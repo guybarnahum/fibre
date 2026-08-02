@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fibre relationship",
+  "type": "object",
+  "required": [
+    "relationshipId",
+    "from",
+    "to",
+    "kind",
+    "context"
+  ],
+  "properties": {
+    "relationshipId": {
+      "type": "string"
+    },
+    "from": {
+      "type": "string"
+    },
+    "to": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "context": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "trustEvidence": {
+      "type": "string"
+    }
+  }
+}

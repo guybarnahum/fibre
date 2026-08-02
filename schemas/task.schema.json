@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fibre task",
+  "type": "object",
+  "required": [
+    "taskId",
+    "objective",
+    "acceptanceCriteria",
+    "budget"
+  ],
+  "properties": {
+    "taskId": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "context": {
+      "type": "string"
+    },
+    "requiredCapabilities": {
+      "type": "string"
+    },
+    "acceptanceCriteria": {
+      "type": "string"
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "fibreCredits",
+        "usd",
+        "modelTokens"
+      ],
+      "properties": {
+        "fibreCredits": {
+          "type": "number"
+        },
+        "usd": {
+          "type": "number"
+        },
+        "modelTokens": {
+          "type": "integer"
+        }
+      }
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}

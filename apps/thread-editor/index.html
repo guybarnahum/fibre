@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fibre Thread Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">Fibre founding tool</p>
+      <h1>Thread Editor</h1>
+      <p>Load, inspect, simulate, and propose changes to a synthetic Thread.</p>
+    </div>
+    <div class="status" id="status">Fixture mode · no live writes</div>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <label>Fixture
+        <select id="fixtureSelect">
+          <option value="mina">Mina Park</option>
+          <option value="daniel">Daniel Rossi</option>
+        </select>
+      </label>
+      <label class="file-label">Load JSON
+        <input id="fileInput" type="file" accept="application/json,.json">
+      </label>
+      <button id="downloadButton" type="button">Download snapshot</button>
+    </section>
+
+    <section class="grid">
+      <article class="profile panel">
+        <div class="avatar" id="avatar">MP</div>
+        <div>
+          <p class="eyebrow" id="orientation">Original Thread</p>
+          <h2 id="name">Mina Park</h2>
+          <p id="description"></p>
+          <div class="chips" id="culture"></div>
+        </div>
+        <dl class="facts">
+          <div><dt>Status</dt><dd id="threadStatus"></dd></div>
+          <div><dt>Version</dt><dd id="version"></dd></div>
+          <div><dt>Birth city</dt><dd id="birthCity"></dd></div>
+          <div><dt>Work city</dt><dd id="workCity"></dd></div>
+          <div><dt>FC</dt><dd id="fc"></dd></div>
+          <div><dt>Model tokens</dt><dd id="tokens"></dd></div>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <h2>Genetic personality</h2>
+        <div id="traits" class="stack"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Current life state</h2>
+        <h3>Needs</h3><ul id="needs"></ul>
+        <h3>Feelings</h3><ul id="feelings"></ul>
+        <h3>Self-model</h3>
+        <textarea id="selfModel" rows="7"></textarea>
+        <button id="proposeButton" type="button">Preview update command</button>
+      </article>
+
+      <article class="panel">
+        <h2>Thaw preview</h2>
+        <label>Objective
+          <textarea id="objective" rows="4">Review a Fibre website proposal and decide whether to bid.</textarea>
+        </label>
+        <button id="thawButton" type="button">Build context capsule</button>
+        <pre id="capsule"></pre>
+      </article>
+
+      <article class="panel wide">
+        <h2>Proposed command / raw snapshot</h2>
+        <div class="tabs">
+          <button class="tab active" data-tab="command" type="button">Command</button>
+          <button class="tab" data-tab="raw" type="button">Raw JSON</button>
+        </div>
+        <pre id="command"></pre>
+        <pre id="raw" hidden></pre>
+      </article>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

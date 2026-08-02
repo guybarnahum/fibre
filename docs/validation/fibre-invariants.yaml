@@ -1,0 +1,33 @@
+- id: persistent-personhood
+  statement: A Thread persists across temporary execution runtimes.
+  required_evidence:
+    - persistent_thread_id
+    - life_event_history
+    - execution_records_linked_to_thread
+
+- id: non-interchangeability
+  statement: Distinct Threads make meaningfully different decisions under the same task conditions.
+  required_evidence:
+    - comparative_behavior_test
+    - identity_grounded_explanation
+
+- id: economic-consequence
+  statement: Work consumes constrained resources and creates persistent economic effects.
+  required_evidence:
+    - contract
+    - escrow_entries
+    - cost_entries
+    - settlement_entries
+
+- id: functional-identity
+  statement: Culture, family, geography, embodiment, and reading affect behavior rather than only profiles.
+  required_evidence:
+    - behavior_trace
+    - cited_identity_influence
+
+- id: model-not-person
+  statement: The LLM produces candidate cognition subject to Thread-level audit and validation.
+  required_evidence:
+    - candidate_output
+    - goal_guardian_review
+    - authorized_action

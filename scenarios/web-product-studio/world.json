@@ -1,0 +1,16 @@
+{
+  "scenarioId": "web_studio_v0",
+  "threadRefs": [
+    "../../fixtures/threads/mina.thread.json",
+    "../../fixtures/threads/daniel.thread.json"
+  ],
+  "task": {
+    "objective": "Design and deploy a concise public website for Fibre.",
+    "acceptanceCriteria": "The site explains Threads, freeze/thaw, and the task marketplace; it is mobile-friendly and includes a working human contact form mockup.",
+    "budget": {
+      "fibreCredits": 100,
+      "usd": 10,
+      "modelTokens": 250000
+    }
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fibre.world/schemas/thread.schema.json",
+  "title": "Fibre Thread snapshot",
+  "type": "object",
+  "required": [
+    "threadId",
+    "version",
+    "status",
+    "identity",
+    "genome",
+    "currentState",
+    "provenance"
+  ],
+  "properties": {
+    "threadId": {
+      "type": "string",
+      "pattern": "^thr_[a-z0-9_]+$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "enum": [
+        "frozen",
+        "thawing",
+        "active",
+        "freezing",
+        "dormant",
+        "retired"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "name",
+        "originOrientation",
+        "selfDescription"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "originOrientation": {
+          "enum": [
+            "original",
+            "echo",
+            "homage",
+            "composite"
+          ]
+        },
+        "selfDescription": {
+          "type": "string"
+        },
+        "birthCity": {
+          "type": "string"
+        },
+        "currentWorkCity": {
+          "type": "string"
+        },
+        "culture": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "portraitRef": {
+          "type": "string"
+        },
+        "voiceRef": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "genome": {
+      "type": "object",
+      "required": [
+        "textualTraits",
+        "runtimeBaselines"
+      ],
+      "properties": {
+        "textualTraits": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "runtimeBaselines": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "number",
+              "integer",
+              "string",
+              "boolean"
+            ]
+          }
+        }
+      }
+    },
+    "currentState": {
+      "type": "object",
+      "required": [
+        "needs",
+        "feelings",
+        "selfModel"
+      ],
+      "properties": {
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "feelings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "selfModel": {
+          "type": "string"
+        },
+        "unresolvedIntentions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "accounts": {
+      "type": "object",
+      "properties": {
+        "fibreCredits": {
+          "type": "number"
+        },
+        "usdAvailable": {
+          "type": "number"
+        },
+        "modelTokensAvailable": {
+          "type": "integer"
+        }
+      }
+    },
+    "relationshipRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "memoryRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "createdAt",
+        "createdBy"
+      ],
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "lastEventId": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

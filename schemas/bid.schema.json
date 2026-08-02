@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fibre bid",
+  "type": "object",
+  "required": [
+    "bidId",
+    "taskId",
+    "bidderThreadId",
+    "approach",
+    "priceFC",
+    "confidence"
+  ],
+  "properties": {
+    "bidId": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "bidderThreadId": {
+      "type": "string"
+    },
+    "approach": {
+      "type": "string"
+    },
+    "claimedFit": {
+      "type": "string"
+    },
+    "limitations": {
+      "type": "string"
+    },
+    "priceFC": {
+      "type": "number"
+    },
+    "usdBudget": {
+      "type": "number"
+    },
+    "modelTokenBudget": {
+      "type": "integer"
+    },
+    "confidence": {
+      "type": "string"
+    }
+  }
+}

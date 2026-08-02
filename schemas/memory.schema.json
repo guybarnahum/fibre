@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fibre memory",
+  "type": "object",
+  "required": [
+    "memoryId",
+    "threadId",
+    "provenanceType",
+    "narrative",
+    "occurredAt"
+  ],
+  "properties": {
+    "memoryId": {
+      "type": "string"
+    },
+    "threadId": {
+      "type": "string"
+    },
+    "provenanceType": {
+      "enum": [
+        "experienced",
+        "reported",
+        "family_story",
+        "cultural_narrative",
+        "generated_upbringing",
+        "external_evaluation",
+        "reinterpretation"
+      ]
+    },
+    "narrative": {
+      "type": "string"
+    },
+    "occurredAt": {
+      "type": "string"
+    },
+    "sourceRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "emotionalMeaning": {
+      "type": "string"
+    }
+  }
+}

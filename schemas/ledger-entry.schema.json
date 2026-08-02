@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fibre ledger transaction",
+  "type": "object",
+  "required": [
+    "transactionId",
+    "entries",
+    "occurredAt"
+  ],
+  "properties": {
+    "transactionId": {
+      "type": "string"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "account",
+          "unit",
+          "amount"
+        ],
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "unit": {
+            "enum": [
+              "FC",
+              "USD",
+              "MODEL_TOKEN"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}
