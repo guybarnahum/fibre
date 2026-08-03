@@ -1,6 +1,6 @@
 ---
 id: validation-m1-persistent-thread-round-trip
-status: proposed
+status: accepted
 last-reviewed: 2026-08-03
 canonical: true
 issue: 1
@@ -74,6 +74,8 @@ M1 does not include:
 
 A small budget object may be included in a context capsule as fixture state, but M1 does not implement the full economy.
 
+These items are deferred from M1, not rejected from Fibre. M1 implementation choices must preserve credible extension paths to the larger Fibre world, including many interacting Threads, rich identity, culture, family, development, economy, markets, and institutions.
+
 ## Lifecycle invariants
 
 The implementation must preserve these invariants:
@@ -91,6 +93,7 @@ The implementation must preserve these invariants:
 11. **Recoverability** — interrupted runtime sessions can be diagnosed and safely completed or abandoned.
 12. **Deterministic replay** — ordered events reconstruct the same authoritative Thread state and version.
 13. **Human inspectability** — the editor clearly separates current state, event history, runtime session, context capsule, proposed command, and accepted result.
+14. **Ambition preservation** — narrow milestone implementations must not hard-code assumptions that prevent later social, economic, familial, cultural, institutional, or developmental expansion.
 
 ## Minimum persistent model
 
@@ -177,6 +180,7 @@ The milestone is not accepted unless the reviewer can answer yes to each questio
 - Can the system reject stale or duplicated changes?
 - Can Mina be reconstructed from her history?
 - Would failure of the restart or replay tests falsify the milestone's central claim?
+- Does the architecture remain extensible to Fibre's larger ambition rather than collapsing into ordinary orchestration?
 
 ## Proposed implementation stages
 
@@ -195,14 +199,14 @@ Each stage should have its own issue, branch, pull request, tests, and handoff n
 
 ## Stage 1 owner validation
 
-Before this document is marked `accepted`, the project owner should review:
+The project owner approved the following on 2026-08-03:
 
-- [ ] The thesis accurately captures what M1 must prove.
-- [ ] The artifacts are sufficient and human-inspectable.
-- [ ] The non-goals keep the milestone narrow enough.
-- [ ] The lifecycle invariants preserve Fibre's original vision.
-- [ ] The acceptance scenario is concrete and falsifiable.
-- [ ] The implementation-stage split is suitable for parallel LLM contributors.
-- [ ] No important M1 behavior is missing.
+- [x] The thesis accurately captures what M1 must prove.
+- [x] The artifacts are sufficient and human-inspectable.
+- [x] The non-goals keep the milestone narrow enough.
+- [x] The lifecycle invariants preserve Fibre's original vision.
+- [x] The acceptance scenario is concrete and falsifiable.
+- [x] The implementation-stage split is suitable for parallel LLM contributors.
+- [x] No important M1 behavior is missing.
 
-Approval should be recorded in issue #1 or the associated pull request. After approval, change this document's status from `proposed` to `accepted` and open the implementation issues.
+The owner also directed that every implementation be reviewed for consistency with Fibre's high-level goals and for whether a narrow implementation unnecessarily limits the project's ambition.
