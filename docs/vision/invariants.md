@@ -22,15 +22,15 @@ A design is drifting if it produces any of the following:
 - The self-audit loop becomes either performative agreement or corrosive self-denigration.
 - Human-visible evidence is absent.
 - A milestone's temporary simplification is silently converted into a permanent constraint.
-- Implementation or infrastructure convenience closes off a preserved ambition path without an explicit, recorded decision.
+- Implementation or infrastructure convenience closes off a preserved ambition path without a decision recorded in an ADR.
 - A narrowly testable prototype is treated as the final conceptual boundary rather than a proof of one layer in a larger world.
-- Deferred capabilities disappear from the architecture, roadmap, or extension model merely because they are outside the current milestone.
+- Deferred capabilities disappear from every durable record — architecture documents, roadmap, and milestone contract — merely because they are outside the current milestone.
 - The system becomes optimized for one canonical use case in a way that makes the others structurally unnatural or impossible.
 - The easiest explanation of Fibre becomes “a multi-agent workflow system with personas.”
 
 ## Preserved ambition paths
 
-Fibre's architecture must keep a credible extension path open for each of the following. Preserving a path means preserving domain boundaries, interfaces, and vocabulary — not implementing the subsystem now.
+Fibre's architecture must keep a credible extension path open for each of the following. Preserving a path means preserving domain boundaries, domain vocabulary, and the contracts between domains — not implementing the subsystem now.
 
 - many interacting Threads
 - identity and self-authorship
@@ -42,18 +42,18 @@ Fibre's architecture must keep a credible extension path open for each of the fo
 - economic accounts and consequences
 - task markets, bids, and contracts
 - organizations and institutions
-- replaceable workers, models, tools, and runtimes
+- multiple concurrent workers, models, tools, and runtime systems
 
 ## Capability status
 
-Every capability excluded from current work is exactly one of the following. Naming the status is required; the status determines what evidence is owed.
+A capability a change deliberately excludes is exactly one of the following. Naming the status is required; the status determines what evidence is owed.
 
-- **Deferred** — accepted for Fibre and not implemented yet. Must remain visible in the architecture, roadmap, and extension model. Requires no ADR.
-- **Experimental** — under falsifiable investigation and not yet accepted. Requires a hypothesis or experiment record.
-- **Rejected** — recorded as outside Fibre in [`non-goals.md`](non-goals.md) or an ADR.
-- **Permanent constraint** — a limitation reversible only by redefining an accepted concept, invalidating recorded history, or breaking a published world contract. Requires a concept decision and an ADR.
+- **Deferred** — accepted for Fibre and not implemented yet. Must stay visible in at least one durable place: `docs/architecture/`, [`prototype-roadmap.md`](../validation/prototype-roadmap.md), or the milestone contract that defers it. Requires no ADR.
+- **Experimental** — under falsifiable investigation and not yet accepted. Requires a hypothesis or an entry under `experiments/`.
+- **Rejected** — outside Fibre itself, not merely outside the current milestone. Requires an ADR, or a non-goal that is scoped to Fibre rather than to a prototype stage. Note that [`non-goals.md`](non-goals.md) is scoped to the initial prototype and includes sequencing deferrals; a non-goal listed there is not automatically a rejection.
+- **Permanent constraint** — a limitation reversible only by redefining an accepted concept, invalidating recorded history, or breaking a schema or event contract other components depend on. Requires a concept decision and an ADR.
 
-Reversible, local engineering choices — storage engine, module layout, internal interfaces, single-process deployment, fixture data, provider adapters — are not permanent constraints and do not require an ADR.
+Reversible, local engineering choices — storage engine, module layout, interfaces internal to one domain boundary, single-process deployment, fixture data, provider adapters — are not permanent constraints and do not require an ADR.
 
 ## Required proposal and release questions
 

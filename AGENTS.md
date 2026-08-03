@@ -37,7 +37,7 @@ For behavior or identity work, read the relevant file under `docs/concepts/`.
 
 ## Vision and ambition guard
 
-Every concept, architecture, experiment, and implementation change must pass two tests. Artifact-only changes — typos, formatting, non-substantive editing — are exempt.
+Every concept, architecture, experiment, and implementation change must pass two tests. Changes that neither defer a capability nor move a domain boundary are exempt: typos, formatting, dependency bumps, and local refactors.
 
 1. **Fidelity test** — Is the work consistent with Fibre's accepted concepts, invariants, and high-level goals?
 2. **Ambition test** — Does the work preserve a credible path to Fibre's full intended world, or does it quietly reduce Fibre to a smaller conventional agent product?
@@ -49,25 +49,25 @@ The standard is: **build the smallest proof that preserves the largest credible 
 State each of the following in the issue or pull request. One sentence each is enough.
 
 - Which Fibre capability the work proves or enables.
-- Which capabilities are intentionally deferred, and where each deferral is recorded.
+- Which capabilities it deliberately excludes, the status of each, and where each is recorded.
 - Which extension path remains open for each deferred capability.
 - Which shortcuts are temporary, and what would reverse them.
 - Whether any choice creates a permanent constraint, and if so which ADR records it.
 
 ### Required review questions
 
-Answer each explicitly. An uncomfortable answer must be justified, not omitted.
+Answer each in the pull request or its review. An uncomfortable answer must be justified, not omitted.
 
 - Does the design keep a credible extension path for every item in [`docs/vision/invariants.md`](docs/vision/invariants.md#preserved-ambition-paths)? Name any path it closes.
-- Would a similarly simple abstraction have preserved more of those paths? If so, why was it rejected?
+- If an alternative that preserved more of those paths was considered, why was it not chosen?
 - Is a conventional workflow, assistant, persona, or SaaS architecture being mistaken for the Fibre end state?
 - Does engineering convenience risk redefining an accepted concept?
 
-Preserving an extension path means preserving domain boundaries, interfaces, and vocabulary. It does not mean implementing the future subsystem now, and it does not justify abstraction that is not exercised by the current proof.
+Preserving an extension path means preserving domain boundaries, domain vocabulary, and the contracts between domains. It does not mean implementing the future subsystem now, and it does not justify abstraction that is not exercised by the current proof.
 
 ### Capability status
 
-Do not use “out of scope for this milestone” to erase a capability from the long-term design. Classify every excluded capability as **deferred**, **experimental**, **rejected**, or a **permanent constraint**, as defined in [`docs/vision/invariants.md`](docs/vision/invariants.md#capability-status). Only a permanent constraint requires a concept decision and an ADR; reversible local engineering choices do not.
+Do not use “out of scope for this milestone” to erase a capability from the long-term design. Classify every capability the change deliberately excludes as **deferred**, **experimental**, **rejected**, or a **permanent constraint**, as defined in [`docs/vision/invariants.md`](docs/vision/invariants.md#capability-status). Only a permanent constraint requires a concept decision and an ADR; reversible local engineering choices do not.
 
 ## Decision process
 
@@ -89,11 +89,11 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 
 ## Definition of done
 
-A concept or implementation change is complete only when:
+A concept, architecture, experiment, or implementation change is complete only when:
 
 1. Its canonical source document is updated.
 2. Relevant scenario or acceptance tests are updated.
 3. Any durable decision is recorded.
 4. Human-inspectable evidence is identified or produced.
 5. Drift against Fibre invariants has been checked.
-6. The required statements under **Vision and ambition guard** are present, and every excluded capability has a named status.
+6. The required statements and review questions under **Vision and ambition guard** are answered, and every capability the change excludes has a named status.
