@@ -19,5 +19,8 @@ Fibre is currently a private concept and prototype project.
 - What human-inspectable artifact demonstrates it?
 - What drift risk does it introduce?
 - Which ADR records the durable decision?
+- What is deferred, which extension path stays open, and does anything become a permanent constraint?
+
+Concept, architecture, experiment, and implementation changes must also answer the fidelity and ambition questions in [`docs/vision/invariants.md`](docs/vision/invariants.md). Artifact changes are exempt.
 
 Never treat a compelling LLM-generated proposal as accepted merely because it is well written.

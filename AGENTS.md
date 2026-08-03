@@ -37,31 +37,37 @@ For behavior or identity work, read the relevant file under `docs/concepts/`.
 
 ## Vision and ambition guard
 
-Every proposal, milestone, and implementation must pass two distinct tests:
+Every concept, architecture, experiment, and implementation change must pass two tests. Artifact-only changes — typos, formatting, non-substantive editing — are exempt.
 
 1. **Fidelity test** — Is the work consistent with Fibre's accepted concepts, invariants, and high-level goals?
 2. **Ambition test** — Does the work preserve a credible path to Fibre's full intended world, or does it quietly reduce Fibre to a smaller conventional agent product?
 
-A narrow prototype is acceptable when it isolates and verifies one foundational claim. It is not acceptable when its temporary simplifications become implicit permanent limits.
+The standard is: **build the smallest proof that preserves the largest credible architecture.** A narrow prototype is acceptable when it isolates and verifies one foundational claim; it is not acceptable when its temporary simplifications harden into unexamined permanent constraints.
 
-For every scoped implementation:
+### Required statements
 
-- State which broader Fibre capabilities it enables.
-- Identify which ambitious capabilities are intentionally deferred rather than rejected.
-- Preserve extension points and domain boundaries needed by later identity, family, culture, economy, marketplace, institutional, and developmental systems.
-- Avoid choosing abstractions that only work for the current demo when a similarly simple abstraction can preserve the larger model.
-- Explicitly call out when engineering convenience risks redefining the concept.
-- Ask whether a conventional workflow, assistant, persona, or SaaS architecture is being mistaken for the Fibre end state.
-- Prefer a small vertical proof of a large architecture over a polished implementation of a diminished vision.
+State each of the following in the issue or pull request. One sentence each is enough.
 
-Do not use “out of scope for this milestone” to erase a capability from the long-term design. Distinguish clearly among:
+- Which Fibre capability the work proves or enables.
+- Which capabilities are intentionally deferred, and where each deferral is recorded.
+- Which extension path remains open for each deferred capability.
+- Which shortcuts are temporary, and what would reverse them.
+- Whether any choice creates a permanent constraint, and if so which ADR records it.
 
-- deferred capability
-- experimental capability
-- rejected capability
-- permanent architectural constraint
+### Required review questions
 
-Any permanent constraint on Fibre's ambition requires an explicit concept decision and ADR.
+Answer each explicitly. An uncomfortable answer must be justified, not omitted.
+
+- Does the design keep a credible extension path for every item in [`docs/vision/invariants.md`](docs/vision/invariants.md#preserved-ambition-paths)? Name any path it closes.
+- Would a similarly simple abstraction have preserved more of those paths? If so, why was it rejected?
+- Is a conventional workflow, assistant, persona, or SaaS architecture being mistaken for the Fibre end state?
+- Does engineering convenience risk redefining an accepted concept?
+
+Preserving an extension path means preserving domain boundaries, interfaces, and vocabulary. It does not mean implementing the future subsystem now, and it does not justify abstraction that is not exercised by the current proof.
+
+### Capability status
+
+Do not use “out of scope for this milestone” to erase a capability from the long-term design. Classify every excluded capability as **deferred**, **experimental**, **rejected**, or a **permanent constraint**, as defined in [`docs/vision/invariants.md`](docs/vision/invariants.md#capability-status). Only a permanent constraint requires a concept decision and an ADR; reversible local engineering choices do not.
 
 ## Decision process
 
@@ -71,7 +77,7 @@ Any permanent constraint on Fibre's ambition requires an explicit concept decisi
 - Update `docs/state/current-state.md` when an accepted decision changes Fibre.
 - Add or update a verifiable test in `docs/validation/` or `tests/`.
 - Identify a human-inspectable artifact that demonstrates the behavior.
-- Include both a fidelity assessment and an ambition assessment in meaningful proposals and pull requests.
+- Include a fidelity assessment and an ambition assessment in every concept, architecture, experiment, or implementation proposal and pull request.
 
 ## Implementation rules
 
@@ -90,5 +96,4 @@ A concept or implementation change is complete only when:
 3. Any durable decision is recorded.
 4. Human-inspectable evidence is identified or produced.
 5. Drift against Fibre invariants has been checked.
-6. The implementation's temporary scope and long-term extension path are explicit.
-7. The work has been reviewed for both fidelity to the vision and accidental limitation of Fibre's ambition.
+6. The required statements under **Vision and ambition guard** are present, and every excluded capability has a named status.
