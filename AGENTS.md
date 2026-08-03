@@ -35,6 +35,34 @@ For behavior or identity work, read the relevant file under `docs/concepts/`.
 - The underlying LLM is treated as fallible and audited by the Thread.
 - Historical state is not silently rewritten; meaningful changes are commands and events.
 
+## Vision and ambition guard
+
+Every proposal, milestone, and implementation must pass two distinct tests:
+
+1. **Fidelity test** — Is the work consistent with Fibre's accepted concepts, invariants, and high-level goals?
+2. **Ambition test** — Does the work preserve a credible path to Fibre's full intended world, or does it quietly reduce Fibre to a smaller conventional agent product?
+
+A narrow prototype is acceptable when it isolates and verifies one foundational claim. It is not acceptable when its temporary simplifications become implicit permanent limits.
+
+For every scoped implementation:
+
+- State which broader Fibre capabilities it enables.
+- Identify which ambitious capabilities are intentionally deferred rather than rejected.
+- Preserve extension points and domain boundaries needed by later identity, family, culture, economy, marketplace, institutional, and developmental systems.
+- Avoid choosing abstractions that only work for the current demo when a similarly simple abstraction can preserve the larger model.
+- Explicitly call out when engineering convenience risks redefining the concept.
+- Ask whether a conventional workflow, assistant, persona, or SaaS architecture is being mistaken for the Fibre end state.
+- Prefer a small vertical proof of a large architecture over a polished implementation of a diminished vision.
+
+Do not use “out of scope for this milestone” to erase a capability from the long-term design. Distinguish clearly among:
+
+- deferred capability
+- experimental capability
+- rejected capability
+- permanent architectural constraint
+
+Any permanent constraint on Fibre's ambition requires an explicit concept decision and ADR.
+
 ## Decision process
 
 - Do not silently redefine an accepted concept.
@@ -43,6 +71,7 @@ For behavior or identity work, read the relevant file under `docs/concepts/`.
 - Update `docs/state/current-state.md` when an accepted decision changes Fibre.
 - Add or update a verifiable test in `docs/validation/` or `tests/`.
 - Identify a human-inspectable artifact that demonstrates the behavior.
+- Include both a fidelity assessment and an ambition assessment in meaningful proposals and pull requests.
 
 ## Implementation rules
 
@@ -61,3 +90,5 @@ A concept or implementation change is complete only when:
 3. Any durable decision is recorded.
 4. Human-inspectable evidence is identified or produced.
 5. Drift against Fibre invariants has been checked.
+6. The implementation's temporary scope and long-term extension path are explicit.
+7. The work has been reviewed for both fidelity to the vision and accidental limitation of Fibre's ambition.
