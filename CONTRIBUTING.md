@@ -19,8 +19,9 @@ Fibre is currently a private concept and prototype project.
 - What human-inspectable artifact demonstrates it?
 - What drift risk does it introduce?
 - Which ADR records the durable decision?
-- What is deferred, which extension path stays open, and does anything become a permanent constraint?
 
-Unless exempt under the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md), a change must also satisfy that guard and answer the fidelity and ambition questions in [`docs/vision/invariants.md`](docs/vision/invariants.md).
+Answer what applies; a change that only touches wording or tooling will answer little of it.
+
+A change the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md) covers must also satisfy that guard and answer the [fidelity and ambition questions](docs/vision/invariants.md#required-proposal-and-release-questions).
 
 Never treat a compelling LLM-generated proposal as accepted merely because it is well written.

@@ -1,3 +1,5 @@
+<!-- Delete any section or question that does not apply to this change. -->
+
 ## Summary
 
 ## Fibre impact
@@ -7,12 +9,12 @@
 - Which canonical scenario demonstrates it?
 - What observable behavior should change?
 - What human-inspectable artifact demonstrates it?
-- What drift risk does it introduce?
+- What drift risk does it introduce? (drift tests: `docs/vision/invariants.md`)
 - Which ADR records the durable decision?
 
 ## Ambition assessment
 
-Delete this section if the change is exempt under **Vision and ambition guard** in [`AGENTS.md`](../AGENTS.md).
+Delete this section if the change is exempt under **Vision and ambition guard** in `AGENTS.md`.
 
 - Which Fibre capability does this prove or enable?
 - Which capabilities does it deliberately exclude, what is the status of each (deferred / experimental / rejected / permanent constraint), and where is each recorded?

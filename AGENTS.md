@@ -37,13 +37,13 @@ For behavior or identity work, read the relevant file under `docs/concepts/`.
 
 ## Vision and ambition guard
 
-Every concept, architecture, experiment, and implementation change must pass the **fidelity** and **ambition** tests stated in [`docs/vision/invariants.md`](docs/vision/invariants.md#required-proposal-and-release-questions). Changes that neither defer a capability nor move a domain boundary are exempt: typos, formatting, dependency bumps, and local refactors.
+The guard applies to any change that defers a capability, moves a domain boundary, alters behaviour governed by an accepted invariant, or changes how an accepted concept is described. Everything else is exempt — typos, formatting, dependency bumps, local refactors, routine editing. An in-scope change must pass the **fidelity** and **ambition** tests in [`docs/vision/invariants.md`](docs/vision/invariants.md#required-proposal-and-release-questions).
 
 The standard is: **build the smallest proof that preserves the largest credible architecture.** A narrow prototype is acceptable when it isolates and verifies one foundational claim; it is not acceptable when its temporary simplifications harden into unexamined permanent constraints.
 
 ### Required statements
 
-State each of the following in the issue or pull request. One sentence each is enough.
+State each of the following in the issue or pull request. Group related exclusions and cite the document that records them rather than listing every capability separately.
 
 - Which Fibre capability the work proves or enables.
 - Which capabilities it deliberately excludes, the status of each, and where each is recorded.
@@ -53,11 +53,11 @@ State each of the following in the issue or pull request. One sentence each is e
 
 ### Required review questions
 
-Answer each in the pull request or its review. An uncomfortable answer must be justified, not omitted.
+Answer each in the pull request or its review. "None was considered" and "no path is closed" are acceptable answers; an unexamined question is not.
 
-- Does the design keep a credible extension path for every item in [`docs/vision/invariants.md`](docs/vision/invariants.md#preserved-ambition-paths)? Name any path it closes.
+- Does the change keep a credible extension path for every item in [`docs/vision/invariants.md`](docs/vision/invariants.md#preserved-ambition-paths)? Name any path it closes.
 - If an alternative that preserved more of those paths was considered, why was it not chosen?
-- Is a conventional workflow, assistant, persona, or SaaS architecture being mistaken for the Fibre end state?
+- Seeing only this change, would Fibre read as a workflow engine, an assistant, or a collection of personas? If so, what in the change prevents that reading?
 - Does engineering convenience risk redefining an accepted concept?
 
 Preserving an extension path means preserving domain boundaries, domain vocabulary, and the contracts between domains. It does not mean implementing the future subsystem now, and it does not justify abstraction that is not exercised by the current proof.
@@ -86,7 +86,7 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 
 ## Definition of done
 
-A concept, architecture, experiment, or implementation change is complete only when:
+A change within the scope of the **Vision and ambition guard** is complete only when:
 
 1. Its canonical source document is updated.
 2. Relevant scenario or acceptance tests are updated.

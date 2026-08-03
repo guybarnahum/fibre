@@ -22,7 +22,7 @@ A design is drifting if it produces any of the following:
 - The self-audit loop becomes either performative agreement or corrosive self-denigration.
 - Human-visible evidence is absent.
 - A milestone's temporary simplification is silently converted into a permanent constraint.
-- Implementation or infrastructure convenience closes off a preserved ambition path without a decision recorded in an ADR.
+- Implementation or infrastructure convenience closes off a preserved ambition path irreversibly, without a decision recorded in an ADR.
 - A narrowly testable prototype is treated as the final conceptual boundary rather than a proof of one layer in a larger world.
 - Deferred capabilities disappear from every durable record — architecture documents, roadmap, and milestone contract — merely because they are outside the current milestone.
 - The system becomes optimized for one canonical use case in a way that makes the others structurally unnatural or impossible.
@@ -57,7 +57,7 @@ Reversible, local engineering choices — storage engine, module layout, interfa
 
 ## Required proposal and release questions
 
-For every change within the scope of the **Vision and ambition guard** in `AGENTS.md`, and for every release, answer both:
+For every change the **Vision and ambition guard** in [`AGENTS.md`](../../AGENTS.md) covers, and for every release, answer both:
 
 1. **Fidelity:** Does this make Fibre feel more like a persistent society of distinctive Threads, or more like ordinary orchestration?
 2. **Ambition:** Does this preserve and enable Fibre's larger intended world, or does it prematurely narrow the project to what is easiest to implement now?
@@ -70,4 +70,4 @@ A deliberately narrow milestone passes the ambition test when it:
 - does not redefine deferred capabilities as unnecessary
 - produces evidence the next, more ambitious layer can build on
 
-Any permanent constraint on Fibre's intended scope must be explicit, justified, reviewed as a concept decision, and recorded in an ADR.
+Any permanent constraint on Fibre's intended scope must be explicit, justified, reviewed as a concept decision, and recorded in an ADR. A permanent constraint that closes a preserved ambition path should be refused and redesigned rather than documented, unless the owner accepts the reduction as a concept decision.
