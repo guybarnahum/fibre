@@ -12,7 +12,7 @@
 
 ## Ambition assessment
 
-Required unless this change neither defers a capability nor moves a domain boundary. See **Vision and ambition guard** in [`AGENTS.md`](../AGENTS.md).
+Delete this section if the change is exempt under **Vision and ambition guard** in [`AGENTS.md`](../AGENTS.md).
 
 - Which Fibre capability does this prove or enable?
 - Which capabilities does it deliberately exclude, what is the status of each (deferred / experimental / rejected / permanent constraint), and where is each recorded?

@@ -21,6 +21,6 @@ Fibre is currently a private concept and prototype project.
 - Which ADR records the durable decision?
 - What is deferred, which extension path stays open, and does anything become a permanent constraint?
 
-Unless a change neither defers a capability nor moves a domain boundary, it must also satisfy the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md) and answer the fidelity and ambition questions in [`docs/vision/invariants.md`](docs/vision/invariants.md).
+Unless exempt under the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md), a change must also satisfy that guard and answer the fidelity and ambition questions in [`docs/vision/invariants.md`](docs/vision/invariants.md).
 
 Never treat a compelling LLM-generated proposal as accepted merely because it is well written.

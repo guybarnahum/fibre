@@ -37,10 +37,7 @@ For behavior or identity work, read the relevant file under `docs/concepts/`.
 
 ## Vision and ambition guard
 
-Every concept, architecture, experiment, and implementation change must pass two tests. Changes that neither defer a capability nor move a domain boundary are exempt: typos, formatting, dependency bumps, and local refactors.
-
-1. **Fidelity test** — Is the work consistent with Fibre's accepted concepts, invariants, and high-level goals?
-2. **Ambition test** — Does the work preserve a credible path to Fibre's full intended world, or does it quietly reduce Fibre to a smaller conventional agent product?
+Every concept, architecture, experiment, and implementation change must pass the **fidelity** and **ambition** tests stated in [`docs/vision/invariants.md`](docs/vision/invariants.md#required-proposal-and-release-questions). Changes that neither defer a capability nor move a domain boundary are exempt: typos, formatting, dependency bumps, and local refactors.
 
 The standard is: **build the smallest proof that preserves the largest credible architecture.** A narrow prototype is acceptable when it isolates and verifies one foundational claim; it is not acceptable when its temporary simplifications harden into unexamined permanent constraints.
 
@@ -77,7 +74,7 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Update `docs/state/current-state.md` when an accepted decision changes Fibre.
 - Add or update a verifiable test in `docs/validation/` or `tests/`.
 - Identify a human-inspectable artifact that demonstrates the behavior.
-- Include a fidelity assessment and an ambition assessment in every concept, architecture, experiment, or implementation proposal and pull request.
+- Apply the **Vision and ambition guard** above to every proposal and pull request within its scope.
 
 ## Implementation rules
 

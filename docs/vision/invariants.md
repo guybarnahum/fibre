@@ -57,7 +57,7 @@ Reversible, local engineering choices — storage engine, module layout, interfa
 
 ## Required proposal and release questions
 
-For every concept, architecture, experiment, or implementation change, and for every release, answer both:
+For every change within the scope of the **Vision and ambition guard** in `AGENTS.md`, and for every release, answer both:
 
 1. **Fidelity:** Does this make Fibre feel more like a persistent society of distinctive Threads, or more like ordinary orchestration?
 2. **Ambition:** Does this preserve and enable Fibre's larger intended world, or does it prematurely narrow the project to what is easiest to implement now?
@@ -66,7 +66,7 @@ A deliberately narrow milestone passes the ambition test when it:
 
 - verifies a foundational claim the broader world depends on
 - names what is deferred and where the deferral is recorded
-- preserves the interfaces and domain boundaries the ambition paths above need
+- preserves the domain boundaries and cross-domain contracts the ambition paths above need
 - does not redefine deferred capabilities as unnecessary
 - produces evidence the next, more ambitious layer can build on
 
