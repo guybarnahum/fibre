@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 2,
+  "version": 3,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -97,8 +97,8 @@
     }
   },
   "coverage": {
-    "acceptedCanonicalConcepts": {
-      "directory": "docs/concepts",
+    "acceptedCanonicalDocuments": {
+      "directory": "docs",
       "profiles": [
         "core",
         "request-processing",
