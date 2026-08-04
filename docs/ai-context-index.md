@@ -2,6 +2,18 @@
 
 Use this index to load only the context needed for a task.
 
+## Machine-readable profiles
+
+[`ai-context-manifest.json`](ai-context-manifest.json) is the canonical machine-readable source for AI context selection. Run `npm run context-pack` to generate bounded packs under `artifacts/generated/`.
+
+- `core` — minimum context for understanding Fibre.
+- `request-processing` — dignity, consent, affect, and response behavior.
+- `full` — broad cross-cutting concept, architecture, use-case, and validation context.
+
+Generated packs are non-canonical and must not be edited directly. Each includes its source list, repository revision, manifest version, and content digest. Use the smallest profile sufficient for the task.
+
+Every accepted canonical concept under `docs/concepts/` must appear in at least one manifest profile. Repository validation enforces this rule.
+
 ## Understand Fibre
 
 1. `vision/constitution.md`
