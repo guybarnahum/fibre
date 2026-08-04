@@ -39,7 +39,7 @@ This repository is the canonical, version-controlled source for Fibre's concept,
 
 Generated packs include the repository revision, manifest version, source list, and content digest. They are reproducible build artifacts, ignored by Git, and never canonical. External LLMs should receive the smallest profile sufficient for the task.
 
-Every accepted canonical concept under `docs/concepts/` must appear in at least one manifest profile. Repository validation enforces concept coverage. `npm run check` builds and tests the domain package, verifies context-path safety, generates all packs deterministically, and validates the resulting outputs.
+Every accepted canonical concept under `docs/concepts/` must appear in at least one manifest profile. Repository validation enforces concept coverage. `npm run check` builds and tests the domain package, rejects textual or symlink context-path escapes, generates all packs deterministically, and validates the resulting outputs.
 
 ## Quick commands
 
@@ -56,7 +56,9 @@ Then open <http://localhost:4173>.
 
 ## Current status
 
-`v0.1-concept-foundation`: concepts, schemas, synthetic fixtures, minimal domain package, Thread Editor prototype, and bounded AI context publication are present. No production world database, private-state access-control system, event-consumed authorization capability, or live LLM integration exists yet.
+`v0.1-concept-foundation`: concepts, schemas, synthetic fixtures, minimal domain package, Thread Editor prototype, and bounded AI context publication are present. The portable request flow includes Thread-owned appraisal context, SHA-256 request-content binding, private stance, request-bound authorization, recorded-obligation overrides, restricted disclosure strategy, and audience-visible response separation.
+
+No production world database, private-state access-control system, event-consumed authorization capability, persistent relationship aggregate, or live LLM integration exists yet.
 
 ## License
 
