@@ -56,7 +56,7 @@ Then open <http://localhost:4173>.
 
 ## Current status
 
-`v0.1-concept-foundation`: concepts, schemas, synthetic fixtures, minimal domain package, Thread Editor prototype, and bounded AI context publication are present. The portable request flow includes Thread-owned appraisal context, SHA-256 request-content binding, private stance, request-bound authorization, recorded-obligation overrides, restricted disclosure strategy, and audience-visible response separation.
+`v0.1-concept-foundation`: concepts, schemas, synthetic fixtures, minimal domain package, Thread Editor prototype, and bounded AI context publication are present. The portable request flow includes Thread-owned appraisal context with inclusion/exclusion traces, SHA-256 request-content binding, private stance, request-bound authorization, recorded-obligation overrides, evidence-bearing relationship effects, restricted disclosure strategy, and audience-visible response separation.
 
 No production world database, private-state access-control system, event-consumed authorization capability, persistent relationship aggregate, or live LLM integration exists yet.
 
