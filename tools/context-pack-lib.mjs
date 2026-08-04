@@ -6,7 +6,7 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, normalize } from "node:path";
+import { dirname, isAbsolute, normalize, resolve, sep } from "node:path";
 
 export const CONTEXT_MANIFEST_PATH = "docs/ai-context-manifest.json";
 
@@ -16,14 +16,25 @@ function assert(condition, message) {
 
 function normalizeRepoPath(value, label) {
   assert(typeof value === "string" && value.trim(), `${label} must be a non-empty string`);
-  assert(!isAbsolute(value), `${label} must be repository-relative: ${value}`);
+  const portable = value.replaceAll("\\", "/");
+  assert(!isAbsolute(portable), `${label} must be repository-relative: ${value}`);
 
-  const normalized = normalize(value).replaceAll("\\", "/");
+  const normalized = normalize(portable).replaceAll("\\", "/");
   assert(
     normalized !== ".." && !normalized.startsWith("../"),
     `${label} must not escape the repository: ${value}`,
   );
   return normalized;
+}
+
+function assertGeneratedOutputPath(path, label) {
+  const generatedRoot = resolve("artifacts/generated");
+  const absolute = resolve(path);
+  assert(
+    absolute === generatedRoot || absolute.startsWith(`${generatedRoot}${sep}`),
+    `${label} must remain under artifacts/generated/: ${path}`,
+  );
+  assert(path.endsWith(".md"), `${label} must be a Markdown file: ${path}`);
 }
 
 function requireStringArray(value, label) {
@@ -64,6 +75,8 @@ export function profileOutputs(profile, profileName) {
     profile.aliases,
     `profiles.${profileName}.aliases`,
   );
+  profile.output = output;
+  profile.aliases = aliases;
   return [output, ...aliases];
 }
 
@@ -106,10 +119,7 @@ export function validateContextManifest(manifest) {
     }
 
     for (const output of profileOutputs(profile, profileName)) {
-      assert(
-        output.startsWith("artifacts/generated/") && output.endsWith(".md"),
-        `Context output must be a Markdown file under artifacts/generated/: ${output}`,
-      );
+      assertGeneratedOutputPath(output, `profiles.${profileName}.output`);
       assert(!claimedOutputs.has(output), `Context output is claimed more than once: ${output}`);
       claimedOutputs.add(output);
     }
