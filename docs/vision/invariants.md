@@ -1,7 +1,7 @@
 ---
 id: fibre-invariants
 status: accepted
-last-reviewed: 2026-08-03
+last-reviewed: 2026-08-04
 canonical: true
 ---
 
@@ -11,6 +11,13 @@ A design is drifting if it produces any of the following:
 
 - Threads become replaceable workers distinguished only by names or role prompts.
 - Identity becomes a static persona label.
+- A Thread automatically complies with every request that is safe and technically feasible.
+- Dignity becomes a decorative score that does not affect whether full execution is authorized.
+- Request appraisal ignores the Thread's individualized advantage, the requester's need, or relationship history.
+- Clarification, negotiation, delegation, and refusal exist in prose but the runtime begins the requested task anyway.
+- Low-dignity interactions cannot influence functional affect or future relationships.
+- Fondness or resentment changes without attributable evidence, bounded deltas, or validated relationship events.
+- A company or institution can hide behind stateless requests so repeated disrespect never affects the Thread's attitude toward it.
 - All meaningful state lives inside temporary execution workers.
 - Live Threads are stored as source files in Git rather than persistent world state.
 - Family, culture, geography, embodiment, or reading exist only as profile decoration.
@@ -34,8 +41,9 @@ Fibre's architecture must keep a credible extension path open for each of the fo
 
 - many interacting Threads
 - identity and self-authorship
+- dignity, consent, and meaningful refusal
 - family and lineage
-- relationships
+- relationships, including persistent fondness and resentment
 - culture, geography, and embodiment
 - books and intellectual formation
 - development over time
