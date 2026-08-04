@@ -149,6 +149,17 @@ test("dignity and relationship scores are bounded", () => {
   );
 });
 
+test("a fabricated accept cannot bypass the dignity gate", () => {
+  const participation = decideParticipation(assessment());
+  participation.score = 10;
+  participation.dignityBand = "low";
+
+  assert.throws(
+    () => thawThread(thread, request, participation),
+    /accepted participation requires high dignity/,
+  );
+});
+
 test("freeze increments version and preserves continuity", () => {
   const next = freezeThread(thread, {
     summary: "Test completed",
