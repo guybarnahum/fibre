@@ -2,15 +2,20 @@
 
 ## Unreleased
 
-- Established dignity as a core Thread property and a durable resistance to interchangeability.
-- Added a two-stage request process: dignity appraisal followed by explicit participation consent.
-- Added accept, clarify, negotiate, delegate, and refuse outcomes; only acceptance authorizes full task execution.
-- Connected dignity outcomes to functional affect and bounded fondness or resentment toward requesting entities.
-- Added canonical concept, architecture, ADR, event, schema, validation, AI-context, and repository-invariant coverage.
-- Added portable domain contracts and tests for dignity appraisal, consent gating, clarification, delegation, and bounded relationship effects.
+- Established dignity as a core Thread property and durable resistance to interchangeability.
+- Established the interior–exterior boundary: private stance, desired action, authorization, disclosure strategy, external response, and performed action remain separate.
+- Added interest-mediated expression with candid, tactful, selective, ambiguous, evasive, and deceptive disclosure modes.
+- Replaced the direct dignity-to-execution decision with a request-bound Participation Authorization tied to Thread ID, snapshot version, request fingerprint, requester, policy version, and causation chain.
+- Made appraisal context Thread-owned so requesters cannot suppress or inject relationship and memory history.
+- Allowed explicit obligation-mediated authorization to differ from private desire while preserving the conflict and governing reference.
+- Added accept, clarify, negotiate, delegate, and refuse private stances; non-accept authorization cannot begin full execution.
+- Connected dignity outcomes to private affect and bounded fondness or resentment toward requesting entities.
+- Added canonical concepts, architecture, ADRs, lifecycle and M1 amendments, events, validation scenarios, AI-context routing, and repository invariants.
+- Expanded the portable domain suite to 17 adversarial participation and expression tests.
+- Added path-boundary tests preventing context-manifest output from escaping `artifacts/generated/` through slash or backslash traversal.
 - Added a canonical machine-readable AI context manifest with core, request-processing, and full profiles.
-- Generated context packs now include repository revision, manifest version, source list, and content digest; the previous `fibre-context-pack.md` path remains as a full-profile compatibility alias.
-- Repository validation now rejects accepted canonical concepts omitted from all AI context profiles and detects missing or stale generated packs during `npm run check`.
+- Generated context packs include repository revision, manifest version, source list, and content digest; the previous `fibre-context-pack.md` path remains a full-profile compatibility alias.
+- Repository validation rejects accepted canonical concepts omitted from every AI context profile. `npm run check` verifies deterministic pack generation and validates the resulting generated outputs.
 
 ## 0.1.0 — 2026-08-02
 
