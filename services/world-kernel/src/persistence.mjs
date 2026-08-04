@@ -1,298 +1,78 @@
-import { createHash } from "node:crypto";
-import { mkdirSync, realpathSync } from "node:fs";
-import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-const THREAD_STATUSES = new Set([
-  "frozen",
-  "thawing",
-  "active",
-  "freezing",
-  "dormant",
-  "retired",
-]);
+import {
+  WORLD_STORE_SCHEMA_VERSION,
+  IdempotencyConflictError,
+  IntegrityError,
+  StaleThreadVersionError,
+  ThreadAlreadyExistsError,
+  ThreadNotFoundError,
+  assertId,
+  assertIsoTimestamp,
+  assertNonEmpty,
+  canonicalJson,
+  threadStateHash,
+} from "./persistence-common.mjs";
+import {
+  applyCommandToThread,
+  applyEventToThread,
+  assertCommandLifecycle,
+  commandDigest,
+  eventIdForCommand,
+  normalizeSeedSnapshot,
+  parseJson,
+  rowToEvent,
+  validateCommand,
+  validateStoredThread,
+  validateThreadSnapshot,
+} from "./persistence-domain.mjs";
+import {
+  migrateDatabase,
+  normalizeDatabasePath,
+  safeRollback,
+  translateStorageError,
+} from "./persistence-sqlite.mjs";
 
-const COMMAND_TYPES = new Set(["UPDATE_SELF_MODEL"]);
-
-export class ThreadNotFoundError extends Error {}
-export class ThreadAlreadyExistsError extends Error {}
-export class StaleThreadVersionError extends Error {}
-export class IdempotencyConflictError extends Error {}
-export class IntegrityError extends Error {}
-
-function assertNonEmpty(name, value) {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new TypeError(`${name} is required`);
-  }
-}
-
-function assertPlainObject(name, value) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new TypeError(`${name} must be an object`);
-  }
-}
-
-function assertStringArray(name, value) {
-  if (!Array.isArray(value)) throw new TypeError(`${name} must be an array`);
-  value.forEach((item, index) => assertNonEmpty(`${name}[${index}]`, item));
-}
-
-function canonicalize(value) {
-  if (value === null || typeof value !== "object") return value;
-  if (Array.isArray(value)) return value.map(canonicalize);
-  return Object.fromEntries(
-    Object.keys(value)
-      .sort()
-      .map((key) => [key, canonicalize(value[key])]),
-  );
-}
-
-export function canonicalJson(value) {
-  return JSON.stringify(canonicalize(value));
-}
-
-export function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-export function threadStateHash(thread) {
-  return `sha256:${sha256(canonicalJson(thread))}`;
-}
-
-function validateThreadSnapshot(thread) {
-  assertPlainObject("thread", thread);
-  assertNonEmpty("thread.threadId", thread.threadId);
-  if (!Number.isSafeInteger(thread.version) || thread.version < 1) {
-    throw new TypeError("thread.version must be a positive safe integer");
-  }
-  if (!THREAD_STATUSES.has(thread.status)) {
-    throw new TypeError("thread.status is invalid");
-  }
-  assertPlainObject("thread.identity", thread.identity);
-  assertNonEmpty("thread.identity.name", thread.identity.name);
-  assertNonEmpty("thread.identity.selfDescription", thread.identity.selfDescription);
-  assertPlainObject("thread.currentState", thread.currentState);
-  assertStringArray("thread.currentState.needs", thread.currentState.needs);
-  assertStringArray("thread.currentState.feelings", thread.currentState.feelings);
-  assertNonEmpty("thread.currentState.selfModel", thread.currentState.selfModel);
-  assertStringArray(
-    "thread.currentState.unresolvedIntentions",
-    thread.currentState.unresolvedIntentions,
-  );
-  assertStringArray("thread.relationshipRefs", thread.relationshipRefs);
-  assertStringArray("thread.memoryRefs", thread.memoryRefs);
-  assertPlainObject("thread.provenance", thread.provenance);
-  assertNonEmpty("thread.provenance.createdAt", thread.provenance.createdAt);
-  assertNonEmpty("thread.provenance.createdBy", thread.provenance.createdBy);
-}
-
-function validateCommand(command) {
-  assertPlainObject("command", command);
-  assertNonEmpty("command.commandId", command.commandId);
-  assertNonEmpty("command.threadId", command.threadId);
-  if (!Number.isSafeInteger(command.expectedVersion) || command.expectedVersion < 1) {
-    throw new TypeError("command.expectedVersion must be a positive safe integer");
-  }
-  if (!COMMAND_TYPES.has(command.type)) {
-    throw new TypeError(`unsupported command type: ${command.type}`);
-  }
-  assertNonEmpty("command.occurredAt", command.occurredAt);
-  assertPlainObject("command.actor", command.actor);
-  assertNonEmpty("command.actor.entityId", command.actor.entityId);
-  assertNonEmpty("command.actor.kind", command.actor.kind);
-  assertNonEmpty("command.actor.displayName", command.actor.displayName);
-  assertPlainObject("command.payload", command.payload);
-  if (command.type === "UPDATE_SELF_MODEL") {
-    assertNonEmpty("command.payload.selfModel", command.payload.selfModel);
-    assertNonEmpty("command.payload.summary", command.payload.summary);
-  }
-}
-
-function commandDigest(command) {
-  return `sha256:${sha256(canonicalJson(command))}`;
-}
-
-function eventIdForCommand(command, digest) {
-  return `evt_${command.threadId}_${digest.slice("sha256:".length, "sha256:".length + 24)}`;
-}
-
-function applyCommandToThread(thread, command, eventId) {
-  if (command.type !== "UPDATE_SELF_MODEL") {
-    throw new TypeError(`unsupported command type: ${command.type}`);
-  }
-  return {
-    ...thread,
-    version: thread.version + 1,
-    status: "frozen",
-    currentState: {
-      ...thread.currentState,
-      selfModel: command.payload.selfModel,
-    },
-    provenance: {
-      ...thread.provenance,
-      lastEventId: eventId,
-    },
-  };
-}
-
-function applyEventToThread(thread, event) {
-  if (event.eventType === "THREAD_SEEDED") {
-    const snapshot = event.payload.snapshot;
-    validateThreadSnapshot(snapshot);
-    if (event.expectedVersion !== 0 || event.resultingVersion !== snapshot.version) {
-      throw new IntegrityError(`seed event ${event.eventId} has invalid version metadata`);
-    }
-    return snapshot;
-  }
-
-  if (event.eventType === "SELF_MODEL_UPDATED") {
-    if (thread === null) {
-      throw new IntegrityError(`event ${event.eventId} appears before a seed event`);
-    }
-    if (thread.version !== event.expectedVersion) {
-      throw new IntegrityError(
-        `event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`,
-      );
-    }
-    const replayed = applyCommandToThread(
-      thread,
-      {
-        commandId: event.commandId,
-        threadId: event.threadId,
-        expectedVersion: event.expectedVersion,
-        type: "UPDATE_SELF_MODEL",
-        payload: event.payload,
-        actor: event.actor,
-        occurredAt: event.occurredAt,
-      },
-      event.eventId,
-    );
-    if (replayed.version !== event.resultingVersion) {
-      throw new IntegrityError(`event ${event.eventId} has an invalid resulting version`);
-    }
-    return replayed;
-  }
-
-  throw new IntegrityError(`unsupported event type during replay: ${event.eventType}`);
-}
-
-function parseJson(name, value) {
-  try {
-    return JSON.parse(value);
-  } catch (error) {
-    throw new IntegrityError(`${name} is not valid JSON: ${error.message}`);
-  }
-}
-
-function rowToEvent(row) {
-  return {
-    eventId: row.event_id,
-    threadId: row.thread_id,
-    sequence: Number(row.sequence),
-    expectedVersion: Number(row.expected_version),
-    resultingVersion: Number(row.resulting_version),
-    eventType: row.event_type,
-    commandId: row.command_id,
-    commandDigest: row.command_digest,
-    payload: parseJson(`event ${row.event_id} payload`, row.payload_json),
-    actor: parseJson(`event ${row.event_id} actor`, row.actor_json),
-    occurredAt: row.occurred_at,
-    stateHash: row.state_hash,
-  };
-}
-
-function ensureDatabaseParent(databasePath) {
-  if (databasePath === ":memory:") return databasePath;
-  const absolutePath = resolve(databasePath);
-  mkdirSync(dirname(absolutePath), { recursive: true });
-  const parent = realpathSync(dirname(absolutePath));
-  return resolve(parent, absolutePath.slice(dirname(absolutePath).length + 1));
-}
+export {
+  WORLD_STORE_SCHEMA_VERSION,
+  MAX_COMMAND_PAYLOAD_BYTES,
+  ThreadNotFoundError,
+  ThreadAlreadyExistsError,
+  StaleThreadVersionError,
+  IdempotencyConflictError,
+  LifecycleCommandError,
+  IntegrityError,
+  StorageBusyError,
+  canonicalJson,
+  sha256,
+  threadStateHash,
+} from "./persistence-common.mjs";
+export { normalizeDatabasePath } from "./persistence-sqlite.mjs";
 
 export class WorldStore {
   #database;
 
   constructor(databasePath) {
     assertNonEmpty("databasePath", databasePath);
-    const normalizedPath = ensureDatabaseParent(databasePath);
+    const normalizedPath = normalizeDatabasePath(databasePath);
     this.#database = new DatabaseSync(normalizedPath, {
       enableForeignKeyConstraints: true,
     });
-    this.#database.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL;");
-    this.#migrate();
+    this.#database.exec(
+      "PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL; PRAGMA busy_timeout = 5000;",
+    );
+    try {
+      migrateDatabase(this.#database);
+    } catch (error) {
+      this.#database.close();
+      throw error;
+    }
   }
 
-  #migrate() {
-    this.#database.exec(`
-      CREATE TABLE IF NOT EXISTS threads (
-        thread_id TEXT PRIMARY KEY,
-        version INTEGER NOT NULL CHECK (version >= 1),
-        status TEXT NOT NULL,
-        state_json TEXT NOT NULL,
-        state_hash TEXT NOT NULL,
-        last_event_id TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      ) STRICT;
-
-      CREATE TABLE IF NOT EXISTS thread_events (
-        event_id TEXT PRIMARY KEY,
-        thread_id TEXT NOT NULL,
-        sequence INTEGER NOT NULL CHECK (sequence >= 1),
-        expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
-        resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-        event_type TEXT NOT NULL,
-        command_id TEXT,
-        command_digest TEXT,
-        payload_json TEXT NOT NULL,
-        actor_json TEXT NOT NULL,
-        occurred_at TEXT NOT NULL,
-        state_hash TEXT NOT NULL,
-        FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
-        UNIQUE (thread_id, sequence)
-      ) STRICT;
-
-      CREATE TABLE IF NOT EXISTS commands (
-        thread_id TEXT NOT NULL,
-        command_id TEXT NOT NULL,
-        command_digest TEXT NOT NULL,
-        expected_version INTEGER NOT NULL,
-        resulting_version INTEGER NOT NULL,
-        event_id TEXT NOT NULL,
-        result_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        PRIMARY KEY (thread_id, command_id),
-        FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
-        FOREIGN KEY (event_id) REFERENCES thread_events(event_id)
-      ) STRICT;
-
-      CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence
-        ON thread_events(thread_id, sequence);
-
-      CREATE TRIGGER IF NOT EXISTS thread_events_no_update
-      BEFORE UPDATE ON thread_events
-      BEGIN
-        SELECT RAISE(ABORT, 'thread_events is append-only');
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS thread_events_no_delete
-      BEFORE DELETE ON thread_events
-      BEGIN
-        SELECT RAISE(ABORT, 'thread_events is append-only');
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS commands_no_update
-      BEFORE UPDATE ON commands
-      BEGIN
-        SELECT RAISE(ABORT, 'commands is append-only');
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS commands_no_delete
-      BEFORE DELETE ON commands
-      BEGIN
-        SELECT RAISE(ABORT, 'commands is append-only');
-      END;
-    `);
+  storageMetadata() {
+    const version = Number(this.#database.prepare("PRAGMA user_version").get().user_version);
+    const busyTimeout = Number(this.#database.prepare("PRAGMA busy_timeout").get().timeout);
+    return { schemaVersion: version, busyTimeoutMs: busyTimeout };
   }
 
   close() {
@@ -301,29 +81,32 @@ export class WorldStore {
 
   seedThread(thread, { occurredAt = thread?.provenance?.createdAt } = {}) {
     validateThreadSnapshot(thread);
-    assertNonEmpty("occurredAt", occurredAt);
-    const existing = this.getThread(thread.threadId, { required: false });
+    assertIsoTimestamp("occurredAt", occurredAt);
+    const normalized = normalizeSeedSnapshot(thread);
+    const existing = this.getThread(normalized.threadId, { required: false });
     if (existing !== null) {
-      if (threadStateHash(existing) === threadStateHash(thread)) {
+      if (threadStateHash(existing) === threadStateHash(normalized)) {
         return { thread: existing, created: false };
       }
       throw new ThreadAlreadyExistsError(
-        `Thread ${thread.threadId} already exists with different state`,
+        `Thread ${normalized.threadId} already exists with different state`,
       );
     }
 
-    const eventId = thread.provenance.lastEventId ?? `evt_${thread.threadId}_seeded`;
-    const stateJson = canonicalJson(thread);
-    const stateHash = threadStateHash(thread);
-    const payloadJson = canonicalJson({ snapshot: thread });
-    const actorJson = canonicalJson({
-      entityId: thread.provenance.createdBy,
+    const eventId = normalized.provenance.lastEventId;
+    const stateJson = canonicalJson(normalized);
+    const stateHash = threadStateHash(normalized);
+    const payloadJson = canonicalJson({ snapshot: normalized });
+    const actor = {
+      entityId: normalized.provenance.createdBy,
       kind: "other",
-      displayName: thread.provenance.createdBy,
-    });
+      displayName: normalized.provenance.createdBy,
+    };
+    const actorJson = canonicalJson(actor);
+    const provenanceJson = canonicalJson({ source: "seedThread", adapter: "sqlite-v1" });
 
-    this.#database.exec("BEGIN IMMEDIATE");
     try {
+      this.#database.exec("BEGIN IMMEDIATE");
       this.#database
         .prepare(`
           INSERT INTO threads (
@@ -332,13 +115,13 @@ export class WorldStore {
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `)
         .run(
-          thread.threadId,
-          thread.version,
-          thread.status,
+          normalized.threadId,
+          normalized.version,
+          normalized.status,
           stateJson,
           stateHash,
           eventId,
-          thread.provenance.createdAt,
+          normalized.provenance.createdAt,
           occurredAt,
         );
       this.#database
@@ -346,44 +129,55 @@ export class WorldStore {
           INSERT INTO thread_events (
             event_id, thread_id, sequence, expected_version, resulting_version,
             event_type, command_id, command_digest, payload_json, actor_json,
-            occurred_at, state_hash
-          ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)
+            occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+            payload_schema_version, provenance_json
+          ) VALUES (?, ?, 1, 0, ?, 'THREAD_SEEDED', NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, 1, ?)
         `)
         .run(
           eventId,
-          thread.threadId,
-          1,
-          0,
-          thread.version,
-          "THREAD_SEEDED",
+          normalized.threadId,
+          normalized.version,
           payloadJson,
           actorJson,
           occurredAt,
           stateHash,
+          eventId,
+          eventId,
+          provenanceJson,
         );
       this.#database.exec("COMMIT");
     } catch (error) {
-      this.#database.exec("ROLLBACK");
-      throw error;
+      safeRollback(this.#database);
+      throw translateStorageError(error);
     }
-    return { thread: structuredClone(thread), created: true };
+    return { thread: structuredClone(normalized), created: true };
   }
 
-  getThread(threadId, { required = true } = {}) {
-    assertNonEmpty("threadId", threadId);
+  #projectionRow(threadId, required) {
     const row = this.#database
       .prepare(`
-        SELECT version, status, state_json, state_hash, last_event_id
-        FROM threads
-        WHERE thread_id = ?
+        SELECT thread_id, version, status, state_json, state_hash, last_event_id
+        FROM threads WHERE thread_id = ?
       `)
       .get(threadId);
     if (row === undefined) {
       if (!required) return null;
       throw new ThreadNotFoundError(`Thread ${threadId} was not found`);
     }
+    return row;
+  }
+
+  getThread(threadId, { required = true } = {}) {
+    assertId("threadId", threadId);
+    const row = this.#projectionRow(threadId, required);
+    if (row === null) return null;
     const thread = parseJson(`Thread ${threadId} state`, row.state_json);
-    validateThreadSnapshot(thread);
+    validateStoredThread(threadId, thread);
+    if (thread.threadId !== threadId || row.thread_id !== threadId) {
+      throw new IntegrityError(
+        `Thread ${threadId} projection contains identity ${thread.threadId}`,
+      );
+    }
     const actualHash = threadStateHash(thread);
     if (actualHash !== row.state_hash) {
       throw new IntegrityError(`Thread ${threadId} projection hash does not match state`);
@@ -395,46 +189,125 @@ export class WorldStore {
     ) {
       throw new IntegrityError(`Thread ${threadId} projection columns do not match state`);
     }
+    const witness = this.#database
+      .prepare(`
+        SELECT thread_id, resulting_version, state_hash
+        FROM thread_events WHERE event_id = ?
+      `)
+      .get(row.last_event_id);
+    if (
+      witness === undefined ||
+      witness.thread_id !== threadId ||
+      Number(witness.resulting_version) !== thread.version ||
+      witness.state_hash !== row.state_hash
+    ) {
+      throw new IntegrityError(`Thread ${threadId} projection does not match its last event`);
+    }
     return thread;
   }
 
   listEvents(threadId) {
-    assertNonEmpty("threadId", threadId);
+    assertId("threadId", threadId);
     return this.#database
       .prepare(`
         SELECT event_id, thread_id, sequence, expected_version, resulting_version,
                event_type, command_id, command_digest, payload_json, actor_json,
-               occurred_at, state_hash
-        FROM thread_events
-        WHERE thread_id = ?
-        ORDER BY sequence ASC
+               occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+               payload_schema_version, provenance_json
+        FROM thread_events WHERE thread_id = ? ORDER BY sequence ASC
       `)
       .all(threadId)
       .map(rowToEvent);
+  }
+
+  #commandRecord(threadId, commandId) {
+    return this.#database
+      .prepare(`
+        SELECT command_digest, expected_version, resulting_version, event_id, created_at
+        FROM commands WHERE thread_id = ? AND command_id = ?
+      `)
+      .get(threadId, commandId);
+  }
+
+  #assertCommandWitness(event) {
+    if (event.eventType === "THREAD_SEEDED") return;
+    const record = this.#commandRecord(event.threadId, event.commandId);
+    if (record === undefined) {
+      throw new IntegrityError(`event ${event.eventId} has no accepted command witness`);
+    }
+    if (
+      record.command_digest !== event.commandDigest ||
+      Number(record.expected_version) !== event.expectedVersion ||
+      Number(record.resulting_version) !== event.resultingVersion ||
+      record.event_id !== event.eventId ||
+      record.created_at !== event.occurredAt
+    ) {
+      throw new IntegrityError(`event ${event.eventId} disagrees with its command witness`);
+    }
+  }
+
+  #replayThrough(threadId, stopEventId = null) {
+    const events = this.listEvents(threadId);
+    if (events.length === 0) {
+      throw new ThreadNotFoundError(`Thread ${threadId} has no event history`);
+    }
+    let replayed = null;
+    for (const [index, event] of events.entries()) {
+      if (event.sequence !== index + 1) {
+        throw new IntegrityError(`Thread ${threadId} event sequence has a gap`);
+      }
+      this.#assertCommandWitness(event);
+      replayed = applyEventToThread(replayed, event);
+      const hash = threadStateHash(replayed);
+      if (hash !== event.stateHash) {
+        throw new IntegrityError(`Event ${event.eventId} state hash failed replay`);
+      }
+      if (stopEventId !== null && event.eventId === stopEventId) {
+        return { thread: replayed, event };
+      }
+    }
+    if (stopEventId !== null) {
+      throw new IntegrityError(`Command event ${stopEventId} is absent from Thread ${threadId}`);
+    }
+    return { thread: replayed, event: events.at(-1) };
+  }
+
+  #idempotentResult(command, digest, prior) {
+    if (prior.command_digest !== digest) {
+      throw new IdempotencyConflictError(
+        `Command ${command.commandId} was already used with different content`,
+      );
+    }
+    const replayed = this.#replayThrough(command.threadId, prior.event_id);
+    if (
+      replayed.event.commandId !== command.commandId ||
+      replayed.event.commandDigest !== digest ||
+      replayed.event.expectedVersion !== Number(prior.expected_version) ||
+      replayed.event.resultingVersion !== Number(prior.resulting_version) ||
+      replayed.thread.version !== Number(prior.resulting_version)
+    ) {
+      throw new IntegrityError(`Command ${command.commandId} cached metadata failed replay`);
+    }
+    return {
+      thread: replayed.thread,
+      event: replayed.event,
+      idempotent: true,
+    };
   }
 
   applyCommand(command) {
     validateCommand(command);
     const digest = commandDigest(command);
 
-    this.#database.exec("BEGIN IMMEDIATE");
+    const priorRead = this.#commandRecord(command.threadId, command.commandId);
+    if (priorRead !== undefined) return this.#idempotentResult(command, digest, priorRead);
+
     try {
-      const prior = this.#database
-        .prepare(`
-          SELECT command_digest, result_json
-          FROM commands
-          WHERE thread_id = ? AND command_id = ?
-        `)
-        .get(command.threadId, command.commandId);
+      this.#database.exec("BEGIN IMMEDIATE");
+      const prior = this.#commandRecord(command.threadId, command.commandId);
       if (prior !== undefined) {
-        if (prior.command_digest !== digest) {
-          throw new IdempotencyConflictError(
-            `Command ${command.commandId} was already used with different content`,
-          );
-        }
-        const result = parseJson(`command ${command.commandId} result`, prior.result_json);
         this.#database.exec("COMMIT");
-        return { ...result, idempotent: true };
+        return this.#idempotentResult(command, digest, prior);
       }
 
       const thread = this.getThread(command.threadId);
@@ -443,6 +316,7 @@ export class WorldStore {
           `Thread ${command.threadId} is version ${thread.version}; command expected ${command.expectedVersion}`,
         );
       }
+      assertCommandLifecycle(thread, command);
 
       const lastSequenceRow = this.#database
         .prepare(
@@ -458,14 +332,16 @@ export class WorldStore {
       const eventType = "SELF_MODEL_UPDATED";
       const payloadJson = canonicalJson(command.payload);
       const actorJson = canonicalJson(command.actor);
+      const provenanceJson = canonicalJson({ source: "applyCommand", adapter: "sqlite-v1" });
 
       this.#database
         .prepare(`
           INSERT INTO thread_events (
             event_id, thread_id, sequence, expected_version, resulting_version,
             event_type, command_id, command_digest, payload_json, actor_json,
-            occurred_at, state_hash
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+            payload_schema_version, provenance_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 1, ?)
         `)
         .run(
           eventId,
@@ -480,6 +356,9 @@ export class WorldStore {
           actorJson,
           command.occurredAt,
           stateHash,
+          command.commandId,
+          command.commandId,
+          provenanceJson,
         );
 
       const update = this.#database
@@ -505,30 +384,12 @@ export class WorldStore {
         );
       }
 
-      const result = {
-        thread: nextThread,
-        event: {
-          eventId,
-          threadId: command.threadId,
-          sequence,
-          expectedVersion: command.expectedVersion,
-          resultingVersion: nextThread.version,
-          eventType,
-          commandId: command.commandId,
-          commandDigest: digest,
-          payload: structuredClone(command.payload),
-          actor: structuredClone(command.actor),
-          occurredAt: command.occurredAt,
-          stateHash,
-        },
-        idempotent: false,
-      };
       this.#database
         .prepare(`
           INSERT INTO commands (
             thread_id, command_id, command_digest, expected_version,
-            resulting_version, event_id, result_json, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            resulting_version, event_id, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `)
         .run(
           command.threadId,
@@ -537,32 +398,28 @@ export class WorldStore {
           command.expectedVersion,
           nextThread.version,
           eventId,
-          canonicalJson(result),
           command.occurredAt,
         );
+
       this.#database.exec("COMMIT");
-      return result;
+      return {
+        thread: nextThread,
+        event: this.listEvents(command.threadId).at(-1),
+        idempotent: false,
+      };
     } catch (error) {
-      this.#database.exec("ROLLBACK");
-      throw error;
+      safeRollback(this.#database);
+      throw translateStorageError(error);
     }
   }
 
   replayThread(threadId) {
-    const events = this.listEvents(threadId);
-    if (events.length === 0) {
-      throw new ThreadNotFoundError(`Thread ${threadId} has no event history`);
-    }
-    let replayed = null;
-    for (const [index, event] of events.entries()) {
-      if (event.sequence !== index + 1) {
-        throw new IntegrityError(`Thread ${threadId} event sequence has a gap`);
-      }
-      replayed = applyEventToThread(replayed, event);
-      const hash = threadStateHash(replayed);
-      if (hash !== event.stateHash) {
-        throw new IntegrityError(`Event ${event.eventId} state hash failed replay`);
-      }
+    assertId("threadId", threadId);
+    const replayed = this.#replayThrough(threadId).thread;
+    if (replayed.threadId !== threadId) {
+      throw new IntegrityError(
+        `Thread ${threadId} replay reconstructed identity ${replayed.threadId}`,
+      );
     }
     return replayed;
   }
@@ -570,6 +427,9 @@ export class WorldStore {
   verifyThreadIntegrity(threadId) {
     const projected = this.getThread(threadId);
     const replayed = this.replayThread(threadId);
+    if (projected.threadId !== threadId || replayed.threadId !== threadId) {
+      throw new IntegrityError(`Thread ${threadId} identity changed during verification`);
+    }
     const projectedHash = threadStateHash(projected);
     const replayedHash = threadStateHash(replayed);
     if (canonicalJson(projected) !== canonicalJson(replayed)) {
@@ -579,10 +439,51 @@ export class WorldStore {
       throw new IntegrityError(`Thread ${threadId} replay hash differs from projection`);
     }
     return {
-      threadId,
+      threadId: projected.threadId,
       version: projected.version,
       stateHash: projectedHash,
       eventCount: this.listEvents(threadId).length,
+    };
+  }
+
+  repairThreadProjection(threadId) {
+    assertId("threadId", threadId);
+    const replayed = this.replayThread(threadId);
+    const events = this.listEvents(threadId);
+    const lastEvent = events.at(-1);
+    const stateJson = canonicalJson(replayed);
+    const stateHash = threadStateHash(replayed);
+    try {
+      this.#database.exec("BEGIN IMMEDIATE");
+      const result = this.#database
+        .prepare(`
+          UPDATE threads
+          SET version = ?, status = ?, state_json = ?, state_hash = ?,
+              last_event_id = ?, updated_at = ?
+          WHERE thread_id = ?
+        `)
+        .run(
+          replayed.version,
+          replayed.status,
+          stateJson,
+          stateHash,
+          lastEvent.eventId,
+          lastEvent.occurredAt,
+          threadId,
+        );
+      if (Number(result.changes) !== 1) {
+        throw new ThreadNotFoundError(`Thread ${threadId} was not found`);
+      }
+      this.#database.exec("COMMIT");
+    } catch (error) {
+      safeRollback(this.#database);
+      throw translateStorageError(error);
+    }
+    return {
+      thread: replayed,
+      stateHash,
+      eventCount: events.length,
+      repaired: true,
     };
   }
 }

@@ -14,14 +14,20 @@ The adapter persists three distinct records:
 
 The public behavior is storage-neutral even though this first adapter is SQLite-specific:
 
-1. seed a validated frozen Thread;
+1. normalize projection metadata and seed a validated Thread;
 2. submit a typed command with an expected Thread version and stable command ID;
-3. reject stale versions and conflicting reuse of an idempotency key;
+3. reject stale versions, illegal lifecycle states, unknown payload fields, oversized payloads, and conflicting idempotency reuse;
 4. append one event and atomically advance the projection;
-5. replay all events and verify the projection and SHA-256 state hash;
-6. close and reopen the database without changing the Thread.
+5. verify ordinary reads against the last immutable event;
+6. replay all events while re-deriving command digests and event IDs and checking command witnesses;
+7. repair a corrupt projection from intact event history;
+8. close and reopen the database without changing the Thread.
 
-SQLite triggers reject event and command updates or deletions. Replay independently validates sequence, version transitions, event state hashes, and final projection equality.
+SQLite schema version 1 records causation, correlation, payload schema version, provenance, and optional authorization evidence on every event. Triggers reject event and command updates or deletions. Replay validates identity, sequence, version transitions, command content, event state hashes, command witnesses, and final projection equality.
+
+`provenance.lastEventId` is projection metadata, not intrinsic identity. Seeding deterministically creates the seed event and normalizes the stored snapshot to reference it. `UPDATE_SELF_MODEL` is permitted only for frozen or dormant Threads and preserves the existing status; it cannot resurrect a retired Thread or rewrite an active runtime state.
+
+Integrity checks detect hash-, digest-, identity-, metadata-, and witness-inconsistent corruption. They are not a cryptographic proof against an administrator who can disable protections and coherently rewrite every database witness; kernel-origin signatures and external trust anchors remain later capabilities.
 
 ## Deliberate scope boundary
 

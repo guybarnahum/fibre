@@ -51,7 +51,9 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, a static Thread Editor prototype, a canonical AI context manifest, and the first M1 SQLite persistence spine.
 
-The persistence spine now stores a versioned Thread projection, append-only events, and idempotent command records in a file-backed database. It atomically validates expected versions, appends one event, advances the projection, computes deterministic SHA-256 state hashes, survives close and reopen, and verifies the projection by replaying ordered events. Database triggers protect event and command append-only behavior.
+The persistence spine stores a versioned Thread projection, immutable events, and idempotent command witnesses in a schema-versioned file-backed database. It normalizes seed projection metadata, rejects illegal lifecycle writes, atomically validates expected versions, appends one event, advances the projection, computes deterministic SHA-256 state hashes, survives close and reopen, and verifies the projection by replaying ordered events.
+
+Normal reads verify Thread identity, canonical state hash, denormalized projection columns, and agreement with the last immutable event. Replay independently verifies seed identity, sequence and version transitions, command digests, derived event IDs, command witnesses, and per-event state hashes. A projection-repair operation can re-derive the current row from intact event history.
 
 The domain package separately proves bounded private dignity appraisal, SHA-256 request-content binding, request-bound participation authorization, Thread-owned context selection with exclusion traces, recorded-obligation overrides, evidence-bearing relationship effects, interest-mediated disclosure, and the rule that public language cannot authorize execution.
 
