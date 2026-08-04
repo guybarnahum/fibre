@@ -12,7 +12,7 @@ Use this index to load only the context needed for a task.
 
 Generated packs are non-canonical and must not be edited directly. Each includes its source list, repository revision, manifest version, and content digest. Use the smallest profile sufficient for the task.
 
-Every accepted canonical Markdown document under `docs/` must appear in at least one manifest profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources, and symlinked output paths.
+Manifest version 3 requires every accepted canonical Markdown document under `docs/` to appear in at least one profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources, and symlinked output paths.
 
 ## Understand Fibre
 
