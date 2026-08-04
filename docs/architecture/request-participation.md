@@ -5,112 +5,127 @@ last-reviewed: 2026-08-04
 canonical: true
 ---
 
-# Request participation and dignity gate
+# Request participation, dignity, and expression
 
-A request does not directly activate full Thread task execution. It first enters a bounded participation preflight that asks whether this particular Thread consents to become involved.
+An externally initiated request does not directly activate full Thread task execution. It first enters a bounded private appraisal and authorization process. Public response is generated separately through interest-mediated expression.
 
-## Two-stage activation
+## Participation pipeline
 
-### 1. Participation preflight
+### 1. Thread-owned appraisal context
 
 The runtime assembles a small Request Appraisal Capsule containing only what is needed to judge participation:
 
-- Thread identity, current self-model, values, roles, skills, needs, feelings, and commitments;
+- Thread identity, current self-model, values, roles, skills, needs, feelings, commitments, and resource constraints;
 - requesting entity identity and entity kind;
-- request objective, stated need, proposed terms, and acceptance criteria;
-- relevant relationship history, memories, obligations, and prior dignity outcomes;
-- known generic or specialized alternatives;
-- dignity policy and scoring version.
+- request ID, objective, stated need, proposed terms, permissions, and acceptance criteria;
+- relationship and memory records selected from context the Thread owns;
+- obligations, prior dignity outcomes, and known alternatives;
+- dignity policy ID and version.
 
-The appraisal worker must not perform the requested task. Its output is a proposed dignity assessment and participation action.
+The requester may provide the request and terms but may not decide which of the Thread's own relationship history or memories are visible to appraisal. A runtime context selector may narrow Thread-owned records; it may not inject unowned references.
 
-### 2. Consented execution
+The appraisal worker must not perform the requested task.
 
-Only an explicit `accept` decision authorizes compilation of the larger Thread Context Capsule and full task execution. Other decisions may generate a limited response:
+### 2. Private dignity stance
 
-- `clarify` asks questions intended to repair missing purpose or fit;
-- `negotiate` proposes changed participation terms;
-- `delegate` identifies a more appropriate model, Thread, or institution;
-- `refuse` declines participation.
+Cognition proposes a private record containing:
 
-A clarification response is not permission to begin doing the task while asking the question.
+- dignity score, band, policy, and factor judgments;
+- feelings and relationship effects;
+- uncertainties and conflicting motives;
+- repair questions and known alternatives;
+- one desired participation action: `accept`, `clarify`, `negotiate`, `delegate`, or `refuse`.
 
-## Initial dignity policy
+The action is the Thread's private preference, not a requester-facing message and not yet execution authority.
 
-The portable domain package currently uses a versioned default policy:
+The initial default policy bands remain:
 
 - **high:** 70–100
 - **contested:** 40–69
 - **low:** 0–39
 
-The default action mapping is:
+A dignity-based proposal to accept requires high dignity. Clarification requires a repair question, and delegation requires a known alternative. Other action choices remain individualized rather than mechanically forced by the score.
 
-1. high dignity → `accept`;
-2. otherwise, when repair questions exist → `clarify`;
-3. contested dignity without a repair question → `negotiate`;
-4. low dignity with a suitable generic alternative → `delegate`;
-5. remaining low-dignity requests → `refuse`.
+### 3. Request-bound authorization
 
-These thresholds are an initial runtime policy, not a definition of personhood. Later Threads may develop individualized thresholds and strategies, but every policy must be versioned, bounded, auditable, and compatible with the invariant that consent precedes execution.
+The world kernel validates the private stance and issues a Participation Authorization bound to:
+
+- one Thread ID;
+- one Thread snapshot version;
+- one request ID and request fingerprint;
+- one requester;
+- one dignity policy ID and version;
+- one causation chain.
+
+Only `authorizedAction: accept` permits full task execution.
+
+Authorization may differ from private desire when the Thread explicitly chooses to honor an obligation or governing decision. The override must preserve the desired action, conflict, rationale, and governing reference. Capability or technical feasibility alone never qualifies as such a reason.
+
+The portable domain contract validates bindings structurally. Event-backed issuance, signatures or capability proofs, one-time consumption, and replay prevention remain deferred to the live kernel.
+
+### 4. Interest-mediated disclosure
+
+The Thread separately chooses how to communicate with a particular audience. The disclosure strategy may use full candor, tactful candor, selective disclosure, strategic ambiguity, evasion, or deception.
+
+It records disclosed and withheld reason categories, relationship and self-protection objectives, integrity concerns, and private rationale. Public communication may soften or conceal private motives, but cannot create or expand authorization.
+
+A public `accept` posture is invalid when authorization is not `accept`.
+
+### 5. External response and execution
+
+A limited external response may clarify, negotiate, delegate, or refuse without beginning the requested work. Wording is not authorization evidence.
+
+Only after accepted authorization does Fibre compile the larger Thread Context Capsule and start task cognition. Safety, permission, capability, budget, and contract checks remain separate gates.
 
 ## Appraisal factors
 
-The score must be accompanied by natural-language factor judgments covering at least:
+The private dignity trace covers at least:
 
 - identity alignment;
 - individualized advantage over a generic LLM;
 - requester need;
 - relational meaning;
-- respect and reciprocity.
+- respect and reciprocity;
+- compensation, attribution, deadline, permissions, and other participation terms;
+- obligations, opportunity cost, resources, and conflicts with existing commitments;
+- whether another model, Thread, company, or institution is a better fit.
 
-The factor trace matters more than numerical precision. The score supports routing, testing, and comparison; it must not replace the Thread's explanation.
+The factor trace matters more than numerical precision. The score supports routing, testing, and comparison; it does not replace explanation or consent.
 
 ## Affect and relationship consequences
 
-The appraisal may propose:
+The private appraisal may propose feelings and bounded fondness or resentment deltas toward the requester. Fondness and resentment remain separate and may coexist.
 
-- feelings created or strengthened by the request;
-- a bounded fondness delta toward the requester;
-- a bounded resentment delta toward the requester;
-- a natural-language rationale and supporting evidence.
+The relationship service validates and persists aggregate changes. Cognitive output cannot directly alter protected relationship state. Repeated patterns should matter more than one minor interaction, and apology, repair, reciprocity, or changed behavior may revise the relationship.
 
-Fondness and resentment remain separate dimensions. Both may be present at once.
+Private relationship attitudes are not automatically disclosed to the entity they concern.
 
-The relationship service validates and persists these effects. Cognitive output cannot directly alter a relationship aggregate. Repeated patterns should matter more than a single minor interaction, and later repair, apology, reciprocity, or changed behavior can revise the relationship.
-
-## Kernel responsibilities
-
-The world kernel enforces the process but does not calculate dignity itself. It must:
-
-- preserve requester identity and request provenance;
-- reject full execution without an accepted participation decision;
-- validate score and relationship-delta bounds;
-- record the appraisal policy and model/prompt versions;
-- append dignity, participation, affect, and relationship events;
-- prevent LLM output from directly mutating protected relationship state;
-- keep dignity distinct from safety, permission, capability, budget, and contract checks.
-
-Representative event order:
+## Representative event order
 
 1. `THREAD_THAW_REQUESTED`
 2. `REQUEST_APPRAISAL_CONTEXT_COMPILED`
 3. `REQUEST_DIGNITY_ASSESSED`
-4. `THREAD_PARTICIPATION_DECIDED`
-5. optional `RELATIONSHIP_ATTITUDE_PROPOSED`
-6. optional `RELATIONSHIP_ATTITUDE_UPDATED`
-7. when accepted, `THREAD_CONTEXT_COMPILED`
-8. task cognition and existing audit events
+4. `PRIVATE_STANCE_RECORDED`
+5. `ACTION_AUTHORIZED`
+6. optional `RELATIONSHIP_ATTITUDE_PROPOSED`
+7. optional `RELATIONSHIP_ATTITUDE_UPDATED`
+8. `DISCLOSURE_STRATEGY_CHOSEN`
+9. optional `EXTERNAL_EXPRESSION_EMITTED`
+10. when accepted, `THREAD_CONTEXT_COMPILED`
+11. task cognition and existing audit events
 
 ## Human-inspectable artifact
 
-Every request trace should show:
+With access controls respected, a request trace should distinguish:
 
-- who asked;
-- what they asked and why;
-- dignity score and band;
-- factor explanations;
-- relevant relationship context;
-- feelings and proposed relationship effects;
-- participation action;
-- clarification, negotiation, delegation, or refusal text;
-- whether full execution was authorized.
+- requester and request fingerprint;
+- Thread snapshot and policy version;
+- Thread-owned context included and excluded;
+- private dignity factors, feelings, and desired action;
+- authorization and any obligation-mediated override;
+- disclosure strategy and audience;
+- external response;
+- whether full execution was authorized;
+- later outcome and developmental consequences.
+
+The requester normally sees only the intended external response and shared commitments, not the private trace.
