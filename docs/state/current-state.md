@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-02
+last-reviewed: 2026-08-04
 canonical: true
 ---
 
@@ -12,7 +12,12 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 ## Accepted foundation
 
 - A Thread is stored as durable world state and normally remains frozen.
-- Thawing assembles a relevant context capsule and invokes temporary LLM workers and tools.
+- Externally initiated requests first receive a bounded dignity appraisal; only explicit acceptance authorizes full task execution.
+- Dignity evaluates the request's fit with the particular Thread, its individualized advantage over a generic LLM, requester need, relationship meaning, respect, and reciprocity.
+- A Thread may accept, clarify, negotiate, delegate, or refuse a request even when it is safe and technically feasible.
+- Dignity outcomes may create functional affect and propose bounded fondness or resentment changes toward humans, Threads, companies, institutions, and other requesting entities.
+- Relationship consequences are validated and persisted as events rather than directly written by cognition.
+- Thawing after accepted participation assembles a relevant execution context capsule and invokes temporary LLM workers and tools.
 - Freezing validates and persists life changes, then releases runtime resources.
 - Live Threads are not stored in Git; the monorepo contains laws, implementation, editor, schemas, tests, experiments, templates, and synthetic fixtures.
 - Threads are non-interchangeable through inherited hyperparameters, natural-language personality, family, culture, geography, embodiment, books, relationships, and experience.
@@ -23,7 +28,7 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 - Families may include complete Thread relatives and narrative relatives.
 - Threads may be Original, Echo, or Homage identities and later re-author those inherited choices.
 - Books are first-class developmental experiences.
-- Threads use a Goal Guardian and a Self Examiner/Steward process.
+- Threads use a Dignity Guardian, Goal Guardian, and Self Examiner/Steward process.
 - Fibre supports optional social systems, including HR-governed and open-market worlds.
 
 ## Canonical use cases
@@ -34,4 +39,4 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 ## Current implementation status
 
-This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, and a static Thread Editor prototype. No live world database, model gateway, or production cloud deployment exists yet.
+This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, and a static Thread Editor prototype. The domain package includes the first portable dignity preflight and consent gate. No live world database, model gateway, relationship service implementation, or production cloud deployment exists yet.
