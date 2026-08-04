@@ -12,7 +12,7 @@
     "test": "npm run build && node --test packages/domain/test/*.test.mjs",
     "validate": "node tools/validate-repo.mjs",
     "context-pack": "node tools/build-context-pack.mjs",
-    "check": "npm test && npm run validate && npm run context-pack",
+    "check": "npm test && npm run context-pack && node tools/validate-repo.mjs --generated",
     "git-check": "node tools/check-git-sync.mjs",
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/serve-thread-editor.mjs"
