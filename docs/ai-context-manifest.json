@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": 1,
+  "canonical": true,
+  "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
+  "profiles": {
+    "core": {
+      "title": "Core",
+      "description": "The minimum context needed to understand Fibre as a persistent world of distinctive Threads.",
+      "output": "artifacts/generated/fibre-core-context.md",
+      "sources": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "docs/ai-context-index.md",
+        "docs/vision/constitution.md",
+        "docs/vision/invariants.md",
+        "docs/state/current-state.md",
+        "docs/concepts/thread.md",
+        "docs/concepts/dignity.md"
+      ]
+    },
+    "request-processing": {
+      "title": "Request processing",
+      "description": "Context for request appraisal, consent, response behavior, affect, and relationship consequences.",
+      "output": "artifacts/generated/fibre-request-processing-context.md",
+      "includes": [
+        "core"
+      ],
+      "sources": [
+        "docs/concepts/emotions-and-needs.md",
+        "docs/concepts/dual-adversarial-cognition.md",
+        "docs/architecture/request-participation.md",
+        "docs/architecture/prompt-synthesis.md",
+        "docs/architecture/world-kernel.md",
+        "docs/architecture/event-model.md",
+        "docs/validation/dignity-request-scenarios.md",
+        "docs/decisions/ADR-0007-dual-adversarial-cognition.md",
+        "docs/decisions/ADR-0009-dignity-gates-participation.md"
+      ]
+    },
+    "full": {
+      "title": "Full",
+      "description": "Broad Fibre concept, architecture, governance, use-case, and validation context for cross-cutting work.",
+      "output": "artifacts/generated/fibre-full-context.md",
+      "aliases": [
+        "artifacts/generated/fibre-context-pack.md"
+      ],
+      "includes": [
+        "request-processing"
+      ],
+      "sources": [
+        "docs/vision/core-thesis.md",
+        "docs/vision/principles.md",
+        "docs/vision/glossary.md",
+        "docs/vision/world-bible.md",
+        "docs/vision/non-goals.md",
+        "docs/state/current-priorities.md",
+        "docs/state/unresolved-decisions.md",
+        "docs/concepts/identity-and-genome.md",
+        "docs/concepts/development-and-memory.md",
+        "docs/concepts/culture-geography-and-embodiment.md",
+        "docs/concepts/sponsorship-adoption-and-echoes.md",
+        "docs/concepts/homage-threads.md",
+        "docs/concepts/books-and-intellectual-formation.md",
+        "docs/concepts/families-couples-and-reproduction.md",
+        "docs/concepts/economy-and-fibre-credits.md",
+        "docs/concepts/task-marketplace.md",
+        "docs/concepts/welfare-dormancy-and-retirement.md",
+        "docs/concepts/institutions-and-governance.md",
+        "docs/architecture/system-overview.md",
+        "docs/architecture/domain-model.md",
+        "docs/architecture/thread-lifecycle.md",
+        "docs/architecture/storage-model.md",
+        "docs/architecture/thread-editor.md",
+        "docs/architecture/cloud-strategy.md",
+        "docs/validation/prototype-roadmap.md",
+        "docs/validation/drift-scorecard.md",
+        "docs/validation/canonical-scenario-tests.md",
+        "docs/use-cases/web-product-studio.md",
+        "docs/use-cases/elder-support-network.md",
+        "docs/use-cases/open-task-society.md",
+        "docs/decisions/ADR-0001-persistent-identity.md",
+        "docs/decisions/ADR-0002-natural-language-fields.md",
+        "docs/decisions/ADR-0003-thread-terminology.md",
+        "docs/decisions/ADR-0004-task-marketplace.md",
+        "docs/decisions/ADR-0005-family-and-inheritance.md",
+        "docs/decisions/ADR-0006-echo-and-homage.md",
+        "docs/decisions/ADR-0008-repository-world-separation.md"
+      ]
+    }
+  },
+  "coverage": {
+    "acceptedCanonicalConcepts": {
+      "directory": "docs/concepts",
+      "profiles": [
+        "core",
+        "request-processing",
+        "full"
+      ]
+    }
+  }
+}
