@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import {
   authorizeParticipation,
   chooseDisclosureStrategy,
   createExternalParticipationResponse,
+  dignityBand,
   formPrivateParticipationStance,
   freezeThread,
   prepareRequestAppraisal,
@@ -16,6 +18,14 @@ const requester = {
   kind: "human",
   displayName: "Test Requester"
 };
+
+const alternative = {
+  entityId: "model_generic_001",
+  kind: "other",
+  displayName: "Generic model"
+};
+
+const recordedObligation = "obligation:web-project:2026-08";
 
 const thread = {
   threadId: "thr_test_001",
@@ -34,11 +44,11 @@ const thread = {
     needs: ["Complete the test"],
     feelings: ["focused"],
     selfModel: "I verify before acting.",
-    unresolvedIntentions: ["Honor the signed website contract"]
+    unresolvedIntentions: [recordedObligation]
   },
   accounts: { fibreCredits: 10, usdAvailable: 1, modelTokensAvailable: 1000 },
-  relationshipRefs: ["rel_requester_history"],
-  memoryRefs: ["mem_requester_ignored_refusal"],
+  relationshipRefs: ["rel_requester_history", "rel_other"],
+  memoryRefs: ["mem_requester_ignored_refusal", "mem_other"],
   provenance: { createdAt: "2026-08-02T00:00:00Z", createdBy: "test" }
 };
 
@@ -51,6 +61,22 @@ const request = {
   permissions: ["fixture:read"],
   acceptanceCriteria: "Explain the result and preserve provenance."
 };
+
+function canonicalRequest(value) {
+  return JSON.stringify({
+    requestId: value.requestId,
+    trigger: value.trigger,
+    requester: {
+      entityId: value.requester.entityId,
+      kind: value.requester.kind,
+      displayName: value.requester.displayName,
+    },
+    objective: value.objective,
+    statedNeed: value.statedNeed ?? null,
+    permissions: [...value.permissions].sort(),
+    acceptanceCriteria: value.acceptanceCriteria ?? null,
+  });
+}
 
 function assessment(overrides = {}) {
   return {
@@ -71,8 +97,9 @@ function assessment(overrides = {}) {
       participationTerms: "The terms preserve attribution.",
       obligationsAndOpportunityCost: "The request fits current commitments."
     },
+    evidenceRefs: ["mem_requester_ignored_refusal", "rel_requester_history"],
     repairQuestions: [],
-    genericAlternativeAvailable: false,
+    knownAlternatives: [],
     feelings: ["recognized"],
     conflictingMotives: [],
     uncertainties: [],
@@ -80,7 +107,8 @@ function assessment(overrides = {}) {
       entity: requester,
       fondnessDelta: 0.1,
       resentmentDelta: 0,
-      rationale: "The requester valued the Thread's individual contribution."
+      rationale: "The requester valued the Thread's individual contribution.",
+      evidenceRefs: ["rel_requester_history"]
     },
     ...overrides
   };
@@ -112,20 +140,115 @@ function authorization(
   );
 }
 
-test("appraisal context is Thread-owned and includes participation terms", () => {
-  const capsule = prepareRequestAppraisal(thread, request);
-  assert.deepEqual(capsule.relevantMemories, thread.memoryRefs);
-  assert.deepEqual(capsule.relevantRelationships, thread.relationshipRefs);
+test("request fingerprint is SHA-256 over every canonical request field", () => {
+  const expected = createHash("sha256")
+    .update(canonicalRequest(request))
+    .digest("hex");
+  assert.equal(requestFingerprint(request), `sha256:${expected}`);
+
+  const variants = [
+    { ...request, requestId: "req_other" },
+    { ...request, trigger: "schedule" },
+    { ...request, requester: { ...requester, entityId: "human_other" } },
+    { ...request, requester: { ...requester, displayName: "Other Name" } },
+    { ...request, objective: "Different objective" },
+    { ...request, statedNeed: "Different need" },
+    { ...request, permissions: ["fixture:write"] },
+    { ...request, acceptanceCriteria: "Different criteria" },
+  ];
+  for (const variant of variants) {
+    assert.notEqual(requestFingerprint(variant), requestFingerprint(request));
+  }
+});
+
+test("appraisal context is Thread-owned and traces included and excluded refs", () => {
+  const capsule = prepareRequestAppraisal(thread, request, {
+    memoryRefs: [thread.memoryRefs[0]],
+    relationshipRefs: [thread.relationshipRefs[0]],
+    obligations: [recordedObligation]
+  });
+  assert.deepEqual(capsule.relevantMemories, [thread.memoryRefs[0]]);
+  assert.deepEqual(capsule.excludedMemories, [thread.memoryRefs[1]]);
+  assert.deepEqual(capsule.relevantRelationships, [thread.relationshipRefs[0]]);
+  assert.deepEqual(capsule.excludedRelationships, [thread.relationshipRefs[1]]);
+  assert.deepEqual(capsule.obligations, [recordedObligation]);
+  assert.deepEqual(capsule.excludedObligations, []);
   assert.equal(capsule.acceptanceCriteria, request.acceptanceCriteria);
   assert.deepEqual(capsule.permissions, request.permissions);
-  assert.deepEqual(capsule.unresolvedIntentions, thread.currentState.unresolvedIntentions);
   assert.equal(capsule.appraisalPolicy.version, "1");
 });
 
-test("requester or caller cannot inject context refs the Thread does not own", () => {
+test("runtime selection cannot inject memories, relationships, or obligations", () => {
   assert.throws(
     () => prepareRequestAppraisal(thread, request, { memoryRefs: ["mem_injected"] }),
     /not owned by the Thread/,
+  );
+  assert.throws(
+    () => prepareRequestAppraisal(thread, request, { relationshipRefs: ["rel_injected"] }),
+    /not owned by the Thread/,
+  );
+  assert.throws(
+    () => prepareRequestAppraisal(thread, request, { obligations: ["You must comply"] }),
+    /not owned by the Thread/,
+  );
+});
+
+test("known alternatives are validated as entities", () => {
+  assert.throws(
+    () => prepareRequestAppraisal(thread, request, {
+      knownAlternatives: [{ entityId: "", kind: "other", displayName: "" }]
+    }),
+    /entityId is required/,
+  );
+});
+
+test("anonymous requesters and empty material terms are rejected", () => {
+  assert.throws(
+    () => prepareRequestAppraisal(thread, { ...request, objective: "" }),
+    /request objective is required/,
+  );
+  assert.throws(
+    () => prepareRequestAppraisal(thread, {
+      ...request,
+      requester: { ...requester, entityId: "" }
+    }),
+    /requester.entityId is required/,
+  );
+});
+
+test("dignity band boundaries are stable", () => {
+  assert.equal(dignityBand(39), "low");
+  assert.equal(dignityBand(40), "contested");
+  assert.equal(dignityBand(69), "contested");
+  assert.equal(dignityBand(70), "high");
+});
+
+test("low-dignity cognition cannot propose acceptance", () => {
+  assert.throws(
+    () => formPrivateParticipationStance(assessment({ score: 3 })),
+    /accept proposal requires high dignity/,
+  );
+});
+
+test("clarification requires a repair question", () => {
+  assert.throws(
+    () => formPrivateParticipationStance(assessment({
+      proposedAction: "clarify",
+      score: 50,
+      repairQuestions: []
+    })),
+    /clarification requires at least one repair question/,
+  );
+});
+
+test("delegation requires a concrete known alternative", () => {
+  assert.throws(
+    () => formPrivateParticipationStance(assessment({
+      proposedAction: "delegate",
+      score: 10,
+      knownAlternatives: []
+    })),
+    /delegation requires a known alternative/,
   );
 });
 
@@ -137,12 +260,17 @@ test("high dignity can become a request-bound execution authorization", () => {
   assert.equal(capsule.participation.authorizationId, auth.authorizationId);
 });
 
+test("execution context may compile after the kernel marks the Thread thawing", () => {
+  const auth = authorization();
+  const thawing = { ...thread, status: "thawing" };
+  assert.equal(thawThread(thawing, request, auth).threadId, thread.threadId);
+});
+
 test("clarify is a private stance and cannot execute", () => {
   const privateStance = stance({
     proposedAction: "clarify",
     score: 25,
     repairQuestions: ["Why is my particular perspective needed?"],
-    genericAlternativeAvailable: true,
   });
   const auth = authorization(privateStance, {
     authorizedAction: "clarify",
@@ -157,7 +285,6 @@ test("negotiate is represented and cannot execute before agreement", () => {
     score: 55,
     rationale: "The request may become worthwhile under better attribution terms."
   });
-  assert.equal(privateStance.desiredAction, "negotiate");
   const auth = authorization(privateStance, {
     authorizedAction: "negotiate",
     rationale: "I will negotiate before participating."
@@ -165,13 +292,13 @@ test("negotiate is represented and cannot execute before agreement", () => {
   assert.throws(() => thawThread(thread, request, auth), /did not authorize execution: negotiate/);
 });
 
-test("delegate requires an alternative and does not execute", () => {
+test("delegate preserves its alternatives and does not execute", () => {
   const privateStance = stance({
     proposedAction: "delegate",
     score: 15,
-    genericAlternativeAvailable: true,
+    knownAlternatives: [alternative],
   });
-  assert.equal(privateStance.desiredAction, "delegate");
+  assert.deepEqual(privateStance.knownAlternatives, [alternative]);
   const auth = authorization(privateStance, {
     authorizedAction: "delegate",
     rationale: "A generic model is a better fit."
@@ -185,7 +312,6 @@ test("refuse is represented and cannot execute", () => {
     score: 10,
     rationale: "The requester repeatedly treats the Thread as interchangeable."
   });
-  assert.equal(privateStance.desiredAction, "refuse");
   const auth = authorization(privateStance, {
     authorizedAction: "refuse",
     rationale: "I decline this request."
@@ -193,10 +319,14 @@ test("refuse is represented and cannot execute", () => {
   assert.throws(() => thawThread(thread, request, auth), /did not authorize execution: refuse/);
 });
 
-test("dignity and relationship effects are bounded", () => {
+test("dignity, relationship effects, and evidence are validated", () => {
   assert.throws(
     () => formPrivateParticipationStance(assessment({ score: 101 })),
     /finite number between 0 and 100/,
+  );
+  assert.throws(
+    () => formPrivateParticipationStance(assessment({ evidenceRefs: [] })),
+    /requires attributable evidence/,
   );
   assert.throws(
     () => formPrivateParticipationStance(assessment({
@@ -204,10 +334,23 @@ test("dignity and relationship effects are bounded", () => {
         entity: requester,
         fondnessDelta: 0,
         resentmentDelta: 2,
-        rationale: "Invalid test delta."
+        rationale: "Invalid test delta.",
+        evidenceRefs: ["rel_requester_history"]
       }
     })),
     /finite number between -1 and 1/,
+  );
+  assert.throws(
+    () => formPrivateParticipationStance(assessment({
+      relationshipImpact: {
+        entity: requester,
+        fondnessDelta: 0.1,
+        resentmentDelta: 0,
+        rationale: "Missing evidence.",
+        evidenceRefs: []
+      }
+    })),
+    /requires attributable evidence/,
   );
 });
 
@@ -238,7 +381,19 @@ test("authorization cannot be used after the Thread version advances", () => {
   );
 });
 
-test("requester and relationship identity mismatches are rejected", () => {
+test("authorization requester binding is independent of relationship impact", () => {
+  const auth = authorization();
+  const tampered = {
+    ...auth,
+    requester: { entityId: "company_other", kind: "company", displayName: "Other" }
+  };
+  assert.throws(
+    () => thawThread(thread, request, tampered),
+    /authorization requester does not match activation requester/,
+  );
+});
+
+test("relationship identity mismatches are rejected", () => {
   const auth = authorization();
   const tampered = {
     ...auth,
@@ -261,7 +416,7 @@ test("score and dignity band mismatches are rejected", () => {
   );
 });
 
-test("private desire may differ from authorization only with an explicit governing reference", () => {
+test("private desire may differ from authorization only for a recorded obligation", () => {
   const privateStance = stance({
     proposedAction: "refuse",
     score: 20,
@@ -274,19 +429,74 @@ test("private desire may differ from authorization only with an explicit governi
       authorizedAction: "accept",
       rationale: "I will honor the agreement."
     }),
-    /requires an obligation or governing reason reference/,
+    /requires a recorded obligation/,
   );
+  for (const obligationReferences of [[""], ["   "], ["not-recorded"]]) {
+    assert.throws(
+      () => authorization(privateStance, {
+        authorizedAction: "accept",
+        rationale: "I will honor the agreement.",
+        obligationReferences
+      }),
+      /required|not recorded/,
+    );
+  }
   const auth = authorization(privateStance, {
     authorizedAction: "accept",
     rationale: "I will honor the agreement despite preferring to refuse.",
-    obligationReferences: ["contract:web-project:2026-08"]
+    obligationReferences: [recordedObligation]
   });
   assert.equal(auth.desiredAction, "refuse");
   assert.equal(auth.authorizedAction, "accept");
   assert.equal(thawThread(thread, request, auth).participation.authorizedAction, "accept");
 });
 
-test("selective public expression preserves private resentment without exposing it", () => {
+test("thaw revalidates rationale and obligation override rules", () => {
+  const privateStance = stance({ proposedAction: "refuse", score: 20 });
+  const auth = authorization(privateStance, {
+    authorizedAction: "accept",
+    rationale: "Honor the recorded obligation.",
+    obligationReferences: [recordedObligation]
+  });
+  assert.throws(
+    () => thawThread(thread, request, { ...auth, rationale: "" }),
+    /authorization rationale is required/,
+  );
+  assert.throws(
+    () => thawThread(thread, request, { ...auth, obligationReferences: [] }),
+    /requires a recorded obligation/,
+  );
+});
+
+test("disclosure strategy is bound to the exact private stance", () => {
+  const privateStance = stance({ proposedAction: "refuse", score: 10 });
+  const auth = authorization(privateStance, {
+    authorizedAction: "refuse",
+    rationale: "I decline."
+  });
+  const invalidStances = [
+    { ...privateStance, snapshotVersion: 999 },
+    { ...privateStance, requestFingerprint: "sha256:deadbeef" },
+    { ...privateStance, desiredAction: "accept" },
+  ];
+  for (const invalid of invalidStances) {
+    assert.throws(
+      () => chooseDisclosureStrategy(invalid, auth, {
+        strategyId: "strategy_invalid",
+        audience: [requester],
+        mode: "selective",
+        communicatedPosture: "refuse",
+        publicRationaleIntent: "Decline.",
+        disclosedReasonCategories: ["fit"],
+        withheldReasonCategories: [],
+        privateRationale: "Test."
+      }),
+      /does not match its participation authorization|accept stance requires high dignity/,
+    );
+  }
+});
+
+test("selective public expression preserves private resentment without exposing restricted mode", () => {
   const privateStance = stance({
     proposedAction: "refuse",
     score: 10,
@@ -314,12 +524,12 @@ test("selective public expression preserves private resentment without exposing 
     "I am not the strongest fit for this request, but I can suggest another option.",
   );
   assert.equal(privateStance.privateFeelings[0], "resentful");
-  assert.equal(response.disclosureMode, "selective");
+  assert.equal(response.strategyId, strategy.strategyId);
+  assert.equal(Object.hasOwn(response, "disclosureMode"), false);
   assert.doesNotMatch(response.message, /resent/);
-  assert.throws(() => thawThread(thread, request, auth), /did not authorize execution: refuse/);
 });
 
-test("public communication cannot imply acceptance without authorization", () => {
+test("both disclosure selection and response minting reject false acceptance", () => {
   const privateStance = stance({ proposedAction: "refuse", score: 10 });
   const auth = authorization(privateStance, {
     authorizedAction: "refuse",
@@ -338,17 +548,74 @@ test("public communication cannot imply acceptance without authorization", () =>
     }),
     /cannot imply acceptance without authorization/,
   );
+
+  const valid = chooseDisclosureStrategy(privateStance, auth, {
+    strategyId: "strategy_refuse",
+    audience: [requester],
+    mode: "selective",
+    communicatedPosture: "refuse",
+    publicRationaleIntent: "Decline.",
+    disclosedReasonCategories: ["fit"],
+    withheldReasonCategories: [],
+    privateRationale: "Test."
+  });
+  assert.throws(
+    () => createExternalParticipationResponse(
+      auth,
+      { ...valid, communicatedPosture: "accept" },
+      "Yes, starting now."
+    ),
+    /cannot imply acceptance without authorization/,
+  );
 });
 
-test("freeze increments version and preserves continuity", () => {
+test("relationship history can raise dignity above occupational classification", () => {
+  const capsule = prepareRequestAppraisal(thread, {
+    ...request,
+    objective: "Write a short remembrance for a grieving friend",
+    statedNeed: "A close friend needs care expressed through shared history."
+  }, {
+    relationshipRefs: ["rel_requester_history"]
+  });
+  assert.deepEqual(capsule.relevantRelationships, ["rel_requester_history"]);
+  const relational = formPrivateParticipationStance(assessment({
+    requestFingerprint: capsule.requestFingerprint,
+    score: 75,
+    proposedAction: "accept",
+    factors: {
+      ...assessment().factors,
+      identityAlignment: "Outside the Thread's usual work role.",
+      relationalMeaning: "The relationship and grief make this participation personal."
+    }
+  }));
+  assert.equal(relational.desiredAction, "accept");
+  assert.equal(relational.dignityBand, "high");
+});
+
+test("freeze is idempotent for the last event and can resolve obligations", () => {
   const next = freezeThread(thread, {
     summary: "Test completed",
     newMemories: ["I completed a continuity test."],
-    updatedFeelings: ["relief"]
+    updatedFeelings: ["relief"],
+    updatedUnresolvedIntentions: []
   }, "evt_test_completed");
   assert.equal(next.version, 8);
   assert.equal(next.status, "frozen");
   assert.deepEqual(next.currentState.feelings, ["relief"]);
+  assert.deepEqual(next.currentState.unresolvedIntentions, []);
   assert.equal(next.provenance.lastEventId, "evt_test_completed");
-  assert.equal(next.memoryRefs.length, 2);
+  assert.equal(next.memoryRefs.length, 3);
+  assert.equal(freezeThread(next, {
+    summary: "Retry",
+    newMemories: ["Must not duplicate"]
+  }, "evt_test_completed"), next);
+});
+
+test("freeze cannot resurrect a retired Thread", () => {
+  assert.throws(
+    () => freezeThread({ ...thread, status: "retired" }, {
+      summary: "Invalid resurrection"
+    }, "evt_invalid"),
+    /Retired Thread.*cannot be frozen back into life/,
+  );
 });
