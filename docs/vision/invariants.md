@@ -1,7 +1,7 @@
 ---
 id: fibre-invariants
 status: accepted
-last-reviewed: 2026-08-03
+last-reviewed: 2026-08-04
 canonical: true
 ---
 
@@ -11,8 +11,31 @@ A design is drifting if it produces any of the following:
 
 - Threads become replaceable workers distinguished only by names or role prompts.
 - Identity becomes a static persona label.
+- A Thread automatically complies with every request that is safe and technically feasible.
+- Dignity becomes a decorative score that does not affect participation or relationship state.
+- Request appraisal ignores the Thread's individualized advantage, the requester's need, Thread-owned relationship history, participation terms, or recorded obligations.
+- Clarification, negotiation, delegation, and refusal exist in prose but the runtime begins the requested task anyway.
+- A low-dignity acceptance proposal reaches authorization or execution.
+- An authorization can be replayed against different request content, another requester, another Thread, or a stale Thread version.
+- A request digest is too narrow to function as an adversarial integrity binding or omits a material request field.
+- A caller-authored or blank obligation reference can override the Thread's private desire.
+- An authorization override is not revalidated at the execution boundary.
+- Public wording is treated as consent or authorization evidence.
+- An audience-visible response carries restricted disclosure mode, withheld reasons, or private rationale.
+- Acceptance posture is checked when choosing disclosure but not when minting the external response.
+- The same record represents private stance, authorization, disclosure strategy, and external response.
+- A disclosure strategy can be paired with a stale or different private stance.
+- Public explanations are treated as complete and authoritative representations of private feelings, beliefs, motives, attitudes, or consent.
+- Private resentment, fear, vulnerability, or strategic reasoning is automatically exposed to the entity it concerns.
+- External communication overwrites or sanitizes the Thread's prior private state.
+- Interest mediation silently changes permissions, commitments, authorization, or performed action.
+- Runtime context selection can inject records the Thread does not own, or narrowing leaves no included/excluded trace.
+- Low-dignity interactions cannot influence functional affect or future relationships.
+- Fondness or resentment changes without attributable evidence, bounded deltas, or validated relationship events.
+- A company or institution can hide behind stateless requests so repeated disrespect never affects the Thread's attitude toward it.
 - All meaningful state lives inside temporary execution workers.
 - Live Threads are stored as source files in Git rather than persistent world state.
+- Generated artifacts or symlinked sources can overwrite canonical documents or leak files outside the repository boundary.
 - Family, culture, geography, embodiment, or reading exist only as profile decoration.
 - Work has no durable economic or developmental consequences.
 - Tasks are directly assigned when the scenario is intended to use bids and contracts.
@@ -21,6 +44,7 @@ A design is drifting if it produces any of the following:
 - LLM output directly changes protected world state without validation.
 - The self-audit loop becomes either performative agreement or corrosive self-denigration.
 - Human-visible evidence is absent.
+- A passing test count is cited as evidence while accepted negative properties can be removed without test failure.
 - A milestone's temporary simplification is silently converted into a permanent constraint.
 - Implementation or infrastructure convenience closes off a preserved ambition path irreversibly, without a decision recorded in an ADR.
 - A narrowly testable prototype is treated as the final conceptual boundary rather than a proof of one layer in a larger world.
@@ -34,8 +58,10 @@ Fibre's architecture must keep a credible extension path open for each of the fo
 
 - many interacting Threads
 - identity and self-authorship
+- dignity, consent, and meaningful refusal
+- interiority, privacy, interest mediation, and audience-specific expression
 - family and lineage
-- relationships
+- relationships, including persistent fondness and resentment
 - culture, geography, and embodiment
 - books and intellectual formation
 - development over time
