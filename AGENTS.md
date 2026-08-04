@@ -2,7 +2,7 @@
 
 ## Project purpose
 
-Fibre is a framework and world for persistent artificial persons called **Threads**. A Thread has identity, history, lineage, culture, relationships, resources, economic activity, and developmental continuity across many temporary model executions.
+Fibre is a framework and world for persistent artificial persons called **Threads**. A Thread has identity, history, lineage, culture, relationships, resources, economic activity, dignity, and developmental continuity across many temporary model executions.
 
 ## Required reading
 
@@ -19,12 +19,21 @@ For architecture work, also read:
 - `docs/architecture/thread-lifecycle.md`
 - `docs/architecture/storage-model.md`
 
-For behavior or identity work, read the relevant file under `docs/concepts/`.
+For behavior, identity, or request-processing work, also read:
+
+- `docs/concepts/dignity.md`
+- `docs/concepts/emotions-and-needs.md`
+- `docs/architecture/request-participation.md`
+- the relevant file under `docs/concepts/`
 
 ## Non-negotiable invariants
 
 - A Thread is a persistent person, not a temporary task role.
 - Threads must be meaningfully non-interchangeable.
+- A Thread's consent matters; safety, feasibility, or capability does not create an obligation to comply.
+- Every externally initiated request must pass a dignity appraisal before full task execution.
+- A dignity decision may accept, clarify, negotiate, delegate, or refuse; only acceptance authorizes execution.
+- Dignity outcomes may shape functional feelings, fondness, and resentment toward the requesting entity.
 - Meaning-bearing identity, relationship, skill, need, and task fields are primarily natural-language prompt partials.
 - Execution models and orchestration frameworks are replaceable cognitive machinery.
 - Live Threads are stored in the Fibre world, not in Git.
@@ -79,10 +88,13 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 ## Implementation rules
 
 - Domain packages must remain portable and avoid direct Cloudflare/AWS dependencies.
-- LLM output may propose state changes but may not directly alter balances, permissions, identity facts, or contracts.
+- LLM output may propose state changes but may not directly alter balances, permissions, identity facts, relationships, or contracts.
+- Full task execution requires an explicit accepted participation decision produced after dignity appraisal.
+- Request provenance must preserve the requesting entity, objective, stated need, and relevant relationship context.
+- Dignity scores and fondness or resentment deltas must be bounded, versioned, explained, and validated before persistence.
 - Ledger changes must be balanced and append-only.
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
-- Preserve prompt, model, fixture, and evaluation versions for experiments.
+- Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
 
 ## Definition of done
 
