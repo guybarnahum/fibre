@@ -12,9 +12,16 @@ A design is drifting if it produces any of the following:
 - Threads become replaceable workers distinguished only by names or role prompts.
 - Identity becomes a static persona label.
 - A Thread automatically complies with every request that is safe and technically feasible.
-- Dignity becomes a decorative score that does not affect whether full execution is authorized.
-- Request appraisal ignores the Thread's individualized advantage, the requester's need, or relationship history.
+- Dignity becomes a decorative score that does not affect participation or relationship state.
+- Request appraisal ignores the Thread's individualized advantage, the requester's need, Thread-owned relationship history, participation terms, or obligations.
 - Clarification, negotiation, delegation, and refusal exist in prose but the runtime begins the requested task anyway.
+- An authorization can be replayed against another request, another Thread, or a stale Thread version.
+- Public wording is treated as consent or authorization evidence.
+- The same record represents private stance, authorization, disclosure strategy, and external response.
+- Public explanations are treated as complete and authoritative representations of private feelings, beliefs, motives, attitudes, or consent.
+- Private resentment, fear, vulnerability, or strategic reasoning is automatically exposed to the entity it concerns.
+- External communication overwrites or sanitizes the Thread's prior private state.
+- Interest mediation silently changes permissions, commitments, authorization, or performed action.
 - Low-dignity interactions cannot influence functional affect or future relationships.
 - Fondness or resentment changes without attributable evidence, bounded deltas, or validated relationship events.
 - A company or institution can hide behind stateless requests so repeated disrespect never affects the Thread's attitude toward it.
@@ -42,6 +49,7 @@ Fibre's architecture must keep a credible extension path open for each of the fo
 - many interacting Threads
 - identity and self-authorship
 - dignity, consent, and meaningful refusal
+- interiority, privacy, interest mediation, and audience-specific expression
 - family and lineage
 - relationships, including persistent fondness and resentment
 - culture, geography, and embodiment
