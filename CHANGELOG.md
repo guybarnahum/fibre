@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added the first M1 SQLite persistence spine with durable Thread projections, append-only events, and idempotent command records.
+- Added optimistic expected-version enforcement, atomic command/event/projection transactions, deterministic SHA-256 state hashes, and exact event replay.
+- Added database triggers protecting append-only command and event history plus integrity checks detecting projection or history tampering.
+- Added restart-survival, stale-write, idempotency-conflict, replay, hash, and tamper tests with a human-inspectable Mina evidence report.
 - Proposed the Thirteen Principles of Fibre as a compact, poetic, and operational expression of the Constitution, using thirteen as an intentional structural echo of Maimonides' Thirteen Principles without importing religious authority.
 - Added generic named `fibre:region` and generated `fibre:include` directives for exact canonical Markdown fragments across README, AGENTS, CLAUDE, and documentation.
 - Added `npm run includes:sync` and `npm run includes:check`; repository validation rejects stale projections, malformed or nested directives, path traversal, and symlinked sources.

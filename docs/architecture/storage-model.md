@@ -1,7 +1,7 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-08-02
+last-reviewed: 2026-08-04
 canonical: true
 ---
 
@@ -19,6 +19,18 @@ Suggested durable stores:
 - Secret/resource vault for credentials and external authorizations
 - Double-entry ledger for FC, USD, and model-token accounting
 
-The aggregate is reconstructed at a versioned point in time. Snapshots may accelerate loading but never replace the event history.
+The aggregate is reconstructed at a versioned point in time. Snapshots and current-state projections may accelerate loading but never replace the event history.
 
-Live Thread data is not committed to Git. The repository may contain synthetic fixtures, templates, redacted archives, and schema examples.
+## M1 local persistence profile
+
+The first M1 adapter uses one local SQLite database with three deliberately separate tables:
+
+- `threads` stores the current projection, lifecycle status, version, last event, and SHA-256 state hash;
+- `thread_events` stores ordered immutable seed and life-change events with expected and resulting versions;
+- `commands` stores accepted idempotency keys, full command digests, and the event and version produced by each command.
+
+A command, event, idempotency record, and projection update commit in one transaction. SQLite triggers reject updates and deletions from the event and command tables. Deterministic replay validates every sequence and version transition, recomputes each event's state hash, and requires the final replayed state to match the current projection exactly.
+
+SQLite is an M1 implementation choice, not a permanent world architecture. Event, command, version, and hash contracts remain explicit so a future storage adapter can preserve the same behavior.
+
+Live Thread data is not committed to Git. The repository may contain synthetic fixtures, templates, redacted archives, schema examples, and human-inspectable test reports.

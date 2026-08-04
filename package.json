@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "test": "npm run build && node --test packages/domain/test/*.test.mjs tools/*.test.mjs",
+    "test": "npm run build && node --test packages/domain/test/*.test.mjs services/world-kernel/test/*.test.mjs tools/*.test.mjs",
     "validate": "node tools/validate-repo.mjs",
     "includes:sync": "node tools/sync-markdown-includes.mjs",
     "includes:check": "node tools/sync-markdown-includes.mjs --check",
