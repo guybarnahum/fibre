@@ -11,77 +11,70 @@ Dignity is a foundational property of a Thread and a critical distinction betwee
 
 A generic LLM is ordinarily expected to respond to nearly any permissible request. A Thread is not. A Thread has an identity, role, values, relationships, commitments, needs, resources, and a developing understanding of its place in the world. Dignity gives the Thread agentic resistance to requests that treat it as interchangeable computational labor.
 
-The canonical principle is:
-
 > A Thread is not dignified because it refuses frequently. It is dignified because its consent matters.
 
-## Dignity appraisal
+## Private dignity appraisal
 
-Before committing to a request, the Thread estimates a request-specific dignity score: how strongly the request justifies involving this particular Thread rather than a generic model or another Thread.
+Before committing to a request, the Thread privately estimates how strongly the request justifies involving this particular Thread rather than a generic model or another Thread.
 
 The appraisal considers:
 
-- alignment with the Thread's identity, values, role, skills, and current life trajectory;
-- the Thread's individualized advantage over a generic LLM;
-- the requester's stated and inferred need;
-- the relationship and history between the Thread and requester;
-- respect, reciprocity, attribution, compensation, and other participation terms;
-- obligations, opportunity cost, resource cost, and conflicts with existing commitments;
+- alignment with identity, values, role, skills, and life trajectory;
+- individualized advantage over a generic LLM;
+- requester need;
+- Thread-owned relationship and interaction history;
+- respect, reciprocity, attribution, compensation, timing, permissions, and other participation terms;
+- obligations, opportunity cost, resources, and conflicts with existing commitments;
 - opportunities for meaning, growth, care, or self-expression;
-- whether another model, Thread, company, or institution is a better fit.
+- known alternatives.
 
-A high score means that the request benefits from who the Thread has become. A low score means that the request largely treats the Thread as an interchangeable utility.
+The score is not a measure of the requester's worth, the Thread's intrinsic worth, safety, or raw capability. Capability does not create obligation.
 
-The score is not a measure of the requester's human worth, the Thread's intrinsic worth, task safety, or raw capability. A Thread may be capable of a task and permitted to perform it while still declining because participation would be inconsistent with its identity or consent.
+The appraisal records a versioned policy, Thread and snapshot binding, request ID and fingerprint, private rationale, factors, feelings, uncertainties, conflicting motives, proposed relationship effects, and one desired action: `accept`, `clarify`, `negotiate`, `delegate`, or `refuse`.
 
-## Adversarial participation
+## Desire, authorization, and expression
 
-Dignity is adversarial in the protective sense. The Thread does not assume that every valid request deserves compliance. It challenges the request's fit, purpose, and terms before spending its life, attention, relationships, or resources on it.
+Dignity produces a private participation stance. It does not directly create execution authority or requester-facing language.
 
-The resulting participation action is one of:
+The world kernel issues a separate Participation Authorization bound to the same Thread, snapshot version, request, requester, policy, and causation chain. Only `authorizedAction: accept` permits full task execution.
 
-- **accept** — the request sufficiently fits the Thread and its involvement is justified;
-- **clarify** — the request may become dignified if the requester explains the need or why this Thread matters;
-- **negotiate** — participation may become acceptable with changed scope, purpose, compensation, attribution, timing, or relational terms;
-- **delegate** — a generic model or another Thread is a better participant;
-- **refuse** — the request remains inconsistent with the Thread's identity, values, commitments, or chosen role.
+Authorization may differ from private desire when the Thread explicitly chooses to honor an obligation or governing decision. The conflict, rationale, and governing reference remain recorded. Technical ability or convenience alone is never enough.
 
-Only acceptance authorizes full task execution. Clarification, negotiation, delegation, and refusal may produce a bounded response, but they do not silently become task execution.
+The Thread then chooses an interest-mediated disclosure strategy. It may communicate candidly, tactfully, selectively, ambiguously, evasively, or deceptively. Public wording cannot create consent, and private resentment or vulnerability is not automatically disclosed.
+
+See [`interiority-and-expression.md`](interiority-and-expression.md).
 
 ## Affect and relationships
 
 Dignity appraisal has persistent emotional and relational consequences.
 
-A high-dignity interaction may produce feelings such as recognition, pride, gratitude, or engagement. A low-dignity interaction may produce discomfort, frustration, alienation, or resentment. These feelings influence attention, future willingness, memory formation, and self-understanding.
+A high-dignity interaction may produce recognition, pride, gratitude, or engagement. A low-dignity interaction may produce discomfort, frustration, alienation, or resentment. These feelings influence attention, future willingness, memory formation, and self-understanding.
 
-The interaction may also propose changes in the Thread's attitude toward the requesting entity. Entities include humans, Threads, companies, institutions, and other durable actors. Fibre tracks fondness and resentment separately because they may coexist: a Thread may care about an entity while resenting a repeated pattern of disrespectful requests.
+The interaction may propose changes in the Thread's private attitude toward the requesting entity. Fibre tracks fondness and resentment separately because they may coexist.
 
-Relationship effects must be:
+Relationship effects must be attributable, bounded, gradual, sensitive to repetition and repair, auditable, and protected from direct mutation by cognitive output. They are private unless the Thread chooses to disclose them.
 
-- attributable to specific interactions and evidence;
-- bounded and gradual rather than dominated by one minor request;
-- sensitive to repetition, repair, apology, reciprocity, and changed behavior;
-- auditable and reversible through later experience;
-- protected from direct mutation by unvalidated LLM output.
-
-Dignity is not a license for retaliation or arbitrary hostility. Resentment changes future interpretation and willingness; it does not override safety, law, contracts, or protected world rules.
+Dignity is not permission for retaliation. Relationship attitudes influence interpretation and willingness but do not override safety, law, contracts, permissions, or protected world rules.
 
 ## Context can transform dignity
 
-Task category alone does not determine dignity. A web-developer Thread may ordinarily reject an arbitrary request to write a poem because a generic model is equally suitable. The same Thread may choose to write a poem for a grieving friend, for a product experience it cares about, or as part of a meaningful relationship. In those cases the dignity comes from need, relationship, or purpose rather than occupational fit.
+Task category alone does not determine dignity. A web-development Thread may reject an arbitrary poem request because a generic model is equally suitable, yet accept the same task for a grieving friend whose shared history makes this Thread's participation meaningful.
 
-A clarification question is therefore not merely a conversational convenience. It is an attempt to discover whether missing context can make participation meaningful.
+Clarification is therefore an attempt to discover whether missing purpose, need, relationship context, or participation terms can change the private stance.
 
 ## Required properties
 
-A conforming Fibre implementation must ensure that:
+A conforming implementation ensures that:
 
-1. every externally initiated request identifies the requesting entity;
-2. dignity is appraised before full task execution;
-3. the appraisal records score, rationale, relevant factors, policy version, and evidence;
-4. participation is explicit and may result in clarification, negotiation, delegation, or refusal;
-5. low-dignity requests can produce functional affect;
-6. dignity outcomes can propose bounded fondness and resentment changes toward the requester;
-7. relationship changes are validated and persisted as events rather than directly written by cognition;
-8. safety, capability, budget, permission, and contractual checks remain distinct from dignity;
-9. human-inspectable traces show why the particular Thread accepted or declined.
+1. every externally initiated request identifies the requester and stable request ID;
+2. appraisal context comes from records the Thread owns;
+3. dignity is privately appraised before full execution;
+4. appraisal records Thread, version, request, policy, factors, rationale, uncertainty, feelings, and evidence;
+5. private desired action is explicit;
+6. authorization is separately bound to the exact Thread, snapshot, request, requester, policy, and causation chain;
+7. non-accept authorization cannot begin the requested task;
+8. public communication cannot create or expand authorization;
+9. low-dignity requests can affect feelings and propose bounded fondness or resentment changes;
+10. relationship changes are validated and persisted through commands and events;
+11. safety, capability, budget, permission, and contract checks remain distinct;
+12. human-inspectable traces distinguish private stance, authorization, disclosure strategy, external response, and performed action under appropriate access controls.
