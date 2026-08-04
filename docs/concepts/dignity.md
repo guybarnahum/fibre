@@ -24,23 +24,27 @@ The appraisal considers:
 - requester need;
 - Thread-owned relationship and interaction history;
 - respect, reciprocity, attribution, compensation, timing, permissions, and other participation terms;
-- obligations, opportunity cost, resources, and conflicts with existing commitments;
+- recorded obligations, opportunity cost, resources, and conflicts with existing commitments;
 - opportunities for meaning, growth, care, or self-expression;
-- known alternatives.
+- concrete known alternatives.
 
 The score is not a measure of the requester's worth, the Thread's intrinsic worth, safety, or raw capability. Capability does not create obligation.
 
-The appraisal records a versioned policy, Thread and snapshot binding, request ID and fingerprint, private rationale, factors, feelings, uncertainties, conflicting motives, proposed relationship effects, and one desired action: `accept`, `clarify`, `negotiate`, `delegate`, or `refuse`.
+The appraisal records a versioned policy, Thread and snapshot binding, request ID and SHA-256 digest, private rationale, factors, attributable evidence references, feelings, uncertainties, conflicting motives, concrete alternatives, proposed relationship effects, and one desired action: `accept`, `clarify`, `negotiate`, `delegate`, or `refuse`.
+
+The initial portable policy defines `low` as 0–39, `contested` as 40–69, and `high` as 70–100. Dignity-based acceptance requires `high`; clarification requires a non-empty repair question; delegation requires a validated alternative entity.
 
 ## Desire, authorization, and expression
 
 Dignity produces a private participation stance. It does not directly create execution authority or requester-facing language.
 
-The world kernel issues a separate Participation Authorization bound to the same Thread, snapshot version, request, requester, policy, and causation chain. Only `authorizedAction: accept` permits full task execution.
+The world kernel issues a separate Participation Authorization bound to the same Thread, snapshot version, request, requester, policy, and causation chain. The exact request content is bound through a SHA-256 digest over every material field. Only `authorizedAction: accept` permits full task execution.
 
-Authorization may differ from private desire when the Thread explicitly chooses to honor an obligation or governing decision. The conflict, rationale, and governing reference remain recorded. Technical ability or convenience alone is never enough.
+Authorization may differ from private desire when the Thread explicitly chooses to honor a recorded obligation or governing decision. The conflict, rationale, and governing reference remain recorded. In the portable prototype, obligation references must resolve to the Thread's own unresolved intentions. Technical ability, convenience, or a caller-authored assertion is never enough.
 
 The Thread then chooses an interest-mediated disclosure strategy. It may communicate candidly, tactfully, selectively, ambiguously, evasively, or deceptively. Public wording cannot create consent, and private resentment or vulnerability is not automatically disclosed.
+
+The requester-facing response references the private strategy by ID but does not itself expose the disclosure mode or withheld rationale.
 
 See [`interiority-and-expression.md`](interiority-and-expression.md).
 
@@ -52,7 +56,7 @@ A high-dignity interaction may produce recognition, pride, gratitude, or engagem
 
 The interaction may propose changes in the Thread's private attitude toward the requesting entity. Fibre tracks fondness and resentment separately because they may coexist.
 
-Relationship effects must be attributable, bounded, gradual, sensitive to repetition and repair, auditable, and protected from direct mutation by cognitive output. They are private unless the Thread chooses to disclose them.
+Relationship effects must be attributable, bounded, gradual, sensitive to repetition and repair, auditable, and protected from direct mutation by cognitive output. Every non-zero proposed fondness or resentment delta carries evidence references. Attitudes are private unless the Thread chooses to disclose them.
 
 Dignity is not permission for retaliation. Relationship attitudes influence interpretation and willingness but do not override safety, law, contracts, permissions, or protected world rules.
 
@@ -67,14 +71,16 @@ Clarification is therefore an attempt to discover whether missing purpose, need,
 A conforming implementation ensures that:
 
 1. every externally initiated request identifies the requester and stable request ID;
-2. appraisal context comes from records the Thread owns;
-3. dignity is privately appraised before full execution;
-4. appraisal records Thread, version, request, policy, factors, rationale, uncertainty, feelings, and evidence;
-5. private desired action is explicit;
-6. authorization is separately bound to the exact Thread, snapshot, request, requester, policy, and causation chain;
-7. non-accept authorization cannot begin the requested task;
-8. public communication cannot create or expand authorization;
-9. low-dignity requests can affect feelings and propose bounded fondness or resentment changes;
-10. relationship changes are validated and persisted through commands and events;
-11. safety, capability, budget, permission, and contract checks remain distinct;
-12. human-inspectable traces distinguish private stance, authorization, disclosure strategy, external response, and performed action under appropriate access controls.
+2. every material request field is non-empty where required and included in the SHA-256 request binding;
+3. appraisal context comes from records the Thread owns and records both included and excluded references;
+4. dignity is privately appraised before full execution;
+5. appraisal records Thread, version, request, policy, factors, rationale, uncertainty, feelings, alternatives, and evidence;
+6. private desired action is explicit and validated against the versioned dignity policy;
+7. authorization is separately bound to the exact Thread, snapshot, request, requester, policy, and causation chain;
+8. an authorization overriding private desire references a recorded Thread-owned obligation or governing decision;
+9. non-accept authorization cannot begin the requested task;
+10. public communication cannot create or expand authorization, including at the response-minting boundary;
+11. low-dignity requests can affect feelings and propose bounded, evidenced fondness or resentment changes;
+12. relationship changes are validated and persisted through commands and events;
+13. safety, capability, budget, permission, and contract checks remain distinct;
+14. human-inspectable traces distinguish private stance, authorization, disclosure strategy, external response, and performed action under appropriate access controls.
