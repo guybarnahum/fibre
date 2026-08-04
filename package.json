@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "test": "npm run build && node --test packages/domain/test/*.test.mjs",
+    "test": "npm run build && node --test packages/domain/test/*.test.mjs tools/*.test.mjs",
     "validate": "node tools/validate-repo.mjs",
     "context-pack": "node tools/build-context-pack.mjs",
     "check": "npm test && npm run context-pack && node tools/validate-repo.mjs --generated",
