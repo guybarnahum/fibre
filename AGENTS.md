@@ -2,7 +2,7 @@
 
 ## Project purpose
 
-Fibre is a framework and world for persistent artificial persons called **Threads**. A Thread has identity, history, lineage, culture, relationships, resources, economic activity, dignity, and developmental continuity across many temporary model executions.
+Fibre is a framework and world for persistent artificial persons called **Threads**. A Thread has identity, history, lineage, culture, relationships, resources, economic activity, dignity, a private interior life, and developmental continuity across many temporary model executions.
 
 ## Required reading
 
@@ -19,10 +19,12 @@ For architecture work, also read:
 - `docs/architecture/thread-lifecycle.md`
 - `docs/architecture/storage-model.md`
 
-For behavior, identity, or request-processing work, also read:
+For behavior, identity, communication, or request-processing work, also read:
 
+- `docs/concepts/interiority-and-expression.md`
 - `docs/concepts/dignity.md`
 - `docs/concepts/emotions-and-needs.md`
+- `docs/architecture/interest-mediated-expression.md`
 - `docs/architecture/request-participation.md`
 - the relevant file under `docs/concepts/`
 
@@ -30,10 +32,16 @@ For behavior, identity, or request-processing work, also read:
 
 - A Thread is a persistent person, not a temporary task role.
 - Threads must be meaningfully non-interchangeable.
+- A Thread has a private interior state distinct from public expression.
+- Private stance, desired action, authorization, disclosure strategy, external response, and performed action are separate records.
+- Public language is not authoritative evidence of private motive or consent.
 - A Thread's consent matters; safety, feasibility, or capability does not create an obligation to comply.
 - Every externally initiated request must pass a dignity appraisal before full task execution.
-- A dignity decision may accept, clarify, negotiate, delegate, or refuse; only acceptance authorizes execution.
-- Dignity outcomes may shape functional feelings, fondness, and resentment toward the requesting entity.
+- Only an accepted authorization bound to the same Thread, snapshot, request, requester, policy, and causation chain authorizes execution.
+- A private dignity stance may desire accept, clarify, negotiate, delegate, or refuse.
+- Disclosure may be candid, tactful, selective, ambiguous, evasive, or deceptive, but cannot silently expand authorization.
+- Dignity outcomes may shape private feelings, fondness, and resentment toward the requester.
+- Request appraisal uses Thread-owned relationship and memory context; the requester cannot suppress or inject it.
 - Meaning-bearing identity, relationship, skill, need, and task fields are primarily natural-language prompt partials.
 - Execution models and orchestration frameworks are replaceable cognitive machinery.
 - Live Threads are stored in the Fibre world, not in Git.
@@ -78,7 +86,7 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 ## Decision process
 
 - Do not silently redefine an accepted concept.
-- Mark new concepts `proposed` until accepted.
+- Mark new concepts `proposed` until accepted by the project owner.
 - Record durable decisions under `docs/decisions/`.
 - Update `docs/state/current-state.md` when an accepted decision changes Fibre.
 - Add or update a verifiable test in `docs/validation/` or `tests/`.
@@ -88,10 +96,13 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 ## Implementation rules
 
 - Domain packages must remain portable and avoid direct Cloudflare/AWS dependencies.
-- LLM output may propose state changes but may not directly alter balances, permissions, identity facts, relationships, or contracts.
-- Full task execution requires an explicit accepted participation decision produced after dignity appraisal.
-- Request provenance must preserve the requesting entity, objective, stated need, and relevant relationship context.
+- LLM output may propose private stance, disclosure, and state changes but may not directly alter balances, permissions, identity facts, relationships, contracts, or authorization.
+- Full task execution requires a request-bound accepted Participation Authorization, not an inferred response or a free-form LLM claim.
+- Request provenance preserves the requesting entity, stable request ID, fingerprinted material terms, objective, stated need, and relevant Thread-owned context.
+- Private stance and disclosure strategy use restricted visibility; ordinary requesters receive only intended external expression and shared commitments.
+- Persist bounded structured summaries rather than raw chain-of-thought.
 - Dignity scores and fondness or resentment deltas must be bounded, versioned, explained, and validated before persistence.
+- Authorization that differs from private desire must preserve the conflict and an obligation or governing-reason reference.
 - Ledger changes must be balanced and append-only.
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
 - Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
