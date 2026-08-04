@@ -39,7 +39,9 @@ Representative events:
 - `THREAD_ENTERED_DORMANCY`
 - `THREAD_RETIRED`
 
-Every event has an ID, aggregate ID, expected prior version, actor, authorization evidence, timestamp, causation ID, correlation ID, payload schema version, and provenance.
+Every event has an ID, aggregate ID, expected prior version, actor, timestamp, causation ID, correlation ID, payload schema version, provenance, and authorization evidence when the event depends on an authorization. Seed and directly owner-authored state events may carry no authorization reference; participation and execution events must carry the authorization required by their domain invariant.
+
+The M1 SQLite profile currently implements `THREAD_SEEDED` and `SELF_MODEL_UPDATED` with this common envelope. Its stored names are prototype-specific and do not narrow the representative event vocabulary above.
 
 A `REQUEST_APPRAISAL_CONTEXT_COMPILED` event records which Thread-owned memory, relationship, and obligation references were included and excluded.
 

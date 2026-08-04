@@ -49,8 +49,14 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 ## Current implementation status
 
-This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, a static Thread Editor prototype, and a canonical AI context manifest. The domain package now proves bounded private dignity appraisal, SHA-256 request-content binding, request-bound participation authorization, Thread-owned context selection with exclusion traces, recorded-obligation overrides, evidence-bearing relationship effects, interest-mediated disclosure, and the rule that public language cannot authorize execution.
+This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, a static Thread Editor prototype, a canonical AI context manifest, and the first M1 SQLite persistence spine.
+
+The persistence spine stores a versioned Thread projection, immutable events, and idempotent command witnesses in a schema-versioned file-backed database. It normalizes seed projection metadata, rejects illegal lifecycle writes, atomically validates expected versions, appends one event, advances the projection, computes deterministic SHA-256 state hashes, survives close and reopen, and verifies the projection by replaying ordered events.
+
+Normal reads verify Thread identity, canonical state hash, denormalized projection columns, and agreement with the last immutable event. Replay independently verifies seed identity, sequence and version transitions, command digests, derived event IDs, command witnesses, and per-event state hashes. A projection-repair operation can re-derive the current row from intact event history.
+
+The domain package separately proves bounded private dignity appraisal, SHA-256 request-content binding, request-bound participation authorization, Thread-owned context selection with exclusion traces, recorded-obligation overrides, evidence-bearing relationship effects, interest-mediated disclosure, and the rule that public language cannot authorize execution.
 
 The portable authorization is cryptographically wide as a content digest and is structurally revalidated at execution. It is not yet an event-consumed capability proving kernel origin. Event-backed issuance, one-time consumption, distributed replay prevention, persistent participation records, live relationship aggregation, private-state access control, and mutation-coverage automation remain deferred.
 
-No live world database, model gateway, relationship service implementation, or production cloud deployment exists yet.
+No independently running world-kernel API, model gateway, relationship service implementation, production database, or production cloud deployment exists yet.

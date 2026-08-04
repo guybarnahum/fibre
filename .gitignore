@@ -10,3 +10,6 @@ artifacts/generated/*
 !artifacts/generated/.gitkeep
 
 *.tsbuildinfo
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
