@@ -39,4 +39,4 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 ## Current implementation status
 
-This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, and a static Thread Editor prototype. The domain package includes the first portable dignity preflight and consent gate. No live world database, model gateway, relationship service implementation, or production cloud deployment exists yet.
+This repository contains a concept foundation, schemas, synthetic fixtures, a minimal domain package, a static Thread Editor prototype, and a canonical AI context manifest that generates bounded core, request-processing, and full context packs. The domain package includes the first portable dignity preflight and consent gate. No live world database, model gateway, relationship service implementation, or production cloud deployment exists yet.
