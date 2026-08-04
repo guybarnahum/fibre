@@ -108,10 +108,36 @@ export function thawThread(
   participation: ParticipationDecision,
 ): ThreadContextCapsule {
   assertCanAppraise(thread);
+
+  const expectedBand = dignityBand(participation.score);
+  if (participation.dignityBand !== expectedBand) {
+    throw new Error("participation dignity band does not match its score");
+  }
+  if (
+    participation.relationshipImpact.entity.entityId !== request.requester.entityId
+  ) {
+    throw new Error("participation requester does not match activation requester");
+  }
+  assertRange(
+    "fondness delta",
+    participation.relationshipImpact.fondnessDelta,
+    -1,
+    1,
+  );
+  assertRange(
+    "resentment delta",
+    participation.relationshipImpact.resentmentDelta,
+    -1,
+    1,
+  );
+
   if (participation.action !== "accept") {
     throw new Error(
       `Thread ${thread.threadId} did not consent to execute request: ${participation.action}`,
     );
+  }
+  if (participation.dignityBand !== "high") {
+    throw new Error("accepted participation requires high dignity");
   }
 
   return {
