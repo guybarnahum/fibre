@@ -30,6 +30,43 @@
     },
     "trustEvidence": {
       "type": "string"
+    },
+    "attitude": {
+      "type": "object",
+      "required": [
+        "fondness",
+        "resentment",
+        "summary"
+      ],
+      "properties": {
+        "fondness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "resentment": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "summary": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastDignityEventId": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
