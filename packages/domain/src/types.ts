@@ -74,6 +74,7 @@ export interface ContextSelection {
   memoryRefs?: string[];
   relationshipRefs?: string[];
   knownAlternatives?: EntityRef[];
+  /** Thread-owned unresolved-intention references selected for this appraisal. */
   obligations?: string[];
 }
 
@@ -95,9 +96,12 @@ export interface RequestAppraisalCapsule {
   acceptanceCriteria?: string;
   permissions: string[];
   relevantMemories: string[];
+  excludedMemories: string[];
   relevantRelationships: string[];
+  excludedRelationships: string[];
   knownAlternatives: EntityRef[];
   obligations: string[];
+  excludedObligations: string[];
   appraisalPolicy: PolicyRef;
 }
 
@@ -116,6 +120,7 @@ export interface RelationshipImpact {
   fondnessDelta: number;
   resentmentDelta: number;
   rationale: string;
+  evidenceRefs: string[];
 }
 
 export type DignityBand = "low" | "contested" | "high";
@@ -137,8 +142,9 @@ export interface DignityAssessment {
   score: number;
   rationale: string;
   factors: DignityFactors;
+  evidenceRefs: string[];
   repairQuestions: string[];
-  genericAlternativeAvailable: boolean;
+  knownAlternatives: EntityRef[];
   feelings: string[];
   conflictingMotives: string[];
   uncertainties: string[];
@@ -155,16 +161,19 @@ export interface PrivateParticipationStance {
   dignityBand: DignityBand;
   score: number;
   privateRationale: string;
+  evidenceRefs: string[];
   privateFeelings: string[];
   conflictingMotives: string[];
   uncertainties: string[];
   repairQuestions: string[];
+  knownAlternatives: EntityRef[];
   relationshipImpact: RelationshipImpact;
 }
 
 export interface AuthorizationDecision {
   authorizedAction: ParticipationAction;
   rationale: string;
+  /** References must resolve to this Thread's unresolved intentions in the prototype. */
   obligationReferences?: string[];
 }
 
@@ -189,6 +198,7 @@ export interface ParticipationAuthorization {
   dignityBand: DignityBand;
   score: number;
   rationale: string;
+  evidenceRefs: string[];
   obligationReferences: string[];
   relationshipImpact: RelationshipImpact;
 }
@@ -223,12 +233,13 @@ export interface DisclosureStrategy extends DisclosureStrategyInput {
   authorizationId: string;
 }
 
+/** Audience-visible response. Restricted disclosure mode remains on DisclosureStrategy. */
 export interface ExternalParticipationResponse {
   requestId: string;
   authorizationId: string;
+  strategyId: string;
   communicatedPosture: CommunicatedPosture;
   message: string;
-  disclosureMode: DisclosureMode;
 }
 
 export interface ThreadContextCapsule {
@@ -262,4 +273,5 @@ export interface ProposedLifeChange {
   updatedNeeds?: string[];
   updatedFeelings?: string[];
   updatedSelfModel?: string;
+  updatedUnresolvedIntentions?: string[];
 }
