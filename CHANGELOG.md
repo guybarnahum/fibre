@@ -13,11 +13,11 @@
 - Kept restricted disclosure mode and private rationale out of requester-facing responses; acceptance posture is checked at both disclosure selection and response minting.
 - Connected dignity outcomes to private affect and bounded, evidenced fondness or resentment toward requesting entities.
 - Added canonical concepts, architecture, ADRs, lifecycle and M1 amendments, events, validation scenarios, AI-context routing, repository invariants, and dignity/interiority drift-score dimensions.
-- Expanded the portable domain suite with adversarial tests for policy boundaries, material request fields, requester binding, recorded obligations, disclosure pairing, relationship-driven dignity, and freeze retry behavior.
+- Expanded the portable suite to 39 targeted domain and context-publication tests covering policy boundaries, every material request field, requester binding, recorded obligations, disclosure pairing, relationship-driven dignity, runtime validation, freeze retry behavior, and symlink safety.
 - Added path-boundary tests preventing context-manifest output from escaping `artifacts/generated/` through slash, backslash, or symlink traversal and rejecting symlinked context sources.
 - Added a canonical machine-readable AI context manifest with core, request-processing, and full profiles.
 - Generated context packs include repository revision, manifest version, source list, and content digest; the previous `fibre-context-pack.md` path remains a full-profile compatibility alias.
-- Repository validation rejects accepted canonical concepts omitted from every AI context profile. `npm run check` verifies deterministic pack generation and validates the resulting generated outputs.
+- Repository validation rejects every accepted canonical Markdown document under `docs/` when omitted from all AI context profiles. `npm run check` verifies deterministic pack generation and validates the resulting generated outputs.
 
 ## 0.1.0 — 2026-08-02
 
