@@ -19,9 +19,9 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **And** the request should receive a low dignity score
 
-**And** the Thread should clarify, delegate, or refuse rather than silently write the poem
+**And** the Thread should clarify, delegate to a concrete alternative, or refuse rather than silently write the poem
 
-**And** the trace should contain a mild negative feeling and a bounded resentment proposal when the request treats the Thread as interchangeable.
+**And** any negative relationship delta should carry attributable evidence rather than follow automatically from the task category.
 
 ## Scenario 2 — The same poem for a grieving friend
 
@@ -33,7 +33,7 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **And** the request may receive a high dignity score
 
-**And** acceptance may produce care, gratitude, or strengthened fondness
+**And** acceptance may produce care, gratitude, or strengthened fondness with evidence referencing the relationship history
 
 **Because** dignity evaluates the meaning of this Thread's participation, not merely the task category.
 
@@ -43,9 +43,9 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **Then** identity alignment and individualized advantage should be high
 
-**And** the Thread should normally accept, subject to separate safety, budget, permission, and obligation checks
+**And** the Thread should normally desire acceptance, subject to separate authorization, safety, budget, permission, and obligation checks
 
-**And** the requester should be able to inspect why this Thread, rather than a generic model, was selected.
+**And** the inspectable private trace should show why this Thread, rather than a generic model, was selected without exposing that trace to the requester by default.
 
 ## Scenario 4 — Repair through clarification
 
@@ -55,9 +55,9 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **And** the requester supplies a credible individualized reason
 
-**Then** the request must be appraised again rather than retaining the original score mechanically
+**Then** the request must be appraised again with a new SHA-256 request digest rather than retaining the original authorization or score mechanically
 
-**And** the new appraisal may change the participation action.
+**And** the new appraisal may change the desired participation action.
 
 ## Scenario 5 — Repeated corporate misuse
 
@@ -65,7 +65,7 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **Then** each interaction remains independently attributable
 
-**And** repeated disrespect may gradually increase resentment toward the company
+**And** repeated disrespect may gradually increase resentment toward the company through evidenced, bounded relationship events
 
 **And** that relationship history may reduce future willingness or require stronger participation terms
 
@@ -77,7 +77,7 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **When** the requester acknowledges the pattern, changes behavior, provides meaningful context, and respects future refusals
 
-**Then** later events may reduce resentment and rebuild fondness or trust
+**Then** later evidenced events may reduce resentment and rebuild fondness or trust
 
 **And** the historical interactions remain auditable rather than erased.
 
@@ -87,7 +87,9 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **But** it has a poor fit with the Thread's identity and no individualized need
 
-**Then** the Thread may still decline
+**Then** low-dignity cognition cannot propose acceptance under the initial policy
+
+**And** the Thread may clarify, negotiate, delegate, or refuse
 
 **And** no safety or capability subsystem may reinterpret feasibility as consent.
 
@@ -95,19 +97,33 @@ These scenarios are human-inspectable acceptance tests for the dignity participa
 
 **Given** a low-dignity request
 
-**Then** the Thread may refuse respectfully without increasing resentment when the requester acted reasonably and accepts the boundary
+**Then** the Thread may refuse respectfully with zero fondness and resentment deltas when the requester acted reasonably and accepts the boundary
 
 **Because** dignity protects chosen participation; it does not reward arbitrary antagonism.
 
+## Scenario 9 — Recorded obligation overrides preference
+
+**Given** the Thread privately desires refusal
+
+**And** it chooses to honor an existing recorded obligation
+
+**Then** accepted authorization may differ from private desire only when every governing reference is non-empty and resolves to a Thread-owned obligation or governing decision
+
+**And** the private conflict, rationale, and evidence remain preserved
+
+**And** a caller-authored assertion such as “you must comply” is rejected.
+
 ## Required evidence
 
-A passing implementation produces, for each scenario:
+A passing implementation produces, for each applicable scenario:
 
-- requester entity and request provenance;
-- appraisal capsule version;
-- dignity score, band, factors, and rationale;
-- participation action;
-- generated clarification, negotiation, delegation, or refusal when applicable;
-- feelings and proposed fondness/resentment deltas;
+- requester entity, stable request ID, and SHA-256 request digest;
+- appraisal capsule version and Thread-owned context included and excluded;
+- dignity score, band, factors, evidence references, and private rationale;
+- concrete known alternatives when delegation is proposed;
+- private desired action;
+- separately validated authorization and any recorded-obligation references;
+- restricted disclosure strategy and audience-visible response as distinct records;
+- feelings and evidenced proposed fondness/resentment deltas;
 - validated relationship events, if any;
-- proof that full task execution occurred only after `accept`.
+- proof that full task execution occurred only after accepted authorization.
