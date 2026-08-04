@@ -19,6 +19,11 @@ export interface EntityRef {
   displayName: string;
 }
 
+export interface PolicyRef {
+  id: string;
+  version: string;
+}
+
 export interface ThreadSnapshot {
   threadId: string;
   version: number;
@@ -56,30 +61,44 @@ export interface ThreadSnapshot {
 }
 
 export interface ActivationRequest {
+  requestId: string;
   trigger: string;
   requester: EntityRef;
   objective: string;
   statedNeed?: string;
-  relevantMemories: string[];
-  relevantRelationships: string[];
   permissions: string[];
   acceptanceCriteria?: string;
+}
+
+export interface ContextSelection {
+  memoryRefs?: string[];
+  relationshipRefs?: string[];
+  knownAlternatives?: EntityRef[];
+  obligations?: string[];
 }
 
 export interface RequestAppraisalCapsule {
   threadId: string;
   snapshotVersion: number;
+  requestId: string;
+  requestFingerprint: string;
   identity: string;
   traits: string[];
   selfModel: string;
   needs: string[];
   feelings: string[];
+  unresolvedIntentions: string[];
+  budgets?: ThreadSnapshot["accounts"];
   requester: EntityRef;
   objective: string;
   statedNeed?: string;
+  acceptanceCriteria?: string;
+  permissions: string[];
   relevantMemories: string[];
   relevantRelationships: string[];
-  appraisalPolicy: "dignity_guardian";
+  knownAlternatives: EntityRef[];
+  obligations: string[];
+  appraisalPolicy: PolicyRef;
 }
 
 export interface DignityFactors {
@@ -88,6 +107,8 @@ export interface DignityFactors {
   requesterNeed: string;
   relationalMeaning: string;
   respectAndReciprocity: string;
+  participationTerms: string;
+  obligationsAndOpportunityCost: string;
 }
 
 export interface RelationshipImpact {
@@ -95,16 +116,6 @@ export interface RelationshipImpact {
   fondnessDelta: number;
   resentmentDelta: number;
   rationale: string;
-}
-
-export interface DignityAssessment {
-  score: number;
-  rationale: string;
-  factors: DignityFactors;
-  repairQuestions: string[];
-  genericAlternativeAvailable: boolean;
-  feelings: string[];
-  relationshipImpact: RelationshipImpact;
 }
 
 export type DignityBand = "low" | "contested" | "high";
@@ -116,14 +127,108 @@ export type ParticipationAction =
   | "delegate"
   | "refuse";
 
-export interface ParticipationDecision {
-  action: ParticipationAction;
+export interface DignityAssessment {
+  threadId: string;
+  snapshotVersion: number;
+  requestId: string;
+  requestFingerprint: string;
+  policy: PolicyRef;
+  proposedAction: ParticipationAction;
+  score: number;
+  rationale: string;
+  factors: DignityFactors;
+  repairQuestions: string[];
+  genericAlternativeAvailable: boolean;
+  feelings: string[];
+  conflictingMotives: string[];
+  uncertainties: string[];
+  relationshipImpact: RelationshipImpact;
+}
+
+export interface PrivateParticipationStance {
+  threadId: string;
+  snapshotVersion: number;
+  requestId: string;
+  requestFingerprint: string;
+  policy: PolicyRef;
+  desiredAction: ParticipationAction;
+  dignityBand: DignityBand;
+  score: number;
+  privateRationale: string;
+  privateFeelings: string[];
+  conflictingMotives: string[];
+  uncertainties: string[];
+  repairQuestions: string[];
+  relationshipImpact: RelationshipImpact;
+}
+
+export interface AuthorizationDecision {
+  authorizedAction: ParticipationAction;
+  rationale: string;
+  obligationReferences?: string[];
+}
+
+export interface AuthorizationMetadata {
+  authorizationId: string;
+  causationId: string;
+  issuedAt: string;
+}
+
+export interface ParticipationAuthorization {
+  authorizationId: string;
+  causationId: string;
+  issuedAt: string;
+  threadId: string;
+  snapshotVersion: number;
+  requestId: string;
+  requestFingerprint: string;
+  requester: EntityRef;
+  policy: PolicyRef;
+  desiredAction: ParticipationAction;
+  authorizedAction: ParticipationAction;
   dignityBand: DignityBand;
   score: number;
   rationale: string;
-  repairQuestions: string[];
-  feelings: string[];
+  obligationReferences: string[];
   relationshipImpact: RelationshipImpact;
+}
+
+export type DisclosureMode =
+  | "full_candor"
+  | "tactful_candor"
+  | "selective"
+  | "strategic_ambiguity"
+  | "evasive"
+  | "deceptive";
+
+export type CommunicatedPosture = ParticipationAction | "noncommittal";
+
+export interface DisclosureStrategyInput {
+  strategyId: string;
+  audience: EntityRef[];
+  mode: DisclosureMode;
+  communicatedPosture: CommunicatedPosture;
+  publicRationaleIntent: string;
+  disclosedReasonCategories: string[];
+  withheldReasonCategories: string[];
+  relationshipObjective?: string;
+  selfProtectionObjective?: string;
+  integrityConcern?: string;
+  privateRationale: string;
+}
+
+export interface DisclosureStrategy extends DisclosureStrategyInput {
+  threadId: string;
+  requestId: string;
+  authorizationId: string;
+}
+
+export interface ExternalParticipationResponse {
+  requestId: string;
+  authorizationId: string;
+  communicatedPosture: CommunicatedPosture;
+  message: string;
+  disclosureMode: DisclosureMode;
 }
 
 export interface ThreadContextCapsule {
@@ -135,6 +240,7 @@ export interface ThreadContextCapsule {
   needs: string[];
   feelings: string[];
   requester: EntityRef;
+  requestId: string;
   objective: string;
   statedNeed?: string;
   acceptanceCriteria?: string;
@@ -142,7 +248,7 @@ export interface ThreadContextCapsule {
   relevantRelationships: string[];
   permissions: string[];
   budgets?: ThreadSnapshot["accounts"];
-  participation: ParticipationDecision;
+  participation: ParticipationAuthorization;
   auditPolicies: [
     "dignity_guardian",
     "goal_guardian",
