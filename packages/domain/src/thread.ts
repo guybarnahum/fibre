@@ -43,6 +43,14 @@ const SHA256_CONSTANTS = [
   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ] as const;
 
+const ENTITY_KINDS = new Set([
+  "human",
+  "thread",
+  "company",
+  "institution",
+  "other",
+]);
+
 function rotateRight(value: number, bits: number): number {
   return (value >>> bits) | (value << (32 - bits));
 }
@@ -164,17 +172,26 @@ function assertRange(
   }
 }
 
-function assertNonEmpty(name: string, value: string): void {
-  if (!value.trim()) throw new Error(`${name} is required`);
+function assertNonEmpty(name: string, value: unknown): asserts value is string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`${name} is required`);
+  }
 }
 
 function assertStringRefs(name: string, refs: readonly string[]): void {
+  if (!Array.isArray(refs)) throw new Error(`${name} must be an array`);
   refs.forEach((ref, index) => assertNonEmpty(`${name}[${index}]`, ref));
 }
 
 function assertEntityRef(name: string, entity: EntityRef): void {
+  if (entity === null || typeof entity !== "object") {
+    throw new Error(`${name} must be an entity reference`);
+  }
   assertNonEmpty(`${name}.entityId`, entity.entityId);
   assertNonEmpty(`${name}.displayName`, entity.displayName);
+  if (!ENTITY_KINDS.has(entity.kind)) {
+    throw new Error(`${name}.kind is invalid`);
+  }
 }
 
 function sameEntity(
@@ -224,6 +241,7 @@ function validateActivationRequest(request: ActivationRequest): void {
 }
 
 function validateEntityRefs(name: string, entities: readonly EntityRef[]): void {
+  if (!Array.isArray(entities)) throw new Error(`${name} must be an array`);
   entities.forEach((entity, index) => assertEntityRef(`${name}[${index}]`, entity));
 }
 
@@ -274,10 +292,13 @@ export function prepareRequestAppraisal(
     selection.obligations,
     "obligation selection",
   );
+  validateEntityRefs(
+    "known alternatives",
+    (selection.knownAlternatives ?? []) as EntityRef[],
+  );
   const knownAlternatives = (selection.knownAlternatives ?? []).map((entity) => ({
     ...entity,
   }));
-  validateEntityRefs("known alternatives", knownAlternatives);
 
   return {
     threadId: thread.threadId,
