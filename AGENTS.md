@@ -37,11 +37,14 @@ For behavior, identity, communication, or request-processing work, also read:
 - Public language is not authoritative evidence of private motive or consent.
 - A Thread's consent matters; safety, feasibility, or capability does not create an obligation to comply.
 - Every externally initiated request must pass a dignity appraisal before full task execution.
-- Only an accepted authorization bound to the same Thread, snapshot, request, requester, policy, and causation chain authorizes execution.
-- A private dignity stance may desire accept, clarify, negotiate, delegate, or refuse.
+- Only an accepted authorization bound to the same Thread, snapshot, exact request content, requester, policy, and causation chain authorizes execution.
+- Every material request field is included in a cryptographically wide SHA-256 content digest.
+- A private dignity stance may desire accept, clarify, negotiate, delegate, or refuse; dignity-based acceptance requires the versioned policy's high band.
 - Disclosure may be candid, tactful, selective, ambiguous, evasive, or deceptive, but cannot silently expand authorization.
-- Dignity outcomes may shape private feelings, fondness, and resentment toward the requester.
-- Request appraisal uses Thread-owned relationship and memory context; the requester cannot suppress or inject it.
+- Restricted disclosure mode and private rationale do not appear automatically in the audience-visible response.
+- Dignity outcomes may shape private feelings, fondness, and resentment toward the requester, with attributable evidence for non-zero attitude changes.
+- Request appraisal uses Thread-owned relationship, memory, and obligation context. Runtime narrowing records included and excluded references; requesters cannot inject or directly select private context.
+- Authorization that differs from private desire requires a non-empty reference resolving to a recorded Thread obligation or governing decision.
 - Meaning-bearing identity, relationship, skill, need, and task fields are primarily natural-language prompt partials.
 - Execution models and orchestration frameworks are replaceable cognitive machinery.
 - Live Threads are stored in the Fibre world, not in Git.
@@ -98,14 +101,21 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Domain packages must remain portable and avoid direct Cloudflare/AWS dependencies.
 - LLM output may propose private stance, disclosure, and state changes but may not directly alter balances, permissions, identity facts, relationships, contracts, or authorization.
 - Full task execution requires a request-bound accepted Participation Authorization, not an inferred response or a free-form LLM claim.
-- Request provenance preserves the requesting entity, stable request ID, fingerprinted material terms, objective, stated need, and relevant Thread-owned context.
+- Request provenance preserves the requesting entity, stable request ID, objective, stated need, permissions, acceptance criteria, and SHA-256 digest of every material term.
+- Request-content binding is an adversarial integrity boundary. Do not replace it with a convenience checksum.
+- Private appraisal context is selected from Thread-owned records. Record included and excluded references so narrowing remains inspectable.
 - Private stance and disclosure strategy use restricted visibility; ordinary requesters receive only intended external expression and shared commitments.
-- Persist bounded structured summaries rather than raw chain-of-thought.
-- Dignity scores and fondness or resentment deltas must be bounded, versioned, explained, and validated before persistence.
-- Authorization that differs from private desire must preserve the conflict and an obligation or governing-reason reference.
+- Audience-visible responses may reference a disclosure strategy by ID but must not automatically carry restricted disclosure mode, withheld reasons, or private rationale.
+- Check acceptance posture both when selecting a disclosure strategy and when minting an external response.
+- Persist bounded structured summaries and evidence references rather than raw chain-of-thought.
+- Dignity scores and fondness or resentment deltas must be bounded, versioned, explained, evidenced, and validated before persistence.
+- Authorization that differs from private desire must preserve the conflict and references resolving to a Thread-owned recorded obligation or governing decision. In the portable prototype, references resolve to `currentState.unresolvedIntentions`.
+- Re-validate authorization rationale, evidence, request binding, requester, policy, band, and obligation override at execution consumption.
+- Generated context tools must reject path traversal and symlinked sources or output paths.
 - Ledger changes must be balanced and append-only.
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
 - Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
+- Automated evidence must name and test accepted negative properties. A passing test count alone is not evidence; targeted mutation analysis is recommended for consequential guards.
 
 ## Definition of done
 
