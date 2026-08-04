@@ -18,7 +18,7 @@ const REGION_TOKEN =
   /<!--\s*fibre:region\s+name="([A-Za-z0-9._-]+)"\s*-->|<!--\s*\/fibre:region\s*-->/g;
 const INCLUDE_TOKEN =
   /<!--\s*fibre:include\s+([^>\n]*?)\s*-->|<!--\s*\/fibre:include\s*-->/g;
-const INCLUDE_START = /^<!--\s*fibre:include\b/;
+const INCLUDE_START = /<!--\s*fibre:include\b/;
 
 export const MARKDOWN_INCLUDE_ROOTS = ["README.md", "AGENTS.md", "CLAUDE.md", "docs"];
 
@@ -136,7 +136,7 @@ export function extractMarkdownRegions(sourceText, label = "Markdown source") {
       assert(content, `${label} region ${open.name} must not be empty`);
       const activeContent = fencedMask(content);
       assert(
-        !INCLUDE_START.test(activeContent.trim()),
+        !INCLUDE_START.test(activeContent),
         `${label} region ${open.name} must not contain nested fibre:include directives`,
       );
       regions.set(open.name, content);
