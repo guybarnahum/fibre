@@ -75,22 +75,22 @@ try {
 }
 
 if (manifest) {
-  const coverage = manifest.coverage?.acceptedCanonicalConcepts;
+  const coverage = manifest.coverage?.acceptedCanonicalDocuments;
   if (!coverage || typeof coverage !== "object") {
-    report("AI context manifest must define coverage.acceptedCanonicalConcepts");
+    report("AI context manifest must define coverage.acceptedCanonicalDocuments");
   } else {
     const directory = coverage.directory;
     const profileNames = coverage.profiles;
     if (typeof directory !== "string" || !directory.trim()) {
-      report("acceptedCanonicalConcepts.directory must be a non-empty string");
+      report("acceptedCanonicalDocuments.directory must be a non-empty string");
     }
     if (!Array.isArray(profileNames) || profileNames.length === 0) {
-      report("acceptedCanonicalConcepts.profiles must be a non-empty array");
+      report("acceptedCanonicalDocuments.profiles must be a non-empty array");
     } else {
       const coveredSources = new Set();
       for (const profileName of profileNames) {
         if (!Object.hasOwn(manifest.profiles, profileName)) {
-          report(`Concept coverage references unknown profile: ${profileName}`);
+          report(`Canonical document coverage references unknown profile: ${profileName}`);
           continue;
         }
         for (const source of resolveProfileSources(manifest, profileName)) {
@@ -105,7 +105,7 @@ if (manifest) {
           if (metadata.status === "accepted" && metadata.canonical === "true") {
             const normalized = file.replaceAll("\\", "/");
             if (!coveredSources.has(normalized)) {
-              report(`Accepted canonical concept is absent from AI context profiles: ${normalized}`);
+              report(`Accepted canonical document is absent from AI context profiles: ${normalized}`);
             }
           }
         }
