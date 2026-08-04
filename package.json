@@ -11,8 +11,10 @@
     "build": "tsc -b",
     "test": "npm run build && node --test packages/domain/test/*.test.mjs tools/*.test.mjs",
     "validate": "node tools/validate-repo.mjs",
+    "includes:sync": "node tools/sync-markdown-includes.mjs",
+    "includes:check": "node tools/sync-markdown-includes.mjs --check",
     "context-pack": "node tools/build-context-pack.mjs",
-    "check": "npm test && npm run context-pack && node tools/validate-repo.mjs --generated",
+    "check": "npm run includes:check && npm test && npm run context-pack && node tools/validate-repo.mjs --generated",
     "git-check": "node tools/check-git-sync.mjs",
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/serve-thread-editor.mjs"
