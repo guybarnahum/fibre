@@ -6,6 +6,7 @@ import {
   resolveProfileSources,
   validateContextManifest,
 } from "./context-pack-lib.mjs";
+import { expectedMarkdownIncludeProjections } from "./markdown-includes-lib.mjs";
 
 const required = [
   "README.md", "AGENTS.md", "CLAUDE.md",
@@ -65,6 +66,16 @@ for (const file of walk("schemas")) {
   } catch (error) {
     report(`Invalid JSON ${file}: ${error.message}`);
   }
+}
+
+try {
+  for (const [path, projection] of expectedMarkdownIncludeProjections()) {
+    if (projection.actual !== projection.expected) {
+      report(`Markdown include projection is stale: ${path}`);
+    }
+  }
+} catch (error) {
+  report(`Invalid Markdown include configuration: ${error.message}`);
 }
 
 let manifest;

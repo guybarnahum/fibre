@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Proposed the Thirteen Principles of Fibre as a compact, poetic, and operational expression of the Constitution, using thirteen as an intentional structural echo of Maimonides' Thirteen Principles without importing religious authority.
+- Added generic named `fibre:region` and generated `fibre:include` directives for exact canonical Markdown fragments across README, AGENTS, CLAUDE, and documentation.
+- Added `npm run includes:sync` and `npm run includes:check`; repository validation rejects stale projections, malformed or nested directives, path traversal, and symlinked sources.
+- Included the canonical principles document directly in the core AI context profile rather than consuming its generated README projection.
 - Established dignity as a core Thread property and durable resistance to interchangeability.
 - Established the interior–exterior boundary: private stance, desired action, authorization, disclosure strategy, external response, and performed action remain separate.
 - Added interest-mediated expression with candid, tactful, selective, ambiguous, evasive, and deceptive disclosure modes.

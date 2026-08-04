@@ -9,6 +9,7 @@ Fibre is a framework and world for persistent artificial persons called **Thread
 Before changing core concepts, read:
 
 - `docs/vision/constitution.md`
+- `docs/vision/principles.md`
 - `docs/vision/invariants.md`
 - `docs/vision/glossary.md`
 - `docs/state/current-state.md`
@@ -112,6 +113,9 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Authorization that differs from private desire must preserve the conflict and references resolving to a Thread-owned recorded obligation or governing decision. In the portable prototype, references resolve to `currentState.unresolvedIntentions`.
 - Re-validate authorization rationale, evidence, request binding, requester, policy, band, and obligation override at execution consumption.
 - Generated context tools must reject path traversal and symlinked sources or output paths.
+- A canonical Markdown fragment is edited only in its named `fibre:region` source. Documents needing the exact fragment use `fibre:include`; do not hand-maintain duplicate copies.
+- Run `npm run includes:sync` after changing canonical regions. Include targets are committed rendered Markdown, and `npm run includes:check` must pass without rewriting them.
+- Markdown includes must remain repository-relative, symlink-free, non-nested, outside fenced examples, and mechanically validated. Prefer a link or direct AI-context source over an include when exact in-place duplication is unnecessary.
 - Ledger changes must be balanced and append-only.
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
 - Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
@@ -126,4 +130,5 @@ A change within the scope of the **Vision and ambition guard** is complete only 
 3. Any durable decision is recorded.
 4. Human-inspectable evidence is identified or produced.
 5. Drift against Fibre invariants has been checked.
-6. The required statements and review questions under **Vision and ambition guard** are answered, and every capability the change excludes has a named status.
+6. Generated Markdown projections and AI context coverage are current.
+7. The required statements and review questions under **Vision and ambition guard** are answered, and every capability the change excludes has a named status.
