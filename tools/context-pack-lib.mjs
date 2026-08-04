@@ -2,11 +2,21 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, normalize, resolve, sep } from "node:path";
+import {
+  dirname,
+  isAbsolute,
+  join,
+  normalize,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 
 export const CONTEXT_MANIFEST_PATH = "docs/ai-context-manifest.json";
 
@@ -27,7 +37,40 @@ function normalizeRepoPath(value, label) {
   return normalized;
 }
 
+function isWithin(root, target) {
+  const path = relative(root, target);
+  return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path));
+}
+
+function assertNoSymlinkComponents(root, target, label, allowMissing) {
+  assert(isWithin(root, target), `${label} must remain inside the repository: ${target}`);
+  const path = relative(root, target);
+  let current = root;
+  for (const component of path.split(sep).filter(Boolean)) {
+    current = join(current, component);
+    if (!existsSync(current)) {
+      assert(allowMissing, `${label} does not exist: ${current}`);
+      return;
+    }
+    assert(!lstatSync(current).isSymbolicLink(), `${label} must not traverse a symlink: ${current}`);
+  }
+}
+
+function repositoryRoot() {
+  return realpathSync(".");
+}
+
+function assertSafeSourcePath(path, label) {
+  const root = repositoryRoot();
+  const absolute = resolve(path);
+  assertNoSymlinkComponents(root, absolute, label, false);
+  const real = realpathSync(absolute);
+  assert(isWithin(root, real), `${label} resolves outside the repository: ${path}`);
+  assert(real === absolute, `${label} must not resolve through a symlink: ${path}`);
+}
+
 function assertGeneratedOutputPath(path, label) {
+  const root = repositoryRoot();
   const generatedRoot = resolve("artifacts/generated");
   const absolute = resolve(path);
   assert(
@@ -35,6 +78,8 @@ function assertGeneratedOutputPath(path, label) {
     `${label} must remain under artifacts/generated/: ${path}`,
   );
   assert(path.endsWith(".md"), `${label} must be a Markdown file: ${path}`);
+  assertNoSymlinkComponents(root, generatedRoot, "generated context root", false);
+  assertNoSymlinkComponents(root, absolute, label, true);
 }
 
 function requireStringArray(value, label) {
@@ -116,6 +161,7 @@ export function validateContextManifest(manifest) {
 
     for (const source of sources) {
       assert(existsSync(source), `Context source does not exist: ${source}`);
+      assertSafeSourcePath(source, `Context source ${source}`);
     }
 
     for (const output of profileOutputs(profile, profileName)) {
@@ -153,10 +199,13 @@ export function renderContextPack(manifest, profileName, revision = repositoryRe
   validateContextManifest(manifest);
   const profile = manifest.profiles[profileName];
   const sources = resolveProfileSources(manifest, profileName);
-  const sourceRecords = sources.map((path) => ({
-    path,
-    content: readFileSync(path, "utf8"),
-  }));
+  const sourceRecords = sources.map((path) => {
+    assertSafeSourcePath(path, `Context source ${path}`);
+    return {
+      path,
+      content: readFileSync(path, "utf8"),
+    };
+  });
   const digest = createHash("sha256")
     .update(JSON.stringify({
       manifestVersion: manifest.version,
@@ -189,7 +238,9 @@ export function expectedContextPacks(manifest, revision = repositoryRevision()) 
 export function writeContextPacks(manifest, revision = repositoryRevision()) {
   const outputs = expectedContextPacks(manifest, revision);
   for (const [path, content] of outputs) {
+    assertGeneratedOutputPath(path, `generated output ${path}`);
     mkdirSync(dirname(path), { recursive: true });
+    assertGeneratedOutputPath(path, `generated output ${path}`);
     writeFileSync(path, content);
   }
   return [...outputs.keys()];
