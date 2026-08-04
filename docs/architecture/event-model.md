@@ -41,10 +41,14 @@ Representative events:
 
 Every event has an ID, aggregate ID, expected prior version, actor, authorization evidence, timestamp, causation ID, correlation ID, payload schema version, and provenance.
 
-A `REQUEST_DIGNITY_ASSESSED` event records the requester, request fingerprint, objective, stated need, score, band, natural-language factors, policy version, relevant Thread-owned evidence, private feelings, uncertainties, and proposed relationship effects.
+A `REQUEST_APPRAISAL_CONTEXT_COMPILED` event records which Thread-owned memory, relationship, and obligation references were included and excluded.
 
-A `PRIVATE_STANCE_RECORDED` event records the desired action and bounded private rationale. An `ACTION_AUTHORIZED` event binds the authorized action to one Thread, snapshot version, request, requester, policy version, and causation chain. Full execution may follow only an accepted authorization in that chain.
+A `REQUEST_DIGNITY_ASSESSED` event records the requester, SHA-256 request digest, objective, stated need, score, band, natural-language factors, policy version, attributable Thread-owned evidence references, private feelings, uncertainties, concrete alternatives, and proposed relationship effects.
 
-A `DISCLOSURE_STRATEGY_CHOSEN` event records audience, disclosure mode, communicated posture, disclosed and withheld reason categories, and private mediation rationale under restricted visibility. `EXTERNAL_EXPRESSION_EMITTED` records only the audience-visible expression and its references. External wording is never authorization evidence.
+A `PRIVATE_STANCE_RECORDED` event records the desired action, evidence references, alternatives, and bounded private rationale. An `ACTION_AUTHORIZED` event binds the authorized action to one Thread, snapshot version, request, requester, policy version, causation chain, and any Thread-owned recorded-obligation references. Full execution may follow only an accepted authorization in that chain.
+
+A `DISCLOSURE_STRATEGY_CHOSEN` event records audience, disclosure mode, communicated posture, disclosed and withheld reason categories, and private mediation rationale under restricted visibility.
+
+`EXTERNAL_EXPRESSION_EMITTED` records only the audience-visible expression, authorization ID, disclosure-strategy ID, and communicated posture. It does not copy the restricted disclosure mode, withheld reasons, or private rationale. External wording is never authorization evidence.
 
 The event model must preserve access boundaries: private stance and disclosure mediation are not automatically visible to the requester. Raw model chain-of-thought is not an event payload.
