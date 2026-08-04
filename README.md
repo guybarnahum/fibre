@@ -27,6 +27,19 @@ This repository is the canonical, version-controlled source for Fibre's concept,
 - `artifacts/` — white papers, proposals, diagrams, and generated context packs.
 - `source-material/` — historical source documents; not automatically canonical.
 
+## AI context packs
+
+[`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the canonical machine-readable source for bounded LLM context. Run `npm run context-pack` to generate:
+
+- `artifacts/generated/fibre-core-context.md` — minimum Fibre identity and invariant context.
+- `artifacts/generated/fibre-request-processing-context.md` — dignity, consent, affect, and response behavior.
+- `artifacts/generated/fibre-full-context.md` — broad cross-cutting concept and architecture context.
+- `artifacts/generated/fibre-context-pack.md` — compatibility alias for the full profile.
+
+Generated packs include the repository revision, manifest version, source list, and content digest. They are reproducible build artifacts, ignored by Git, and never canonical. External LLMs should receive the smallest profile sufficient for the task.
+
+Every accepted canonical concept must appear in at least one manifest profile. Repository validation fails when a concept is omitted or when generated packs are stale during `npm run check`.
+
 ## Quick commands
 
 ```bash
@@ -34,6 +47,7 @@ npm run build
 npm test
 npm run validate
 npm run context-pack
+npm run check
 npm run editor
 ```
 
