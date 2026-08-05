@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const WORLD_STORE_SCHEMA_VERSION = 1;
+export const WORLD_STORE_SCHEMA_VERSION = 2;
 export const MAX_COMMAND_PAYLOAD_BYTES = 64 * 1024;
 
 export const THREAD_STATUSES = new Set([
@@ -23,6 +23,10 @@ export class IdempotencyConflictError extends Error {}
 export class LifecycleCommandError extends Error {}
 export class IntegrityError extends Error {}
 export class StorageBusyError extends Error {}
+export class PrivateRequestNotFoundError extends Error {}
+export class PrivateRequestConflictError extends Error {}
+export class PrivateStanceConflictError extends Error {}
+export class StaleAppraisalError extends Error {}
 
 export function assertNonEmpty(name, value) {
   if (typeof value !== "string" || value.trim().length === 0) {

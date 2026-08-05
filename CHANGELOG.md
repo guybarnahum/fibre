@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added schema-versioned, append-only activation-request, Request Appraisal Capsule, and restricted private-participation-stance records to the M1 world kernel.
+- Matched the portable SHA-256 request binding, persisted historical Thread state-hash witnesses, and revalidated copied private state plus complete, disjoint included/excluded memory, relationship, and obligation partitions through event replay.
+- Added lifetime-idempotent request/appraisal retry, exact private-stance retry, explicit conflicting reuse, direct appraisal insertion-race rejection, transactional schema v1-to-v2 migration, and coherent private-record tamper detection.
+- Made private stances durable opinions about immutable historical appraisals, so unrelated later Thread changes do not strand a stable request ID; future authorization still must revalidate live governing state.
+- Replaced content-addressed private record IDs with opaque random 256-bit identifiers, retained separate SHA-256 content digests, added schema-level ID checks, and added a stance state-hash witness.
+- Added token-gated restricted participation routes with authentication before private subpath dispatch, exact transport envelopes, lifecycle-specific appraisal rejection, and no private-capability advertisement on unauthenticated health.
+- Added named adversarial tests for low-dignity acceptance, clarification/delegation preconditions, stance and requester binding, evidence requirements, context partitions, copied private state, selection semantics, malformed IDs, lifecycle handling, and coherent private-record rewriting.
+- Kept appraisal capsules, private rationale, stance feelings, motives, uncertainties, and relationship effects out of public Thread and event responses while distinguishing them from ordinary public Thread state such as `currentState.feelings`.
 - Hardened the M1 world-kernel API after adversarial review: `.fibre/` is ignored and validated as world-state-only storage, loopback binding is enforced by the exported listener, non-JSON mutation traffic and hostile request-target authorities fail closed, and response security headers cannot be overridden.
 - Made `POST /threads` idempotent against the immutable seed event for the Thread's lifetime, kept event history inspectable during projection corruption, added service-layer preview-envelope validation, bounded local transport resources, and documented the one-command M1 causation/correlation convention.
 - Expanded API evidence with direct negative tests for bind safety, media-type enforcement, no-CORS preflight, every post-apply preview witness, preview/idempotency error distinctions, projection-corrupt event access, request-target authority rejection, and lifetime seed retry.

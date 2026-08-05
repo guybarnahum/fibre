@@ -1,6 +1,9 @@
 import {
   IdempotencyConflictError,
   IntegrityError,
+  LifecycleCommandError,
+  PrivateRequestConflictError,
+  PrivateRequestNotFoundError,
   StaleThreadVersionError,
   ThreadAlreadyExistsError,
   ThreadNotFoundError,
@@ -21,6 +24,14 @@ import {
   validateCommand,
   validateThreadSnapshot,
 } from "./persistence-domain.mjs";
+import {
+  DEFAULT_DIGNITY_POLICY,
+  assertStanceMatchesTrace,
+  formPrivateParticipationStance,
+  normalizeActivationRequest,
+  normalizeContextSelection,
+  prepareRequestAppraisal,
+} from "./private-participation.mjs";
 
 export const COMMAND_PREVIEW_SCHEMA_VERSION = 1;
 const PREVIEW_ID_PATTERN = /^prv_[0-9a-f]{64}$/;
@@ -109,6 +120,20 @@ function previewFromAcceptedEvent(command, accepted) {
   return { previewId: previewIdForReceipt(receipt), ...receipt };
 }
 
+function retrySelectionMatches(selection, appraisal) {
+  const normalized = normalizeContextSelection(selection);
+  const sameRefs = (key, included, excluded) =>
+    normalized[key] === undefined
+      ? excluded.length === 0
+      : canonicalJson(normalized[key]) === canonicalJson(included);
+  return (
+    sameRefs("memoryRefs", appraisal.relevantMemories, appraisal.excludedMemories) &&
+    sameRefs("relationshipRefs", appraisal.relevantRelationships, appraisal.excludedRelationships) &&
+    sameRefs("obligations", appraisal.obligations, appraisal.excludedObligations) &&
+    canonicalJson(normalized.knownAlternatives ?? []) === canonicalJson(appraisal.knownAlternatives)
+  );
+}
+
 export class WorldKernelService {
   #store;
 
@@ -121,6 +146,13 @@ export class WorldKernelService {
       if (typeof store[method] !== "function") throw new TypeError(`store.${method} is required`);
     }
     this.#store = store;
+  }
+
+  #requirePrivateStoreMethod(method) {
+    if (typeof this.#store[method] !== "function") {
+      throw new TypeError(`store.${method} is required for private participation records`);
+    }
+    return this.#store[method].bind(this.#store);
   }
 
   health() {
@@ -186,6 +218,114 @@ export class WorldKernelService {
   verifyThreadIntegrity(threadId) {
     assertId("threadId", threadId);
     return this.#store.verifyThreadIntegrity(threadId);
+  }
+
+  recordRequestAppraisal(threadId, request) {
+    assertId("threadId", threadId);
+    assertPlainObject("private request submission", request);
+    assertExactKeys("private request submission", request, [
+      "request", "selection", "policy", "occurredAt", "causationId", "correlationId",
+    ]);
+    assertNonEmpty("private request occurredAt", request.occurredAt);
+    assertId("private request causationId", request.causationId);
+    const correlationId = request.correlationId ?? request.causationId;
+    assertId("private request correlationId", correlationId);
+    const normalizedRequest = normalizeActivationRequest(request.request);
+    const normalizedSelection = normalizeContextSelection(request.selection ?? {});
+    const policy = request.policy ?? DEFAULT_DIGNITY_POLICY;
+    const getTrace = this.#requirePrivateStoreMethod("getPrivateRequestTrace");
+    try {
+      const existing = getTrace(threadId, normalizedRequest.requestId);
+      if (
+        canonicalJson(existing.request) === canonicalJson(normalizedRequest) &&
+        retrySelectionMatches(normalizedSelection, existing.appraisal) &&
+        canonicalJson(existing.appraisal.appraisalPolicy) === canonicalJson(policy) &&
+        existing.occurredAt === request.occurredAt &&
+        existing.causationId === request.causationId &&
+        existing.correlationId === correlationId
+      ) {
+        return { trace: existing, idempotent: true };
+      }
+      throw new PrivateRequestConflictError(
+        `Private request ${normalizedRequest.requestId} already exists with different content`,
+      );
+    } catch (error) {
+      if (!(error instanceof PrivateRequestNotFoundError)) throw error;
+    }
+
+    const thread = this.#store.getThread(threadId);
+    if (thread.status !== "frozen" && thread.status !== "dormant") {
+      throw new LifecycleCommandError(
+        `Request appraisal cannot act on Thread ${thread.threadId} while status is ${thread.status}`,
+      );
+    }
+    const appraisal = prepareRequestAppraisal(
+      thread,
+      normalizedRequest,
+      normalizedSelection,
+      policy,
+    );
+    return this.#requirePrivateStoreMethod("recordRequestAppraisal")({
+      threadId,
+      request: normalizedRequest,
+      appraisal,
+      occurredAt: request.occurredAt,
+      causationId: request.causationId,
+      correlationId,
+    });
+  }
+
+  recordPrivateStance(threadId, requestId, request) {
+    assertId("threadId", threadId);
+    assertId("requestId", requestId);
+    assertPlainObject("private stance submission", request);
+    assertExactKeys("private stance submission", request, [
+      "assessment", "recordedAt", "causationId", "correlationId",
+    ]);
+    assertNonEmpty("private stance recordedAt", request.recordedAt);
+    assertId("private stance causationId", request.causationId);
+    const correlationId = request.correlationId ?? request.causationId;
+    assertId("private stance correlationId", correlationId);
+    const trace = this.#requirePrivateStoreMethod("getPrivateRequestTrace")(threadId, requestId);
+    const stance = formPrivateParticipationStance(request.assessment);
+    assertStanceMatchesTrace(trace, stance);
+    return this.#requirePrivateStoreMethod("recordPrivateStance")({
+      threadId,
+      requestId,
+      stance,
+      recordedAt: request.recordedAt,
+      causationId: request.causationId,
+      correlationId,
+    });
+  }
+
+  getPrivateRequestTrace(threadId, requestId) {
+    assertId("threadId", threadId);
+    assertId("requestId", requestId);
+    return this.#requirePrivateStoreMethod("getPrivateRequestTrace")(threadId, requestId);
+  }
+
+  listPrivateRequestSummaries(threadId) {
+    assertId("threadId", threadId);
+    return this.#requirePrivateStoreMethod("listPrivateRequestTraces")(threadId).map((trace) => ({
+      threadId: trace.threadId,
+      requestId: trace.requestId,
+      snapshotVersion: trace.snapshotVersion,
+      requestFingerprint: trace.requestFingerprint,
+      requester: trace.request.requester,
+      objective: trace.request.objective,
+      appraisalId: trace.appraisalId,
+      privateStanceId: trace.privateStanceId,
+      desiredAction: trace.privateStance?.desiredAction ?? null,
+      dignityBand: trace.privateStance?.dignityBand ?? null,
+      occurredAt: trace.occurredAt,
+    }));
+  }
+
+  verifyPrivateRequestTrace(threadId, requestId) {
+    assertId("threadId", threadId);
+    assertId("requestId", requestId);
+    return this.#requirePrivateStoreMethod("verifyPrivateRequestTrace")(threadId, requestId);
   }
 
   previewCommandRequest(request) {
