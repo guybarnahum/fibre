@@ -7,6 +7,7 @@ import {
   StorageBusyError,
 } from "./persistence-common.mjs";
 import { createRuntimeTables } from "./runtime-schema.mjs";
+import { createFreezeTables } from "./freeze-schema.mjs";
 
 export function normalizeDatabasePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
@@ -50,7 +51,7 @@ function createBaseSchema(database) {
       sequence INTEGER NOT NULL CHECK (sequence >= 1),
       expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
       resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','SELF_MODEL_UPDATED')),
+      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','SELF_MODEL_UPDATED','THREAD_FROZEN')),
       command_id TEXT,
       command_digest TEXT,
       payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
@@ -67,7 +68,7 @@ function createBaseSchema(database) {
       CHECK (
         (event_type = 'THREAD_SEEDED' AND command_id IS NULL AND command_digest IS NULL)
         OR
-        (event_type = 'SELF_MODEL_UPDATED' AND command_id IS NOT NULL AND command_digest IS NOT NULL)
+        (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
       )
     ) STRICT;
 
@@ -194,6 +195,45 @@ function createSchema(database) {
   createBaseSchema(database);
   createPrivateParticipationSchema(database);
   createRuntimeTables(database);
+  createFreezeTables(database);
+}
+
+function needsFreezeEventUpgrade(database) {
+  const row = database.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
+  ).get();
+  return row !== undefined && !row.sql.includes("THREAD_FROZEN");
+}
+
+function rebuildEventTables(database) {
+  database.exec(`
+    DROP TRIGGER IF EXISTS thread_events_no_update;
+    DROP TRIGGER IF EXISTS thread_events_no_delete;
+    DROP TRIGGER IF EXISTS commands_no_update;
+    DROP TRIGGER IF EXISTS commands_no_delete;
+    DROP INDEX IF EXISTS idx_thread_events_thread_sequence;
+    ALTER TABLE commands RENAME TO commands_pre_v4;
+    ALTER TABLE thread_events RENAME TO thread_events_pre_v4;
+  `);
+  createBaseSchema(database);
+  database.exec(`
+    INSERT INTO thread_events(
+      event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+      command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+      authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+    )
+    SELECT event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+      command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+      authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+    FROM thread_events_pre_v4;
+    INSERT INTO commands(
+      thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at
+    )
+    SELECT thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at
+    FROM commands_pre_v4;
+    DROP TABLE commands_pre_v4;
+    DROP TABLE thread_events_pre_v4;
+  `);
 }
 
 export function migrateDatabase(database) {
@@ -208,7 +248,7 @@ export function migrateDatabase(database) {
     const existingTables = Number(
       database
         .prepare(
-          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits')",
+          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories')",
         )
         .get().count,
     );
@@ -224,13 +264,22 @@ export function migrateDatabase(database) {
     return;
   }
 
+  const rebuildEvents = currentVersion > 0 && needsFreezeEventUpgrade(database);
+  if (rebuildEvents) database.exec("PRAGMA foreign_keys=OFF");
   try {
     database.exec("BEGIN IMMEDIATE");
+    if (rebuildEvents) rebuildEventTables(database);
     createSchema(database);
+    const violations = database.prepare("PRAGMA foreign_key_check").all();
+    if (violations.length !== 0) {
+      throw new IntegrityError("world-store migration produced foreign-key violations");
+    }
     database.exec(`PRAGMA user_version = ${WORLD_STORE_SCHEMA_VERSION}`);
     database.exec("COMMIT");
   } catch (error) {
     safeRollback(database);
     throw error;
+  } finally {
+    if (rebuildEvents) database.exec("PRAGMA foreign_keys=ON");
   }
 }

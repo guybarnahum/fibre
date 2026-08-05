@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const WORLD_STORE_SCHEMA_VERSION = 3;
+export const WORLD_STORE_SCHEMA_VERSION = 4;
 export const MAX_COMMAND_PAYLOAD_BYTES = 64 * 1024;
 
 export const THREAD_STATUSES = new Set([
@@ -13,7 +13,11 @@ export const THREAD_STATUSES = new Set([
 ]);
 export const UPDATE_SELF_MODEL_STATUSES = new Set(["frozen", "dormant"]);
 export const COMMAND_TYPES = new Set(["UPDATE_SELF_MODEL"]);
-export const EVENT_TYPES = new Set(["THREAD_SEEDED", "SELF_MODEL_UPDATED"]);
+export const EVENT_TYPES = new Set([
+  "THREAD_SEEDED",
+  "SELF_MODEL_UPDATED",
+  "THREAD_FROZEN",
+]);
 export const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
 export class ThreadNotFoundError extends Error {}

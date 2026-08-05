@@ -610,7 +610,7 @@ test("runtime records survive restart under one unified schema version", () =>
     runtime.close();
   }));
 
-test("world schema version 2 migrates transactionally to unified schema version 3", () =>
+test("world schema version 2 migrates transactionally to the current unified schema", () =>
   withDatabase((databasePath) => {
     let runtime = startRuntime(databasePath);
     runtime.service.seedThread({ thread: fixture });
@@ -626,8 +626,14 @@ test("world schema version 2 migrates transactionally to unified schema version 
     `);
     database.close();
     runtime = startRuntime(databasePath);
-    assert.equal(runtime.store.storageMetadata().schemaVersion, 3);
-    assert.equal(runtime.runtimeStore.storageMetadata().schemaVersion, 3);
+    assert.equal(
+      runtime.store.storageMetadata().schemaVersion,
+      WORLD_STORE_SCHEMA_VERSION,
+    );
+    assert.equal(
+      runtime.runtimeStore.storageMetadata().schemaVersion,
+      WORLD_STORE_SCHEMA_VERSION,
+    );
     assert.equal(runtime.service.getThread(fixture.threadId).threadId, fixture.threadId);
     runtime.close();
   }));

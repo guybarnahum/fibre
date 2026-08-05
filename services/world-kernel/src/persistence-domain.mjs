@@ -4,7 +4,6 @@ import {
   COMMAND_TYPES,
   THREAD_STATUSES,
   UPDATE_SELF_MODEL_STATUSES,
-  ID_PATTERN,
   IdempotencyConflictError,
   IntegrityError,
   LifecycleCommandError,
@@ -19,6 +18,7 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
+import { applyFreezeEventToThread } from "./freeze-domain.mjs";
 
 export function validateThreadSnapshot(thread) {
   assertPlainObject("thread", thread);
@@ -224,6 +224,9 @@ export function rowToEvent(row) {
     if (!/^sha256:[0-9a-f]{64}$/.test(event.stateHash)) {
       throw new TypeError("invalid state hash");
     }
+    if (event.authorizationId !== null) {
+      assertId(`event ${event.eventId} authorizationId`, event.authorizationId);
+    }
     assertIsoTimestamp(`event ${event.eventId} occurredAt`, event.occurredAt);
     assertId(`event ${event.eventId} causationId`, event.causationId);
     assertId(`event ${event.eventId} correlationId`, event.correlationId);
@@ -304,6 +307,23 @@ export function applyEventToThread(thread, event) {
     }
     if (replayed.version !== event.resultingVersion) {
       throw new IntegrityError(`event ${event.eventId} has an invalid resulting version`);
+    }
+    return replayed;
+  }
+
+  if (event.eventType === "THREAD_FROZEN") {
+    if (event.commandId === null || event.commandDigest === null) {
+      throw new IntegrityError(`freeze event ${event.eventId} requires operation metadata`);
+    }
+    let replayed;
+    try {
+      replayed = applyFreezeEventToThread(thread, event);
+    } catch (error) {
+      if (error instanceof IntegrityError) throw error;
+      throw new IntegrityError(`freeze event ${event.eventId} cannot be applied: ${error.message}`);
+    }
+    if (replayed.version !== event.resultingVersion) {
+      throw new IntegrityError(`freeze event ${event.eventId} has an invalid resulting version`);
     }
     return replayed;
   }
