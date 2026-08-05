@@ -3,13 +3,15 @@ import { pathToFileURL } from "node:url";
 
 import { openWorldStore } from "./persistence.mjs";
 import { openRuntimeStore } from "./runtime-store.mjs";
-import { M1RuntimeWorldKernelService } from "./runtime-service.mjs";
+import { openFreezeStore } from "./freeze-store.mjs";
+import { openLifecycleHardeningStore } from "./lifecycle-hardening-store.mjs";
+import { M1LifecycleWorldKernelService } from "./lifecycle-hardening-service.mjs";
 import {
   assertLoopbackBindHost,
   closeWorldKernelHttpServer,
-  createWorldKernelHttpServer,
   listenWorldKernelHttpServer,
 } from "./http-server.mjs";
+import { createLifecycleWorldKernelHttpServer } from "./lifecycle-hardening-http-server.mjs";
 
 function parsePort(value) {
   const port = Number(value);
@@ -29,14 +31,26 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
 
   const store = openWorldStore(databasePath);
   let runtimeStore;
+  let freezeStore;
+  let lifecycleStore;
   try {
     runtimeStore = openRuntimeStore(databasePath);
+    freezeStore = openFreezeStore(databasePath);
+    lifecycleStore = openLifecycleHardeningStore(databasePath);
   } catch (error) {
+    lifecycleStore?.close();
+    freezeStore?.close();
+    runtimeStore?.close();
     store.close();
     throw error;
   }
-  const service = new M1RuntimeWorldKernelService(store, runtimeStore);
-  const server = createWorldKernelHttpServer({
+  const service = new M1LifecycleWorldKernelService(
+    store,
+    runtimeStore,
+    freezeStore,
+    lifecycleStore,
+  );
+  const server = createLifecycleWorldKernelHttpServer({
     service,
     adminToken,
     privateToken,
@@ -62,6 +76,8 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
+        lifecycleStore.close();
+        freezeStore.close();
         runtimeStore.close();
         store.close();
       }
@@ -70,6 +86,8 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
       server,
       store,
       runtimeStore,
+      freezeStore,
+      lifecycleStore,
       service,
       address,
       databasePath,
@@ -78,6 +96,8 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
       close,
     };
   } catch (error) {
+    lifecycleStore.close();
+    freezeStore.close();
     runtimeStore.close();
     store.close();
     throw error;
@@ -94,6 +114,8 @@ async function main() {
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
     runtimeProfileVersion: 1,
+    freezeProfileVersion: 1,
+    lifecycleClosureProfileVersion: 1,
   })}\n`);
 
   const shutdown = async (signal) => {
