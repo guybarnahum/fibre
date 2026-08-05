@@ -2,7 +2,8 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { openWorldStore } from "./persistence.mjs";
-import { WorldKernelService } from "./kernel-service.mjs";
+import { openRuntimeStore } from "./runtime-store.mjs";
+import { M1RuntimeWorldKernelService } from "./runtime-service.mjs";
 import {
   assertLoopbackBindHost,
   closeWorldKernelHttpServer,
@@ -27,7 +28,14 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
   assertLoopbackBindHost(host);
 
   const store = openWorldStore(databasePath);
-  const service = new WorldKernelService(store);
+  let runtimeStore;
+  try {
+    runtimeStore = openRuntimeStore(databasePath);
+  } catch (error) {
+    store.close();
+    throw error;
+  }
+  const service = new M1RuntimeWorldKernelService(store, runtimeStore);
   const server = createWorldKernelHttpServer({
     service,
     adminToken,
@@ -51,11 +59,17 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
     const close = async () => {
       if (closed) return;
       closed = true;
-      try { await closeWorldKernelHttpServer(server); } finally { store.close(); }
+      try {
+        await closeWorldKernelHttpServer(server);
+      } finally {
+        runtimeStore.close();
+        store.close();
+      }
     };
     return {
       server,
       store,
+      runtimeStore,
       service,
       address,
       databasePath,
@@ -64,6 +78,7 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
       close,
     };
   } catch (error) {
+    runtimeStore.close();
     store.close();
     throw error;
   }
@@ -78,6 +93,7 @@ async function main() {
     databasePath: runtime.databasePath,
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
+    runtimeProfileVersion: 1,
   })}\n`);
 
   const shutdown = async (signal) => {

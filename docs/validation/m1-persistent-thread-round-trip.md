@@ -1,7 +1,7 @@
 ---
 id: validation-m1-persistent-thread-round-trip
 status: accepted
-last-reviewed: 2026-08-04
+last-reviewed: 2026-08-05
 canonical: true
 issue: 1
 ---
@@ -18,9 +18,9 @@ M1 is intentionally deterministic. It validates persistence, event integrity, au
 
 ## Accepted amendment — 2026-08-04
 
-The original M1 contract predated the accepted dignity and interior–exterior boundaries. M1 still proves the persistent round trip, but externally initiated thaw now requires a bounded private appraisal and request-bound authorization before lease acquisition and full task cognition.
+The original M1 contract predated the accepted dignity and interior–exterior boundaries. Externally initiated thaw now requires a bounded private appraisal and request-bound authorization before lease acquisition and full task cognition.
 
-This amendment does not add production social behavior. It prevents M1 from demonstrating automatic compliance or treating a public message as consent.
+This amendment prevents M1 from demonstrating automatic compliance or treating a public message as consent.
 
 ## Required artifacts
 
@@ -31,9 +31,9 @@ A completed M1 produces human-inspectable evidence for:
 3. current Thread state and version;
 4. append-only event timeline;
 5. command preview and accepted result;
-6. bounded Request Appraisal Capsule showing requester, SHA-256 request digest, Thread-owned context included and excluded, terms, recorded obligations, alternatives, evidence, and policy version;
+6. bounded Request Appraisal Capsule showing requester, SHA-256 request digest, included/excluded Thread-owned context, terms, obligations, alternatives, evidence, and policy version;
 7. private participation stance showing dignity factors, evidence, feelings, uncertainty, relationship effects, alternatives, and desired action under restricted visibility;
-8. Participation Authorization bound to Thread ID, snapshot version, exact request content, requester, policy, and causation chain;
+8. Participation Authorization bound to Thread ID, current snapshot, exact request content, requester, policy, appraisal, stance, and causation chain;
 9. separate restricted disclosure strategy and audience-visible external response carrying only safe references;
 10. execution context capsule compiled only after accepted authorization;
 11. deterministic Actor and Goal Guardian output;
@@ -41,17 +41,15 @@ A completed M1 produces human-inspectable evidence for:
 13. replay report and matching state hash;
 14. restart-survival end-to-end test.
 
-Artifacts 1–7 now have executable M1 evidence. The world-kernel persists request, appraisal, and stance records under restricted access, verifies them against historical Thread replay, uses opaque private record IDs with separate content digests, and keeps their private payloads outside the public Thread event response. Artifacts 8–14 remain active M1 work.
+Artifacts 1–8 and 10–11 now have executable M1 evidence. Artifact 9 and artifacts 12–14 remain active work.
 
 ## M1 non-goals
 
-M1 does not implement production LLM routing, semantic-memory infrastructure, production cloud deployment, high-availability or multi-region operation, marketplace behavior, full ledgers, real external messaging, multi-tenant security, individualized dignity thresholds, learned disclosure strategies, production private-state access control, kernel-origin capability proofs, or cryptographic authorization signatures.
+M1 does not implement production LLM routing, semantic-memory infrastructure, production cloud deployment, high availability, marketplace behavior, full ledgers, real external messaging, multi-tenant security, learned disclosure strategies, production private-state access control, cryptographic authorization signatures, distributed leases, or a production worker sandbox.
 
-M1 does require a cryptographically wide SHA-256 request-content digest. Origin proof, one-time consumption, and distributed replay prevention are separate deferred kernel capabilities.
+The local private-route token is not production authentication, consent, Participation Authorization, or execution permission.
 
-The local private-route token introduced for artifact inspection is not production authentication, consent, Participation Authorization, or execution permission.
-
-These capabilities are deferred, not rejected. M1 preserves their domain vocabulary and extension paths.
+The deterministic Goal Guardian is a declaration and consistency auditor. It does not observe capabilities independently and must not be treated as a sandbox. A future tool-capable worker requires an isolated worker/tool gateway that supplies independently observed tool-call and command-attempt traces.
 
 ## Lifecycle invariants
 
@@ -59,74 +57,90 @@ These capabilities are deferred, not rejected. M1 preserves their domain vocabul
 2. Live Thread state is world data, not Git content.
 3. Workers propose changes but cannot directly mutate authoritative state.
 4. Accepted changes create append-only events.
-5. Commands and participation authorizations carry an expected Thread version; stale records fail visibly.
-6. Externally initiated full execution requires accepted authorization bound to the same Thread, SHA-256 digest of all material request fields, requester, policy version, and causation chain.
-7. Private stance, authorization, disclosure strategy, external expression, and performed action remain distinguishable; public wording is not authorization evidence.
-8. Appraisal context is selected only from records the Thread owns. Runtime narrowing records included and excluded references; requesters cannot inject or directly select private context.
-9. A private stance remains bound to the immutable historical appraisal and state hash it describes; later Thread changes do not erase or strand that opinion. Current authorization and execution still require separate live-state validation.
-10. Authorization that overrides private desire requires a non-empty reference resolving to a recorded Thread obligation or governing decision.
-11. The requester-facing expression does not carry restricted disclosure mode or private rationale and cannot imply acceptance without accepted authorization.
-12. A Thread has at most one authoritative thaw lease.
-13. Freeze validates each proposed mutation and releases runtime resources.
-14. Retries do not duplicate commands, requests, appraisals, private stances, authorization consumption, memories, messages, or economic effects.
-15. Interrupted sessions remain diagnosable and recoverable.
-16. Ordered events reconstruct the same Thread state and version.
-17. Human inspection distinguishes current state, private records, authorization, public expression, runtime context, proposed cognition, and accepted history.
-18. Narrow implementation choices preserve Fibre's larger social, relational, economic, familial, cultural, institutional, and developmental ambition.
+5. Commands and authorizations carry an expected Thread version; stale records fail visibly.
+6. Full execution requires accepted authorization bound to the same Thread, current state hash, request fingerprint, requester, policy, appraisal, stance, and causation chain.
+7. Private stance, authorization, disclosure strategy, external expression, and performed action remain distinguishable.
+8. Appraisal and runtime context may include only Thread-owned records and must record included/excluded refs.
+9. A private stance remains a historical opinion about its immutable appraisal; live authorization separately revalidates current state.
+10. For M1, one request ID identifies one immutable appraisal attempt. After Thread advancement, recovery uses a new request-attempt ID under the same correlation ID.
+11. Authorization that overrides private desire requires a non-empty reference resolving to a currently recorded Thread obligation.
+12. A Thread has at most one authoritative active thaw lease, enforced by the database.
+13. Runtime time is kernel-owned. Caller timestamps cannot acquire, extend, reclaim, or complete a lease.
+14. Actor output contains proposals only and cannot directly write authoritative state.
+15. Goal Guardian can persist either pass or reject and each check is independently falsifiable.
+16. Freeze validates proposed mutations, consumes authorization once, completes the runtime, and releases the lease.
+17. Retries do not duplicate commands, requests, appraisals, stances, authorizations, leases, worker runs, audits, consumption, memories, messages, or economic effects.
+18. Interrupted and expired sessions remain diagnosable; aborted or expired sessions cannot continue work.
+19. Ordered events reconstruct the same Thread state and version.
+20. Human inspection distinguishes current state, private records, authorization, runtime context, proposed cognition, audit, and accepted history.
+21. Narrow implementation choices preserve Fibre's larger social, relational, economic, familial, cultural, institutional, and developmental ambition.
 
 ## Minimum persistent model
 
 M1 requires durable representations for:
 
-- Thread identity, lifecycle status, and version;
-- projected current state and append-only events;
-- optional snapshots or checkpoints;
-- autobiographical memories with provenance;
-- requests and SHA-256 request digests;
-- appraisal-context inclusion and exclusion traces;
-- private participation stance with restricted visibility;
-- participation authorization, recorded-obligation references, and consumption status;
-- disclosure strategy with restricted visibility;
-- audience-visible external response referencing the strategy by ID;
-- runtime sessions and lease state;
-- commands and idempotency keys.
+- Thread identity, lifecycle status, version, projection, and append-only events;
+- requests and SHA-256 request fingerprints;
+- appraisal-context inclusion/exclusion traces;
+- private participation stance;
+- participation authorization and recorded-obligation references;
+- disclosure strategy and audience-visible response;
+- runtime session and exclusive lease state;
+- deterministic Actor output and Goal Guardian audit;
+- authorization consumption and command idempotency.
 
-SQLite remains the recommended local target. Storage interfaces remain infrastructure-neutral.
+The local target remains SQLite. One `PRAGMA user_version` governs the complete file. Schema version 3 adds runtime tables transactionally to the version-2 world/private schema. A separate runtime-version mechanism is not used.
 
-The current SQLite schema version 2 implements the first three participation records in separate restricted append-only tables and migrates schema version 1 in one transaction. Appraisal and stance identifiers are opaque random values; their SHA-256 content digests are stored separately. One stance is permitted per appraisal until an explicit revision operation exists.
+WorldStore and RuntimeStore use separate WAL connections. Cross-store correctness is enforced by rereading Thread and stance witnesses inside the runtime acquisition transaction. The partial unique lease index remains the final exclusivity authority.
+
+Authorizations and worker records are append-only. Lease and session rows permit only trigger-constrained lifecycle transitions; their immutable bindings cannot change and they cannot be deleted.
 
 ## Canonical acceptance scenario
 
 1. Seed Mina as a frozen Thread at a known version and state hash.
-2. Restart the world-kernel and verify identical state and hash.
-3. Apply a validated self-model command, confirm the new version and event, then visibly reject the same command at the stale version.
-4. Submit a named request with a stable request ID: `Evaluate whether to respond to a website project opportunity and identify what information is missing.`
-5. Compile and inspect Mina's bounded appraisal capsule using Thread-owned relationship, memory, and obligation context; show included and excluded references.
-6. Run deterministic private appraisal and record Mina's evidence, alternatives, relationship effects, and desired participation action.
-7. Issue and inspect authorization bound to Mina's current version and exact SHA-256 request digest.
-8. Reject reuse of that authorization against changed request content, another requester, another Thread, or a later snapshot.
-9. Demonstrate one low-dignity acceptance proposal being rejected.
-10. Demonstrate an obligation-mediated override only with a reference resolving to Mina's recorded unresolved intentions.
-11. Demonstrate one non-accept authorization that creates no lease and no execution capsule; show the public response separately without exposing disclosure mode.
-12. On the accepted branch only, acquire the lease and compile the execution context capsule.
-13. Run deterministic Actor and Goal Guardian workers.
-14. Freeze Mina, explicitly accepting or rejecting proposed changes, resolve or retain obligations, and release the lease.
-15. Restart, reload, replay events, and verify matching state hash, version, lifecycle status, and no active runtime.
+2. Restart and verify identical state/hash.
+3. Apply a validated self-model command and visibly reject stale reuse.
+4. Submit a named request attempt for a website opportunity.
+5. Compile and inspect Mina's bounded appraisal capsule with included/excluded context.
+6. Record Mina's private dignity stance.
+7. Issue authorization bound to Mina's current version and exact request fingerprint.
+8. Reject changed request, requester, Thread, state, policy, appraisal, stance, low-dignity accept, or invalid obligation override.
+9. After unrelated Thread advancement, reject historical authorization and recover through a new request-attempt ID under the same correlation ID.
+10. Demonstrate a non-accept decision creating no lease.
+11. On the accepted branch, acquire the one exclusive kernel-timed lease and compile execution context.
+12. Reject concurrent acquisition from another connection.
+13. Run deterministic Actor and Goal Guardian; demonstrate one injected Actor producing a persisted Guardian reject.
+14. Freeze Mina, accept/reject proposed changes, resolve or retain obligations, consume authorization, complete runtime, and release lease.
+15. Restart, replay, and verify matching state, consumed authorization, and no active runtime.
 
-Steps 4–6 now have durable process-restart evidence. The named request and private trace survive restart, exact retries do not duplicate records, a direct appraisal insertion race fails without partial rows, and a private stance remains recordable against its historical appraisal after unrelated Thread advancement. Public Thread/event routes reveal none of the restricted stance fields.
+Steps 4–13 now have durable evidence. The Thread projection remains unchanged until freeze.
 
 ## Required automated evidence
 
-Tests cover persistence across restart, command validation, stale-version rejection, append-only events, Thread-owned appraisal context and exclusion traces, deterministic private appraisal, all policy-band boundaries, low-dignity accept rejection, clarification and delegation preconditions, SHA-256 material-term binding, requester binding, cross-request/cross-Thread/stale authorization rejection, recorded-obligation override rules, non-accept without execution, disclosure-to-authorization binding, public wording unable to create authorization at both strategy and response boundaries, exclusive lease, deterministic execution context, Actor and Goal Guardian output, freeze validation, idempotent retry, runtime release, and replay equality.
+Tests cover:
 
-The portable package supplies the domain-boundary tests. The live kernel now supplies persistence, historical snapshot binding, append-only private-record, restricted-route, restart, idempotency, direct insertion-race, public-non-disclosure, opaque-ID, complete-partition, copied-state, stance-binding, evidence-precondition, and coherent-tamper evidence for requests, capsules, and private stances. The committed evidence artifact maps every advertised rejection to a named test rather than relying on the aggregate passing count.
+- restart persistence, command validation, stale versions, append-only events, and replay;
+- Thread-owned appraisal context and complete exclusion traces;
+- request, requester, policy, appraisal, stance, score/band, and obligation binding;
+- low-dignity acceptance and invalid override rejection;
+- explicit stale-attempt recovery under one correlation lineage;
+- kernel-owned timestamps and real lease expiry;
+- one active lease across separate connections;
+- aborted/expired-session work rejection;
+- deterministic context and worker idempotency;
+- every Goal Guardian check failing independently;
+- a full service path that persists Guardian reject;
+- coherent context/output rewriting detected by independent witnesses;
+- private-route protection and public non-disclosure.
 
-Lease, authorization consumption, execution, freeze, and final replay evidence remain later M1 slices. Mutation-coverage automation is deferred as an evaluation improvement; the accepted M1 evidence is defined by named behavioral properties rather than a passing test count.
+Evidence artifacts name the test for every advertised negative property; aggregate counts are supplementary only.
+
+Freeze, authorization consumption, normal runtime release, final replay, disclosure, editor, and end-to-end evidence remain later M1 slices.
 
 ## Human demonstration
 
-A reviewer can inspect Mina's state and history, restart the service, submit the canonical request, inspect appraisal and private stance through the restricted route, verify that the public event route does not reveal the private trace, advance Mina for an unrelated reason and still record the historically bound stance, inspect authorization and rejected misuse attempts, verify non-accept does not thaw, inspect an audience response without restricted disclosure metadata, run the accepted branch, inspect audits and freeze results, restart again, replay events, and verify no runtime remains.
+A reviewer can inspect Mina's state and public history, inspect the private request/appraisal/stance trace, see stale-attempt recovery preserve correlation lineage, acquire a kernel-timed runtime, observe overlap rejection, inspect authorization/context, run Actor and Guardian, observe a deliberate Guardian reject, restart the service, recover identical witnesses, and verify that public state/events remain unchanged until freeze.
 
 ## Owner validation
 
-The project owner approved the original M1 contract on 2026-08-03 and accepted this dignity and interiority amendment on 2026-08-04. M1 remains the persistent round-trip milestone; the amendment makes consent and the interior–exterior boundary part of the round trip rather than a separate optional layer.
+The project owner approved the original M1 contract on 2026-08-03 and accepted the dignity/interiority amendment on 2026-08-04. M1 remains one persistent lifecycle: appraisal, stance, authorization, temporary cognition, audit, freeze, and replay.

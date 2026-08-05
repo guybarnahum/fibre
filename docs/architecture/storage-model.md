@@ -1,7 +1,7 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-08-04
+last-reviewed: 2026-08-05
 canonical: true
 ---
 
@@ -19,24 +19,41 @@ Suggested durable stores:
 - Secret/resource vault for credentials and external authorizations
 - Double-entry ledger for FC, USD, and model-token accounting
 
-The aggregate is reconstructed at a versioned point in time. Snapshots and current-state projections may accelerate loading but never replace the event history.
+The aggregate is reconstructed at a versioned point in time. Snapshots and current-state projections may accelerate loading but never replace event history.
 
 ## M1 local persistence profile
 
-The first M1 adapter uses one local SQLite database with an explicit schema version and three deliberately separate tables:
+The M1 adapter uses one local SQLite database and one authoritative `PRAGMA user_version`. Schema version 3 governs all public, restricted-participation, and runtime tables. A second subsystem-specific schema-version table is not used.
+
+Public world tables:
 
 - `threads` stores the current projection, lifecycle status, version, last event, and SHA-256 state hash;
-- `thread_events` stores ordered immutable seed and life-change events with expected and resulting versions, actor, causation, correlation, payload schema version, provenance, optional authorization evidence, and per-event state hashes;
-- `commands` stores accepted idempotency keys, full command digests, and the event and version produced by each command.
+- `thread_events` stores ordered immutable seed and life-change events with expected/resulting versions, actor, causation, correlation, provenance, optional authorization evidence, and per-event state hashes;
+- `commands` stores accepted idempotency keys, command digests, and resulting event/version witnesses.
 
-A command, event, idempotency record, and projection update commit in one transaction. SQLite triggers reject updates and deletions from the event and command tables. Normal projection reads verify identity, canonical hash, denormalized columns, and the last-event witness. Deterministic replay validates sequence, versions, event identity, command digests, derived event IDs, command witnesses, and per-event state hashes before requiring the final replayed state to match the current projection exactly.
+Restricted participation and runtime tables:
 
-`provenance.lastEventId` is projection metadata. A seed operation deterministically creates a seed event and normalizes the stored snapshot to reference it, whether or not the incoming schema-valid snapshot supplied that optional field.
+- `activation_requests`, `request_appraisals`, and `private_participation_stances` preserve the interior request/appraisal/stance chain;
+- `participation_authorizations` preserves current-state execution authority;
+- `thaw_leases` and `runtime_sessions` preserve exclusive temporary-cognition state;
+- `actor_runs` and `goal_guardian_audits` preserve deterministic worker proposals and audits.
 
-The M1 adapter also provides an explicit projection-repair operation that re-derives the current row from intact event history. This makes projection corruption diagnosable and recoverable without rewriting the life history.
+Schema migrations run inside one immediate transaction. Schema versions 1 and 2 migrate to version 3 without rewriting existing Thread events or private records.
 
-The M1 event profile implements the common envelope described in [`event-model.md`](event-model.md). Authorization evidence is nullable for seed and owner-authored self-model events; participation-authorized event classes will require it when those records are added.
+A command, event, idempotency record, and projection update commit in one world-store transaction. Runtime authorization, exclusive lease, and runtime-session creation commit in one runtime-store transaction after rereading the Thread and private-stance witnesses.
 
-SQLite is an M1 implementation choice, not a permanent world architecture. Event, command, version, identity, idempotency, and hash contracts remain explicit so a future storage adapter can preserve the same behavior.
+The world store and runtime store intentionally use two SQLite handles over the same file to preserve separate interfaces. WAL and a bounded busy timeout mitigate lock contention. Cross-store invariants are not assumed from an earlier read: the runtime transaction rereads version, lifecycle, state hash, appraisal ID, stance ID, fingerprint, and stance digest before writing. The partial unique lease index remains the database-level exclusivity authority.
+
+Events, commands, requests, appraisals, private stances, authorizations, Actor runs, and Guardian audits are append-only. `thaw_leases` and `runtime_sessions` are mutable only for explicit lifecycle transitions. Triggers prevent changes to their immutable IDs, bindings, context, digests, and start times and permit only bounded status completion, release, expiration, or abort metadata. Neither table permits deletion.
+
+Normal projection reads verify identity, canonical hash, denormalized columns, and the last-event witness. Deterministic replay validates sequence, versions, event identity, command digests, derived event IDs, command witnesses, and per-event state hashes before requiring the final replayed state to match the projection.
+
+Runtime reads rederive acquisition, authorization, execution-context, session, Actor, and Guardian digests. The runtime session digest independently binds the context digest to immutable session and lease metadata, so coherent context-plus-digest rewriting still fails. Actor and Guardian operation digests similarly remain independent of their content digests.
+
+`provenance.lastEventId` is projection metadata. Seed normalizes the stored snapshot to its deterministic seed event.
+
+The projection-repair operation rederives the current row from intact event history without rewriting life history.
+
+SQLite is an M1 implementation choice, not a permanent world architecture. Event, command, version, identity, idempotency, lease, authorization, and hash contracts remain explicit so a future adapter can preserve behavior.
 
 Live Thread data is not committed to Git. The repository may contain synthetic fixtures, templates, redacted archives, schema examples, and human-inspectable test reports.

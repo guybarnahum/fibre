@@ -23,6 +23,15 @@ import {
   WorldKernelService,
   assertRouteThread,
 } from "./kernel-service.mjs";
+import {
+  ParticipationAuthorizationRejectedError,
+  RuntimeConflictError,
+  RuntimeLeaseExpiredError,
+  RuntimeNotFoundError,
+  RuntimeOrderError,
+  RuntimeStateChangedError,
+  ThawLeaseConflictError,
+} from "./runtime-domain.mjs";
 
 export const DEFAULT_MAX_HTTP_BODY_BYTES = 1024 * 1024;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -68,7 +77,11 @@ function writeJson(response, status, payload, requestId, headers = {}) {
 function ensureJsonContentType(request) {
   const contentType = request.headers["content-type"];
   if (typeof contentType !== "string" || !/^application\/json(?:\s*;|$)/i.test(contentType)) {
-    throw new HttpProblemError(415, "UNSUPPORTED_MEDIA_TYPE", "Content-Type must be application/json");
+    throw new HttpProblemError(
+      415,
+      "UNSUPPORTED_MEDIA_TYPE",
+      "Content-Type must be application/json",
+    );
   }
 }
 
@@ -79,7 +92,11 @@ async function readJson(request, maxBodyBytes) {
   for await (const chunk of request) {
     length += chunk.length;
     if (length > maxBodyBytes) {
-      throw new HttpProblemError(413, "REQUEST_TOO_LARGE", `Request body exceeds ${maxBodyBytes} bytes`);
+      throw new HttpProblemError(
+        413,
+        "REQUEST_TOO_LARGE",
+        `Request body exceeds ${maxBodyBytes} bytes`,
+      );
     }
     chunks.push(chunk);
   }
@@ -106,21 +123,87 @@ function decodeSegment(segment) {
 
 function mapError(error) {
   if (error instanceof HttpProblemError) return error;
-  if (error instanceof ThreadNotFoundError) return new HttpProblemError(404, "THREAD_NOT_FOUND", error.message);
-  if (error instanceof PrivateRequestNotFoundError) return new HttpProblemError(404, "PRIVATE_REQUEST_NOT_FOUND", error.message);
-  if (error instanceof ThreadAlreadyExistsError) return new HttpProblemError(409, "THREAD_ALREADY_EXISTS", error.message);
-  if (error instanceof PrivateRequestConflictError) return new HttpProblemError(409, "PRIVATE_REQUEST_CONFLICT", error.message);
-  if (error instanceof PrivateStanceConflictError) return new HttpProblemError(409, "PRIVATE_STANCE_CONFLICT", error.message);
-  if (error instanceof StaleAppraisalError) return new HttpProblemError(409, "STALE_APPRAISAL", error.message);
-  if (error instanceof StaleThreadVersionError) return new HttpProblemError(409, "STALE_THREAD_VERSION", error.message);
-  if (error instanceof IdempotencyConflictError) return new HttpProblemError(409, "IDEMPOTENCY_CONFLICT", error.message);
-  if (error instanceof PreviewMismatchError) return new HttpProblemError(409, "PREVIEW_MISMATCH", error.message);
-  if (error instanceof RouteThreadMismatchError) return new HttpProblemError(409, "ROUTE_THREAD_MISMATCH", error.message);
-  if (error instanceof LifecycleCommandError) return new HttpProblemError(422, "LIFECYCLE_COMMAND_REJECTED", error.message);
-  if (error instanceof StorageBusyError) return new HttpProblemError(503, "STORAGE_BUSY", "World storage is temporarily busy", { "retry-after": "1" });
-  if (error instanceof IntegrityError) return new HttpProblemError(503, "INTEGRITY_FAILURE", "Authoritative Thread data failed integrity validation");
-  if (error instanceof TypeError) return new HttpProblemError(400, "INVALID_REQUEST", error.message);
-  return new HttpProblemError(500, "INTERNAL_ERROR", "The world-kernel could not complete the request");
+  if (error instanceof ThreadNotFoundError) {
+    return new HttpProblemError(404, "THREAD_NOT_FOUND", error.message);
+  }
+  if (error instanceof PrivateRequestNotFoundError) {
+    return new HttpProblemError(404, "PRIVATE_REQUEST_NOT_FOUND", error.message);
+  }
+  if (error instanceof RuntimeNotFoundError) {
+    return new HttpProblemError(404, "RUNTIME_NOT_FOUND", error.message);
+  }
+  if (error instanceof ThreadAlreadyExistsError) {
+    return new HttpProblemError(409, "THREAD_ALREADY_EXISTS", error.message);
+  }
+  if (error instanceof PrivateRequestConflictError) {
+    return new HttpProblemError(409, "PRIVATE_REQUEST_CONFLICT", error.message);
+  }
+  if (error instanceof PrivateStanceConflictError) {
+    return new HttpProblemError(409, "PRIVATE_STANCE_CONFLICT", error.message);
+  }
+  if (error instanceof StaleAppraisalError) {
+    return new HttpProblemError(409, "STALE_APPRAISAL", error.message);
+  }
+  if (error instanceof StaleThreadVersionError) {
+    return new HttpProblemError(409, "STALE_THREAD_VERSION", error.message);
+  }
+  if (error instanceof IdempotencyConflictError) {
+    return new HttpProblemError(409, "IDEMPOTENCY_CONFLICT", error.message);
+  }
+  if (error instanceof PreviewMismatchError) {
+    return new HttpProblemError(409, "PREVIEW_MISMATCH", error.message);
+  }
+  if (error instanceof RouteThreadMismatchError) {
+    return new HttpProblemError(409, "ROUTE_THREAD_MISMATCH", error.message);
+  }
+  if (error instanceof RuntimeStateChangedError) {
+    return new HttpProblemError(409, "RUNTIME_STATE_CHANGED", error.message);
+  }
+  if (error instanceof RuntimeConflictError) {
+    return new HttpProblemError(409, "RUNTIME_CONFLICT", error.message);
+  }
+  if (error instanceof ThawLeaseConflictError) {
+    return new HttpProblemError(409, "THAW_LEASE_CONFLICT", error.message);
+  }
+  if (error instanceof RuntimeOrderError) {
+    return new HttpProblemError(409, "RUNTIME_ORDER_REJECTED", error.message);
+  }
+  if (error instanceof RuntimeLeaseExpiredError) {
+    return new HttpProblemError(409, "THAW_LEASE_EXPIRED", error.message);
+  }
+  if (error instanceof ParticipationAuthorizationRejectedError) {
+    return new HttpProblemError(
+      422,
+      "PARTICIPATION_AUTHORIZATION_REJECTED",
+      error.message,
+    );
+  }
+  if (error instanceof LifecycleCommandError) {
+    return new HttpProblemError(422, "LIFECYCLE_COMMAND_REJECTED", error.message);
+  }
+  if (error instanceof StorageBusyError) {
+    return new HttpProblemError(
+      503,
+      "STORAGE_BUSY",
+      "World storage is temporarily busy",
+      { "retry-after": "1" },
+    );
+  }
+  if (error instanceof IntegrityError) {
+    return new HttpProblemError(
+      503,
+      "INTEGRITY_FAILURE",
+      "Authoritative Thread data failed integrity validation",
+    );
+  }
+  if (error instanceof TypeError) {
+    return new HttpProblemError(400, "INVALID_REQUEST", error.message);
+  }
+  return new HttpProblemError(
+    500,
+    "INTERNAL_ERROR",
+    "The world-kernel could not complete the request",
+  );
 }
 
 export function assertLoopbackBindHost(host) {
@@ -134,20 +217,35 @@ function assertLoopbackHostHeader(value) {
     throw new HttpProblemError(400, "HOST_REQUIRED", "A Host header is required");
   }
   const authority = value.toLowerCase();
-  if (!/^(?:localhost|127\.0\.0\.1)(?::[0-9]{1,5})?$/.test(authority) &&
-      !/^\[::1\](?::[0-9]{1,5})?$/.test(authority)) {
-    throw new HttpProblemError(421, "MISDIRECTED_REQUEST", "The M1 world-kernel accepts only loopback Host headers");
+  if (
+    !/^(?:localhost|127\.0\.0\.1)(?::[0-9]{1,5})?$/.test(authority) &&
+    !/^\[::1\](?::[0-9]{1,5})?$/.test(authority)
+  ) {
+    throw new HttpProblemError(
+      421,
+      "MISDIRECTED_REQUEST",
+      "The M1 world-kernel accepts only loopback Host headers",
+    );
   }
 }
 
 function methodNotAllowed(allow) {
-  return new HttpProblemError(405, "METHOD_NOT_ALLOWED", `Method is not allowed; use ${allow}`, { allow });
+  return new HttpProblemError(
+    405,
+    "METHOD_NOT_ALLOWED",
+    `Method is not allowed; use ${allow}`,
+    { allow },
+  );
 }
 
 function routeParts(request) {
   const target = request.url ?? "/";
   if (!target.startsWith("/") || target.startsWith("//")) {
-    throw new HttpProblemError(421, "MISDIRECTED_REQUEST", "Absolute and network-path request targets are not accepted");
+    throw new HttpProblemError(
+      421,
+      "MISDIRECTED_REQUEST",
+      "Absolute and network-path request targets are not accepted",
+    );
   }
   const url = new URL(target, "http://world-kernel.local");
   if (url.search !== "") {
@@ -158,10 +256,18 @@ function routeParts(request) {
 
 function requirePrivateAccess(request, privateToken) {
   if (privateToken === null) {
-    throw new HttpProblemError(503, "PRIVATE_ACCESS_DISABLED", "Private request access is not enabled");
+    throw new HttpProblemError(
+      503,
+      "PRIVATE_ACCESS_DISABLED",
+      "Private request access is not enabled",
+    );
   }
   if (!safeTokenEqual(request.headers["x-fibre-private-token"], privateToken)) {
-    throw new HttpProblemError(403, "PRIVATE_TOKEN_REQUIRED", "A valid private-access token is required");
+    throw new HttpProblemError(
+      403,
+      "PRIVATE_TOKEN_REQUIRED",
+      "A valid private-access token is required",
+    );
   }
 }
 
@@ -194,10 +300,12 @@ export function createWorldKernelHttpServer({
 
       if (parts.length === 1 && parts[0] === "health") {
         if (method !== "GET") throw methodNotAllowed("GET");
-        return writeJson(response, 200, {
-          ...service.health(),
-          repairEnabled: adminToken !== null,
-        }, requestId);
+        return writeJson(
+          response,
+          200,
+          { ...service.health(), repairEnabled: adminToken !== null },
+          requestId,
+        );
       }
 
       if (parts.length === 1 && parts[0] === "threads") {
@@ -229,14 +337,22 @@ export function createWorldKernelHttpServer({
           if (parts.length >= 4 && parts[3] === "requests") {
             if (parts.length === 4) {
               if (method === "GET") {
-                return writeJson(response, 200, {
-                  requests: service.listPrivateRequestSummaries(threadId),
-                }, requestId);
+                return writeJson(
+                  response,
+                  200,
+                  { requests: service.listPrivateRequestSummaries(threadId) },
+                  requestId,
+                );
               }
               if (method === "POST") {
                 const body = await readJson(request, maxBodyBytes);
                 assertExactKeys("request body", body, [
-                  "request", "selection", "policy", "occurredAt", "causationId", "correlationId",
+                  "request",
+                  "selection",
+                  "policy",
+                  "occurredAt",
+                  "causationId",
+                  "correlationId",
                 ]);
                 const result = service.recordRequestAppraisal(threadId, body);
                 return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
@@ -246,9 +362,12 @@ export function createWorldKernelHttpServer({
             const privateRequestId = parts[4];
             if (parts.length === 5) {
               if (method !== "GET") throw methodNotAllowed("GET");
-              return writeJson(response, 200, {
-                trace: service.getPrivateRequestTrace(threadId, privateRequestId),
-              }, requestId);
+              return writeJson(
+                response,
+                200,
+                { trace: service.getPrivateRequestTrace(threadId, privateRequestId) },
+                requestId,
+              );
             }
             if (parts.length === 6 && parts[5] === "integrity") {
               if (method !== "GET") throw methodNotAllowed("GET");
@@ -263,9 +382,76 @@ export function createWorldKernelHttpServer({
               if (method !== "POST") throw methodNotAllowed("POST");
               const body = await readJson(request, maxBodyBytes);
               assertExactKeys("request body", body, [
-                "assessment", "recordedAt", "causationId", "correlationId",
+                "assessment",
+                "recordedAt",
+                "causationId",
+                "correlationId",
               ]);
               const result = service.recordPrivateStance(threadId, privateRequestId, body);
+              return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
+            }
+            if (parts.length === 6 && parts[5] === "runtime") {
+              if (method !== "POST") throw methodNotAllowed("POST");
+              if (typeof service.acquireThawRuntime !== "function") {
+                throw new HttpProblemError(503, "RUNTIME_DISABLED", "M1 runtime is not enabled");
+              }
+              const body = await readJson(request, maxBodyBytes);
+              assertExactKeys("request body", body, [
+                "operationId",
+                "decision",
+                "selection",
+                "causationId",
+                "correlationId",
+              ]);
+              const result = service.acquireThawRuntime(threadId, privateRequestId, body);
+              return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
+            }
+          }
+
+          if (parts.length >= 4 && parts[3] === "runtime") {
+            if (typeof service.getRuntime !== "function") {
+              throw new HttpProblemError(503, "RUNTIME_DISABLED", "M1 runtime is not enabled");
+            }
+            if (parts.length === 4) {
+              if (method !== "GET") throw methodNotAllowed("GET");
+              return writeJson(
+                response,
+                200,
+                { runtimes: service.listRuntimeSummaries(threadId) },
+                requestId,
+              );
+            }
+            const sessionId = parts[4];
+            if (parts.length === 5) {
+              if (method !== "GET") throw methodNotAllowed("GET");
+              return writeJson(
+                response,
+                200,
+                { runtime: service.getRuntime(threadId, sessionId) },
+                requestId,
+              );
+            }
+            if (parts.length === 6 && parts[5] === "integrity") {
+              if (method !== "GET") throw methodNotAllowed("GET");
+              return writeJson(
+                response,
+                200,
+                service.verifyRuntimeIntegrity(threadId, sessionId),
+                requestId,
+              );
+            }
+            if (parts.length === 6 && parts[5] === "actor") {
+              if (method !== "POST") throw methodNotAllowed("POST");
+              const body = await readJson(request, maxBodyBytes);
+              assertExactKeys("request body", body, ["operationId"]);
+              const result = service.runDeterministicActor(threadId, sessionId, body);
+              return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
+            }
+            if (parts.length === 6 && parts[5] === "goal-guardian") {
+              if (method !== "POST") throw methodNotAllowed("POST");
+              const body = await readJson(request, maxBodyBytes);
+              assertExactKeys("request body", body, ["operationId"]);
+              const result = service.runGoalGuardian(threadId, sessionId, body);
               return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
             }
           }
@@ -292,7 +478,11 @@ export function createWorldKernelHttpServer({
             throw new HttpProblemError(503, "REPAIR_DISABLED", "Projection repair is not enabled");
           }
           if (!safeTokenEqual(request.headers["x-fibre-admin-token"], adminToken)) {
-            throw new HttpProblemError(403, "ADMIN_TOKEN_REQUIRED", "A valid administrative token is required");
+            throw new HttpProblemError(
+              403,
+              "ADMIN_TOKEN_REQUIRED",
+              "A valid administrative token is required",
+            );
           }
           const body = await readJson(request, maxBodyBytes);
           assertExactKeys("request body", body, []);
@@ -300,20 +490,26 @@ export function createWorldKernelHttpServer({
         }
       }
 
-      throw new HttpProblemError(404, "ROUTE_NOT_FOUND", "No world-kernel route matches this request");
+      throw new HttpProblemError(
+        404,
+        "ROUTE_NOT_FOUND",
+        "No world-kernel route matches this request",
+      );
     } catch (error) {
       const problem = mapError(error);
       if (problem.status >= 500) {
-        try { onError(error, { requestId, method: request.method, url: request.url }); } catch {}
+        try {
+          onError(error, { requestId, method: request.method, url: request.url });
+        } catch {}
       }
       if (!response.headersSent) {
-        writeJson(response, problem.status, {
-          error: {
-            code: problem.code,
-            message: problem.message,
-            requestId,
-          },
-        }, requestId, problem.headers);
+        writeJson(
+          response,
+          problem.status,
+          { error: { code: problem.code, message: problem.message, requestId } },
+          requestId,
+          problem.headers,
+        );
       } else {
         response.destroy();
       }
@@ -326,22 +522,37 @@ export function createWorldKernelHttpServer({
   return server;
 }
 
-export async function listenWorldKernelHttpServer(server, { host = "127.0.0.1", port = 0 } = {}) {
+export async function listenWorldKernelHttpServer(
+  server,
+  { host = "127.0.0.1", port = 0 } = {},
+) {
   assertLoopbackBindHost(host);
-  if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new TypeError("port must be between 0 and 65535");
+  if (!Number.isSafeInteger(port) || port < 0 || port > 65535) {
+    throw new TypeError("port must be between 0 and 65535");
+  }
   await new Promise((resolve, reject) => {
-    const onError = (error) => { server.off("listening", onListening); reject(error); };
-    const onListening = () => { server.off("error", onError); resolve(); };
+    const onError = (error) => {
+      server.off("listening", onListening);
+      reject(error);
+    };
+    const onListening = () => {
+      server.off("error", onError);
+      resolve();
+    };
     server.once("error", onError);
     server.once("listening", onListening);
     server.listen(port, host);
   });
   const address = server.address();
-  if (address === null || typeof address === "string") throw new Error("world-kernel did not expose a TCP address");
+  if (address === null || typeof address === "string") {
+    throw new Error("world-kernel did not expose a TCP address");
+  }
   return { host: address.address, port: address.port };
 }
 
 export async function closeWorldKernelHttpServer(server) {
   if (!server.listening) return;
-  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await new Promise((resolve, reject) =>
+    server.close((error) => (error ? reject(error) : resolve())),
+  );
 }
