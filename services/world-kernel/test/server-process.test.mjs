@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+
+import { startWorldKernelFromEnvironment } from "../src/server.mjs";
 
 const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -93,6 +95,26 @@ async function requestJson(url, options = {}) {
   return { response, body: await response.json() };
 }
 
+test("environment startup refuses non-loopback hosts before creating world state", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-world-kernel-bind-"));
+  const databasePath = join(directory, "world.db");
+  try {
+    for (const host of ["0.0.0.0", "10.0.0.1"]) {
+      await assert.rejects(
+        () => startWorldKernelFromEnvironment({
+          FIBRE_WORLD_DATABASE: databasePath,
+          FIBRE_WORLD_HOST: host,
+          FIBRE_WORLD_PORT: "0",
+        }),
+        /loopback/,
+      );
+      assert.equal(existsSync(databasePath), false);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("independent world-kernel survives restart with preview-bound command history", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-world-kernel-api-"));
   const databasePath = join(directory, "world.sqlite");
@@ -133,6 +155,26 @@ test("independent world-kernel survives restart with preview-bound command histo
     });
     assert.equal(applied.response.status, 201);
     assert.equal(applied.body.thread.version, 2);
+
+    const seedRetry = await requestJson(`${first.baseUrl}/threads`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ thread: fixture }),
+    });
+    assert.equal(seedRetry.response.status, 200);
+    assert.equal(seedRetry.body.created, false);
+    assert.equal(seedRetry.body.thread.version, 2);
+
+    const conflictingSeed = structuredClone(fixture);
+    conflictingSeed.identity.selfDescription = "A different immutable seed";
+    const conflict = await requestJson(`${first.baseUrl}/threads`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ thread: conflictingSeed }),
+    });
+    assert.equal(conflict.response.status, 409);
+    assert.equal(conflict.body.error.code, "THREAD_ALREADY_EXISTS");
+
     const beforeRestart = await requestJson(`${first.baseUrl}/threads/${fixture.threadId}/integrity`);
     assert.equal(beforeRestart.body.eventCount, 2);
 

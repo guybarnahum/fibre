@@ -22,6 +22,7 @@ import {
 
 export const DEFAULT_MAX_HTTP_BODY_BYTES = 1024 * 1024;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const LOOPBACK_BIND_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
 
 class HttpProblemError extends Error {
   constructor(status, code, message, headers = {}) {
@@ -49,13 +50,13 @@ function safeTokenEqual(actual, expected) {
 function writeJson(response, status, payload, requestId, headers = {}) {
   const body = JSON.stringify(payload);
   response.writeHead(status, {
+    ...headers,
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(body),
     "cache-control": "no-store",
     "x-content-type-options": "nosniff",
     "content-security-policy": "default-src 'none'",
     "x-request-id": requestId,
-    ...headers,
   });
   response.end(body);
 }
@@ -114,6 +115,12 @@ function mapError(error) {
   return new HttpProblemError(500, "INTERNAL_ERROR", "The world-kernel could not complete the request");
 }
 
+export function assertLoopbackBindHost(host) {
+  if (typeof host !== "string" || !LOOPBACK_BIND_HOSTS.has(host)) {
+    throw new TypeError("The M1 world-kernel server may bind only to a loopback host");
+  }
+}
+
 function assertLoopbackHostHeader(value) {
   if (typeof value !== "string") {
     throw new HttpProblemError(400, "HOST_REQUIRED", "A Host header is required");
@@ -130,7 +137,11 @@ function methodNotAllowed(allow) {
 }
 
 function routeParts(request) {
-  const url = new URL(request.url ?? "/", "http://world-kernel.local");
+  const target = request.url ?? "/";
+  if (!target.startsWith("/") || target.startsWith("//")) {
+    throw new HttpProblemError(421, "MISDIRECTED_REQUEST", "Absolute and network-path request targets are not accepted");
+  }
+  const url = new URL(target, "http://world-kernel.local");
   if (url.search !== "") {
     throw new HttpProblemError(400, "QUERY_NOT_SUPPORTED", "Query parameters are not supported");
   }
@@ -154,7 +165,7 @@ export function createWorldKernelHttpServer({
   }
   if (typeof onError !== "function") throw new TypeError("onError must be a function");
 
-  return createServer(async (request, response) => {
+  const server = createServer(async (request, response) => {
     const requestId = safeRequestId(request.headers["x-request-id"]);
     try {
       assertLoopbackHostHeader(request.headers.host);
@@ -197,7 +208,7 @@ export function createWorldKernelHttpServer({
           const body = await readJson(request, maxBodyBytes);
           assertExactKeys("request body", body, ["command"]);
           assertRouteThread(threadId, body.command);
-          return writeJson(response, 200, service.previewCommand(body.command), requestId);
+          return writeJson(response, 200, service.previewCommandRequest(body), requestId);
         }
         if (parts.length === 3 && parts[2] === "commands") {
           if (method !== "POST") throw methodNotAllowed("POST");
@@ -240,10 +251,15 @@ export function createWorldKernelHttpServer({
       }
     }
   });
+  server.requestTimeout = 30_000;
+  server.headersTimeout = 10_000;
+  server.keepAliveTimeout = 5_000;
+  server.maxConnections = 64;
+  return server;
 }
 
 export async function listenWorldKernelHttpServer(server, { host = "127.0.0.1", port = 0 } = {}) {
-  if (typeof host !== "string" || host.length === 0) throw new TypeError("host is required");
+  assertLoopbackBindHost(host);
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new TypeError("port must be between 0 and 65535");
   await new Promise((resolve, reject) => {
     const onError = (error) => { server.off("listening", onListening); reject(error); };

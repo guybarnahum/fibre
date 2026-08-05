@@ -2,6 +2,8 @@ import {
   IdempotencyConflictError,
   IntegrityError,
   StaleThreadVersionError,
+  ThreadAlreadyExistsError,
+  ThreadNotFoundError,
   assertExactKeys,
   assertId,
   assertNonEmpty,
@@ -12,8 +14,10 @@ import {
 } from "./persistence-common.mjs";
 import {
   applyCommandToThread,
+  applyEventToThread,
   commandDigest,
   eventIdForCommand,
+  normalizeSeedSnapshot,
   validateCommand,
   validateThreadSnapshot,
 } from "./persistence-domain.mjs";
@@ -31,14 +35,7 @@ function assertPreviewId(previewId) {
   }
 }
 
-function receiptFields({
-  command,
-  digest,
-  currentStateHash,
-  eventId,
-  resultingVersion,
-  resultingStateHash,
-}) {
+function receiptFields({ command, digest, currentStateHash, eventId, resultingVersion, resultingStateHash }) {
   return {
     schemaVersion: COMMAND_PREVIEW_SCHEMA_VERSION,
     threadId: command.threadId,
@@ -88,7 +85,7 @@ function findAcceptedEvent(store, commandId, threadId) {
   if (index < 0) return null;
   if (index === 0) {
     throw new IdempotencyConflictError(
-      `Command ${commandId} conflicts with the seed event`,
+      `Command ${commandId} appears where the immutable seed event must be`,
     );
   }
   return { event: events[index], priorEvent: events[index - 1] };
@@ -109,31 +106,19 @@ function previewFromAcceptedEvent(command, accepted) {
     resultingVersion: accepted.event.resultingVersion,
     resultingStateHash: accepted.event.stateHash,
   });
-  return {
-    previewId: previewIdForReceipt(receipt),
-    ...receipt,
-  };
+  return { previewId: previewIdForReceipt(receipt), ...receipt };
 }
 
 export class WorldKernelService {
   #store;
 
   constructor(store) {
-    if (store === null || typeof store !== "object") {
-      throw new TypeError("store is required");
-    }
+    if (store === null || typeof store !== "object") throw new TypeError("store is required");
     for (const method of [
-      "storageMetadata",
-      "seedThread",
-      "getThread",
-      "listEvents",
-      "applyCommand",
-      "verifyThreadIntegrity",
-      "repairThreadProjection",
+      "storageMetadata", "seedThread", "getThread", "listEvents", "applyCommand",
+      "verifyThreadIntegrity", "repairThreadProjection",
     ]) {
-      if (typeof store[method] !== "function") {
-        throw new TypeError(`store.${method} is required`);
-      }
+      if (typeof store[method] !== "function") throw new TypeError(`store.${method} is required`);
     }
     this.#store = store;
   }
@@ -150,10 +135,38 @@ export class WorldKernelService {
   seedThread(request) {
     assertPlainObject("seed request", request);
     assertExactKeys("seed request", request, ["thread", "occurredAt"]);
-    return this.#store.seedThread(
-      request.thread,
-      request.occurredAt === undefined ? {} : { occurredAt: request.occurredAt },
-    );
+    validateThreadSnapshot(request.thread);
+    const normalized = normalizeSeedSnapshot(request.thread);
+    const occurredAt = request.occurredAt ?? request.thread.provenance.createdAt;
+
+    let current;
+    try {
+      current = this.#store.getThread(normalized.threadId);
+    } catch (error) {
+      if (error instanceof ThreadNotFoundError) {
+        return this.#store.seedThread(
+          request.thread,
+          request.occurredAt === undefined ? {} : { occurredAt: request.occurredAt },
+        );
+      }
+      throw error;
+    }
+
+    const events = this.#store.listEvents(normalized.threadId);
+    const firstEvent = events[0];
+    if (firstEvent === undefined || firstEvent.eventType !== "THREAD_SEEDED") {
+      throw new IntegrityError(`Thread ${normalized.threadId} has no valid seed event`);
+    }
+    const originalSeed = applyEventToThread(null, firstEvent);
+    if (
+      canonicalJson(originalSeed) !== canonicalJson(normalized) ||
+      firstEvent.occurredAt !== occurredAt
+    ) {
+      throw new ThreadAlreadyExistsError(
+        `Thread ${normalized.threadId} already exists with a different immutable seed`,
+      );
+    }
+    return { thread: current, created: false };
   }
 
   getThread(threadId) {
@@ -163,13 +176,22 @@ export class WorldKernelService {
 
   listEvents(threadId) {
     assertId("threadId", threadId);
-    this.#store.getThread(threadId);
-    return this.#store.listEvents(threadId);
+    const events = this.#store.listEvents(threadId);
+    if (events.length === 0) {
+      throw new ThreadNotFoundError(`Thread ${threadId} has no event history`);
+    }
+    return events;
   }
 
   verifyThreadIntegrity(threadId) {
     assertId("threadId", threadId);
     return this.#store.verifyThreadIntegrity(threadId);
+  }
+
+  previewCommandRequest(request) {
+    assertPlainObject("preview request", request);
+    assertExactKeys("preview request", request, ["command"]);
+    return this.previewCommand(request.command);
   }
 
   previewCommand(command) {

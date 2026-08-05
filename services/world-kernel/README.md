@@ -27,6 +27,8 @@ SQLite schema version 1 records causation, correlation, payload schema version, 
 
 `provenance.lastEventId` is projection metadata, not intrinsic identity. Seeding deterministically creates the seed event and normalizes the stored snapshot to reference it. `UPDATE_SELF_MODEL` is permitted only for frozen or dormant Threads and preserves the existing status.
 
+For the M1 one-command/one-event profile, a command event uses its `commandId` as both `causationId` and `correlationId`; the seed event uses its own `eventId`. This means the fields identify the single durable transaction today. Multi-event causation chains and caller-supplied correlation scopes are deferred until the command vocabulary can produce more than one event.
+
 ## M1 local world-kernel API
 
 `src/server.mjs` starts an independently running local HTTP process over the storage contract. HTTP parsing, error mapping, preview binding, and persistence remain separate modules:
@@ -50,22 +52,26 @@ FIBRE_WORLD_PORT=8787
 FIBRE_ADMIN_TOKEN=<optional token of at least 16 characters>
 ```
 
-The M1 executable refuses non-loopback bind addresses. Projection repair remains disabled unless `FIBRE_ADMIN_TOKEN` is configured.
+`.fibre/` is repository-ignored and repository validation rejects tracked content beneath it. The exported listener and the executable both refuse non-loopback bind addresses. Projection repair remains disabled unless `FIBRE_ADMIN_TOKEN` is configured.
 
 ### Routes
 
 | Method | Route | Purpose |
 |---|---|---|
 | `GET` | `/health` | Service and storage metadata |
-| `POST` | `/threads` | Idempotently seed one validated Thread |
+| `POST` | `/threads` | Idempotently seed one immutable Thread origin |
 | `GET` | `/threads/:threadId` | Read the integrity-checked current projection |
-| `GET` | `/threads/:threadId/events` | Read the ordered event timeline |
+| `GET` | `/threads/:threadId/events` | Read the ordered event timeline, including while only the projection is corrupt |
 | `GET` | `/threads/:threadId/integrity` | Replay and compare projection integrity |
 | `POST` | `/threads/:threadId/commands/preview` | Validate and preview a command without writing |
 | `POST` | `/threads/:threadId/commands` | Apply a command only with its matching preview receipt |
 | `POST` | `/threads/:threadId/repair-projection` | Explicit token-protected administrative repair |
 
-The transport rejects query parameters, unknown envelope fields, unsupported methods, non-JSON mutation requests, oversized HTTP bodies, route/command Thread mismatches, and non-loopback `Host` headers. Responses use `Cache-Control: no-store`, do not enable CORS, and never expose stack traces. Integrity failures are logged server-side but returned with a redacted public message.
+`POST /threads` is idempotent for the lifetime of the Thread when the submitted snapshot and seed timestamp match the immutable seed event. A retry returns the current projection even after later commands have advanced it. A different proposed origin for the same Thread ID returns `THREAD_ALREADY_EXISTS`.
+
+The transport rejects query parameters, absolute-form and network-path request targets, unknown envelope fields, unsupported methods, non-JSON mutation requests, oversized HTTP bodies, route/command Thread mismatches, non-loopback `Host` headers, and non-loopback bind addresses. Responses use `Cache-Control: no-store`, do not enable CORS, and never expose stack traces. Integrity failures are logged server-side but returned with a redacted public message. Security headers and content length are owned by the transport and cannot be overridden by problem-specific headers.
+
+The local process uses bounded Node transport defaults: 30-second request timeout, 10-second header timeout, five-second keep-alive timeout, and 64 maximum concurrent connections.
 
 ### Command preview
 
@@ -78,7 +84,7 @@ A preview performs the same command and lifecycle validation as acceptance but d
 - the proposed event core and resulting Thread projection;
 - a deterministic `previewId` over those receipt fields.
 
-Command acceptance requires the exact command and matching `previewId`. The service recomputes the receipt against current state before writing, so modified or stale previews fail visibly. After persistence, the returned event and Thread hash must match the previewed result. Identical retries reconstruct the original receipt from accepted event history and remain idempotent across process restart.
+Command acceptance requires the exact command and matching `previewId`. The service recomputes the receipt against current state before writing, so modified or stale previews fail visibly. After persistence, Thread identity, resulting version, event ID, command digest, event state hash, and projected state hash must all match the previewed result. Identical retries reconstruct the original receipt from accepted event history and remain idempotent across process restart.
 
 A preview receipt is a consistency and review artifact. It is not consent, participation authorization, an authentication credential, or proof of kernel origin. Later M1 stages add request-bound Participation Authorization and event-backed consumption separately.
 
@@ -94,13 +100,13 @@ The API uses stable JSON error codes and request IDs:
 - oversized body → `413`;
 - unsupported media type → `415`;
 - lifecycle rejection → `422`;
-- non-loopback host routing → `421`;
+- non-loopback routing or request-target authority → `421`;
 - storage busy, repair disabled, or integrity failure → `503`.
 
 ## Deliberate scope boundary
 
 This service remains a deterministic, single-user, local M1 process. It is not a production network service, authentication system, multi-tenant access-control layer, model gateway, thaw-lease manager, authorization-consumption system, or production database.
 
-The API currently exposes the whole synthetic Thread snapshot to its local caller because private participation records do not exist yet. Before remote or multi-user use, access-aware private/public views and authenticated principals are required.
+The API currently exposes the whole synthetic Thread snapshot to its local caller because private participation records do not exist yet. Before remote or multi-user use, Fibre requires authenticated principals, access-aware private/public views, audited administrative failures, stricter resource quotas, production-grade slow-client defenses, and alternatives to linear full replay on integrity requests.
 
 LLM output still cannot write the store directly. Later world-kernel handlers must translate validated, authorized domain outcomes into the same command and event boundary.

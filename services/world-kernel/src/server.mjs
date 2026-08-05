@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { openWorldStore } from "./persistence.mjs";
 import { WorldKernelService } from "./kernel-service.mjs";
 import {
+  assertLoopbackBindHost,
   closeWorldKernelHttpServer,
   createWorldKernelHttpServer,
   listenWorldKernelHttpServer,
@@ -17,18 +18,12 @@ function parsePort(value) {
   return port;
 }
 
-function assertLoopbackHost(host) {
-  if (!["127.0.0.1", "::1", "localhost"].includes(host)) {
-    throw new TypeError("The M1 world-kernel server may bind only to a loopback host");
-  }
-}
-
 export async function startWorldKernelFromEnvironment(environment = process.env) {
   const databasePath = resolve(environment.FIBRE_WORLD_DATABASE ?? ".fibre/world.sqlite");
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
   const adminToken = environment.FIBRE_ADMIN_TOKEN ?? null;
-  assertLoopbackHost(host);
+  assertLoopbackBindHost(host);
 
   const store = openWorldStore(databasePath);
   const service = new WorldKernelService(store);

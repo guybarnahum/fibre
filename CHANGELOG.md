@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+- Hardened the M1 world-kernel API after adversarial review: `.fibre/` is ignored and validated as world-state-only storage, loopback binding is enforced by the exported listener, non-JSON mutation traffic and hostile request-target authorities fail closed, and response security headers cannot be overridden.
+- Made `POST /threads` idempotent against the immutable seed event for the Thread's lifetime, kept event history inspectable during projection corruption, added service-layer preview-envelope validation, bounded local transport resources, and documented the one-command M1 causation/correlation convention.
+- Expanded API evidence with direct negative tests for bind safety, media-type enforcement, no-CORS preflight, every post-apply preview witness, preview/idempotency error distinctions, projection-corrupt event access, request-target authority rejection, and lifetime seed retry.
 - Added an independently running, loopback-only M1 world-kernel HTTP process over the SQLite persistence contract.
 - Added deterministic SHA-256 command previews that bind exact command content, expected version, current state hash, proposed event ID, and resulting state hash without mutating world state.
 - Added preview-bound command acceptance, post-write agreement checks, restart-safe idempotent receipt reconstruction, stable HTTP error codes, bounded JSON bodies, loopback Host enforcement, and redacted integrity responses.
-- Added explicit token-protected projection repair plus five API-specific tests, including an external-process stop/restart round trip against the same database.
+- Added explicit token-protected projection repair plus API-specific tests, including an external-process stop/restart round trip against the same database.
 - Hardened the M1 persistence spine against identity substitution, unreadable seed projections, retired-Thread resurrection, coherent event rewrites, stale command-result caches, and unversioned immutable storage.
 - Added mandatory last-event projection witnesses, command-digest and derived-event-ID replay checks, accepted-command witnesses, projection repair from event history, lifecycle-preserving self-model updates, exact command payload contracts, and bounded payload size.
 - Added SQLite schema version 1, status and JSON checks, causation/correlation/payload-schema/provenance event fields, a five-second busy timeout, typed stored-data integrity failures, and Node 22.13 as the minimum runtime.

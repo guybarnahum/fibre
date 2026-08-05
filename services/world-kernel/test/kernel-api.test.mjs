@@ -3,6 +3,7 @@ import { request as httpRequest } from "node:http";
 import test from "node:test";
 
 import {
+  IdempotencyConflictError,
   IntegrityError,
   StaleThreadVersionError,
   ThreadNotFoundError,
@@ -124,7 +125,7 @@ async function startApi(options = {}) {
     ...(options.maxBodyBytes === undefined ? {} : { maxBodyBytes: options.maxBodyBytes }),
   });
   const address = await listenWorldKernelHttpServer(server, { host: "127.0.0.1", port: 0 });
-  return { store, server, baseUrl: `http://127.0.0.1:${address.port}` };
+  return { store, service, server, baseUrl: `http://127.0.0.1:${address.port}` };
 }
 
 async function json(url, options = {}) {
@@ -132,13 +133,22 @@ async function json(url, options = {}) {
   return { response, body: await response.json() };
 }
 
-async function rawHostRequest(url, host) {
+async function rawRequest(url, { host, path } = {}) {
   const target = new URL(url);
   return await new Promise((resolve, reject) => {
-    const request = httpRequest({ hostname: target.hostname, port: target.port, path: target.pathname, headers: { host } }, (response) => {
+    const request = httpRequest({
+      hostname: target.hostname,
+      port: target.port,
+      path: path ?? target.pathname,
+      headers: { host: host ?? target.host },
+    }, (response) => {
       const chunks = [];
       response.on("data", (chunk) => chunks.push(chunk));
-      response.on("end", () => resolve({ status: response.statusCode, body: JSON.parse(Buffer.concat(chunks)) }));
+      response.on("end", () => resolve({
+        status: response.statusCode,
+        headers: response.headers,
+        body: JSON.parse(Buffer.concat(chunks)),
+      }));
     });
     request.on("error", reject);
     request.end();
@@ -158,7 +168,54 @@ test("preview is deterministic, read-only, exact, and restart-safe for idempoten
   assert.equal(store.events.length, 2);
 });
 
-test("modified, stale, cross-Thread, and divergent storage results fail visibly", () => {
+test("preview envelope and receipt failures remain distinguishable", () => {
+  const store = new FakeStore();
+  const service = new WorldKernelService(store);
+  assert.throws(
+    () => service.previewCommandRequest({ command: command(), sneaky: true }),
+    /not allowed/,
+  );
+  const preview = service.previewCommandRequest({ command: command() });
+  assert.throws(
+    () => service.applyPreviewedCommand({ previewId: "bad", command: command() }),
+    /invalid format/,
+  );
+  assert.throws(
+    () => service.applyPreviewedCommand({ previewId: `prv_${"0".repeat(64)}`, command: command() }),
+    PreviewMismatchError,
+  );
+  service.applyPreviewedCommand({ previewId: preview.previewId, command: command() });
+  assert.throws(
+    () => service.applyPreviewedCommand({
+      previewId: preview.previewId,
+      command: command({ payload: { selfModel: "Different", summary: "Different" } }),
+    }),
+    IdempotencyConflictError,
+  );
+});
+
+test("each post-apply preview witness is enforced", () => {
+  const mutations = [
+    (result) => ({ ...result, thread: { ...result.thread, threadId: "thr_other" } }),
+    (result) => ({ ...result, thread: { ...result.thread, version: 99 } }),
+    (result) => ({ ...result, event: { ...result.event, eventId: "evt_other" } }),
+    (result) => ({ ...result, event: { ...result.event, commandDigest: `sha256:${"0".repeat(64)}` } }),
+    (result) => ({ ...result, event: { ...result.event, stateHash: `sha256:${"0".repeat(64)}` } }),
+  ];
+  for (const mutate of mutations) {
+    const store = new FakeStore();
+    const original = store.applyCommand.bind(store);
+    store.applyCommand = (input) => mutate(original(input));
+    const service = new WorldKernelService(store);
+    const preview = service.previewCommand(command());
+    assert.throws(
+      () => service.applyPreviewedCommand({ previewId: preview.previewId, command: command() }),
+      IntegrityError,
+    );
+  }
+});
+
+test("modified, stale, and cross-Thread commands fail visibly", () => {
   const store = new FakeStore();
   const service = new WorldKernelService(store);
   const preview = service.previewCommand(command());
@@ -169,16 +226,14 @@ test("modified, stale, cross-Thread, and divergent storage results fail visibly"
   assert.throws(() => assertRouteThread("thr_other", command()), RouteThreadMismatchError);
   store.applyCommand(command());
   assert.throws(() => service.previewCommand(command({ commandId: "cmd_stale" })), StaleThreadVersionError);
+});
 
-  const divergent = new FakeStore();
-  const original = divergent.applyCommand.bind(divergent);
-  divergent.applyCommand = (input) => {
-    const result = original(input);
-    return { ...result, event: { ...result.event, stateHash: `sha256:${"0".repeat(64)}` } };
-  };
-  const guarded = new WorldKernelService(divergent);
-  const guardedPreview = guarded.previewCommand(command());
-  assert.throws(() => guarded.applyPreviewedCommand({ previewId: guardedPreview.previewId, command: command() }), IntegrityError);
+test("event history remains inspectable while only the projection is corrupt", () => {
+  const store = new FakeStore();
+  store.getThread = () => { throw new IntegrityError("projection corrupt"); };
+  const service = new WorldKernelService(store);
+  assert.equal(service.listEvents(seed.threadId).length, 1);
+  assert.throws(() => service.listEvents("thr_missing"), ThreadNotFoundError);
 });
 
 test("HTTP exposes preview/apply with stable no-store responses and bounded contracts", async () => {
@@ -206,9 +261,26 @@ test("HTTP exposes preview/apply with stable no-store responses and bounded cont
     assert.equal(applied.response.status, 201);
     assert.equal(applied.body.thread.version, 2);
 
-    const method = await json(`${runtime.baseUrl}/health`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    const method = await json(`${runtime.baseUrl}/health`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
     assert.equal(method.response.status, 405);
     assert.equal(method.response.headers.get("allow"), "GET");
+
+    const plain = await json(`${runtime.baseUrl}/threads`, {
+      method: "POST",
+      headers: { "content-type": "text/plain", origin: "https://evil.example" },
+      body: JSON.stringify({ thread: seed }),
+    });
+    assert.equal(plain.response.status, 415);
+    assert.equal(plain.body.error.code, "UNSUPPORTED_MEDIA_TYPE");
+
+    const preflight = await json(`${runtime.baseUrl}/threads`, { method: "OPTIONS" });
+    assert.equal(preflight.response.status, 405);
+    assert.equal(preflight.response.headers.get("access-control-allow-origin"), null);
+
     const oversized = await json(`${runtime.baseUrl}/threads`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -220,16 +292,36 @@ test("HTTP exposes preview/apply with stable no-store responses and bounded cont
   }
 });
 
-test("administrative repair, loopback routing, and integrity errors keep protected boundaries", async () => {
+test("loopback binding and request authorities fail closed", async () => {
+  const service = new WorldKernelService(new FakeStore());
+  const server = createWorldKernelHttpServer({ service });
+  await assert.rejects(
+    () => listenWorldKernelHttpServer(server, { host: "0.0.0.0", port: 0 }),
+    /loopback/,
+  );
+
+  const runtime = await startApi();
+  try {
+    const host = await rawRequest(`${runtime.baseUrl}/health`, { host: "attacker.example" });
+    assert.equal(host.status, 421);
+    assert.equal(host.body.error.code, "MISDIRECTED_REQUEST");
+    for (const path of ["//evil.example/health", "http://evil.example/health"]) {
+      const authority = await rawRequest(`${runtime.baseUrl}/health`, { path });
+      assert.equal(authority.status, 421);
+      assert.equal(authority.body.error.code, "MISDIRECTED_REQUEST");
+    }
+  } finally {
+    await closeWorldKernelHttpServer(runtime.server);
+  }
+});
+
+test("administrative repair and integrity errors keep protected boundaries", async () => {
   const disabled = await startApi();
   try {
     const repair = await json(`${disabled.baseUrl}/threads/${seed.threadId}/repair-projection`, {
       method: "POST", headers: { "content-type": "application/json" }, body: "{}",
     });
     assert.equal(repair.body.error.code, "REPAIR_DISABLED");
-    const host = await rawHostRequest(`${disabled.baseUrl}/health`, "attacker.example");
-    assert.equal(host.status, 421);
-    assert.equal(host.body.error.code, "MISDIRECTED_REQUEST");
   } finally { await closeWorldKernelHttpServer(disabled.server); }
 
   const store = new FakeStore();
