@@ -1,56 +1,37 @@
 # world-kernel
 
-Owns validated commands, events, lifecycle transitions, provenance, and protected world laws.
+Owns validated commands, events, lifecycle transitions, restricted participation records, temporary cognition, provenance, and protected world laws.
 
-## M1 persistence spine
+## M1 storage profile
 
-`src/persistence.mjs` is the first executable world-kernel storage adapter. It uses Node's built-in `node:sqlite` module to prove a deterministic local Thread round trip without adding a production database dependency.
-
-The adapter persists two visibility classes.
+The local M1 implementation uses one SQLite database and one authoritative `PRAGMA user_version`. Schema version 3 governs every public, restricted, and runtime table:
 
 Public world records:
 
-- `threads` — the current versioned projection and deterministic state hash;
-- `thread_events` — the ordered append-only public Thread history from which the projection is replayed;
-- `commands` — accepted idempotency keys, command digests, resulting versions, and event references.
+- `threads` — current versioned projection and deterministic state hash;
+- `thread_events` — ordered append-only public Thread history;
+- `commands` — accepted idempotency keys and event/version witnesses.
 
 Restricted participation records:
 
-- `activation_requests` — immutable named request origins and SHA-256 request bindings;
-- `request_appraisals` — Thread-owned context capsules, historical snapshot witnesses, policies, opaque IDs, and content digests;
-- `private_participation_stances` — immutable private dignity stances, their own historical state-hash witness, opaque IDs, and content digests.
+- `activation_requests` — immutable named request attempts and request fingerprints;
+- `request_appraisals` — Thread-owned historical context capsules;
+- `private_participation_stances` — immutable private dignity opinions;
+- `participation_authorizations` — immutable live-state execution decisions;
+- `thaw_leases` — exclusive lease state;
+- `runtime_sessions` — temporary-cognition session state;
+- `actor_runs` — immutable deterministic Actor proposals;
+- `goal_guardian_audits` — immutable Goal Guardian audits.
 
-The storage contract:
+Schema versions 1 and 2 migrate transactionally to version 3. Runtime tables no longer use a second version mechanism. SQLite triggers reject mutation of events, commands, requests, appraisals, private stances, authorizations, Actor runs, and Guardian audits.
 
-1. normalizes projection metadata and seeds a validated Thread;
-2. accepts typed commands with expected Thread versions and stable command IDs;
-3. rejects stale versions, illegal lifecycle states, unknown payload fields, oversized payloads, and conflicting idempotency reuse;
-4. appends one event and atomically advances the projection;
-5. verifies ordinary reads against the last immutable event;
-6. replays all events while re-deriving command digests and event IDs and checking command witnesses;
-7. repairs a corrupt projection from intact event history;
-8. persists restricted request, appraisal, and private-stance records without adding them to the public event response;
-9. revalidates restricted records against the exact historical Thread snapshot;
-10. closes and reopens without changing the Thread or its private request traces.
+`thaw_leases` and `runtime_sessions` are the intentional exceptions to append-only storage. Their immutable identity and content fields cannot change; restricted triggers permit only bounded status transitions from `active` to an expired, released, completed, or aborted state with a timestamp and reason where applicable. They cannot be deleted.
 
-SQLite schema version 2 records causation, correlation, payload schema version, provenance, and optional authorization evidence on every public Thread event and adds the restricted participation tables. Existing schema version 1 databases migrate in one transaction. Triggers reject updates or deletes of events, commands, requests, appraisals, and private stances.
+The world projection store and runtime store use separate SQLite handles to keep their interfaces independent. Both use WAL and a five-second busy timeout. Runtime acquisition opens an immediate transaction and rereads the Thread projection and private stance witnesses before writing authorization, lease, and session records. The database partial unique index remains the final one-active-lease-per-Thread authority.
 
-Private record IDs are opaque random 256-bit values with `app_` and `pst_` prefixes. They are not hashes or commitments to private content. SHA-256 content digests are stored separately and verified against historical replay. The database enforces both ID and digest formats. One private stance may be recorded for each appraisal; a different later opinion requires an explicit future revision operation rather than overwrite.
+## M1 local process
 
-`provenance.lastEventId` is projection metadata, not intrinsic identity. Seeding deterministically creates the seed event and normalizes the stored snapshot to reference it. `UPDATE_SELF_MODEL` is permitted only for frozen or dormant Threads and preserves the existing status.
-
-For the M1 one-command/one-event profile, a command event uses its `commandId` as both `causationId` and `correlationId`; the seed event uses its own `eventId`. This means the fields identify the single durable transaction today. Multi-event causation chains and caller-supplied correlation scopes are deferred until the command vocabulary can produce more than one event.
-
-## M1 local world-kernel API
-
-`src/server.mjs` starts an independently running local HTTP process over the storage contract. HTTP parsing, error mapping, preview binding, participation-record validation, and persistence remain separate modules:
-
-- `http-server.mjs` — loopback HTTP transport, restricted-route token checks, exact request envelopes, and stable problem responses;
-- `kernel-service.mjs` — application operations, command-preview enforcement, request-appraisal creation, and private-stance recording;
-- `private-participation.mjs` — runtime validation, request fingerprinting, Thread-owned capsule construction, and private-stance binding;
-- `persistence.mjs` — durable SQLite commands, events, projections, replay, private traces, idempotency, integrity, and repair.
-
-Start it from the repository root:
+Start the loopback-only world kernel from the repository root:
 
 ```bash
 npm run world-kernel
@@ -66,99 +47,117 @@ FIBRE_ADMIN_TOKEN=<optional repair token of at least 16 characters>
 FIBRE_PRIVATE_TOKEN=<optional private-route token of at least 16 characters>
 ```
 
-`.fibre/` is repository-ignored and repository validation rejects tracked content beneath it. The exported listener and the executable both refuse non-loopback bind addresses. Projection repair remains disabled unless `FIBRE_ADMIN_TOKEN` is configured. Restricted participation routes remain disabled unless `FIBRE_PRIVATE_TOKEN` is configured.
+`.fibre/` is ignored and rejected as tracked repository content. The process refuses non-loopback bind and Host authorities, enables no CORS, caps request bodies, uses `Cache-Control: no-store`, and returns stable error codes without stack traces.
 
 ### Public routes
 
 | Method | Route | Purpose |
 |---|---|---|
-| `GET` | `/health` | Service, storage, preview, and repair metadata |
+| `GET` | `/health` | Service, storage, preview, runtime-profile, and repair metadata |
 | `POST` | `/threads` | Idempotently seed one immutable Thread origin |
-| `GET` | `/threads/:threadId` | Read the integrity-checked current projection |
-| `GET` | `/threads/:threadId/events` | Read the ordered public event timeline, including while only the projection is corrupt |
+| `GET` | `/threads/:threadId` | Read the integrity-checked projection |
+| `GET` | `/threads/:threadId/events` | Read the ordered public timeline |
 | `GET` | `/threads/:threadId/integrity` | Replay and compare projection integrity |
-| `POST` | `/threads/:threadId/commands/preview` | Validate and preview a command without writing |
-| `POST` | `/threads/:threadId/commands` | Apply a command only with its matching preview receipt |
-| `POST` | `/threads/:threadId/repair-projection` | Explicit token-protected administrative repair |
+| `POST` | `/threads/:threadId/commands/preview` | Preview a deterministic command without writing |
+| `POST` | `/threads/:threadId/commands` | Apply an exact preview-bound command |
+| `POST` | `/threads/:threadId/repair-projection` | Token-protected projection repair |
 
-The unauthenticated health response does not advertise whether restricted participation access is configured. The independent process startup record may report that fact to its local operator.
+### Restricted request routes
 
-### Restricted participation routes
-
-Every path below `/threads/:threadId/private` requires `x-fibre-private-token` matching `FIBRE_PRIVATE_TOKEN` before route dispatch, including unknown private subpaths.
+Every path below `/threads/:threadId/private` requires `x-fibre-private-token` before route dispatch.
 
 | Method | Route | Purpose |
 |---|---|---|
-| `GET` | `/threads/:threadId/private/requests` | List restricted request summaries without full private payloads |
-| `POST` | `/threads/:threadId/private/requests` | Persist one named request and Thread-owned appraisal capsule |
-| `GET` | `/threads/:threadId/private/requests/:requestId` | Read the complete restricted request trace |
-| `GET` | `/threads/:threadId/private/requests/:requestId/integrity` | Verify the trace against historical Thread replay |
-| `POST` | `/threads/:threadId/private/requests/:requestId/stance` | Persist one validated private participation stance |
+| `GET` | `/threads/:threadId/private/requests` | List restricted request summaries |
+| `POST` | `/threads/:threadId/private/requests` | Persist a request and Thread-owned appraisal capsule |
+| `GET` | `/threads/:threadId/private/requests/:requestId` | Read one complete private trace |
+| `GET` | `/threads/:threadId/private/requests/:requestId/integrity` | Verify the private trace against historical replay |
+| `POST` | `/threads/:threadId/private/requests/:requestId/stance` | Persist one private participation stance |
 
-The local private token is a route capability, not a production principal, consent record, Participation Authorization, authentication architecture, or permission to execute the request.
+For M1, a `requestId` identifies one immutable request/appraisal attempt. Exact retry is idempotent; changed reuse conflicts. A historical stance remains a valid opinion about its historical snapshot, but it cannot authorize current execution after the Thread changes. Recovery is explicit: submit a new request-attempt ID under the same `correlationId`, appraise the current snapshot, record its stance, and authorize that fresh attempt. Earlier attempts remain attributable history.
 
-`POST /threads` is idempotent for the lifetime of the Thread when the submitted snapshot and seed timestamp match the immutable seed event. A retry returns the current projection even after later commands have advanced it. A different proposed origin for the same Thread ID returns `THREAD_ALREADY_EXISTS`.
+### Restricted runtime routes
 
-A request/appraisal submission is idempotent when request content, normalized context selection, policy, timestamp, causation, and correlation metadata match the immutable origin. This remains true after the Thread advances. Reusing the request ID with different content fails with `PRIVATE_REQUEST_CONFLICT`.
+| Method | Route | Purpose |
+|---|---|---|
+| `POST` | `/threads/:threadId/private/requests/:requestId/runtime` | Issue accepted authorization and atomically acquire the exclusive lease/session |
+| `GET` | `/threads/:threadId/private/runtime` | List runtime summaries |
+| `GET` | `/threads/:threadId/private/runtime/:sessionId` | Read one complete restricted runtime |
+| `GET` | `/threads/:threadId/private/runtime/:sessionId/integrity` | Re-read and verify every persisted runtime witness |
+| `POST` | `/threads/:threadId/private/runtime/:sessionId/actor` | Run the deterministic M1 Actor |
+| `POST` | `/threads/:threadId/private/runtime/:sessionId/goal-guardian` | Audit the persisted Actor output |
 
-Request appraisal compilation is allowed only while the Thread is frozen or dormant. A lifecycle-invalid appraisal returns the same 422 lifecycle rejection class used by protected commands. The store also rejects a race in which the Thread advances after a capsule is compiled but before that immutable request/appraisal trace is atomically inserted.
+Runtime mutation requests accept operation IDs and domain inputs only. The kernel owns `issuedAt`, `acquiredAt`, `expiresAt`, and worker `completedAt` using a server clock. The clock is injectable only at the application boundary for deterministic tests. Caller-supplied runtime timestamps are rejected.
 
-A private stance is an opinion about the immutable historical appraisal, not an action against the live Thread. It may therefore be recorded after unrelated later Thread changes, while remaining bound to the request, requester, fingerprint, policy, historical version, and state hash. An exact retry is idempotent. A materially different second stance returns `PRIVATE_STANCE_CONFLICT`; explicit stance revision remains deferred. Any future Participation Authorization must independently revalidate the live Thread version and current governing state.
+Lease duration is configured by the service and is currently five minutes in the independent process. Work at or after `expiresAt` is rejected using the current kernel clock. A later acquisition may reclaim an actually expired lease; reclamation atomically marks the old lease expired and its active session aborted before creating the replacement. A caller cannot preempt a lease by claiming a future time.
 
-The transport rejects query parameters, absolute-form and network-path request targets, unknown envelope fields, unsupported methods, non-JSON mutation requests, oversized HTTP bodies, route/record Thread mismatches, non-loopback `Host` headers, and non-loopback bind addresses. Responses use `Cache-Control: no-store`, do not enable CORS, and never expose stack traces. Integrity failures are logged server-side but returned with a redacted public message. Security headers and content length are owned by the transport and cannot be overridden by problem-specific headers.
+## Authorization and execution context
 
-The local process uses bounded Node transport defaults: 30-second request timeout, 10-second header timeout, five-second keep-alive timeout, and 64 maximum concurrent connections.
+A private stance is not execution authority. Runtime acquisition revalidates the current Thread and exact request chain, then persists one accepted Participation Authorization bound to:
 
-### Command preview
+- Thread ID, current version, and state hash;
+- request ID, fingerprint, and requester;
+- appraisal and private-stance IDs;
+- dignity policy, score, band, evidence, and relationship target;
+- any obligation-mediated override.
 
-A preview performs the same command and lifecycle validation as acceptance but does not mutate world state. It returns:
+Only `authorizedAction: accept` can acquire a lease. A non-accept private desire can be overridden only by a non-empty reference currently present in `currentState.unresolvedIntentions`. Today those obligations originate in the seed/current projection; mutation and discharge of obligations are part of PR #20 freeze work.
 
-- the full SHA-256 command digest;
-- the current Thread state hash and expected version;
-- the deterministic proposed event ID;
-- the proposed resulting version and state hash;
-- the proposed event core and resulting Thread projection;
-- a deterministic `previewId` over those receipt fields.
+The execution context is compiled after accepted authorization and records included and excluded Thread-owned memory and relationship refs. The caller may narrow owned context but cannot inject references. Authorization-to-context binding is checked field by field.
 
-Command acceptance requires the exact command and matching `previewId`. The service recomputes the receipt against current state before writing, so modified or stale previews fail visibly. After persistence, Thread identity, resulting version, event ID, command digest, event state hash, and projected state hash must all match the previewed result. Identical retries reconstruct the original receipt from accepted event history and remain idempotent across process restart.
+## Deterministic Actor
 
-A preview receipt is a consistency and review artifact. It is not consent, participation authorization, an authentication credential, or proof of kernel origin.
+The M1 Actor is a replaceable deterministic proposal worker. It produces a bounded plan, declares no tool calls, declares no direct world commands, and may propose one memory change citing selected Thread-owned memory or relationship evidence. It cannot write authoritative Thread state, events, ledgers, relationships, messages, tools, or external systems.
 
-### Private request trace
+Actor and Guardian rows each permit one record per session; the `session_id UNIQUE` constraints are load-bearing for both ordering and the one-to-one runtime joins.
 
-A Request Appraisal Capsule is compiled from the authoritative Thread snapshot. The caller may narrow Thread-owned memory, relationship, and unresolved-intention references but cannot inject unowned references. The stored capsule records included and excluded references.
+## Goal Guardian boundary
 
-Trace integrity verification reconstructs the exact historical Thread version from immutable events and checks:
+The M1 Goal Guardian is a **declaration and consistency auditor**, not a capability sandbox. It verifies the returned Actor record against the persisted context:
 
-- Thread state-hash witnesses on the request/appraisal and stance;
-- SHA-256 request fingerprint and immutable request digest;
-- complete, disjoint included/excluded partitions of Thread-owned context;
-- copied identity, self-model, needs, feelings, intentions, and budget state;
-- policy, request, requester, snapshot, and appraisal bindings;
-- opaque appraisal and stance ID formats;
-- appraisal and stance content digests.
+- Thread and snapshot binding;
+- request and fingerprint binding;
+- objective preservation;
+- accepted authorization;
+- declared absence of tool calls;
+- declared absence of direct world commands;
+- bounded life-change proposals citing selected Thread-owned evidence.
 
-The public Thread and event routes never copy the appraisal capsule, private rationale, private feelings added by the stance, conflicting motives, uncertainties, or proposed relationship effects. The public Thread projection may separately contain Thread state fields such as `currentState.feelings`; that is distinct from exposing the restricted participation trace.
+Every check is independently falsifiable, and an injected divergent test Actor produces a durable `reject` through the full service pipeline.
 
-### Error mapping
+For a future model or tool-capable Actor, self-declaration is insufficient. Capability enforcement is deferred to an isolated worker/tool gateway that records independently observed tool calls and command attempts for Guardian and kernel verification. The current Guardian must not be treated as a sandbox.
 
-The API uses stable JSON error codes and request IDs:
+## Integrity and idempotency
+
+Private runtime identifiers are opaque random 256-bit values. Content digests and operation digests remain separate witnesses. Reads rederive:
+
+- acquisition-operation digest;
+- authorization digest;
+- execution-context digest;
+- session digest binding context and immutable session metadata;
+- Actor-output and Actor-operation digests;
+- Guardian-audit and Guardian-operation digests.
+
+Exact operation retries return the original record even after the kernel clock advances. Reusing an operation ID for another session or changed content returns `RUNTIME_CONFLICT`. A Thread/request witness changing between service validation and the runtime-store transaction returns the distinct, retry-oriented `RUNTIME_STATE_CHANGED` error.
+
+The runtime integrity route is a read-through verification report: `getRuntime` performs the full rederivation and the route returns its verified witness summary. It is not a second independent replay algorithm.
+
+## Error mapping
 
 - malformed input → `400`;
-- forbidden private or administrative access → `403`;
-- missing Thread, private request, or route → `404`;
+- forbidden private/admin access → `403`;
+- missing Thread, request, runtime, or route → `404`;
 - unsupported method → `405`;
-- stale version, idempotency conflict, preview mismatch, route identity conflict, private request conflict, private stance conflict, or request-appraisal insertion race → `409`;
-- oversized body → `413`;
-- unsupported media type → `415`;
-- lifecycle rejection → `422`;
-- non-loopback routing or request-target authority → `421`;
-- storage busy, disabled repair, disabled private access, or integrity failure → `503`.
+- operation conflict → `409 RUNTIME_CONFLICT`;
+- state changed before acquisition → `409 RUNTIME_STATE_CHANGED`;
+- overlapping lease → `409 THAW_LEASE_CONFLICT`;
+- invalid worker order or inactive session → `409 RUNTIME_ORDER_REJECTED`;
+- actual lease expiry → `409 THAW_LEASE_EXPIRED`;
+- rejected or non-current participation authorization → `422 PARTICIPATION_AUTHORIZATION_REJECTED`;
+- storage busy, disabled private/repair access, or integrity failure → `503`.
 
 ## Deliberate scope boundary
 
-This service remains a deterministic, single-user, local M1 process. It is not a production network service, authentication system, multi-tenant access-control layer, model gateway, thaw-lease manager, authorization-consumption system, or production database.
+The service remains a deterministic, single-user, local M1 process. It is not production authentication, distributed leasing, worker isolation, a tool gateway, a model provider, a remote communication system, or a production database topology.
 
-The public API currently exposes the whole synthetic Thread snapshot to its local caller, but not the restricted participation trace. Before remote or multi-user use, Fibre requires authenticated principals, per-record access-aware private/public views, audited administrative failures, encryption and key management, stricter resource quotas, production-grade slow-client defenses, and alternatives to linear full replay on integrity requests.
-
-Persistent requests and private stances still do not authorize execution. The next M1 stage adds Participation Authorization, restricted disclosure strategy, audience-visible external response, and event-backed authorization consumption. LLM output cannot write the store directly.
+PR #20 remains responsible for authorization consumption, freeze validation, accepted/rejected change reporting, runtime completion, normal lease release, obligation mutation/discharge, Thread lifecycle events, restart, and final replay with no active runtime. LLM or worker output still cannot write world state directly.

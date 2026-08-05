@@ -6,6 +6,7 @@ import {
   IntegrityError,
   StorageBusyError,
 } from "./persistence-common.mjs";
+import { createRuntimeTables } from "./runtime-schema.mjs";
 
 export function normalizeDatabasePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
@@ -192,6 +193,7 @@ function createPrivateParticipationSchema(database) {
 function createSchema(database) {
   createBaseSchema(database);
   createPrivateParticipationSchema(database);
+  createRuntimeTables(database);
 }
 
 export function migrateDatabase(database) {
@@ -206,7 +208,7 @@ export function migrateDatabase(database) {
     const existingTables = Number(
       database
         .prepare(
-          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances')",
+          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits')",
         )
         .get().count,
     );
