@@ -5,7 +5,6 @@ import {
   WORLD_STORE_SCHEMA_VERSION,
   IntegrityError,
   StorageBusyError,
-  assertNonEmpty,
 } from "./persistence-common.mjs";
 
 export function normalizeDatabasePath(databasePath) {
@@ -31,29 +30,7 @@ export function translateStorageError(error) {
   return error;
 }
 
-export function migrateDatabase(database) {
-  const row = database.prepare("PRAGMA user_version").get();
-  const currentVersion = Number(row.user_version);
-  if (currentVersion !== 0 && currentVersion !== WORLD_STORE_SCHEMA_VERSION) {
-    throw new IntegrityError(
-      `Unsupported world-store schema version ${currentVersion}; expected ${WORLD_STORE_SCHEMA_VERSION}`,
-    );
-  }
-  if (currentVersion === 0) {
-    const existingTables = Number(
-      database
-        .prepare(
-          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands')",
-        )
-        .get().count,
-    );
-    if (existingTables !== 0) {
-      throw new IntegrityError(
-        "Refusing an unversioned pre-release world-store schema; recreate the local M1 database",
-      );
-    }
-  }
-
+function createBaseSchema(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS threads (
       thread_id TEXT PRIMARY KEY,
@@ -125,7 +102,133 @@ export function migrateDatabase(database) {
     BEFORE DELETE ON commands
     BEGIN SELECT RAISE(ABORT, 'commands is append-only'); END;
   `);
+}
+
+function createPrivateParticipationSchema(database) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS activation_requests (
+      thread_id TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
+      thread_state_hash TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
+      request_fingerprint TEXT NOT NULL CHECK (length(request_fingerprint) = 71 AND substr(request_fingerprint, 1, 7) = 'sha256:' AND substr(request_fingerprint, 8) NOT GLOB '*[^0-9a-f]*'),
+      request_json TEXT NOT NULL CHECK (json_valid(request_json)),
+      record_digest TEXT NOT NULL CHECK (length(record_digest) = 71 AND substr(record_digest, 1, 7) = 'sha256:' AND substr(record_digest, 8) NOT GLOB '*[^0-9a-f]*'),
+      occurred_at TEXT NOT NULL,
+      causation_id TEXT NOT NULL,
+      correlation_id TEXT NOT NULL,
+      PRIMARY KEY (thread_id, request_id),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS request_appraisals (
+      appraisal_id TEXT PRIMARY KEY CHECK (length(appraisal_id) = 68 AND substr(appraisal_id, 1, 4) = 'app_' AND substr(appraisal_id, 5) NOT GLOB '*[^0-9a-f]*'),
+      thread_id TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
+      thread_state_hash TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
+      request_fingerprint TEXT NOT NULL CHECK (length(request_fingerprint) = 71 AND substr(request_fingerprint, 1, 7) = 'sha256:' AND substr(request_fingerprint, 8) NOT GLOB '*[^0-9a-f]*'),
+      policy_id TEXT NOT NULL,
+      policy_version TEXT NOT NULL,
+      capsule_json TEXT NOT NULL CHECK (json_valid(capsule_json)),
+      capsule_digest TEXT NOT NULL CHECK (length(capsule_digest) = 71 AND substr(capsule_digest, 1, 7) = 'sha256:' AND substr(capsule_digest, 8) NOT GLOB '*[^0-9a-f]*'),
+      occurred_at TEXT NOT NULL,
+      causation_id TEXT NOT NULL,
+      correlation_id TEXT NOT NULL,
+      UNIQUE (thread_id, request_id),
+      FOREIGN KEY (thread_id, request_id)
+        REFERENCES activation_requests(thread_id, request_id)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS private_participation_stances (
+      stance_id TEXT PRIMARY KEY CHECK (length(stance_id) = 68 AND substr(stance_id, 1, 4) = 'pst_' AND substr(stance_id, 5) NOT GLOB '*[^0-9a-f]*'),
+      appraisal_id TEXT NOT NULL UNIQUE,
+      thread_id TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
+      thread_state_hash TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
+      request_fingerprint TEXT NOT NULL CHECK (length(request_fingerprint) = 71 AND substr(request_fingerprint, 1, 7) = 'sha256:' AND substr(request_fingerprint, 8) NOT GLOB '*[^0-9a-f]*'),
+      policy_id TEXT NOT NULL,
+      policy_version TEXT NOT NULL,
+      stance_json TEXT NOT NULL CHECK (json_valid(stance_json)),
+      stance_digest TEXT NOT NULL CHECK (length(stance_digest) = 71 AND substr(stance_digest, 1, 7) = 'sha256:' AND substr(stance_digest, 8) NOT GLOB '*[^0-9a-f]*'),
+      recorded_at TEXT NOT NULL,
+      causation_id TEXT NOT NULL,
+      correlation_id TEXT NOT NULL,
+      FOREIGN KEY (appraisal_id) REFERENCES request_appraisals(appraisal_id),
+      FOREIGN KEY (thread_id, request_id)
+        REFERENCES activation_requests(thread_id, request_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_activation_requests_thread_time
+      ON activation_requests(thread_id, occurred_at, request_id);
+
+    CREATE TRIGGER IF NOT EXISTS activation_requests_no_update
+    BEFORE UPDATE ON activation_requests
+    BEGIN SELECT RAISE(ABORT, 'activation_requests is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS activation_requests_no_delete
+    BEFORE DELETE ON activation_requests
+    BEGIN SELECT RAISE(ABORT, 'activation_requests is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS request_appraisals_no_update
+    BEFORE UPDATE ON request_appraisals
+    BEGIN SELECT RAISE(ABORT, 'request_appraisals is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS request_appraisals_no_delete
+    BEFORE DELETE ON request_appraisals
+    BEGIN SELECT RAISE(ABORT, 'request_appraisals is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS private_participation_stances_no_update
+    BEFORE UPDATE ON private_participation_stances
+    BEGIN SELECT RAISE(ABORT, 'private_participation_stances is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS private_participation_stances_no_delete
+    BEFORE DELETE ON private_participation_stances
+    BEGIN SELECT RAISE(ABORT, 'private_participation_stances is append-only'); END;
+  `);
+}
+
+function createSchema(database) {
+  createBaseSchema(database);
+  createPrivateParticipationSchema(database);
+}
+
+export function migrateDatabase(database) {
+  const row = database.prepare("PRAGMA user_version").get();
+  const currentVersion = Number(row.user_version);
+  if (currentVersion < 0 || currentVersion > WORLD_STORE_SCHEMA_VERSION) {
+    throw new IntegrityError(
+      `Unsupported world-store schema version ${currentVersion}; expected at most ${WORLD_STORE_SCHEMA_VERSION}`,
+    );
+  }
   if (currentVersion === 0) {
+    const existingTables = Number(
+      database
+        .prepare(
+          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances')",
+        )
+        .get().count,
+    );
+    if (existingTables !== 0) {
+      throw new IntegrityError(
+        "Refusing an unversioned pre-release world-store schema; recreate the local M1 database",
+      );
+    }
+  }
+
+  if (currentVersion === WORLD_STORE_SCHEMA_VERSION) {
+    createSchema(database);
+    return;
+  }
+
+  try {
+    database.exec("BEGIN IMMEDIATE");
+    createSchema(database);
     database.exec(`PRAGMA user_version = ${WORLD_STORE_SCHEMA_VERSION}`);
+    database.exec("COMMIT");
+  } catch (error) {
+    safeRollback(database);
+    throw error;
   }
 }

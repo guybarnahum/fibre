@@ -23,6 +23,7 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
   const adminToken = environment.FIBRE_ADMIN_TOKEN ?? null;
+  const privateToken = environment.FIBRE_PRIVATE_TOKEN ?? null;
   assertLoopbackBindHost(host);
 
   const store = openWorldStore(databasePath);
@@ -30,6 +31,7 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
   const server = createWorldKernelHttpServer({
     service,
     adminToken,
+    privateToken,
     onError(error, context) {
       process.stderr.write(`${JSON.stringify({
         level: "error",
@@ -51,7 +53,16 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
       closed = true;
       try { await closeWorldKernelHttpServer(server); } finally { store.close(); }
     };
-    return { server, store, service, address, databasePath, repairEnabled: adminToken !== null, close };
+    return {
+      server,
+      store,
+      service,
+      address,
+      databasePath,
+      repairEnabled: adminToken !== null,
+      privateAccessEnabled: privateToken !== null,
+      close,
+    };
   } catch (error) {
     store.close();
     throw error;
@@ -66,6 +77,7 @@ async function main() {
     port: runtime.address.port,
     databasePath: runtime.databasePath,
     repairEnabled: runtime.repairEnabled,
+    privateAccessEnabled: runtime.privateAccessEnabled,
   })}\n`);
 
   const shutdown = async (signal) => {

@@ -6,6 +6,10 @@ import {
   IdempotencyConflictError,
   IntegrityError,
   LifecycleCommandError,
+  PrivateRequestConflictError,
+  PrivateRequestNotFoundError,
+  PrivateStanceConflictError,
+  StaleAppraisalError,
   StaleThreadVersionError,
   StorageBusyError,
   ThreadAlreadyExistsError,
@@ -103,7 +107,11 @@ function decodeSegment(segment) {
 function mapError(error) {
   if (error instanceof HttpProblemError) return error;
   if (error instanceof ThreadNotFoundError) return new HttpProblemError(404, "THREAD_NOT_FOUND", error.message);
+  if (error instanceof PrivateRequestNotFoundError) return new HttpProblemError(404, "PRIVATE_REQUEST_NOT_FOUND", error.message);
   if (error instanceof ThreadAlreadyExistsError) return new HttpProblemError(409, "THREAD_ALREADY_EXISTS", error.message);
+  if (error instanceof PrivateRequestConflictError) return new HttpProblemError(409, "PRIVATE_REQUEST_CONFLICT", error.message);
+  if (error instanceof PrivateStanceConflictError) return new HttpProblemError(409, "PRIVATE_STANCE_CONFLICT", error.message);
+  if (error instanceof StaleAppraisalError) return new HttpProblemError(409, "STALE_APPRAISAL", error.message);
   if (error instanceof StaleThreadVersionError) return new HttpProblemError(409, "STALE_THREAD_VERSION", error.message);
   if (error instanceof IdempotencyConflictError) return new HttpProblemError(409, "IDEMPOTENCY_CONFLICT", error.message);
   if (error instanceof PreviewMismatchError) return new HttpProblemError(409, "PREVIEW_MISMATCH", error.message);
@@ -148,9 +156,19 @@ function routeParts(request) {
   return url.pathname.split("/").filter(Boolean).map(decodeSegment);
 }
 
+function requirePrivateAccess(request, privateToken) {
+  if (privateToken === null) {
+    throw new HttpProblemError(503, "PRIVATE_ACCESS_DISABLED", "Private request access is not enabled");
+  }
+  if (!safeTokenEqual(request.headers["x-fibre-private-token"], privateToken)) {
+    throw new HttpProblemError(403, "PRIVATE_TOKEN_REQUIRED", "A valid private-access token is required");
+  }
+}
+
 export function createWorldKernelHttpServer({
   service,
   adminToken = null,
+  privateToken = null,
   maxBodyBytes = DEFAULT_MAX_HTTP_BODY_BYTES,
   onError = () => {},
 } = {}) {
@@ -160,8 +178,10 @@ export function createWorldKernelHttpServer({
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1024) {
     throw new TypeError("maxBodyBytes must be an integer of at least 1024");
   }
-  if (adminToken !== null && (typeof adminToken !== "string" || adminToken.length < 16)) {
-    throw new TypeError("adminToken must be null or at least 16 characters");
+  for (const [name, token] of [["adminToken", adminToken], ["privateToken", privateToken]]) {
+    if (token !== null && (typeof token !== "string" || token.length < 16)) {
+      throw new TypeError(`${name} must be null or at least 16 characters`);
+    }
   }
   if (typeof onError !== "function") throw new TypeError("onError must be a function");
 
@@ -203,6 +223,54 @@ export function createWorldKernelHttpServer({
           if (method !== "GET") throw methodNotAllowed("GET");
           return writeJson(response, 200, service.verifyThreadIntegrity(threadId), requestId);
         }
+
+        if (parts.length >= 3 && parts[2] === "private") {
+          requirePrivateAccess(request, privateToken);
+          if (parts.length >= 4 && parts[3] === "requests") {
+            if (parts.length === 4) {
+              if (method === "GET") {
+                return writeJson(response, 200, {
+                  requests: service.listPrivateRequestSummaries(threadId),
+                }, requestId);
+              }
+              if (method === "POST") {
+                const body = await readJson(request, maxBodyBytes);
+                assertExactKeys("request body", body, [
+                  "request", "selection", "policy", "occurredAt", "causationId", "correlationId",
+                ]);
+                const result = service.recordRequestAppraisal(threadId, body);
+                return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
+              }
+              throw methodNotAllowed("GET, POST");
+            }
+            const privateRequestId = parts[4];
+            if (parts.length === 5) {
+              if (method !== "GET") throw methodNotAllowed("GET");
+              return writeJson(response, 200, {
+                trace: service.getPrivateRequestTrace(threadId, privateRequestId),
+              }, requestId);
+            }
+            if (parts.length === 6 && parts[5] === "integrity") {
+              if (method !== "GET") throw methodNotAllowed("GET");
+              return writeJson(
+                response,
+                200,
+                service.verifyPrivateRequestTrace(threadId, privateRequestId),
+                requestId,
+              );
+            }
+            if (parts.length === 6 && parts[5] === "stance") {
+              if (method !== "POST") throw methodNotAllowed("POST");
+              const body = await readJson(request, maxBodyBytes);
+              assertExactKeys("request body", body, [
+                "assessment", "recordedAt", "causationId", "correlationId",
+              ]);
+              const result = service.recordPrivateStance(threadId, privateRequestId, body);
+              return writeJson(response, result.idempotent ? 200 : 201, result, requestId);
+            }
+          }
+        }
+
         if (parts.length === 4 && parts[2] === "commands" && parts[3] === "preview") {
           if (method !== "POST") throw methodNotAllowed("POST");
           const body = await readJson(request, maxBodyBytes);

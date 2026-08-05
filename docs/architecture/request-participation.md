@@ -28,6 +28,12 @@ In the portable prototype, obligation references resolve against the Thread's ow
 
 The appraisal worker must not perform the requested task.
 
+The M1 kernel persists the named activation request and its capsule as immutable restricted records. The request carries the portable SHA-256 fingerprint over every material request field. The capsule is built from the authoritative Thread snapshot and stores that snapshot version and state-hash witness. Integrity verification replays to that historical version and proves that included and excluded references form complete, disjoint partitions of the memory, relationship, and obligation references owned by the Thread at that time.
+
+An exact request/appraisal retry is idempotent even after later Thread changes. Reusing the same request ID with materially different request content, selection, policy, timestamps, or causal metadata fails visibly.
+
+Compilation is permitted only while the Thread is frozen or dormant. If the Thread advances after compilation but before the immutable request/appraisal trace is inserted, the store rejects that race rather than persisting a capsule against the wrong snapshot.
+
 ### 2. Private dignity stance
 
 Cognition proposes a private record containing:
@@ -48,6 +54,14 @@ The initial default policy bands remain:
 
 A dignity-based proposal to accept requires high dignity. Clarification requires a non-empty repair question, and delegation requires a validated alternative entity. Other action choices remain individualized rather than mechanically forced by the score.
 
+The M1 kernel persists one restricted private stance bound to the request, fingerprint, exact historical Thread snapshot, state hash, policy, and requester. A stance is the Thread's opinion about that durable appraisal at that time. It may be recorded after unrelated later Thread changes without changing what snapshot it describes. Any future Participation Authorization or execution decision must separately revalidate current Thread state.
+
+An exact stance retry remains idempotent. A materially different second stance conflicts until explicit stance revision is implemented. This prevents silent overwrite while leaving a clear future path for a new `PRIVATE_STANCE_REVISED` record.
+
+Appraisal and stance records have opaque random identifiers. Their SHA-256 content digests are stored and verified separately so an identifier is not a commitment to private material.
+
+The request, capsule, and stance are stored outside the public Thread event response. Every private route requires a separate local private token before route dispatch. That token protects route access only; it is not consent, Participation Authorization, or permission to execute.
+
 ### 3. Request-bound authorization
 
 The world kernel validates the private stance and issues a Participation Authorization bound to:
@@ -67,6 +81,8 @@ The request digest is an integrity binding against adversarial request substitut
 Authorization may differ from private desire only when the Thread explicitly chooses to honor a recorded obligation or governing decision. The override preserves the desired action, conflict, rationale, and governing reference. In the portable prototype every reference must be non-empty and resolve to a Thread-owned unresolved intention. Capability or technical feasibility alone never qualifies as such a reason.
 
 The portable domain contract validates request content, Thread, snapshot, requester, policy, score, relationship evidence, rationale, and obligation bindings structurally at issuance and again before execution. Event-backed origin proof, one-time consumption, and replay detection remain deferred to the live kernel; those deferrals do not weaken content integrity.
+
+A historical stance does not authorize current action by itself. Persistent authorization must bind to and validate the live governing state needed for execution. Persistent authorization is the next M1 slice.
 
 ### 4. Interest-mediated disclosure
 
@@ -120,6 +136,8 @@ Private relationship attitudes are not automatically disclosed to the entity the
 9. optional `EXTERNAL_EXPRESSION_EMITTED`
 10. when accepted, `THREAD_CONTEXT_COMPILED`
 11. task cognition and existing audit events
+
+The current M1 implementation stores the first three durable participation artifacts in a restricted append-only ledger instead of exposing their private payloads through the public Thread event route. The representative order remains the intended causal history.
 
 ## Human-inspectable artifact
 

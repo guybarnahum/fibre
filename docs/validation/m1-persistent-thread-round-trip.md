@@ -41,11 +41,15 @@ A completed M1 produces human-inspectable evidence for:
 13. replay report and matching state hash;
 14. restart-survival end-to-end test.
 
+Artifacts 1–7 now have executable M1 evidence. The world-kernel persists request, appraisal, and stance records under restricted access, verifies them against historical Thread replay, uses opaque private record IDs with separate content digests, and keeps their private payloads outside the public Thread event response. Artifacts 8–14 remain active M1 work.
+
 ## M1 non-goals
 
 M1 does not implement production LLM routing, semantic-memory infrastructure, production cloud deployment, high-availability or multi-region operation, marketplace behavior, full ledgers, real external messaging, multi-tenant security, individualized dignity thresholds, learned disclosure strategies, production private-state access control, kernel-origin capability proofs, or cryptographic authorization signatures.
 
 M1 does require a cryptographically wide SHA-256 request-content digest. Origin proof, one-time consumption, and distributed replay prevention are separate deferred kernel capabilities.
+
+The local private-route token introduced for artifact inspection is not production authentication, consent, Participation Authorization, or execution permission.
 
 These capabilities are deferred, not rejected. M1 preserves their domain vocabulary and extension paths.
 
@@ -59,15 +63,16 @@ These capabilities are deferred, not rejected. M1 preserves their domain vocabul
 6. Externally initiated full execution requires accepted authorization bound to the same Thread, SHA-256 digest of all material request fields, requester, policy version, and causation chain.
 7. Private stance, authorization, disclosure strategy, external expression, and performed action remain distinguishable; public wording is not authorization evidence.
 8. Appraisal context is selected only from records the Thread owns. Runtime narrowing records included and excluded references; requesters cannot inject or directly select private context.
-9. Authorization that overrides private desire requires a non-empty reference resolving to a recorded Thread obligation or governing decision.
-10. The requester-facing expression does not carry restricted disclosure mode or private rationale and cannot imply acceptance without accepted authorization.
-11. A Thread has at most one authoritative thaw lease.
-12. Freeze validates each proposed mutation and releases runtime resources.
-13. Retries do not duplicate commands, authorization consumption, memories, messages, or economic effects.
-14. Interrupted sessions remain diagnosable and recoverable.
-15. Ordered events reconstruct the same Thread state and version.
-16. Human inspection distinguishes current state, private records, authorization, public expression, runtime context, proposed cognition, and accepted history.
-17. Narrow implementation choices preserve Fibre's larger social, relational, economic, familial, cultural, institutional, and developmental ambition.
+9. A private stance remains bound to the immutable historical appraisal and state hash it describes; later Thread changes do not erase or strand that opinion. Current authorization and execution still require separate live-state validation.
+10. Authorization that overrides private desire requires a non-empty reference resolving to a recorded Thread obligation or governing decision.
+11. The requester-facing expression does not carry restricted disclosure mode or private rationale and cannot imply acceptance without accepted authorization.
+12. A Thread has at most one authoritative thaw lease.
+13. Freeze validates each proposed mutation and releases runtime resources.
+14. Retries do not duplicate commands, requests, appraisals, private stances, authorization consumption, memories, messages, or economic effects.
+15. Interrupted sessions remain diagnosable and recoverable.
+16. Ordered events reconstruct the same Thread state and version.
+17. Human inspection distinguishes current state, private records, authorization, public expression, runtime context, proposed cognition, and accepted history.
+18. Narrow implementation choices preserve Fibre's larger social, relational, economic, familial, cultural, institutional, and developmental ambition.
 
 ## Minimum persistent model
 
@@ -88,6 +93,8 @@ M1 requires durable representations for:
 
 SQLite remains the recommended local target. Storage interfaces remain infrastructure-neutral.
 
+The current SQLite schema version 2 implements the first three participation records in separate restricted append-only tables and migrates schema version 1 in one transaction. Appraisal and stance identifiers are opaque random values; their SHA-256 content digests are stored separately. One stance is permitted per appraisal until an explicit revision operation exists.
+
 ## Canonical acceptance scenario
 
 1. Seed Mina as a frozen Thread at a known version and state hash.
@@ -106,15 +113,19 @@ SQLite remains the recommended local target. Storage interfaces remain infrastru
 14. Freeze Mina, explicitly accepting or rejecting proposed changes, resolve or retain obligations, and release the lease.
 15. Restart, reload, replay events, and verify matching state hash, version, lifecycle status, and no active runtime.
 
+Steps 4–6 now have durable process-restart evidence. The named request and private trace survive restart, exact retries do not duplicate records, a direct appraisal insertion race fails without partial rows, and a private stance remains recordable against its historical appraisal after unrelated Thread advancement. Public Thread/event routes reveal none of the restricted stance fields.
+
 ## Required automated evidence
 
 Tests cover persistence across restart, command validation, stale-version rejection, append-only events, Thread-owned appraisal context and exclusion traces, deterministic private appraisal, all policy-band boundaries, low-dignity accept rejection, clarification and delegation preconditions, SHA-256 material-term binding, requester binding, cross-request/cross-Thread/stale authorization rejection, recorded-obligation override rules, non-accept without execution, disclosure-to-authorization binding, public wording unable to create authorization at both strategy and response boundaries, exclusive lease, deterministic execution context, Actor and Goal Guardian output, freeze validation, idempotent retry, runtime release, and replay equality.
 
-The portable package supplies the domain-boundary tests now. Full persistence, lease, consumption, restart, and replay evidence is produced by the M1 implementation. Mutation-coverage automation is deferred as an evaluation improvement; the accepted M1 evidence is defined by named behavioral properties rather than a passing test count.
+The portable package supplies the domain-boundary tests. The live kernel now supplies persistence, historical snapshot binding, append-only private-record, restricted-route, restart, idempotency, direct insertion-race, public-non-disclosure, opaque-ID, complete-partition, copied-state, stance-binding, evidence-precondition, and coherent-tamper evidence for requests, capsules, and private stances. The committed evidence artifact maps every advertised rejection to a named test rather than relying on the aggregate passing count.
+
+Lease, authorization consumption, execution, freeze, and final replay evidence remain later M1 slices. Mutation-coverage automation is deferred as an evaluation improvement; the accepted M1 evidence is defined by named behavioral properties rather than a passing test count.
 
 ## Human demonstration
 
-A reviewer can inspect Mina's state and history, restart the service, submit the canonical request, inspect appraisal and private stance under appropriate access, inspect authorization and rejected misuse attempts, verify non-accept does not thaw, inspect an audience response without restricted disclosure metadata, run the accepted branch, inspect audits and freeze results, restart again, replay events, and verify no runtime remains.
+A reviewer can inspect Mina's state and history, restart the service, submit the canonical request, inspect appraisal and private stance through the restricted route, verify that the public event route does not reveal the private trace, advance Mina for an unrelated reason and still record the historically bound stance, inspect authorization and rejected misuse attempts, verify non-accept does not thaw, inspect an audience response without restricted disclosure metadata, run the accepted branch, inspect audits and freeze results, restart again, replay events, and verify no runtime remains.
 
 ## Owner validation
 
