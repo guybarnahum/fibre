@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -25,6 +26,26 @@ function report(message) {
 
 for (const file of required) {
   if (!existsSync(file)) report(`Missing required file: ${file}`);
+}
+
+const gitignoreLines = new Set(
+  readFileSync(".gitignore", "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean),
+);
+if (!gitignoreLines.has(".fibre/")) {
+  report(".gitignore must exclude .fibre/ so live world state cannot enter Git");
+}
+try {
+  const trackedWorldState = execFileSync("git", ["ls-files", "--", ".fibre"], {
+    encoding: "utf8",
+  }).trim();
+  if (trackedWorldState !== "") {
+    report(`Live world-state paths are tracked under .fibre/: ${trackedWorldState}`);
+  }
+} catch (error) {
+  report(`Unable to verify tracked .fibre/ paths: ${error.message}`);
 }
 
 function walk(dir) {

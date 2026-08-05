@@ -9,6 +9,7 @@ coverage/
 artifacts/generated/*
 !artifacts/generated/.gitkeep
 
+.fibre/
 *.tsbuildinfo
 *.sqlite
 *.sqlite-shm
