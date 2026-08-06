@@ -28,12 +28,19 @@ export function runtimeSummary(runtime) {
   };
 }
 
-function leaseExpiredAt(lease, kernelTime) {
-  if (lease?.status === "expired") return true;
-  if (typeof lease?.expiresAt !== "string" || typeof kernelTime !== "string") return false;
-  const expiresAt = Date.parse(lease.expiresAt);
-  const observedAt = Date.parse(kernelTime);
-  return Number.isFinite(expiresAt) && Number.isFinite(observedAt) && expiresAt <= observedAt;
+function parsedTime(value) {
+  if (typeof value !== "string") return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function leaseExpirationState(lease, kernelTime) {
+  if (lease?.status === "expired") return "expired";
+  const expiresAt = parsedTime(lease?.expiresAt);
+  if (expiresAt === null) return "not_applicable";
+  const observedAt = parsedTime(kernelTime);
+  if (observedAt === null) return "unknown";
+  return expiresAt <= observedAt ? "expired" : "current";
 }
 
 export function lifecycleOutcome(runtimeDetail, freezeDetail, abandonDetail, kernelTime = null) {
@@ -45,7 +52,8 @@ export function lifecycleOutcome(runtimeDetail, freezeDetail, abandonDetail, ker
   if (abandonDetail?.abandonment ?? abandonDetail?.record ?? abandonDetail?.abandonmentId) {
     return { kind: "abandoned", label: "Explicitly abandoned", detail: "Guardian-rejected episode closed without consumption." };
   }
-  if (leaseExpiredAt(lease, kernelTime)) {
+  const expiration = leaseExpirationState(lease, kernelTime);
+  if (expiration === "expired") {
     const pendingReclaim = lease?.status === "active";
     return {
       kind: "timeout",
@@ -61,7 +69,43 @@ export function lifecycleOutcome(runtimeDetail, freezeDetail, abandonDetail, ker
   if (session?.status === "completed") {
     return { kind: "completed", label: "Completed", detail: "Runtime completed." };
   }
-  return { kind: "active", label: "Active", detail: "Runtime remains active at the kernel-observed time." };
+  if (expiration === "unknown") {
+    return {
+      kind: "unknown",
+      label: "Expiry unknown",
+      detail: "The runtime has a lease expiry, but current kernel time is unavailable. The editor will not assert that it remains active.",
+    };
+  }
+  return { kind: "active", label: "Active", detail: "Runtime remains active at the freshly observed kernel time." };
+}
+
+export async function loadRuntimeInspection({ basePath, fetchJson, optionalJson }) {
+  if (typeof basePath !== "string" || basePath.length === 0) {
+    throw new TypeError("basePath is required");
+  }
+  if (typeof fetchJson !== "function" || typeof optionalJson !== "function") {
+    throw new TypeError("fetchJson and optionalJson are required");
+  }
+  const [health, runtime, integrity, freeze, freezeIntegrity, abandon, abandonIntegrity] = await Promise.all([
+    fetchJson("/api/editor/health"),
+    fetchJson(basePath),
+    fetchJson(`${basePath}/integrity`),
+    optionalJson(`${basePath}/freeze`),
+    optionalJson(`${basePath}/freeze/integrity`),
+    optionalJson(`${basePath}/abandon`),
+    optionalJson(`${basePath}/abandon/integrity`),
+  ]);
+  const kernelTime = health?.kernel?.kernelTime ?? null;
+  return {
+    runtime,
+    integrity,
+    freeze,
+    freezeIntegrity,
+    abandon,
+    abandonIntegrity,
+    kernelTime,
+    outcome: lifecycleOutcome(runtime, freeze, abandon, kernelTime),
+  };
 }
 
 export function inspectionCounts(inspection) {

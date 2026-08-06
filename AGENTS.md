@@ -119,7 +119,7 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Ledger changes must be balanced and append-only.
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
 - Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
-- Automated evidence must name and test accepted negative properties. A passing test count alone is not evidence; targeted mutation analysis is recommended for consequential guards.
+- Automated evidence must name and test accepted negative properties. For authority-, consent-, obligation-, identity-, ledger-, and lifecycle-critical guards, evidence must pin both the guard's behavior and the live call path or transaction boundary that makes it load-bearing; a removable wiring point is not sufficient evidence. A passing test count alone is not evidence; targeted mutation analysis is recommended for consequential guards.
 
 ## Definition of done
 
