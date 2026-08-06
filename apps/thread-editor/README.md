@@ -12,6 +12,39 @@ npm run demo:m1
 
 The command generates local credentials, starts separate kernel and editor processes, drives the complete scenario through HTTP, restarts the kernel repeatedly, emits a redacted JSON proof report, and removes its temporary database unless `--keep-database` is supplied.
 
+## Explore the completed M1 world
+
+For the most enjoyable human demonstration, run:
+
+```bash
+npm run demo:m1:editor
+```
+
+This command first runs the same reviewed M1 proof. After it succeeds, it retains the completed SQLite world, starts the normal World Kernel and credentialed Thread Editor on available loopback ports, and prints the exact access URL.
+
+Open that URL, load `thr_mina_001`, and inspect:
+
+- **Overview** for Mina's version-4 projection, state hash, two freeze-created memories, and empty unresolved intentions;
+- **Events** for `THREAD_SEEDED`, `SELF_MODEL_UPDATED`, and the two `THREAD_FROZEN` life events;
+- **Requests** for the stale attempt, correlated recovery, accepted request, private refusals, and obligation-mediated participation;
+- **Runtime** for Guardian pass/reject, explicit non-consuming abandonment, unattended timeout, lazy reclaim, and both successful freezes;
+- **Integrity** and **Raw** for replay, authorization, consumption, freeze, memory, and lifecycle witnesses.
+
+The command uses free ephemeral ports and fresh private, administrative, and editor credentials. Press Ctrl-C when finished. The retained database remains available and its path is printed. To delete it automatically on exit:
+
+```bash
+npm run demo:m1:editor -- --delete-on-exit
+```
+
+Summarize and verify a retained database with:
+
+```bash
+npm run inspect:db -- "/path/to/world.sqlite"
+npm run inspect:db -- "/path/to/world.sqlite" --json
+```
+
+The inspector checks SQLite integrity, foreign keys, schema version, Thread replay and projection hashes, private request traces, runtime witnesses, freeze and authorization-consumption records, abandonment non-consumption, and freeze-created memory projection.
+
 ## Interactive start
 
 Run the world kernel and editor with the same private token. Configure an admin token whenever live command acceptance is needed outside the editor:

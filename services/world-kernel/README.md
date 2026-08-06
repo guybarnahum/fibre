@@ -39,6 +39,25 @@ The consolidated runner starts independent kernel and credentialed editor proces
 - obligation-mediated authorization, discharge, and permanent reuse rejection;
 - final restart/replay equality, two accepted memories, replay rejection, and zero active runtimes.
 
+## Inspect a completed world
+
+Run the full proof and keep its completed world live in the Thread Editor:
+
+```bash
+npm run demo:m1:editor
+```
+
+The command prints a credentialed editor URL and the retained SQLite path. It uses free loopback ports and fresh credentials. Press Ctrl-C to stop the local servers; the database remains available unless `--delete-on-exit` is supplied.
+
+Verify and summarize any retained current-schema Fibre database with:
+
+```bash
+npm run inspect:db -- "/path/to/world.sqlite"
+npm run inspect:db -- "/path/to/world.sqlite" --json
+```
+
+The inspector checks SQLite integrity, foreign keys, schema completeness, Thread replay and projection hashes, private traces, runtime witnesses, freeze and consumption records, abandonment non-consumption, and accepted-memory projection. It reports failures without repairing the database.
+
 ## Start the normal local process
 
 ```bash
@@ -126,7 +145,7 @@ A Guardian-rejected active runtime may instead be explicitly abandoned. One tran
 
 ## Replay and privacy
 
-The `THREAD_FROZEN` witness binds request, session, authorization, report, Actor, Guardian, kernel time, exact decisions, accepted/rejected changes, discharged obligations, prior state, and resulting state.
+The `THREAD_FROZEN` witness binds request, session, authorization, report, Actor, Guardian, kernel completion time, exact decisions, accepted/rejected changes, discharged obligations, prior state, and resulting state.
 
 Replay reconstructs the freeze report, operation and commit digests, event ID, memory refs, obligation discharge, and resulting state hash. Thread integrity cross-checks freeze reports, `thread_memories`, and projection `memoryRefs`.
 
