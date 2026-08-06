@@ -7,82 +7,122 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
+  <header class="site-header">
     <div>
-      <p class="eyebrow">Fibre founding tool</p>
+      <p class="eyebrow">Fibre world inspection</p>
       <h1>Thread Editor</h1>
-      <p>Load, inspect, simulate, and propose changes to a synthetic Thread.</p>
+      <p>Inspect a live Thread, its public history, private participation trace, temporary cognition, and lifecycle integrity.</p>
     </div>
-    <div class="status" id="status">Fixture mode · no live writes</div>
+    <div class="connection-status" id="connectionStatus" data-state="loading">Connecting…</div>
   </header>
 
   <main>
-    <section class="toolbar">
-      <label>Fixture
-        <select id="fixtureSelect">
-          <option value="mina">Mina Park</option>
-          <option value="daniel">Daniel Rossi</option>
-        </select>
-      </label>
-      <label class="file-label">Load JSON
-        <input id="fileInput" type="file" accept="application/json,.json">
-      </label>
-      <button id="downloadButton" type="button">Download snapshot</button>
+    <section class="notice">
+      <strong>Inspection boundary</strong>
+      <span>This editor cannot seed, accept commands, acquire runtime, run workers, freeze, abandon, repair, or mutate obligations. Self-model changes are previewed only.</span>
     </section>
 
-    <section class="grid">
-      <article class="profile panel">
-        <div class="avatar" id="avatar">MP</div>
+    <section class="toolbar panel">
+      <label>Thread ID
+        <input id="threadId" value="thr_mina_001" autocomplete="off" spellcheck="false">
+      </label>
+      <button id="loadButton" type="button">Load Thread</button>
+      <button id="refreshButton" type="button">Refresh</button>
+      <span class="toolbar-note" id="lastLoaded">Not loaded</span>
+    </section>
+
+    <section id="errorPanel" class="error-panel" hidden></section>
+
+    <section class="overview-grid">
+      <article class="panel profile-panel">
+        <div class="avatar" id="avatar">—</div>
         <div>
-          <p class="eyebrow" id="orientation">Original Thread</p>
-          <h2 id="name">Mina Park</h2>
-          <p id="description"></p>
+          <p class="eyebrow" id="orientation">Thread</p>
+          <h2 id="name">No Thread loaded</h2>
+          <p id="description" class="muted"></p>
           <div class="chips" id="culture"></div>
         </div>
         <dl class="facts">
-          <div><dt>Status</dt><dd id="threadStatus"></dd></div>
-          <div><dt>Version</dt><dd id="version"></dd></div>
-          <div><dt>Birth city</dt><dd id="birthCity"></dd></div>
-          <div><dt>Work city</dt><dd id="workCity"></dd></div>
-          <div><dt>FC</dt><dd id="fc"></dd></div>
-          <div><dt>Model tokens</dt><dd id="tokens"></dd></div>
+          <div><dt>Status</dt><dd id="threadStatus">—</dd></div>
+          <div><dt>Version</dt><dd id="version">—</dd></div>
+          <div><dt>State hash</dt><dd id="stateHash" class="mono">—</dd></div>
+          <div><dt>Events</dt><dd id="eventCount">0</dd></div>
+          <div><dt>Requests</dt><dd id="requestCount">0</dd></div>
+          <div><dt>Runtimes</dt><dd id="runtimeCount">0</dd></div>
         </dl>
       </article>
 
-      <article class="panel">
-        <h2>Genetic personality</h2>
-        <div id="traits" class="stack"></div>
-      </article>
-
-      <article class="panel">
-        <h2>Current life state</h2>
-        <h3>Needs</h3><ul id="needs"></ul>
-        <h3>Feelings</h3><ul id="feelings"></ul>
-        <h3>Self-model</h3>
-        <textarea id="selfModel" rows="7"></textarea>
-        <button id="proposeButton" type="button">Preview update command</button>
-      </article>
-
-      <article class="panel">
-        <h2>Thaw preview</h2>
-        <label>Objective
-          <textarea id="objective" rows="4">Review a Fibre website proposal and decide whether to bid.</textarea>
-        </label>
-        <button id="thawButton" type="button">Build context capsule</button>
-        <pre id="capsule"></pre>
-      </article>
-
-      <article class="panel wide">
-        <h2>Proposed command / raw snapshot</h2>
-        <div class="tabs">
-          <button class="tab active" data-tab="command" type="button">Command</button>
-          <button class="tab" data-tab="raw" type="button">Raw JSON</button>
+      <article class="panel integrity-panel">
+        <div class="section-heading">
+          <div><p class="eyebrow">Authoritative checks</p><h2>Integrity</h2></div>
+          <span class="badge" id="integrityBadge">Not checked</span>
         </div>
-        <pre id="command"></pre>
-        <pre id="raw" hidden></pre>
+        <dl class="facts compact">
+          <div><dt>Projection/event agreement</dt><dd id="projectionIntegrity">—</dd></div>
+          <div><dt>Freeze-created memories</dt><dd id="memoryIntegrity">—</dd></div>
+          <div><dt>Private inspection</dt><dd id="privateAvailability">—</dd></div>
+        </dl>
+        <pre id="integrityRaw">No integrity report.</pre>
       </article>
     </section>
+
+    <nav class="tabs" aria-label="Thread Editor views">
+      <button class="tab active" data-view="state" type="button">Life state</button>
+      <button class="tab" data-view="events" type="button">Public events</button>
+      <button class="tab" data-view="requests" type="button">Private requests</button>
+      <button class="tab" data-view="runtimes" type="button">Runtime episodes</button>
+      <button class="tab" data-view="preview" type="button">Preview</button>
+      <button class="tab" data-view="raw" type="button">Raw</button>
+    </nav>
+
+    <section id="view-state" class="view-grid">
+      <article class="panel"><h2>Current self-model</h2><p id="selfModel"></p></article>
+      <article class="panel"><h2>Needs</h2><ul id="needs"></ul></article>
+      <article class="panel"><h2>Feelings</h2><ul id="feelings"></ul></article>
+      <article class="panel"><h2>Unresolved intentions</h2><ul id="intentions"></ul><p class="boundary-note">Read-only in PR #21. No obligation or intention mutation is exposed.</p></article>
+      <article class="panel wide"><h2>Genetic personality</h2><div id="traits" class="trait-grid"></div></article>
+    </section>
+
+    <section id="view-events" class="view-grid" hidden>
+      <article class="panel list-panel"><h2>Public timeline</h2><div id="eventList" class="record-list"></div></article>
+      <article class="panel detail-panel"><h2>Selected public event</h2><pre id="eventDetail">Select an event.</pre></article>
+    </section>
+
+    <section id="view-requests" class="view-grid" hidden>
+      <article class="panel list-panel"><h2>Request attempts</h2><div id="requestList" class="record-list"></div></article>
+      <article class="panel detail-panel"><h2>Restricted request trace</h2><pre id="requestDetail">Select a request.</pre></article>
+    </section>
+
+    <section id="view-runtimes" class="view-grid" hidden>
+      <article class="panel list-panel"><h2>Runtime episodes</h2><div id="runtimeList" class="record-list"></div></article>
+      <article class="panel detail-panel">
+        <div class="section-heading"><h2>Restricted runtime trace</h2><span id="lifecycleBadge" class="badge">Select a runtime</span></div>
+        <p id="lifecycleDetail" class="muted"></p>
+        <pre id="runtimeDetail">Select a runtime.</pre>
+      </article>
+    </section>
+
+    <section id="view-preview" class="view-grid" hidden>
+      <article class="panel">
+        <p class="eyebrow">Non-mutating simulation</p>
+        <h2>Preview self-model update</h2>
+        <label>Proposed self-model
+          <textarea id="previewSelfModel" rows="9"></textarea>
+        </label>
+        <label>Summary
+          <input id="previewSummary" value="Thread Editor non-mutating preview">
+        </label>
+        <button id="previewButton" type="button">Request kernel preview</button>
+        <p class="boundary-note">The editor cannot call the command-acceptance route. Preview receipts are not consent or authorization.</p>
+      </article>
+      <article class="panel detail-panel"><h2>Kernel preview receipt</h2><pre id="previewResult">No preview requested.</pre></article>
+    </section>
+
+    <section id="view-raw" class="view-grid" hidden>
+      <article class="panel wide"><h2>Aggregated inspection payload</h2><pre id="rawInspection">No Thread loaded.</pre></article>
+    </section>
   </main>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -108,14 +108,19 @@ function problem(error) {
   return [500, "INTERNAL_ERROR", "The world-kernel could not complete the request", {}];
 }
 
-function abandonRoute(target) {
+function parsedParts(target) {
   if (typeof target !== "string" || !target.startsWith("/") || target.startsWith("//")) {
     return null;
   }
   const url = new URL(target, "http://world-kernel.local");
   if (url.search !== "") return null;
-  const parts = url.pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  return url.pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+}
+
+function abandonRoute(target) {
+  const parts = parsedParts(target);
   if (
+    parts !== null &&
     parts.length >= 6 &&
     parts[0] === "threads" &&
     parts[2] === "private" &&
@@ -132,9 +137,18 @@ function abandonRoute(target) {
   return null;
 }
 
+function commandAcceptanceRoute(target) {
+  const parts = parsedParts(target);
+  return parts !== null &&
+    parts.length === 3 &&
+    parts[0] === "threads" &&
+    parts[2] === "commands";
+}
+
 export function createLifecycleWorldKernelHttpServer({
   service,
   privateToken = null,
+  adminToken = null,
   maxBodyBytes = DEFAULT_MAX_HTTP_BODY_BYTES,
   onError = () => {},
   ...baseOptions
@@ -142,6 +156,7 @@ export function createLifecycleWorldKernelHttpServer({
   const server = createFreezeWorldKernelHttpServer({
     service,
     privateToken,
+    adminToken,
     maxBodyBytes,
     onError,
     ...baseOptions,
@@ -149,6 +164,37 @@ export function createLifecycleWorldKernelHttpServer({
   const [baseHandler] = server.listeners("request");
   server.removeAllListeners("request");
   server.on("request", async (request, response) => {
+    if (commandAcceptanceRoute(request.url)) {
+      const id = requestId(request.headers["x-request-id"]);
+      try {
+        if (!loopbackHost(request.headers.host)) {
+          const error = new TypeError("The M1 world-kernel accepts only loopback Host headers");
+          error.httpStatus = 421;
+          error.httpCode = "MISDIRECTED_REQUEST";
+          throw error;
+        }
+        if (adminToken === null) {
+          const error = new TypeError("Command acceptance is not enabled");
+          error.httpStatus = 503;
+          error.httpCode = "COMMAND_ACCEPTANCE_DISABLED";
+          throw error;
+        }
+        if (!tokenEqual(request.headers["x-fibre-admin-token"], adminToken)) {
+          const error = new TypeError("A valid administrative token is required for command acceptance");
+          error.httpStatus = 403;
+          error.httpCode = "ADMIN_TOKEN_REQUIRED";
+          throw error;
+        }
+        return baseHandler(request, response);
+      } catch (error) {
+        const [status, code, message, headers] = problem(error);
+        if (!response.headersSent) {
+          return writeJson(response, status, { error: { code, message, requestId: id } }, id, headers);
+        }
+        return response.destroy();
+      }
+    }
+
     let route;
     try {
       route = abandonRoute(request.url);

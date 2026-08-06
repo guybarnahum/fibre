@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Replaced the fixture-only Thread Editor with a loopback-only, API-backed inspection surface over the independently running world kernel.
+- Added live public/private views for Thread state, event history, integrity, request/appraisal/stance traces, runtime, authorization, Actor, Goal Guardian, freeze, abandonment, timeout, and raw inspection data.
+- Added a per-run editor API credential, kept `FIBRE_PRIVATE_TOKEN` server-side, rejected non-loopback upstreams and Host authorities, enabled no CORS, and exposed no generic reverse proxy.
+- Made timeout display compare `expiresAt` against kernel-published time, including the truthful `Timed out — not yet reclaimed` state before lazy lease reclamation.
+- Hardened the editor proxy and static server against encoded suffix traversal, encoded static traversal, symlinked files/directories, filesystem escape, oversized upstream JSON, content-type CSRF, unknown preview fields, and request-body overflow.
+- Limited editor simulation to deterministic `UPDATE_SELF_MODEL` preview, used kernel-owned preview time, and redacted the raw preview ID from browser responses.
+- Required administrative authority for live world-kernel command acceptance while leaving preview public and non-mutating.
+- Added twelve editor and command-authority properties covering editor authentication, two-token non-disclosure, private-disabled drill-down, route allowlists, filesystem containment, exact preview envelopes, admin-gated acceptance, and lazy-timeout truthfulness.
 - Added schema-versioned, append-only activation-request, Request Appraisal Capsule, and restricted private-participation-stance records to the M1 world kernel.
 - Matched the portable SHA-256 request binding, persisted historical Thread state-hash witnesses, and revalidated copied private state plus complete, disjoint included/excluded memory, relationship, and obligation partitions through event replay.
 - Added lifetime-idempotent request/appraisal retry, exact private-stance retry, explicit conflicting reuse, direct appraisal insertion-race rejection, transactional schema v1-to-v2 migration, and coherent private-record tamper detection.

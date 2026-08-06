@@ -12,6 +12,7 @@ const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
 const serverPath = fileURLToPath(new URL("../src/server.mjs", import.meta.url));
+const ADMIN_TOKEN = "0123456789abcdef";
 
 function command(overrides = {}) {
   return {
@@ -57,7 +58,7 @@ async function waitForReady(child, stderr, timeoutMs = 10000) {
   });
 }
 
-async function startProcess(databasePath) {
+async function startProcess(databasePath, { adminToken = ADMIN_TOKEN } = {}) {
   let stderr = "";
   const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", serverPath], {
     env: {
@@ -65,7 +66,7 @@ async function startProcess(databasePath) {
       FIBRE_WORLD_DATABASE: databasePath,
       FIBRE_WORLD_HOST: "127.0.0.1",
       FIBRE_WORLD_PORT: "0",
-      FIBRE_ADMIN_TOKEN: "0123456789abcdef",
+      ...(adminToken === null ? {} : { FIBRE_ADMIN_TOKEN: adminToken }),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -95,6 +96,13 @@ async function requestJson(url, options = {}) {
   return { response, body: await response.json() };
 }
 
+function commandHeaders(token = ADMIN_TOKEN) {
+  return {
+    "content-type": "application/json",
+    "x-fibre-admin-token": token,
+  };
+}
+
 test("environment startup refuses non-loopback hosts before creating world state", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-world-kernel-bind-"));
   const databasePath = join(directory, "world.db");
@@ -115,7 +123,38 @@ test("environment startup refuses non-loopback hosts before creating world state
   }
 });
 
-test("independent world-kernel survives restart with preview-bound command history", async () => {
+test("live command acceptance is disabled without admin authority", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-command-authority-"));
+  const databasePath = join(directory, "world.sqlite");
+  let runtime;
+  try {
+    runtime = await startProcess(databasePath, { adminToken: null });
+    await requestJson(`${runtime.baseUrl}/threads`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ thread: fixture }),
+    });
+    const preview = await requestJson(`${runtime.baseUrl}/threads/${fixture.threadId}/commands/preview`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ command: command() }),
+    });
+    assert.equal(preview.response.status, 200);
+    const disabled = await requestJson(`${runtime.baseUrl}/threads/${fixture.threadId}/commands`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ previewId: preview.body.previewId, command: command() }),
+    });
+    assert.equal(disabled.response.status, 503);
+    assert.equal(disabled.body.error.code, "COMMAND_ACCEPTANCE_DISABLED");
+    assert.equal((await requestJson(`${runtime.baseUrl}/threads/${fixture.threadId}`)).body.thread.version, 1);
+  } finally {
+    if (runtime) await runtime.stop().catch(() => {});
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("independent world-kernel survives restart with admin-authorized preview-bound command history", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-world-kernel-api-"));
   const databasePath = join(directory, "world.sqlite");
   let first;
@@ -129,6 +168,9 @@ test("independent world-kernel survives restart with preview-bound command histo
     });
     assert.equal(seeded.response.status, 201);
 
+    const health = await requestJson(`${first.baseUrl}/health`);
+    assert.match(health.body.kernelTime, /^\d{4}-\d{2}-\d{2}T/);
+
     const preview = await requestJson(`${first.baseUrl}/threads/${fixture.threadId}/commands/preview`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -138,9 +180,17 @@ test("independent world-kernel survives restart with preview-bound command histo
     assert.match(preview.body.previewId, /^prv_[0-9a-f]{64}$/);
     assert.equal((await requestJson(`${first.baseUrl}/threads/${fixture.threadId}`)).body.thread.version, 1);
 
+    const denied = await requestJson(`${first.baseUrl}/threads/${fixture.threadId}/commands`, {
+      method: "POST",
+      headers: commandHeaders("wrong-admin-token"),
+      body: JSON.stringify({ previewId: preview.body.previewId, command: command() }),
+    });
+    assert.equal(denied.response.status, 403);
+    assert.equal(denied.body.error.code, "ADMIN_TOKEN_REQUIRED");
+
     const changed = await requestJson(`${first.baseUrl}/threads/${fixture.threadId}/commands`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: commandHeaders(),
       body: JSON.stringify({
         previewId: preview.body.previewId,
         command: command({ payload: { selfModel: "Changed after preview", summary: "Must not persist" } }),
@@ -150,7 +200,7 @@ test("independent world-kernel survives restart with preview-bound command histo
 
     const applied = await requestJson(`${first.baseUrl}/threads/${fixture.threadId}/commands`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: commandHeaders(),
       body: JSON.stringify({ previewId: preview.body.previewId, command: command() }),
     });
     assert.equal(applied.response.status, 201);
@@ -192,7 +242,7 @@ test("independent world-kernel survives restart with preview-bound command histo
     assert.deepEqual(afterRestart.body, beforeRestart.body);
     const retry = await requestJson(`${second.baseUrl}/threads/${fixture.threadId}/commands`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: commandHeaders(),
       body: JSON.stringify({ previewId: preview.body.previewId, command: command() }),
     });
     assert.equal(retry.response.status, 200);
