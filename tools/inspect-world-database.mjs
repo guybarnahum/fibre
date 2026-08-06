@@ -367,7 +367,7 @@ export async function inspectWorldDatabase(databasePath) {
     verified: emptyVerifiedCounts(),
   };
   let snapshot = null;
-  if (sqliteOk && foreignKeysOk) {
+  if (sqliteOk && foreignKeysOk && sourceSchemaOk) {
     try {
       snapshot = createVerificationSnapshot(absolutePath);
       domain = verifyDomainRecords(snapshot.snapshotPath, raw);
@@ -378,8 +378,14 @@ export async function inspectWorldDatabase(databasePath) {
         rmSync(snapshot.directory, { recursive: true, force: true });
       }
     }
+  } else if (!sqliteOk || !foreignKeysOk) {
+    domain.errors.push(
+      "domain verification skipped because SQLite integrity or foreign keys failed",
+    );
   } else {
-    domain.errors.push("domain verification skipped because SQLite integrity failed");
+    domain.errors.push(
+      "domain verification skipped because source schema enforcement is incomplete",
+    );
   }
 
   const errors = [
@@ -425,8 +431,8 @@ export async function inspectWorldDatabase(databasePath) {
       sessionStatuses: raw.sessionStatuses,
       leaseStatuses: raw.leaseStatuses,
       guardianDecisions: raw.guardianDecisions,
-      activeRuntimeCount:
-        (raw.sessionStatuses.active ?? 0) + (raw.leaseStatuses.active ?? 0),
+      activeSessionCount: raw.sessionStatuses.active ?? 0,
+      activeLeaseCount: raw.leaseStatuses.active ?? 0,
     },
   };
 }
@@ -458,7 +464,7 @@ export function formatWorldDatabaseSummary(report) {
     lines.push(
       `  ${thread.name} (${thread.threadId}) v${thread.version} ${thread.status}`,
       `    hash=${thread.stateHash}`,
-      `    memories=${formatNullableCount(thread.memoryRefCount)}, unresolvedIntentions=${formatNullableCount(thread.unresolvedIntentionCount)}`,
+      `    memories=${formatNullableCount(thread.memoryRefCount)} including seeded, unresolvedIntentions=${formatNullableCount(thread.unresolvedIntentionCount)}`,
     );
   }
   lines.push(
@@ -470,7 +476,7 @@ export function formatWorldDatabaseSummary(report) {
     `Accepted memories: ${report.summary.tableCounts.thread_memories ?? 0}`,
     `Authorization consumptions: ${report.summary.tableCounts.authorization_consumptions ?? 0}`,
     `Abandonments: ${report.summary.tableCounts.runtime_abandons ?? 0}`,
-    `Active runtime rows: ${report.summary.activeRuntimeCount}`,
+    `Active runtime rows: sessions=${report.summary.activeSessionCount}, leases=${report.summary.activeLeaseCount}`,
     `Verified: threads=${report.verification.verified.threads}, requests=${report.verification.verified.privateRequests}, runtimes=${report.verification.verified.runtimes}, freezes=${report.verification.verified.freezes}, abandonments=${report.verification.verified.abandonments}, generatedMemories=${report.verification.verified.freezeCreatedMemories}`,
   );
   if (report.verification.errors.length > 0) {
@@ -501,7 +507,8 @@ export function parseInspectorArguments(arguments_) {
 
 function usage() {
   return [
-    "Usage: npm run inspect:db -- <database.sqlite> [--json]",
+    "Usage: npm run inspect:db -- <database.sqlite>",
+    "JSON: npm run --silent inspect:db -- <database.sqlite> --json",
     "",
     "Reads the source without mutation, verifies its schema enforcement objects,",
     "then validates a temporary snapshot through the Fibre domain stores.",
