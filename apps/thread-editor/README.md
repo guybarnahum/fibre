@@ -40,10 +40,10 @@ Summarize and verify a retained database with:
 
 ```bash
 npm run inspect:db -- "/path/to/world.sqlite"
-npm run inspect:db -- "/path/to/world.sqlite" --json
+npm run --silent inspect:db -- "/path/to/world.sqlite" --json
 ```
 
-The inspector checks SQLite integrity, foreign keys, schema version, Thread replay and projection hashes, private request traces, runtime witnesses, freeze and authorization-consumption records, abandonment non-consumption, and freeze-created memory projection.
+Use the `--silent` form when stdout must contain only parseable JSON. The inspector checks SQLite integrity, foreign keys, schema version, Thread replay and projection hashes, private request traces, runtime witnesses, freeze and authorization-consumption records, abandonment non-consumption, and freeze-created memory projection.
 
 ## Interactive start
 
