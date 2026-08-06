@@ -53,10 +53,10 @@ Verify and summarize any retained current-schema Fibre database with:
 
 ```bash
 npm run inspect:db -- "/path/to/world.sqlite"
-npm run inspect:db -- "/path/to/world.sqlite" --json
+npm run --silent inspect:db -- "/path/to/world.sqlite" --json
 ```
 
-The inspector checks SQLite integrity, foreign keys, schema completeness, Thread replay and projection hashes, private traces, runtime witnesses, freeze and consumption records, abandonment non-consumption, and accepted-memory projection. It reports failures without repairing the database.
+Use the `--silent` form when stdout must contain only parseable JSON. The inspector checks SQLite integrity, foreign keys, schema completeness, Thread replay and projection hashes, private traces, runtime witnesses, freeze and consumption records, abandonment non-consumption, and accepted-memory projection. It reports failures without repairing the database.
 
 ## Start the normal local process
 
