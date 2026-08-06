@@ -24,7 +24,7 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 - In the portable prototype, obligation references resolve against the Thread's own unresolved intentions.
 - Disclosure may be candid, tactful, selective, ambiguous, evasive, or deceptive, but cannot silently create or expand authorization.
 - Restricted disclosure mode and private rationale remain on the private strategy; the requester-facing response carries only audience-visible content and safe references.
-- Dignity outcomes may create private affect and propose bounded, evidenced fondness or resentment changes toward humans, Threads, companies, institutions, and other requesters.
+- Dignity outcomes may create private affect and propose bounded, evidenced fondness or resentment toward humans, Threads, companies, institutions, and other requesters.
 - Relationship consequences are validated and persisted as events rather than directly written by cognition.
 - Thawing after accepted authorization assembles a relevant execution context capsule and invokes temporary workers and tools.
 - Freezing validates life changes, supports idempotent retry, can resolve unresolved intentions, consumes execution authority, and releases runtime resources.
@@ -50,11 +50,13 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 ## Current implementation status
 
-The repository now contains the deterministic M1 lifecycle through freeze, explicit reject closure, and replay: a hardened SQLite persistence spine, an independently running loopback world-kernel API, restricted request/appraisal/stance records, current-state Participation Authorization, an exclusive kernel-timed thaw runtime, deterministic Actor and Goal Guardian records, atomic freeze with authorization consumption, and append-only abandonment of Guardian-rejected episodes.
+The repository now contains the deterministic M1 lifecycle through freeze, explicit reject closure, replay, and human inspection: a hardened SQLite persistence spine, an independently running loopback world-kernel API, restricted request/appraisal/stance records, current-state Participation Authorization, an exclusive kernel-timed thaw runtime, deterministic Actor and Goal Guardian records, atomic freeze with authorization consumption, append-only abandonment of Guardian-rejected episodes, and a credentialed API-backed Thread Editor.
 
 The persistence spine stores a versioned Thread projection, immutable Thread events, and idempotent command witnesses. It normalizes seed metadata, rejects illegal lifecycle writes, validates expected versions, computes deterministic SHA-256 state hashes, survives close/reopen, and verifies the projection by ordered replay. Projection repair can reconstruct the current row from intact event history.
 
-The local service exposes public health, Thread state, safe event history, integrity, seed, command preview/acceptance, and administrative repair. Restricted routes expose request traces, runtime state, worker records, freeze reports, rejected-runtime abandonment, and integrity witnesses behind a separate local token. Transport binds only to loopback, enables no CORS, caps request bodies, owns security headers, and redacts integrity details.
+The local service exposes public health, Thread state, safe event history, integrity, seed, and command preview. Live command acceptance and projection repair require the configured administrative token. Restricted routes expose request traces, runtime state, worker records, freeze reports, rejected-runtime abandonment, and integrity witnesses behind a separate local private token. Transport binds only to loopback, enables no CORS, caps request bodies, owns security headers, and redacts integrity details.
+
+The health response publishes `kernelTime` from the same injectable lifecycle clock that owns authorization, lease, Actor, Guardian, freeze, and abandonment timestamps. Read surfaces can therefore distinguish observed expiry from the later lazy database reclaim transition without trusting a browser clock.
 
 Request fingerprints match the portable domain's SHA-256 binding. Appraisal integrity reconstructs the historical Thread snapshot and verifies copied private state plus complete, disjoint included/excluded partitions of Thread-owned memory, relationship, and obligation references. Appraisal and stance IDs are opaque; separate content digests provide integrity.
 
@@ -62,7 +64,7 @@ A request ID identifies one immutable request/appraisal attempt. A historical st
 
 Runtime acquisition atomically persists accepted Participation Authorization, one exclusive thaw lease, and one runtime session. Authorization binds the current Thread version/state hash, request fingerprint, requester, appraisal, stance, policy, evidence, and any recorded-obligation override. Blank, invented, missing, historically discharged, and low-dignity acceptance paths fail.
 
-The kernel owns authorization, lease, Actor, Guardian, freeze, and abandonment timestamps. Caller-supplied time cannot acquire, extend, reclaim, complete, freeze, or abandon a runtime. An expired lease may be reclaimed; the old lease becomes expired and its active session aborted before replacement.
+The kernel owns authorization, lease, Actor, Guardian, freeze, abandonment, and editor-preview timestamps. Caller-supplied time cannot acquire, extend, reclaim, complete, freeze, or abandon a runtime. An expired lease may be reclaimed; the old lease becomes expired and its active session aborted before replacement.
 
 The deterministic Actor produces proposals only, no external tool calls, no direct world commands, and no requester-facing communication. Its memory proposal cites selected Thread-owned evidence. The Goal Guardian is a declaration and consistency auditor, not a sandbox; every check is independently falsifiable and a divergent Actor can persist a reject.
 
@@ -78,8 +80,18 @@ One SQLite `PRAGMA user_version` governs the complete file. Schema version 4 inc
 
 Public `THREAD_FROZEN` responses are safe projections: accepted memory references and counts are visible, while concrete authorization, session, Actor, Guardian, report, causal, and private-rationale fields remain restricted. The authoritative stored event remains independently replayable. Abandonment records remain restricted and never enter the public Thread event stream because they change runtime lifecycle state, not Thread life state.
 
+The API-backed Thread Editor is a separate loopback-only process that reads the live world kernel through a same-origin allowlisted inspection server. It displays current Thread state, public events, integrity, private request traces, runtime episodes, authorization, Actor, Goal Guardian, freeze, abandonment, timeout, and raw inspection data.
+
+Every editor API request requires a random per-run credential delivered in the process's printed URL fragment. Browser code stores it only for the session and removes the fragment. The world-kernel private token remains server-side and is never returned to browser JavaScript. Loopback access alone therefore does not grant editor API access to Thread interiority.
+
+The editor uses kernel-published time to display a persisted `active` lease as `Timed out — not yet reclaimed` once its expiry passes. It does not falsely label an unattended rejected episode as active while waiting for later reclamation traffic.
+
+The editor is deliberately non-authoritative. It exposes only read inspection and a deterministic `UPDATE_SELF_MODEL` command preview. The preview response redacts the raw preview ID, and the live world-kernel process requires administrative authority for command acceptance. The editor cannot seed, accept commands, acquire runtime, run workers, freeze, abandon, repair, or create/edit/discharge obligations or unresolved intentions.
+
+The editor's static server rejects encoded traversal and symbolic-link path segments, verifies realpath containment, uses a single file descriptor for size and streaming, caps upstream JSON, and percent-encodes allowlisted private-route suffixes. Its network surface is directly tested for Host enforcement, editor credentials, private-disabled behavior, content type, body size, exact keys, route traversal, no CORS, no-store, and CSP.
+
 The current runtime invokes no production LLM, external tool, network service, or requester-facing communication. A worker/tool gateway with independently observed capability traces is mandatory before any tool-, network-, or model-capable Actor.
 
-The remaining planned M1 product slices are the API-backed Thread Editor and one consolidated Mina persistent-round-trip demonstration. Persistent live-kernel disclosure strategy and audience-visible external response are still unfinished and must remain distinct from private stance, authorization, runtime cognition, freeze, and performed action.
+The sole remaining planned M1 slice is one consolidated Mina persistent-round-trip demonstration through the independently running world kernel and credentialed API-backed editor. Persistent live-kernel disclosure strategy and audience-visible external response are still unfinished and must remain distinct from private stance, authorization, runtime cognition, freeze, and performed action.
 
 Production authentication, encryption, model gateway, relationship service, structured obligation records, production database topology, distributed leases, and cloud deployment remain deferred.

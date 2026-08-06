@@ -57,6 +57,7 @@ export class M1LifecycleWorldKernelService extends M1FreezeWorldKernelService {
   health() {
     return {
       ...super.health(),
+      kernelTime: this.#now(),
       lifecycleClosureProfileVersion: 1,
       lifecycleClosureStorage: this.#lifecycleStore.storageMetadata(),
     };

@@ -14,24 +14,16 @@ Public world records:
 
 Restricted records:
 
-- `activation_requests` — immutable request attempts and request fingerprints;
-- `request_appraisals` — Thread-owned historical context capsules;
-- `private_participation_stances` — immutable private dignity opinions;
-- `participation_authorizations` — immutable current-state execution decisions;
-- `thaw_leases` — exclusive lease state;
-- `runtime_sessions` — temporary-cognition state;
-- `actor_runs` — immutable deterministic Actor proposals;
-- `goal_guardian_audits` — immutable Goal Guardian audits;
-- `authorization_consumptions` — one-time authorization and obligation-discharge witnesses;
-- `freeze_reports` — restricted accepted/rejected change reports;
-- `thread_memories` — accepted evidence-bearing memory records;
-- `runtime_abandons` — immutable closure records for Guardian-rejected episodes.
+- `activation_requests` and `request_appraisals`;
+- `private_participation_stances` and `participation_authorizations`;
+- `thaw_leases`, `runtime_sessions`, `actor_runs`, and `goal_guardian_audits`;
+- `authorization_consumptions`, `freeze_reports`, `thread_memories`, and `runtime_abandons`.
 
 Schema versions 1 through 3 migrate transactionally to version 4. Events, commands, requests, appraisals, private stances, authorizations, worker records, consumption records, freeze reports, memory records, and abandonment records are append-only.
 
-`thaw_leases` and `runtime_sessions` are intentional mutable exceptions. Triggers preserve immutable identity, binding, context, digest, and start-time fields and permit only bounded status transitions. They cannot be deleted.
+`thaw_leases` and `runtime_sessions` are intentional mutable exceptions. Triggers preserve immutable identity, binding, context, digest, and start-time fields and permit only bounded lifecycle transitions. They cannot be deleted.
 
-WorldStore, RuntimeStore, FreezeStore, and LifecycleHardeningStore use separate WAL connections over the same file to preserve interface boundaries. Cross-interface correctness is enforced by rereading every required witness inside the immediate transaction that writes dependent records.
+WorldStore, RuntimeStore, FreezeStore, and LifecycleHardeningStore use separate WAL connections over the same file. Every dependent write rereads its required cross-interface witnesses inside the immediate transaction.
 
 ## M1 local process
 
@@ -47,37 +39,43 @@ Configuration:
 FIBRE_WORLD_DATABASE=.fibre/world.sqlite
 FIBRE_WORLD_HOST=127.0.0.1
 FIBRE_WORLD_PORT=8787
-FIBRE_ADMIN_TOKEN=<optional repair token of at least 16 characters>
-FIBRE_PRIVATE_TOKEN=<optional private-route token of at least 16 characters>
+FIBRE_ADMIN_TOKEN=<optional command-acceptance and repair token, at least 16 characters>
+FIBRE_PRIVATE_TOKEN=<optional private-route token, at least 16 characters>
 ```
 
 `.fibre/` is ignored and rejected as tracked repository content. The process refuses non-loopback bind and Host authorities, enables no CORS, caps request bodies, uses `Cache-Control: no-store`, and returns stable errors without stack traces.
 
-## Public routes
+`GET /health` publishes `kernelTime` from the same lifecycle clock used for authorization, leases, Actor, Guardian, freeze, and abandonment. Read surfaces use that timestamp to interpret lease expiry without trusting a browser or proxy clock.
 
-| Method | Route | Purpose |
-|---|---|---|
-| `GET` | `/health` | Service, storage, preview, runtime, freeze, lifecycle-closure, and repair metadata |
-| `POST` | `/threads` | Idempotently seed one immutable Thread origin |
-| `GET` | `/threads/:threadId` | Read the integrity-checked projection |
-| `GET` | `/threads/:threadId/events` | Read the ordered safe public timeline |
-| `GET` | `/threads/:threadId/integrity` | Replay and compare projection plus freeze-created-memory integrity |
-| `POST` | `/threads/:threadId/commands/preview` | Preview a deterministic command without writing |
-| `POST` | `/threads/:threadId/commands` | Apply an exact preview-bound command |
-| `POST` | `/threads/:threadId/repair-projection` | Token-protected projection repair |
+## Public and administrative routes
 
-The authoritative stored `THREAD_FROZEN` event remains fully replayable. Its public API projection exposes accepted memory references and counts but withholds concrete authorization, runtime, report, Actor, Guardian, causal, and private-rationale fields. Rejected-runtime abandonment never appears in public Thread history because it changes temporary runtime state, not durable Thread life state.
+| Method | Route | Authority | Purpose |
+|---|---|---|---|
+| `GET` | `/health` | public loopback | Service, storage, profile, repair, and kernel-time metadata |
+| `POST` | `/threads` | public loopback M1 seed | Idempotently seed one immutable Thread origin |
+| `GET` | `/threads/:threadId` | public loopback | Read the integrity-checked projection |
+| `GET` | `/threads/:threadId/events` | public loopback | Read the ordered safe public timeline |
+| `GET` | `/threads/:threadId/integrity` | public loopback | Replay and compare projection and memory integrity |
+| `POST` | `/threads/:threadId/commands/preview` | public loopback | Preview a deterministic command without writing |
+| `POST` | `/threads/:threadId/commands` | `x-fibre-admin-token` | Apply an exact preview-bound command |
+| `POST` | `/threads/:threadId/repair-projection` | `x-fibre-admin-token` | Rebuild the projection from immutable history |
+
+When `FIBRE_ADMIN_TOKEN` is absent, live command acceptance returns `503 COMMAND_ACCEPTANCE_DISABLED` and repair returns `503 REPAIR_DISABLED`. When configured, missing or incorrect credentials return `403 ADMIN_TOKEN_REQUIRED`.
+
+Command preview is non-mutating and does not grant consent, Participation Authorization, or write authority. A caller must possess both the exact command/preview witness and administrative authority to accept it through the independently running process.
+
+The authoritative stored `THREAD_FROZEN` event remains fully replayable. Its public API projection exposes accepted memory references and counts but withholds authorization, runtime, report, Actor, Guardian, causal, and private-rationale fields. Runtime abandonment never appears in public Thread history because it changes temporary runtime state rather than durable Thread life state.
 
 ## Restricted request routes
 
-Every path below `/threads/:threadId/private` requires `x-fibre-private-token` before route dispatch.
+Every path below `/threads/:threadId/private` requires `x-fibre-private-token` before private route dispatch.
 
 | Method | Route | Purpose |
 |---|---|---|
 | `GET` | `/threads/:threadId/private/requests` | List restricted request summaries |
 | `POST` | `/threads/:threadId/private/requests` | Persist a request and Thread-owned appraisal capsule |
 | `GET` | `/threads/:threadId/private/requests/:requestId` | Read one complete private trace |
-| `GET` | `/threads/:threadId/private/requests/:requestId/integrity` | Verify the private trace against historical replay |
+| `GET` | `/threads/:threadId/private/requests/:requestId/integrity` | Verify the trace against historical replay |
 | `POST` | `/threads/:threadId/private/requests/:requestId/stance` | Persist one private participation stance |
 
 A request ID identifies one immutable request/appraisal attempt. A historical stance remains a valid opinion about its historical snapshot, but cannot authorize execution after the Thread changes. Recovery uses a new request-attempt ID under the same correlation ID.
@@ -96,10 +94,10 @@ A request ID identifies one immutable request/appraisal attempt. A historical st
 | `GET` | `/threads/:threadId/private/runtime/:sessionId/freeze/integrity` | Verify freeze, consumption, event, memory, and Thread witnesses |
 | `POST` | `/threads/:threadId/private/runtime/:sessionId/freeze` | Atomically freeze explicit life-change decisions |
 | `GET` | `/threads/:threadId/private/runtime/:sessionId/abandon` | Read the Guardian-reject abandonment record |
-| `GET` | `/threads/:threadId/private/runtime/:sessionId/abandon/integrity` | Verify abandonment, runtime closure, and non-consumption |
-| `POST` | `/threads/:threadId/private/runtime/:sessionId/abandon` | Explicitly close a Guardian-rejected runtime without consumption |
+| `GET` | `/threads/:threadId/private/runtime/:sessionId/abandon/integrity` | Verify closure and non-consumption |
+| `POST` | `/threads/:threadId/private/runtime/:sessionId/abandon` | Close a Guardian-rejected runtime without consumption |
 
-Runtime, freeze, and abandonment mutation requests accept operation IDs and domain inputs only. The kernel owns authorization issuance, lease acquisition/expiry, Actor completion, Guardian completion, freeze completion, and abandonment timestamps. Caller-supplied timestamps are rejected.
+Runtime, freeze, and abandonment mutation requests accept operation IDs and domain inputs only. The kernel owns authorization issuance, lease acquisition/expiry, Actor completion, Guardian completion, freeze completion, and abandonment timestamps. Caller timestamps are rejected.
 
 ## Authorization and lease boundary
 
@@ -111,135 +109,63 @@ A private stance is not execution authority. Runtime acquisition revalidates the
 - dignity policy, score, band, evidence, and relationship target;
 - any obligation-mediated override.
 
-Only `authorizedAction: accept` can acquire a lease. A non-accept private desire can be overridden only by a non-empty reference currently present in `currentState.unresolvedIntentions` and absent from all historical discharge records. The service checks that history before acquisition, and a SQLite insertion trigger independently rejects direct creation of an authorization that reuses a discharged obligation.
+Only `authorizedAction: accept` can acquire a lease. A non-accept private desire can be overridden only by a non-empty obligation reference currently present in `currentState.unresolvedIntentions` and absent from all historical discharge records.
 
-A partial unique index permits one active lease per Thread, including across separate SQLite connections. At real kernel-clock expiry, a later acquisition may mark the old lease expired and its active session aborted before creating a replacement. Aborted, abandoned, completed, or expired sessions cannot continue work.
+A partial unique index permits one active lease per Thread, including across separate SQLite connections. At kernel-observed expiry, a later acquisition may mark the old lease expired and its active session aborted before creating a replacement. Before that lazy reclaim, `expiresAt <= kernelTime` still means the attention window has timed out even if the stored lease status remains `active`.
 
 ## Deterministic Actor and Goal Guardian
 
-The M1 Actor is a deterministic proposal worker. It produces a bounded plan, declares no tool calls, declares no direct world commands, and may propose one memory change citing selected Thread-owned evidence. It cannot write authoritative state.
+The M1 Actor is a deterministic proposal worker. It produces a bounded plan, declares no tool calls or direct world commands, and may propose one memory change citing selected Thread-owned evidence. It cannot write authoritative state.
 
-The M1 Goal Guardian is a declaration and consistency auditor, not a capability sandbox. It verifies Thread/request/objective/authorization binding, declared tool and command absence, and bounded life-change evidence. Every check is independently falsifiable, and a divergent test Actor can produce a durable `reject`.
-
-A future model- or tool-capable Actor requires an isolated worker/tool gateway that records independently observed tool calls and command attempts. Self-declaration is not sufficient for production capability enforcement.
+The M1 Goal Guardian is a declaration and consistency auditor, not a capability sandbox. It verifies Thread/request/objective/authorization binding, declared tool and command absence, and bounded life-change evidence. A future model- or tool-capable Actor requires an isolated worker/tool gateway with independently observed capability traces.
 
 ## Freeze boundary
 
-Freeze is the only current path from Actor proposal to authoritative Thread state.
-
-The request supplies:
-
-```json
-{
-  "operationId": "op_freeze_...",
-  "lifeChangeDecisions": [
-    {
-      "proposalIndex": 0,
-      "decision": "accept",
-      "rationale": "Evidence-bearing memory."
-    }
-  ],
-  "causationId": "cause_...",
-  "correlationId": "corr_..."
-}
-```
-
-Each decision rationale is limited to 4096 UTF-8 bytes before append-only persistence.
-
-Freeze requires:
+Freeze is the only current path from Actor proposal to authoritative Thread state. It requires:
 
 - current Thread version and state hash matching the runtime snapshot;
 - active, unexpired lease and session;
 - accepted and unconsumed authorization;
-- persisted Actor output;
-- persisted Goal Guardian decision `pass`;
+- persisted Actor output and Goal Guardian `pass`;
 - no declared tool calls or direct commands;
 - one explicit accept/reject decision for every proposal;
 - supported memory proposals citing selected Thread-owned evidence.
 
-One immediate transaction:
+Each decision rationale is limited to 4096 UTF-8 bytes. One immediate transaction appends `THREAD_FROZEN`, advances the projection, records accepted memories and rejected rationale, consumes authorization once, discharges any override obligation, completes the session, and releases the lease.
 
-1. rereads all Thread/runtime/authorization/worker witnesses;
-2. appends `THREAD_FROZEN` and its operation witness;
-3. advances the Thread projection and state hash;
-4. records accepted memory rows and rejected rationale;
-5. consumes authorization once;
-6. discharges any obligation used to override private stance;
-7. completes the runtime session; and
-8. releases the lease.
-
-A successful obligation-mediated freeze removes the exact reference from `unresolvedIntentions` and preserves it in consumption and event history. That historical consumption permanently prevents another override using the same reference, even if identical text is reintroduced later. Failure, Guardian reject, abandonment, expiry, or state races consume nothing.
+Successful obligation-mediated freeze removes the exact reference from `unresolvedIntentions` and preserves it in consumption/event history. Historical consumption prevents the identical reference from authorizing another override even if later reintroduced. Failure, Guardian reject, abandonment, expiry, or state races consume nothing.
 
 Exact retry returns the original freeze report. Another operation after successful consumption returns `AUTHORIZATION_CONSUMED`.
 
 ## Guardian-reject abandonment
 
-A rejected cognition episode may be closed deliberately rather than occupying the Thread's lease until timeout.
+A rejected cognition episode may be closed deliberately rather than occupying the lease until timeout. Abandonment requires an active unexpired session/lease, persisted Guardian `reject`, and no freeze or consumption.
 
-The request supplies:
+One immediate transaction appends an immutable `runtime_abandons` record, marks the session `aborted`, and releases the lease with reason `guardian_rejected_abandon`. It does not advance the Thread version, append a public life event, consume authorization, or discharge an obligation.
 
-```json
-{
-  "operationId": "op_abandon_...",
-  "causationId": "cause_...",
-  "correlationId": "corr_..."
-}
-```
-
-Abandonment requires:
-
-- an active, unexpired session and lease;
-- a persisted Goal Guardian audit with decision `reject`;
-- no freeze report;
-- no authorization consumption.
-
-One immediate transaction appends an immutable `runtime_abandons` record, marks the session `aborted`, and releases the lease with reason `guardian_rejected_abandon`. It does not advance the Thread version, append a public life event, consume the Participation Authorization, or discharge an obligation.
-
-Exact retry returns the original record. Changed operation reuse returns `RUNTIME_ABANDON_CONFLICT`. A Guardian-pass runtime, expired runtime, completed runtime, or runtime that already affected authoritative state returns `RUNTIME_ABANDON_REJECTED`.
-
-After explicit closure, a fresh request-attempt ID under the same correlation lineage may acquire a new runtime immediately.
+Exact retry returns the original record. Changed reuse returns `RUNTIME_ABANDON_CONFLICT`. Expiry remains a separate diagnosable timeout and cannot be rewritten as a synthetic abandonment.
 
 ## Replay and integrity
 
-The `THREAD_FROZEN` commit digest binds:
+The `THREAD_FROZEN` commit digest binds request, session, authorization, report, Actor, Guardian, kernel time, exact decisions, accepted/rejected life changes, discharged obligations, prior state, and resulting state.
 
-- request, session, authorization, report, Actor-run, and Guardian-audit IDs;
-- Actor and Guardian content digests;
-- kernel completion time;
-- exact freeze operation and decisions;
-- accepted/rejected life changes;
-- discharged obligations;
-- prior state hash and resulting lifecycle status.
+Replay reconstructs the freeze-report digest, operation and commit digests, event ID, memory refs, obligation discharge, and resulting state hash. Thread integrity compares the exact generated-memory set across freeze reports, `thread_memories`, and projection `memoryRefs` and checks every memory digest and event/session binding.
 
-Replay reconstructs the freeze-report digest from the event, rederives the operation/commit digests and event ID, applies accepted memory refs and obligation discharge, and verifies the resulting state hash.
+Abandonment integrity rederives the immutable abandonment digest, verifies the Guardian reject, requires matching aborted/released lifecycle state, and proves no consumption or freeze occurred.
 
-Thread integrity compares the exact generated-memory set across accepted changes in all freeze reports, `thread_memories`, and projection `memoryRefs`. It also rederives each memory digest and checks event/session binding. Missing, extra, or substituted memory records therefore fail integrity rather than remaining an unnoticed secondary-table divergence.
-
-Abandonment integrity rederives the immutable abandonment digest, verifies the persisted Guardian reject, requires matching aborted/released lifecycle state, and proves the authorization was not consumed and the session was not frozen.
-
-A separate-process freeze test restarts the service and recovers the same state and freeze integrity with a completed session, released lease, and no active runtime.
-
-## Error mapping
+## Stable error families
 
 - malformed input → `400`;
 - forbidden private/admin access → `403`;
-- missing Thread, request, runtime, freeze, abandonment, or route → `404`;
+- missing resource or route → `404`;
 - unsupported method → `405`;
-- operation conflict → `409 RUNTIME_CONFLICT`, `409 FREEZE_CONFLICT`, or `409 RUNTIME_ABANDON_CONFLICT`;
-- changed Thread/runtime witness → `409 RUNTIME_STATE_CHANGED` or `409 FREEZE_STATE_CHANGED`;
-- overlapping lease → `409 THAW_LEASE_CONFLICT`;
-- inactive/aborted runtime → `409 RUNTIME_ORDER_REJECTED`;
-- lease expiry → `409 THAW_LEASE_EXPIRED`;
-- consumed authorization → `409 AUTHORIZATION_CONSUMED`;
-- rejected authorization → `422 PARTICIPATION_AUTHORIZATION_REJECTED`;
-- invalid freeze boundary → `422 FREEZE_REJECTED`;
-- invalid abandonment boundary → `422 RUNTIME_ABANDON_REJECTED`;
+- command acceptance disabled → `503 COMMAND_ACCEPTANCE_DISABLED`;
+- operation/state conflicts → stable `409` codes;
+- rejected authorization/freeze/abandonment → stable `422` codes;
 - storage busy, disabled private/repair access, or integrity failure → `503`.
-
-`FREEZE_CONFLICT` and `FREEZE_STATE_CHANGED` remain intentionally distinct stable codes: operation/idempotency reuse is different from a current-state race and requires a different recovery path.
 
 ## Deliberate scope boundary
 
-The service remains a deterministic, single-user, local M1 process. It is not production authentication, distributed leasing, worker isolation, a tool gateway, a model provider, a remote communication system, or a production database topology.
+The service remains a deterministic, single-user, local M1 process. Its local tokens are not production authentication or principal identity. It is not distributed leasing, worker isolation, a tool gateway, a model provider, remote communication, or production database topology.
 
-The next product slices are the API-backed Thread Editor and one consolidated Mina persistent-round-trip demonstration. Persistent live-kernel disclosure strategy and audience-visible response remain unfinished. LLM or worker output still cannot write world state directly.
+The sole remaining planned M1 slice is the consolidated Mina persistent-round-trip demonstration through the independently running kernel and credentialed API-backed Thread Editor. Persistent live-kernel disclosure strategy and audience-visible response remain unfinished. LLM or worker output still cannot write world state directly.
