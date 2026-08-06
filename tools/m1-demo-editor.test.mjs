@@ -72,6 +72,7 @@ test("interactive M1 launches the retained world on free loopback ports", async 
   const text = formatInteractiveM1Summary(interactive.summary);
   assert.match(text, /M1 proof passed/);
   assert.match(text, /npm run inspect:db/);
+  assert.match(text, /npm run --silent inspect:db .* --json/);
   assert.match(text, /thr_mina_001/);
 
   await interactive.close();
