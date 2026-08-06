@@ -12,7 +12,8 @@ import { inspectWorldDatabase } from "./inspect-world-database.mjs";
 
 test("Mina completes the reviewed persistent round trip with live-path guard evidence", async () => {
   const report = await runM1ReviewedProof({ keepDatabase: true });
-  assert.notEqual(report.databasePath, null);
+  assert.equal(typeof report.databasePath, "string");
+  const databasePath = report.databasePath;
   try {
     assert.equal(report.milestone, "M1 Persistent Thread Round Trip");
     assert.equal(report.threadId, "thr_mina_001");
@@ -57,14 +58,14 @@ test("Mina completes the reviewed persistent round trip with live-path guard evi
     assert.equal(report.proofs.activeSessionRows, 0);
     assert.equal(report.proofs.activeLeaseRows, 0);
 
-    const inspection = await inspectWorldDatabase(report.databasePath);
+    const inspection = await inspectWorldDatabase(databasePath);
     assert.equal(
       inspection.verification.ok,
       true,
       `reviewed proof database must pass inspection: ${inspection.verification.errors.join("; ")}`,
     );
   } finally {
-    rmSync(dirname(report.databasePath), { recursive: true, force: true });
+    rmSync(dirname(databasePath), { recursive: true, force: true });
   }
 });
 
