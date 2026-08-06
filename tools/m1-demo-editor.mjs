@@ -114,7 +114,7 @@ export function formatInteractiveM1Summary(summary, { deleteDatabaseOnClose = fa
     "  Integrity / Raw → replay, memory, authorization, and database-backed witnesses",
     "",
     `Raw database summary: npm run inspect:db -- "${summary.databasePath}"`,
-    `JSON summary: npm run inspect:db -- "${summary.databasePath}" --json`,
+    `JSON summary: npm run --silent inspect:db -- "${summary.databasePath}" --json`,
     "",
     "Press Ctrl-C when finished.",
     deleteDatabaseOnClose
