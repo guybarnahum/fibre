@@ -24,11 +24,12 @@ This command first runs the same reviewed M1 proof. After it succeeds, it retain
 
 Open that URL, load `thr_mina_001`, and inspect:
 
-- **Overview** for Mina's version-4 projection, state hash, two freeze-created memories, and empty unresolved intentions;
-- **Events** for `THREAD_SEEDED`, `SELF_MODEL_UPDATED`, and the two `THREAD_FROZEN` life events;
-- **Requests** for the stale attempt, correlated recovery, accepted request, private refusals, and obligation-mediated participation;
-- **Runtime** for Guardian pass/reject, explicit non-consuming abandonment, unattended timeout, lazy reclaim, and both successful freezes;
-- **Integrity** and **Raw** for replay, authorization, consumption, freeze, memory, and lifecycle witnesses.
+- **Life state** for a plain-language account of Mina's current status, self-model, needs, feelings, intentions, memories, relationships, and record counts;
+- **Public events** for readable explanations of `THREAD_SEEDED`, `SELF_MODEL_UPDATED`, and the two `THREAD_FROZEN` life events;
+- **Private requests** for dignity, participation, requester, action, snapshot, and integrity explanations across the stale attempt, correlated recovery, accepted request, refusals, and obligation-mediated participation;
+- **Runtime episodes** for readable lifecycle, lease, authorization, Actor, Goal Guardian, timeout, abandonment, and freeze explanations;
+- **Integrity** for a human explanation of projection, event, memory, and state-fingerprint agreement;
+- **Technical JSON** only when exact payload fields, identifiers, hashes, or audit details are needed.
 
 The command uses free ephemeral ports and fresh private, administrative, and editor credentials. Press Ctrl-C when finished. The retained database remains available and its path is printed. To delete it automatically on exit:
 
@@ -75,16 +76,42 @@ A configured `FIBRE_EDITOR_ACCESS_TOKEN` has a 16-character minimum only. Operat
 
 The editor loads live API data for one Thread ID and presents:
 
+- a plain-language Thread overview before technical fields;
 - current projection, lifecycle status, version, and state hash;
 - needs, feelings, self-model, unresolved intentions, traits, memory refs, and relationship refs;
-- safe public event history;
-- replay integrity and freeze-created-memory integrity;
-- private request/appraisal/stance summaries and complete traces;
-- authorization, lease, execution context, Actor, and Goal Guardian records;
+- safe public event history with readable version-transition explanations;
+- replay integrity and freeze-created-memory integrity in human and exact forms;
+- private request, appraisal, dignity, and participation-stance explanations;
+- authorization, lease, execution context, Actor, and Goal Guardian explanations;
 - freeze reports, authorization consumption, explicit abandonment, timeout, and integrity outcomes;
-- raw aggregated inspection data.
+- exact JSON behind collapsed technical disclosures and in the dedicated Technical JSON view.
 
 Every runtime selection fetches fresh `kernelTime` from the world kernel. A persisted active lease is shown as `Timed out — not yet reclaimed` once kernel time passes `expiresAt`, even before later acquisition persists reclaim. If current kernel time is unavailable, the editor displays `Expiry unknown`; it does not reassure the reviewer that the runtime remains active.
+
+## Readable explanation boundary
+
+The explanation layer is presentation only. It derives sentences and labeled facts from the same API payload shown in the exact JSON disclosure; it does not ask a model to reinterpret the record, invent missing motives, or modify world state.
+
+The readable view intentionally explains Fibre-specific concepts that are otherwise difficult to infer from field names:
+
+- **Dignity match** describes how strongly a request fits the Thread's individualized identity, values, relationships, and distinctive advantage over a generic model.
+- **Thread's own response** is the Thread's recorded participation stance, including clarification, resistance, or refusal.
+- **Authorized action** is what the world kernel permitted. It is not automatically consent and may differ from the Thread's own response only when the record supplies a valid unresolved obligation reference.
+- **Obligation-mediated participation** is named explicitly as compelled participation. The editor shows the Thread's response, dignity band, authorized action, and exact obligation reference rather than converting compulsion into consent.
+- **Runtime lease** describes the temporary exclusive right to run the Thread; it is not durable life state.
+- **Goal Guardian** describes whether proposed runtime work stayed within the authorized goal.
+- **State fingerprint** is a technical drift-detection hash, not a human description of the Thread.
+- **Preview** is simulation only and is not consent, authorization, or persistence.
+
+The exact JSON is authoritative. The prose is a deterministic derived explanation and remains subordinate to the source record.
+
+The integrity badge is deliberately tri-state:
+
+- **No failure reported** means the editor received a recognizable report containing no explicit failed boolean check. It does not claim an independent browser-side verification.
+- **Review needed** means the returned report contains an explicit failed check.
+- **Integrity unknown** means the report is absent or unrecognized. Unknown never falls through to a reassuring state.
+
+The world kernel may reject an integrity request with an error rather than return a failed report. In that case the editor displays the request error; it does not manufacture a successful badge.
 
 ## Access boundary
 

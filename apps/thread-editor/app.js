@@ -7,6 +7,15 @@ import {
   requestSummary,
   runtimeSummary,
 } from "./editor-model.js";
+import {
+  explainEvent,
+  explainInspection,
+  explainIntegrity,
+  explainPreview,
+  explainRequest,
+  explainRuntime,
+  integrityBadgeModel,
+} from "./human-readable.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -79,6 +88,71 @@ function renderList(id, values, empty = "None recorded") {
   }
 }
 
+function renderExplanation(id, explanation) {
+  const element = $(id);
+  element.replaceChildren();
+  element.className = "explanation";
+
+  if (explanation.eyebrow) {
+    const eyebrow = document.createElement("p");
+    eyebrow.className = "eyebrow";
+    eyebrow.textContent = explanation.eyebrow;
+    element.append(eyebrow);
+  }
+
+  const heading = document.createElement("h3");
+  heading.textContent = explanation.title;
+  element.append(heading);
+
+  const summary = document.createElement("p");
+  summary.className = "explanation-summary";
+  summary.textContent = explanation.summary;
+  element.append(summary);
+
+  if (explanation.facts?.length) {
+    const facts = document.createElement("dl");
+    facts.className = "explanation-facts";
+    for (const entry of explanation.facts) {
+      const row = document.createElement("div");
+      const term = document.createElement("dt");
+      term.textContent = entry.label;
+      const description = document.createElement("dd");
+      const value = document.createElement("span");
+      value.textContent = entry.value;
+      description.append(value);
+      if (entry.help) {
+        const help = document.createElement("small");
+        help.textContent = entry.help;
+        description.append(help);
+      }
+      row.append(term, description);
+      facts.append(row);
+    }
+    element.append(facts);
+  }
+
+  if (explanation.notes?.length) {
+    const notes = document.createElement("ul");
+    notes.className = "explanation-notes";
+    for (const note of explanation.notes) {
+      const item = document.createElement("li");
+      item.textContent = note;
+      notes.append(item);
+    }
+    element.append(notes);
+  }
+}
+
+function renderPlaceholder(id, message) {
+  renderExplanation(id, {
+    eyebrow: "Readable explanation",
+    title: message,
+    summary: "Choose a record to see what it means. Exact JSON remains available as a technical detail.",
+    facts: [],
+    notes: [],
+  });
+}
+
 function recordButton(title, meta, onClick) {
   const button = document.createElement("button");
   button.type = "button";
@@ -127,13 +201,21 @@ function renderThread() {
     return article;
   }));
 
-  $("integrityBadge").textContent = "Verified";
-  $("integrityBadge").dataset.state = "success";
-  $("projectionIntegrity").textContent = `Version ${inspection.integrity?.version ?? thread.version} · ${inspection.integrity?.eventCount ?? counts.events} events`;
+  renderExplanation("threadExplanation", explainInspection(inspection));
+  const integrityExplanation = explainIntegrity(inspection.integrity);
+  const integrityBadge = integrityBadgeModel(inspection.integrity);
+  renderExplanation("integrityExplanation", integrityExplanation);
+  $("integrityBadge").textContent = integrityBadge.label;
+  $("integrityBadge").dataset.state = integrityBadge.state;
+  $("projectionIntegrity").textContent = integrityBadge.state === "unknown"
+    ? "Integrity report unavailable"
+    : `Version ${inspection.integrity?.version ?? thread.version} · ${inspection.integrity?.eventCount ?? counts.events} events`;
   const memory = inspection.integrity?.memoryProjection;
-  $("memoryIntegrity").textContent = memory
-    ? `${memory.freezeCreatedMemoryCount} freeze-created memories match`
-    : "No freeze-memory report";
+  $("memoryIntegrity").textContent = integrityBadge.state === "unknown"
+    ? "Integrity report unavailable"
+    : memory
+      ? `${memory.freezeCreatedMemoryCount} freeze-created memories match`
+      : "No freeze-memory report";
   $("privateAvailability").textContent = inspection.private?.available ? "Available through editor credential" : "Not configured";
   $("integrityRaw").textContent = formatJson(inspection.integrity);
   $("rawInspection").textContent = formatJson(inspection);
@@ -146,7 +228,10 @@ function renderEvents() {
     list.append(recordButton(
       `${event.sequence}. ${event.eventType}`,
       `v${event.expectedVersion} → v${event.resultingVersion} · ${event.occurredAt}`,
-      () => { $("eventDetail").textContent = formatJson(event); },
+      () => {
+        renderExplanation("eventExplanation", explainEvent(event));
+        $("eventDetail").textContent = formatJson(event);
+      },
     ));
   }
   if (!list.childElementCount) list.textContent = "No public events.";
@@ -207,8 +292,14 @@ async function loadThread() {
     state.selectedRequest = null;
     state.selectedRuntime = null;
     renderAll();
+    renderPlaceholder("eventExplanation", "Select a public event");
+    renderPlaceholder("requestExplanation", "Select a request attempt");
+    renderPlaceholder("runtimeExplanation", "Select a runtime episode");
+    renderPlaceholder("previewExplanation", "No preview requested");
+    $("eventDetail").textContent = "Select an event.";
     $("requestDetail").textContent = "Select a request.";
     $("runtimeDetail").textContent = "Select a runtime.";
+    $("previewResult").textContent = "No preview requested.";
     $("lifecycleBadge").textContent = "Select a runtime";
     $("lifecycleDetail").textContent = "";
     $("lastLoaded").textContent = `Kernel time ${state.inspection.kernel?.kernelTime ?? "unavailable"}`;
@@ -227,6 +318,7 @@ async function selectRequest(requestId) {
       fetchJson(`/api/editor/threads/${encodeURIComponent(threadId)}/requests/${encodeURIComponent(requestId)}/integrity`),
     ]);
     state.selectedRequest = { detail, integrity };
+    renderExplanation("requestExplanation", explainRequest(state.selectedRequest));
     $("requestDetail").textContent = formatJson(state.selectedRequest);
   } catch (error) {
     showError(error);
@@ -255,6 +347,7 @@ async function selectRuntime(sessionId) {
     $("lifecycleBadge").textContent = outcome.label;
     $("lifecycleBadge").dataset.state = outcome.kind;
     $("lifecycleDetail").textContent = outcome.detail;
+    renderExplanation("runtimeExplanation", explainRuntime(state.selectedRuntime));
     $("runtimeDetail").textContent = formatJson(state.selectedRuntime);
   } catch (error) {
     showError(error);
@@ -277,6 +370,7 @@ async function previewSelfModel() {
         }),
       },
     );
+    renderExplanation("previewExplanation", explainPreview(payload));
     $("previewResult").textContent = formatJson(payload);
   } catch (error) {
     showError(error);
