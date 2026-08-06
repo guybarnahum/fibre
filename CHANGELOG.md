@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Completed the deterministic M1 Persistent Thread Round Trip with Mina through independent world-kernel and credentialed Thread Editor processes, repeated restart, accepted freeze, explicit rejected-runtime closure, unattended timeout/reclaim, obligation-mediated participation, replay rejection, and final zero-active-runtime inspection.
+- Added `npm run demo:m1` as a reviewed proof command: after the HTTP process scenario, it independently pins historical obligation discharge, service-level consumed-authorization rejection before storage, direct abandonment non-consumption, exactly one obligation-consumption row, and zero active session and lease rows.
+- Explicitly recorded the owner's 2026-08-06 decision that persistent disclosure strategy and audience-visible external response are a deliberate post-M1 extension, and restored the M1 ambition invariant.
 - Replaced the fixture-only Thread Editor with a loopback-only, API-backed inspection surface over the independently running world kernel.
 - Added live public/private views for Thread state, event history, integrity, request/appraisal/stance traces, runtime, authorization, Actor, Goal Guardian, freeze, abandonment, timeout, and raw inspection data.
 - Added a per-run editor API credential, kept `FIBRE_PRIVATE_TOKEN` server-side, rejected non-loopback upstreams and Host authorities, enabled no CORS, and exposed no generic reverse proxy.

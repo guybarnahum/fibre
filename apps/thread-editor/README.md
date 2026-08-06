@@ -2,7 +2,17 @@
 
 The M1 Thread Editor is a dependency-free, loopback-only inspection and bounded-simulation surface over the independently running world kernel.
 
-## Start
+## Consolidated M1 proof
+
+Run Mina's complete deterministic persistent round trip with:
+
+```bash
+npm run demo:m1
+```
+
+The command generates local credentials, starts separate kernel and editor processes, drives the complete scenario through HTTP, restarts the kernel repeatedly, emits a redacted JSON proof report, and removes its temporary database unless `--keep-database` is supplied.
+
+## Interactive start
 
 Run the world kernel and editor with the same private token. Configure an admin token whenever live command acceptance is needed outside the editor:
 
@@ -14,7 +24,7 @@ npm run world-kernel
 FIBRE_PRIVATE_TOKEN=local-private-token-1234 npm run editor
 ```
 
-The editor prints a per-run URL containing an access token in the URL fragment. Open that exact URL. Browser code stores the token in session storage and removes it from the visible address bar.
+The editor prints a per-run URL containing an access token in the URL fragment. Open that exact URL. Browser code stores the token in session storage and removes the fragment from the current address.
 
 Optional editor configuration:
 
@@ -23,8 +33,10 @@ FIBRE_EDITOR_HOST=127.0.0.1
 FIBRE_EDITOR_PORT=4173
 FIBRE_WORLD_URL=http://127.0.0.1:8787
 FIBRE_PRIVATE_TOKEN=<same local token used by the world kernel>
-FIBRE_EDITOR_ACCESS_TOKEN=<optional fixed test/development token; otherwise generated per run>
+FIBRE_EDITOR_ACCESS_TOKEN=<optional fixed local token; otherwise generated per run>
 ```
+
+A configured `FIBRE_EDITOR_ACCESS_TOKEN` has a 16-character minimum only. Operators are responsible for supplying a high-entropy value; the generated default is preferred.
 
 ## Inspection surface
 
@@ -33,27 +45,31 @@ The editor loads live API data for one Thread ID and presents:
 - current projection, lifecycle status, version, and state hash;
 - needs, feelings, self-model, unresolved intentions, traits, memory refs, and relationship refs;
 - safe public event history;
-- Thread replay integrity and freeze-created-memory integrity;
+- replay integrity and freeze-created-memory integrity;
 - private request/appraisal/stance summaries and complete traces;
-- private runtime, authorization, execution-context, Actor, and Goal Guardian records;
-- freeze reports, authorization consumption, explicit abandonment, and timeout outcomes;
+- authorization, lease, execution context, Actor, and Goal Guardian records;
+- freeze reports, authorization consumption, explicit abandonment, timeout, and integrity outcomes;
 - raw aggregated inspection data.
 
-Timeout display uses `kernelTime` from the world-kernel health response. A lease is displayed as timed out when kernel time passes `expiresAt`, even before the database lazily changes the lease row from `active` to `expired`. The editor labels that state `Timed out — not yet reclaimed` rather than falsely reporting an active episode.
+Every runtime selection fetches fresh `kernelTime` from the world kernel. A persisted active lease is shown as `Timed out — not yet reclaimed` once kernel time passes `expiresAt`, even before later acquisition persists reclaim. If current kernel time is unavailable, the editor displays `Expiry unknown`; it does not reassure the reviewer that the runtime remains active.
 
 ## Access boundary
 
-Every `/api/editor/*` request requires the per-run editor access token. Static files remain loopback-readable, but they contain no Thread interiority or world-kernel credentials.
+Every `/api/editor/*` request requires the per-run editor token. Missing, wrong, truncated, extended, or case-modified credentials fail before any upstream request.
 
-The world-kernel private token is held by the editor server and injected only into an allowlisted upstream GET surface. It is never returned to browser JavaScript. A different local process must possess the editor's per-run token before it can use the editor API to read public or private Thread records.
+The world-kernel private token is held by the editor server and injected only into an allowlisted upstream GET surface. It is never returned to browser JavaScript. A different local process must possess the editor token before it can use the editor API to read public or private Thread records.
 
 This is a local M1 credential, not production authentication, principal identity, or role-based authorization.
 
+### Fragment-delivery note
+
+URL fragments are not sent to the server and are removed from the current page with `history.replaceState`. A fragment pasted or typed into a browser may nevertheless remain in browser/omnibox history. Use an ephemeral browser profile for sensitive local demonstrations and do not reuse the editor credential.
+
 ## Bounded simulation
 
-The only mutation-shaped control is `Preview self-model update`. The editor constructs a canonical `UPDATE_SELF_MODEL` command using the kernel-published time and calls the deterministic preview route.
+The only mutation-shaped control is `Preview self-model update`. The editor constructs a canonical `UPDATE_SELF_MODEL` command using kernel-published time and calls the deterministic preview route.
 
-The browser response omits the raw `previewId`. The editor exposes no command-acceptance route, and the live world-kernel process disables command acceptance unless `FIBRE_ADMIN_TOKEN` is configured and supplied directly to the kernel.
+The browser response omits the raw `previewId`, but preview identity is derivable from the returned deterministic receipt fields. This omission is presentation redaction, not an authority control. The actual write boundary is the world kernel's required `FIBRE_ADMIN_TOKEN`, and the editor exposes no command-acceptance route.
 
 A preview receipt is not consent, Participation Authorization, or authority to mutate the Thread.
 
@@ -70,23 +86,24 @@ The editor cannot:
 - create, edit, normalize, or discharge obligations or unresolved intentions;
 - send external communication.
 
-PR #21 is therefore an inspection and simulation tool, not an alternative world-kernel write path.
+The editor is therefore an inspection and simulation tool, not an alternative world-kernel write path.
 
 ## Transport and filesystem boundary
 
 The editor server:
 
-- binds only to loopback;
-- accepts only loopback Host headers;
+- binds only to loopback and enforces loopback Host authorities;
 - accepts only a loopback HTTP world-kernel URL;
-- requires a per-run credential on every editor API request;
+- requires a per-run credential before every editor API route;
+- returns prompt authenticated 404 responses for unknown `/api/*` paths;
 - provides no generic reverse proxy;
 - percent-encodes every allowlisted upstream suffix segment;
 - allows private upstream GETs only for request/runtime/freeze/abandon inspection;
 - constructs one preview-only POST;
 - rejects encoded path traversal and every symbolic-link segment under the static root;
+- verifies realpath containment;
 - opens and stats each static response through one file descriptor;
 - caps inbound preview bodies and buffered upstream JSON responses;
-- uses no CORS, no-store responses, and same-origin CSP.
+- uses no CORS, no-store responses, no-referrer, nosniff, and same-origin CSP.
 
 Production remote access, authenticated principals, role-specific views, and production secret/session handling remain deferred.

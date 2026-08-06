@@ -3,7 +3,7 @@ import {
   formatJson,
   initials,
   inspectionCounts,
-  lifecycleOutcome,
+  loadRuntimeInspection,
   requestSummary,
   runtimeSummary,
 } from "./editor-model.js";
@@ -245,17 +245,13 @@ async function selectRuntime(sessionId) {
   clearError();
   try {
     const threadId = state.inspection.thread.threadId;
-    const base = `/api/editor/threads/${encodeURIComponent(threadId)}/runtimes/${encodeURIComponent(sessionId)}`;
-    const [runtime, integrity, freeze, freezeIntegrity, abandon, abandonIntegrity] = await Promise.all([
-      fetchJson(base),
-      fetchJson(`${base}/integrity`),
-      optionalJson(`${base}/freeze`),
-      optionalJson(`${base}/freeze/integrity`),
-      optionalJson(`${base}/abandon`),
-      optionalJson(`${base}/abandon/integrity`),
-    ]);
-    state.selectedRuntime = { runtime, integrity, freeze, freezeIntegrity, abandon, abandonIntegrity };
-    const outcome = lifecycleOutcome(runtime, freeze, abandon, state.inspection.kernel?.kernelTime ?? null);
+    const basePath = `/api/editor/threads/${encodeURIComponent(threadId)}/runtimes/${encodeURIComponent(sessionId)}`;
+    state.selectedRuntime = await loadRuntimeInspection({
+      basePath,
+      fetchJson,
+      optionalJson,
+    });
+    const outcome = state.selectedRuntime.outcome;
     $("lifecycleBadge").textContent = outcome.label;
     $("lifecycleBadge").dataset.state = outcome.kind;
     $("lifecycleDetail").textContent = outcome.detail;

@@ -371,7 +371,11 @@ export function createThreadEditorServer({
         writeJson(response, 200, {
           command,
           preview: safePreview,
-          receipt: { previewIdRedacted: true, commandAcceptanceRequiresAdminToken: true },
+          receipt: {
+            previewIdRedacted: true,
+            previewIdentityDerivableFromReturnedFields: true,
+            commandAcceptanceRequiresAdminToken: true,
+          },
         }, requestId);
         return true;
       }
@@ -478,7 +482,10 @@ export function createThreadEditorServer({
       }
       const url = new URL(target, "http://thread-editor.local");
       if (url.pathname.startsWith("/api/")) {
-        await apiRoute(request, response, url, requestId);
+        const handled = await apiRoute(request, response, url, requestId);
+        if (!handled) {
+          throw new EditorHttpError(404, "EDITOR_ROUTE_NOT_FOUND", "Unknown editor route");
+        }
       } else {
         serveStatic(request, response, url);
       }

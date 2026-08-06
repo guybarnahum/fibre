@@ -21,7 +21,13 @@ function parsePort(value) {
   return port;
 }
 
-export async function startWorldKernelFromEnvironment(environment = process.env) {
+export async function startWorldKernelFromEnvironment(
+  environment = process.env,
+  serviceOptions = {},
+) {
+  if (serviceOptions === null || typeof serviceOptions !== "object" || Array.isArray(serviceOptions)) {
+    throw new TypeError("world-kernel serviceOptions must be an object");
+  }
   const databasePath = resolve(environment.FIBRE_WORLD_DATABASE ?? ".fibre/world.sqlite");
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
@@ -49,6 +55,7 @@ export async function startWorldKernelFromEnvironment(environment = process.env)
     runtimeStore,
     freezeStore,
     lifecycleStore,
+    serviceOptions,
   );
   const server = createLifecycleWorldKernelHttpServer({
     service,
