@@ -40,12 +40,16 @@ test("database inspector verifies and summarizes a clean Fibre world", async () 
     assert.equal(report.summary.threads[0].threadId, fixture.threadId);
     assert.equal(report.summary.threads[0].name, "Mina Park");
     assert.deepEqual(report.summary.eventTypes, { THREAD_SEEDED: 1 });
-    assert.equal(report.summary.activeRuntimeCount, 0);
+    assert.equal(report.summary.activeSessionCount, 0);
+    assert.equal(report.summary.activeLeaseCount, 0);
     assert.equal(report.verification.verified.threads, 1);
     assert.equal(report.verification.verified.privateRequests, 0);
-    assert.match(formatWorldDatabaseSummary(report), /Fibre world database: PASS/);
-    assert.match(formatWorldDatabaseSummary(report), /Source mode: read-only/);
-    assert.match(formatWorldDatabaseSummary(report), /Schema enforcement: complete/);
+    const summary = formatWorldDatabaseSummary(report);
+    assert.match(summary, /Fibre world database: PASS/);
+    assert.match(summary, /Source mode: read-only/);
+    assert.match(summary, /Schema enforcement: complete/);
+    assert.match(summary, /memories=1 including seeded/);
+    assert.match(summary, /Active runtime rows: sessions=0, leases=0/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -100,9 +104,16 @@ test("database inspector detects missing source enforcement without restoring it
     const report = await inspectWorldDatabase(databasePath);
     assert.equal(report.verification.ok, false);
     assert.equal(report.verification.sourceSchema, false);
+    assert.equal(report.verification.snapshotVerified, false);
+    assert.equal(report.verification.domainRecords, false);
     assert.ok(
       report.verification.errors.some(
         (error) => /missing triggers:.*thread_events_no_delete/.test(error),
+      ),
+    );
+    assert.ok(
+      report.verification.errors.some(
+        (error) => /domain verification skipped because source schema enforcement is incomplete/.test(error),
       ),
     );
 
