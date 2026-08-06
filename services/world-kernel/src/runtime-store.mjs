@@ -395,6 +395,21 @@ export class RuntimeStore {
           `Request ${record.requestId} changed before thaw lease acquisition`,
         );
       }
+      const existingAuthority = this.#database.prepare(`
+        SELECT authorization_id,operation_id
+        FROM participation_authorizations
+        WHERE operation_id=? OR stance_id=?
+      `).get(record.operationId, record.stanceId);
+      if (existingAuthority) {
+        if (existingAuthority.operation_id === record.operationId) {
+          throw new RuntimeConflictError(
+            `Runtime operation ${record.operationId} already belongs to participation authority ${existingAuthority.authorization_id}`,
+          );
+        }
+        throw new RuntimeConflictError(
+          `Private stance ${record.stanceId} already has participation authority and cannot acquire a second authorization`,
+        );
+      }
       const active = this.#database.prepare(
         "SELECT lease_id,expires_at FROM thaw_leases WHERE thread_id=? AND status='active'",
       ).get(record.threadId);
@@ -469,6 +484,15 @@ export class RuntimeStore {
       this.#database.exec("COMMIT");
     } catch (error) {
       safeRollback(this.#database);
+      if (
+        /UNIQUE constraint failed: participation_authorizations\.(?:stance_id|operation_id)/i.test(
+          error?.message ?? "",
+        )
+      ) {
+        throw new RuntimeConflictError(
+          "Participation authority already exists for this request attempt",
+        );
+      }
       throw translateStorageError(error);
     }
     return { runtime: this.getRuntime(record.threadId, record.sessionId), idempotent: false };

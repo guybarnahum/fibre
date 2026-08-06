@@ -8,6 +8,7 @@ import {
 } from "./persistence-common.mjs";
 import { createRuntimeTables } from "./runtime-schema.mjs";
 import { createFreezeTables } from "./freeze-schema.mjs";
+import { createExpressionTables } from "./expression-schema.mjs";
 
 export function normalizeDatabasePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
@@ -196,6 +197,7 @@ function createSchema(database) {
   createPrivateParticipationSchema(database);
   createRuntimeTables(database);
   createFreezeTables(database);
+  createExpressionTables(database);
 }
 
 function needsFreezeEventUpgrade(database) {
@@ -248,7 +250,7 @@ export function migrateDatabase(database) {
     const existingTables = Number(
       database
         .prepare(
-          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories')",
+          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses')",
         )
         .get().count,
     );

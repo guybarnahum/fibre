@@ -63,9 +63,14 @@ export class M1LifecycleWorldKernelService extends M1FreezeWorldKernelService {
     };
   }
 
+  assertObligationsUnspent(threadId, obligationReferences) {
+    assertId("threadId", threadId);
+    this.#lifecycleStore.assertObligationsUnspent(threadId, obligationReferences);
+  }
+
   acquireThawRuntime(threadId, requestId, request) {
     const obligationReferences = request?.decision?.obligationReferences;
-    this.#lifecycleStore.assertObligationsUnspent(threadId, obligationReferences);
+    this.assertObligationsUnspent(threadId, obligationReferences);
     try {
       return super.acquireThawRuntime(threadId, requestId, request);
     } catch (error) {

@@ -5,13 +5,14 @@ import { openWorldStore } from "./persistence.mjs";
 import { openRuntimeStore } from "./runtime-store.mjs";
 import { openFreezeStore } from "./freeze-store.mjs";
 import { openLifecycleHardeningStore } from "./lifecycle-hardening-store.mjs";
-import { M1LifecycleWorldKernelService } from "./lifecycle-hardening-service.mjs";
+import { openExpressionStore } from "./expression-store.mjs";
+import { M1ExpressionWorldKernelService } from "./expression-service.mjs";
 import {
   assertLoopbackBindHost,
   closeWorldKernelHttpServer,
   listenWorldKernelHttpServer,
 } from "./http-server.mjs";
-import { createLifecycleWorldKernelHttpServer } from "./lifecycle-hardening-http-server.mjs";
+import { createExpressionWorldKernelHttpServer } from "./expression-http-server.mjs";
 
 function parsePort(value) {
   const port = Number(value);
@@ -39,25 +40,29 @@ export async function startWorldKernelFromEnvironment(
   let runtimeStore;
   let freezeStore;
   let lifecycleStore;
+  let expressionStore;
   try {
     runtimeStore = openRuntimeStore(databasePath);
     freezeStore = openFreezeStore(databasePath);
     lifecycleStore = openLifecycleHardeningStore(databasePath);
+    expressionStore = openExpressionStore(databasePath);
   } catch (error) {
+    expressionStore?.close();
     lifecycleStore?.close();
     freezeStore?.close();
     runtimeStore?.close();
     store.close();
     throw error;
   }
-  const service = new M1LifecycleWorldKernelService(
+  const service = new M1ExpressionWorldKernelService(
     store,
     runtimeStore,
     freezeStore,
     lifecycleStore,
+    expressionStore,
     serviceOptions,
   );
-  const server = createLifecycleWorldKernelHttpServer({
+  const server = createExpressionWorldKernelHttpServer({
     service,
     adminToken,
     privateToken,
@@ -83,6 +88,7 @@ export async function startWorldKernelFromEnvironment(
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
+        expressionStore.close();
         lifecycleStore.close();
         freezeStore.close();
         runtimeStore.close();
@@ -95,6 +101,7 @@ export async function startWorldKernelFromEnvironment(
       runtimeStore,
       freezeStore,
       lifecycleStore,
+      expressionStore,
       service,
       address,
       databasePath,
@@ -103,6 +110,7 @@ export async function startWorldKernelFromEnvironment(
       close,
     };
   } catch (error) {
+    expressionStore.close();
     lifecycleStore.close();
     freezeStore.close();
     runtimeStore.close();
@@ -123,6 +131,7 @@ async function main() {
     runtimeProfileVersion: 1,
     freezeProfileVersion: 1,
     lifecycleClosureProfileVersion: 1,
+    expressionProfileVersion: 1,
   })}\n`);
 
   const shutdown = async (signal) => {
