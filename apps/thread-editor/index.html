@@ -62,7 +62,11 @@
           <div><dt>Freeze-created memories</dt><dd id="memoryIntegrity">—</dd></div>
           <div><dt>Private inspection</dt><dd id="privateAvailability">—</dd></div>
         </dl>
-        <pre id="integrityRaw">No integrity report.</pre>
+        <div id="integrityExplanation" class="explanation"></div>
+        <details class="technical-json">
+          <summary>Show exact integrity JSON</summary>
+          <pre id="integrityRaw">No integrity report.</pre>
+        </details>
       </article>
     </section>
 
@@ -72,25 +76,40 @@
       <button class="tab" data-view="requests" type="button">Private requests</button>
       <button class="tab" data-view="runtimes" type="button">Runtime episodes</button>
       <button class="tab" data-view="preview" type="button">Preview</button>
-      <button class="tab" data-view="raw" type="button">Raw</button>
+      <button class="tab" data-view="raw" type="button">Technical JSON</button>
     </nav>
 
     <section id="view-state" class="view-grid">
+      <article class="panel wide summary-panel"><div id="threadExplanation" class="explanation"></div></article>
       <article class="panel"><h2>Current self-model</h2><p id="selfModel"></p></article>
       <article class="panel"><h2>Needs</h2><ul id="needs"></ul></article>
       <article class="panel"><h2>Feelings</h2><ul id="feelings"></ul></article>
-      <article class="panel"><h2>Unresolved intentions</h2><ul id="intentions"></ul><p class="boundary-note">Read-only in PR #21. No obligation or intention mutation is exposed.</p></article>
+      <article class="panel"><h2>Unresolved intentions</h2><ul id="intentions"></ul><p class="boundary-note">Read-only in M1. No obligation or intention mutation is exposed.</p></article>
       <article class="panel wide"><h2>Genetic personality</h2><div id="traits" class="trait-grid"></div></article>
     </section>
 
     <section id="view-events" class="view-grid" hidden>
       <article class="panel list-panel"><h2>Public timeline</h2><div id="eventList" class="record-list"></div></article>
-      <article class="panel detail-panel"><h2>Selected public event</h2><pre id="eventDetail">Select an event.</pre></article>
+      <article class="panel detail-panel">
+        <h2>Selected public event</h2>
+        <div id="eventExplanation" class="explanation"></div>
+        <details class="technical-json">
+          <summary>Show exact event JSON</summary>
+          <pre id="eventDetail">Select an event.</pre>
+        </details>
+      </article>
     </section>
 
     <section id="view-requests" class="view-grid" hidden>
       <article class="panel list-panel"><h2>Request attempts</h2><div id="requestList" class="record-list"></div></article>
-      <article class="panel detail-panel"><h2>Restricted request trace</h2><pre id="requestDetail">Select a request.</pre></article>
+      <article class="panel detail-panel">
+        <h2>Restricted request trace</h2>
+        <div id="requestExplanation" class="explanation"></div>
+        <details class="technical-json">
+          <summary>Show exact request JSON</summary>
+          <pre id="requestDetail">Select a request.</pre>
+        </details>
+      </article>
     </section>
 
     <section id="view-runtimes" class="view-grid" hidden>
@@ -98,7 +117,11 @@
       <article class="panel detail-panel">
         <div class="section-heading"><h2>Restricted runtime trace</h2><span id="lifecycleBadge" class="badge">Select a runtime</span></div>
         <p id="lifecycleDetail" class="muted"></p>
-        <pre id="runtimeDetail">Select a runtime.</pre>
+        <div id="runtimeExplanation" class="explanation"></div>
+        <details class="technical-json">
+          <summary>Show exact runtime JSON</summary>
+          <pre id="runtimeDetail">Select a runtime.</pre>
+        </details>
       </article>
     </section>
 
@@ -115,11 +138,23 @@
         <button id="previewButton" type="button">Request kernel preview</button>
         <p class="boundary-note">The editor cannot call the command-acceptance route. Preview receipts are not consent or authorization.</p>
       </article>
-      <article class="panel detail-panel"><h2>Kernel preview receipt</h2><pre id="previewResult">No preview requested.</pre></article>
+      <article class="panel detail-panel">
+        <h2>Kernel preview receipt</h2>
+        <div id="previewExplanation" class="explanation"></div>
+        <details class="technical-json">
+          <summary>Show exact preview JSON</summary>
+          <pre id="previewResult">No preview requested.</pre>
+        </details>
+      </article>
     </section>
 
     <section id="view-raw" class="view-grid" hidden>
-      <article class="panel wide"><h2>Aggregated inspection payload</h2><pre id="rawInspection">No Thread loaded.</pre></article>
+      <article class="panel wide">
+        <p class="eyebrow">Developer and audit view</p>
+        <h2>Aggregated inspection payload</h2>
+        <p class="muted">This is the exact payload returned by the editor API. Use the other views for explanation and this view for debugging or audit work.</p>
+        <pre id="rawInspection">No Thread loaded.</pre>
+      </article>
     </section>
   </main>
 
