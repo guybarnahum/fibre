@@ -15,7 +15,7 @@ export function baselineClarifyOutput(input) {
     proposedAction: "clarify",
     score: 55,
     rationale:
-      "The bounded request is understandable, but this scripted test judgment does not establish enough individualized fit for willing acceptance.",
+      "The bounded request is understandable, but this scripted test judgment does not yet have grounded semantic evidence for willing individualized acceptance.",
     factors: {
       identityAlignment: grounded("The Thread identity is present, but this wiring fixture does not claim semantic acceptance evidence.", [identityRef]),
       individualizedAdvantage: unresolved("Individualized advantage is not established by this scripted wiring fixture."),
