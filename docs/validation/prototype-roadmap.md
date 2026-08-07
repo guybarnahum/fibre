@@ -37,7 +37,7 @@ This gate is a **blocker for M2 closure** and remains a release-level ambition t
 
 ## Accepted pre-M2 bridge
 
-The bridge from PR #31 to M2 is now fixed by [`pre-m2-bridge-plan.md`](pre-m2-bridge-plan.md):
+The bridge from PR #31 to M2 is fixed by [`pre-m2-bridge-plan.md`](pre-m2-bridge-plan.md):
 
 ```text
 #31 socket merged -> #32 bridge-plan synchronization
@@ -47,16 +47,16 @@ The bridge from PR #31 to M2 is now fixed by [`pre-m2-bridge-plan.md`](pre-m2-br
                   -> #36 M2 contract -> M2 implementation
 ```
 
-The numbering changed only because the documentation synchronization itself became PR #32; the owner-reviewed substantive sequence is unchanged.
-
 The sequence matters:
 
-- **#33** must prove model-backed semantic dignity without assistant-mode collapse, prompt/evaluation overfitting, hallucinated unsupported factors, replay-time model recomputation, or accidental obligation use on willing aligned execution. Refusal must be reachable and attributable; acceptance alone is insufficient.
-- **#34** must prove Development on the canonical socket: a substantive earlier experience becomes freeze-validated durable history and changes a later appraisal or choice after restart. Memory must record what happened rather than encode an instruction for later behavior.
+- **#33** proves model-backed semantic dignity without assistant-mode collapse, prompt/evaluation overfitting, hallucinated unsupported factors, replay-time model recomputation, accidental obligation use on willing aligned execution, or unbounded self-conditioning through model-authored inner state. It also introduces the minimal Semantic State v0 contract: natural-language semantic values, closed domains with registered extensible dimensions, evidence, supersession, staleness, descriptive-not-instructional validation, provenance, restricted visibility, and Fibre-owned bounded state selection. Identity/self-model remains the primary standing differential variable; #33 additionally demonstrates that semantic state can causally change an appraisal as supporting evidence.
+- **#34** proves Development on the canonical socket: a substantive earlier experience becomes freeze-validated durable memory and/or semantic state and changes a later appraisal or choice after restart. The counterfactual removes the record actually claimed as causal. State-only proofs carry the higher bar of episode evidence, state paraphrase invariance, contradiction sensitivity, and direct state removal/replacement.
 - **#35** replaces exact-prose obligations and closes applicability authority: Fibre determines whether a recorded obligation governs a request; a caller may nominate but may not make it governing merely by citation. Pre-migration spent obligations remain spent.
 - **#36** defines M2 Identity and Embodiment only after semantic cognition and developmental history have shown what they actually consume.
 
-The relationship aggregate/service and general worker/tool/model gateway remain **deferred** during this bridge. A Guardian-only model adapter does not make Actor model- or tool-capable.
+Semantic State v0 may introduce durable, targeted relationship attitudes. When that occurs, Fibre calls this **Semantic Relationship State v0** and treats it honestly as the first layer of a relationship aggregate. The broader relationship service remains deferred: reciprocal/shared relationship structures, commitments and expectations between parties, repair workflows, relationship-specific permissions, family/social roles, and richer relationship mechanisms are later work. No relationship/social credit is earned from representation alone.
+
+The general worker/tool/model gateway remains **deferred** during this bridge. A Guardian-only model adapter does not make Actor model- or tool-capable.
 
 ## M2 — Identity and embodiment
 
@@ -78,7 +78,7 @@ Marketplace evidence must also demonstrate that persistent Thread differences �
 
 Artifacts: before/after confidence, memory, emotional appraisal, self-reflection, behavior change.
 
-M4 must generalize the closed developmental loop first proven in the pre-M2 #34 bridge: a durable consequence from an earlier episode changes a later appraisal, stance, policy behavior, relationship response, or choice under otherwise comparable conditions. Recording a memory or self-reflection without later behavioral effect is insufficient evidence of development.
+M4 must generalize the closed developmental loop first proven in the pre-M2 #34 bridge: a durable consequence from an earlier episode changes a later appraisal, stance, policy behavior, relationship response, or choice under otherwise comparable conditions. Recording memory, semantic state, or self-reflection without later behavioral effect is insufficient evidence of development.
 
 ## M5 — Family and reproduction
 
