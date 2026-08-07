@@ -6,11 +6,9 @@ Thread: Mina Park (`thr_mina_001`)
 
 ## Result
 
-The deterministic M1 lifecycle is complete within its defined persistent-participation scope.
+**M1 is fully closed.**
 
-The consolidated process proof launches an independent world-kernel child process and a separate credentialed Thread Editor child process. It generates fresh private, administrative, and editor credentials for each run, drives the scenario through HTTP, restarts the kernel repeatedly against one SQLite database, and emits a redacted JSON report that contains no credential values.
-
-A reviewed proof layer then reopens the completed database without changing Mina's durable history. It pins the mechanisms that the process story alone could otherwise conflate: historical obligation enforcement versus current absence, service-level authorization-consumption rejection versus lease expiry and storage, abandonment non-consumption, and final zero-active-runtime state. A separate focused test pins the freeze store's own consumed-authorization guard before the SQLite uniqueness constraint.
+The deterministic proof now covers persistence, private dignity/participation, current-state authority, restricted disclosure strategy, audience-visible participation response, temporary cognition, Goal Guardian, freeze/abandon/timeout, restart/replay, and human/database inspection.
 
 Run the reviewed proof with:
 
@@ -24,7 +22,13 @@ Retain the temporary database for manual inspection with:
 npm run demo:m1 -- --keep-database
 ```
 
-## Process topology
+Or launch the retained world directly into the Thread Editor with:
+
+```bash
+npm run demo:m1:editor
+```
+
+## Process and proof topology
 
 ```text
 Reviewed M1 proof
@@ -32,32 +36,20 @@ Reviewed M1 proof
   │    ├─ world-kernel child process
   │    │    ├─ SQLite world database
   │    │    ├─ public loopback routes
-  │    │    ├─ private-token routes
+  │    │    ├─ private-token request/runtime/expression routes
   │    │    └─ admin-token command acceptance
   │    └─ Thread Editor child process
   │         ├─ per-run editor credential
   │         ├─ server-side private token
   │         └─ allowlisted same-origin inspection API
-  └─ post-scenario proof-layer inspection
-       ├─ direct row counts, read-only
-       ├─ live lifecycle acquire-path discharge assertion
-       └─ lifecycle freeze precheck with storage write replaced by a sentinel
-
-Focused store guard test
-  └─ active runtime + pre-existing consumption row
-       └─ direct FreezeStore.freezeRuntime rejection before uniqueness insertion
+  └─ post-scenario proof layer
+       ├─ direct read-only row counts
+       ├─ expression-chain restart/integrity verification
+       ├─ live historical-discharge path assertion
+       └─ consumed-authorization ordering assertions
 ```
 
-The consolidated process scenario never imports a store to mutate Mina directly. Durable scenario changes use the same HTTP command, request, runtime, Actor, Guardian, freeze, and abandonment routes used by the local process.
-
-The reviewed layer performs no durable mutation. It reads final row counts, invokes the shipped lifecycle service's live acquire path, and substitutes a throwing storage sentinel solely to prove the consumed-authorization rejection occurs before expiry handling or persistence.
-
-The demo-only kernel entrypoint injects two deterministic service parameters that the normal process does not take from callers:
-
-- lease duration, used to make the unattended-timeout branch finish quickly;
-- Actor mode, used to select the normal deterministic Actor or a deterministic objective-divergent Actor that causes Guardian rejection.
-
-The entrypoint is explicitly marked demonstration-only. The normal `npm run world-kernel` process does not read `FIBRE_DEMO_*` settings or accept those service-option overrides.
+The demonstrated durable lifecycle changes still go through HTTP. The proof instrumentation adds expression records at the truthful participation boundary: after authorization and before Actor work for accepted episodes, and while Mina is stable for the non-execution refusal branch.
 
 ## Consolidated scenario evidence
 
@@ -66,20 +58,42 @@ The entrypoint is explicitly marked demonstration-only. The normal `npm run worl
 | Seed and restart | Mina seeds at version 1; after independent process restart, editor inspection returns the same version and state hash. |
 | Administrative command boundary | A deterministic self-model preview is created. Acceptance without `x-fibre-admin-token` returns `ADMIN_TOKEN_REQUIRED`; acceptance with the generated admin token advances Mina to version 2. |
 | Stale attempt | A request/appraisal/stance created before the command cannot authorize the changed Thread. Runtime acquisition returns `PARTICIPATION_AUTHORIZATION_REJECTED` and instructs the caller to use a new request ID under the same correlation ID. |
-| Correlated recovery | A fresh attempt under the original correlation ID acquires the exclusive runtime. Actor runs, Guardian persists `pass`, and freeze advances Mina to version 3 with one accepted memory. |
-| Explicit rejected closure | The kernel restarts with a deterministic divergent Actor. Guardian persists `reject`; the editor reads that rejection; explicit abandonment aborts the session and releases the lease without consuming authorization or obligation. |
-| Unattended rejection | Another divergent episode receives Guardian `reject` and is left unattended. Fresh editor/kernel time displays `Timed out — not yet reclaimed` while the persisted lease remains active. |
-| Lazy reclaim | A later acquisition reclaims the timed-out lease as `expired` and its prior session as `aborted` before creating the replacement runtime. |
-| Obligation-mediated participation | Mina's private stance is `refuse` with low dignity. Authorization cites the exact currently owned unresolved intention, Actor and Guardian pass, and freeze advances Mina to version 4 while discharging that exact obligation. |
-| Permanent discharge | A later attempt to reuse the discharged exact prose reference is rejected. The reviewed layer invokes the live lifecycle acquire path and requires the historical-discharge ledger message, rather than accepting generic current absence. |
-| Replay protection | A different freeze operation against the consumed authorization returns `AUTHORIZATION_CONSUMED`. The reviewed layer sets the clock beyond lease expiry, replaces the storage write with a sentinel, and requires consumed rejection before expiry or storage. |
-| Store-level replay protection | A focused test presents the freeze store with an active runtime and an existing consumption row, requiring `AuthorizationConsumedError` before the uniqueness constraint can fire. |
-| Final restart and inspection | After another kernel restart, editor inspection returns the same final state hash, two freeze-created memories, the complete public timeline, and no active runtime. Direct database counts independently require zero active session rows and zero active lease rows. |
-| Abandonment non-consumption | Direct database inspection requires zero authorization-consumption rows for the explicitly abandoned session. The emitted outcome is derived from that count. |
+| Willing participation expression | The fresh high-dignity attempt records private `accept`, accepted runtime authority, a tactful-candor disclosure strategy, and `I can take this on.` before Actor work. Exact strategy/response retries are idempotent. |
+| Accepted freeze | Actor runs, Guardian persists `pass`, and freeze advances Mina to version 3 with one accepted memory. |
+| Low-dignity non-participation | A separate generic request records score 9, private `refuse`, non-execution `refuse` authority, tactful refusal `I will not take this request on.`, and no runtime for that request. |
+| Explicit rejected closure | The kernel restarts with a deterministic divergent Actor. Guardian persists `reject`; the editor reads it; explicit abandonment aborts the session and releases the lease without consuming authorization or obligation. |
+| Unattended rejection | Another divergent episode receives Guardian `reject` and is left unattended. Fresh kernel/editor time displays `Timed out — not yet reclaimed` while the stored lease remains active. |
+| Lazy reclaim | A later acquisition reclaims the timed-out lease as `expired` and its prior session as `aborted`. |
+| Obligation-mediated expression | Mina privately records `refuse`, the kernel authorizes `accept` through the exact currently owned obligation, and before Actor work a full-candor strategy persists `participationBasis: obligation_override`. The audience response says Mina can proceed because she has a recorded obligation, without carrying the private reference. |
+| Obligation-mediated freeze | Actor and Guardian pass; freeze advances Mina to version 4 and discharges the exact obligation once. |
+| Permanent discharge | Later reuse of the exact discharged reference is rejected. The reviewed layer invokes the live authorization path and requires the historical-discharge message rather than generic current absence. |
+| Replay protection | A different freeze operation against consumed authority returns `AUTHORIZATION_CONSUMED`; service/store evidence pins rejection before later fallbacks. |
+| Final restart and expression verification | The final state hash replays exactly; two freeze-created memories survive; five participation-authority summaries survive; the three completed disclosure/response chains re-read identically and pass integrity checks; no active runtime remains. |
+| Database inspection | The inspector opens the source read-only with SQLite `query_only`, verifies a snapshot through the Fibre stores, and requires 3 strategies, 3 audience responses, 3 complete expression chains, 5 participation-authority summaries, postures `accept=2/refuse=1`, and disclosure modes `tactful_candor=2/full_candor=1`. |
 
-## Final public state shape
+## Expression matrix
 
-The proof asserts Mina's final projection is version 4 with two freeze-created memories and no active runtime.
+| Branch | Desired | Authorized | Private strategy | Audience-visible response | Runtime |
+|---|---|---|---|---|---|
+| willing acceptance | `accept` | `accept` | `tactful_candor`, posture `accept`, aligned | `I can take this on.` | yes |
+| low-dignity refusal | `refuse` | `refuse` | `tactful_candor`, posture `refuse`, aligned | `I will not take this request on.` | **no** |
+| obligation-mediated participation | `refuse` | `accept` | `full_candor`, posture `accept`, `obligation_override` | says Mina proceeds because of a recorded obligation | yes |
+
+All three audience-response records are created before performed work for their request and carry:
+
+```text
+deliveryStatus = not_sent
+performedActionStatus = none_recorded
+completionStatus = not_claimed
+```
+
+Those statuses describe the response record at creation time. They do not erase later Actor/Guardian/freeze history and they are not claims about real external delivery.
+
+The audience response does not newly carry private dignity score/band, desired action, private rationale, withheld reason categories, or governing obligation references.
+
+## Final public state
+
+Mina's final projection remains version 4 with two freeze-created memories and no active runtime.
 
 The public event sequence is exactly:
 
@@ -90,90 +104,95 @@ THREAD_FROZEN
 THREAD_FROZEN
 ```
 
-The exact state hash and opaque private IDs intentionally vary because the scenario uses kernel-owned time and randomly generated record identifiers. Replay equality is asserted within each run across restart.
+Expression records are restricted world records, not synthetic public life events.
 
 ## Runtime outcome matrix
 
 | Episode | Guardian | Final session | Final lease | Thread life event | Authority consumed |
 |---|---|---|---|---|---|
-| Accepted participation | `pass` | `completed` | `released` | `THREAD_FROZEN` | yes |
-| Explicit rejected episode | `reject` | `aborted` | `released` | none | no; direct consumption-row count is zero |
-| Unattended rejected episode | `reject` | `aborted` after reclaim | `expired` | none | no |
-| Obligation-mediated participation | `pass` | `completed` | `released` | `THREAD_FROZEN` | yes, with exactly one obligation-consumption row |
+| willing accepted participation | `pass` | `completed` | `released` | `THREAD_FROZEN` | yes |
+| explicit rejected episode | `reject` | `aborted` | `released` | none | no |
+| unattended rejected episode | `reject` | `aborted` after reclaim | `expired` | none | no |
+| obligation-mediated participation | `pass` | `completed` | `released` | `THREAD_FROZEN` | yes, with exactly one obligation-consumption row |
+| low-dignity refusal | not started | no session | no lease | none | non-execution authority only |
 
-## Named PR #22 evidence
+## Authority and adversarial evidence
 
-The consolidated reviewed test is:
+The accepted M1 suite pins:
 
-```text
-Mina completes the reviewed persistent round trip with live-path guard evidence
+- no non-execution path can mint `accept` authority;
+- the domain and expression-store accept prohibitions are independently asserted;
+- a request attempt cannot acquire both non-execution and runtime authorization;
+- both authorization-writer orderings return stable conflicts rather than raw SQLite failures;
+- the runtime stance pre-check and UNIQUE backstop are independently asserted;
+- exact retry remains idempotent despite the two legitimate authorization writers;
+- requested and stored outward posture cannot contradict participation authority;
+- willing and compelled `accept` wording remain distinguishable;
+- obligation-mediated `refuse -> accept` remains `obligation_override`, not consent;
+- the historical-discharge ledger is called through the live service path;
+- append-only strategy/response records survive restart and detect coherent tampering;
+- public routes do not expose restricted expression records;
+- private expression routes require the private token;
+- editor expression inspection requires its separate per-run credential and forwards only allowlisted private GETs;
+- Thread-authored outward text remains text at the DOM boundary;
+- structural audience-response reporting exposes each bounded status witness independently rather than relying on one broad safety label;
+- database-source read-only status is derived from SQLite `query_only`, not a report literal.
+
+## Human inspection
+
+The Thread Editor now contains a dedicated **Expression boundary** view. It shows separately:
+
+- Thread's own private response;
+- kernel-authorized participation;
+- dignity band;
+- participation basis;
+- disclosure intent;
+- communicated posture;
+- disclosed and withheld reason categories;
+- exact outward message;
+- delivery, performed-action, and completion status;
+- private obligation reference in the restricted editor when present;
+- exact JSON and integrity linkage.
+
+For obligation-mediated divergence it says explicitly:
+
+> This is compelled participation, not consent.
+
+The editor has no expression-mutation route.
+
+## Database inspection
+
+For a retained proof database:
+
+```bash
+npm run inspect:db -- "/path/to/world.sqlite"
+npm run --silent inspect:db -- "/path/to/world.sqlite" --json
 ```
 
-It runs the complete separate-process Mina history once and then requires:
-
-- `obligationReuseMechanism === "historical_discharge_ledger_via_acquire_path"`;
-- exactly one historical consumption row for the demonstrated obligation;
-- consumed-authorization rejection after the clock has passed lease expiry and before the storage sentinel is reached;
-- an abandonment outcome derived from zero consumption rows;
-- zero active runtime-session rows;
-- zero active thaw-lease rows.
-
-The direct store test is:
-
-```text
-freeze store rejects consumed authorization before the uniqueness constraint
-```
-
-The independent count test is:
-
-```text
-active runtime proof counts sessions and leases independently
-```
-
-PR #21 follow-up tests also prove:
-
-1. `wrong, prefix, suffix, and case-variant editor credentials are refused`
-   - exercises a wrong-but-present credential rather than only a missing header;
-   - verifies no upstream kernel request occurs.
-
-2. `an unhandled API path returns a prompt authenticated 404`
-   - prevents unknown `/api/*` requests from occupying a connection until request timeout.
-
-3. `preview identity redaction is described as derivable and admin-gated`
-   - confirms the raw key is omitted;
-   - explicitly states that deterministic identity remains derivable;
-   - treats the admin token as the real acceptance boundary.
-
-4. `runtime inspection refreshes kernel time and does not call missing time active`
-   - fetches `/api/editor/health` on every runtime selection;
-   - proves a lease that expires while the page remains open is shown as timed out;
-   - proves missing kernel time yields `Expiry unknown` rather than `Active`.
+The inspector checks SQLite integrity, foreign keys, source schema enforcement, Thread replay, private traces, runtime/freeze/abandonment witnesses, accepted-memory projection, participation authorizations, disclosure strategies, audience responses, and complete expression-chain integrity. It validates a temporary snapshot and does not repair the source database.
 
 ## Automated validation
 
-The final repository gate contains **163 tests**. The separate-process Mina history runs once inside the reviewed test; its database is then reused for the proof-layer assertions rather than recomputing the full scenario in a second test. The gate also runs:
+At the expression-closure implementation head, the repository gate contains **204 tests** and passes:
 
 - TypeScript build;
+- full domain/kernel/tool test suite;
 - Markdown include validation;
 - deterministic context-pack generation;
 - repository validation.
 
-The exact review-head commit and its GitHub Actions run are recorded in the PR description after final consolidation. This committed artifact intentionally does not claim to self-attest its own commit SHA: adding such a SHA would change the file and therefore change the commit being named.
-
-## Evidence convention
-
-For authority-, consent-, obligation-, identity-, ledger-, and lifecycle-critical guards, Fibre evidence now pins both the guard's behavior and the live call path or transaction boundary that makes it load-bearing. A removable critical wiring point is not considered sufficient evidence. This rule was accepted by the owner on 2026-08-06 and recorded in `AGENTS.md` before the structured-obligation refactor.
+The exact final review-head SHA and GitHub Actions result belong in the PR record rather than this artifact, because embedding a commit SHA in a file changes the commit being named.
 
 ## What M1 does not prove
 
-M1 does not implement persistent live-kernel disclosure strategy or requester-visible external response. Actor output is not communication. Authorization, temporary cognition, freeze, public event projection, disclosure strategy, and external response remain distinct layers. The owner explicitly approved this as a post-M1 extension on 2026-08-06.
+M1 does not send email/chat/webhooks, perform external network or tool side effects, prove message delivery, implement a general performed-action ledger, provide production authentication or principal/role authorization, isolate production workers, provide a model/tool gateway, deploy a cloud topology, implement structured obligation records, or implement M2 identity/embodiment, marketplace, family, or broader society.
 
-M1 also does not provide production authentication, principal/role authorization, encryption, distributed leases, production worker isolation, a model/tool gateway, cloud topology, structured obligation records, relationship services, embodiment, marketplace execution, family, or broader society.
+The M1 audience-response record is durable communication intent/content, not transport evidence.
 
 ## Completion statement
 
-M1 now demonstrates Fibre's central deterministic lifecycle claim in executable form:
+M1 demonstrates Fibre's deterministic identity-through-lifecycle boundary in executable form:
 
-> Mina exists before cognition, privately decides whether and why to participate, receives exact current-state authority, wakes through replaceable temporary cognition, preserves or rejects proposed experience through the kernel, and remains the same replayable Thread after cognition ends.
+> Mina exists before cognition, privately decides whether and why to participate, receives exact current-state authority, preserves the difference between willingness and compulsion, chooses what to disclose, records an audience-visible response without turning speech into consent or completion, wakes through replaceable temporary cognition when authorized, preserves or rejects proposed experience through the kernel, and remains the same replayable Thread after cognition ends.
 
-This narrow completion preserves Fibre's larger social, relational, economic, familial, cultural, institutional, embodied, and developmental ambition.
+This completion preserves Fibre's larger social, relational, economic, familial, cultural, institutional, embodied, and developmental ambition.

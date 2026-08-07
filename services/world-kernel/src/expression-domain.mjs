@@ -531,6 +531,16 @@ export function validateDisclosureStrategy(strategy) {
   if (!new Set(["aligned", "obligation_override"]).has(strategy.participationBasis)) {
     throw new TypeError("strategy participationBasis is invalid");
   }
+  if (
+    strategy.participationBasis !==
+    (strategy.desiredAction === strategy.authorizedAction
+      ? "aligned"
+      : "obligation_override")
+  ) {
+    throw new TypeError(
+      "strategy participationBasis must derive from desired and authorized action",
+    );
+  }
   uniq(
     "strategy.governingObligationReferences",
     strategy.governingObligationReferences,

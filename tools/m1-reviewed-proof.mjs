@@ -6,10 +6,12 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { runM1MinaRoundTrip } from "./m1-mina-round-trip.mjs";
+import { runWithM1ExpressionProof } from "./m1-expression-proof.mjs";
 import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
 import { openRuntimeStore } from "../services/world-kernel/src/runtime-store.mjs";
 import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
 import { openLifecycleHardeningStore } from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
+import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
 import { M1LifecycleWorldKernelService } from "../services/world-kernel/src/lifecycle-hardening-service.mjs";
 import { AuthorizationConsumedError } from "../services/world-kernel/src/freeze-domain.mjs";
 import { ParticipationAuthorizationRejectedError } from "../services/world-kernel/src/runtime-domain.mjs";
@@ -18,6 +20,11 @@ const fixture = JSON.parse(
   readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
 const OBLIGATION = fixture.currentState.unresolvedIntentions[0];
+const EXPRESSION_REQUESTS = {
+  accepted: "req_mina_accepted_attempt",
+  lowDignity: "req_mina_low_dignity_expression",
+  obligationMediated: "req_mina_obligation_attempt",
+};
 
 function scalar(database, sql, ...parameters) {
   const row = database.prepare(sql).get(...parameters);
@@ -167,11 +174,106 @@ function assertServiceConsumptionPrecheck(databasePath, sessionId) {
   }
 }
 
+function assertBoundedAudienceStatus(integrity, name) {
+  assert.deepEqual(
+    integrity.audienceResponseStatus,
+    {
+      responsePresent: true,
+      deliveryNotSent: true,
+      performedActionNotRecorded: true,
+      completionNotClaimed: true,
+      boundedStatusWitnesses: true,
+    },
+    `${name} must retain every structural audience-response status witness`,
+  );
+  assert.equal(
+    integrity.audienceSafe,
+    true,
+    `${name} legacy audienceSafe compatibility must derive from structural witnesses`,
+  );
+}
+
+function assertExpressionClosure(databasePath, evidence) {
+  const expressionStore = openExpressionStore(databasePath);
+  try {
+    const summaries = expressionStore.listExpressionSummaries(fixture.threadId);
+    const completedExpressionSummaries = summaries.filter(
+      (summary) => summary.strategyId !== null && summary.responseId !== null,
+    );
+    assert.equal(
+      completedExpressionSummaries.length,
+      3,
+      "M1 closure must persist exactly three demonstrated disclosure/response chains",
+    );
+    assert.deepEqual(
+      new Set(completedExpressionSummaries.map((summary) => summary.requestId)),
+      new Set(Object.values(EXPRESSION_REQUESTS)),
+      "completed expression summaries must be the three canonical M1 closure branches",
+    );
+
+    const chains = Object.fromEntries(
+      Object.entries(EXPRESSION_REQUESTS).map(([name, requestId]) => [
+        name,
+        expressionStore.getExpressionChain(fixture.threadId, requestId),
+      ]),
+    );
+    assert.deepEqual(chains.accepted, evidence.accepted.chain);
+    assert.deepEqual(chains.lowDignity, evidence.lowDignity.chain);
+    assert.deepEqual(chains.obligationMediated, evidence.obligationMediated.chain);
+
+    for (const [name, requestId] of Object.entries(EXPRESSION_REQUESTS)) {
+      const integrity = expressionStore.verifyExpressionIntegrity(fixture.threadId, requestId);
+      assertBoundedAudienceStatus(integrity, name);
+      assert.ok(integrity.authorizationId, `${name} must retain authorization linkage`);
+      assert.ok(integrity.strategyId, `${name} must retain disclosure linkage`);
+      assert.ok(integrity.responseId, `${name} must retain response linkage`);
+    }
+
+    assert.equal(chains.accepted.authorization.authorization.desiredAction, "accept");
+    assert.equal(chains.accepted.authorization.authorization.authorizedAction, "accept");
+    assert.equal(chains.accepted.response.response.message, "I can take this on.");
+
+    assert.equal(chains.lowDignity.authorization.authorization.desiredAction, "refuse");
+    assert.equal(chains.lowDignity.authorization.authorization.authorizedAction, "refuse");
+    assert.equal(chains.lowDignity.response.response.message, "I will not take this request on.");
+
+    const compelled = chains.obligationMediated;
+    assert.equal(compelled.authorization.authorization.desiredAction, "refuse");
+    assert.equal(compelled.authorization.authorization.authorizedAction, "accept");
+    assert.equal(compelled.disclosure.strategy.participationBasis, "obligation_override");
+    assert.deepEqual(compelled.disclosure.strategy.governingObligationReferences, [OBLIGATION]);
+    assert.match(compelled.response.response.message, /recorded obligation/i);
+
+    return {
+      authorizationSummaryCount: summaries.length,
+      branchCount: completedExpressionSummaries.length,
+      requestIds: { ...EXPRESSION_REQUESTS },
+      restartStable: true,
+      acceptedMessage: chains.accepted.response.response.message,
+      lowDignityMessage: chains.lowDignity.response.response.message,
+      compelledMessage: compelled.response.response.message,
+      compelledParticipationBasis: compelled.disclosure.strategy.participationBasis,
+      audienceStatuses: Object.fromEntries(
+        Object.entries(chains).map(([name, chain]) => [name, {
+          delivery: chain.response.response.deliveryStatus,
+          performedAction: chain.response.response.performedActionStatus,
+          completion: chain.response.response.completionStatus,
+        }]),
+      ),
+    };
+  } finally {
+    expressionStore.close();
+  }
+}
+
 export async function runM1ReviewedProof({ keepDatabase = false } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-m1-reviewed-proof-"));
   const databasePath = join(directory, "world.sqlite");
   try {
-    const report = await runM1MinaRoundTrip({ keepDatabase, directory });
+    const instrumented = await runWithM1ExpressionProof(() =>
+      runM1MinaRoundTrip({ keepDatabase, directory })
+    );
+    const report = instrumented.report;
 
     const database = new DatabaseSync(databasePath, {
       enableForeignKeyConstraints: true,
@@ -180,6 +282,8 @@ export async function runM1ReviewedProof({ keepDatabase = false } = {}) {
     let activeLeaseRows;
     let explicitRejectConsumptionRows;
     let obligationConsumptionRows;
+    let disclosureRows;
+    let audienceResponseRows;
     try {
       ({ activeSessionRows, activeLeaseRows } = readActiveRuntimeCounts(database));
       explicitRejectConsumptionRows = scalar(
@@ -200,6 +304,16 @@ export async function runM1ReviewedProof({ keepDatabase = false } = {}) {
         fixture.threadId,
         OBLIGATION,
       );
+      disclosureRows = scalar(
+        database,
+        "SELECT count(*) AS value FROM disclosure_strategies WHERE thread_id=?",
+        fixture.threadId,
+      );
+      audienceResponseRows = scalar(
+        database,
+        "SELECT count(*) AS value FROM audience_participation_responses WHERE thread_id=?",
+        fixture.threadId,
+      );
     } finally {
       database.close();
     }
@@ -216,7 +330,10 @@ export async function runM1ReviewedProof({ keepDatabase = false } = {}) {
       1,
       "the exact demonstrated obligation must have one historical consumption row",
     );
+    assert.equal(disclosureRows, 3, "three disclosure strategies must persist");
+    assert.equal(audienceResponseRows, 3, "three audience responses must persist");
 
+    const expressionClosure = assertExpressionClosure(databasePath, instrumented.evidence);
     const obligationReuseMechanism = assertHistoricalDischargeGuard(databasePath);
     const serviceConsumptionPrecheck = assertServiceConsumptionPrecheck(
       databasePath,
@@ -242,6 +359,9 @@ export async function runM1ReviewedProof({ keepDatabase = false } = {}) {
         explicitRejectConsumptionRows,
         activeSessionRows,
         activeLeaseRows,
+        disclosureRows,
+        audienceResponseRows,
+        expressionClosure,
       },
     };
   } finally {

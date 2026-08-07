@@ -28,6 +28,27 @@ export function runtimeSummary(runtime) {
   };
 }
 
+export function expressionSummary(expression) {
+  return {
+    requestId: expression.requestId,
+    authorizationId: expression.authorizationId ?? null,
+    desiredAction: expression.desiredAction ?? null,
+    authorizedAction: expression.authorizedAction ?? null,
+    dignityBand: expression.dignityBand ?? null,
+    strategyId: expression.strategyId ?? null,
+    disclosureMode: expression.disclosureMode ?? null,
+    communicatedPosture: expression.communicatedPosture ?? null,
+    responseId: expression.responseId ?? null,
+    recordedAt:
+      expression.responseRecordedAt ??
+      expression.strategyRecordedAt ??
+      expression.authorizationIssuedAt ??
+      expression.issuedAt ??
+      null,
+    complete: expression.strategyId !== null && expression.responseId !== null,
+  };
+}
+
 function parsedTime(value) {
   if (typeof value !== "string") return null;
   const timestamp = Date.parse(value);
@@ -109,10 +130,15 @@ export async function loadRuntimeInspection({ basePath, fetchJson, optionalJson 
 }
 
 export function inspectionCounts(inspection) {
+  const expressions = inspection?.private?.expressions ?? [];
   return {
     events: inspection?.events?.length ?? 0,
     requests: inspection?.private?.requests?.length ?? 0,
     runtimes: inspection?.private?.runtimes?.length ?? 0,
+    expressions: expressions.length,
+    completeExpressions: expressions.filter(
+      (expression) => expression.strategyId !== null && expression.responseId !== null,
+    ).length,
     memories: inspection?.thread?.memoryRefs?.length ?? 0,
     relationships: inspection?.thread?.relationshipRefs?.length ?? 0,
     unresolvedIntentions: inspection?.thread?.currentState?.unresolvedIntentions?.length ?? 0,

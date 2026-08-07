@@ -1,6 +1,6 @@
 ---
 id: validation-m1-disclosure-response-closure-plan
-status: proposed
+status: accepted
 last-reviewed: 2026-08-06
 canonical: false
 issue: 1
@@ -8,192 +8,157 @@ issue: 1
 
 # M1 disclosure and response closure plan
 
-## Owner decision
+## Outcome
 
-On 2026-08-06, after completing the deterministic persistent-lifecycle proof and merging the human-readable Thread Editor, the owner chose to close the remaining interior-to-exterior gap before beginning M2 implementation.
+The owner chose on 2026-08-06 to close the remaining interior-to-exterior gap before beginning M2 implementation. The closure is now implemented and proven through two reviewed work units:
 
-This plan proposes a narrow M1 closure extension for two records that already exist as permanent Fibre concepts but are not yet persisted by the live world kernel:
+1. **Closure PR A** — persist restricted disclosure strategy and audience-visible participation response with their authority, privacy, idempotency, restart, and integrity boundaries;
+2. **Closure PR B** — integrate those records into the consolidated Mina proof, Thread Editor, database inspector, structural status reporting, evidence artifact, and canonical M1 state.
 
-1. restricted disclosure strategy;
-2. audience-visible external participation response.
+The earlier decision to defer these records was accurate for the first deterministic lifecycle proof but is superseded for final M1 scope.
 
-The earlier decision to defer these records remains an accurate description of the completed deterministic lifecycle proof. Acceptance of this closure plan will supersede that deferral for the final M1 boundary. M1 will not be declared fully closed until the implementation, restart proof, integrity evidence, and human inspection described below are complete.
+**M1 is fully closed when Closure PR B merges with its exact-head repository gate green.** The canonical M1 contract and current-state document in this change are written as the resulting merged state.
 
-### Adversarial-review owner decisions
+## Permanent architectural decisions
 
-The owner accepted the following clarifications on 2026-08-06 while reviewing Closure PR A:
+1. **Private stance, authority, disclosure, response, performed action, and durable life change are distinct.** No later layer rewrites an earlier one.
+2. **Outward posture may not contradict participation authority.** `accept` authority communicates `accept`; non-accept authority may communicate the same action or `noncommittal`.
+3. **Compulsion is not consent.** An obligation-mediated `refuse -> accept` keeps both values and its governing obligation in the private chain as `obligation_override`.
+4. **Willing and compelled acceptance remain outwardly distinguishable.** M1 willing acceptance says `I can take this on.`; tactful compelled acceptance says `I can proceed with this request.`; full candor may say the Thread proceeds because of a recorded obligation.
+5. **A future “compelled participation, outwardly withheld” capability needs its own explicit record.** It may not masquerade as a false refusal and is not part of Closure PR B.
+6. **Disclosure mode is private strategy intent.** `full_candor`, `tactful_candor`, `selective`, `strategic_ambiguity`, `evasive`, and `deceptive` are not kernel honesty classifications and do not promise unique deterministic language for every mode.
+7. **Audience-safety claims are narrow and structural.** The response payload does not newly copy private appraisal, dignity details, private rationale, withheld reasons, or governing obligation references. It separately records response presence, delivery state, performed-action state, and completion state. Current public `unresolvedIntentions` are not a permanent confidentiality model.
+8. **Standalone non-execution authority is stable-state only and cannot mint `accept`.** Accepted execution authority remains exclusive to the thaw/runtime boundary.
+9. **One participation authority per request attempt.** The two legitimate authorization writers detect each other through transaction prechecks and storage backstops, with stable domain conflicts rather than raw SQLite failures.
+10. **Expression records are append-only.** M1 records one immutable disclosure strategy and one immutable audience response per request attempt; future revision uses superseding records rather than update-in-place.
+11. **Response creation is not delivery, work, completion, consent, or a Thread life event.** Real transport and general performed-action records remain later capabilities.
+12. **Critical evidence pins behavior and wiring.** Redundant authority guards are independently asserted so a refactor cannot remove both layers while leaving the suite green.
 
-1. **Outward posture may not contradict participation authority.** If the kernel authorizes `accept`, the audience-visible posture must be `accept`; it may not say `refuse`, `clarify`, `negotiate`, `delegate`, or `noncommittal`. For a non-accept authorization, the outward posture may either match the authorized action or use `noncommittal` to withhold the exact non-participation posture. A future capability for "compelled participation, outwardly withheld" must be represented by its own explicit record rather than by a false refusal.
-2. **Disclosure mode is private strategy intent in M1.** Values such as `full_candor`, `tactful_candor`, `selective`, `strategic_ambiguity`, `evasive`, and `deceptive` describe the Thread's restricted disclosure intent. They are not a kernel honesty classifier and do not imply that every mode must produce distinct deterministic wording in M1. `full_candor` may reveal an obligation-mediated participation basis; other modes may currently map to the same bounded response dictionary.
-3. **The audience-safety claim is narrow.** M1 proves that the new audience-response record does not newly copy private appraisal, private stance, withheld reasons, dignity details, or governing obligation references into the response payload. It does not claim that all underlying Thread state is confidential. In the current M1 model, unresolved-intention prose is already visible in the public Thread projection. Structured obligations must later distinguish public standing from private obligation terms.
-4. **Non-execution authority is available only from stable Thread states.** A Thread may issue the standalone non-execution authorization only while `frozen` or `dormant`; an active or transitional runtime must not create a second participation decision for the same request attempt.
-5. **M1 expression records are immutable.** One disclosure strategy and one audience response are recorded per request attempt. Future revision must use a superseding append-only record rather than updating the original record in place.
-
-## Why this belongs before M2
-
-A Thread's private stance, authorization, temporary cognition, outward expression, performed action, and durable life change are distinct records. The current kernel persists the first four lifecycle and authority layers through authorization and runtime, but it stops before the Thread decides what to reveal and before a safe audience-facing response is recorded.
-
-Without these records, a caller or UI is tempted to infer expression from authorization, Actor output, freeze, or public events. That would collapse the interior–exterior boundary and could turn compulsion into apparent consent.
-
-The closure must therefore prove not merely that Fibre can produce text, but that it can preserve the provenance and separation of:
+## Implemented persistent chain
 
 ```text
-private stance
-  -> participation authorization
+private appraisal
+  -> private participation stance
+  -> Participation Authorization
   -> restricted disclosure strategy
-  -> audience-visible response
+  -> audience-visible participation response
   -> performed action, if any
   -> durable life change, if any
 ```
 
-Public or audience-visible wording is never authoritative evidence of private motive, desire, consent, authorization, performed action, or task completion.
+Closure PR A added append-only persistence and restricted APIs for the strategy and response. It also added durable non-execution authorization so `clarify`, `negotiate`, `delegate`, and `refuse` can be authorized and expressed without acquiring runtime.
 
-## Closure PR sequence
+Accepted execution authority remains on the existing runtime path. The standalone authorization path rejects `accept` at both domain and store layers.
 
-### Closure PR A — Persist disclosure and audience response
+## Consolidated Mina closure proof
 
-Implement the live-kernel record and authority boundary.
+Closure PR B demonstrates three completed expression chains inside the existing M1 history:
 
-#### Persistent records
+### 1. High-dignity willing acceptance
 
-Add append-only, integrity-checked persistence for:
+- private stance: `accept`;
+- authorized action: `accept` through runtime acquisition;
+- disclosure: `tactful_candor`, posture `accept`;
+- outward response: `I can take this on.`;
+- expression is persisted before Actor work;
+- Actor/Guardian/freeze then proceed as separate later records.
 
-- a restricted disclosure strategy bound to the exact Thread snapshot, immutable request attempt, requester or audience, appraisal, private stance, Participation Authorization, policy, causation chain, and correlation chain;
-- an audience-visible external participation response bound to the exact disclosure strategy and request attempt.
+### 2. Low-dignity non-participation
 
-The exact storage layout is an implementation decision, but the persisted chain must retain enough independent witnesses to detect substitution or coherent rewriting of its material bindings.
+- generic request with dignity score 9;
+- private stance: `refuse`;
+- non-execution authority: `refuse`;
+- disclosure: `tactful_candor`, posture `refuse`;
+- outward response: `I will not take this request on.`;
+- exact authorization/disclosure/response retries are idempotent;
+- no runtime exists for this request.
 
-#### Restricted disclosure strategy
+### 3. Obligation-mediated participation
 
-The strategy is private. It may represent candid, tactful, selective, ambiguous, evasive, or deceptive expression within the accepted Fibre rules, but it cannot:
+- private stance: `refuse`;
+- authorized action: `accept` through one exact recorded obligation;
+- private disclosure basis: `obligation_override`;
+- disclosure: `full_candor`, posture `accept`;
+- outward response says the Thread can proceed because of a recorded obligation while omitting the private obligation reference;
+- expression is persisted before Actor work;
+- freeze later consumes authority and discharges the exact obligation once.
 
-- create or expand authorization;
-- change the authorized action or objective;
-- claim task completion or performed action that has not occurred;
-- erase a recorded divergence between the Thread's own response and the action the kernel authorized;
-- convert an obligation-mediated override into evidence of consent;
-- disclose private rationale, feelings, dignity evidence, relationship effects, withheld reasons, or obligation details unless the strategy explicitly chooses them for the intended audience.
+All three responses record at creation time:
 
-At minimum, the private record must preserve the Thread-owned response, authorized action, dignity band, disclosure mode, intended visible action, audience, disclosed information, withheld information, safe references, rationale or intent, and any governing obligation reference used by authorization.
+```text
+deliveryStatus = not_sent
+performedActionStatus = none_recorded
+completionStatus = not_claimed
+```
 
-#### Audience-visible response
+The proof then restarts the completed world and requires exact expression-chain equality, request/stance/authorization/strategy/response linkage, three disclosure rows, three audience-response rows, three complete expression chains, and no duplicate records.
 
-The response is a sanitized communication record. It must contain only the fields intentionally visible to the audience, such as the intended audience, visible action, message, and safe references.
+## Human and database inspection
 
-It must not automatically carry private appraisal, score, feelings, private rationale, withheld reasons, relationship deltas, or undisclosed obligation details.
+The Thread Editor has a dedicated **Expression boundary** view. It presents readable explanation first and exact JSON as the technical authority. It shows:
 
-The visible posture must not contradict the kernel's authorized participation action. For a non-accept authorization, `noncommittal` may be used to withhold the exact non-participation posture without asserting a different action. An accepted authorization must be communicated as acceptance in M1.
+- the Thread's own private response;
+- kernel-authorized action;
+- dignity band and participation basis;
+- obligation-mediated divergence explicitly as compelled participation, not consent;
+- disclosure intent;
+- disclosed and withheld reason categories;
+- exact audience-visible message;
+- delivery, performed-action, and completion status;
+- integrity linkage.
 
-"Audience-visible" does not mean globally public. Until Fibre has authenticated principals and role-aware access, the local kernel may keep retrieval behind the existing restricted credential while proving that the returned response payload itself contains no private fields.
+Expression inspection is credentialed and GET-only. The editor exposes no authority, disclosure, response, runtime, freeze, or obligation write path.
 
-#### Service and API behavior
+The database inspector now:
 
-The kernel must own record IDs and timestamps. Creation must be exact-idempotent, append-only, bounded, and conflict visibly when an operation ID is reused with different content.
+- includes expression tables, append-only triggers, and indexes in schema enforcement;
+- verifies each authorization and completed expression chain through the domain stores;
+- counts strategies, responses, and complete chains;
+- reports disclosure modes and communicated postures;
+- derives source read-only state from SQLite `query_only` rather than a hard-coded report literal.
 
-The service must reread the authoritative request, appraisal, stance, authorization, and relevant Thread witnesses inside the load-bearing write transaction rather than trusting caller-supplied copies.
+The expression-integrity API now reports audience-response status structurally. The older store `audienceSafe` boolean remains a compatibility alias only, not a broad truthfulness or confidentiality verdict.
 
-The API must expose bounded create, read, list, and integrity operations. It must not expose a generic proxy, external network send, or a route that treats response creation as command acceptance, runtime acquisition, performed action, or freeze.
+## Explicit non-goals retained
 
-#### Required evidence
-
-Tests must cover at least:
-
-- exact binding to Thread, snapshot, request fingerprint, requester or audience, appraisal, stance, authorization, policy, causation, and correlation;
-- stale or mismatched records rejected through the live service path;
-- outward posture cannot imply an action the authorization does not permit or deny an accepted action that will execute;
-- authorized scope cannot be expanded by disclosure or response wording;
-- private fields absent from the audience-visible payload;
-- obligation-mediated `refuse -> accept` retains both values and the governing reference in the private chain;
-- response text cannot become consent evidence;
-- exact retry returns the same records without duplication;
-- changed-content retry conflicts;
-- records survive close and reopen;
-- tampering or substitution is detected by integrity reads;
-- public Thread and event routes do not leak restricted strategy content.
-
-Authority-, consent-, obligation-, identity-, and privacy-critical evidence must pin both behavior and the live service or transaction path that makes the guard load-bearing.
-
-### Closure PR B — Prove and inspect the complete boundary
-
-Integrate the new records into the consolidated Mina proof, Thread Editor, database inspector, and accepted documentation.
-
-#### Mina acceptance branches
-
-The proof must demonstrate at least three distinct participation outcomes:
-
-1. **High-dignity acceptance:** Mina privately wants to accept, receives accepted authorization, records a strategy, and emits an audience-visible acknowledgment that does not claim the task is already complete.
-2. **Low-dignity non-participation:** Mina privately refuses, clarifies, negotiates, or delegates; no thaw runtime is acquired unless a later accepted authorization exists; the audience-visible response is respectful without rewriting the private stance.
-3. **Obligation-mediated participation:** Mina's own recorded response is `refuse`, the kernel authorizes `accept` through one exact recorded obligation, and the private strategy preserves the divergence and governing reference. The demonstrated audience response must not portray the override as voluntary desire or consent. A candid strategy may explicitly say that Mina is proceeding under an obligation; other future strategies may withhold private details, but the authoritative private record must remain inspectable.
-
-The closure proof does not need real message transport. It proves durable expression intent and an audience-safe response record, not email, chat delivery, tool execution, or external side effects.
-
-#### Restart, integrity, and replay
-
-The consolidated proof must close and reopen the same world database and verify:
-
-- identical disclosure and response records after restart;
-- exact request, stance, authorization, strategy, and response linkage;
-- no duplicate records under exact retry;
-- restricted fields remain restricted;
-- response payload remains audience-safe;
-- existing Thread projection and event replay remain unchanged unless a separate accepted life event requires change;
-- expression records are not inferred from Actor output, Guardian result, freeze report, or public event projection.
-
-#### Human inspection
-
-The Thread Editor must show, in separate readable sections:
-
-- the Thread's own private response and dignity match;
-- the action authorized by the kernel;
-- any obligation-mediated divergence, named as compulsion rather than consent;
-- the private disclosure strategy and what it chose to reveal or withhold;
-- the exact audience-visible response;
-- performed action and durable life change as separate states, including "none recorded" when appropriate;
-- collapsed exact JSON as the authoritative technical witness.
-
-The database inspector must count and cross-check strategies and responses and must not assert read-only or integrity properties through hardcoded report literals.
-
-#### Final documentation closure
-
-After the executable proof passes, update the accepted M1 contract, prototype roadmap, current-state document, evidence artifact, and repository status so that they no longer disagree about whether disclosure strategy and audience-visible response are part of the completed M1 artifact set.
-
-Only then should the repository state: **M1 is fully closed.**
-
-## Permanent closure invariants
-
-1. Private stance, authorization, disclosure strategy, audience-visible response, performed action, outcome, and durable life change remain distinguishable.
-2. Public or audience-visible wording is not authoritative evidence of private motive, desire, dignity, consent, or authorization.
-3. Disclosure and response cannot create, enlarge, repair, contradict, or silently negate authorization.
-4. An obligation-mediated override remains identifiable as compulsion even when outward wording is tactful or selective.
-5. Audience-visible responses contain only deliberately disclosed content and safe references.
-6. Actor output is proposal data and is not requester-facing communication.
-7. Creating a response record is not proof that a message was delivered, that work was performed, or that a life change was accepted.
-8. Exact retry cannot duplicate expression records or effects.
-9. Human inspection presents the readable explanation first while retaining exact JSON as the authority.
-10. Critical evidence pins both the guard and its live wiring or transaction boundary.
-
-## Explicit non-goals
-
-This closure does not add:
+M1 closure does not add:
 
 - real email, chat, webhook, network, or tool delivery;
+- a general performed-action ledger;
 - production principal identity or role-aware access;
 - learned or LLM-generated disclosure strategy;
 - production model execution or worker isolation;
-- performed-action execution;
 - marketplace contracts or settlement;
-- relationship aggregation;
 - structured obligation creation or editing;
 - M2 passport, portrait, voice, geography, or family implementation.
 
 ## Structured-obligation follow-up
 
-The M1 demonstration still uses exact UTF-8 unresolved-intention prose as provisional obligation identity. Stable obligation records with ID, owner or issuer, scope, terms, expiry, recurrence, satisfaction criteria, discharge history, and explicit visibility classification remain the next authority hardening step before any new obligation-mutation surface.
+M1 still uses exact UTF-8 unresolved-intention prose as provisional obligation identity. The immediate authority-hardening follow-up is a structured obligation record with:
 
-The structured-obligation design must distinguish **public standing** (for example, that a Thread is bound by an obligation relevant to an interaction) from **private terms** (the exact text, evidence, or personal reason behind that obligation). The current M1 public `unresolvedIntentions` representation is provisional and must not be treated as the permanent privacy model.
+- stable ID;
+- owner or issuer;
+- scope and terms;
+- expiry and recurrence;
+- satisfaction criteria;
+- discharge history;
+- provenance;
+- explicit visibility classification.
 
-That refactor is not silently folded into this expression closure. It should be a separate reviewed PR immediately after M1 closure, or may proceed in parallel with an M2 contract-only PR, but no new feature may create or edit obligations until stable obligation identity exists.
+That design must distinguish **public standing** from **private terms**. No new feature should create or edit obligations until stable obligation identity exists.
+
+An M2 Identity and Embodiment contract may be defined in parallel, but M2 implementation should preserve this authority boundary.
 
 ## Exit gate
 
-M1 closure is complete only when both implementation PRs are merged, the exact final head passes `npm run check`, the consolidated separate-process proof passes across restart, the Thread Editor displays the complete interior-to-exterior chain without converting compulsion into consent, and the accepted canonical documents are reconciled.
+The closure exit gate is:
+
+- both implementation work units present in `main`;
+- exact final head passes `npm run check`;
+- the consolidated separate-process proof passes across restart;
+- three expression branches are persisted and independently reverified;
+- Thread Editor shows the complete interior-to-exterior chain without converting compulsion into consent;
+- database inspector verifies expression records without hard-coded integrity/read-only claims;
+- accepted M1 contract, roadmap, current-state, priorities, evidence, and world-kernel documentation agree.
+
+On merge of Closure PR B, these conditions make the repository statement **M1 is fully closed** true.

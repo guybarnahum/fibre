@@ -98,16 +98,18 @@ npm run includes:sync
 npm run includes:check
 npm run context-pack
 npm run check
+npm run demo:m1
+npm run demo:m1:editor
 npm run editor
 ```
 
-Then open <http://localhost:4173>.
-
 ## Current status
 
-`v0.1-concept-foundation`: concepts, schemas, synthetic fixtures, minimal domain package, Thread Editor prototype, and bounded AI context publication are present. The portable request flow includes Thread-owned appraisal context with inclusion/exclusion traces, SHA-256 request-content binding, private stance, request-bound authorization, recorded-obligation overrides, evidence-bearing relationship effects, restricted disclosure strategy, and audience-visible response separation.
+**M1 Persistent Thread Round Trip is fully closed.** The local world kernel persists Thread state, append-only life history, private request appraisal and stance, request-bound participation authority, restricted disclosure strategy, audience-visible participation response, temporary cognition, Goal Guardian audit, freeze/abandon/timeout outcomes, authorization consumption, accepted memories, and obligation discharge across process restart.
 
-No production world database, private-state access-control system, event-consumed authorization capability, persistent relationship aggregate, or live LLM integration exists yet.
+The consolidated Mina proof demonstrates willing participation, low-dignity refusal without runtime, and obligation-mediated `refuse -> accept` without converting compulsion into consent. The credentialed Thread Editor and read-only database inspector expose the same durable chain for human audit while keeping exact JSON as the technical authority.
+
+The implementation remains a local deterministic milestone, not production infrastructure. Production authentication/roles, encryption, real message delivery, a generalized performed-action ledger, model/tool worker isolation, structured obligations, identity/embodiment, relationships, marketplace execution, cloud topology, and broader society remain future work.
 
 ## License
 

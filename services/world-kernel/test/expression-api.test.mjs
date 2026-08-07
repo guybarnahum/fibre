@@ -124,7 +124,7 @@ async function json(base, path, { method = "GET", body, token = privateToken } =
   return { response, payload: await response.json() };
 }
 
-test("restricted expression API persists a refusal and returns an audience-safe response", async () => {
+test("restricted expression API persists a refusal and returns structural audience-response witnesses", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-expression-api-"));
   const databasePath = join(directory, "world.sqlite");
   const world = setup(databasePath);
@@ -202,7 +202,18 @@ test("restricted expression API persists a refusal and returns an audience-safe 
 
     const integrity = await json(base, `${prefix}/expression/integrity`);
     assert.equal(integrity.response.status, 200);
-    assert.equal(integrity.payload.audienceSafe, true);
+    assert.deepEqual(integrity.payload.audienceResponseStatus, {
+      responsePresent: true,
+      deliveryNotSent: true,
+      performedActionNotRecorded: true,
+      completionNotClaimed: true,
+      boundedStatusWitnesses: true,
+    });
+    assert.equal(
+      integrity.payload.audienceSafe,
+      true,
+      "legacy compatibility value must be derived from the structural witnesses",
+    );
   } finally {
     await closeWorldKernelHttpServer(server);
     world.closeStores();

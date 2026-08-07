@@ -2,13 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
+import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
+import { runM1ReviewedProof } from "./m1-reviewed-proof.mjs";
 import {
   formatWorldDatabaseSummary,
   inspectWorldDatabase,
+  openInspectorSourceDatabase,
   parseInspectorArguments,
 } from "./inspect-world-database.mjs";
 
@@ -25,6 +28,8 @@ function seededDatabase() {
   } finally {
     store.close();
   }
+  const expressionStore = openExpressionStore(databasePath);
+  expressionStore.close();
   return { directory, databasePath };
 }
 
@@ -42,16 +47,97 @@ test("database inspector verifies and summarizes a clean Fibre world", async () 
     assert.deepEqual(report.summary.eventTypes, { THREAD_SEEDED: 1 });
     assert.equal(report.summary.activeSessionCount, 0);
     assert.equal(report.summary.activeLeaseCount, 0);
+    assert.equal(report.summary.tableCounts.disclosure_strategies, 0);
+    assert.equal(report.summary.tableCounts.audience_participation_responses, 0);
     assert.equal(report.verification.verified.threads, 1);
     assert.equal(report.verification.verified.privateRequests, 0);
+    assert.equal(report.verification.verified.expressionAuthorizations, 0);
+    assert.equal(report.verification.verified.completeExpressionChains, 0);
     const summary = formatWorldDatabaseSummary(report);
     assert.match(summary, /Fibre world database: PASS/);
     assert.match(summary, /Source mode: read-only/);
     assert.match(summary, /Schema enforcement: complete/);
     assert.match(summary, /memories=1 including seeded/);
+    assert.match(summary, /Disclosure strategies: 0/);
+    assert.match(summary, /Audience responses: 0/);
     assert.match(summary, /Active runtime rows: sessions=0, leases=0/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("inspector source opener remains read-only even if query_only is disabled", () => {
+  const { directory, databasePath } = seededDatabase();
+  try {
+    const source = openInspectorSourceDatabase(databasePath);
+    try {
+      assert.equal(Number(source.prepare("PRAGMA query_only").get().query_only), 1);
+      source.exec("PRAGMA query_only=OFF");
+      assert.equal(Number(source.prepare("PRAGMA query_only").get().query_only), 0);
+      assert.throws(
+        () => source.exec("PRAGMA user_version=99"),
+        /readonly|read-only|attempt to write/i,
+        "the source handle itself must be opened read-only, independent of query_only",
+      );
+    } finally {
+      source.close();
+    }
+    const verification = new DatabaseSync(databasePath, { readOnly: true });
+    try {
+      assert.equal(Number(verification.prepare("PRAGMA user_version").get().user_version), 4);
+    } finally {
+      verification.close();
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("inspector reports a source connection that lacks query_only protection", async () => {
+  const { directory, databasePath } = seededDatabase();
+  try {
+    const report = await inspectWorldDatabase(databasePath, {
+      openSourceDatabase(path) {
+        return new DatabaseSync(path, {
+          readOnly: false,
+          enableForeignKeyConstraints: true,
+        });
+      },
+    });
+    assert.equal(report.verification.ok, false);
+    assert.equal(report.verification.sourceReadOnly, false);
+    assert.ok(
+      report.verification.errors.includes(
+        "source SQLite connection did not report query_only mode",
+      ),
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("database inspector verifies all three completed M1 expression chains", async () => {
+  const proof = await runM1ReviewedProof({ keepDatabase: true });
+  try {
+    const report = await inspectWorldDatabase(proof.databasePath);
+    assert.equal(report.verification.ok, true);
+    assert.equal(report.verification.sourceReadOnly, true);
+    assert.equal(report.summary.tableCounts.disclosure_strategies, 3);
+    assert.equal(report.summary.tableCounts.audience_participation_responses, 3);
+    assert.equal(report.verification.verified.expressionAuthorizations, 5);
+    assert.equal(report.verification.verified.disclosureStrategies, 3);
+    assert.equal(report.verification.verified.audienceResponses, 3);
+    assert.equal(report.verification.verified.completeExpressionChains, 3);
+    assert.deepEqual(report.summary.communicatedPostures, { accept: 2, refuse: 1 });
+    assert.deepEqual(report.summary.disclosureModes, {
+      full_candor: 1,
+      tactful_candor: 2,
+    });
+    const summary = formatWorldDatabaseSummary(report);
+    assert.match(summary, /completeExpressionChains=3/);
+    assert.match(summary, /Disclosure modes: full_candor=1, tactful_candor=2|Disclosure modes: tactful_candor=2, full_candor=1/);
+  } finally {
+    rmSync(dirname(proof.databasePath), { recursive: true, force: true });
   }
 });
 
