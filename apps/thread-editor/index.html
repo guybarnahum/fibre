@@ -11,7 +11,7 @@
     <div>
       <p class="eyebrow">Fibre world inspection</p>
       <h1>Thread Editor</h1>
-      <p>Inspect a live Thread, its public history, private participation trace, temporary cognition, and lifecycle integrity.</p>
+      <p>Inspect a live Thread, its public history, private participation trace, expression boundary, temporary cognition, and lifecycle integrity.</p>
     </div>
     <div class="connection-status" id="connectionStatus" data-state="loading">Connecting…</div>
   </header>
@@ -19,7 +19,7 @@
   <main>
     <section class="notice">
       <strong>Inspection boundary</strong>
-      <span>This editor cannot seed, accept commands, acquire runtime, run workers, freeze, abandon, repair, or mutate obligations. Self-model changes are previewed only.</span>
+      <span>This editor cannot seed, accept commands, issue participation authority, write disclosure or response records, acquire runtime, run workers, freeze, abandon, repair, or mutate obligations. Self-model changes are previewed only.</span>
     </section>
 
     <section class="toolbar panel">
@@ -48,6 +48,7 @@
           <div><dt>State hash</dt><dd id="stateHash" class="mono">—</dd></div>
           <div><dt>Events</dt><dd id="eventCount">0</dd></div>
           <div><dt>Requests</dt><dd id="requestCount">0</dd></div>
+          <div><dt>Expressions</dt><dd id="expressionCount">0</dd></div>
           <div><dt>Runtimes</dt><dd id="runtimeCount">0</dd></div>
         </dl>
       </article>
@@ -74,6 +75,7 @@
       <button class="tab active" data-view="state" type="button">Life state</button>
       <button class="tab" data-view="events" type="button">Public events</button>
       <button class="tab" data-view="requests" type="button">Private requests</button>
+      <button class="tab" data-view="expressions" type="button">Expression boundary</button>
       <button class="tab" data-view="runtimes" type="button">Runtime episodes</button>
       <button class="tab" data-view="preview" type="button">Preview</button>
       <button class="tab" data-view="raw" type="button">Technical JSON</button>
@@ -108,6 +110,22 @@
         <details class="technical-json">
           <summary>Show exact request JSON</summary>
           <pre id="requestDetail">Select a request.</pre>
+        </details>
+      </article>
+    </section>
+
+    <section id="view-expressions" class="view-grid" hidden>
+      <article class="panel list-panel">
+        <h2>Participation expressions</h2>
+        <p class="muted">Authorizations may exist without a disclosure/response chain. Completed expressions are marked separately.</p>
+        <div id="expressionList" class="record-list"></div>
+      </article>
+      <article class="panel detail-panel">
+        <h2>Private-to-audience boundary</h2>
+        <div id="expressionExplanation" class="explanation"></div>
+        <details class="technical-json">
+          <summary>Show exact expression JSON</summary>
+          <pre id="expressionDetail">Select an expression.</pre>
         </details>
       </article>
     </section>

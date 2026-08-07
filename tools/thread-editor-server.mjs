@@ -269,10 +269,12 @@ export function createThreadEditorServer({
     ]);
     let requests = null;
     let runtimes = null;
+    let expressions = null;
     if (privateToken !== null) {
-      [requests, runtimes] = await Promise.all([
+      [requests, runtimes, expressions] = await Promise.all([
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/requests`, { privateAccess: true }),
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/runtime`, { privateAccess: true }),
+        callKernel(`/threads/${encodeURIComponent(threadId)}/private/expression`, { privateAccess: true }),
       ]);
     }
     return {
@@ -287,6 +289,7 @@ export function createThreadEditorServer({
         abandon: false,
         repair: false,
         obligationMutation: false,
+        expressionMutation: false,
       },
       kernel: health,
       thread: thread.thread,
@@ -296,6 +299,7 @@ export function createThreadEditorServer({
         available: privateToken !== null,
         requests: requests?.requests ?? [],
         runtimes: runtimes?.runtimes ?? [],
+        expressions: expressions?.expressions ?? [],
       },
     };
   }
@@ -393,7 +397,7 @@ export function createThreadEditorServer({
         const requestIdValue = parts[5];
         const suffixParts = parts.slice(6);
         const suffixKey = suffixParts.join("/");
-        if (!new Set(["", "integrity"]).has(suffixKey)) {
+        if (!new Set(["", "integrity", "expression", "expression/integrity"]).has(suffixKey)) {
           throw new EditorHttpError(404, "EDITOR_ROUTE_NOT_FOUND", "Unknown editor route");
         }
         const payload = await callKernel(

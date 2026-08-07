@@ -13,17 +13,19 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 - A Thread is stored as durable world state and normally remains frozen.
 - A Thread has a private interior state distinct from public expression and performed action.
-- Private stance, desired action, authorization, disclosure strategy, external response, and performed action are separate records.
-- Public wording is not authoritative evidence of private motive or consent.
+- Private stance, desired action, authorization, disclosure strategy, audience-visible response, performed action, and durable life change are separate records.
+- Public or audience-visible wording is not authoritative evidence of private motive, desire, dignity, consent, authorization, performed action, delivery, or completion.
 - Externally initiated requests first receive a bounded Thread-owned dignity appraisal.
 - Runtime selection may narrow Thread-owned memory, relationship, and obligation context, but records included and excluded references and cannot inject unowned records.
 - Dignity evaluates fit with the particular Thread, individualized advantage, requester need, relationship meaning, participation terms, recorded obligations, resources, respect, and reciprocity.
 - A private dignity stance records attributable evidence, concrete alternatives, and may desire acceptance, clarification, negotiation, delegation, or refusal even when a request is safe and feasible.
-- Full task execution requires accepted authorization bound to the same Thread, snapshot version, requester, policy version, causation chain, and SHA-256 digest of every material request field.
-- Authorization may differ from private desire only when the Thread explicitly chooses to honor a recorded obligation or governing decision; the conflict and governing reference remain recorded.
-- In the portable M1 implementation, obligation references resolve against the Thread's own unresolved intentions and use exact UTF-8 prose identity.
-- Disclosure may be candid, tactful, selective, ambiguous, evasive, or deceptive, but cannot silently create or expand authorization.
-- Restricted disclosure mode and private rationale remain on the private strategy; requester-facing response carries only audience-visible content and safe references.
+- Participation Authorization is bound to the same Thread, snapshot version, requester, policy version, causation chain, appraisal, private stance, and SHA-256 digest of every material request field.
+- Accepted execution authority is minted only through the thaw/runtime boundary. A separate non-execution path may persist `clarify`, `negotiate`, `delegate`, or `refuse`, but cannot mint execution-capable `accept` authority.
+- Authorization may differ from private desire only through an exact recorded obligation or governing decision; the conflict and governing reference remain private durable evidence and do not become consent.
+- In M1, obligation references resolve against the Thread's own unresolved intentions and use exact UTF-8 prose identity. Historical discharge permanently prevents reuse of the same exact reference.
+- Disclosure may be candid, tactful, selective, ambiguous, evasive, or deceptive as private strategy intent, but cannot create, expand, contradict, or silently negate authorization.
+- An audience-visible response is a separate sanitized record. Its posture cannot contradict authorized participation and its payload does not newly copy private dignity details, private rationale, withheld reasons, or governing obligation references.
+- Compelled acceptance remains distinguishable from willing acceptance. The private chain preserves `refuse -> accept` as `obligation_override`; outward wording cannot rewrite the refusal as consent.
 - Dignity outcomes may create private affect and propose bounded, evidenced fondness or resentment toward humans, Threads, companies, institutions, and other requesters.
 - Relationship consequences are validated and persisted as events rather than directly written by cognition.
 - Thawing after accepted authorization assembles a relevant execution context capsule and invokes temporary workers.
@@ -47,9 +49,9 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 2. Elder-support network
 3. Open task society
 
-## Deterministic M1 is complete
+## M1 is fully closed
 
-The repository now contains and proves the complete deterministic M1 Persistent Thread Round Trip. A Thread persists independently of cognition, privately appraises an externally initiated request, records a private stance, receives current-state Participation Authorization, acquires one kernel-timed thaw lease, runs replaceable deterministic cognition, receives a Goal Guardian audit, then either freezes validated life changes or closes a rejected episode without changing Thread life state.
+The repository now contains and proves the complete deterministic M1 Persistent Thread Round Trip, including the interior-to-exterior expression boundary.
 
 Run the consolidated proof with:
 
@@ -57,19 +59,36 @@ Run the consolidated proof with:
 npm run demo:m1
 ```
 
-The command generates per-run private, administrative, and editor credentials; starts an independent world-kernel process and a separate credentialed Thread Editor process; uses only their HTTP APIs; drives Mina through the full lifecycle; stops both processes; and emits a redacted JSON proof report.
+The command generates per-run private, administrative, and editor credentials; starts an independent world-kernel process and a separate credentialed Thread Editor process; uses their HTTP APIs for the demonstrated lifecycle; restarts repeatedly against the same SQLite world; and emits a redacted JSON proof report. A reviewed proof layer then reopens the completed database and independently verifies load-bearing lifecycle, obligation, expression, and zero-active-runtime evidence.
 
-The consolidated scenario proves one coherent Mina history:
+The coherent Mina history proves:
 
 1. seed at version 1 and restart with the same state hash;
-2. create a request attempt, advance Mina through an admin-authorized self-model command, and reject the now-stale attempt with an explicit recovery instruction;
-3. create a fresh attempt under the same correlation ID, acquire runtime, run Actor, receive Guardian `pass`, and freeze one evidence-bearing memory;
-4. run an injected divergent Actor, receive Guardian `reject`, and explicitly abandon the episode without consuming authorization or obligation;
-5. leave another rejected episode unattended, display `Timed out — not yet reclaimed` from fresh kernel time, and later reclaim it as an expired lease with an aborted session;
-6. authorize a low-dignity private refusal through one exact recorded-obligation override, freeze, discharge the obligation, and reject later reuse;
-7. restart again, replay the same final state hash, inspect the complete history through the editor, verify two freeze-created memories, reject authorization replay, and finish with zero active runtimes.
+2. create a request attempt, advance Mina through an admin-authorized self-model command, and reject the now-stale attempt with an explicit correlated recovery path;
+3. create a fresh high-dignity attempt, acquire runtime, persist a truthful willing-acceptance expression before work, run Actor, receive Guardian `pass`, and freeze one evidence-bearing memory;
+4. while Mina is stable, create a separate low-dignity generic request, persist private `refuse`, non-execution `refuse` authorization, disclosure strategy, and respectful audience response, and prove that request never acquires runtime;
+5. run an injected divergent Actor, receive Guardian `reject`, and explicitly abandon the episode without consuming authorization or obligation;
+6. leave another rejected episode unattended, display `Timed out — not yet reclaimed` from fresh kernel time, and later reclaim it as an expired lease with an aborted session;
+7. authorize an obligation-mediated `refuse -> accept`, persist a full-candor expression before work that preserves `obligation_override`, run Actor and Guardian, freeze, discharge the exact obligation once, and reject later reuse;
+8. restart again, replay the same final state hash, verify two freeze-created memories, five participation-authority summaries, three complete disclosure/response chains, authorization replay rejection, and zero active runtimes.
 
-The final demonstrated Mina projection is version 4 with this public event sequence:
+The three completed M1 expression branches are:
+
+- willing acceptance: private `accept`, authorized `accept`, outward `I can take this on.`;
+- low-dignity non-participation: private `refuse`, authorized `refuse`, outward `I will not take this request on.`, no runtime;
+- obligation-mediated participation: private `refuse`, authorized `accept`, private basis `obligation_override`, outward full-candor wording that says Mina proceeds because of a recorded obligation without exposing the private obligation reference.
+
+Every demonstrated audience-response record is created before any performed work for that request and explicitly records:
+
+```text
+deliveryStatus = not_sent
+performedActionStatus = none_recorded
+completionStatus = not_claimed
+```
+
+Those are bounded status witnesses at response-record time. Later Actor, Guardian, freeze, abandonment, timeout, delivery, or performed-action records remain separate facts.
+
+The final demonstrated Mina projection remains version 4 with this public event sequence:
 
 ```text
 THREAD_SEEDED
@@ -78,34 +97,50 @@ THREAD_FROZEN
 THREAD_FROZEN
 ```
 
+Expression closure adds restricted records; it does not manufacture additional public Thread life events.
+
 ## Persistence and authority boundaries
 
-The SQLite persistence spine stores a versioned Thread projection, immutable Thread events, command witnesses, request/appraisal/stance records, authorizations, leases, sessions, Actor outputs, Guardian audits, freeze reports, accepted memories, authorization consumption, obligation discharge, and rejected-runtime abandonment. One `PRAGMA user_version` governs the complete file; schema version 4 is current.
+The SQLite persistence spine stores a versioned Thread projection, immutable Thread events, command witnesses, request/appraisal/stance records, participation authorizations, thaw leases, runtime sessions, Actor outputs, Guardian audits, freeze reports, accepted memories, authorization consumption, obligation discharge, rejected-runtime abandonment, restricted disclosure strategies, and audience participation responses. One `PRAGMA user_version` governs the world file; schema version 4 remains current, with M1 expression tables installed as the accepted additive extension.
 
-WorldStore, RuntimeStore, FreezeStore, and LifecycleHardeningStore use separate WAL connections over the same file. Each writing transaction rereads every cross-interface witness required for the dependent write. Replay rederives event, command, freeze, memory, and state-hash witnesses; projection repair reconstructs current state from intact event history.
+WorldStore, RuntimeStore, FreezeStore, LifecycleHardeningStore, and ExpressionStore use separate WAL connections over the same file. Load-bearing writes reread their cross-interface witnesses inside the relevant transaction. Replay rederives event, command, freeze, memory, and state-hash witnesses; expression integrity independently rechecks request, stance, authorization, disclosure, response linkage, the participation basis derived from private desire versus kernel authorization, and the deterministic audience wording implied by the stored disclosure strategy.
 
-Live command acceptance and projection repair require administrative authority. Private request and runtime records require the separate world-kernel private token. Editor API reads require a third, per-run editor credential. These local tokens are milestone controls, not production identity or role-based authorization.
+M1 integrity hashes, digests, and cross-record derivation checks are **unkeyed self-consistency evidence under the append-only local storage model**. They detect inconsistent or substituted records, including a re-signed audience message or participation basis that no longer derives from its authoritative witnesses, but they are not cryptographic signatures against an attacker with arbitrary SQLite DDL/write access who can coherently rewrite every witness. Production tamper evidence requires a stronger trust anchor such as keyed signatures, protected signing authority, or externally anchored history.
 
-Runtime, Actor, Guardian, freeze, abandonment, preview, and displayed expiry time are kernel-owned. Caller timestamps cannot acquire, extend, reclaim, complete, freeze, or abandon a runtime. The editor fetches current kernel time for every runtime selection; when time is unavailable it displays `Expiry unknown` rather than asserting that a lease remains active.
+Live command acceptance and projection repair require administrative authority. Private request, runtime, and expression records require the separate world-kernel private token. Editor API reads require a third per-run editor credential. These local tokens are milestone controls, not production identity or role-based authorization.
 
-The deterministic Actor proposes changes only. It performs no external tool, network, or requester-facing action and cannot mutate authoritative state. Goal Guardian is a declaration and consistency auditor, not a capability sandbox. A model-, network-, or tool-capable Actor is prohibited until an isolated worker/tool gateway supplies independently observed capability traces.
+Runtime, Actor, Guardian, freeze, abandonment, preview, and displayed expiry time are kernel-owned. Expression record IDs and timestamps are also kernel-owned. Caller timestamps cannot acquire, extend, reclaim, complete, freeze, abandon, or mint expression records.
 
-Freeze is the only current boundary from Actor proposal to Thread life. One SQLite transaction appends `THREAD_FROZEN`, advances the projection, records accepted memories and rejected rationale, consumes authorization once, discharges any obligation override, completes the session, and releases the lease. Failed freeze, Guardian rejection, explicit abandonment, expiry, and state races consume neither authorization nor obligation.
+The deterministic Actor proposes changes only. It performs no external tool, network, delivery, or requester-facing action and cannot mutate authoritative state. Goal Guardian is a declaration and consistency auditor, not a capability sandbox. A model-, network-, or tool-capable Actor remains prohibited until an isolated worker/tool gateway supplies independently observed capability traces.
 
-An obligation-mediated freeze removes the exact unresolved-intention reference and preserves it in event and consumption history. Historical consumption independently blocks the identical reference from authorizing another override even if the same prose is later reintroduced.
+Freeze remains the only current boundary from Actor proposal to Thread life. One SQLite transaction appends `THREAD_FROZEN`, advances the projection, records accepted memories and rejected rationale, consumes authorization once, discharges any obligation override, completes the session, and releases the lease. Failed freeze, Guardian rejection, explicit abandonment, expiry, and state races consume neither authorization nor obligation.
 
-## Thread Editor
+An obligation-mediated freeze removes the exact unresolved-intention reference and preserves it in event and consumption history. Historical consumption independently blocks identical reuse even if the prose later reappears.
 
-The Thread Editor is a separate loopback-only, same-origin inspection process over the live world kernel. It displays current state, public events, integrity, private request traces, runtime episodes, authorization, Actor, Guardian, freeze, abandonment, timeout, and raw inspection records.
+## Thread Editor and database inspection
 
-Every `/api/editor/*` request requires a random per-run credential delivered in a URL fragment. The browser stores it for the session and removes the fragment from the current address. The private world-kernel token remains server-side and is injected only into allowlisted upstream reads.
+The Thread Editor is a separate loopback-only, same-origin inspection process over the live world kernel. It displays current state, public events, integrity, private request traces, expression summaries and drill-down, runtime episodes, authorization, Actor, Guardian, freeze, abandonment, timeout, and exact JSON witnesses.
 
-The editor is non-authoritative. It exposes one deterministic `UPDATE_SELF_MODEL` preview and no route for command acceptance, runtime acquisition, workers, freeze, abandonment, repair, or obligation mutation. The raw preview ID is omitted from the browser response, but its identity is derivable from the returned public receipt; the administrative token, not redaction, is the actual acceptance boundary.
+Its **Expression boundary** view presents separately:
 
-Unknown authenticated API paths return a prompt 404. Static serving rejects encoded traversal, symlinked path segments, and realpath escape; upstream JSON and inbound request bodies are capped.
+- the Thread's private response;
+- the kernel-authorized action;
+- dignity band and participation basis;
+- private disclosure intent and disclosed/withheld reason categories;
+- exact audience-visible message;
+- delivery, performed-action, and completion status witnesses;
+- obligation-mediated divergence explicitly labeled as compelled participation, not consent.
+
+Every `/api/editor/*` request requires a random per-run credential delivered in a URL fragment. The browser stores it for the session and removes the fragment from the current address. The private world-kernel token remains server-side and is injected only into allowlisted upstream reads. Expression inspection is GET-only; the editor has no expression-mutation capability.
+
+The database inspector opens the source database read-only with SQLite `query_only`, verifies source schema enforcement, validates a temporary snapshot through the Fibre stores, counts authorizations/strategies/responses/complete expression chains, and reports disclosure modes and communicated postures. Its tests independently pin both layers of the source-read boundary: the actual source handle remains non-writable even if `query_only` is disabled, and a source connection without `query_only` is reported as a verification failure.
+
+The editor and expression-integrity API use structural audience-response status witnesses. The older store-level `audienceSafe` boolean is retained only as a compatibility field derived from those witnesses; it is not treated as a broad confidentiality or truthfulness verdict. In M1, response validation structurally fixes those three status fields to `not_sent`, `none_recorded`, and `not_claimed`, so every valid persisted M1 response satisfies the predicate by construction. Behavioral evidence therefore pins the structural witnesses and their live API/proof wiring, but cannot distinguish the compatibility derivation from a constant until delivery or performed-action states become representable.
 
 ## Still unfinished after M1
 
-M1 proves the durable participation and cognition lifecycle, but it does **not** implement persistent live-kernel disclosure strategy or requester-visible external response. Those records remain deliberately distinct from private stance, authorization, temporary cognition, freeze, performed action, and public event projection.
+M1 now proves durable participation, cognition, expression intent, audience-response persistence, life-change, closure, restart, replay, and human inspection. It still does **not** send email or chat, perform network/tool side effects, prove message delivery, or record a general performed-action layer outside the demonstrated deterministic runtime/freeze lifecycle.
 
-Structured obligations with stable IDs, issuer, scope, terms, expiry, recurrence, and satisfaction criteria remain post-M1 work. Production authentication, encryption, principal/role authorization, model gateway, worker isolation, relationship service, production database topology, distributed leases, cloud deployment, marketplace execution, embodiment, family, and broader society remain deferred.
+Structured obligations with stable IDs, issuer, scope, terms, expiry, recurrence, satisfaction criteria, discharge history, provenance, and explicit visibility classification remain the immediate authority-hardening follow-up. The current public `unresolvedIntentions` prose is provisional; future obligation design must separate public standing from private terms.
+
+Production authentication, encryption, principal/role authorization, model gateway, worker isolation, relationship service, production database topology, distributed leases, cloud deployment, marketplace execution, identity/embodiment implementation, family, and broader society remain deferred to later milestones.

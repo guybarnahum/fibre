@@ -11,7 +11,7 @@ import {
 test("inspection counts remain derived from the loaded API payload", () => {
   assert.deepEqual(inspectionCounts({
     events: [{}, {}],
-    private: { requests: [{}], runtimes: [{}, {}, {}] },
+    private: { requests: [{}], runtimes: [{}, {}, {}], expressions: [] },
     thread: {
       memoryRefs: ["mem_1"],
       relationshipRefs: ["rel_1", "rel_2"],
@@ -21,6 +21,8 @@ test("inspection counts remain derived from the loaded API payload", () => {
     events: 2,
     requests: 1,
     runtimes: 3,
+    expressions: 0,
+    completeExpressions: 0,
     memories: 1,
     relationships: 2,
     unresolvedIntentions: 1,

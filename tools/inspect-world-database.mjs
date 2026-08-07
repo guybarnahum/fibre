@@ -18,6 +18,7 @@ import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
 import {
   openLifecycleHardeningStore,
 } from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
+import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
 
 const EXPECTED_TABLES = [
   "threads",
@@ -35,6 +36,8 @@ const EXPECTED_TABLES = [
   "freeze_reports",
   "thread_memories",
   "runtime_abandons",
+  "disclosure_strategies",
+  "audience_participation_responses",
 ];
 
 const EXPECTED_TRIGGERS = [
@@ -67,6 +70,10 @@ const EXPECTED_TRIGGERS = [
   "thread_memories_no_delete",
   "runtime_abandons_no_update",
   "runtime_abandons_no_delete",
+  "disclosure_strategies_no_update",
+  "disclosure_strategies_no_delete",
+  "audience_participation_responses_no_update",
+  "audience_participation_responses_no_delete",
 ];
 
 const EXPECTED_INDEXES = [
@@ -76,6 +83,8 @@ const EXPECTED_INDEXES = [
   "idx_runtime_sessions_thread_started",
   "idx_thread_memories_thread_event",
   "idx_runtime_abandons_thread_time",
+  "idx_disclosure_strategies_thread_time",
+  "idx_audience_responses_thread_time",
 ];
 
 function emptyVerifiedCounts() {
@@ -86,6 +95,10 @@ function emptyVerifiedCounts() {
     freezes: 0,
     abandonments: 0,
     freezeCreatedMemories: 0,
+    expressionAuthorizations: 0,
+    disclosureStrategies: 0,
+    audienceResponses: 0,
+    completeExpressionChains: 0,
   };
 }
 
@@ -145,13 +158,25 @@ function parseStoredThread(row, errors) {
   }
 }
 
-function inspectSqlite(databasePath) {
+export function openInspectorSourceDatabase(databasePath) {
   const database = new DatabaseSync(databasePath, {
     readOnly: true,
     enableForeignKeyConstraints: true,
   });
   try {
     database.exec("PRAGMA query_only=ON");
+  } catch (error) {
+    database.close();
+    throw error;
+  }
+  return database;
+}
+
+function inspectSqlite(databasePath, openSourceDatabase = openInspectorSourceDatabase) {
+  const database = openSourceDatabase(databasePath);
+  try {
+    const sourceQueryOnly =
+      Number(database.prepare("PRAGMA query_only").get().query_only) === 1;
     const readErrors = [];
     const tableNames = namesOf(database, "table");
     const triggerNames = namesOf(database, "trigger");
@@ -193,6 +218,7 @@ function inspectSqlite(databasePath) {
     return {
       schemaVersion: Number(database.prepare("PRAGMA user_version").get().user_version),
       expectedSchemaVersion: WORLD_STORE_SCHEMA_VERSION,
+      sourceQueryOnly,
       integrityMessages: database
         .prepare("PRAGMA integrity_check")
         .all()
@@ -218,6 +244,16 @@ function inspectSqlite(databasePath) {
         : {},
       guardianDecisions: tableNames.has("goal_guardian_audits")
         ? groupedCounts(database, "goal_guardian_audits", "json_extract(audit_json,'$.decision')")
+        : {},
+      disclosureModes: tableNames.has("disclosure_strategies")
+        ? groupedCounts(database, "disclosure_strategies", "json_extract(strategy_json,'$.mode')")
+        : {},
+      communicatedPostures: tableNames.has("disclosure_strategies")
+        ? groupedCounts(
+          database,
+          "disclosure_strategies",
+          "json_extract(strategy_json,'$.communicatedPosture')",
+        )
         : {},
     };
   } finally {
@@ -261,12 +297,15 @@ function verifyDomainRecords(databasePath, raw) {
   let runtimeStore = null;
   let freezeStore = null;
   let lifecycleStore = null;
+  let expressionStore = null;
   try {
     worldStore = openWorldStore(databasePath);
     runtimeStore = openRuntimeStore(databasePath);
     freezeStore = openFreezeStore(databasePath);
     lifecycleStore = openLifecycleHardeningStore(databasePath);
+    expressionStore = openExpressionStore(databasePath);
   } catch (error) {
+    expressionStore?.close();
     lifecycleStore?.close();
     freezeStore?.close();
     runtimeStore?.close();
@@ -335,8 +374,33 @@ function verifyDomainRecords(databasePath, raw) {
           }
         }
       }
+
+      let expressionSummaries = [];
+      try {
+        expressionSummaries = expressionStore.listExpressionSummaries(threadId);
+      } catch (error) {
+        errors.push(`Expression list for ${threadId}: ${error.message}`);
+      }
+      for (const expression of expressionSummaries) {
+        try {
+          expressionStore.getAuthorization(threadId, expression.authorizationId);
+          verified.expressionAuthorizations += 1;
+          if (expression.strategyId !== null) {
+            const chain = expressionStore.getExpressionChain(threadId, expression.requestId);
+            expressionStore.verifyExpressionIntegrity(threadId, expression.requestId);
+            verified.disclosureStrategies += 1;
+            if (chain.response !== null) {
+              verified.audienceResponses += 1;
+              verified.completeExpressionChains += 1;
+            }
+          }
+        } catch (error) {
+          errors.push(`Expression ${expression.requestId}: ${error.message}`);
+        }
+      }
     }
   } finally {
+    expressionStore.close();
     lifecycleStore.close();
     freezeStore.close();
     runtimeStore.close();
@@ -345,7 +409,10 @@ function verifyDomainRecords(databasePath, raw) {
   return { ok: errors.length === 0, errors, verified };
 }
 
-export async function inspectWorldDatabase(databasePath) {
+export async function inspectWorldDatabase(
+  databasePath,
+  { openSourceDatabase = openInspectorSourceDatabase } = {},
+) {
   const absolutePath = resolve(databasePath);
   if (!existsSync(absolutePath)) {
     throw new Error(`database does not exist: ${absolutePath}`);
@@ -353,7 +420,7 @@ export async function inspectWorldDatabase(databasePath) {
   const stat = statSync(absolutePath);
   if (!stat.isFile()) throw new Error(`database path is not a file: ${absolutePath}`);
 
-  const raw = inspectSqlite(absolutePath);
+  const raw = inspectSqlite(absolutePath, openSourceDatabase);
   const sqliteOk = raw.integrityMessages.length === 1 && raw.integrityMessages[0] === "ok";
   const foreignKeysOk = raw.foreignKeyViolations.length === 0;
   const sourceSchemaOk =
@@ -391,6 +458,7 @@ export async function inspectWorldDatabase(databasePath) {
   const errors = [
     ...(sqliteOk ? [] : raw.integrityMessages.map((message) => `SQLite: ${message}`)),
     ...(foreignKeysOk ? [] : [`foreign-key violations: ${raw.foreignKeyViolations.length}`]),
+    ...(raw.sourceQueryOnly ? [] : ["source SQLite connection did not report query_only mode"]),
     ...(raw.schemaVersion === WORLD_STORE_SCHEMA_VERSION
       ? []
       : [`schema version ${raw.schemaVersion} does not match expected ${WORLD_STORE_SCHEMA_VERSION}`]),
@@ -414,7 +482,7 @@ export async function inspectWorldDatabase(databasePath) {
     expectedSchemaVersion: raw.expectedSchemaVersion,
     verification: {
       ok: errors.length === 0,
-      sourceReadOnly: true,
+      sourceReadOnly: raw.sourceQueryOnly,
       sourceSchema: sourceSchemaOk,
       snapshotVerified: domain.ok,
       sqliteIntegrity: sqliteOk,
@@ -431,6 +499,8 @@ export async function inspectWorldDatabase(databasePath) {
       sessionStatuses: raw.sessionStatuses,
       leaseStatuses: raw.leaseStatuses,
       guardianDecisions: raw.guardianDecisions,
+      disclosureModes: raw.disclosureModes,
+      communicatedPostures: raw.communicatedPostures,
       activeSessionCount: raw.sessionStatuses.active ?? 0,
       activeLeaseCount: raw.leaseStatuses.active ?? 0,
     },
@@ -472,12 +542,16 @@ export function formatWorldDatabaseSummary(report) {
     `Sessions: ${formatMap(report.summary.sessionStatuses)}`,
     `Leases: ${formatMap(report.summary.leaseStatuses)}`,
     `Guardian: ${formatMap(report.summary.guardianDecisions)}`,
+    `Disclosure modes: ${formatMap(report.summary.disclosureModes)}`,
+    `Communicated postures: ${formatMap(report.summary.communicatedPostures)}`,
     `Freezes: ${report.summary.tableCounts.freeze_reports ?? 0}`,
     `Accepted memories: ${report.summary.tableCounts.thread_memories ?? 0}`,
     `Authorization consumptions: ${report.summary.tableCounts.authorization_consumptions ?? 0}`,
     `Abandonments: ${report.summary.tableCounts.runtime_abandons ?? 0}`,
+    `Disclosure strategies: ${report.summary.tableCounts.disclosure_strategies ?? 0}`,
+    `Audience responses: ${report.summary.tableCounts.audience_participation_responses ?? 0}`,
     `Active runtime rows: sessions=${report.summary.activeSessionCount}, leases=${report.summary.activeLeaseCount}`,
-    `Verified: threads=${report.verification.verified.threads}, requests=${report.verification.verified.privateRequests}, runtimes=${report.verification.verified.runtimes}, freezes=${report.verification.verified.freezes}, abandonments=${report.verification.verified.abandonments}, generatedMemories=${report.verification.verified.freezeCreatedMemories}`,
+    `Verified: threads=${report.verification.verified.threads}, requests=${report.verification.verified.privateRequests}, runtimes=${report.verification.verified.runtimes}, freezes=${report.verification.verified.freezes}, abandonments=${report.verification.verified.abandonments}, generatedMemories=${report.verification.verified.freezeCreatedMemories}, expressionAuthorizations=${report.verification.verified.expressionAuthorizations}, disclosureStrategies=${report.verification.verified.disclosureStrategies}, audienceResponses=${report.verification.verified.audienceResponses}, completeExpressionChains=${report.verification.verified.completeExpressionChains}`,
   );
   if (report.verification.errors.length > 0) {
     lines.push("Errors:");

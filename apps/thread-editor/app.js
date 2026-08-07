@@ -1,5 +1,6 @@
 import {
   DEFAULT_THREAD_ID,
+  expressionSummary,
   formatJson,
   initials,
   inspectionCounts,
@@ -16,11 +17,13 @@ import {
   explainRuntime,
   integrityBadgeModel,
 } from "./human-readable.js";
+import { explainExpression } from "./expression-readable.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
   inspection: null,
   selectedRequest: null,
+  selectedExpression: null,
   selectedRuntime: null,
   activeView: "state",
   accessToken: null,
@@ -184,6 +187,7 @@ function renderThread() {
   $("stateHash").textContent = inspection.integrity?.stateHash ?? "—";
   $("eventCount").textContent = counts.events;
   $("requestCount").textContent = counts.requests;
+  $("expressionCount").textContent = counts.expressions;
   $("runtimeCount").textContent = counts.runtimes;
   $("selfModel").textContent = thread.currentState?.selfModel ?? "—";
   $("previewSelfModel").value = thread.currentState?.selfModel ?? "";
@@ -256,6 +260,27 @@ function renderRequests() {
   }
 }
 
+function renderExpressions() {
+  const list = $("expressionList");
+  list.replaceChildren();
+  const expressions = state.inspection.private?.expressions ?? [];
+  for (const expression of expressions) {
+    const summary = expressionSummary(expression);
+    list.append(recordButton(
+      summary.requestId,
+      summary.complete
+        ? `${summary.desiredAction} → ${summary.authorizedAction} · ${summary.disclosureMode}/${summary.communicatedPosture} · response recorded`
+        : `${summary.desiredAction} → ${summary.authorizedAction} · authorization only`,
+      () => void selectExpression(summary.requestId),
+    ));
+  }
+  if (!list.childElementCount) {
+    list.textContent = state.inspection.private?.available
+      ? "No participation authorizations or expression records."
+      : "Private inspection is not configured.";
+  }
+}
+
 function renderRuntimes() {
   const list = $("runtimeList");
   list.replaceChildren();
@@ -279,6 +304,7 @@ function renderAll() {
   renderThread();
   renderEvents();
   renderRequests();
+  renderExpressions();
   renderRuntimes();
 }
 
@@ -290,14 +316,17 @@ async function loadThread() {
   try {
     state.inspection = await fetchJson(`/api/editor/threads/${encodeURIComponent(threadId)}`);
     state.selectedRequest = null;
+    state.selectedExpression = null;
     state.selectedRuntime = null;
     renderAll();
     renderPlaceholder("eventExplanation", "Select a public event");
     renderPlaceholder("requestExplanation", "Select a request attempt");
+    renderPlaceholder("expressionExplanation", "Select a participation expression");
     renderPlaceholder("runtimeExplanation", "Select a runtime episode");
     renderPlaceholder("previewExplanation", "No preview requested");
     $("eventDetail").textContent = "Select an event.";
     $("requestDetail").textContent = "Select a request.";
+    $("expressionDetail").textContent = "Select an expression.";
     $("runtimeDetail").textContent = "Select a runtime.";
     $("previewResult").textContent = "No preview requested.";
     $("lifecycleBadge").textContent = "Select a runtime";
@@ -320,6 +349,23 @@ async function selectRequest(requestId) {
     state.selectedRequest = { detail, integrity };
     renderExplanation("requestExplanation", explainRequest(state.selectedRequest));
     $("requestDetail").textContent = formatJson(state.selectedRequest);
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function selectExpression(requestId) {
+  clearError();
+  try {
+    const threadId = state.inspection.thread.threadId;
+    const basePath = `/api/editor/threads/${encodeURIComponent(threadId)}/requests/${encodeURIComponent(requestId)}/expression`;
+    const [expression, integrity] = await Promise.all([
+      fetchJson(basePath),
+      fetchJson(`${basePath}/integrity`),
+    ]);
+    state.selectedExpression = { expression, integrity };
+    renderExplanation("expressionExplanation", explainExpression(state.selectedExpression));
+    $("expressionDetail").textContent = formatJson(state.selectedExpression);
   } catch (error) {
     showError(error);
   }

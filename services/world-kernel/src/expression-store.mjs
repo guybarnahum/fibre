@@ -20,6 +20,7 @@ import {
   ExpressionRejectedError,
   ParticipationAuthorizationNotFoundError,
   audienceResponseDigest,
+  buildAudienceResponse,
   disclosureOperationDigest,
   disclosureStrategyDigest,
   nonExecutionAuthorizationOperationDigest,
@@ -28,6 +29,7 @@ import {
   validateDisclosureStrategy,
   validateParticipationAuthorization,
 } from "./expression-domain.mjs";
+import { audienceResponseStatus } from "./expression-integrity.mjs";
 import {
   authorizationDigest,
   runtimeAcquireOperationDigest,
@@ -609,6 +611,11 @@ export class ExpressionStore {
     if (canonicalJson(response.audience) !== canonicalJson(disclosure.audience)) {
       throw new IntegrityError("response audience does not match disclosure audience");
     }
+    const expectedResponse = buildAudienceResponse(disclosure, operation, {
+      responseId: response.responseId,
+      recordedAt: response.recordedAt,
+    });
+    same("response message", response.message, expectedResponse.message);
     return {
       response,
       responseDigest: row.response_digest,
@@ -725,13 +732,14 @@ export class ExpressionStore {
   listExpressionSummaries(threadId) {
     assertId("threadId", threadId);
     return this.#db.prepare(`
-      SELECT a.request_id,a.authorization_id,a.issued_at,
+      SELECT a.request_id,a.authorization_id,a.issued_at AS authorization_issued_at,
         json_extract(a.authorization_json,'$.desiredAction') desired_action,
         json_extract(a.authorization_json,'$.authorizedAction') authorized_action,
         json_extract(a.authorization_json,'$.dignityBand') dignity_band,
-        d.strategy_id,json_extract(d.strategy_json,'$.mode') disclosure_mode,
+        d.strategy_id,d.recorded_at AS strategy_recorded_at,
+        json_extract(d.strategy_json,'$.mode') disclosure_mode,
         json_extract(d.strategy_json,'$.communicatedPosture') communicated_posture,
-        r.response_id
+        r.response_id,r.recorded_at AS response_recorded_at
       FROM participation_authorizations a
       LEFT JOIN disclosure_strategies d ON d.authorization_id=a.authorization_id
       LEFT JOIN audience_participation_responses r ON r.strategy_id=d.strategy_id
@@ -741,19 +749,23 @@ export class ExpressionStore {
       threadId,
       requestId: row.request_id,
       authorizationId: row.authorization_id,
-      issuedAt: row.issued_at,
+      issuedAt: row.authorization_issued_at,
+      authorizationIssuedAt: row.authorization_issued_at,
       desiredAction: row.desired_action,
       authorizedAction: row.authorized_action,
       dignityBand: row.dignity_band,
       strategyId: row.strategy_id,
+      strategyRecordedAt: row.strategy_recorded_at,
       disclosureMode: row.disclosure_mode,
       communicatedPosture: row.communicated_posture,
       responseId: row.response_id,
+      responseRecordedAt: row.response_recorded_at,
     }));
   }
 
   verifyExpressionIntegrity(threadId, requestId) {
     const chain = this.getExpressionChain(threadId, requestId);
+    const status = audienceResponseStatus(chain.response?.response ?? null);
     return {
       threadId,
       requestId,
@@ -763,11 +775,9 @@ export class ExpressionStore {
       strategyDigest: chain.disclosure?.strategyDigest ?? null,
       responseId: chain.response?.response.responseId ?? null,
       responseDigest: chain.response?.responseDigest ?? null,
+      audienceResponseStatus: status,
       audienceSafe:
-        chain.response === null ||
-        (chain.response.response.deliveryStatus === "not_sent" &&
-          chain.response.response.performedActionStatus === "none_recorded" &&
-          chain.response.response.completionStatus === "not_claimed"),
+        chain.response === null || status.boundedStatusWitnesses === true,
     };
   }
 }

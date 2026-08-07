@@ -45,6 +45,38 @@ async function readBody(request) {
 
 function fakeKernel() {
   const calls = [];
+  const expression = {
+    authorization: {
+      authorization: {
+        authorizationId: "auth_test",
+        desiredAction: "refuse",
+        authorizedAction: "accept",
+        dignityBand: "low",
+        obligationReferences: ["private obligation"],
+      },
+    },
+    disclosure: {
+      strategy: {
+        strategyId: "dsc_test",
+        mode: "full_candor",
+        communicatedPosture: "accept",
+        participationBasis: "obligation_override",
+        disclosedReasonCategories: ["recorded_obligation"],
+        withheldReasonCategories: ["private_feelings"],
+        governingObligationReferences: ["private obligation"],
+      },
+    },
+    response: {
+      response: {
+        responseId: "rsp_test",
+        audience: { entityId: "human_guy", displayName: "Guy" },
+        message: "I can proceed with this request because I have a recorded obligation to do so.",
+        deliveryStatus: "not_sent",
+        performedActionStatus: "none_recorded",
+        completionStatus: "not_claimed",
+      },
+    },
+  };
   const server = createServer(async (request, response) => {
     const body = await readBody(request);
     calls.push({ method: request.method, url: request.url, headers: request.headers, body });
@@ -61,8 +93,11 @@ function fakeKernel() {
       "/threads/thr_test/integrity": { threadId: "thr_test", version: 3, eventCount: 3, stateHash: "sha256:test", memoryProjection: { freezeCreatedMemoryCount: 0 } },
       "/threads/thr_test/private/requests": { requests: [{ requestId: "req_1", objective: "Inspect", requester: { displayName: "Guy" } }] },
       "/threads/thr_test/private/runtime": { runtimes: [{ sessionId: "run_1", status: "completed", leaseStatus: "released" }] },
+      "/threads/thr_test/private/expression": { expressions: [{ requestId: "req_1", authorizationId: "auth_test", desiredAction: "refuse", authorizedAction: "accept", dignityBand: "low", strategyId: "dsc_test", disclosureMode: "full_candor", communicatedPosture: "accept", responseId: "rsp_test" }] },
       "/threads/thr_test/private/requests/req_1": { trace: { requestId: "req_1", privateRationale: "restricted" } },
       "/threads/thr_test/private/requests/req_1/integrity": { requestId: "req_1", valid: true },
+      "/threads/thr_test/private/requests/req_1/expression": { expression },
+      "/threads/thr_test/private/requests/req_1/expression/integrity": { requestId: "req_1", authorizationId: "auth_test", strategyId: "dsc_test", responseId: "rsp_test", audienceSafe: true },
       "/threads/thr_test/private/runtime/run_1": { runtime: { session: { sessionId: "run_1", status: "completed" }, lease: { status: "released" } } },
       "/threads/thr_test/private/runtime/run_1/integrity": { sessionId: "run_1", valid: true },
     };
@@ -125,6 +160,7 @@ test("editor API requires a per-run credential before public or private inspecti
       "/api/editor/health",
       "/api/editor/threads/thr_test",
       "/api/editor/threads/thr_test/requests/req_1",
+      "/api/editor/threads/thr_test/requests/req_1/expression",
       "/api/editor/threads/thr_test/runtimes/run_1",
     ]) {
       const response = await fetch(`${editor.baseUrl}${path}`);
@@ -153,13 +189,44 @@ test("editor inspection aggregates public and private data without exposing eith
     assert.equal(payload.capabilities.commandAcceptance, false);
     assert.equal(payload.capabilities.freeze, false);
     assert.equal(payload.capabilities.obligationMutation, false);
+    assert.equal(payload.capabilities.expressionMutation, false);
     assert.equal(payload.private.requests.length, 1);
     assert.equal(payload.private.runtimes.length, 1);
+    assert.equal(payload.private.expressions.length, 1);
     assert.equal(JSON.stringify(payload).includes(PRIVATE_TOKEN), false);
     assert.equal(JSON.stringify(payload).includes(ACCESS_TOKEN), false);
     const privateCalls = kernel.calls.filter((call) => call.url.includes("/private/"));
-    assert.equal(privateCalls.length, 2);
+    assert.equal(privateCalls.length, 3);
     assert.ok(privateCalls.every((call) => call.headers["x-fibre-private-token"] === PRIVATE_TOKEN));
+  } finally {
+    await closeThreadEditorServer(editor.server);
+    await close(kernel.server);
+  }
+});
+
+test("editor exposes expression chain and integrity only through private GET forwarding", async () => {
+  const kernel = fakeKernel();
+  const kernelPort = await listen(kernel.server);
+  const editor = await startEditor(kernelPort);
+  try {
+    const base = `${editor.baseUrl}/api/editor/threads/thr_test/requests/req_1/expression`;
+    const expressionResponse = await editorFetch(base);
+    assert.equal(expressionResponse.status, 200);
+    const expression = await expressionResponse.json();
+    assert.equal(expression.expression.authorization.authorization.desiredAction, "refuse");
+    assert.equal(expression.expression.authorization.authorization.authorizedAction, "accept");
+    assert.equal(expression.expression.disclosure.strategy.participationBasis, "obligation_override");
+    assert.match(expression.expression.response.response.message, /recorded obligation/);
+
+    const integrity = await (await editorFetch(`${base}/integrity`)).json();
+    assert.equal(integrity.authorizationId, "auth_test");
+    assert.equal(integrity.strategyId, "dsc_test");
+    assert.equal(integrity.responseId, "rsp_test");
+
+    const forwarded = kernel.calls.filter((call) => call.url.includes("/expression"));
+    assert.ok(forwarded.length >= 2);
+    assert.ok(forwarded.every((call) => call.method === "GET"));
+    assert.ok(forwarded.every((call) => call.headers["x-fibre-private-token"] === PRIVATE_TOKEN));
   } finally {
     await closeThreadEditorServer(editor.server);
     await close(kernel.server);
@@ -228,6 +295,7 @@ test("runtime and request allow-lists reject encoded traversal without forwardin
     for (const path of [
       "/api/editor/threads/thr_test/runtimes/run_1/..%2F..%2Frequests",
       "/api/editor/threads/thr_test/requests/req_1/..%2Fintegrity",
+      "/api/editor/threads/thr_test/requests/req_1/expression/integrity/extra",
       "/api/editor/threads/thr_test/runtimes/run_1/freeze/integrity/extra",
     ]) {
       const response = await editorFetch(`${editor.baseUrl}${path}`);
@@ -250,11 +318,13 @@ test("editor private inspection and drill-down fail closed when no private token
     assert.equal(inspection.private.available, false);
     assert.deepEqual(inspection.private.requests, []);
     assert.deepEqual(inspection.private.runtimes, []);
+    assert.deepEqual(inspection.private.expressions, []);
     assert.equal(kernel.calls.some((call) => call.url.includes("/private/")), false);
 
     for (const path of [
       "/api/editor/threads/thr_test/requests",
       "/api/editor/threads/thr_test/requests/req_1",
+      "/api/editor/threads/thr_test/requests/req_1/expression",
       "/api/editor/threads/thr_test/runtimes",
       "/api/editor/threads/thr_test/runtimes/run_1",
     ]) {
