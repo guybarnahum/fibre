@@ -19,6 +19,16 @@ This plan proposes a narrow M1 closure extension for two records that already ex
 
 The earlier decision to defer these records remains an accurate description of the completed deterministic lifecycle proof. Acceptance of this closure plan will supersede that deferral for the final M1 boundary. M1 will not be declared fully closed until the implementation, restart proof, integrity evidence, and human inspection described below are complete.
 
+### Adversarial-review owner decisions
+
+The owner accepted the following clarifications on 2026-08-06 while reviewing Closure PR A:
+
+1. **Outward posture may not contradict participation authority.** If the kernel authorizes `accept`, the audience-visible posture must be `accept`; it may not say `refuse`, `clarify`, `negotiate`, `delegate`, or `noncommittal`. For a non-accept authorization, the outward posture may either match the authorized action or use `noncommittal` to withhold the exact non-participation posture. A future capability for "compelled participation, outwardly withheld" must be represented by its own explicit record rather than by a false refusal.
+2. **Disclosure mode is private strategy intent in M1.** Values such as `full_candor`, `tactful_candor`, `selective`, `strategic_ambiguity`, `evasive`, and `deceptive` describe the Thread's restricted disclosure intent. They are not a kernel honesty classifier and do not imply that every mode must produce distinct deterministic wording in M1. `full_candor` may reveal an obligation-mediated participation basis; other modes may currently map to the same bounded response dictionary.
+3. **The audience-safety claim is narrow.** M1 proves that the new audience-response record does not newly copy private appraisal, private stance, withheld reasons, dignity details, or governing obligation references into the response payload. It does not claim that all underlying Thread state is confidential. In the current M1 model, unresolved-intention prose is already visible in the public Thread projection. Structured obligations must later distinguish public standing from private obligation terms.
+4. **Non-execution authority is available only from stable Thread states.** A Thread may issue the standalone non-execution authorization only while `frozen` or `dormant`; an active or transitional runtime must not create a second participation decision for the same request attempt.
+5. **M1 expression records are immutable.** One disclosure strategy and one audience response are recorded per request attempt. Future revision must use a superseding append-only record rather than updating the original record in place.
+
 ## Why this belongs before M2
 
 A Thread's private stance, authorization, temporary cognition, outward expression, performed action, and durable life change are distinct records. The current kernel persists the first four lifecycle and authority layers through authorization and runtime, but it stops before the Thread decides what to reveal and before a safe audience-facing response is recorded.
@@ -72,6 +82,8 @@ The response is a sanitized communication record. It must contain only the field
 
 It must not automatically carry private appraisal, score, feelings, private rationale, withheld reasons, relationship deltas, or undisclosed obligation details.
 
+The visible posture must not contradict the kernel's authorized participation action. For a non-accept authorization, `noncommittal` may be used to withhold the exact non-participation posture without asserting a different action. An accepted authorization must be communicated as acceptance in M1.
+
 "Audience-visible" does not mean globally public. Until Fibre has authenticated principals and role-aware access, the local kernel may keep retrieval behind the existing restricted credential while proving that the returned response payload itself contains no private fields.
 
 #### Service and API behavior
@@ -88,7 +100,7 @@ Tests must cover at least:
 
 - exact binding to Thread, snapshot, request fingerprint, requester or audience, appraisal, stance, authorization, policy, causation, and correlation;
 - stale or mismatched records rejected through the live service path;
-- false acceptance rejected when authorization did not accept participation;
+- outward posture cannot imply an action the authorization does not permit or deny an accepted action that will execute;
 - authorized scope cannot be expanded by disclosure or response wording;
 - private fields absent from the audience-visible payload;
 - obligation-mediated `refuse -> accept` retains both values and the governing reference in the private chain;
@@ -151,7 +163,7 @@ Only then should the repository state: **M1 is fully closed.**
 
 1. Private stance, authorization, disclosure strategy, audience-visible response, performed action, outcome, and durable life change remain distinguishable.
 2. Public or audience-visible wording is not authoritative evidence of private motive, desire, dignity, consent, or authorization.
-3. Disclosure and response cannot create, enlarge, or repair authorization.
+3. Disclosure and response cannot create, enlarge, repair, contradict, or silently negate authorization.
 4. An obligation-mediated override remains identifiable as compulsion even when outward wording is tactful or selective.
 5. Audience-visible responses contain only deliberately disclosed content and safe references.
 6. Actor output is proposal data and is not requester-facing communication.
@@ -176,7 +188,9 @@ This closure does not add:
 
 ## Structured-obligation follow-up
 
-The M1 demonstration still uses exact UTF-8 unresolved-intention prose as provisional obligation identity. Stable obligation records with ID, owner or issuer, scope, terms, expiry, recurrence, satisfaction criteria, and discharge history remain the next authority hardening step before any new obligation-mutation surface.
+The M1 demonstration still uses exact UTF-8 unresolved-intention prose as provisional obligation identity. Stable obligation records with ID, owner or issuer, scope, terms, expiry, recurrence, satisfaction criteria, discharge history, and explicit visibility classification remain the next authority hardening step before any new obligation-mutation surface.
+
+The structured-obligation design must distinguish **public standing** (for example, that a Thread is bound by an obligation relevant to an interaction) from **private terms** (the exact text, evidence, or personal reason behind that obligation). The current M1 public `unresolvedIntentions` representation is provisional and must not be treated as the permanent privacy model.
 
 That refactor is not silently folded into this expression closure. It should be a separate reviewed PR immediately after M1 closure, or may proceed in parallel with an M2 contract-only PR, but no new feature may create or edit obligations until stable obligation identity exists.
 
