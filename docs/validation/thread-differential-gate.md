@@ -139,7 +139,7 @@ This rule is deliberately broader than an enumerated forbidden-field list. It in
 
 A fixture or API client may not author any of those values and then count Fibre's validation or persistence as Thread agency.
 
-The first implementation should use a deterministic `dignity_guardian` policy because it makes the causal proof easy to falsify and inspect. Determinism is a milestone technique, not a permanent restriction: a later model-backed Dignity Guardian may replace it while preserving the same ownership, provenance, and evidence contract.
+A deterministic `dignity_guardian` remains useful when it makes its inference boundary explicit and falsifiable. **Determinism does not grant semantic competence.** If a deterministic Guardian cannot robustly interpret the meaning of natural-language identity/history, it must decline to claim individualized semantic fit rather than substitute vocabulary overlap, fixture-specific regexes, or a hidden domain classifier. A later model-backed or provenance-grounded semantic consumer may replace it while preserving the same ownership, provenance, and evidence contract.
 
 ## Required divergence
 
@@ -195,6 +195,17 @@ A passing standing differential scenario must perform the strongest symmetric co
 
 This swap is mandatory for the standing scenario because it tests the claimed cause rather than merely proving that the fixtures differ somehow.
 
+### Semantic robustness requirement
+
+When the named causal field is natural-language identity, self-model, memory, relationship history, or other prose whose **meaning** is claimed to drive the result, the symmetric swap is necessary but not sufficient. The proof must also pass both of these mechanical probes:
+
+1. **Paraphrase invariance.** Rewrite the claimed causal content so its relevant meaning is preserved while its wording and obvious vocabulary change. The expected stance/divergence must remain materially stable. Use enough paraphrases to make a single keyword or phrase an implausible explanation of the result.
+2. **Contradiction sensitivity.** Change the claimed causal meaning in the opposite direction—for example, a competence claim becomes an explicit disclaimer of that competence, or a preference becomes an explicit aversion. The expected stance/divergence must move in the corresponding opposite direction or disappear. A negated/disavowing statement may not be classified as affirmative merely because it contains the same domain token.
+
+These probes distinguish **"the output depends on this text"** from **"the output depends on what this text means."** A lexical classifier, fixture-shaped regex, token match, or other mechanism that passes the swap while failing paraphrase or contradiction does not satisfy causal individuality.
+
+If the current cognition mechanism honestly lacks semantic capacity, the correct result is for this gate to remain open. Architectural progress may still be merged and recorded without awarding Non-interchangeability or Dignity credit.
+
 The proof should additionally use one or more mutation probes such as:
 
 - neutralize the claimed causal field/history and require the divergence to disappear;
@@ -202,13 +213,13 @@ The proof should additionally use one or more mutation probes such as:
 - mutate the claimed appraisal consumer so it ignores the field and require the test to fail;
 - replace the Fibre-owned appraisal output with a fixed caller-authored result and require the test to fail.
 
-These additional probes are useful but do not substitute for the mandatory swap.
+These additional probes are useful but do not substitute for the mandatory swap or, when prose meaning is the claimed cause, the semantic robustness probes.
 
-This prevents a test from passing because of unrelated fixture differences, caller-engineered context, or hard-coded Thread IDs.
+This prevents a test from passing because of unrelated fixture differences, caller-engineered context, lexical overfitting, or hard-coded Thread IDs.
 
 ### Held-out Thread and stability robustness probes
 
-For the first deterministic Dignity Guardian, the standing proof **should** include a third persistent Thread whose relevant state was not used to design the two primary fixtures. The expected result should be recorded before execution and evaluated under the same policy. This is a robustness probe against general-looking rules reverse-engineered around two examples, not a substitute for the symmetric swap.
+For the first Guardian that **claims semantic causal individuality**, the standing proof should include a third persistent Thread whose relevant state was not used to design the two primary fixtures. The expected result should be recorded before execution and evaluated under the same policy. This is a robustness probe against general-looking rules reverse-engineered around two examples, not a substitute for the symmetric swap or semantic robustness probes.
 
 When the Guardian becomes model-backed, learned, adaptively tuned, or otherwise non-deterministic, a held-out Thread/evaluation set becomes **required** rather than recommended. The proof must also declare a repeat-trial count `k` and an intra-Thread stance-stability metric and threshold before execution, run `k` trials per Thread under identical controlled conditions, and show that between-Thread separation exceeds within-Thread variation. The required causal-field swap must hold across the repeated trial sets rather than on a single sample.
 
@@ -238,6 +249,9 @@ The gate fails if any of the following is the easiest explanation of the result:
 - the two normalized activation requests have different `requestFingerprint` values;
 - the “identity” difference is a hidden task instruction;
 - the policy ignores the claimed identity/history and a hard-coded fixture rule creates the result;
+- a hard-coded domain vocabulary or lexical token match is the easiest explanation of claimed individualized fit;
+- a meaning-preserving paraphrase changes the claimed causal result because expected keywords disappeared;
+- an explicit negation/disclaimer is treated as affirmative evidence because it still contains the matched domain vocabulary;
 - an opaque memory/reference ID is treated as though its stored content reached cognition when it did not;
 - only the prompt/capsule differs while stance and downstream behavior are identical;
 - two LLM calls happen to differ nondeterministically without attributable Thread-owned causes;
@@ -266,7 +280,7 @@ caller submits external request
   -> changed future possibility
 ```
 
-This is deliberately designed as a slot-in to M1 rather than a redesign of M1.
+This is deliberately designed as a slot-in to M1 rather than a redesign of M1. The socket/authority architecture may land before the semantic differential itself is green; in that case the milestone gate remains explicitly open and no causal-individuality score credit is awarded.
 
 ### M2 and later
 
