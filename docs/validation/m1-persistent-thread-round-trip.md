@@ -1,7 +1,7 @@
 ---
 id: validation-m1-persistent-thread-round-trip
 status: accepted
-last-reviewed: 2026-08-06
+last-reviewed: 2026-08-07
 canonical: true
 issue: 1
 ---
@@ -20,11 +20,13 @@ npm run demo:m1
 
 The proof launches independent world-kernel and credentialed Thread Editor processes, generates fresh local credentials, communicates through HTTP for the demonstrated lifecycle, restarts repeatedly against the same SQLite world, and emits a redacted JSON report. A reviewed proof layer then reopens the completed database and pins historical-obligation, authorization-consumption, expression, integrity, and zero-active-runtime mechanisms through the shipped service/store paths.
 
+M1 closure is a claim about its accepted persistence, authority, expression, lifecycle, replay, and inspection contract. It is **not** a claim that Fibre already produces a Thread's consequential private judgment from distinctive identity or history. The current deterministic interface protects and persists that judgment after an assessment is supplied; endogenous stance production remains the immediate post-M1 vision-effectiveness gap.
+
 ## Purpose
 
 Milestone 1 proves the central Fibre lifecycle claim:
 
-> A Thread persists independently of temporary cognition, privately appraises externally initiated participation, records its own stance, receives bounded current-state authority, chooses what to disclose, records an audience-visible participation response, thaws into temporary cognition when execution is authorized, and freezes validated life changes back into durable, auditable state.
+> A Thread persists independently of temporary cognition, maintains a protected private appraisal/stance boundary for externally initiated participation, receives bounded current-state authority, records a restricted disclosure strategy and audience-visible participation response, thaws into temporary cognition when execution is authorized, and freezes validated life changes back into durable, auditable state.
 
 M1 is intentionally deterministic. It validates persistence, event integrity, dignity and authorization boundaries, the interior-to-exterior expression boundary, temporary-cognition lifecycle control, replay, and human inspectability before production model providers or broader social and economic behavior.
 
@@ -40,6 +42,7 @@ M1 is intentionally deterministic. It validates persistence, event integrity, di
 - The M1 audience-safety claim is narrow: the audience-response payload does not newly copy private rationale, dignity details, withheld reasons, or governing obligation references. Current public `unresolvedIntentions` remain provisional and are not a permanent privacy model.
 - One disclosure strategy and one audience response are immutable per request attempt; future revision must use superseding append-only records rather than in-place mutation.
 - Consequential authority, consent, obligation, identity, ledger, and lifecycle evidence must pin both behavior and the live path or transaction boundary that makes the guard load-bearing.
+- 2026-08-07: the owner clarified that vision-effectiveness review must distinguish representation, context wiring, externally authored judgment, and genuinely causal Thread behavior. The post-close causal-status register below records that distinction without reopening M1's accepted contract.
 
 ## Completed executable artifacts
 
@@ -215,8 +218,48 @@ npm run inspect:db -- "/path/to/world.sqlite"
 
 It opens the source read-only, enables SQLite `query_only`, verifies schema enforcement, validates a temporary snapshot through the domain stores, and cross-checks expression records without repairing the source.
 
+## Causal-status register
+
+M1 deliberately built a protected socket for future Thread judgment before it built the judgment policy itself. This register prevents stored representation, prompt/context wiring, opaque references, caller-injected deliberation content, and externally authored values from being counted as stronger evidence than they are.
+
+The statuses mean:
+
+- **Named-only** — the concept or policy identifier exists, but no implementation performs the named function.
+- **Stored-only** — the value or content is persisted, validated, or displayed, but no downstream cognition/decision path consumes it.
+- **Context-only** — the value itself changes selected or compiled cognition context, but M1 has no acceptance criterion requiring that difference to change a judgment or downstream outcome.
+- **Behaviorally/future-state causal** — the value or historical fact changes authority, action, durable relationship/resource state, or a later possibility.
+
+Opaque references are classified separately from the records they name. A reference reaching a capsule does not mean the referenced content reached cognition. A mechanism can also be behaviorally causal while still **Exogenous** if the consequential value, selection decision, or deliberation content is supplied by the caller rather than produced or resolved from Thread/world-owned state. These authorship distinctions are central to the post-M1 differential gate.
+
+| Field family or mechanism | M1 causal status | Authorship / current consequence | Next proof required |
+|---|---|---|---|
+| `genome.runtimeBaselines.temperature`, `persistenceThreshold`, `collaborationInclination` | Stored-only | Seeded and validated; no current decision or worker policy consumes them. | M2 must define their semantics; a later cognition/runtime proof must show a named baseline changes an attributable behavior. |
+| identity culture and geography (`culture`, `birthCity`, `currentWorkCity`) | Stored-only | Persisted and inspectable; no appraisal or action is derived from them. | M2 differential evidence must trace a named identity/history field into a changed stance or other legitimate identity-dependent consequence. |
+| embodiment refs (`portraitRef`, `voiceRef`) | Stored-only | Persisted references with no durable resolved asset behavior in M1. | M2 embodiment must make the refs resolve to versioned assets/provenance and visibly change embodiment output. |
+| `genome.textualTraits` | Context-only | Trait **values** reach the appraisal capsule via `Object.values(...)`; semantic trait names are discarded there, and no policy derives stance from the values. | Preserve named trait structure and exercise it through the Dignity Guardian/differential scenario. |
+| `currentState.selfModel`, `needs`, `feelings` | Context-only | Copied into appraisal/runtime context; the caller still supplies the consequential assessment rather than a Fibre policy deriving it from this state. | Dignity Guardian and later development work must show changed persistent state can change a later appraisal or behavior. |
+| accepted memory content (`thread_memories.summary`) | Stored-only | Freeze persists bounded memory summaries and inspection verifies them, but no appraisal/runtime path resolves the stored summary into cognition. | Resolve bounded memory content through a Fibre-owned retriever and show a named prior experience changes a later stance or behavior. |
+| `memoryRefs` in appraisal/runtime context | Context-only for personhood; authorization-causal as an evidence allowlist; **Exogenous selection in M1** | Capsules carry opaque memory IDs, not memory content. The API caller may choose the subset from a Thread-owned allowlist; the refs constrain which evidence the Actor may cite. | Standing differential proof must use a common Fibre/Thread-owned selector/retriever, resolve causal memory content, and show attributable behavioral divergence. |
+| `relationshipRefs` | Context-only **with Exogenous selection in M1** | Opaque refs participate in owned-context partitioning; the caller may choose the subset, and no persistent relationship aggregate/table resolves the refs into relationship history. | Relationship service plus Fibre-owned selection must resolve durable relationship state and demonstrate history changing later appraisal or interaction. |
+| obligation refs selected into appraisal context | Context-only **with Exogenous selection in M1** | The caller may choose which Thread-owned unresolved-intention refs enter the appraisal partition; this selection is not Thread-authored. | Structured obligations and a Fibre-owned selection policy must determine relevant obligations without caller-engineered private attention. |
+| `knownAlternatives` | Context-only **with Exogenous injected content in M1**; stance-legality consequential | The API caller supplies entity objects directly; M1 validates their shape but does not resolve them from Thread knowledge or world-owned records. Presence of at least one alternative is required for a `delegate` private stance, so caller injection can change which participation actions are legally reachable. | Resolve alternatives from permitted world state the Thread actually knows or can discover, using a named Fibre policy; the standing differential proof may not use caller-authored alternatives as private deliberation input. |
+| `relationshipImpact.fondnessDelta` / `resentmentDelta` | Stored-only | Evidence-gated and persisted inside the externally supplied private stance; applied to no durable relationship state. | Relationship service must apply validated deltas/events and later prove they alter a relationship-sensitive choice. |
+| accounts (`fibreCredits`, `usdAvailable`, `modelTokensAvailable`) | Context-only | Validated and carried into execution context as budgets; no spend, reservation, settlement, or capability constraint changes future state. | Marketplace/economy work must make balances constrain and change future opportunity. |
+| Dignity Guardian | Named-only | `policy: {id: "dignity_guardian", version: "1"}` is recorded, but `recordPrivateStance` accepts a caller-supplied assessment; no policy module produces it. | [`thread-differential-gate.md`](thread-differential-gate.md): Fibre-owned context selection/retrieval, world-context resolution, and assessment from Thread state, same request, required attributable stance divergence. |
+| Self Examiner / Steward | Named-only | Named in Fibre's cognition architecture; no implemented self-examination loop changes protected state. | Development milestone must make evidence-based reflection propose and validate durable self-authorship. |
+| private participation stance | Behaviorally/future-state causal **but Exogenous in M1** | Once recorded, desired action and dignity band constrain authorization/execution and preserve refusal/compulsion boundaries; the assessment content itself is caller-authored. | Replace caller-authored consequential appraisal with a versioned Fibre/Thread-owned Dignity Guardian while preserving the M1 authority boundary. |
+| unresolved intention used as obligation + discharge history | Behaviorally/future-state causal | A successful obligation-mediated freeze permanently spends the exact reference, so a past commitment irreversibly changes which later authorizations are possible. This is authority history, not Thread development. | Structured obligation identity/privacy hardening: stable IDs, public standing vs private terms, expiry/recurrence/satisfaction/provenance. |
+
+The strongest historical mechanisms therefore have different maturity:
+
+- **obligation discharge is future-state causal** — history directly narrows later authorization possibility, but that is authority/commitment accounting rather than development;
+- **accepted memory content is Stored-only** — the durable summary exists but does not reach cognition;
+- **memory references are Context-only for personhood** — opaque IDs can reappear in later capsules and constrain evidence citations, but the experience they name is not yet consumed as cognition input.
+
+The standing differential gate exists to cross the remaining seams: Fibre/Thread-owned private attention/retrieval, Fibre-owned world-context resolution, and Fibre-owned consequential judgment, without erasing the persistence and boundary work M1 already proved.
+
 ## Owner validation
 
-The owner approved the original M1 contract on 2026-08-03, accepted dignity/interiority on 2026-08-04, selected single-use obligation discharge and explicit reject closure on 2026-08-05, accepted the first deterministic lifecycle proof on 2026-08-06, then explicitly chose to close persistent disclosure and audience response before M2 and approved the resulting authority/posture decisions and adversarial fixes.
+The owner approved the original M1 contract on 2026-08-03, accepted dignity/interiority on 2026-08-04, selected single-use obligation discharge and explicit reject closure on 2026-08-05, accepted the first deterministic lifecycle proof on 2026-08-06, then explicitly chose to close persistent disclosure and audience response before M2 and approved the resulting authority/posture decisions and adversarial fixes. On 2026-08-07, the owner required future review and milestone accounting to distinguish stored representation, opaque references, context-only wiring, externally authored attention/judgment, caller-injected deliberation context, and causal Thread behavior.
 
-**M1 is fully closed.**
+**M1 is fully closed under its accepted contract.** The causal-status register is honest post-close accounting of what that contract did and did not prove; it does not retroactively expand M1 acceptance.
