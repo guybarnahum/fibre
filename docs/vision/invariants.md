@@ -1,7 +1,7 @@
 ---
 id: fibre-invariants
 status: accepted
-last-reviewed: 2026-08-04
+last-reviewed: 2026-08-06
 canonical: true
 ---
 
@@ -11,6 +11,11 @@ A design is drifting if it produces any of the following:
 
 - Threads become replaceable workers distinguished only by names or role prompts.
 - Identity becomes a static persona label.
+- Thread-owned identity, genome, history, relationships, needs, culture, geography, embodiment, or development are persisted and inspectable but have no causal path to a different appraisal, stance, term, authorization, action, relationship state, opportunity, or resource consequence.
+- A caller, fixture, or test authors the consequential private judgment — score, desired action, factors, feelings, or outcome — while Fibre only validates and stores it, but the result is described as Thread-owned agency.
+- Two materially different Threads can receive the same material request under the same external conditions and Fibre has no mechanism by which those Thread-owned differences can make them choose differently when the accepted concepts say they should.
+- A milestone treats different prompt or capsule contents as sufficient proof of non-interchangeability without requiring any attributable behavioral or future-state consequence.
+- History is remembered but cannot bend a later appraisal, authority decision, relationship, opportunity, resource state, or action.
 - A Thread automatically complies with every request that is safe and technically feasible.
 - Dignity becomes a decorative score that does not affect participation or relationship state.
 - Request appraisal ignores the Thread's individualized advantage, the requester's need, Thread-owned relationship history, participation terms, or recorded obligations.
@@ -70,6 +75,50 @@ Fibre's architecture must keep a credible extension path open for each of the fo
 - organizations and institutions
 - multiple concurrent workers, models, tools, and runtime systems
 
+## Vision-effectiveness adversarial review
+
+Unless a review is explicitly scoped as a security, abuse, threat-model, or red-team exercise, **adversarial review in Fibre means trying to falsify the effectiveness of the implementation in advancing the Thread vision**.
+
+The reviewer should not stop at “is the record durable?”, “is the schema validated?”, “is the route protected?”, or “does the prompt contain identity?”. Those questions matter, but they can all pass while Fibre remains ordinary orchestration with elaborate persona metadata.
+
+The primary review question is:
+
+> **What difference does this Thread-owned difference make?**
+
+A strong Fibre mechanism creates or strengthens a causal chain such as:
+
+```text
+Thread-owned identity / history / relationship / need / obligation
+  -> selected evidence or context
+  -> Thread-owned appraisal or choice
+  -> authorization / terms / expression / action
+  -> durable consequence
+  -> changed future possibility
+```
+
+Not every pull request must span that entire chain. A foundational PR may legitimately build one socket or invariant. But a milestone must not claim that identity, dignity, relationship, development, or personhood has become functional merely because a new record can be stored, hashed, injected into a prompt, or displayed in the editor.
+
+Security review remains important where the threat model calls for it. It is a separate lens, not the default meaning of “adversarial” for Fibre development.
+
+## Standing Thread differential gate
+
+Fibre must maintain a falsifiable differential scenario that proves **causal non-interchangeability**, not just representational difference. The accepted contract is [`thread-differential-gate.md`](../validation/thread-differential-gate.md).
+
+The gate becomes mandatory before M2 can close and remains a standing ambition gate thereafter. At minimum it must prove:
+
+1. the **same material external request** is presented under equivalent external conditions to two Threads;
+2. the Threads differ materially in named, persisted, Thread-owned identity and/or history fields relevant to the request;
+3. Fibre owns the production of the consequential appraisal/stance for the scenario — the caller requests appraisal but does not author the authoritative score, desired action, factors, or final stance;
+4. the recorded private stances **diverge in a required and explainable way**;
+5. at least one downstream participation or action consequence also diverges;
+6. the evidence identifies which named Thread-owned fields and prior records caused the divergence;
+7. a counterfactual or mutation that removes/swaps the claimed cause changes or eliminates the divergence;
+8. the result survives persistence/restart and is human-inspectable.
+
+Different context capsules, different prompt text, different portraits, or different stored trait values do **not** satisfy this gate by themselves.
+
+The first implementation may use a deterministic, versioned Dignity Guardian policy. That is a proof mechanism, not a permanent restriction on later model-based cognition. The permanent boundary is that the consequential judgment belongs to the Thread/Fibre process, not to the requester supplying a pre-authored stance.
+
 ## Capability status
 
 A capability a change deliberately excludes is exactly one of the following. Naming the status is required; the status determines what evidence is owed.
@@ -87,6 +136,7 @@ For every change the **Vision and ambition guard** in [`AGENTS.md`](../../AGENTS
 
 1. **Fidelity:** Does this make Fibre feel more like a persistent society of distinctive Threads, or more like ordinary orchestration?
 2. **Ambition:** Does this preserve and enable Fibre's larger intended world, or does it prematurely narrow the project to what is easiest to implement now?
+3. **Causal individuality:** What Thread-owned difference can this work make consequential? If it only changes representation or context today, is that limitation explicitly named rather than counted as functional individuality?
 
 A deliberately narrow milestone passes the ambition test when it:
 
@@ -95,5 +145,6 @@ A deliberately narrow milestone passes the ambition test when it:
 - preserves the domain boundaries and cross-domain contracts the ambition paths above need
 - does not redefine deferred capabilities as unnecessary
 - produces evidence the next, more ambitious layer can build on
+- does not claim functional individuality, dignity, relationship, or development without a causal downstream consequence
 
 Any permanent constraint on Fibre's intended scope must be explicit, justified, reviewed as a concept decision, and recorded in an ADR. A permanent constraint that closes a preserved ambition path should be refused and redesigned rather than documented, unless the owner accepts the reduction as a concept decision.

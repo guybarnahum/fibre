@@ -62,6 +62,23 @@ The guard applies to any change that defers a capability, moves a domain boundar
 
 The standard is: **build the smallest proof that preserves the largest credible architecture.** A narrow prototype is acceptable when it isolates and verifies one foundational claim; it is not acceptable when its temporary simplifications harden into unexamined permanent constraints.
 
+### Default meaning of adversarial review
+
+Unless a review is explicitly scoped as a **security**, **threat-model**, **abuse**, or **red-team** review, an **adversarial review of Fibre means a vision-effectiveness review**.
+
+The reviewer should try to falsify the claim that the implementation is making Fibre more like a world of persistent artificial persons. Security robustness is one useful dimension, but it is not the default or dominant lens. The primary questions are whether identity, history, dignity, relationships, obligations, development, and economic consequences are becoming **causal and load-bearing**, or merely more richly represented, stored, hashed, prompted, and displayed.
+
+A vision-effectiveness review should actively look for these failure modes:
+
+- personhood concepts are present as records or labels but no code path lets them change a decision or future possibility;
+- a caller, fixture, or test authors the Thread's apparent inner life and the kernel only validates it;
+- two materially different Threads receive different context but still have no mechanism that can make them choose differently;
+- history is persisted but does not bend later appraisal, authority, behavior, relationship state, opportunity, or resources;
+- new identity fields have provenance and UI but no named behavioral consumer;
+- a milestone can pass while Fibre would behave the same if the distinctive Thread fields were deleted or replaced by persona text.
+
+The standing differential contract is [`docs/validation/thread-differential-gate.md`](docs/validation/thread-differential-gate.md). Once implemented, it is a release-level ambition gate: same external request, materially different Thread-owned identity/history, Fibre-owned stance production, and an attributable behavioral divergence.
+
 ### Required statements
 
 State each of the following in the issue or pull request. Group related exclusions and cite the document that records them rather than listing every capability separately.
@@ -71,6 +88,7 @@ State each of the following in the issue or pull request. Group related exclusio
 - Which extension path remains open for each deferred capability.
 - Which shortcuts are temporary, and what would reverse them.
 - Whether any choice creates a permanent constraint, and if so which ADR records it.
+- For each new identity, history, relationship, dignity, developmental, or economic field: what consumes it, and what behavior or future possibility can it change? If the answer is “not yet,” name that explicitly as deferred rather than counting the field as functional evidence.
 
 ### Required review questions
 
@@ -80,6 +98,10 @@ Answer each in the pull request or its review. "None was considered" and "no pat
 - If an alternative that preserved more of those paths was considered, why was it not chosen?
 - Seeing only this change, would Fibre read as a workflow engine, an assistant, or a collection of personas? If so, what in the change prevents that reading?
 - Does engineering convenience risk redefining an accepted concept?
+- **Causal individuality:** what Thread-owned difference can make a different decision, participation stance, relationship consequence, action, or later opportunity because of this change? Is that causal path actually exercised, or only stored/compiled/displayed?
+- **Endogenous agency:** who authors the consequential judgment? If the caller provides the score, desired action, feelings, factors, or outcome and Fibre only validates them, is the change honestly described as infrastructure for future agency rather than evidence of agency itself?
+- **History bending the future:** which persisted fact from an earlier episode can alter a later choice or possibility? If none, does the milestone overclaim development or continuity?
+- **Differential evidence:** where identity is supposed to matter, can the same request to two materially different Threads produce a required, attributable difference in stance and downstream behavior? Different prompt/capsule contents alone do not satisfy this question.
 
 Preserving an extension path means preserving domain boundaries, domain vocabulary, and the contracts between domains. It does not mean implementing the future subsystem now, and it does not justify abstraction that is not exercised by the current proof.
 
@@ -120,6 +142,7 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
 - Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
 - Automated evidence must name and test accepted negative properties. For authority-, consent-, obligation-, identity-, ledger-, and lifecycle-critical guards, evidence must pin both the guard's behavior and the live call path or transaction boundary that makes it load-bearing; a removable wiring point is not sufficient evidence. A passing test count alone is not evidence; targeted mutation analysis is recommended for consequential guards.
+- For identity-, dignity-, relationship-, history-, development-, or economy-facing work, do not count persistence, schema validation, prompt inclusion, provenance, or UI display alone as proof that the concept is functional. Name and exercise the downstream consequence, or state explicitly that causal behavior remains deferred.
 
 ## Definition of done
 
@@ -132,3 +155,4 @@ A change within the scope of the **Vision and ambition guard** is complete only 
 5. Drift against Fibre invariants has been checked.
 6. Generated Markdown projections and AI context coverage are current.
 7. The required statements and review questions under **Vision and ambition guard** are answered, and every capability the change excludes has a named status.
+8. If the change claims that a Thread difference is functional, the evidence identifies the causal Thread-owned input and the resulting behavioral or future-state consequence; prompt/context difference alone is insufficient.

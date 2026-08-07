@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 4,
+  "version": 5,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -17,6 +17,7 @@
         "docs/vision/principles.md",
         "docs/vision/invariants.md",
         "docs/state/current-state.md",
+        "docs/validation/thread-differential-gate.md",
         "docs/concepts/thread.md",
         "docs/concepts/interiority-and-expression.md",
         "docs/concepts/dignity.md"
