@@ -45,6 +45,7 @@ For behavior, identity, communication, or request-processing work, also read:
 - Restricted disclosure mode and private rationale do not appear automatically in the audience-visible response.
 - Dignity outcomes may shape private feelings, fondness, and resentment toward the requester, with attributable evidence for non-zero attitude changes.
 - Request appraisal uses Thread-owned relationship, memory, and obligation context. Runtime narrowing records included and excluded references; requesters cannot inject or directly select private context.
+- Private context-selection authority is part of Thread agency. Standing causal-individuality proofs may not substitute caller-authored private subsets for Fibre/Thread-owned attention and retrieval.
 - Authorization that differs from private desire requires a non-empty reference resolving to a recorded Thread obligation or governing decision.
 - Meaning-bearing identity, relationship, skill, need, and task fields are primarily natural-language prompt partials.
 - Execution models and orchestration frameworks are replaceable cognitive machinery.
@@ -72,12 +73,14 @@ A vision-effectiveness review should actively look for these failure modes:
 
 - personhood concepts are present as records or labels but no code path lets them change a decision or future possibility;
 - a caller, fixture, or test authors the Thread's apparent inner life and the kernel only validates it;
+- a caller or fixture chooses private context so a later Fibre-owned policy merely computes over an externally engineered attention set;
 - two materially different Threads receive different context but still have no mechanism that can make them choose differently;
 - history is persisted but does not bend later appraisal, authority, behavior, relationship state, opportunity, or resources;
+- opaque references reach a capsule and are described as though the referenced identity/history content reached cognition;
 - new identity fields have provenance and UI but no named behavioral consumer;
 - a milestone can pass while Fibre would behave the same if the distinctive Thread fields were deleted or replaced by persona text.
 
-The standing differential contract is [`docs/validation/thread-differential-gate.md`](docs/validation/thread-differential-gate.md). Once implemented, it is a release-level ambition gate: same external request, materially different Thread-owned identity/history, Fibre-owned stance production, and an attributable behavioral divergence.
+The standing differential contract is [`docs/validation/thread-differential-gate.md`](docs/validation/thread-differential-gate.md). Once implemented, it is a release-level ambition gate: same external request, materially different Thread-owned identity/history, Fibre/Thread-owned private context selection/retrieval, Fibre-owned stance production, and an attributable behavioral divergence.
 
 ### Required statements
 
@@ -99,11 +102,28 @@ Answer each in the pull request or its review. "None was considered" and "no pat
 - Seeing only this change, would Fibre read as a workflow engine, an assistant, or a collection of personas? If so, what in the change prevents that reading?
 - Does engineering convenience risk redefining an accepted concept?
 - **Causal individuality:** what Thread-owned difference can make a different decision, participation stance, relationship consequence, action, or later opportunity because of this change? Is that causal path actually exercised, or only stored/compiled/displayed?
+- **Endogenous attention:** who chooses which private memory, relationship, obligation, or other historical context matters? If a caller chooses the subset and Fibre only verifies ownership, is the change honestly described as scaffolding rather than Thread-owned attention/retrieval?
 - **Endogenous agency:** who authors the consequential judgment? If the caller provides the score, desired action, feelings, factors, or outcome and Fibre only validates them, is the change honestly described as infrastructure for future agency rather than evidence of agency itself?
-- **History bending the future:** which persisted fact from an earlier episode can alter a later choice or possibility? If none, does the milestone overclaim development or continuity?
-- **Differential evidence:** where identity is supposed to matter, can the same request to two materially different Threads produce a required, attributable difference in stance and downstream behavior? Different prompt/capsule contents alone do not satisfy this question.
+- **History bending the future:** which persisted fact from an earlier episode can alter a later choice or possibility? If only an opaque reference reappears, has the referenced content actually been resolved and consumed? If none, does the milestone overclaim development or continuity?
+- **Differential evidence:** where identity is supposed to matter, can the same request to two materially different Threads produce a required, attributable difference in stance and downstream behavior under the same declared Fibre/Thread-owned selection policy? Different prompt/capsule contents alone do not satisfy this question.
 
 Preserving an extension path means preserving domain boundaries, domain vocabulary, and the contracts between domains. It does not mean implementing the future subsystem now, and it does not justify abstraction that is not exercised by the current proof.
+
+### Classifying a vision-effectiveness finding
+
+When a review finds a gap between what the implementation represents and what it makes consequential, classify the gap with this vocabulary rather than borrowing security severities:
+
+- **Inert** — a personhood-bearing field or mechanism is stored, validated, or displayed but has no downstream consumer that changes context, judgment, behavior, resources, relationships, or future possibility. Acceptable when explicitly named as deferred; reportable whenever it is presented as progress toward functionality.
+- **Context-only** — a Thread-owned difference changes a prompt, capsule, selected evidence, or other cognition input, but no acceptance criterion requires it to change a judgment or downstream consequence. This is meaningful wiring, but it does **not** satisfy causal individuality or the standing differential gate.
+- **Exogenous** — a consequential judgment, attention/selection decision, or other personhood-bearing value attributed to the Thread is authored by a caller, fixture, or external test input and Fibre only validates or records it. Legitimate scaffolding, but it blocks any claim that the Thread itself produced that judgment or attention decision.
+- **Decorative** — wording, UI, policy names, or milestone summaries make an Inert, Context-only, or Exogenous mechanism look behaviorally functional. Correct the claim or implement the missing consequence; a Decorative finding against a central acceptance claim blocks that claim.
+- **Notarial** — integrity, provenance, append-only storage, or inspection is added around a mechanism. This can be important foundational work, but it is evidence for persistence/governance of that mechanism, not by itself evidence that identity or history changes behavior.
+- **Narrowing** — a design makes a preserved ambition path materially harder to reach, or makes the easiest next step continue adding representation rather than consequence. Redesign it or record an explicit owner decision.
+- **Contradiction** — the change conflicts with the Constitution, the Thirteen Principles, or an accepted invariant. Blocking.
+
+The review vocabulary above classifies **findings**; a milestone causal-status register classifies **mechanism maturity** as Named-only, Stored-only, Context-only, or Behaviorally/future-state causal. `Context-only` intentionally has the same meaning in both. An Inert finding usually points to a Named-only or Stored-only mechanism; Exogenous is an orthogonal authorship/selection axis that can apply at any maturity level. Do not collapse the two vocabularies into competing ladders.
+
+Inert, Context-only, Exogenous, and Notarial states can be intentional milestone scaffolding when they are named honestly. They become defects in the milestone claim when they are counted as evidence for a stronger capability than they actually provide.
 
 ### Capability status
 
@@ -126,7 +146,8 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Full task execution requires a request-bound accepted Participation Authorization, not an inferred response or a free-form LLM claim.
 - Request provenance preserves the requesting entity, stable request ID, objective, stated need, permissions, acceptance criteria, and SHA-256 digest of every material term.
 - Request-content binding is an adversarial integrity boundary. Do not replace it with a convenience checksum.
-- Private appraisal context is selected from Thread-owned records. Record included and excluded references so narrowing remains inspectable.
+- Private appraisal context is selected only from Thread-owned records. Record included and excluded references so narrowing remains inspectable. For standing causal-individuality evidence, selection/retrieval authority must itself be Fibre/Thread-owned or use the same declared default policy for both Threads; caller-supplied private subsets are provisional scaffolding, not evidence of Thread agency.
+- Do not treat an opaque record reference as evidence that the referenced content reached cognition. Where history or identity content is claimed as causal, resolve and inspect the bounded content that the consumer actually received.
 - Private stance and disclosure strategy use restricted visibility; ordinary requesters receive only intended external expression and shared commitments.
 - Audience-visible responses may reference a disclosure strategy by ID but must not automatically carry restricted disclosure mode, withheld reasons, or private rationale.
 - Check acceptance posture both when selecting a disclosure strategy and when minting an external response.
@@ -156,3 +177,8 @@ A change within the scope of the **Vision and ambition guard** is complete only 
 6. Generated Markdown projections and AI context coverage are current.
 7. The required statements and review questions under **Vision and ambition guard** are answered, and every capability the change excludes has a named status.
 8. If the change claims that a Thread difference is functional, the evidence identifies the causal Thread-owned input and the resulting behavioral or future-state consequence; prompt/context difference alone is insufficient.
+
+Closing a milestone additionally requires both of the following so representation is never mistaken for capability:
+
+1. A **causal-status register** in the milestone contract covering each personhood-bearing field family or named mechanism the milestone introduces or relies on. Classify each as **Named-only**, **Stored-only**, **Context-only**, or **Behaviorally/future-state causal**; distinguish opaque references from the content they name; state who authors consequential values and private selection/retrieval where authorship matters; name the current consequence; and name the next proof required to advance it. Technical IDs, timestamps, and integrity metadata do not need field-by-field entries.
+2. A **recorded score** under `## Recorded scores` in [`docs/validation/drift-scorecard.md`](docs/validation/drift-scorecard.md), with a concise evidence basis for every dimension and the rubric version used. A score below the threshold is acceptable for a deliberately foundational milestone after explicit drift review; an absent score is not.
