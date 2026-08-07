@@ -6,13 +6,14 @@ import { openRuntimeStore } from "./runtime-store.mjs";
 import { openFreezeStore } from "./freeze-store.mjs";
 import { openLifecycleHardeningStore } from "./lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "./expression-store.mjs";
-import { M1ExpressionWorldKernelService } from "./expression-service.mjs";
+import { openCausalContextStore } from "./causal-context-store.mjs";
+import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
 import {
   assertLoopbackBindHost,
   closeWorldKernelHttpServer,
   listenWorldKernelHttpServer,
 } from "./http-server.mjs";
-import { createExpressionWorldKernelHttpServer } from "./expression-http-server.mjs";
+import { createCausalWorldKernelHttpServer } from "./causal-http-server.mjs";
 
 function parsePort(value) {
   const port = Number(value);
@@ -29,6 +30,9 @@ export async function startWorldKernelFromEnvironment(
   if (serviceOptions === null || typeof serviceOptions !== "object" || Array.isArray(serviceOptions)) {
     throw new TypeError("world-kernel serviceOptions must be an object");
   }
+  if (Object.hasOwn(serviceOptions, "historicalM1Compatibility")) {
+    throw new TypeError("historical M1 compatibility is not available from the canonical world-kernel");
+  }
   const databasePath = resolve(environment.FIBRE_WORLD_DATABASE ?? ".fibre/world.sqlite");
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
@@ -41,12 +45,15 @@ export async function startWorldKernelFromEnvironment(
   let freezeStore;
   let lifecycleStore;
   let expressionStore;
+  let causalContextStore;
   try {
     runtimeStore = openRuntimeStore(databasePath);
     freezeStore = openFreezeStore(databasePath);
     lifecycleStore = openLifecycleHardeningStore(databasePath);
     expressionStore = openExpressionStore(databasePath);
+    causalContextStore = openCausalContextStore(databasePath);
   } catch (error) {
+    causalContextStore?.close();
     expressionStore?.close();
     lifecycleStore?.close();
     freezeStore?.close();
@@ -54,15 +61,17 @@ export async function startWorldKernelFromEnvironment(
     store.close();
     throw error;
   }
-  const service = new M1ExpressionWorldKernelService(
+
+  const service = new PreM2CausalWorldKernelService(
     store,
     runtimeStore,
     freezeStore,
     lifecycleStore,
     expressionStore,
+    causalContextStore,
     serviceOptions,
   );
-  const server = createExpressionWorldKernelHttpServer({
+  const server = createCausalWorldKernelHttpServer({
     service,
     adminToken,
     privateToken,
@@ -88,6 +97,7 @@ export async function startWorldKernelFromEnvironment(
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
+        causalContextStore.close();
         expressionStore.close();
         lifecycleStore.close();
         freezeStore.close();
@@ -102,14 +112,17 @@ export async function startWorldKernelFromEnvironment(
       freezeStore,
       lifecycleStore,
       expressionStore,
+      causalContextStore,
       service,
       address,
       databasePath,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
+      causalParticipationEnabled: true,
       close,
     };
   } catch (error) {
+    causalContextStore.close();
     expressionStore.close();
     lifecycleStore.close();
     freezeStore.close();
@@ -128,10 +141,12 @@ async function main() {
     databasePath: runtime.databasePath,
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
+    causalParticipationEnabled: true,
     runtimeProfileVersion: 1,
     freezeProfileVersion: 1,
     lifecycleClosureProfileVersion: 1,
     expressionProfileVersion: 1,
+    causalParticipationProfileVersion: 2,
   })}\n`);
 
   const shutdown = async (signal) => {

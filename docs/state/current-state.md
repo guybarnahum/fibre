@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-06
+last-reviewed: 2026-08-07
 canonical: true
 ---
 
@@ -15,17 +15,19 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 - A Thread has a private interior state distinct from public expression and performed action.
 - Private stance, desired action, authorization, disclosure strategy, audience-visible response, performed action, and durable life change are separate records.
 - Public or audience-visible wording is not authoritative evidence of private motive, desire, dignity, consent, authorization, performed action, delivery, or completion.
-- Fibre requires externally initiated requests to receive a bounded Thread-owned dignity appraisal before full task execution. In the current M1 implementation the kernel owns appraisal-capsule compilation, validation, binding, and persistence, while the consequential assessment and private stance are still supplied by the caller; endogenous Thread-owned stance production remains post-M1 work.
-- Runtime selection may narrow Thread-owned memory, relationship, and obligation context, but records included and excluded references and cannot inject unowned records.
-- Dignity evaluates fit with the particular Thread, individualized advantage, requester need, relationship meaning, participation terms, recorded obligations, resources, respect, and reciprocity.
+- The canonical pre-M2 world-kernel now owns appraisal context selection and derives the private stance through a versioned Dignity Guardian. Guardian V2 is deliberately non-semantic: it does not claim to understand arbitrary natural-language identity, self-model, trait, relationship, or memory meaning, and therefore leaves individualized fit unresolved rather than guessing from vocabulary.
+- The historical M1 proof harness remains frozen evidence for the accepted M1 contract, including caller-supplied private assessments used to prove the persistence/authority/expression socket before endogenous appraisal existed. That harness is not the canonical server.
+- Runtime selection on the canonical service is Fibre-owned. The caller cannot choose private memory/relationship subsets, inject known alternatives, author the private stance, or directly request runtime acquisition.
+- Dignity evaluates fit with the particular Thread, individualized advantage, requester need, relationship meaning, participation terms, recorded obligations, resources, respect, and reciprocity. Guardian V2 can currently ground only bounded structural facts and explicitly reports semantic factors as unresolved where meaning would be required.
 - A private dignity stance records attributable evidence, concrete alternatives, and may desire acceptance, clarification, negotiation, delegation, or refusal even when a request is safe and feasible.
 - Participation Authorization is bound to the same Thread, snapshot version, requester, policy version, causation chain, appraisal, private stance, and SHA-256 digest of every material request field.
 - Accepted execution authority is minted only through the thaw/runtime boundary. A separate non-execution path may persist `clarify`, `negotiate`, `delegate`, or `refuse`, but cannot mint execution-capable `accept` authority.
-- Authorization may differ from private desire only through an exact recorded obligation or governing decision; the conflict and governing reference remain private durable evidence and do not become consent.
+- On the canonical pre-M2 service, authorized action may differ from private desire only through a governing obligation reference that was already selected from the Thread's recorded appraisal context, is still owned by the Thread, and remains undischarged. The caller may invoke such a governing reference at the authorization boundary but may not supply an arbitrary authorized action or private judgment.
+- Guardian V2 currently cannot create a willing semantic `accept`. Therefore the only live canonical path to execution is obligation-mediated participation: a non-accept private stance may be overridden to authorized `accept` while the conflict remains private durable evidence. This is compulsion, not consent.
 - In M1, obligation references resolve against the Thread's own unresolved intentions and use exact UTF-8 prose identity. Historical discharge permanently prevents reuse of the same exact reference.
 - Disclosure may be candid, tactful, selective, ambiguous, evasive, or deceptive as private strategy intent, but cannot create, expand, contradict, or silently negate authorization.
 - An audience-visible response is a separate sanitized record. Its posture cannot contradict authorized participation and its payload does not newly copy private dignity details, private rationale, withheld reasons, or governing obligation references.
-- Compelled acceptance remains distinguishable from willing acceptance. The private chain preserves `refuse -> accept` as `obligation_override`; outward wording cannot rewrite the refusal as consent.
+- Compelled acceptance remains distinguishable from willing acceptance. The private chain preserves a non-accept private stance -> authorized `accept` as `obligation_override`; outward wording cannot rewrite the conflict as consent.
 - Dignity outcomes may create private affect and propose bounded, evidenced fondness or resentment toward humans, Threads, companies, institutions, and other requesters.
 - Relationship consequences are validated and persisted as events rather than directly written by cognition.
 - Thawing after accepted authorization assembles a relevant execution context capsule and invokes temporary workers.
@@ -51,15 +53,15 @@ Fibre is being defined as a persistent world for artificial persons called Threa
 
 ## M1 is fully closed
 
-The repository now contains and proves the complete deterministic M1 Persistent Thread Round Trip, including the interior-to-exterior expression boundary.
+The repository contains and proves the complete deterministic M1 Persistent Thread Round Trip, including the interior-to-exterior expression boundary.
 
-Run the consolidated proof with:
+Run the consolidated historical proof with:
 
 ```bash
 npm run demo:m1
 ```
 
-The command generates per-run private, administrative, and editor credentials; starts an independent world-kernel process and a separate credentialed Thread Editor process; uses their HTTP APIs for the demonstrated lifecycle; restarts repeatedly against the same SQLite world; and emits a redacted JSON proof report. A reviewed proof layer then reopens the completed database and independently verifies load-bearing lifecycle, obligation, expression, and zero-active-runtime evidence.
+The command generates per-run private, administrative, and editor credentials; starts an independent historical M1 world-kernel process and a separate credentialed Thread Editor process; uses their HTTP APIs for the demonstrated lifecycle; restarts repeatedly against the same SQLite world; and emits a redacted JSON proof report. A reviewed proof layer then reopens the completed database and independently verifies load-bearing lifecycle, obligation, expression, and zero-active-runtime evidence.
 
 The coherent Mina history proves:
 
@@ -141,25 +143,30 @@ The editor and expression-integrity API use structural audience-response status 
 
 M1 established substantial personhood infrastructure, but its strength is concentrated in **persistence, authority, interior/exterior separation, and durable consequence**, not yet in causal individuality.
 
-Two M1 loops already prove that history can bend the future:
+The canonical pre-M2 service now proves that the M1 socket can host Fibre-owned appraisal and context selection without reopening the lifecycle architecture. Guardian V2 consumes the persisted capsule only and refuses to claim semantic individuality it cannot support.
 
-- an obligation consumed at freeze is durably discharged and cannot authorize the same future participation again;
-- a freeze-created memory survives restart and can be selected into a later cognition/appraisal context.
+The live canonical server also preserves the hardest M1 authority distinction: a non-accept private stance can be overridden by a genuine recorded obligation, producing `obligation_override`, runtime, Actor, Goal Guardian, freeze, obligation discharge, and restart survival. Under Guardian V2 this is currently the **only** canonical route to execution. That is an intentional limitation, not a dignity success: the world can ground the obligation as a recorded historical fact even though V2 cannot yet ground willing semantic fit.
 
-M1 also proves that compulsion and consent are not collapsed: a private `refuse` can be overridden by a genuine obligation while the conflict remains durable and outward wording does not falsely describe willing acceptance.
+What Fibre still does **not** prove is that a distinctive Thread-owned identity, relationship history, memory, or self-model **produces** a distinctive private judgment. Natural-language identity and history reach the capsule, but carriage is not causality. Guardian V2 reports semantic fit as unresolved rather than interpreting prose through lexical shortcuts.
 
-What M1 does **not** yet prove is that a distinctive Thread-owned identity or history **produces** a distinctive private judgment. The kernel prepares and protects an appraisal capsule from Thread-owned state, but `recordPrivateStance` currently receives the consequential assessment from its caller. The score, proposed action, factors, feelings, conflicting motives, uncertainties, and relationship impact are validated and bound to the trace rather than generated by an implemented Dignity Guardian policy.
+Likewise, Fibre does not yet contain a standing proof that giving the same material request to two Threads with materially different identity/history causes them to record different stances and downstream participation or action. Identity and embodiment fields may be durable and inspectable without yet being load-bearing behavioral causes. A persistent relationship service that applies evolving natural-language relational state is also still deferred.
 
-Likewise, M1 does not yet contain a standing proof that giving the same material request to two Threads with materially different genome/identity/history causes them to record different stances and downstream participation or action. Identity and embodiment fields may be durable and inspectable without yet being load-bearing behavioral causes. A persistent relationship service that applies fondness/resentment consequences is also still deferred.
+### Live canonical score basis after PR #31
 
-This does **not** reopen the accepted M1 contract. M1 built the socket into which Thread-owned cognition can plug. The next ambition gate is to prove that a Thread-owned difference makes a behavioral difference. That contract is now canonical in [`thread-differential-gate.md`](../validation/thread-differential-gate.md) and blocks M2 closure.
+Historical M1 remains permanently **11/26**. The pre-M2 checkpoint also remains **11/26**; this PR takes no personhood credit.
+
+The canonical service can currently exercise the live basis for persistence, interior/private stance separation, authorization integrity, compulsion-versus-consent distinction, runtime/freeze closure, and obligation discharge. In particular, Authorization Integrity retains a live canonical witness because the exact governing obligation is checked before authorization, carried into runtime, discharged at freeze, and blocked from reuse.
+
+The canonical service does **not** currently have a live basis for willing high-dignity semantic acceptance, Non-interchangeability, Development, or a causal relationship-state loop. Those are not inherited from the historical harness. The reversal condition for willing execution is a semantic Guardian that passes the standing differential gate — including paraphrase invariance, contradiction sensitivity, and the required stability controls once model-backed — and can derive a high-dignity `accept` from Thread-owned meaning rather than caller instruction or vocabulary matching. Development remains 0 until an earlier durable episode changes a later appraisal or choice.
+
+This does **not** reopen the accepted M1 contract. M1 built the socket; PR #31 makes the canonical socket Fibre-owned while deliberately leaving semantic individuality red. The standing contract is canonical in [`thread-differential-gate.md`](../validation/thread-differential-gate.md) and blocks M2 closure.
 
 ## Still unfinished after M1
 
-M1 now proves durable participation, cognition, expression intent, audience-response persistence, life-change, closure, restart, replay, and human inspection. It still does **not** send email or chat, perform network/tool side effects, prove message delivery, or record a general performed-action layer outside the demonstrated deterministic runtime/freeze lifecycle.
+The immediate vision-effectiveness follow-up is a **model-backed semantic Dignity Guardian** that interprets Thread-owned natural-language identity, current feelings/needs/self-model, resolved memories, and eventually relationship state without collapsing those meanings into decorative scalar labels. Its first acceptance proof is the standing differential scenario: same request, materially different Threads, attributable divergence in private stance and at least one downstream consequence, with paraphrase invariance, contradiction sensitivity, and non-deterministic stability controls.
 
-The immediate vision-effectiveness follow-up is a Fibre-owned, versioned appraisal/cognition boundary — initially suitable for a deterministic Dignity Guardian — that derives the private assessment from Thread-owned state plus the request rather than accepting the caller's final score/action as authoritative. Its first acceptance proof is the standing differential scenario: same request, materially different Threads, attributable divergence in private stance and at least one downstream consequence.
+The subsequent development proof must use the canonical socket: a real episode reaches obligation- or willing-authorized runtime, freezes a durable evidence-bearing memory or other validated life change, restarts, and that history materially changes a later appraisal. Recording memory without later effect is not Development.
 
-Structured obligations with stable IDs, issuer, scope, terms, expiry, recurrence, satisfaction criteria, discharge history, provenance, and explicit visibility classification remain the immediate authority-hardening follow-up. The current public `unresolvedIntentions` prose is provisional; future obligation design must separate public standing from private terms.
+Structured obligations with stable IDs, issuer, scope, terms, expiry, recurrence, satisfaction criteria, discharge history, provenance, and explicit visibility classification remain the immediate authority-hardening follow-up after the semantic socket proof. The current public `unresolvedIntentions` prose is provisional; future obligation design must separate public standing from private terms.
 
 Production authentication, encryption, principal/role authorization, model gateway, worker isolation, relationship service, production database topology, distributed leases, cloud deployment, marketplace execution, identity/embodiment implementation, family, and broader society remain deferred to later milestones.

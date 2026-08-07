@@ -9,7 +9,7 @@ import test from "node:test";
 const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
-const serverPath = fileURLToPath(new URL("../src/server.mjs", import.meta.url));
+const serverPath = fileURLToPath(new URL("../../../tools/m1-demo-world-kernel.mjs", import.meta.url));
 const privateToken = "freeze-process-token-0123456789";
 
 async function waitForReady(child, stderr, timeoutMs = 10000) {
@@ -24,7 +24,7 @@ async function waitForReady(child, stderr, timeoutMs = 10000) {
         buffered = buffered.slice(index + 1);
         try {
           const value = JSON.parse(line);
-          if (value.event === "world-kernel-listening") return finish(null, value);
+          if (value.event === "m1-demo-world-kernel-listening") return finish(null, value);
         } catch {}
       }
     };

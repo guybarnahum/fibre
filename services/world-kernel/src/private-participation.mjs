@@ -54,6 +54,63 @@ function assertEntityArray(name, value) {
   if (new Set(ids).size !== ids.length) throw new TypeError(`${name} must not contain duplicates`);
 }
 
+function assertStringMap(name, value) {
+  assertPlainObject(name, value);
+  for (const [key, item] of Object.entries(value)) {
+    assertNonEmpty(`${name}.${key}`, item);
+  }
+}
+
+function assertResolvedMemories(name, value) {
+  if (!Array.isArray(value)) throw new TypeError(`${name} must be an array`);
+  const seen = new Set();
+  value.forEach((memory, index) => {
+    const itemName = `${name}[${index}]`;
+    assertPlainObject(itemName, memory);
+    assertExactKeys(itemName, memory, [
+      "memoryId", "threadId", "eventId", "sessionId", "summary", "evidenceRefs", "createdAt",
+    ]);
+    assertId(`${itemName}.memoryId`, memory.memoryId);
+    assertId(`${itemName}.threadId`, memory.threadId);
+    assertId(`${itemName}.eventId`, memory.eventId);
+    assertId(`${itemName}.sessionId`, memory.sessionId);
+    assertNonEmpty(`${itemName}.summary`, memory.summary);
+    assertUniqueStringArray(`${itemName}.evidenceRefs`, memory.evidenceRefs);
+    assertIsoTimestamp(`${itemName}.createdAt`, memory.createdAt);
+    if (seen.has(memory.memoryId)) throw new TypeError(`${name} must not contain duplicate memory IDs`);
+    seen.add(memory.memoryId);
+  });
+}
+
+function assertAlternativeEvidence(name, value) {
+  if (!Array.isArray(value)) throw new TypeError(`${name} must be an array`);
+  value.forEach((item, index) => {
+    const itemName = `${name}[${index}]`;
+    assertPlainObject(itemName, item);
+    assertExactKeys(itemName, item, ["entity", "resolutionPolicy"]);
+    assertEntityRef(`${itemName}.entity`, item.entity);
+    assertPolicy(`${itemName}.resolutionPolicy`, item.resolutionPolicy);
+  });
+}
+
+function assertCausalContext(name, value) {
+  assertPlainObject(name, value);
+  assertExactKeys(name, value, [
+    "selectionAuthority", "selectionPolicy", "memoryResolutionPolicy", "worldResolutionPolicy",
+    "unresolvedMemoryRefs", "excludedRelationshipRefs", "alternativeEvidence", "selectionDigest",
+  ]);
+  if (value.selectionAuthority !== "fibre") {
+    throw new TypeError(`${name}.selectionAuthority must be fibre`);
+  }
+  assertPolicy(`${name}.selectionPolicy`, value.selectionPolicy);
+  assertPolicy(`${name}.memoryResolutionPolicy`, value.memoryResolutionPolicy);
+  assertPolicy(`${name}.worldResolutionPolicy`, value.worldResolutionPolicy);
+  assertUniqueStringArray(`${name}.unresolvedMemoryRefs`, value.unresolvedMemoryRefs);
+  assertUniqueStringArray(`${name}.excludedRelationshipRefs`, value.excludedRelationshipRefs);
+  assertAlternativeEvidence(`${name}.alternativeEvidence`, value.alternativeEvidence);
+  assertNonEmpty(`${name}.selectionDigest`, value.selectionDigest);
+}
+
 export function validateActivationRequest(request) {
   assertPlainObject("request", request);
   assertExactKeys("request", request, [
@@ -212,7 +269,8 @@ function validateAppraisalCapsule(capsule) {
     "requester", "objective", "statedNeed", "acceptanceCriteria", "permissions",
     "relevantMemories", "excludedMemories", "relevantRelationships",
     "excludedRelationships", "knownAlternatives", "obligations",
-    "excludedObligations", "appraisalPolicy",
+    "excludedObligations", "appraisalPolicy", "semanticTraits", "resolvedMemories",
+    "causalContext",
   ]);
   assertId("capsule.threadId", capsule.threadId);
   assertFiniteNumber("capsule.snapshotVersion", capsule.snapshotVersion, { integer: true, minimum: 1 });
@@ -239,6 +297,17 @@ function validateAppraisalCapsule(capsule) {
   ]) assertUniqueStringArray(`capsule.${key}`, capsule[key]);
   assertEntityArray("capsule.knownAlternatives", capsule.knownAlternatives);
   assertPolicy("capsule.appraisalPolicy", capsule.appraisalPolicy);
+
+  const causalFields = ["semanticTraits", "resolvedMemories", "causalContext"];
+  const causalFieldCount = causalFields.filter((key) => capsule[key] !== undefined).length;
+  if (causalFieldCount !== 0 && causalFieldCount !== causalFields.length) {
+    throw new TypeError("causal appraisal fields must be recorded together");
+  }
+  if (causalFieldCount === causalFields.length) {
+    assertStringMap("capsule.semanticTraits", capsule.semanticTraits);
+    assertResolvedMemories("capsule.resolvedMemories", capsule.resolvedMemories);
+    assertCausalContext("capsule.causalContext", capsule.causalContext);
+  }
 }
 
 function assertPartition(name, owned, included, excluded) {
@@ -248,6 +317,35 @@ function assertPartition(name, owned, included, excluded) {
   if (new Set(union).size !== union.length) throw new IntegrityError(`${name} includes overlap`);
   if (canonicalJson([...union].sort()) !== canonicalJson([...owned].sort())) {
     throw new IntegrityError(`${name} does not partition Thread-owned refs`);
+  }
+}
+
+function assertCausalCapsuleMatchesThread(thread, capsule) {
+  if (capsule.semanticTraits === undefined) return;
+  if (canonicalJson(capsule.semanticTraits) !== canonicalJson(thread.genome.textualTraits)) {
+    throw new IntegrityError("appraisal capsule semantic traits do not match Thread snapshot");
+  }
+  const relevantMemorySet = new Set(capsule.relevantMemories);
+  for (const memory of capsule.resolvedMemories) {
+    if (memory.threadId !== thread.threadId || !relevantMemorySet.has(memory.memoryId)) {
+      throw new IntegrityError("resolved appraisal memory is not selected Thread-owned context");
+    }
+  }
+  const excludedMemorySet = new Set(capsule.excludedMemories);
+  for (const memoryId of capsule.causalContext.unresolvedMemoryRefs) {
+    if (!excludedMemorySet.has(memoryId)) {
+      throw new IntegrityError("unresolved causal memory must remain excluded from cognition");
+    }
+  }
+  if (
+    canonicalJson([...capsule.causalContext.excludedRelationshipRefs].sort()) !==
+    canonicalJson([...capsule.excludedRelationships].sort())
+  ) {
+    throw new IntegrityError("causal relationship exclusions do not match appraisal selection");
+  }
+  const alternativeEntities = capsule.causalContext.alternativeEvidence.map((item) => item.entity);
+  if (canonicalJson(alternativeEntities) !== canonicalJson(capsule.knownAlternatives)) {
+    throw new IntegrityError("world-resolved alternative evidence does not match appraisal alternatives");
   }
 }
 
@@ -296,6 +394,7 @@ export function assertCapsuleMatchesThread(thread, request, capsule) {
   );
   assertEntityArray("capsule.knownAlternatives", capsule.knownAlternatives);
   assertPolicy("capsule.appraisalPolicy", capsule.appraisalPolicy);
+  assertCausalCapsuleMatchesThread(thread, capsule);
 }
 
 export function appraisalDigest(capsule) {
