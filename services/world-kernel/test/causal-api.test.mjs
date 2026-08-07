@@ -10,12 +10,15 @@ import { openFreezeStore } from "../src/freeze-store.mjs";
 import { openLifecycleHardeningStore } from "../src/lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "../src/expression-store.mjs";
 import { openCausalContextStore } from "../src/causal-context-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { openGuardianCognitionStore } from "../src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../src/causal-service.mjs";
 import {
   closeWorldKernelHttpServer,
   listenWorldKernelHttpServer,
 } from "../src/http-server.mjs";
 import { createCausalWorldKernelHttpServer } from "../src/causal-http-server.mjs";
+import { createScriptedGuardianModelAdapter } from "./support/scripted-guardian-model-adapter.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -55,6 +58,9 @@ async function startCausalApi() {
   const lifecycleStore = openLifecycleHardeningStore(databasePath);
   const expressionStore = openExpressionStore(databasePath);
   const causalContextStore = openCausalContextStore(databasePath);
+  const semanticStateStore = openSemanticStateStore(databasePath);
+  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
+  const guardianModelAdapter = createScriptedGuardianModelAdapter();
   const service = new PreM2CausalWorldKernelService(
     worldStore,
     runtimeStore,
@@ -62,7 +68,12 @@ async function startCausalApi() {
     lifecycleStore,
     expressionStore,
     causalContextStore,
-    { clock: () => new Date("2026-08-07T20:00:00Z") },
+    {
+      clock: () => new Date("2026-08-07T20:00:00Z"),
+      semanticStateStore,
+      guardianCognitionStore,
+      guardianModelAdapter,
+    },
   );
   service.seedThread({ thread: mina });
   service.seedThread({ thread: daniel });
@@ -70,9 +81,12 @@ async function startCausalApi() {
   const address = await listenWorldKernelHttpServer(server, { host: "127.0.0.1", port: 0 });
   return {
     service,
+    guardianModelAdapter,
     baseUrl: `http://127.0.0.1:${address.port}`,
     async close() {
       await closeWorldKernelHttpServer(server);
+      guardianCognitionStore.close();
+      semanticStateStore.close();
       causalContextStore.close();
       expressionStore.close();
       lifecycleStore.close();
@@ -84,7 +98,7 @@ async function startCausalApi() {
   };
 }
 
-test("canonical private API derives a grounded stance and rejects caller-authored private cognition", async () => {
+test("canonical private API derives a persisted v3 stance and rejects caller-authored private cognition", async () => {
   const runtime = await startCausalApi();
   try {
     assert.throws(
@@ -130,9 +144,25 @@ test("canonical private API derives a grounded stance and rejects caller-authore
     assert.equal(created.response.status, 201);
     assert.equal(created.body.trace.privateStance.desiredAction, "clarify");
     assert.equal(created.body.trace.privateStance.dignityBand, "contested");
-    assert.equal(created.body.trace.privateStance.policy.version, "2");
+    assert.equal(created.body.trace.privateStance.policy.version, "3");
     assert.equal(created.body.trace.appraisal.causalContext.selectionAuthority, "fibre");
     assert.match(created.body.trace.privateStance.privateRationale, /does not yet have grounded semantic evidence/i);
+    assert.equal(runtime.guardianModelAdapter.callCount, 1);
+
+    const exactRetry = await json(
+      `${runtime.baseUrl}/threads/${mina.threadId}/private/requests`,
+      {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          request: request(),
+          causationId: "cause_causal_api_appraise",
+          correlationId: "corr_causal_api",
+        }),
+      },
+    );
+    assert.equal(exactRetry.response.status, 200);
+    assert.equal(runtime.guardianModelAdapter.callCount, 1);
 
     const oldStance = await json(
       `${runtime.baseUrl}/threads/${mina.threadId}/private/requests/${request().requestId}/stance`,
