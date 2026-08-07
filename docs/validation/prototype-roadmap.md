@@ -1,7 +1,7 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-08-06
+last-reviewed: 2026-08-07
 canonical: true
 ---
 
@@ -17,9 +17,9 @@ Prove that a Thread persists independently of temporary cognition, survives proc
 
 Artifacts: local world-kernel service, persistent Thread state, append-only event timeline, validated commands, API-backed Thread Editor live mode, Request Appraisal Capsule with included/excluded Thread-owned context, private participation stance, SHA-256 request-bound Participation Authorization, restricted disclosure strategy, audience-visible participation response, accepted execution context capsule, deterministic Actor and Goal Guardian results, freeze report, replay/integrity report, read-only database inspector, and restart-survival end-to-end proof.
 
-M1 deliberately does not claim real message delivery, generalized performed-action execution, production authentication, worker isolation, structured obligations, or endogenous Thread-owned production of the private stance. The M1 kernel validates, binds, persists, and protects the stance/authority/expression chain, but its current `recordPrivateStance` boundary accepts an assessment payload whose score, proposed action, factors, feelings, and motives are supplied by the caller. That is accepted M1 infrastructure, not evidence that identity itself already generates different choices.
+M1 deliberately does not claim real message delivery, generalized performed-action execution, production authentication, worker isolation, structured obligations, or endogenous Thread-owned production of the private stance. The historical M1 proof kernel validates, binds, persists, and protects the stance/authority/expression chain while accepting caller-supplied assessment content. That remains accepted historical M1 infrastructure, not evidence that identity itself already generated different choices.
 
-M1 nevertheless contains two real “history bends the future” loops that later milestones must generalize: discharged obligations permanently constrain future authorization, and freeze-created memory can be selected into later cognition context.
+M1 nevertheless contains two real “history bends the future” mechanisms that later milestones must generalize: discharged obligations permanently constrain future authorization, and freeze-created memory can survive into later selectable cognition context.
 
 Detailed contract: [`m1-persistent-thread-round-trip.md`](m1-persistent-thread-round-trip.md)
 
@@ -29,15 +29,40 @@ Beginning immediately after M1, Fibre must implement and then retain the [`Stand
 
 The gate uses the same material request for two materially different Threads under equivalent external conditions and requires an attributable difference in **recorded private stance plus at least one downstream participation or action consequence**. The relevant difference must come from named persisted Thread-owned identity/history, and Fibre must own production of the consequential stance rather than accepting the caller's desired action or score as the authoritative result.
 
-Different prompt text or appraisal capsules alone are insufficient. The first implementation may use a deterministic, versioned Dignity Guardian policy; later model-based cognition may replace it without changing the ownership or evidence boundary.
+Different prompt text or appraisal capsules alone are insufficient.
+
+PR #31 landed the Fibre-owned appraisal/runtime socket and deliberately left the semantic individuality gate red. Guardian V2 is non-semantic and therefore cannot create willing semantic acceptance. The canonical service can currently execute only through obligation-mediated participation; this is compulsion, not consent, and earns no causal-individuality credit.
 
 This gate is a **blocker for M2 closure** and remains a release-level ambition test for later milestones. It exists specifically to prevent Fibre from becoming a workflow system whose identity fields are rich but behaviorally decorative.
+
+## Accepted pre-M2 bridge
+
+The bridge from PR #31 to M2 is now fixed by [`pre-m2-bridge-plan.md`](pre-m2-bridge-plan.md):
+
+```text
+#31 socket merged -> #32 bridge-plan synchronization
+                  -> #33 Semantic Guardian
+                  -> #34 History bends judgment
+                  -> #35 Structured Obligation v1
+                  -> #36 M2 contract -> M2 implementation
+```
+
+The numbering changed only because the documentation synchronization itself became PR #32; the owner-reviewed substantive sequence is unchanged.
+
+The sequence matters:
+
+- **#33** must prove model-backed semantic dignity without assistant-mode collapse, prompt/evaluation overfitting, hallucinated unsupported factors, replay-time model recomputation, or accidental obligation use on willing aligned execution. Refusal must be reachable and attributable; acceptance alone is insufficient.
+- **#34** must prove Development on the canonical socket: a substantive earlier experience becomes freeze-validated durable history and changes a later appraisal or choice after restart. Memory must record what happened rather than encode an instruction for later behavior.
+- **#35** replaces exact-prose obligations and closes applicability authority: Fibre determines whether a recorded obligation governs a request; a caller may nominate but may not make it governing merely by citation. Pre-migration spent obligations remain spent.
+- **#36** defines M2 Identity and Embodiment only after semantic cognition and developmental history have shown what they actually consume.
+
+The relationship aggregate/service and general worker/tool/model gateway remain **deferred** during this bridge. A Guardian-only model adapter does not make Actor model- or tool-capable.
 
 ## M2 — Identity and embodiment
 
 Artifacts: citizen passport, portrait, voice sample, geography timeline, family tree, prompt partial inspection, and a passing causal Thread differential scenario.
 
-The first M2 implementation step is to define the durable identity/embodiment contract, provenance and mutation rules, privacy boundaries, and falsifiable acceptance scenarios before generation or UI work.
+The first M2 implementation step is the accepted #36 contract: define the durable identity/embodiment contract, provenance and mutation rules, privacy boundaries, self-authorship rules, and falsifiable acceptance scenarios before generation or UI work.
 
 M2 is not complete merely because two Threads compile different identity context. At least one accepted identity/history difference must be consumed by a Fibre-owned appraisal or cognition path and must produce a required, explainable difference in private stance and downstream participation/action for the same request. The proof must identify the named causal fields and survive persistence/restart.
 
@@ -53,7 +78,7 @@ Marketplace evidence must also demonstrate that persistent Thread differences �
 
 Artifacts: before/after confidence, memory, emotional appraisal, self-reflection, behavior change.
 
-M4 must prove a closed developmental loop: a durable consequence from an earlier episode changes a later appraisal, stance, policy behavior, relationship response, or choice under otherwise comparable conditions. Recording a memory or self-reflection without later behavioral effect is insufficient evidence of development.
+M4 must generalize the closed developmental loop first proven in the pre-M2 #34 bridge: a durable consequence from an earlier episode changes a later appraisal, stance, policy behavior, relationship response, or choice under otherwise comparable conditions. Recording a memory or self-reflection without later behavioral effect is insufficient evidence of development.
 
 ## M5 — Family and reproduction
 
