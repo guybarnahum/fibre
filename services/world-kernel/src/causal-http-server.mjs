@@ -7,6 +7,7 @@ import {
   StorageBusyError,
   IntegrityError,
 } from "./persistence-common.mjs";
+import { GuardianModelError } from "./guardian-model-adapter.mjs";
 import { DEFAULT_MAX_HTTP_BODY_BYTES } from "./http-server.mjs";
 import { createExpressionWorldKernelHttpServer } from "./expression-http-server.mjs";
 import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
@@ -93,6 +94,9 @@ function problem(value) {
   }
   if (value instanceof IntegrityError) {
     return [503, "INTEGRITY_FAILURE", "Authoritative Thread data failed integrity validation", {}];
+  }
+  if (value instanceof GuardianModelError) {
+    return [503, "COGNITION_UNAVAILABLE", "The Thread's semantic appraisal did not complete; no private stance was recorded", { "retry-after": "1" }];
   }
   if (value instanceof TypeError) {
     return [value.httpStatus ?? 400, value.httpCode ?? "INVALID_REQUEST", value.message, {}];
@@ -184,7 +188,7 @@ export function createCausalWorldKernelHttpServer({
 
       const body = await readJson(request, maxBodyBytes);
       if (route.kind === "appraise") {
-        const result = service.appraiseParticipation(route.threadId, body);
+        const result = await service.appraiseParticipation(route.threadId, body);
         return writeJson(response, result.idempotent ? 200 : 201, result, id);
       }
       if (route.kind === "participation") {
