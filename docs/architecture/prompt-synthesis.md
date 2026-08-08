@@ -105,10 +105,10 @@ The runtime selects relationship, memory, and obligation material only from reco
 
 The appraisal capsule exists only to form a private participation stance. It must not contain unnecessary task context or silently perform the requested work.
 
-Its output proposes:
+Its validated canonical result includes:
 
 - Thread, snapshot, request, SHA-256 request digest, requester, and policy bindings;
-- a dignity score, band, and natural-language factor judgments;
+- semantic participation fit and natural-language factor judgments; any numeric compatibility metadata is Fibre-derived operational metadata, not model cognition;
 - attributable evidence references;
 - private feelings, uncertainties, and conflicting motives;
 - bounded, evidenced fondness and resentment effects toward the requester;
