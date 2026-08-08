@@ -6,6 +6,12 @@ import {
   canonicalJson,
   sha256,
 } from "../persistence-common.mjs";
+import {
+  attachRetryGuidance,
+  httpRetryGuidance,
+  isClearlyTransientTransportError,
+  retryDelayFor,
+} from "./retry-policy.mjs";
 
 const DEFAULTS = Object.freeze({
   timeoutMs: 45_000,
@@ -76,6 +82,7 @@ function classifyHttpFailure(response, body) {
   const providerErrorType = providerString(body?.error?.type) || null;
   const providerMessage = providerString(body?.error?.message) || "unknown error";
   const signature = [providerErrorCode, providerErrorType, providerMessage].filter(Boolean).join(" ").toLowerCase();
+  const guidance = httpRetryGuidance(response);
 
   if (httpStatus === 429 && (
     signature.includes("insufficient_quota") || signature.includes("billing") ||
@@ -107,21 +114,22 @@ function classifyHttpFailure(response, body) {
       code: "MODEL_REQUEST_CONFIGURATION_ERROR", retryable: false, httpStatus, providerErrorCode, providerErrorType,
     });
   }
-  return new GuardianModelError(`OpenAI model endpoint returned HTTP ${httpStatus}: ${providerMessage}`, {
+  return attachRetryGuidance(new GuardianModelError(`OpenAI model endpoint returned HTTP ${httpStatus}: ${providerMessage}`, {
     code: "MODEL_HTTP_ERROR",
-    retryable: httpStatus === 429 || httpStatus >= 500,
+    retryable: guidance.retryable,
     httpStatus,
     providerErrorCode,
     providerErrorType,
-  });
+  }), guidance);
 }
 
 function normalizeError(error) {
   if (error instanceof GuardianModelError) return error;
+  const retryable = isClearlyTransientTransportError(error);
   return new GuardianModelError(`OpenAI model request failed: ${error?.message ?? String(error)}`, {
     code: error?.name === "AbortError" ? "MODEL_TIMEOUT" : "MODEL_TRANSPORT_ERROR",
     cause: error instanceof Error ? error : undefined,
-    retryable: true,
+    retryable,
   });
 }
 
@@ -218,9 +226,11 @@ export function createOpenAIModelAdapter({
             try {
               body = await response.json();
             } catch (error) {
-              throw new GuardianModelError(`OpenAI model response was not JSON: ${error.message}`, {
-                code: "MODEL_PROTOCOL_ERROR", cause: error, retryable: true,
-              });
+              const guidance = httpRetryGuidance(response);
+              throw attachRetryGuidance(new GuardianModelError(`OpenAI model response was not JSON: ${error.message}`, {
+                code: "MODEL_PROTOCOL_ERROR", cause: error, retryable: guidance.retryable,
+                httpStatus: Number(response.status),
+              }), guidance);
             }
           } catch (error) {
             throw normalizeError(error);
@@ -229,7 +239,7 @@ export function createOpenAIModelAdapter({
           if (!response.ok) throw classifyHttpFailure(response, body);
           if (body?.status !== undefined && body.status !== "completed") {
             throw new GuardianModelError(`OpenAI model response did not complete: ${body.status}`, {
-              code: "MODEL_INCOMPLETE_RESPONSE", retryable: true,
+              code: "MODEL_INCOMPLETE_RESPONSE", retryable: false,
             });
           }
 
@@ -271,6 +281,7 @@ export function createOpenAIModelAdapter({
             code: normalized.code,
             message: normalized.message,
             retryable: normalized.retryable,
+            retryAfterMs: normalized.retryAfterMs ?? null,
             httpStatus: normalized.httpStatus,
             providerErrorCode: normalized.providerErrorCode,
             providerErrorType: normalized.providerErrorType,
@@ -285,6 +296,7 @@ export function createOpenAIModelAdapter({
             attempt,
             maximumAttempts,
             retrying,
+            retryDelayMs: retrying ? retryDelayFor(normalized, retryDelayMs) : null,
             inputDigest: digest(input),
             promptHash: digest(systemPrompt),
             responseSchemaHash: digest(responseSchema),
@@ -296,7 +308,7 @@ export function createOpenAIModelAdapter({
           }
           if (!retrying) throw normalized;
           operationalRetries.push({ attempt, ...failure });
-          await wait(retryDelayMs);
+          await wait(retryDelayFor(normalized, retryDelayMs));
         } finally {
           clearTimeout(timer);
         }
