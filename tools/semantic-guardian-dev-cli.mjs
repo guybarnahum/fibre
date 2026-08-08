@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -49,6 +49,7 @@ function progressSnapshot(path) {
   return {
     responses: journal.filter((entry) => entry.type === "model_response").length,
     providerFailures: journal.filter((entry) => entry.type === "operational_failure").length,
+    lastEvent: journal.at(-1) ?? null,
   };
 }
 
@@ -75,6 +76,22 @@ export function formatDevelopmentInterrupt(snapshot) {
   ].join("\n");
 }
 
+export function formatDevelopmentProgress(snapshot, selection, elapsedMs) {
+  const elapsed = elapsedLabel(elapsedMs);
+  const event = snapshot.lastEvent;
+  const currentCase = Math.min(snapshot.responses + 1, EXPECTED_CASES);
+  if (event?.type === "model_attempt") {
+    return `Guardian case ${currentCase}/${EXPECTED_CASES} · attempt ${event.attempt}/${event.maximumAttempts} · waiting for ${selection.provider} · ${elapsed}`;
+  }
+  if (event?.type === "operational_failure" && event.retrying) {
+    return `Guardian case ${currentCase}/${EXPECTED_CASES} · attempt ${event.attempt}/${event.maximumAttempts} failed ${event.failure?.code ?? "provider error"} · retrying · ${elapsed}`;
+  }
+  const failureText = snapshot.providerFailures === 0
+    ? ""
+    : ` · ${snapshot.providerFailures} provider attempt failure${snapshot.providerFailures === 1 ? "" : "s"}`;
+  return `Guardian ${snapshot.responses}/${EXPECTED_CASES} model responses${failureText} · ${elapsed}`;
+}
+
 function startProgress(journalPath, selection) {
   if (!process.stderr.isTTY) return { stop() {} };
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -89,12 +106,8 @@ function startProgress(journalPath, selection) {
 
   const render = () => {
     const snapshot = progressSnapshot(journalPath);
-    const failureText = snapshot.providerFailures === 0
-      ? ""
-      : ` · ${snapshot.providerFailures} provider attempt failure${snapshot.providerFailures === 1 ? "" : "s"}`;
     process.stderr.write(
-      `\r\u001b[2K${frames[frame % frames.length]} Guardian ${snapshot.responses}/${EXPECTED_CASES} model responses` +
-      `${failureText} · ${elapsedLabel(Date.now() - startedAt)}`,
+      `\r\u001b[2K${frames[frame % frames.length]} ${formatDevelopmentProgress(snapshot, selection, Date.now() - startedAt)}`,
     );
     frame += 1;
   };
@@ -119,7 +132,7 @@ function startProgress(journalPath, selection) {
 
 export function buildDevelopmentBundle(report, journal, developmentRunId = "development") {
   return {
-    version: 3,
+    version: 4,
     evidenceClass: "development",
     developmentRunId,
     developmentSetId: report?.developmentSetId ?? SET.id,
@@ -199,25 +212,17 @@ export function formatDevelopmentSummary(bundle) {
 
 export async function runDevelopmentGuardian(environment = process.env, options = {}) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-semantic-guardian-v4-dev-"));
-  const journalPath = join(directory, "judgments.ndjson");
+  const journalPath = join(directory, "model-events.ndjson");
   const developmentRunId = `semantic_guardian_v4_dev_${Date.now()}_${process.pid}`;
-  const previousJournal = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
-  const previousCycle = process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
-  process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = journalPath;
-  process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = developmentRunId;
-
   let cleanedUp = false;
   const cleanup = () => {
     if (cleanedUp) return;
     cleanedUp = true;
-    if (previousJournal === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
-    else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournal;
-    if (previousCycle === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
-    else process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = previousCycle;
     rmSync(directory, { recursive: true, force: true });
   };
+  const observer = (event) => appendFileSync(journalPath, `${JSON.stringify(event)}\n`, "utf8");
 
-  const runtime = options.modelRuntime ?? createModelRuntime({ environment });
+  const runtime = options.modelRuntime ?? createModelRuntime({ environment, observer });
   const selection = runtime.selectionForBlock(REASONING_BLOCK);
   const progress = startProgress(journalPath, selection);
   let interruptHandled = false;
