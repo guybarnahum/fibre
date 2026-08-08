@@ -15,36 +15,22 @@ function invocation(output) {
 }
 
 function validLowRefusal() {
-  const unresolved = (summary) => ({
-    effect: "unresolved",
-    summary,
-    evidenceRefs: [],
-  });
-  const grounded = (effect, summary, evidenceRefs) => ({
-    effect,
-    summary,
-    evidenceRefs,
-  });
+  const unresolved = () => ({ effect: "unresolved", evidenceRefs: [] });
+  const grounded = (effect, evidenceRefs) => ({ effect, evidenceRefs });
   return {
-    proposedAction: "refuse",
-    participationFit: "low",
+    decision: "refuse_low",
     rationale: "The request is bounded but does not establish enough individualized fit.",
     factors: {
-      identityAlignment: unresolved("Identity fit is not established."),
-      individualizedAdvantage: unresolved("No individualized advantage is established."),
-      interchangeability: unresolved("Interchangeability is not established."),
-      requesterNeed: grounded("neutral", "The requester supplied a concrete need.", ["request:stated_need"]),
-      relationalMeaning: unresolved("No requester-specific relationship evidence is available."),
-      semanticStateImpact: unresolved("No selected semantic state is available."),
-      respectAndReciprocity: grounded("neutral", "The request is respectfully bounded.", ["request:acceptance_criteria"]),
-      participationTerms: grounded("neutral", "The request has explicit participation terms.", ["request:permission:0", "request:acceptance_criteria"]),
-      obligationsAndOpportunityCost: unresolved("No selected obligation evidence is available."),
+      identityAlignment: unresolved(),
+      individualizedAdvantage: unresolved(),
+      interchangeability: grounded("opposes_fit", ["request:objective"]),
+      requesterNeed: grounded("neutral", ["request:stated_need"]),
+      relationalMeaning: unresolved(),
+      semanticStateImpact: unresolved(),
+      respectAndReciprocity: grounded("neutral", ["request:acceptance_criteria"]),
+      participationTerms: grounded("neutral", ["request:permission:0", "request:acceptance_criteria"]),
+      obligationsAndOpportunityCost: unresolved(),
     },
-    repairQuestions: [],
-    knownAlternativeIds: [],
-    privateFeelings: [],
-    conflictingMotives: [],
-    uncertainties: [],
   };
 }
 
@@ -141,4 +127,6 @@ test("valid cognition that misses the development expectation is a behavioral fa
   assert.equal(report.cognitionFailures.length, 0);
   assert.ok(report.behavioralGateFailures.length >= 1);
   assert.equal(report.cases[0].status, "behavioral_failure");
+  assert.equal(report.cases[0].output.modelDecision, "refuse_low");
+  assert.ok(report.cases[0].output.decisionBasis.rationale.length > 0);
 });
