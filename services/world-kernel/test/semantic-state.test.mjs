@@ -21,7 +21,7 @@ function withStores(run) {
   const worldStore = openWorldStore(databasePath);
   const stateStore = openSemanticStateStore(databasePath);
   try {
-    worldStore.seedThread({ thread: mina });
+    worldStore.seedThread(mina);
     return run({ worldStore, stateStore });
   } finally {
     stateStore.close();
