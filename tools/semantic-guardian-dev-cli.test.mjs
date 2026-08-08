@@ -11,8 +11,6 @@ const DEFAULT_OPTIONS = {
   summary: true,
   json: false,
   help: false,
-  modelId: "gpt-5.1-2025-11-13",
-  reasoningEffort: "none",
   failFast: false,
 };
 
@@ -21,8 +19,8 @@ test("development runner defaults to v4 summary and remains explicitly non-evide
 
   const report = {
     developmentSetId: "semantic_guardian_v4_development_v1",
+    modelProvider: "openai",
     modelId: "gpt-5.1-2025-11-13",
-    reasoningEffort: "none",
     status: "failed",
     casesPlanned: 2,
     casesAttempted: 2,
@@ -65,27 +63,21 @@ test("development runner defaults to v4 summary and remains explicitly non-evide
   const text = formatDevelopmentSummary(bundle);
   assert.match(text, /Semantic Guardian v4 development summary/);
   assert.match(text, /NON-EVIDENTIARY · repeatable/);
+  assert.match(text, /Model: openai\/gpt-5\.1-2025-11-13/);
   assert.match(text, /Standing gate: NOT EVALUATED/);
   assert.match(text, /Score movement: NEVER/);
   assert.match(text, /Behavioral findings/);
   assert.match(text, /generic_control/);
 });
 
-test("development runner accepts model, reasoning, fail-fast, summary, and json options", () => {
-  assert.deepEqual(
-    parseDevelopmentArgs([
-      "--summary", "--json", "--model", "gpt-test", "--reasoning", "low", "--fail-fast",
-    ]),
-    {
-      summary: true,
-      json: true,
-      help: false,
-      modelId: "gpt-test",
-      reasoningEffort: "low",
-      failFast: true,
-    },
-  );
-  assert.throws(() => parseDevelopmentArgs(["--reasoning", "extreme"]), /reasoning must be one of/);
-  assert.throws(() => parseDevelopmentArgs(["--model"]), /model requires a model ID/);
+test("development runner keeps CLI options small; model routing belongs in models.yaml", () => {
+  assert.deepEqual(parseDevelopmentArgs(["--summary", "--json", "--fail-fast"]), {
+    summary: true,
+    json: true,
+    help: false,
+    failFast: true,
+  });
+  assert.throws(() => parseDevelopmentArgs(["--model", "gpt-test"]), /unknown option/);
+  assert.throws(() => parseDevelopmentArgs(["--reasoning", "low"]), /unknown option/);
   assert.throws(() => parseDevelopmentArgs(["--wat"]), /unknown option/);
 });

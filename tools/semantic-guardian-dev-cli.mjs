@@ -1,51 +1,31 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { resolve } from "node:path";
 
+import { createModelRuntime } from "../services/world-kernel/src/model-runtime/model-runtime.mjs";
 import { SEMANTIC_GUARDIAN_V4_DEVELOPMENT_SET as SET } from "../experiments/semantic-guardian-v4/development-set.mjs";
 import {
+  blockedV4DevelopmentReport,
   buildSemanticGuardianV4DevelopmentCases,
   runSemanticGuardianV4DevelopmentProof,
 } from "./semantic-guardian-v4-dev-proof.mjs";
 
+const REASONING_BLOCK = "dignity_guardian";
 const EXPECTED_CASES = buildSemanticGuardianV4DevelopmentCases().length;
 
 function usage() {
-  return `Fibre Semantic Guardian development runner\n\nUsage:\n  npm run guardian:dev\n  npm run guardian:dev -- --summary\n  npm run guardian:dev -- --model <model-id>\n  npm run guardian:dev -- --model <model-id> --reasoning <none|low|medium|high>\n  npm run guardian:dev -- --summary --json\n\nOptions:\n  --summary       Print a deterministic human-readable development summary.\n  --json          Print the complete non-evidentiary development report.\n  --model         Override the development model only; never changes a frozen gate.\n  --reasoning     Override development reasoning effort: none, low, medium, or high.\n  --fail-fast     Stop after the first provider, protocol, cognition, or behavioral failure.\n  --help          Show this help.\n\nThis runner is repeatable and non-evidentiary. It exercises Guardian v4's\ndevelopment contract and a disjoint development matrix. It never seals an\nacceptance cycle and never permits Fibre score movement.\n`;
+  return `Fibre Semantic Guardian development runner\n\nUsage:\n  npm run guardian:dev\n  npm run guardian:dev -- --summary\n  npm run guardian:dev -- --summary --json\n\nOptions:\n  --summary    Print a deterministic human-readable development summary.\n  --json       Print the complete non-evidentiary development report.\n  --fail-fast  Stop after the first provider, protocol, cognition, or behavioral failure.\n  --help       Show this help.\n\nProvider and model are selected by config/models.yaml for the dignity_guardian\nreasoning block. Credentials come only from environment variables / local .env.\nThis runner is repeatable, non-evidentiary, and never permits Fibre score movement.\n`;
 }
 
 export function parseDevelopmentArgs(argv) {
-  const options = {
-    summary: false,
-    json: false,
-    help: false,
-    modelId: SET.defaultModelId,
-    reasoningEffort: SET.defaultReasoningEffort,
-    failFast: false,
-  };
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
+  const options = { summary: false, json: false, help: false, failFast: false };
+  for (const arg of argv) {
     if (arg === "--summary") options.summary = true;
     else if (arg === "--json") options.json = true;
     else if (arg === "--fail-fast") options.failFast = true;
     else if (arg === "--help" || arg === "-h") options.help = true;
-    else if (arg === "--model") {
-      const value = argv[index + 1];
-      if (value === undefined || value.startsWith("--")) throw new Error("--model requires a model ID");
-      options.modelId = value;
-      index += 1;
-    } else if (arg === "--reasoning") {
-      const value = argv[index + 1];
-      if (!["none", "low", "medium", "high"].includes(value)) {
-        throw new Error("--reasoning must be one of none, low, medium, high");
-      }
-      options.reasoningEffort = value;
-      index += 1;
-    } else {
-      throw new Error(`unknown option: ${arg}`);
-    }
+    else throw new Error(`unknown option: ${arg}`);
   }
   if (!options.summary && !options.json && !options.help) options.summary = true;
   return options;
@@ -79,7 +59,7 @@ function elapsedLabel(milliseconds) {
   return minutes === 0 ? `${seconds}s` : `${minutes}m ${String(remainder).padStart(2, "0")}s`;
 }
 
-function startProgress(journalPath, options) {
+function startProgress(journalPath, selection) {
   if (!process.stderr.isTTY) return { stop() {} };
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   const startedAt = Date.now();
@@ -87,7 +67,7 @@ function startProgress(journalPath, options) {
 
   process.stderr.write(
     `\nFibre · Semantic Guardian v4 development\n` +
-    `NON-EVIDENTIARY · ${SET.id} · ${options.modelId} · reasoning=${options.reasoningEffort} · ${EXPECTED_CASES} cases\n\n`,
+    `NON-EVIDENTIARY · ${SET.id} · ${selection.provider}/${selection.modelId} · ${EXPECTED_CASES} cases\n\n`,
   );
 
   const render = () => {
@@ -119,7 +99,7 @@ function startProgress(journalPath, options) {
 
 export function buildDevelopmentBundle(report, journal, developmentRunId = "development") {
   return {
-    version: 2,
+    version: 3,
     evidenceClass: "development",
     developmentRunId,
     developmentSetId: report?.developmentSetId ?? SET.id,
@@ -153,7 +133,7 @@ export function formatDevelopmentSummary(bundle) {
     "Fibre · Semantic Guardian v4 development summary",
     "NON-EVIDENTIARY · repeatable",
     `Development set: ${report.developmentSetId}`,
-    `Model: ${report.modelId} · reasoning=${report.reasoningEffort}`,
+    `Model: ${report.modelProvider ?? "unknown"}/${report.modelId}`,
     "",
     `RESULT: ${report.status.toUpperCase()}`,
     "Standing gate: NOT EVALUATED",
@@ -206,9 +186,28 @@ export async function runDevelopmentGuardian(environment = process.env, options 
   process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = journalPath;
   process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = developmentRunId;
 
-  const progress = startProgress(journalPath, options);
+  const runtime = options.modelRuntime ?? createModelRuntime({ environment });
+  const selection = runtime.selectionForBlock(REASONING_BLOCK);
+  const progress = startProgress(journalPath, selection);
   try {
-    const report = await runSemanticGuardianV4DevelopmentProof(environment, options);
+    let report;
+    try {
+      const modelAdapter = options.modelAdapter ?? runtime.forBlock(REASONING_BLOCK);
+      report = await runSemanticGuardianV4DevelopmentProof(environment, {
+        failFast: options.failFast ?? false,
+        modelAdapter,
+        modelId: modelAdapter.modelId,
+        reasoningEffort: modelAdapter.configuration?.reasoningEffort ?? "provider_default",
+        cases: options.cases ?? null,
+      });
+    } catch (error) {
+      if (error?.code !== "MODEL_UNAVAILABLE") throw error;
+      report = blockedV4DevelopmentReport(error.message, {
+        modelId: selection.modelId,
+        reasoningEffort: "provider_default",
+      });
+    }
+    report = { ...report, modelProvider: selection.provider };
     const bundle = buildDevelopmentBundle(report, readJournal(journalPath), developmentRunId);
     progress.stop(report.status);
     return bundle;
