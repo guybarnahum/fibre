@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildDevelopmentBundle,
+  formatDevelopmentInterrupt,
   formatDevelopmentSummary,
   parseDevelopmentArgs,
 } from "./semantic-guardian-dev-cli.mjs";
@@ -80,4 +81,17 @@ test("development runner keeps CLI options small; model routing belongs in model
   assert.throws(() => parseDevelopmentArgs(["--model", "gpt-test"]), /unknown option/);
   assert.throws(() => parseDevelopmentArgs(["--reasoning", "low"]), /unknown option/);
   assert.throws(() => parseDevelopmentArgs(["--wat"]), /unknown option/);
+});
+
+test("Ctrl-C summary is explicit about cleanup and non-evidentiary status", () => {
+  const zero = formatDevelopmentInterrupt({ responses: 0, providerFailures: 0 });
+  assert.match(zero, /Interrupted by Ctrl-C/);
+  assert.match(zero, /NON-EVIDENTIARY · development run stopped/);
+  assert.match(zero, /No model responses were received before interruption/);
+  assert.match(zero, /Temporary development state cleaned up/);
+  assert.match(zero, /Nothing sealed; Fibre score unchanged/);
+
+  const partial = formatDevelopmentInterrupt({ responses: 2, providerFailures: 1 });
+  assert.match(partial, /2 model responses were received before interruption/);
+  assert.match(partial, /1 provider attempt failure was recorded before interruption/);
 });
