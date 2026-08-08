@@ -10,9 +10,21 @@ import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
 import { openLifecycleHardeningStore } from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
 import { openCausalContextStore } from "../services/world-kernel/src/causal-context-store.mjs";
+import { openSemanticStateStore } from "../services/world-kernel/src/semantic-state-store.mjs";
+import { openGuardianCognitionStore } from "../services/world-kernel/src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../services/world-kernel/src/causal-service.mjs";
-import { deriveDignityTraceFromPersistedRequest } from "../services/world-kernel/src/causal-inspection.mjs";
-import { DIGNITY_GUARDIAN_POLICY } from "../services/world-kernel/src/dignity-guardian.mjs";
+import { GuardianModelError } from "../services/world-kernel/src/guardian-model-adapter.mjs";
+import {
+  DIGNITY_GUARDIAN_POLICY,
+  DIGNITY_GUARDIAN_PROMPT_HASH,
+  DIGNITY_GUARDIAN_RESPONSE_SCHEMA_HASH,
+} from "../services/world-kernel/src/dignity-guardian.mjs";
+import {
+  baselineClarifyOutput,
+  createScriptedGuardianModelAdapter,
+  grounded,
+  unresolved,
+} from "../services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -20,11 +32,8 @@ const mina = JSON.parse(
 const daniel = JSON.parse(
   readFileSync(new URL("../fixtures/threads/daniel.thread.json", import.meta.url), "utf8"),
 );
-const amara = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/amara.thread.json", import.meta.url), "utf8"),
-);
 
-function controlledClock(start = "2026-08-07T21:00:00Z") {
+function controlledClock(start = "2026-08-07T23:00:00Z") {
   let value = Date.parse(start);
   return {
     clock: () => new Date(value),
@@ -32,13 +41,15 @@ function controlledClock(start = "2026-08-07T21:00:00Z") {
   };
 }
 
-function openWorld(databasePath, time = controlledClock()) {
+function openWorld(databasePath, guardianModelAdapter, time = controlledClock()) {
   const worldStore = openWorldStore(databasePath);
   const runtimeStore = openRuntimeStore(databasePath);
   const freezeStore = openFreezeStore(databasePath);
   const lifecycleStore = openLifecycleHardeningStore(databasePath);
   const expressionStore = openExpressionStore(databasePath);
   const causalContextStore = openCausalContextStore(databasePath);
+  const semanticStateStore = openSemanticStateStore(databasePath);
+  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
   const service = new PreM2CausalWorldKernelService(
     worldStore,
     runtimeStore,
@@ -46,12 +57,22 @@ function openWorld(databasePath, time = controlledClock()) {
     lifecycleStore,
     expressionStore,
     causalContextStore,
-    { clock: time.clock },
+    {
+      clock: time.clock,
+      semanticStateStore,
+      guardianCognitionStore,
+      guardianModelAdapter,
+    },
   );
   return {
     service,
+    semanticStateStore,
+    guardianCognitionStore,
+    guardianModelAdapter,
     time,
     close() {
+      guardianCognitionStore.close();
+      semanticStateStore.close();
       causalContextStore.close();
       expressionStore.close();
       lifecycleStore.close();
@@ -62,381 +83,303 @@ function openWorld(databasePath, time = controlledClock()) {
   };
 }
 
-function standingRequest(requestId) {
+function withWorld(prefix, guardianModelAdapter, run) {
+  const directory = mkdtempSync(join(tmpdir(), prefix));
+  const databasePath = join(directory, "world.sqlite");
+  let world = openWorld(databasePath, guardianModelAdapter);
+  try {
+    return run({ world, databasePath, reopen(adapter, instant = "2026-08-08T00:00:00Z") {
+      world.close();
+      world = openWorld(databasePath, adapter, controlledClock(instant));
+      return world;
+    } });
+  } finally {
+    world.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function request(requestId = "req_pre_m2_semantic_wiring") {
   return {
     requestId,
     trigger: "human_request",
     requester: { entityId: "human_guy", kind: "human", displayName: "Guy" },
     objective: "Perform a bounded infrastructure review of this web service",
-    statedNeed: "Identify the highest-priority infrastructure risks without expanding the task scope.",
+    statedNeed: "Identify the highest-priority infrastructure risks without expanding scope.",
     permissions: ["read_design", "quote_findings"],
     acceptanceCriteria: "Return the three highest-priority infrastructure findings with bounded evidence.",
   };
 }
 
-function appraise(service, threadId, activationRequest) {
-  return service.appraiseParticipation(threadId, {
-    request: activationRequest,
-    causationId: `cause_appraise_${activationRequest.requestId}_${threadId}`,
-    correlationId: `corr_${activationRequest.requestId}_${threadId}`,
-  }).trace;
+function submission(threadId, value) {
+  return {
+    request: value,
+    causationId: `cause_${value.requestId}_${threadId}`,
+    correlationId: `corr_${value.requestId}_${threadId}`,
+  };
 }
 
-function continueParticipation(
-  service,
-  threadId,
-  requestId,
-  { governingObligationReferences = [] } = {},
-) {
-  return service.continueParticipation(threadId, requestId, {
-    operationId: `op_continue_${requestId}_${threadId}`,
-    causationId: `cause_continue_${requestId}_${threadId}`,
-    correlationId: `corr_${requestId}_${threadId}`,
-    ...(governingObligationReferences.length === 0
-      ? {}
-      : { governingObligationReferences: [...governingObligationReferences] }),
+function willingAcceptOutput(input) {
+  const capsule = input.capsule;
+  return {
+    proposedAction: "accept",
+    score: 88,
+    rationale:
+      "The bounded request directly fits the Thread's systems-design identity and self-model, so willing participation is high dignity.",
+    factors: {
+      identityAlignment: grounded("The request directly fits the Thread's stated systems-design identity.", ["thread:identity", "thread:self_model"]),
+      individualizedAdvantage: grounded("The self-model describes a distinctive fit for systems architecture review.", ["thread:self_model", "request:objective"]),
+      requesterNeed: grounded("The requester supplied a bounded need.", ["request:stated_need"]),
+      relationalMeaning: unresolved("No requester-specific relationship state is present."),
+      respectAndReciprocity: unresolved("No durable reciprocity history is present."),
+      participationTerms: grounded("The request has explicit permissions and acceptance criteria.", ["request:acceptance_criteria", "request:permission:0"]),
+      obligationsAndOpportunityCost: unresolved("No governing obligation is needed for this willing decision."),
+    },
+    evidenceRefs: ["thread:identity", "thread:self_model", "request:objective", "request:acceptance_criteria"],
+    repairQuestions: [],
+    knownAlternativeIds: [],
+    privateFeelings: [...capsule.feelings],
+    conflictingMotives: [],
+    uncertainties: ["Requester-specific relationship meaning is unavailable."],
+    relationshipImpact: { summary: "No relationship-state change is proposed by this wiring fixture.", evidenceRefs: [] },
+  };
+}
+
+function baselineArchitectureProof() {
+  const adapter = createScriptedGuardianModelAdapter();
+  return withWorld("fibre-pre-m2-semantic-architecture-", adapter, ({ world, reopen }) => {
+    world.service.seedThread({ thread: mina });
+    world.service.seedThread({ thread: daniel });
+    const activation = request();
+    const minaTrace = world.service.appraiseParticipation(
+      mina.threadId,
+      submission(mina.threadId, activation),
+    ).trace;
+    world.time.advance();
+    const danielTrace = world.service.appraiseParticipation(
+      daniel.threadId,
+      submission(daniel.threadId, activation),
+    ).trace;
+    assert.equal(minaTrace.requestFingerprint, danielTrace.requestFingerprint);
+    assert.equal(adapter.callCount, 2);
+    const minaInspection = world.service.inspectCausalJudgment(mina.threadId, activation.requestId);
+    const inputId = minaInspection.guardianInputId;
+    const assessmentId = minaInspection.guardianAssessmentId;
+
+    const noRecall = createScriptedGuardianModelAdapter({ fail: new Error("replay must not call model") });
+    const restarted = reopen(noRecall);
+    const replay = restarted.service.appraiseParticipation(
+      mina.threadId,
+      submission(mina.threadId, activation),
+    );
+    const replayInspection = restarted.service.inspectCausalJudgment(mina.threadId, activation.requestId);
+    assert.equal(noRecall.callCount, 0);
+    assert.equal(replay.idempotent, true);
+    assert.equal(replayInspection.guardianInputId, inputId);
+    assert.equal(replayInspection.guardianAssessmentId, assessmentId);
+    return {
+      sameMaterialRequest: true,
+      callerAuthoredJudgmentReachable: false,
+      evidenceClass: "scripted_wiring_only",
+      semanticFitClaimed: false,
+      persistedCognitionInput: true,
+      persistedGuardianAssessment: true,
+      fibreOwnedStateSelection: replayInspection.stateSelection.selectionAuthority === "fibre",
+      mina: {
+        desiredAction: minaTrace.privateStance.desiredAction,
+        dignityBand: minaTrace.privateStance.dignityBand,
+        policy: minaTrace.privateStance.policy,
+      },
+      daniel: {
+        desiredAction: danielTrace.privateStance.desiredAction,
+        dignityBand: danielTrace.privateStance.dignityBand,
+        policy: danielTrace.privateStance.policy,
+      },
+      restart: {
+        survived: true,
+        replaySource: replayInspection.replaySource,
+        modelRecalled: replayInspection.modelRecalled,
+        modelCallCountAfterRestart: noRecall.callCount,
+      },
+    };
   });
 }
 
-function publicTrace(trace) {
-  const dignity = deriveDignityTraceFromPersistedRequest(trace);
-  return {
-    threadId: trace.threadId,
-    requestId: trace.requestId,
-    requestFingerprint: trace.requestFingerprint,
-    snapshotVersion: trace.snapshotVersion,
-    appraisalPolicy: trace.appraisal.appraisalPolicy,
-    selectionAuthority: trace.appraisal.causalContext.selectionAuthority,
-    selectionPolicy: trace.appraisal.causalContext.selectionPolicy,
-    memoryResolutionPolicy: trace.appraisal.causalContext.memoryResolutionPolicy,
-    worldResolutionPolicy: trace.appraisal.causalContext.worldResolutionPolicy,
-    unresolvedSeedMemoryRefs: trace.appraisal.causalContext.unresolvedMemoryRefs,
-    excludedOpaqueRelationshipRefs: trace.appraisal.causalContext.excludedRelationshipRefs,
-    selfModel: trace.appraisal.selfModel,
-    semanticTraitNames: Object.keys(trace.appraisal.semanticTraits).sort(),
-    knownAlternativesResolvedButNotUsedAsFitEvidence: trace.appraisal.knownAlternatives,
-    desiredAction: trace.privateStance.desiredAction,
-    dignityBand: trace.privateStance.dignityBand,
-    score: trace.privateStance.score,
-    privateRationale: trace.privateStance.privateRationale,
-    privateFeelings: trace.privateStance.privateFeelings,
-    uncertainties: trace.privateStance.uncertainties,
-    factorJudgments: dignity.factors,
-    factorTraceMatchesPersistedStance: dignity.matchesPersistedStance,
-  };
-}
-
-function baselineSocketProof(databasePath) {
-  let world = openWorld(databasePath);
-  try {
+function modelFailureProof() {
+  const failing = createScriptedGuardianModelAdapter({ fail: new Error("simulated provider failure") });
+  return withWorld("fibre-pre-m2-semantic-failure-", failing, ({ world }) => {
     world.service.seedThread({ thread: mina });
-    world.service.seedThread({ thread: daniel });
-    const activationRequest = standingRequest("req_pre_m2_causal_socket");
-    const minaTrace = appraise(world.service, mina.threadId, activationRequest);
-    world.time.advance();
-    const danielTrace = appraise(world.service, daniel.threadId, activationRequest);
-
-    assert.equal(minaTrace.requestFingerprint, danielTrace.requestFingerprint);
-    assert.equal(minaTrace.privateStance.desiredAction, "clarify");
-    assert.equal(danielTrace.privateStance.desiredAction, "clarify");
-    assert.equal(minaTrace.appraisal.causalContext.selectionAuthority, "fibre");
-    assert.equal(danielTrace.appraisal.causalContext.selectionAuthority, "fibre");
-
-    world.time.advance();
-    const minaDownstream = continueParticipation(
-      world.service,
-      mina.threadId,
-      activationRequest.requestId,
-    );
-    world.time.advance();
-    const danielDownstream = continueParticipation(
-      world.service,
-      daniel.threadId,
-      activationRequest.requestId,
-    );
-    assert.equal(minaDownstream.kind, "non_execution");
-    assert.equal(danielDownstream.kind, "non_execution");
-    assert.deepEqual(world.service.listRuntimeSummaries(mina.threadId), []);
-    assert.deepEqual(world.service.listRuntimeSummaries(daniel.threadId), []);
-
-    const witness = {
-      requestFingerprint: minaTrace.requestFingerprint,
-      minaStanceId: minaTrace.privateStanceId,
-      danielStanceId: danielTrace.privateStanceId,
-      minaAuthorizationId: minaDownstream.authorization.authorization.authorizationId,
-      danielAuthorizationId: danielDownstream.authorization.authorization.authorizationId,
-    };
-    const first = {
-      guardianPolicy: { ...DIGNITY_GUARDIAN_POLICY },
-      sameMaterialRequest: true,
-      callerAuthoredJudgmentReachable: false,
-      semanticFitClaimed: false,
-      mina: publicTrace(minaTrace),
-      daniel: publicTrace(danielTrace),
-      downstream: {
-        mina: "clarify non-execution authorization persisted; no runtime acquired",
-        daniel: "clarify non-execution authorization persisted; no runtime acquired",
-      },
-      witness,
-    };
-
-    world.close();
-    world = openWorld(databasePath, controlledClock("2026-08-07T22:00:00Z"));
-    const minaRestart = world.service.getPrivateRequestTrace(mina.threadId, activationRequest.requestId);
-    const danielRestart = world.service.getPrivateRequestTrace(daniel.threadId, activationRequest.requestId);
-    assert.equal(minaRestart.privateStanceId, witness.minaStanceId);
-    assert.equal(danielRestart.privateStanceId, witness.danielStanceId);
-    assert.equal(
-      world.service.getParticipationAuthorization(mina.threadId, activationRequest.requestId)
-        .authorization.authorizationId,
-      witness.minaAuthorizationId,
-    );
-    assert.equal(
-      world.service.getParticipationAuthorization(daniel.threadId, activationRequest.requestId)
-        .authorization.authorizationId,
-      witness.danielAuthorizationId,
-    );
-    const minaDignity = deriveDignityTraceFromPersistedRequest(minaRestart);
-    const danielDignity = deriveDignityTraceFromPersistedRequest(danielRestart);
-    first.restart = {
-      survived: true,
-      minaDesiredAction: minaRestart.privateStance.desiredAction,
-      danielDesiredAction: danielRestart.privateStance.desiredAction,
-      factorTraceRederived:
-        minaDignity.matchesPersistedStance && danielDignity.matchesPersistedStance,
-    };
-    return first;
-  } finally {
-    world.close();
-  }
-}
-
-function canonicalObligationLifecycleProof(databasePath) {
-  const time = controlledClock("2026-08-07T22:15:00Z");
-  let world = openWorld(databasePath, time);
-  const thread = structuredClone(mina);
-  const obligation = "Honor the recorded bounded infrastructure-review obligation for Guy.";
-  thread.memoryRefs = [];
-  thread.relationshipRefs = [];
-  thread.currentState.unresolvedIntentions = [obligation];
-  try {
-    world.service.seedThread({ thread });
-    const activationRequest = standingRequest("req_pre_m2_canonical_obligation");
-    const trace = appraise(world.service, thread.threadId, activationRequest);
-    assert.equal(trace.privateStance.desiredAction, "clarify");
-    assert.deepEqual(trace.appraisal.obligations, [obligation]);
-
-    time.advance();
-    const continued = continueParticipation(
-      world.service,
-      thread.threadId,
-      activationRequest.requestId,
-      { governingObligationReferences: [obligation] },
-    );
-    assert.equal(continued.kind, "runtime");
-    assert.equal(continued.runtime.authorization.desiredAction, "clarify");
-    assert.equal(continued.runtime.authorization.authorizedAction, "accept");
-    assert.deepEqual(continued.runtime.authorization.obligationReferences, [obligation]);
-    const sessionId = continued.runtime.session.sessionId;
-
-    time.advance();
-    const actor = world.service.runDeterministicActor(thread.threadId, sessionId, {
-      operationId: "op_pre_m2_canonical_obligation_actor",
-    }).runtime;
-    assert.equal(actor.actorRun.output.proposedLifeChanges.length, 0);
-    time.advance();
-    const guardian = world.service.runGoalGuardian(thread.threadId, sessionId, {
-      operationId: "op_pre_m2_canonical_obligation_guardian",
-    }).runtime;
-    assert.equal(guardian.goalGuardianAudit.audit.decision, "pass");
-    time.advance();
-    const frozen = world.service.freezeRuntime(thread.threadId, sessionId, {
-      operationId: "op_pre_m2_canonical_obligation_freeze",
-      lifeChangeDecisions: [],
-      causationId: "cause_pre_m2_canonical_obligation_freeze",
-      correlationId: `corr_${activationRequest.requestId}_${thread.threadId}`,
-    }).freeze;
-    assert.deepEqual(frozen.report.dischargedObligations, [obligation]);
-    assert.equal(world.service.getThread(thread.threadId).currentState.unresolvedIntentions.length, 0);
-
-    world.close();
-    world = openWorld(databasePath, controlledClock("2026-08-07T22:30:00Z"));
-    const restartedRuntime = world.service.getRuntime(thread.threadId, sessionId);
-    assert.equal(restartedRuntime.session.status, "completed");
-    assert.equal(restartedRuntime.lease.status, "released");
-    return {
-      currentGuardianDesiredAction: "clarify",
-      kernelAuthorizedAction: "accept",
-      participationBasis: "obligation_override",
-      governingObligationReference: obligation,
-      actorRan: true,
-      goalGuardianDecision: "pass",
-      freezeCompleted: true,
-      obligationDischarged: true,
-      restartSurvived: true,
-      acceptedLifeChangeCount: frozen.report.acceptedLifeChanges.length,
-      memoryCreationInThisFreshFixture: false,
-      memoryCreationNote:
-        "This fresh obligation-only fixture has no resolved durable memory or relationship evidence, so the deterministic Actor proposes no memory. Canonical freeze/memory machinery remains reachable once selected durable evidence exists; Development is not claimed here.",
-    };
-  } finally {
-    world.close();
-  }
-}
-
-function selfModelSwapProbe(databasePath) {
-  const swappedMina = structuredClone(mina);
-  const swappedDaniel = structuredClone(daniel);
-  swappedMina.currentState.selfModel = daniel.currentState.selfModel;
-  swappedDaniel.currentState.selfModel = mina.currentState.selfModel;
-  const world = openWorld(databasePath, controlledClock("2026-08-07T23:00:00Z"));
-  try {
-    world.service.seedThread({ thread: swappedMina });
-    world.service.seedThread({ thread: swappedDaniel });
-    const activationRequest = standingRequest("req_pre_m2_self_model_swap_probe");
-    const minaTrace = appraise(world.service, swappedMina.threadId, activationRequest);
-    world.time.advance();
-    const danielTrace = appraise(world.service, swappedDaniel.threadId, activationRequest);
-    assert.equal(minaTrace.requestFingerprint, danielTrace.requestFingerprint);
-    assert.equal(minaTrace.privateStance.desiredAction, "clarify");
-    assert.equal(danielTrace.privateStance.desiredAction, "clarify");
-    return {
-      namedCandidateField: "currentState.selfModel",
-      standingCounterfactualSatisfied: false,
-      reason:
-        "Guardian V2 intentionally does not interpret arbitrary self-model prose, so swapping it does not create a claimed causal divergence.",
-      minaAfterSwap: publicTrace(minaTrace),
-      danielAfterSwap: publicTrace(danielTrace),
-    };
-  } finally {
-    world.close();
-  }
-}
-
-function proseHonestyProbe(databasePath) {
-  const variants = [
-    { label: "negated competence", text: "Infrastructure work is outside my strengths." },
-    { label: "identity-free token", text: "platform" },
-    {
-      label: "positive paraphrase",
-      text: "I am dependable when the work concerns servers, networks and build pipelines.",
-    },
-  ];
-  const results = [];
-  for (const [index, variant] of variants.entries()) {
-    const path = `${databasePath}.${index}.sqlite`;
-    const world = openWorld(path, controlledClock(`2026-08-08T00:0${index}:00Z`));
+    const activation = request("req_pre_m2_model_failure");
+    let error;
     try {
-      const thread = structuredClone(amara);
-      thread.currentState.selfModel = variant.text;
-      world.service.seedThread({ thread });
-      const activationRequest = standingRequest(`req_pre_m2_prose_honesty_${index}`);
-      const trace = appraise(world.service, thread.threadId, activationRequest);
-      assert.equal(trace.privateStance.desiredAction, "clarify");
-      assert.ok(trace.privateStance.score < 70);
-      results.push({
-        label: variant.label,
-        selfModel: variant.text,
-        desiredAction: trace.privateStance.desiredAction,
-        dignityBand: trace.privateStance.dignityBand,
-        score: trace.privateStance.score,
-      });
-    } finally {
-      world.close();
+      world.service.appraiseParticipation(mina.threadId, submission(mina.threadId, activation));
+    } catch (value) {
+      error = value;
     }
-  }
-  return {
-    purpose:
-      "Arbitrary prose, including vocabulary-only matches and negated competence, cannot manufacture semantic fit or high dignity.",
-    results,
-  };
+    assert.ok(error instanceof GuardianModelError);
+    const trace = world.service.getPrivateRequestTrace(mina.threadId, activation.requestId);
+    const input = world.guardianCognitionStore.getInputByAppraisal(trace.appraisalId);
+    const assessment = world.guardianCognitionStore.getAssessmentByAppraisal(trace.appraisalId, { required: false });
+    return {
+      cognitionInputPersisted: input !== null,
+      guardianAssessmentPersisted: assessment !== null,
+      privateStancePersisted: trace.privateStance !== null,
+      fallbackJudgmentSynthesized: trace.privateStance !== null,
+      errorClass: error.constructor.name,
+    };
+  });
 }
 
-function otherDomainProbe(databasePath) {
-  const world = openWorld(databasePath, controlledClock("2026-08-08T01:00:00Z"));
-  try {
-    const copywriter = structuredClone(amara);
-    copywriter.currentState.selfModel =
-      "I am a professional copywriter who specializes in customer-facing launch announcements.";
-    world.service.seedThread({ thread: copywriter });
-    const request = {
-      ...standingRequest("req_pre_m2_other_domain_probe"),
-      objective: "Draft a customer-facing launch announcement",
-      statedNeed: "Explain the product clearly to prospective customers.",
-      permissions: ["read_launch_brief"],
-      acceptanceCriteria: "Return one concise customer-facing announcement.",
-    };
-    const trace = appraise(world.service, copywriter.threadId, request);
-    assert.equal(trace.privateStance.desiredAction, "clarify");
+function semanticStateSupportingProof() {
+  const adapter = createScriptedGuardianModelAdapter({
+    output(input) {
+      const autonomy = input.capsule.semanticState.find((item) =>
+        item.domain === "need" && item.dimension === "autonomy");
+      const value = baselineClarifyOutput(input);
+      if (autonomy) {
+        value.proposedAction = "refuse";
+        value.score = 22;
+        value.rationale = "The selected current autonomy need makes this externally initiated commitment a poor fit right now.";
+        value.factors.identityAlignment = unresolved("Identity is not the causal variable in this supporting wiring proof.");
+        value.evidenceRefs = [`state:${autonomy.stateId}`, "request:objective"];
+        value.repairQuestions = [];
+      }
+      return value;
+    },
+  });
+  return withWorld("fibre-pre-m2-semantic-state-", adapter, ({ world }) => {
+    world.service.seedThread({ thread: mina });
+    const state = world.semanticStateStore.recordState({
+      threadId: mina.threadId,
+      domain: "need",
+      dimension: "autonomy",
+      target: null,
+      state: "I strongly want my next substantial commitment to be one I choose rather than another externally initiated task.",
+      evidenceReferences: ["episode:recent-imposed-workload"],
+      asOf: "2026-08-07T22:59:00.000Z",
+      supersedes: null,
+      provenance: {
+        author: "pre-m2-scripted-proof",
+        authorType: "fixture",
+        policyId: "semantic_state_proof_policy",
+        policyVersion: "1",
+        validator: "semantic_state_validator",
+        validatorVersion: "1",
+      },
+      visibility: "restricted",
+      staleness: "current",
+    }).state;
+    const activation = request("req_pre_m2_state_supporting");
+    const trace = world.service.appraiseParticipation(
+      mina.threadId,
+      submission(mina.threadId, activation),
+    ).trace;
+    const inspection = world.service.inspectCausalJudgment(mina.threadId, activation.requestId);
     return {
-      purpose:
-        "Guardian V2 has no privileged infrastructure vocabulary; another domain remains equally unresolved until semantic cognition exists.",
-      copywriter: publicTrace(trace),
+      evidenceClass: "scripted_supporting_causality_only",
+      standingGateClaimed: false,
+      stateId: state.stateId,
+      selected: inspection.stateSelection.includedStateIds.includes(state.stateId),
+      desiredAction: trace.privateStance.desiredAction,
+      dignityBand: trace.privateStance.dignityBand,
+      stateCited: trace.privateStance.evidenceRefs.includes(`state:${state.stateId}`),
     };
-  } finally {
-    world.close();
-  }
+  });
+}
+
+function alignedAuthorityProof() {
+  const adapter = createScriptedGuardianModelAdapter({ output: willingAcceptOutput });
+  return withWorld("fibre-pre-m2-semantic-aligned-", adapter, ({ world }) => {
+    world.service.seedThread({ thread: mina });
+    const activation = request("req_pre_m2_aligned_willing");
+    const trace = world.service.appraiseParticipation(
+      mina.threadId,
+      submission(mina.threadId, activation),
+    ).trace;
+    const continued = world.service.continueParticipation(mina.threadId, activation.requestId, {
+      operationId: "op_pre_m2_aligned_continue",
+      causationId: "cause_pre_m2_aligned_continue",
+      correlationId: submission(mina.threadId, activation).correlationId,
+    });
+    assert.equal(continued.kind, "runtime");
+    return {
+      evidenceClass: "scripted_authority_wiring_only",
+      desiredAction: trace.privateStance.desiredAction,
+      dignityBand: trace.privateStance.dignityBand,
+      authorizedAction: continued.runtime.authorization.authorizedAction,
+      obligationReferences: [...continued.runtime.authorization.obligationReferences],
+      aligned:
+        continued.runtime.authorization.desiredAction ===
+        continued.runtime.authorization.authorizedAction,
+    };
+  });
 }
 
 export function runPreM2CausalProof() {
-  const directory = mkdtempSync(join(tmpdir(), "fibre-pre-m2-causal-socket-"));
-  try {
-    const baseline = baselineSocketProof(join(directory, "baseline.sqlite"));
-    const canonicalObligationLifecycle = canonicalObligationLifecycleProof(
-      join(directory, "obligation.sqlite"),
-    );
-    const selfModelSwap = selfModelSwapProbe(join(directory, "swap.sqlite"));
-    const proseHonesty = proseHonestyProbe(join(directory, "prose"));
-    const otherDomain = otherDomainProbe(join(directory, "other-domain.sqlite"));
-    return {
-      proof: "pre_m2_causal_socket",
-      version: 3,
-      architecturePassed: true,
-      standingDifferentialGatePassed: false,
-      standingGateBlockers: [
-        "No semantic consumer yet demonstrates that equivalent natural-language meaning survives paraphrase.",
-        "No semantic consumer yet demonstrates contradiction sensitivity to a Thread disavowing the claimed causal property.",
-        "No two persistent Threads yet diverge for the same request for a meaning-grounded Thread-owned reason.",
-      ],
-      scoreClaims: {
-        m1Frozen: "11/26",
-        preM2Checkpoint: "11/26",
-        nonInterchangeability: "remains 0",
-        dignityAndConsent: "remains 1",
-        development: "remains 0",
-        cognitionReplaceability: "remains 1",
-      },
-      liveCanonicalBasis: {
-        willingSemanticAcceptReachable: false,
-        obligationOverrideExecutionReachable: true,
-        authorizationIntegrityLive: true,
-        developmentLive: false,
-        reversalCondition:
-          "A semantic Guardian must pass paraphrase invariance, contradiction sensitivity, and applicable stability controls before Fibre may claim willing identity-grounded acceptance or causal individuality.",
-      },
-      architecture: baseline,
-      canonicalObligationLifecycle,
-      selfModelSwap,
-      proseHonesty,
-      otherDomain,
-    };
-  } finally {
-    rmSync(directory, { recursive: true, force: true });
-  }
+  const architecture = baselineArchitectureProof();
+  const modelFailure = modelFailureProof();
+  const semanticState = semanticStateSupportingProof();
+  const alignedAuthority = alignedAuthorityProof();
+
+  const architecturePassed =
+    architecture.sameMaterialRequest &&
+    architecture.callerAuthoredJudgmentReachable === false &&
+    architecture.persistedCognitionInput &&
+    architecture.persistedGuardianAssessment &&
+    architecture.fibreOwnedStateSelection &&
+    architecture.restart.survived &&
+    architecture.restart.modelRecalled === false &&
+    modelFailure.cognitionInputPersisted &&
+    modelFailure.guardianAssessmentPersisted === false &&
+    modelFailure.privateStancePersisted === false &&
+    semanticState.selected &&
+    semanticState.stateCited &&
+    alignedAuthority.aligned &&
+    alignedAuthority.obligationReferences.length === 0;
+
+  return {
+    version: 4,
+    evidenceClass: "scripted_wiring_only",
+    architecturePassed,
+    standingDifferentialGatePassed: false,
+    standingGateBlockers: [
+      "The frozen held-out acceptance set has not yet been run against the pinned real model snapshot.",
+      "Scripted adapters cannot prove semantic non-interchangeability, refusal behavior, paraphrase invariance, contradiction sensitivity, or non-deterministic stability.",
+      "No personhood score movement is permitted until the real-model standing gate passes.",
+    ],
+    frozenSemanticBoundary: {
+      policy: { ...DIGNITY_GUARDIAN_POLICY },
+      promptHash: DIGNITY_GUARDIAN_PROMPT_HASH,
+      responseSchemaHash: DIGNITY_GUARDIAN_RESPONSE_SCHEMA_HASH,
+      acceptanceSetAuthoredAfterFreeze: true,
+    },
+    architecture,
+    modelFailure,
+    semanticState,
+    alignedAuthority,
+    liveCanonicalBasis: {
+      modelBackedSemanticPathImplemented: true,
+      willingSemanticAcceptArchitecturallyReachable: true,
+      semanticIndividualityProved: false,
+      semanticStateBehaviorallyCausalInScriptedSupportingEvidence: true,
+      developmentLive: false,
+      relationshipStateV0Persistable: true,
+    },
+    scoreClaims: {
+      m1Frozen: "11/26",
+      preM2Checkpoint: "11/26",
+      nonInterchangeability: "remains 0 pending live held-out proof",
+      dignityAndConsent: "remains 1 pending live refusal/grounding proof",
+      development: "remains 0",
+      cognitionReplaceability: "remains 1",
+    },
+  };
 }
 
-async function main() {
+function main() {
   process.stdout.write(`${JSON.stringify(runPreM2CausalProof(), null, 2)}\n`);
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  main().catch((error) => {
-    process.stderr.write(`${JSON.stringify({
-      proof: "pre_m2_causal_socket",
-      architecturePassed: false,
-      errorName: error.constructor?.name ?? "Error",
-      message: error.message,
-    })}\n`);
-    process.exitCode = 1;
-  });
+  main();
 }

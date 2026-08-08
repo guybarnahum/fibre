@@ -26,7 +26,10 @@ import {
 } from "./runtime-domain.mjs";
 import { M1ExpressionWorldKernelService } from "./expression-service.mjs";
 import { selectCausalContext } from "./causal-context.mjs";
-import { DIGNITY_GUARDIAN_POLICY, dignityGuardianV2 } from "./dignity-guardian.mjs";
+import { DIGNITY_GUARDIAN_POLICY } from "./dignity-guardian.mjs";
+import { selectSemanticStateForAppraisal } from "./semantic-state.mjs";
+import { buildSemanticGuardianInput } from "./guardian-cognition-store.mjs";
+import { runSemanticDignityGuardian } from "./semantic-guardian-runner.mjs";
 
 function isoFromClock(clock) {
   const value = clock();
@@ -35,14 +38,13 @@ function isoFromClock(clock) {
   return iso;
 }
 
-function sameRequest(existing, request, causationId, correlationId) {
+function sameAppraisalRequest(existing, request, causationId, correlationId) {
   return (
     canonicalJson(existing.request) === canonicalJson(request) &&
     existing.causationId === causationId &&
     existing.correlationId === correlationId &&
     existing.appraisal?.causalContext?.selectionAuthority === "fibre" &&
-    canonicalJson(existing.appraisal?.appraisalPolicy) === canonicalJson(DIGNITY_GUARDIAN_POLICY) &&
-    existing.privateStance !== null
+    canonicalJson(existing.appraisal?.appraisalPolicy) === canonicalJson(DIGNITY_GUARDIAN_POLICY)
   );
 }
 
@@ -68,10 +70,17 @@ function governingObligationReferences(trace, references = []) {
   return [...references];
 }
 
+function isPromise(value) {
+  return value !== null && typeof value === "object" && typeof value.then === "function";
+}
+
 export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelService {
   #worldStore;
   #runtimeStore;
   #causalContextStore;
+  #semanticStateStore;
+  #guardianCognitionStore;
+  #guardianModelAdapter;
   #causalClock;
   #leaseDurationMs;
 
@@ -101,6 +110,27 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
         throw new TypeError(`runtimeStore.${method} is required for causal participation`);
       }
     }
+    const semanticStateStore = options.semanticStateStore;
+    if (semanticStateStore === null || typeof semanticStateStore !== "object" ||
+        typeof semanticStateStore.listCurrentState !== "function") {
+      throw new TypeError("semanticStateStore.listCurrentState is required for semantic participation");
+    }
+    const guardianCognitionStore = options.guardianCognitionStore;
+    if (guardianCognitionStore === null || typeof guardianCognitionStore !== "object") {
+      throw new TypeError("guardianCognitionStore is required for semantic participation");
+    }
+    for (const method of [
+      "getInputByAppraisal", "recordInput", "getAssessmentByAppraisal", "recordAssessment",
+    ]) {
+      if (typeof guardianCognitionStore[method] !== "function") {
+        throw new TypeError(`guardianCognitionStore.${method} is required`);
+      }
+    }
+    const guardianModelAdapter = options.guardianModelAdapter;
+    if (guardianModelAdapter === null || typeof guardianModelAdapter !== "object" ||
+        typeof guardianModelAdapter.invoke !== "function") {
+      throw new TypeError("guardianModelAdapter.invoke is required for semantic participation");
+    }
     const clock = options.clock ?? (() => new Date());
     if (typeof clock !== "function") throw new TypeError("causal participation clock must be a function");
     const leaseDurationMs = options.leaseDurationMs ?? 5 * 60 * 1000;
@@ -110,6 +140,9 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
     this.#worldStore = worldStore;
     this.#runtimeStore = runtimeStore;
     this.#causalContextStore = causalContextStore;
+    this.#semanticStateStore = semanticStateStore;
+    this.#guardianCognitionStore = guardianCognitionStore;
+    this.#guardianModelAdapter = guardianModelAdapter;
     this.#causalClock = clock;
     this.#leaseDurationMs = leaseDurationMs;
   }
@@ -126,13 +159,21 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
     return selectCausalContext({ thread, worldThreads, memoryRecords });
   }
 
+  #semanticStateSelection(trace) {
+    const records = this.#semanticStateStore.listCurrentState(trace.threadId);
+    return selectSemanticStateForAppraisal(records, trace.request);
+  }
+
   health() {
     return {
       ...super.health(),
-      causalParticipationProfileVersion: 2,
+      causalParticipationProfileVersion: 3,
       appraisalAuthority: "fibre",
       contextSelectionAuthority: "fibre",
-      semanticFitAuthority: "unimplemented",
+      semanticStateSelectionAuthority: "fibre",
+      semanticFitAuthority: "model_backed_guardian",
+      guardianProvider: this.#guardianModelAdapter.provider ?? "configured_adapter",
+      guardianModelId: this.#guardianModelAdapter.modelId ?? "configured_model",
       obligationOverrideAuthority: "recorded_thread_obligation",
     };
   }
@@ -149,6 +190,56 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
     throw legacyBypassError("caller-selected runtime acquisition");
   }
 
+  #persistStanceFromAssessment(trace, guardianAssessment) {
+    const stance = formPrivateParticipationStance(guardianAssessment.derivedAssessment);
+    assertStanceMatchesTrace(trace, stance);
+    const stanceResult = this.#worldStore.recordPrivateStance({
+      threadId: trace.threadId,
+      requestId: trace.requestId,
+      stance,
+      recordedAt: guardianAssessment.recordedAt,
+      causationId: trace.causationId,
+      correlationId: trace.correlationId,
+    });
+    return stanceResult.trace;
+  }
+
+  #completeSemanticAppraisal(trace) {
+    if (trace.privateStance !== null) {
+      const persistedAssessment = this.#guardianCognitionStore.getAssessmentByAppraisal(trace.appraisalId);
+      const expected = formPrivateParticipationStance(persistedAssessment.derivedAssessment);
+      assertStanceMatchesTrace(trace, expected);
+      if (canonicalJson(expected) !== canonicalJson(trace.privateStance)) {
+        throw new IntegrityError(`Stored private stance for ${trace.requestId} does not match its persisted Guardian assessment`);
+      }
+      return { trace, idempotent: true };
+    }
+
+    let input = this.#guardianCognitionStore.getInputByAppraisal(trace.appraisalId, { required: false });
+    if (input === null) {
+      const prepared = buildSemanticGuardianInput(trace, this.#semanticStateSelection(trace));
+      input = this.#guardianCognitionStore.recordInput(prepared, this.#now()).input;
+    }
+
+    const persisted = this.#guardianCognitionStore.getAssessmentByAppraisal(trace.appraisalId, { required: false });
+    if (persisted !== null) {
+      return { trace: this.#persistStanceFromAssessment(trace, persisted), idempotent: false };
+    }
+
+    const invoked = runSemanticDignityGuardian(input.capsule, this.#guardianModelAdapter, {
+      clientRequestId: `guardian:${trace.threadId}:${trace.requestId}`,
+    });
+    const finish = (semanticResult) => {
+      const assessment = this.#guardianCognitionStore.recordAssessment(
+        input,
+        semanticResult,
+        this.#now(),
+      ).assessment;
+      return { trace: this.#persistStanceFromAssessment(trace, assessment), idempotent: false };
+    };
+    return isPromise(invoked) ? invoked.then(finish) : finish(invoked);
+  }
+
   appraiseParticipation(threadId, submission) {
     assertId("threadId", threadId);
     assertPlainObject("causal appraisal request", submission);
@@ -162,8 +253,8 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
 
     try {
       const existing = this.#worldStore.getPrivateRequestTrace(threadId, request.requestId);
-      if (sameRequest(existing, request, submission.causationId, correlationId)) {
-        return { trace: existing, idempotent: true };
+      if (sameAppraisalRequest(existing, request, submission.causationId, correlationId)) {
+        return this.#completeSemanticAppraisal(existing);
       }
       throw new PrivateRequestConflictError(
         `Private request ${request.requestId} already exists with different causal appraisal content`,
@@ -195,21 +286,7 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
       causationId: submission.causationId,
       correlationId,
     });
-
-    // Guardian V2 consumes the persisted capsule only. It deliberately refuses
-    // to infer individualized semantic fit from arbitrary natural-language text.
-    const assessment = dignityGuardianV2(structuredClone(recorded.trace.appraisal));
-    const stance = formPrivateParticipationStance(assessment);
-    assertStanceMatchesTrace(recorded.trace, stance);
-    const stanceResult = this.#worldStore.recordPrivateStance({
-      threadId,
-      requestId: request.requestId,
-      stance,
-      recordedAt: occurredAt,
-      causationId: submission.causationId,
-      correlationId,
-    });
-    return { trace: stanceResult.trace, idempotent: false };
+    return this.#completeSemanticAppraisal(recorded.trace);
   }
 
   inspectCausalJudgment(threadId, requestId) {
@@ -225,27 +302,40 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
     if (canonicalJson(trace.appraisal.appraisalPolicy) !== canonicalJson(DIGNITY_GUARDIAN_POLICY)) {
       throw new TypeError(`Request ${requestId} uses an unsupported causal Guardian policy`);
     }
-
-    const assessment = dignityGuardianV2(structuredClone(trace.appraisal));
-    const rederivedStance = formPrivateParticipationStance(assessment);
+    const input = this.#guardianCognitionStore.getInputByAppraisal(trace.appraisalId);
+    const assessment = this.#guardianCognitionStore.getAssessmentByAppraisal(trace.appraisalId);
+    const rederivedStance = formPrivateParticipationStance(assessment.derivedAssessment);
     assertStanceMatchesTrace(trace, rederivedStance);
     if (canonicalJson(rederivedStance) !== canonicalJson(trace.privateStance)) {
       throw new IntegrityError(
-        `Stored private stance for ${requestId} does not match Dignity Guardian V2 re-derivation`,
+        `Stored private stance for ${requestId} does not match persisted semantic Guardian evidence`,
       );
     }
     return {
       threadId,
       requestId,
       appraisalId: trace.appraisalId,
+      guardianInputId: input.inputId,
+      guardianAssessmentId: assessment.assessmentId,
       stanceId: trace.privateStanceId,
       policy: structuredClone(assessment.policy),
-      factors: structuredClone(assessment.factors),
-      evidenceRefs: [...assessment.evidenceRefs],
-      desiredAction: assessment.proposedAction,
+      model: {
+        provider: assessment.provider,
+        modelId: assessment.modelId,
+        promptSchemaVersion: assessment.promptSchemaVersion,
+        promptHash: assessment.promptHash,
+        responseSchemaVersion: assessment.responseSchemaVersion,
+        responseSchemaHash: assessment.responseSchemaHash,
+      },
+      stateSelection: structuredClone(input.stateSelection),
+      factors: structuredClone(assessment.derivedAssessment.factors),
+      evidenceRefs: [...assessment.derivedAssessment.evidenceRefs],
+      desiredAction: trace.privateStance.desiredAction,
       dignityBand: trace.privateStance.dignityBand,
-      score: assessment.score,
-      rationale: assessment.rationale,
+      score: trace.privateStance.score,
+      rationale: trace.privateStance.privateRationale,
+      replaySource: "persisted_guardian_assessment",
+      modelRecalled: false,
       matchesStoredStance: true,
     };
   }

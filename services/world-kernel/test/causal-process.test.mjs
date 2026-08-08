@@ -9,7 +9,7 @@ import test from "node:test";
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
-const serverPath = fileURLToPath(new URL("../src/server.mjs", import.meta.url));
+const serverPath = fileURLToPath(new URL("./support/causal-test-server.mjs", import.meta.url));
 const privateToken = "causal-process-private-token-012345";
 
 async function waitForReady(child, stderr, timeoutMs = 10000) {
@@ -54,6 +54,8 @@ async function startProcess(databasePath) {
   });
   child.stderr.on("data", (chunk) => { stderr += chunk.toString("utf8"); });
   const ready = await waitForReady(child, () => stderr);
+  assert.equal(ready.guardianProvider, "scripted_test_only");
+  assert.equal(ready.causalParticipationProfileVersion, 3);
   return {
     child,
     baseUrl: `http://127.0.0.1:${ready.port}`,
@@ -104,7 +106,7 @@ function activationRequest() {
   };
 }
 
-test("canonical world-kernel completes and restarts an obligation-mediated life", async () => {
+test("canonical world-kernel process persists semantic judgment and completes an obligation-mediated life", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-process-"));
   const databasePath = join(directory, "world.sqlite");
   const thread = obligatedThread();
@@ -131,6 +133,7 @@ test("canonical world-kernel completes and restarts an obligation-mediated life"
     });
     assert.equal(appraisal.response.status, 201);
     assert.equal(appraisal.body.trace.privateStance.desiredAction, "clarify");
+    assert.equal(appraisal.body.trace.privateStance.policy.version, "3");
     assert.deepEqual(appraisal.body.trace.appraisal.obligations, [obligation]);
 
     const continued = await json(

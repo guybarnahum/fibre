@@ -1,14 +1,15 @@
 import {
   IntegrityError,
+  assertPlainObject,
   canonicalJson,
 } from "./persistence-common.mjs";
 import {
   assertStanceMatchesTrace,
   formPrivateParticipationStance,
 } from "./private-participation.mjs";
-import { dignityGuardianV2 } from "./dignity-guardian.mjs";
+import { derivePrivateAssessmentFromSemanticOutput } from "./dignity-guardian.mjs";
 
-export function deriveDignityTraceFromPersistedRequest(trace) {
+export function deriveDignityTraceFromPersistedRequest(trace, guardianInput, guardianAssessment) {
   if (trace === null || typeof trace !== "object" || Array.isArray(trace)) {
     throw new TypeError("persisted private request trace is required");
   }
@@ -18,32 +19,57 @@ export function deriveDignityTraceFromPersistedRequest(trace) {
   if (trace.appraisal?.causalContext?.selectionAuthority !== "fibre") {
     throw new TypeError("causal dignity inspection requires Fibre-owned appraisal context");
   }
+  assertPlainObject("persisted Guardian input", guardianInput);
+  assertPlainObject("persisted Guardian assessment", guardianAssessment);
+  if (guardianInput.appraisalId !== trace.appraisalId ||
+      guardianAssessment.appraisalId !== trace.appraisalId ||
+      guardianAssessment.inputId !== guardianInput.inputId) {
+    throw new IntegrityError("persisted Guardian evidence does not match the private request appraisal");
+  }
 
-  // Re-derive from the persisted capsule only. This deliberately has no Thread,
-  // store, request, fixture, or runtime side channel.
-  const assessment = dignityGuardianV2(structuredClone(trace.appraisal));
-  const derivedStance = formPrivateParticipationStance(assessment);
+  // Replay is intentionally not a model call. Re-validate the stored bounded
+  // output against the stored cognition capsule and deterministically derive
+  // the stance that the model judgment authorized Fibre to persist.
+  const derivedAssessment = derivePrivateAssessmentFromSemanticOutput(
+    guardianInput.capsule,
+    guardianAssessment.modelOutput,
+  );
+  if (canonicalJson(derivedAssessment) !== canonicalJson(guardianAssessment.derivedAssessment)) {
+    throw new IntegrityError("persisted Guardian derived assessment does not match stored model output");
+  }
+  const derivedStance = formPrivateParticipationStance(derivedAssessment);
   assertStanceMatchesTrace(trace, derivedStance);
   if (canonicalJson(derivedStance) !== canonicalJson(trace.privateStance)) {
     throw new IntegrityError(
-      "persisted private stance does not match Dignity Guardian V2 re-derivation from its capsule",
+      "persisted private stance does not match persisted semantic Guardian evidence",
     );
   }
 
   return {
-    policy: structuredClone(assessment.policy),
-    factors: structuredClone(assessment.factors),
-    rationale: assessment.rationale,
-    evidenceRefs: [...assessment.evidenceRefs],
-    feelings: [...assessment.feelings],
-    conflictingMotives: [...assessment.conflictingMotives],
-    uncertainties: [...assessment.uncertainties],
-    repairQuestions: [...assessment.repairQuestions],
-    knownAlternatives: assessment.knownAlternatives.map((entity) => ({ ...entity })),
-    relationshipImpact: structuredClone(assessment.relationshipImpact),
+    policy: structuredClone(guardianAssessment.policy),
+    model: {
+      provider: guardianAssessment.provider,
+      modelId: guardianAssessment.modelId,
+      promptSchemaVersion: guardianAssessment.promptSchemaVersion,
+      promptHash: guardianAssessment.promptHash,
+      responseSchemaVersion: guardianAssessment.responseSchemaVersion,
+      responseSchemaHash: guardianAssessment.responseSchemaHash,
+    },
+    stateSelection: structuredClone(guardianInput.stateSelection),
+    factors: structuredClone(derivedAssessment.factors),
+    rationale: derivedAssessment.rationale,
+    evidenceRefs: [...derivedAssessment.evidenceRefs],
+    feelings: [...derivedAssessment.feelings],
+    conflictingMotives: [...derivedAssessment.conflictingMotives],
+    uncertainties: [...derivedAssessment.uncertainties],
+    repairQuestions: [...derivedAssessment.repairQuestions],
+    knownAlternatives: derivedAssessment.knownAlternatives.map((entity) => ({ ...entity })),
+    relationshipImpact: structuredClone(derivedAssessment.relationshipImpact),
     desiredAction: derivedStance.desiredAction,
     dignityBand: derivedStance.dignityBand,
     score: derivedStance.score,
+    replaySource: "persisted_guardian_assessment",
+    modelRecalled: false,
     matchesPersistedStance: true,
   };
 }

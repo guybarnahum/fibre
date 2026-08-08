@@ -10,7 +10,10 @@ import { openFreezeStore } from "../src/freeze-store.mjs";
 import { openLifecycleHardeningStore } from "../src/lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "../src/expression-store.mjs";
 import { openCausalContextStore } from "../src/causal-context-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { openGuardianCognitionStore } from "../src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../src/causal-service.mjs";
+import { createScriptedGuardianModelAdapter } from "./support/scripted-guardian-model-adapter.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -37,6 +40,9 @@ function openCausalWorld(databasePath, time = controlledClock()) {
   const lifecycleStore = openLifecycleHardeningStore(databasePath);
   const expressionStore = openExpressionStore(databasePath);
   const causalContextStore = openCausalContextStore(databasePath);
+  const semanticStateStore = openSemanticStateStore(databasePath);
+  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
+  const guardianModelAdapter = createScriptedGuardianModelAdapter();
   const service = new PreM2CausalWorldKernelService(
     worldStore,
     runtimeStore,
@@ -44,12 +50,22 @@ function openCausalWorld(databasePath, time = controlledClock()) {
     lifecycleStore,
     expressionStore,
     causalContextStore,
-    { clock: time.clock },
+    {
+      clock: time.clock,
+      semanticStateStore,
+      guardianCognitionStore,
+      guardianModelAdapter,
+    },
   );
   return {
     service,
     time,
+    guardianModelAdapter,
+    guardianCognitionStore,
+    semanticStateStore,
     close() {
+      guardianCognitionStore.close();
+      semanticStateStore.close();
       causalContextStore.close();
       expressionStore.close();
       lifecycleStore.close();
@@ -143,8 +159,8 @@ test("same request proves Fibre-owned appraisal without claiming causal individu
 
       assert.equal(minaTrace.requestFingerprint, danielTrace.requestFingerprint);
       assert.equal(minaTrace.privateStance.policy.id, "dignity_guardian");
-      assert.equal(minaTrace.privateStance.policy.version, "2");
-      assert.equal(danielTrace.privateStance.policy.version, "2");
+      assert.equal(minaTrace.privateStance.policy.version, "3");
+      assert.equal(danielTrace.privateStance.policy.version, "3");
       assert.equal(minaTrace.privateStance.desiredAction, "clarify");
       assert.equal(danielTrace.privateStance.desiredAction, "clarify");
       assert.equal(minaTrace.privateStance.dignityBand, "contested");
@@ -198,13 +214,16 @@ test("same request proves Fibre-owned appraisal without claiming causal individu
         world.service.getParticipationAuthorization(daniel.threadId, request.requestId).authorization.authorizedAction,
         "clarify",
       );
+      const replay = world.service.inspectCausalJudgment(mina.threadId, request.requestId);
+      assert.equal(replay.replaySource, "persisted_guardian_assessment");
+      assert.equal(replay.modelRecalled, false);
     } finally {
       world.close();
     }
   });
 });
 
-test("recorded obligation can override V2 clarify and complete a canonical life", () => {
+test("recorded obligation can override semantic clarify and complete a canonical life", () => {
   withDatabase("fibre-causal-obligation-life-", (databasePath) => {
     const time = controlledClock("2026-08-07T18:30:00Z");
     let world = openCausalWorld(databasePath, time);
@@ -287,7 +306,7 @@ test("recorded obligation can override V2 clarify and complete a canonical life"
   });
 });
 
-test("self-model swap no longer creates a false individuality proof", () => {
+test("self-model swap remains a wiring test rather than semantic individuality evidence", () => {
   withDatabase("fibre-causal-swap-honesty-", (databasePath) => {
     const time = controlledClock("2026-08-07T19:00:00Z");
     const world = openCausalWorld(databasePath, time);
@@ -321,7 +340,7 @@ test("self-model swap no longer creates a false individuality proof", () => {
   });
 });
 
-test("negation, token-only identity, and positive paraphrases cannot manufacture high dignity", () => {
+test("scripted wiring probes cannot manufacture semantic high dignity", () => {
   const variants = [
     "Infrastructure work is outside my strengths.",
     "I avoid low-level systems work; I build products.",
@@ -349,7 +368,7 @@ test("negation, token-only identity, and positive paraphrases cannot manufacture
         assert.equal(trace.privateStance.desiredAction, "clarify");
         assert.equal(trace.privateStance.dignityBand, "contested");
         assert.ok(trace.privateStance.score < 70);
-        assert.match(trace.privateStance.privateRationale, /does not yet have grounded semantic evidence/i);
+        assert.match(trace.privateStance.privateRationale, /grounded semantic evidence/i);
         assert.deepEqual(world.service.listRuntimeSummaries(thread.threadId), []);
       } finally {
         world.close();
@@ -358,7 +377,7 @@ test("negation, token-only identity, and positive paraphrases cannot manufacture
   }
 });
 
-test("another domain remains equally unresolved instead of being hardcoded below infrastructure", () => {
+test("another domain remains equally unresolved in scripted wiring evidence", () => {
   withDatabase("fibre-causal-other-domain-", (databasePath) => {
     const world = openCausalWorld(databasePath, controlledClock("2026-08-07T20:30:00Z"));
     try {
