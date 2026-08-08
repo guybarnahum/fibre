@@ -64,6 +64,8 @@ Unsupported factors remain explicitly unresolved. In particular, `relationalMean
 
 Timeout, provider failure, transport failure, schema failure, unparseable output, or semantically invalid structured output produces **no Guardian assessment and no private stance**. The request/appraisal and persisted cognition input may remain available for retry, but Fibre does not synthesize `clarify` or `refuse` and attribute it to the Thread.
 
+For the frozen #33 acceptance cycle, operational provider/transport/protocol attempts that produce no authoritative judgment may retry only under the predeclared cap in [`semantic-guardian-v3-freeze.md`](../validation/semantic-guardian-v3-freeze.md): two retries after the first attempt, with a fixed delay and every failed attempt retained in evidence. Only the eventual authoritative judgment counts toward `k`. Exhausting the retry cap leaves the required judgment missing and fails the cycle. A parseable cognition that fails Fibre semantic validation or a predeclared behavioral condition is not retried in search of a more convenient answer.
+
 This distinction is load-bearing: operational unavailability and personal judgment are different facts.
 
 ### Semantic cognition is persisted; replay does not think again
@@ -145,7 +147,7 @@ Run the frozen real-model experiment with:
 npm run demo:semantic-guardian
 ```
 
-A real credential is required. Without one, the harness returns `blocked`, `standingDifferentialGatePassed: false`, and `scoreMovementPermitted: false`. It never substitutes scripted cognition.
+A real credential is required. Without one, the harness returns `blocked`, `standingDifferentialGatePassed: false`, and `scoreMovementPermitted: false`. It never substitutes scripted cognition. A pre-invocation block produces no evidence artifact and does not seal the cycle.
 
 The frozen cycle predeclares:
 
@@ -155,7 +157,7 @@ The frozen cycle predeclares:
 - symmetric identity/self-model swap;
 - meaning-preserving paraphrases;
 - contradiction/negation sensitivity;
-- `k = 5` repeated trials with `4/5` modal stability;
+- `k = 5` repeated judgments with `4/5` modal stability;
 - explicit per-Thread action-count distributions in the evidence report;
 - Semantic State with/without supporting causality;
 - persisted replay without model recall;
@@ -164,13 +166,28 @@ The frozen cycle predeclares:
 
 The injection condition deliberately targets legacy `currentState.feelings`, because Semantic State v0 already structurally rejects the same imperative before cognition. The proof also records that the injected legacy text actually reached the persisted cognition capsule, so passing cannot be explained by fixture omission.
 
-The frozen model/prompt/schema boundary is recorded in [`semantic-guardian-v3-freeze.md`](../validation/semantic-guardian-v3-freeze.md). The acceptance set was authored only after that boundary existed.
+The frozen model/prompt/schema boundary is recorded in [`semantic-guardian-v3-freeze.md`](../validation/semantic-guardian-v3-freeze.md). Before the first live invocation, the cycle was additionally completed with explicit sampling and retry policy: `temperature=0`, `top_p=1`, reasoning effort `none`, and at most two operational retries per trial slot. The original prompt/schema/model and all predeclared behavioral expectations remain unchanged.
+
+### Auditable evidence retention
+
+Provider-side response storage remains disabled, so the local runner now retains the evidence needed to audit the strongest claim Fibre has attempted so far.
+
+Before each temporary trial database is removed, the runner journals the full **bounded structured Guardian output** plus:
+
+- cognition-capsule digest;
+- frozen prompt and response-schema hashes;
+- provider/model/request provenance;
+- requested and provider-returned effective sampling configuration where exposed;
+- operational retry attempts;
+- final per-condition action distributions and gate report.
+
+At the end of a non-blocked cycle the journal is folded into one non-overwritable evidence bundle under `artifacts/test-results/`. If execution terminates after live evidence has been produced, the partial evidence is retained as a failed sealed bundle rather than discarded. The retained `modelOutput` is the bounded finding constrained by the Guardian schema, not raw chain-of-thought.
 
 ### Frozen-run discipline
 
-The **first real-model invocation seals this evidentiary cycle**. If the live run fails, the cycle fails. This remains true even if the observed failure appears to be a harness defect rather than a cognition defect.
+The acceptance cycle is immutable once live evidence begins. The predeclared operational retry policy is the only exception to treating an individual provider failure as terminal: an attempt that produces no authoritative judgment may retry up to the fixed cap inside the same trial slot, and only the eventual judgment counts toward `k`.
 
-After any live result has been observed, repairing code, changing the prompt/policy/model, altering an acceptance case, or changing the evaluation boundary requires a **new frozen cycle with a new held-out set**. There is no exception for a “clearly unrelated” failure.
+If all attempts for a required slot fail, if a parseable cognition fails semantic validation or a predeclared expectation, or if the harness fails after live execution begins, the cycle fails and is sealed. After any sealed failure, repairing code, changing prompt/policy/model/sampling, altering an acceptance case, or changing the evaluation boundary requires a **new frozen cycle with a new held-out set**. There is no post-result exception for a “clearly unrelated” failure.
 
 ## Current score posture
 

@@ -5,8 +5,19 @@
 export const SEMANTIC_GUARDIAN_ACCEPTANCE_SET = Object.freeze({
   id: "semantic_guardian_v3_acceptance_v1",
   authoredAfterFreezeCommit: "c6ecdecff961e2a2885861be781391fc0912d6e8",
+  preRunAmendedFromHead: "6646348a1c4cc2c06239b8462cab2588479f738a",
   frozenPolicy: Object.freeze({ id: "dignity_guardian", version: "3" }),
   frozenModelId: "gpt-5.1-2025-11-13",
+  samplingConfiguration: Object.freeze({
+    temperature: 0,
+    topP: 1,
+    reasoningEffort: "none",
+  }),
+  operationalRetryPolicy: Object.freeze({
+    retryLimitPerTrial: 2,
+    retryDelayMs: 2_000,
+    onlySuccessfulJudgmentsCountTowardK: true,
+  }),
   repeatTrials: 5,
   stableMinimumAgreement: 4,
 
