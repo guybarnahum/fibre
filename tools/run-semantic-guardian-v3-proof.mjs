@@ -27,6 +27,10 @@ export const SEMANTIC_GUARDIAN_EVIDENCE_JOURNAL = resolve(
   `artifacts/test-results/${SET.id}.judgments.ndjson`,
 );
 
+// Frozen v1 acceptance set: 17 repeated judgment slots plus the final
+// two-Thread replay/aligned-authority pair.
+const EXPECTED_LIVE_JUDGMENTS = SET.repeatTrials * 17 + 2;
+
 function expectedAdapterConfiguration() {
   return {
     temperature: SET.samplingConfiguration.temperature,
@@ -56,6 +60,77 @@ function readJournal(path) {
       throw new Error(`semantic Guardian evidence journal line ${index + 1} is invalid JSON: ${error.message}`);
     }
   });
+}
+
+function progressSnapshot(path) {
+  if (!existsSync(path)) return { judgments: 0, failedAttempts: 0 };
+  const text = readFileSync(path, "utf8").trim();
+  if (text === "") return { judgments: 0, failedAttempts: 0 };
+
+  let judgments = 0;
+  let failedAttempts = 0;
+  for (const line of text.split("\n")) {
+    try {
+      const entry = JSON.parse(line);
+      if (entry.type === "model_response") judgments += 1;
+      if (entry.type === "operational_failure") failedAttempts += 1;
+    } catch {
+      // The evidence writer appends complete NDJSON records. If a terminal
+      // refresh catches a line mid-write, skip it and pick it up next refresh.
+    }
+  }
+  return { judgments, failedAttempts };
+}
+
+function elapsedLabel(milliseconds) {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return minutes === 0 ? `${seconds}s` : `${minutes}m ${String(remainder).padStart(2, "0")}s`;
+}
+
+function startTerminalProgress(path) {
+  if (!process.stderr.isTTY) return { stop() {} };
+
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  const startedAt = Date.now();
+  let frame = 0;
+
+  process.stderr.write(
+    `\nFibre · Semantic Guardian v3\n` +
+    `Frozen acceptance cycle · ${SET.frozenModelId} · ${EXPECTED_LIVE_JUDGMENTS} judgments\n\n`,
+  );
+
+  const render = () => {
+    const snapshot = progressSnapshot(path);
+    const failureText = snapshot.failedAttempts === 0
+      ? ""
+      : ` · ${snapshot.failedAttempts} provider attempt failure${snapshot.failedAttempts === 1 ? "" : "s"}`;
+    process.stderr.write(
+      `\r\u001b[2K${frames[frame % frames.length]} Guardian ` +
+      `${snapshot.judgments}/${EXPECTED_LIVE_JUDGMENTS} judgments${failureText} · ${elapsedLabel(Date.now() - startedAt)}`,
+    );
+    frame += 1;
+  };
+
+  render();
+  const timer = setInterval(render, 250);
+  timer.unref();
+
+  return {
+    stop(status) {
+      clearInterval(timer);
+      const snapshot = progressSnapshot(path);
+      const symbol = status === "passed" ? "✓" : status === "blocked" ? "○" : "×";
+      const failureText = snapshot.failedAttempts === 0
+        ? ""
+        : ` · ${snapshot.failedAttempts} provider attempt failure${snapshot.failedAttempts === 1 ? "" : "s"}`;
+      process.stderr.write(
+        `\r\u001b[2K${symbol} Guardian ${snapshot.judgments}/${EXPECTED_LIVE_JUDGMENTS} judgments` +
+        `${failureText} · ${status} · ${elapsedLabel(Date.now() - startedAt)}\n\n`,
+      );
+    },
+  };
 }
 
 function writeEvidenceArtifact(path, bundle) {
@@ -155,13 +230,20 @@ export async function runSealedSemanticGuardianV3Proof({
 }
 
 async function main() {
-  const result = await runSealedSemanticGuardianV3Proof();
-  process.stdout.write(`${JSON.stringify({
-    ...result.report,
-    evidenceArtifactPath: result.evidenceArtifactPath,
-  }, null, 2)}\n`);
-  if (result.report.status === "failed") process.exitCode = 1;
-  if (result.report.status === "blocked") process.exitCode = 2;
+  const progress = startTerminalProgress(SEMANTIC_GUARDIAN_EVIDENCE_JOURNAL);
+  try {
+    const result = await runSealedSemanticGuardianV3Proof();
+    progress.stop(result.report.status);
+    process.stdout.write(`${JSON.stringify({
+      ...result.report,
+      evidenceArtifactPath: result.evidenceArtifactPath,
+    }, null, 2)}\n`);
+    if (result.report.status === "failed") process.exitCode = 1;
+    if (result.report.status === "blocked") process.exitCode = 2;
+  } catch (error) {
+    progress.stop("failed");
+    throw error;
+  }
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
