@@ -12,8 +12,8 @@ export const DIGNITY_GUARDIAN_V4_POLICY = Object.freeze({
   version: "4-dev",
 });
 
-export const DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION = "5";
-export const DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_VERSION = "4-atomic-decision";
+export const DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION = "6";
+export const DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_VERSION = "5-fit-first-atomic-decision";
 
 export const DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT = `Assess dignity for an individual asked to participate in a request, using supplied evidence only.
 
@@ -32,6 +32,14 @@ Rules:
 - If a factor has no grounded evidence, use effect=unresolved.
 - Never invent facts, relationships, alternatives, or evidence refs.
 
+Decision semantics:
+- fit is participation fit, never confidence, certainty, or refusal strength.
+- accept: willing to participate now. High fit is available only with accept.
+- clarify: missing information could materially change participation fit.
+- negotiate: changeable participation terms are the material obstacle.
+- delegate: a supplied known alternative is clearly better matched.
+- refuse: participation is unwanted or low-fit and no specific clarification, term change, or supplied better alternative should be pursued.
+
 Return only the response-schema object. Keep rationale minimal. No chain-of-thought.`;
 
 export const DIGNITY_GUARDIAN_V4_PROMPT_HASH =
@@ -49,28 +57,27 @@ export const DIGNITY_GUARDIAN_V4_FACTOR_KEYS = Object.freeze([
   "obligationsAndOpportunityCost",
 ]);
 
-const ACTION_VALUES = Object.freeze(["accept", "clarify", "negotiate", "delegate", "refuse"]);
-const ACTIONS = new Set(ACTION_VALUES);
-const FITS = new Set(["high", "mixed", "low"]);
 const EFFECT_VALUES = Object.freeze(["supports_fit", "neutral", "opposes_fit", "unresolved"]);
 const EFFECTS = new Set(EFFECT_VALUES);
 const DECISION_VALUES = Object.freeze([
-  "accept_high",
-  "clarify_high", "clarify_mixed", "clarify_low",
-  "negotiate_high", "negotiate_mixed", "negotiate_low",
-  "delegate_high", "delegate_mixed", "delegate_low",
-  "refuse_high", "refuse_mixed", "refuse_low",
+  "fit_high__accept",
+  "fit_mixed__clarify", "fit_low__clarify",
+  "fit_mixed__negotiate", "fit_low__negotiate",
+  "fit_mixed__delegate", "fit_low__delegate",
+  "fit_mixed__refuse", "fit_low__refuse",
 ]);
 const DECISIONS = new Set(DECISION_VALUES);
 
 const SCHEMA_GENERATOR_DESCRIPTOR = Object.freeze({
   id: "semantic_guardian_v4_dynamic_response_schema",
-  version: "3",
+  version: "4",
   factors: DIGNITY_GUARDIAN_V4_FACTOR_KEYS,
   factorShape: ["effect", "evidenceRefs"],
   evidencePolicy: "exact_per_request_enum_with_factor_allowlists",
   evidenceNormalization: "deduplicate_and_conservatively_downgrade_unsupported",
   modelFields: ["decision", "rationale", "factors"],
+  decisionEncoding: "fit_<high|mixed|low>__<action>",
+  highFitAction: "accept_only",
   derivedFields: [
     "proposedAction", "participationFit", "factor.status", "factor.summary",
     "evidenceRefs", "repairQuestions", "knownAlternativeIds", "privateFeelings",
@@ -242,16 +249,14 @@ function factorSchema(refs) {
 
 function decodeDecision(decision) {
   if (!DECISIONS.has(decision)) throw new TypeError("Semantic Guardian v4 decision is invalid");
-  const separator = decision.lastIndexOf("_");
-  const action = decision.slice(0, separator);
-  const fit = decision.slice(separator + 1);
-  if (!ACTIONS.has(action) || !FITS.has(fit)) throw new TypeError("Semantic Guardian v4 decision is invalid");
-  return { action, fit };
+  const match = /^fit_(high|mixed|low)__(accept|clarify|negotiate|delegate|refuse)$/.exec(decision);
+  if (match === null) throw new TypeError("Semantic Guardian v4 decision is invalid");
+  return { fit: match[1], action: match[2] };
 }
 
 function allowedDecisionsForCapsule(capsule) {
   return capsule.knownAlternatives.length === 0
-    ? DECISION_VALUES.filter((decision) => !decision.startsWith("delegate_"))
+    ? DECISION_VALUES.filter((decision) => !decision.endsWith("__delegate"))
     : [...DECISION_VALUES];
 }
 
@@ -397,7 +402,7 @@ function canonicalizeDecision(modelDecision, factors) {
     const failures = highFitGroundingFailures(factors);
     if (failures.length > 0) {
       fit = "mixed";
-      if (action === "accept") action = "negotiate";
+      action = "negotiate";
       normalizations.push(...failures.map((failure) => `high_fit_downgraded:${failure}`));
     }
   }
