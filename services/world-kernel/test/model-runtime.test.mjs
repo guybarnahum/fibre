@@ -44,14 +44,68 @@ test("repository model routing config selects the Guardian baseline without embe
   });
 });
 
+test("OpenAI runtime accepts generic cognition input without a Guardian capsule and emits progress", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-model-runtime-openai-"));
+  const configPath = join(directory, "models.yaml");
+  writeFileSync(configPath, "version: 1\nreasoning:\n  dignity_guardian:\n    provider: openai\n    model: gpt-test\n");
+  let calls = 0;
+  const events = [];
+  const runtime = createModelRuntime({
+    environment: { OPENAI_API_KEY: "test-key" },
+    configUrl: configPath,
+    observer: (event) => events.push(event),
+    fetchImpl: async () => {
+      calls += 1;
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => "openai-request-1" },
+        async json() {
+          return {
+            id: "resp_test",
+            status: "completed",
+            model: "gpt-test",
+            output_text: '{"decision":"accept"}',
+            usage: { input_tokens: 11, output_tokens: 3, total_tokens: 14 },
+          };
+        },
+      };
+    },
+  });
+
+  const result = await runtime.forBlock("dignity_guardian").invoke({
+    systemPrompt: "Return the bounded result.",
+    input: { contract: { version: 4 }, evidence: [{ ref: "thread:identity", text: "Mina" }] },
+    responseSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["decision"],
+      properties: { decision: { type: "string", enum: ["accept", "refuse"] } },
+    },
+    clientRequestId: "guardian-v4-dev:no-capsule",
+  });
+
+  assert.equal(calls, 1, "successful generic model input must not be retried by legacy Guardian journaling");
+  assert.deepEqual(result.output, { decision: "accept" });
+  assert.equal(result.provenance.provider, "openai");
+  assert.deepEqual(events.map((event) => event.type), ["model_attempt", "model_response"]);
+  assert.equal(events[0].attempt, 1);
+  assert.equal(events[0].maximumAttempts, 3);
+  assert.match(events[1].inputDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.equal(Object.hasOwn(events[1], "capsuleDigest"), false);
+  rmSync(directory, { recursive: true, force: true });
+});
+
 test("runtime changes provider by config only and Google translates the shared invoke contract", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-model-runtime-test-"));
   const configPath = join(directory, "models.yaml");
   writeFileSync(configPath, "version: 1\nreasoning:\n  dignity_guardian:\n    provider: google\n    model: gemini-test\n");
   let request = null;
+  const events = [];
   const runtime = createModelRuntime({
     environment: { GEMINI_API_KEY: "test-key" },
     configUrl: configPath,
+    observer: (event) => events.push(event),
     fetchImpl: async (url, init) => {
       request = { url, init, body: JSON.parse(init.body) };
       return {
@@ -96,6 +150,7 @@ test("runtime changes provider by config only and Google translates the shared i
   assert.equal(result.provenance.provider, "google");
   assert.equal(result.provenance.modelId, "gemini-test");
   assert.equal(result.provenance.usage.totalTokens, 14);
+  assert.deepEqual(events.map((event) => event.type), ["model_attempt", "model_response"]);
   rmSync(directory, { recursive: true, force: true });
 });
 
