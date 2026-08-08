@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildDevelopmentBundle,
   formatDevelopmentInterrupt,
+  formatDevelopmentProgress,
   formatDevelopmentSummary,
   parseDevelopmentArgs,
 } from "./semantic-guardian-dev-cli.mjs";
@@ -94,4 +95,35 @@ test("Ctrl-C summary is explicit about cleanup and non-evidentiary status", () =
   const partial = formatDevelopmentInterrupt({ responses: 2, providerFailures: 1 });
   assert.match(partial, /2 model responses were received before interruption/);
   assert.match(partial, /1 provider attempt failure was recorded before interruption/);
+});
+
+test("development progress shows the active case, provider attempt, and retries", () => {
+  const selection = { provider: "openai", modelId: "gpt-test" };
+  const waiting = formatDevelopmentProgress({
+    responses: 0,
+    providerFailures: 0,
+    lastEvent: {
+      type: "model_attempt",
+      attempt: 1,
+      maximumAttempts: 3,
+    },
+  }, selection, 12_000);
+  assert.match(waiting, /case 1\/13/);
+  assert.match(waiting, /attempt 1\/3/);
+  assert.match(waiting, /waiting for openai/);
+  assert.match(waiting, /12s/);
+
+  const retrying = formatDevelopmentProgress({
+    responses: 0,
+    providerFailures: 1,
+    lastEvent: {
+      type: "operational_failure",
+      attempt: 1,
+      maximumAttempts: 3,
+      retrying: true,
+      failure: { code: "MODEL_TIMEOUT" },
+    },
+  }, selection, 46_000);
+  assert.match(retrying, /attempt 1\/3 failed MODEL_TIMEOUT/);
+  assert.match(retrying, /retrying/);
 });
