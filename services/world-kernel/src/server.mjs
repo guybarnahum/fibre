@@ -7,6 +7,9 @@ import { openFreezeStore } from "./freeze-store.mjs";
 import { openLifecycleHardeningStore } from "./lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "./expression-store.mjs";
 import { openCausalContextStore } from "./causal-context-store.mjs";
+import { openSemanticStateStore } from "./semantic-state-store.mjs";
+import { openGuardianCognitionStore } from "./guardian-cognition-store.mjs";
+import { guardianModelAdapterFromEnvironment } from "./guardian-model-adapter.mjs";
 import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
 import {
   assertLoopbackBindHost,
@@ -46,13 +49,19 @@ export async function startWorldKernelFromEnvironment(
   let lifecycleStore;
   let expressionStore;
   let causalContextStore;
+  let semanticStateStore;
+  let guardianCognitionStore;
   try {
     runtimeStore = openRuntimeStore(databasePath);
     freezeStore = openFreezeStore(databasePath);
     lifecycleStore = openLifecycleHardeningStore(databasePath);
     expressionStore = openExpressionStore(databasePath);
     causalContextStore = openCausalContextStore(databasePath);
+    semanticStateStore = openSemanticStateStore(databasePath);
+    guardianCognitionStore = openGuardianCognitionStore(databasePath);
   } catch (error) {
+    guardianCognitionStore?.close();
+    semanticStateStore?.close();
     causalContextStore?.close();
     expressionStore?.close();
     lifecycleStore?.close();
@@ -62,6 +71,8 @@ export async function startWorldKernelFromEnvironment(
     throw error;
   }
 
+  const guardianModelAdapter = serviceOptions.guardianModelAdapter ??
+    guardianModelAdapterFromEnvironment(environment);
   const service = new PreM2CausalWorldKernelService(
     store,
     runtimeStore,
@@ -69,7 +80,12 @@ export async function startWorldKernelFromEnvironment(
     lifecycleStore,
     expressionStore,
     causalContextStore,
-    serviceOptions,
+    {
+      ...serviceOptions,
+      semanticStateStore,
+      guardianCognitionStore,
+      guardianModelAdapter,
+    },
   );
   const server = createCausalWorldKernelHttpServer({
     service,
@@ -83,6 +99,7 @@ export async function startWorldKernelFromEnvironment(
         method: context.method,
         url: context.url,
         errorName: error?.constructor?.name ?? "Error",
+        errorCode: error?.code ?? null,
         message: error?.message ?? "Unknown error",
       })}\n`);
     },
@@ -97,6 +114,8 @@ export async function startWorldKernelFromEnvironment(
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
+        guardianCognitionStore.close();
+        semanticStateStore.close();
         causalContextStore.close();
         expressionStore.close();
         lifecycleStore.close();
@@ -113,15 +132,21 @@ export async function startWorldKernelFromEnvironment(
       lifecycleStore,
       expressionStore,
       causalContextStore,
+      semanticStateStore,
+      guardianCognitionStore,
       service,
       address,
       databasePath,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       causalParticipationEnabled: true,
+      guardianProvider: guardianModelAdapter.provider ?? "configured_adapter",
+      guardianModelId: guardianModelAdapter.modelId ?? "configured_model",
       close,
     };
   } catch (error) {
+    guardianCognitionStore.close();
+    semanticStateStore.close();
     causalContextStore.close();
     expressionStore.close();
     lifecycleStore.close();
@@ -146,7 +171,9 @@ async function main() {
     freezeProfileVersion: 1,
     lifecycleClosureProfileVersion: 1,
     expressionProfileVersion: 1,
-    causalParticipationProfileVersion: 2,
+    causalParticipationProfileVersion: 3,
+    guardianProvider: runtime.guardianProvider,
+    guardianModelId: runtime.guardianModelId,
   })}\n`);
 
   const shutdown = async (signal) => {
