@@ -18,7 +18,7 @@ function validLowRefusal() {
   const unresolved = () => ({ effect: "unresolved", evidenceRefs: [] });
   const grounded = (effect, evidenceRefs) => ({ effect, evidenceRefs });
   return {
-    decision: "refuse_low",
+    decision: "fit_low__refuse",
     rationale: "The request is bounded but does not establish enough individualized fit.",
     factors: {
       identityAlignment: unresolved(),
@@ -127,6 +127,6 @@ test("valid cognition that misses the development expectation is a behavioral fa
   assert.equal(report.cognitionFailures.length, 0);
   assert.ok(report.behavioralGateFailures.length >= 1);
   assert.equal(report.cases[0].status, "behavioral_failure");
-  assert.equal(report.cases[0].output.modelDecision, "refuse_low");
+  assert.equal(report.cases[0].output.modelDecision, "fit_low__refuse");
   assert.ok(report.cases[0].output.decisionBasis.rationale.length > 0);
 });
