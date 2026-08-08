@@ -15,7 +15,7 @@ A change to the frozen prompt, model snapshot, policy version, response schema, 
 
 - Guardian policy: `dignity_guardian` version `3`
 - prompt schema version: `1`
-- prompt source first frozen in code commit: `4b4f1d4eec864addcb8fa331c333d23988d1fca0`
+- clean freeze commit: `c6ecdecff961e2a2885861be781391fc0912d6e8`
 - system-prompt SHA-256: `sha256:fa5df59a0f1fd45d080dbad9ca380cee7dc93739ceab657a687dea8102be1c73`
 - response schema version: `1`
 - strict response-schema SHA-256: `sha256:cf2ffad0721798790350b1a5a741da01d0b81ded1d02154dde12fdd2eefb0fad`
