@@ -1,6 +1,3 @@
-import { appendFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
-
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
 import {
   assertId,
@@ -19,21 +16,13 @@ function digest(value) {
   return `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 }
 
-function journalPath() {
-  const value = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
-}
-
-function cycleId() {
-  const value = process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : "model_runtime";
-}
-
-function appendEvidence(record) {
-  const path = journalPath();
-  if (path === null) return;
-  mkdirSync(dirname(path), { recursive: true });
-  appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
+function notify(observer, event) {
+  if (typeof observer !== "function") return;
+  try {
+    observer(structuredClone(event));
+  } catch {
+    // Observability must never change cognition/provider behavior.
+  }
 }
 
 function googleSchema(value) {
@@ -51,11 +40,7 @@ function googleSchema(value) {
 function extractText(body) {
   const parts = body?.candidates?.[0]?.content?.parts;
   if (!Array.isArray(parts)) return "";
-  return parts
-    .filter((part) => typeof part?.text === "string")
-    .map((part) => part.text)
-    .join("\n")
-    .trim();
+  return parts.filter((part) => typeof part?.text === "string").map((part) => part.text).join("\n").trim();
 }
 
 function parseOutput(text) {
@@ -66,9 +51,7 @@ function parseOutput(text) {
     return value;
   } catch (error) {
     throw new GuardianModelError(`Google model returned unparseable structured output: ${error.message}`, {
-      code: "UNPARSEABLE_MODEL_OUTPUT",
-      cause: error,
-      retryable: false,
+      code: "UNPARSEABLE_MODEL_OUTPUT", cause: error, retryable: false,
     });
   }
 }
@@ -79,34 +62,22 @@ function classifyHttpFailure(response, body) {
   const providerErrorCode = body?.error?.status ?? body?.error?.code ?? null;
   if (status === 401) {
     return new GuardianModelError(`Google API authentication failed: ${message}`, {
-      code: "MODEL_AUTHENTICATION_ERROR",
-      retryable: false,
-      httpStatus: status,
-      providerErrorCode,
+      code: "MODEL_AUTHENTICATION_ERROR", retryable: false, httpStatus: status, providerErrorCode,
       actionHint: "Check GEMINI_API_KEY.",
     });
   }
   if (status === 403) {
     return new GuardianModelError(`Google API permission denied: ${message}`, {
-      code: "MODEL_PERMISSION_ERROR",
-      retryable: false,
-      httpStatus: status,
-      providerErrorCode,
+      code: "MODEL_PERMISSION_ERROR", retryable: false, httpStatus: status, providerErrorCode,
     });
   }
   if ([400, 404, 405, 422].includes(status)) {
     return new GuardianModelError(`Google API request or model configuration is invalid: ${message}`, {
-      code: "MODEL_REQUEST_CONFIGURATION_ERROR",
-      retryable: false,
-      httpStatus: status,
-      providerErrorCode,
+      code: "MODEL_REQUEST_CONFIGURATION_ERROR", retryable: false, httpStatus: status, providerErrorCode,
     });
   }
   return new GuardianModelError(`Google model endpoint failed: ${message}`, {
-    code: "MODEL_HTTP_ERROR",
-    retryable: status === 429 || status >= 500,
-    httpStatus: status,
-    providerErrorCode,
+    code: "MODEL_HTTP_ERROR", retryable: status === 429 || status >= 500, httpStatus: status, providerErrorCode,
   });
 }
 
@@ -116,12 +87,12 @@ export function createGoogleModelAdapter({
   timeoutMs = 45_000,
   maxOutputTokens = 2_000,
   fetchImpl = globalThis.fetch,
+  observer = null,
 } = {}) {
   const key = apiKey(environment);
   if (key === null) {
     throw new GuardianModelError("Google model runtime requires GEMINI_API_KEY", {
-      code: "MODEL_UNAVAILABLE",
-      retryable: false,
+      code: "MODEL_UNAVAILABLE", retryable: false,
       actionHint: "Set GEMINI_API_KEY in the environment or local .env file.",
     });
   }
@@ -129,12 +100,7 @@ export function createGoogleModelAdapter({
   if (typeof fetchImpl !== "function") throw new TypeError("Google model fetchImpl must be a function");
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent`;
-  const configuration = Object.freeze({
-    transport: "generateContent",
-    endpoint,
-    maxOutputTokens,
-    structuredOutput: "json_schema",
-  });
+  const configuration = Object.freeze({ transport: "generateContent", endpoint, maxOutputTokens, structuredOutput: "json_schema" });
 
   return Object.freeze({
     provider: "google",
@@ -146,6 +112,7 @@ export function createGoogleModelAdapter({
       assertPlainObject("model responseSchema", responseSchema);
       assertId("model clientRequestId", clientRequestId);
 
+      notify(observer, { type: "model_attempt", provider: "google", modelId, clientRequestId, attempt: 1, maximumAttempts: 1 });
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -154,10 +121,7 @@ export function createGoogleModelAdapter({
         try {
           response = await fetchImpl(endpoint, {
             method: "POST",
-            headers: {
-              "content-type": "application/json",
-              "x-goog-api-key": key,
-            },
+            headers: { "content-type": "application/json", "x-goog-api-key": key },
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: systemPrompt }] },
               contents: [{ role: "user", parts: [{ text: JSON.stringify(input) }] }],
@@ -185,8 +149,7 @@ export function createGoogleModelAdapter({
           provider: "google",
           transport: "generateContent",
           modelId,
-          providerRequestId:
-            response.headers?.get?.("x-request-id") ?? response.headers?.get?.("x-goog-request-id") ?? null,
+          providerRequestId: response.headers?.get?.("x-request-id") ?? response.headers?.get?.("x-goog-request-id") ?? null,
           configuration: { ...configuration },
           usage: {
             inputTokens: Number(body?.usageMetadata?.promptTokenCount ?? 0),
@@ -194,33 +157,35 @@ export function createGoogleModelAdapter({
             totalTokens: Number(body?.usageMetadata?.totalTokenCount ?? 0),
           },
         };
-        appendEvidence({
+        notify(observer, {
           type: "model_response",
-          cycle: cycleId(),
+          provider: "google",
+          modelId,
           clientRequestId,
           attempt: 1,
+          maximumAttempts: 1,
           inputDigest: digest(input),
           promptHash: digest(systemPrompt),
           responseSchemaHash: digest(responseSchema),
-          provider: provenance.provider,
-          modelId,
           providerRequestId: provenance.providerRequestId,
           modelOutput: structuredClone(output),
+          usage: structuredClone(provenance.usage),
         });
         return { output, provenance };
       } catch (error) {
         const normalized = error instanceof GuardianModelError
           ? error
           : new GuardianModelError(`Google model request failed: ${error?.message ?? String(error)}`, {
-            code: "MODEL_TRANSPORT_ERROR",
-            cause: error instanceof Error ? error : undefined,
-            retryable: true,
+            code: "MODEL_TRANSPORT_ERROR", cause: error instanceof Error ? error : undefined, retryable: true,
           });
-        appendEvidence({
+        notify(observer, {
           type: "operational_failure",
-          cycle: cycleId(),
+          provider: "google",
+          modelId,
           clientRequestId,
           attempt: 1,
+          maximumAttempts: 1,
+          retrying: false,
           inputDigest: digest(input),
           promptHash: digest(systemPrompt),
           responseSchemaHash: digest(responseSchema),
