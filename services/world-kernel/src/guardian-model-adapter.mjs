@@ -10,11 +10,28 @@ import {
 } from "./persistence-common.mjs";
 
 export class GuardianModelError extends Error {
-  constructor(message, { code = "MODEL_ERROR", cause } = {}) {
+  constructor(message, {
+    code = "MODEL_ERROR",
+    cause,
+    retryable = true,
+    httpStatus = null,
+    providerErrorCode = null,
+    providerErrorType = null,
+    actionHint = null,
+  } = {}) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = "GuardianModelError";
     this.code = code;
+    this.retryable = retryable;
+    this.httpStatus = httpStatus;
+    this.providerErrorCode = providerErrorCode;
+    this.providerErrorType = providerErrorType;
+    this.actionHint = actionHint;
   }
+}
+
+export function isTerminalGuardianModelError(error) {
+  return error instanceof GuardianModelError && error.retryable === false;
 }
 
 function extractOutputText(body) {
@@ -62,6 +79,11 @@ function evidenceJournalPath() {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
+function evidenceCycleId() {
+  const value = process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : "semantic_guardian_v3";
+}
+
 function appendEvidence(record) {
   const path = evidenceJournalPath();
   if (path === null) return;
@@ -80,7 +102,99 @@ function normalizeModelError(error) {
   return new GuardianModelError(`Guardian model request failed: ${error?.message ?? String(error)}`, {
     code,
     cause: error instanceof Error ? error : undefined,
+    retryable: true,
   });
+}
+
+function providerString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function classifyHttpFailure(response, body) {
+  const httpStatus = Number(response.status);
+  const providerErrorCode = providerString(body?.error?.code) || null;
+  const providerErrorType = providerString(body?.error?.type) || null;
+  const providerMessage = providerString(body?.error?.message) || "unknown error";
+  const signature = [providerErrorCode, providerErrorType, providerMessage]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const billingQuotaFailure = httpStatus === 429 && (
+    signature.includes("insufficient_quota") ||
+    signature.includes("billing") ||
+    signature.includes("no credits") ||
+    signature.includes("quota exhausted") ||
+    signature.includes("current quota") ||
+    signature.includes("usage limit")
+  );
+
+  if (billingQuotaFailure) {
+    return new GuardianModelError(
+      `OpenAI API billing quota is unavailable: ${providerMessage}`,
+      {
+        code: "MODEL_BILLING_QUOTA_EXHAUSTED",
+        retryable: false,
+        httpStatus,
+        providerErrorCode,
+        providerErrorType,
+        actionHint: "Add OpenAI API credits or resolve API billing, then rerun the current unsealed acceptance cycle.",
+      },
+    );
+  }
+
+  if (httpStatus === 401) {
+    return new GuardianModelError(
+      `OpenAI API authentication failed: ${providerMessage}`,
+      {
+        code: "MODEL_AUTHENTICATION_ERROR",
+        retryable: false,
+        httpStatus,
+        providerErrorCode,
+        providerErrorType,
+        actionHint: "Check FIBRE_GUARDIAN_OPENAI_API_KEY and the API project or organization that owns the key.",
+      },
+    );
+  }
+
+  if (httpStatus === 403) {
+    return new GuardianModelError(
+      `OpenAI API permission denied: ${providerMessage}`,
+      {
+        code: "MODEL_PERMISSION_ERROR",
+        retryable: false,
+        httpStatus,
+        providerErrorCode,
+        providerErrorType,
+        actionHint: "Check API project permissions and access to the frozen Guardian model.",
+      },
+    );
+  }
+
+  if ([400, 404, 405, 422].includes(httpStatus)) {
+    return new GuardianModelError(
+      `OpenAI API request or model configuration is invalid (HTTP ${httpStatus}): ${providerMessage}`,
+      {
+        code: "MODEL_REQUEST_CONFIGURATION_ERROR",
+        retryable: false,
+        httpStatus,
+        providerErrorCode,
+        providerErrorType,
+        actionHint: "Fix the request or frozen model configuration before starting another live acceptance attempt.",
+      },
+    );
+  }
+
+  return new GuardianModelError(
+    `Guardian model endpoint returned HTTP ${httpStatus}: ${providerMessage}`,
+    {
+      code: "MODEL_HTTP_ERROR",
+      retryable: true,
+      httpStatus,
+      providerErrorCode,
+      providerErrorType,
+    },
+  );
 }
 
 export const OPENAI_GUARDIAN_EVALUATION_CONFIGURATION = Object.freeze({
@@ -97,7 +211,7 @@ export function createUnavailableGuardianModelAdapter(reason = "No Guardian mode
     modelId: "unavailable",
     configuration: Object.freeze({}),
     async invoke() {
-      throw new GuardianModelError(reason, { code: "MODEL_UNAVAILABLE" });
+      throw new GuardianModelError(reason, { code: "MODEL_UNAVAILABLE", retryable: false });
     },
   });
 }
@@ -155,6 +269,8 @@ export function createOpenAIResponsesGuardianAdapter({
     operationalRetryDelayMs,
   });
 
+  let terminalFailure = null;
+
   return Object.freeze({
     provider: "openai_responses",
     modelId,
@@ -164,6 +280,8 @@ export function createOpenAIResponsesGuardianAdapter({
       assertPlainObject("Guardian input", input);
       assertPlainObject("Guardian responseSchema", responseSchema);
       assertId("Guardian clientRequestId", clientRequestId);
+
+      if (terminalFailure !== null) throw terminalFailure;
 
       const operationalRetries = [];
       const maximumAttempts = operationalRetryLimit + 1;
@@ -214,19 +332,14 @@ export function createOpenAIResponsesGuardianAdapter({
           } catch (error) {
             throw new GuardianModelError(
               `Guardian model response was not JSON: ${error.message}`,
-              { code: "MODEL_PROTOCOL_ERROR", cause: error },
+              { code: "MODEL_PROTOCOL_ERROR", cause: error, retryable: true },
             );
           }
-          if (!response.ok) {
-            throw new GuardianModelError(
-              `Guardian model endpoint returned HTTP ${response.status}: ${body?.error?.message ?? "unknown error"}`,
-              { code: "MODEL_HTTP_ERROR" },
-            );
-          }
+          if (!response.ok) throw classifyHttpFailure(response, body);
           if (body?.status !== undefined && body.status !== "completed") {
             throw new GuardianModelError(
               `Guardian model response did not complete: ${body.status}`,
-              { code: "MODEL_INCOMPLETE" },
+              { code: "MODEL_INCOMPLETE", retryable: true },
             );
           }
 
@@ -258,7 +371,7 @@ export function createOpenAIResponsesGuardianAdapter({
 
           appendEvidence({
             type: "model_response",
-            cycle: "semantic_guardian_v3_acceptance_v1",
+            cycle: evidenceCycleId(),
             clientRequestId,
             attempt,
             capsuleDigest: canonicalDigest(input.capsule),
@@ -280,10 +393,15 @@ export function createOpenAIResponsesGuardianAdapter({
             attempt,
             code: normalized.code,
             message: normalized.message,
+            retryable: normalized.retryable,
+            httpStatus: normalized.httpStatus,
+            providerErrorCode: normalized.providerErrorCode,
+            providerErrorType: normalized.providerErrorType,
+            actionHint: normalized.actionHint,
           };
           appendEvidence({
             type: "operational_failure",
-            cycle: "semantic_guardian_v3_acceptance_v1",
+            cycle: evidenceCycleId(),
             clientRequestId,
             attempt,
             capsuleDigest: canonicalDigest(input.capsule),
@@ -291,6 +409,10 @@ export function createOpenAIResponsesGuardianAdapter({
             responseSchemaHash: canonicalDigest(responseSchema),
             failure,
           });
+          if (normalized.retryable === false) {
+            terminalFailure = normalized;
+            throw normalized;
+          }
           if (attempt >= maximumAttempts) throw normalized;
           operationalRetries.push(failure);
           await wait(operationalRetryDelayMs);

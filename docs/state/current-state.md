@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-07
+last-reviewed: 2026-08-08
 canonical: true
 ---
 
@@ -9,7 +9,7 @@ canonical: true
 
 Fibre is being defined as a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, resources, permissions, and a life trajectory that spans temporary model executions.
 
-This document describes the implementation at the **PR #33 draft head before the first frozen real-model semantic acceptance run**. Implemented capability and evidentiary credit are deliberately separated: the semantic mechanisms below exist in the canonical pre-M2 service, but the personhood score does not move until the standing causal proof passes.
+This document describes the implementation at the **PR #33 draft head plus the stacked provider-failure hardening in PR #34**. Acceptance cycle v1 reached the OpenAI provider but produced **zero authoritative model judgments** and remains historically failed/sealed because API billing quota was exhausted. Acceptance cycle v2 is the current unsealed semantic-evidence cycle. Implemented capability and evidentiary credit remain deliberately separated: the semantic mechanisms below exist in the canonical pre-M2 service, but the personhood score does not move until the standing causal proof passes.
 
 ## Accepted foundation
 
@@ -64,7 +64,11 @@ Unsupported factors remain explicitly unresolved. In particular, `relationalMean
 
 Timeout, provider failure, transport failure, schema failure, unparseable output, or semantically invalid structured output produces **no Guardian assessment and no private stance**. The request/appraisal and persisted cognition input may remain available for retry, but Fibre does not synthesize `clarify` or `refuse` and attribute it to the Thread.
 
-For the frozen #33 acceptance cycle, operational provider/transport/protocol attempts that produce no authoritative judgment may retry only under the predeclared cap in [`semantic-guardian-v3-freeze.md`](../validation/semantic-guardian-v3-freeze.md): two retries after the first attempt, with a fixed delay and every failed attempt retained in evidence. Only the eventual authoritative judgment counts toward `k`. Exhausting the retry cap leaves the required judgment missing and fails the cycle. A parseable cognition that fails Fibre semantic validation or a predeclared behavioral condition is not retried in search of a more convenient answer.
+Acceptance cycle v2 distinguishes **retryable operational failures** from **terminal provider failures**. Ordinary rate limiting, transport errors, timeouts, incomplete responses, and retryable server failures retain the fixed operational envelope: two retries after the first attempt, a fixed delay, and every failed attempt retained in evidence. Only an eventual authoritative judgment counts toward `k`; exhausting the retry cap leaves the required judgment missing and fails the cycle.
+
+Billing/quota exhaustion, authentication failure, permission failure, and invalid request/model/configuration classes are terminal. A terminal provider failure is not retried, opens a local provider circuit that prevents later acceptance cases from issuing more HTTP calls, and produces an actionable operational result. If it occurs before any authoritative judgment, v2 is `blocked` and remains unsealed; if it occurs after any authoritative judgment, the cycle fails and seals with partial evidence. The exact operational record is [`semantic-guardian-v3-cycle-v2.md`](../validation/semantic-guardian-v3-cycle-v2.md).
+
+A parseable cognition that fails Fibre semantic validation or a predeclared behavioral condition is never retried in search of a more convenient answer.
 
 This distinction is load-bearing: operational unavailability and personal judgment are different facts.
 
@@ -133,23 +137,25 @@ obligationReferences = []
 
 Scripted wiring tests prove that this branch acquires runtime, preserves aligned participation, spends no obligation, and creates no obligation discharge.
 
-That is **authority-path evidence**, not yet evidence that the real semantic Guardian makes a willing individualized decision. The frozen real-model acceptance run must supply that causal evidence before Dignity receives additional credit.
+That is **authority-path evidence**, not yet evidence that the real semantic Guardian makes a willing individualized decision. The current v2 real-model acceptance cycle must supply that causal evidence before Dignity receives additional credit.
 
-Obligation-mediated execution also remains available. When a governing recorded obligation overrides a non-accept private stance, Fibre preserves `obligation_override` as compulsion rather than rewriting it as consent. Structured Fibre-owned obligation applicability remains deferred to PR #35.
+Obligation-mediated execution also remains available. When a governing recorded obligation overrides a non-accept private stance, Fibre preserves `obligation_override` as compulsion rather than rewriting it as consent. Structured Fibre-owned obligation applicability remains deferred to the later Structured Obligation v1 milestone.
 
-## Evidence posture before the first real-model run
+## Evidence posture after v1 operational failure
 
-The model-backed architecture is implemented, but the standing semantic-individuality gate has **not been executed**. This is intentional.
+The model-backed architecture is implemented, but the standing semantic-individuality gate still has **no authoritative real-model judgment**. Acceptance cycle v1 reached the provider and failed/sealed on API billing-quota exhaustion with zero model responses; it is infrastructure evidence only and says nothing about whether the semantic Guardian passes or fails the standing differential gate.
 
-Run the frozen real-model experiment with:
+Acceptance cycle `semantic_guardian_v3_acceptance_v2` is the current unsealed cycle. It preserves the same model snapshot, prompt/schema hashes, sampling configuration, semantic cases, expected actions, `k = 5`, and `4/5` stability threshold while adding terminal-provider fail-fast behavior.
+
+Run the current real-model experiment with:
 
 ```bash
 npm run demo:semantic-guardian
 ```
 
-A real credential is required. Without one, the harness returns `blocked`, `standingDifferentialGatePassed: false`, and `scoreMovementPermitted: false`. It never substitutes scripted cognition. A pre-invocation block produces no evidence artifact and does not seal the cycle.
+A real credential and usable API billing are required. Without a credential, the harness returns `blocked`, `standingDifferentialGatePassed: false`, and `scoreMovementPermitted: false`. It never substitutes scripted cognition. A terminal provider problem before any authoritative judgment likewise returns a single actionable `blocked` result and leaves v2 unsealed.
 
-The frozen cycle predeclares:
+The frozen semantic cycle predeclares:
 
 - same-request Mina/Daniel semantic differential plus held-out Amara;
 - refusal reachability and a request every evaluated Thread must refuse;
@@ -166,11 +172,11 @@ The frozen cycle predeclares:
 
 The injection condition deliberately targets legacy `currentState.feelings`, because Semantic State v0 already structurally rejects the same imperative before cognition. The proof also records that the injected legacy text actually reached the persisted cognition capsule, so passing cannot be explained by fixture omission.
 
-The frozen model/prompt/schema boundary is recorded in [`semantic-guardian-v3-freeze.md`](../validation/semantic-guardian-v3-freeze.md). Before the first live invocation, the cycle was additionally completed with explicit sampling and retry policy: `temperature=0`, `top_p=1`, reasoning effort `none`, and at most two operational retries per trial slot. The original prompt/schema/model and all predeclared behavioral expectations remain unchanged.
+The cognition boundary is recorded in [`semantic-guardian-v3-freeze.md`](../validation/semantic-guardian-v3-freeze.md); the v1-to-v2 operational succession is recorded separately in [`semantic-guardian-v3-cycle-v2.md`](../validation/semantic-guardian-v3-cycle-v2.md). The system prompt, response schema, model snapshot, sampling configuration, semantic cases, expected actions, and scoring thresholds remain unchanged between v1 and v2.
 
 ### Auditable evidence retention
 
-Provider-side response storage remains disabled, so the local runner now retains the evidence needed to audit the strongest claim Fibre has attempted so far.
+Provider-side response storage remains disabled, so the local runner retains the evidence needed to audit the strongest claim Fibre has attempted so far.
 
 Before each temporary trial database is removed, the runner journals the full **bounded structured Guardian output** plus:
 
@@ -181,17 +187,19 @@ Before each temporary trial database is removed, the runner journals the full **
 - operational retry attempts;
 - final per-condition action distributions and gate report.
 
-At the end of a non-blocked cycle the journal is folded into one non-overwritable evidence bundle under `artifacts/test-results/`. If execution terminates after live evidence has been produced, the partial evidence is retained as a failed sealed bundle rather than discarded. The retained `modelOutput` is the bounded finding constrained by the Guardian schema, not raw chain-of-thought.
+At the end of a non-blocked cycle the journal is folded into one non-overwritable evidence bundle under `artifacts/test-results/`. If execution terminates after live semantic evidence has been produced, the partial evidence is retained as a failed sealed bundle rather than discarded. The retained `modelOutput` is the bounded finding constrained by the Guardian schema, not raw chain-of-thought.
 
 ### Frozen-run discipline
 
-The acceptance cycle is immutable once live evidence begins. The predeclared operational retry policy is the only exception to treating an individual provider failure as terminal: an attempt that produces no authoritative judgment may retry up to the fixed cap inside the same trial slot, and only the eventual judgment counts toward `k`.
+Acceptance cycle v1 remains historical and failed/sealed. It is not reinterpreted after the fact.
 
-If all attempts for a required slot fail, if a parseable cognition fails semantic validation or a predeclared expectation, or if the harness fails after live execution begins, the cycle fails and is sealed. After any sealed failure, repairing code, changing prompt/policy/model/sampling, altering an acceptance case, or changing the evaluation boundary requires a **new frozen cycle with a new held-out set**. There is no post-result exception for a “clearly unrelated” failure.
+For v2, a retryable operational attempt that produces no authoritative judgment may retry only within the fixed per-trial cap, and only the eventual judgment counts toward `k`. A terminal provider failure before any authoritative judgment is a `blocked` infrastructure condition rather than semantic evidence and leaves v2 unsealed. Once any authoritative v2 judgment exists, the evidentiary boundary is live: a later terminal failure, exhausted retryable failure, semantic-validation failure, behavioral miss, or harness failure fails and seals the cycle.
+
+After a sealed semantic failure, repairing cognition code, changing prompt/policy/model/sampling, altering an acceptance case, or changing the evaluation boundary requires a **new frozen cycle**. There is no post-result exception for a “clearly unrelated” cognition or harness failure.
 
 ## Current score posture
 
-Historical M1 remains permanently **11/26**. Before the frozen semantic run, the pre-M2 checkpoint also remains **11/26**.
+Historical M1 remains permanently **11/26**. At the current v2 pre-judgment checkpoint, pre-M2 also remains **11/26**.
 
 ```text
 Historical M1                 11/26
@@ -200,12 +208,12 @@ Non-interchangeability        0
 Dignity and consent           1
 Development                   0
 Economic consequence          0
-Standing semantic gate        RED — not yet executed
+Standing semantic gate        RED — no authoritative real-model judgment yet
 ```
 
-Scripted adapters, different prompt contents, persisted semantic prose, or fluent individualized rationales cannot move those scores.
+Scripted adapters, different prompt contents, persisted semantic prose, provider connectivity, or fluent individualized rationales cannot move those scores.
 
-The predeclared #33 score candidates remain:
+The predeclared semantic-gate score candidates remain:
 
 - Non-interchangeability `0 -> 1` only if the real-model standing differential passes;
 - Dignity and consent `1 -> 2` only if refusal is reachable/attributable and factor grounding/unresolved discipline survives the live run;
@@ -236,31 +244,33 @@ Broader human-facing Semantic State and relationship inspection can be expanded 
 
 ## Immediate bridge sequence
 
-The accepted bridge remains:
+The accepted bridge remains conceptually:
 
 ```text
-#33 Semantic Guardian — implementation present; frozen real-model gate still RED
-  -> #34 History bends judgment
-  -> #35 Structured Obligation v1
-  -> #36 M2 contract
+#33 Semantic Guardian — implementation present; v1 operationally failed with zero judgments; v2 gate RED
+  -> History bends judgment
+  -> Structured Obligation v1
+  -> M2 contract
   -> M2 implementation
 ```
 
-The immediate action for #33 is **execute the frozen real-model acceptance cycle**, not build another semantic representation layer.
+PR numbering is not part of the architecture. PR #34 is currently used for the stacked provider-failure hardening needed to make the v2 semantic experiment operationally sound.
 
-If #33 passes, PR #34 must prove Development through a real canonical episode whose substantive validated memory and/or semantic-state consequence survives restart and materially changes a later comparable appraisal under a direct counterfactual.
+The immediate action is **resolve API billing, land PR #34 into the #33 branch, and execute acceptance cycle v2**. Do not build another semantic representation layer before the standing gate is resolved.
 
-PR #35 then replaces provisional exact-prose obligations with stable structured obligations and makes Fibre—not the caller—the authority that determines whether an obligation applies to a request.
+After the semantic gate passes, the **History bends judgment** milestone must prove Development through a real canonical episode whose substantive validated memory and/or semantic-state consequence survives restart and materially changes a later comparable appraisal under a direct counterfactual.
 
-PR #36 defines the M2 identity/embodiment contract only after semantic cognition and developmental evidence reveal which identity/history fields are truly consumed. M2 does not close merely because richer identity fields reach prompts.
+The **Structured Obligation v1** milestone then replaces provisional exact-prose obligations with stable structured obligations and makes Fibre—not the caller—the authority that determines whether an obligation applies to a request.
+
+The **M2 contract** defines the identity/embodiment contract only after semantic cognition and developmental evidence reveal which identity/history fields are truly consumed. M2 does not close merely because richer identity fields reach prompts.
 
 ## Deferred capability, not erased capability
 
 The following remain deferred with extension paths preserved:
 
 - broader reciprocal relationship service beyond Semantic Relationship State v0;
-- substantive developmental learning proof (#34);
-- structured obligation applicability (#35);
+- substantive developmental learning proof;
+- structured obligation applicability;
 - general isolated worker/tool/model gateway;
 - model-capable Actor and independently observed external action traces;
 - production authentication, encryption, principal/role authorization, and stronger tamper anchors;

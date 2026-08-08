@@ -27,8 +27,8 @@ export const SEMANTIC_GUARDIAN_EVIDENCE_JOURNAL = resolve(
   `artifacts/test-results/${SET.id}.judgments.ndjson`,
 );
 
-// Frozen v1 acceptance set: 17 repeated judgment slots plus the final
-// two-Thread replay/aligned-authority pair.
+// Frozen v2 acceptance set: 17 repeated judgment slots plus the final
+// two-Thread replay/aligned-authority pair. Semantic cases are unchanged from v1.
 const EXPECTED_LIVE_JUDGMENTS = SET.repeatTrials * 17 + 2;
 
 function expectedAdapterConfiguration() {
@@ -98,7 +98,7 @@ function startTerminalProgress(path) {
 
   process.stderr.write(
     `\nFibre · Semantic Guardian v3\n` +
-    `Frozen acceptance cycle · ${SET.frozenModelId} · ${EXPECTED_LIVE_JUDGMENTS} judgments\n\n`,
+    `Frozen acceptance cycle · ${SET.id} · ${SET.frozenModelId} · ${EXPECTED_LIVE_JUDGMENTS} judgments\n\n`,
   );
 
   const render = () => {
@@ -164,12 +164,24 @@ function bundleFor(report, journal, fatalError = null) {
   };
 }
 
-function sealedBlock(reason) {
+function sealedBlock(reason, providerFailure = null) {
   return {
-    report: blockedSemanticGuardianReport(reason),
+    report: {
+      ...blockedSemanticGuardianReport(reason),
+      providerFailure,
+    },
     evidenceArtifactPath: null,
     evidenceBundle: null,
   };
+}
+
+function terminalFailureBeforeJudgment(journal) {
+  const hasJudgment = journal.some((entry) => entry.type === "model_response");
+  if (hasJudgment) return null;
+  const terminal = journal.find(
+    (entry) => entry.type === "operational_failure" && entry.failure?.retryable === false,
+  );
+  return terminal?.failure ?? null;
 }
 
 export async function runSealedSemanticGuardianV3Proof({
@@ -186,7 +198,9 @@ export async function runSealedSemanticGuardianV3Proof({
   }
 
   const previousJournalPath = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+  const previousCycleId = process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
   process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = evidenceJournalPath;
+  process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = SET.id;
   try {
     const report = await runSemanticGuardianV3Proof(environment);
     if (report.status === "blocked") {
@@ -195,12 +209,30 @@ export async function runSealedSemanticGuardianV3Proof({
     }
 
     const journal = readJournal(evidenceJournalPath);
+    const terminalFailure = terminalFailureBeforeJudgment(journal);
+    if (terminalFailure !== null) {
+      rmSync(evidenceJournalPath, { force: true });
+      const hint = typeof terminalFailure.actionHint === "string" && terminalFailure.actionHint !== ""
+        ? ` ${terminalFailure.actionHint}`
+        : "";
+      return sealedBlock(`${terminalFailure.message}${hint}`, terminalFailure);
+    }
+
     const evidenceBundle = bundleFor(report, journal);
     writeEvidenceArtifact(evidenceArtifactPath, evidenceBundle);
     rmSync(evidenceJournalPath, { force: true });
     return { report, evidenceArtifactPath, evidenceBundle };
   } catch (error) {
     const journal = readJournal(evidenceJournalPath);
+    const terminalFailure = terminalFailureBeforeJudgment(journal);
+    if (terminalFailure !== null) {
+      rmSync(evidenceJournalPath, { force: true });
+      const hint = typeof terminalFailure.actionHint === "string" && terminalFailure.actionHint !== ""
+        ? ` ${terminalFailure.actionHint}`
+        : "";
+      return sealedBlock(`${terminalFailure.message}${hint}`, terminalFailure);
+    }
+
     if (journal.length > 0 && !existsSync(evidenceArtifactPath)) {
       const fatalError = {
         name: error?.constructor?.name ?? "Error",
@@ -214,7 +246,7 @@ export async function runSealedSemanticGuardianV3Proof({
         status: "failed",
         standingDifferentialGatePassed: false,
         scoreMovementPermitted: false,
-        reason: "The sealed acceptance cycle terminated after at least one live model response.",
+        reason: "The sealed acceptance cycle terminated after at least one live model response or an exhausted retryable operational failure.",
       };
       writeEvidenceArtifact(evidenceArtifactPath, bundleFor(failedReport, journal, fatalError));
       rmSync(evidenceJournalPath, { force: true });
@@ -225,6 +257,11 @@ export async function runSealedSemanticGuardianV3Proof({
       delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
     } else {
       process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournalPath;
+    }
+    if (previousCycleId === undefined) {
+      delete process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
+    } else {
+      process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = previousCycleId;
     }
   }
 }

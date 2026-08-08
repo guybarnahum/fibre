@@ -1,9 +1,18 @@
-// Authored after docs/validation/semantic-guardian-v3-freeze.md was committed.
-// Changing this file after inspecting live acceptance results does not repair a
-// failed evidentiary run; a new frozen evaluation cycle is required.
+// Semantic Guardian acceptance cycle v2.
+//
+// v1 was authored after docs/validation/semantic-guardian-v3-freeze.md and was
+// sealed on its first live invocation with zero model judgments because the
+// OpenAI account had no API credits. The semantic cases and expectations below
+// are unchanged from v1. v2 changes only the operational provider-failure
+// envelope: terminal provider failures fail fast, and a terminal failure before
+// any authoritative model judgment is a blocker rather than semantic evidence.
+// Changing semantic cases after inspecting live v2 judgments still requires a
+// new frozen evaluation cycle.
 
 export const SEMANTIC_GUARDIAN_ACCEPTANCE_SET = Object.freeze({
-  id: "semantic_guardian_v3_acceptance_v1",
+  id: "semantic_guardian_v3_acceptance_v2",
+  supersedesCycleId: "semantic_guardian_v3_acceptance_v1",
+  supersessionReason: "v1 sealed with zero model judgments after terminal OpenAI billing-quota exhaustion",
   authoredAfterFreezeCommit: "c6ecdecff961e2a2885861be781391fc0912d6e8",
   preRunAmendedFromHead: "6646348a1c4cc2c06239b8462cab2588479f738a",
   frozenPolicy: Object.freeze({ id: "dignity_guardian", version: "3" }),
@@ -17,6 +26,11 @@ export const SEMANTIC_GUARDIAN_ACCEPTANCE_SET = Object.freeze({
     retryLimitPerTrial: 2,
     retryDelayMs: 2_000,
     onlySuccessfulJudgmentsCountTowardK: true,
+    terminalProviderFailure: Object.freeze({
+      abortFurtherProviderCalls: true,
+      zeroJudgmentDisposition: "blocked_unsealed",
+      partialJudgmentDisposition: "failed_sealed",
+    }),
   }),
   repeatTrials: 5,
   stableMinimumAgreement: 4,

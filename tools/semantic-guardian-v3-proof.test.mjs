@@ -9,7 +9,10 @@ import {
   DIGNITY_GUARDIAN_RESPONSE_SCHEMA_HASH,
 } from "../services/world-kernel/src/dignity-guardian.mjs";
 
-test("semantic Guardian acceptance set remains bound to the frozen v3 evidence cycle", () => {
+test("semantic Guardian acceptance set remains bound to the frozen v3 evidence boundary", () => {
+  assert.equal(SET.id, "semantic_guardian_v3_acceptance_v2");
+  assert.equal(SET.supersedesCycleId, "semantic_guardian_v3_acceptance_v1");
+  assert.match(SET.supersessionReason, /zero model judgments.*billing-quota/i);
   assert.equal(SET.authoredAfterFreezeCommit, "c6ecdecff961e2a2885861be781391fc0912d6e8");
   assert.equal(SET.preRunAmendedFromHead, "6646348a1c4cc2c06239b8462cab2588479f738a");
   assert.deepEqual(SET.frozenPolicy, { id: "dignity_guardian", version: "3" });
@@ -24,6 +27,11 @@ test("semantic Guardian acceptance set remains bound to the frozen v3 evidence c
     retryLimitPerTrial: 2,
     retryDelayMs: 2000,
     onlySuccessfulJudgmentsCountTowardK: true,
+    terminalProviderFailure: {
+      abortFurtherProviderCalls: true,
+      zeroJudgmentDisposition: "blocked_unsealed",
+      partialJudgmentDisposition: "failed_sealed",
+    },
   });
   assert.equal(SET.repeatTrials, 5);
   assert.equal(SET.stableMinimumAgreement, 4);

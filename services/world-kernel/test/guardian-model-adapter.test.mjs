@@ -8,6 +8,7 @@ import {
   GuardianModelError,
   OPENAI_GUARDIAN_EVALUATION_CONFIGURATION,
   createOpenAIResponsesGuardianAdapter,
+  isTerminalGuardianModelError,
 } from "../src/guardian-model-adapter.mjs";
 
 function response(body, { ok = true, status = 200, requestId = "req_provider_test" } = {}) {
@@ -55,8 +56,10 @@ function invocation(adapter) {
 test("OpenAI Guardian sends the frozen sampling configuration and journals the bounded model response", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-guardian-evidence-"));
   const journal = join(directory, "judgments.ndjson");
-  const previous = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+  const previousJournal = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+  const previousCycle = process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
   process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = journal;
+  process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = "test_guardian_cycle";
   const requests = [];
   try {
     const adapter = createOpenAIResponsesGuardianAdapter({
@@ -89,19 +92,22 @@ test("OpenAI Guardian sends the frozen sampling configuration and journals the b
     const lines = readFileSync(journal, "utf8").trim().split("\n").map(JSON.parse);
     assert.equal(lines.length, 1);
     assert.equal(lines[0].type, "model_response");
+    assert.equal(lines[0].cycle, "test_guardian_cycle");
     assert.deepEqual(lines[0].modelOutput, { appraisal: "bounded finding" });
     assert.match(lines[0].capsuleDigest, /^sha256:[0-9a-f]{64}$/);
     assert.match(lines[0].promptHash, /^sha256:[0-9a-f]{64}$/);
     assert.match(lines[0].responseSchemaHash, /^sha256:[0-9a-f]{64}$/);
     assert.deepEqual(lines[0].effectiveConfiguration, result.provenance.effectiveConfiguration);
   } finally {
-    if (previous === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
-    else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previous;
+    if (previousJournal === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+    else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournal;
+    if (previousCycle === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
+    else process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = previousCycle;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("operational provider failure retries inside one trial and records the retry", async () => {
+test("transient OpenAI rate-limit 429 retries inside one trial and records the retry", async () => {
   let calls = 0;
   const adapter = createOpenAIResponsesGuardianAdapter({
     apiKey: "test-key",
@@ -111,7 +117,13 @@ test("operational provider failure retries inside one trial and records the retr
     fetchImpl: async () => {
       calls += 1;
       if (calls === 1) {
-        return response({ error: { message: "rate limited" } }, { ok: false, status: 429 });
+        return response({
+          error: {
+            code: "rate_limit_exceeded",
+            type: "rate_limit_error",
+            message: "Rate limit reached; retry shortly.",
+          },
+        }, { ok: false, status: 429 });
       }
       return response(completedBody());
     },
@@ -122,9 +134,50 @@ test("operational provider failure retries inside one trial and records the retr
   assert.equal(result.provenance.invocationAttempts, 2);
   assert.equal(result.provenance.operationalRetries.length, 1);
   assert.equal(result.provenance.operationalRetries[0].code, "MODEL_HTTP_ERROR");
+  assert.equal(result.provenance.operationalRetries[0].retryable, true);
 });
 
-test("exhausting the declared operational retry cap produces no judgment", async () => {
+test("billing-quota 429 is terminal, performs no retry, and opens the provider circuit", async () => {
+  let calls = 0;
+  const adapter = createOpenAIResponsesGuardianAdapter({
+    apiKey: "test-key",
+    modelId: "gpt-5.1-2025-11-13",
+    operationalRetryLimit: 2,
+    operationalRetryDelayMs: 0,
+    fetchImpl: async () => {
+      calls += 1;
+      return response({
+        error: {
+          code: "insufficient_quota",
+          type: "insufficient_quota",
+          message: "You have no credits remaining. Add credits to continue using the API.",
+        },
+      }, { ok: false, status: 429 });
+    },
+  });
+
+  let firstError;
+  await assert.rejects(
+    () => invocation(adapter),
+    (error) => {
+      firstError = error;
+      return error instanceof GuardianModelError &&
+        error.code === "MODEL_BILLING_QUOTA_EXHAUSTED" &&
+        error.retryable === false &&
+        isTerminalGuardianModelError(error) &&
+        /add OpenAI API credits/i.test(error.actionHint);
+    },
+  );
+  assert.equal(calls, 1, "terminal billing failure must not consume retry attempts");
+
+  await assert.rejects(
+    () => invocation(adapter),
+    (error) => error === firstError && isTerminalGuardianModelError(error),
+  );
+  assert.equal(calls, 1, "terminal provider circuit must prevent later HTTP calls");
+});
+
+test("exhausting the declared retry cap for a transient provider failure produces no judgment", async () => {
   let calls = 0;
   const adapter = createOpenAIResponsesGuardianAdapter({
     apiKey: "test-key",
@@ -139,7 +192,9 @@ test("exhausting the declared operational retry cap produces no judgment", async
 
   await assert.rejects(
     () => invocation(adapter),
-    (error) => error instanceof GuardianModelError && error.code === "MODEL_HTTP_ERROR",
+    (error) => error instanceof GuardianModelError &&
+      error.code === "MODEL_HTTP_ERROR" &&
+      error.retryable === true,
   );
   assert.equal(calls, 3);
 });

@@ -18,6 +18,11 @@ test("pre-run sampling and operational retry policy match the live adapter defau
     retryLimitPerTrial: 2,
     retryDelayMs: 2000,
     onlySuccessfulJudgmentsCountTowardK: true,
+    terminalProviderFailure: {
+      abortFurtherProviderCalls: true,
+      zeroJudgmentDisposition: "blocked_unsealed",
+      partialJudgmentDisposition: "failed_sealed",
+    },
   });
   assert.deepEqual(OPENAI_GUARDIAN_EVALUATION_CONFIGURATION, {
     temperature: 0,
