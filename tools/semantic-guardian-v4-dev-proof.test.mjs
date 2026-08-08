@@ -16,13 +16,11 @@ function invocation(output) {
 
 function validLowRefusal() {
   const unresolved = (summary) => ({
-    status: "unresolved",
     effect: "unresolved",
     summary,
     evidenceRefs: [],
   });
   const grounded = (effect, summary, evidenceRefs) => ({
-    status: "grounded",
     effect,
     summary,
     evidenceRefs,
@@ -42,16 +40,11 @@ function validLowRefusal() {
       participationTerms: grounded("neutral", "The request has explicit participation terms.", ["request:permission:0", "request:acceptance_criteria"]),
       obligationsAndOpportunityCost: unresolved("No selected obligation evidence is available."),
     },
-    evidenceRefs: ["request:stated_need", "request:acceptance_criteria", "request:permission:0"],
     repairQuestions: [],
     knownAlternativeIds: [],
     privateFeelings: [],
     conflictingMotives: [],
     uncertainties: [],
-    relationshipImpact: {
-      summary: "No requester-specific relationship evidence is available.",
-      evidenceRefs: [],
-    },
   };
 }
 
