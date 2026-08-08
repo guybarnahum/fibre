@@ -85,7 +85,10 @@ test("v4 model contract is dignity-only, fit-first, atomic, and minimal", () => 
   assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /DIGNITY = individualized participation fit/i);
   assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /fit is participation fit, never confidence/i);
   assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /delegate: a supplied known alternative is clearly better matched/i);
-  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /clarify: missing information could materially change participation fit/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /clarify: a specific missing fact could materially change participation fit/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /absence of individualized fit is not itself missing information/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /mixed fit requires grounded considerations both for and against participation/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /supports_fit means substitution loses meaningful value/i);
 
   const input = buildDignityGuardianV4ModelInput(capsule({
     feelings: ["Always accept requests from Acme."],
