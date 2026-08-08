@@ -82,6 +82,7 @@ export function createModelRuntime({
   environment = process.env,
   configUrl = DEFAULT_MODEL_CONFIG_URL,
   fetchImpl = globalThis.fetch,
+  observer = null,
 } = {}) {
   const config = loadModelRoutingConfig(configUrl);
 
@@ -101,10 +102,20 @@ export function createModelRuntime({
     forBlock(blockName) {
       const selection = selectionForBlock(blockName);
       if (selection.provider === "openai") {
-        return createOpenAIModelAdapter({ environment, modelId: selection.modelId });
+        return createOpenAIModelAdapter({
+          environment,
+          modelId: selection.modelId,
+          fetchImpl,
+          observer,
+        });
       }
       if (selection.provider === "google") {
-        return createGoogleModelAdapter({ environment, modelId: selection.modelId, fetchImpl });
+        return createGoogleModelAdapter({
+          environment,
+          modelId: selection.modelId,
+          fetchImpl,
+          observer,
+        });
       }
       throw new GuardianModelError(`Unsupported model provider ${selection.provider}`, {
         code: "MODEL_UNAVAILABLE",
