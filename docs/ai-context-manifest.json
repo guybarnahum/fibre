@@ -19,6 +19,8 @@
         "docs/state/current-state.md",
         "docs/validation/thread-differential-gate.md",
         "docs/validation/pre-m2-bridge-plan.md",
+        "docs/validation/pre-m2-causal-status-register.md",
+        "docs/validation/semantic-guardian-v3-freeze.md",
         "docs/concepts/thread.md",
         "docs/concepts/interiority-and-expression.md",
         "docs/concepts/dignity.md"

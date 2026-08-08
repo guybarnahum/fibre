@@ -10,8 +10,11 @@ import { openFreezeStore } from "../src/freeze-store.mjs";
 import { openLifecycleHardeningStore } from "../src/lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "../src/expression-store.mjs";
 import { openCausalContextStore } from "../src/causal-context-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { openGuardianCognitionStore } from "../src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../src/causal-service.mjs";
 import { deriveDignityTraceFromPersistedRequest } from "../src/causal-inspection.mjs";
+import { createScriptedGuardianModelAdapter } from "./support/scripted-guardian-model-adapter.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -30,13 +33,15 @@ const FACTOR_KEYS = [
   "obligationsAndOpportunityCost",
 ];
 
-function openCausalWorld(databasePath, instant) {
+function openCausalWorld(databasePath, instant, guardianModelAdapter = createScriptedGuardianModelAdapter()) {
   const worldStore = openWorldStore(databasePath);
   const runtimeStore = openRuntimeStore(databasePath);
   const freezeStore = openFreezeStore(databasePath);
   const lifecycleStore = openLifecycleHardeningStore(databasePath);
   const expressionStore = openExpressionStore(databasePath);
   const causalContextStore = openCausalContextStore(databasePath);
+  const semanticStateStore = openSemanticStateStore(databasePath);
+  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
   const service = new PreM2CausalWorldKernelService(
     worldStore,
     runtimeStore,
@@ -44,11 +49,20 @@ function openCausalWorld(databasePath, instant) {
     lifecycleStore,
     expressionStore,
     causalContextStore,
-    { clock: () => new Date(instant) },
+    {
+      clock: () => new Date(instant),
+      semanticStateStore,
+      guardianCognitionStore,
+      guardianModelAdapter,
+    },
   );
   return {
     service,
+    guardianCognitionStore,
+    guardianModelAdapter,
     close() {
+      guardianCognitionStore.close();
+      semanticStateStore.close();
       causalContextStore.close();
       expressionStore.close();
       lifecycleStore.close();
@@ -71,7 +85,7 @@ function request() {
   };
 }
 
-test("all seven grounded Guardian factors remain inspectable after restart by capsule-only re-derivation", () => {
+test("all seven Guardian factors remain inspectable after restart without a model recall", () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-factor-trace-"));
   const databasePath = join(directory, "world.sqlite");
   let world = openCausalWorld(databasePath, "2026-08-07T21:30:00Z");
@@ -84,22 +98,28 @@ test("all seven grounded Guardian factors remain inspectable after restart by ca
       correlationId: "corr_causal_factor_trace",
     });
     assert.equal(created.trace.privateStance.desiredAction, "clarify");
-    assert.equal(created.trace.privateStance.policy.version, "2");
+    assert.equal(created.trace.privateStance.policy.version, "3");
+    assert.equal(world.guardianModelAdapter.callCount, 1);
     world.close();
 
-    world = openCausalWorld(databasePath, "2026-08-07T22:30:00Z");
+    const failIfCalled = createScriptedGuardianModelAdapter({ fail: new Error("model must not be called during replay") });
+    world = openCausalWorld(databasePath, "2026-08-07T22:30:00Z", failIfCalled);
     const persisted = world.service.getPrivateRequestTrace(mina.threadId, request().requestId);
-    const dignity = deriveDignityTraceFromPersistedRequest(persisted);
+    const input = world.guardianCognitionStore.getInputByAppraisal(persisted.appraisalId);
+    const assessment = world.guardianCognitionStore.getAssessmentByAppraisal(persisted.appraisalId);
+    const dignity = deriveDignityTraceFromPersistedRequest(persisted, input, assessment);
     assert.equal(dignity.matchesPersistedStance, true);
+    assert.equal(dignity.modelRecalled, false);
+    assert.equal(failIfCalled.callCount, 0);
     assert.equal(dignity.desiredAction, "clarify");
     assert.equal(dignity.dignityBand, "contested");
     assert.deepEqual(Object.keys(dignity.factors).sort(), [...FACTOR_KEYS].sort());
     for (const key of FACTOR_KEYS) assert.equal(typeof dignity.factors[key], "string");
-    assert.match(dignity.factors.identityAlignment, /does not claim semantic understanding/i);
-    assert.match(dignity.factors.individualizedAdvantage, /no model-backed or provenance-grounded semantic evidence/i);
-    assert.match(dignity.factors.relationalMeaning, /no resolved requester-specific relationship/i);
-    assert.match(dignity.factors.respectAndReciprocity, /reciprocity history remains unavailable/i);
-    assert.match(dignity.factors.obligationsAndOpportunityCost, /unresolved intention/i);
+    assert.match(dignity.factors.identityAlignment, /wiring fixture/i);
+    assert.match(dignity.factors.individualizedAdvantage, /not established/i);
+    assert.match(dignity.factors.relationalMeaning, /^Unresolved:/i);
+    assert.match(dignity.factors.respectAndReciprocity, /^Unresolved:/i);
+    assert.match(dignity.factors.obligationsAndOpportunityCost, /^Unresolved:/i);
     assert.deepEqual(dignity.feelings, mina.currentState.feelings);
     assert.deepEqual(dignity.conflictingMotives, []);
   } finally {
