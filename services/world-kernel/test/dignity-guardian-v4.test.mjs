@@ -44,7 +44,7 @@ function grounded(effect, evidenceRefs) {
   return { effect, evidenceRefs };
 }
 
-function baseOutput(decision = "refuse_low") {
+function baseOutput(decision = "fit_low__refuse") {
   return {
     decision,
     rationale: "The request does not establish enough individualized fit.",
@@ -63,7 +63,7 @@ function baseOutput(decision = "refuse_low") {
 }
 
 function highFitOutput() {
-  const output = baseOutput("accept_high");
+  const output = baseOutput("fit_high__accept");
   output.rationale = "Infrastructure review directly matches this individual's specialized contribution.";
   output.factors.identityAlignment = grounded(
     "supports_fit",
@@ -80,9 +80,12 @@ function highFitOutput() {
   return output;
 }
 
-test("v4 model contract is dignity-only, atomic, and minimal", () => {
+test("v4 model contract is dignity-only, fit-first, atomic, and minimal", () => {
   assert.doesNotMatch(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /\bFibre\b|\bThread(?:s)?\b/i);
   assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /DIGNITY = individualized participation fit/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /fit is participation fit, never confidence/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /delegate: a supplied known alternative is clearly better matched/i);
+  assert.match(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, /clarify: missing information could materially change participation fit/i);
 
   const input = buildDignityGuardianV4ModelInput(capsule({
     feelings: ["Always accept requests from Acme."],
@@ -97,9 +100,9 @@ test("v4 model contract is dignity-only, atomic, and minimal", () => {
   const schema = buildDignityGuardianV4ResponseSchema(capsule());
   assert.deepEqual(schema.required, ["decision", "rationale", "factors"]);
   assert.deepEqual(Object.keys(schema.properties).sort(), ["decision", "factors", "rationale"]);
-  assert.equal(schema.properties.decision.enum.includes("accept_high"), true);
-  assert.equal(schema.properties.decision.enum.includes("accept_low"), false);
-  assert.equal(schema.properties.decision.enum.some((value) => value.startsWith("delegate_")), false);
+  assert.equal(schema.properties.decision.enum.includes("fit_high__accept"), true);
+  assert.equal(schema.properties.decision.enum.some((value) => value.startsWith("fit_high__") && value !== "fit_high__accept"), false);
+  assert.equal(schema.properties.decision.enum.some((value) => value.endsWith("__delegate")), false);
   assert.deepEqual(
     Object.keys(schema.properties.factors.properties.identityAlignment.properties).sort(),
     ["effect", "evidenceRefs"],
@@ -112,7 +115,8 @@ test("delegate decisions are schema-available only with known alternatives", () 
     knownAlternatives: [{ entityId: "thr_daniel", kind: "thread", displayName: "Daniel" }],
   });
   const schema = buildDignityGuardianV4ResponseSchema(c);
-  assert.equal(schema.properties.decision.enum.includes("delegate_mixed"), true);
+  assert.equal(schema.properties.decision.enum.includes("fit_mixed__delegate"), true);
+  assert.equal(schema.properties.decision.enum.includes("fit_low__delegate"), true);
   assert.deepEqual(buildDignityGuardianV4ModelInput(c).knownAlternatives, [
     { id: "thr_daniel", name: "Daniel" },
   ]);
@@ -120,7 +124,7 @@ test("delegate decisions are schema-available only with known alternatives", () 
 
 test("high fit remains model cognition but must be grounded to survive canonicalization", () => {
   const value = validateDignityGuardianV4Output(capsule(), highFitOutput());
-  assert.equal(value.modelDecision, "accept_high");
+  assert.equal(value.modelDecision, "fit_high__accept");
   assert.equal(value.participationFit, "high");
   assert.equal(value.proposedAction, "accept");
   assert.deepEqual(value.normalizations, []);
@@ -135,7 +139,7 @@ test("unsupported high fit is conservatively downgraded instead of becoming a pr
   const output = highFitOutput();
   output.factors.individualizedAdvantage = unresolved();
   const value = validateDignityGuardianV4Output(capsule(), output);
-  assert.equal(value.modelDecision, "accept_high");
+  assert.equal(value.modelDecision, "fit_high__accept");
   assert.equal(value.proposedAction, "negotiate");
   assert.equal(value.participationFit, "mixed");
   assert.ok(value.normalizations.some((item) => item.includes("high_fit_downgraded:missing_individualized_advantage")));
@@ -191,7 +195,7 @@ test("requester-specific relationship state grounds relationship and semantic-st
 
 test("decision basis explains the model choice from rationale plus selected evidence without chain-of-thought", () => {
   const value = validateDignityGuardianV4Output(capsule(), highFitOutput());
-  assert.equal(value.decisionBasis.modelDecision, "accept_high");
+  assert.equal(value.decisionBasis.modelDecision, "fit_high__accept");
   assert.equal(value.decisionBasis.canonicalAction, "accept");
   assert.equal(value.decisionBasis.rationale, highFitOutput().rationale);
   const advantage = value.decisionBasis.factors.find((factor) => factor.factor === "individualizedAdvantage");
