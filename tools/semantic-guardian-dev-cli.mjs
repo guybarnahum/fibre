@@ -159,6 +159,38 @@ function failureLines(title, failures) {
   ];
 }
 
+function compactText(value, maxLength = 140) {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  return text.length <= maxLength ? text : `${text.slice(0, maxLength - 1)}…`;
+}
+
+function decisionBasisLines(output) {
+  const basis = output?.decisionBasis;
+  if (basis === null || typeof basis !== "object") return [];
+  const lines = [
+    `  model=${basis.modelDecision ?? "unknown"}`,
+    `  why: ${compactText(basis.rationale, 180)}`,
+  ];
+  if (Array.isArray(basis.normalizations) && basis.normalizations.length > 0) {
+    lines.push(`  normalized: ${basis.normalizations.join(", ")}`);
+  }
+  const factors = Array.isArray(basis.factors)
+    ? basis.factors.filter((factor) => factor.effect !== "neutral").slice(0, 4)
+    : [];
+  for (const factor of factors) {
+    const evidence = Array.isArray(factor.evidence) ? factor.evidence.slice(0, 2) : [];
+    if (evidence.length === 0) {
+      lines.push(`  ${factor.factor}=${factor.effect}`);
+      continue;
+    }
+    const evidenceText = evidence
+      .map((item) => `${item.ref} “${compactText(item.text, 95)}”`)
+      .join("; ");
+    lines.push(`  ${factor.factor}=${factor.effect} ← ${evidenceText}`);
+  }
+  return lines;
+}
+
 export function formatDevelopmentSummary(bundle) {
   const report = bundle.report;
   const passedCases = report.cases.filter((item) => item.status === "passed").length;
@@ -189,12 +221,13 @@ export function formatDevelopmentSummary(bundle) {
 
   const interesting = report.cases.filter((item) => item.output !== undefined);
   if (interesting.length > 0) {
-    lines.push("", "Case outcomes", "────────────────────────────────────────");
+    lines.push("", "Case outcomes and decision basis", "────────────────────────────────────────");
     for (const item of interesting) {
       const marker = item.status === "passed" ? "✓" : "✗";
       lines.push(
         `${marker} ${item.caseId}`,
         `  action=${item.output.proposedAction} · fit=${item.output.participationFit}`,
+        ...decisionBasisLines(item.output),
       );
     }
   }
