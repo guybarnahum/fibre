@@ -59,11 +59,28 @@ function elapsedLabel(milliseconds) {
   return minutes === 0 ? `${seconds}s` : `${minutes}m ${String(remainder).padStart(2, "0")}s`;
 }
 
+export function formatDevelopmentInterrupt(snapshot) {
+  const responseText = snapshot.responses === 0
+    ? "No model responses were received before interruption."
+    : `${snapshot.responses} model response${snapshot.responses === 1 ? " was" : "s were"} received before interruption.`;
+  const providerText = snapshot.providerFailures === 0
+    ? ""
+    : ` ${snapshot.providerFailures} provider attempt failure${snapshot.providerFailures === 1 ? " was" : "s were"} recorded before interruption.`;
+  return [
+    "Interrupted by Ctrl-C.",
+    "NON-EVIDENTIARY · development run stopped",
+    `${responseText}${providerText}`,
+    "Temporary development state cleaned up. Nothing sealed; Fibre score unchanged.",
+    "",
+  ].join("\n");
+}
+
 function startProgress(journalPath, selection) {
   if (!process.stderr.isTTY) return { stop() {} };
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   const startedAt = Date.now();
   let frame = 0;
+  let stopped = false;
 
   process.stderr.write(
     `\nFibre · Semantic Guardian v4 development\n` +
@@ -87,11 +104,14 @@ function startProgress(journalPath, selection) {
   timer.unref();
   return {
     stop(status) {
+      if (stopped) return;
+      stopped = true;
       clearInterval(timer);
       const snapshot = progressSnapshot(journalPath);
-      const symbol = status === "passed" ? "✓" : status === "blocked" ? "○" : "×";
+      const symbol = status === "passed" ? "✓" : status === "blocked" ? "○" : status === "interrupted" ? "!" : "×";
+      const statusLabel = status === "interrupted" ? "INTERRUPTED" : status;
       process.stderr.write(
-        `\r\u001b[2K${symbol} Development run · ${snapshot.responses}/${EXPECTED_CASES} model responses · ${status} · ${elapsedLabel(Date.now() - startedAt)}\n\n`,
+        `\r\u001b[2K${symbol} Development run · ${snapshot.responses}/${EXPECTED_CASES} model responses · ${statusLabel} · ${elapsedLabel(Date.now() - startedAt)}\n\n`,
       );
     },
   };
@@ -186,9 +206,32 @@ export async function runDevelopmentGuardian(environment = process.env, options 
   process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = journalPath;
   process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = developmentRunId;
 
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    if (previousJournal === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+    else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournal;
+    if (previousCycle === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
+    else process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = previousCycle;
+    rmSync(directory, { recursive: true, force: true });
+  };
+
   const runtime = options.modelRuntime ?? createModelRuntime({ environment });
   const selection = runtime.selectionForBlock(REASONING_BLOCK);
   const progress = startProgress(journalPath, selection);
+  let interruptHandled = false;
+  const onSigint = () => {
+    if (interruptHandled) return;
+    interruptHandled = true;
+    const snapshot = progressSnapshot(journalPath);
+    progress.stop("interrupted");
+    cleanup();
+    process.stderr.write(formatDevelopmentInterrupt(snapshot));
+    process.exit(130);
+  };
+  process.once("SIGINT", onSigint);
+
   try {
     let report;
     try {
@@ -212,11 +255,8 @@ export async function runDevelopmentGuardian(environment = process.env, options 
     progress.stop(report.status);
     return bundle;
   } finally {
-    if (previousJournal === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
-    else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournal;
-    if (previousCycle === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
-    else process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = previousCycle;
-    rmSync(directory, { recursive: true, force: true });
+    process.removeListener("SIGINT", onSigint);
+    cleanup();
   }
 }
 
