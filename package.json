@@ -22,6 +22,8 @@
     "demo:m1": "node --disable-warning=ExperimentalWarning tools/m1-reviewed-proof.mjs",
     "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/m1-demo-editor.mjs",
     "demo:causal-thread": "node --disable-warning=ExperimentalWarning tools/pre-m2-causal-proof.mjs",
+    "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
+    "guardian:gate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-cli.mjs",
     "demo:semantic-guardian": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-cli.mjs",
     "inspect:db": "node --disable-warning=ExperimentalWarning tools/inspect-world-database.mjs"
   },
