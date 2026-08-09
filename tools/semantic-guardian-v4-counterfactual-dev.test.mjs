@@ -5,6 +5,7 @@ import {
   buildCounterfactualDevelopmentCases,
   evaluateCounterfactualDevelopment,
   formatCounterfactualProgress,
+  parseCounterfactualDevelopmentArgs,
   validateCounterfactualPairs,
 } from "./semantic-guardian-v4-counterfactual-dev.mjs";
 
@@ -63,6 +64,18 @@ test("counterfactual development rejects state-presence versus state-absence pai
   const malformed = structuredClone(cases);
   malformed[0].capsule.semanticState = [];
   assert.throws(() => validateCounterfactualPairs(malformed), /both sides must carry explicit semantic state/);
+});
+
+test("counterfactual development accepts an explicit model override", () => {
+  assert.deepEqual(parseCounterfactualDevelopmentArgs([]), { model: null, help: false });
+  assert.deepEqual(parseCounterfactualDevelopmentArgs(["--model", "gpt-5.6-luna"]), {
+    model: "gpt-5.6-luna",
+    help: false,
+  });
+  assert.equal(parseCounterfactualDevelopmentArgs(["--model=gpt-5.6-luna"]).model, "gpt-5.6-luna");
+  assert.throws(() => parseCounterfactualDevelopmentArgs(["--model"]), /requires a non-empty model id/);
+  assert.throws(() => parseCounterfactualDevelopmentArgs(["--model="]), /requires a non-empty model id/);
+  assert.throws(() => parseCounterfactualDevelopmentArgs(["--wat"]), /unknown option/);
 });
 
 test("counterfactual development progress names case, provider, and attempt", () => {
