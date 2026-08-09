@@ -155,6 +155,84 @@ function compact(value, max = 180) {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
+function elapsedLabel(milliseconds) {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return minutes === 0 ? `${seconds}s` : `${minutes}m ${String(remainder).padStart(2, "0")}s`;
+}
+
+export function formatCounterfactualProgress({ caseIndex, totalCases, caseId, lastEvent, selection, elapsedMs }) {
+  const elapsed = elapsedLabel(elapsedMs);
+  if (lastEvent?.type === "model_attempt") {
+    return `${caseId} · ${caseIndex}/${totalCases} · attempt ${lastEvent.attempt}/${lastEvent.maximumAttempts} · waiting for ${selection.provider} · ${elapsed}`;
+  }
+  if (lastEvent?.type === "operational_failure" && lastEvent.retrying) {
+    return `${caseId} · ${caseIndex}/${totalCases} · attempt ${lastEvent.attempt}/${lastEvent.maximumAttempts} failed ${lastEvent.failure?.code ?? "provider error"} · retrying · ${elapsed}`;
+  }
+  return `${caseId} · ${caseIndex}/${totalCases} · waiting for ${selection.provider} · ${elapsed}`;
+}
+
+function startCounterfactualProgress(selection, totalCases) {
+  if (!process.stderr.isTTY) return { beginCase() {}, observe() {}, completeCase() {}, stop() {} };
+
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  const startedAt = Date.now();
+  let frame = 0;
+  let caseIndex = 1;
+  let caseId = "starting";
+  let completed = 0;
+  let lastEvent = null;
+  let stopped = false;
+
+  process.stderr.write(
+    `\nFibre · Semantic Guardian v4 counterfactual development\n` +
+    `NON-EVIDENTIARY · ${SET.id} · ${selection.provider}/${selection.modelId} · ${totalCases} cases\n\n`,
+  );
+
+  const render = () => {
+    process.stderr.write(
+      `\r\u001b[2K${frames[frame % frames.length]} ${formatCounterfactualProgress({
+        caseIndex,
+        totalCases,
+        caseId,
+        lastEvent,
+        selection,
+        elapsedMs: Date.now() - startedAt,
+      })}`,
+    );
+    frame += 1;
+  };
+
+  render();
+  const timer = setInterval(render, 250);
+  timer.unref();
+
+  return {
+    beginCase(index, id) {
+      caseIndex = index;
+      caseId = id;
+      lastEvent = null;
+      render();
+    },
+    observe(event) {
+      lastEvent = event;
+    },
+    completeCase() {
+      completed += 1;
+    },
+    stop(status) {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(timer);
+      const symbol = status === "passed" ? "✓" : "×";
+      process.stderr.write(
+        `\r\u001b[2K${symbol} Counterfactual development · ${completed}/${totalCases} model calls completed · ${status.toUpperCase()} · ${elapsedLabel(Date.now() - startedAt)}\n\n`,
+      );
+    },
+  };
+}
+
 export function formatCounterfactualDevelopmentSummary({ selection, results, failures }) {
   const lines = [
     "Fibre · Semantic Guardian v4 counterfactual development",
@@ -201,27 +279,39 @@ export function formatCounterfactualDevelopmentSummary({ selection, results, fai
 export async function runCounterfactualDevelopment({ environment = process.env } = {}) {
   const cases = buildCounterfactualDevelopmentCases();
   validateCounterfactualPairs(cases);
-  const runtime = createModelRuntime({ environment });
+  let progress = null;
+  const observer = (event) => progress?.observe(event);
+  const runtime = createModelRuntime({ environment, observer });
   const selection = runtime.selectionForBlock("dignity_guardian");
   const adapter = runtime.forBlock("dignity_guardian");
   const results = [];
+  progress = startCounterfactualProgress(selection, cases.length);
 
-  for (const testCase of cases) {
-    try {
-      const result = await semanticDignityGuardianV4(testCase.capsule, adapter, {
-        clientRequestId: `guardian-v4-counterfactual-dev:${testCase.id}`,
-      });
-      results.push({ caseId: testCase.id, output: structuredClone(result.output) });
-    } catch (error) {
-      results.push({
-        caseId: testCase.id,
-        error: { name: error?.constructor?.name ?? "Error", code: error?.code ?? null, message: error?.message ?? String(error) },
-      });
+  try {
+    for (const [index, testCase] of cases.entries()) {
+      progress.beginCase(index + 1, testCase.id);
+      try {
+        const result = await semanticDignityGuardianV4(testCase.capsule, adapter, {
+          clientRequestId: `guardian-v4-counterfactual-dev:${testCase.id}`,
+        });
+        results.push({ caseId: testCase.id, output: structuredClone(result.output) });
+      } catch (error) {
+        results.push({
+          caseId: testCase.id,
+          error: { name: error?.constructor?.name ?? "Error", code: error?.code ?? null, message: error?.message ?? String(error) },
+        });
+      } finally {
+        progress.completeCase();
+      }
     }
-  }
 
-  const failures = evaluateCounterfactualDevelopment(cases, results);
-  return { selection, cases, results, failures, passed: failures.length === 0 };
+    const failures = evaluateCounterfactualDevelopment(cases, results);
+    progress.stop(failures.length === 0 ? "passed" : "failed");
+    return { selection, cases, results, failures, passed: failures.length === 0 };
+  } catch (error) {
+    progress.stop("failed");
+    throw error;
+  }
 }
 
 async function main() {
