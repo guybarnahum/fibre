@@ -24,7 +24,7 @@ export const SEMANTIC_GUARDIAN_V4_GATE_V4_JOURNAL = resolve(`artifacts/test-resu
 const EXPECTED_CASES = buildSemanticGuardianV4StandingCasesV4().length;
 
 function usage() {
-  return `Fibre Semantic Guardian v4 standing gate v4\n\nUsage:\n  npm run guardian:gate\n  npm run guardian:gate -- --summary\n  npm run guardian:gate -- --json\n  npm run guardian:gate -- --summary --json\n  npm run guardian:gate -- --summary-only\n  npm run guardian:gate -- --summary-only --evidence <path>\n\nThis is a one-shot sealed standing gate for ${SET.id}. Missing credentials/configuration block without consuming the cycle. Once a real provider attempt starts, the cycle seals pass or fail.\n`;
+  return `Fibre Semantic Guardian v4 standing gate v4\n\nUsage:\n  npm run guardian:gate\n  npm run guardian:gate -- --summary\n  npm run guardian:gate -- --json\n  npm run guardian:gate -- --summary --json\n  npm run guardian:gate -- --summary-only\n  npm run guardian:gate -- --summary-only --evidence <path>\n\nThis is a one-shot sealed standing gate for ${SET.id}. Missing credentials/configuration block without consuming the cycle. Once a real provider attempt starts, the cycle seals pass or fail. A later execution request is rejected without changing the sealed result.\n`;
 }
 
 function parseArgs(argv) {
@@ -201,14 +201,53 @@ export function formatStandingGateV4Summary(bundle) {
   return `${lines.join("\n")}\n`;
 }
 
+export function formatStandingGateV4Rejected(result) {
+  const report = result.evidenceBundle?.report ?? result.report ?? null;
+  const lines = [
+    "Fibre · Semantic Guardian v4 standing gate v4",
+    `SEALED · ${SET.id}`,
+    `Candidate: ${FROZEN.id}`,
+    `Model: ${report?.modelProvider ?? FROZEN.provider}/${report?.modelId ?? FROZEN.modelId}`,
+    "",
+    "REQUEST: REJECTED",
+    `Reason: ${result.rejectionReason}`,
+    "No provider call was made. The sealed evidence was not changed.",
+  ];
+  if (report !== null) {
+    lines.push(
+      "",
+      `Authoritative sealed result: ${String(report.status).toUpperCase()}`,
+      `Standing gate: ${report.standingDifferentialGatePassed ? "PASSED" : "NOT PASSED"}`,
+      `Score movement: ${report.scoreMovementPermitted ? "PERMITTED" : "NO"}`,
+    );
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function rejectedRerun({ evidenceBundle = null, evidenceArtifactPath = null, rejectionReason }) {
+  return {
+    executionStatus: "rejected",
+    rejectionReason,
+    report: evidenceBundle?.report ?? null,
+    evidenceArtifactPath,
+    evidenceBundle,
+  };
+}
+
 export async function runSealedSemanticGuardianV4GateV4({ environment = process.env } = {}) {
   assertSemanticGuardianV4FrozenBoundaryV4();
-  if (existsSync(SEMANTIC_GUARDIAN_V4_GATE_V4_ARTIFACT) || existsSync(SEMANTIC_GUARDIAN_V4_GATE_V4_JOURNAL)) {
-    return {
-      report: blockedV4StandingReportV4(`Standing gate ${SET.id} is already sealed by an existing evidence artifact or journal. Never rerun a sealed cycle.`),
-      evidenceArtifactPath: existsSync(SEMANTIC_GUARDIAN_V4_GATE_V4_ARTIFACT) ? SEMANTIC_GUARDIAN_V4_GATE_V4_ARTIFACT : null,
-      evidenceBundle: null,
-    };
+  if (existsSync(SEMANTIC_GUARDIAN_V4_GATE_V4_ARTIFACT)) {
+    const evidenceBundle = readBundle(SEMANTIC_GUARDIAN_V4_GATE_V4_ARTIFACT);
+    return rejectedRerun({
+      evidenceBundle,
+      evidenceArtifactPath: SEMANTIC_GUARDIAN_V4_GATE_V4_ARTIFACT,
+      rejectionReason: `Standing gate ${SET.id} is already sealed. Rerun requests are rejected; inspect the existing evidence instead.`,
+    });
+  }
+  if (existsSync(SEMANTIC_GUARDIAN_V4_GATE_V4_JOURNAL)) {
+    return rejectedRerun({
+      rejectionReason: `Standing gate ${SET.id} already has a sealed/in-progress journal. Rerun requests are rejected; preserve and inspect the existing cycle.`,
+    });
   }
 
   mkdirSync(dirname(SEMANTIC_GUARDIAN_V4_GATE_V4_JOURNAL), { recursive: true });
@@ -264,6 +303,17 @@ async function main() {
   if (options.summaryOnly) { process.stdout.write(formatStandingGateV4Summary(readBundle(options.evidencePath))); return; }
 
   const result = await runSealedSemanticGuardianV4GateV4();
+  if (result.executionStatus === "rejected") {
+    if (options.summary) process.stdout.write(formatStandingGateV4Rejected(result));
+    if (options.json) process.stdout.write(`${JSON.stringify({
+      executionStatus: result.executionStatus,
+      rejectionReason: result.rejectionReason,
+      evidenceArtifactPath: result.evidenceArtifactPath,
+      authoritativeReport: result.report,
+    }, null, 2)}\n`);
+    return;
+  }
+
   const bundle = result.evidenceBundle ?? {
     version: 4,
     evidenceClass: "standing_gate",
