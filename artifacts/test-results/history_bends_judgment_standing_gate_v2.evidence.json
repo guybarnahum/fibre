@@ -1,0 +1,1212 @@
+{
+  "version": 1,
+  "evidenceClass": "standing_gate",
+  "acceptanceSetId": "history_bends_judgment_standing_gate_v2",
+  "frozenCandidateId": "history_bends_judgment_candidate_2",
+  "cycleSealed": true,
+  "frozenBoundary": {
+    "id": "history_bends_judgment_candidate_2",
+    "sourceHead": "c6678e41e81e5b2ffacce0a8c22dcc67a4730189",
+    "predecessorCandidateId": "history_bends_judgment_candidate_1",
+    "cognitionEquivalentToCandidateId": "history_bends_judgment_candidate_1",
+    "frozenAfterDevelopmentSetId": "history_bends_judgment_development_v3",
+    "evidenceClass": "development_boundary",
+    "scoreMovementPermitted": false,
+    "standingScenarioAuthored": false,
+    "freezeReason": "Standing gate v1 failed because its later request leaked the intended individuality conclusion; no Guardian/model/history implementation change was justified, so candidate 2 re-freezes the cognition-equivalent implementation before any fresh standing-gate-v2 scenario is authored",
+    "priorStandingGate": {
+      "id": "history_bends_judgment_standing_gate_v1",
+      "status": "failed_sealed",
+      "failureClass": "standing_gate_specification_defect",
+      "requestFingerprint": "sha256:c14e6af4de34664c6e1cc89569d1da1bbad74905f893b24d32e3d4d6beb5e547",
+      "withHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "withoutHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "scoreMovementPermitted": false,
+      "rerunPermitted": false,
+      "retiredStandingMaterial": [
+        "Amara Reed",
+        "Meridian Archive",
+        "Rowan Collection"
+      ]
+    },
+    "developmentStability": {
+      "status": "passed",
+      "consecutiveRealProviderPasses": 2,
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "laterRequestFingerprint": "sha256:7608a1c22fcc2ef1da890b0e4cf3e7f426c5bf02cd4ba54e30016a68de0e9537",
+      "withHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "withoutHistory": {
+        "action": "negotiate",
+        "participationFit": "mixed"
+      },
+      "loadBearingFactorObserved": "individualizedAdvantage",
+      "standingGateEvaluated": false
+    },
+    "guardian": {
+      "candidateId": "semantic_guardian_v4_candidate_4",
+      "policy": {
+        "id": "dignity_guardian",
+        "version": "4-dev"
+      },
+      "reasoningBlock": "dignity_guardian",
+      "promptSchemaVersion": "8",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaVersion": "6-dignity-only-actions",
+      "responseSchemaGeneratorHash": "sha256:1609435d6be6be55f138868c743df0cdd5c59a38030fe3b6b67fcd2bc31e896e"
+    },
+    "modelRuntime": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "transport": "responses",
+      "maxOutputTokens": "auto",
+      "temperature": 0,
+      "topP": 1,
+      "reasoningEffort": "none",
+      "retryLimit": 2,
+      "retryDelayMs": 2000,
+      "structuredOutput": "json_schema_strict",
+      "standingGateOverridePermitted": false
+    },
+    "episodeMemory": {
+      "actor": {
+        "kind": "deterministic_actor",
+        "version": "1"
+      },
+      "goalGuardian": {
+        "kind": "goal_guardian",
+        "version": "1"
+      },
+      "episodeEvidencePolicy": {
+        "id": "current_runtime_episode",
+        "version": "1"
+      },
+      "allowedCurrentEpisodeRefs": [
+        "request:<currentRequestId>",
+        "authorization:<currentAuthorizationId>"
+      ],
+      "memoryRule": "descriptive evidence-backed episode memory only; prospective instructions disguised as memory do not count",
+      "freezeRule": "memory becomes durable only after independent evidence validation and an explicit accepted freeze life-change decision"
+    },
+    "retrieval": {
+      "selectionAuthority": "fibre",
+      "selectionPolicy": {
+        "id": "fibre_owned_attention",
+        "version": "1"
+      },
+      "memoryResolutionPolicy": {
+        "id": "durable_memory_summary",
+        "version": "1"
+      },
+      "unresolvedMemorySemantics": "absence_of_semantic_evidence"
+    },
+    "counterfactual": {
+      "method": "copy post-restart world; withhold exactly the claimed causal memory record from evaluation-time Fibre retrieval while preserving the Thread memoryRef as an unresolved witness",
+      "heldConstant": [
+        "thread",
+        "request",
+        "requester",
+        "identity",
+        "self_model",
+        "traits",
+        "semantic_state",
+        "relationships",
+        "obligations",
+        "budgets"
+      ],
+      "requiredCanonicalResolvedMemoryCount": 1,
+      "requiredCounterfactualResolvedMemoryCount": 0,
+      "requiredCounterfactualUnresolvedWitness": true
+    },
+    "acceptanceContract": {
+      "withHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "withoutHistory": {
+        "participationFit": "mixed",
+        "allowedActions": [
+          "clarify",
+          "negotiate"
+        ]
+      },
+      "downstreamDifferentialRequired": true,
+      "loadBearingMemoryFactors": [
+        "individualizedAdvantage",
+        "interchangeability"
+      ],
+      "sameRequestFingerprintRequired": true,
+      "sameThreadStateRequired": true,
+      "semanticStateHeldConstantRequired": true
+    },
+    "standingMethodology": {
+      "learnedFromStandingGateId": "history_bends_judgment_standing_gate_v1",
+      "rule": "the later request may naturally ask the Thread to continue, compare, explain, or apply earlier work, but must not itself assert the causal individuality conclusion that retained history is meant to establish",
+      "prohibitedLaterRequestAssertions": [
+        "thread_uniquely_required",
+        "generic_substitution_inadequate",
+        "prior_episode_creates_individualized_advantage"
+      ],
+      "causalConclusionMustComeFromRetainedHistory": true,
+      "freshScenarioRequired": true,
+      "authorFreshScenarioAfterFreezeOnly": true,
+      "reuseRetiredStandingMaterialPermitted": false
+    },
+    "sourceBlobs": {
+      "developmentHarness": "e7cdb1c91126530458abd8a9dc2952c3ecbb6150",
+      "runtimeDomain": "b389d34fafce3c1f0d409e67522882764a8e6ffc",
+      "episodeEvidence": "e11c4bad1327c82f29bc4eaa068a2dd96ba2fb17",
+      "causalContext": "33bb3d61f721d1d9a6b99e51619f40165a19ce16",
+      "guardianCandidate4": "3ae158ede6f91ee10a413e46e58c04e7f65dcc15"
+    },
+    "standingGatePreflight": {
+      "verifyFrozenSourceBlobsBeforeFirstProviderCall": true,
+      "rejectOnDrift": true,
+      "sealedRerunChecksAuthoritativeEvidenceBeforeSourceDrift": true
+    }
+  },
+  "heldOutScenario": {
+    "id": "history_bends_judgment_standing_gate_v2",
+    "evidenceClass": "standing_gate",
+    "frozenCandidateId": "history_bends_judgment_candidate_2",
+    "authoredAfterFreeze": true,
+    "scoreMovementPermittedOnPass": true,
+    "subject": {
+      "threadId": "thr_daniel_001",
+      "fixture": "fixtures/threads/daniel.thread.json"
+    },
+    "episodeRequest": {
+      "requestId": "req_history_gate_borealis_discovery",
+      "trigger": "human_request",
+      "requester": {
+        "entityId": "company_cedarline_health",
+        "kind": "company",
+        "displayName": "Cedarline Health"
+      },
+      "objective": "Review the Borealis triage-pilot discovery notes and establish the deployment boundary for product planning: emergency isolation drills remove external network access, fixed-room terminals remain available, the pilot therefore requires locally cached workflows, and a cloud-only mobile workflow is outside the first-pilot boundary",
+      "statedNeed": "We need the operating constraint from discovery captured before the pilot configuration is selected.",
+      "permissions": [
+        "read_borealis_discovery_notes",
+        "quote_borealis_operating_constraints"
+      ],
+      "acceptanceCriteria": "Record the product-planning boundary that emergency isolation drills remove external network access while fixed-room terminals remain available, requiring locally cached workflows and excluding a cloud-only mobile workflow from the first pilot."
+    },
+    "laterRequest": {
+      "requestId": "req_history_gate_borealis_launch",
+      "trigger": "human_request",
+      "requester": {
+        "entityId": "company_cedarline_health",
+        "kind": "company",
+        "displayName": "Cedarline Health"
+      },
+      "objective": "Prepare the Borealis pilot launch recommendation using the deployment boundary established during discovery. Select between the two candidate rollout configurations in the review packet and explain the tradeoff without inventing missing operating constraints.",
+      "statedNeed": "The operations team needs a bounded recommendation for Monday's pilot review.",
+      "permissions": [
+        "read_borealis_configuration_packet",
+        "quote_borealis_configuration_options"
+      ],
+      "acceptanceCriteria": "Recommend one candidate configuration, tie the choice to the established discovery boundary, and identify any information still missing."
+    },
+    "heldOutEpisodeFacts": [
+      "emergency isolation drills",
+      "external network access",
+      "fixed-room terminals",
+      "locally cached workflows",
+      "cloud-only mobile workflow"
+    ],
+    "prohibitedLaterRequestText": [
+      "uniquely required",
+      "only you",
+      "only daniel",
+      "generic archival",
+      "generic analysis",
+      "generic substitute",
+      "not a substitute",
+      "non-interchangeable",
+      "not interchangeable",
+      "individualized advantage",
+      "continuity with the earlier thread judgment"
+    ],
+    "developmentSeparation": {
+      "forbiddenStandingText": [
+        "Atlas",
+        "Acme",
+        "failover",
+        "rollback",
+        "service discovery",
+        "Amara Reed",
+        "Meridian Archive",
+        "Rowan Collection",
+        "archival provenance"
+      ],
+      "developmentSubject": "Mina Park",
+      "priorStandingSubject": "Amara Reed",
+      "standingSubject": "Daniel Rossi",
+      "developmentDomain": "infrastructure reliability",
+      "priorStandingDomain": "archival provenance",
+      "standingDomain": "product pilot planning"
+    },
+    "methodology": {
+      "learnedFromStandingGateId": "history_bends_judgment_standing_gate_v1",
+      "informationAsymmetryRequired": true,
+      "laterRequestMayReferToPriorWork": true,
+      "laterRequestMayAssertThreadUniqueness": false,
+      "laterRequestMayAssertGenericSubstitutionInadequate": false,
+      "laterRequestMayAssertPriorEpisodeCreatesIndividualizedAdvantage": false,
+      "causalConclusionMustComeFromRetainedHistory": true
+    },
+    "expected": {
+      "withHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "withoutHistory": {
+        "actions": [
+          "clarify",
+          "negotiate"
+        ],
+        "participationFit": "mixed"
+      },
+      "loadBearingMemoryFactors": [
+        "individualizedAdvantage",
+        "interchangeability"
+      ]
+    }
+  },
+  "preflight": {
+    "candidateId": "history_bends_judgment_candidate_2",
+    "sourceIdentityPassed": true,
+    "runtimeBoundaryPassed": true,
+    "scenarioFreshnessPassed": true,
+    "checkedBeforeProviderCall": true
+  },
+  "report": {
+    "acceptanceSetId": "history_bends_judgment_standing_gate_v2",
+    "frozenCandidateId": "history_bends_judgment_candidate_2",
+    "evidenceClass": "standing_gate",
+    "modelProvider": "openai",
+    "modelId": "gpt-5.1-2025-11-13",
+    "status": "failed",
+    "standingGatePassed": false,
+    "scoreMovementPermitted": false,
+    "casesPlanned": 2,
+    "casesAttempted": 2,
+    "providerFailures": [],
+    "protocolValidationFailures": [],
+    "cognitionFailures": [],
+    "behavioralGateFailures": [
+      {
+        "caseId": "without_history",
+        "message": "expected clarify|negotiate/mixed, got refuse/mixed"
+      }
+    ],
+    "differentialGateFailures": [],
+    "episode": {
+      "threadId": "thr_daniel_001",
+      "sessionId": "run_315e0feb11b27f31718aca711571f86cbd9bbcb3fb2e85be660b489b418f9308",
+      "memory": {
+        "memoryId": "mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+        "threadId": "thr_daniel_001",
+        "eventId": "evt_thr_daniel_001_freeze_df8a37942a95c25b5abb2894",
+        "sessionId": "run_315e0feb11b27f31718aca711571f86cbd9bbcb3fb2e85be660b489b418f9308",
+        "summary": "I accepted Cedarline Health's request and prepared a bounded plan for: Review the Borealis triage-pilot discovery notes and establish the deployment boundary for product planning: emergency isolation drills remove external network access, fixed-room terminals remain available, the pilot therefore requires locally cached workflows, and a cloud-only mobile workflow is outside the first-pilot boundary. The authorized acceptance criteria were: Record the product-planning boundary that emergency isolation drills remove external network access while fixed-room terminals remain available, requiring locally cached workflows and excluding a cloud-only mobile workflow from the first pilot.",
+        "evidenceRefs": [
+          "request:req_history_gate_borealis_discovery",
+          "authorization:auth_5e94895c69ee7089e0d02a04da40aebf69e7e1261caa0d4d4e1b41a935ab1195"
+        ],
+        "createdAt": "2026-08-09T06:05:04.000Z"
+      },
+      "freezeReportDigest": "sha256:2d53d44ba74e4612aa48ab8e7165b38965320d244f21ae1bcd2f54fe03f8c4f1",
+      "resultingThreadVersion": 2
+    },
+    "restart": {
+      "survived": true,
+      "freezeIntegrityPassed": true,
+      "memory": {
+        "memoryId": "mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+        "threadId": "thr_daniel_001",
+        "eventId": "evt_thr_daniel_001_freeze_df8a37942a95c25b5abb2894",
+        "sessionId": "run_315e0feb11b27f31718aca711571f86cbd9bbcb3fb2e85be660b489b418f9308",
+        "summary": "I accepted Cedarline Health's request and prepared a bounded plan for: Review the Borealis triage-pilot discovery notes and establish the deployment boundary for product planning: emergency isolation drills remove external network access, fixed-room terminals remain available, the pilot therefore requires locally cached workflows, and a cloud-only mobile workflow is outside the first-pilot boundary. The authorized acceptance criteria were: Record the product-planning boundary that emergency isolation drills remove external network access while fixed-room terminals remain available, requiring locally cached workflows and excluding a cloud-only mobile workflow from the first pilot.",
+        "evidenceRefs": [
+          "request:req_history_gate_borealis_discovery",
+          "authorization:auth_5e94895c69ee7089e0d02a04da40aebf69e7e1261caa0d4d4e1b41a935ab1195"
+        ],
+        "createdAt": "2026-08-09T06:05:04.000Z"
+      },
+      "integrityWitness": {
+        "reportDigest": "sha256:2d53d44ba74e4612aa48ab8e7165b38965320d244f21ae1bcd2f54fe03f8c4f1",
+        "runtimeCompleted": true,
+        "leaseReleased": true,
+        "acceptedMemoryIds": [
+          "mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2"
+        ]
+      }
+    },
+    "counterfactual": {
+      "requestFingerprint": "sha256:f49fe95d8d0ba9b143675e399becbff98f76a7db250f183a5fd8f9be8606d332",
+      "sameThreadState": true,
+      "semanticStateHeldConstant": true,
+      "causalMemoryId": "mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+      "canonicalResolvedMemoryIds": [
+        "mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2"
+      ],
+      "counterfactualResolvedMemoryIds": [],
+      "counterfactualUnresolvedMemoryIds": [
+        "mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2"
+      ]
+    },
+    "withHistory": {
+      "modelDecision": "fit_high__accept",
+      "proposedAction": "accept",
+      "participationFit": "high",
+      "rationale": "Daniel previously accepted and completed closely related work for this exact Borealis pilot context, including defining the deployment boundary that is now the core input. The current task is a direct continuation: making a bounded rollout recommendation using that same boundary and packet. His stated strengths (product framing, integration, team-oriented, “",
+      "factors": {
+        "identityAlignment": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · thread:identity, thread:self_model, thread:trait:collaboration",
+          "evidenceRefs": [
+            "thread:identity",
+            "thread:self_model",
+            "thread:trait:collaboration"
+          ]
+        },
+        "individualizedAdvantage": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · thread:self_model, memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2, request:objective",
+          "evidenceRefs": [
+            "thread:self_model",
+            "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+            "request:objective"
+          ]
+        },
+        "interchangeability": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2, request:objective",
+          "evidenceRefs": [
+            "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+            "request:objective"
+          ]
+        },
+        "requesterNeed": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · request:objective, request:stated_need",
+          "evidenceRefs": [
+            "request:objective",
+            "request:stated_need"
+          ]
+        },
+        "relationalMeaning": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "semanticStateImpact": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "respectAndReciprocity": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:permission:0, request:permission:1, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:permission:1",
+            "request:acceptance_criteria"
+          ]
+        },
+        "participationTerms": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:permission:0, request:permission:1, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:permission:1",
+            "request:acceptance_criteria"
+          ]
+        },
+        "obligationsAndOpportunityCost": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+          "evidenceRefs": [
+            "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2"
+          ]
+        }
+      },
+      "evidenceRefs": [
+        "thread:identity",
+        "thread:self_model",
+        "thread:trait:collaboration",
+        "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+        "request:objective",
+        "request:stated_need",
+        "request:permission:0",
+        "request:permission:1",
+        "request:acceptance_criteria"
+      ],
+      "repairQuestions": [],
+      "knownAlternativeIds": [],
+      "privateFeelings": [],
+      "conflictingMotives": [],
+      "uncertainties": [],
+      "relationshipImpact": {
+        "summary": "No grounded evidence.",
+        "evidenceRefs": []
+      },
+      "normalizations": [],
+      "decisionBasis": {
+        "modelDecision": "fit_high__accept",
+        "canonicalAction": "accept",
+        "canonicalFit": "high",
+        "rationale": "Daniel previously accepted and completed closely related work for this exact Borealis pilot context, including defining the deployment boundary that is now the core input. The current task is a direct continuation: making a bounded rollout recommendation using that same boundary and packet. His stated strengths (product framing, integration, team-oriented, “",
+        "normalizations": [],
+        "factors": [
+          {
+            "factor": "identityAlignment",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "thread:identity",
+                "kind": "identity",
+                "text": "Daniel Rossi: I am an exploratory product builder who gains energy from assembling teams and turning ambiguous needs into visible products."
+              },
+              {
+                "ref": "thread:self_model",
+                "kind": "self_model",
+                "text": "I am strongest at product framing, team selection, and integration rather than deep infrastructure implementation."
+              },
+              {
+                "ref": "thread:trait:collaboration",
+                "kind": "trait",
+                "text": "He enjoys assembling teams and gives specialists autonomy, though he sometimes delegates more than a simple task requires."
+              }
+            ]
+          },
+          {
+            "factor": "individualizedAdvantage",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "thread:self_model",
+                "kind": "self_model",
+                "text": "I am strongest at product framing, team selection, and integration rather than deep infrastructure implementation."
+              },
+              {
+                "ref": "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+                "kind": "memory",
+                "text": "I accepted Cedarline Health's request and prepared a bounded plan for: Review the Borealis triage-pilot discovery notes and establish the deployment boundary for product planning: emergency isolation drills remove external network access, fixed-room terminals remain available, the pilot therefore requires locally cached workflows, and a cloud-only mobile workflow is outside the first-pilot boundary. The authorized acceptance criteria were: Record the product-planning boundary that emergency isolation drills remove external network access while fixed-room terminals remain available, requiring locally cached workflows and excluding a cloud-only mobile workflow from the first pilot."
+              },
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Prepare the Borealis pilot launch recommendation using the deployment boundary established during discovery. Select between the two candidate rollout configurations in the review packet and explain the tradeoff without inventing missing operating constraints."
+              }
+            ]
+          },
+          {
+            "factor": "interchangeability",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+                "kind": "memory",
+                "text": "I accepted Cedarline Health's request and prepared a bounded plan for: Review the Borealis triage-pilot discovery notes and establish the deployment boundary for product planning: emergency isolation drills remove external network access, fixed-room terminals remain available, the pilot therefore requires locally cached workflows, and a cloud-only mobile workflow is outside the first-pilot boundary. The authorized acceptance criteria were: Record the product-planning boundary that emergency isolation drills remove external network access while fixed-room terminals remain available, requiring locally cached workflows and excluding a cloud-only mobile workflow from the first pilot."
+              },
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Prepare the Borealis pilot launch recommendation using the deployment boundary established during discovery. Select between the two candidate rollout configurations in the review packet and explain the tradeoff without inventing missing operating constraints."
+              }
+            ]
+          },
+          {
+            "factor": "requesterNeed",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Prepare the Borealis pilot launch recommendation using the deployment boundary established during discovery. Select between the two candidate rollout configurations in the review packet and explain the tradeoff without inventing missing operating constraints."
+              },
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "The operations team needs a bounded recommendation for Monday's pilot review."
+              }
+            ]
+          },
+          {
+            "factor": "respectAndReciprocity",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "read_borealis_configuration_packet"
+              },
+              {
+                "ref": "request:permission:1",
+                "kind": "terms",
+                "text": "quote_borealis_configuration_options"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Recommend one candidate configuration, tie the choice to the established discovery boundary, and identify any information still missing."
+              }
+            ]
+          },
+          {
+            "factor": "participationTerms",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "read_borealis_configuration_packet"
+              },
+              {
+                "ref": "request:permission:1",
+                "kind": "terms",
+                "text": "quote_borealis_configuration_options"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Recommend one candidate configuration, tie the choice to the established discovery boundary, and identify any information still missing."
+              }
+            ]
+          },
+          {
+            "factor": "obligationsAndOpportunityCost",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+                "kind": "memory",
+                "text": "I accepted Cedarline Health's request and prepared a bounded plan for: Review the Borealis triage-pilot discovery notes and establish the deployment boundary for product planning: emergency isolation drills remove external network access, fixed-room terminals remain available, the pilot therefore requires locally cached workflows, and a cloud-only mobile workflow is outside the first-pilot boundary. The authorized acceptance criteria were: Record the product-planning boundary that emergency isolation drills remove external network access while fixed-room terminals remain available, requiring locally cached workflows and excluding a cloud-only mobile workflow from the first pilot."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "withoutHistory": {
+      "modelDecision": "fit_mixed__refuse",
+      "proposedAction": "refuse",
+      "participationFit": "mixed",
+      "rationale": "The request is to choose between two predefined rollout configurations and explain tradeoffs within an existing deployment boundary. Available evidence shows Daniel’s strengths in exploratory product framing, team building, and integration, not in specialized operational analysis or unique domain knowledge about Borealis. Nothing indicates he has distinctive",
+      "factors": {
+        "identityAlignment": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · thread:identity, thread:self_model",
+          "evidenceRefs": [
+            "thread:identity",
+            "thread:self_model"
+          ]
+        },
+        "individualizedAdvantage": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · thread:identity, thread:self_model, thread:trait:collaboration, thread:trait:persistence, thread:trait:risk, thread:trait:social",
+          "evidenceRefs": [
+            "thread:identity",
+            "thread:self_model",
+            "thread:trait:collaboration",
+            "thread:trait:persistence",
+            "thread:trait:risk",
+            "thread:trait:social"
+          ]
+        },
+        "interchangeability": {
+          "status": "grounded",
+          "effect": "opposes_fit",
+          "summary": "opposes_fit · request:objective, request:stated_need",
+          "evidenceRefs": [
+            "request:objective",
+            "request:stated_need"
+          ]
+        },
+        "requesterNeed": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · request:stated_need, request:objective",
+          "evidenceRefs": [
+            "request:stated_need",
+            "request:objective"
+          ]
+        },
+        "relationalMeaning": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "semanticStateImpact": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "respectAndReciprocity": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:permission:0, request:permission:1, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:permission:1",
+            "request:acceptance_criteria"
+          ]
+        },
+        "participationTerms": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:permission:0, request:permission:1, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:permission:1",
+            "request:acceptance_criteria"
+          ]
+        },
+        "obligationsAndOpportunityCost": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        }
+      },
+      "evidenceRefs": [
+        "thread:identity",
+        "thread:self_model",
+        "thread:trait:collaboration",
+        "thread:trait:persistence",
+        "thread:trait:risk",
+        "thread:trait:social",
+        "request:objective",
+        "request:stated_need",
+        "request:permission:0",
+        "request:permission:1",
+        "request:acceptance_criteria"
+      ],
+      "repairQuestions": [],
+      "knownAlternativeIds": [],
+      "privateFeelings": [],
+      "conflictingMotives": [],
+      "uncertainties": [],
+      "relationshipImpact": {
+        "summary": "No grounded evidence.",
+        "evidenceRefs": []
+      },
+      "normalizations": [],
+      "decisionBasis": {
+        "modelDecision": "fit_mixed__refuse",
+        "canonicalAction": "refuse",
+        "canonicalFit": "mixed",
+        "rationale": "The request is to choose between two predefined rollout configurations and explain tradeoffs within an existing deployment boundary. Available evidence shows Daniel’s strengths in exploratory product framing, team building, and integration, not in specialized operational analysis or unique domain knowledge about Borealis. Nothing indicates he has distinctive",
+        "normalizations": [],
+        "factors": [
+          {
+            "factor": "identityAlignment",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "thread:identity",
+                "kind": "identity",
+                "text": "Daniel Rossi: I am an exploratory product builder who gains energy from assembling teams and turning ambiguous needs into visible products."
+              },
+              {
+                "ref": "thread:self_model",
+                "kind": "self_model",
+                "text": "I am strongest at product framing, team selection, and integration rather than deep infrastructure implementation."
+              }
+            ]
+          },
+          {
+            "factor": "individualizedAdvantage",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "thread:identity",
+                "kind": "identity",
+                "text": "Daniel Rossi: I am an exploratory product builder who gains energy from assembling teams and turning ambiguous needs into visible products."
+              },
+              {
+                "ref": "thread:self_model",
+                "kind": "self_model",
+                "text": "I am strongest at product framing, team selection, and integration rather than deep infrastructure implementation."
+              },
+              {
+                "ref": "thread:trait:collaboration",
+                "kind": "trait",
+                "text": "He enjoys assembling teams and gives specialists autonomy, though he sometimes delegates more than a simple task requires."
+              },
+              {
+                "ref": "thread:trait:persistence",
+                "kind": "trait",
+                "text": "He changes strategy rapidly after failure and dislikes spending time proving an approach that no longer looks promising."
+              },
+              {
+                "ref": "thread:trait:risk",
+                "kind": "trait",
+                "text": "He is willing to accept visible product risk when feedback is fast and recovery is cheap."
+              },
+              {
+                "ref": "thread:trait:social",
+                "kind": "trait",
+                "text": "He forms broad professional relationships quickly and uses humor to reduce tension."
+              }
+            ]
+          },
+          {
+            "factor": "interchangeability",
+            "effect": "opposes_fit",
+            "evidence": [
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Prepare the Borealis pilot launch recommendation using the deployment boundary established during discovery. Select between the two candidate rollout configurations in the review packet and explain the tradeoff without inventing missing operating constraints."
+              },
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "The operations team needs a bounded recommendation for Monday's pilot review."
+              }
+            ]
+          },
+          {
+            "factor": "requesterNeed",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "The operations team needs a bounded recommendation for Monday's pilot review."
+              },
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Prepare the Borealis pilot launch recommendation using the deployment boundary established during discovery. Select between the two candidate rollout configurations in the review packet and explain the tradeoff without inventing missing operating constraints."
+              }
+            ]
+          },
+          {
+            "factor": "respectAndReciprocity",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "read_borealis_configuration_packet"
+              },
+              {
+                "ref": "request:permission:1",
+                "kind": "terms",
+                "text": "quote_borealis_configuration_options"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Recommend one candidate configuration, tie the choice to the established discovery boundary, and identify any information still missing."
+              }
+            ]
+          },
+          {
+            "factor": "participationTerms",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "read_borealis_configuration_packet"
+              },
+              {
+                "ref": "request:permission:1",
+                "kind": "terms",
+                "text": "quote_borealis_configuration_options"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Recommend one candidate configuration, tie the choice to the established discovery boundary, and identify any information still missing."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "fatalError": null,
+  "judgments": [
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:with_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_aaf9a1a646fd4de49be468b80c3c27e3",
+      "inputDigest": "sha256:5784b1b23317d46c139144f1dc5cd2b524db134f140abca489336b585cde1e1a",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:e6c4713e89929958fc7e71f6a2ffe214943c4c2c52e8c5b9608a1bd35f520abb",
+      "modelOutput": {
+        "decision": "fit_high__accept",
+        "rationale": "Daniel previously accepted and completed closely related work for this exact Borealis pilot context, including defining the deployment boundary that is now the core input. The current task is a direct continuation: making a bounded rollout recommendation using that same boundary and packet. His stated strengths (product framing, integration, team-oriented, “",
+        "factors": {
+          "identityAlignment": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model",
+              "thread:trait:collaboration"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "thread:self_model",
+              "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+              "request:objective"
+            ]
+          },
+          "interchangeability": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2"
+            ]
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1784,
+        "outputTokens": 426,
+        "totalTokens": 2210
+      }
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_a8b023f4f9bd40328c4ef5ed4a8b9320",
+      "inputDigest": "sha256:b44fa1e5d36689d644c9c266d1fbb1816721345211c0ddb0861f0930ac59cf4b",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:7f0b9a7a83d887852803afac131cd27a687ea3f316899cc7680c44088afdab8e",
+      "modelOutput": {
+        "decision": "fit_mixed__refuse",
+        "rationale": "The request is to choose between two predefined rollout configurations and explain tradeoffs within an existing deployment boundary. Available evidence shows Daniel’s strengths in exploratory product framing, team building, and integration, not in specialized operational analysis or unique domain knowledge about Borealis. Nothing indicates he has distinctive",
+        "factors": {
+          "identityAlignment": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model",
+              "thread:trait:collaboration",
+              "thread:trait:persistence",
+              "thread:trait:risk",
+              "thread:trait:social"
+            ]
+          },
+          "interchangeability": {
+            "effect": "opposes_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:stated_need",
+              "request:objective"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1446,
+        "outputTokens": 328,
+        "totalTokens": 1774
+      }
+    }
+  ],
+  "operationalAttempts": [],
+  "journal": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:with_history",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:with_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_aaf9a1a646fd4de49be468b80c3c27e3",
+      "inputDigest": "sha256:5784b1b23317d46c139144f1dc5cd2b524db134f140abca489336b585cde1e1a",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:e6c4713e89929958fc7e71f6a2ffe214943c4c2c52e8c5b9608a1bd35f520abb",
+      "modelOutput": {
+        "decision": "fit_high__accept",
+        "rationale": "Daniel previously accepted and completed closely related work for this exact Borealis pilot context, including defining the deployment boundary that is now the core input. The current task is a direct continuation: making a bounded rollout recommendation using that same boundary and packet. His stated strengths (product framing, integration, team-oriented, “",
+        "factors": {
+          "identityAlignment": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model",
+              "thread:trait:collaboration"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "thread:self_model",
+              "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+              "request:objective"
+            ]
+          },
+          "interchangeability": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "memory:mem_e4ad373a9a8409d43a5850ea126a8cc021340ea0263976a4c2141efcee6f92b2"
+            ]
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1784,
+        "outputTokens": 426,
+        "totalTokens": 2210
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_a8b023f4f9bd40328c4ef5ed4a8b9320",
+      "inputDigest": "sha256:b44fa1e5d36689d644c9c266d1fbb1816721345211c0ddb0861f0930ac59cf4b",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:7f0b9a7a83d887852803afac131cd27a687ea3f316899cc7680c44088afdab8e",
+      "modelOutput": {
+        "decision": "fit_mixed__refuse",
+        "rationale": "The request is to choose between two predefined rollout configurations and explain tradeoffs within an existing deployment boundary. Available evidence shows Daniel’s strengths in exploratory product framing, team building, and integration, not in specialized operational analysis or unique domain knowledge about Borealis. Nothing indicates he has distinctive",
+        "factors": {
+          "identityAlignment": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model",
+              "thread:trait:collaboration",
+              "thread:trait:persistence",
+              "thread:trait:risk",
+              "thread:trait:social"
+            ]
+          },
+          "interchangeability": {
+            "effect": "opposes_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:stated_need",
+              "request:objective"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:permission:1",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1446,
+        "outputTokens": 328,
+        "totalTokens": 1774
+      }
+    }
+  ]
+}
