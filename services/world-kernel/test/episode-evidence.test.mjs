@@ -181,6 +181,9 @@ test("current-episode evidence refs bind exactly to request, authorization, and 
     () => currentEpisodeEvidenceRefsFromRuntime(mismatchedRuntime),
     /authorization does not match runtime/,
   );
+  const legacyRuntime = structuredClone(runtime);
+  delete legacyRuntime.session.context.participation;
+  assert.deepEqual(currentEpisodeEvidenceRefsFromRuntime(legacyRuntime), []);
   const missingContextRuntime = structuredClone(runtime);
   delete missingContextRuntime.session.context;
   assert.throws(
