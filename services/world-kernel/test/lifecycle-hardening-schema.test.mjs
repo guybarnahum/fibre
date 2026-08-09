@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
-import { openWorldStore } from "../src/persistence.mjs";
+import { WORLD_STORE_SCHEMA_VERSION, openWorldStore } from "../src/persistence.mjs";
 import { openLifecycleHardeningStore } from "../src/lifecycle-hardening-store.mjs";
 
 function withDatabase(run) {
@@ -35,7 +35,7 @@ test("schema version 3 migration creates rejected-runtime closure and spent-obli
     database.close();
 
     const lifecycle = openLifecycleHardeningStore(databasePath);
-    assert.equal(lifecycle.storageMetadata().schemaVersion, 4);
+    assert.equal(lifecycle.storageMetadata().schemaVersion, WORLD_STORE_SCHEMA_VERSION);
     lifecycle.close();
 
     database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
