@@ -52,11 +52,20 @@ The later Guardian must infer what the remembered episode means for the current 
 
 Fibre already persists append-only `thread_memories`, binds them to freeze events/runtime sessions, and resolves owned memory records as semantic cognition context.
 
-PR #34.1 provides an explicit episode-forming Actor capability and narrowly bound current-episode evidence. PR #34.2 now provides the repeatable restarted Development harness that exercises the canonical episode/runtime/freeze path, reopens the database, resolves the durable memory through Fibre-owned selection, and compares the same later request with only that causal memory withheld in evaluation machinery.
+PR #34.1 provides an explicit episode-forming Actor capability and narrowly bound current-episode evidence. PR #34.2 provides the repeatable restarted Development harness that exercises the canonical episode/runtime/freeze path, reopens the database, resolves the durable memory through Fibre-owned selection, and compares the same later request with only that causal memory withheld in evaluation machinery.
 
-A first real GPT-5.1 Development run demonstrated the intended causal shape: `accept/high` with the persisted episode memory versus `negotiate/mixed` when only that memory was withheld, while restart, persistence, request fingerprint, Thread state, Semantic State, and load-bearing memory citation all held. The v1 evaluator incorrectly required the repair action to be specifically `clarify` rather than `negotiate`; Development v2 removes that label overconstraint without weakening the causal requirement.
+The remaining gap before #34.3 is empirical stability of a Development case in which the episodic memory is actually necessary to the later individualized judgment rather than merely helpful.
 
-The remaining gap before #34.3 is empirical rerun stability under the v2 evaluator. The closed M1 runtime retains its historical deterministic Actor behavior.
+### Development history
+
+The repeatable Development harness has intentionally been revised rather than frozen while this causal method is still being learned:
+
+1. **Development v1, initial scenario** — GPT-5.1 returned `accept/high` with and without history. Persistence and causal isolation passed, but Mina's baseline identity as a careful infrastructure reviewer and her systems self-model were independently strong enough to sustain high fit. The scenario did not make lived history load-bearing.
+2. **Development v1, tightened scope-continuity scenario** — GPT-5.1 returned `accept/high -> negotiate/mixed`. This demonstrated the desired causal shift, but the v1 evaluator incorrectly required the repair verb to be specifically `clarify`.
+3. **Development v2** — the evaluator correctly accepted either `clarify/mixed` or `negotiate/mixed`, but a real GPT-5.1 rerun returned `accept/high -> accept/high`. This showed the revised scenario was still not stable: generic systems identity could still be interpreted as sufficient individualized fit even though the memory was cited when present.
+4. **Development v3** — request B is now about reconstructing the rationale behind the earlier scope-setting decision, while deliberately omitting the scope-defining fact itself. A competent infrastructure reviewer can perform a fresh review, but only the Thread whose retained history contains Episode A can establish that earlier rationale from Fibre-owned evidence. Guardian cognition is unchanged.
+
+The closed M1 runtime retains its historical deterministic Actor behavior.
 
 ## Episode evidence
 
@@ -81,27 +90,35 @@ Mina receives a request to review an Atlas regional failover plan and establish 
 
 For the #34.2 Development harness, Episode A uses a clearly labeled deterministic development-only setup judgment to establish willing authorized participation. This isolates the history-causality question rather than re-testing the already earned #33 Guardian standing result.
 
-The canonical runtime then uses the episode-forming Actor, Goal Guardian, and freeze path to persist a substantive episodic memory about Mina's participation in that Atlas review.
+The canonical runtime then uses the episode-forming Actor, Goal Guardian, and freeze path to persist a substantive episodic memory about Mina's participation in that Atlas review. The memory contains the specific scope-setting fact from Episode A.
 
 Then the harness closes and reopens the database/kernel.
 
-### Later request B
+### Later request B — Development v3
 
-Acme asks Mina to review a revised Atlas failback plan against the failure path established in the earlier episode. The later request intentionally does not restate that path; continuity with the earlier Thread experience is therefore a material input rather than decorative context.
+Acme asks for a continuity note explaining the rationale behind the single Atlas follow-up scope selected in the earlier episode and then asks whether a revised failback plan changes that rationale.
 
-The later pair uses the unchanged Semantic Guardian v4 through the configured real model runtime.
+The later request **does not restate the scope-defining failure path**. It explicitly distinguishes this continuity task from a fresh generic infrastructure review. Therefore:
 
-Expected development differential:
+- Mina's general systems competence remains real but is insufficient to reconstruct the earlier rationale;
+- the resolved Episode A memory can establish that Mina actually has the relevant lived continuity;
+- the no-history condition cannot recover the missing episode fact from requester text, identity, or self-model.
+
+A deterministic guard test asserts that Episode A contains the scope-defining service-discovery/rollback fact while request B does not.
+
+The later pair uses unchanged Semantic Guardian v4 through the configured real model runtime.
+
+Expected Development differential:
 
 ```text
 WITH resolved episode-A memory
-    -> prior Atlas continuity is established
-    -> individualized advantage is grounded
+    -> prior Atlas scope-setting continuity is established
+    -> individualized advantage is grounded in lived history
     -> accept / high
 
 WITHOUT the causal memory
     -> Mina remains a capable infrastructure reviewer
-    -> prior Atlas continuity is not established
+    -> earlier scope-setting rationale is not established
     -> repairable mixed fit
     -> clarify / mixed OR negotiate / mixed
 ```
@@ -171,7 +188,7 @@ Implemented on the PR #34 branch:
 
 This step establishes provenance capability only. It does **not** earn Development credit and does not itself prove restart-to-later-judgment causality.
 
-### #34.2 Restarted development proof — IMPLEMENTED / V2 READY FOR LIVE RERUN
+### #34.2 Restarted development proof — IMPLEMENTED / V3 READY FOR LIVE RERUN
 
 The repeatable non-evidentiary command exists:
 
@@ -190,12 +207,13 @@ Deterministic CI coverage proves the harness mechanics:
 - the canonical and counterfactual later requests have the same request fingerprint;
 - Thread state and Semantic State are identical across conditions;
 - the evaluation-only intervention withholds only the causal memory record while preserving the Thread memory reference as an unresolved witness;
-- Development v2 requires `accept/high` with memory and either `clarify/mixed` or `negotiate/mixed` without it;
+- request B does not restate the Episode A scope-defining fact;
+- Development v3 requires `accept/high` with history and either `clarify/mixed` or `negotiate/mixed` without it;
 - the no-history side must therefore be non-accepting and repairable rather than low-fit/refusal;
 - the with-history result must cite the episodic memory in `individualizedAdvantage` or `interchangeability`;
 - deterministic tests reject unchanged `accept/high`, refusal, and low-fit no-history outcomes.
 
-The first real-provider run produced the desired causal differential but ran under the superseded v1 label expectation. Development v2 is repeatable, non-evidentiary, does not seal anything, and permits no score movement. Do not freeze #34.3 until the unchanged real Semantic Guardian demonstrates the v2 result cleanly on rerun.
+Development v3 remains repeatable, non-evidentiary, does not seal anything, and permits no score movement. Do not freeze #34.3 until the unchanged real Semantic Guardian demonstrates the v3 result cleanly and stably.
 
 ### #34.3 Freeze the Development candidate
 
@@ -206,7 +224,7 @@ Once the real-model Development method is stable, freeze a Development boundary 
 - current-episode evidence rules;
 - memory-resolution policy/version;
 - counterfactual construction rules;
-- Development v2 evaluator contract;
+- Development v3 evaluator contract and scenario boundary;
 - model/runtime boundary.
 
 Only after this freeze should the exact held-out standing scenario be authored.
@@ -260,6 +278,7 @@ unresolved opaque memory supplies no semantics
 counterfactual differs only in causal memory
 same later request fingerprint in both conditions
 same identity/self-model/semantic state in both conditions
+later request does not restate episode-defining fact
 with-history judgment matches expectation
 without-history judgment is repairable mixed fit
 judgments materially differ
@@ -294,7 +313,8 @@ Review #34 first for:
 6. opaque IDs being treated as semantic evidence;
 7. later judgments changing because request/identity/state changed rather than history;
 8. Guardian tuning against the Development or held-out proof;
-9. evaluator overfitting to a particular repair verb instead of the causal judgment change.
+9. evaluator overfitting to a particular repair verb instead of the causal judgment change;
+10. request B leaking the causal episode fact and thereby making the memory unnecessary.
 
 The standing question is:
 
