@@ -13,6 +13,7 @@ import {
   sha256,
   threadStateHash,
 } from "./persistence-common.mjs";
+import { currentEpisodeEvidenceRefsFromContext } from "./episode-evidence.mjs";
 
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/;
 const ACTIONS = new Set(["accept", "clarify", "negotiate", "delegate", "refuse"]);
@@ -349,7 +350,8 @@ export function deterministicActorOutput(context) {
     );
   }
   const criteria = context.acceptanceCriteria ?? "No explicit acceptance criteria were supplied.";
-  const evidenceRef = context.relevantMemories[0] ?? context.relevantRelationships[0] ?? null;
+  const willingParticipation = context.participation.desiredAction === "accept";
+  const episodeEvidenceRefs = currentEpisodeEvidenceRefsFromContext(context);
   return {
     worker: { kind: "deterministic_actor", version: "1" },
     threadId: context.threadId,
@@ -373,13 +375,13 @@ export function deterministicActorOutput(context) {
     ],
     toolCalls: [],
     proposedCommands: [],
-    proposedLifeChanges: evidenceRef === null
-      ? []
-      : [{
+    proposedLifeChanges: willingParticipation
+      ? [{
           kind: "memory",
-          summary: `Remember that request ${context.requestId} was evaluated through a bounded deterministic runtime.`,
-          evidenceRefs: [evidenceRef],
-        }],
+          summary: `I accepted ${context.requester.displayName}'s request and prepared a bounded plan for: ${context.objective}. The authorized acceptance criteria were: ${criteria}`,
+          evidenceRefs: episodeEvidenceRefs,
+        }]
+      : [],
   };
 }
 
@@ -389,9 +391,10 @@ export function actorOutputDigest(output) {
 
 export function auditActorOutput(context, output) {
   assertPlainObject("Actor output", output);
-  const ownedEvidence = new Set([
+  const allowedEvidence = new Set([
     ...context.relevantMemories,
     ...context.relevantRelationships,
+    ...currentEpisodeEvidenceRefsFromContext(context),
   ]);
   const checks = [
     {
@@ -437,9 +440,9 @@ export function auditActorOutput(context, output) {
             change.summary.length > 0 &&
             Array.isArray(change.evidenceRefs) &&
             change.evidenceRefs.length > 0 &&
-            change.evidenceRefs.every((reference) => ownedEvidence.has(reference)),
+            change.evidenceRefs.every((reference) => allowedEvidence.has(reference)),
         ),
-      detail: "Proposed life changes are memory proposals citing selected Thread-owned evidence.",
+      detail: "Proposed life changes are memory proposals citing selected Thread-owned or current-episode evidence.",
     },
   ];
   const passed = checks.every((check) => check.passed);
