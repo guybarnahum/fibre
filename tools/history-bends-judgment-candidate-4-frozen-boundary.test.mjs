@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_3 } from
-  "../experiments/history-bends-judgment/frozen-boundary-candidate-3.mjs";
 import { HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_4 } from
   "../experiments/history-bends-judgment/frozen-boundary-candidate-4.mjs";
 import { SEMANTIC_GUARDIAN_V4_FROZEN_BOUNDARY_CANDIDATE_4 } from
@@ -20,31 +18,32 @@ import {
   DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_VERSION,
 } from "../services/world-kernel/src/dignity-guardian-v4.mjs";
 
-const CANDIDATE_3 = HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_3;
 const CANDIDATE_4 = HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_4;
 
 function assertGitBlobSha(value) {
   assert.match(value, /^[0-9a-f]{40}$/);
 }
 
-test("history candidate 4 is a no-score cognition-equivalent re-freeze", () => {
+test("history candidate 4 preserves its frozen cognition-equivalent predecessor claim", () => {
   assert.equal(CANDIDATE_4.id, "history_bends_judgment_candidate_4");
   assert.equal(CANDIDATE_4.sourceHead, "1f160dd36633462f7e5f01d1d266b43babc8d15a");
-  assert.equal(CANDIDATE_4.predecessorCandidateId, CANDIDATE_3.id);
-  assert.equal(CANDIDATE_4.cognitionEquivalentToCandidateId, CANDIDATE_3.id);
-  assert.equal(CANDIDATE_4.frozenAfterDevelopmentSetId, CANDIDATE_3.frozenAfterDevelopmentSetId);
+  assert.equal(CANDIDATE_4.predecessorCandidateId, "history_bends_judgment_candidate_3");
+  assert.equal(CANDIDATE_4.cognitionEquivalentToCandidateId, "history_bends_judgment_candidate_3");
+  assert.equal(CANDIDATE_4.frozenAfterDevelopmentSetId, "history_bends_judgment_development_v3");
   assert.equal(CANDIDATE_4.scoreMovementPermitted, false);
   assert.equal(CANDIDATE_4.standingScenarioAuthored, false);
   assert.equal(CANDIDATE_4.standingThreadFixtureAuthored, false);
   assert.equal(CANDIDATE_4.standingDirectionAuthored, false);
 
-  assert.deepEqual(CANDIDATE_4.guardian, CANDIDATE_3.guardian);
-  assert.deepEqual(CANDIDATE_4.modelRuntime, CANDIDATE_3.modelRuntime);
-  assert.deepEqual(CANDIDATE_4.episodeMemory, CANDIDATE_3.episodeMemory);
-  assert.deepEqual(CANDIDATE_4.retrieval, CANDIDATE_3.retrieval);
-  assert.deepEqual(CANDIDATE_4.counterfactual, CANDIDATE_3.counterfactual);
-  assert.deepEqual(CANDIDATE_4.sourceBlobs, CANDIDATE_3.sourceBlobs);
-  assert.deepEqual(CANDIDATE_4.standingGatePreflight, CANDIDATE_3.standingGatePreflight);
+  assert.deepEqual(CANDIDATE_4.sourceBlobs, {
+    developmentHarness: "e7cdb1c91126530458abd8a9dc2952c3ecbb6150",
+    runtimeDomain: "b389d34fafce3c1f0d409e67522882764a8e6ffc",
+    episodeEvidence: "e11c4bad1327c82f29bc4eaa068a2dd96ba2fb17",
+    causalContext: "33bb3d61f721d1d9a6b99e51619f40165a19ce16",
+    guardianCandidate4: "3ae158ede6f91ee10a413e46e58c04e7f65dcc15",
+  });
+  assert.equal(CANDIDATE_4.standingGatePreflight.verifyFrozenSourceBlobsBeforeFirstProviderCall, true);
+  assert.equal(CANDIDATE_4.standingGatePreflight.rejectOnDrift, true);
 });
 
 test("history candidate 4 preserves all three failed sealed predecessor gates", () => {
