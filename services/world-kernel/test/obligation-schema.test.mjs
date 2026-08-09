@@ -20,12 +20,12 @@ function database() {
   return db;
 }
 
-test("world-store v5 creates the Structured Obligation tables", () => {
+test("current world-store schema creates the Structured Obligation tables additively", () => {
   const db = database();
   try {
     migrateDatabase(db);
     assert.equal(Number(db.prepare("PRAGMA user_version").get().user_version), WORLD_STORE_SCHEMA_VERSION);
-    assert.equal(WORLD_STORE_SCHEMA_VERSION, 5);
+    assert.equal(WORLD_STORE_SCHEMA_VERSION, 4);
     const names = new Set(db.prepare(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN (
