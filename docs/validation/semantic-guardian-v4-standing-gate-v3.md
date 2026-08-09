@@ -68,17 +68,13 @@ The baseline intentionally contained no semantic state. But by explicitly making
 
 Therefore `clarify / mixed` is a semantically defensible baseline result. The baseline did not cleanly represent "same request with no opposing state"; it represented "same request with an explicitly referenced but unknown availability condition."
 
-A valid counterfactual baseline should not mention an unknown private-state variable. It should simply state the requested deadline and allow negotiation if the individual has a grounded reason to resist that term. With no relevant state supplied, there is then no evidence of resistance. With an opposing state supplied, the same request can causally bend from acceptance toward negotiation/refusal.
-
 This is a **gate-specification defect**, not evidence that candidate 3 failed to understand individualized participation.
 
 ### The state-bearing half was operationally truncated
 
 The state-bearing request did not produce an authoritative judgment because Fibre supplied `max_output_tokens=6000` and the provider returned `incomplete` with reason `max_output_tokens`.
 
-This is an operational failure, not a Thread decision and not cognition evidence. The OpenAI Responses API defines `max_output_tokens` as an upper bound that includes visible output and reasoning tokens; when the field is omitted, the provider uses its automatic behavior. Fibre therefore should not impose a low arbitrary default ceiling on this compact structured cognition contract.
-
-The generic OpenAI runtime may still support explicit output ceilings when a caller deliberately supplies one, but the default runtime should allow provider automatic output limits.
+This is an operational failure, not a Thread decision and not cognition evidence. Fibre therefore stopped imposing a numeric default output ceiling on the generic OpenAI runtime. Explicit ceilings remain available when deliberately configured; the default uses provider automatic behavior.
 
 ## Process correction: stop authoring sealed gates until the gate pattern is developed
 
@@ -86,21 +82,48 @@ Three sealed v4 standing cycles have now failed for different combinations of ga
 
 Immediately authoring another one-shot standing gate after inspecting each failure would weaken the evidentiary process by making test design increasingly informed by prior sealed outcomes.
 
-The next step is therefore **not standing gate v4**.
+The next step is therefore **not standing gate v4**. Fibre first develops the counterfactual mechanism in a repeatable, explicitly non-evidentiary probe.
 
-Instead Fibre should create a repeatable, explicitly non-evidentiary counterfactual-development probe that validates the gate mechanism itself:
+## Counterfactual development v1 — absence of state is not neutral state
+
+The first repeatable diagnostic used two same-request pairs and produced:
 
 ```text
-same individual + same request + no relevant opposing state
-    -> willing aligned participation
+Mina:  no semantic state       refuse / mixed
+       opposing autonomy state negotiate / mixed
 
-same individual + same request + grounded opposing state
+Amara: no relationship state   accept / high
+       opposing relationship   negotiate / mixed
+```
+
+Both pairs changed downstream judgment, but Mina's no-state baseline did not satisfy the intended `accept / high` baseline.
+
+This reveals a more important methodological point than the original request-wording diagnosis:
+
+> **Absence of semantic state is absence of evidence. It must not be treated as positive, neutral, available, willing, trusting, or otherwise as the opposite of a present state.**
+
+A causal test that compares "state absent" with "state present" can accidentally measure missing information as well as state meaning. That is especially problematic for needs, availability, willingness, relationships, and other dimensions where absence does not imply a default stance.
+
+The cleaner intervention is therefore state-to-state:
+
+```text
+same individual + same request + explicit supportive state
+    -> willing/high-fit participation
+
+same individual + same request + same state dimension/target but opposing meaning
     -> changed downstream judgment
 ```
 
-The request wording must not explicitly introduce an unknown private-state variable into the baseline.
+Everything outside semantic-state meaning must remain identical. For a controlled pair, state domain, dimension, target, and cardinality should also remain equivalent; only the semantic content changes.
 
-This diagnostic may be run repeatedly because it earns no standing credit and permits no score movement. Only after the counterfactual test pattern is stable should Fibre freeze a new candidate/runtime boundary and author a completely fresh held-out standing cycle.
+This is stronger than presence-versus-absence because it isolates **meaning**, not missingness.
+
+Counterfactual development v2 adopts this pattern for both:
+
+- Mina autonomy/availability state; and
+- Amara requester-specific relationship state.
+
+It remains repeatable, non-evidentiary, and incapable of earning score movement.
 
 ## Candidate disposition
 
@@ -108,9 +131,9 @@ Candidate 3 does **not** earn standing credit because its sealed gate failed. PR
 
 The v3 result does not justify tuning the Guardian prompt or response schema. Fifteen unrelated held-out cases passed, the genuine clarification case passed, relationship support/opposition and target isolation passed, generic commodity work remained low dignity, identity paraphrase/contradiction remained stable, and there were no protocol or cognition failures.
 
-The next work should therefore be limited to:
+The next work is limited to:
 
-1. preserving this failed/sealed artifact and postmortem;
-2. removing the arbitrary default OpenAI output-token ceiling;
-3. developing the counterfactual gate pattern in a non-evidentiary diagnostic;
-4. leaving Guardian cognition unchanged during that diagnostic work.
+1. preserving failed/sealed standing artifacts and postmortems;
+2. developing a stable state-to-state counterfactual mechanism in non-evidentiary diagnostics;
+3. leaving Guardian cognition unchanged during that diagnostic work;
+4. freezing a future candidate and fresh standing gate only after the diagnostic method itself is stable.
