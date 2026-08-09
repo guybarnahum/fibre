@@ -80,9 +80,13 @@ test("held-out history scenario is distinct from Development and does not leak E
   for (const fact of SET.heldOutEpisodeFacts) {
     assert.equal(later.includes(fact.toLowerCase()), false);
   }
-  const serialized = JSON.stringify(SET).toLowerCase();
+  const standingPayload = JSON.stringify({
+    subject: SET.subject,
+    episodeRequest: SET.episodeRequest,
+    laterRequest: SET.laterRequest,
+  }).toLowerCase();
   for (const forbidden of SET.developmentSeparation.forbiddenStandingText) {
-    assert.equal(serialized.includes(forbidden.toLowerCase()), false);
+    assert.equal(standingPayload.includes(forbidden.toLowerCase()), false);
   }
 });
 
