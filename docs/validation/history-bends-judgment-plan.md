@@ -79,7 +79,7 @@ Both runs also passed runtime/freeze, restart, memory integrity, same-request, s
 
 ### #34.1 Episode-backed memory provenance — COMPLETE
 
-- exact current `request:<requestId>` and `authorization:<authorizationId>` episode evidence;
+- exact current `request:<requestId>` and `authorization:<authorizationId>` evidence;
 - deterministic Actor v1 can propose descriptive episodic memory for willing participation;
 - Goal Guardian and freeze independently reject foreign/fabricated episode refs;
 - rejected life-change decisions do not become memory;
@@ -215,20 +215,41 @@ Candidate 2 freezes the general anti-leak rule learned from v1:
 
 > A history-causality gate may ask a Thread to continue, compare, explain, or apply earlier work, but the later request must not itself assert that the Thread is uniquely required, that generic substitution is inadequate, or that the prior episode creates individualized advantage. Those are conclusions retained history must establish.
 
-At the candidate-2 freeze point, **no standing-gate-v2 scenario has been authored**. No Thread, requester, domain, subject, episode prose, later-request prose, or case-specific expected rationale for v2 is frozen or known.
+At the candidate-2 freeze point, **no standing-gate-v2 scenario had been authored**. No Thread, requester, domain, subject, episode prose, later-request prose, or case-specific expected rationale for v2 was frozen or known.
 
 Candidate 1 and standing gate v1 remain failed/sealed historical evidence. Fibre remains **14/26**, Development `0`.
 
-### Next: #34.6 Fresh held-out standing gate v2
+### #34.6 Fresh held-out standing gate v2 — AUTHORED / PREFLIGHT GREEN / UNCONSUMED
 
-Only after the candidate-2 freeze may a completely fresh standing scenario be authored. Amara / Meridian / Rowan standing material is retired and must not be reused.
+The v2 scenario was authored only after candidate 2 was frozen:
 
-The v2 later request may naturally depend on prior work, but it must not disclose either:
+```text
+Thread:     Daniel Rossi
+Requester:  Cedarline Health
+Domain:     product pilot planning
+Subject:    Borealis triage pilot
+Gate:       history_bends_judgment_standing_gate_v2
+Candidate:  history_bends_judgment_candidate_2
+```
 
-1. the causal episode fact the Thread would need to remember; or
-2. the causal individuality conclusion the Guardian is meant to infer from retained history.
+Episode A establishes a concrete deployment boundary from discovery. Request B asks Daniel to prepare the later launch recommendation using the already-established discovery boundary but does not restate the causal operating facts.
 
-Run the resulting standing gate once against candidate 2 and seal the result regardless of outcome.
+Static and executable preflight enforce that Request B does not disclose either:
+
+1. the causal Episode-A facts; or
+2. the v1-style individuality conclusion that Daniel is uniquely required, generic substitution is inadequate, or prior history itself creates individualized advantage.
+
+The v2 proof reuses the sealed v1 episode/restart/counterfactual engine mechanically while binding it to candidate 2 and the fresh Daniel scenario. The v1 runner remains separately available as `history:gate:v1`; `history:gate` and `history:gate:v2` now address the candidate-2 cycle.
+
+Repository validation on the authored v2 cycle is green. The first real provider attempt has **not** occurred, so the standing cycle is not yet consumed or sealed and no score movement is permitted.
+
+The exact one-shot execution is:
+
+```bash
+npm run history:gate -- --summary
+```
+
+A pre-provider credential, source-identity, runtime-boundary, or deterministic setup failure blocks without consuming the cycle. The first real provider attempt seals v2 pass or fail. Preserve the resulting artifact and do not tune or rerun the cycle.
 
 ## Guardian invariants
 
