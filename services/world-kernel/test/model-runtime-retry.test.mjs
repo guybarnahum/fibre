@@ -51,6 +51,22 @@ function invoke(adapter) {
   });
 }
 
+test("OpenAI defaults to provider automatic output limits", async () => {
+  let requestBody = null;
+  const adapter = createOpenAIModelAdapter({
+    environment: { OPENAI_API_KEY: "test-key" },
+    modelId: "gpt-test",
+    fetchImpl: async (_url, init) => {
+      requestBody = JSON.parse(init.body);
+      return response(200, openAICompleted());
+    },
+  });
+
+  await invoke(adapter);
+  assert.equal(adapter.configuration.maxOutputTokens, "auto");
+  assert.equal(Object.hasOwn(requestBody, "max_output_tokens"), false);
+});
+
 test("OpenAI retries a clearly transient 503 and then succeeds", async () => {
   let calls = 0;
   const events = [];
@@ -119,6 +135,7 @@ test("OpenAI incomplete response is request-scoped, reports reason, and does not
   const adapter = createOpenAIModelAdapter({
     environment: { OPENAI_API_KEY: "test-key" },
     modelId: "gpt-test",
+    maxOutputTokens: 6000,
     observer: (event) => events.push(event),
     fetchImpl: async () => {
       calls += 1;
