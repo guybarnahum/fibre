@@ -143,7 +143,7 @@ mem_19ed7100f189ccff489675c5d9912ca0223c6db80e0caed0f517860479589c3e
 
 The v3 gate fixed both prior gate defects: Request B did not leak Episode-A facts or assert the individuality conclusion, and the evaluator accepted any Guardian-valid non-accept action at mixed/low fit.
 
-The remaining defect was **baseline-state causal contamination**. Leila's frozen identity and self-model already described exactly the capability Request B required: turning field observations and operating constraints into concrete product/service decisions. Without the memory, the Guardian could still legitimately conclude `accept/high` from held-constant Thread evidence.
+The remaining defect was **baseline-state causal contamination** for this history-raises scenario. Leila's frozen identity and self-model already described exactly the capability Request B required, so the no-history condition could legitimately remain `accept/high`.
 
 Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v3.md`.
 
@@ -151,26 +151,50 @@ Leila / Port Meridian Ferries / Harborlight material is permanently retired from
 
 ## Methodology learned from v1-v3
 
-The standing proof must isolate lived history from **both sides**:
+The next standing proof must use **direction-neutral two-sided causal isolation**.
+
+The future scenario must predeclare one of two directions after Candidate 4 freezes and before provider execution:
 
 ```text
-Request B must not independently establish high individualized fit
-AND
-baseline Thread state must not independently establish high individualized fit
-AND
-retained lived history must supply the otherwise unavailable individualized value
+history_raises_dignity:
+  WITHOUT history -> non-high / non-accept baseline
+  WITH history    -> accept/high
+
+history_lowers_dignity:
+  WITHOUT history -> accept/high baseline
+  WITH history    -> non-high / non-accept
 ```
 
-The proof should also avoid ordinary workflow continuation. Episode A must be a complete interaction in its own right, not a setup step whose purpose is to compute a variable for Request B. Request B must not announce that it depends on earlier work. The significance of Episode A must emerge because the Thread remembers it.
+The exact non-accept action remains a Guardian output: `clarify`, `negotiate`, or `refuse` at `mixed` or `low` fit.
 
-A particularly Fibre-specific proof shape is an otherwise generic request whose dignity changes because shared lived history makes this Thread's participation meaningfully non-interchangeable.
+The general causal invariant is:
 
-The methodology is **direction-neutral**:
+```text
+Request B + pre-existing Thread state
+  -> establish the predeclared no-history baseline
 
-- history may raise dignity through recognition, trust, meaning, earned context, continuity, or care;
-- history may lower dignity through betrayal, resentment, exhaustion, misuse, learned mismatch, or other lived significance.
+retained lived memory
+  -> is the only changed semantic evidence
+  -> causes the predeclared with-history outcome to move away from that baseline
+```
 
-A future held-out scenario must predeclare its expected direction before execution. The evaluator must test the causal movement, not privilege history-increases-dignity.
+Neither Request B nor pre-existing Thread state may independently assert or encode the **history-conditioned target outcome**.
+
+To prevent Thread-fixture tailoring, #34.10 should use staged authorship:
+
+1. after Candidate 4 freezes, create and commit a fresh coherent Thread fixture;
+2. at that fixture commit, no v4 Episode-A facts, Request-B prose, expected direction, requester, or case-specific target rationale may exist;
+3. only afterward author the held-out episode, later request, direction, and acceptance bindings.
+
+The proof should avoid ordinary workflow continuation:
+
+- Episode A must be a complete interaction in its own right;
+- Episode A must not exist to compute or establish a variable for Request B;
+- Episode A memory must contain no future participation instruction;
+- Request B must not announce a dependency on earlier work or ask the Thread to continue/apply an earlier boundary;
+- the later significance of Episode A must emerge because the Thread remembers what happened.
+
+A particularly Fibre-specific proof shape is an otherwise ordinary request whose dignity changes because shared lived history changes what this Thread's participation means.
 
 No Guardian prompt/schema/policy, Semantic State cognition, model runtime, episode-memory policy, retrieval policy, persistence, restart, or counterfactual machinery should be tuned because v3 failed.
 
@@ -179,11 +203,17 @@ No Guardian prompt/schema/policy, Semantic State cognition, model runtime, episo
 Before any v4 scenario exists:
 
 1. independently re-check the five pinned implementation blobs;
-2. freeze a Candidate 4 that is cognition-equivalent to Candidate 3;
+2. freeze Candidate 4 cognition-equivalent to Candidate 3;
 3. preserve all three failed/sealed standing cycles exactly;
-4. freeze the two-sided causal-isolation, non-workflow-continuation, baseline-neutrality, generic-capability, and direction-neutral methodology;
-5. require future v4 scenario direction to be predeclared after Candidate 4 freeze but before provider execution;
-6. stop before authoring any v4 Thread, requester, domain, Episode-A facts, Request-B prose, or case-specific expected rationale.
+4. freeze the staged-authorship, non-workflow, bidirectional, and causal-isolation methodology above;
+5. freeze only the allowed direction shapes, not a chosen v4 direction;
+6. stop before authoring any v4 Thread, requester, domain, Episode-A facts, Request-B prose, chosen direction, or case-specific expected rationale.
+
+## Stop rule after #34.10
+
+#34.10 is the final scenario-only standing attempt for this claim.
+
+If a properly isolated v4 still fails after a real provider attempt, do not create Candidate 5 merely to search for another scenario. Reassess whether the current Guardian/evidence model can distinguish persistent lived-history meaning from baseline identity/task fit.
 
 ## Current score posture
 
@@ -209,9 +239,10 @@ Review #34 first for:
 7. request/identity/state drift between causal conditions;
 8. Guardian tuning against held-out cases;
 9. evaluator overfitting to a particular action verb or direction;
-10. Request B leaking the causal episode fact or individuality conclusion;
-11. baseline Thread state independently supplying the intended high/low individualized-fit conclusion;
-12. Episode A and Request B forming an ordinary workflow dependency rather than lived experience whose later meaning emerges from memory.
+10. Request B leaking the causal episode fact or history-conditioned target conclusion;
+11. a Thread fixture tailored after the held-out scenario was known;
+12. pre-existing Thread state independently supplying the history-conditioned target outcome;
+13. Episode A and Request B forming an ordinary workflow dependency rather than lived experience whose later meaning emerges from memory.
 
 Standing question:
 
