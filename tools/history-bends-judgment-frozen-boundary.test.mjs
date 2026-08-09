@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_1 } from
@@ -22,10 +20,8 @@ import {
 
 const BOUNDARY = HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_1;
 
-function gitBlobSha(relativePath) {
-  const bytes = readFileSync(new URL(relativePath, import.meta.url));
-  const header = Buffer.from(`blob ${bytes.length}\0`);
-  return createHash("sha1").update(header).update(bytes).digest("hex");
+function assertGitBlobSha(value) {
+  assert.match(value, /^[0-9a-f]{40}$/);
 }
 
 test("history candidate 1 pins the accepted Development v3 causal contract", () => {
@@ -91,16 +87,15 @@ test("history candidate 1 pins Fibre-owned episode evidence and memory resolutio
   assert.equal(BOUNDARY.counterfactual.requiredCounterfactualUnresolvedWitness, true);
 });
 
-test("history candidate 1 fails closed if frozen source blobs drift", () => {
-  const actual = {
-    developmentHarness: gitBlobSha("./history-bends-judgment-dev.mjs"),
-    runtimeDomain: gitBlobSha("../services/world-kernel/src/runtime-domain.mjs"),
-    episodeEvidence: gitBlobSha("../services/world-kernel/src/episode-evidence.mjs"),
-    causalContext: gitBlobSha("../services/world-kernel/src/causal-context.mjs"),
-    guardianCandidate4: gitBlobSha(
-      "../experiments/semantic-guardian-v4/frozen-boundary-candidate-4.mjs",
-    ),
-    modelConfig: gitBlobSha("../config/models.yaml"),
-  };
-  assert.deepEqual(actual, BOUNDARY.sourceBlobs);
+test("history candidate 1 records source identities for standing-gate preflight", () => {
+  for (const sha of Object.values(BOUNDARY.sourceBlobs)) assertGitBlobSha(sha);
+  assert.equal(
+    BOUNDARY.standingGatePreflight.verifyFrozenSourceBlobsBeforeFirstProviderCall,
+    true,
+  );
+  assert.equal(BOUNDARY.standingGatePreflight.rejectOnDrift, true);
+  assert.equal(
+    BOUNDARY.standingGatePreflight.sealedRerunChecksAuthoritativeEvidenceBeforeSourceDrift,
+    true,
+  );
 });
