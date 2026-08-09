@@ -33,6 +33,22 @@ test("sealed history evidence is committed and self-consistent with Candidate 4 
     SET.authorship.freshThreadFixtureBlob);
 });
 
+test("sealed bundle proves frozen-source/runtime/scenario preflight passed before provider execution", () => {
+  const { preflight } = readSealedHistoryStandingEvidence();
+  assert.deepEqual(preflight, {
+    candidateId: FROZEN.id,
+    sourceIdentityPassed: true,
+    runtimeBoundaryPassed: true,
+    scenarioFreshnessPassed: true,
+    checkedBeforeProviderCall: true,
+  });
+  assert.equal(
+    FROZEN.standingGatePreflight.verifyFrozenSourceBlobsBeforeFirstProviderCall,
+    true,
+  );
+  assert.equal(FROZEN.standingGatePreflight.rejectOnDrift, true);
+});
+
 test("sealed evidence records the authoritative causal differential and load-bearing memory", () => {
   const bundle = readSealedHistoryStandingEvidence();
   const report = bundle.report;
