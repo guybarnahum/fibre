@@ -19,7 +19,8 @@ export function createObligationTables(database) {
       supersedes_revision INTEGER,
       effective_at TEXT NOT NULL,
       expires_at TEXT,
-      visibility TEXT NOT NULL CHECK (visibility IN ('public','restricted','private')),
+      standing_visibility TEXT NOT NULL CHECK (standing_visibility IN ('public','restricted','private')),
+      terms_visibility TEXT NOT NULL CHECK (terms_visibility IN ('public','restricted','private')),
       legacy_source_digest TEXT CHECK (legacy_source_digest IS NULL OR (length(legacy_source_digest)=71 AND substr(legacy_source_digest,1,7)='sha256:' AND substr(legacy_source_digest,8) NOT GLOB '*[^0-9a-f]*')),
       recorded_at TEXT NOT NULL,
       PRIMARY KEY (obligation_id, revision),
@@ -29,7 +30,12 @@ export function createObligationTables(database) {
       CHECK (
         (revision=1 AND supersedes_revision IS NULL)
         OR
-        (revision>1 AND supersedes_revision IS NOT NULL AND supersedes_revision<revision)
+        (revision>1 AND supersedes_revision=revision-1)
+      ),
+      CHECK (
+        (standing_visibility='public')
+        OR (standing_visibility='restricted' AND terms_visibility IN ('restricted','private'))
+        OR (standing_visibility='private' AND terms_visibility='private')
       )
     ) STRICT;
 
