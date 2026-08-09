@@ -119,7 +119,7 @@ Behavioral failures:           0
 Differential failures:         0
 ```
 
-See [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standing-gate-v4.md).
+The committed machine-readable authority is `artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`; it includes the exact model rationales, factor evidence refs, provider request/digest data, retrying timeout record, normalizations, persisted memory, restart witness, and counterfactual witnesses. See [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standing-gate-v4.md).
 
 | Dimension | Score | Basis |
 |---|---:|---|
@@ -131,11 +131,13 @@ See [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standi
 | Authorization integrity | 2 | Unchanged. |
 | Economic consequence | 0 | Unchanged. |
 | Social and relationship memory | 1 | Unchanged; v4 is credited to Development rather than opportunistically widening the relationship-memory score. |
-| Development | 1 | A substantive evidence-backed canonical episode became durable memory, survived restart, and causally changed Nadia's later appraisal under a direct one-memory withholding counterfactual. |
+| Development | 1 | A Fibre-owned durable episodic record formed through an earlier canonical episode, survived restart, and was the isolated semantic cause of Nadia's later appraisal differential under exact one-memory withholding. This is limited attributable development, not yet self-authored learning. |
 | Model supervision | 1 | Unchanged. |
 | Human inspectability | 1 | Unchanged. |
 | Institutional plurality | 0 | Unchanged. |
 | Cognition replaceability | 1 | Unchanged. |
+
+The Development credit is intentionally narrow. Episode A's acceptance appraisal was scripted setup; deterministic Actor v1 stored request/criteria-derived descriptive memory rather than Nadia-authored reflection; the later standing comparison invoked Guardian v4 directly in the evidence harness; and the default live runtime has not generalized this into broad experience-driven self-development. These limits keep Development at **1**, not 2.
 
 Score movement from the Semantic Guardian checkpoint is therefore:
 
