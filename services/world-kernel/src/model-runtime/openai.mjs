@@ -16,7 +16,7 @@ import {
 
 const DEFAULTS = Object.freeze({
   timeoutMs: 45_000,
-  maxOutputTokens: 3_000,
+  maxOutputTokens: 6_000,
   temperature: 0,
   topP: 1,
   reasoningEffort: "none",
