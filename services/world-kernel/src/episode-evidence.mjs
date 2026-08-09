@@ -47,15 +47,22 @@ export function currentEpisodeEvidenceRefsFromRuntime(runtime) {
   assertId("episode runtime.requestId", runtime.requestId);
   assertPlainObject("episode runtime.authorization", runtime.authorization);
   assertId("episode runtime.authorization.authorizationId", runtime.authorization.authorizationId);
-  if (runtime.authorization.requestId !== runtime.requestId) {
+  if (
+    runtime.authorization.requestId !== undefined &&
+    runtime.authorization.requestId !== runtime.requestId
+  ) {
     throw new TypeError("episode authorization request does not match runtime");
   }
-  if (runtime.session?.context?.requestId !== runtime.requestId) {
+  if (
+    runtime.session?.context?.requestId !== undefined &&
+    runtime.session.context.requestId !== runtime.requestId
+  ) {
     throw new TypeError("episode execution context request does not match runtime");
   }
   if (
-    runtime.session.context.participation?.authorizationId !==
-    runtime.authorization.authorizationId
+    runtime.session?.context?.participation?.authorizationId !== undefined &&
+    runtime.session.context.participation.authorizationId !==
+      runtime.authorization.authorizationId
   ) {
     throw new TypeError("episode execution context authorization does not match runtime");
   }
