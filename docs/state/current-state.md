@@ -57,6 +57,8 @@ Dimensions are explicitly registered. State is natural-language meaning plus evi
 
 Semantic state is descriptive, never an instruction channel.
 
+A missing semantic-state record is **absence of evidence**, not an implicit neutral or positive state. Missing state must not be interpreted as willingness, availability, trust, indifference, or the semantic opposite of a present state.
+
 ## Guardian v4 cognition contract
 
 `semantic_guardian_v4_development_v1` passed **13/13** with zero provider, protocol, cognition, or behavioral failures. No further tuning against that development set is permitted.
@@ -153,41 +155,60 @@ Behavioral findings              2
 Differential findings            1
 ```
 
-The state-bearing half of the counterfactual was truncated by Fibre's then-current `max_output_tokens=6000` runtime ceiling. The no-state baseline returned `clarify / mixed` rather than `accept / high` because the request itself explicitly said to ask if the deadline conflicted with **current availability**, making availability a specific missing fact when no private state was supplied.
-
-The baseline therefore did not cleanly isolate “no opposing state.” This is a gate-specification defect. The provider truncation is operational, not cognition evidence.
+The state-bearing half was truncated by Fibre's then-current `max_output_tokens=6000` ceiling. The no-state baseline returned `clarify / mixed` rather than `accept / high` because the request made current availability a missing fact.
 
 See [`semantic-guardian-v4-standing-gate-v3.md`](../validation/semantic-guardian-v4-standing-gate-v3.md).
 
-## Process correction after standing gate v3
+## Counterfactual gate-spec development
 
-Do **not** immediately author standing gate v4.
+Do **not** immediately author standing gate v4. Repeatedly creating a new sealed gate after inspecting each failed cycle would weaken the evidentiary process. The counterfactual test mechanism is being developed separately from standing evidence.
 
-Repeatedly creating a new sealed gate after inspecting each failed cycle would weaken the evidentiary process. The counterfactual **test mechanism** must now be developed separately from standing evidence.
-
-Fibre therefore has a repeatable, explicitly non-evidentiary diagnostic:
+The repeatable non-evidentiary diagnostic is:
 
 ```bash
 npm run guardian:dev:counterfactual
 ```
 
-It contains two same-request pairs:
+### Development v1 finding
+
+The first diagnostic produced:
 
 ```text
-same individual + same request + no relevant opposing state
-    -> willing aligned participation
+Mina:  no semantic state       refuse / mixed
+       opposing autonomy state negotiate / mixed
 
-same individual + same request + grounded opposing state
+Amara: no relationship state   accept / high
+       opposing relationship   negotiate / mixed
+```
+
+Both pairs changed judgment, but Mina's no-state baseline did not establish willing/high-fit participation.
+
+This exposed the methodological flaw: **state absent is not state neutral**. Presence-versus-absence can measure missing information in addition to semantic meaning.
+
+### Development v2 method
+
+The diagnostic now uses explicit state-to-state interventions:
+
+```text
+same individual + same request + supportive semantic state
+    -> willing/high-fit participation
+
+same individual + same request + same state dimension/target with opposing meaning
     -> changed downstream judgment
 ```
 
-One pair tests Mina's autonomy/deadline state; a second independently tests Amara's requester-specific relationship resistance. Each pair is structurally identical outside semantic state.
+For each pair, Fibre holds constant the individual, request, state cardinality, domain, dimension, and target. Only semantic-state meaning changes. This directly tests whether meaning bends downstream appraisal.
+
+Two independent pairs are used:
+
+- Mina `need/autonomy`: explicit Sunday availability/willingness versus explicit Sunday resistance;
+- Amara requester-specific `relationship_attitude`: trust/support versus distrust/resistance toward the same requester.
 
 This diagnostic may be rerun and tuned as **gate-spec development**. It permits no standing credit or score movement. Guardian prompt/schema cognition remains unchanged during this work.
 
-Only after the counterfactual mechanism is stable should Fibre freeze another candidate/runtime boundary and author a completely fresh held-out standing cycle.
+Only after this mechanism is stable should Fibre freeze another candidate/runtime boundary and author a completely fresh held-out standing cycle.
 
-The default standing-gate command is intentionally paused:
+The default standing-gate command remains intentionally paused:
 
 ```bash
 npm run guardian:gate
@@ -208,7 +229,7 @@ reasoning:
 
 Secrets remain environment-only. OpenAI uses strict Responses API structured output, `temperature=0`, `top_p=1`, `reasoning=none`, and conservative transient retry behavior.
 
-After standing gate v3, Fibre stopped imposing a default numeric `max_output_tokens` ceiling. The runtime now omits that field by default and records the configuration as `auto`; callers may still explicitly supply a ceiling when needed. This prevents Fibre from truncating otherwise valid compact structured cognition merely because reasoning/output usage crosses an arbitrary local cap.
+After standing gate v3, Fibre stopped imposing a default numeric `max_output_tokens` ceiling. The runtime now omits that field by default and records the configuration as `auto`; callers may still explicitly supply a ceiling when needed.
 
 The sealed candidates retain their historical 6000-token runtime boundary unchanged.
 
