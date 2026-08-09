@@ -281,12 +281,21 @@ function verifyRestart(databasePath, episode, progress) {
     assert.equal(thread.memoryRefs.includes(memory.memoryId), true);
     assert.equal(thread.version, episode.resultingThreadVersion);
     const integrity = world.service.verifyFreezeIntegrity(episode.threadId, episode.sessionId);
-    assert.equal(integrity.passed, true);
+    assert.equal(integrity.runtimeCompleted, true);
+    assert.equal(integrity.leaseReleased, true);
+    assert.equal(integrity.reportDigest, episode.freezeReportDigest);
+    assert.deepEqual(integrity.acceptedMemoryIds, [memory.memoryId]);
     return {
       survived: true,
       memory: structuredClone(memory),
       threadVersion: thread.version,
       freezeIntegrityPassed: true,
+      integrityWitness: {
+        reportDigest: integrity.reportDigest,
+        runtimeCompleted: integrity.runtimeCompleted,
+        leaseReleased: integrity.leaseReleased,
+        acceptedMemoryIds: [...integrity.acceptedMemoryIds],
+      },
     };
   } finally {
     world.close();
