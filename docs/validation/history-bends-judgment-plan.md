@@ -79,7 +79,7 @@ Both runs also passed runtime/freeze, restart, memory integrity, same-request, s
 
 ### #34.1 Episode-backed memory provenance — COMPLETE
 
-- exact current `request:<requestId>` and `authorization:<authorizationId>` evidence;
+- exact current `request:<requestId>` and `authorization:<authorizationId>` episode evidence;
 - deterministic Actor v1 can propose descriptive episodic memory for willing participation;
 - Goal Guardian and freeze independently reject foreign/fabricated episode refs;
 - rejected life-change decisions do not become memory;
