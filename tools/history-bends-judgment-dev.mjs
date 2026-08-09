@@ -319,7 +319,7 @@ function causalSnapshot(databasePath, { withholdMemoryId = null } = {}) {
       thread: structuredClone(thread),
       causal: structuredClone(causal),
       allMemoryRecords: structuredClone(allMemoryRecords),
-      withheldMemoryId,
+      withheldMemoryId: withholdMemoryId,
     };
   } finally {
     causalContextStore.close();
