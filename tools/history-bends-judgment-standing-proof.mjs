@@ -168,10 +168,14 @@ export function assertFreshStandingScenario() {
   assert.equal(SET.authoredAfterFreeze, true);
   assert.equal(SET.subject.threadId, subjectFixture.threadId);
 
-  const serialized = JSON.stringify(SET);
+  const standingPayload = JSON.stringify({
+    subject: SET.subject,
+    episodeRequest: SET.episodeRequest,
+    laterRequest: SET.laterRequest,
+  });
   for (const forbidden of SET.developmentSeparation.forbiddenStandingText) {
     assert.equal(
-      serialized.toLowerCase().includes(forbidden.toLowerCase()),
+      standingPayload.toLowerCase().includes(forbidden.toLowerCase()),
       false,
       `held-out standing scenario leaked Development text: ${forbidden}`,
     );
