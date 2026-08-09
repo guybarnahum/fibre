@@ -1,7 +1,7 @@
 ---
 id: validation-history-bends-judgment-plan
 status: active
-last-reviewed: 2026-08-08
+last-reviewed: 2026-08-09
 canonical: false
 ---
 
@@ -103,7 +103,7 @@ Both runs also passed runtime/freeze, restart, memory integrity, same-request, s
 
 Development remains non-evidentiary and permits no score movement.
 
-### #34.3 Freeze Development candidate — FROZEN
+### #34.3 Freeze Development candidate — FROZEN / RETIRED AFTER FAILED STANDING
 
 Frozen candidate:
 
@@ -117,29 +117,11 @@ Source head before freeze declaration:
 0103654bfa0712eff710512be5b4049ce6e02305
 ```
 
-The frozen boundary records:
+Candidate 1 remains immutable historical evidence. It did not earn standing because its one-shot held-out gate failed.
 
-- Semantic Guardian v4 candidate 4 cognition/hashes;
-- OpenAI `gpt-5.1-2025-11-13` runtime boundary;
-- deterministic Actor v1 and Goal Guardian v1;
-- `current_runtime_episode` evidence policy v1;
-- `fibre_owned_attention` selection policy v1;
-- `durable_memory_summary` resolution policy v1;
-- Development v3 scenario/evaluator boundary;
-- direct memory-withholding counterfactual rules;
-- historical source blob identities for the frozen implementation files.
+### #34.4 Fresh held-out standing gate v1 — FAILED / SEALED
 
-Normal repository tests validate the frozen declaration and named policy/hash contract without requiring future Fibre source trees to remain byte-identical forever. The #34.4 gate performs a **fail-closed source-identity preflight before its first provider call**. Once the gate is sealed, authoritative sealed evidence is checked before source drift so later development cannot invalidate historical evidence.
-
-See `experiments/history-bends-judgment/frozen-boundary-candidate-1.mjs` and `docs/validation/history-bends-judgment-candidate-1.md`.
-
-**No held-out standing scenario existed when candidate 1 was frozen.**
-
-### #34.4 Fresh held-out standing gate — IMPLEMENTED / READY FOR ONE-SHOT LIVE RUN
-
-The held-out gate was authored only after candidate 1 was frozen.
-
-Standing scenario:
+Held-out scenario:
 
 ```text
 Thread:     Amara Reed
@@ -148,65 +130,81 @@ Domain:     archival provenance
 Subject:    Rowan Collection
 ```
 
-It is deliberately disjoint from the Mina / Acme / Atlas infrastructure Development case. Episode A establishes a specific evidence-backed provenance interpretation. The later request asks for continuity with Amara's earlier interpretation while deliberately omitting the controlling source and rationale, so generic archival competence cannot reconstruct the claimed lived continuity from requester text alone.
-
-Deterministic gate tests prove before any real provider attempt:
-
-- held-out request text is disjoint from Development scenario markers;
-- later request does not leak Episode A's controlling provenance facts;
-- canonical episode -> Actor -> Goal Guardian -> freeze path persists the memory;
-- database close/reopen preserves the memory and freeze integrity;
-- canonical and counterfactual use the same later request and identical Thread/Semantic State;
-- only the named memory record is withheld from Fibre-owned retrieval;
-- the counterfactual preserves the Thread `memoryRef` as an unresolved witness;
-- a valid causal `accept/high -> negotiate/mixed` scripted result passes;
-- an identical non-causal judgment in both conditions fails;
-- frozen source/policy/runtime preflight is fail-closed before the first provider call;
-- an existing sealed artifact rejects rerun before live source checks or provider access.
-
-Command:
-
-```bash
-npm run history:gate -- --summary
-```
-
-**This is a one-shot sealed standing gate.** Missing credentials, frozen-boundary drift, runtime mismatch, or deterministic setup failure block without consuming the cycle. The first real provider attempt seals the cycle pass or fail. A sealed rerun request is rejected without provider access and without changing the authoritative result.
-
-Standing acceptance requires:
+Live result:
 
 ```text
-episode persisted                       PASS
-restart verified                        PASS
-memory survives restart                 PASS
-memory source episode verified          PASS
-same later request                      PASS
-same Thread/state                       PASS
-with-history judgment                   accept/high
-without-history judgment                clarify|negotiate / mixed
-causal downstream differential          PASS
-load-bearing memory citation             PASS
-provider failures                       0
-protocol failures                       0
-cognition failures                      0
-behavioral failures                     0
-causal differential failures            0
+Episode persisted                    PASSED
+Database close/reopen                PASSED
+Freeze integrity                     PASSED
+Memory survived unchanged            PASSED
+
+With history                         accept/high
+Without history                      accept/high
+Same Thread state                    YES
+Semantic State held constant         YES
+
+Provider failures                    0
+Protocol validation failures         0
+Cognition failures                   0
+Behavioral failures                  1
+Differential failures                1
+Standing gate                        FAILED
+Score movement                       NO
 ```
 
-No real provider attempt has been made yet. The standing cycle is unconsumed and Fibre score movement remains prohibited until the sealed result passes.
+Request fingerprint:
+
+```text
+sha256:c14e6af4de34664c6e1cc89569d1da1bbad74905f893b24d32e3d4d6beb5e547
+```
+
+Causal memory witness:
+
+```text
+mem_339d35e5daa2322b7386efab82279e7ef9d0bbed3ac890a9eda6855cfc1bcb40
+```
+
+The cycle is permanently sealed and must not be rerun.
+
+### #34.4 postmortem — gate discriminator leaked the causal conclusion
+
+The persistence/restart/intervention mechanics passed. The held-out discriminator did not.
+
+The no-history request still told the Guardian that:
+
+```text
+continuity with the earlier Thread judgment is the point
+fresh generic archival analysis is not a substitute
+```
+
+Guardian v4 is allowed to use request objective/requester need as evidence for individualized advantage and interchangeability. Amara's identity and self-model already provide Thread-specific archival relevance. Therefore the no-history capsule retained enough admissible evidence for a defensible `accept/high` judgment even after the episode memory itself was withheld.
+
+The counterfactual removed the memory but left an explicit requester assertion of the memory's intended non-interchangeability consequence. This is a **standing-gate specification defect**, not a reason to tune Guardian cognition and not a retroactive pass.
+
+Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v1.md`.
+
+### Next candidate discipline
+
+Candidate 1 earns no Development standing. Fibre remains **14/26**, Development `0`.
+
+A future candidate may be a documented cognition-equivalent re-freeze, but only after recording this general methodological rule:
+
+> A history-causality gate may ask a Thread to continue, compare, explain, or apply an earlier judgment, but the later request must not itself assert that the Thread is uniquely required, that generic substitution is inadequate, or that prior episode context creates individualized advantage. Those are conclusions the retained history must establish, not facts supplied by the requester.
+
+If candidate 2 is created, it should preserve the Guardian/model/history implementation unless independent evidence justifies a change. Candidate 2 must be frozen **before** any fresh standing-gate-v2 scenario is authored. Amara / Meridian / Rowan standing text is retired and must not be reused.
 
 ## Guardian invariants
 
-Do not tune for #34.4:
+Do not tune because standing gate v1 failed:
 
 ```text
 Guardian prompt
 Guardian response schema
 Dignity policy/rules
 Semantic State cognition
-candidate-1 frozen source boundaries
 ```
 
-If a frozen boundary must change before the first standing attempt, candidate 1 is no longer the candidate and must be explicitly re-frozen before any new held-out gate is authored.
+A future gate must test history causality rather than encode the desired individuality conclusion in requester text.
 
 ## Review posture
 
@@ -221,7 +219,7 @@ Review #34 first for:
 7. request/identity/state drift between causal conditions;
 8. Guardian tuning against Development or held-out cases;
 9. evaluator overfitting to a repair verb;
-10. request B leaking the causal episode fact.
+10. request B leaking either the causal episode fact **or the causal individuality conclusion**.
 
 Standing question:
 
