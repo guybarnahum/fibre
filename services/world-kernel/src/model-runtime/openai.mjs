@@ -16,7 +16,7 @@ import {
 
 const DEFAULTS = Object.freeze({
   timeoutMs: 45_000,
-  maxOutputTokens: 6_000,
+  maxOutputTokens: null,
   temperature: 0,
   topP: 1,
   reasoningEffort: "none",
@@ -170,7 +170,7 @@ export function createOpenAIModelAdapter({
   const configuration = Object.freeze({
     transport: "responses",
     endpoint,
-    maxOutputTokens,
+    maxOutputTokens: maxOutputTokens === null ? "auto" : maxOutputTokens,
     temperature,
     topP,
     reasoningEffort,
@@ -213,7 +213,7 @@ export function createOpenAIModelAdapter({
               body: JSON.stringify({
                 model: modelId,
                 store: false,
-                max_output_tokens: maxOutputTokens,
+                ...(maxOutputTokens === null ? {} : { max_output_tokens: maxOutputTokens }),
                 temperature,
                 top_p: topP,
                 reasoning: { effort: reasoningEffort },
@@ -255,7 +255,9 @@ export function createOpenAIModelAdapter({
               retryable: false,
               providerErrorCode: incompleteReason,
               actionHint: incompleteReason === "max_output_tokens" || incompleteReason === "max_tokens"
-                ? `Output hit the ${maxOutputTokens}-token ceiling; increase the ceiling or reduce the structured output.`
+                ? maxOutputTokens === null
+                  ? "Provider returned a max-output-tokens incomplete response while using automatic output limits; inspect provider/model limits or reduce the structured output."
+                  : `Output hit the ${maxOutputTokens}-token ceiling; increase the ceiling or reduce the structured output.`
                 : null,
             });
             incomplete.providerUsage = usage;
