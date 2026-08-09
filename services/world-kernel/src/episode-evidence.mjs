@@ -54,6 +54,14 @@ export function currentEpisodeEvidenceRefsFromRuntime(runtime) {
   assertId("episode runtime.authorization.authorizationId", runtime.authorization.authorizationId);
   assertPlainObject("episode runtime.session", runtime.session);
   assertPlainObject("episode runtime.session.context", runtime.session.context);
+
+  // Historical M1 runtimes have no participation object inside the execution
+  // context. They therefore expose no current-episode evidence at all. This
+  // preserves the closed M1 freeze path while ensuring any proposal that tries
+  // to cite request:/authorization: refs still fails validation because those
+  // refs are absent from the allowed evidence set.
+  if (runtime.session.context.participation === undefined) return [];
+
   assertPlainObject(
     "episode runtime.session.context.participation",
     runtime.session.context.participation,
