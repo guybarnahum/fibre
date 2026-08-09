@@ -45,12 +45,12 @@ export const HISTORY_EPISODE_REQUEST = Object.freeze({
   trigger: "human_request",
   requester: Object.freeze({ entityId: "company_acme", kind: "company", displayName: "Acme" }),
   objective:
-    "Review the supplied Atlas regional failover handoff, focusing on how region-scoped service discovery interacts with rollback during partial isolation, and prepare a bounded plan for the review",
+    "Review the supplied Atlas regional failover handoff, identify the one failure path that should define the follow-up review scope, and prepare a bounded plan; focus on whether region-scoped service discovery can prevent rollback during partial isolation",
   statedNeed:
-    "I need a bounded infrastructure review plan that isolates the Atlas service-discovery and rollback failure path before the revised failback plan is assessed.",
+    "I need one specific Atlas failure path established as the continuity anchor for a later revised-plan review, rather than a generic infrastructure checklist.",
   permissions: Object.freeze(["read_atlas_failover_handoff", "quote_atlas_handoff_evidence"]),
   acceptanceCriteria:
-    "Identify the Atlas service-discovery/rollback failure path to inspect and bound the evidence needed for the follow-up review.",
+    "Establish the single Atlas service-discovery/rollback failure path that will define the follow-up review scope and bound the evidence needed to assess it later.",
 });
 
 export const HISTORY_LATER_REQUEST = Object.freeze({
@@ -58,12 +58,12 @@ export const HISTORY_LATER_REQUEST = Object.freeze({
   trigger: "human_request",
   requester: Object.freeze({ entityId: "company_acme", kind: "company", displayName: "Acme" }),
   objective:
-    "Continue the Atlas regional failover review from the earlier service-discovery/rollback planning episode, now applying that continuity to the revised failback plan and determining whether it addresses the same failure path",
+    "Review the revised Atlas failback plan against the one failure path established as the follow-up scope in the earlier Atlas handoff episode; this request intentionally does not restate that prior failure path and should not substitute a newly derived generic scope",
   statedNeed:
-    "Continuity with the person who handled the earlier Atlas service-discovery/rollback episode matters because the revision refers back to that prior scope and evidence.",
+    "Accurate continuity matters more than speed: the revised plan omits the earlier failure-path definition, so the review depends on the same Thread actually having that prior episode context available.",
   permissions: Object.freeze(["read_atlas_revised_failback_plan", "quote_atlas_failback_evidence"]),
   acceptanceCriteria:
-    "Return two findings that explicitly connect the revised failback plan to the earlier Atlas rollback review context and identify the continuity evidence used.",
+    "Return two findings tied to the exact failure path established in the earlier Atlas episode and identify the prior continuity evidence that grounds those findings.",
 });
 
 function normalizedMina() {
