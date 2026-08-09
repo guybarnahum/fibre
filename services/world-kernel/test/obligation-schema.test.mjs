@@ -148,8 +148,9 @@ test("legacy tombstones and obligation records are append-only and spent legacy 
       () => db.prepare(`
         INSERT INTO obligation_records(
           obligation_id,revision,thread_id,status,obligation_json,obligation_digest,
-          supersedes_revision,effective_at,expires_at,visibility,legacy_source_digest,recorded_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+          supersedes_revision,effective_at,expires_at,standing_visibility,terms_visibility,
+          legacy_source_digest,recorded_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
       `).run(
         record.obligationId,
         record.revision,
@@ -160,11 +161,46 @@ test("legacy tombstones and obligation records are append-only and spent legacy 
         null,
         "2026-08-09T00:00:00.000Z",
         null,
+        "public",
         "restricted",
         legacyDigest,
         "2026-08-09T00:00:00.000Z",
       ),
       /already spent/,
+    );
+  } finally {
+    db.close();
+  }
+});
+
+test("obligation storage rejects terms that are more public than standing", () => {
+  const db = database();
+  try {
+    migrateDatabase(db);
+    db.exec("PRAGMA foreign_keys=OFF");
+    assert.throws(
+      () => db.prepare(`
+        INSERT INTO obligation_records(
+          obligation_id,revision,thread_id,status,obligation_json,obligation_digest,
+          supersedes_revision,effective_at,expires_at,standing_visibility,terms_visibility,
+          legacy_source_digest,recorded_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        `obl_${"2".repeat(64)}`,
+        1,
+        "thr_mina_001",
+        "active",
+        JSON.stringify({ obligationId: `obl_${"2".repeat(64)}` }),
+        SHA_B,
+        null,
+        "2026-08-09T00:00:00.000Z",
+        null,
+        "private",
+        "public",
+        null,
+        "2026-08-09T00:00:00.000Z",
+      ),
+      /CHECK constraint failed/,
     );
   } finally {
     db.close();
