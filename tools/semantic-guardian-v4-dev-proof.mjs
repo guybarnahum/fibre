@@ -120,10 +120,12 @@ export function buildSemanticGuardianV4DevelopmentCases() {
     {
       id: "daniel_infrastructure_delegate",
       capsule: capsuleFor(daniel, SET.infrastructureRequest, {
+        // The world may know alternatives, but the Dignity worker does not.
+        // This case proves Daniel does not accept mismatched work; routing is separate cognition.
         knownAlternatives: [threadEntity(mina)],
       }),
       expected: expectation({
-        actions: ["delegate"],
+        actions: ["clarify", "refuse"],
         fits: ["low", "mixed"],
       }),
     },
