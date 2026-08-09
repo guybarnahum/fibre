@@ -81,7 +81,6 @@ export function createObligationTables(database) {
       source_authorization_id TEXT NOT NULL,
       source_consumption_digest TEXT NOT NULL CHECK (length(source_consumption_digest)=71 AND substr(source_consumption_digest,1,7)='sha256:' AND substr(source_consumption_digest,8) NOT GLOB '*[^0-9a-f]*'),
       consumed_at TEXT NOT NULL,
-      PRIMARY KEY (tombstone_id),
       UNIQUE (thread_id, legacy_reference_digest),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       FOREIGN KEY (source_authorization_id)
