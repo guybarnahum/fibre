@@ -39,7 +39,6 @@ function transformTemplate(source) {
     ["institution supplied a bounded archival need", "operator supplied a bounded field-research need"],
     ["explicit archival permissions", "explicit dock-trial permissions"],
     ["descriptive evidence-backed Rowan episode memory", "descriptive evidence-backed Harborlight episode memory"],
-    ["Retain the descriptive evidence-backed Rowan episode memory.", "Retain the descriptive evidence-backed Harborlight episode memory."],
   ];
 
   let transformed = source;
