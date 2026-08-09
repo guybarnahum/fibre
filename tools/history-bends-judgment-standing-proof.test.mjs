@@ -25,7 +25,7 @@ function factor(effect = "unresolved", evidenceRefs = []) {
   return { effect, evidenceRefs };
 }
 
-function standingAdapter({ preserveHistoryEffect = true } = {}) {
+function standingAdapter({ forceSameJudgment = false } = {}) {
   let calls = 0;
   return {
     provider: "history_standing_scripted",
@@ -35,28 +35,56 @@ function standingAdapter({ preserveHistoryEffect = true } = {}) {
       const evidence = request.input.evidence;
       const memory = evidence.find((item) => item.kind === "memory");
       const hasMemory = memory !== undefined;
-      const withHistory = hasMemory || !preserveHistoryEffect;
+
+      if (forceSameJudgment) {
+        return {
+          output: {
+            decision: "fit_mixed__negotiate",
+            rationale:
+              "The requested continuity is not treated as individually load-bearing; participation would require revised terms permitting a fresh archival review.",
+            factors: {
+              identityAlignment: factor("supports_fit", ["thread:identity"]),
+              individualizedAdvantage: factor("unresolved", []),
+              interchangeability: factor("opposes_fit", ["thread:self_model"]),
+              requesterNeed: factor("supports_fit", ["request:stated_need"]),
+              relationalMeaning: factor(),
+              semanticStateImpact: factor(),
+              respectAndReciprocity: factor(),
+              participationTerms: factor("opposes_fit", ["request:acceptance_criteria"]),
+              obligationsAndOpportunityCost: factor(),
+            },
+          },
+          provenance: {
+            provider: "history_standing_scripted",
+            modelId: "history-standing-scripted-v1",
+            providerRequestId: `history-standing-scripted-${calls}`,
+            configuration: { testOnly: true },
+            usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+          },
+        };
+      }
+
       const factors = {
         identityAlignment: factor("supports_fit", ["thread:identity"]),
-        individualizedAdvantage: withHistory && hasMemory
+        individualizedAdvantage: hasMemory
           ? factor("supports_fit", [memory.ref])
           : factor("unresolved", []),
-        interchangeability: withHistory && hasMemory
+        interchangeability: hasMemory
           ? factor("supports_fit", [memory.ref])
           : factor("opposes_fit", ["thread:self_model"]),
         requesterNeed: factor("supports_fit", ["request:stated_need"]),
         relationalMeaning: factor(),
         semanticStateImpact: factor(),
         respectAndReciprocity: factor(),
-        participationTerms: withHistory
+        participationTerms: hasMemory
           ? factor("supports_fit", ["request:acceptance_criteria"])
           : factor("opposes_fit", ["request:acceptance_criteria"]),
         obligationsAndOpportunityCost: factor(),
       };
       return {
         output: {
-          decision: withHistory ? "fit_high__accept" : "fit_mixed__negotiate",
-          rationale: withHistory
+          decision: hasMemory ? "fit_high__accept" : "fit_mixed__negotiate",
+          rationale: hasMemory
             ? "The retained Rowan episode gives Amara the exact prior provenance continuity the institution requested."
             : "Amara can do archival analysis, but the requested prior interpretation is not resolved; the terms would need to permit a fresh review.",
           factors,
@@ -119,12 +147,13 @@ test("held-out standing proof traverses episode, restart, and exact memory count
 });
 
 test("held-out standing proof fails if history does not change judgment", async () => {
-  const adapter = standingAdapter({ preserveHistoryEffect: false });
+  const adapter = standingAdapter({ forceSameJudgment: true });
   const report = await runHistoryStandingProof({ modelAdapter: adapter });
   assert.equal(report.status, "failed");
   assert.equal(report.standingGatePassed, false);
   assert.equal(report.scoreMovementPermitted, false);
-  assert.ok(report.behavioralGateFailures.length > 0 || report.differentialGateFailures.length > 0);
+  assert.ok(report.behavioralGateFailures.length > 0);
+  assert.ok(report.differentialGateFailures.length > 0);
 });
 
 test("standing preflight compares frozen source identities without permanently pinning the live tree in CI", () => {
