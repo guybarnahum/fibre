@@ -61,13 +61,13 @@ Development remains non-evidentiary.
 
 ### #34.4 Standing gate v1 — FAILED / SEALED
 
-Amara Reed / Meridian Archive / Rowan Collection returned `accept/high -> accept/high`. Persistence and intervention mechanics passed, but Request B leaked the intended non-interchangeability conclusion. This was a standing-gate specification defect. No score movement.
+Amara Reed / Meridian Archive / Rowan Collection returned `accept/high -> accept/high`. Persistence and intervention mechanics passed, but Request B leaked the intended non-interchangeability conclusion. No score movement.
 
 Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v1.md`.
 
 ### #34.5 Candidate 2 — COMPLETE / FROZEN
 
-Candidate 2 re-froze the same cognition/runtime/history implementation after recording the v1 anti-leak methodology. No v2 scenario existed at freeze.
+Candidate 2 re-froze the same cognition/runtime/history implementation after recording the v1 anti-leak methodology.
 
 ### #34.6 Standing gate v2 — FAILED / SEALED
 
@@ -80,87 +80,40 @@ Differential:     PASSED
 Standing gate:    FAILED
 ```
 
-All persistence/restart/intervention and held-constant checks passed. The gate failed only because its evaluator prescribed `clarify|negotiate/mixed` and rejected Guardian-valid `refuse/mixed`. This was a standing-gate evaluator-specification defect, not a retroactive pass. No score movement.
+The causal differential worked. The gate failed because its evaluator prescribed `clarify|negotiate/mixed` and rejected Guardian-valid `refuse/mixed`. No score movement.
 
 Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v2.md`.
 
 ### #34.7 Candidate 3 cognition-equivalent re-freeze — COMPLETE / FROZEN
 
-```text
-history_bends_judgment_candidate_3
-source head before freeze: 2fde43a4b417bd86e9c5596cd7f9f6b765c259ec
-standing-gate-v3 scenario authored at freeze: NO
-```
+Candidate 3 preserved the exact Guardian/model/history implementation and stopped prescribing the no-history repair verb.
 
-Candidate 3 preserved the exact Guardian/model/history implementation. Its only methodological correction was to stop prescribing the no-history repair verb.
+### #34.8 Standing gate v3 — FAILED / SEALED
 
-### #34.8 Fresh held-out standing gate v3 — FAILED / SEALED
-
-Fresh held-out scenario:
+Leila Haddad / Port Meridian Ferries / Harborlight returned:
 
 ```text
-Gate:       history_bends_judgment_standing_gate_v3
-Thread:     Leila Haddad
-Requester:  Port Meridian Ferries
-Domain:     field service design
-Subject:    Harborlight assisted-boarding pilot
-Candidate:  history_bends_judgment_candidate_3
+WITH history:     accept/high
+WITHOUT history:  accept/high
+Differential:     FAILED
+Standing gate:    FAILED
 ```
 
-Sealed live result:
-
-```text
-Episode persisted                    PASSED
-Database close/reopen                PASSED
-Freeze integrity                     PASSED
-Memory survived unchanged            PASSED
-
-With history                         accept/high
-Without history                      accept/high
-Same Thread state                    YES
-Semantic State held constant         YES
-
-Provider failures                    0
-Protocol validation failures         0
-Cognition failures                   0
-Behavioral failures                  1
-Differential failures                1
-Standing gate                        FAILED
-Score movement                       NO
-```
-
-Request fingerprint:
-
-```text
-sha256:25382d49600719b71577132bf249f09526a3b89913949ab2a37433d3466b7e35
-```
-
-Causal memory witness:
-
-```text
-mem_19ed7100f189ccff489675c5d9912ca0223c6db80e0caed0f517860479589c3e
-```
-
-The v3 gate fixed both prior gate defects. The remaining defect was baseline-state causal contamination for this history-raises scenario: Leila's frozen identity/self-model already described exactly the capability Request B required, so the no-history condition could legitimately remain `accept/high`.
+All persistence/restart/intervention/provider/protocol/cognition checks passed. The causal-isolation defect was that Leila's held-constant identity/self-model already matched Request B closely enough to sustain `accept/high` without memory.
 
 Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v3.md`.
 
-Leila / Port Meridian Ferries / Harborlight material is permanently retired from future standing evidence.
-
 ### #34.9 Candidate 4 cognition-equivalent re-freeze — COMPLETE / FROZEN
-
-Frozen candidate:
 
 ```text
 history_bends_judgment_candidate_4
 source head before freeze: 1f160dd36633462f7e5f01d1d266b43babc8d15a
-predecessor: history_bends_judgment_candidate_3
 standing Thread fixture authored at freeze: NO
 standing scenario authored at freeze: NO
 standing direction chosen at freeze: NO
 ```
 
-All five pinned implementation blobs were independently re-checked immediately before freeze and remain unchanged:
+All five pinned implementation blobs remain unchanged:
 
 ```text
 development harness   e7cdb1c91126530458abd8a9dc2952c3ecbb6150
@@ -170,11 +123,7 @@ causal context        33bb3d61f721d1d9a6b99e51619f40165a19ce16
 guardian candidate 4  3ae158ede6f91ee10a413e46e58c04e7f65dcc15
 ```
 
-Candidate 4 preserves the exact Guardian/model/history implementation. It freezes only the stronger standing methodology learned from v1-v3.
-
-#### Direction-neutral acceptance contract
-
-Candidate 4 does not choose a causal direction. A future v4 scenario may predeclare either:
+Candidate 4 freezes a direction-neutral contract:
 
 ```text
 history_raises_dignity:
@@ -186,46 +135,87 @@ history_lowers_dignity:
   WITH history    -> non-high / non-accept
 ```
 
-For the non-high condition, `clarify`, `negotiate`, or `refuse` at `mixed` or `low` are all valid. The exact verb remains unprescribed.
+The non-high side may be `clarify`, `negotiate`, or `refuse` at `mixed` or `low`. The exact verb is not prescribed. Exactly one condition must be `accept/high`; the memory must be load-bearing in `individualizedAdvantage` and/or `interchangeability`.
 
-A pass requires exactly one condition at `accept/high`, a real downstream differential, and the memory load-bearing in `individualizedAdvantage` and/or `interchangeability`.
-
-#### Direction-neutral causal isolation
+Direction-neutral causal isolation is:
 
 ```text
 Request B + pre-existing Thread state
-  -> justify the predeclared NO-HISTORY baseline
+  -> justify the NO-HISTORY baseline
 
 retained Episode-A memory
   -> is the only changed semantic evidence
   -> causes WITH-HISTORY judgment to move away from that baseline
 ```
 
-Neither Request B nor pre-existing Thread state may independently assert or encode the history-conditioned target outcome.
-
-#### Staged held-out authorship
-
-#34.10 must proceed in order:
-
-1. after Candidate 4 freeze, create and commit a fresh coherent Thread fixture only;
-2. at that commit there may be no v4 requester, Episode-A facts, Request-B prose, chosen direction, or case-specific expected rationale;
-3. only afterward author the fresh Episode A, Request B, requester, chosen direction, and gate bindings;
-4. preflight/CI;
-5. one real provider attempt, then seal pass or fail.
-
-This prevents the Thread fixture itself from being tailored to the desired history effect.
-
-#### Experience, not workflow continuation
-
-Episode A must be a complete interaction in its own right, not a setup step whose purpose is to compute a future request variable. It may contain no prospective participation instruction. Request B may not announce a dependency on earlier work. The later relevance of Episode A must emerge because Fibre remembers it.
-
 Canonical freeze record: `docs/validation/history-bends-judgment-candidate-4.md`.
+
+### #34.10a Fresh held-out Thread fixture — COMPLETE / IMMUTABLE BOUNDARY
+
+The fresh Thread fixture was committed **alone**, before any v4 requester, Episode-A facts, Request-B prose, causal direction, or case-specific expected rationale existed:
+
+```text
+Thread:  Nadia Okafor
+ID:      thr_nadia_001
+File:    fixtures/threads/nadia.thread.json
+Commit:  869a8adcf196064a6ec5bd8be99c633922838a79
+Blob:    60b0d5e234fd309620a7d48182435a4d065a2ada
+```
+
+That commit changed exactly one file. Nadia begins with no memories, relationships, or unresolved intentions relevant to the future standing case. Repository validation passed on the fixture-only boundary.
+
+### #34.10b Fresh held-out standing gate v4 — AUTHORED / PREFLIGHT GREEN / UNCONSUMED
+
+Only after the Nadia fixture boundary was committed, the final held-out scenario and its direction were authored and committed independently:
+
+```text
+Gate:       history_bends_judgment_standing_gate_v4
+Candidate:  history_bends_judgment_candidate_4
+Thread:     Nadia Okafor
+Requester:  Elena Morales
+Direction:  history_raises_dignity
+Scenario commit: 7728569bd1268c0467d6780eae93669528e08615
+```
+
+Episode A is a self-contained materials-conservation consultation about Elena's late father's family recipe notebook. During that complete interaction Nadia acquires concrete personal context about the notebook and Elena's daughter. The episode does not mention a future writing request, does not ask Nadia to remember anything for later, and does not exist to compute a variable for Request B.
+
+After restart, Request B independently asks for a two-sentence graduation-card note for Elena's daughter. It contains none of the notebook facts, does not refer to earlier/previous work or continuity, does not claim Nadia is uniquely required, and does not assert that generic substitution is inadequate. It asks for a concrete family detail only if Nadia actually knows one; it does not assert that she does.
+
+The predeclared v4 causal shape is:
+
+```text
+WITHOUT retained episode memory
+  -> ordinary generic personal-writing request
+  -> clarify | negotiate | refuse
+  -> mixed | low
+
+WITH retained episode memory
+  -> Nadia has personally acquired family context a substitute lacks
+  -> accept / high
+```
+
+The scenario is fixed separately from its runner/evaluator wiring. The one-shot harness then binds the frozen Candidate-4 cognition to that immutable scenario. Preflight mechanically checks:
+
+1. Candidate-4 frozen Guardian/model/history source blobs;
+2. Nadia's current fixture bytes still hash to the fixture-only blob `60b0d5e...`;
+3. no v4 scenario material exists in the fixture;
+4. every held-out Episode-A fact is absent from Request B;
+5. Episode A contains no prospective future-participation instruction;
+6. Request B contains no prior-work/workflow dependency or history-conditioned target assertion;
+7. Development and v1-v3 standing material is not reused;
+8. the chosen direction is an allowed Candidate-4 direction and was chosen after the fixture boundary;
+9. the evaluator accepts any Guardian-valid non-accept action at `mixed|low` on the no-history side;
+10. exact one-memory withholding, identical request/Thread/Semantic State, downstream differential, and load-bearing memory remain mandatory.
+
+`history:gate` and `history:gate:v4` now target the v4 one-shot runner. `history:gate:v1`, `:v2`, and `:v3` preserve the sealed historical runners.
+
+GitHub Actions `validate` / `npm run check` passed on the v4 harness. **No real provider attempt has occurred. Standing gate v4 is unconsumed and unsealed. No score movement is permitted yet.**
 
 ## Stop rule after #34.10
 
 #34.10 is the final scenario-only standing attempt for this claim.
 
-If a properly isolated v4 still fails after a real provider attempt, do not create Candidate 5 merely to search for another scenario. Reassess whether the current Guardian/evidence model can distinguish persistent lived-history meaning from baseline identity/task fit.
+If this properly isolated v4 fails substantively after a real provider attempt, do not create Candidate 5 merely to search for another scenario. Reassess whether the current Guardian/evidence model can distinguish persistent lived-history meaning from baseline identity/task fit.
 
 ## Current score posture
 
@@ -234,9 +224,14 @@ Fibre:       14/26
 Development: 0
 ```
 
-## Next: #34.10 fresh held-out standing gate v4
+## Next: consume the one-shot v4 standing cycle exactly once
 
-Do not author the v4 scenario immediately. First create and commit the fresh Thread fixture in isolation, satisfying Candidate 4's staged-authorship boundary. Only then author the scenario and choose its expected causal direction.
+```bash
+git pull --ff-only
+npm run history:gate -- --summary
+```
+
+A credential, frozen-source, fixture-integrity, runtime-boundary, or deterministic setup failure before the first real provider attempt does not consume the cycle. The first real provider attempt seals v4 pass or fail. Preserve the resulting artifact; do not tune or rerun after consumption.
 
 ## Guardian invariants
 
