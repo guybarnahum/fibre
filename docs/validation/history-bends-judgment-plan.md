@@ -117,7 +117,7 @@ Source head before freeze declaration:
 0103654bfa0712eff710512be5b4049ce6e02305
 ```
 
-The frozen boundary records and fail-closed tests:
+The frozen boundary records:
 
 - Semantic Guardian v4 candidate 4 cognition/hashes;
 - OpenAI `gpt-5.1-2025-11-13` runtime boundary;
@@ -127,7 +127,9 @@ The frozen boundary records and fail-closed tests:
 - `durable_memory_summary` resolution policy v1;
 - Development v3 scenario/evaluator boundary;
 - direct memory-withholding counterfactual rules;
-- exact frozen source blob identities.
+- historical source blob identities for the frozen implementation files.
+
+Normal repository tests validate the frozen declaration and named policy/hash contract without requiring future Fibre source trees to remain byte-identical forever. The #34.4 gate must instead perform a **fail-closed source-identity preflight before its first provider call**. Once the gate is sealed, authoritative sealed evidence must be checked before source drift so later development cannot invalidate historical evidence.
 
 See `experiments/history-bends-judgment/frozen-boundary-candidate-1.mjs` and `docs/validation/history-bends-judgment-candidate-1.md`.
 
@@ -177,7 +179,7 @@ Semantic State cognition
 candidate-1 frozen source boundaries
 ```
 
-If a frozen boundary must change, candidate 1 is no longer the candidate and must be explicitly re-frozen before any new held-out gate is authored.
+If a frozen boundary must change before the first standing attempt, candidate 1 is no longer the candidate and must be explicitly re-frozen before any new held-out gate is authored.
 
 ## Review posture
 
