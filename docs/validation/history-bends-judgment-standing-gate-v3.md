@@ -104,29 +104,36 @@ Request B asked Leila to prepare a station recommendation from an already-establ
 
 The no-history Guardian rationale therefore relied on admissible baseline Thread evidence rather than inventing the missing episode facts: Leila's identity and strengths were directly relevant to turning operating constraints into a concrete service decision. That was enough to sustain `accept / high` without the retained memory.
 
-The gate therefore failed to isolate the episode memory as the source of high individualized fit.
+The gate therefore failed to isolate the episode memory as the source of the **history-conditioned target outcome**.
 
 This is a **standing-scenario causal-isolation defect**, not evidence that Guardian cognition, memory persistence, retrieval, restart, or counterfactual mechanics failed.
 
 ## Deeper methodology lesson
 
-A history-causality gate needs **two-sided causal isolation**.
+A history-causality gate needs **two-sided causal isolation**, but the rule must be direction-neutral.
 
-It is not enough that Request B withhold the causal episode facts and avoid stating the individuality conclusion. The held-constant baseline Thread state must also be unable to independently entail the same high individualized-fit conclusion.
+For a scenario where history is expected to **raise** dignity, Request B and the pre-existing Thread state must not independently establish the later `accept/high` target. The retained memory must supply the otherwise unavailable individualized value.
 
-Future methodology must therefore require:
+For a scenario where history is expected to **lower** dignity, the no-history baseline may legitimately be `accept/high`; the retained memory must then be the sole new cause that lowers fit or willingness.
+
+The general invariant is therefore:
 
 ```text
-Request B does not independently establish high individualized fit
-AND
-baseline Thread state does not independently establish high individualized fit
-AND
-retained lived history supplies the otherwise unavailable individualized value
+request B + pre-existing Thread state
+  -> establish the predeclared NO-HISTORY baseline
+
+retained lived memory
+  -> is the only changed semantic evidence
+  -> causes the predeclared WITH-HISTORY outcome to move away from that baseline
 ```
+
+Neither Request B nor pre-existing Thread state may independently assert or encode the **history-conditioned target outcome**.
+
+To prevent scenario tailoring, a future held-out Thread fixture should be committed after the candidate freeze but before the causal Episode-A facts, Request-B prose, and expected direction are authored. Its identity/self-model/traits therefore cannot be reverse-engineered around the later history effect.
 
 The history experiment should also avoid collapsing into ordinary workflow continuation. Episode A should be a complete interaction in its own right rather than a setup step whose purpose is to compute a variable for Request B. Request B should not announce a dependency on earlier work. The later significance of Episode A should emerge because the Thread remembers what happened.
 
-A particularly Fibre-specific proof shape is an otherwise generic request whose dignity changes because shared lived history makes this Thread's participation meaningfully non-interchangeable. The direction must not be privileged: history may raise dignity through recognition, trust, meaning, earned context, or personal continuity, and may lower dignity through betrayal, resentment, exhaustion, misuse, learned mismatch, or other lived significance.
+A particularly Fibre-specific proof shape is an otherwise ordinary request whose dignity changes because shared lived history changes what this Thread's participation means. History may raise dignity through recognition, trust, meaning, earned context, personal continuity, or care; it may lower dignity through betrayal, resentment, exhaustion, misuse, learned mismatch, or other lived significance.
 
 The standing claim is therefore **history bends judgment**, not `history always raises dignity`.
 
