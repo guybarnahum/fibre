@@ -1,7 +1,7 @@
 ---
 id: validation-drift-scorecard
 status: accepted
-last-reviewed: 2026-08-07
+last-reviewed: 2026-08-08
 canonical: true
 ---
 
@@ -43,7 +43,7 @@ Recorded scores must name the rubric version used. When a dimension is added, re
 
 ## Recorded scores
 
-Every closed milestone is scored here. An unscored release is an unmeasured release.
+Every closed milestone or accepted checkpoint is scored here. An unscored release is an unmeasured release.
 
 ### M1 — Persistent Thread Round Trip (closed 2026-08-06)
 
@@ -68,3 +68,38 @@ No blocking zero occurs: dignity and consent scores 1 rather than 0 because refu
 | Cognition replaceability | 1 | Actor/worker cognition is separated behind an injectable seam and alternate workers are exercised in tests, but continuity of the same Thread across a genuine model/runtime replacement has not been demonstrated. |
 
 The important shape is not the total alone. M1's strongest evidence is concentrated in **persistence, boundaries, and authority**. Its partial evidence is concentrated in **identity representation, dignity enforcement, supervision, inspectability, and cognition separation**. Its weakest evidence is exactly where the Fibre vision demands the next step: **distinctive Thread-owned state and history causing different judgment, development, relationship consequence, economic consequence, or future opportunity**.
+
+### Pre-M2 Semantic Guardian standing checkpoint (accepted 2026-08-08)
+
+**Rubric v2: 14 / 26.** Historical M1 remains frozen at 11/26; this is the current live pre-M2 checkpoint after PR #33 earned its semantic standing claim through sealed `semantic_guardian_v4_standing_gate_v4`.
+
+The passing standing cycle used frozen `semantic_guardian_v4_candidate_4` and reported **18/18 cases passed** with zero provider, protocol-validation, cognition, behavioral, or differential failures. See [`semantic-guardian-v4-standing-gate-v4.md`](semantic-guardian-v4-standing-gate-v4.md).
+
+| Dimension | Score | Basis |
+|---|---:|---|
+| Persistence | 2 | Unchanged from M1; freeze/thaw and persisted authoritative cognition/replay remain established. |
+| Non-interchangeability | 1 | Held-out identity match/mismatch, paraphrase/contradiction, generic-work controls, and semantic-state differentials establish attributable Thread-specific behavioral effect. Score remains 1 because the stronger repeated-identical-condition stability/history-grounded standard for 2 is not yet closed. |
+| Natural-language identity | 1 | Natural-language identity/self-model meaning is now behaviorally consumed, but this checkpoint does not opportunistically rescore the broader identity representation dimension beyond the predeclared bridge movement. |
+| Dignity and consent | 2 | Thread-owned semantic appraisal now governs willing acceptance, clarification, negotiation, and refusal; request-bound authorization remains authoritative. Generic capability, urgency, politeness, and feasibility cannot manufacture high dignity. |
+| Interiority and privacy | 2 | Private appraisal/stance remains distinct from authorization, disclosure, expression, action, and durable state. |
+| Authorization integrity | 2 | Request/version binding and independent consumer validation remain intact under the model-backed path. |
+| Economic consequence | 0 | Model use remains metered/provenanced but does not durably spend, settle, reserve, or constrain future capability. |
+| Social and relationship memory | 1 | Persistent requester-targeted Semantic Relationship State v0 exists, and the accepted Amara trust counterfactual changes appraisal from `accept/high` to `negotiate/mixed` while target isolation and generic-work controls pass. Broader reciprocal relationship development remains deferred. |
+| Development | 0 | No substantive earlier canonical episode has yet changed a later appraisal after restart. This is PR #34's target. |
+| Model supervision | 1 | Goal/consistency audit remains separate; broader adversarial/impact stewardship is not yet implemented. |
+| Human inspectability | 1 | Guardian decision basis, evidence refs, sealed standing artifacts, and readable validation docs improve inspectability, but broad accepted-world inspectability remains incomplete. |
+| Institutional plurality | 0 | No implemented social order or plurality proof. |
+| Cognition replaceability | 1 | Thin model runtime keeps cognition replaceable, but continuity of the same Thread across a genuine model/runtime replacement has not yet been demonstrated. |
+
+Score movement from the historical M1 checkpoint is therefore:
+
+```text
+Non-interchangeability        0 -> 1
+Dignity and consent           1 -> 2
+Social/relationship memory    0 -> 1
+Development                   0
+Economic consequence          0
+Total                         11/26 -> 14/26
+```
+
+The checkpoint is still below the rubric's 75% drift threshold, so the explicit pre-M2 drift discipline remains active. The next planned causal movement is **Development `0 -> 1`** under PR #34, **History bends judgment**.
