@@ -1,6 +1,6 @@
 ---
 id: validation-history-bends-judgment-plan
-status: planned
+status: active
 last-reviewed: 2026-08-08
 canonical: false
 ---
@@ -52,9 +52,7 @@ The later Guardian must infer what the remembered episode means for the current 
 
 Fibre already persists append-only `thread_memories`, binds them to freeze events/runtime sessions, and resolves owned memory records as semantic cognition context.
 
-The current deterministic Actor, however, proposes only generic runtime-history text and freeze currently validates life-change evidence only against pre-existing selected memory/relationship context.
-
-PR #34 should make the minimum extension required for a current episode to produce a substantive, evidence-backed episodic memory.
+PR #34.1 now provides an explicit episode-forming Actor capability and narrowly bound current-episode evidence. The closed M1 runtime keeps its historical deterministic Actor behavior; #34 must opt into episode formation rather than silently changing M1 semantics.
 
 ## Episode evidence
 
@@ -150,12 +148,19 @@ History reaches cognition through resolved memories under Fibre-owned selection.
 
 ## Implementation steps
 
-### #34.1 Episode-backed memory provenance
+### #34.1 Episode-backed memory provenance — COMPLETE
 
-- permit narrowly validated current-episode evidence refs;
-- produce substantive deterministic episodic memory proposals;
-- reject foreign/fabricated episode refs;
-- keep memory creation behind accepted freeze life-change decisions.
+Implemented on the PR #34 branch:
+
+- narrowly validated current-episode refs `request:<requestId>` and `authorization:<authorizationId>`;
+- an explicit episode-forming deterministic Actor capability that can propose descriptive episodic memory;
+- Goal Guardian validation permitting only selected Thread-owned evidence or exact current-episode evidence;
+- independent freeze validation rejecting foreign/fabricated episode refs even if upstream audit is bypassed;
+- memory creation remains behind an explicit accepted freeze life-change decision;
+- historical M1 Actor behavior remains the default for M1/pre-M2 services unless the #34 episode-forming Actor is explicitly injected;
+- no memory-schema migration.
+
+This step establishes provenance capability only. It does **not** earn Development credit and does not yet prove restart-to-later-judgment causality.
 
 ### #34.2 Restarted development proof
 
