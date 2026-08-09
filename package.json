@@ -25,6 +25,7 @@
     "model:smoke": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model-api-smoke.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-counterfactual-dev.mjs",
+    "history:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/history-bends-judgment-dev.mjs",
     "guardian:gate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-gate-v4-cli.mjs",
     "guardian:gate:v4": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-gate-v4-cli.mjs",
     "guardian:gate:v4:v1": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-gate-cli.mjs",
