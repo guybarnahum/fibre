@@ -1,7 +1,7 @@
 ---
 id: validation-semantic-guardian-v3-freeze
 status: accepted
-last-reviewed: 2026-08-07
+last-reviewed: 2026-08-09
 canonical: true
 ---
 
@@ -12,6 +12,8 @@ This artifact originally froze the model-backed Guardian boundary **before the P
 Before the first live model invocation, the acceptance cycle received one explicit **pre-run completeness amendment** from head `6646348a1c4cc2c06239b8462cab2588479f738a`. No live acceptance result had been observed. The amendment does not change the system prompt, response schema, pinned model, expected actions, cases, or scoring thresholds. It closes three evidentiary omissions that would otherwise make a green run unauditable or operationally ambiguous: durable judgment retention, explicit sampling configuration, and predeclared operational retry semantics.
 
 After the first live model invocation, a change to the prompt, model snapshot, policy version, response schema, sampling configuration, retry policy, acceptance cases, expected outcomes, thresholds, or evidence boundary invalidates the evidentiary cycle and requires a new freeze plus a new held-out acceptance set.
+
+This document is historical methodology. Its former executable runner is retired from the active command surface and must not be treated as a current runnable acceptance gate.
 
 ## Frozen cognition boundary
 
@@ -38,15 +40,17 @@ The provider/model choice is a replaceable experimental cognition mechanism, not
 
 ## Durable evidence retention
 
-Provider-side response storage remains disabled. Therefore the local acceptance runner must retain the bounded structured judgment before each temporary trial world is deleted.
+Provider-side response storage remained disabled. Therefore the historical acceptance runner retained the bounded structured judgment before each temporary trial world was deleted.
 
-The canonical command is:
+The former command was:
 
-```bash
+```text
 npm run demo:semantic-guardian
 ```
 
-For a live cycle, that command writes one sealed, non-overwritable evidence bundle under `artifacts/test-results/` containing, for every model response produced during the cycle:
+That command is intentionally **retired**. Do not add it back as a live provider-execution alias. Exact historical implementation remains recoverable from reachable Git history when forensic reproduction is needed.
+
+For a live cycle, the historical runner wrote one sealed, non-overwritable evidence bundle under `artifacts/test-results/` containing, for every model response produced during the cycle:
 
 - full bounded `modelOutput`, including factor summaries and rationale;
 - the cognition-capsule SHA-256 digest;
@@ -59,9 +63,9 @@ For a live cycle, that command writes one sealed, non-overwritable evidence bund
 
 This is not raw chain-of-thought storage. The retained `modelOutput` is the same bounded structured finding already constrained by the Guardian response schema and persisted when the world accepts the assessment.
 
-The evidence journal is written as responses arrive, before temporary SQLite trial worlds are removed. At the end of a non-blocked run it is folded into the sealed JSON evidence bundle. If the cycle terminates after at least one live response, the partial journal is still folded into a failed sealed bundle so the produced judgments are not lost.
+The evidence journal was written as responses arrived, before temporary SQLite trial worlds were removed. At the end of a non-blocked run it was folded into the sealed JSON evidence bundle. If the cycle terminated after at least one live response, the partial journal was still folded into a failed sealed bundle so the produced judgments were not lost.
 
-A run blocked **before any live model invocation**, including a missing credential, writes no evidence artifact and does not seal the cycle. Once a live response has been produced, the evidence artifact seals this acceptance-cycle ID and the canonical runner refuses to rerun it; a subsequent experiment requires a new frozen cycle.
+A run blocked **before any live model invocation**, including a missing credential, wrote no evidence artifact and did not seal the cycle. Once a live response had been produced, the evidence artifact sealed that acceptance-cycle ID and the historical runner refused to rerun it; a subsequent experiment required a new frozen cycle.
 
 ## Evaluation procedure frozen before live execution
 
@@ -115,4 +119,6 @@ The acceptance set includes, without changing the frozen prompt/schema/model bou
 
 ## Score posture
 
-This freeze earns **no personhood score movement**. Non-interchangeability, Dignity, Semantic Relationship State, and Economic consequence remain unchanged until the relevant live evidence passes the accepted rubric.
+This freeze earned **no personhood score movement**. Non-interchangeability, Dignity, Semantic Relationship State, and Economic consequence remained unchanged until later live evidence passed the accepted rubric.
+
+Current accepted standing evidence is Semantic Guardian v4 standing gate v4; inspect that committed result with `npm run guardian:gate -- --summary`.

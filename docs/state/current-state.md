@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-08
+last-reviewed: 2026-08-09
 canonical: true
 ---
 
@@ -175,6 +175,26 @@ Amara relationship_attitude/trust:
 
 The standing semantic gate is therefore **GREEN** and PR #33's semantic claim is earned.
 
+## PR #34 — History bends judgment earned
+
+PR #34 is **EARNED / SEALED** by `history_bends_judgment_standing_gate_v4` on frozen `history_bends_judgment_candidate_4`.
+
+The accepted v4 result is deliberately narrow: a Fibre-owned durable episodic record formed through Nadia Okafor's earlier canonical runtime episode survived database close/reopen and causally changed her later dignity appraisal under exact one-memory withholding.
+
+```text
+WITH history:     accept / high
+WITHOUT history:  refuse / low
+Request fingerprint: sha256:7d57002e7740d87607bcd6dba441009a059fa3af4fddc173337e951bd417fba2
+```
+
+The committed evidence bundle records the exact model outputs, rationale, factor evidence refs, retry history, normalizations, frozen boundary, and causal witnesses:
+
+`artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`
+
+This earns **Development `0 -> 1`** under rubric v2. It does not yet establish rich self-authored learning: Episode A's setup appraisal was scripted for isolation, the durable memory is a deterministic descriptive restatement of the accepted request and criteria rather than a Nadia-authored reflection, the later standing appraisal is invoked directly through Guardian v4 in the evidence harness, and this proof path is not yet the default live runtime socket. Those are explicit extension targets rather than evidence silently claimed by this checkpoint.
+
+`npm run history:gate` is now read-only inspection of the committed sealed bundle. `npm run history:dev` remains the repeatable non-evidentiary provider-backed development harness.
+
 ## Model runtime
 
 `config/models.yaml` remains the only model-routing configuration:
@@ -192,18 +212,19 @@ The current runtime does not impose a default numeric `max_output_tokens` ceilin
 
 ## Current score posture
 
-Historical M1 remains **11/26**. The live pre-M2 checkpoint is now **14/26 under rubric v2**.
+Historical M1 remains **11/26**. The live pre-M2 checkpoint is now **15/26 under rubric v2**.
 
 ```text
 Historical M1                 11/26
-Pre-M2 checkpoint             14/26
+Pre-M2 checkpoint             15/26
 Non-interchangeability        1
 Dignity and consent           2
 Social/relationship memory    1
-Development                   0
+Development                   1
 Economic consequence          0
 Standing semantic gate        GREEN
 PR #33 semantic claim         EARNED
+PR #34 history claim          EARNED / SEALED
 ```
 
 The awarded movement is intentionally conservative:
@@ -211,29 +232,27 @@ The awarded movement is intentionally conservative:
 - Non-interchangeability `0 -> 1`: attributable semantic differences now change participation under controlled held-out conditions, but the stronger rubric-2 repeated-condition/history standard is not yet closed.
 - Dignity and consent `1 -> 2`: Thread-owned semantic appraisal plus request-bound authorization now governs willing participation and resistance.
 - Social and relationship memory `0 -> 1`: persistent requester-targeted relationship state exists and the accepted trust counterfactual changes appraisal narrowly; the broader reciprocal relationship system remains deferred.
-- Development stays `0`: no substantive earlier canonical experience has yet changed a later appraisal after restart.
+- Development `0 -> 1`: a durable Fibre-owned record from an earlier canonical episode survived restart and was the isolated semantic cause of a later appraisal differential. Richer self-authored learning remains unearned.
 - Economic consequence stays `0`: appraisal does not durably spend or constrain future capability.
 
 ## Immediate bridge sequence
 
 ```text
 #33 Semantic Guardian — EARNED
-  -> #34 History bends judgment — UNBLOCKED
-  -> #35 Structured Obligation v1
+  -> #34 History bends judgment — EARNED / SEALED
+  -> #35 Structured Obligation v1 — NEXT
   -> #36 M2 contract
   -> M2 implementation
 ```
 
-PR #34 remains reserved for **History bends judgment** and may now begin substantive Development work. Its proof must show that a substantive consequence from an earlier canonical Thread episode survives restart and materially changes a later comparable appraisal or choice under a direct counterfactual.
-
-Do not spend another bridge PR number on Guardian housekeeping or operational work.
+Do not spend another bridge PR number on Guardian or History housekeeping after #34 closes. The next substantive bridge milestone is **#35 Structured Obligation v1**.
 
 ## Deferred capability, not erased capability
 
 The following remain deferred with extension paths preserved:
 
 - broader reciprocal relationship service beyond Semantic Relationship State v0;
-- substantive developmental learning proof;
+- richer self-authored developmental learning: Thread-authored observations/reflection, experience-derived self-model/state change, adverse and low-dignity experience memory, and repeated cross-episode behavioral learning;
 - structured obligation applicability;
 - general isolated worker/tool/model gateway;
 - model-capable Actor and independently observed external action traces;

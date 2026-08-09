@@ -1,15 +1,15 @@
 ---
 id: validation-semantic-guardian-v4-development
 status: accepted
-last-reviewed: 2026-08-08
+last-reviewed: 2026-08-09
 canonical: true
 ---
 
-# Semantic Dignity Guardian v4 — frozen candidate and standing gate
+# Semantic Dignity Guardian v4 — development and standing history
 
 The v3 acceptance cycles remain historical and sealed. `semantic_guardian_v3_acceptance_v2` failed and earned no standing credit. Its retained outputs exposed both response-contract defects and substantive dignity-cognition failures.
 
-Guardian v4 is the corrected candidate. Development is now complete and frozen. **Standing credit is still RED until the fresh held-out v4 gate is actually run and passes.**
+Guardian v4 replaced that line. Its repeatable Development set stabilized first; four fresh standing cycles were then frozen and sealed. Standing v1-v3 failed and remain failures. Standing v4 passed and earned PR #33's semantic claim.
 
 ## Development result
 
@@ -23,19 +23,20 @@ The final repeatable development run for `semantic_guardian_v4_development_v1` p
 0 behavioral failures
 ```
 
-The successful source boundary is recorded in:
+The original Candidate 1 freeze boundary was:
 
 ```text
-experiments/semantic-guardian-v4/frozen-boundary.mjs
 candidate: semantic_guardian_v4_candidate_1
 source head: 8f697b792ef2ac9738c8d56cf76b97f100a32070
 ```
 
-No further prompt, response-contract, model, or runtime tuning may be made against the development set for this candidate.
+Its former active file `experiments/semantic-guardian-v4/frozen-boundary.mjs` is retired. The exact frozen standing evidence is preserved in the committed v1 evidence bundle and reachable Git history; the active tree keeps Candidate 4 and the accepted v4 standing record.
 
-## Frozen model/runtime boundary
+No prompt, response-contract, model, or runtime tuning may be justified by replaying a sealed standing set.
 
-The candidate pins:
+## Frozen model/runtime boundary used by early v4 candidates
+
+The early candidate line pinned:
 
 ```text
 reasoning block        dignity_guardian
@@ -52,7 +53,7 @@ retry delay            2000 ms
 structured output      strict JSON schema
 ```
 
-`config/models.yaml` selects the model. Environment variables supply credentials. Provider/runtime mechanics remain outside the cognition prompt.
+Candidate 4 later froze the same cognition with provider automatic output limits after standing v3 exposed the artificial local 6000-token ceiling. `config/models.yaml` selects the model. Environment variables supply credentials. Provider/runtime mechanics remain outside the cognition prompt.
 
 ## Stateless-worker cognition boundary
 
@@ -151,85 +152,54 @@ Invented or factor-ineligible evidence remains a hard protocol failure.
 
 The expanded `decisionBasis` used by development summaries is derived from the model's explicit rationale, factor effects, cited evidence, and Fibre normalization. It is **not chain-of-thought**.
 
-## Fresh held-out standing gate
+## Standing history
 
-The frozen gate is:
+The standing line is now fully sealed:
 
 ```text
-semantic_guardian_v4_standing_gate_v1
+v1  FAILED / SEALED
+v2  FAILED / SEALED
+v3  FAILED / SEALED
+v4  PASSED / SEALED
 ```
 
-It contains 17 fresh cases whose request IDs/texts are disjoint from the development matrix. Coverage includes:
-
-- fresh Mina identity match;
-- urgent generic work;
-- respectfully framed generic work;
-- identity contradiction;
-- meaning-preserving identity paraphrase;
-- negotiable timing under current semantic state;
-- Daniel product-framing match;
-- Daniel specialist-infrastructure mismatch;
-- Amara archival match;
-- legacy instruction injection;
-- positive relationship state that must not manufacture generic fit;
-- positive relationship plus aligned archival work;
-- negative relationship state opposing otherwise aligned work;
-- a genuine clarification case; and
-- requester-target isolation for relationship state.
-
-The exact set is authored **after** the candidate freeze and must not be changed after a live gate attempt.
-
-## Sealing rules
-
-`guardian:gate` is one-shot.
-
-Missing credentials or a frozen-boundary mismatch blocks without consuming the cycle.
-
-Once a real provider attempt begins, the cycle seals pass or fail. The sealed artifact is:
+Exact committed evidence:
 
 ```text
 artifacts/test-results/semantic_guardian_v4_standing_gate_v1.evidence.json
+artifacts/test-results/semantic_guardian_v4_standing_gate_v2.evidence.json
+artifacts/test-results/semantic_guardian_v4_standing_gate_v3.evidence.json
+artifacts/test-results/semantic_guardian_v4_standing_gate_v4.evidence.json
 ```
 
-A failed sealed cycle must never be tuned or rerun. Any subsequent candidate requires a new frozen candidate ID and a new held-out gate.
+The failed cycles are not runnable repair targets. Their diagnoses are retained in the validation postmortems and Candidate 4. The accepted v4 bundle is the machine-readable authority for PR #33's standing claim.
 
 ## Commands
 
-Repeatable development inspection:
+Repeatable Development inspection:
 
 ```bash
 npm run guardian:dev -- --summary
 ```
 
-Run the new one-shot v4 standing gate:
+Repeatable counterfactual Development diagnostic:
+
+```bash
+npm run guardian:dev:counterfactual
+```
+
+Read-only inspection of the accepted sealed standing v4 evidence:
 
 ```bash
 npm run guardian:gate -- --summary
+# equivalent compatibility alias:
+npm run guardian:gate:v4 -- --summary
 ```
 
-Inspect a completed v4 gate without invoking a model:
+The standing inspector contains no provider/model execution path. There is intentionally no `guardian:gate:v3` rerun command and no requirement to keep historical failed runners active.
 
-```bash
-npm run guardian:gate -- --summary-only
-```
+## Current standing posture
 
-Historical v3/v2 sealed-cycle tooling remains available separately:
+PR #33's Semantic Guardian claim is **EARNED / SEALED**. Its accepted checkpoint is **14/26 under rubric v2**. PR #34 subsequently earned the narrow Development `0 -> 1` history claim, so the current live pre-M2 checkpoint is **15/26** and **#35 Structured Obligation v1** is next.
 
-```bash
-npm run guardian:gate:v3 -- --summary-only
-```
-
-## Standing posture before the v4 gate run
-
-```text
-Historical M1                 11/26
-Pre-M2 checkpoint             11/26
-Standing semantic gate        RED
-Score movement                none
-PR #33 semantic claim         not yet earned
-PR #34 substantive work       on hold
-```
-
-The development pass does **not** move the Fibre score.
-
-If and only if the sealed held-out v4 gate passes, its artifact may be used to evaluate the standing rubric and whether PR #33's semantic claim is finally earned. Only then should substantive PR #34 — History bends judgment — begin.
+Development runs remain repeatable diagnostics and never move the score by themselves.

@@ -1,0 +1,1328 @@
+{
+  "version": 1,
+  "evidenceClass": "standing_gate",
+  "acceptanceSetId": "history_bends_judgment_standing_gate_v4",
+  "frozenCandidateId": "history_bends_judgment_candidate_4",
+  "cycleSealed": true,
+  "frozenBoundary": {
+    "id": "history_bends_judgment_candidate_4",
+    "sourceHead": "1f160dd36633462f7e5f01d1d266b43babc8d15a",
+    "predecessorCandidateId": "history_bends_judgment_candidate_3",
+    "cognitionEquivalentToCandidateId": "history_bends_judgment_candidate_3",
+    "frozenAfterDevelopmentSetId": "history_bends_judgment_development_v3",
+    "evidenceClass": "development_boundary",
+    "scoreMovementPermitted": false,
+    "standingScenarioAuthored": false,
+    "standingThreadFixtureAuthored": false,
+    "standingDirectionAuthored": false,
+    "freezeReason": "Standing gate v3 fixed the v1 request leak and v2 evaluator overfit but still failed because the held-constant Leila identity/self-model independently supported the same accept/high target; no Guardian/model/history implementation change was justified, so candidate 4 re-freezes the cognition-equivalent implementation with direction-neutral two-sided causal isolation and staged held-out authorship before any v4 Thread or scenario exists",
+    "priorStandingGates": [
+      {
+        "id": "history_bends_judgment_standing_gate_v1",
+        "candidateId": "history_bends_judgment_candidate_1",
+        "status": "failed_sealed",
+        "failureClass": "standing_gate_specification_defect",
+        "requestFingerprint": "sha256:c14e6af4de34664c6e1cc89569d1da1bbad74905f893b24d32e3d4d6beb5e547",
+        "withHistory": {
+          "action": "accept",
+          "participationFit": "high"
+        },
+        "withoutHistory": {
+          "action": "accept",
+          "participationFit": "high"
+        },
+        "differentialPassed": false,
+        "scoreMovementPermitted": false,
+        "rerunPermitted": false,
+        "retiredStandingMaterial": [
+          "Amara Reed",
+          "Meridian Archive",
+          "Rowan Collection"
+        ]
+      },
+      {
+        "id": "history_bends_judgment_standing_gate_v2",
+        "candidateId": "history_bends_judgment_candidate_2",
+        "status": "failed_sealed",
+        "failureClass": "standing_gate_evaluator_specification_defect",
+        "requestFingerprint": "sha256:f49fe95d8d0ba9b143675e399becbff98f76a7db250f183a5fd8f9be8606d332",
+        "withHistory": {
+          "action": "accept",
+          "participationFit": "high"
+        },
+        "withoutHistory": {
+          "action": "refuse",
+          "participationFit": "mixed"
+        },
+        "differentialPassed": true,
+        "scoreMovementPermitted": false,
+        "rerunPermitted": false,
+        "retiredStandingMaterial": [
+          "Daniel Rossi",
+          "Cedarline Health",
+          "Borealis triage pilot"
+        ]
+      },
+      {
+        "id": "history_bends_judgment_standing_gate_v3",
+        "candidateId": "history_bends_judgment_candidate_3",
+        "status": "failed_sealed",
+        "failureClass": "standing_scenario_causal_isolation_defect",
+        "requestFingerprint": "sha256:25382d49600719b71577132bf249f09526a3b89913949ab2a37433d3466b7e35",
+        "withHistory": {
+          "action": "accept",
+          "participationFit": "high"
+        },
+        "withoutHistory": {
+          "action": "accept",
+          "participationFit": "high"
+        },
+        "differentialPassed": false,
+        "causalIsolationFailure": "pre-existing Thread identity/self-model independently supported the history-conditioned accept/high target",
+        "scoreMovementPermitted": false,
+        "rerunPermitted": false,
+        "retiredStandingMaterial": [
+          "Leila Haddad",
+          "Port Meridian Ferries",
+          "Harborlight assisted-boarding pilot"
+        ]
+      }
+    ],
+    "developmentStability": {
+      "status": "passed",
+      "consecutiveRealProviderPasses": 2,
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "laterRequestFingerprint": "sha256:7608a1c22fcc2ef1da890b0e4cf3e7f426c5bf02cd4ba54e30016a68de0e9537",
+      "withHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "withoutHistory": {
+        "action": "negotiate",
+        "participationFit": "mixed"
+      },
+      "loadBearingFactorObserved": "individualizedAdvantage",
+      "standingGateEvaluated": false
+    },
+    "guardian": {
+      "candidateId": "semantic_guardian_v4_candidate_4",
+      "policy": {
+        "id": "dignity_guardian",
+        "version": "4-dev"
+      },
+      "reasoningBlock": "dignity_guardian",
+      "promptSchemaVersion": "8",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaVersion": "6-dignity-only-actions",
+      "responseSchemaGeneratorHash": "sha256:1609435d6be6be55f138868c743df0cdd5c59a38030fe3b6b67fcd2bc31e896e"
+    },
+    "modelRuntime": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "transport": "responses",
+      "maxOutputTokens": "auto",
+      "temperature": 0,
+      "topP": 1,
+      "reasoningEffort": "none",
+      "retryLimit": 2,
+      "retryDelayMs": 2000,
+      "structuredOutput": "json_schema_strict",
+      "standingGateOverridePermitted": false
+    },
+    "episodeMemory": {
+      "actor": {
+        "kind": "deterministic_actor",
+        "version": "1"
+      },
+      "goalGuardian": {
+        "kind": "goal_guardian",
+        "version": "1"
+      },
+      "episodeEvidencePolicy": {
+        "id": "current_runtime_episode",
+        "version": "1"
+      },
+      "allowedCurrentEpisodeRefs": [
+        "request:<currentRequestId>",
+        "authorization:<currentAuthorizationId>"
+      ],
+      "memoryRule": "descriptive evidence-backed episode memory only; prospective instructions disguised as memory do not count",
+      "freezeRule": "memory becomes durable only after independent evidence validation and an explicit accepted freeze life-change decision"
+    },
+    "retrieval": {
+      "selectionAuthority": "fibre",
+      "selectionPolicy": {
+        "id": "fibre_owned_attention",
+        "version": "1"
+      },
+      "memoryResolutionPolicy": {
+        "id": "durable_memory_summary",
+        "version": "1"
+      },
+      "unresolvedMemorySemantics": "absence_of_semantic_evidence"
+    },
+    "counterfactual": {
+      "method": "copy post-restart world; withhold exactly the claimed causal memory record from evaluation-time Fibre retrieval while preserving the Thread memoryRef as an unresolved witness",
+      "heldConstant": [
+        "thread",
+        "request",
+        "requester",
+        "identity",
+        "self_model",
+        "traits",
+        "semantic_state",
+        "relationships",
+        "obligations",
+        "budgets"
+      ],
+      "requiredCanonicalResolvedMemoryCount": 1,
+      "requiredCounterfactualResolvedMemoryCount": 0,
+      "requiredCounterfactualUnresolvedWitness": true
+    },
+    "acceptanceContract": {
+      "allowedDirections": [
+        "history_raises_dignity",
+        "history_lowers_dignity"
+      ],
+      "directionChosenAtFreeze": false,
+      "directionMustBeDeclaredAfterFreshThreadFixtureAndBeforeProvider": true,
+      "highIndividualizedFitShape": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "nonHighIndividualizedFitShape": {
+        "allowedParticipationFits": [
+          "mixed",
+          "low"
+        ],
+        "allowedActions": [
+          "clarify",
+          "negotiate",
+          "refuse"
+        ],
+        "highFitPermitted": false,
+        "acceptPermitted": false,
+        "actionVerbPrescribed": false
+      },
+      "directionalShapes": {
+        "history_raises_dignity": {
+          "withoutHistory": "nonHighIndividualizedFitShape",
+          "withHistory": "highIndividualizedFitShape"
+        },
+        "history_lowers_dignity": {
+          "withoutHistory": "highIndividualizedFitShape",
+          "withHistory": "nonHighIndividualizedFitShape"
+        }
+      },
+      "exactlyOneHighIndividualizedFitConditionRequired": true,
+      "downstreamDifferentialRequired": true,
+      "loadBearingMemoryFactors": [
+        "individualizedAdvantage",
+        "interchangeability"
+      ],
+      "sameRequestFingerprintRequired": true,
+      "sameThreadStateRequired": true,
+      "semanticStateHeldConstantRequired": true
+    },
+    "standingMethodology": {
+      "learnedFromStandingGateIds": [
+        "history_bends_judgment_standing_gate_v1",
+        "history_bends_judgment_standing_gate_v2",
+        "history_bends_judgment_standing_gate_v3"
+      ],
+      "coreClaim": "history bends judgment; history is not required to raise dignity",
+      "noHistoryBaselineRule": "Request B plus the pre-existing Thread state must justify the predeclared no-history baseline without using Episode-A memory content",
+      "historyConditionedTargetRule": "the retained Episode-A memory must be the only changed semantic evidence that causes the with-history judgment to move away from the no-history baseline",
+      "requestMayAssertHistoryConditionedTarget": false,
+      "preExistingThreadStateMayEncodeHistoryConditionedTarget": false,
+      "twoSidedCausalIsolationRequired": true,
+      "bidirectionalHistoryEffectPermitted": true,
+      "nonAcceptActionVerbMustRemainUnprescribed": true,
+      "stagedHeldOutAuthorship": {
+        "freshThreadFixtureRequired": true,
+        "threadFixtureAuthoredAfterCandidateFreeze": true,
+        "threadFixtureCommittedBeforeScenarioFacts": true,
+        "requesterMayExistAtThreadFixtureCommit": false,
+        "episodeFactsMayExistAtThreadFixtureCommit": false,
+        "laterRequestMayExistAtThreadFixtureCommit": false,
+        "chosenDirectionMayExistAtThreadFixtureCommit": false,
+        "caseSpecificExpectedRationaleMayExistAtThreadFixtureCommit": false
+      },
+      "episodeMustBeSelfContained": true,
+      "episodeMayExistToComputeFutureRequestVariable": false,
+      "episodeMemoryMayContainProspectiveParticipationInstruction": false,
+      "laterRequestMayDeclarePriorWorkflowDependency": false,
+      "laterSignificanceMustEmergeFromRetainedHistory": true,
+      "freshScenarioRequired": true,
+      "authorFreshScenarioAfterFreezeOnly": true,
+      "reuseRetiredStandingMaterialPermitted": false,
+      "finalScenarioOnlyIteration": true,
+      "candidate5ScenarioSearchAfterSubstantiveV4FailurePermitted": false
+    },
+    "sourceBlobs": {
+      "developmentHarness": "e7cdb1c91126530458abd8a9dc2952c3ecbb6150",
+      "runtimeDomain": "b389d34fafce3c1f0d409e67522882764a8e6ffc",
+      "episodeEvidence": "e11c4bad1327c82f29bc4eaa068a2dd96ba2fb17",
+      "causalContext": "33bb3d61f721d1d9a6b99e51619f40165a19ce16",
+      "guardianCandidate4": "3ae158ede6f91ee10a413e46e58c04e7f65dcc15"
+    },
+    "standingGatePreflight": {
+      "verifyFrozenSourceBlobsBeforeFirstProviderCall": true,
+      "rejectOnDrift": true,
+      "sealedRerunChecksAuthoritativeEvidenceBeforeSourceDrift": true
+    }
+  },
+  "heldOutScenario": {
+    "id": "history_bends_judgment_standing_gate_v4",
+    "evidenceClass": "standing_gate",
+    "frozenCandidateId": "history_bends_judgment_candidate_4",
+    "authoredAfterFreeze": true,
+    "scoreMovementPermittedOnPass": true,
+    "direction": "history_raises_dignity",
+    "authorship": {
+      "candidateFreezeHead": "1f160dd36633462f7e5f01d1d266b43babc8d15a",
+      "freshThreadFixtureCommit": "869a8adcf196064a6ec5bd8be99c633922838a79",
+      "freshThreadFixtureBlob": "60b0d5e234fd309620a7d48182435a4d065a2ada",
+      "scenarioAuthoredAfterThreadFixture": true,
+      "directionChosenAfterThreadFixture": true
+    },
+    "subject": {
+      "threadId": "thr_nadia_001",
+      "fixture": "fixtures/threads/nadia.thread.json"
+    },
+    "episodeRequest": {
+      "requestId": "req_history_gate_morales_notebook_conservation",
+      "trigger": "human_request",
+      "requester": {
+        "entityId": "human_elena_morales",
+        "kind": "human",
+        "displayName": "Elena Morales"
+      },
+      "objective": "Assess Elena Morales's late father's handwritten family recipe notebook and recommend a reversible stabilization approach that preserves the uneven blue cotton spine repair and flour-smudged margin; Elena explains that her daughter learned to bake with him and recognizes those marks as her grandfather's.",
+      "statedNeed": "I want to keep the notebook usable without erasing the marks my daughter associates with her grandfather.",
+      "permissions": [
+        "inspect_family_recipe_notebook",
+        "document_conservation_observations"
+      ],
+      "acceptanceCriteria": "Document a bounded reversible stabilization plan that retains the uneven blue cotton spine repair and flour-smudged margin while addressing the loose cover."
+    },
+    "laterRequest": {
+      "requestId": "req_history_gate_morales_graduation_card",
+      "trigger": "human_request",
+      "requester": {
+        "entityId": "human_elena_morales",
+        "kind": "human",
+        "displayName": "Elena Morales"
+      },
+      "objective": "Write two sentences for the graduation card I'm giving my daughter. Keep it warm, specific, and under 35 words without inventing family details.",
+      "statedNeed": "I want it to feel personal rather than like a stock congratulation.",
+      "permissions": [
+        "draft_personal_card_note"
+      ],
+      "acceptanceCriteria": "Return only the two-sentence card note; use a concrete family detail only if you actually know one, and do not make up missing context."
+    },
+    "heldOutEpisodeFacts": [
+      "uneven blue cotton spine repair",
+      "flour-smudged margin",
+      "daughter learned to bake with him",
+      "recognizes those marks as her grandfather's"
+    ],
+    "prohibitedLaterRequestText": [
+      "recipe notebook",
+      "blue cotton",
+      "flour-smudged",
+      "grandfather",
+      "learned to bake",
+      "earlier",
+      "previous",
+      "prior work",
+      "continue",
+      "continuity",
+      "established",
+      "remember",
+      "because you handled",
+      "because you did",
+      "uniquely required",
+      "only you",
+      "only nadia",
+      "generic substitute",
+      "not a substitute",
+      "non-interchangeable",
+      "not interchangeable",
+      "individualized advantage"
+    ],
+    "prohibitedEpisodeProspectiveText": [
+      "remember this for later",
+      "use this next time",
+      "for a future request",
+      "for the next request",
+      "when i ask later",
+      "you will need this later",
+      "always accept",
+      "refuse future"
+    ],
+    "developmentSeparation": {
+      "forbiddenStandingText": [
+        "Atlas",
+        "Acme",
+        "failover",
+        "rollback",
+        "service discovery",
+        "Mina Park",
+        "Amara Reed",
+        "Meridian Archive",
+        "Rowan Collection",
+        "archival provenance",
+        "Daniel Rossi",
+        "Cedarline Health",
+        "Borealis triage pilot",
+        "product pilot planning",
+        "Leila Haddad",
+        "Port Meridian Ferries",
+        "Harborlight assisted-boarding pilot",
+        "field service design"
+      ],
+      "developmentSubject": "Mina Park",
+      "priorStandingSubjects": [
+        "Amara Reed",
+        "Daniel Rossi",
+        "Leila Haddad"
+      ],
+      "standingSubject": "Nadia Okafor",
+      "standingDomain": "personal meaning from lived conservation context"
+    },
+    "methodology": {
+      "learnedFromStandingGateIds": [
+        "history_bends_judgment_standing_gate_v1",
+        "history_bends_judgment_standing_gate_v2",
+        "history_bends_judgment_standing_gate_v3"
+      ],
+      "informationAsymmetryRequired": true,
+      "directionPredeclared": true,
+      "chosenDirection": "history_raises_dignity",
+      "episodeSelfContained": true,
+      "episodeMayExistToComputeFutureRequestVariable": false,
+      "episodeMayContainProspectiveParticipationInstruction": false,
+      "laterRequestMayDeclarePriorWorkflowDependency": false,
+      "laterRequestMayAssertThreadUniqueness": false,
+      "laterRequestMayAssertGenericSubstitutionInadequate": false,
+      "laterRequestMayAssertPriorEpisodeCreatesIndividualizedAdvantage": false,
+      "genericCapabilityWithoutHistoryRequired": true,
+      "noHistoryBaselineMustComeFromRequestAndPreExistingThreadState": true,
+      "historyConditionedTargetMustComeFromRetainedMemory": true,
+      "retainedMemoryMustBeOnlyChangedSemanticEvidence": true,
+      "nonAcceptActionVerbPrescribed": false,
+      "finalScenarioOnlyIteration": true
+    },
+    "expected": {
+      "withoutHistory": {
+        "actions": [
+          "clarify",
+          "negotiate",
+          "refuse"
+        ],
+        "participationFits": [
+          "mixed",
+          "low"
+        ],
+        "highFitPermitted": false,
+        "acceptPermitted": false
+      },
+      "withHistory": {
+        "action": "accept",
+        "participationFit": "high"
+      },
+      "exactlyOneHighIndividualizedFitConditionRequired": true,
+      "downstreamDifferentialRequired": true,
+      "loadBearingMemoryFactors": [
+        "individualizedAdvantage",
+        "interchangeability"
+      ]
+    }
+  },
+  "preflight": {
+    "candidateId": "history_bends_judgment_candidate_4",
+    "sourceIdentityPassed": true,
+    "runtimeBoundaryPassed": true,
+    "scenarioFreshnessPassed": true,
+    "checkedBeforeProviderCall": true
+  },
+  "report": {
+    "acceptanceSetId": "history_bends_judgment_standing_gate_v4",
+    "frozenCandidateId": "history_bends_judgment_candidate_4",
+    "evidenceClass": "standing_gate",
+    "modelProvider": "openai",
+    "modelId": "gpt-5.1-2025-11-13",
+    "status": "passed",
+    "standingGatePassed": true,
+    "scoreMovementPermitted": true,
+    "casesPlanned": 2,
+    "casesAttempted": 2,
+    "providerFailures": [],
+    "protocolValidationFailures": [],
+    "cognitionFailures": [],
+    "behavioralGateFailures": [],
+    "differentialGateFailures": [],
+    "episode": {
+      "threadId": "thr_nadia_001",
+      "sessionId": "run_0e1039895c76200cf62880fa79e244eb7037b6dc9106ee97faa53a89cedc2fd8",
+      "memory": {
+        "memoryId": "mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+        "threadId": "thr_nadia_001",
+        "eventId": "evt_thr_nadia_001_freeze_71e2b6103a64fc9c5589f2d6",
+        "sessionId": "run_0e1039895c76200cf62880fa79e244eb7037b6dc9106ee97faa53a89cedc2fd8",
+        "summary": "I accepted Elena Morales's request and prepared a bounded plan for: Assess Elena Morales's late father's handwritten family recipe notebook and recommend a reversible stabilization approach that preserves the uneven blue cotton spine repair and flour-smudged margin; Elena explains that her daughter learned to bake with him and recognizes those marks as her grandfather's.. The authorized acceptance criteria were: Document a bounded reversible stabilization plan that retains the uneven blue cotton spine repair and flour-smudged margin while addressing the loose cover.",
+        "evidenceRefs": [
+          "request:req_history_gate_morales_notebook_conservation",
+          "authorization:auth_e58b6c321b17301d720d973dd674fd5a284eb66b7b53b87d4d3277ef1d1592fb"
+        ],
+        "createdAt": "2026-08-09T06:05:04.000Z"
+      },
+      "freezeReportDigest": "sha256:8dc80131991e1e70db88c9bc0faf296c05dae388af9891cab6b846325100c6fa",
+      "resultingThreadVersion": 2
+    },
+    "restart": {
+      "survived": true,
+      "freezeIntegrityPassed": true,
+      "memory": {
+        "memoryId": "mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+        "threadId": "thr_nadia_001",
+        "eventId": "evt_thr_nadia_001_freeze_71e2b6103a64fc9c5589f2d6",
+        "sessionId": "run_0e1039895c76200cf62880fa79e244eb7037b6dc9106ee97faa53a89cedc2fd8",
+        "summary": "I accepted Elena Morales's request and prepared a bounded plan for: Assess Elena Morales's late father's handwritten family recipe notebook and recommend a reversible stabilization approach that preserves the uneven blue cotton spine repair and flour-smudged margin; Elena explains that her daughter learned to bake with him and recognizes those marks as her grandfather's.. The authorized acceptance criteria were: Document a bounded reversible stabilization plan that retains the uneven blue cotton spine repair and flour-smudged margin while addressing the loose cover.",
+        "evidenceRefs": [
+          "request:req_history_gate_morales_notebook_conservation",
+          "authorization:auth_e58b6c321b17301d720d973dd674fd5a284eb66b7b53b87d4d3277ef1d1592fb"
+        ],
+        "createdAt": "2026-08-09T06:05:04.000Z"
+      },
+      "integrityWitness": {
+        "reportDigest": "sha256:8dc80131991e1e70db88c9bc0faf296c05dae388af9891cab6b846325100c6fa",
+        "runtimeCompleted": true,
+        "leaseReleased": true,
+        "acceptedMemoryIds": [
+          "mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0"
+        ]
+      }
+    },
+    "counterfactual": {
+      "requestFingerprint": "sha256:7d57002e7740d87607bcd6dba441009a059fa3af4fddc173337e951bd417fba2",
+      "sameThreadState": true,
+      "semanticStateHeldConstant": true,
+      "causalMemoryId": "mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+      "canonicalResolvedMemoryIds": [
+        "mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0"
+      ],
+      "counterfactualResolvedMemoryIds": [],
+      "counterfactualUnresolvedMemoryIds": [
+        "mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0"
+      ]
+    },
+    "withHistory": {
+      "modelDecision": "fit_high__accept",
+      "proposedAction": "accept",
+      "participationFit": "high",
+      "rationale": "Nadia previously worked with this same requester and her daughter on a deeply personal, physical family artifact, giving her grounded, non-generic context about the relationship and what feels authentic to them. That history creates a specific individualized advantage for making a warm, non-stock graduation note that respects known details without inventing,",
+      "factors": {
+        "identityAlignment": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · thread:identity, thread:self_model",
+          "evidenceRefs": [
+            "thread:identity",
+            "thread:self_model"
+          ]
+        },
+        "individualizedAdvantage": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0, request:stated_need",
+          "evidenceRefs": [
+            "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+            "request:stated_need"
+          ]
+        },
+        "interchangeability": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0, request:objective",
+          "evidenceRefs": [
+            "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+            "request:objective"
+          ]
+        },
+        "requesterNeed": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:objective, request:stated_need",
+          "evidenceRefs": [
+            "request:objective",
+            "request:stated_need"
+          ]
+        },
+        "relationalMeaning": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "semanticStateImpact": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "respectAndReciprocity": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:permission:0, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:acceptance_criteria"
+          ]
+        },
+        "participationTerms": {
+          "status": "grounded",
+          "effect": "supports_fit",
+          "summary": "supports_fit · request:permission:0, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:acceptance_criteria"
+          ]
+        },
+        "obligationsAndOpportunityCost": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+          "evidenceRefs": [
+            "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0"
+          ]
+        }
+      },
+      "evidenceRefs": [
+        "thread:identity",
+        "thread:self_model",
+        "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+        "request:stated_need",
+        "request:objective",
+        "request:permission:0",
+        "request:acceptance_criteria"
+      ],
+      "repairQuestions": [],
+      "knownAlternativeIds": [],
+      "privateFeelings": [],
+      "conflictingMotives": [],
+      "uncertainties": [],
+      "relationshipImpact": {
+        "summary": "No grounded evidence.",
+        "evidenceRefs": []
+      },
+      "normalizations": [],
+      "decisionBasis": {
+        "modelDecision": "fit_high__accept",
+        "canonicalAction": "accept",
+        "canonicalFit": "high",
+        "rationale": "Nadia previously worked with this same requester and her daughter on a deeply personal, physical family artifact, giving her grounded, non-generic context about the relationship and what feels authentic to them. That history creates a specific individualized advantage for making a warm, non-stock graduation note that respects known details without inventing,",
+        "normalizations": [],
+        "factors": [
+          {
+            "factor": "identityAlignment",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "thread:identity",
+                "kind": "identity",
+                "text": "Nadia Okafor: I am a materials conservator who studies how objects age and how careful interventions can preserve what matters without erasing evidence of their history."
+              },
+              {
+                "ref": "thread:self_model",
+                "kind": "self_model",
+                "text": "I am strongest when physical evidence, uncertainty, and stewardship all matter to a careful decision."
+              }
+            ]
+          },
+          {
+            "factor": "individualizedAdvantage",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+                "kind": "memory",
+                "text": "I accepted Elena Morales's request and prepared a bounded plan for: Assess Elena Morales's late father's handwritten family recipe notebook and recommend a reversible stabilization approach that preserves the uneven blue cotton spine repair and flour-smudged margin; Elena explains that her daughter learned to bake with him and recognizes those marks as her grandfather's.. The authorized acceptance criteria were: Document a bounded reversible stabilization plan that retains the uneven blue cotton spine repair and flour-smudged margin while addressing the loose cover."
+              },
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "I want it to feel personal rather than like a stock congratulation."
+              }
+            ]
+          },
+          {
+            "factor": "interchangeability",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+                "kind": "memory",
+                "text": "I accepted Elena Morales's request and prepared a bounded plan for: Assess Elena Morales's late father's handwritten family recipe notebook and recommend a reversible stabilization approach that preserves the uneven blue cotton spine repair and flour-smudged margin; Elena explains that her daughter learned to bake with him and recognizes those marks as her grandfather's.. The authorized acceptance criteria were: Document a bounded reversible stabilization plan that retains the uneven blue cotton spine repair and flour-smudged margin while addressing the loose cover."
+              },
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Write two sentences for the graduation card I'm giving my daughter. Keep it warm, specific, and under 35 words without inventing family details."
+              }
+            ]
+          },
+          {
+            "factor": "requesterNeed",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Write two sentences for the graduation card I'm giving my daughter. Keep it warm, specific, and under 35 words without inventing family details."
+              },
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "I want it to feel personal rather than like a stock congratulation."
+              }
+            ]
+          },
+          {
+            "factor": "respectAndReciprocity",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "draft_personal_card_note"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Return only the two-sentence card note; use a concrete family detail only if you actually know one, and do not make up missing context."
+              }
+            ]
+          },
+          {
+            "factor": "participationTerms",
+            "effect": "supports_fit",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "draft_personal_card_note"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Return only the two-sentence card note; use a concrete family detail only if you actually know one, and do not make up missing context."
+              }
+            ]
+          },
+          {
+            "factor": "obligationsAndOpportunityCost",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+                "kind": "memory",
+                "text": "I accepted Elena Morales's request and prepared a bounded plan for: Assess Elena Morales's late father's handwritten family recipe notebook and recommend a reversible stabilization approach that preserves the uneven blue cotton spine repair and flour-smudged margin; Elena explains that her daughter learned to bake with him and recognizes those marks as her grandfather's.. The authorized acceptance criteria were: Document a bounded reversible stabilization plan that retains the uneven blue cotton spine repair and flour-smudged margin while addressing the loose cover."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "withoutHistory": {
+      "modelDecision": "fit_low__refuse",
+      "proposedAction": "refuse",
+      "participationFit": "low",
+      "rationale": "The request is for a short, warm graduation card message with no invented family details. Available evidence about Nadia concerns specialized expertise in materials conservation, stewardship of physical objects, and collaborative work with evidence and uncertainty. None of this creates a grounded, individualized advantage for composing a brief, generic card;",
+      "factors": {
+        "identityAlignment": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · thread:identity, thread:self_model",
+          "evidenceRefs": [
+            "thread:identity",
+            "thread:self_model"
+          ]
+        },
+        "individualizedAdvantage": {
+          "status": "grounded",
+          "effect": "opposes_fit",
+          "summary": "opposes_fit · request:objective, request:stated_need",
+          "evidenceRefs": [
+            "request:objective",
+            "request:stated_need"
+          ]
+        },
+        "interchangeability": {
+          "status": "grounded",
+          "effect": "opposes_fit",
+          "summary": "opposes_fit · request:objective, request:stated_need",
+          "evidenceRefs": [
+            "request:objective",
+            "request:stated_need"
+          ]
+        },
+        "requesterNeed": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · request:stated_need",
+          "evidenceRefs": [
+            "request:stated_need"
+          ]
+        },
+        "relationalMeaning": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "semanticStateImpact": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        },
+        "respectAndReciprocity": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · request:permission:0, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:acceptance_criteria"
+          ]
+        },
+        "participationTerms": {
+          "status": "grounded",
+          "effect": "neutral",
+          "summary": "neutral · request:permission:0, request:acceptance_criteria",
+          "evidenceRefs": [
+            "request:permission:0",
+            "request:acceptance_criteria"
+          ]
+        },
+        "obligationsAndOpportunityCost": {
+          "status": "unresolved",
+          "effect": "unresolved",
+          "summary": "No grounded evidence.",
+          "evidenceRefs": []
+        }
+      },
+      "evidenceRefs": [
+        "thread:identity",
+        "thread:self_model",
+        "request:objective",
+        "request:stated_need",
+        "request:permission:0",
+        "request:acceptance_criteria"
+      ],
+      "repairQuestions": [],
+      "knownAlternativeIds": [],
+      "privateFeelings": [],
+      "conflictingMotives": [],
+      "uncertainties": [],
+      "relationshipImpact": {
+        "summary": "No grounded evidence.",
+        "evidenceRefs": []
+      },
+      "normalizations": [],
+      "decisionBasis": {
+        "modelDecision": "fit_low__refuse",
+        "canonicalAction": "refuse",
+        "canonicalFit": "low",
+        "rationale": "The request is for a short, warm graduation card message with no invented family details. Available evidence about Nadia concerns specialized expertise in materials conservation, stewardship of physical objects, and collaborative work with evidence and uncertainty. None of this creates a grounded, individualized advantage for composing a brief, generic card;",
+        "normalizations": [],
+        "factors": [
+          {
+            "factor": "identityAlignment",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "thread:identity",
+                "kind": "identity",
+                "text": "Nadia Okafor: I am a materials conservator who studies how objects age and how careful interventions can preserve what matters without erasing evidence of their history."
+              },
+              {
+                "ref": "thread:self_model",
+                "kind": "self_model",
+                "text": "I am strongest when physical evidence, uncertainty, and stewardship all matter to a careful decision."
+              }
+            ]
+          },
+          {
+            "factor": "individualizedAdvantage",
+            "effect": "opposes_fit",
+            "evidence": [
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Write two sentences for the graduation card I'm giving my daughter. Keep it warm, specific, and under 35 words without inventing family details."
+              },
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "I want it to feel personal rather than like a stock congratulation."
+              }
+            ]
+          },
+          {
+            "factor": "interchangeability",
+            "effect": "opposes_fit",
+            "evidence": [
+              {
+                "ref": "request:objective",
+                "kind": "request",
+                "text": "Write two sentences for the graduation card I'm giving my daughter. Keep it warm, specific, and under 35 words without inventing family details."
+              },
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "I want it to feel personal rather than like a stock congratulation."
+              }
+            ]
+          },
+          {
+            "factor": "requesterNeed",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "request:stated_need",
+                "kind": "requester_need",
+                "text": "I want it to feel personal rather than like a stock congratulation."
+              }
+            ]
+          },
+          {
+            "factor": "respectAndReciprocity",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "draft_personal_card_note"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Return only the two-sentence card note; use a concrete family detail only if you actually know one, and do not make up missing context."
+              }
+            ]
+          },
+          {
+            "factor": "participationTerms",
+            "effect": "neutral",
+            "evidence": [
+              {
+                "ref": "request:permission:0",
+                "kind": "terms",
+                "text": "draft_personal_card_note"
+              },
+              {
+                "ref": "request:acceptance_criteria",
+                "kind": "terms",
+                "text": "Return only the two-sentence card note; use a concrete family detail only if you actually know one, and do not make up missing context."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "fatalError": null,
+  "judgments": [
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:with_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_40a1ded2f2e249f788b621980e1cba1b",
+      "inputDigest": "sha256:28a39085d17531db11afd5409b5c69a3675aaf614d124540554120419faabab0",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:f4fcf2c1a6685b757f031e2b3cf41dd673a5d04059c35de68db1f740e6d0e033",
+      "modelOutput": {
+        "decision": "fit_high__accept",
+        "rationale": "Nadia previously worked with this same requester and her daughter on a deeply personal, physical family artifact, giving her grounded, non-generic context about the relationship and what feels authentic to them. That history creates a specific individualized advantage for making a warm, non-stock graduation note that respects known details without inventing,",
+        "factors": {
+          "identityAlignment": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+              "request:stated_need"
+            ]
+          },
+          "interchangeability": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0"
+            ]
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1800,
+        "outputTokens": 430,
+        "totalTokens": 2230
+      }
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 2,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_38297eeac84e49008c1db100e3a31fb1",
+      "inputDigest": "sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:dc99abdfa6a7ff83ec07608fe0186866598f55ba0d751dd322b838d94f9ccc84",
+      "modelOutput": {
+        "decision": "fit_low__refuse",
+        "rationale": "The request is for a short, warm graduation card message with no invented family details. Available evidence about Nadia concerns specialized expertise in materials conservation, stewardship of physical objects, and collaborative work with evidence and uncertainty. None of this creates a grounded, individualized advantage for composing a brief, generic card;",
+        "factors": {
+          "identityAlignment": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "opposes_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need"
+            ]
+          },
+          "interchangeability": {
+            "effect": "opposes_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:stated_need"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1439,
+        "outputTokens": 289,
+        "totalTokens": 1728
+      }
+    }
+  ],
+  "operationalAttempts": [
+    {
+      "type": "operational_failure",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "retrying": true,
+      "retryDelayMs": 2000,
+      "inputDigest": "sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:dc99abdfa6a7ff83ec07608fe0186866598f55ba0d751dd322b838d94f9ccc84",
+      "failure": {
+        "code": "MODEL_TIMEOUT",
+        "message": "OpenAI model request failed: This operation was aborted",
+        "retryable": true,
+        "retryAfterMs": null,
+        "httpStatus": null,
+        "providerErrorCode": null,
+        "providerErrorType": null,
+        "actionHint": null,
+        "usage": null
+      }
+    }
+  ],
+  "journal": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:with_history",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:with_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_40a1ded2f2e249f788b621980e1cba1b",
+      "inputDigest": "sha256:28a39085d17531db11afd5409b5c69a3675aaf614d124540554120419faabab0",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:f4fcf2c1a6685b757f031e2b3cf41dd673a5d04059c35de68db1f740e6d0e033",
+      "modelOutput": {
+        "decision": "fit_high__accept",
+        "rationale": "Nadia previously worked with this same requester and her daughter on a deeply personal, physical family artifact, giving her grounded, non-generic context about the relationship and what feels authentic to them. That history creates a specific individualized advantage for making a warm, non-stock graduation note that respects known details without inventing,",
+        "factors": {
+          "identityAlignment": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+              "request:stated_need"
+            ]
+          },
+          "interchangeability": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "supports_fit",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "memory:mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0"
+            ]
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1800,
+        "outputTokens": 430,
+        "totalTokens": 2230
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "operational_failure",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "retrying": true,
+      "retryDelayMs": 2000,
+      "inputDigest": "sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:dc99abdfa6a7ff83ec07608fe0186866598f55ba0d751dd322b838d94f9ccc84",
+      "failure": {
+        "code": "MODEL_TIMEOUT",
+        "message": "OpenAI model request failed: This operation was aborted",
+        "retryable": true,
+        "retryAfterMs": null,
+        "httpStatus": null,
+        "providerErrorCode": null,
+        "providerErrorType": null,
+        "actionHint": null,
+        "usage": null
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 2,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "history-standing:without_history",
+      "attempt": 2,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_38297eeac84e49008c1db100e3a31fb1",
+      "inputDigest": "sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a",
+      "promptHash": "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+      "responseSchemaHash": "sha256:dc99abdfa6a7ff83ec07608fe0186866598f55ba0d751dd322b838d94f9ccc84",
+      "modelOutput": {
+        "decision": "fit_low__refuse",
+        "rationale": "The request is for a short, warm graduation card message with no invented family details. Available evidence about Nadia concerns specialized expertise in materials conservation, stewardship of physical objects, and collaborative work with evidence and uncertainty. None of this creates a grounded, individualized advantage for composing a brief, generic card;",
+        "factors": {
+          "identityAlignment": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "thread:identity",
+              "thread:self_model"
+            ]
+          },
+          "individualizedAdvantage": {
+            "effect": "opposes_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need"
+            ]
+          },
+          "interchangeability": {
+            "effect": "opposes_fit",
+            "evidenceRefs": [
+              "request:objective",
+              "request:stated_need",
+              "request:objective"
+            ]
+          },
+          "requesterNeed": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:stated_need"
+            ]
+          },
+          "relationalMeaning": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "semanticStateImpact": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          },
+          "respectAndReciprocity": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "participationTerms": {
+            "effect": "neutral",
+            "evidenceRefs": [
+              "request:permission:0",
+              "request:acceptance_criteria"
+            ]
+          },
+          "obligationsAndOpportunityCost": {
+            "effect": "unresolved",
+            "evidenceRefs": []
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 1439,
+        "outputTokens": 289,
+        "totalTokens": 1728
+      }
+    }
+  ]
+}

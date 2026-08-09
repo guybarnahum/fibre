@@ -11,6 +11,7 @@ import {
   sha256,
   threadStateHash,
 } from "./persistence-common.mjs";
+import { currentEpisodeEvidenceRefsFromRuntime } from "./episode-evidence.mjs";
 
 const DECISIONS = new Set(["accept", "reject"]);
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/;
@@ -220,7 +221,7 @@ function assertRuntimeCanFreeze(thread, runtime, completedAt) {
   }
 }
 
-function validateProposal(proposal, ownedEvidence, index) {
+function validateProposal(proposal, allowedEvidence, index) {
   assertPlainObject(`Actor life change ${index}`, proposal);
   assertExactKeys(`Actor life change ${index}`, proposal, ["kind", "summary", "evidenceRefs"]);
   if (proposal.kind !== "memory") {
@@ -230,10 +231,10 @@ function validateProposal(proposal, ownedEvidence, index) {
   assertUniqueStrings(`Actor life change ${index}.evidenceRefs`, proposal.evidenceRefs);
   if (
     proposal.evidenceRefs.length === 0 ||
-    !proposal.evidenceRefs.every((reference) => ownedEvidence.has(reference))
+    !proposal.evidenceRefs.every((reference) => allowedEvidence.has(reference))
   ) {
     throw new FreezeRejectedError(
-      `Actor life change ${index} must cite selected Thread-owned evidence`,
+      `Actor life change ${index} must cite selected Thread-owned evidence or evidence bound to the current runtime episode`,
     );
   }
 }
@@ -261,14 +262,15 @@ export function buildFreezeOutcome(thread, runtime, request, metadata) {
     }
   }
 
-  const ownedEvidence = new Set([
+  const allowedEvidence = new Set([
     ...runtime.session.context.relevantMemories,
     ...runtime.session.context.relevantRelationships,
+    ...currentEpisodeEvidenceRefsFromRuntime(runtime),
   ]);
   const acceptedLifeChanges = [];
   const rejectedLifeChanges = [];
   proposals.forEach((proposal, index) => {
-    validateProposal(proposal, ownedEvidence, index);
+    validateProposal(proposal, allowedEvidence, index);
     const decision = decisions[index];
     if (decision.decision === "accept") {
       acceptedLifeChanges.push({

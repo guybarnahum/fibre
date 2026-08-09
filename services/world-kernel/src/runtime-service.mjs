@@ -5,6 +5,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { WorldKernelService } from "./kernel-service.mjs";
+import { m1DeterministicActorOutput } from "./m1-deterministic-actor.mjs";
 import {
   RuntimeOrderError,
   actorOperationDigest,
@@ -13,7 +14,6 @@ import {
   authorizationDigest,
   buildExecutionContext,
   buildParticipationAuthorization,
-  deterministicActorOutput,
   executionContextDigest,
   goalGuardianOperationDigest,
   guardianAuditDigest,
@@ -42,7 +42,7 @@ export class M1RuntimeWorldKernelService extends WorldKernelService {
     {
       clock = () => new Date(),
       leaseDurationMs = 5 * 60 * 1000,
-      actor = deterministicActorOutput,
+      actor = m1DeterministicActorOutput,
     } = {},
   ) {
     super(worldStore);

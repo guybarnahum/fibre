@@ -5,13 +5,9 @@ import {
   DIGNITY_GUARDIAN_V4_PROMPT_HASH,
   DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH,
 } from "../services/world-kernel/src/dignity-guardian-v4.mjs";
-import { SEMANTIC_GUARDIAN_V4_FROZEN_BOUNDARY_CANDIDATE_3 as CANDIDATE_3 } from "../experiments/semantic-guardian-v4/frozen-boundary-candidate-3.mjs";
 import { SEMANTIC_GUARDIAN_V4_FROZEN_BOUNDARY_CANDIDATE_4 as FROZEN } from "../experiments/semantic-guardian-v4/frozen-boundary-candidate-4.mjs";
 import { buildSemanticGuardianV4DevelopmentCases } from "./semantic-guardian-v4-dev-proof.mjs";
 import { buildCounterfactualDevelopmentCases } from "./semantic-guardian-v4-counterfactual-dev.mjs";
-import { buildSemanticGuardianV4StandingCases } from "./semantic-guardian-v4-standing-proof.mjs";
-import { buildSemanticGuardianV4StandingCasesV2 } from "./semantic-guardian-v4-standing-proof-v2.mjs";
-import { buildSemanticGuardianV4StandingCasesV3 } from "./semantic-guardian-v4-standing-proof-v3.mjs";
 import { formatStandingGateV4Rejected } from "./semantic-guardian-v4-gate-v4-cli.mjs";
 import {
   assertSemanticGuardianV4FrozenBoundaryV4,
@@ -51,25 +47,24 @@ function capsuleWithoutStateMeaning(capsule) {
   return clone;
 }
 
-test("candidate 4 preserves cognition and freezes provider automatic output limits", () => {
+test("candidate 4 preserves the frozen cognition lineage and provider automatic output limits", () => {
   assertSemanticGuardianV4FrozenBoundaryV4();
-  assert.equal(FROZEN.cognitionEquivalentTo, CANDIDATE_3.id);
-  assert.equal(FROZEN.promptHash, CANDIDATE_3.promptHash);
-  assert.equal(FROZEN.responseSchemaGeneratorHash, CANDIDATE_3.responseSchemaGeneratorHash);
+  assert.equal(FROZEN.cognitionEquivalentTo, "semantic_guardian_v4_candidate_3");
   assert.equal(FROZEN.promptHash, DIGNITY_GUARDIAN_V4_PROMPT_HASH);
   assert.equal(FROZEN.responseSchemaGeneratorHash, DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH);
   assert.equal(FROZEN.runtimeConfiguration.maxOutputTokens, "auto");
-  assert.equal(CANDIDATE_3.runtimeConfiguration.maxOutputTokens, 6000);
   assert.equal(FROZEN.counterfactualDevelopment.status, "passed");
+  assert.deepEqual(FROZEN.priorStandingGates, [
+    { id: "semantic_guardian_v4_standing_gate_v1", status: "failed", diagnosis: "gate_specification_defects" },
+    { id: "semantic_guardian_v4_standing_gate_v2", status: "failed", diagnosis: "ambiguous_semantic_state_factor_direction_assertion" },
+    { id: "semantic_guardian_v4_standing_gate_v3", status: "failed", diagnosis: "counterfactual_baseline_specification_defect_plus_runtime_output_ceiling" },
+  ]);
 });
 
-test("standing gate v4 is fresh relative to development diagnostics and sealed v1-v3", () => {
+test("standing gate v4 is fresh relative to active Development material", () => {
   const prior = [
     ...buildSemanticGuardianV4DevelopmentCases(),
     ...buildCounterfactualDevelopmentCases(),
-    ...buildSemanticGuardianV4StandingCases(),
-    ...buildSemanticGuardianV4StandingCasesV2(),
-    ...buildSemanticGuardianV4StandingCasesV3(),
   ];
   const v4 = buildSemanticGuardianV4StandingCasesV4();
   assert.equal(v4.length, 18);
