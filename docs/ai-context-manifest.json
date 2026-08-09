@@ -22,6 +22,7 @@
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/m2-pr-plan.md",
         "docs/validation/pre-m2-causal-status-register.md",
+        "docs/architecture/structured-obligations-v1.md",
         "docs/validation/semantic-guardian-v3-freeze.md",
         "docs/validation/semantic-guardian-v3-cycle-v2.md",
         "docs/validation/semantic-guardian-v4-development.md",
