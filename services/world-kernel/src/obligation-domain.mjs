@@ -37,11 +37,19 @@ export const OBLIGATION_NOMINATION_SOURCES = new Set(["caller", "fibre", "both"]
 export const OBLIGATION_APPLICABILITY_RESULTS = new Set(["applies", "does_not_apply"]);
 
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/;
+const OBLIGATION_ID_PATTERN = /^obl_[0-9a-f]{64}$/;
 const ENTITY_KINDS = new Set(["human", "thread", "company", "institution", "other"]);
 
 function assertSha(name, value) {
   if (typeof value !== "string" || !SHA256_PATTERN.test(value)) {
     throw new TypeError(`${name} must be a SHA-256 digest`);
+  }
+}
+
+function assertObligationId(name, value) {
+  assertNonEmpty(name, value);
+  if (!OBLIGATION_ID_PATTERN.test(value)) {
+    throw new TypeError(`${name} must be obl_ followed by 64 lowercase hex characters`);
   }
 }
 
@@ -112,10 +120,7 @@ export function normalizeStructuredObligation(record) {
     "supersedesRevision",
   ]);
 
-  assertId("obligation.obligationId", record.obligationId);
-  if (!record.obligationId.startsWith("obl_")) {
-    throw new TypeError("obligation.obligationId must start with obl_");
-  }
+  assertObligationId("obligation.obligationId", record.obligationId);
   assertFiniteNumber("obligation.revision", record.revision, { integer: true, minimum: 1 });
   assertId("obligation.threadId", record.threadId);
   if (!OBLIGATION_STATUSES.has(record.status)) throw new TypeError("obligation.status is invalid");
