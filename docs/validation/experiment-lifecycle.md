@@ -40,6 +40,8 @@ A standing gate is fresh held-out evidence. The first real provider attempt cons
 
 Sealed evidence is immutable in meaning. Later repository changes may improve non-semantic tooling such as summaries or progress indication, but they must not rewrite the authoritative outcome or silently turn a failed cycle into a pass.
 
+A sealed result may retain a read-only inspection command. That command must fail closed if authoritative evidence is unavailable and must never enter provider execution.
+
 ## What remains in the active tree
 
 Keep active only what is useful for current engineering:
@@ -48,9 +50,10 @@ Keep active only what is useful for current engineering:
 - the accepted standing scenario and reference proof when useful for inspectability;
 - reusable Development harnesses that remain useful;
 - generalized invariant tests learned from prior failures;
-- shared experiment infrastructure such as provider progress, evidence sealing, and summary helpers.
+- shared experiment infrastructure such as provider progress, evidence sealing, and summary helpers;
+- optionally, a read-only sealed-result inspector that cannot call a provider.
 
-Do not keep every historical gate runnable merely because it once existed.
+Do not keep every historical gate provider-executable merely because it once existed.
 
 ## What is preserved forever
 
@@ -71,7 +74,7 @@ The per-cycle documents under `docs/validation/` are the human-readable authorit
 
 ## Failed experiments are evidence
 
-A failed gate must remain visible in the scientific record. It must not remain in the active command surface simply to prove that it happened.
+A failed gate must remain visible in the scientific record. It must not remain in the active provider-execution surface simply to prove that it happened.
 
 The correct transformation is:
 
@@ -91,7 +94,7 @@ This prevents three forms of drift:
 
 ## Provider progress requirement
 
-Any new CLI experiment that can block on a real model/provider call must visibly report progress.
+Any CLI experiment that can block on a real model/provider call must visibly report progress.
 
 The standard non-TTY-safe form is:
 
@@ -129,6 +132,8 @@ Authoritative details remain in:
 Candidate 4 itself also records the retired standing IDs, diagnoses, fingerprints, and material that may not be reused.
 
 The active History v4 wrapper still reads the original v1 proof/CLI files as transformation templates. Those two base files are therefore retained as implementation dependencies, not as supported v1 commands. The retired v1 scenario/candidate and v2/v3 executable generations are archived out of the active tree.
+
+`npm run history:gate` is a read-only v4 inspector: the package script forces `--summary-only`, so it can display an existing authoritative local evidence artifact but cannot enter provider execution or consume a new standing cycle. `npm run history:dev` is the repeatable provider-backed Development command and uses the shared provider heartbeat.
 
 ## Semantic Guardian / dignity reasoning archive
 
