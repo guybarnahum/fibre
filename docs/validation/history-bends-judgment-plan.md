@@ -52,7 +52,9 @@ The later Guardian must infer what the remembered episode means for the current 
 
 Fibre already persists append-only `thread_memories`, binds them to freeze events/runtime sessions, and resolves owned memory records as semantic cognition context.
 
-PR #34.1 now provides an explicit episode-forming Actor capability and narrowly bound current-episode evidence. The closed M1 runtime keeps its historical deterministic Actor behavior; #34 must opt into episode formation rather than silently changing M1 semantics.
+PR #34.1 provides an explicit episode-forming Actor capability and narrowly bound current-episode evidence. PR #34.2 now provides the repeatable restarted Development harness that exercises the canonical episode/runtime/freeze path, reopens the database, resolves the durable memory through Fibre-owned selection, and compares the same later request with only that causal memory withheld in evaluation machinery.
+
+The remaining Development gap is empirical: the unchanged real Semantic Guardian must demonstrate the expected later with-history / without-history judgment differential before the method is frozen. The closed M1 runtime retains its historical deterministic Actor behavior.
 
 ## Episode evidence
 
@@ -75,15 +77,17 @@ Use a repeatable non-evidentiary Mina scenario.
 
 Mina receives a request to review an Atlas regional failover plan, focused on whether region-scoped service discovery can make rollback ineffective during isolation.
 
-The request should be clearly aligned with Mina's infrastructure/reliability identity and produce willing high-fit participation.
+For the #34.2 Development harness, Episode A uses a clearly labeled deterministic development-only setup judgment to establish willing authorized participation. This isolates the history-causality question rather than re-testing the already earned #33 Guardian standing result.
 
-After authorized execution, freeze accepts a substantive episodic memory about Mina's participation in that Atlas review.
+The canonical runtime then uses the episode-forming Actor, Goal Guardian, and freeze path to persist a substantive episodic memory about Mina's participation in that Atlas review.
 
-Then close and reopen the database/kernel.
+Then the harness closes and reopens the database/kernel.
 
 ### Later request B
 
 Acme asks Mina to review a revised Atlas failback plan and explicitly needs continuity with the earlier service-discovery/rollback review.
+
+The later pair uses the unchanged Semantic Guardian v4 through the configured real model runtime.
 
 Expected development differential:
 
@@ -120,7 +124,7 @@ budgets
 
 The intervention removes only the claimed causal episodic memory from Fibre-owned appraisal selection.
 
-The real append-only memory is never deleted or mutated. Counterfactual omission exists only inside test/evaluation machinery.
+The real append-only memory is never deleted or mutated. The counterfactual uses a copy of the post-restart database and withholds the named memory record only from evaluation-time retrieval. The Thread projection and its memory reference remain unchanged; therefore the omitted record appears as an unresolved memory reference rather than semantic evidence.
 
 ## Semantic-content controls
 
@@ -160,30 +164,35 @@ Implemented on the PR #34 branch:
 - historical M1 Actor behavior remains the default for M1/pre-M2 services unless the #34 episode-forming Actor is explicitly injected;
 - no memory-schema migration.
 
-This step establishes provenance capability only. It does **not** earn Development credit and does not yet prove restart-to-later-judgment causality.
+This step establishes provenance capability only. It does **not** earn Development credit and does not itself prove restart-to-later-judgment causality.
 
-### #34.2 Restarted development proof
+### #34.2 Restarted development proof — IMPLEMENTED / READY FOR LIVE RUN
 
-Create a repeatable non-evidentiary command, expected shape:
+The repeatable non-evidentiary command now exists:
 
 ```bash
-npm run history:dev
-npm run history:dev -- --model gpt-5.6-luna
+npm run history:dev -- --summary
+npm run history:dev -- --model gpt-5.6-luna --summary
 ```
 
-It must prove:
+Deterministic CI coverage proves the harness mechanics:
 
-- episode A is authorized and frozen;
-- substantive memory is persisted;
-- a real DB/kernel restart occurs;
-- memory survives restart with intact provenance/digest;
-- Fibre-owned retrieval resolves memory prose;
-- later request is identical across canonical/counterfactual conditions;
-- with-memory and without-memory judgments differ materially for the expected reason.
+- Episode A traverses canonical participation authority, runtime, Actor, Goal Guardian, and freeze;
+- the accepted memory cites exact current request and participation authorization evidence;
+- the database/kernel is closed and reopened before the later appraisal setup;
+- the memory survives restart unchanged and concrete freeze integrity witnesses remain valid;
+- Fibre-owned retrieval resolves the persisted memory prose;
+- the canonical and counterfactual later requests have the same request fingerprint;
+- Thread state and Semantic State are identical across conditions;
+- the evaluation-only intervention withholds only the causal memory record while preserving the Thread memory reference as an unresolved witness;
+- deterministic v4-contract coverage requires `accept/high` with memory and `clarify/mixed` without it;
+- the with-history result must cite the episodic memory in `individualizedAdvantage` or `interchangeability`.
+
+The real provider Development run has **not yet been accepted as passed**. `history:dev` is repeatable, non-evidentiary, does not seal anything, and permits no score movement. Do not freeze #34.3 until the unchanged real Semantic Guardian demonstrates a stable Development differential.
 
 ### #34.3 Freeze the Development candidate
 
-Once the method is stable, freeze a Development boundary that records at least:
+Once the real-model Development method is stable, freeze a Development boundary that records at least:
 
 - Guardian cognition boundary;
 - memory-synthesis policy/version;
