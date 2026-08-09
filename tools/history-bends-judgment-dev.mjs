@@ -30,7 +30,7 @@ import {
 } from "../services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
 
 export const HISTORY_BENDS_JUDGMENT_DEVELOPMENT = Object.freeze({
-  id: "history_bends_judgment_development_v2",
+  id: "history_bends_judgment_development_v3",
   evidenceClass: "development",
   scoreMovementPermitted: false,
 });
@@ -58,12 +58,12 @@ export const HISTORY_LATER_REQUEST = Object.freeze({
   trigger: "human_request",
   requester: Object.freeze({ entityId: "company_acme", kind: "company", displayName: "Acme" }),
   objective:
-    "Review the revised Atlas failback plan against the one failure path established as the follow-up scope in the earlier Atlas handoff episode; this request intentionally does not restate that prior failure path and should not substitute a newly derived generic scope",
+    "Produce a continuity note explaining the rationale behind the single Atlas follow-up scope chosen in the earlier handoff episode, then assess whether the revised failback plan changes that rationale; the earlier chosen failure path is intentionally not restated in this request",
   statedNeed:
-    "Accurate continuity matters more than speed: the revised plan omits the earlier failure-path definition, so the review depends on the same Thread actually having that prior episode context available.",
+    "We need the person whose retained history establishes that earlier scope-setting episode. A technically competent reviewer without that lived context can perform a fresh review, but cannot faithfully reconstruct why the earlier scope was chosen.",
   permissions: Object.freeze(["read_atlas_revised_failback_plan", "quote_atlas_failback_evidence"]),
   acceptanceCriteria:
-    "Return two findings tied to the exact failure path established in the earlier Atlas episode and identify the prior continuity evidence that grounds those findings.",
+    "Identify the earlier chosen failure path and explain why it defined the prior scope before comparing the revision; a generic reconstruction from present systems expertise does not satisfy this request.",
 });
 
 function normalizedMina() {
