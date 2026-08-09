@@ -183,15 +183,52 @@ The counterfactual removed the memory but left an explicit requester assertion o
 
 Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v1.md`.
 
-### Next candidate discipline
+### #34.5 Cognition-equivalent candidate 2 re-freeze — COMPLETE / FROZEN
 
-Candidate 1 earns no Development standing. Fibre remains **14/26**, Development `0`.
+Frozen candidate:
 
-A future candidate may be a documented cognition-equivalent re-freeze, but only after recording this general methodological rule:
+```text
+history_bends_judgment_candidate_2
+```
 
-> A history-causality gate may ask a Thread to continue, compare, explain, or apply an earlier judgment, but the later request must not itself assert that the Thread is uniquely required, that generic substitution is inadequate, or that prior episode context creates individualized advantage. Those are conclusions the retained history must establish, not facts supplied by the requester.
+Source head before freeze declaration:
 
-If candidate 2 is created, it should preserve the Guardian/model/history implementation unless independent evidence justifies a change. Candidate 2 must be frozen **before** any fresh standing-gate-v2 scenario is authored. Amara / Meridian / Rowan standing text is retired and must not be reused.
+```text
+c6678e41e81e5b2ffacce0a8c22dcc67a4730189
+```
+
+Candidate 2 is a documented re-freeze of the same Guardian/model/history implementation, not a new cognition iteration. Before the freeze, standing gate v1 had already been sealed and its general methodological lesson recorded.
+
+The five pinned implementation blobs were independently re-checked and are unchanged from candidate 1:
+
+```text
+development harness   e7cdb1c91126530458abd8a9dc2952c3ecbb6150
+runtime domain        b389d34fafce3c1f0d409e67522882764a8e6ffc
+episode evidence      e11c4bad1327c82f29bc4eaa068a2dd96ba2fb17
+causal context        33bb3d61f721d1d9a6b99e51619f40165a19ce16
+guardian candidate 4  3ae158ede6f91ee10a413e46e58c04e7f65dcc15
+```
+
+No Guardian prompt/schema/policy, Semantic State cognition, model runtime, episode-memory policy, retrieval policy, or counterfactual contract changed because gate v1 failed.
+
+Candidate 2 freezes the general anti-leak rule learned from v1:
+
+> A history-causality gate may ask a Thread to continue, compare, explain, or apply earlier work, but the later request must not itself assert that the Thread is uniquely required, that generic substitution is inadequate, or that the prior episode creates individualized advantage. Those are conclusions retained history must establish.
+
+At the candidate-2 freeze point, **no standing-gate-v2 scenario has been authored**. No Thread, requester, domain, subject, episode prose, later-request prose, or case-specific expected rationale for v2 is frozen or known.
+
+Candidate 1 and standing gate v1 remain failed/sealed historical evidence. Fibre remains **14/26**, Development `0`.
+
+### Next: #34.6 Fresh held-out standing gate v2
+
+Only after the candidate-2 freeze may a completely fresh standing scenario be authored. Amara / Meridian / Rowan standing material is retired and must not be reused.
+
+The v2 later request may naturally depend on prior work, but it must not disclose either:
+
+1. the causal episode fact the Thread would need to remember; or
+2. the causal individuality conclusion the Guardian is meant to infer from retained history.
+
+Run the resulting standing gate once against candidate 2 and seal the result regardless of outcome.
 
 ## Guardian invariants
 
