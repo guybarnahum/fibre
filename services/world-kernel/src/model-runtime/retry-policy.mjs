@@ -6,6 +6,11 @@ const TRANSIENT_TRANSPORT_CODES = new Set([
   "ENETRESET",
   "EPIPE",
 ]);
+const PROVIDER_CIRCUIT_ERROR_CODES = new Set([
+  "MODEL_AUTHENTICATION_ERROR",
+  "MODEL_PERMISSION_ERROR",
+  "MODEL_BILLING_QUOTA_EXHAUSTED",
+]);
 
 export function parseRetryAfterMs(response, now = Date.now()) {
   const raw = response?.headers?.get?.("retry-after");
@@ -31,6 +36,10 @@ export function isClearlyTransientTransportError(error) {
   if (error?.name === "AbortError") return true;
   const code = error?.code ?? error?.cause?.code ?? null;
   return typeof code === "string" && TRANSIENT_TRANSPORT_CODES.has(code);
+}
+
+export function shouldOpenProviderCircuit(error) {
+  return PROVIDER_CIRCUIT_ERROR_CODES.has(error?.code);
 }
 
 export function attachRetryGuidance(error, { retryAfterMs = null } = {}) {
