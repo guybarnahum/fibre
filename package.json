@@ -26,7 +26,7 @@
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-counterfactual-dev.mjs",
     "history:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/history-bends-judgment-dev-cli.mjs",
-    "history:gate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/history-bends-judgment-gate-v4.mjs --summary-only",
+    "history:gate": "node --disable-warning=ExperimentalWarning tools/history-bends-judgment-sealed-inspector.mjs",
     "inspect:db": "node --disable-warning=ExperimentalWarning tools/inspect-world-database.mjs"
   },
   "engines": {
