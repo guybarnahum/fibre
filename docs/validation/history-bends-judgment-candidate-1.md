@@ -53,9 +53,9 @@ Candidate 1 pins:
 - `fibre_owned_attention` selection policy v1;
 - `durable_memory_summary` resolution policy v1;
 - Development v3 counterfactual construction and evaluator contract;
-- exact source blob identities for the frozen implementation files.
+- historical source blob identities for the frozen implementation files.
 
-`tools/history-bends-judgment-frozen-boundary.test.mjs` fails closed if any frozen source blob or named policy/hash drifts.
+Normal repository tests validate the frozen declaration and named policy/hash contract, but do **not** require future Fibre source trees to remain byte-identical forever. Instead, #34.4 must perform a fail-closed preflight against the recorded source identities **before its first provider call**. Once a standing gate is sealed, authoritative sealed evidence is checked before any source-drift rejection so later development cannot invalidate historical evidence.
 
 ## Explicitly not frozen as evidence
 
