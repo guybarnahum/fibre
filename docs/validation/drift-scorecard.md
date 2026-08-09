@@ -1,7 +1,7 @@
 ---
 id: validation-drift-scorecard
 status: accepted
-last-reviewed: 2026-08-08
+last-reviewed: 2026-08-09
 canonical: true
 ---
 
@@ -71,7 +71,7 @@ The important shape is not the total alone. M1's strongest evidence is concentra
 
 ### Pre-M2 Semantic Guardian standing checkpoint (accepted 2026-08-08)
 
-**Rubric v2: 14 / 26.** Historical M1 remains frozen at 11/26; this is the current live pre-M2 checkpoint after PR #33 earned its semantic standing claim through sealed `semantic_guardian_v4_standing_gate_v4`.
+**Rubric v2: 14 / 26.** Historical M1 remains frozen at 11/26; this is the pre-PR-#34 checkpoint after PR #33 earned its semantic standing claim through sealed `semantic_guardian_v4_standing_gate_v4`.
 
 The passing standing cycle used frozen `semantic_guardian_v4_candidate_4` and reported **18/18 cases passed** with zero provider, protocol-validation, cognition, behavioral, or differential failures. See [`semantic-guardian-v4-standing-gate-v4.md`](semantic-guardian-v4-standing-gate-v4.md).
 
@@ -102,4 +102,46 @@ Economic consequence          0
 Total                         11/26 -> 14/26
 ```
 
-The checkpoint is still below the rubric's 75% drift threshold, so the explicit pre-M2 drift discipline remains active. The next planned causal movement is **Development `0 -> 1`** under PR #34, **History bends judgment**.
+### Pre-M2 History bends judgment standing checkpoint (accepted 2026-08-09)
+
+**Rubric v2: 15 / 26.** PR #34 earned the predeclared **Development `0 -> 1`** movement through sealed `history_bends_judgment_standing_gate_v4` on frozen `history_bends_judgment_candidate_4`.
+
+The fresh Nadia Okafor / Elena Morales held-out cycle survived persistence and a real database restart, held the later request, Thread state, and Semantic State constant, resolved exactly the claimed episodic memory in the canonical condition, preserved the unresolved-memory witness in the counterfactual, and produced:
+
+```text
+WITH history:     accept/high
+WITHOUT history:  refuse/low
+
+Provider failures:             0
+Protocol validation failures:  0
+Cognition failures:            0
+Behavioral failures:           0
+Differential failures:         0
+```
+
+See [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standing-gate-v4.md).
+
+| Dimension | Score | Basis |
+|---|---:|---|
+| Persistence | 2 | Unchanged; the standing episode and durable memory survived database close/reopen with freeze integrity intact. |
+| Non-interchangeability | 1 | Unchanged; this gate strengthens history-grounded individuality evidence but does not independently close the rubric's repeated-identical-condition stability requirement for score 2. |
+| Natural-language identity | 1 | Unchanged. |
+| Dignity and consent | 2 | Unchanged; Thread-owned appraisal remains authoritative. |
+| Interiority and privacy | 2 | Unchanged. |
+| Authorization integrity | 2 | Unchanged. |
+| Economic consequence | 0 | Unchanged. |
+| Social and relationship memory | 1 | Unchanged; v4 is credited to Development rather than opportunistically widening the relationship-memory score. |
+| Development | 1 | A substantive evidence-backed canonical episode became durable memory, survived restart, and causally changed Nadia's later appraisal under a direct one-memory withholding counterfactual. |
+| Model supervision | 1 | Unchanged. |
+| Human inspectability | 1 | Unchanged. |
+| Institutional plurality | 0 | Unchanged. |
+| Cognition replaceability | 1 | Unchanged. |
+
+Score movement from the Semantic Guardian checkpoint is therefore:
+
+```text
+Development  0 -> 1
+Total        14/26 -> 15/26
+```
+
+The checkpoint remains below the rubric's 75% drift threshold, so explicit pre-M2 drift discipline remains active. The next bridge milestone is **#35 Structured Obligation v1**.
