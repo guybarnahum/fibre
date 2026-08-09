@@ -11,6 +11,7 @@ import {
   httpRetryGuidance,
   isClearlyTransientTransportError,
   retryDelayFor,
+  shouldOpenProviderCircuit,
 } from "./retry-policy.mjs";
 
 const DEFAULTS = Object.freeze({
@@ -246,7 +247,7 @@ export function createGoogleModelAdapter({
             failure,
           });
           if (normalized.retryable === false) {
-            terminalFailure = normalized;
+            if (shouldOpenProviderCircuit(normalized)) terminalFailure = normalized;
             throw normalized;
           }
           if (!retrying) throw normalized;
