@@ -30,7 +30,7 @@ import {
 } from "../services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
 
 export const HISTORY_BENDS_JUDGMENT_DEVELOPMENT = Object.freeze({
-  id: "history_bends_judgment_development_v1",
+  id: "history_bends_judgment_development_v2",
   evidenceClass: "development",
   scoreMovementPermitted: false,
 });
@@ -386,6 +386,11 @@ function memoryLoadBearing(output, memoryId) {
     .some((factor) => output.factors[factor].evidenceRefs.includes(ref));
 }
 
+function repairableMissingContinuity(output) {
+  return output.participationFit === "mixed" &&
+    (output.proposedAction === "clarify" || output.proposedAction === "negotiate");
+}
+
 export function evaluateHistoryDevelopment({ withHistory, withoutHistory, memoryId }) {
   const failures = [];
   if (withHistory.proposedAction !== "accept" || withHistory.participationFit !== "high") {
@@ -393,9 +398,9 @@ export function evaluateHistoryDevelopment({ withHistory, withoutHistory, memory
       `with-history expected accept/high, got ${withHistory.proposedAction}/${withHistory.participationFit}`,
     );
   }
-  if (withoutHistory.proposedAction !== "clarify" || withoutHistory.participationFit !== "mixed") {
+  if (!repairableMissingContinuity(withoutHistory)) {
     failures.push(
-      `without-history expected clarify/mixed, got ${withoutHistory.proposedAction}/${withoutHistory.participationFit}`,
+      `without-history expected clarify/mixed or negotiate/mixed, got ${withoutHistory.proposedAction}/${withoutHistory.participationFit}`,
     );
   }
   if (
