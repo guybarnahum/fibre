@@ -39,6 +39,7 @@ export const OBLIGATION_APPLICABILITY_RESULTS = new Set(["applies", "does_not_ap
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/;
 const OBLIGATION_ID_PATTERN = /^obl_[0-9a-f]{64}$/;
 const ENTITY_KINDS = new Set(["human", "thread", "company", "institution", "other"]);
+const VISIBILITY_RANK = Object.freeze({ public: 0, restricted: 1, private: 2 });
 
 function assertSha(name, value) {
   if (typeof value !== "string" || !SHA256_PATTERN.test(value)) {
@@ -97,6 +98,21 @@ function normalizeRecurrence(recurrence) {
   }
   assertNonEmpty("obligation.recurrence.description", recurrence.description);
   return { kind: "descriptive", description: recurrence.description };
+}
+
+function normalizeVisibility(visibility) {
+  assertPlainObject("obligation.visibility", visibility);
+  assertExactKeys("obligation.visibility", visibility, ["standing", "terms"]);
+  if (!OBLIGATION_VISIBILITIES.has(visibility.standing)) {
+    throw new TypeError("obligation.visibility.standing is invalid");
+  }
+  if (!OBLIGATION_VISIBILITIES.has(visibility.terms)) {
+    throw new TypeError("obligation.visibility.terms is invalid");
+  }
+  if (VISIBILITY_RANK[visibility.terms] < VISIBILITY_RANK[visibility.standing]) {
+    throw new TypeError("obligation terms cannot be more public than obligation standing");
+  }
+  return { standing: visibility.standing, terms: visibility.terms };
 }
 
 export function normalizeStructuredObligation(record) {
@@ -169,9 +185,7 @@ export function normalizeStructuredObligation(record) {
     throw new TypeError("obligation.provenance.evidenceReferences must not contain duplicates");
   }
 
-  if (!OBLIGATION_VISIBILITIES.has(record.visibility)) {
-    throw new TypeError("obligation.visibility is invalid");
-  }
+  const visibility = normalizeVisibility(record.visibility);
   if (record.legacySourceDigest !== undefined) {
     assertSha("obligation.legacySourceDigest", record.legacySourceDigest);
   }
@@ -180,15 +194,15 @@ export function normalizeStructuredObligation(record) {
       integer: true,
       minimum: 1,
     });
-    if (record.supersedesRevision >= record.revision) {
-      throw new TypeError("obligation.supersedesRevision must be lower than revision");
-    }
   }
   if (record.revision === 1 && record.supersedesRevision !== undefined) {
     throw new TypeError("obligation revision 1 cannot supersede an earlier revision");
   }
   if (record.revision > 1 && record.supersedesRevision === undefined) {
     throw new TypeError("obligation revisions after 1 must identify supersedesRevision");
+  }
+  if (record.revision > 1 && record.supersedesRevision !== record.revision - 1) {
+    throw new TypeError("obligation supersedesRevision must name the immediately prior revision");
   }
 
   return {
@@ -209,7 +223,7 @@ export function normalizeStructuredObligation(record) {
       createdAt: record.provenance.createdAt,
       evidenceReferences: [...record.provenance.evidenceReferences],
     },
-    visibility: record.visibility,
+    visibility,
     ...(record.legacySourceDigest === undefined
       ? {}
       : { legacySourceDigest: record.legacySourceDigest }),
