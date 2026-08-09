@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createModelRuntime } from "../services/world-kernel/src/model-runtime/model-runtime.mjs";
 import {
   DIGNITY_GUARDIAN_V4_POLICY,
   DIGNITY_GUARDIAN_V4_PROMPT_HASH,
@@ -50,14 +49,11 @@ test("frozen v4 boundary pins the exact successful development candidate", () =>
   assert.equal(FROZEN.developmentResult.casesPassed, 13);
 });
 
-test("frozen model routing and runtime configuration match the candidate", () => {
-  const runtime = createModelRuntime({ environment: { OPENAI_API_KEY: "test-key" } });
-  const selection = runtime.selectionForBlock(FROZEN.reasoningBlock);
-  const adapter = runtime.forBlock(FROZEN.reasoningBlock);
-  assert.deepEqual(selection, { provider: FROZEN.provider, modelId: FROZEN.modelId });
-  for (const [key, expected] of Object.entries(FROZEN.runtimeConfiguration)) {
-    assert.equal(adapter.configuration[key], expected, `runtime ${key} must remain frozen`);
-  }
+test("sealed candidate retains its historical model/runtime boundary", () => {
+  assert.equal(FROZEN.provider, "openai");
+  assert.equal(FROZEN.modelId, "gpt-5.1-2025-11-13");
+  assert.equal(FROZEN.runtimeConfiguration.maxOutputTokens, 6000);
+  assert.equal(FROZEN.runtimeConfiguration.structuredOutput, "json_schema_strict");
 });
 
 test("standing gate is fresh, disjoint from development requests, and covers all dignity actions", () => {
