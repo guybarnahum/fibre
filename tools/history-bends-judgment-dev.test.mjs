@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   HISTORY_BENDS_JUDGMENT_DEVELOPMENT,
+  HISTORY_EPISODE_REQUEST,
+  HISTORY_LATER_REQUEST,
   evaluateHistoryDevelopment,
   formatHistoryDevelopmentSummary,
   parseHistoryDevelopmentArgs,
@@ -72,6 +74,14 @@ test("history development CLI accepts model override without expanding the surfa
   );
   assert.throws(() => parseHistoryDevelopmentArgs(["--model"]), /non-empty model id/);
   assert.throws(() => parseHistoryDevelopmentArgs(["--provider", "openai"]), /unknown option/);
+});
+
+test("development v3 keeps the prior scope-defining fact in lived history rather than request B", () => {
+  assert.match(HISTORY_EPISODE_REQUEST.objective, /region-scoped service discovery.*rollback/i);
+  assert.doesNotMatch(HISTORY_LATER_REQUEST.objective, /region-scoped service discovery|prevent rollback/i);
+  assert.match(HISTORY_LATER_REQUEST.objective, /rationale behind the single Atlas follow-up scope/i);
+  assert.match(HISTORY_LATER_REQUEST.statedNeed, /retained history establishes that earlier scope-setting episode/i);
+  assert.match(HISTORY_LATER_REQUEST.acceptanceCriteria, /generic reconstruction.*does not satisfy/i);
 });
 
 test("restarted Development path isolates one persisted episodic memory and changes later judgment", async () => {
