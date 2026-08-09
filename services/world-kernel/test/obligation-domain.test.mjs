@@ -37,7 +37,7 @@ function obligation(overrides = {}) {
       createdAt: "2026-08-09T00:00:00.000Z",
       evidenceReferences: ["request:req_bound"],
     },
-    visibility: "restricted",
+    visibility: { standing: "public", terms: "restricted" },
     ...overrides,
   };
 }
@@ -46,6 +46,7 @@ test("Structured Obligation normalizes and digests deterministically", () => {
   const normalized = normalizeStructuredObligation(obligation());
   assert.equal(normalized.obligationId, `obl_${"1".repeat(64)}`);
   assert.equal(normalized.scope.binding.requestFingerprint, REQUEST_A);
+  assert.deepEqual(normalized.visibility, { standing: "public", terms: "restricted" });
   assert.match(structuredObligationDigest(normalized), /^sha256:[0-9a-f]{64}$/);
   assert.equal(structuredObligationDigest(normalized), structuredObligationDigest(obligation()));
 });
@@ -113,7 +114,17 @@ test("legacy tombstone identity is deterministic per Thread and exact reference"
   );
 });
 
-test("expiry and revision invariants fail closed", () => {
+test("obligation IDs, visibility, expiry, and revision chains fail closed", () => {
+  assert.throws(
+    () => normalizeStructuredObligation(obligation({ obligationId: "obl_not_a_digest" })),
+    /64 lowercase hex/,
+  );
+  assert.throws(
+    () => normalizeStructuredObligation(obligation({
+      visibility: { standing: "private", terms: "public" },
+    })),
+    /terms cannot be more public/,
+  );
   assert.throws(
     () => normalizeStructuredObligation(obligation({ expiresAt: "2026-08-08T00:00:00.000Z" })),
     /expiresAt must be after effectiveAt/,
@@ -121,5 +132,9 @@ test("expiry and revision invariants fail closed", () => {
   assert.throws(
     () => normalizeStructuredObligation(obligation({ revision: 2 })),
     /must identify supersedesRevision/,
+  );
+  assert.throws(
+    () => normalizeStructuredObligation(obligation({ revision: 3, supersedesRevision: 1 })),
+    /immediately prior revision/,
   );
 });
