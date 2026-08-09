@@ -105,7 +105,7 @@ See [`semantic-appraisal.md`](../architecture/semantic-appraisal.md) and [`promp
 
 ## Guardian v4 standing-gate history
 
-All three standing cycles below are **FAILED / SEALED** and must never be rerun or edited to pass.
+Standing cycles v1-v3 are **FAILED / SEALED** and must never be rerun or edited to pass.
 
 ### Standing gate v1
 
@@ -159,62 +159,70 @@ The state-bearing half was truncated by Fibre's then-current `max_output_tokens=
 
 See [`semantic-guardian-v4-standing-gate-v3.md`](../validation/semantic-guardian-v4-standing-gate-v3.md).
 
-## Counterfactual gate-spec development
+## Counterfactual gate-spec development — stable
 
-Do **not** immediately author standing gate v4. Repeatedly creating a new sealed gate after inspecting each failed cycle would weaken the evidentiary process. The counterfactual test mechanism is being developed separately from standing evidence.
-
-The repeatable non-evidentiary diagnostic is:
+After v3, Fibre paused sealed standing gates and developed the counterfactual mechanism separately using the repeatable non-evidentiary command:
 
 ```bash
 npm run guardian:dev:counterfactual
 ```
 
-### Development v1 finding
+The first diagnostic exposed a methodological flaw: **state absent is not state neutral**. Presence-versus-absence can measure missing information in addition to semantic meaning.
 
-The first diagnostic produced:
+The corrected `semantic_guardian_v4_counterfactual_development_v2` uses explicit state-to-state interventions. It holds constant the individual, request, state cardinality, domain, dimension, and target. Only natural-language semantic meaning changes.
 
-```text
-Mina:  no semantic state       refuse / mixed
-       opposing autonomy state negotiate / mixed
-
-Amara: no relationship state   accept / high
-       opposing relationship   negotiate / mixed
-```
-
-Both pairs changed judgment, but Mina's no-state baseline did not establish willing/high-fit participation.
-
-This exposed the methodological flaw: **state absent is not state neutral**. Presence-versus-absence can measure missing information in addition to semantic meaning.
-
-### Development v2 method
-
-The diagnostic now uses explicit state-to-state interventions:
+The live v2 diagnostic passed both independent pairs:
 
 ```text
-same individual + same request + supportive semantic state
-    -> willing/high-fit participation
+Mina autonomy:
+  supportive state  -> accept / high
+  opposing state    -> negotiate / mixed
 
-same individual + same request + same state dimension/target with opposing meaning
-    -> changed downstream judgment
+Amara relationship trust:
+  supportive state  -> accept / high
+  opposing state    -> negotiate / mixed
 ```
 
-For each pair, Fibre holds constant the individual, request, state cardinality, domain, dimension, and target. Only semantic-state meaning changes. This directly tests whether meaning bends downstream appraisal.
+All four judgments grounded `semanticStateImpact`; both downstream differentials changed exactly as intended. This is development evidence only and permits no score movement.
 
-Two independent pairs are used:
+Canonical methodological rule:
 
-- Mina `need/autonomy`: explicit Sunday availability/willingness versus explicit Sunday resistance;
-- Amara requester-specific `relationship_attitude`: trust/support versus distrust/resistance toward the same requester.
+> **To prove semantic state causal, compare explicit state with explicit state while holding structural state identity and the request constant. Absence of state is absence of evidence, not the control condition.**
 
-This diagnostic may be rerun and tuned as **gate-spec development**. It permits no standing credit or score movement. Guardian prompt/schema cognition remains unchanged during this work.
+The counterfactual development CLI now also reports the active case, provider attempt/retry, and elapsed time while a model call is in flight.
 
-Only after this mechanism is stable should Fibre freeze another candidate/runtime boundary and author a completely fresh held-out standing cycle.
+## Candidate 4 and standing gate v4 — pending
 
-The default standing-gate command remains intentionally paused:
+After the counterfactual method passed, Fibre froze `semantic_guardian_v4_candidate_4` **before** authoring another held-out standing set.
+
+Candidate 4 preserves candidate 3 cognition exactly:
+
+- same model `openai/gpt-5.1-2025-11-13`;
+- same Guardian prompt/schema hashes;
+- same policy and normalization semantics.
+
+The only runtime-boundary change is operational: `maxOutputTokens` is now `auto`, reflecting the post-v3 removal of Fibre's arbitrary 6000-token ceiling.
+
+Only after candidate 4 was frozen, Fibre authored `semantic_guardian_v4_standing_gate_v4`: 18 fresh held-out cases, disjoint from the original development matrix, the counterfactual-development requests, and sealed standing gates v1-v3.
+
+V4 includes two explicit state-to-state semantic differentials:
+
+```text
+Mina need/autonomy supportive vs opposing meaning
+Amara relationship_attitude/trust supportive vs opposing meaning
+```
+
+Both pairs keep the individual, request, state domain, dimension, target, and cardinality fixed. The gate tests downstream action/fit change rather than prescribing a one-word causal-factor direction.
+
+The gate has **not been run**. It is one-shot and seals on the first real provider attempt. Missing credentials or frozen-boundary mismatch block without consuming the cycle.
+
+Run exactly once with:
 
 ```bash
-npm run guardian:gate
+npm run guardian:gate -- --summary
 ```
 
-It reports that no active standing gate exists. Historical sealed runners remain available explicitly for inspection.
+Historical sealed cycles remain explicitly inspectable with their versioned commands.
 
 ## Model runtime
 
@@ -231,7 +239,7 @@ Secrets remain environment-only. OpenAI uses strict Responses API structured out
 
 After standing gate v3, Fibre stopped imposing a default numeric `max_output_tokens` ceiling. The runtime now omits that field by default and records the configuration as `auto`; callers may still explicitly supply a ceiling when needed.
 
-The sealed candidates retain their historical 6000-token runtime boundary unchanged.
+Sealed candidates 1-3 retain their historical 6000-token runtime boundary unchanged. Candidate 4 freezes the current automatic-limit runtime.
 
 ## Current score posture
 
@@ -262,7 +270,7 @@ Development success and failed/sealed standing cycles do not move the score.
 
 PR #34 remains reserved for **History bends judgment** and must not be consumed by infrastructure or housekeeping work.
 
-The immediate action is **counterfactual gate-spec development**, not another standing run. Substantive #34 work remains blocked until #33 earns standing credit.
+The immediate action is the one-shot candidate-4 standing gate. Substantive #34 work remains blocked until #33 earns standing credit.
 
 ## Deferred capability, not erased capability
 
