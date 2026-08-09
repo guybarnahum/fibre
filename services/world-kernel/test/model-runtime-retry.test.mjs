@@ -37,7 +37,7 @@ function openAICompleted() {
 
 function googleCompleted() {
   return {
-    candidates: [{ content: { parts: [{ text: '{"decision":"accept"}' }] }],
+    candidates: [{ content: { parts: [{ text: '{"decision":"accept"}' }] } }],
     usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
   };
 }
