@@ -12,6 +12,7 @@ import { buildCounterfactualDevelopmentCases } from "./semantic-guardian-v4-coun
 import { buildSemanticGuardianV4StandingCases } from "./semantic-guardian-v4-standing-proof.mjs";
 import { buildSemanticGuardianV4StandingCasesV2 } from "./semantic-guardian-v4-standing-proof-v2.mjs";
 import { buildSemanticGuardianV4StandingCasesV3 } from "./semantic-guardian-v4-standing-proof-v3.mjs";
+import { formatStandingGateV4Rejected } from "./semantic-guardian-v4-gate-v4-cli.mjs";
 import {
   assertSemanticGuardianV4FrozenBoundaryV4,
   buildSemanticGuardianV4StandingCasesV4,
@@ -127,4 +128,28 @@ test("standing proof v4 can pass a schema-valid fresh high-fit case", async () =
   const report = await runSemanticGuardianV4StandingProofV4({ modelAdapter: adapter, cases: [cases[0]] });
   assert.equal(report.status, "passed");
   assert.equal(report.cases[0].caseId, "gate4_mina_resilience_match");
+});
+
+test("rerun rejection preserves the authoritative sealed result", () => {
+  const result = {
+    executionStatus: "rejected",
+    rejectionReason: "Standing gate is already sealed.",
+    evidenceBundle: {
+      report: {
+        status: "passed",
+        standingDifferentialGatePassed: true,
+        scoreMovementPermitted: true,
+        modelProvider: FROZEN.provider,
+        modelId: FROZEN.modelId,
+      },
+    },
+  };
+  const summary = formatStandingGateV4Rejected(result);
+  assert.match(summary, /REQUEST: REJECTED/);
+  assert.match(summary, /Authoritative sealed result: PASSED/);
+  assert.match(summary, /Standing gate: PASSED/);
+  assert.match(summary, /Score movement: PERMITTED/);
+  assert.match(summary, /No provider call was made/);
+  assert.doesNotMatch(summary, /RESULT: BLOCKED/);
+  assert.doesNotMatch(summary, /did not pass this sealed standing gate/);
 });
