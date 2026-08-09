@@ -11,25 +11,29 @@ Working implementation record for PR #34. This document does not itself earn Dev
 
 ## Milestone claim
 
-A substantive earlier canonical Thread experience survives restart and materially changes a later comparable appraisal because Fibre remembers what happened.
+The claim actually earned by #34 is deliberately bounded:
 
-The Fibre-specific claim is stronger than durable task context: lived history can make the same later request mean something different to this particular Thread. History may raise or lower dignity; the claim is **history bends judgment**, not `history always raises dignity`.
+> **A Fibre-owned durable record formed through a Thread's earlier canonical episode can survive restart and causally change its later appraisal.**
 
-## Required causal shape
+This is stronger than transient task context because the record is Thread-owned persisted world history, Fibre selects/resolves it after restart, and an exact one-memory intervention changes downstream judgment. It is not yet evidence of rich Thread-authored reflection, learned self-model change, or broad experience-driven development.
+
+History remains direction-neutral as a concept: it may raise or lower dignity. The accepted v4 case exercised `history_raises_dignity` only.
+
+## Required causal shape used by v4
 
 ```text
 episode A
   -> valid authorized runtime
-  -> evidence-backed episodic memory
+  -> evidence-backed descriptive episodic memory
   -> accepted freeze
   -> real database/kernel restart
   -> Fibre-owned memory resolution
   -> later request B
   -> changed private judgment
-  -> direct memory-withholding counterfactual
+  -> direct one-memory withholding counterfactual
 ```
 
-The memory records what happened. It must not encode prospective instructions. The later Guardian must infer what the remembered episode means.
+The memory records descriptive episode context. It must not encode prospective instructions. The later Guardian infers the participation consequence from the resolved memory evidence.
 
 ## Result
 
@@ -65,7 +69,27 @@ Canonical causal memory:
 mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0
 ```
 
+The committed machine-readable authority is:
+
+```text
+artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json
+```
+
+The bundle records the exact model outputs/rationales, factor evidence refs, normalizations, provider request/digest data, one retrying `MODEL_TIMEOUT`, persisted memory, restart integrity witness, frozen boundary, and counterfactual witnesses.
+
 The retained Episode-A memory was the isolated semantic change. Thread/request/Semantic State were held constant and exactly that memory was withheld on the counterfactual side.
+
+## Scope limitations
+
+Development `1` is intentionally limited:
+
+- Episode A's acceptance appraisal was scripted deterministic setup to isolate the later history question.
+- Deterministic Actor v1 formed memory by describing the requester objective and accepted criteria; the record is not a Nadia-authored observation, conclusion, feeling, reflection, or self-model update.
+- Request B made possessing a concrete family detail relevant by asking for one only if actually known; that narrows the result to durable information/history possession rather than broad disposition change.
+- The later standing comparison built the cognition capsule in the evidence harness and invoked Guardian v4 directly rather than using the default canonical service socket.
+- The default live runtime has not generalized this standing path into broad self-authored developmental learning.
+
+These limitations keep the score at Development `1`, not `2`.
 
 ## Score posture
 
@@ -81,9 +105,7 @@ Fibre:       14/26 -> 15/26
 - v3 — FAILED / SEALED: baseline identity/self-model independently sustained the target without memory.
 - v4 — PASSED / SEALED: fresh staged fixture/scenario and exact memory withholding established the causal result.
 
-No earlier gate is retroactively passed.
-
-Canonical postmortems remain under `docs/validation/history-bends-judgment-standing-gate-v1.md` through `-v4.md`.
+No earlier gate is retroactively passed. Exact evidence bundles for all four cycles are committed under `artifacts/test-results/`; canonical postmortems remain under `docs/validation/history-bends-judgment-standing-gate-v1.md` through `-v4.md`.
 
 ## Held-out authorship boundaries
 
@@ -110,32 +132,39 @@ Episode A is self-contained conservation work. Request B is an independent gradu
 PR #34 establishes the canonical lifecycle:
 
 ```text
-Development -> Freeze -> fresh Standing -> Seal PASS/FAIL -> Archive
+Development cycle -> Freeze -> fresh Standing -> Seal PASS/FAIL
+                  -> commit evidence -> Archive provider executable
 ```
 
-Failed cycles remain scientific evidence, while retired provider-executable stacks are removed from the active tree and remain recoverable from Git history.
+Failed cycles remain scientific evidence. Exact evidence bundles and canonical postmortems remain in the active tree; retired provider-executable source remains in reachable repository history.
 
-A sealed result may keep a **read-only inspector**, but it may not remain provider-executable.
+After sealing, the History provider-capable standing proof/runner/template stack was removed from the active tree. There is no provider execution path behind the standing command.
 
-For History:
+Read-only standing inspection:
 
 ```text
 npm run history:gate -- --summary
 ```
 
-is now forced through `--summary-only`. It reads the existing authoritative local v4 evidence and can never invoke the provider or consume a new standing cycle. If the evidence artifact is absent, it fails closed.
+This reads the committed v4 evidence bundle through `tools/history-bends-judgment-sealed-inspector.mjs` and cannot invoke a provider.
 
-The repeatable live command remains:
+Repeatable non-evidentiary live development:
 
 ```text
 npm run history:dev -- --summary
 ```
 
-`history:dev` now uses `tools/provider-progress.mjs`, producing elapsed-time heartbeat output while real provider calls are outstanding.
+`history:dev` uses `tools/provider-progress.mjs`, producing elapsed-time heartbeat output while real provider calls are outstanding.
+
+## Current memory-formation limitation
+
+Deterministic Actor v1 currently proposes episodic memory only for accepted participation. This is an **experimental limitation**, not a permanent Fibre constraint. It means the current substrate does not yet generally capture adverse/refused/compelled/failed experiences needed to demonstrate `history_lowers_dignity`.
+
+The extension path is to admit evidence-backed adverse-event memories and Thread-authored observations/reflections while preserving descriptive-not-prescriptive validation, provenance, and Fibre-owned selection.
 
 ## Provider progress
 
-Provider-backed experiment CLIs must not appear silently hung. The standard form is:
+Provider-backed repeatable experiment CLIs must not appear silently hung. The standard form is:
 
 ```text
 <experiment> · <phase> · Calling openai/...
@@ -151,4 +180,4 @@ This is instrumentation only. It does not alter model inputs, outputs, retry sem
 
 Proceed to **#35 Structured Obligation v1**.
 
-Do not rerun the sealed standing gate. Use `history:gate` only to inspect the authoritative local evidence and `history:dev` for repeatable non-evidentiary provider-backed development.
+Do not rerun any sealed standing gate. Use the committed evidence/inspectors for standing audit and Development commands for repeatable non-evidentiary experimentation.
