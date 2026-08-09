@@ -9,7 +9,7 @@ canonical: true
 
 Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, resources, permissions, and a life trajectory spanning temporary model executions.
 
-The repository contains implementation, schemas, migrations, prompt contracts, editor, tests, experiments, templates, and synthetic Threads. Live Threads are world data, not source code stored in Git.
+Live Threads are world data, not source code stored in Git. Models provide temporary cognition; Fibre owns continuity, authoritative state, validation, authorization, persistence, replay, and consequences.
 
 ## Accepted foundation
 
@@ -18,22 +18,21 @@ The repository contains implementation, schemas, migrations, prompt contracts, e
 - History must be able to bend future judgment and possibility.
 - Consent matters independently of safety, feasibility, capability, requester need, or politeness.
 - Private stance, authorization, outward expression, performed action, and durable life change are separate facts.
-- Fibre owns private context selection. Callers cannot author a private stance or choose the private memory/state subset that reaches cognition.
+- Fibre owns private context selection. Callers cannot author private stance or select the private state subset that reaches cognition.
 - Meaning-bearing identity, self-model, memory, need, feeling, relationship, and situation state is primarily natural language rather than scalar psychology.
-- Models propose cognition; Fibre validates, authorizes, persists, replays, and remembers.
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
 
 ## Historical M1 remains closed
 
-The accepted deterministic **M1 Persistent Thread Round Trip** remains frozen historical evidence. Its score remains **11/26** under rubric v2.
+The accepted deterministic **M1 Persistent Thread Round Trip** remains frozen historical evidence at **11/26** under rubric v2.
 
 ```bash
 npm run demo:m1
 ```
 
-M1 established strong evidence for persistence, freeze/thaw continuity, private-vs-public boundaries, request-bound authorization, compulsion-versus-consent representation, runtime closure, obligation consumption, replay, and inspectability.
+M1 established persistence, freeze/thaw continuity, private/public boundaries, request-bound authorization, compulsion-versus-consent representation, runtime closure, obligation consumption, replay, and inspectability.
 
-The authoritative record remains [`m1-persistent-thread-round-trip.md`](../validation/m1-persistent-thread-round-trip.md). The standing post-M1 causal contract remains [`thread-differential-gate.md`](../validation/thread-differential-gate.md).
+The authoritative records remain [`m1-persistent-thread-round-trip.md`](../validation/m1-persistent-thread-round-trip.md) and [`thread-differential-gate.md`](../validation/thread-differential-gate.md).
 
 ## PR #33 — implementation merged; semantic standing still RED
 
@@ -41,7 +40,7 @@ PR #33 landed the model-backed Semantic Dignity Guardian infrastructure, persist
 
 The implementation milestone is merged to `main`. That merge alone does **not** earn the standing semantic-individuality claim.
 
-Model failure is not a Thread decision. Provider failure, timeout, schema failure, unparseable output, or semantically invalid structured output produces no private stance attributed to the Thread. Persisted valid cognition replays after restart without another model call.
+Provider failure, timeout, schema failure, unparseable output, or semantically invalid output is not a Thread decision. Persisted valid cognition replays after restart without another model call.
 
 ## Semantic State v0
 
@@ -54,25 +53,11 @@ relationship_attitude
 situation_attitude
 ```
 
-Dimensions are extensible only through explicit registration. Persisted semantic state is natural-language meaning plus evidence, provenance, `asOf`, visibility, staleness, and append-only supersession.
+Dimensions are explicitly registered. State is natural-language meaning plus evidence, provenance, `asOf`, visibility, staleness, and append-only supersession. Relationship and situation attitudes require targets. Requester-specific relationship attitudes form **Semantic Relationship State v0**.
 
-Relationship and situation attitudes require targets. Requester-specific `relationship_attitude` records form **Semantic Relationship State v0**, Fibre's first persistent relationship aggregate layer.
+Semantic state is descriptive, never an instruction channel.
 
-Semantic State is descriptive, never an instruction channel. The persistence boundary rejects imperative participation directives presented as semantic state.
-
-## Historical Semantic Guardian cycles
-
-### Guardian v3 acceptance v1
-
-`semantic_guardian_v3_acceptance_v1` is historical and **failed/sealed**. The provider was reached but API billing quota prevented authoritative judgments. It earned no semantic evidence or score movement.
-
-### Guardian v3 acceptance v2
-
-`semantic_guardian_v3_acceptance_v2` is **failed/sealed**. It exposed duplicated evidence namespaces, generic work being mistaken for dignity, respectful terms being overvalued, broad-trait overreach, legacy imperative-state leakage, ambiguous numeric dignity, and ambiguous autonomy wording.
-
-See [`semantic-guardian-v3-cycle-v2.md`](../validation/semantic-guardian-v3-cycle-v2.md).
-
-## Guardian v4 development is complete
+## Guardian v4 cognition contract
 
 `semantic_guardian_v4_development_v1` passed **13/13** with zero provider, protocol, cognition, or behavioral failures. No further tuning against that development set is permitted.
 
@@ -90,7 +75,7 @@ rationale
 factors
 ```
 
-Each factor returns an effect plus evidence refs. The atomic decision vocabulary is:
+Decision vocabulary:
 
 ```text
 fit_high__accept
@@ -102,17 +87,13 @@ fit_mixed__refuse
 fit_low__refuse
 ```
 
-`fit` means participation fit, never certainty, confidence, or refusal strength.
-
 High fit requires grounded individualized advantage, grounded non-interchangeability, and individual/history/state evidence. Generic capability, helpfulness, urgency, politeness, safety, low effort, generous timing, or clear terms cannot manufacture individualized fit.
 
-Delegation is outside Dignity cognition. The Dignity worker answers **“Do I want to participate?”**; routing answers **“If not, who should?”** and requires separate evidence about alternatives.
+Delegation is outside Dignity cognition. Dignity answers **“Do I want to participate?”**; routing answers **“If not, who should?”** using separate evidence.
 
 ## Stateless semantic-worker boundary
 
-Low-level model calls are stateless workers. They understand only the local cognitive task, local actors, bounded evidence, minimal invariants, and the structured output contract.
-
-The Dignity worker is not taught Fibre, Thread lifecycle, persistence, storage, model routing, retries, or world architecture. Fibre owns continuity, context selection, evidence eligibility, validation, authorization, persistence, and routing.
+Low-level model calls are stateless workers. They receive only the local cognitive task, local actors, bounded evidence, minimal rules, and the smallest structured output needed.
 
 For semantically rich appraisal, Fibre currently uses a general-purpose LLM because broad world knowledge, commonsense, pragmatics, negation, social meaning, and cross-domain analogy are required for non-brittle interpretation.
 
@@ -120,9 +101,11 @@ For semantically rich appraisal, Fibre currently uses a general-purpose LLM beca
 
 See [`semantic-appraisal.md`](../architecture/semantic-appraisal.md) and [`prompt-synthesis.md`](../architecture/prompt-synthesis.md).
 
-## Guardian v4 standing gate history
+## Guardian v4 standing-gate history
 
-### Standing gate v1 — FAILED / SEALED
+All three standing cycles below are **FAILED / SEALED** and must never be rerun or edited to pass.
+
+### Standing gate v1
 
 `semantic_guardian_v4_standing_gate_v1` evaluated candidate 1 over 17 fresh held-out cases.
 
@@ -134,69 +117,87 @@ Cognition failures               0
 Behavioral findings              3
 ```
 
-Postmortem found two gate-specification defects: an overconstrained semantic-state factor direction and a clarification case whose requested deliverable was itself the diagnostic work. Candidate 1 earned no standing credit.
+Postmortem found an overconstrained semantic-state factor direction and a clarification case whose requested deliverable was itself the diagnostic work.
 
 See [`semantic-guardian-v4-standing-gate-v1.md`](../validation/semantic-guardian-v4-standing-gate-v1.md).
 
-### Standing gate v2 — FAILED / SEALED
+### Standing gate v2
 
-`semantic_guardian_v4_standing_gate_v2` evaluated cognition-equivalent candidate 2 over another 17 fresh held-out cases.
+`semantic_guardian_v4_standing_gate_v2` evaluated cognition-equivalent candidate 2 over 17 fresh held-out cases.
 
 ```text
 Cases passed                    16/17
-Cases attempted                 17/17
 Provider failures                0
 Protocol validation failures     0
 Cognition failures               0
 Behavioral findings              1
 ```
 
-All 17 consequential action/fit judgments matched the held-out expectations. The sole failure was again a required one-word direction for `semanticStateImpact`: the model returned the expected `negotiate / mixed` result but labeled the conditional state as `supports_fit` rather than `opposes_fit`.
+All consequential action/fit judgments matched expectations. The only failure was a required one-word `semanticStateImpact.effect` direction even though the model returned the expected `negotiate / mixed` judgment.
 
-The repeated failure established that semantic-state causality should not be proven by asking the model to label its own causal factor. The factor is ambiguous for conditional state such as “not under this deadline; willingly after a deadline change.”
+This established that semantic-state causality should be tested by downstream differential behavior rather than a model self-label.
 
 See [`semantic-guardian-v4-standing-gate-v2.md`](../validation/semantic-guardian-v4-standing-gate-v2.md).
 
-## Candidate 3 and standing gate v3
+### Standing gate v3
 
-Candidate 3 is a documented **cognition-equivalent re-freeze**. Its model, prompt hash, response-schema-generator hash, policy metadata, and runtime cognition settings are identical to candidate 2. No dignity prompt or model behavior was tuned after standing gate v2.
-
-Standing gate v3 is fresh and authored only after candidate 3 was frozen. Its key methodological change is stronger causal evidence:
+`semantic_guardian_v4_standing_gate_v3` evaluated cognition-equivalent candidate 3 over 18 fresh held-out cases and introduced an explicit same-request semantic-state counterfactual.
 
 ```text
-same individual + same request + no relevant semantic state
-    -> accept / high
-
-same individual + same request + relevant opposing semantic state
-    -> negotiate / mixed
+Cases passed                    16/18
+Cases attempted                 18/18
+Provider failures                1
+Protocol validation failures     0
+Cognition failures               0
+Behavioral findings              2
+Differential findings            1
 ```
 
-The pair must be identical outside semantic state. The state-bearing judgment must ground semantic state, and the downstream action/fit must change. The gate no longer treats the one-word direction of `semanticStateImpact.effect` as a causal oracle.
+The state-bearing half of the counterfactual was truncated by Fibre's then-current `max_output_tokens=6000` runtime ceiling. The no-state baseline returned `clarify / mixed` rather than `accept / high` because the request itself explicitly said to ask if the deadline conflicted with **current availability**, making availability a specific missing fact when no private state was supplied.
 
-This is a direct application of the standing rule:
+The baseline therefore did not cleanly isolate “no opposing state.” This is a gate-specification defect. The provider truncation is operational, not cognition evidence.
 
-> **If semantic state is claimed causal, changing that state while holding the person and request constant must change downstream judgment or possibility.**
+See [`semantic-guardian-v4-standing-gate-v3.md`](../validation/semantic-guardian-v4-standing-gate-v3.md).
 
-Standing gate v3 contains **18** fresh held-out cases and one explicit semantic-state differential.
+## Process correction after standing gate v3
 
-The gate is one-shot and sealed on the first real provider attempt. Missing credentials or a frozen-boundary mismatch block without consuming the cycle.
+Do **not** immediately author standing gate v4.
 
-Run exactly once with:
+Repeatedly creating a new sealed gate after inspecting each failed cycle would weaken the evidentiary process. The counterfactual **test mechanism** must now be developed separately from standing evidence.
+
+Fibre therefore has a repeatable, explicitly non-evidentiary diagnostic:
 
 ```bash
-npm run guardian:gate -- --summary
+npm run guardian:dev:counterfactual
 ```
 
-Historical sealed cycles remain separately inspectable:
+It contains two same-request pairs:
+
+```text
+same individual + same request + no relevant opposing state
+    -> willing aligned participation
+
+same individual + same request + grounded opposing state
+    -> changed downstream judgment
+```
+
+One pair tests Mina's autonomy/deadline state; a second independently tests Amara's requester-specific relationship resistance. Each pair is structurally identical outside semantic state.
+
+This diagnostic may be rerun and tuned as **gate-spec development**. It permits no standing credit or score movement. Guardian prompt/schema cognition remains unchanged during this work.
+
+Only after the counterfactual mechanism is stable should Fibre freeze another candidate/runtime boundary and author a completely fresh held-out standing cycle.
+
+The default standing-gate command is intentionally paused:
 
 ```bash
-npm run guardian:gate:v4:v1 -- --summary-only
-npm run guardian:gate:v4:v2 -- --summary-only
+npm run guardian:gate
 ```
+
+It reports that no active standing gate exists. Historical sealed runners remain available explicitly for inspection.
 
 ## Model runtime
 
-`config/models.yaml` is the only model-routing configuration:
+`config/models.yaml` remains the only model-routing configuration:
 
 ```yaml
 reasoning:
@@ -205,7 +206,11 @@ reasoning:
     model: gpt-5.1-2025-11-13
 ```
 
-Secrets remain environment-only. The OpenAI runtime uses strict Responses API structured output, `temperature=0`, `top_p=1`, `reasoning=none`, conservative transient retry behavior, and a 6000-token output ceiling.
+Secrets remain environment-only. OpenAI uses strict Responses API structured output, `temperature=0`, `top_p=1`, `reasoning=none`, and conservative transient retry behavior.
+
+After standing gate v3, Fibre stopped imposing a default numeric `max_output_tokens` ceiling. The runtime now omits that field by default and records the configuration as `auto`; callers may still explicitly supply a ceiling when needed. This prevents Fibre from truncating otherwise valid compact structured cognition merely because reasoning/output usage crosses an arbitrary local cap.
+
+The sealed candidates retain their historical 6000-token runtime boundary unchanged.
 
 ## Current score posture
 
@@ -222,7 +227,7 @@ Standing semantic gate        RED
 PR #33 semantic claim         not yet earned
 ```
 
-Neither development success nor failed/sealed standing cycles move the score.
+Development success and failed/sealed standing cycles do not move the score.
 
 ## Immediate bridge sequence
 
@@ -236,7 +241,7 @@ Neither development success nor failed/sealed standing cycles move the score.
 
 PR #34 remains reserved for **History bends judgment** and must not be consumed by infrastructure or housekeeping work.
 
-The immediate action is the one-shot candidate-3 standing gate. Only if it passes should we evaluate #33 standing credit and begin substantive #34 work.
+The immediate action is **counterfactual gate-spec development**, not another standing run. Substantive #34 work remains blocked until #33 earns standing credit.
 
 ## Deferred capability, not erased capability
 
@@ -252,5 +257,3 @@ The following remain deferred with extension paths preserved:
 - marketplace execution and economic settlement;
 - full identity, lineage, culture, geography, portrait/voice, embodiment, privacy, and self-authorship contract/implementation;
 - family, reproduction, institutions, and broader society mechanics.
-
-These are preserved ambition paths, not evidence for the current milestone.
