@@ -18,6 +18,7 @@
         "docs/vision/invariants.md",
         "docs/state/current-state.md",
         "docs/validation/thread-differential-gate.md",
+        "docs/validation/experiment-lifecycle.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/validation/semantic-guardian-v3-freeze.md",
