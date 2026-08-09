@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildCounterfactualDevelopmentCases,
   evaluateCounterfactualDevelopment,
+  formatCounterfactualProgress,
   validateCounterfactualPairs,
 } from "./semantic-guardian-v4-counterfactual-dev.mjs";
 
@@ -62,4 +63,20 @@ test("counterfactual development rejects state-presence versus state-absence pai
   const malformed = structuredClone(cases);
   malformed[0].capsule.semanticState = [];
   assert.throws(() => validateCounterfactualPairs(malformed), /both sides must carry explicit semantic state/);
+});
+
+test("counterfactual development progress names case, provider, and attempt", () => {
+  const text = formatCounterfactualProgress({
+    caseIndex: 2,
+    totalCases: 4,
+    caseId: "counterfactual_dev_mina_opposing_state",
+    lastEvent: { type: "model_attempt", attempt: 1, maximumAttempts: 3 },
+    selection: { provider: "openai", modelId: "test" },
+    elapsedMs: 12_000,
+  });
+  assert.match(text, /counterfactual_dev_mina_opposing_state/);
+  assert.match(text, /2\/4/);
+  assert.match(text, /attempt 1\/3/);
+  assert.match(text, /waiting for openai/);
+  assert.match(text, /12s/);
 });
