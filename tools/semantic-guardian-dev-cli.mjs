@@ -15,16 +15,35 @@ const REASONING_BLOCK = "dignity_guardian";
 const EXPECTED_CASES = buildSemanticGuardianV4DevelopmentCases().length;
 
 function usage() {
-  return `Fibre Semantic Guardian development runner\n\nUsage:\n  npm run guardian:dev\n  npm run guardian:dev -- --summary\n  npm run guardian:dev -- --summary --json\n\nOptions:\n  --summary    Print a deterministic human-readable development summary.\n  --json       Print the complete non-evidentiary development report.\n  --fail-fast  Stop after the first provider, protocol, cognition, or behavioral failure.\n  --help       Show this help.\n\nProvider and model are selected by config/models.yaml for the dignity_guardian\nreasoning block. Credentials come only from environment variables / local .env.\nThis runner is repeatable, non-evidentiary, and never permits Fibre score movement.\n`;
+  return `Fibre Semantic Guardian development runner\n\nUsage:\n  npm run guardian:dev\n  npm run guardian:dev -- --model gpt-5.6-luna\n  npm run guardian:dev -- --summary --json\n\nOptions:\n  --model <id> Override the YAML-selected model for this non-evidentiary run.\n  --summary    Print a deterministic human-readable development summary.\n  --json       Print the complete non-evidentiary development report.\n  --fail-fast  Stop after the first provider, protocol, cognition, or behavioral failure.\n  --help       Show this help.\n\nProvider is selected by config/models.yaml for the dignity_guardian reasoning block.\n--model overrides only the model id; credentials still come only from environment variables / local .env.\nCLI overrides take precedence over YAML selection for this run only and never modify config/models.yaml.\nThis runner is repeatable, non-evidentiary, and never permits Fibre score movement.\n`;
+}
+
+function readModelArg(argv, index) {
+  const arg = argv[index];
+  if (arg.startsWith("--model=")) {
+    const value = arg.slice("--model=".length).trim();
+    if (value === "") throw new Error("--model requires a non-empty model id");
+    return { value, consumed: 0 };
+  }
+  const value = argv[index + 1];
+  if (value === undefined || value.startsWith("--") || value.trim() === "") {
+    throw new Error("--model requires a non-empty model id");
+  }
+  return { value: value.trim(), consumed: 1 };
 }
 
 export function parseDevelopmentArgs(argv) {
-  const options = { summary: false, json: false, help: false, failFast: false };
-  for (const arg of argv) {
+  const options = { summary: false, json: false, help: false, failFast: false, model: null };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
     if (arg === "--summary") options.summary = true;
     else if (arg === "--json") options.json = true;
     else if (arg === "--fail-fast") options.failFast = true;
-    else if (arg === "--help" || arg === "-h") options.help = true;
+    else if (arg === "--model" || arg.startsWith("--model=")) {
+      const parsed = readModelArg(argv, index);
+      options.model = parsed.value;
+      index += parsed.consumed;
+    } else if (arg === "--help" || arg === "-h") options.help = true;
     else throw new Error(`unknown option: ${arg}`);
   }
   if (!options.summary && !options.json && !options.help) options.summary = true;
@@ -255,7 +274,10 @@ export async function runDevelopmentGuardian(environment = process.env, options 
   };
   const observer = (event) => appendFileSync(journalPath, `${JSON.stringify(event)}\n`, "utf8");
 
-  const runtime = options.modelRuntime ?? createModelRuntime({ environment, observer });
+  const modelOverrides = options.model === null || options.model === undefined
+    ? null
+    : { [REASONING_BLOCK]: options.model };
+  const runtime = options.modelRuntime ?? createModelRuntime({ environment, observer, modelOverrides });
   const selection = runtime.selectionForBlock(REASONING_BLOCK);
   const progress = startProgress(journalPath, selection);
   let interruptHandled = false;
