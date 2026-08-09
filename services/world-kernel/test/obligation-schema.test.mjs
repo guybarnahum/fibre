@@ -1,0 +1,187 @@
+import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
+import test from "node:test";
+
+import { WORLD_STORE_SCHEMA_VERSION } from "../src/persistence-common.mjs";
+import {
+  createObligationTables,
+  legacyConsumptionRowsToTombstones,
+  migrateLegacyConsumedObligations,
+} from "../src/obligation-schema.mjs";
+import { migrateDatabase } from "../src/persistence-sqlite.mjs";
+import { legacyObligationReferenceDigest } from "../src/obligation-domain.mjs";
+
+const SHA_A = `sha256:${"a".repeat(64)}`;
+const SHA_B = `sha256:${"b".repeat(64)}`;
+
+function database() {
+  const db = new DatabaseSync(":memory:", { enableForeignKeyConstraints: true });
+  db.exec("PRAGMA foreign_keys=ON");
+  return db;
+}
+
+test("world-store v5 creates the Structured Obligation tables", () => {
+  const db = database();
+  try {
+    migrateDatabase(db);
+    assert.equal(Number(db.prepare("PRAGMA user_version").get().user_version), WORLD_STORE_SCHEMA_VERSION);
+    assert.equal(WORLD_STORE_SCHEMA_VERSION, 5);
+    const names = new Set(db.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name IN (
+        'obligation_records',
+        'obligation_applicability_decisions',
+        'legacy_obligation_tombstones'
+      )
+    `).all().map((row) => row.name));
+    assert.deepEqual(
+      [...names].sort(),
+      [
+        "legacy_obligation_tombstones",
+        "obligation_applicability_decisions",
+        "obligation_records",
+      ],
+    );
+  } finally {
+    db.close();
+  }
+});
+
+test("migration does not promote unresolved intentions into active obligations", () => {
+  const db = database();
+  try {
+    migrateDatabase(db);
+    db.prepare(`
+      INSERT INTO threads(
+        thread_id,version,status,state_json,state_hash,last_event_id,created_at,updated_at
+      ) VALUES (?,?,?,?,?,?,?,?)
+    `).run(
+      "thr_mina_001",
+      1,
+      "frozen",
+      JSON.stringify({
+        currentState: {
+          unresolvedIntentions: ["Read a case study on identity-system failures"],
+        },
+      }),
+      SHA_A,
+      "evt_seed",
+      "2026-08-09T00:00:00.000Z",
+      "2026-08-09T00:00:00.000Z",
+    );
+    migrateLegacyConsumedObligations(db);
+    assert.equal(Number(db.prepare("SELECT COUNT(*) AS count FROM obligation_records").get().count), 0);
+    assert.equal(
+      Number(db.prepare("SELECT COUNT(*) AS count FROM legacy_obligation_tombstones").get().count),
+      0,
+    );
+  } finally {
+    db.close();
+  }
+});
+
+test("legacy consumption rows map to deterministic spent-authority tombstones", () => {
+  const rows = [
+    {
+      authorization_id: "auth_one",
+      thread_id: "thr_mina_001",
+      consumed_at: "2026-08-08T01:00:00.000Z",
+      obligation_refs_json: JSON.stringify([
+        "Read a case study on identity-system failures",
+        "Finish the bounded review",
+      ]),
+      consumption_digest: SHA_A,
+    },
+    {
+      authorization_id: "auth_two",
+      thread_id: "thr_mina_001",
+      consumed_at: "2026-08-08T02:00:00.000Z",
+      obligation_refs_json: JSON.stringify(["Finish the bounded review"]),
+      consumption_digest: SHA_B,
+    },
+  ];
+  const tombstones = legacyConsumptionRowsToTombstones(rows);
+  assert.equal(tombstones.length, 2);
+  const finish = tombstones.find((item) => item.legacyReference === "Finish the bounded review");
+  assert.equal(finish.sourceAuthorizationId, "auth_one");
+  assert.equal(
+    finish.legacyReferenceDigest,
+    legacyObligationReferenceDigest("thr_mina_001", "Finish the bounded review"),
+  );
+});
+
+test("legacy tombstones and obligation records are append-only and spent legacy authority cannot reactivate", () => {
+  const db = database();
+  try {
+    migrateDatabase(db);
+    db.exec("PRAGMA foreign_keys=OFF");
+    const legacyReference = "Read a case study on identity-system failures";
+    const legacyDigest = legacyObligationReferenceDigest("thr_mina_001", legacyReference);
+    db.prepare(`
+      INSERT INTO legacy_obligation_tombstones(
+        tombstone_id,thread_id,legacy_reference,legacy_reference_digest,
+        source_authorization_id,source_consumption_digest,consumed_at
+      ) VALUES (?,?,?,?,?,?,?)
+    `).run(
+      `olt_${legacyDigest.slice(7)}`,
+      "thr_mina_001",
+      legacyReference,
+      legacyDigest,
+      "auth_legacy",
+      SHA_A,
+      "2026-08-08T01:00:00.000Z",
+    );
+
+    assert.throws(
+      () => db.prepare("UPDATE legacy_obligation_tombstones SET consumed_at=? WHERE tombstone_id=?")
+        .run("2026-08-09T00:00:00.000Z", `olt_${legacyDigest.slice(7)}`),
+      /append-only/,
+    );
+
+    const record = {
+      obligationId: `obl_${"1".repeat(64)}`,
+      revision: 1,
+      threadId: "thr_mina_001",
+      status: "active",
+    };
+    assert.throws(
+      () => db.prepare(`
+        INSERT INTO obligation_records(
+          obligation_id,revision,thread_id,status,obligation_json,obligation_digest,
+          supersedes_revision,effective_at,expires_at,visibility,legacy_source_digest,recorded_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        record.obligationId,
+        record.revision,
+        record.threadId,
+        record.status,
+        JSON.stringify(record),
+        SHA_B,
+        null,
+        "2026-08-09T00:00:00.000Z",
+        null,
+        "restricted",
+        legacyDigest,
+        "2026-08-09T00:00:00.000Z",
+      ),
+      /already spent/,
+    );
+  } finally {
+    db.close();
+  }
+});
+
+test("obligation schema creation is idempotent", () => {
+  const db = database();
+  try {
+    migrateDatabase(db);
+    createObligationTables(db);
+    createObligationTables(db);
+    assert.equal(
+      Number(db.prepare("SELECT COUNT(*) AS count FROM obligation_records").get().count),
+      0,
+    );
+  } finally {
+    db.close();
+  }
+});
