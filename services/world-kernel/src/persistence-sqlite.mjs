@@ -9,6 +9,10 @@ import {
 import { createRuntimeTables } from "./runtime-schema.mjs";
 import { createFreezeTables } from "./freeze-schema.mjs";
 import { createExpressionTables } from "./expression-schema.mjs";
+import {
+  createObligationTables,
+  migrateLegacyConsumedObligations,
+} from "./obligation-schema.mjs";
 
 export function normalizeDatabasePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
@@ -198,6 +202,7 @@ function createSchema(database) {
   createRuntimeTables(database);
   createFreezeTables(database);
   createExpressionTables(database);
+  createObligationTables(database);
 }
 
 function needsFreezeEventUpgrade(database) {
@@ -250,7 +255,7 @@ export function migrateDatabase(database) {
     const existingTables = Number(
       database
         .prepare(
-          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses')",
+          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses','obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones')",
         )
         .get().count,
     );
@@ -263,6 +268,7 @@ export function migrateDatabase(database) {
 
   if (currentVersion === WORLD_STORE_SCHEMA_VERSION) {
     createSchema(database);
+    migrateLegacyConsumedObligations(database);
     return;
   }
 
@@ -272,6 +278,7 @@ export function migrateDatabase(database) {
     database.exec("BEGIN IMMEDIATE");
     if (rebuildEvents) rebuildEventTables(database);
     createSchema(database);
+    migrateLegacyConsumedObligations(database);
     const violations = database.prepare("PRAGMA foreign_key_check").all();
     if (violations.length !== 0) {
       throw new IntegrityError("world-store migration produced foreign-key violations");
