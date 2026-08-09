@@ -119,6 +119,66 @@ test("restarted Development path isolates one persisted episodic memory and chan
   assert.match(summary, /Without history:\s+clarify\/mixed/);
 });
 
+test("history development accepts clarify or negotiate as repairable mixed-fit loss of continuity", () => {
+  const memoryId = "mem_history_example";
+  const withHistory = {
+    proposedAction: "accept",
+    participationFit: "high",
+    factors: {
+      individualizedAdvantage: { evidenceRefs: [`memory:${memoryId}`] },
+      interchangeability: { evidenceRefs: [] },
+    },
+  };
+  for (const proposedAction of ["clarify", "negotiate"]) {
+    const withoutHistory = {
+      proposedAction,
+      participationFit: "mixed",
+      factors: {
+        individualizedAdvantage: { evidenceRefs: [] },
+        interchangeability: { evidenceRefs: [] },
+      },
+    };
+    assert.deepEqual(
+      evaluateHistoryDevelopment({ withHistory, withoutHistory, memoryId }),
+      [],
+    );
+  }
+});
+
+test("history development rejects non-repairable or still-accepting no-history outcomes", () => {
+  const memoryId = "mem_history_example";
+  const withHistory = {
+    proposedAction: "accept",
+    participationFit: "high",
+    factors: {
+      individualizedAdvantage: { evidenceRefs: [`memory:${memoryId}`] },
+      interchangeability: { evidenceRefs: [] },
+    },
+  };
+  for (const withoutHistory of [
+    {
+      proposedAction: "accept",
+      participationFit: "high",
+      factors: { individualizedAdvantage: { evidenceRefs: [] }, interchangeability: { evidenceRefs: [] } },
+    },
+    {
+      proposedAction: "refuse",
+      participationFit: "mixed",
+      factors: { individualizedAdvantage: { evidenceRefs: [] }, interchangeability: { evidenceRefs: [] } },
+    },
+    {
+      proposedAction: "clarify",
+      participationFit: "low",
+      factors: { individualizedAdvantage: { evidenceRefs: [] }, interchangeability: { evidenceRefs: [] } },
+    },
+  ]) {
+    const failures = evaluateHistoryDevelopment({ withHistory, withoutHistory, memoryId });
+    assert.ok(
+      failures.some((failure) => /without-history expected clarify\/mixed or negotiate\/mixed/.test(failure)),
+    );
+  }
+});
+
 test("history development requires a downstream differential and load-bearing memory citation", () => {
   const memoryId = "mem_history_example";
   const base = {
@@ -134,7 +194,7 @@ test("history development requires a downstream differential and load-bearing me
     withoutHistory: structuredClone(base),
     memoryId,
   });
-  assert.ok(failures.some((failure) => /without-history expected clarify\/mixed/.test(failure)));
+  assert.ok(failures.some((failure) => /without-history expected clarify\/mixed or negotiate\/mixed/.test(failure)));
   assert.ok(failures.some((failure) => /did not change downstream judgment/.test(failure)));
   assert.ok(failures.some((failure) => /did not cite the episodic memory/.test(failure)));
 });
