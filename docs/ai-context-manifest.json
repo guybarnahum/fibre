@@ -41,6 +41,7 @@
         "docs/architecture/interest-mediated-expression.md",
         "docs/architecture/request-participation.md",
         "docs/architecture/prompt-synthesis.md",
+        "docs/architecture/semantic-appraisal.md",
         "docs/architecture/thread-lifecycle.md",
         "docs/architecture/world-kernel.md",
         "docs/architecture/event-model.md",
