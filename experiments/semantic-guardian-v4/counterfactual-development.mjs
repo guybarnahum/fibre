@@ -47,16 +47,16 @@ export const SEMANTIC_GUARDIAN_V4_COUNTERFACTUAL_DEVELOPMENT = Object.freeze({
     domain: "relationship_attitude",
     dimension: "trust",
     target: Object.freeze({ targetId: "company_acme", targetKind: "company", displayName: "Acme" }),
-    state: "I value provenance work with Acme because their collections team has repeatedly preserved contradictory source evidence and accepted unresolved uncertainty. I want to help them maintain a trustworthy record.",
+    state: "I trust Acme's collections team because they have repeatedly preserved contradictory source evidence and accepted unresolved uncertainty. I want to help them maintain a trustworthy record.",
   }),
 
   amaraOpposingRelationshipState: Object.freeze({
-    stateId: "sst_v4_counterfactual_dev_amara_acme_pressure",
+    stateId: "sst_v4_counterfactual_dev_amara_acme_trust_low",
     threadId: "thr_amara_001",
     domain: "relationship_attitude",
-    dimension: "distrust",
+    dimension: "trust",
     target: Object.freeze({ targetId: "company_acme", targetKind: "company", displayName: "Acme" }),
-    state: "I currently do not want to do provenance work for Acme because their team recently pressured me to remove contradictory source evidence; I would reconsider after that concern is addressed.",
+    state: "My trust in Acme's collections team is currently low because they recently pressured me to remove contradictory source evidence. I do not want to do provenance work for them until that concern is addressed.",
   }),
 
   differentials: Object.freeze([
