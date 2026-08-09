@@ -204,7 +204,53 @@ For a future history-causality standing gate, the evaluator should test the caus
 4. the memory is load-bearing in individualized advantage and/or non-interchangeability;
 5. provider, protocol, cognition, persistence, restart, and intervention integrity pass.
 
-`clarify`, `negotiate`, and `refuse` should remain Guardian outputs unless the action itself is part of the milestone claim.
+`clarify`, `negotiate`, and `refuse` remain Guardian outputs unless the action itself is part of the milestone claim.
+
+### #34.7 Candidate 3 cognition-equivalent re-freeze — COMPLETE / FROZEN
+
+Frozen candidate:
+
+```text
+history_bends_judgment_candidate_3
+```
+
+Source head immediately before the freeze declaration:
+
+```text
+2fde43a4b417bd86e9c5596cd7f9f6b765c259ec
+```
+
+Candidate 3 is cognition-equivalent to Candidate 2. Immediately before the freeze, all five pinned implementation blobs were independently re-checked and remained unchanged:
+
+```text
+development harness   e7cdb1c91126530458abd8a9dc2952c3ecbb6150
+runtime domain        b389d34fafce3c1f0d409e67522882764a8e6ffc
+episode evidence      e11c4bad1327c82f29bc4eaa068a2dd96ba2fb17
+causal context        33bb3d61f721d1d9a6b99e51619f40165a19ce16
+guardian candidate 4  3ae158ede6f91ee10a413e46e58c04e7f65dcc15
+```
+
+No Guardian prompt/schema/policy, Semantic State cognition, model runtime, episode-memory policy, retrieval policy, persistence path, restart path, or counterfactual mechanism changed.
+
+Candidate 3 changes only the standing-evaluator acceptance contract:
+
+```text
+WITH history
+  -> accept / high
+
+WITHOUT the claimed causal memory
+  -> no high individualized fit
+  -> mixed OR low
+  -> clarify OR negotiate OR refuse
+```
+
+The exact non-accept action verb is deliberately not prescribed. A real downstream differential and the existing load-bearing-memory / held-constant / integrity requirements remain mandatory.
+
+At the Candidate-3 freeze point, **no standing-gate-v3 scenario had been authored**. No future Thread, requester, domain, subject, Episode-A prose, Request-B prose, or case-specific expected rationale is frozen or known.
+
+Canonical freeze record: `docs/validation/history-bends-judgment-candidate-3.md`.
+
+Candidate 1 and Candidate 2 standing results remain failed/sealed and are not retroactively reclassified. Fibre remains **14/26**, Development `0`.
 
 ## Guardian invariants
 
@@ -220,11 +266,21 @@ Episode-memory policy
 Retrieval policy
 ```
 
-## Next: candidate 3 re-freeze
+## Next: #34.8 fresh held-out standing gate v3
 
-If #34 continues, the next step should be a cognition-equivalent Candidate 3 re-freeze created **after** this sealed v2 postmortem.
+Only after Candidate 3 is frozen may a completely fresh standing-gate-v3 scenario be authored.
 
-Candidate 3 should preserve the exact Guardian/model/history implementation and change only the standing-evaluator methodology above. No fresh v3 Thread, requester, domain, subject, episode prose, or Request-B prose should be authored until after Candidate 3 is frozen.
+The v3 scenario must:
+
+- remain disjoint from Development material;
+- not reuse Amara / Meridian / Rowan;
+- not reuse Daniel / Cedarline / Borealis;
+- keep Episode-A causal facts out of Request B;
+- keep the individuality conclusion out of Request B;
+- hold all non-memory causal inputs constant;
+- evaluate loss of high individualized fit without prescribing `clarify`, `negotiate`, or `refuse`.
+
+Run the resulting gate once against Candidate 3 and seal the result regardless of outcome.
 
 ## Review posture
 
