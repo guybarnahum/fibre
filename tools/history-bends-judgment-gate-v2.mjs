@@ -25,7 +25,6 @@ function transformTemplate(source) {
     ["History bends judgment standing gate v1", "History bends judgment standing gate v2"],
     ["frozen candidate 1", "frozen candidate 2"],
     ["Frozen history candidate 1", "Frozen history candidate 2"],
-    ["candidate 1", "candidate 2"],
   ];
 
   let transformed = source;
