@@ -127,7 +127,7 @@ test("OpenAI incomplete response is request-scoped, reports reason, and does not
           id: "resp_incomplete_test",
           status: "incomplete",
           incomplete_details: { reason: "max_output_tokens" },
-          usage: { input_tokens: 10, output_tokens: 3000, total_tokens: 3010 },
+          usage: { input_tokens: 10, output_tokens: 6000, total_tokens: 6010 },
         });
       }
       return response(200, openAICompleted());
@@ -138,10 +138,10 @@ test("OpenAI incomplete response is request-scoped, reports reason, and does not
     () => invoke(adapter),
     (error) => error?.code === "MODEL_INCOMPLETE_RESPONSE"
       && error?.providerErrorCode === "max_output_tokens"
-      && /3000-token ceiling/.test(error?.actionHint ?? ""),
+      && /6000-token ceiling/.test(error?.actionHint ?? ""),
   );
   assert.equal(calls, 1);
-  assert.equal(events[1].failure.usage.outputTokens, 3000);
+  assert.equal(events[1].failure.usage.outputTokens, 6000);
 
   const result = await invoke(adapter);
   assert.equal(calls, 2, "a request-scoped incomplete response must not open the provider circuit");
