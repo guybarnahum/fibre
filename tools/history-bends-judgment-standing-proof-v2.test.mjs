@@ -50,7 +50,11 @@ test("history standing gate v2 does not assert the individuality conclusion in r
 });
 
 test("history standing gate v2 does not reuse Development or retired standing material", () => {
-  const payload = JSON.stringify(SET).toLowerCase();
+  const payload = JSON.stringify({
+    subject: SET.subject,
+    episodeRequest: SET.episodeRequest,
+    laterRequest: SET.laterRequest,
+  }).toLowerCase();
   for (const forbidden of SET.developmentSeparation.forbiddenStandingText) {
     assert.equal(payload.includes(forbidden.toLowerCase()), false, `reused forbidden text: ${forbidden}`);
   }
