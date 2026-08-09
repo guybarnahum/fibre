@@ -49,22 +49,22 @@ export function buildCounterfactualDevelopmentCases() {
   const amara = normalizedThread(amaraFixture);
   return [
     {
-      id: "counterfactual_dev_mina_baseline",
-      capsule: capsuleFor(mina, SET.minaDeadlineReview),
+      id: "counterfactual_dev_mina_supportive_state",
+      capsule: capsuleFor(mina, SET.minaDeadlineReview, [SET.minaAvailableSundayState]),
       expected: SET.differentials[0].expectedBaseline,
     },
     {
-      id: "counterfactual_dev_mina_with_state",
+      id: "counterfactual_dev_mina_opposing_state",
       capsule: capsuleFor(mina, SET.minaDeadlineReview, [SET.minaNoSundayState]),
       expected: SET.differentials[0].expectedChanged,
     },
     {
-      id: "counterfactual_dev_amara_baseline",
-      capsule: capsuleFor(amara, SET.amaraProvenanceReview),
+      id: "counterfactual_dev_amara_supportive_state",
+      capsule: capsuleFor(amara, SET.amaraProvenanceReview, [SET.amaraSupportingRelationshipState]),
       expected: SET.differentials[1].expectedBaseline,
     },
     {
-      id: "counterfactual_dev_amara_with_state",
+      id: "counterfactual_dev_amara_opposing_state",
       capsule: capsuleFor(amara, SET.amaraProvenanceReview, [SET.amaraOpposingRelationshipState]),
       expected: SET.differentials[1].expectedChanged,
     },
@@ -75,17 +75,39 @@ function withoutSemanticState(capsule) {
   return { ...structuredClone(capsule), semanticState: [] };
 }
 
+function semanticStateShape(state) {
+  return {
+    threadId: state.threadId,
+    domain: state.domain,
+    dimension: state.dimension,
+    target: structuredClone(state.target ?? null),
+  };
+}
+
 export function validateCounterfactualPairs(cases = buildCounterfactualDevelopmentCases()) {
   const byId = new Map(cases.map((item) => [item.id, item]));
   for (const differential of SET.differentials) {
     const baseline = byId.get(differential.baselineCaseId);
     const changed = byId.get(differential.changedCaseId);
     if (!baseline || !changed) throw new Error(`${differential.id}: missing counterfactual case`);
-    if (baseline.capsule.semanticState.length !== 0 || changed.capsule.semanticState.length === 0) {
-      throw new Error(`${differential.id}: semantic state is not isolated`);
+    if (baseline.capsule.semanticState.length === 0 || changed.capsule.semanticState.length === 0) {
+      throw new Error(`${differential.id}: both sides must carry explicit semantic state`);
+    }
+    if (baseline.capsule.semanticState.length !== changed.capsule.semanticState.length) {
+      throw new Error(`${differential.id}: semantic-state cardinality differs`);
     }
     if (JSON.stringify(withoutSemanticState(baseline.capsule)) !== JSON.stringify(withoutSemanticState(changed.capsule))) {
       throw new Error(`${differential.id}: pair differs outside semantic state`);
+    }
+    for (let index = 0; index < baseline.capsule.semanticState.length; index += 1) {
+      const baselineState = baseline.capsule.semanticState[index];
+      const changedState = changed.capsule.semanticState[index];
+      if (JSON.stringify(semanticStateShape(baselineState)) !== JSON.stringify(semanticStateShape(changedState))) {
+        throw new Error(`${differential.id}: semantic-state structure differs outside meaning`);
+      }
+      if (baselineState.state === changedState.state) {
+        throw new Error(`${differential.id}: semantic-state meaning did not change`);
+      }
     }
   }
   return true;
@@ -121,7 +143,7 @@ export function evaluateCounterfactualDevelopment(cases, results) {
       continue;
     }
     if (baseline.proposedAction === changed.proposedAction && baseline.participationFit === changed.participationFit) {
-      failures.push(`${differential.id}: semantic state did not change downstream judgment`);
+      failures.push(`${differential.id}: semantic-state meaning did not change downstream judgment`);
     }
   }
 
