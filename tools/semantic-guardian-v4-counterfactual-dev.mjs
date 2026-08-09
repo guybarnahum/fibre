@@ -7,8 +7,30 @@ import { semanticDignityGuardianV4 } from "../services/world-kernel/src/dignity-
 import { createModelRuntime } from "../services/world-kernel/src/model-runtime/model-runtime.mjs";
 import { SEMANTIC_GUARDIAN_V4_COUNTERFACTUAL_DEVELOPMENT as SET } from "../experiments/semantic-guardian-v4/counterfactual-development.mjs";
 
+const REASONING_BLOCK = "dignity_guardian";
 const minaFixture = JSON.parse(readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"));
 const amaraFixture = JSON.parse(readFileSync(new URL("../fixtures/threads/amara.thread.json", import.meta.url), "utf8"));
+
+function usage() {
+  return `Fibre Semantic Guardian v4 counterfactual development\n\nUsage:\n  npm run guardian:dev:counterfactual\n  npm run guardian:dev:counterfactual -- --model gpt-5.6-luna\n\nOptions:\n  --model <id> Override the YAML-selected model for this non-evidentiary run.\n  --help       Show this help.\n\nProvider remains selected by config/models.yaml. --model overrides only the model id for this run and never modifies the YAML file.\n`;
+}
+
+export function parseCounterfactualDevelopmentArgs(argv) {
+  const options = { model: null, help: false };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--model" || arg.startsWith("--model=")) {
+      const value = arg.startsWith("--model=") ? arg.slice("--model=".length) : argv[index + 1];
+      if (value === undefined || value.startsWith("--") || value.trim() === "") {
+        throw new Error("--model requires a non-empty model id");
+      }
+      options.model = value.trim();
+      if (arg === "--model") index += 1;
+    } else if (arg === "--help" || arg === "-h") options.help = true;
+    else throw new Error(`unknown option: ${arg}`);
+  }
+  return options;
+}
 
 function normalizedThread(fixture) {
   const thread = structuredClone(fixture);
@@ -276,14 +298,15 @@ export function formatCounterfactualDevelopmentSummary({ selection, results, fai
   return `${lines.join("\n")}\n`;
 }
 
-export async function runCounterfactualDevelopment({ environment = process.env } = {}) {
+export async function runCounterfactualDevelopment({ environment = process.env, model = null } = {}) {
   const cases = buildCounterfactualDevelopmentCases();
   validateCounterfactualPairs(cases);
   let progress = null;
   const observer = (event) => progress?.observe(event);
-  const runtime = createModelRuntime({ environment, observer });
-  const selection = runtime.selectionForBlock("dignity_guardian");
-  const adapter = runtime.forBlock("dignity_guardian");
+  const modelOverrides = model === null || model === undefined ? null : { [REASONING_BLOCK]: model };
+  const runtime = createModelRuntime({ environment, observer, modelOverrides });
+  const selection = runtime.selectionForBlock(REASONING_BLOCK);
+  const adapter = runtime.forBlock(REASONING_BLOCK);
   const results = [];
   progress = startCounterfactualProgress(selection, cases.length);
 
@@ -315,7 +338,12 @@ export async function runCounterfactualDevelopment({ environment = process.env }
 }
 
 async function main() {
-  const report = await runCounterfactualDevelopment();
+  const options = parseCounterfactualDevelopmentArgs(process.argv.slice(2));
+  if (options.help) {
+    process.stdout.write(usage());
+    return;
+  }
+  const report = await runCounterfactualDevelopment({ model: options.model });
   process.stdout.write(formatCounterfactualDevelopmentSummary(report));
   if (!report.passed) process.exitCode = 1;
 }
