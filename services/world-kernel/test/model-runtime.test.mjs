@@ -44,6 +44,31 @@ test("repository model routing config selects the Guardian baseline without embe
   });
 });
 
+test("explicit model override wins over YAML while preserving the configured provider", () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-model-runtime-override-"));
+  const configPath = join(directory, "models.yaml");
+  writeFileSync(configPath, "version: 1\nreasoning:\n  dignity_guardian:\n    provider: openai\n    model: gpt-yaml\n");
+  const runtime = createModelRuntime({
+    environment: { OPENAI_API_KEY: "test-key" },
+    configUrl: configPath,
+    modelOverrides: { dignity_guardian: "gpt-cli" },
+    fetchImpl: async () => null,
+  });
+  assert.deepEqual(runtime.selectionForBlock("dignity_guardian"), {
+    provider: "openai",
+    modelId: "gpt-cli",
+  });
+  assert.throws(
+    () => createModelRuntime({
+      environment: { OPENAI_API_KEY: "test-key" },
+      configUrl: configPath,
+      modelOverrides: { dignity_guardian: "   " },
+    }).selectionForBlock("dignity_guardian"),
+    /must be a non-empty string/,
+  );
+  rmSync(directory, { recursive: true, force: true });
+});
+
 test("OpenAI runtime accepts generic cognition input without a Guardian capsule and emits progress", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-model-runtime-openai-"));
   const configPath = join(directory, "models.yaml");
