@@ -71,7 +71,7 @@ function highFitOutput() {
   );
   output.factors.individualizedAdvantage = grounded(
     "supports_fit",
-    ["thread:self_model", "thread:trait:persistence", "request:objective"],
+    ["thread:self_model", "thread:trait:persistence"],
   );
   output.factors.interchangeability = grounded(
     "supports_fit",
@@ -132,6 +132,7 @@ test("high fit remains model cognition but must be grounded to survive canonical
   assert.equal(value.proposedAction, "accept");
   assert.deepEqual(value.normalizations, []);
   assert.equal(value.factors.individualizedAdvantage.status, "grounded");
+  assert.equal(value.factors.individualizedAdvantage.evidenceRefs.some((ref) => ref.startsWith("request:")), false);
 
   const assessment = derivePrivateAssessmentFromV4Output(capsule(), highFitOutput());
   assert.equal(assessment.score, 85, "numeric score is Fibre-derived compatibility metadata, not model cognition");
