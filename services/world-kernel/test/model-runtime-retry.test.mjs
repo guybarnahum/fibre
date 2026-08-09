@@ -37,7 +37,7 @@ function openAICompleted() {
 
 function googleCompleted() {
   return {
-    candidates: [{ content: { parts: [{ text: '{"decision":"accept"}' }] } }],
+    candidates: [{ content: { parts: [{ text: '{"decision":"accept"}' }] }],
     usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
   };
 }
@@ -113,6 +113,57 @@ test("OpenAI does not retry unknown HTTP, malformed success, or arbitrary transp
   }
 });
 
+test("OpenAI incomplete response is request-scoped, reports reason, and does not block the next cognition", async () => {
+  let calls = 0;
+  const events = [];
+  const adapter = createOpenAIModelAdapter({
+    environment: { OPENAI_API_KEY: "test-key" },
+    modelId: "gpt-test",
+    observer: (event) => events.push(event),
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) {
+        return response(200, {
+          id: "resp_incomplete_test",
+          status: "incomplete",
+          incomplete_details: { reason: "max_output_tokens" },
+          usage: { input_tokens: 10, output_tokens: 3000, total_tokens: 3010 },
+        });
+      }
+      return response(200, openAICompleted());
+    },
+  });
+
+  await assert.rejects(
+    () => invoke(adapter),
+    (error) => error?.code === "MODEL_INCOMPLETE_RESPONSE"
+      && error?.providerErrorCode === "max_output_tokens"
+      && /3000-token ceiling/.test(error?.actionHint ?? ""),
+  );
+  assert.equal(calls, 1);
+  assert.equal(events[1].failure.usage.outputTokens, 3000);
+
+  const result = await invoke(adapter);
+  assert.equal(calls, 2, "a request-scoped incomplete response must not open the provider circuit");
+  assert.deepEqual(result.output, { decision: "accept" });
+});
+
+test("OpenAI provider-wide authentication failure opens the provider circuit", async () => {
+  let calls = 0;
+  const adapter = createOpenAIModelAdapter({
+    environment: { OPENAI_API_KEY: "test-key" },
+    modelId: "gpt-test",
+    fetchImpl: async () => {
+      calls += 1;
+      return response(401, { error: { message: "bad key" } });
+    },
+  });
+
+  await assert.rejects(() => invoke(adapter), (error) => error?.code === "MODEL_AUTHENTICATION_ERROR");
+  await assert.rejects(() => invoke(adapter), (error) => error?.code === "MODEL_AUTHENTICATION_ERROR");
+  assert.equal(calls, 1, "provider-wide terminal failures should fail fast after the first provider response");
+});
+
 test("OpenAI retries a timeout because it is a clearly transient transport failure", async () => {
   let calls = 0;
   const adapter = createOpenAIModelAdapter({
@@ -155,9 +206,13 @@ test("Google retries only clearly recoverable failures", async () => {
     retryDelayMs: 0,
     fetchImpl: async () => {
       permanentCalls += 1;
-      return response(501, { error: { message: "not implemented" } });
+      if (permanentCalls === 1) return response(501, { error: { message: "not implemented" } });
+      return response(200, googleCompleted());
     },
   });
   await assert.rejects(() => invoke(permanent), (error) => error?.retryable === false);
   assert.equal(permanentCalls, 1);
+  const result = await invoke(permanent);
+  assert.equal(permanentCalls, 2, "request-scoped terminal failures must not poison the Google adapter");
+  assert.deepEqual(result.output, { decision: "accept" });
 });
