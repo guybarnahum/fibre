@@ -41,7 +41,7 @@ A Structured Obligation is a stable logical aggregate with append-only revisions
 
 Each revision records:
 
-- `obligationId`: stable identity across revisions;
+- `obligationId`: `obl_` plus 64 lowercase hex characters, stable across revisions;
 - `revision`: monotonically increasing revision number;
 - `threadId`: the obligated Thread;
 - `status`: `active`, `satisfied`, `expired`, `revoked`, or `discharged`;
@@ -53,10 +53,13 @@ Each revision records:
 - `recurrence`: recurrence semantics, initially `none` or descriptive/deferred;
 - `satisfaction`: criteria for satisfaction/discharge;
 - `provenance`: who/what created this revision and the evidence supporting it;
-- `visibility`: `public`, `restricted`, or `private`;
+- `visibility.standing`: who may know the obligation exists/currently stands;
+- `visibility.terms`: who may inspect its terms;
 - optional `legacySourceDigest` for an explicitly classified legacy source;
-- `supersedesRevision`: the prior revision, if any;
+- `supersedesRevision`: exactly the immediately prior revision for revision 2+;
 - a canonical record digest.
+
+Terms may never be more public than the fact that the obligation stands. A public standing may therefore have restricted/private terms; a private standing necessarily has private terms.
 
 Status changes do not mutate history. They append a new revision.
 
@@ -140,6 +143,10 @@ legacy_obligation_tombstones
 
 `obligation_records` stores revisions rather than a mutable current row. Current state is the highest valid revision for an `obligationId`.
 
+This first #35 slice adds the tables through Fibre's existing idempotent schema-v4 repair path. The pre-M2 storage contract already permits later v4 builds to add/restore tables and triggers when an existing v4 database is opened. The global `PRAGMA user_version` therefore remains 4 during this additive storage/migration phase.
+
+A later #35 authority cutover may require a world-schema version increase if it changes the persisted contract of existing authorization, freeze, or consumption tables. Do not predeclare v5 merely because new append-only tables exist.
+
 This avoids silent status mutation and makes replay/audit straightforward.
 
 ## V1 deterministic applicability
@@ -203,14 +210,24 @@ restart / replay
 - no score movement merely for richer representation;
 - no rewriting private refusal into willing acceptance.
 
+## Implementation state in the first #35 slice
+
+The first slice lands only:
+
+- domain validation and canonical digests;
+- additive append-only storage tables;
+- deterministic applicability logic as a pure domain function;
+- migration of consumed legacy references to spent-authority tombstones;
+- tests for fail-closed migration, append-only history, visibility, binding, and tombstone behavior.
+
+It deliberately does **not** yet change runtime authorization. Until the explicit authority-cutover slice lands, historical M1 `obligationReferences` behavior remains executable and is treated as legacy compatibility rather than Structured Obligation v1 proof.
+
 ## Follow-on implementation steps
 
-1. land domain validation/digests and storage tables;
-2. migrate consumed legacy refs to tombstones;
-3. add an ObligationStore/service with append-only revision creation and lookup;
-4. implement deterministic applicability v1 and persistence;
-5. change runtime acquisition from `obligationReferences` authority to nominated IDs plus Fibre applicability;
-6. bind applicability evidence into Participation Authorization;
-7. change freeze/discharge to append obligation status revisions and consumption evidence;
-8. update M1 compatibility tooling without reinterpreting historical M1 evidence;
-9. add private/admin inspection and adversarial/restart tests.
+1. add an ObligationStore/service with append-only revision creation and lookup;
+2. persist deterministic applicability decisions transactionally;
+3. change runtime acquisition from `obligationReferences` authority to nominated IDs plus Fibre applicability;
+4. bind applicability evidence into Participation Authorization;
+5. change freeze/discharge to append obligation status revisions and consumption evidence;
+6. update M1 compatibility tooling without reinterpreting historical M1 evidence;
+7. add private/admin inspection and adversarial/restart tests.
