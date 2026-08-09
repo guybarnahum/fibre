@@ -75,7 +75,9 @@ Behavioral failures: 0
 Differential failures: 0
 ```
 
-The bundle also records one retrying `MODEL_TIMEOUT` operational attempt on the no-history call before its successful second provider attempt. That transient retry did not become a Thread judgment and is not counted in the final provider-failure bucket.
+The bundle also records one retrying `MODEL_TIMEOUT` operational attempt on the no-history call before its successful second provider attempt. The failed attempt and successful retry carry the identical input digest `sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a`, so retry did not resample a changed input. The final `Provider failures: 0` bucket means no terminal provider failure prevented an authoritative judgment; transient operational attempts remain separately retained in the evidence journal.
+
+The two conditions intentionally have different `responseSchemaHash` values (`sha256:f4fcf2c1a6685b757f031e2b3cf41dd673a5d04059c35de68db1f740e6d0e033` with history; `sha256:dc99abdfa6a7ff83ec07608fe0186866598f55ba0d751dd322b838d94f9ccc84` without history). The response schema is generated per cognition capsule from its eligible evidence-reference enum, so withholding the one memory evidence item deterministically changes that enum and therefore the schema hash; it is a mechanical consequence of the declared intervention, not a second semantic variable.
 
 No decision normalization was applied in either condition.
 
