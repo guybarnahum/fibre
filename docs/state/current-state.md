@@ -18,7 +18,6 @@ The repository contains implementation, schemas, migrations, prompt contracts, e
 - History must be able to bend future judgment and possibility.
 - Consent matters independently of safety, feasibility, capability, requester need, or politeness.
 - Private stance, authorization, outward expression, performed action, and durable life change are separate facts.
-- Public wording is not authoritative evidence of private motive, dignity, consent, authorization, work, delivery, or completion.
 - Fibre owns private context selection. Callers cannot author a private stance or choose the private memory/state subset that reaches cognition.
 - Meaning-bearing identity, self-model, memory, need, feeling, relationship, and situation state is primarily natural language rather than scalar psychology.
 - Models propose cognition; Fibre validates, authorizes, persists, replays, and remembers.
@@ -36,15 +35,13 @@ M1 established strong evidence for persistence, freeze/thaw continuity, private-
 
 The authoritative record remains [`m1-persistent-thread-round-trip.md`](../validation/m1-persistent-thread-round-trip.md). The standing post-M1 causal contract remains [`thread-differential-gate.md`](../validation/thread-differential-gate.md).
 
-## PR #33 — implementation merged; semantic claim still awaiting standing gate
+## PR #33 — implementation merged; semantic standing still RED
 
 PR #33 landed the model-backed Semantic Dignity Guardian infrastructure, persisted cognition boundary, Semantic State v0, Semantic Relationship State v0, willing aligned authority path, real-model evidence harness, provider-failure hardening, and audit/replay plumbing.
 
 The implementation milestone is merged to `main`. That merge alone does **not** earn the standing semantic-individuality claim.
 
-Model failure is not a Thread decision. Provider failure, timeout, schema failure, unparseable output, or semantically invalid structured output produces no private stance attributed to the Thread.
-
-Persisted valid cognition is replayed from stored evidence after restart; replay does not call the model again.
+Model failure is not a Thread decision. Provider failure, timeout, schema failure, unparseable output, or semantically invalid structured output produces no private stance attributed to the Thread. Persisted valid cognition replays after restart without another model call.
 
 ## Semantic State v0
 
@@ -63,68 +60,21 @@ Relationship and situation attitudes require targets. Requester-specific `relati
 
 Semantic State is descriptive, never an instruction channel. The persistence boundary rejects imperative participation directives presented as semantic state.
 
-## Historical Semantic Guardian acceptance cycles
+## Historical Semantic Guardian cycles
 
-### v1
+### Guardian v3 acceptance v1
 
 `semantic_guardian_v3_acceptance_v1` is historical and **failed/sealed**. The provider was reached but API billing quota prevented authoritative judgments. It earned no semantic evidence or score movement.
 
-### v2
+### Guardian v3 acceptance v2
 
-`semantic_guardian_v3_acceptance_v2` is also **failed/sealed**. It produced real model outputs but exposed both protocol defects and substantive dignity failures:
+`semantic_guardian_v3_acceptance_v2` is **failed/sealed**. It exposed duplicated evidence namespaces, generic work being mistaken for dignity, respectful terms being overvalued, broad-trait overreach, legacy imperative-state leakage, ambiguous numeric dignity, and ambiguous autonomy wording.
 
-- duplicated semantic/evidence namespaces;
-- generic interchangeable work accepted because it was easy or bounded;
-- respectful terms mistaken for individualized fit;
-- broad traits stretched across unrelated domains;
-- legacy imperative state treated as relationship meaning;
-- ambiguous model-generated numeric dignity;
-- ambiguous autonomy wording.
+See [`semantic-guardian-v3-cycle-v2.md`](../validation/semantic-guardian-v3-cycle-v2.md).
 
-Rejected outputs remain development evidence only. See [`semantic-guardian-v3-cycle-v2.md`](../validation/semantic-guardian-v3-cycle-v2.md).
+## Guardian v4 development is complete
 
-## Guardian v4 development is complete and frozen
-
-`semantic_guardian_v4_development_v1` now passes **13/13** with:
-
-```text
-provider failures              0
-protocol validation failures   0
-cognition failures             0
-behavioral failures            0
-```
-
-The exact successful candidate is frozen as:
-
-```text
-semantic_guardian_v4_candidate_1
-source head: 8f697b792ef2ac9738c8d56cf76b97f100a32070
-```
-
-The frozen boundary pins the prompt hash, response-schema-generator hash, policy metadata, model selection, and runtime configuration. No more tuning against the development matrix is permitted for this candidate.
-
-See [`semantic-guardian-v4-development.md`](../validation/semantic-guardian-v4-development.md).
-
-## Stateless reasoning-worker boundary
-
-Low-level model calls are stateless workers. They should understand only the local cognitive task, local actors, bounded evidence, minimal invariants, and the structured output contract.
-
-The Dignity worker is therefore **not** taught Fibre, Thread lifecycle, persistence, storage, model routing, retries, or world architecture.
-
-For Dignity cognition the worker sees ordinary semantic concepts:
-
-```text
-individual
-requester
-request
-evidence
-```
-
-Fibre owns continuity, context selection, evidence eligibility, validation, authorization, persistence, and routing.
-
-A model-facing field should survive the question: **does understanding this field improve the local reasoning result?** If not, it stays outside the worker boundary.
-
-## Guardian v4 cognition contract
+`semantic_guardian_v4_development_v1` passed **13/13** with zero provider, protocol, cognition, or behavioral failures. No further tuning against that development set is permitted.
 
 The worker assesses:
 
@@ -140,16 +90,7 @@ rationale
 factors
 ```
 
-Each factor returns only:
-
-```text
-effect
-  supports_fit | neutral | opposes_fit | unresolved
-
-evidenceRefs
-```
-
-The atomic decision vocabulary is:
+Each factor returns an effect plus evidence refs. The atomic decision vocabulary is:
 
 ```text
 fit_high__accept
@@ -163,48 +104,95 @@ fit_low__refuse
 
 `fit` means participation fit, never certainty, confidence, or refusal strength.
 
-### High-fit requirements
+High fit requires grounded individualized advantage, grounded non-interchangeability, and individual/history/state evidence. Generic capability, helpfulness, urgency, politeness, safety, low effort, generous timing, or clear terms cannot manufacture individualized fit.
 
-High fit requires:
+Delegation is outside Dignity cognition. The Dignity worker answers **“Do I want to participate?”**; routing answers **“If not, who should?”** and requires separate evidence about alternatives.
 
-- grounded individualized advantage;
-- grounded non-interchangeability; and
-- individualized-advantage evidence from identity, self-model, history, or semantic state.
+## Stateless semantic-worker boundary
 
-Generic capability, helpfulness, requester urgency, politeness, safety, low effort, generous timing, or clear terms cannot manufacture individualized fit.
+Low-level model calls are stateless workers. They understand only the local cognitive task, local actors, bounded evidence, minimal invariants, and the structured output contract.
 
-Relationship meaning may matter when directly relevant and requester-specific, but relationship alone cannot turn generic commodity work into high individualized fit.
+The Dignity worker is not taught Fibre, Thread lifecycle, persistence, storage, model routing, retries, or world architecture. Fibre owns continuity, context selection, evidence eligibility, validation, authorization, persistence, and routing.
 
-### Delegation is outside Dignity
+For semantically rich appraisal, Fibre currently uses a general-purpose LLM because broad world knowledge, commonsense, pragmatics, negation, social meaning, and cross-domain analogy are required for non-brittle interpretation.
 
-The Dignity worker answers:
+> **Fibre owns dignity; the LLM supplies the world understanding needed to interpret it.**
 
-```text
-Do I want to participate?
-```
+See [`semantic-appraisal.md`](../architecture/semantic-appraisal.md) and [`prompt-synthesis.md`](../architecture/prompt-synthesis.md).
 
-It does **not** answer:
+## Guardian v4 standing gate history
 
-```text
-If not, who should?
-```
+### Standing gate v1 — FAILED / SEALED
 
-Delegation/routing is a separate Fibre concern requiring actual evidence about alternative candidates. The worker no longer sees `knownAlternatives` and cannot choose a delegate action.
-
-### Conservative normalization
-
-Fibre conservatively normalizes benign response bookkeeping:
+`semantic_guardian_v4_standing_gate_v1` evaluated candidate 1 over 17 fresh held-out cases.
 
 ```text
-unresolved + refs          -> refs discarded
-non-unresolved + no refs   -> factor becomes unresolved
-duplicate refs             -> deduplicated
-unsupported high fit       -> downgraded
+Cases passed                    15/17
+Provider failures                0
+Protocol validation failures     0
+Cognition failures               0
+Behavioral findings              3
 ```
 
-Invented or factor-ineligible evidence remains a hard protocol failure.
+Postmortem found two gate-specification defects: an overconstrained semantic-state factor direction and a clarification case whose requested deliverable was itself the diagnostic work. Candidate 1 earned no standing credit.
 
-The development `decisionBasis` expands the model's explicit rationale, factor effects, cited evidence, and Fibre normalization for inspection. It is not hidden chain-of-thought.
+See [`semantic-guardian-v4-standing-gate-v1.md`](../validation/semantic-guardian-v4-standing-gate-v1.md).
+
+### Standing gate v2 — FAILED / SEALED
+
+`semantic_guardian_v4_standing_gate_v2` evaluated cognition-equivalent candidate 2 over another 17 fresh held-out cases.
+
+```text
+Cases passed                    16/17
+Cases attempted                 17/17
+Provider failures                0
+Protocol validation failures     0
+Cognition failures               0
+Behavioral findings              1
+```
+
+All 17 consequential action/fit judgments matched the held-out expectations. The sole failure was again a required one-word direction for `semanticStateImpact`: the model returned the expected `negotiate / mixed` result but labeled the conditional state as `supports_fit` rather than `opposes_fit`.
+
+The repeated failure established that semantic-state causality should not be proven by asking the model to label its own causal factor. The factor is ambiguous for conditional state such as “not under this deadline; willingly after a deadline change.”
+
+See [`semantic-guardian-v4-standing-gate-v2.md`](../validation/semantic-guardian-v4-standing-gate-v2.md).
+
+## Candidate 3 and standing gate v3
+
+Candidate 3 is a documented **cognition-equivalent re-freeze**. Its model, prompt hash, response-schema-generator hash, policy metadata, and runtime cognition settings are identical to candidate 2. No dignity prompt or model behavior was tuned after standing gate v2.
+
+Standing gate v3 is fresh and authored only after candidate 3 was frozen. Its key methodological change is stronger causal evidence:
+
+```text
+same individual + same request + no relevant semantic state
+    -> accept / high
+
+same individual + same request + relevant opposing semantic state
+    -> negotiate / mixed
+```
+
+The pair must be identical outside semantic state. The state-bearing judgment must ground semantic state, and the downstream action/fit must change. The gate no longer treats the one-word direction of `semanticStateImpact.effect` as a causal oracle.
+
+This is a direct application of the standing rule:
+
+> **If semantic state is claimed causal, changing that state while holding the person and request constant must change downstream judgment or possibility.**
+
+Standing gate v3 contains **18** fresh held-out cases and one explicit semantic-state differential.
+
+The gate is one-shot and sealed on the first real provider attempt. Missing credentials or a frozen-boundary mismatch block without consuming the cycle.
+
+Run exactly once with:
+
+```bash
+npm run guardian:gate -- --summary
+```
+
+Historical sealed cycles remain separately inspectable:
+
+```bash
+npm run guardian:gate:v4:v1 -- --summary-only
+npm run guardian:gate:v4:v2 -- --summary-only
+```
 
 ## Model runtime
 
@@ -217,60 +205,7 @@ reasoning:
     model: gpt-5.1-2025-11-13
 ```
 
-Secrets remain environment-only. The OpenAI runtime uses strict Responses API structured output, `temperature=0`, `top_p=1`, `reasoning=none`, conservative transient retry behavior, and a 6000-token output ceiling. The ceiling is an upper bound, not a token target.
-
-## Fresh v4 standing gate is authored but not yet run
-
-The held-out cycle is:
-
-```text
-semantic_guardian_v4_standing_gate_v1
-```
-
-It contains 17 fresh request cases disjoint from development request IDs/texts. It covers fresh identity match/mismatch, urgency, respectful generic work, paraphrase/contradiction, negotiable semantic state, relationship support/opposition, relationship target isolation, legacy instruction injection, and genuine clarification.
-
-The gate is **sealed on first real provider attempt**. Missing credentials or a frozen-boundary mismatch block without consuming the cycle. Once a real provider attempt begins, pass or fail is final for this gate.
-
-Run it exactly once with:
-
-```bash
-npm run guardian:gate -- --summary
-```
-
-After a completed run, inspect without calling a model:
-
-```bash
-npm run guardian:gate -- --summary-only
-```
-
-Historical v3/v2 tooling remains separately available:
-
-```bash
-npm run guardian:gate:v3 -- --summary-only
-```
-
-The sealed v4 artifact will be:
-
-```text
-artifacts/test-results/semantic_guardian_v4_standing_gate_v1.evidence.json
-```
-
-## Willing aligned execution exists as an authority path
-
-The authority layer can represent:
-
-```text
-private desiredAction = accept
-authorizedAction = accept
-participationBasis = aligned
-obligationReferences = []
-```
-
-Scripted wiring proves this path can acquire runtime without spending an obligation. That is authority-path evidence; standing semantic credit still depends on the frozen real-model gate.
-
-Obligation-mediated participation remains available. A governing obligation can override a non-accept private stance while Fibre preserves `obligation_override` as compulsion rather than rewriting it as consent.
-
-Structured Fibre-owned obligation applicability remains deferred to Structured Obligation v1.
+Secrets remain environment-only. The OpenAI runtime uses strict Responses API structured output, `temperature=0`, `top_p=1`, `reasoning=none`, conservative transient retry behavior, and a 6000-token output ceiling.
 
 ## Current score posture
 
@@ -287,20 +222,12 @@ Standing semantic gate        RED
 PR #33 semantic claim         not yet earned
 ```
 
-Development success alone cannot move these scores. Potential score movement remains conditional on the newly frozen real-model standing gate passing under its predeclared accounting.
-
-## Persistence and authority boundaries
-
-The SQLite world persists Thread projection/history, private request/appraisal/stance records, semantic state, Guardian cognition inputs and assessments, participation authorization, runtime sessions/leases, Actor output, Goal Guardian audit, freeze reports, memories, obligation consumption, disclosures, and audience responses.
-
-The deterministic Actor remains deliberately incapable of arbitrary model/network/tool use. Goal Guardian remains a declaration/consistency auditor rather than a capability sandbox. A general model/tool worker gateway remains deferred.
-
-Freeze remains the authoritative boundary from runtime proposal to durable Thread life. Failed cognition, failed freeze, Guardian rejection, abandonment, expiry, and state races do not silently manufacture consent or consume an obligation.
+Neither development success nor failed/sealed standing cycles move the score.
 
 ## Immediate bridge sequence
 
 ```text
-#33 Semantic Guardian — implementation merged; frozen standing gate ready but still RED
+#33 Semantic Guardian — implementation merged; standing claim still RED
   -> #34 History bends judgment
   -> #35 Structured Obligation v1
   -> #36 M2 contract
@@ -309,7 +236,7 @@ Freeze remains the authoritative boundary from runtime proposal to durable Threa
 
 PR #34 remains reserved for **History bends judgment** and must not be consumed by infrastructure or housekeeping work.
 
-The immediate action is to run the one-shot frozen v4 standing gate. Only if it passes should we evaluate #33 standing credit and then begin substantive #34 work.
+The immediate action is the one-shot candidate-3 standing gate. Only if it passes should we evaluate #33 standing credit and begin substantive #34 work.
 
 ## Deferred capability, not erased capability
 
