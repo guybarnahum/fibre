@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
@@ -37,11 +38,23 @@ const ARCHIVE = Object.freeze([
   },
 ]);
 
-function load(entry) {
+function bytes(entry) {
   const url = new URL(entry.path, import.meta.url);
   assert.equal(existsSync(url), true, `missing sealed evidence bundle: ${entry.id}`);
-  return JSON.parse(readFileSync(url, "utf8"));
+  return readFileSync(url);
 }
+
+function load(entry) {
+  return JSON.parse(bytes(entry).toString("utf8"));
+}
+
+function sha256(entry) {
+  return createHash("sha256").update(bytes(entry)).digest("hex");
+}
+
+test("diagnostic: print canonical standing evidence sha256", () => {
+  for (const entry of ARCHIVE) console.log(`EVIDENCE_SHA256 ${entry.id} ${sha256(entry)}`);
+});
 
 test("every canonical standing cycle retains a committed sealed evidence bundle", () => {
   for (const entry of ARCHIVE) {
