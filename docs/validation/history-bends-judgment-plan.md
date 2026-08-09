@@ -129,23 +129,48 @@ The frozen boundary records:
 - direct memory-withholding counterfactual rules;
 - historical source blob identities for the frozen implementation files.
 
-Normal repository tests validate the frozen declaration and named policy/hash contract without requiring future Fibre source trees to remain byte-identical forever. The #34.4 gate must instead perform a **fail-closed source-identity preflight before its first provider call**. Once the gate is sealed, authoritative sealed evidence must be checked before source drift so later development cannot invalidate historical evidence.
+Normal repository tests validate the frozen declaration and named policy/hash contract without requiring future Fibre source trees to remain byte-identical forever. The #34.4 gate performs a **fail-closed source-identity preflight before its first provider call**. Once the gate is sealed, authoritative sealed evidence is checked before source drift so later development cannot invalidate historical evidence.
 
 See `experiments/history-bends-judgment/frozen-boundary-candidate-1.mjs` and `docs/validation/history-bends-judgment-candidate-1.md`.
 
 **No held-out standing scenario existed when candidate 1 was frozen.**
 
-### #34.4 Fresh held-out standing gate — NEXT
+### #34.4 Fresh held-out standing gate — IMPLEMENTED / READY FOR ONE-SHOT LIVE RUN
 
-Only now author a fresh scenario with different requester, system, wording, and episode content from Atlas.
+The held-out gate was authored only after candidate 1 was frozen.
 
-Expected command shape:
+Standing scenario:
+
+```text
+Thread:     Amara Reed
+Requester:  Meridian Archive
+Domain:     archival provenance
+Subject:    Rowan Collection
+```
+
+It is deliberately disjoint from the Mina / Acme / Atlas infrastructure Development case. Episode A establishes a specific evidence-backed provenance interpretation. The later request asks for continuity with Amara's earlier interpretation while deliberately omitting the controlling source and rationale, so generic archival competence cannot reconstruct the claimed lived continuity from requester text alone.
+
+Deterministic gate tests prove before any real provider attempt:
+
+- held-out request text is disjoint from Development scenario markers;
+- later request does not leak Episode A's controlling provenance facts;
+- canonical episode -> Actor -> Goal Guardian -> freeze path persists the memory;
+- database close/reopen preserves the memory and freeze integrity;
+- canonical and counterfactual use the same later request and identical Thread/Semantic State;
+- only the named memory record is withheld from Fibre-owned retrieval;
+- the counterfactual preserves the Thread `memoryRef` as an unresolved witness;
+- a valid causal `accept/high -> negotiate/mixed` scripted result passes;
+- an identical non-causal judgment in both conditions fails;
+- frozen source/policy/runtime preflight is fail-closed before the first provider call;
+- an existing sealed artifact rejects rerun before live source checks or provider access.
+
+Command:
 
 ```bash
 npm run history:gate -- --summary
 ```
 
-The first real-provider attempt seals the gate. A sealed rerun request must be rejected without provider access and without changing the authoritative result.
+**This is a one-shot sealed standing gate.** Missing credentials, frozen-boundary drift, runtime mismatch, or deterministic setup failure block without consuming the cycle. The first real provider attempt seals the cycle pass or fail. A sealed rerun request is rejected without provider access and without changing the authoritative result.
 
 Standing acceptance requires:
 
@@ -156,8 +181,8 @@ memory survives restart                 PASS
 memory source episode verified          PASS
 same later request                      PASS
 same Thread/state                       PASS
-with-history judgment                   expected
-without-history judgment                expected
+with-history judgment                   accept/high
+without-history judgment                clarify|negotiate / mixed
 causal downstream differential          PASS
 load-bearing memory citation             PASS
 provider failures                       0
@@ -166,6 +191,8 @@ cognition failures                      0
 behavioral failures                     0
 causal differential failures            0
 ```
+
+No real provider attempt has been made yet. The standing cycle is unconsumed and Fibre score movement remains prohibited until the sealed result passes.
 
 ## Guardian invariants
 
