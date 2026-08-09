@@ -11,11 +11,12 @@ import {
   httpRetryGuidance,
   isClearlyTransientTransportError,
   retryDelayFor,
+  shouldOpenProviderCircuit,
 } from "./retry-policy.mjs";
 
 const DEFAULTS = Object.freeze({
   timeoutMs: 45_000,
-  maxOutputTokens: 2_000,
+  maxOutputTokens: 3_000,
   temperature: 0,
   topP: 1,
   reasoningEffort: "none",
@@ -74,6 +75,14 @@ function parseOutput(text) {
 
 function providerString(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function usageFromBody(body) {
+  return {
+    inputTokens: Number(body?.usage?.input_tokens ?? 0),
+    outputTokens: Number(body?.usage?.output_tokens ?? 0),
+    totalTokens: Number(body?.usage?.total_tokens ?? 0),
+  };
 }
 
 function classifyHttpFailure(response, body) {
@@ -238,18 +247,24 @@ export function createOpenAIModelAdapter({
 
           if (!response.ok) throw classifyHttpFailure(response, body);
           if (body?.status !== undefined && body.status !== "completed") {
-            throw new GuardianModelError(`OpenAI model response did not complete: ${body.status}`, {
-              code: "MODEL_INCOMPLETE_RESPONSE", retryable: false,
+            const incompleteReason = providerString(body?.incomplete_details?.reason) || null;
+            const usage = usageFromBody(body);
+            const reasonSuffix = incompleteReason === null ? "" : ` (${incompleteReason})`;
+            const incomplete = new GuardianModelError(`OpenAI model response did not complete: ${body.status}${reasonSuffix}`, {
+              code: "MODEL_INCOMPLETE_RESPONSE",
+              retryable: false,
+              providerErrorCode: incompleteReason,
+              actionHint: incompleteReason === "max_output_tokens" || incompleteReason === "max_tokens"
+                ? `Output hit the ${maxOutputTokens}-token ceiling; increase the ceiling or reduce the structured output.`
+                : null,
             });
+            incomplete.providerUsage = usage;
+            throw incomplete;
           }
 
           const output = parseOutput(extractOutputText(body));
           const providerRequestId = response.headers?.get?.("x-request-id") ?? body?.id ?? null;
-          const usage = {
-            inputTokens: Number(body?.usage?.input_tokens ?? 0),
-            outputTokens: Number(body?.usage?.output_tokens ?? 0),
-            totalTokens: Number(body?.usage?.total_tokens ?? 0),
-          };
+          const usage = usageFromBody(body);
           const provenance = {
             provider: "openai",
             transport: "responses",
@@ -286,6 +301,7 @@ export function createOpenAIModelAdapter({
             providerErrorCode: normalized.providerErrorCode,
             providerErrorType: normalized.providerErrorType,
             actionHint: normalized.actionHint,
+            usage: normalized.providerUsage ?? null,
           };
           const retrying = normalized.retryable === true && attempt < maximumAttempts;
           notify(observer, {
@@ -303,7 +319,7 @@ export function createOpenAIModelAdapter({
             failure,
           });
           if (normalized.retryable === false) {
-            terminalFailure = normalized;
+            if (shouldOpenProviderCircuit(normalized)) terminalFailure = normalized;
             throw normalized;
           }
           if (!retrying) throw normalized;
