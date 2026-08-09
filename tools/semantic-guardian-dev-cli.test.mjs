@@ -14,6 +14,7 @@ const DEFAULT_OPTIONS = {
   json: false,
   help: false,
   failFast: false,
+  model: null,
 };
 
 test("development runner defaults to v4 summary and remains explicitly non-evidentiary", () => {
@@ -72,14 +73,17 @@ test("development runner defaults to v4 summary and remains explicitly non-evide
   assert.match(text, /generic_control/);
 });
 
-test("development runner keeps CLI options small; model routing belongs in models.yaml", () => {
-  assert.deepEqual(parseDevelopmentArgs(["--summary", "--json", "--fail-fast"]), {
+test("development runner accepts an explicit model override and keeps other CLI options small", () => {
+  assert.deepEqual(parseDevelopmentArgs(["--summary", "--json", "--fail-fast", "--model", "gpt-5.6-luna"]), {
     summary: true,
     json: true,
     help: false,
     failFast: true,
+    model: "gpt-5.6-luna",
   });
-  assert.throws(() => parseDevelopmentArgs(["--model", "gpt-test"]), /unknown option/);
+  assert.equal(parseDevelopmentArgs(["--model=gpt-5.6-luna"]).model, "gpt-5.6-luna");
+  assert.throws(() => parseDevelopmentArgs(["--model"]), /requires a non-empty model id/);
+  assert.throws(() => parseDevelopmentArgs(["--model="]), /requires a non-empty model id/);
   assert.throws(() => parseDevelopmentArgs(["--reasoning", "low"]), /unknown option/);
   assert.throws(() => parseDevelopmentArgs(["--wat"]), /unknown option/);
 });
