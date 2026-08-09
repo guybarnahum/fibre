@@ -1,0 +1,61 @@
+name: model-smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 7 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  openai-luna:
+    name: OpenAI · GPT-5.6 Luna
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Missing OPENAI_API_KEY
+        if: env.OPENAI_API_KEY == ''
+        run: echo "::notice::OPENAI_API_KEY is not configured; live OpenAI smoke skipped."
+      - name: Smoke GPT-5.6 Luna
+        if: env.OPENAI_API_KEY != ''
+        run: npm run model:smoke -- --provider openai --model gpt-5.6-luna
+
+  google-gemini:
+    name: Google · Gemini 3.6 Flash
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Missing GEMINI_API_KEY
+        if: env.GEMINI_API_KEY == ''
+        run: echo "::notice::GEMINI_API_KEY is not configured; live Gemini smoke skipped."
+      - name: Smoke Gemini 3.6 Flash
+        if: env.GEMINI_API_KEY != ''
+        run: npm run model:smoke -- --provider google --model gemini-3.6-flash
+
+  google-gemma:
+    name: Google · Gemma 4 26B MoE IT
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Missing GEMINI_API_KEY
+        if: env.GEMINI_API_KEY == ''
+        run: echo "::notice::GEMINI_API_KEY is not configured; live Gemma smoke skipped."
+      - name: Smoke Gemma 4 26B MoE IT
+        if: env.GEMINI_API_KEY != ''
+        run: npm run model:smoke -- --provider google --model gemma-4-26b-a4b-it
