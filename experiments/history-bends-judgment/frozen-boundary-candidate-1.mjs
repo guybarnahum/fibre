@@ -103,12 +103,19 @@ export const HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_1 = Object.freeze(
     semanticStateHeldConstantRequired: true,
   }),
 
+  // Historical source identities for the frozen boundary. The #34.4 gate must
+  // verify these before its first provider call. Normal repository tests do not
+  // require future source trees to remain byte-identical after #34 is sealed.
   sourceBlobs: Object.freeze({
     developmentHarness: "e7cdb1c91126530458abd8a9dc2952c3ecbb6150",
     runtimeDomain: "b389d34fafce3c1f0d409e67522882764a8e6ffc",
     episodeEvidence: "e11c4bad1327c82f29bc4eaa068a2dd96ba2fb17",
     causalContext: "33bb3d61f721d1d9a6b99e51619f40165a19ce16",
     guardianCandidate4: "3ae158ede6f91ee10a413e46e58c04e7f65dcc15",
-    modelConfig: "40ea9150d81eeaf03101fb32a11f3fc876402851",
+  }),
+  standingGatePreflight: Object.freeze({
+    verifyFrozenSourceBlobsBeforeFirstProviderCall: true,
+    rejectOnDrift: true,
+    sealedRerunChecksAuthoritativeEvidenceBeforeSourceDrift: true,
   }),
 });
