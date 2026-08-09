@@ -248,13 +248,15 @@ async function formEpisode(databasePath, progress) {
     assert.ok(memory);
     assert.equal(memory.sessionId, sessionId);
     assert.deepEqual(memory.evidenceRefs, proposedMemory.evidenceRefs);
+    const resultingThread = world.service.getThread(thread.threadId);
+    assert.equal(resultingThread.memoryRefs.includes(memory.memoryId), true);
 
     return {
       threadId: thread.threadId,
       sessionId,
       memory: structuredClone(memory),
       freezeReportDigest: frozen.reportDigest,
-      resultingThreadVersion: frozen.nextThread.version,
+      resultingThreadVersion: resultingThread.version,
       setupGuardian: {
         provider: "history_development_setup",
         modelId: "history-development-setup-v1",
