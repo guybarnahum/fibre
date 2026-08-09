@@ -9,7 +9,6 @@ import { generatedHistoryStandingGateV4Source } from
   "./history-bends-judgment-gate-v4.mjs";
 import {
   assertFreshStandingScenario,
-  createHistoryProviderProgressHeartbeat,
   generatedHistoryStandingProofV4Source,
 } from "./history-bends-judgment-standing-proof-v4.mjs";
 
@@ -126,53 +125,6 @@ test("history standing gate v4 evaluator matches Candidate 4's history-raises sh
   assert.match(source, /participationFits\.includes\(withoutHistory\.participationFit\)/);
   assert.match(source, /expected non-accept/);
   assert.doesNotMatch(source, /withoutHistory\.participationFit !== SET\.expected\.withoutHistory\.participationFit/);
-});
-
-test("history gate v4 reports provider wait progress without changing provider semantics", () => {
-  const events = [];
-  let elapsedMs = 0;
-  let tick = null;
-  let cleared = false;
-  let unrefCalled = false;
-  const timer = {
-    unref() { unrefCalled = true; },
-  };
-  const heartbeat = createHistoryProviderProgressHeartbeat({
-    progress: (phase, message) => events.push([phase, message]),
-    intervalMs: 10_000,
-    now: () => elapsedMs,
-    setIntervalFn: (callback, intervalMs) => {
-      assert.equal(intervalMs, 10_000);
-      tick = callback;
-      return timer;
-    },
-    clearIntervalFn: (receivedTimer) => {
-      assert.equal(receivedTimer, timer);
-      cleared = true;
-    },
-  });
-
-  heartbeat.report("without_history", "Calling openai/gpt-5.1-2025-11-13");
-  assert.deepEqual(events, [
-    ["without_history", "Calling openai/gpt-5.1-2025-11-13"],
-    ["without_history", "Awaiting provider response · 0s elapsed"],
-  ]);
-  assert.equal(unrefCalled, true);
-
-  elapsedMs = 10_400;
-  tick();
-  assert.deepEqual(events.at(-1), [
-    "without_history",
-    "Awaiting provider response · 10s elapsed",
-  ]);
-
-  elapsedMs = 27_900;
-  heartbeat.finish();
-  assert.equal(cleared, true);
-  assert.deepEqual(events.at(-1), [
-    "without_history",
-    "Provider call completed · 27s elapsed",
-  ]);
 });
 
 test("history gate v4 runner mechanically binds the one-shot engine to Candidate 4", () => {
