@@ -78,11 +78,21 @@ export function loadModelRoutingConfig(configUrl = DEFAULT_MODEL_CONFIG_URL) {
   return parseModelRoutingYaml(readFileSync(configUrl, "utf8"));
 }
 
+function modelOverrideFor(blockName, modelOverrides) {
+  const value = modelOverrides?.[blockName];
+  if (value === undefined) return null;
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError(`model override for ${blockName} must be a non-empty string`);
+  }
+  return value.trim();
+}
+
 export function createModelRuntime({
   environment = process.env,
   configUrl = DEFAULT_MODEL_CONFIG_URL,
   fetchImpl = globalThis.fetch,
   observer = null,
+  modelOverrides = null,
 } = {}) {
   const config = loadModelRoutingConfig(configUrl);
 
@@ -94,7 +104,10 @@ export function createModelRuntime({
         retryable: false,
       });
     }
-    return { provider: selection.provider, modelId: selection.model };
+    return {
+      provider: selection.provider,
+      modelId: modelOverrideFor(blockName, modelOverrides) ?? selection.model,
+    };
   }
 
   return Object.freeze({
