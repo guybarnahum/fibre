@@ -238,7 +238,62 @@ export function blockedHistoryStandingReport(reason) {
   return generatedProof.blockedHistoryStandingReport(reason);
 }
 
+export function createHistoryProviderProgressHeartbeat({
+  progress = () => {},
+  intervalMs = 10_000,
+  now = Date.now,
+  setIntervalFn = setInterval,
+  clearIntervalFn = clearInterval,
+} = {}) {
+  let active = null;
+
+  const elapsedSeconds = (startedAt) =>
+    Math.max(0, Math.floor((now() - startedAt) / 1000));
+
+  function finish(label = "Provider call completed") {
+    if (active === null) return;
+    const { phase, startedAt, timer } = active;
+    clearIntervalFn(timer);
+    active = null;
+    progress(phase, `${label} · ${elapsedSeconds(startedAt)}s elapsed`);
+  }
+
+  function report(phase, message) {
+    if (String(message).startsWith("Calling ")) {
+      finish("Provider response received");
+      progress(phase, message);
+      const startedAt = now();
+      progress(phase, "Awaiting provider response · 0s elapsed");
+      const timer = setIntervalFn(() => {
+        progress(
+          phase,
+          `Awaiting provider response · ${elapsedSeconds(startedAt)}s elapsed`,
+        );
+      }, intervalMs);
+      timer?.unref?.();
+      active = { phase, startedAt, timer };
+      return;
+    }
+    progress(phase, message);
+  }
+
+  return Object.freeze({ report, finish });
+}
+
 export async function runHistoryStandingProof(options) {
   assertFreshStandingScenario();
-  return generatedProof.runHistoryStandingProof(options);
+  const heartbeat = createHistoryProviderProgressHeartbeat({
+    progress: options?.progress,
+  });
+  try {
+    const report = await generatedProof.runHistoryStandingProof({
+      ...(options ?? {}),
+      progress: heartbeat.report,
+    });
+    heartbeat.finish();
+    return report;
+  } catch (error) {
+    heartbeat.finish("Provider call ended");
+    throw error;
+  }
 }
