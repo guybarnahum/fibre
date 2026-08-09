@@ -116,13 +116,15 @@ function syntheticRuntime() {
   };
 }
 
-function freezeRequest() {
+function freezeRequest({ decision = "accept" } = {}) {
   return {
     operationId: "op_freeze_episode_001",
     lifeChangeDecisions: [{
       proposalIndex: 0,
-      decision: "accept",
-      rationale: "Retain the bounded evidence-backed episode memory.",
+      decision,
+      rationale: decision === "accept"
+        ? "Retain the bounded evidence-backed episode memory."
+        : "Do not retain this proposed episode memory.",
     }],
     causationId: "cause_freeze_episode_001",
     correlationId: "corr_episode",
@@ -136,7 +138,7 @@ function freezeMetadata() {
   };
 }
 
-test("current-episode evidence refs bind exactly to request and authorization", () => {
+test("current-episode evidence refs bind exactly to request, authorization, and Thread", () => {
   assert.equal(requestEpisodeEvidenceRef(REQUEST_ID), `request:${REQUEST_ID}`);
   assert.equal(
     authorizationEpisodeEvidenceRef(AUTHORIZATION_ID),
@@ -161,6 +163,12 @@ test("current-episode evidence refs bind exactly to request and authorization", 
     () => currentEpisodeEvidenceRefsFromContext(mismatchedContext),
     /does not match execution context/,
   );
+  const wrongThreadContext = structuredClone(context);
+  wrongThreadContext.participation.threadId = "thread_other";
+  assert.throws(
+    () => currentEpisodeEvidenceRefsFromContext(wrongThreadContext),
+    /Thread does not match execution context/,
+  );
 
   const runtime = syntheticRuntime();
   assert.deepEqual(
@@ -172,6 +180,18 @@ test("current-episode evidence refs bind exactly to request and authorization", 
   assert.throws(
     () => currentEpisodeEvidenceRefsFromRuntime(mismatchedRuntime),
     /authorization does not match runtime/,
+  );
+  const missingContextRuntime = structuredClone(runtime);
+  delete missingContextRuntime.session.context;
+  assert.throws(
+    () => currentEpisodeEvidenceRefsFromRuntime(missingContextRuntime),
+    /must be a plain object/,
+  );
+  const wrongThreadRuntime = structuredClone(runtime);
+  wrongThreadRuntime.authorization.threadId = "thread_other";
+  assert.throws(
+    () => currentEpisodeEvidenceRefsFromRuntime(wrongThreadRuntime),
+    /Thread does not match runtime/,
   );
 });
 
@@ -244,4 +264,23 @@ test("freeze independently accepts only episode evidence bound to the active run
       forgedRef,
     );
   }
+});
+
+test("rejected freeze life change does not become durable memory", () => {
+  const runtime = syntheticRuntime();
+  const rejected = buildFreezeOutcome(
+    fixture,
+    runtime,
+    freezeRequest({ decision: "reject" }),
+    freezeMetadata(),
+  );
+
+  assert.equal(rejected.report.acceptedLifeChanges.length, 0);
+  assert.equal(rejected.report.rejectedLifeChanges.length, 1);
+  assert.deepEqual(rejected.nextThread.memoryRefs, fixture.memoryRefs);
+  assert.equal(
+    rejected.nextThread.memoryRefs.some((memoryId) =>
+      rejected.report.rejectedLifeChanges.some((change) => change.memoryId === memoryId)),
+    false,
+  );
 });
