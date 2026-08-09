@@ -374,10 +374,6 @@ function isThreadSpecificRef(ref) {
   return ref.startsWith("thread:") || ref.startsWith("memory:") || ref.startsWith("state:");
 }
 
-function isRequestSemanticRef(ref) {
-  return ref === "request:objective" || ref === "request:stated_need";
-}
-
 function highFitGroundingFailures(factors) {
   const failures = [];
   const advantage = factors.individualizedAdvantage;
@@ -385,7 +381,6 @@ function highFitGroundingFailures(factors) {
   if (advantage.effect !== "supports_fit") failures.push("missing_individualized_advantage");
   if (interchangeability.effect !== "supports_fit") failures.push("missing_non_interchangeability");
   if (!advantage.evidenceRefs.some(isThreadSpecificRef)) failures.push("missing_individual_specific_advantage_evidence");
-  if (!advantage.evidenceRefs.some(isRequestSemanticRef)) failures.push("missing_request_semantic_advantage_evidence");
   return failures;
 }
 
