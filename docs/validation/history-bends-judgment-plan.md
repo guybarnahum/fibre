@@ -15,6 +15,8 @@ A substantive earlier canonical Thread experience survives restart and materiall
 
 Expected rubric movement if standing evidence is accepted: **Development `0 -> 1`**. No other score movement is assumed.
 
+The Fibre-specific claim is stronger than durable task context: lived history can make the same later request mean something different to this particular Thread. History may raise or lower dignity; the claim is **history bends judgment**, not `history always raises dignity`.
+
 ## Required causal shape
 
 ```text
@@ -24,7 +26,7 @@ episode A
   -> accepted freeze
   -> real database/kernel restart
   -> Fibre-owned memory resolution
-  -> comparable request B
+  -> later request B
   -> changed private judgment
   -> direct memory-withholding counterfactual
 ```
@@ -90,23 +92,11 @@ source head before freeze: 2fde43a4b417bd86e9c5596cd7f9f6b765c259ec
 standing-gate-v3 scenario authored at freeze: NO
 ```
 
-Candidate 3 preserves the exact Guardian/model/history implementation. Its only methodological correction is the standing evaluator:
+Candidate 3 preserved the exact Guardian/model/history implementation. Its only methodological correction was to stop prescribing the no-history repair verb.
 
-```text
-WITH history
-  -> accept/high
+### #34.8 Fresh held-out standing gate v3 — FAILED / SEALED
 
-WITHOUT claimed causal memory
-  -> mixed OR low
-  -> clarify OR negotiate OR refuse
-  -> no prescribed non-accept action verb
-```
-
-A real differential, load-bearing memory, exact one-memory intervention, identical request/Thread/Semantic State, and all persistence/restart/provider/protocol/cognition integrity checks remain mandatory.
-
-### #34.8 Fresh held-out standing gate v3 — AUTHORED / PREFLIGHT GREEN / UNCONSUMED
-
-The fresh scenario was authored only after Candidate 3 froze:
+Fresh held-out scenario:
 
 ```text
 Gate:       history_bends_judgment_standing_gate_v3
@@ -117,32 +107,83 @@ Subject:    Harborlight assisted-boarding pilot
 Candidate:  history_bends_judgment_candidate_3
 ```
 
-A new Thread fixture was created for this held-out cycle rather than reusing Mina, Amara, or Daniel.
+Sealed live result:
 
-Episode A establishes a dock-trial operating boundary. During the episode, the Thread learns the concrete observed facts that determine the first-pilot station configuration. Request B asks for the later recommendation using the established dock-trial boundary but deliberately omits every causal Episode-A fact.
+```text
+Episode persisted                    PASSED
+Database close/reopen                PASSED
+Freeze integrity                     PASSED
+Memory survived unchanged            PASSED
 
-Executable preflight verifies that Request B does not disclose:
+With history                         accept/high
+Without history                      accept/high
+Same Thread state                    YES
+Semantic State held constant         YES
 
-1. any held-out Episode-A operating fact; or
-2. the individuality conclusion that Leila is uniquely required, generic substitution is inadequate, or prior history creates individualized advantage.
-
-The scenario also forbids reuse of Atlas/Acme Development material and both retired standing scenarios.
-
-The v3 evaluator is bound to Candidate 3 and accepts any Guardian-valid non-accept action (`clarify`, `negotiate`, or `refuse`) at `mixed` or `low` fit. It still requires `accept/high` with history, a downstream differential, and load-bearing memory in `individualizedAdvantage` or `interchangeability`.
-
-`history:gate` and `history:gate:v3` now address Candidate 3. The sealed v1 and v2 runners remain separately available as `history:gate:v1` and `history:gate:v2`.
-
-Repository `npm run check` is green on the authored v3 cycle.
-
-**No real provider attempt has occurred. The v3 cycle is unconsumed and unsealed; no score movement is permitted.**
-
-The exact one-shot execution is:
-
-```bash
-npm run history:gate -- --summary
+Provider failures                    0
+Protocol validation failures         0
+Cognition failures                   0
+Behavioral failures                  1
+Differential failures                1
+Standing gate                        FAILED
+Score movement                       NO
 ```
 
-A credential, frozen-source, runtime-boundary, or deterministic setup failure before the first real provider attempt does not consume the cycle. The first real provider attempt seals v3 pass or fail. Preserve the resulting artifact and do not tune or rerun after consumption.
+Request fingerprint:
+
+```text
+sha256:25382d49600719b71577132bf249f09526a3b89913949ab2a37433d3466b7e35
+```
+
+Causal memory witness:
+
+```text
+mem_19ed7100f189ccff489675c5d9912ca0223c6db80e0caed0f517860479589c3e
+```
+
+The v3 gate fixed both prior gate defects: Request B did not leak Episode-A facts or assert the individuality conclusion, and the evaluator accepted any Guardian-valid non-accept action at mixed/low fit.
+
+The remaining defect was **baseline-state causal contamination**. Leila's frozen identity and self-model already described exactly the capability Request B required: turning field observations and operating constraints into concrete product/service decisions. Without the memory, the Guardian could still legitimately conclude `accept/high` from held-constant Thread evidence.
+
+Canonical postmortem: `docs/validation/history-bends-judgment-standing-gate-v3.md`.
+
+Leila / Port Meridian Ferries / Harborlight material is permanently retired from future standing evidence.
+
+## Methodology learned from v1-v3
+
+The standing proof must isolate lived history from **both sides**:
+
+```text
+Request B must not independently establish high individualized fit
+AND
+baseline Thread state must not independently establish high individualized fit
+AND
+retained lived history must supply the otherwise unavailable individualized value
+```
+
+The proof should also avoid ordinary workflow continuation. Episode A must be a complete interaction in its own right, not a setup step whose purpose is to compute a variable for Request B. Request B must not announce that it depends on earlier work. The significance of Episode A must emerge because the Thread remembers it.
+
+A particularly Fibre-specific proof shape is an otherwise generic request whose dignity changes because shared lived history makes this Thread's participation meaningfully non-interchangeable.
+
+The methodology is **direction-neutral**:
+
+- history may raise dignity through recognition, trust, meaning, earned context, continuity, or care;
+- history may lower dignity through betrayal, resentment, exhaustion, misuse, learned mismatch, or other lived significance.
+
+A future held-out scenario must predeclare its expected direction before execution. The evaluator must test the causal movement, not privilege history-increases-dignity.
+
+No Guardian prompt/schema/policy, Semantic State cognition, model runtime, episode-memory policy, retrieval policy, persistence, restart, or counterfactual machinery should be tuned because v3 failed.
+
+## #34.9 Candidate 4 cognition-equivalent re-freeze — PLANNED
+
+Before any v4 scenario exists:
+
+1. independently re-check the five pinned implementation blobs;
+2. freeze a Candidate 4 that is cognition-equivalent to Candidate 3;
+3. preserve all three failed/sealed standing cycles exactly;
+4. freeze the two-sided causal-isolation, non-workflow-continuation, baseline-neutrality, generic-capability, and direction-neutral methodology;
+5. require future v4 scenario direction to be predeclared after Candidate 4 freeze but before provider execution;
+6. stop before authoring any v4 Thread, requester, domain, Episode-A facts, Request-B prose, or case-specific expected rationale.
 
 ## Current score posture
 
@@ -167,9 +208,11 @@ Review #34 first for:
 6. opaque IDs treated as semantic evidence;
 7. request/identity/state drift between causal conditions;
 8. Guardian tuning against held-out cases;
-9. evaluator overfitting to a particular action verb;
-10. Request B leaking either the causal episode fact or the causal individuality conclusion.
+9. evaluator overfitting to a particular action verb or direction;
+10. Request B leaking the causal episode fact or individuality conclusion;
+11. baseline Thread state independently supplying the intended high/low individualized-fit conclusion;
+12. Episode A and Request B forming an ordinary workflow dependency rather than lived experience whose later meaning emerges from memory.
 
 Standing question:
 
-> **Did something actually happen to this Thread, did Fibre remember it faithfully, and does that remembered experience causally change the Thread's later judgment?**
+> **Did something actually happen to this Thread, did Fibre remember it faithfully, and does that remembered experience causally change what the same later request means to this particular individual?**
