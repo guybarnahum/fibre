@@ -27,12 +27,16 @@ export function currentEpisodeEvidenceRefs({ requestId, authorizationId }) {
 
 export function currentEpisodeEvidenceRefsFromContext(context) {
   assertPlainObject("episode execution context", context);
+  assertId("episode execution context.threadId", context.threadId);
   assertId("episode execution context.requestId", context.requestId);
   assertPlainObject("episode execution context.participation", context.participation);
   assertId(
     "episode execution context.participation.authorizationId",
     context.participation.authorizationId,
   );
+  if (context.participation.threadId !== context.threadId) {
+    throw new TypeError("episode participation Thread does not match execution context");
+  }
   if (context.participation.requestId !== context.requestId) {
     throw new TypeError("episode participation request does not match execution context");
   }
@@ -44,28 +48,42 @@ export function currentEpisodeEvidenceRefsFromContext(context) {
 
 export function currentEpisodeEvidenceRefsFromRuntime(runtime) {
   assertPlainObject("episode runtime", runtime);
+  assertId("episode runtime.threadId", runtime.threadId);
   assertId("episode runtime.requestId", runtime.requestId);
   assertPlainObject("episode runtime.authorization", runtime.authorization);
   assertId("episode runtime.authorization.authorizationId", runtime.authorization.authorizationId);
-  if (
-    runtime.authorization.requestId !== undefined &&
-    runtime.authorization.requestId !== runtime.requestId
-  ) {
+  assertPlainObject("episode runtime.session", runtime.session);
+  assertPlainObject("episode runtime.session.context", runtime.session.context);
+  assertPlainObject(
+    "episode runtime.session.context.participation",
+    runtime.session.context.participation,
+  );
+
+  if (runtime.authorization.threadId !== runtime.threadId) {
+    throw new TypeError("episode authorization Thread does not match runtime");
+  }
+  if (runtime.authorization.requestId !== runtime.requestId) {
     throw new TypeError("episode authorization request does not match runtime");
   }
-  if (
-    runtime.session?.context?.requestId !== undefined &&
-    runtime.session.context.requestId !== runtime.requestId
-  ) {
+  if (runtime.session.context.threadId !== runtime.threadId) {
+    throw new TypeError("episode execution context Thread does not match runtime");
+  }
+  if (runtime.session.context.requestId !== runtime.requestId) {
     throw new TypeError("episode execution context request does not match runtime");
   }
   if (
-    runtime.session?.context?.participation?.authorizationId !== undefined &&
     runtime.session.context.participation.authorizationId !==
-      runtime.authorization.authorizationId
+    runtime.authorization.authorizationId
   ) {
     throw new TypeError("episode execution context authorization does not match runtime");
   }
+  if (runtime.session.context.participation.requestId !== runtime.requestId) {
+    throw new TypeError("episode participation request does not match runtime");
+  }
+  if (runtime.session.context.participation.threadId !== runtime.threadId) {
+    throw new TypeError("episode participation Thread does not match runtime");
+  }
+
   return currentEpisodeEvidenceRefs({
     requestId: runtime.requestId,
     authorizationId: runtime.authorization.authorizationId,
