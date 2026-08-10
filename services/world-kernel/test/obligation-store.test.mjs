@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
-import { openWorldStore, canonicalJson } from "../src/persistence.mjs";
+import { openWorldStore } from "../src/persistence.mjs";
 import {
   ObligationConflictError,
   ObligationNotFoundError,
@@ -86,6 +86,17 @@ function revision2(overrides = {}) {
     supersedesRevision: 1,
     terms: "Perform one bounded security review and return only evidence-bearing findings.",
     createdAt: "2026-08-09T20:05:00.000Z",
+    ...overrides,
+  });
+}
+
+function revision3(overrides = {}) {
+  return obligation({
+    revision: 3,
+    supersedesRevision: 2,
+    status: "satisfied",
+    terms: "The bounded review obligation is satisfied; preserve its historical terms.",
+    createdAt: "2026-08-09T20:10:00.000Z",
     ...overrides,
   });
 }
@@ -232,7 +243,36 @@ test("obligation identity cannot move between Threads", () =>
     store.close();
   }));
 
-test("legacy source identity is stable and spent authority cannot become active", () =>
+test("issuer identity is stable and terminal status cannot be resurrected", () =>
+  withDatabase((databasePath) => {
+    const store = openObligationStore(databasePath);
+    store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
+    assert.throws(
+      () => store.recordRevision(revision2({
+        issuer: { entityId: "human_other", kind: "human", displayName: "Other" },
+      }), { recordedAt: "2026-08-09T20:06:00.000Z" }),
+      ObligationConflictError,
+    );
+
+    store.recordRevision(revision2({ status: "satisfied" }), {
+      recordedAt: "2026-08-09T20:06:00.000Z",
+    });
+    assert.throws(
+      () => store.recordRevision(revision3({ status: "active" }), {
+        recordedAt: "2026-08-09T20:11:00.000Z",
+      }),
+      ObligationConflictError,
+    );
+    assert.equal(
+      store.recordRevision(revision3(), {
+        recordedAt: "2026-08-09T20:11:00.000Z",
+      }).revision.obligation.status,
+      "satisfied",
+    );
+    store.close();
+  }));
+
+test("legacy source identity is unique, stable, and spent authority cannot become active", () =>
   withDatabase((databasePath) => {
     const legacyReference = "Legacy bounded review commitment";
     const legacyDigest = legacyObligationReferenceDigest(fixture.threadId, legacyReference);
@@ -243,9 +283,17 @@ test("legacy source identity is stable and spent authority cannot become active"
     }), { recordedAt: "2026-08-09T20:01:00.000Z" });
     assert.throws(
       () => store.recordRevision(revision2({
-        status: "active",
+        status: "satisfied",
         legacySourceDigest: undefined,
       }), { recordedAt: "2026-08-09T20:06:00.000Z" }),
+      ObligationConflictError,
+    );
+    assert.throws(
+      () => store.recordRevision(obligation({
+        obligationId: OBLIGATION_B,
+        status: "satisfied",
+        legacySourceDigest: legacyDigest,
+      }), { recordedAt: "2026-08-09T20:02:00.000Z" }),
       ObligationConflictError,
     );
     store.close();
@@ -271,8 +319,8 @@ test("legacy source identity is stable and spent authority cannot become active"
     store = openObligationStore(databasePath);
     assert.equal(store.hasLegacyTombstone(fixture.threadId, legacyDigest), true);
     assert.throws(
-      () => store.recordRevision(obligation({
-        obligationId: OBLIGATION_B,
+      () => store.recordRevision(revision2({
+        status: "active",
         legacySourceDigest: legacyDigest,
       }), { recordedAt: "2026-08-09T20:10:00.000Z" }),
       ObligationConflictError,
@@ -280,7 +328,63 @@ test("legacy source identity is stable and spent authority cannot become active"
     store.close();
   }));
 
-test("current reads detect coherent row tampering and broken revision history", () =>
+test("append-only enforcement rejects ordinary row rewriting", () =>
+  withDatabase((databasePath) => {
+    const store = openObligationStore(databasePath);
+    store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
+    store.close();
+
+    const raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
+    assert.throws(
+      () => raw.prepare(`
+        UPDATE obligation_records SET status='revoked'
+        WHERE obligation_id=? AND revision=1
+      `).run(OBLIGATION_A),
+      /append-only/,
+    );
+    raw.close();
+  }));
+
+test("reads detect digest and denormalized-column corruption after append-only protection is bypassed", () =>
+  withDatabase((databasePath) => {
+    let store = openObligationStore(databasePath);
+    const first = store.recordRevision(obligation(), {
+      recordedAt: "2026-08-09T20:01:00.000Z",
+    }).revision;
+    store.close();
+
+    let raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
+    raw.exec("DROP TRIGGER obligation_records_no_update");
+    raw.prepare(`
+      UPDATE obligation_records SET obligation_digest=?
+      WHERE obligation_id=? AND revision=1
+    `).run(REQUEST_B, OBLIGATION_A);
+    raw.close();
+
+    store = openObligationStore(databasePath);
+    assert.throws(
+      () => store.getCurrentRevision(fixture.threadId, OBLIGATION_A),
+      /digest failed/,
+    );
+    store.close();
+
+    raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
+    raw.exec("DROP TRIGGER obligation_records_no_update");
+    raw.prepare(`
+      UPDATE obligation_records SET obligation_digest=?, status='revoked'
+      WHERE obligation_id=? AND revision=1
+    `).run(first.obligationDigest, OBLIGATION_A);
+    raw.close();
+
+    store = openObligationStore(databasePath);
+    assert.throws(
+      () => store.getCurrentRevision(fixture.threadId, OBLIGATION_A),
+      /status does not match obligation_json/,
+    );
+    store.close();
+  }));
+
+test("current resolution verifies chronology across the full revision chain", () =>
   withDatabase((databasePath) => {
     let store = openObligationStore(databasePath);
     store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
@@ -289,31 +393,11 @@ test("current reads detect coherent row tampering and broken revision history", 
 
     const raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
     raw.exec("DROP TRIGGER obligation_records_no_update");
-    const tampered = revision2({ terms: "Tampered but coherently redigested terms." });
     raw.prepare(`
-      UPDATE obligation_records
-      SET obligation_json=?, obligation_digest=?
-      WHERE obligation_id=? AND revision=2
-    `).run(
-      canonicalJson(tampered),
-      structuredObligationDigest(tampered),
-      OBLIGATION_A,
-    );
-    raw.close();
-
-    store = openObligationStore(databasePath);
-    const current = store.getCurrentRevision(fixture.threadId, OBLIGATION_A);
-    assert.equal(current.obligation.terms, tampered.terms);
-    store.close();
-
-    const rawAgain = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
-    rawAgain.exec("DROP TRIGGER obligation_records_no_update");
-    rawAgain.prepare(`
-      UPDATE obligation_records
-      SET recorded_at=?
+      UPDATE obligation_records SET recorded_at=?
       WHERE obligation_id=? AND revision=1
     `).run("2026-08-09T20:07:00.000Z", OBLIGATION_A);
-    rawAgain.close();
+    raw.close();
 
     store = openObligationStore(databasePath);
     assert.throws(
