@@ -198,6 +198,22 @@ The canonical server owns and opens the applicability store. Callers cannot inje
 
 D does **not** claim Structured Obligation discharge. Actor/Guardian execution can now be compelled through structured authority, but the obligation remains current until E appends the proper status/discharge history and consumption evidence.
 
+### Why D is a Fibre step, not workflow plumbing
+
+D makes a persistent social fact causally load-bearing while preserving the Thread's interior stance. The behavior is not “the request included a magic token, so execute.” Instead:
+
+```text
+Thread-owned current commitment
+    -> Fibre-owned applicability judgment
+    -> persisted authority witness
+    -> current-authority revalidation
+    -> compelled consequence
+```
+
+That is closer to a digital person than an assistant permission flag because a durable commitment can constrain future action **without changing what the Thread privately wants**. The provenance and exact current-state witnesses make the social constraint inspectable rather than hidden in prompt text or requester instructions.
+
+D still earns no personhood score by itself. Its value is architectural: later identity, relationship, and institutional commitments can have real consequences without becoming caller-controlled execution channels.
+
 ## Required #35 adversarial cases
 
 ```text
