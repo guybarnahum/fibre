@@ -33,6 +33,10 @@ import {
   guardianAuditDigest,
   runtimeSessionDigest,
 } from "./runtime-domain.mjs";
+import {
+  persistStructuredObligationDischarge,
+  prepareStructuredObligationDischarge,
+} from "./structured-obligation-discharge-store.mjs";
 
 function parseJson(name, value) {
   try {
@@ -393,6 +397,13 @@ export class FreezeStore {
         );
       }
 
+      const structuredDischarge = prepareStructuredObligationDischarge(
+        this.#database,
+        authorization,
+        runtime.authorization_digest,
+        record,
+      );
+
       const threadRow = this.#database.prepare(
         "SELECT version,status,state_json,state_hash FROM threads WHERE thread_id=?",
       ).get(record.threadId);
@@ -535,6 +546,9 @@ export class FreezeStore {
         UPDATE thaw_leases SET status='released',released_at=?,release_reason='freeze_completed'
         WHERE lease_id=? AND status='active'
       `).run(record.completedAt, record.leaseId);
+
+      persistStructuredObligationDischarge(this.#database, structuredDischarge);
+
       this.#database.exec("COMMIT");
     } catch (error) {
       safeRollback(this.#database);
