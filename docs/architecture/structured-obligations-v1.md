@@ -128,7 +128,7 @@ BEGIN IMMEDIATE
 COMMIT
 ```
 
-The applicability writer acquires SQLite's write reservation before consulting the companion file-backed `ObligationStore`. That companion performs B's full-chain validation while the reservation prevents a competing writer from committing a newer obligation revision before the applicability row commits. Thus the resolution and append occur within one serialized write interval, although only the applicability connection owns the SQL transaction.
+The applicability writer acquires SQLite's write reservation before consulting the companion file-backed `ObligationStore`. That companion performs B's full-chain validation while the reservation prevents a competing writer from committing a newer obligation revision before the applicability row commits. Thus resolution and append occur within one serialized write interval, although only the applicability connection owns the SQL transaction.
 
 Fibre generates evidence refs for the persisted activation request, historical Thread snapshot, exact obligation revision, and any load-bearing legacy tombstone. SQL backstops independently require an applicability insert to match the persisted request, exact current obligation revision/digest, and policy `structured_obligation_applicability/1`.
 
