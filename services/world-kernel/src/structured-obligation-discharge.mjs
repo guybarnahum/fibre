@@ -98,10 +98,12 @@ export function normalizeStructuredObligationDischarge(record) {
     "applicabilityDecisionDigest",
     "authorizationId",
     "authorizationDigest",
+    "authorizationConsumptionDigest",
     "sessionId",
     "requestId",
     "freezeOperationId",
     "freezeReportId",
+    "freezeReportDigest",
     "eventId",
     "dischargedAt",
     "reasonCode",
@@ -145,10 +147,15 @@ export function normalizeStructuredObligationDischarge(record) {
   );
   assertId("structured discharge authorizationId", record.authorizationId);
   assertSha256("structured discharge authorizationDigest", record.authorizationDigest);
+  assertSha256(
+    "structured discharge authorizationConsumptionDigest",
+    record.authorizationConsumptionDigest,
+  );
   assertId("structured discharge sessionId", record.sessionId);
   assertId("structured discharge requestId", record.requestId);
   assertId("structured discharge freezeOperationId", record.freezeOperationId);
   assertId("structured discharge freezeReportId", record.freezeReportId);
+  assertSha256("structured discharge freezeReportDigest", record.freezeReportDigest);
   assertId("structured discharge eventId", record.eventId);
   assertIsoTimestamp("structured discharge dischargedAt", record.dischargedAt);
   if (record.reasonCode !== "runtime_completed_guardian_pass") {
@@ -166,10 +173,12 @@ export function normalizeStructuredObligationDischarge(record) {
     applicabilityDecisionDigest: record.applicabilityDecisionDigest,
     authorizationId: record.authorizationId,
     authorizationDigest: record.authorizationDigest,
+    authorizationConsumptionDigest: record.authorizationConsumptionDigest,
     sessionId: record.sessionId,
     requestId: record.requestId,
     freezeOperationId: record.freezeOperationId,
     freezeReportId: record.freezeReportId,
+    freezeReportDigest: record.freezeReportDigest,
     eventId: record.eventId,
     dischargedAt: record.dischargedAt,
     reasonCode: record.reasonCode,
@@ -183,10 +192,12 @@ export function buildStructuredObligationDischarge({
   applicabilityDecisionDigest,
   authorizationId,
   authorizationDigest,
+  authorizationConsumptionDigest,
   sessionId,
   requestId,
   freezeOperationId,
   freezeReportId,
+  freezeReportDigest,
   eventId,
   dischargedAt,
 }) {
@@ -214,10 +225,12 @@ export function buildStructuredObligationDischarge({
     applicabilityDecisionDigest,
     authorizationId,
     authorizationDigest,
+    authorizationConsumptionDigest,
     sessionId,
     requestId,
     freezeOperationId,
     freezeReportId,
+    freezeReportDigest,
     eventId,
     dischargedAt,
     reasonCode: "runtime_completed_guardian_pass",
