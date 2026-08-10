@@ -21,13 +21,15 @@ The second invariant is:
 
 > **Compulsion never rewrites consent.**
 
-A Thread may privately refuse a request while a valid governing obligation still authorizes participation. The resulting execution is obligation-mediated/compelled; the private refusal remains authoritative.
+A Thread may privately refuse or otherwise decline a request while a valid governing obligation authorizes participation. The resulting execution is obligation-mediated/compelled; the private stance remains authoritative as the Thread's own desire.
 
 ## Existing authority gap
 
-Before #35, the canonical runtime accepts caller-supplied `obligationReferences` and treats membership in `thread.currentState.unresolvedIntentions` as sufficient authority to override a private refusal. Freeze then consumes the exact string and removes it from `unresolvedIntentions`.
+Before #35, the canonical runtime accepted caller-supplied `obligationReferences` and treated membership in `thread.currentState.unresolvedIntentions` as sufficient authority to override a private refusal. Freeze then consumed the exact string and removed it from `unresolvedIntentions`.
 
-This conflates a personal intention or unfinished goal, a social/legal commitment, and a caller-nominated authority token. Mina's fixture makes the defect concrete: `Read a case study on identity-system failures` is an unresolved intention, yet historical M1 tooling can cite that string as an obligation. #35 must not preserve that semantic conflation behind a richer object shape.
+This conflated a personal intention or unfinished goal, a social/legal commitment, and a caller-nominated authority token. Mina's fixture made the defect concrete: `Read a case study on identity-system failures` is an unresolved intention, yet historical M1 tooling can cite that string as an obligation. #35 must not preserve that semantic conflation behind a richer object shape.
+
+D removes that authority path from the canonical world-kernel. Historical M1/v3 code and evidence remain readable as historical/internal compatibility, but the canonical server no longer accepts exact prose as obligation authority.
 
 ## Domain model
 
@@ -52,11 +54,13 @@ A stored obligation without a supported binding may exist and be inspectable but
 
 Applicability is an append-only decision distinct from the obligation itself. Each decision binds operation/input identity, the historical Thread snapshot, persisted request, exact obligation revision/digest, nomination source, result/reason, policy, Fibre-generated evidence refs, time/causation lineage, and a decision digest.
 
-Only a persisted `applies` decision produced by Fibre may eventually support obligation-mediated authorization. The caller may nominate an obligation ID but cannot author result, reason, policy, obligation revision/digest, or evidence refs. Authorization must eventually bind applicability ID/digest, not merely an obligation ID.
+Only a persisted `applies` decision produced by Fibre can support obligation-mediated authorization. The caller may nominate an obligation ID but cannot author result, reason, policy, obligation revision/digest, or evidence refs.
+
+An `applies` decision is historical evidence, **not a perpetual capability**. D therefore revalidates current obligation authority again at runtime authorization insertion. A later revision, revocation, discharge, expiry, tombstone, request-binding mismatch, or other loss of current authority prevents the historical `applies` record from being replayed into execution.
 
 ## Legacy migration
 
-`currentState.unresolvedIntentions` is not an obligation registry. Migration MUST NOT convert those strings into active Structured Obligations. After authority cutover they remain personal/history context and carry zero obligation authority unless explicitly classified through a separate authoritative operation.
+`currentState.unresolvedIntentions` is not an obligation registry. Migration MUST NOT convert those strings into active Structured Obligations. After D, they remain personal/history context and carry zero canonical obligation authority unless explicitly classified through a separate authoritative operation.
 
 Historical consumed exact-string authority becomes deterministic append-only tombstones. Any later explicit legacy import computing the same legacy digest MUST NOT create active authority.
 
@@ -76,13 +80,13 @@ legacy_obligation_tombstones
 
 Current obligation state is not trusted from `MAX(revision)` alone: Fibre validates the complete aggregate history before returning the final revision.
 
-The additive #35 storage/applicability work remains on world-store schema v4 under the existing same-version repair contract. A global version bump should occur only when the later authorization/freeze cutover changes an existing persisted contract.
+The additive #35 work remains on world-store schema v4 under the existing same-version repair contract. D adds conditional authorization guards for new structured authorization JSON while leaving historical M1 authorization rows readable. A global version bump should occur only if E changes the persisted contract of existing freeze/consumption tables or another later slice requires incompatible migration semantics.
 
-SQL independently backstops append-only history, predecessor linkage, visibility ordering, stable Thread/issuer/legacy identity, terminal-state stability, legacy-origin uniqueness, and spent-legacy non-reactivation.
+SQL independently backstops append-only history, predecessor linkage, visibility ordering, stable Thread/issuer/legacy identity, terminal-state stability, legacy-origin uniqueness, spent-legacy non-reactivation, and D's current structured authority binding.
 
 ## ObligationStore v1 — B
 
-`services/world-kernel/src/obligation-store.mjs` is the trusted revision substrate. It does not authorize participation.
+`services/world-kernel/src/obligation-store.mjs` is the trusted revision substrate.
 
 ```text
 normalize candidate
@@ -108,7 +112,7 @@ Policy:
 structured_obligation_applicability / 1
 ```
 
-A candidate can apply only when it belongs to the Thread; Fibre resolves and verifies the exact current revision; it is active/effective/unexpired; its supported request-fingerprint binding matches the persisted request; no legacy tombstone forbids authority; and the persisted decision binds the same historical Thread snapshot/request that later authorization will use.
+A candidate can apply only when it belongs to the Thread; Fibre resolves and verifies the exact current revision; it is active/effective/unexpired; its supported request-fingerprint binding matches the persisted request; no legacy tombstone forbids authority; and the persisted decision binds the same historical Thread snapshot/request later used by authorization.
 
 Natural-language terms may explain the commitment but cannot expand deterministic v1 authority.
 
@@ -136,33 +140,100 @@ Exact operation retry returns the original persisted decision even if time has a
 
 The C implementation is file-backed. Because full-chain validation currently uses a companion connection, SQLite `:memory:` is not a supported runtime/evidentiary path and cannot resolve against the writer's separate in-memory world. A future shared-connection refactor may add true in-memory support without changing the decision contract.
 
+## Runtime authorization cutover — D
+
+The canonical world-kernel now uses `StructuredObligationCausalWorldKernelService` with causal participation profile v4. The live participation API may nominate only a stable `governingObligationId`; legacy `governingObligationReferences` prose is rejected by the canonical structured service.
+
+The authority chain is:
+
+```text
+persisted private stance
+        |
+        +-- desiredAction=accept + dignity=high
+        |       -> willing authorization
+        |
+        +-- non-accept + nominated obligationId
+                -> Fibre persists C applicability
+                -> does_not_apply: preserve private non-execution stance
+                -> applies: attempt compelled runtime authorization
+                              |
+                              -> BEGIN IMMEDIATE in runtime store
+                              -> revalidate exact applicability ID/digest
+                              -> revalidate exact current obligation revision/digest
+                              -> require active/effective/unexpired
+                              -> require exact request-fingerprint binding
+                              -> require no newer revision
+                              -> require no spent-legacy tombstone
+                              -> insert obligation_override authorization/runtime
+```
+
+Structured authorization explicitly records:
+
+```text
+participationBasis = willing | obligation_override
+```
+
+For compelled participation it also records a load-bearing `applicability` witness containing:
+
+```text
+applicabilityId
+decisionDigest
+obligationId
+obligationRevision
+obligationDigest
+policy { id, version }
+```
+
+The legacy `obligationReferences` field remains present only for historical record-shape compatibility and is empty on all new structured authorizations. It carries no Structured Obligation authority.
+
+A compelled authorization preserves the private `desiredAction` exactly and separately records `authorizedAction = accept`. It therefore represents the important Fibre distinction:
+
+> **The Thread does not want to do this, but a current commitment can still bind what happens.**
+
+A willing authorization cannot invoke obligation authority unnecessarily. An irrelevant obligation does not turn a non-execution stance into execution; C persists `does_not_apply` and D returns to the Thread's own stance.
+
+The runtime SQL guard is intentionally load-bearing. C may have been correct when it ran, but between C and runtime insertion the obligation could be revised, revoked, expire, or become otherwise non-current. Because runtime insertion itself occurs under `BEGIN IMMEDIATE`, the current-authority recheck prevents a historical applicability decision from becoming a stale bearer token.
+
+The canonical server owns and opens the applicability store. Callers cannot inject a substitute applicability store through server startup options.
+
+D does **not** claim Structured Obligation discharge. Actor/Guardian execution can now be compelled through structured authority, but the obligation remains current until E appends the proper status/discharge history and consumption evidence.
+
 ## Required #35 adversarial cases
 
 ```text
 unknown / foreign nomination
-    -> no authority-bearing applicability record
+    -> no authority-bearing applicability record or runtime
 
 real but unrelated obligation
     -> does_not_apply
+    -> private non-execution stance preserved
 
 active exact-bound obligation
     -> applies
+    -> may authorize obligation_override runtime
 
-private dignity = refuse + governing obligation
-    -> may later authorize compelled execution
-    -> private refusal remains unchanged
+private dignity != accept + governing obligation
+    -> compelled runtime may occur
+    -> private stance remains unchanged
+    -> never rewritten as consent
+
+legacy unresolved-intention prose
+    -> rejected as canonical obligation authority
+
+C says applies, then obligation is revised/revoked before runtime insert
+    -> runtime authorization rejected
+
+C says applies, then obligation expires before runtime insert
+    -> runtime authorization rejected
 
 expired / satisfied / revoked / discharged obligation
-    -> no authority
-
-legacy unresolved intention without structured obligation
-    -> no authority
+    -> no current execution authority
 
 pre-migration consumed legacy reference
-    -> tombstone load-bearing -> does_not_apply
+    -> tombstone load-bearing -> no authority
 
-restart / replay
-    -> same obligation/applicability/authorization/discharge evidence
+restart / replay after D
+    -> same persisted private stance, applicability witness, authorization, and runtime identity
 ```
 
 ## Non-goals for v1
@@ -188,10 +259,13 @@ Transactional append/exact retry, full-chain current resolution, exact revision/
 
 Persisted request/snapshot verification, Fibre-owned current-revision resolution, deterministic applicability within one serialized write interval, caller-output exclusion, decision/digest verification, SQL binding backstops, restart idempotency, historical decision preservation, and unrelated/unknown/foreign/corrupt-witness/concurrency/legacy-spend coverage are implemented.
 
-A, B, and C deliberately do **not** yet change runtime participation authorization. Historical M1 `obligationReferences` remains executable as legacy compatibility until the explicit authority cutover. Structured records and applicability decisions alone are not #35 authority closure.
+### D — runtime authorization cutover + applicability binding — LANDED
+
+The canonical server now uses structured causal profile v4, rejects prose obligation authority, persists C from a stable nomination, distinguishes willing from compelled authorization, binds applicability ID/digest plus exact obligation revision/digest, and transactionally revalidates current authority at runtime insertion. Restart and stale-revision/expiry adversarial coverage are included.
+
+A-D close the **canonical runtime authority-selection gap**: a caller can no longer create compelled execution merely by citing prose or by naming a real but irrelevant commitment. They do not yet close the full Structured Obligation lifecycle because discharge remains on the historical M1 freeze mechanism until E.
 
 ## Follow-on implementation steps
 
-1. **D — Runtime authorization cutover + applicability binding.** Remove exact-string/unresolved-intention authority from the canonical runtime and require a persisted `applies` decision bound by applicability ID/digest plus exact obligation revision/digest.
-2. **E — Freeze/discharge cutover.** Discharge Structured Obligations through append-only status revisions and consumption evidence while preserving historical M1 evidence as historical only.
-3. **F — Inspection + restart/replay/adversarial closure.** Expose bounded private/admin inspection and close #35 with full restart, replay, privacy, and authority-integrity tests.
+1. **E — Freeze/discharge cutover.** Discharge Structured Obligations through append-only status revisions and consumption evidence, bind the exact applicability/authorization chain, and preserve historical M1 evidence as historical only.
+2. **F — Inspection + restart/replay/adversarial closure.** Expose bounded private/admin inspection and close #35 with full restart, replay, privacy, and authority-integrity tests.
