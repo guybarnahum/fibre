@@ -44,6 +44,9 @@ export function createObligationTables(database) {
     CREATE INDEX IF NOT EXISTS idx_obligation_records_legacy_source
       ON obligation_records(thread_id,legacy_source_digest)
       WHERE legacy_source_digest IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_obligation_records_legacy_origin
+      ON obligation_records(thread_id,legacy_source_digest)
+      WHERE revision=1 AND legacy_source_digest IS NOT NULL;
 
     CREATE TABLE IF NOT EXISTS obligation_applicability_decisions (
       applicability_id TEXT PRIMARY KEY CHECK (length(applicability_id)=68 AND substr(applicability_id,1,4)='oba_' AND substr(applicability_id,5) NOT GLOB '*[^0-9a-f]*'),
@@ -111,6 +114,34 @@ export function createObligationTables(database) {
     CREATE TRIGGER IF NOT EXISTS legacy_obligation_tombstones_no_delete
       BEFORE DELETE ON legacy_obligation_tombstones
       BEGIN SELECT RAISE(ABORT,'legacy_obligation_tombstones is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS obligation_records_revision_stable_identity
+      BEFORE INSERT ON obligation_records
+      WHEN NEW.revision>1 AND EXISTS (
+        SELECT 1
+        FROM obligation_records prior
+        WHERE prior.obligation_id=NEW.obligation_id
+          AND prior.revision=NEW.revision-1
+          AND (
+            prior.thread_id<>NEW.thread_id
+            OR NOT (prior.legacy_source_digest IS NEW.legacy_source_digest)
+            OR json_extract(prior.obligation_json,'$.issuer.entityId')<>json_extract(NEW.obligation_json,'$.issuer.entityId')
+            OR json_extract(prior.obligation_json,'$.issuer.kind')<>json_extract(NEW.obligation_json,'$.issuer.kind')
+          )
+      )
+      BEGIN SELECT RAISE(ABORT,'obligation revision changes stable identity'); END;
+
+    CREATE TRIGGER IF NOT EXISTS obligation_records_terminal_status_stable
+      BEFORE INSERT ON obligation_records
+      WHEN NEW.revision>1 AND EXISTS (
+        SELECT 1
+        FROM obligation_records prior
+        WHERE prior.obligation_id=NEW.obligation_id
+          AND prior.revision=NEW.revision-1
+          AND prior.status<>'active'
+          AND NEW.status<>prior.status
+      )
+      BEGIN SELECT RAISE(ABORT,'terminal obligation status cannot change'); END;
 
     CREATE TRIGGER IF NOT EXISTS obligation_records_reject_spent_legacy_authority
       BEFORE INSERT ON obligation_records
