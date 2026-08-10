@@ -61,7 +61,9 @@ async function startProcess(databasePath) {
   const ready = await waitForReady(child, () => stderr);
   assert.equal(ready.guardianProvider, "scripted_test_only");
   assert.equal(ready.causalParticipationProfileVersion, 4);
+  assert.equal(ready.freezeProfileVersion, 2);
   assert.equal(ready.structuredObligationAuthorityEnabled, true);
+  assert.equal(ready.structuredObligationDischargeEnabled, true);
   return {
     child,
     baseUrl: `http://127.0.0.1:${ready.port}`,
@@ -387,8 +389,8 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
       },
     );
     assert.equal(frozen.response.status, 409);
-    assert.equal(frozen.body.code, "FREEZE_STATE_CHANGED");
-    assert.match(frozen.body.message, /advanced to revision 2 before freeze/);
+    assert.equal(frozen.body.error.code, "FREEZE_STATE_CHANGED");
+    assert.match(frozen.body.error.message, /advanced to revision 2 before freeze/);
 
     const evidenceDb = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
     try {
