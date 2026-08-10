@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
@@ -142,7 +143,7 @@ function structuredObligation(threadId, request) {
   };
 }
 
-test("canonical world-kernel process persists semantic judgment and structured obligation runtime authority", async () => {
+test("canonical world-kernel completes and persists a compelled Structured Obligation life", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-process-"));
   const databasePath = join(directory, "world.sqlite");
   const thread = structuredThread();
@@ -214,6 +215,7 @@ test("canonical world-kernel process persists semantic judgment and structured o
     assert.equal(continued.body.runtime.authorization.applicability.obligationId, obligationId);
     const sessionId = continued.body.runtime.session.sessionId;
     const authorizationId = continued.body.runtime.authorization.authorizationId;
+    const applicabilityId = continued.body.applicability.decision.applicabilityId;
 
     const actor = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/actor`, {
       method: "POST",
@@ -231,15 +233,64 @@ test("canonical world-kernel process persists semantic judgment and structured o
     assert.equal(guardian.response.status, 201);
     assert.equal(guardian.body.runtime.goalGuardianAudit.audit.decision, "pass");
 
-    // D ends at runtime authority. Structured discharge/status revision belongs to E.
-    const stillCurrent = openObligationStore(databasePath);
+    const frozen = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/freeze`, {
+      method: "POST",
+      headers: privateHeaders(),
+      body: JSON.stringify({
+        operationId: "op_causal_process_freeze",
+        lifeChangeDecisions: [],
+        causationId: "cause_causal_process_freeze",
+        correlationId: "corr_causal_process",
+      }),
+    });
+    assert.equal(frozen.response.status, 201);
+    assert.equal(frozen.body.idempotent, false);
+    assert.deepEqual(frozen.body.freeze.report.dischargedObligations, []);
+    assert.deepEqual(frozen.body.freeze.consumption.obligationReferences, []);
+    assert.equal(frozen.body.freeze.report.authorizationId, authorizationId);
+
+    const discharged = openObligationStore(databasePath);
     try {
+      const history = discharged.listHistory(thread.threadId, obligationId);
+      assert.equal(history.length, 2);
+      assert.equal(history[0].obligation.status, "active");
+      assert.equal(history[1].obligation.status, "discharged");
+      assert.equal(history[1].obligation.revision, 2);
+      assert.equal(history[1].obligation.supersedesRevision, 1);
       assert.equal(
-        stillCurrent.getCurrentRevision(thread.threadId, obligationId).obligation.status,
-        "active",
+        discharged.getCurrentRevision(thread.threadId, obligationId).obligation.status,
+        "discharged",
       );
     } finally {
-      stillCurrent.close();
+      discharged.close();
+    }
+
+    const evidenceDb = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+    try {
+      const discharge = evidenceDb.prepare(`
+        SELECT discharge_id,obligation_id,prior_revision,terminal_revision,applicability_id,
+          authorization_id,authorization_consumption_digest,session_id,freeze_operation_id,
+          freeze_report_id,freeze_report_digest,event_id,reason_code,discharge_digest
+        FROM structured_obligation_discharges
+        WHERE authorization_id=?
+      `).get(authorizationId);
+      assert.ok(discharge);
+      assert.equal(discharge.obligation_id, obligationId);
+      assert.equal(Number(discharge.prior_revision), 1);
+      assert.equal(Number(discharge.terminal_revision), 2);
+      assert.equal(discharge.applicability_id, applicabilityId);
+      assert.equal(discharge.authorization_id, authorizationId);
+      assert.equal(discharge.session_id, sessionId);
+      assert.equal(discharge.freeze_operation_id, "op_causal_process_freeze");
+      assert.equal(discharge.freeze_report_id, frozen.body.freeze.report.reportId);
+      assert.equal(discharge.freeze_report_digest, frozen.body.freeze.reportDigest);
+      assert.equal(discharge.event_id, frozen.body.freeze.event.eventId);
+      assert.equal(discharge.authorization_consumption_digest, frozen.body.freeze.consumptionDigest);
+      assert.equal(discharge.reason_code, "runtime_completed_guardian_pass");
+      assert.match(discharge.discharge_id, /^obd_[0-9a-f]{64}$/);
+      assert.match(discharge.discharge_digest, /^sha256:[0-9a-f]{64}$/);
+    } finally {
+      evidenceDb.close();
     }
 
     await first.stop();
@@ -248,18 +299,29 @@ test("canonical world-kernel process persists semantic judgment and structured o
     second = await startProcess(databasePath);
     const persisted = await json(`${second.baseUrl}/threads/${thread.threadId}`);
     assert.equal(persisted.response.status, 200);
-    assert.equal(persisted.body.thread.version, 1);
+    assert.equal(persisted.body.thread.version, 2);
     assert.deepEqual(persisted.body.thread.currentState.unresolvedIntentions, []);
 
     const runtime = await json(`${second.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`, {
       headers: { "x-fibre-private-token": privateToken },
     });
     assert.equal(runtime.response.status, 200);
+    assert.equal(runtime.body.runtime.session.status, "completed");
+    assert.equal(runtime.body.runtime.lease.status, "released");
     assert.equal(runtime.body.runtime.authorization.authorizationId, authorizationId);
     assert.equal(runtime.body.runtime.authorization.desiredAction, "clarify");
     assert.equal(runtime.body.runtime.authorization.authorizedAction, "accept");
     assert.equal(runtime.body.runtime.authorization.participationBasis, "obligation_override");
     assert.equal(runtime.body.runtime.authorization.applicability.obligationId, obligationId);
+
+    const restartedObligations = openObligationStore(databasePath);
+    try {
+      const current = restartedObligations.getCurrentRevision(thread.threadId, obligationId);
+      assert.equal(current.obligation.revision, 2);
+      assert.equal(current.obligation.status, "discharged");
+    } finally {
+      restartedObligations.close();
+    }
   } finally {
     if (first) await first.stop().catch(() => {});
     if (second) await second.stop().catch(() => {});
