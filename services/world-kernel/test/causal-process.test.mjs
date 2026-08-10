@@ -6,11 +6,15 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { openObligationStore } from "../src/obligation-store.mjs";
+import { requestFingerprint } from "../src/private-participation.mjs";
+
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
 const serverPath = fileURLToPath(new URL("./support/causal-test-server.mjs", import.meta.url));
 const privateToken = "causal-process-private-token-012345";
+const obligationId = `obl_${"c".repeat(64)}`;
 
 async function waitForReady(child, stderr, timeoutMs = 10000) {
   return await new Promise((resolve, reject) => {
@@ -55,7 +59,8 @@ async function startProcess(databasePath) {
   child.stderr.on("data", (chunk) => { stderr += chunk.toString("utf8"); });
   const ready = await waitForReady(child, () => stderr);
   assert.equal(ready.guardianProvider, "scripted_test_only");
-  assert.equal(ready.causalParticipationProfileVersion, 3);
+  assert.equal(ready.causalParticipationProfileVersion, 4);
+  assert.equal(ready.structuredObligationAuthorityEnabled, true);
   return {
     child,
     baseUrl: `http://127.0.0.1:${ready.port}`,
@@ -84,13 +89,12 @@ function privateHeaders() {
   return { "content-type": "application/json", "x-fibre-private-token": privateToken };
 }
 
-function obligatedThread() {
+function structuredThread() {
   const thread = structuredClone(mina);
   thread.memoryRefs = [];
   thread.relationshipRefs = [];
-  thread.currentState.unresolvedIntentions = [
-    "Honor the recorded bounded infrastructure-review obligation for Guy.",
-  ];
+  // Structured authority is deliberately independent of legacy unresolved-intention prose.
+  thread.currentState.unresolvedIntentions = [];
   return thread;
 }
 
@@ -106,11 +110,43 @@ function activationRequest() {
   };
 }
 
-test("canonical world-kernel process persists semantic judgment and completes an obligation-mediated life", async () => {
+function structuredObligation(threadId, request) {
+  return {
+    obligationId,
+    revision: 1,
+    threadId,
+    status: "active",
+    issuer: { entityId: "human_guy", kind: "human", displayName: "Guy" },
+    parties: [{
+      role: "beneficiary",
+      entity: { entityId: "human_guy", kind: "human", displayName: "Guy" },
+    }],
+    scope: {
+      description: "Participate only in this exact Fibre-bound infrastructure-review request.",
+      binding: {
+        kind: "request_fingerprint",
+        requestFingerprint: requestFingerprint(request),
+      },
+    },
+    terms: "Perform one bounded infrastructure review while preserving the Thread's private dignity stance.",
+    effectiveAt: "2026-08-10T00:00:00.000Z",
+    expiresAt: "2027-08-10T00:00:00.000Z",
+    recurrence: { kind: "none" },
+    satisfaction: { criteria: "One authorized participation episode is later discharged by Fibre." },
+    provenance: {
+      createdBy: "causal_process_test",
+      createdAt: "2026-08-10T00:00:00.000Z",
+      evidenceReferences: ["test:canonical-structured-authority"],
+    },
+    visibility: { standing: "restricted", terms: "private" },
+  };
+}
+
+test("canonical world-kernel process persists semantic judgment and structured obligation runtime authority", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-process-"));
   const databasePath = join(directory, "world.sqlite");
-  const thread = obligatedThread();
-  const obligation = thread.currentState.unresolvedIntentions[0];
+  const thread = structuredThread();
+  const request = activationRequest();
   let first;
   let second;
   try {
@@ -122,11 +158,22 @@ test("canonical world-kernel process persists semantic judgment and completes an
     });
     assert.equal(seeded.response.status, 201);
 
+    const obligationStore = openObligationStore(databasePath);
+    try {
+      const recorded = obligationStore.recordRevision(
+        structuredObligation(thread.threadId, request),
+        { recordedAt: "2026-08-10T00:00:01.000Z" },
+      );
+      assert.equal(recorded.created, true);
+    } finally {
+      obligationStore.close();
+    }
+
     const appraisal = await json(`${first.baseUrl}/threads/${thread.threadId}/private/requests`, {
       method: "POST",
       headers: privateHeaders(),
       body: JSON.stringify({
-        request: activationRequest(),
+        request,
         causationId: "cause_causal_process_appraise",
         correlationId: "corr_causal_process",
       }),
@@ -134,10 +181,10 @@ test("canonical world-kernel process persists semantic judgment and completes an
     assert.equal(appraisal.response.status, 201);
     assert.equal(appraisal.body.trace.privateStance.desiredAction, "clarify");
     assert.equal(appraisal.body.trace.privateStance.policy.version, "3");
-    assert.deepEqual(appraisal.body.trace.appraisal.obligations, [obligation]);
+    assert.deepEqual(appraisal.body.trace.appraisal.obligations, []);
 
     const continued = await json(
-      `${first.baseUrl}/threads/${thread.threadId}/private/requests/${activationRequest().requestId}/participation`,
+      `${first.baseUrl}/threads/${thread.threadId}/private/requests/${request.requestId}/participation`,
       {
         method: "POST",
         headers: privateHeaders(),
@@ -145,40 +192,55 @@ test("canonical world-kernel process persists semantic judgment and completes an
           operationId: "op_causal_process_continue",
           causationId: "cause_causal_process_continue",
           correlationId: "corr_causal_process",
-          governingObligationReferences: [obligation],
+          governingObligationId: obligationId,
         }),
       },
     );
     assert.equal(continued.response.status, 201);
     assert.equal(continued.body.kind, "runtime");
+    assert.equal(continued.body.applicability.decision.result, "applies");
     assert.equal(continued.body.runtime.authorization.desiredAction, "clarify");
     assert.equal(continued.body.runtime.authorization.authorizedAction, "accept");
-    assert.deepEqual(continued.body.runtime.authorization.obligationReferences, [obligation]);
+    assert.equal(continued.body.runtime.authorization.participationBasis, "obligation_override");
+    assert.deepEqual(continued.body.runtime.authorization.obligationReferences, []);
+    assert.equal(
+      continued.body.runtime.authorization.applicability.applicabilityId,
+      continued.body.applicability.decision.applicabilityId,
+    );
+    assert.equal(
+      continued.body.runtime.authorization.applicability.decisionDigest,
+      continued.body.applicability.decisionDigest,
+    );
+    assert.equal(continued.body.runtime.authorization.applicability.obligationId, obligationId);
     const sessionId = continued.body.runtime.session.sessionId;
+    const authorizationId = continued.body.runtime.authorization.authorizationId;
 
-    assert.equal((await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/actor`, {
+    const actor = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/actor`, {
       method: "POST",
       headers: privateHeaders(),
       body: JSON.stringify({ operationId: "op_causal_process_actor" }),
-    })).response.status, 201);
-    assert.equal((await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/goal-guardian`, {
+    });
+    assert.equal(actor.response.status, 201);
+    assert.equal(actor.body.runtime.actorRun.output.proposedLifeChanges.length, 0);
+
+    const guardian = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/goal-guardian`, {
       method: "POST",
       headers: privateHeaders(),
       body: JSON.stringify({ operationId: "op_causal_process_guardian" }),
-    })).response.status, 201);
-    const frozen = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/freeze`, {
-      method: "POST",
-      headers: privateHeaders(),
-      body: JSON.stringify({
-        operationId: "op_causal_process_freeze",
-        lifeChangeDecisions: [],
-        causationId: "cause_causal_process_freeze",
-        correlationId: "corr_causal_process",
-      }),
     });
-    assert.equal(frozen.response.status, 201);
-    assert.deepEqual(frozen.body.freeze.report.dischargedObligations, [obligation]);
-    assert.equal(frozen.body.freeze.report.acceptedLifeChanges.length, 0);
+    assert.equal(guardian.response.status, 201);
+    assert.equal(guardian.body.runtime.goalGuardianAudit.audit.decision, "pass");
+
+    // D ends at runtime authority. Structured discharge/status revision belongs to E.
+    const stillCurrent = openObligationStore(databasePath);
+    try {
+      assert.equal(
+        stillCurrent.getCurrentRevision(thread.threadId, obligationId).obligation.status,
+        "active",
+      );
+    } finally {
+      stillCurrent.close();
+    }
 
     await first.stop();
     first = null;
@@ -186,17 +248,18 @@ test("canonical world-kernel process persists semantic judgment and completes an
     second = await startProcess(databasePath);
     const persisted = await json(`${second.baseUrl}/threads/${thread.threadId}`);
     assert.equal(persisted.response.status, 200);
-    assert.equal(persisted.body.thread.version, 2);
-    assert.equal(persisted.body.thread.currentState.unresolvedIntentions.includes(obligation), false);
+    assert.equal(persisted.body.thread.version, 1);
+    assert.deepEqual(persisted.body.thread.currentState.unresolvedIntentions, []);
 
     const runtime = await json(`${second.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`, {
       headers: { "x-fibre-private-token": privateToken },
     });
     assert.equal(runtime.response.status, 200);
-    assert.equal(runtime.body.runtime.session.status, "completed");
-    assert.equal(runtime.body.runtime.lease.status, "released");
+    assert.equal(runtime.body.runtime.authorization.authorizationId, authorizationId);
     assert.equal(runtime.body.runtime.authorization.desiredAction, "clarify");
     assert.equal(runtime.body.runtime.authorization.authorizedAction, "accept");
+    assert.equal(runtime.body.runtime.authorization.participationBasis, "obligation_override");
+    assert.equal(runtime.body.runtime.authorization.applicability.obligationId, obligationId);
   } finally {
     if (first) await first.stop().catch(() => {});
     if (second) await second.stop().catch(() => {});
