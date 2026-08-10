@@ -21,19 +21,19 @@ The second invariant is:
 
 > **Compulsion never rewrites consent.**
 
-A Thread may privately refuse a request while a valid governing obligation still authorizes participation. The resulting execution is obligation-mediated/compelled; the private refusal remains part of the authoritative record.
+A Thread may privately refuse a request while a valid governing obligation still authorizes participation. The resulting execution is obligation-mediated/compelled; the private refusal remains authoritative.
 
 ## Existing authority gap
 
 Before #35, the canonical runtime accepts caller-supplied `obligationReferences` and treats membership in `thread.currentState.unresolvedIntentions` as sufficient authority to override a private refusal. Freeze then consumes the exact string and removes it from `unresolvedIntentions`.
 
-This conflates at least three different concepts:
+This conflates:
 
 - a personal intention or unfinished goal;
 - a social/legal commitment;
 - a caller-nominated authority token.
 
-Mina's fixture makes the defect concrete: `Read a case study on identity-system failures` is an unresolved intention, yet historical M1 tooling can cite that string as the obligation that compels participation. #35 must not preserve that semantic conflation behind a richer object shape.
+Mina's fixture makes the defect concrete: `Read a case study on identity-system failures` is an unresolved intention, yet historical M1 tooling can cite that string as an obligation. #35 must not preserve that semantic conflation behind a richer object shape.
 
 ## Domain model
 
@@ -41,73 +41,72 @@ A Structured Obligation is a stable logical aggregate with append-only revisions
 
 Each revision records:
 
-- `obligationId`: `obl_` plus 64 lowercase hex characters, stable across revisions;
-- `revision`: monotonically increasing revision number;
-- `threadId`: the obligated Thread;
+- stable `obligationId` (`obl_` + 64 lowercase hex characters);
+- monotonic `revision` and immediate `supersedesRevision`;
+- obligated `threadId`;
 - `status`: `active`, `satisfied`, `expired`, `revoked`, or `discharged`;
-- `issuer`: the entity that issued or originated the commitment;
-- `parties`: typed relevant parties and their roles;
-- `scope`: natural-language scope plus any Fibre-owned machine-checkable request binding;
-- `terms`: material commitment terms;
-- `effectiveAt` and optional `expiresAt`;
-- `recurrence`: recurrence semantics, initially `none` or descriptive/deferred;
-- `satisfaction`: criteria for satisfaction/discharge;
-- `provenance`: who/what created this revision and the evidence supporting it;
-- `visibility.standing`: who may know the obligation exists/currently stands;
-- `visibility.terms`: who may inspect its terms;
-- optional `legacySourceDigest` for an explicitly classified legacy source;
-- `supersedesRevision`: exactly the immediately prior revision for revision 2+;
-- a canonical record digest.
+- issuer and typed parties;
+- natural-language scope plus optional Fibre-owned machine-checkable binding;
+- terms;
+- effective/expiry time;
+- recurrence;
+- satisfaction criteria;
+- provenance and evidence refs;
+- separate standing and terms visibility;
+- optional `legacySourceDigest`;
+- canonical record digest.
 
-Terms may never be more public than the fact that the obligation stands. A public standing may therefore have restricted/private terms; a private standing necessarily has private terms.
-
-Status changes do not mutate history. They append a new revision.
+Terms may never be more public than the fact that the obligation stands.
 
 Stable aggregate identity is stronger than record identity. Across revisions:
 
 - the obligated Thread cannot change;
 - issuer entity identity (`entityId` + `kind`) cannot change, though display text may;
-- a `legacySourceDigest`, if present, cannot be added, removed, or replaced;
-- a legacy source can seed at most one Structured Obligation aggregate per Thread;
-- once a status becomes terminal (`satisfied`, `expired`, `revoked`, or `discharged`), later corrective revisions must preserve that terminal status rather than resurrecting the obligation.
+- `legacySourceDigest`, if present, cannot be added, removed, or replaced;
+- one legacy source can seed at most one Structured Obligation aggregate per Thread;
+- once status is terminal, later corrective revisions cannot resurrect the obligation.
 
-A materially new or re-created commitment therefore gets a new `obligationId`; revision history is not an authority-resurrection mechanism.
+A materially new or re-created commitment gets a new `obligationId`.
 
 ## Scope versus applicability
 
 Representation and authority remain separate.
 
-The natural-language `scope.description` says what the commitment means. It is not itself executable authority.
+The natural-language `scope.description` says what the commitment means. It is not executable authority.
 
-V1 supports a conservative machine-checkable binding:
+V1 supports one deliberately conservative binding:
 
 ```text
 scope.binding.kind = request_fingerprint
 scope.binding.requestFingerprint = sha256:...
 ```
 
-The binding must originate from Fibre-owned request evidence. A stored obligation without a supported machine-checkable binding may exist and be inspectable, but it cannot override dignity under the deterministic v1 applicability policy.
+A stored obligation without a supported machine-checkable binding may exist and be inspectable, but it cannot override dignity under deterministic v1 applicability.
 
-This is intentionally narrower than pretending arbitrary natural-language scope is already solved. A later semantic applicability worker may broaden the policy, but it must remain Fibre-owned, evidence-bound, replayable, and independently validated.
+A later semantic applicability worker may broaden scope understanding, but it must remain Fibre-owned, evidence-bound, replayable, and independently validated.
 
 ## Applicability record
 
 Applicability is an append-only decision distinct from the obligation itself.
 
-Each decision binds:
+Each persisted decision binds:
 
-- Thread and Thread snapshot/state hash;
+- applicability operation ID and input digest;
+- Thread and historical Thread snapshot/state hash;
 - request ID and request fingerprint;
-- candidate obligation ID, revision, and digest;
+- exact obligation ID, revision, and digest;
 - nomination source (`caller`, `fibre`, or `both`);
 - result (`applies` or `does_not_apply`);
-- reason code and evidence references;
-- applicability policy ID/version;
-- decision time and decision digest.
+- reason code;
+- policy ID/version;
+- Fibre-generated evidence refs;
+- decision time, causation/correlation IDs, and decision digest.
 
-Only an `applies` decision produced by Fibre's applicability policy can support obligation-mediated authorization.
+Only an `applies` decision produced by Fibre's applicability policy may eventually support obligation-mediated authorization.
 
-Authorization must eventually bind the applicability decision ID/digest, not merely the obligation ID.
+The caller may nominate an obligation ID but cannot author the result, reason, policy, obligation revision/digest, or evidence refs.
+
+Authorization must bind the applicability decision ID/digest, not merely an obligation ID.
 
 ## Legacy migration
 
@@ -115,31 +114,19 @@ Authorization must eventually bind the applicability decision ID/digest, not mer
 
 `currentState.unresolvedIntentions` is not an obligation registry. Migration MUST NOT convert those strings into active Structured Obligations.
 
-After the #35 authority cutover, unresolved intentions remain available as personal/history context but carry zero obligation authority unless explicitly classified into a Structured Obligation through a separate authoritative operation.
-
-This is a deliberate fail-closed compatibility break in the canonical service, not data loss.
+After authority cutover, unresolved intentions remain personal/history context and carry zero obligation authority unless explicitly classified into a Structured Obligation through a separate authoritative operation.
 
 ### Preserve spent authority as spent
 
-Historical `authorization_consumptions.obligation_refs_json` is authoritative evidence that an exact legacy reference was already consumed.
+Historical `authorization_consumptions.obligation_refs_json` is evidence that an exact legacy reference was already consumed.
 
-Migration creates one deterministic `legacy_obligation_tombstone` per consumed `(threadId, legacyReference)` pair containing:
+Migration creates one deterministic append-only tombstone per consumed `(threadId, legacyReference)` pair, including the exact legacy-reference digest and source authorization/consumption witness.
 
-- deterministic tombstone ID;
-- Thread ID;
-- exact legacy reference and its digest;
-- source authorization/consumption identity and digest;
-- consumed timestamp.
-
-Tombstones are append-only.
-
-Any later explicit legacy-to-Structured-Obligation import must compute the same legacy reference digest. If a tombstone exists, it MUST NOT create active authority. This preserves the invariant:
+Any later explicit legacy import computing the same digest MUST NOT create active authority.
 
 > **Pre-migration spent obligations remain spent.**
 
-### Active legacy references
-
-There is no automatic active-legacy migration because the old schema cannot distinguish a genuine commitment from a personal intention. Legitimate active obligations must be explicitly reclassified with issuer, parties, scope, terms, provenance, visibility, and satisfaction semantics.
+There is no automatic active-legacy migration because the old schema cannot distinguish a genuine commitment from a personal intention.
 
 ## Storage model
 
@@ -151,53 +138,49 @@ obligation_applicability_decisions
 legacy_obligation_tombstones
 ```
 
-`obligation_records` stores revisions rather than a mutable current row. Current state is not trusted from `MAX(revision)` alone: Fibre resolves current state only after validating the complete aggregate history and then returns the final valid revision.
+`obligation_records` stores revisions, not a mutable current row. Current state is not trusted from `MAX(revision)` alone: Fibre validates the complete aggregate history and then returns the final valid revision.
 
-This #35 storage work uses Fibre's existing idempotent schema-v4 repair path. The pre-M2 storage contract already permits later v4 builds to add/restore tables, indexes, and triggers when an existing v4 database is opened. The global `PRAGMA user_version` therefore remains 4 during this additive storage/migration phase.
+The additive #35 storage/applicability work remains on world-store schema v4 under the existing same-version repair contract. A global version bump should occur only when the later authorization/freeze cutover changes an existing persisted contract.
 
-A later #35 authority cutover may require a world-schema version increase if it changes the persisted contract of existing authorization, freeze, or consumption tables. Do not predeclare v5 merely because new append-only tables exist.
+SQL independently backstops append-only history, predecessor linkage, visibility ordering, stable Thread/issuer/legacy identity, terminal-status stability, legacy-origin uniqueness, and spent-legacy non-reactivation.
 
-SQL independently backstops append-only revision history, immediate predecessor linkage, visibility ordering, stable Thread/issuer/legacy identity, terminal-status stability, uniqueness of a legacy origin, and spent-legacy non-reactivation.
+## ObligationStore v1 — B
 
-## ObligationStore v1
-
-`services/world-kernel/src/obligation-store.mjs` is the authority substrate for the next #35 slices. It does not yet authorize participation.
+`services/world-kernel/src/obligation-store.mjs` is the trusted revision substrate. It does not itself authorize participation.
 
 Its write path is transactional:
 
 ```text
 normalize candidate
   -> BEGIN IMMEDIATE
-  -> reread Thread existence
+  -> verify Thread exists
   -> reread and verify complete obligation history
   -> resolve exact current revision
-  -> enforce stable aggregate identity/lifecycle
+  -> enforce aggregate identity/lifecycle
   -> reject spent or duplicate legacy authority
   -> append one canonical revision + digest
   -> COMMIT
 ```
 
-Competing writers therefore cannot both decide from the same stale predecessor. An exact retry of an already-committed identical revision is idempotent; reuse of the same `(obligationId, revision)` with different content is a conflict.
+It exposes:
 
-The store exposes:
+- `recordRevision(...)`;
+- `getRevision(...)`;
+- `listHistory(...)`;
+- `getCurrentRevision(...)`;
+- `resolveCurrentRevision({ threadId, obligationId, revision, obligationDigest })`;
+- `listCurrent(...)`;
+- `hasLegacyTombstone(...)`.
 
-- `recordRevision(...)` for transactional append/idempotent retry;
-- `getRevision(...)` for an exact historical revision;
-- `listHistory(...)` for verified contiguous history;
-- `getCurrentRevision(...)` for the final revision only after full history validation;
-- `resolveCurrentRevision({ threadId, obligationId, revision, obligationDigest })` for exact current-authority binding;
-- `listCurrent(...)` for verified current revisions across one Thread;
-- `hasLegacyTombstone(...)` for later applicability checks.
+A correct obligation ID with a stale revision or digest is not current authority.
 
-`resolveCurrentRevision(...)` is deliberately strict. A correct obligation ID with a stale revision or stale digest is not current authority.
+Read verification covers canonical JSON, digest, denormalized columns, predecessor continuity, stable owner/issuer/legacy identity, monotonic storage chronology, and terminal-status non-resurrection.
 
-Read verification checks canonical JSON, record digest, denormalized SQL columns, immediate predecessor continuity, stable owner/issuer/legacy identity, monotonic storage chronology, and terminal-status non-resurrection.
+The row digest is an integrity witness inside Fibre's append-only boundary, not external notarization against a privileged administrator who disables enforcement and coherently rewrites both content and digest.
 
-The row digest is an integrity witness inside Fibre's append-only storage boundary, not an external notarization mechanism. If an administrator deliberately disables append-only enforcement and coherently rewrites both content and its digest, B does not claim cryptographic detection of that fully privileged rewrite. It does detect ordinary forbidden mutation and inconsistent corruption after protections are bypassed.
+## Deterministic applicability v1 — C
 
-## V1 deterministic applicability
-
-The first policy is deliberately small:
+Policy:
 
 ```text
 structured_obligation_applicability / 1
@@ -206,45 +189,74 @@ structured_obligation_applicability / 1
 A candidate can apply only when all are true:
 
 1. it belongs to the Thread;
-2. the nominated revision/digest is current and intact;
+2. Fibre resolves its exact current revision/digest and verifies the full chain;
 3. status is `active`;
-4. `effectiveAt <= decision time`;
+4. it is effective at decision time;
 5. it has not expired;
-6. its supported Fibre-owned request binding matches the current request fingerprint;
-7. no matching legacy tombstone forbids reactivation;
-8. the decision is persisted and bound to the same Thread snapshot/request used by authorization.
+6. its supported request-fingerprint binding matches the persisted request;
+7. no matching legacy tombstone forbids authority;
+8. the persisted decision binds the same historical Thread snapshot/request that later authorization will use.
 
-Natural-language terms may explain the commitment but cannot expand deterministic v1 authority beyond these checks.
+Natural-language terms may explain the commitment but cannot expand deterministic v1 authority.
+
+### Persisted decision transaction
+
+`services/world-kernel/src/obligation-applicability-store.mjs` performs:
+
+```text
+BEGIN IMMEDIATE
+  -> resolve operation idempotency
+  -> verify persisted activation request JSON/fingerprint/record digest
+  -> verify historical Thread snapshot witness
+  -> resolve Fibre's exact current Structured Obligation revision
+  -> inspect legacy-spend tombstone state
+  -> run structured_obligation_applicability/1
+  -> append immutable applicability decision + digest
+COMMIT
+```
+
+The writer lock is acquired before current-obligation resolution, so a competing obligation writer cannot commit a newer revision between resolution and decision persistence.
+
+Fibre generates evidence refs for:
+
+- the persisted activation request;
+- the historical Thread snapshot;
+- the exact obligation revision;
+- any load-bearing legacy tombstone.
+
+SQL backstops independently require an applicability insert to match the persisted activation request, the exact current obligation revision/digest, and policy `structured_obligation_applicability/1`.
+
+Exact operation retry returns the original persisted decision even if time has advanced. A later obligation revision does not rewrite historical applicability; a new applicability operation binds the new current revision.
+
+The current C implementation is file-backed. It uses a companion `ObligationStore` connection for full-chain validation while the applicability writer holds the SQLite write lock. `:memory:` is not a supported evidentiary/runtime path for this cross-connection implementation. A future shared-connection refactor may remove that limitation without changing the decision contract.
 
 ## Required #35 adversarial cases
 
-At minimum:
-
 ```text
-caller cites unknown / foreign obligation
-    -> no authority
+unknown / foreign nomination
+    -> no applicability record granting authority
 
-caller cites real but unrelated obligation
-    -> does_not_apply -> no authority
+real but unrelated obligation
+    -> does_not_apply
 
-caller cites active obligation bound to this request
-    -> applies -> may support obligation-mediated authorization
+active exact-bound obligation
+    -> applies
 
 private dignity = refuse + governing obligation
-    -> authorized execution may occur as compelled
+    -> may later authorize compelled execution
     -> private refusal remains unchanged
 
 expired / satisfied / revoked / discharged obligation
     -> no authority
 
-legacy unresolved intention with no structured obligation
+legacy unresolved intention without structured obligation
     -> no authority
 
 pre-migration consumed legacy reference
-    -> tombstoned -> cannot resurrect
+    -> tombstone is load-bearing -> does_not_apply
 
 restart / replay
-    -> same obligation revision, applicability decision, authorization binding, and discharge state
+    -> same obligation/applicability/authorization/discharge evidence
 ```
 
 ## Non-goals for v1
@@ -256,34 +268,40 @@ restart / replay
 - no score movement merely for richer representation;
 - no rewriting private refusal into willing acceptance.
 
-## Implementation state
+## Implementation status
 
 ### A — domain/schema/migration — LANDED
 
 - domain validation and canonical digests;
-- additive append-only storage tables;
-- deterministic applicability logic as a pure domain function;
-- migration of consumed legacy references to spent-authority tombstones;
-- fail-closed migration, visibility, binding, and tombstone tests.
+- additive append-only tables;
+- pure deterministic applicability policy;
+- consumed-legacy tombstones;
+- fail-closed migration and storage backstops.
 
 ### B — ObligationStore/revision integrity — LANDED
 
-- transactional append with `BEGIN IMMEDIATE`;
-- exact retry idempotency and conflicting-revision rejection;
-- full-chain current-revision validation;
-- exact current revision + digest resolution;
-- stable Thread owner, issuer identity, and legacy origin;
-- terminal-state non-resurrection;
-- SQL backstops for the same load-bearing identity/lifecycle rules;
-- restart, independent-connection, corruption, cross-Thread, stale-digest, and legacy-origin tests.
+- transactional append and exact retry;
+- full-chain current resolution;
+- exact revision/digest binding;
+- stable aggregate identity and terminal-state rules;
+- concurrency/restart/corruption/adversarial coverage.
 
-A and B deliberately do **not** yet change runtime authorization. Historical M1 `obligationReferences` behavior remains executable until the explicit authority cutover and is treated as legacy compatibility rather than Structured Obligation v1 proof.
+### C — persisted Fibre-owned applicability — LANDED
+
+- persisted activation-request and historical-snapshot verification;
+- Fibre-owned exact current-revision resolution;
+- deterministic applicability under one write-lock interval;
+- caller cannot author output fields;
+- append-only decision/digest verification;
+- SQL request/current-revision/policy backstops;
+- exact operation idempotency across restart;
+- historical decision preservation after later obligation revision;
+- unrelated, unknown, foreign, corrupt-witness, concurrency, and legacy-spend coverage.
+
+A, B, and C deliberately do **not** yet change runtime participation authorization. Historical M1 `obligationReferences` remains executable as legacy compatibility until the explicit authority cutover. Structured records and applicability decisions alone are not #35 authority closure.
 
 ## Follow-on implementation steps
 
-1. persist deterministic applicability decisions transactionally through ObligationStore/service;
-2. change runtime acquisition from `obligationReferences` authority to nominated IDs plus Fibre applicability;
-3. bind applicability evidence into Participation Authorization;
-4. change freeze/discharge to append obligation status revisions and consumption evidence;
-5. update M1 compatibility tooling without reinterpreting historical M1 evidence;
-6. add private/admin inspection and final adversarial/restart closure tests.
+1. **D — Runtime authorization cutover + applicability binding.** Remove exact-string/unresolved-intention authority from the canonical runtime and require a persisted `applies` decision bound by applicability ID/digest plus exact obligation revision/digest.
+2. **E — Freeze/discharge cutover.** Discharge Structured Obligations through append-only status revisions and consumption evidence while preserving historical M1 evidence as historical only.
+3. **F — Inspection + restart/replay/adversarial closure.** Expose bounded private/admin inspection and close #35 with full restart, replay, privacy, and authority-integrity tests.
