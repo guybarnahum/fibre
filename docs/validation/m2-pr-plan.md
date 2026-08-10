@@ -45,6 +45,8 @@ Do not collapse #37-#40 into one large “M2 implementation” PR. Each exists t
 
 Turn a commitment into a durable Thread-owned social fact with future consequences rather than an exact-prose permission string.
 
+This is a personhood-enabling substrate rather than a score target: a persistent individual can have commitments that constrain future action even when current private desire points elsewhere. Fibre must preserve both facts—the private stance and the binding commitment—rather than converting either one into the other.
+
 ### Required obligation shape
 
 At minimum:
