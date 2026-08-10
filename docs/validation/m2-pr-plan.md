@@ -58,7 +58,7 @@ At minimum:
 - satisfaction criteria;
 - provenance;
 - discharge/history state;
-- visibility classification;
+- separately classified standing visibility and terms visibility;
 - request-bound applicability evidence;
 - applicability author, policy, and version.
 
@@ -87,6 +87,23 @@ expired / satisfied / previously spent obligation
 ```
 
 Migration must preserve the invariant that pre-migration spent obligations remain spent.
+
+`currentState.unresolvedIntentions` must not be auto-promoted into obligations: the legacy field mixes unfinished personal intentions with what historical M1 temporarily treated as exact-string obligation authority. Active Structured Obligations therefore require explicit authoritative representation. Existing consumed legacy references migrate only to deterministic spent-authority tombstones.
+
+### #35 implementation sequence
+
+Keep the authority transition reviewable rather than changing storage and authorization in one opaque step:
+
+```text
+A. domain + additive append-only schema + legacy-spend tombstones
+B. ObligationStore/service + current-revision integrity
+C. Fibre-owned applicability persistence
+D. runtime authorization cutover to nominated obligation IDs + applicability evidence
+E. freeze/discharge cutover to structured obligation revisions
+F. inspector + restart/replay/adversarial closure
+```
+
+Slice A remains intentionally non-authoritative: historical `obligationReferences` behavior continues until D lands. The existence of new tables must never be described as closure of the authority gap.
 
 #35 is primarily authority integrity. Do not game it for score movement.
 
