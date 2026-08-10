@@ -7,6 +7,8 @@ import { createCausalWorldKernelHttpServer } from "./causal-http-server.mjs";
 import { StructuredObligationInspectionNotFoundError } from "./structured-obligation-inspection-store.mjs";
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const PRIVATE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const OBLIGATION_ID_PATTERN = /^obl_[0-9a-f]{64}$/;
 
 function requestId(value) {
   return typeof value === "string" && REQUEST_ID_PATTERN.test(value)
@@ -92,6 +94,36 @@ function inspectionRoute(target) {
   return null;
 }
 
+function assertRouteId(name, value, pattern = PRIVATE_ID_PATTERN) {
+  if (typeof value !== "string" || !pattern.test(value)) {
+    throw httpError(400, "INVALID_REQUEST", `${name} is invalid`);
+  }
+}
+
+function validateRoute(route) {
+  assertRouteId("threadId", route.threadId);
+  if (route.obligationId !== undefined) {
+    assertRouteId("obligationId", route.obligationId, OBLIGATION_ID_PATTERN);
+  }
+  if (route.requestId !== undefined) assertRouteId("requestId", route.requestId);
+  if (route.sessionId !== undefined) assertRouteId("sessionId", route.sessionId);
+}
+
+function inspectPersistedEvidence(action) {
+  try {
+    return action();
+  } catch (error) {
+    if (
+      error instanceof TypeError &&
+      error.httpStatus === undefined &&
+      error.httpCode === undefined
+    ) {
+      throw new IntegrityError(`Structured Obligation persisted evidence is invalid: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
 function problem(error) {
   if (error instanceof StructuredObligationInspectionNotFoundError) {
     return [404, "STRUCTURED_OBLIGATION_INSPECTION_NOT_FOUND", error.message, {}];
@@ -150,23 +182,39 @@ export function createStructuredObligationInspectionHttpServer({
       if (request.method !== "GET") {
         throw httpError(405, "METHOD_NOT_ALLOWED", "Method is not allowed; use GET", { allow: "GET" });
       }
+      validateRoute(route);
       if (route.kind === "obligation_list") {
-        return writeJson(response, 200, { obligations: inspectionStore.listObligations(route.threadId) }, id);
+        return writeJson(response, 200, {
+          obligations: inspectPersistedEvidence(() => inspectionStore.listObligations(route.threadId)),
+        }, id);
       }
       if (route.kind === "obligation_integrity") {
-        return writeJson(response, 200, inspectionStore.verifyThread(route.threadId), id);
+        return writeJson(
+          response,
+          200,
+          inspectPersistedEvidence(() => inspectionStore.verifyThread(route.threadId)),
+          id,
+        );
       }
       if (route.kind === "obligation_detail") {
-        return writeJson(response, 200, { obligation: inspectionStore.inspectObligation(route.threadId, route.obligationId) }, id);
+        return writeJson(response, 200, {
+          obligation: inspectPersistedEvidence(
+            () => inspectionStore.inspectObligation(route.threadId, route.obligationId),
+          ),
+        }, id);
       }
       if (route.kind === "request_applicability") {
         return writeJson(response, 200, {
-          applicability: inspectionStore.listRequestApplicability(route.threadId, route.requestId),
+          applicability: inspectPersistedEvidence(
+            () => inspectionStore.listRequestApplicability(route.threadId, route.requestId),
+          ),
         }, id);
       }
       if (route.kind === "runtime_discharge") {
         return writeJson(response, 200, {
-          discharge: inspectionStore.getRuntimeDischarge(route.threadId, route.sessionId),
+          discharge: inspectPersistedEvidence(
+            () => inspectionStore.getRuntimeDischarge(route.threadId, route.sessionId),
+          ),
         }, id);
       }
       return baseHandler(request, response);
