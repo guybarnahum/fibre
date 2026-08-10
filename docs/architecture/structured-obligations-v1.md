@@ -228,7 +228,7 @@ SQL backstops independently require an applicability insert to match the persist
 
 Exact operation retry returns the original persisted decision even if time has advanced. A later obligation revision does not rewrite historical applicability; a new applicability operation binds the new current revision.
 
-The current C implementation is file-backed. It uses a companion `ObligationStore` connection for full-chain validation while the applicability writer holds the SQLite write lock. `:memory:` is not a supported evidentiary/runtime path for this cross-connection implementation. A future shared-connection refactor may remove that limitation without changing the decision contract.
+The current C implementation is file-backed. It uses a companion `ObligationStore` connection for full-chain validation while the applicability writer holds the SQLite write lock. `:memory:` is not a supported evidentiary/runtime path for this cross-connection implementation and cannot produce a valid decision against the writer's separate in-memory world. A future shared-connection refactor may add true in-memory support without changing the decision contract.
 
 ## Required #35 adversarial cases
 
