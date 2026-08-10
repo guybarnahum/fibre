@@ -63,6 +63,16 @@ Terms may never be more public than the fact that the obligation stands. A publi
 
 Status changes do not mutate history. They append a new revision.
 
+Stable aggregate identity is stronger than record identity. Across revisions:
+
+- the obligated Thread cannot change;
+- issuer entity identity (`entityId` + `kind`) cannot change, though display text may;
+- a `legacySourceDigest`, if present, cannot be added, removed, or replaced;
+- a legacy source can seed at most one Structured Obligation aggregate per Thread;
+- once a status becomes terminal (`satisfied`, `expired`, `revoked`, or `discharged`), later corrective revisions must preserve that terminal status rather than resurrecting the obligation.
+
+A materially new or re-created commitment therefore gets a new `obligationId`; revision history is not an authority-resurrection mechanism.
+
 ## Scope versus applicability
 
 Representation and authority remain separate.
@@ -141,13 +151,49 @@ obligation_applicability_decisions
 legacy_obligation_tombstones
 ```
 
-`obligation_records` stores revisions rather than a mutable current row. Current state is the highest valid revision for an `obligationId`.
+`obligation_records` stores revisions rather than a mutable current row. Current state is not trusted from `MAX(revision)` alone: Fibre resolves current state only after validating the complete aggregate history and then returns the final valid revision.
 
-This first #35 slice adds the tables through Fibre's existing idempotent schema-v4 repair path. The pre-M2 storage contract already permits later v4 builds to add/restore tables and triggers when an existing v4 database is opened. The global `PRAGMA user_version` therefore remains 4 during this additive storage/migration phase.
+This #35 storage work uses Fibre's existing idempotent schema-v4 repair path. The pre-M2 storage contract already permits later v4 builds to add/restore tables, indexes, and triggers when an existing v4 database is opened. The global `PRAGMA user_version` therefore remains 4 during this additive storage/migration phase.
 
 A later #35 authority cutover may require a world-schema version increase if it changes the persisted contract of existing authorization, freeze, or consumption tables. Do not predeclare v5 merely because new append-only tables exist.
 
-This avoids silent status mutation and makes replay/audit straightforward.
+SQL independently backstops append-only revision history, immediate predecessor linkage, visibility ordering, stable Thread/issuer/legacy identity, terminal-status stability, uniqueness of a legacy origin, and spent-legacy non-reactivation.
+
+## ObligationStore v1
+
+`services/world-kernel/src/obligation-store.mjs` is the authority substrate for the next #35 slices. It does not yet authorize participation.
+
+Its write path is transactional:
+
+```text
+normalize candidate
+  -> BEGIN IMMEDIATE
+  -> reread Thread existence
+  -> reread and verify complete obligation history
+  -> resolve exact current revision
+  -> enforce stable aggregate identity/lifecycle
+  -> reject spent or duplicate legacy authority
+  -> append one canonical revision + digest
+  -> COMMIT
+```
+
+Competing writers therefore cannot both decide from the same stale predecessor. An exact retry of an already-committed identical revision is idempotent; reuse of the same `(obligationId, revision)` with different content is a conflict.
+
+The store exposes:
+
+- `recordRevision(...)` for transactional append/idempotent retry;
+- `getRevision(...)` for an exact historical revision;
+- `listHistory(...)` for verified contiguous history;
+- `getCurrentRevision(...)` for the final revision only after full history validation;
+- `resolveCurrentRevision({ threadId, obligationId, revision, obligationDigest })` for exact current-authority binding;
+- `listCurrent(...)` for verified current revisions across one Thread;
+- `hasLegacyTombstone(...)` for later applicability checks.
+
+`resolveCurrentRevision(...)` is deliberately strict. A correct obligation ID with a stale revision or stale digest is not current authority.
+
+Read verification checks canonical JSON, record digest, denormalized SQL columns, immediate predecessor continuity, stable owner/issuer/legacy identity, monotonic storage chronology, and terminal-status non-resurrection.
+
+The row digest is an integrity witness inside Fibre's append-only storage boundary, not an external notarization mechanism. If an administrator deliberately disables append-only enforcement and coherently rewrites both content and its digest, B does not claim cryptographic detection of that fully privileged rewrite. It does detect ordinary forbidden mutation and inconsistent corruption after protections are bypassed.
 
 ## V1 deterministic applicability
 
@@ -210,24 +256,34 @@ restart / replay
 - no score movement merely for richer representation;
 - no rewriting private refusal into willing acceptance.
 
-## Implementation state in the first #35 slice
+## Implementation state
 
-The first slice lands only:
+### A — domain/schema/migration — LANDED
 
 - domain validation and canonical digests;
 - additive append-only storage tables;
 - deterministic applicability logic as a pure domain function;
 - migration of consumed legacy references to spent-authority tombstones;
-- tests for fail-closed migration, append-only history, visibility, binding, and tombstone behavior.
+- fail-closed migration, visibility, binding, and tombstone tests.
 
-It deliberately does **not** yet change runtime authorization. Until the explicit authority-cutover slice lands, historical M1 `obligationReferences` behavior remains executable and is treated as legacy compatibility rather than Structured Obligation v1 proof.
+### B — ObligationStore/revision integrity — LANDED
+
+- transactional append with `BEGIN IMMEDIATE`;
+- exact retry idempotency and conflicting-revision rejection;
+- full-chain current-revision validation;
+- exact current revision + digest resolution;
+- stable Thread owner, issuer identity, and legacy origin;
+- terminal-state non-resurrection;
+- SQL backstops for the same load-bearing identity/lifecycle rules;
+- restart, independent-connection, corruption, cross-Thread, stale-digest, and legacy-origin tests.
+
+A and B deliberately do **not** yet change runtime authorization. Historical M1 `obligationReferences` behavior remains executable until the explicit authority cutover and is treated as legacy compatibility rather than Structured Obligation v1 proof.
 
 ## Follow-on implementation steps
 
-1. add an ObligationStore/service with append-only revision creation and lookup;
-2. persist deterministic applicability decisions transactionally;
-3. change runtime acquisition from `obligationReferences` authority to nominated IDs plus Fibre applicability;
-4. bind applicability evidence into Participation Authorization;
-5. change freeze/discharge to append obligation status revisions and consumption evidence;
-6. update M1 compatibility tooling without reinterpreting historical M1 evidence;
-7. add private/admin inspection and adversarial/restart tests.
+1. persist deterministic applicability decisions transactionally through ObligationStore/service;
+2. change runtime acquisition from `obligationReferences` authority to nominated IDs plus Fibre applicability;
+3. bind applicability evidence into Participation Authorization;
+4. change freeze/discharge to append obligation status revisions and consumption evidence;
+5. update M1 compatibility tooling without reinterpreting historical M1 evidence;
+6. add private/admin inspection and final adversarial/restart closure tests.
