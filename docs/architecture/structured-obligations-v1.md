@@ -215,7 +215,7 @@ BEGIN IMMEDIATE
 COMMIT
 ```
 
-The writer lock is acquired before current-obligation resolution, so a competing obligation writer cannot commit a newer revision between resolution and decision persistence.
+The applicability writer acquires SQLite's write reservation before consulting the companion file-backed `ObligationStore`. That companion performs B's full-chain read validation while the reservation prevents any competing writer from committing a newer obligation revision before the applicability row commits. The two connections therefore participate in one serialized write interval, though only the applicability connection owns the SQL transaction.
 
 Fibre generates evidence refs for:
 
@@ -228,7 +228,7 @@ SQL backstops independently require an applicability insert to match the persist
 
 Exact operation retry returns the original persisted decision even if time has advanced. A later obligation revision does not rewrite historical applicability; a new applicability operation binds the new current revision.
 
-The current C implementation is file-backed. It uses a companion `ObligationStore` connection for full-chain validation while the applicability writer holds the SQLite write lock. `:memory:` is not a supported evidentiary/runtime path for this cross-connection implementation and cannot produce a valid decision against the writer's separate in-memory world. A future shared-connection refactor may add true in-memory support without changing the decision contract.
+The current C implementation is file-backed. It uses a companion `ObligationStore` connection for full-chain validation while the applicability writer holds the SQLite write reservation. `:memory:` is not a supported evidentiary/runtime path for this cross-connection implementation and cannot produce a valid decision against the writer's separate in-memory world. A future shared-connection refactor may add true in-memory support without changing the decision contract.
 
 ## Required #35 adversarial cases
 
@@ -290,7 +290,7 @@ restart / replay
 
 - persisted activation-request and historical-snapshot verification;
 - Fibre-owned exact current-revision resolution;
-- deterministic applicability under one write-lock interval;
+- deterministic applicability within one serialized write interval;
 - caller cannot author output fields;
 - append-only decision/digest verification;
 - SQL request/current-revision/policy backstops;
