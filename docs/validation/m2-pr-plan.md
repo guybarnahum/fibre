@@ -95,15 +95,19 @@ Migration must preserve the invariant that pre-migration spent obligations remai
 Keep the authority transition reviewable rather than changing storage and authorization in one opaque step:
 
 ```text
-A. domain + additive append-only schema + legacy-spend tombstones
-B. ObligationStore/service + current-revision integrity
-C. Fibre-owned applicability persistence
-D. runtime authorization cutover to nominated obligation IDs + applicability evidence
-E. freeze/discharge cutover to structured obligation revisions
-F. inspector + restart/replay/adversarial closure
+LANDED  A. domain + additive append-only schema + legacy-spend tombstones
+LANDED  B. ObligationStore/service + current-revision integrity
+LANDED  C. Fibre-owned applicability persistence
+LANDED  D. runtime authorization cutover to nominated obligation IDs + applicability evidence
+NEXT    E. freeze/discharge cutover to structured obligation revisions
+        F. inspector + restart/replay/adversarial closure
 ```
 
-Slice A remains intentionally non-authoritative: historical `obligationReferences` behavior continues until D lands. The existence of new tables must never be described as closure of the authority gap.
+A-C intentionally did not change canonical runtime authority. **D is the authority cutover:** the canonical world-kernel no longer accepts exact-string/unresolved-intention prose as obligation authority. A caller may nominate only a stable Structured Obligation ID; Fibre persists applicability, and a compelled runtime authorization binds the exact applicability ID/digest plus obligation revision/digest.
+
+A persisted `applies` decision is not a bearer capability. Runtime insertion independently revalidates that the exact obligation is still current, active, effective, unexpired, request-bound, and not tombstoned. The private stance remains separate from compelled execution authority.
+
+D deliberately stops before discharge. Structured Obligations remain active after a D-only runtime episode until E appends the appropriate status/discharge history and consumption evidence. Historical M1 exact-prose code/evidence remains historical/internal compatibility rather than canonical runtime authority.
 
 #35 is primarily authority integrity. Do not game it for score movement.
 
