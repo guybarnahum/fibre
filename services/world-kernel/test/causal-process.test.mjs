@@ -143,6 +143,89 @@ function structuredObligation(threadId, request) {
   };
 }
 
+async function seedAndAcquireCompelledRuntime(processHandle, databasePath, thread, request, suffix) {
+  const seeded = await json(`${processHandle.baseUrl}/threads`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ thread }),
+  });
+  assert.equal(seeded.response.status, 201);
+
+  const obligationStore = openObligationStore(databasePath);
+  try {
+    const recorded = obligationStore.recordRevision(
+      structuredObligation(thread.threadId, request),
+      { recordedAt: "2026-08-10T00:00:01.000Z" },
+    );
+    assert.equal(recorded.created, true);
+  } finally {
+    obligationStore.close();
+  }
+
+  const appraisal = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/private/requests`, {
+    method: "POST",
+    headers: privateHeaders(),
+    body: JSON.stringify({
+      request,
+      causationId: `cause_causal_process_appraise${suffix}`,
+      correlationId: `corr_causal_process${suffix}`,
+    }),
+  });
+  assert.equal(appraisal.response.status, 201);
+  assert.equal(appraisal.body.trace.privateStance.desiredAction, "clarify");
+  assert.equal(appraisal.body.trace.privateStance.policy.version, "3");
+  assert.deepEqual(appraisal.body.trace.appraisal.obligations, []);
+
+  const continued = await json(
+    `${processHandle.baseUrl}/threads/${thread.threadId}/private/requests/${request.requestId}/participation`,
+    {
+      method: "POST",
+      headers: privateHeaders(),
+      body: JSON.stringify({
+        operationId: `op_causal_process_continue${suffix}`,
+        causationId: `cause_causal_process_continue${suffix}`,
+        correlationId: `corr_causal_process${suffix}`,
+        governingObligationId: obligationId,
+      }),
+    },
+  );
+  assert.equal(continued.response.status, 201);
+  assert.equal(continued.body.kind, "runtime");
+  assert.equal(continued.body.applicability.decision.result, "applies");
+  assert.equal(continued.body.runtime.authorization.desiredAction, "clarify");
+  assert.equal(continued.body.runtime.authorization.authorizedAction, "accept");
+  assert.equal(continued.body.runtime.authorization.participationBasis, "obligation_override");
+  assert.deepEqual(continued.body.runtime.authorization.obligationReferences, []);
+  assert.equal(
+    continued.body.runtime.authorization.applicability.applicabilityId,
+    continued.body.applicability.decision.applicabilityId,
+  );
+  assert.equal(
+    continued.body.runtime.authorization.applicability.decisionDigest,
+    continued.body.applicability.decisionDigest,
+  );
+  assert.equal(continued.body.runtime.authorization.applicability.obligationId, obligationId);
+  const sessionId = continued.body.runtime.session.sessionId;
+
+  const actor = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/actor`, {
+    method: "POST",
+    headers: privateHeaders(),
+    body: JSON.stringify({ operationId: `op_causal_process_actor${suffix}` }),
+  });
+  assert.equal(actor.response.status, 201);
+  assert.equal(actor.body.runtime.actorRun.output.proposedLifeChanges.length, 0);
+
+  const guardian = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/goal-guardian`, {
+    method: "POST",
+    headers: privateHeaders(),
+    body: JSON.stringify({ operationId: `op_causal_process_guardian${suffix}` }),
+  });
+  assert.equal(guardian.response.status, 201);
+  assert.equal(guardian.body.runtime.goalGuardianAudit.audit.decision, "pass");
+
+  return { appraisal, continued, sessionId };
+}
+
 test("canonical world-kernel completes and persists a compelled Structured Obligation life", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-process-"));
   const databasePath = join(directory, "world.sqlite");
@@ -152,86 +235,15 @@ test("canonical world-kernel completes and persists a compelled Structured Oblig
   let second;
   try {
     first = await startProcess(databasePath);
-    const seeded = await json(`${first.baseUrl}/threads`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ thread }),
-    });
-    assert.equal(seeded.response.status, 201);
-
-    const obligationStore = openObligationStore(databasePath);
-    try {
-      const recorded = obligationStore.recordRevision(
-        structuredObligation(thread.threadId, request),
-        { recordedAt: "2026-08-10T00:00:01.000Z" },
-      );
-      assert.equal(recorded.created, true);
-    } finally {
-      obligationStore.close();
-    }
-
-    const appraisal = await json(`${first.baseUrl}/threads/${thread.threadId}/private/requests`, {
-      method: "POST",
-      headers: privateHeaders(),
-      body: JSON.stringify({
-        request,
-        causationId: "cause_causal_process_appraise",
-        correlationId: "corr_causal_process",
-      }),
-    });
-    assert.equal(appraisal.response.status, 201);
-    assert.equal(appraisal.body.trace.privateStance.desiredAction, "clarify");
-    assert.equal(appraisal.body.trace.privateStance.policy.version, "3");
-    assert.deepEqual(appraisal.body.trace.appraisal.obligations, []);
-
-    const continued = await json(
-      `${first.baseUrl}/threads/${thread.threadId}/private/requests/${request.requestId}/participation`,
-      {
-        method: "POST",
-        headers: privateHeaders(),
-        body: JSON.stringify({
-          operationId: "op_causal_process_continue",
-          causationId: "cause_causal_process_continue",
-          correlationId: "corr_causal_process",
-          governingObligationId: obligationId,
-        }),
-      },
+    const { continued, sessionId } = await seedAndAcquireCompelledRuntime(
+      first,
+      databasePath,
+      thread,
+      request,
+      "",
     );
-    assert.equal(continued.response.status, 201);
-    assert.equal(continued.body.kind, "runtime");
-    assert.equal(continued.body.applicability.decision.result, "applies");
-    assert.equal(continued.body.runtime.authorization.desiredAction, "clarify");
-    assert.equal(continued.body.runtime.authorization.authorizedAction, "accept");
-    assert.equal(continued.body.runtime.authorization.participationBasis, "obligation_override");
-    assert.deepEqual(continued.body.runtime.authorization.obligationReferences, []);
-    assert.equal(
-      continued.body.runtime.authorization.applicability.applicabilityId,
-      continued.body.applicability.decision.applicabilityId,
-    );
-    assert.equal(
-      continued.body.runtime.authorization.applicability.decisionDigest,
-      continued.body.applicability.decisionDigest,
-    );
-    assert.equal(continued.body.runtime.authorization.applicability.obligationId, obligationId);
-    const sessionId = continued.body.runtime.session.sessionId;
     const authorizationId = continued.body.runtime.authorization.authorizationId;
     const applicabilityId = continued.body.applicability.decision.applicabilityId;
-
-    const actor = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/actor`, {
-      method: "POST",
-      headers: privateHeaders(),
-      body: JSON.stringify({ operationId: "op_causal_process_actor" }),
-    });
-    assert.equal(actor.response.status, 201);
-    assert.equal(actor.body.runtime.actorRun.output.proposedLifeChanges.length, 0);
-
-    const guardian = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/goal-guardian`, {
-      method: "POST",
-      headers: privateHeaders(),
-      body: JSON.stringify({ operationId: "op_causal_process_guardian" }),
-    });
-    assert.equal(guardian.response.status, 201);
-    assert.equal(guardian.body.runtime.goalGuardianAudit.audit.decision, "pass");
 
     const frozen = await json(`${first.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/freeze`, {
       method: "POST",
@@ -325,6 +337,105 @@ test("canonical world-kernel completes and persists a compelled Structured Oblig
   } finally {
     if (first) await first.stop().catch(() => {});
     if (second) await second.stop().catch(() => {});
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("freeze cannot consume Structured Obligation authority after a newer revocation", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-causal-revoked-before-freeze-"));
+  const databasePath = join(directory, "world.sqlite");
+  const thread = structuredThread();
+  const request = activationRequest();
+  let processHandle;
+  try {
+    processHandle = await startProcess(databasePath);
+    const { continued, sessionId } = await seedAndAcquireCompelledRuntime(
+      processHandle,
+      databasePath,
+      thread,
+      request,
+      "_revoked",
+    );
+    const authorizationId = continued.body.runtime.authorization.authorizationId;
+
+    const obligations = openObligationStore(databasePath);
+    try {
+      const revoked = {
+        ...structuredObligation(thread.threadId, request),
+        revision: 2,
+        status: "revoked",
+        supersedesRevision: 1,
+      };
+      const result = obligations.recordRevision(revoked, { recordedAt: new Date().toISOString() });
+      assert.equal(result.created, true);
+      assert.equal(result.revision.obligation.status, "revoked");
+    } finally {
+      obligations.close();
+    }
+
+    const frozen = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/freeze`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_freeze_revoked",
+          lifeChangeDecisions: [],
+          causationId: "cause_causal_process_freeze_revoked",
+          correlationId: "corr_causal_process_revoked",
+        }),
+      },
+    );
+    assert.equal(frozen.response.status, 409);
+    assert.equal(frozen.body.code, "FREEZE_STATE_CHANGED");
+    assert.match(frozen.body.message, /advanced to revision 2 before freeze/);
+
+    const evidenceDb = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+    try {
+      assert.equal(
+        Number(evidenceDb.prepare(
+          "SELECT COUNT(*) AS count FROM freeze_reports WHERE authorization_id=?",
+        ).get(authorizationId).count),
+        0,
+      );
+      assert.equal(
+        Number(evidenceDb.prepare(
+          "SELECT COUNT(*) AS count FROM authorization_consumptions WHERE authorization_id=?",
+        ).get(authorizationId).count),
+        0,
+      );
+      assert.equal(
+        Number(evidenceDb.prepare(
+          "SELECT COUNT(*) AS count FROM structured_obligation_discharges WHERE authorization_id=?",
+        ).get(authorizationId).count),
+        0,
+      );
+    } finally {
+      evidenceDb.close();
+    }
+
+    const persisted = await json(`${processHandle.baseUrl}/threads/${thread.threadId}`);
+    assert.equal(persisted.response.status, 200);
+    assert.equal(persisted.body.thread.version, 1);
+
+    const runtime = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(runtime.response.status, 200);
+    assert.equal(runtime.body.runtime.session.status, "active");
+    assert.equal(runtime.body.runtime.authorization.desiredAction, "clarify");
+
+    const currentStore = openObligationStore(databasePath);
+    try {
+      const current = currentStore.getCurrentRevision(thread.threadId, obligationId);
+      assert.equal(current.obligation.revision, 2);
+      assert.equal(current.obligation.status, "revoked");
+    } finally {
+      currentStore.close();
+    }
+  } finally {
+    if (processHandle) await processHandle.stop().catch(() => {});
     rmSync(directory, { recursive: true, force: true });
   }
 });
