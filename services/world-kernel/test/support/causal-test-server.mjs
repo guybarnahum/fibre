@@ -10,7 +10,8 @@ process.stdout.write(`${JSON.stringify({
   port: runtime.address.port,
   databasePath: runtime.databasePath,
   causalParticipationEnabled: true,
-  causalParticipationProfileVersion: 3,
+  structuredObligationAuthorityEnabled: runtime.structuredObligationAuthorityEnabled,
+  causalParticipationProfileVersion: 4,
   guardianProvider: guardianModelAdapter.provider,
   guardianModelId: guardianModelAdapter.modelId,
 })}\n`);
