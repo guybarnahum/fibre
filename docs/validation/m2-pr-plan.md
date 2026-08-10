@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-10
 canonical: true
 ---
 
@@ -25,19 +25,19 @@ The current pre-M2 checkpoint is **15/26 under rubric v2**. The strongest eviden
 MERGED  #33  Semantic Guardian
 MERGED  #34  History bends judgment
 
-        #35  Structured Obligation v1
-        #36  M2 Identity & Embodiment Contract
-        #37  Thread Passport & Identity Provenance v1
-        #38  Lineage, Geography & Embodiment v1
-        #39  Identity Projection & Causal Consumption
-        #40  M2 Standing Gate / M2 closure
+DRAFT / IMPLEMENTATION COMPLETE  #35  Structured Obligation v1
+                                #36  M2 Identity & Embodiment Contract
+                                #37  Thread Passport & Identity Provenance v1
+                                #38  Lineage, Geography & Embodiment v1
+                                #39  Identity Projection & Causal Consumption
+                                #40  M2 Standing Gate / M2 closure
 
-        #41  Self-authored Development v1
-        #42  Reciprocal Relationships v1
-        #43  Economic Consequence / M3 foundation
+                                #41  Self-authored Development v1
+                                #42  Reciprocal Relationships v1
+                                #43  Economic Consequence / M3 foundation
 ```
 
-Do not collapse #37-#40 into one large “M2 implementation” PR. Each exists to close a distinct causal/architectural risk.
+#36 begins after #35 review/merge. Do not collapse #37-#40 into one large “M2 implementation” PR. Each exists to close a distinct causal/architectural risk.
 
 ## #35 — Structured Obligation v1
 
@@ -92,26 +92,28 @@ Migration must preserve the invariant that pre-migration spent obligations remai
 
 `currentState.unresolvedIntentions` must not be auto-promoted into obligations: the legacy field mixes unfinished personal intentions with what historical M1 temporarily treated as exact-string obligation authority. Active Structured Obligations therefore require explicit authoritative representation. Existing consumed legacy references migrate only to deterministic spent-authority tombstones.
 
-### #35 implementation sequence
+### #35 implementation sequence — COMPLETE
 
-Keep the authority transition reviewable rather than changing storage and authorization in one opaque step:
+The authority transition remains reviewable as six distinct slices:
 
 ```text
 LANDED  A. domain + additive append-only schema + legacy-spend tombstones
 LANDED  B. ObligationStore/service + current-revision integrity
 LANDED  C. Fibre-owned applicability persistence
 LANDED  D. runtime authorization cutover to nominated obligation IDs + applicability evidence
-NEXT    E. freeze/discharge cutover to structured obligation revisions
-        F. inspector + restart/replay/adversarial closure
+LANDED  E. atomic freeze/discharge cutover to structured obligation revisions
+LANDED  F. read-only private/admin inspection + restart/replay/privacy/adversarial closure
 ```
 
-A-C intentionally did not change canonical runtime authority. **D is the authority cutover:** the canonical world-kernel no longer accepts exact-string/unresolved-intention prose as obligation authority. A caller may nominate only a stable Structured Obligation ID; Fibre persists applicability, and a compelled runtime authorization binds the exact applicability ID/digest plus obligation revision/digest.
+**D is the authority cutover:** the canonical world-kernel no longer accepts exact-string/unresolved-intention prose as new obligation authority. A caller may nominate only a stable Structured Obligation ID; Fibre persists applicability, and a compelled runtime authorization binds the exact applicability ID/digest plus obligation revision/digest.
 
 A persisted `applies` decision is not a bearer capability. Runtime insertion independently revalidates that the exact obligation is still current, active, effective, unexpired, request-bound, and not tombstoned. The private stance remains separate from compelled execution authority.
 
-D deliberately stops before discharge. Structured Obligations remain active after a D-only runtime episode until E appends the appropriate status/discharge history and consumption evidence. Historical M1 exact-prose code/evidence remains historical/internal compatibility rather than canonical runtime authority.
+**E is the lifecycle cutover:** successful one-shot compelled completion revalidates authority and atomically appends an immediate terminal `discharged` revision plus an immutable causal discharge witness. Failure rolls back freeze, authorization consumption, runtime completion, and discharge together. Historical M1 prose-discharge records retain their original semantics.
 
-#35 is primarily authority integrity. Do not game it for score movement.
+**F is the inspection/replay closure:** a shared `readOnly + query_only` verifier checks the complete obligation/applicability/authorization/consumption/runtime/freeze/event/discharge chain. It is exposed through private GET-only world-kernel routes and `npm run inspect:obligations`; exact private inspection survives process restart; public Thread/event/health routes reveal no private obligation evidence; and coherently re-signed discharge-row tampering still fails cross-chain verification.
+
+#35 remains primarily authority integrity and social consequence. **A-F implementation completion does not itself award personhood-score movement.** PR review/merge is still required before #36 starts.
 
 ## #36 — M2 Identity & Embodiment Contract
 
