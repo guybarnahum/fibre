@@ -207,6 +207,84 @@ test("obligation storage rejects terms that are more public than standing", () =
   }
 });
 
+test("SQL backstops preserve aggregate identity, legacy origin, and terminal status", () => {
+  const db = database();
+  try {
+    migrateDatabase(db);
+    db.exec("PRAGMA foreign_keys=OFF");
+    const obligationId = `obl_${"3".repeat(64)}`;
+    const secondObligationId = `obl_${"4".repeat(64)}`;
+    const insert = db.prepare(`
+      INSERT INTO obligation_records(
+        obligation_id,revision,thread_id,status,obligation_json,obligation_digest,
+        supersedes_revision,effective_at,expires_at,standing_visibility,terms_visibility,
+        legacy_source_digest,recorded_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `);
+    const json = (issuerId) => JSON.stringify({
+      obligationId,
+      issuer: { entityId: issuerId, kind: "human" },
+    });
+
+    insert.run(
+      obligationId, 1, "thr_mina_001", "active", json("human_guy"), SHA_A,
+      null, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_A,
+      "2026-08-09T00:00:00.000Z",
+    );
+
+    assert.throws(
+      () => insert.run(
+        obligationId, 2, "thr_other", "active", json("human_guy"), SHA_B,
+        1, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_A,
+        "2026-08-09T00:01:00.000Z",
+      ),
+      /changes stable identity/,
+    );
+    assert.throws(
+      () => insert.run(
+        obligationId, 2, "thr_mina_001", "active", json("human_guy"), SHA_B,
+        1, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_B,
+        "2026-08-09T00:01:00.000Z",
+      ),
+      /changes stable identity/,
+    );
+    assert.throws(
+      () => insert.run(
+        obligationId, 2, "thr_mina_001", "active", json("human_other"), SHA_B,
+        1, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_A,
+        "2026-08-09T00:01:00.000Z",
+      ),
+      /changes stable identity/,
+    );
+
+    insert.run(
+      obligationId, 2, "thr_mina_001", "satisfied", json("human_guy"), SHA_B,
+      1, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_A,
+      "2026-08-09T00:01:00.000Z",
+    );
+    assert.throws(
+      () => insert.run(
+        obligationId, 3, "thr_mina_001", "active", json("human_guy"), SHA_A,
+        2, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_A,
+        "2026-08-09T00:02:00.000Z",
+      ),
+      /terminal obligation status cannot change/,
+    );
+
+    assert.throws(
+      () => insert.run(
+        secondObligationId, 1, "thr_mina_001", "satisfied",
+        JSON.stringify({ obligationId: secondObligationId, issuer: { entityId: "human_guy", kind: "human" } }),
+        SHA_B, null, "2026-08-09T00:00:00.000Z", null, "restricted", "private", SHA_A,
+        "2026-08-09T00:03:00.000Z",
+      ),
+      /UNIQUE constraint failed/,
+    );
+  } finally {
+    db.close();
+  }
+});
+
 test("obligation schema creation is idempotent", () => {
   const db = database();
   try {
