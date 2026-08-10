@@ -12,8 +12,10 @@ process.stdout.write(`${JSON.stringify({
   causalParticipationEnabled: true,
   structuredObligationAuthorityEnabled: runtime.structuredObligationAuthorityEnabled,
   structuredObligationDischargeEnabled: runtime.structuredObligationDischargeEnabled,
+  structuredObligationInspectionEnabled: runtime.structuredObligationInspectionEnabled,
   causalParticipationProfileVersion: 4,
   freezeProfileVersion: 2,
+  structuredObligationInspectionProfileVersion: 1,
   guardianProvider: guardianModelAdapter.provider,
   guardianModelId: guardianModelAdapter.modelId,
 })}\n`);
