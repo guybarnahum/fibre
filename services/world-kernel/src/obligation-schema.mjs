@@ -96,6 +96,54 @@ export function createObligationTables(database) {
         REFERENCES authorization_consumptions(authorization_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS structured_obligation_discharges (
+      discharge_id TEXT PRIMARY KEY CHECK (length(discharge_id)=68 AND substr(discharge_id,1,4)='obd_' AND substr(discharge_id,5) NOT GLOB '*[^0-9a-f]*'),
+      thread_id TEXT NOT NULL,
+      obligation_id TEXT NOT NULL,
+      prior_revision INTEGER NOT NULL CHECK (prior_revision >= 1),
+      prior_obligation_digest TEXT NOT NULL CHECK (length(prior_obligation_digest)=71 AND substr(prior_obligation_digest,1,7)='sha256:' AND substr(prior_obligation_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      terminal_revision INTEGER NOT NULL CHECK (terminal_revision=prior_revision+1),
+      terminal_obligation_digest TEXT NOT NULL CHECK (length(terminal_obligation_digest)=71 AND substr(terminal_obligation_digest,1,7)='sha256:' AND substr(terminal_obligation_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      applicability_id TEXT NOT NULL UNIQUE,
+      applicability_decision_digest TEXT NOT NULL CHECK (length(applicability_decision_digest)=71 AND substr(applicability_decision_digest,1,7)='sha256:' AND substr(applicability_decision_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      authorization_id TEXT NOT NULL UNIQUE,
+      authorization_digest TEXT NOT NULL CHECK (length(authorization_digest)=71 AND substr(authorization_digest,1,7)='sha256:' AND substr(authorization_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      authorization_consumption_digest TEXT NOT NULL CHECK (length(authorization_consumption_digest)=71 AND substr(authorization_consumption_digest,1,7)='sha256:' AND substr(authorization_consumption_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      session_id TEXT NOT NULL UNIQUE,
+      request_id TEXT NOT NULL,
+      freeze_operation_id TEXT NOT NULL UNIQUE,
+      freeze_report_id TEXT NOT NULL UNIQUE,
+      freeze_report_digest TEXT NOT NULL CHECK (length(freeze_report_digest)=71 AND substr(freeze_report_digest,1,7)='sha256:' AND substr(freeze_report_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      event_id TEXT NOT NULL UNIQUE,
+      discharged_at TEXT NOT NULL,
+      reason_code TEXT NOT NULL CHECK (reason_code='runtime_completed_guardian_pass'),
+      discharge_json TEXT NOT NULL CHECK (json_valid(discharge_json)),
+      discharge_digest TEXT NOT NULL CHECK (length(discharge_digest)=71 AND substr(discharge_digest,1,7)='sha256:' AND substr(discharge_digest,8) NOT GLOB '*[^0-9a-f]*'),
+      UNIQUE (obligation_id, terminal_revision),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (obligation_id, prior_revision)
+        REFERENCES obligation_records(obligation_id, revision),
+      FOREIGN KEY (obligation_id, terminal_revision)
+        REFERENCES obligation_records(obligation_id, revision),
+      FOREIGN KEY (applicability_id)
+        REFERENCES obligation_applicability_decisions(applicability_id),
+      FOREIGN KEY (authorization_id)
+        REFERENCES participation_authorizations(authorization_id),
+      FOREIGN KEY (authorization_id)
+        REFERENCES authorization_consumptions(authorization_id),
+      FOREIGN KEY (session_id)
+        REFERENCES runtime_sessions(session_id),
+      FOREIGN KEY (freeze_report_id)
+        REFERENCES freeze_reports(report_id),
+      FOREIGN KEY (event_id)
+        REFERENCES thread_events(event_id),
+      FOREIGN KEY (thread_id, request_id)
+        REFERENCES activation_requests(thread_id, request_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_structured_obligation_discharges_obligation
+      ON structured_obligation_discharges(thread_id,obligation_id,discharged_at);
+
     CREATE TRIGGER IF NOT EXISTS obligation_records_no_update
       BEFORE UPDATE ON obligation_records
       BEGIN SELECT RAISE(ABORT,'obligation_records is append-only'); END;
@@ -114,6 +162,12 @@ export function createObligationTables(database) {
     CREATE TRIGGER IF NOT EXISTS legacy_obligation_tombstones_no_delete
       BEFORE DELETE ON legacy_obligation_tombstones
       BEGIN SELECT RAISE(ABORT,'legacy_obligation_tombstones is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS structured_obligation_discharges_no_update
+      BEFORE UPDATE ON structured_obligation_discharges
+      BEGIN SELECT RAISE(ABORT,'structured_obligation_discharges is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS structured_obligation_discharges_no_delete
+      BEFORE DELETE ON structured_obligation_discharges
+      BEGIN SELECT RAISE(ABORT,'structured_obligation_discharges is append-only'); END;
 
     CREATE TRIGGER IF NOT EXISTS obligation_records_revision_stable_identity
       BEFORE INSERT ON obligation_records
@@ -151,6 +205,95 @@ export function createObligationTables(database) {
           AND spent.legacy_reference_digest=NEW.legacy_source_digest
       )
       BEGIN SELECT RAISE(ABORT,'legacy obligation authority was already spent'); END;
+
+    CREATE TRIGGER IF NOT EXISTS structured_obligation_discharge_guard
+      BEFORE INSERT ON structured_obligation_discharges
+      WHEN NOT EXISTS (
+        SELECT 1
+        FROM obligation_records prior
+        JOIN obligation_records terminal
+          ON terminal.obligation_id=prior.obligation_id
+         AND terminal.revision=prior.revision+1
+        JOIN obligation_applicability_decisions applicability
+          ON applicability.applicability_id=NEW.applicability_id
+        JOIN participation_authorizations authorization
+          ON authorization.authorization_id=NEW.authorization_id
+        JOIN authorization_consumptions consumption
+          ON consumption.authorization_id=NEW.authorization_id
+        JOIN runtime_sessions runtime
+          ON runtime.session_id=NEW.session_id
+        JOIN freeze_reports freeze
+          ON freeze.report_id=NEW.freeze_report_id
+        WHERE prior.obligation_id=NEW.obligation_id
+          AND prior.revision=NEW.prior_revision
+          AND prior.thread_id=NEW.thread_id
+          AND prior.status='active'
+          AND prior.obligation_digest=NEW.prior_obligation_digest
+          AND terminal.revision=NEW.terminal_revision
+          AND terminal.thread_id=NEW.thread_id
+          AND terminal.status='discharged'
+          AND terminal.supersedes_revision=NEW.prior_revision
+          AND terminal.obligation_digest=NEW.terminal_obligation_digest
+          AND terminal.recorded_at=NEW.discharged_at
+          AND applicability.result='applies'
+          AND applicability.thread_id=NEW.thread_id
+          AND applicability.request_id=NEW.request_id
+          AND applicability.obligation_id=NEW.obligation_id
+          AND applicability.obligation_revision=NEW.prior_revision
+          AND applicability.obligation_digest=NEW.prior_obligation_digest
+          AND applicability.decision_digest=NEW.applicability_decision_digest
+          AND authorization.thread_id=NEW.thread_id
+          AND authorization.request_id=NEW.request_id
+          AND authorization.authorization_digest=NEW.authorization_digest
+          AND json_extract(authorization.authorization_json,'$.participationBasis')='obligation_override'
+          AND json_extract(authorization.authorization_json,'$.applicability.applicabilityId')=NEW.applicability_id
+          AND json_extract(authorization.authorization_json,'$.applicability.decisionDigest')=NEW.applicability_decision_digest
+          AND json_extract(authorization.authorization_json,'$.applicability.obligationId')=NEW.obligation_id
+          AND json_extract(authorization.authorization_json,'$.applicability.obligationRevision')=NEW.prior_revision
+          AND json_extract(authorization.authorization_json,'$.applicability.obligationDigest')=NEW.prior_obligation_digest
+          AND consumption.operation_id=NEW.freeze_operation_id
+          AND consumption.session_id=NEW.session_id
+          AND consumption.thread_id=NEW.thread_id
+          AND consumption.request_id=NEW.request_id
+          AND consumption.consumption_digest=NEW.authorization_consumption_digest
+          AND runtime.authorization_id=NEW.authorization_id
+          AND runtime.thread_id=NEW.thread_id
+          AND runtime.request_id=NEW.request_id
+          AND runtime.status='completed'
+          AND freeze.operation_id=NEW.freeze_operation_id
+          AND freeze.session_id=NEW.session_id
+          AND freeze.thread_id=NEW.thread_id
+          AND freeze.request_id=NEW.request_id
+          AND freeze.authorization_id=NEW.authorization_id
+          AND freeze.event_id=NEW.event_id
+          AND freeze.report_digest=NEW.freeze_report_digest
+          AND freeze.completed_at=NEW.discharged_at
+      )
+      BEGIN SELECT RAISE(ABORT,'structured obligation discharge evidence is not causally bound'); END;
+
+    CREATE TRIGGER IF NOT EXISTS structured_obligation_discharge_json_guard
+      BEFORE INSERT ON structured_obligation_discharges
+      WHEN json_extract(NEW.discharge_json,'$.dischargeId')<>NEW.discharge_id
+        OR json_extract(NEW.discharge_json,'$.threadId')<>NEW.thread_id
+        OR json_extract(NEW.discharge_json,'$.obligationId')<>NEW.obligation_id
+        OR json_extract(NEW.discharge_json,'$.priorRevision')<>NEW.prior_revision
+        OR json_extract(NEW.discharge_json,'$.priorObligationDigest')<>NEW.prior_obligation_digest
+        OR json_extract(NEW.discharge_json,'$.terminalRevision')<>NEW.terminal_revision
+        OR json_extract(NEW.discharge_json,'$.terminalObligationDigest')<>NEW.terminal_obligation_digest
+        OR json_extract(NEW.discharge_json,'$.applicabilityId')<>NEW.applicability_id
+        OR json_extract(NEW.discharge_json,'$.applicabilityDecisionDigest')<>NEW.applicability_decision_digest
+        OR json_extract(NEW.discharge_json,'$.authorizationId')<>NEW.authorization_id
+        OR json_extract(NEW.discharge_json,'$.authorizationDigest')<>NEW.authorization_digest
+        OR json_extract(NEW.discharge_json,'$.authorizationConsumptionDigest')<>NEW.authorization_consumption_digest
+        OR json_extract(NEW.discharge_json,'$.sessionId')<>NEW.session_id
+        OR json_extract(NEW.discharge_json,'$.requestId')<>NEW.request_id
+        OR json_extract(NEW.discharge_json,'$.freezeOperationId')<>NEW.freeze_operation_id
+        OR json_extract(NEW.discharge_json,'$.freezeReportId')<>NEW.freeze_report_id
+        OR json_extract(NEW.discharge_json,'$.freezeReportDigest')<>NEW.freeze_report_digest
+        OR json_extract(NEW.discharge_json,'$.eventId')<>NEW.event_id
+        OR json_extract(NEW.discharge_json,'$.dischargedAt')<>NEW.discharged_at
+        OR json_extract(NEW.discharge_json,'$.reasonCode')<>NEW.reason_code
+      BEGIN SELECT RAISE(ABORT,'structured obligation discharge JSON does not match columns'); END;
   `);
 }
 
