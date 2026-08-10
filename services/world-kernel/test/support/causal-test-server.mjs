@@ -11,7 +11,9 @@ process.stdout.write(`${JSON.stringify({
   databasePath: runtime.databasePath,
   causalParticipationEnabled: true,
   structuredObligationAuthorityEnabled: runtime.structuredObligationAuthorityEnabled,
+  structuredObligationDischargeEnabled: runtime.structuredObligationDischargeEnabled,
   causalParticipationProfileVersion: 4,
+  freezeProfileVersion: 2,
   guardianProvider: guardianModelAdapter.provider,
   guardianModelId: guardianModelAdapter.modelId,
 })}\n`);
