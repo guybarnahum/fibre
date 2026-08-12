@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 5,
+  "version": 9,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -21,6 +21,10 @@
         "docs/validation/experiment-lifecycle.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/m2-pr-plan.md",
+        "docs/architecture/m2-identity-embodiment-contract.md",
+        "docs/architecture/m2-character-formation-model.md",
+        "docs/architecture/m2-interior-exterior-situated-identity.md",
+        "docs/architecture/m2-developmental-continuity-past-selves.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/architecture/structured-obligations-v1.md",
         "docs/validation/semantic-guardian-v3-freeze.md",
@@ -46,11 +50,9 @@
     },
     "request-processing": {
       "title": "Request processing",
-      "description": "Context for private appraisal, dignity, authorization, interest-mediated disclosure, response behavior, affect, and relationship consequences.",
+      "description": "Context for private appraisal, authorization, interest-mediated disclosure, response behavior, affect, and relationship consequences.",
       "output": "artifacts/generated/fibre-request-processing-context.md",
-      "includes": [
-        "core"
-      ],
+      "includes": ["core"],
       "sources": [
         "docs/concepts/emotions-and-needs.md",
         "docs/concepts/dual-adversarial-cognition.md",
@@ -72,12 +74,8 @@
       "title": "Full",
       "description": "Broad Fibre concept, architecture, governance, use-case, milestone, and validation context for cross-cutting work.",
       "output": "artifacts/generated/fibre-full-context.md",
-      "aliases": [
-        "artifacts/generated/fibre-context-pack.md"
-      ],
-      "includes": [
-        "request-processing"
-      ],
+      "aliases": ["artifacts/generated/fibre-context-pack.md"],
+      "includes": ["request-processing"],
       "sources": [
         "docs/vision/core-thesis.md",
         "docs/vision/glossary.md",
@@ -122,11 +120,7 @@
   "coverage": {
     "acceptedCanonicalDocuments": {
       "directory": "docs",
-      "profiles": [
-        "core",
-        "request-processing",
-        "full"
-      ]
+      "profiles": ["core", "request-processing", "full"]
     }
   }
 }
