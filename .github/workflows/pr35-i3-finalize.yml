@@ -1,0 +1,96 @@
+name: pr35-i3-finalize
+
+on:
+  push:
+    branches:
+      - agent/structured-obligation-v1
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ github.event.head_commit.message == 'Finalize PR35 authority-withdrawal closure' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/structured-obligation-v1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply corrected closure and route ownership
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/pr35-i3-debug.yml').read_text()
+          marker = '      - name: Reapply corrected closure\n        shell: bash\n        run: |\n'
+          start = source.index(marker) + len(marker)
+          end = source.index('\n      - name: Focused causal proof', start)
+          lines = source[start:end].splitlines()
+          Path('/tmp/apply-i3-corrected.sh').write_text('\n'.join(line[10:] if line.startswith('          ') else line for line in lines) + '\n')
+          PY
+          bash /tmp/apply-i3-corrected.sh
+
+          python <<'PY'
+          from pathlib import Path
+          p=Path('services/world-kernel/src/structured-obligation-inspection-http-server.mjs')
+          t=p.read_text()
+          old='''    const route = inspectionRoute(request.url);\n    if (route === null) return baseHandler(request, response);\n    const id = requestId(request.headers["x-request-id"]);'''
+          new='''    const route = inspectionRoute(request.url);\n    if (route === null) return baseHandler(request, response);\n    if (route.kind === "runtime_authority_withdrawal" && request.method !== "GET") {\n      return baseHandler(request, response);\n    }\n    const id = requestId(request.headers["x-request-id"]);'''
+          if old not in t: raise SystemExit('inspection dispatch anchor missing')
+          p.write_text(t.replace(old,new,1))
+          PY
+
+      - name: Focused causal proof
+        shell: bash
+        run: |
+          npm run build
+          set +e
+          node --disable-warning=ExperimentalWarning --test services/world-kernel/test/causal-process.test.mjs > /tmp/causal.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/causal.log
+          if [ "$rc" -ne 0 ]; then
+            python <<'PY'
+          from pathlib import Path
+          lines=Path('/tmp/causal.log').read_text(errors='replace').splitlines()
+          hits=[i for i,l in enumerate(lines) if 'not ok' in l or 'AssertionError' in l or 'SqliteError' in l or 'TypeError' in l or 'ERR_' in l]
+          lo=max(0,(min(hits)-15) if hits else 0); hi=min(len(lines),(max(hits)+55) if hits else len(lines))
+          msg='\n'.join(lines[lo:hi])[-12000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+          print(f'::error title=I3 causal proof failure::{msg}')
+          PY
+            exit "$rc"
+          fi
+
+      - name: Full validation
+        shell: bash
+        run: |
+          set +e
+          npm run check > /tmp/full.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/full.log
+          if [ "$rc" -ne 0 ]; then
+            python <<'PY'
+          from pathlib import Path
+          lines=Path('/tmp/full.log').read_text(errors='replace').splitlines()
+          hits=[i for i,l in enumerate(lines) if 'not ok' in l or 'AssertionError' in l or 'SqliteError' in l or 'TypeError' in l or 'ERR_' in l or 'Repository validation failed' in l]
+          lo=max(0,(min(hits)-20) if hits else max(0,len(lines)-100)); hi=min(len(lines),(max(hits)+70) if hits else len(lines))
+          msg='\n'.join(lines[lo:hi])[-15000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+          print(f'::error title=PR35 full validation failure::{msg}')
+          PY
+            exit "$rc"
+          fi
+
+      - name: Commit closure
+        shell: bash
+        run: |
+          git config user.name "OpenAI review-fix bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/pr35-i3-closure.yml .github/workflows/pr35-i3-retry.yml .github/workflows/pr35-i3-debug.yml .github/workflows/pr35-i3-finalize.yml
+          git add -A
+          git commit -m "Close interrupted structured authority truthfully"
+          git push origin HEAD:agent/structured-obligation-v1
