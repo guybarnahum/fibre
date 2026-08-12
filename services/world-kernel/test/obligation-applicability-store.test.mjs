@@ -20,6 +20,8 @@ import {
   openObligationApplicabilityStore,
 } from "../src/obligation-applicability-store.mjs";
 import { applicabilityDecisionDigest } from "../src/obligation-schema.mjs";
+import { canonicalJson } from "../src/persistence-common.mjs";
+import { openStructuredObligationInspectionStore } from "../src/structured-obligation-inspection-store.mjs";
 
 const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -501,4 +503,50 @@ test("legacy tombstone is Fibre-owned evidence that forces does_not_apply", () =
       true,
     );
     store.close();
+  }));
+
+test("read-only inspection re-derives applicability policy without downstream authority witnesses", () =>
+  withDatabase((databasePath) => {
+    const applicability = openObligationApplicabilityStore(databasePath);
+    const persisted = applicability.decideApplicability(decisionInput());
+    assert.equal(persisted.decision.result, "applies");
+    applicability.close();
+
+    const db = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
+    try {
+      assert.equal(Number(db.prepare(
+        "SELECT COUNT(*) AS count FROM participation_authorizations",
+      ).get().count), 0);
+      assert.equal(Number(db.prepare(
+        "SELECT COUNT(*) AS count FROM structured_obligation_discharges",
+      ).get().count), 0);
+      db.exec("DROP TRIGGER obligation_applicability_decisions_no_update");
+      const forged = structuredClone(persisted.decision);
+      forged.result = "does_not_apply";
+      forged.reasonCode = "request_binding_mismatch";
+      const forgedDigest = applicabilityDecisionDigest(forged);
+      db.prepare(`
+        UPDATE obligation_applicability_decisions
+        SET result=?,reason_code=?,decision_json=?,decision_digest=?
+        WHERE applicability_id=?
+      `).run(
+        forged.result,
+        forged.reasonCode,
+        canonicalJson(forged),
+        forgedDigest,
+        forged.applicabilityId,
+      );
+    } finally {
+      db.close();
+    }
+
+    const inspector = openStructuredObligationInspectionStore(databasePath);
+    try {
+      assert.throws(
+        () => inspector.listRequestApplicability(fixture.threadId, request().requestId),
+        /applicability derived result does not match persisted evidence/,
+      );
+    } finally {
+      inspector.close();
+    }
   }));

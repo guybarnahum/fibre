@@ -360,6 +360,29 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     );
     const authorizationId = continued.body.runtime.authorization.authorizationId;
 
+    const prematureClosure = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_authority_withdrawal_live",
+          causationId: "cause_causal_process_authority_withdrawal_live",
+          correlationId: "corr_causal_process_revoked",
+        }),
+      },
+    );
+    assert.equal(prematureClosure.response.status, 422);
+    assert.equal(prematureClosure.body.error.code, "AUTHORITY_WITHDRAWAL_REJECTED");
+    assert.match(prematureClosure.body.error.message, /remains current execution authority/);
+
+    const stillActive = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(stillActive.body.runtime.session.status, "active");
+    assert.equal(stillActive.body.runtime.lease.status, "active");
+
     const obligations = openObligationStore(databasePath);
     try {
       const revoked = {
@@ -444,6 +467,37 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     assert.equal(closed.body.closure.reasonCode, "governing_authority_withdrawn");
     assert.equal(closed.body.closure.withdrawalCause, "superseded");
     assert.equal(closed.body.closure.guardianDecision, "pass");
+
+    const exactRetry = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_authority_withdrawal",
+          causationId: "cause_causal_process_authority_withdrawal",
+          correlationId: "corr_causal_process_revoked",
+        }),
+      },
+    );
+    assert.equal(exactRetry.response.status, 200);
+    assert.equal(exactRetry.body.idempotent, true);
+    assert.deepEqual(exactRetry.body.closure, closed.body.closure);
+
+    const conflictingReuse = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_authority_withdrawal_second",
+          causationId: "cause_causal_process_authority_withdrawal_second",
+          correlationId: "corr_causal_process_revoked",
+        }),
+      },
+    );
+    assert.equal(conflictingReuse.response.status, 409);
+    assert.equal(conflictingReuse.body.error.code, "AUTHORITY_WITHDRAWAL_CONFLICT");
 
     const closedRuntime = await json(
       `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
