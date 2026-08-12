@@ -9,14 +9,17 @@ import { openExpressionStore } from "./expression-store.mjs";
 import { openCausalContextStore } from "./causal-context-store.mjs";
 import { openSemanticStateStore } from "./semantic-state-store.mjs";
 import { openGuardianCognitionStore } from "./guardian-cognition-store.mjs";
+import { openObligationApplicabilityStore } from "./obligation-applicability-store.mjs";
+import { openStructuredAuthorityWithdrawalStore } from "./structured-authority-withdrawal-store.mjs";
+import { openStructuredObligationInspectionStore } from "./structured-obligation-inspection-store.mjs";
 import { guardianModelAdapterFromEnvironment } from "./guardian-model-adapter.mjs";
-import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
+import { StructuredObligationCausalWorldKernelService } from "./structured-causal-service.mjs";
 import {
   assertLoopbackBindHost,
   closeWorldKernelHttpServer,
   listenWorldKernelHttpServer,
 } from "./http-server.mjs";
-import { createCausalWorldKernelHttpServer } from "./causal-http-server.mjs";
+import { createStructuredObligationInspectionHttpServer } from "./structured-obligation-inspection-http-server.mjs";
 
 function parsePort(value) {
   const port = Number(value);
@@ -36,6 +39,15 @@ export async function startWorldKernelFromEnvironment(
   if (Object.hasOwn(serviceOptions, "historicalM1Compatibility")) {
     throw new TypeError("historical M1 compatibility is not available from the canonical world-kernel");
   }
+  if (Object.hasOwn(serviceOptions, "applicabilityStore")) {
+    throw new TypeError("canonical Structured Obligation applicability storage is world-kernel owned");
+  }
+  if (Object.hasOwn(serviceOptions, "inspectionStore")) {
+    throw new TypeError("canonical Structured Obligation inspection is world-kernel owned");
+  }
+  if (Object.hasOwn(serviceOptions, "authorityWithdrawalStore")) {
+    throw new TypeError("canonical Structured Obligation authority-withdrawal storage is world-kernel owned");
+  }
   const databasePath = resolve(environment.FIBRE_WORLD_DATABASE ?? ".fibre/world.sqlite");
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
@@ -51,6 +63,9 @@ export async function startWorldKernelFromEnvironment(
   let causalContextStore;
   let semanticStateStore;
   let guardianCognitionStore;
+  let applicabilityStore;
+  let authorityWithdrawalStore;
+  let inspectionStore;
   try {
     runtimeStore = openRuntimeStore(databasePath);
     freezeStore = openFreezeStore(databasePath);
@@ -59,7 +74,14 @@ export async function startWorldKernelFromEnvironment(
     causalContextStore = openCausalContextStore(databasePath);
     semanticStateStore = openSemanticStateStore(databasePath);
     guardianCognitionStore = openGuardianCognitionStore(databasePath);
+    applicabilityStore = openObligationApplicabilityStore(databasePath);
+    authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);
+    // Open only after schema-owning stores have completed their additive repair.
+    inspectionStore = openStructuredObligationInspectionStore(databasePath);
   } catch (error) {
+    inspectionStore?.close();
+    authorityWithdrawalStore?.close();
+    applicabilityStore?.close();
     guardianCognitionStore?.close();
     semanticStateStore?.close();
     causalContextStore?.close();
@@ -73,7 +95,7 @@ export async function startWorldKernelFromEnvironment(
 
   const guardianModelAdapter = serviceOptions.guardianModelAdapter ??
     guardianModelAdapterFromEnvironment(environment);
-  const service = new PreM2CausalWorldKernelService(
+  const service = new StructuredObligationCausalWorldKernelService(
     store,
     runtimeStore,
     freezeStore,
@@ -85,10 +107,13 @@ export async function startWorldKernelFromEnvironment(
       semanticStateStore,
       guardianCognitionStore,
       guardianModelAdapter,
+      applicabilityStore,
+      authorityWithdrawalStore,
     },
   );
-  const server = createCausalWorldKernelHttpServer({
+  const server = createStructuredObligationInspectionHttpServer({
     service,
+    inspectionStore,
     adminToken,
     privateToken,
     onError(error, context) {
@@ -114,6 +139,9 @@ export async function startWorldKernelFromEnvironment(
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
+        inspectionStore.close();
+        authorityWithdrawalStore.close();
+        applicabilityStore.close();
         guardianCognitionStore.close();
         semanticStateStore.close();
         causalContextStore.close();
@@ -134,17 +162,27 @@ export async function startWorldKernelFromEnvironment(
       causalContextStore,
       semanticStateStore,
       guardianCognitionStore,
+      applicabilityStore,
+      authorityWithdrawalStore,
+      inspectionStore,
       service,
       address,
       databasePath,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       causalParticipationEnabled: true,
+      structuredObligationAuthorityEnabled: true,
+      structuredObligationDischargeEnabled: true,
+      structuredAuthorityWithdrawalClosureEnabled: true,
+      structuredObligationInspectionEnabled: true,
       guardianProvider: guardianModelAdapter.provider ?? "configured_adapter",
       guardianModelId: guardianModelAdapter.modelId ?? "configured_model",
       close,
     };
   } catch (error) {
+    inspectionStore.close();
+    authorityWithdrawalStore.close();
+    applicabilityStore.close();
     guardianCognitionStore.close();
     semanticStateStore.close();
     causalContextStore.close();
@@ -167,11 +205,16 @@ async function main() {
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
     causalParticipationEnabled: true,
+    structuredObligationAuthorityEnabled: true,
+    structuredObligationDischargeEnabled: true,
+    structuredAuthorityWithdrawalClosureEnabled: true,
+    structuredObligationInspectionEnabled: true,
     runtimeProfileVersion: 1,
-    freezeProfileVersion: 1,
+    freezeProfileVersion: 2,
     lifecycleClosureProfileVersion: 1,
     expressionProfileVersion: 1,
-    causalParticipationProfileVersion: 3,
+    causalParticipationProfileVersion: 4,
+    structuredObligationInspectionProfileVersion: 1,
     guardianProvider: runtime.guardianProvider,
     guardianModelId: runtime.guardianModelId,
   })}\n`);

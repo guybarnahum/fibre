@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-12
 canonical: true
 ---
 
@@ -195,6 +195,72 @@ This earns **Development `0 -> 1`** under rubric v2. It does not yet establish r
 
 `npm run history:gate` is now read-only inspection of the committed sealed bundle. `npm run history:dev` remains the repeatable non-evidentiary provider-backed development harness.
 
+## PR #35 — Structured Obligation v1 implementation complete
+
+PR #35 is **ACTIVE / DRAFT / IMPLEMENTATION COMPLETE**. A-F now close the intended Structured Obligation v1 implementation scope; review and merge remain separate actions.
+
+The canonical design authority is [`structured-obligations-v1.md`](../architecture/structured-obligations-v1.md).
+
+Three invariants govern the implementation:
+
+> **A caller may nominate an obligation; only Fibre may determine that it governs the current request.**
+
+> **Compulsion never rewrites consent.**
+
+> **A commitment that causally authorizes completed participation must leave a durable, append-only social consequence, or the whole freeze fails.**
+
+A-F are now landed on the draft branch:
+
+```text
+A. domain/schema/migration + legacy-spend tombstones
+B. ObligationStore/current-revision integrity
+C. persisted Fibre-owned applicability
+D. runtime authorization cutover + applicability binding
+E. atomic freeze/discharge cutover
+F. private/admin inspection + restart/replay/privacy/adversarial closure
+```
+
+The implemented causal path is:
+
+```text
+persisted private stance
+  -> caller may nominate stable obligationId
+  -> Fibre resolves current obligation and persists applicability
+  -> applies may authorize obligation_override participation
+  -> private desiredAction remains unchanged
+  -> Actor + Goal Guardian complete the bounded runtime
+  -> freeze revalidates current authority
+  -> authorization is consumed
+  -> obligation appends terminal discharged revision
+  -> immutable discharge witness binds the entire causal chain
+```
+
+Important closure properties:
+
+- `currentState.unresolvedIntentions` carries no canonical Structured Obligation authority and is never auto-promoted;
+- legacy caller prose is rejected as a new canonical authority surface;
+- previously consumed legacy exact references remain spent through deterministic tombstones;
+- historical applicability is evidence, not a perpetual capability;
+- current authority is revalidated at runtime insertion and again at freeze;
+- obligation revision/revocation/expiry races fail closed without partial authority consumption;
+- a compelled runtime preserves the Thread's private non-consent rather than rewriting it as acceptance;
+- one-shot completion appends `discharged`, not an unsupported semantic claim of `satisfied`;
+- descriptive recurrence cannot auto-discharge before Fibre has a real occurrence model;
+- live Structured Obligation inspection is private-token, loopback, GET-only and `no-store`;
+- the inspector is `readOnly` plus SQLite `query_only` and performs no repair;
+- the same cross-chain verifier is available offline through `npm run inspect:obligations`;
+- private inspection replays identically after process restart;
+- public Thread/event/health routes do not reveal private obligation identifiers or terms;
+- coherently re-signed discharge-row tampering is still detected through independent cross-chain verification.
+
+Structured inspection profile v1 verifies obligation revision history, persisted request/applicability witnesses, authorization, authorization consumption, runtime completion, freeze report/event, terminal obligation revision, and immutable discharge witness as one coherent chain.
+
+A hostile post-A-F review found three blocking downstream inconsistencies and several important hardening gaps while independently confirming the core authority model held. The branch now closes those findings: public `ObligationStore` cannot mint `discharged`; terminal discharge verification is bidirectional; applicability is re-derived during read-only inspection; disclosure/editor surfaces consume structured `participationBasis` and applicability instead of retired prose references; freeze integrity understands structured discharge; expected obligation conflicts are bounded 4xx; public Thread snapshots are exact-keyed; and stale authority after Actor execution/Guardian pass closes through append-only `governing_authority_withdrawn` evidence rather than leaving a permanent active runtime or falsifying a Guardian reject.
+
+The authority-withdrawal closure records an interrupted episode without freeze, authorization consumption, or obligation discharge. It is rejected while authority remains live, exact retries are idempotent, conflicting reuse is rejected, and private stance plus closure evidence survive restart inspection.
+
+The completed #35 implementation does **not** move the pre-M2 personhood score. It closes authority integrity, social consequence, and inspectability needed by later relationship/institution/economic systems without manufacturing rubric credit.
+
 ## Model runtime
 
 `config/models.yaml` remains the only model-routing configuration:
@@ -212,7 +278,7 @@ The current runtime does not impose a default numeric `max_output_tokens` ceilin
 
 ## Current score posture
 
-Historical M1 remains **11/26**. The live pre-M2 checkpoint is now **15/26 under rubric v2**.
+Historical M1 remains **11/26**. The live pre-M2 checkpoint remains **15/26 under rubric v2**.
 
 ```text
 Historical M1                 11/26
@@ -225,9 +291,10 @@ Economic consequence          0
 Standing semantic gate        GREEN
 PR #33 semantic claim         EARNED
 PR #34 history claim          EARNED / SEALED
+PR #35 structured obligation  IMPLEMENTATION + HOSTILE-REVIEW FIXES COMPLETE / DRAFT RE-REVIEW PENDING
 ```
 
-The awarded movement is intentionally conservative:
+The awarded movement remains intentionally conservative:
 
 - Non-interchangeability `0 -> 1`: attributable semantic differences now change participation under controlled held-out conditions, but the stronger rubric-2 repeated-condition/history standard is not yet closed.
 - Dignity and consent `1 -> 2`: Thread-owned semantic appraisal plus request-bound authorization now governs willing participation and resistance.
@@ -235,17 +302,20 @@ The awarded movement is intentionally conservative:
 - Development `0 -> 1`: a durable Fibre-owned record from an earlier canonical episode survived restart and was the isolated semantic cause of a later appraisal differential. Richer self-authored learning remains unearned.
 - Economic consequence stays `0`: appraisal does not durably spend or constrain future capability.
 
-## Immediate bridge sequence
+## Immediate sequence
 
 ```text
 #33 Semantic Guardian — EARNED
-  -> #34 History bends judgment — EARNED / SEALED
-  -> #35 Structured Obligation v1 — NEXT
-  -> #36 M2 contract
-  -> M2 implementation
+  -> #34 History bends judgment — EARNED / SEALED / MERGED
+  -> #35 Structured Obligation v1 — IMPLEMENTATION COMPLETE / DRAFT REVIEW PENDING
+  -> #36 M2 Identity & Embodiment Contract
+  -> #37 Thread Passport & Identity Provenance v1
+  -> #38 Lineage, Geography & Embodiment v1
+  -> #39 Identity Projection & Causal Consumption
+  -> #40 M2 Standing Gate / M2 closure
 ```
 
-Do not spend another bridge PR number on Guardian or History housekeeping after #34 closes. The next substantive bridge milestone is **#35 Structured Obligation v1**.
+The detailed continuation plan through #43 is [`m2-pr-plan.md`](../validation/m2-pr-plan.md). #36 begins only after #35 review/merge; it remains contract-only rather than collapsing the M2 sequence into one implementation PR.
 
 ## Deferred capability, not erased capability
 
@@ -253,7 +323,8 @@ The following remain deferred with extension paths preserved:
 
 - broader reciprocal relationship service beyond Semantic Relationship State v0;
 - richer self-authored developmental learning: Thread-authored observations/reflection, experience-derived self-model/state change, adverse and low-dignity experience memory, and repeated cross-episode behavioral learning;
-- structured obligation applicability;
+- semantic natural-language obligation applicability beyond conservative request-fingerprint binding;
+- real recurring-obligation occurrence/period/partial-satisfaction semantics;
 - general isolated worker/tool/model gateway;
 - model-capable Actor and independently observed external action traces;
 - production authentication, encryption, principal/role authorization, and stronger tamper anchors;

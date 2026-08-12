@@ -33,6 +33,14 @@ import {
   guardianAuditDigest,
   runtimeSessionDigest,
 } from "./runtime-domain.mjs";
+import {
+  persistStructuredObligationDischarge,
+  prepareStructuredObligationDischarge,
+} from "./structured-obligation-discharge-store.mjs";
+import {
+  normalizeStructuredObligationDischarge,
+  structuredObligationDischargeDigest,
+} from "./structured-obligation-discharge.mjs";
 
 function parseJson(name, value) {
   try {
@@ -393,6 +401,13 @@ export class FreezeStore {
         );
       }
 
+      const structuredDischarge = prepareStructuredObligationDischarge(
+        this.#database,
+        authorization,
+        runtime.authorization_digest,
+        record,
+      );
+
       const threadRow = this.#database.prepare(
         "SELECT version,status,state_json,state_hash FROM threads WHERE thread_id=?",
       ).get(record.threadId);
@@ -528,26 +543,78 @@ export class FreezeStore {
         record.reportDigest,
         record.completedAt,
       );
-      this.#database.prepare(
+      const runtimeCompletion = this.#database.prepare(
         "UPDATE runtime_sessions SET status='completed',completed_at=? WHERE session_id=? AND status='active'",
       ).run(record.completedAt, record.sessionId);
-      this.#database.prepare(`
+      const leaseRelease = this.#database.prepare(`
         UPDATE thaw_leases SET status='released',released_at=?,release_reason='freeze_completed'
         WHERE lease_id=? AND status='active'
       `).run(record.completedAt, record.leaseId);
+      if (Number(runtimeCompletion.changes) !== 1 || Number(leaseRelease.changes) !== 1) {
+        throw new FreezeStateChangedError(`Runtime ${record.sessionId} changed during freeze completion`);
+      }
+
+      persistStructuredObligationDischarge(this.#database, structuredDischarge);
+      const persistedFreeze = this.getFreeze(record.threadId, record.sessionId);
       this.#database.exec("COMMIT");
+      return { freeze: persistedFreeze, idempotent: false };
     } catch (error) {
       safeRollback(this.#database);
       throw translateStorageError(error);
     }
-    return {
-      freeze: this.getFreeze(record.threadId, record.sessionId),
-      idempotent: false,
-    };
   }
 
   verifyFreezeIntegrity(threadId, sessionId) {
     const freeze = this.getFreeze(threadId, sessionId);
+    const authorizationRow = this.#database.prepare(`
+      SELECT authorization_json,authorization_digest
+      FROM participation_authorizations WHERE authorization_id=?
+    `).get(freeze.report.authorizationId);
+    if (authorizationRow === undefined) {
+      throw new IntegrityError(`freeze ${freeze.report.reportId} lost its participation authorization`);
+    }
+    const authorization = parseJson(
+      `freeze authorization ${freeze.report.authorizationId}`,
+      authorizationRow.authorization_json,
+    );
+    same(
+      "freeze authorization digest",
+      authorizationDigest(authorization),
+      authorizationRow.authorization_digest,
+    );
+    const dischargeRows = this.#database.prepare(`
+      SELECT discharge_id,terminal_revision,discharge_json,discharge_digest
+      FROM structured_obligation_discharges
+      WHERE thread_id=? AND session_id=? AND freeze_operation_id=?
+    `).all(threadId, sessionId, freeze.consumption.operationId);
+    let structuredDischarge = null;
+    if (authorization.participationBasis === "obligation_override") {
+      if (dischargeRows.length !== 1) {
+        throw new IntegrityError(
+          `structured compelled freeze ${freeze.report.reportId} must have exactly one discharge witness`,
+        );
+      }
+      const row = dischargeRows[0];
+      const discharge = normalizeStructuredObligationDischarge(
+        parseJson(`structured discharge ${row.discharge_id}`, row.discharge_json),
+      );
+      same("structured discharge digest", structuredObligationDischargeDigest(discharge), row.discharge_digest);
+      same("structured discharge Thread", discharge.threadId, threadId);
+      same("structured discharge session", discharge.sessionId, sessionId);
+      same("structured discharge authorization", discharge.authorizationId, freeze.report.authorizationId);
+      same("structured discharge freeze report", discharge.freezeReportId, freeze.report.reportId);
+      same("structured discharge freeze report digest", discharge.freezeReportDigest, freeze.reportDigest);
+      same("structured discharge event", discharge.eventId, freeze.event.eventId);
+      structuredDischarge = {
+        dischargeId: discharge.dischargeId,
+        terminalRevision: discharge.terminalRevision,
+        dischargeDigest: row.discharge_digest,
+      };
+    } else if (dischargeRows.length !== 0) {
+      throw new IntegrityError(
+        `non-structured freeze ${freeze.report.reportId} unexpectedly carries a Structured Obligation discharge`,
+      );
+    }
     return {
       threadId,
       sessionId,
@@ -560,6 +627,7 @@ export class FreezeStore {
       resultingStateHash: freeze.report.resultingStateHash,
       acceptedMemoryIds: freeze.memories.map((memory) => memory.memoryId),
       dischargedObligations: [...freeze.report.dischargedObligations],
+      structuredDischarge,
       runtimeCompleted: true,
       leaseReleased: true,
     };

@@ -8,9 +8,24 @@ import {
   IntegrityError,
 } from "./persistence-common.mjs";
 import { GuardianModelError } from "./guardian-model-adapter.mjs";
+import {
+  ApplicabilityConflictError,
+  ApplicabilityNotFoundError,
+  ApplicabilityRequestNotFoundError,
+} from "./obligation-applicability-store.mjs";
+import {
+  ObligationConflictError,
+  ObligationNotFoundError,
+  StaleObligationRevisionError,
+} from "./obligation-store.mjs";
 import { DEFAULT_MAX_HTTP_BODY_BYTES } from "./http-server.mjs";
 import { createExpressionWorldKernelHttpServer } from "./expression-http-server.mjs";
 import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
+import {
+  StructuredAuthorityWithdrawalConflictError,
+  StructuredAuthorityWithdrawalNotFoundError,
+  StructuredAuthorityWithdrawalRejectedError,
+} from "./structured-authority-withdrawal-store.mjs";
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 
@@ -89,6 +104,29 @@ function problem(value) {
   if (value instanceof PrivateRequestConflictError) {
     return [409, "PRIVATE_REQUEST_CONFLICT", value.message, {}];
   }
+  if (
+    value instanceof ApplicabilityConflictError ||
+    value instanceof ObligationConflictError ||
+    value instanceof StaleObligationRevisionError
+  ) {
+    return [409, "STRUCTURED_OBLIGATION_CONFLICT", value.message, {}];
+  }
+  if (
+    value instanceof ApplicabilityNotFoundError ||
+    value instanceof ApplicabilityRequestNotFoundError ||
+    value instanceof ObligationNotFoundError
+  ) {
+    return [404, "STRUCTURED_OBLIGATION_NOT_FOUND", value.message, {}];
+  }
+  if (value instanceof StructuredAuthorityWithdrawalConflictError) {
+    return [409, "AUTHORITY_WITHDRAWAL_CONFLICT", value.message, {}];
+  }
+  if (value instanceof StructuredAuthorityWithdrawalNotFoundError) {
+    return [404, "AUTHORITY_WITHDRAWAL_NOT_FOUND", value.message, {}];
+  }
+  if (value instanceof StructuredAuthorityWithdrawalRejectedError) {
+    return [422, "AUTHORITY_WITHDRAWAL_REJECTED", value.message, {}];
+  }
   if (value instanceof StorageBusyError) {
     return [503, "STORAGE_BUSY", "World storage is temporarily busy", { "retry-after": "1" }];
   }
@@ -118,6 +156,12 @@ function parsedParts(target) {
 function causalRoute(target, method) {
   const parts = parsedParts(target);
   if (parts === null || method !== "POST") return null;
+  if (
+    parts.length === 6 && parts[0] === "threads" && parts[2] === "private" &&
+    parts[3] === "runtime" && parts[5] === "authority-withdrawal"
+  ) {
+    return { kind: "authority_withdrawal", threadId: parts[1], sessionId: parts[4] };
+  }
   if (parts[0] !== "threads" || parts[2] !== "private" || parts[3] !== "requests") return null;
   if (parts.length === 4) return { kind: "appraise", threadId: parts[1] };
   if (parts.length !== 6) return null;
@@ -187,6 +231,10 @@ export function createCausalWorldKernelHttpServer({
       }
 
       const body = await readJson(request, maxBodyBytes);
+      if (route.kind === "authority_withdrawal") {
+        const result = service.closeWithdrawnAuthority(route.threadId, route.sessionId, body);
+        return writeJson(response, result.idempotent ? 200 : 201, result, id);
+      }
       if (route.kind === "appraise") {
         const result = await service.appraiseParticipation(route.threadId, body);
         return writeJson(response, result.idempotent ? 200 : 201, result, id);

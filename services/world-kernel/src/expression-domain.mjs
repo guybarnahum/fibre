@@ -418,16 +418,25 @@ export function buildDisclosureStrategy(
   assertId("strategyId", strategyId);
   assertIsoTimestamp("disclosure recordedAt", recordedAt);
 
-  const participationBasis =
-    authorization.desiredAction === authorization.authorizedAction
+  const participationBasis = authorization.participationBasis === "obligation_override"
+    ? "obligation_override"
+    : authorization.participationBasis === "willing"
       ? "aligned"
-      : "obligation_override";
+      : authorization.desiredAction === authorization.authorizedAction
+        ? "aligned"
+        : "obligation_override";
+  const hasLegacyObligation = authorization.obligationReferences.length > 0;
+  const hasStructuredObligation =
+    authorization.applicability !== null &&
+    authorization.applicability !== undefined &&
+    typeof authorization.applicability.obligationId === "string";
   if (
     participationBasis === "obligation_override" &&
-    authorization.obligationReferences.length === 0
+    !hasLegacyObligation &&
+    !hasStructuredObligation
   ) {
     throw new IntegrityError(
-      "authorization divergence is missing its governing obligation reference",
+      "authorization divergence is missing its governing obligation evidence",
     );
   }
 

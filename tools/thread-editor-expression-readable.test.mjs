@@ -282,3 +282,35 @@ test("Thread-authored expression text remains data, never HTML", () => {
   assert.doesNotMatch(appSource, /innerHTML|insertAdjacentHTML/);
   assert.match(appSource, /textContent = entry\.value/);
 });
+
+test("canonical structured authorization alone renders compelled participation truthfully", () => {
+  const obligationId = `obl_${"d".repeat(64)}`;
+  const explanation = explainExpression({
+    expression: {
+      expression: {
+        authorization: {
+          authorization: {
+            authorizationId: "auth_structured",
+            desiredAction: "clarify",
+            authorizedAction: "accept",
+            dignityBand: "contested",
+            participationBasis: "obligation_override",
+            obligationReferences: [],
+            applicability: { obligationId },
+          },
+        },
+        disclosure: null,
+        response: null,
+      },
+    },
+    integrity: null,
+  });
+  assert.match(explanation.title, /compelled participation/i);
+  assert.ok(explanation.notes.some((note) => /compelled participation, not consent/i.test(note)));
+  assert.ok(explanation.notes.some((note) => note.includes(obligationId)));
+  assert.ok(
+    explanation.facts.some(
+      (entry) => entry.label === "Participation basis" && entry.value === "obligation_override",
+    ),
+  );
+});

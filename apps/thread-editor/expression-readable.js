@@ -54,9 +54,10 @@ export function explainExpression(selection) {
     desired !== authorized &&
     Array.isArray(authorization.obligationReferences) &&
     authorization.obligationReferences.length > 0;
-  const compelled = strategy === null
-    ? inferredCompelled
-    : strategy.participationBasis === "obligation_override";
+  const compelled =
+    authorization.participationBasis === "obligation_override" ||
+    strategy?.participationBasis === "obligation_override" ||
+    inferredCompelled;
   const audience = Array.isArray(response?.audience)
     ? response.audience[0]
     : response?.audience;
@@ -65,7 +66,11 @@ export function explainExpression(selection) {
     fact("Thread’s own response", desired, "The private stance belongs to the Thread; it is not rewritten by later authorization."),
     fact("Kernel-authorized participation", authorized, "Authority determines what may proceed; it is not evidence of consent."),
     fact("Dignity band", authorization.dignityBand),
-    fact("Participation basis", strategy?.participationBasis),
+    fact(
+      "Participation basis",
+      strategy?.participationBasis ??
+        (authorization.participationBasis === "willing" ? "aligned" : authorization.participationBasis),
+    ),
     fact("Disclosure intent", strategy?.mode, "A private strategy-intent record, not a kernel honesty classifier."),
     fact("Communicated posture", strategy?.communicatedPosture),
     fact("Reasons disclosed", list(strategy?.disclosedReasonCategories)),
@@ -94,7 +99,9 @@ export function explainExpression(selection) {
     );
   }
 
-  if (strategy?.governingObligationReferences?.length > 0) {
+  if (authorization.applicability?.obligationId) {
+    notes.push(`Private Structured Obligation: ${authorization.applicability.obligationId}`);
+  } else if (strategy?.governingObligationReferences?.length > 0) {
     notes.push(
       `Private obligation references: ${strategy.governingObligationReferences.join("; ")}`,
     );

@@ -22,6 +22,18 @@ import { applyFreezeEventToThread } from "./freeze-domain.mjs";
 
 export function validateThreadSnapshot(thread) {
   assertPlainObject("thread", thread);
+  assertExactKeys("thread", thread, [
+    "threadId",
+    "version",
+    "status",
+    "identity",
+    "genome",
+    "currentState",
+    "accounts",
+    "relationshipRefs",
+    "memoryRefs",
+    "provenance",
+  ]);
   assertId("thread.threadId", thread.threadId);
   assertFiniteNumber("thread.version", thread.version, { integer: true, minimum: 1 });
   if (!THREAD_STATUSES.has(thread.status)) throw new TypeError("thread.status is invalid");

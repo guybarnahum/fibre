@@ -53,7 +53,8 @@ export class M1FreezeWorldKernelService extends M1RuntimeWorldKernelService {
   health() {
     return {
       ...super.health(),
-      freezeProfileVersion: 1,
+      freezeProfileVersion: 2,
+      structuredObligationDischarge: "atomic_terminal_revision",
       freezeStorage: this.#freezeStore.storageMetadata(),
     };
   }

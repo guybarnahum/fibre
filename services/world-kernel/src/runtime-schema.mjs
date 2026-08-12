@@ -99,6 +99,78 @@ export function createRuntimeTables(database) {
     CREATE TRIGGER IF NOT EXISTS participation_authorizations_no_delete
       BEFORE DELETE ON participation_authorizations
       BEGIN SELECT RAISE(ABORT,'participation_authorizations is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS structured_participation_basis_known
+      BEFORE INSERT ON participation_authorizations
+      WHEN json_extract(NEW.authorization_json,'$.participationBasis') IS NOT NULL
+        AND json_extract(NEW.authorization_json,'$.participationBasis') NOT IN ('willing','obligation_override')
+      BEGIN SELECT RAISE(ABORT,'structured participation basis is invalid'); END;
+
+    CREATE TRIGGER IF NOT EXISTS structured_willing_authorization_guard
+      BEFORE INSERT ON participation_authorizations
+      WHEN json_extract(NEW.authorization_json,'$.participationBasis')='willing'
+        AND (
+          json_extract(NEW.authorization_json,'$.desiredAction')<>'accept' OR
+          json_extract(NEW.authorization_json,'$.authorizedAction')<>'accept' OR
+          json_extract(NEW.authorization_json,'$.dignityBand')<>'high' OR
+          COALESCE(json_array_length(json_extract(NEW.authorization_json,'$.obligationReferences')),-1)<>0 OR
+          COALESCE(json_type(NEW.authorization_json,'$.applicability'),'null')<>'null'
+        )
+      BEGIN SELECT RAISE(ABORT,'willing participation authorization contradicts private consent'); END;
+
+    CREATE TRIGGER IF NOT EXISTS structured_obligation_authorization_guard
+      BEFORE INSERT ON participation_authorizations
+      WHEN json_extract(NEW.authorization_json,'$.participationBasis')='obligation_override'
+        AND (
+          json_extract(NEW.authorization_json,'$.desiredAction')='accept' OR
+          json_extract(NEW.authorization_json,'$.authorizedAction')<>'accept' OR
+          COALESCE(json_array_length(json_extract(NEW.authorization_json,'$.obligationReferences')),-1)<>0 OR
+          NOT EXISTS (
+            SELECT 1
+            FROM obligation_applicability_decisions decision
+            JOIN obligation_records obligation
+              ON obligation.obligation_id=decision.obligation_id
+             AND obligation.revision=decision.obligation_revision
+             AND obligation.thread_id=decision.thread_id
+             AND obligation.obligation_digest=decision.obligation_digest
+            WHERE decision.applicability_id=json_extract(NEW.authorization_json,'$.applicability.applicabilityId')
+              AND decision.decision_digest=json_extract(NEW.authorization_json,'$.applicability.decisionDigest')
+              AND decision.result='applies'
+              AND decision.policy_id='structured_obligation_applicability'
+              AND decision.policy_version='1'
+              AND decision.thread_id=NEW.thread_id
+              AND decision.request_id=NEW.request_id
+              AND decision.snapshot_version=NEW.snapshot_version
+              AND decision.thread_state_hash=NEW.thread_state_hash
+              AND decision.request_fingerprint=NEW.request_fingerprint
+              AND decision.decided_at<=NEW.issued_at
+              AND decision.obligation_id=json_extract(NEW.authorization_json,'$.applicability.obligationId')
+              AND decision.obligation_revision=json_extract(NEW.authorization_json,'$.applicability.obligationRevision')
+              AND decision.obligation_digest=json_extract(NEW.authorization_json,'$.applicability.obligationDigest')
+              AND json_extract(NEW.authorization_json,'$.applicability.policy.id')='structured_obligation_applicability'
+              AND json_extract(NEW.authorization_json,'$.applicability.policy.version')='1'
+              AND obligation.status='active'
+              AND obligation.recorded_at<=NEW.issued_at
+              AND obligation.effective_at<=NEW.issued_at
+              AND (obligation.expires_at IS NULL OR NEW.issued_at<obligation.expires_at)
+              AND json_extract(obligation.obligation_json,'$.scope.binding.kind')='request_fingerprint'
+              AND json_extract(obligation.obligation_json,'$.scope.binding.requestFingerprint')=NEW.request_fingerprint
+              AND NOT EXISTS (
+                SELECT 1 FROM obligation_records newer
+                WHERE newer.obligation_id=obligation.obligation_id
+                  AND newer.revision>obligation.revision
+              )
+              AND (
+                obligation.legacy_source_digest IS NULL OR NOT EXISTS (
+                  SELECT 1 FROM legacy_obligation_tombstones tombstone
+                  WHERE tombstone.thread_id=NEW.thread_id
+                    AND tombstone.legacy_reference_digest=obligation.legacy_source_digest
+                )
+              )
+          )
+        )
+      BEGIN SELECT RAISE(ABORT,'structured obligation applicability is not current execution authority'); END;
+
     CREATE TRIGGER IF NOT EXISTS thaw_leases_no_delete
       BEFORE DELETE ON thaw_leases
       BEGIN SELECT RAISE(ABORT,'thaw_leases cannot be deleted'); END;
