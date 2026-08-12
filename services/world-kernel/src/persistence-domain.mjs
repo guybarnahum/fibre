@@ -19,6 +19,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { applyFreezeEventToThread } from "./freeze-domain.mjs";
+import { applyInterruptedCompelledEpisodeEventToThread } from "./interrupted-compelled-episode.mjs";
 
 export function validateThreadSnapshot(thread) {
   assertPlainObject("thread", thread);
@@ -336,6 +337,23 @@ export function applyEventToThread(thread, event) {
     }
     if (replayed.version !== event.resultingVersion) {
       throw new IntegrityError(`freeze event ${event.eventId} has an invalid resulting version`);
+    }
+    return replayed;
+  }
+
+  if (event.eventType === "COMPELLED_EPISODE_INTERRUPTED") {
+    if (event.commandId === null || event.commandDigest === null) {
+      throw new IntegrityError(`interrupted episode event ${event.eventId} requires operation metadata`);
+    }
+    let replayed;
+    try {
+      replayed = applyInterruptedCompelledEpisodeEventToThread(thread, event);
+    } catch (error) {
+      if (error instanceof IntegrityError) throw error;
+      throw new IntegrityError(`interrupted episode event ${event.eventId} cannot be applied: ${error.message}`);
+    }
+    if (replayed.version !== event.resultingVersion) {
+      throw new IntegrityError(`interrupted episode event ${event.eventId} has an invalid resulting version`);
     }
     return replayed;
   }

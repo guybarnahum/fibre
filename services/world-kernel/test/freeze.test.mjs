@@ -394,7 +394,7 @@ test("freeze records are append-only and coherent report tampering is detected",
     reopened.close();
   }));
 
-test("schema version 3 migrates to unified freeze schema version 4", () =>
+test("schema version 3 migrates to current unified world schema", () =>
   withDatabase((databasePath) => {
     const runtime = start(databasePath);
     runtime.service.seedThread({ thread: fixture });

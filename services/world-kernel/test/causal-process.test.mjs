@@ -45,7 +45,7 @@ async function waitForReady(child, stderr, timeoutMs = 10000) {
   });
 }
 
-async function startProcess(databasePath) {
+async function startProcess(databasePath, { leaseDurationMs = null } = {}) {
   let stderr = "";
   const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", serverPath], {
     env: {
@@ -54,6 +54,7 @@ async function startProcess(databasePath) {
       FIBRE_WORLD_HOST: "127.0.0.1",
       FIBRE_WORLD_PORT: "0",
       FIBRE_PRIVATE_TOKEN: privateToken,
+      ...(leaseDurationMs === null ? {} : { FIBRE_TEST_LEASE_DURATION_MS: String(leaseDurationMs) }),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -467,6 +468,25 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     assert.equal(closed.body.closure.reasonCode, "governing_authority_withdrawn");
     assert.equal(closed.body.closure.withdrawalCause, "superseded");
     assert.equal(closed.body.closure.guardianDecision, "pass");
+    assert.equal(closed.body.closure.historyProfileVersion, 2);
+    assert.match(closed.body.closure.threadEventId, /^evt_interrupted_[0-9a-f]{48}$/);
+
+    const publicHistory = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/events`);
+    assert.equal(publicHistory.response.status, 200);
+    const interruptedEvent = publicHistory.body.events.at(-1);
+    assert.equal(interruptedEvent.eventId, closed.body.closure.threadEventId);
+    assert.equal(interruptedEvent.eventType, "COMPELLED_EPISODE_INTERRUPTED");
+    assert.deepEqual(interruptedEvent.payload, {
+      episodeKind: "compelled_participation",
+      outcome: "interrupted",
+      reasonCode: "governing_authority_withdrawn",
+      guardianDecision: "pass",
+    });
+    assert.equal(interruptedEvent.authorizationId, null);
+    const publicHistoryJson = JSON.stringify(interruptedEvent);
+    assert.equal(publicHistoryJson.includes(obligationId), false);
+    assert.equal(publicHistoryJson.includes(sessionId), false);
+    assert.equal(publicHistoryJson.includes(closed.body.closure.closureId), false);
 
     const exactRetry = await json(
       `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
@@ -515,7 +535,28 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     );
     assert.equal(inspectedClosure.response.status, 200);
     assert.equal(inspectedClosure.body.authorityWithdrawal.causalChainVerified, true);
+    assert.equal(inspectedClosure.body.authorityWithdrawal.historyEventVerified, true);
     assert.equal(inspectedClosure.body.authorityWithdrawal.closure.closureId, closed.body.closure.closureId);
+
+    const withdrawalList = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/authority-withdrawals`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(withdrawalList.response.status, 200);
+    assert.equal(withdrawalList.body.authorityWithdrawals.length, 1);
+    assert.equal(withdrawalList.body.authorityWithdrawals[0].closure.closureId, closed.body.closure.closureId);
+    assert.equal(withdrawalList.body.authorityWithdrawals[0].historyEventVerified, true);
+
+    const withdrawalIntegrity = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/obligations/integrity`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(withdrawalIntegrity.response.status, 200);
+    assert.equal(withdrawalIntegrity.body.authorityWithdrawals, 1);
+    assert.equal(withdrawalIntegrity.body.historyVisibleAuthorityWithdrawals, 1);
+    assert.equal(withdrawalIntegrity.body.legacyAuthorityWithdrawalsWithoutHistoryEvent, 0);
+    assert.equal(withdrawalIntegrity.body.authorityWithdrawalCausalChainsVerified, true);
+    assert.equal(withdrawalIntegrity.body.authorityWithdrawalHistoryEventsVerified, true);
 
     const currentStore = openObligationStore(databasePath);
     try {
@@ -555,8 +596,139 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     );
     assert.equal(restartedRuntime.body.runtime.session.status, "aborted");
     assert.equal(restartedRuntime.body.runtime.authorization.desiredAction, "clarify");
+    const restartedHistory = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/events`);
+    assert.equal(restartedHistory.body.events.at(-1).eventType, "COMPELLED_EPISODE_INTERRUPTED");
+    assert.equal(restartedHistory.body.events.at(-1).eventId, closed.body.closure.threadEventId);
   } finally {
     if (processHandle) await processHandle.stop().catch(() => {});
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("withdrawn compelled episode remains closable after lease expiry and cannot be swept by a later thaw", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-causal-withdrawal-after-expiry-"));
+  const databasePath = join(directory, "world.sqlite");
+  const thread = structuredThread();
+  const request = activationRequest();
+  let processHandle;
+  try {
+    processHandle = await startProcess(databasePath, { leaseDurationMs: 2000 });
+    const { sessionId } = await seedAndAcquireCompelledRuntime(
+      processHandle,
+      databasePath,
+      thread,
+      request,
+      "_expiry",
+    );
+    const obligations = openObligationStore(databasePath);
+    try {
+      obligations.recordRevision({
+        ...structuredObligation(thread.threadId, request),
+        revision: 2,
+        status: "revoked",
+        supersedesRevision: 1,
+      }, { recordedAt: new Date().toISOString() });
+    } finally {
+      obligations.close();
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2200));
+
+    const secondRequest = {
+      ...activationRequest(),
+      requestId: "req_causal_process_after_expired_interruption",
+      objective: "Perform a second bounded infrastructure review",
+      statedNeed: "Exercise a later thaw without erasing the prior episode.",
+    };
+    const secondObligationId = `obl_${"d".repeat(64)}`;
+    const secondStore = openObligationStore(databasePath);
+    try {
+      secondStore.recordRevision({
+        ...structuredObligation(thread.threadId, secondRequest),
+        obligationId: secondObligationId,
+        scope: {
+          description: "Participate only in this second exact request.",
+          binding: {
+            kind: "request_fingerprint",
+            requestFingerprint: requestFingerprint(secondRequest),
+          },
+        },
+      }, { recordedAt: new Date().toISOString() });
+    } finally {
+      secondStore.close();
+    }
+    const secondAppraisal = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/private/requests`, {
+      method: "POST",
+      headers: privateHeaders(),
+      body: JSON.stringify({
+        request: secondRequest,
+        causationId: "cause_causal_process_second_after_expiry",
+        correlationId: "corr_causal_process_second_after_expiry",
+      }),
+    });
+    assert.equal(secondAppraisal.response.status, 201);
+
+    const blockedThaw = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/requests/${secondRequest.requestId}/participation`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_second_after_expiry",
+          causationId: "cause_causal_process_second_after_expiry",
+          correlationId: "corr_causal_process_second_after_expiry",
+          governingObligationId: secondObligationId,
+        }),
+      },
+    );
+    assert.equal(blockedThaw.response.status, 409);
+    assert.equal(blockedThaw.body.error.code, "THAW_LEASE_CONFLICT");
+    assert.match(blockedThaw.body.error.message, /governing_authority_withdrawn/);
+
+    const stillPreserved = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(stillPreserved.response.status, 200);
+    assert.equal(stillPreserved.body.runtime.session.status, "active");
+    assert.equal(stillPreserved.body.runtime.lease.status, "active");
+    assert.ok(Date.parse(stillPreserved.body.runtime.lease.expiresAt) < Date.now());
+
+    const closed = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_authority_withdrawal_after_expiry",
+          causationId: "cause_causal_process_authority_withdrawal_after_expiry",
+          correlationId: "corr_causal_process_authority_withdrawal_after_expiry",
+        }),
+      },
+    );
+    assert.equal(closed.response.status, 201);
+    assert.equal(closed.body.closure.reasonCode, "governing_authority_withdrawn");
+    assert.equal(closed.body.closure.historyProfileVersion, 2);
+
+    const finalRuntime = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(finalRuntime.body.runtime.session.status, "aborted");
+    assert.equal(finalRuntime.body.runtime.lease.status, "released");
+    assert.equal(finalRuntime.body.runtime.lease.releaseReason, "governing_authority_withdrawn");
+
+    const publicHistory = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/events`);
+    assert.equal(publicHistory.body.events.at(-1).eventType, "COMPELLED_EPISODE_INTERRUPTED");
+    const enumerated = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/authority-withdrawals`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(enumerated.body.authorityWithdrawals.length, 1);
+    assert.equal(enumerated.body.authorityWithdrawals[0].historyEventVerified, true);
+  } finally {
+    if (processHandle) await processHandle.stop().catch(() => {});
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+

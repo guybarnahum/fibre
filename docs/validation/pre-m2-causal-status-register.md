@@ -7,7 +7,7 @@ canonical: true
 
 # Pre-M2 causal-status register
 
-This register describes the current pre-M2 mechanism maturity after the accepted Semantic Guardian v4 and History bends judgment v4 standing proofs and the Draft implementation of Structured Obligation v1. It does **not** modify or reinterpret the closed M1 causal-status register.
+This register describes the current pre-M2 mechanism maturity after the accepted Semantic Guardian v4 and History bends judgment v4 standing proofs, merged Structured Obligation v1, and its direct interrupted-compelled-history follow-up. It does **not** modify or reinterpret the closed M1 causal-status register.
 
 The maturity labels follow `AGENTS.md`: **Named-only**, **Stored-only**, **Context-only**, and **Behaviorally/future-state causal**.
 
@@ -21,7 +21,7 @@ The maturity labels follow `AGENTS.md`: **Named-only**, **Stored-only**, **Conte
 | Persisted Guardian assessment and replay | **Behaviorally/future-state causal for replay integrity** | Valid cognition input/output is append-only persisted with provider/model/prompt/schema provenance. Restart reuses the stored assessment/private stance and does not re-call the model. | A recorded judgment survives restart deterministically; model/provider failure cannot silently become a personal choice. | Retain as an invariant in later lifecycle work. |
 | Willing aligned participation authority | **Behaviorally causal** | High-dignity `accept` can produce `desiredAction=accept`, `authorizedAction=accept`, `participationBasis=aligned`, and `obligationReferences=[]`; the standing model independently demonstrates willing high-fit acceptance. | Canonical runtime can proceed from willing semantic consent without obligation override. | Preserve in later episode/lifecycle proofs. |
 | Durable episodic memory bending later judgment | **Behaviorally causal, narrow Development scope** | In `history_bends_judgment_standing_gate_v4`, an accepted Episode A passed canonical participation/runtime/freeze authority, produced one evidence-backed deterministic episodic memory, survived database close/reopen, and Fibre resolved that memory into the later Guardian input. Exact one-memory withholding held Thread/request/Semantic State constant. | The same later request moved from `refuse/low` without the memory to `accept/high` with it. The memory is load-bearing in `individualizedAdvantage` and `interchangeability`. Development earns `0 -> 1`. | Rich self-authored development remains open: Thread-authored observation/reflection, experience-derived self-model/state change, adverse/low-dignity memories, repeated cross-episode learning, and default live-socket integration. |
-| Structured Obligation v1 authority and lifecycle | **Behaviorally/future-state causal, bounded request-fingerprint scope** | Caller nomination carries no authority. Fibre resolves the exact current obligation revision, persists deterministic `structured_obligation_applicability/1`, and revalidates current active/effective/unexpired/not-tombstoned authority at runtime insertion and freeze. Compelled authorization persists `participationBasis=obligation_override` while preserving the private `desiredAction`. Successful one-shot completion appends a terminal `discharged` revision plus an immutable causal discharge witness. Read-only inspection re-derives applicability and verifies discharge bidirectionally. | A durable Thread-owned commitment can compel bounded participation despite a private non-accept stance without rewriting that stance as consent. Completed participation leaves a durable social consequence. If authority becomes stale after Actor execution and Guardian pass, `governing_authority_withdrawn` closes the interrupted runtime without freeze, consumption, or discharge while preserving the episode as inspectable history. | Focused hostile re-review of PR #35 remains required before merge. Broader semantic natural-language applicability, recurring occurrence/period semantics, and richer institutional/relationship obligation semantics remain future work. |
+| Structured Obligation v1 authority and lifecycle | **Behaviorally/future-state causal, bounded request-fingerprint scope** | Caller nomination carries no authority. Fibre resolves the exact current obligation revision, persists deterministic `structured_obligation_applicability/1`, and revalidates current active/effective/unexpired/not-tombstoned authority at runtime insertion and freeze. Compelled authorization persists `participationBasis=obligation_override` while preserving the private `desiredAction`. Successful one-shot completion appends a terminal `discharged` revision plus an immutable causal discharge witness. Read-only inspection re-derives applicability and verifies discharge bidirectionally. The direct history follow-up protects a qualified interrupted compelled episode from lazy lease sweep, appends a public-safe `COMPELLED_EPISODE_INTERRUPTED` Thread event, and privately enumerates/verifies the complete withdrawal chain. | A durable Thread-owned commitment can compel bounded participation despite a private non-accept stance without rewriting that stance as consent. Completed participation leaves a durable social consequence. If authority becomes stale after Actor execution and Guardian pass, `governing_authority_withdrawn` closes the interrupted runtime without freeze, consumption, or discharge; the fact survives physical lease expiry, becomes replayable Thread history, and remains privately inspectable. | Broader semantic natural-language applicability, recurring occurrence/period semantics, and richer institutional/relationship obligation semantics remain future work. Preserve the causal-boundary rule so later revocation cannot retroactively relabel an ordinary timeout. |
 | Economic model-token consequence | **Context-only** | `modelTokensAvailable` is durable and model usage provenance is recorded, but no durable appraisal debit is implemented. | No budget or future-capability change. | Optional later proof of metered durable spend. |
 
 ## Accepted standing evidence
@@ -75,9 +75,9 @@ The accepted causal sentence is therefore:
 
 Do not silently inflate that into experience-derived self-authorship or broad developmental learning.
 
-## Structured Obligation review closure
+## Structured Obligation review and direct history closure
 
-PR #35 remains Draft, but its implementation and hostile-review fix pass are complete on the branch.
+PR #35 is merged after hostile review and focused re-review. A direct no-PR lifecycle follow-up then closed the remaining lease-expiry/history/enumeration limitation without changing the authority model.
 
 The hostile review independently confirmed that caller escalation, stale-applicability revalidation, double-spend prevention, freeze atomicity, revision locking, route privacy, legacy spent-authority migration, and v1 semantic non-claims hold. The fix pass closed the defects the review did find:
 
@@ -91,7 +91,9 @@ The hostile review independently confirmed that caller escalation, stale-applica
 - an executed/Guardian-passed compelled runtime whose authority becomes stale before freeze closes as append-only `governing_authority_withdrawn`, preserving the interrupted episode without consuming authorization or discharging the obligation;
 - same-version additive schema repair/tombstone migration is transactional, and guarded freeze terminal updates are checked before commit.
 
-These changes strengthen authority truth and human inspectability. They do **not** create new personhood-score credit.
+The direct follow-up additionally ensures that a qualified interrupted compelled episode cannot be lazily collapsed into generic `lease_expired`; closure remains possible after lease expiry only when authority was already stale by the causal boundary; each new closure appends a replayable public-safe `COMPELLED_EPISODE_INTERRUPTED` life event; and private/admin inspection enumerates and verifies closures per Thread. World-store schema v5 reflects the expanded append-only event vocabulary.
+
+These changes strengthen authority truth, life-history truth, and human inspectability. They do **not** create new personhood-score credit.
 
 ## Relationship accounting
 
@@ -133,4 +135,4 @@ Development                   0 -> 1
 Economic consequence          stays 0
 ```
 
-Historical M1 remains frozen at 11/26. PR #35 Structured Obligation v1 is **implementation + hostile-review fixes complete / Draft focused re-review pending**. It does not move the score. After #35 review/merge, the next bridge milestone is **#36 M2 Identity & Embodiment Contract**.
+Historical M1 remains frozen at 11/26. PR #35 Structured Obligation v1 is **MERGED / REVIEWED** and the direct interrupted-compelled-history follow-up is **LANDED / NO PR NUMBER**. Neither moves the score. The next bridge milestone is **#36 M2 Identity & Embodiment Contract**.

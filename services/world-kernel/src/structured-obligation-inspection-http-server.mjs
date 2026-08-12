@@ -79,6 +79,9 @@ function inspectionRoute(target) {
   if (parts.length === 4 && parts[3] === "obligations") {
     return { kind: "obligation_list", threadId };
   }
+  if (parts.length === 4 && parts[3] === "authority-withdrawals") {
+    return { kind: "authority_withdrawal_list", threadId };
+  }
   if (parts.length === 5 && parts[3] === "obligations" && parts[4] === "integrity") {
     return { kind: "obligation_integrity", threadId };
   }
@@ -158,6 +161,7 @@ export function createStructuredObligationInspectionHttpServer({
     "listRequestApplicability",
     "getRuntimeDischarge",
     "getRuntimeAuthorityWithdrawal",
+    "listAuthorityWithdrawals",
     "verifyThread",
   ]) {
     if (typeof inspectionStore[method] !== "function") {
@@ -193,6 +197,13 @@ export function createStructuredObligationInspectionHttpServer({
       if (route.kind === "obligation_list") {
         return writeJson(response, 200, {
           obligations: inspectPersistedEvidence(() => inspectionStore.listObligations(route.threadId)),
+        }, id);
+      }
+      if (route.kind === "authority_withdrawal_list") {
+        return writeJson(response, 200, {
+          authorityWithdrawals: inspectPersistedEvidence(
+            () => inspectionStore.listAuthorityWithdrawals(route.threadId),
+          ),
         }, id);
       }
       if (route.kind === "obligation_integrity") {

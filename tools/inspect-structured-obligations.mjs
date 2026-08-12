@@ -14,6 +14,7 @@ export function inspectStructuredObligations(databasePath, { threadId = null } =
     const threads = threadIds.map((id) => ({
       integrity: store.verifyThread(id),
       obligations: store.listObligations(id),
+      authorityWithdrawals: store.listAuthorityWithdrawals(id),
     }));
     return {
       databasePath: absolutePath,
@@ -35,8 +36,8 @@ export function formatStructuredObligationInspection(report) {
   for (const item of report.threads) {
     const integrity = item.integrity;
     lines.push(
-      `Thread ${integrity.threadId}: obligations=${integrity.obligations}, applicability=${integrity.applicabilityDecisions}, discharges=${integrity.discharges}`,
-      `  revisionChains=${integrity.revisionChainsVerified ? "verified" : "failed"}, applicabilityBindings=${integrity.applicabilityBindingsVerified ? "verified" : "failed"}, dischargeChains=${integrity.dischargeCausalChainsVerified ? "verified" : "failed"}`,
+      `Thread ${integrity.threadId}: obligations=${integrity.obligations}, applicability=${integrity.applicabilityDecisions}, discharges=${integrity.discharges}, authorityWithdrawals=${integrity.authorityWithdrawals}`,
+      `  revisionChains=${integrity.revisionChainsVerified ? "verified" : "failed"}, applicabilityBindings=${integrity.applicabilityBindingsVerified ? "verified" : "failed"}, dischargeChains=${integrity.dischargeCausalChainsVerified ? "verified" : "failed"}, withdrawalChains=${integrity.authorityWithdrawalCausalChainsVerified ? "verified" : "failed"}, withdrawalHistory=${integrity.historyVisibleAuthorityWithdrawals}/${integrity.authorityWithdrawals}`,
     );
   }
   return `${lines.join("\n")}\n`;
@@ -66,7 +67,7 @@ function usage() {
   return [
     "Usage: node tools/inspect-structured-obligations.mjs <database.sqlite> [--thread <thread-id>] [--json]",
     "",
-    "Read-only inspection of Structured Obligation revision, applicability, and discharge chains.",
+    "Read-only inspection of Structured Obligation revision, applicability, discharge, and interrupted compelled-episode chains.",
     "",
   ].join("\n");
 }

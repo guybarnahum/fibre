@@ -2,7 +2,13 @@ import { startWorldKernelFromEnvironment } from "../../src/server.mjs";
 import { createScriptedGuardianModelAdapter } from "./scripted-guardian-model-adapter.mjs";
 
 const guardianModelAdapter = createScriptedGuardianModelAdapter();
-const runtime = await startWorldKernelFromEnvironment(process.env, { guardianModelAdapter });
+const leaseDurationMs = process.env.FIBRE_TEST_LEASE_DURATION_MS === undefined
+  ? undefined
+  : Number(process.env.FIBRE_TEST_LEASE_DURATION_MS);
+const runtime = await startWorldKernelFromEnvironment(process.env, {
+  guardianModelAdapter,
+  ...(leaseDurationMs === undefined ? {} : { leaseDurationMs }),
+});
 
 process.stdout.write(`${JSON.stringify({
   event: "world-kernel-listening",

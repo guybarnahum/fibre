@@ -195,9 +195,9 @@ This earns **Development `0 -> 1`** under rubric v2. It does not yet establish r
 
 `npm run history:gate` is now read-only inspection of the committed sealed bundle. `npm run history:dev` remains the repeatable non-evidentiary provider-backed development harness.
 
-## PR #35 — Structured Obligation v1 implementation complete
+## PR #35 — Structured Obligation v1 merged
 
-PR #35 is **ACTIVE / DRAFT / IMPLEMENTATION COMPLETE**. A-F now close the intended Structured Obligation v1 implementation scope; review and merge remain separate actions.
+PR #35 is **MERGED / REVIEWED**. A-F plus the hostile-review closure established the Structured Obligation v1 authority, lifecycle, inspection, and human-truth boundary.
 
 The canonical design authority is [`structured-obligations-v1.md`](../architecture/structured-obligations-v1.md).
 
@@ -209,7 +209,7 @@ Three invariants govern the implementation:
 
 > **A commitment that causally authorizes completed participation must leave a durable, append-only social consequence, or the whole freeze fails.**
 
-A-F are now landed on the draft branch:
+The merged #35 implementation is:
 
 ```text
 A. domain/schema/migration + legacy-spend tombstones
@@ -218,6 +218,7 @@ C. persisted Fibre-owned applicability
 D. runtime authorization cutover + applicability binding
 E. atomic freeze/discharge cutover
 F. private/admin inspection + restart/replay/privacy/adversarial closure
+hostile-review closure: bidirectional evidence + truthful lifecycle/presentation hardening
 ```
 
 The implemented causal path is:
@@ -259,7 +260,21 @@ A hostile post-A-F review found three blocking downstream inconsistencies and se
 
 The authority-withdrawal closure records an interrupted episode without freeze, authorization consumption, or obligation discharge. It is rejected while authority remains live, exact retries are idempotent, conflicting reuse is rejected, and private stance plus closure evidence survive restart inspection.
 
-The completed #35 implementation does **not** move the pre-M2 personhood score. It closes authority integrity, social consequence, and inspectability needed by later relationship/institution/economic systems without manufacturing rubric credit.
+### Direct post-#35 follow-up — interrupted compelled episode persistence + history visibility
+
+The focused re-review found a bounded lifecycle gap: an executed/Guardian-passed compelled episode could still be lazily swept as generic `lease_expired` if authority had already disappeared but closure was not invoked inside the lease window. A direct follow-up, deliberately consuming **no PR number**, closes that gap.
+
+- qualified interrupted compelled episodes are protected from lazy lease sweep;
+- a later thaw fails `THAW_LEASE_CONFLICT` until the prior episode is truthfully closed;
+- closure remains possible after physical lease expiry only when authority was already stale by `min(closedAt, lease.expiresAt)`, preventing retroactive relabeling of ordinary timeouts;
+- closure atomically appends a replayable public-safe `COMPELLED_EPISODE_INTERRUPTED` Thread life event, advances only Thread version/provenance, records the private causal closure, aborts the runtime, and releases the lease;
+- the public event exposes the historical category but no obligation/session/authorization/closure IDs, private stance, terms, or rationale;
+- private/admin inspection can enumerate all authority-withdrawal closures per Thread and independently verifies causal chains plus new history-event bindings;
+- legacy #35 withdrawal rows remain readable without being rewritten.
+
+Because the append-only event vocabulary changed, the world-store schema is now **v5**.
+
+Neither #35 nor this lifecycle follow-up moves the pre-M2 personhood score. They close authority integrity, social consequence, and truthful life-history substrate needed by later relationship/institution/economic systems without manufacturing rubric credit.
 
 ## Model runtime
 
@@ -291,7 +306,8 @@ Economic consequence          0
 Standing semantic gate        GREEN
 PR #33 semantic claim         EARNED
 PR #34 history claim          EARNED / SEALED
-PR #35 structured obligation  IMPLEMENTATION + HOSTILE-REVIEW FIXES COMPLETE / DRAFT RE-REVIEW PENDING
+PR #35 structured obligation  MERGED / REVIEWED
+Direct history follow-up       LANDED / NO PR NUMBER
 ```
 
 The awarded movement remains intentionally conservative:
@@ -307,7 +323,8 @@ The awarded movement remains intentionally conservative:
 ```text
 #33 Semantic Guardian — EARNED
   -> #34 History bends judgment — EARNED / SEALED / MERGED
-  -> #35 Structured Obligation v1 — IMPLEMENTATION COMPLETE / DRAFT REVIEW PENDING
+  -> #35 Structured Obligation v1 — MERGED / REVIEWED
+  -> direct no-PR follow-up — interrupted compelled episode persistence + history visibility — LANDED
   -> #36 M2 Identity & Embodiment Contract
   -> #37 Thread Passport & Identity Provenance v1
   -> #38 Lineage, Geography & Embodiment v1
@@ -315,7 +332,7 @@ The awarded movement remains intentionally conservative:
   -> #40 M2 Standing Gate / M2 closure
 ```
 
-The detailed continuation plan through #43 is [`m2-pr-plan.md`](../validation/m2-pr-plan.md). #36 begins only after #35 review/merge; it remains contract-only rather than collapsing the M2 sequence into one implementation PR.
+The detailed continuation plan through #43 is [`m2-pr-plan.md`](../validation/m2-pr-plan.md). #35 and its direct history follow-up are complete; #36 is next and remains contract-only rather than collapsing the M2 sequence into one implementation PR.
 
 ## Deferred capability, not erased capability
 

@@ -80,10 +80,11 @@ V1 uses:
 obligation_records
 obligation_applicability_decisions
 structured_obligation_discharges
+structured_authority_withdrawal_closures
 legacy_obligation_tombstones
 ```
 
-The additive work remains on world-store schema v4 under the existing same-version repair contract.
+A direct post-#35 lifecycle follow-up advances the world store to schema v5 because the append-only `thread_events` vocabulary now includes `COMPELLED_EPISODE_INTERRUPTED`. The Structured Obligation authority model itself is unchanged; v5 makes an already-established interrupted compelled episode part of replayable Thread life history.
 
 Current obligation state is not trusted from `MAX(revision)` alone. Fibre validates the complete aggregate history before returning the current revision.
 
@@ -289,6 +290,7 @@ GET /threads/:threadId/private/obligations/:obligationId
 GET /threads/:threadId/private/requests/:requestId/obligation-applicability
 GET /threads/:threadId/private/runtime/:sessionId/obligation-discharge
 GET /threads/:threadId/private/runtime/:sessionId/authority-withdrawal
+GET /threads/:threadId/private/authority-withdrawals
 ```
 
 There is no corresponding public obligation route. Public Thread, event, and health responses do not reveal obligation IDs, private terms, applicability IDs, or discharge IDs.
@@ -409,6 +411,50 @@ structured obligation_override authorization
 
 The append-only record is `structured_authority_withdrawal_closures` with `obw_<64 hex>` identity. It binds the authorization, applicability, authorized obligation revision, current withdrawal-causing revision/state, Actor output, Guardian pass, operation lineage, and closure time. Exact retry is idempotent; a second operation cannot reuse the same session. The closure is rejected while authority is still live.
 
+### Direct post-#35 closure — interrupted compelled episode persistence and history visibility
+
+The focused hostile re-review found that the authority-withdrawal mechanism could still lose its semantic fact if nobody closed it before the physical thaw lease expired. The direct no-PR follow-up closes that gap without changing #35 authority semantics.
+
+The stronger lifecycle invariant is:
+
+> **An executed episode cannot disappear merely because the authority that initiated it later disappears.**
+
+For a structured compelled runtime with Actor evidence and a Goal Guardian pass, lazy lease reclamation now checks whether the governing authority was already stale at the lease boundary. If so, a later thaw fails closed instead of rewriting the episode as generic `lease_expired`. The prior episode must first close as `governing_authority_withdrawn`.
+
+Closure may occur after physical lease expiry, but Fibre evaluates withdrawal eligibility at:
+
+```text
+eligibilityAt = min(closedAt, lease.expiresAt)
+```
+
+This prevents retroactive relabeling: an authority change that occurs only after an otherwise ordinary timeout cannot transform that earlier timeout into an authority-withdrawal episode.
+
+A new history-profile-v2 withdrawal closes atomically as:
+
+```text
+Actor evidence + Guardian pass
+  -> authority stale by causal boundary
+  -> append COMPELLED_EPISODE_INTERRUPTED Thread event
+  -> advance Thread version/provenance only
+  -> append normal command witness for replay integrity
+  -> append structured authority-withdrawal closure
+  -> abort runtime
+  -> release lease with governing_authority_withdrawn
+```
+
+The public life event deliberately carries only:
+
+```text
+episodeKind      = compelled_participation
+outcome          = interrupted
+reasonCode       = governing_authority_withdrawn
+guardianDecision = pass
+```
+
+It contains no obligation ID, applicability ID, authorization ID, session ID, closure ID, private stance, material terms, or private rationale. The full causal evidence remains private/admin inspection data.
+
+Withdrawal closures are now enumerable per Thread through the private inspection route and offline inspector. `verifyThread(...)` reports both causal-chain integrity and whether each new history-profile-v2 closure has its exact replayable Thread event. Pre-follow-up #35 withdrawal rows remain readable and are explicitly counted as legacy closures without a history event rather than being rewritten.
+
 This is intentionally distinct from historical `runtime_abandons`, whose meaning remains `guardian_rejected`. Fibre does not falsify a Guardian pass into a rejection merely to obtain lifecycle closure.
 
 ### Additional hostile-review hardening
@@ -521,6 +567,6 @@ Freeze profile v2 atomically closes one-shot Structured Obligation authority thr
 
 Structured inspection profile v1 adds shared read-only cross-chain verification, private GET-only kernel inspection, a first-class offline administrative inspector, exact restart/replay equality, public-route non-disclosure checks, and coherent re-signed tamper detection.
 
-A-F complete the intended #35 Structured Obligation v1 implementation scope. PR #35 remains a draft until review; implementation completion does not itself merge or award personhood-score movement.
+A-F plus hostile-review closure completed PR #35 Structured Obligation v1, which is now merged. The direct interrupted-compelled-history follow-up closes lease-expiry/history/enumeration visibility without consuming a PR number and without awarding personhood-score movement.
 
-The next planned PR after #35 review/merge is **#36 — M2 Identity & Embodiment Contract**.
+The next numbered PR remains **#36 — M2 Identity & Embodiment Contract**.

@@ -30,7 +30,7 @@ export function normalizeStructuredAuthorityWithdrawal(value) {
     "authorizedObligationDigest", "currentObligationRevision", "currentObligationDigest",
     "currentObligationStatus", "actorRunId", "actorOutputDigest", "guardianAuditId",
     "guardianAuditDigest", "guardianDecision", "withdrawalCause", "reasonCode",
-    "closedAt", "causationId", "correlationId",
+    "closedAt", "causationId", "correlationId", "historyProfileVersion", "threadEventId",
   ]);
   if (typeof value.closureId !== "string" || !CLOSURE_ID.test(value.closureId)) {
     throw new TypeError("closureId must be obw_ followed by 64 lowercase hex characters");
@@ -62,6 +62,13 @@ export function normalizeStructuredAuthorityWithdrawal(value) {
   }
   if (value.reasonCode !== STRUCTURED_AUTHORITY_WITHDRAWAL_REASON) {
     throw new TypeError("Structured authority withdrawal reasonCode is invalid");
+  }
+  const hasHistoryBinding = value.historyProfileVersion !== undefined || value.threadEventId !== undefined;
+  if (hasHistoryBinding) {
+    if (value.historyProfileVersion !== 2) {
+      throw new TypeError("Structured authority withdrawal historyProfileVersion must be 2");
+    }
+    assertId("Structured authority withdrawal threadEventId", value.threadEventId);
   }
   assertIsoTimestamp("Structured authority withdrawal closedAt", value.closedAt);
   return structuredClone(value);

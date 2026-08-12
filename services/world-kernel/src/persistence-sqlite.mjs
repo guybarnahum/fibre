@@ -57,7 +57,7 @@ function createBaseSchema(database) {
       sequence INTEGER NOT NULL CHECK (sequence >= 1),
       expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
       resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','SELF_MODEL_UPDATED','THREAD_FROZEN')),
+      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED')),
       command_id TEXT,
       command_digest TEXT,
       payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
@@ -74,7 +74,7 @@ function createBaseSchema(database) {
       CHECK (
         (event_type = 'THREAD_SEEDED' AND command_id IS NULL AND command_digest IS NULL)
         OR
-        (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
+        (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
       )
     ) STRICT;
 
@@ -207,11 +207,11 @@ function createSchema(database) {
   createStructuredAuthorityWithdrawalTables(database);
 }
 
-function needsFreezeEventUpgrade(database) {
+function needsEventSchemaUpgrade(database) {
   const row = database.prepare(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
   ).get();
-  return row !== undefined && !row.sql.includes("THREAD_FROZEN");
+  return row !== undefined && !row.sql.includes("COMPELLED_EPISODE_INTERRUPTED");
 }
 
 function rebuildEventTables(database) {
@@ -281,7 +281,7 @@ export function migrateDatabase(database) {
     return;
   }
 
-  const rebuildEvents = currentVersion > 0 && needsFreezeEventUpgrade(database);
+  const rebuildEvents = currentVersion > 0 && needsEventSchemaUpgrade(database);
   if (rebuildEvents) database.exec("PRAGMA foreign_keys=OFF");
   try {
     database.exec("BEGIN IMMEDIATE");

@@ -7,7 +7,7 @@ canonical: true
 
 # Refined PR plan from #35 through M2
 
-This document is the canonical continuation plan after PR #34, **History bends judgment**, merged.
+This document is the canonical continuation plan after PR #35, **Structured Obligation v1**, merged. A direct no-PR interrupted-compelled-history follow-up sits between #35 and #36 and deliberately does not consume a PR number.
 
 ## Planning principle
 
@@ -24,8 +24,8 @@ The current pre-M2 checkpoint is **15/26 under rubric v2**. The strongest eviden
 ```text
 MERGED  #33  Semantic Guardian
 MERGED  #34  History bends judgment
-
-DRAFT / IMPLEMENTATION COMPLETE  #35  Structured Obligation v1
+MERGED  #35  Structured Obligation v1
+DIRECT / NO PR NUMBER  Interrupted compelled episode persistence + history visibility
                                 #36  M2 Identity & Embodiment Contract
                                 #37  Thread Passport & Identity Provenance v1
                                 #38  Lineage, Geography & Embodiment v1
@@ -37,7 +37,7 @@ DRAFT / IMPLEMENTATION COMPLETE  #35  Structured Obligation v1
                                 #43  Economic Consequence / M3 foundation
 ```
 
-#36 begins after #35 review/merge. Do not collapse #37-#40 into one large “M2 implementation” PR. Each exists to close a distinct causal/architectural risk.
+#36 begins after the direct history follow-up. Its number is intentionally preserved. Do not collapse #37-#40 into one large “M2 implementation” PR. Each exists to close a distinct causal/architectural risk.
 
 ## #35 — Structured Obligation v1
 
@@ -113,9 +113,17 @@ A persisted `applies` decision is not a bearer capability. Runtime insertion ind
 
 **F is the inspection/replay closure:** a shared `readOnly + query_only` verifier checks the complete obligation/applicability/authorization/consumption/runtime/freeze/event/discharge chain. It is exposed through private GET-only world-kernel routes and `npm run inspect:obligations`; exact private inspection survives process restart; public Thread/event/health routes reveal no private obligation evidence; and coherently re-signed discharge-row tampering still fails cross-chain verification.
 
-**Hostile-review closure is also complete on the Draft branch.** It forbids direct authoring of `discharged`, verifies terminal discharge in both directions, re-derives deterministic applicability during inspection, moves disclosure/editor presentation to structured `participationBasis` + applicability, binds structured discharge into freeze integrity, exact-keys public Thread snapshots, maps expected obligation conflicts to bounded 4xx responses, and adds append-only `governing_authority_withdrawn` closure for an executed/Guardian-passed compelled runtime whose authority becomes stale before freeze. That interrupted closure consumes no authorization and discharges no obligation; it preserves the episode as durable inspectable history.
+**Hostile-review closure is complete and #35 is merged.** It forbids direct authoring of `discharged`, verifies terminal discharge in both directions, re-derives deterministic applicability during inspection, moves disclosure/editor presentation to structured `participationBasis` + applicability, binds structured discharge into freeze integrity, exact-keys public Thread snapshots, maps expected obligation conflicts to bounded 4xx responses, and adds append-only `governing_authority_withdrawn` closure for an executed/Guardian-passed compelled runtime whose authority becomes stale before freeze. That interrupted closure consumes no authorization and discharges no obligation.
 
-#35 remains primarily authority integrity and social consequence. **A-F implementation completion does not itself award personhood-score movement.** PR review/merge is still required before #36 starts.
+### Direct no-PR follow-up — interrupted compelled episode persistence + history visibility
+
+Before #36, Fibre closes the focused re-review limitation without consuming a PR number. A qualified interrupted compelled episode is protected from lazy lease-expiry sweep, remains closable after physical expiry only if governing authority was already stale by the causal boundary, appends a replayable public-safe `COMPELLED_EPISODE_INTERRUPTED` Thread event, and becomes privately enumerable/verifiable per Thread. The public event names the historical category but carries none of the private obligation/session/authorization/closure identifiers or terms.
+
+This follow-up establishes the broader lifecycle rule:
+
+> **An executed episode cannot disappear merely because the authority that initiated it later disappears.**
+
+#35 and the direct follow-up remain authority/history substrate. **They do not themselves award personhood-score movement.** #36 now starts from this completed causal-history boundary.
 
 ## #36 — M2 Identity & Embodiment Contract
 

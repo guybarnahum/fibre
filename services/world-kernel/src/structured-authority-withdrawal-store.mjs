@@ -8,7 +8,9 @@ import {
   assertPlainObject,
   canonicalJson,
   sha256,
+  threadStateHash,
 } from "./persistence-common.mjs";
+import { validateStoredThread } from "./persistence-domain.mjs";
 import {
   migrateDatabase,
   normalizeDatabasePath,
@@ -31,6 +33,15 @@ import {
   normalizeStructuredAuthorityWithdrawal,
   structuredAuthorityWithdrawalDigest,
 } from "./structured-authority-withdrawal.mjs";
+import {
+  COMPELLED_EPISODE_HISTORY_PROFILE_VERSION,
+  interruptedCompelledEpisodeActor,
+  interruptedCompelledEpisodeCommandDigest,
+  interruptedCompelledEpisodeCommandId,
+  interruptedCompelledEpisodeEventId,
+  interruptedCompelledEpisodePayload,
+  interruptedCompelledEpisodeProvenance,
+} from "./interrupted-compelled-episode.mjs";
 
 export class StructuredAuthorityWithdrawalNotFoundError extends Error {}
 export class StructuredAuthorityWithdrawalConflictError extends Error {}
@@ -198,8 +209,8 @@ export class StructuredAuthorityWithdrawalStore {
       if (runtime.session_status !== "active" || runtime.lease_status !== "active") {
         throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal requires an active runtime and lease");
       }
-      if (Date.parse(input.closedAt) < Date.parse(runtime.acquired_at) || Date.parse(input.closedAt) >= Date.parse(runtime.expires_at)) {
-        throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal must occur during the active lease");
+      if (Date.parse(input.closedAt) < Date.parse(runtime.acquired_at)) {
+        throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal cannot predate lease acquisition");
       }
       if (runtime.actor_run_id === null || runtime.audit_id === null) {
         throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal requires completed Actor and Goal Guardian evidence");
@@ -248,25 +259,117 @@ export class StructuredAuthorityWithdrawalStore {
       same("authorization obligation digest", authorizedRow.obligation_digest, authorization.applicability.obligationDigest);
 
       const currentRow = this.#database.prepare(`
-        SELECT obligation_json,obligation_digest,legacy_source_digest
+        SELECT obligation_json,obligation_digest,recorded_at
         FROM obligation_records WHERE thread_id=? AND obligation_id=?
         ORDER BY revision DESC LIMIT 1
       `).get(input.threadId, authorization.applicability.obligationId);
       if (currentRow === undefined) throw new IntegrityError("structured obligation disappeared before authority-withdrawal closure");
+      if (Date.parse(currentRow.recorded_at) > Date.parse(input.closedAt)) {
+        throw new IntegrityError("current Structured Obligation revision postdates authority-withdrawal closure");
+      }
       const current = normalizeStructuredObligation(parseJson("current obligation", currentRow.obligation_json));
       same("current obligation digest", currentRow.obligation_digest, structuredObligationDigest(current));
-      const legacyTombstoned = currentRow.legacy_source_digest !== null &&
+
+      const eligibilityAt = new Date(Math.min(
+        Date.parse(input.closedAt),
+        Date.parse(runtime.expires_at),
+      )).toISOString();
+      const causalRow = this.#database.prepare(`
+        SELECT obligation_json,obligation_digest,legacy_source_digest
+        FROM obligation_records
+        WHERE thread_id=? AND obligation_id=? AND julianday(recorded_at)<=julianday(?)
+        ORDER BY revision DESC LIMIT 1
+      `).get(input.threadId, authorization.applicability.obligationId, eligibilityAt);
+      if (causalRow === undefined) throw new IntegrityError("structured obligation has no causal revision at withdrawal boundary");
+      const causalObligation = normalizeStructuredObligation(
+        parseJson("causal obligation at authority-withdrawal boundary", causalRow.obligation_json),
+      );
+      same("causal obligation digest", causalRow.obligation_digest, structuredObligationDigest(causalObligation));
+      const causalTombstoned = causalRow.legacy_source_digest !== null &&
         this.#database.prepare(`
           SELECT 1 AS present FROM legacy_obligation_tombstones
-          WHERE thread_id=? AND legacy_reference_digest=?
-        `).get(input.threadId, currentRow.legacy_source_digest) !== undefined;
-      const withdrawalCause = causeFor(current, authorizedRevision, input.closedAt, legacyTombstoned);
+          WHERE thread_id=? AND legacy_reference_digest=? AND julianday(consumed_at)<=julianday(?)
+        `).get(input.threadId, causalRow.legacy_source_digest, eligibilityAt) !== undefined;
+      const withdrawalCause = causeFor(
+        causalObligation,
+        authorizedRevision,
+        eligibilityAt,
+        causalTombstoned,
+      );
       if (withdrawalCause === null) {
-        throw new StructuredAuthorityWithdrawalRejectedError("the governing Structured Obligation remains current execution authority");
+        throw new StructuredAuthorityWithdrawalRejectedError(
+          "the governing Structured Obligation remains current execution authority",
+        );
       }
 
+      const closureId = newOpaqueId("obw");
+      const threadEventId = interruptedCompelledEpisodeEventId(closureId);
+      const eventCommandId = interruptedCompelledEpisodeCommandId(closureId);
+      const eventCommandDigest = interruptedCompelledEpisodeCommandDigest({
+        closureId,
+        threadId: input.threadId,
+        eventId: threadEventId,
+        commandId: eventCommandId,
+        occurredAt: input.closedAt,
+      });
+      const threadRow = this.#database.prepare(`
+        SELECT version,status,state_json,state_hash,last_event_id,updated_at
+        FROM threads WHERE thread_id=?
+      `).get(input.threadId);
+      if (threadRow === undefined) throw new IntegrityError(`Thread ${input.threadId} disappeared before interrupted-episode history append`);
+      const thread = parseJson(`Thread ${input.threadId}`, threadRow.state_json);
+      validateStoredThread(input.threadId, thread);
+      same("interrupted episode Thread state hash", threadRow.state_hash, threadStateHash(thread));
+      same("interrupted episode Thread version", Number(threadRow.version), thread.version);
+      same("interrupted episode Thread status", threadRow.status, thread.status);
+      same("interrupted episode Thread last event", threadRow.last_event_id, thread.provenance.lastEventId);
+      if (Date.parse(input.closedAt) < Date.parse(threadRow.updated_at)) {
+        throw new IntegrityError("authority-withdrawal life event would move Thread history backwards in time");
+      }
+      const sequence = Number(this.#database.prepare(
+        "SELECT COALESCE(MAX(sequence),0) AS last_sequence FROM thread_events WHERE thread_id=?",
+      ).get(input.threadId).last_sequence) + 1;
+      const nextThread = {
+        ...thread,
+        version: thread.version + 1,
+        provenance: { ...thread.provenance, lastEventId: threadEventId },
+      };
+      validateStoredThread(input.threadId, nextThread);
+      const nextStateJson = canonicalJson(nextThread);
+      const nextStateHash = threadStateHash(nextThread);
+      this.#database.prepare(`
+        INSERT INTO thread_events(
+          event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+          command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+          authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+        ) VALUES (?,?,?,?,?,'COMPELLED_EPISODE_INTERRUPTED',?,?,?,?,?,?,NULL,?,?,1,?)
+      `).run(
+        threadEventId,input.threadId,sequence,thread.version,nextThread.version,
+        eventCommandId,eventCommandDigest,canonicalJson(interruptedCompelledEpisodePayload()),
+        canonicalJson(interruptedCompelledEpisodeActor()),input.closedAt,nextStateHash,
+        eventCommandId,eventCommandId,canonicalJson(interruptedCompelledEpisodeProvenance()),
+      );
+      const threadUpdate = this.#database.prepare(`
+        UPDATE threads SET version=?,status=?,state_json=?,state_hash=?,last_event_id=?,updated_at=?
+        WHERE thread_id=? AND version=? AND state_hash=?
+      `).run(
+        nextThread.version,nextThread.status,nextStateJson,nextStateHash,threadEventId,input.closedAt,
+        input.threadId,thread.version,threadRow.state_hash,
+      );
+      if (Number(threadUpdate.changes) !== 1) {
+        throw new StructuredAuthorityWithdrawalConflictError("Thread changed during authority-withdrawal history append");
+      }
+      this.#database.prepare(`
+        INSERT INTO commands(
+          thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at
+        ) VALUES (?,?,?,?,?,?,?)
+      `).run(
+        input.threadId,eventCommandId,eventCommandDigest,thread.version,nextThread.version,
+        threadEventId,input.closedAt,
+      );
+
       const closure = normalizeStructuredAuthorityWithdrawal({
-        closureId: newOpaqueId("obw"),
+        closureId,
         operationId: input.operationId,
         threadId: input.threadId,
         sessionId: input.sessionId,
@@ -291,6 +394,8 @@ export class StructuredAuthorityWithdrawalStore {
         closedAt: input.closedAt,
         causationId: input.causationId,
         correlationId: input.correlationId,
+        historyProfileVersion: COMPELLED_EPISODE_HISTORY_PROFILE_VERSION,
+        threadEventId,
       });
       const closureDigest = structuredAuthorityWithdrawalDigest(closure);
       this.#database.prepare(`

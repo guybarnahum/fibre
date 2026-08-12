@@ -25,7 +25,7 @@ test("current world-store schema creates the Structured Obligation tables additi
   try {
     migrateDatabase(db);
     assert.equal(Number(db.prepare("PRAGMA user_version").get().user_version), WORLD_STORE_SCHEMA_VERSION);
-    assert.equal(WORLD_STORE_SCHEMA_VERSION, 4);
+    assert.equal(WORLD_STORE_SCHEMA_VERSION, 5);
     const names = new Set(db.prepare(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN (

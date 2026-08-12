@@ -84,7 +84,7 @@ test("inspector source opener remains read-only even if query_only is disabled",
     }
     const verification = new DatabaseSync(databasePath, { readOnly: true });
     try {
-      assert.equal(Number(verification.prepare("PRAGMA user_version").get().user_version), 4);
+      assert.equal(Number(verification.prepare("PRAGMA user_version").get().user_version), 5);
     } finally {
       verification.close();
     }

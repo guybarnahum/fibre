@@ -19,6 +19,7 @@ import {
   StaleObligationRevisionError,
 } from "./obligation-store.mjs";
 import { DEFAULT_MAX_HTTP_BODY_BYTES } from "./http-server.mjs";
+import { ThawLeaseConflictError } from "./runtime-domain.mjs";
 import { createExpressionWorldKernelHttpServer } from "./expression-http-server.mjs";
 import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
 import {
@@ -126,6 +127,9 @@ function problem(value) {
   }
   if (value instanceof StructuredAuthorityWithdrawalRejectedError) {
     return [422, "AUTHORITY_WITHDRAWAL_REJECTED", value.message, {}];
+  }
+  if (value instanceof ThawLeaseConflictError) {
+    return [409, "THAW_LEASE_CONFLICT", value.message, {}];
   }
   if (value instanceof StorageBusyError) {
     return [503, "STORAGE_BUSY", "World storage is temporarily busy", { "retry-after": "1" }];

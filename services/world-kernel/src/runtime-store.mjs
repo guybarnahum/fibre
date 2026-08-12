@@ -30,6 +30,7 @@ import {
   runtimeAcquireOperationDigest,
   runtimeSessionDigest,
 } from "./runtime-domain.mjs";
+import { normalizeStructuredObligation, structuredObligationDigest } from "./obligation-domain.mjs";
 
 const ID = {
   authorization: /^auth_[0-9a-f]{64}$/,
@@ -355,6 +356,51 @@ export class RuntimeStore {
     }));
   }
 
+
+  #expiredCompelledEpisodeNeedsAuthorityWithdrawal(leaseId, cutoffAt) {
+    const row = this.#database.prepare(`
+      SELECT s.session_id,a.authorization_json,a.authorization_digest,
+        ar.actor_run_id,ga.audit_json,ga.audit_digest
+      FROM runtime_sessions s
+      JOIN participation_authorizations a ON a.authorization_id=s.authorization_id
+      LEFT JOIN actor_runs ar ON ar.session_id=s.session_id
+      LEFT JOIN goal_guardian_audits ga ON ga.session_id=s.session_id
+      WHERE s.lease_id=? AND s.status='active'
+    `).get(leaseId);
+    if (row === undefined || row.actor_run_id === null || row.audit_json === null) return false;
+    const authorization = json(`expired lease authorization ${leaseId}`, row.authorization_json);
+    same("expired lease authorization digest", row.authorization_digest, authorizationDigest(authorization));
+    if (authorization.participationBasis !== "obligation_override" || authorization.applicability === null) {
+      return false;
+    }
+    const audit = json(`expired lease Guardian audit ${leaseId}`, row.audit_json);
+    same("expired lease Guardian digest", row.audit_digest, guardianAuditDigest(audit));
+    if (audit.decision !== "pass") return false;
+    const binding = authorization.applicability;
+    const causalRow = this.#database.prepare(`
+      SELECT obligation_json,obligation_digest,legacy_source_digest
+      FROM obligation_records
+      WHERE thread_id=? AND obligation_id=? AND julianday(recorded_at)<=julianday(?)
+      ORDER BY revision DESC LIMIT 1
+    `).get(authorization.threadId, binding.obligationId, cutoffAt);
+    if (causalRow === undefined) {
+      throw new IntegrityError(`expired compelled runtime ${row.session_id} lost governing obligation history`);
+    }
+    const causal = normalizeStructuredObligation(
+      json(`expired lease obligation ${binding.obligationId}`, causalRow.obligation_json),
+    );
+    same("expired lease obligation digest", causalRow.obligation_digest, structuredObligationDigest(causal));
+    const tombstoned = causalRow.legacy_source_digest !== null &&
+      this.#database.prepare(`
+        SELECT 1 AS present FROM legacy_obligation_tombstones
+        WHERE thread_id=? AND legacy_reference_digest=? AND julianday(consumed_at)<=julianday(?)
+      `).get(authorization.threadId, causalRow.legacy_source_digest, cutoffAt) !== undefined;
+    return causal.revision !== Number(binding.obligationRevision) ||
+      causal.status !== "active" ||
+      (causal.expiresAt !== undefined && Date.parse(causal.expiresAt) <= Date.parse(cutoffAt)) ||
+      tombstoned;
+  }
+
   acquireRuntime(record) {
     const prior = this.getRuntimeByAcquireOperation(record.operationId, record.operationDigest);
     if (prior) return { runtime: prior, idempotent: true };
@@ -417,6 +463,11 @@ export class RuntimeStore {
         if (Date.parse(active.expires_at) > Date.parse(record.acquiredAt)) {
           throw new ThawLeaseConflictError(
             `Thread ${record.threadId} already has active thaw lease ${active.lease_id}`,
+          );
+        }
+        if (this.#expiredCompelledEpisodeNeedsAuthorityWithdrawal(active.lease_id, active.expires_at)) {
+          throw new ThawLeaseConflictError(
+            `Thread ${record.threadId} has an interrupted compelled runtime that must be closed as governing_authority_withdrawn before another thaw`,
           );
         }
         this.#database.prepare(`

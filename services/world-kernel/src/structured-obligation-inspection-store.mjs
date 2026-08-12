@@ -8,6 +8,7 @@ import {
   assertPlainObject,
   canonicalJson,
 } from "./persistence-common.mjs";
+import { rowToEvent } from "./persistence-domain.mjs";
 import {
   deterministicApplicability,
   normalizeStructuredObligation,
@@ -29,6 +30,15 @@ import {
   normalizeStructuredAuthorityWithdrawal,
   structuredAuthorityWithdrawalDigest,
 } from "./structured-authority-withdrawal.mjs";
+import {
+  COMPELLED_EPISODE_HISTORY_PROFILE_VERSION,
+  interruptedCompelledEpisodeActor,
+  interruptedCompelledEpisodeCommandDigest,
+  interruptedCompelledEpisodeCommandId,
+  interruptedCompelledEpisodeEventId,
+  interruptedCompelledEpisodePayload,
+  interruptedCompelledEpisodeProvenance,
+} from "./interrupted-compelled-episode.mjs";
 
 const OBLIGATION_ID_PATTERN = /^obl_[0-9a-f]{64}$/;
 
@@ -706,7 +716,72 @@ export class StructuredObligationInspectionStore {
     same("authority withdrawal current revision", current.revision, closure.currentObligationRevision);
     same("authority withdrawal current digest witness", currentRow.obligation_digest, closure.currentObligationDigest);
     same("authority withdrawal current status", current.status, closure.currentObligationStatus);
-    return { closure, closureDigest: row.closure_digest, causalChainVerified: true };
+
+    let historyEventVerified = null;
+    if (closure.historyProfileVersion !== undefined) {
+      same(
+        "authority withdrawal history profile",
+        closure.historyProfileVersion,
+        COMPELLED_EPISODE_HISTORY_PROFILE_VERSION,
+      );
+      const expectedEventId = interruptedCompelledEpisodeEventId(closure.closureId);
+      same("authority withdrawal Thread event", closure.threadEventId, expectedEventId);
+      const eventRow = this.#database.prepare(`
+        SELECT event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+          command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+          authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+        FROM thread_events WHERE event_id=? AND thread_id=?
+      `).get(expectedEventId, threadId);
+      if (eventRow === undefined) {
+        throw new IntegrityError(`authority withdrawal ${closure.closureId} lost its Thread life event`);
+      }
+      const event = rowToEvent(eventRow);
+      same("authority withdrawal event type", event.eventType, "COMPELLED_EPISODE_INTERRUPTED");
+      same("authority withdrawal event time", event.occurredAt, closure.closedAt);
+      same("authority withdrawal event authorization privacy", event.authorizationId, null);
+      same("authority withdrawal event payload", canonicalJson(event.payload), canonicalJson(interruptedCompelledEpisodePayload()));
+      same("authority withdrawal event actor", canonicalJson(event.actor), canonicalJson(interruptedCompelledEpisodeActor()));
+      same("authority withdrawal event provenance", canonicalJson(event.provenance), canonicalJson(interruptedCompelledEpisodeProvenance()));
+      same("authority withdrawal event version step", event.resultingVersion, event.expectedVersion + 1);
+      const expectedCommandId = interruptedCompelledEpisodeCommandId(closure.closureId);
+      const expectedCommandDigest = interruptedCompelledEpisodeCommandDigest({
+        closureId: closure.closureId,
+        threadId,
+        eventId: expectedEventId,
+        commandId: expectedCommandId,
+        occurredAt: closure.closedAt,
+      });
+      same("authority withdrawal event command", event.commandId, expectedCommandId);
+      same("authority withdrawal event command digest", event.commandDigest, expectedCommandDigest);
+      const command = this.#database.prepare(`
+        SELECT command_digest,expected_version,resulting_version,event_id,created_at
+        FROM commands WHERE thread_id=? AND command_id=?
+      `).get(threadId, expectedCommandId);
+      if (command === undefined) {
+        throw new IntegrityError(`authority withdrawal ${closure.closureId} lost its Thread event command witness`);
+      }
+      same("authority withdrawal command digest", command.command_digest, expectedCommandDigest);
+      same("authority withdrawal command expected version", Number(command.expected_version), event.expectedVersion);
+      same("authority withdrawal command resulting version", Number(command.resulting_version), event.resultingVersion);
+      same("authority withdrawal command event", command.event_id, expectedEventId);
+      same("authority withdrawal command time", command.created_at, closure.closedAt);
+      historyEventVerified = true;
+    }
+    return {
+      closure,
+      closureDigest: row.closure_digest,
+      causalChainVerified: true,
+      historyEventVerified,
+    };
+  }
+
+  listAuthorityWithdrawals(threadId) {
+    this.#requireThread(threadId);
+    const sessions = this.#database.prepare(`
+      SELECT session_id FROM structured_authority_withdrawal_closures
+      WHERE thread_id=? ORDER BY closed_at,closure_id
+    `).all(threadId);
+    return sessions.map((row) => this.getRuntimeAuthorityWithdrawal(threadId, row.session_id));
   }
 
   verifyThread(threadId) {
@@ -714,6 +789,10 @@ export class StructuredObligationInspectionStore {
     const obligations = this.listObligations(threadId);
     const applicability = this.#applicabilityRows("thread_id=?", [threadId]);
     const discharges = this.#dischargeRows("thread_id=?", [threadId]);
+    const authorityWithdrawals = this.listAuthorityWithdrawals(threadId);
+    const historyVisibleAuthorityWithdrawals = authorityWithdrawals.filter(
+      (item) => item.historyEventVerified === true,
+    ).length;
     return {
       ok: true,
       threadId,
@@ -721,9 +800,17 @@ export class StructuredObligationInspectionStore {
       obligations: obligations.length,
       applicabilityDecisions: applicability.length,
       discharges: discharges.length,
+      authorityWithdrawals: authorityWithdrawals.length,
+      historyVisibleAuthorityWithdrawals,
+      legacyAuthorityWithdrawalsWithoutHistoryEvent:
+        authorityWithdrawals.length - historyVisibleAuthorityWithdrawals,
       revisionChainsVerified: true,
       applicabilityBindingsVerified: true,
       dischargeCausalChainsVerified: discharges.every((item) => item.causalChainVerified),
+      authorityWithdrawalCausalChainsVerified:
+        authorityWithdrawals.every((item) => item.causalChainVerified),
+      authorityWithdrawalHistoryEventsVerified:
+        authorityWithdrawals.every((item) => item.historyEventVerified !== false),
     };
   }
 }
