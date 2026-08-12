@@ -1,0 +1,72 @@
+name: pr35-i3-diagnose
+
+on:
+  push:
+    branches:
+      - agent/structured-obligation-v1
+
+permissions:
+  contents: read
+
+jobs:
+  debug:
+    if: ${{ github.event.head_commit.message == 'Diagnose landed PR35 authority-withdrawal candidate' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/structured-obligation-v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply candidate
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          source=Path('.github/workflows/pr35-i3-finalize.yml').read_text()
+          marker='      - name: Apply corrected closure and route ownership\n        shell: bash\n        run: |\n'
+          start=source.index(marker)+len(marker)
+          end=source.index('\n      - name: Focused causal proof',start)
+          lines=source[start:end].splitlines()
+          Path('/tmp/apply.sh').write_text('\n'.join(line[10:] if line.startswith('          ') else line for line in lines)+'\n')
+          PY
+          bash /tmp/apply.sh
+          python <<'PY'
+          from pathlib import Path
+          p=Path('services/world-kernel/src/structured-authority-withdrawal.mjs'); t=p.read_text()
+          t=t.replace('return sha256(canonicalJson(normalizeStructuredAuthorityWithdrawal(value)));','return `sha256:${sha256(canonicalJson(normalizeStructuredAuthorityWithdrawal(value)))}`;')
+          p.write_text(t)
+          p=Path('services/world-kernel/src/structured-authority-withdrawal-store.mjs'); t=p.read_text()
+          old='''  return sha256(canonicalJson({\n    kind: "structured_authority_withdrawal/1",\n    operationId: input.operationId,\n    threadId: input.threadId,\n    sessionId: input.sessionId,\n    causationId: input.causationId,\n    correlationId: input.correlationId,\n  }));'''
+          new='''  return `sha256:${sha256(canonicalJson({\n    kind: "structured_authority_withdrawal/1",\n    operationId: input.operationId,\n    threadId: input.threadId,\n    sessionId: input.sessionId,\n    causationId: input.causationId,\n    correlationId: input.correlationId,\n  }))}`;'''
+          if old not in t: raise SystemExit('operation digest anchor missing')
+          p.write_text(t.replace(old,new,1))
+          p=Path('services/world-kernel/test/causal-process.test.mjs'); t=p.read_text()
+          old='''    child,\n    baseUrl: `http://127.0.0.1:${ready.port}`,'''
+          new='''    child,\n    baseUrl: `http://127.0.0.1:${ready.port}`,\n    stderr: () => stderr,'''
+          if old not in t: raise SystemExit('startProcess anchor missing')
+          t=t.replace(old,new,1)
+          old='''    assert.equal(closed.response.status, 201);'''
+          new='''    assert.equal(closed.response.status, 201, `${JSON.stringify(closed.body)}\\nSERVER STDERR:\\n${processHandle.stderr()}`);'''
+          if old not in t: raise SystemExit('closure assertion missing')
+          p.write_text(t.replace(old,new,1))
+          PY
+      - name: Focused causal proof
+        shell: bash
+        run: |
+          npm run build
+          set +e
+          node --disable-warning=ExperimentalWarning --test services/world-kernel/test/causal-process.test.mjs > /tmp/causal.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/causal.log
+          if [ "$rc" -ne 0 ]; then
+            python <<'PY'
+          from pathlib import Path
+          text=Path('/tmp/causal.log').read_text(errors='replace')
+          msg=text[-22000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+          print(f'::error title=I3 candidate failure::{msg}')
+          PY
+            exit "$rc"
+          fi
