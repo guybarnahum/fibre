@@ -703,9 +703,9 @@ export class StructuredObligationInspectionStore {
     if (currentRow === undefined) throw new IntegrityError(`authority withdrawal ${closure.closureId} lost current obligation`);
     const current = normalizeStructuredObligation(parseJson("authority withdrawal current obligation", currentRow.obligation_json));
     same("authority withdrawal current obligation digest", currentRow.obligation_digest, structuredObligationDigest(current));
-    same("authority withdrawal current revision", current.obligation.revision, closure.currentObligationRevision);
+    same("authority withdrawal current revision", current.revision, closure.currentObligationRevision);
     same("authority withdrawal current digest witness", currentRow.obligation_digest, closure.currentObligationDigest);
-    same("authority withdrawal current status", current.obligation.status, closure.currentObligationStatus);
+    same("authority withdrawal current status", current.status, closure.currentObligationStatus);
     return { closure, closureDigest: row.closure_digest, causalChainVerified: true };
   }
 
