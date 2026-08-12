@@ -350,14 +350,26 @@ export function explainRuntime(selection = {}) {
     record.obligationReferences,
     [],
   );
+  const participationBasis = firstDefined(
+    authorization.participationBasis,
+    record.participationBasis,
+  );
+  const structuredObligationId = firstDefined(
+    authorization.applicability?.obligationId,
+    record.applicability?.obligationId,
+  );
   const actionDiverged = isRecorded(desiredAction) && isRecorded(authorizedAction) && desiredAction !== authorizedAction;
   const hasObligationReferences = Array.isArray(obligationReferences) && obligationReferences.length > 0;
-  const obligationText = hasObligationReferences
-    ? obligationReferences.map((reference) => `“${reference}”`).join(", ")
-    : "no visible obligation reference";
+  const hasStructuredObligation = participationBasis === "obligation_override" && isRecorded(structuredObligationId);
+  const hasObligationAuthority = hasStructuredObligation || hasObligationReferences;
+  const obligationText = hasStructuredObligation
+    ? `Structured Obligation ${structuredObligationId}`
+    : hasObligationReferences
+      ? obligationReferences.map((reference) => `“${reference}”`).join(", ")
+      : "no visible obligation reference";
   const lifecycleSummary = outcome.detail ?? "The world kernel returned a runtime record, but no lifecycle explanation was available.";
   const summary = actionDiverged
-    ? hasObligationReferences
+    ? hasObligationAuthority
       ? `The Thread's own recorded response was ${formatHumanValue(desiredAction)}, but the world kernel authorized ${formatHumanValue(authorizedAction)} under ${obligationText}. This is compelled participation, not consent. ${lifecycleSummary}`
       : `The Thread's own recorded response was ${formatHumanValue(desiredAction)}, but the world kernel authorized ${formatHumanValue(authorizedAction)} and this payload shows no obligation reference. Do not interpret the authorization as consent; inspect the exact JSON. ${lifecycleSummary}`
     : lifecycleSummary;
@@ -369,8 +381,8 @@ export function explainRuntime(selection = {}) {
   ];
   if (actionDiverged) {
     notes.unshift(
-      hasObligationReferences
-        ? `The Thread's recorded response (${formatHumanValue(desiredAction)}) was overridden by authorization (${formatHumanValue(authorizedAction)}) using obligation ${obligationText}. The authorization allowed execution; it did not convert compulsion into consent.`
+      hasObligationAuthority
+        ? `The Thread's recorded response (${formatHumanValue(desiredAction)}) was overridden by authorization (${formatHumanValue(authorizedAction)}) using ${obligationText}. The authorization allowed execution; it did not convert compulsion into consent.`
         : `The Thread's recorded response (${formatHumanValue(desiredAction)}) differs from the authorized action (${formatHumanValue(authorizedAction)}), but this payload exposes no obligation reference. Inspect the exact JSON before interpreting the episode.`,
     );
   }
@@ -387,7 +399,13 @@ export function explainRuntime(selection = {}) {
       fact("Thread's own response", desiredAction, "desiredAction"),
       fact("Dignity match", dignityBand, "dignityBand"),
       fact("Authorized action", authorizedAction, "authorizedAction"),
-      fact("Obligation override", actionDiverged ? obligationReferences : null, "obligationReferences"),
+      fact(
+        "Obligation override",
+        actionDiverged
+          ? (hasStructuredObligation ? structuredObligationId : obligationReferences)
+          : null,
+        "obligationReferences",
+      ),
       fact("Goal Guardian", guardianDecision, "guardianDecision"),
       fact("Started", firstDefined(session.startedAt, record.startedAt)),
       fact("Lease expires", lease.expiresAt),

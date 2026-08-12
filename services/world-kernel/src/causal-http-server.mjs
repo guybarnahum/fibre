@@ -8,6 +8,16 @@ import {
   IntegrityError,
 } from "./persistence-common.mjs";
 import { GuardianModelError } from "./guardian-model-adapter.mjs";
+import {
+  ApplicabilityConflictError,
+  ApplicabilityNotFoundError,
+  ApplicabilityRequestNotFoundError,
+} from "./obligation-applicability-store.mjs";
+import {
+  ObligationConflictError,
+  ObligationNotFoundError,
+  StaleObligationRevisionError,
+} from "./obligation-store.mjs";
 import { DEFAULT_MAX_HTTP_BODY_BYTES } from "./http-server.mjs";
 import { createExpressionWorldKernelHttpServer } from "./expression-http-server.mjs";
 import { PreM2CausalWorldKernelService } from "./causal-service.mjs";
@@ -88,6 +98,20 @@ function problem(value) {
   }
   if (value instanceof PrivateRequestConflictError) {
     return [409, "PRIVATE_REQUEST_CONFLICT", value.message, {}];
+  }
+  if (
+    value instanceof ApplicabilityConflictError ||
+    value instanceof ObligationConflictError ||
+    value instanceof StaleObligationRevisionError
+  ) {
+    return [409, "STRUCTURED_OBLIGATION_CONFLICT", value.message, {}];
+  }
+  if (
+    value instanceof ApplicabilityNotFoundError ||
+    value instanceof ApplicabilityRequestNotFoundError ||
+    value instanceof ObligationNotFoundError
+  ) {
+    return [404, "STRUCTURED_OBLIGATION_NOT_FOUND", value.message, {}];
   }
   if (value instanceof StorageBusyError) {
     return [503, "STORAGE_BUSY", "World storage is temporarily busy", { "retry-after": "1" }];

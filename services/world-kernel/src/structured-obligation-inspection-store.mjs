@@ -9,6 +9,7 @@ import {
   canonicalJson,
 } from "./persistence-common.mjs";
 import {
+  deterministicApplicability,
   normalizeStructuredObligation,
   structuredObligationDigest,
 } from "./obligation-domain.mjs";
@@ -282,6 +283,24 @@ export class StructuredObligationInspectionStore {
     }
     const history = rows.map(rowToObligationRevision);
     assertHistory(history, threadId, obligationId);
+    for (const revision of history) {
+      if (revision.obligation.status !== "discharged") continue;
+      const witnesses = this.#database.prepare(`
+        SELECT discharge_id,terminal_obligation_digest
+        FROM structured_obligation_discharges
+        WHERE thread_id=? AND obligation_id=? AND terminal_revision=?
+      `).all(threadId, obligationId, revision.obligation.revision);
+      if (witnesses.length !== 1) {
+        throw new IntegrityError(
+          `discharged obligation ${obligationId} revision ${revision.obligation.revision} must have exactly one discharge witness`,
+        );
+      }
+      same(
+        "discharged revision witness digest",
+        witnesses[0].terminal_obligation_digest,
+        revision.obligationDigest,
+      );
+    }
     return history;
   }
 
@@ -309,7 +328,8 @@ export class StructuredObligationInspectionStore {
       same("applicability request state", request.thread_state_hash, record.decision.threadStateHash);
       same("applicability request fingerprint", request.request_fingerprint, record.decision.requestFingerprint);
       const obligation = this.#database.prepare(`
-        SELECT obligation_digest FROM obligation_records
+        SELECT obligation_json,obligation_digest,legacy_source_digest
+        FROM obligation_records
         WHERE thread_id=? AND obligation_id=? AND revision=?
       `).get(
         record.decision.threadId,
@@ -319,7 +339,31 @@ export class StructuredObligationInspectionStore {
       if (obligation === undefined) {
         throw new IntegrityError(`applicability ${record.decision.applicabilityId} lost its obligation revision`);
       }
+      const persistedObligation = normalizeStructuredObligation(
+        parseJson(
+          `applicability ${record.decision.applicabilityId} obligation revision`,
+          obligation.obligation_json,
+        ),
+      );
+      same(
+        "applicability obligation content digest",
+        obligation.obligation_digest,
+        structuredObligationDigest(persistedObligation),
+      );
       same("applicability stored obligation digest", obligation.obligation_digest, record.decision.obligationDigest);
+      const legacyTombstoned = obligation.legacy_source_digest !== null &&
+        this.#database.prepare(`
+          SELECT 1 AS present FROM legacy_obligation_tombstones
+          WHERE thread_id=? AND legacy_reference_digest=?
+        `).get(record.decision.threadId, obligation.legacy_source_digest) !== undefined;
+      const derived = deterministicApplicability(persistedObligation, {
+        threadId: record.decision.threadId,
+        requestFingerprint: record.decision.requestFingerprint,
+        decidedAt: record.decision.decidedAt,
+        legacyTombstoned,
+      });
+      same("applicability derived result", record.decision.result, derived.result);
+      same("applicability derived reason", record.decision.reasonCode, derived.reasonCode);
       return record;
     });
   }
@@ -614,7 +658,7 @@ export class StructuredObligationInspectionStore {
       discharges: discharges.length,
       revisionChainsVerified: true,
       applicabilityBindingsVerified: true,
-      dischargeCausalChainsVerified: true,
+      dischargeCausalChainsVerified: discharges.every((item) => item.causalChainVerified),
     };
   }
 }

@@ -420,3 +420,20 @@ test("listCurrent resolves each aggregate through verified history", () =>
     assert.deepEqual(store.listHistory(fixture.threadId, OBLIGATION_B), [second]);
     store.close();
   }));
+
+test("public ObligationStore cannot author discharged terminal revisions", () =>
+  withDatabase((databasePath) => {
+    const store = openObligationStore(databasePath);
+    store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
+    assert.throws(
+      () => store.recordRevision(revision2({ status: "discharged" }), {
+        recordedAt: "2026-08-09T20:06:00.000Z",
+      }),
+      ObligationConflictError,
+    );
+    assert.equal(
+      store.getCurrentRevision(fixture.threadId, OBLIGATION_A).obligation.status,
+      "active",
+    );
+    store.close();
+  }));

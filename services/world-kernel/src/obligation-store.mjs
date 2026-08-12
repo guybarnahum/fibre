@@ -348,6 +348,11 @@ export class ObligationStore {
 
   recordRevision(candidate, { recordedAt = new Date().toISOString() } = {}) {
     const obligation = normalizeStructuredObligation(structuredClone(candidate));
+    if (obligation.status === "discharged") {
+      throw new ObligationConflictError(
+        "discharged status may only be authored by the atomic Structured Obligation freeze/discharge path",
+      );
+    }
     assertIsoTimestamp("recordedAt", recordedAt);
     if (Date.parse(recordedAt) < Date.parse(obligation.provenance.createdAt)) {
       throw new TypeError("recordedAt cannot precede obligation provenance.createdAt");

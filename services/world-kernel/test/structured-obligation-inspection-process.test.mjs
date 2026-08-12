@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { canonicalJson } from "../src/persistence-common.mjs";
+import { applicabilityDecisionDigest } from "../src/obligation-schema.mjs";
+import { openFreezeStore } from "../src/freeze-store.mjs";
 import { openObligationStore } from "../src/obligation-store.mjs";
 import { requestFingerprint } from "../src/private-participation.mjs";
 import {
@@ -197,6 +199,48 @@ async function createCompletedCompelledLife(processHandle, databasePath) {
   const sessionId = continued.body.runtime.session.sessionId;
   const applicabilityId = continued.body.applicability.decision.applicabilityId;
 
+  const disclosure = await json(
+    `${processHandle.baseUrl}/threads/${thread.threadId}/private/requests/${request.requestId}/disclosure`,
+    {
+      method: "POST",
+      headers: privateHeaders(true),
+      body: JSON.stringify({
+        operationId: "op_structured_inspection_disclosure",
+        authorizationId: continued.body.runtime.authorization.authorizationId,
+        strategy: {
+          mode: "full_candor",
+          communicatedPosture: "accept",
+          publicRationaleIntent: "State the compelled participation boundary without claiming consent.",
+          disclosedReasonCategories: ["recorded_obligation"],
+          withheldReasonCategories: ["private_feelings", "dignity_evidence"],
+          safeReferences: [],
+          privateRationale: "Preserve the Thread's private clarify stance while accurately disclosing compelled authority.",
+        },
+        causationId: "cause_structured_inspection_disclosure",
+        correlationId: "corr_structured_inspection",
+      }),
+    },
+  );
+  assert.equal(disclosure.response.status, 201);
+  assert.equal(disclosure.body.disclosure.strategy.participationBasis, "obligation_override");
+  assert.deepEqual(disclosure.body.disclosure.strategy.governingObligationReferences, []);
+
+  const response = await json(
+    `${processHandle.baseUrl}/threads/${thread.threadId}/private/requests/${request.requestId}/response`,
+    {
+      method: "POST",
+      headers: privateHeaders(true),
+      body: JSON.stringify({
+        operationId: "op_structured_inspection_response",
+        strategyId: disclosure.body.disclosure.strategy.strategyId,
+        causationId: "cause_structured_inspection_response",
+        correlationId: "corr_structured_inspection",
+      }),
+    },
+  );
+  assert.equal(response.response.status, 201);
+  assert.match(response.body.response.response.message, /recorded obligation/i);
+
   const actor = await json(`${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/actor`, {
     method: "POST",
     headers: privateHeaders(true),
@@ -303,6 +347,19 @@ test("F inspection is private, read-only, restart-stable, and cross-chain verifi
     assert.equal(admin.sourceReadOnly, true);
     assert.equal(admin.threads[0].integrity.dischargeCausalChainsVerified, true);
 
+    const freezeStore = openFreezeStore(databasePath);
+    try {
+      const freezeIntegrity = freezeStore.verifyFreezeIntegrity(
+        life.thread.threadId,
+        life.sessionId,
+      );
+      assert.ok(freezeIntegrity.structuredDischarge);
+      assert.match(freezeIntegrity.structuredDischarge.dischargeId, /^obd_/);
+      assert.equal(freezeIntegrity.structuredDischarge.terminalRevision, 2);
+    } finally {
+      freezeStore.close();
+    }
+
     const publicThread = await json(`${first.baseUrl}/threads/${life.thread.threadId}`);
     const publicEvents = await json(`${first.baseUrl}/threads/${life.thread.threadId}/events`);
     const publicHealth = await json(`${first.baseUrl}/health`);
@@ -390,6 +447,87 @@ test("F inspection detects coherently re-signed discharge tampering after append
     assert.throws(
       () => inspectStructuredObligations(databasePath, { threadId: life.thread.threadId }),
       /discharge freeze report digest does not match persisted evidence/,
+    );
+  } finally {
+    if (processHandle) await processHandle.stop().catch(() => {});
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F inspection rejects a discharged terminal revision whose causal witness is missing", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-structured-inspection-missing-witness-"));
+  const databasePath = join(directory, "world.sqlite");
+  let processHandle;
+  try {
+    processHandle = await startProcess(databasePath);
+    const life = await createCompletedCompelledLife(processHandle, databasePath);
+    await processHandle.stop();
+    processHandle = null;
+
+    const db = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
+    try {
+      db.exec("DROP TRIGGER structured_obligation_discharges_no_delete");
+      db.prepare("DELETE FROM structured_obligation_discharges WHERE session_id=?").run(life.sessionId);
+    } finally {
+      db.close();
+    }
+
+    processHandle = await startProcess(databasePath);
+    const inspected = await json(
+      `${processHandle.baseUrl}/threads/${life.thread.threadId}/private/obligations/integrity`,
+      { headers: privateHeaders() },
+    );
+    assert.equal(inspected.response.status, 503);
+    assert.equal(inspected.body.error.code, "INTEGRITY_FAILURE");
+    assert.throws(
+      () => inspectStructuredObligations(databasePath, { threadId: life.thread.threadId }),
+      /must have exactly one discharge witness/,
+    );
+  } finally {
+    if (processHandle) await processHandle.stop().catch(() => {});
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F inspection re-derives deterministic applicability instead of trusting a re-signed outcome", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-structured-inspection-applicability-tamper-"));
+  const databasePath = join(directory, "world.sqlite");
+  let processHandle;
+  try {
+    processHandle = await startProcess(databasePath);
+    const life = await createCompletedCompelledLife(processHandle, databasePath);
+    await processHandle.stop();
+    processHandle = null;
+
+    const db = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });
+    try {
+      db.exec("DROP TRIGGER obligation_applicability_decisions_no_update");
+      const row = db.prepare(
+        "SELECT decision_json FROM obligation_applicability_decisions WHERE applicability_id=?",
+      ).get(life.applicabilityId);
+      const forged = JSON.parse(row.decision_json);
+      forged.result = "does_not_apply";
+      forged.reasonCode = "request_binding_mismatch";
+      const digest = applicabilityDecisionDigest(forged);
+      db.prepare(`
+        UPDATE obligation_applicability_decisions
+        SET result=?,reason_code=?,decision_json=?,decision_digest=?
+        WHERE applicability_id=?
+      `).run(forged.result, forged.reasonCode, canonicalJson(forged), digest, life.applicabilityId);
+    } finally {
+      db.close();
+    }
+
+    processHandle = await startProcess(databasePath);
+    const inspected = await json(
+      `${processHandle.baseUrl}/threads/${life.thread.threadId}/private/obligations/integrity`,
+      { headers: privateHeaders() },
+    );
+    assert.equal(inspected.response.status, 503);
+    assert.equal(inspected.body.error.code, "INTEGRITY_FAILURE");
+    assert.throws(
+      () => inspectStructuredObligations(databasePath, { threadId: life.thread.threadId }),
+      /(?:discharge applicability digest|applicability derived result) does not match persisted evidence/,
     );
   } finally {
     if (processHandle) await processHandle.stop().catch(() => {});

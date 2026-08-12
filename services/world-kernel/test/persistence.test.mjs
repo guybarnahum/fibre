@@ -503,3 +503,17 @@ test("stored-data corruption is reported as IntegrityError", () =>
     );
     reopened.close();
   }));
+
+test("Thread snapshots reject unknown top-level obligation-shaped fields", () => {
+  withDatabase((databasePath) => {
+    const store = openWorldStore(databasePath);
+    const spoofed = structuredClone(fixture);
+    spoofed.obligations = [{
+      obligationId: `obl_${"f".repeat(64)}`,
+      status: "active",
+      terms: "spoofed public state",
+    }];
+    assert.throws(() => store.seedThread(spoofed), /thread\.obligations is not allowed/);
+    store.close();
+  });
+});
