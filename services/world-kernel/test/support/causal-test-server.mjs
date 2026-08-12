@@ -12,6 +12,7 @@ process.stdout.write(`${JSON.stringify({
   causalParticipationEnabled: true,
   structuredObligationAuthorityEnabled: runtime.structuredObligationAuthorityEnabled,
   structuredObligationDischargeEnabled: runtime.structuredObligationDischargeEnabled,
+  structuredAuthorityWithdrawalClosureEnabled: runtime.structuredAuthorityWithdrawalClosureEnabled,
   structuredObligationInspectionEnabled: runtime.structuredObligationInspectionEnabled,
   causalParticipationProfileVersion: 4,
   freezeProfileVersion: 2,

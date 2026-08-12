@@ -428,6 +428,41 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     assert.equal(runtime.body.runtime.session.status, "active");
     assert.equal(runtime.body.runtime.authorization.desiredAction, "clarify");
 
+    const closed = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      {
+        method: "POST",
+        headers: privateHeaders(),
+        body: JSON.stringify({
+          operationId: "op_causal_process_authority_withdrawal",
+          causationId: "cause_causal_process_authority_withdrawal",
+          correlationId: "corr_causal_process_revoked",
+        }),
+      },
+    );
+    assert.equal(closed.response.status, 201);
+    assert.equal(closed.body.closure.reasonCode, "governing_authority_withdrawn");
+    assert.equal(closed.body.closure.withdrawalCause, "superseded");
+    assert.equal(closed.body.closure.guardianDecision, "pass");
+
+    const closedRuntime = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(closedRuntime.response.status, 200);
+    assert.equal(closedRuntime.body.runtime.session.status, "aborted");
+    assert.equal(closedRuntime.body.runtime.lease.status, "released");
+    assert.equal(closedRuntime.body.runtime.lease.releaseReason, "governing_authority_withdrawn");
+    assert.equal(closedRuntime.body.runtime.authorization.desiredAction, "clarify");
+
+    const inspectedClosure = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(inspectedClosure.response.status, 200);
+    assert.equal(inspectedClosure.body.authorityWithdrawal.causalChainVerified, true);
+    assert.equal(inspectedClosure.body.authorityWithdrawal.closure.closureId, closed.body.closure.closureId);
+
     const currentStore = openObligationStore(databasePath);
     try {
       const current = currentStore.getCurrentRevision(thread.threadId, obligationId);
@@ -436,6 +471,36 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     } finally {
       currentStore.close();
     }
+
+    const closureDb = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+    try {
+      assert.equal(Number(closureDb.prepare(
+        "SELECT COUNT(*) AS count FROM structured_authority_withdrawal_closures WHERE session_id=?",
+      ).get(sessionId).count), 1);
+      assert.equal(Number(closureDb.prepare(
+        "SELECT COUNT(*) AS count FROM authorization_consumptions WHERE authorization_id=?",
+      ).get(authorizationId).count), 0);
+      assert.equal(Number(closureDb.prepare(
+        "SELECT COUNT(*) AS count FROM freeze_reports WHERE session_id=?",
+      ).get(sessionId).count), 0);
+    } finally {
+      closureDb.close();
+    }
+
+    await processHandle.stop();
+    processHandle = await startProcess(databasePath);
+    const restartedClosure = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(restartedClosure.response.status, 200);
+    assert.deepEqual(restartedClosure.body.authorityWithdrawal, inspectedClosure.body.authorityWithdrawal);
+    const restartedRuntime = await json(
+      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,
+      { headers: { "x-fibre-private-token": privateToken } },
+    );
+    assert.equal(restartedRuntime.body.runtime.session.status, "aborted");
+    assert.equal(restartedRuntime.body.runtime.authorization.desiredAction, "clarify");
   } finally {
     if (processHandle) await processHandle.stop().catch(() => {});
     rmSync(directory, { recursive: true, force: true });

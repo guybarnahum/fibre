@@ -25,6 +25,10 @@ import {
   structuredObligationDischargeId,
 } from "./structured-obligation-discharge.mjs";
 import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import {
+  normalizeStructuredAuthorityWithdrawal,
+  structuredAuthorityWithdrawalDigest,
+} from "./structured-authority-withdrawal.mjs";
 
 const OBLIGATION_ID_PATTERN = /^obl_[0-9a-f]{64}$/;
 
@@ -642,6 +646,67 @@ export class StructuredObligationInspectionStore {
       throw new IntegrityError(`runtime session ${sessionId} has multiple Structured Obligation discharges`);
     }
     return rows[0] ?? null;
+  }
+
+  getRuntimeAuthorityWithdrawal(threadId, sessionId) {
+    this.#requireThread(threadId);
+    assertId("sessionId", sessionId);
+    const row = this.#database.prepare(`
+      SELECT * FROM structured_authority_withdrawal_closures
+      WHERE thread_id=? AND session_id=?
+    `).get(threadId, sessionId);
+    if (row === undefined) return null;
+    const closure = normalizeStructuredAuthorityWithdrawal(
+      parseJson(`authority withdrawal ${row.closure_id}`, row.closure_json),
+    );
+    same("authority withdrawal canonical JSON", row.closure_json, canonicalJson(closure));
+    same("authority withdrawal digest", row.closure_digest, structuredAuthorityWithdrawalDigest(closure));
+    same("authority withdrawal Thread", row.thread_id, closure.threadId);
+    same("authority withdrawal session", row.session_id, closure.sessionId);
+    same("authority withdrawal reason", closure.reasonCode, "governing_authority_withdrawn");
+    const runtime = this.#database.prepare(`
+      SELECT s.status,l.status AS lease_status,l.release_reason,a.authorization_json,a.authorization_digest,
+        ar.actor_run_id,ar.output_digest,ga.audit_id,ga.audit_digest,ga.audit_json
+      FROM runtime_sessions s
+      JOIN thaw_leases l ON l.lease_id=s.lease_id
+      JOIN participation_authorizations a ON a.authorization_id=s.authorization_id
+      LEFT JOIN actor_runs ar ON ar.session_id=s.session_id
+      LEFT JOIN goal_guardian_audits ga ON ga.session_id=s.session_id
+      WHERE s.thread_id=? AND s.session_id=?
+    `).get(threadId, sessionId);
+    if (runtime === undefined) throw new IntegrityError(`authority withdrawal ${closure.closureId} lost runtime evidence`);
+    const authorization = parseJson(`authority withdrawal authorization ${closure.authorizationId}`, runtime.authorization_json);
+    same("authority withdrawal authorization digest", runtime.authorization_digest, authorizationDigest(authorization));
+    same("authority withdrawal authorization ID", authorization.authorizationId, closure.authorizationId);
+    same("authority withdrawal participation basis", authorization.participationBasis, "obligation_override");
+    same("authority withdrawal applicability", authorization.applicability.applicabilityId, closure.applicabilityId);
+    same("authority withdrawal obligation", authorization.applicability.obligationId, closure.obligationId);
+    same("authority withdrawal Actor", runtime.actor_run_id, closure.actorRunId);
+    same("authority withdrawal Actor digest", runtime.output_digest, closure.actorOutputDigest);
+    same("authority withdrawal Guardian", runtime.audit_id, closure.guardianAuditId);
+    same("authority withdrawal Guardian digest", runtime.audit_digest, closure.guardianAuditDigest);
+    const audit = parseJson(`authority withdrawal Guardian ${closure.guardianAuditId}`, runtime.audit_json);
+    same("authority withdrawal Guardian decision", audit.decision, "pass");
+    same("authority withdrawal runtime status", runtime.status, "aborted");
+    same("authority withdrawal lease status", runtime.lease_status, "released");
+    same("authority withdrawal lease reason", runtime.release_reason, "governing_authority_withdrawn");
+    if (this.#database.prepare("SELECT 1 AS present FROM authorization_consumptions WHERE authorization_id=?").get(closure.authorizationId) !== undefined) {
+      throw new IntegrityError(`authority withdrawal ${closure.closureId} unexpectedly consumed authorization`);
+    }
+    if (this.#database.prepare("SELECT 1 AS present FROM freeze_reports WHERE session_id=?").get(sessionId) !== undefined) {
+      throw new IntegrityError(`authority withdrawal ${closure.closureId} unexpectedly has freeze evidence`);
+    }
+    const currentRow = this.#database.prepare(`
+      SELECT obligation_json,obligation_digest FROM obligation_records
+      WHERE thread_id=? AND obligation_id=? ORDER BY revision DESC LIMIT 1
+    `).get(threadId, closure.obligationId);
+    if (currentRow === undefined) throw new IntegrityError(`authority withdrawal ${closure.closureId} lost current obligation`);
+    const current = normalizeStructuredObligation(parseJson("authority withdrawal current obligation", currentRow.obligation_json));
+    same("authority withdrawal current obligation digest", currentRow.obligation_digest, structuredObligationDigest(current));
+    same("authority withdrawal current revision", current.obligation.revision, closure.currentObligationRevision);
+    same("authority withdrawal current digest witness", currentRow.obligation_digest, closure.currentObligationDigest);
+    same("authority withdrawal current status", current.obligation.status, closure.currentObligationStatus);
+    return { closure, closureDigest: row.closure_digest, causalChainVerified: true };
   }
 
   verifyThread(threadId) {

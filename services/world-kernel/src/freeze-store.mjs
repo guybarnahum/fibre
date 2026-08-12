@@ -543,25 +543,25 @@ export class FreezeStore {
         record.reportDigest,
         record.completedAt,
       );
-      this.#database.prepare(
+      const runtimeCompletion = this.#database.prepare(
         "UPDATE runtime_sessions SET status='completed',completed_at=? WHERE session_id=? AND status='active'",
       ).run(record.completedAt, record.sessionId);
-      this.#database.prepare(`
+      const leaseRelease = this.#database.prepare(`
         UPDATE thaw_leases SET status='released',released_at=?,release_reason='freeze_completed'
         WHERE lease_id=? AND status='active'
       `).run(record.completedAt, record.leaseId);
+      if (Number(runtimeCompletion.changes) !== 1 || Number(leaseRelease.changes) !== 1) {
+        throw new FreezeStateChangedError(`Runtime ${record.sessionId} changed during freeze completion`);
+      }
 
       persistStructuredObligationDischarge(this.#database, structuredDischarge);
-
+      const persistedFreeze = this.getFreeze(record.threadId, record.sessionId);
       this.#database.exec("COMMIT");
+      return { freeze: persistedFreeze, idempotent: false };
     } catch (error) {
       safeRollback(this.#database);
       throw translateStorageError(error);
     }
-    return {
-      freeze: this.getFreeze(record.threadId, record.sessionId),
-      idempotent: false,
-    };
   }
 
   verifyFreezeIntegrity(threadId, sessionId) {

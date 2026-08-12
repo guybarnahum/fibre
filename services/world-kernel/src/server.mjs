@@ -10,6 +10,7 @@ import { openCausalContextStore } from "./causal-context-store.mjs";
 import { openSemanticStateStore } from "./semantic-state-store.mjs";
 import { openGuardianCognitionStore } from "./guardian-cognition-store.mjs";
 import { openObligationApplicabilityStore } from "./obligation-applicability-store.mjs";
+import { openStructuredAuthorityWithdrawalStore } from "./structured-authority-withdrawal-store.mjs";
 import { openStructuredObligationInspectionStore } from "./structured-obligation-inspection-store.mjs";
 import { guardianModelAdapterFromEnvironment } from "./guardian-model-adapter.mjs";
 import { StructuredObligationCausalWorldKernelService } from "./structured-causal-service.mjs";
@@ -44,6 +45,9 @@ export async function startWorldKernelFromEnvironment(
   if (Object.hasOwn(serviceOptions, "inspectionStore")) {
     throw new TypeError("canonical Structured Obligation inspection is world-kernel owned");
   }
+  if (Object.hasOwn(serviceOptions, "authorityWithdrawalStore")) {
+    throw new TypeError("canonical Structured Obligation authority-withdrawal storage is world-kernel owned");
+  }
   const databasePath = resolve(environment.FIBRE_WORLD_DATABASE ?? ".fibre/world.sqlite");
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
@@ -60,6 +64,7 @@ export async function startWorldKernelFromEnvironment(
   let semanticStateStore;
   let guardianCognitionStore;
   let applicabilityStore;
+  let authorityWithdrawalStore;
   let inspectionStore;
   try {
     runtimeStore = openRuntimeStore(databasePath);
@@ -70,10 +75,12 @@ export async function startWorldKernelFromEnvironment(
     semanticStateStore = openSemanticStateStore(databasePath);
     guardianCognitionStore = openGuardianCognitionStore(databasePath);
     applicabilityStore = openObligationApplicabilityStore(databasePath);
+    authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);
     // Open only after schema-owning stores have completed their additive repair.
     inspectionStore = openStructuredObligationInspectionStore(databasePath);
   } catch (error) {
     inspectionStore?.close();
+    authorityWithdrawalStore?.close();
     applicabilityStore?.close();
     guardianCognitionStore?.close();
     semanticStateStore?.close();
@@ -101,6 +108,7 @@ export async function startWorldKernelFromEnvironment(
       guardianCognitionStore,
       guardianModelAdapter,
       applicabilityStore,
+      authorityWithdrawalStore,
     },
   );
   const server = createStructuredObligationInspectionHttpServer({
@@ -132,6 +140,7 @@ export async function startWorldKernelFromEnvironment(
         await closeWorldKernelHttpServer(server);
       } finally {
         inspectionStore.close();
+        authorityWithdrawalStore.close();
         applicabilityStore.close();
         guardianCognitionStore.close();
         semanticStateStore.close();
@@ -154,6 +163,7 @@ export async function startWorldKernelFromEnvironment(
       semanticStateStore,
       guardianCognitionStore,
       applicabilityStore,
+      authorityWithdrawalStore,
       inspectionStore,
       service,
       address,
@@ -163,6 +173,7 @@ export async function startWorldKernelFromEnvironment(
       causalParticipationEnabled: true,
       structuredObligationAuthorityEnabled: true,
       structuredObligationDischargeEnabled: true,
+      structuredAuthorityWithdrawalClosureEnabled: true,
       structuredObligationInspectionEnabled: true,
       guardianProvider: guardianModelAdapter.provider ?? "configured_adapter",
       guardianModelId: guardianModelAdapter.modelId ?? "configured_model",
@@ -170,6 +181,7 @@ export async function startWorldKernelFromEnvironment(
     };
   } catch (error) {
     inspectionStore.close();
+    authorityWithdrawalStore.close();
     applicabilityStore.close();
     guardianCognitionStore.close();
     semanticStateStore.close();
@@ -195,6 +207,7 @@ async function main() {
     causalParticipationEnabled: true,
     structuredObligationAuthorityEnabled: true,
     structuredObligationDischargeEnabled: true,
+    structuredAuthorityWithdrawalClosureEnabled: true,
     structuredObligationInspectionEnabled: true,
     runtimeProfileVersion: 1,
     freezeProfileVersion: 2,

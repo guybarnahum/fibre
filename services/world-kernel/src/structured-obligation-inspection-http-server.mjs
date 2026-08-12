@@ -91,6 +91,9 @@ function inspectionRoute(target) {
   if (parts.length === 6 && parts[3] === "runtime" && parts[5] === "obligation-discharge") {
     return { kind: "runtime_discharge", threadId, sessionId: parts[4] };
   }
+  if (parts.length === 6 && parts[3] === "runtime" && parts[5] === "authority-withdrawal") {
+    return { kind: "runtime_authority_withdrawal", threadId, sessionId: parts[4] };
+  }
   return null;
 }
 
@@ -154,6 +157,7 @@ export function createStructuredObligationInspectionHttpServer({
     "inspectObligation",
     "listRequestApplicability",
     "getRuntimeDischarge",
+    "getRuntimeAuthorityWithdrawal",
     "verifyThread",
   ]) {
     if (typeof inspectionStore[method] !== "function") {
@@ -173,6 +177,9 @@ export function createStructuredObligationInspectionHttpServer({
   server.on("request", async (request, response) => {
     const route = inspectionRoute(request.url);
     if (route === null) return baseHandler(request, response);
+    if (route.kind === "runtime_authority_withdrawal" && request.method !== "GET") {
+      return baseHandler(request, response);
+    }
     const id = requestId(request.headers["x-request-id"]);
     try {
       if (!loopbackHost(request.headers.host)) {
@@ -214,6 +221,13 @@ export function createStructuredObligationInspectionHttpServer({
         return writeJson(response, 200, {
           discharge: inspectPersistedEvidence(
             () => inspectionStore.getRuntimeDischarge(route.threadId, route.sessionId),
+          ),
+        }, id);
+      }
+      if (route.kind === "runtime_authority_withdrawal") {
+        return writeJson(response, 200, {
+          authorityWithdrawal: inspectPersistedEvidence(
+            () => inspectionStore.getRuntimeAuthorityWithdrawal(route.threadId, route.sessionId),
           ),
         }, id);
       }

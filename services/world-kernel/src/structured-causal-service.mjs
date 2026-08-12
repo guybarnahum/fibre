@@ -39,6 +39,7 @@ export class StructuredObligationCausalWorldKernelService extends PreM2CausalWor
   #runtimeStore;
   #causalContextStore;
   #applicabilityStore;
+  #authorityWithdrawalStore;
   #structuredClock;
   #structuredLeaseDurationMs;
 
@@ -69,6 +70,17 @@ export class StructuredObligationCausalWorldKernelService extends PreM2CausalWor
         throw new TypeError(`applicabilityStore.${method} is required for Structured Obligation authority`);
       }
     }
+    const authorityWithdrawalStore = options.authorityWithdrawalStore ?? null;
+    if (authorityWithdrawalStore !== null) {
+      if (typeof authorityWithdrawalStore !== "object") {
+        throw new TypeError("authorityWithdrawalStore must be an object when provided");
+      }
+      for (const method of ["closeWithdrawnAuthority", "getClosure"]) {
+        if (typeof authorityWithdrawalStore[method] !== "function") {
+          throw new TypeError(`authorityWithdrawalStore.${method} is required when authority-withdrawal closure is enabled`);
+        }
+      }
+    }
     const clock = options.clock ?? (() => new Date());
     if (typeof clock !== "function") {
       throw new TypeError("structured causal participation clock must be a function");
@@ -81,6 +93,7 @@ export class StructuredObligationCausalWorldKernelService extends PreM2CausalWor
     this.#runtimeStore = runtimeStore;
     this.#causalContextStore = causalContextStore;
     this.#applicabilityStore = applicabilityStore;
+    this.#authorityWithdrawalStore = authorityWithdrawalStore;
     this.#structuredClock = clock;
     this.#structuredLeaseDurationMs = leaseDurationMs;
   }
@@ -104,6 +117,7 @@ export class StructuredObligationCausalWorldKernelService extends PreM2CausalWor
       obligationOverrideAuthority: "fibre_structured_applicability",
       obligationNominationAuthority: "attention_only",
       obligationConsentSemantics: "compulsion_preserves_private_stance",
+      authorityWithdrawalClosure: "executed_episode_preserved_without_freeze",
     };
   }
 
@@ -214,6 +228,30 @@ export class StructuredObligationCausalWorldKernelService extends PreM2CausalWor
       ...(applicability === null ? {} : { applicability }),
       ...result,
     };
+  }
+
+  closeWithdrawnAuthority(threadId, sessionId, submission) {
+    assertId("threadId", threadId);
+    assertId("sessionId", sessionId);
+    assertPlainObject("authority withdrawal request", submission);
+    assertExactKeys("authority withdrawal request", submission, [
+      "operationId", "causationId", "correlationId",
+    ]);
+    assertId("authority withdrawal operationId", submission.operationId);
+    assertId("authority withdrawal causationId", submission.causationId);
+    const correlationId = submission.correlationId ?? submission.causationId;
+    assertId("authority withdrawal correlationId", correlationId);
+    if (this.#authorityWithdrawalStore === null) {
+      throw new TypeError("authority-withdrawal closure is not configured on this service instance");
+    }
+    return this.#authorityWithdrawalStore.closeWithdrawnAuthority({
+      operationId: submission.operationId,
+      threadId,
+      sessionId,
+      closedAt: this.#now(),
+      causationId: submission.causationId,
+      correlationId,
+    });
   }
 
   continueParticipation(threadId, requestId, submission) {
