@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-10
+last-reviewed: 2026-08-12
 canonical: true
 ---
 
@@ -112,6 +112,8 @@ A persisted `applies` decision is not a bearer capability. Runtime insertion ind
 **E is the lifecycle cutover:** successful one-shot compelled completion revalidates authority and atomically appends an immediate terminal `discharged` revision plus an immutable causal discharge witness. Failure rolls back freeze, authorization consumption, runtime completion, and discharge together. Historical M1 prose-discharge records retain their original semantics.
 
 **F is the inspection/replay closure:** a shared `readOnly + query_only` verifier checks the complete obligation/applicability/authorization/consumption/runtime/freeze/event/discharge chain. It is exposed through private GET-only world-kernel routes and `npm run inspect:obligations`; exact private inspection survives process restart; public Thread/event/health routes reveal no private obligation evidence; and coherently re-signed discharge-row tampering still fails cross-chain verification.
+
+**Hostile-review closure is also complete on the Draft branch.** It forbids direct authoring of `discharged`, verifies terminal discharge in both directions, re-derives deterministic applicability during inspection, moves disclosure/editor presentation to structured `participationBasis` + applicability, binds structured discharge into freeze integrity, exact-keys public Thread snapshots, maps expected obligation conflicts to bounded 4xx responses, and adds append-only `governing_authority_withdrawn` closure for an executed/Guardian-passed compelled runtime whose authority becomes stale before freeze. That interrupted closure consumes no authorization and discharges no obligation; it preserves the episode as durable inspectable history.
 
 #35 remains primarily authority integrity and social consequence. **A-F implementation completion does not itself award personhood-score movement.** PR review/merge is still required before #36 starts.
 

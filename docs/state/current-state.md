@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-10
+last-reviewed: 2026-08-12
 canonical: true
 ---
 
@@ -255,6 +255,10 @@ Important closure properties:
 
 Structured inspection profile v1 verifies obligation revision history, persisted request/applicability witnesses, authorization, authorization consumption, runtime completion, freeze report/event, terminal obligation revision, and immutable discharge witness as one coherent chain.
 
+A hostile post-A-F review found three blocking downstream inconsistencies and several important hardening gaps while independently confirming the core authority model held. The branch now closes those findings: public `ObligationStore` cannot mint `discharged`; terminal discharge verification is bidirectional; applicability is re-derived during read-only inspection; disclosure/editor surfaces consume structured `participationBasis` and applicability instead of retired prose references; freeze integrity understands structured discharge; expected obligation conflicts are bounded 4xx; public Thread snapshots are exact-keyed; and stale authority after Actor execution/Guardian pass closes through append-only `governing_authority_withdrawn` evidence rather than leaving a permanent active runtime or falsifying a Guardian reject.
+
+The authority-withdrawal closure records an interrupted episode without freeze, authorization consumption, or obligation discharge. It is rejected while authority remains live, exact retries are idempotent, conflicting reuse is rejected, and private stance plus closure evidence survive restart inspection.
+
 The completed #35 implementation does **not** move the pre-M2 personhood score. It closes authority integrity, social consequence, and inspectability needed by later relationship/institution/economic systems without manufacturing rubric credit.
 
 ## Model runtime
@@ -287,7 +291,7 @@ Economic consequence          0
 Standing semantic gate        GREEN
 PR #33 semantic claim         EARNED
 PR #34 history claim          EARNED / SEALED
-PR #35 structured obligation  IMPLEMENTATION COMPLETE / DRAFT REVIEW PENDING
+PR #35 structured obligation  IMPLEMENTATION + HOSTILE-REVIEW FIXES COMPLETE / DRAFT RE-REVIEW PENDING
 ```
 
 The awarded movement remains intentionally conservative:

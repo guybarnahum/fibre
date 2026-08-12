@@ -1,7 +1,7 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-12
 canonical: true
 ---
 
@@ -46,9 +46,11 @@ Structured Obligation v1 additive tables introduced during PR #35:
 
 - `obligation_records` stores append-only Structured Obligation revisions with stable obligation identity, status, scope/terms, provenance, standing/terms visibility, effective/expiry state, and canonical digests;
 - `obligation_applicability_decisions` stores Fibre-owned request-bound applicability decisions separately from the obligation itself;
-- `legacy_obligation_tombstones` preserves deterministic evidence that an exact pre-#35 obligation reference was already consumed and therefore cannot be reactivated through migration.
+- `legacy_obligation_tombstones` preserves deterministic evidence that an exact pre-#35 obligation reference was already consumed and therefore cannot be reactivated through migration;
+- `structured_obligation_discharges` binds a successful one-shot compelled freeze to its exact prior and terminal obligation revisions plus applicability, authorization, consumption, runtime, freeze-report, and event witnesses;
+- `structured_authority_withdrawal_closures` preserves an executed-but-interrupted compelled episode when its governing authority becomes stale after Actor execution and Guardian pass but before freeze.
 
-The first #35 storage slice is deliberately **non-authoritative**: adding these tables does not yet alter the legacy runtime's `obligationReferences` behavior. Authority moves only when the later #35 cutover binds persisted Fibre applicability into Participation Authorization and freeze/discharge.
+The additive tables share schema version 4, but the canonical runtime authority is no longer the historical exact-prose path: Structured Obligation authority now requires Fibre-owned persisted applicability plus current-authority revalidation. Historical M1 prose evidence retains its original replay semantics.
 
 Schema migrations run inside one immediate transaction when `PRAGMA user_version` advances. Schema versions 1 through 3 migrate to version 4. Version 4 rebuilds the event and command tables when necessary so the immutable event vocabulary can accept `THREAD_FROZEN` without rewriting existing event content. Opening an existing version-4 file also reruns idempotent schema creation so tables and triggers added by a later version-4 build are restored. PR #35's first additive obligation slice uses this established same-version repair mechanism; opening v4 also idempotently derives spent-authority tombstones from existing `authorization_consumptions`. No active Structured Obligation is inferred from `currentState.unresolvedIntentions`.
 
@@ -60,9 +62,11 @@ Freeze uses a third interface over the same SQLite file because it owns a wider 
 
 Rejected-runtime closure uses a fourth interface over the same file. One immediate abandonment transaction rereads the active session, lease, authorization, and persisted Guardian reject, then appends the abandonment record, aborts the session, and releases the lease without advancing Thread life state or consuming authority.
 
-The separate WorldStore, RuntimeStore, FreezeStore, and LifecycleHardeningStore handles preserve interface boundaries, not independent consistency domains. They use WAL and bounded busy timeouts. Cross-store invariants are never trusted from a prior application read; the transaction that writes the dependent records rereads every version, hash, ID, digest, lifecycle, and authorization witness it relies on.
+Structured authority-withdrawal closure uses a separate bounded interface over the same file. It applies only to a structured compelled runtime with Actor evidence and Goal Guardian pass when the exact governing authority has become superseded, non-active, expired, or legacy-tombstoned before freeze. One immediate transaction appends the immutable withdrawal closure, aborts the runtime, and releases the lease with `governing_authority_withdrawn`; it records no freeze, consumes no authorization, and does not discharge the obligation.
 
-Events, commands, requests, appraisals, private stances, authorizations, Actor runs, Guardian audits, runtime abandonments, authorization consumptions, freeze reports, accepted memory rows, obligation revisions, applicability decisions, and legacy-obligation tombstones are append-only. `thaw_leases` and `runtime_sessions` are mutable only for explicit lifecycle transitions. Triggers preserve immutable IDs, bindings, context, digests, and start times and permit only bounded completion, release, expiration, or abort metadata. Neither table permits deletion.
+The separate WorldStore, RuntimeStore, FreezeStore, LifecycleHardeningStore, Structured Obligation stores, and authority-withdrawal store preserve interface boundaries, not independent consistency domains. They use WAL and bounded busy timeouts. Cross-store invariants are never trusted from a prior application read; the transaction that writes the dependent records rereads every version, hash, ID, digest, lifecycle, and authorization witness it relies on.
+
+Events, commands, requests, appraisals, private stances, authorizations, Actor runs, Guardian audits, runtime abandonments, structured authority-withdrawal closures, authorization consumptions, freeze reports, accepted memory rows, obligation revisions, applicability decisions, structured obligation discharges, and legacy-obligation tombstones are append-only. `thaw_leases` and `runtime_sessions` are mutable only for explicit lifecycle transitions. Triggers preserve immutable IDs, bindings, context, digests, and start times and permit only bounded completion, release, expiration, or abort metadata. Neither table permits deletion.
 
 Successful obligation-mediated freeze is single-use in historical M1. The consumption record and `THREAD_FROZEN` event preserve the exact unresolved-intention reference, while the projection removes it from `currentState.unresolvedIntentions`. Historical M1 obligation identity is exact UTF-8 prose equality; whitespace, case, or Unicode-normalization differences are different provisional identities. The historical service requires any such reference to be present exactly in the Thread's current unresolved intentions.
 

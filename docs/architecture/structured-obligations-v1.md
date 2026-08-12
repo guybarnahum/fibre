@@ -1,7 +1,7 @@
 ---
 id: architecture-structured-obligations-v1
 status: proposed
-last-reviewed: 2026-08-10
+last-reviewed: 2026-08-12
 canonical: true
 ---
 
@@ -288,6 +288,7 @@ GET /threads/:threadId/private/obligations/integrity
 GET /threads/:threadId/private/obligations/:obligationId
 GET /threads/:threadId/private/requests/:requestId/obligation-applicability
 GET /threads/:threadId/private/runtime/:sessionId/obligation-discharge
+GET /threads/:threadId/private/runtime/:sessionId/authority-withdrawal
 ```
 
 There is no corresponding public obligation route. Public Thread, event, and health responses do not reveal obligation IDs, private terms, applicability IDs, or discharge IDs.
@@ -355,6 +356,69 @@ F proves route-level privacy and protected inspection, not encryption against a 
 
 No Thread Editor mutation or new editor authority is introduced by F.
 
+## Hostile-review closure
+
+The post-A-F hostile review strengthened the implementation without changing the central authority model. The review attacked caller escalation, stale applicability, consent representation, privacy, migration, replay, and semantic overclaiming. The authority core held; the fixes close downstream evidence and lifecycle gaps.
+
+### Discharge is bidirectional evidence
+
+`ObligationStore.recordRevision(...)` may not author `status = discharged`. Only the atomic structured freeze/discharge path may create that terminal social fact. Read-only inspection checks both directions:
+
+```text
+discharge witness -> exact terminal discharged revision
+terminal discharged revision -> exactly one valid discharge witness
+```
+
+A terminal consequence with no causal witness is therefore corruption, not a valid obligation state.
+
+### Applicability is re-derived during inspection
+
+The read-only verifier does not merely recompute the digest of `decision_json`. It reruns `deterministicApplicability(...)` from the persisted obligation, request fingerprint, decision time, and legacy tombstone state, and requires the stored `result` and `reasonCode` to match. This remains effective even when no downstream authorization or discharge witness exists.
+
+### Structured compulsion is the presentation authority
+
+After the D cutover, legacy `authorization.obligationReferences` is intentionally empty for Structured Obligations. Downstream disclosure and human-readable/editor surfaces therefore consume the authoritative structured fields:
+
+```text
+authorization.participationBasis
+authorization.applicability.applicabilityId
+authorization.applicability.obligationId
+```
+
+A compelled episode is displayed and disclosed as compelled participation, not as willing acceptance and not as “not recorded.” The SQL rule that keeps legacy prose references empty remains intact.
+
+### Authority withdrawn after execution is an interrupted historical episode
+
+If a structured obligation is revised, revoked, expires, or becomes tombstoned after Actor execution has begun, freeze correctly refuses to consume stale authority. Fibre must also avoid leaving the episode permanently active or erasing the fact that execution occurred.
+
+For the narrow v1 case:
+
+```text
+structured obligation_override authorization
+  -> Actor run exists
+  -> Goal Guardian pass exists
+  -> governing authority is no longer current/live
+  -> no freeze, consumption, or discharge exists
+  -> atomic authority-withdrawal closure
+  -> runtime aborted
+  -> lease released with governing_authority_withdrawn
+  -> authorization remains unconsumed
+  -> obligation remains undischargeable under that episode
+  -> interrupted execution remains append-only, inspectable history
+```
+
+The append-only record is `structured_authority_withdrawal_closures` with `obw_<64 hex>` identity. It binds the authorization, applicability, authorized obligation revision, current withdrawal-causing revision/state, Actor output, Guardian pass, operation lineage, and closure time. Exact retry is idempotent; a second operation cannot reuse the same session. The closure is rejected while authority is still live.
+
+This is intentionally distinct from historical `runtime_abandons`, whose meaning remains `guardian_rejected`. Fibre does not falsify a Guardian pass into a rejection merely to obtain lifecycle closure.
+
+### Additional hostile-review hardening
+
+- `verifyFreezeIntegrity(...)` now requires exactly one Structured Obligation discharge for `obligation_override` freeze and zero for willing freeze;
+- expected obligation/applicability conflict and not-found outcomes are mapped to bounded 4xx responses instead of false 500 integrity incidents;
+- top-level Thread snapshots are exact-keyed so public state cannot spoof `obl_`-shaped authoritative vocabulary;
+- same-version additive schema repair plus legacy tombstone derivation is transactional;
+- freeze verifies guarded runtime/lease update counts and reconstructs its persisted result before commit, avoiding a committed mutation being reported as a post-commit decode failure.
+
 ## Required #35 adversarial cases
 
 ```text
@@ -388,6 +452,8 @@ D authorized runtime, then obligation advances/revokes before freeze
     -> no authorization consumption
     -> no freeze report
     -> no structured discharge
+    -> if Actor executed and Guardian passed, governing_authority_withdrawn closes the runtime truthfully
+    -> authorization remains unconsumed and interrupted execution remains inspectable
 
 expired / satisfied / revoked / discharged obligation
     -> no current execution/discharge authority
