@@ -1,0 +1,715 @@
+name: pr35-i3-closure
+
+on:
+  push:
+    branches:
+      - agent/structured-obligation-v1
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ github.event.head_commit.message == 'Stage PR35 authority-withdrawal closure fix' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/structured-obligation-v1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Implement truthful authority-withdrawal closure
+        shell: bash
+        run: |
+          cat > services/world-kernel/src/structured-authority-withdrawal.mjs <<'EOF'
+          import {
+            assertExactKeys,
+            assertId,
+            assertIsoTimestamp,
+            assertPlainObject,
+            canonicalJson,
+            sha256,
+          } from "./persistence-common.mjs";
+
+          const SHA256 = /^sha256:[0-9a-f]{64}$/;
+          const CLOSURE_ID = /^obw_[0-9a-f]{64}$/;
+          const OBLIGATION_ID = /^obl_[0-9a-f]{64}$/;
+          const STATUS = new Set(["active", "satisfied", "expired", "revoked", "discharged"]);
+          const CAUSE = new Set(["superseded", "status_changed", "expired", "legacy_tombstoned"]);
+
+          function digest(name, value) {
+            if (typeof value !== "string" || !SHA256.test(value)) {
+              throw new TypeError(`${name} must be a SHA-256 digest`);
+            }
+          }
+
+          export const STRUCTURED_AUTHORITY_WITHDRAWAL_REASON = "governing_authority_withdrawn";
+
+          export function normalizeStructuredAuthorityWithdrawal(value) {
+            assertPlainObject("Structured authority withdrawal", value);
+            assertExactKeys("Structured authority withdrawal", value, [
+              "closureId", "operationId", "threadId", "sessionId", "requestId",
+              "authorizationId", "authorizationDigest", "applicabilityId",
+              "applicabilityDecisionDigest", "obligationId", "authorizedObligationRevision",
+              "authorizedObligationDigest", "currentObligationRevision", "currentObligationDigest",
+              "currentObligationStatus", "actorRunId", "actorOutputDigest", "guardianAuditId",
+              "guardianAuditDigest", "guardianDecision", "withdrawalCause", "reasonCode",
+              "closedAt", "causationId", "correlationId",
+            ]);
+            if (typeof value.closureId !== "string" || !CLOSURE_ID.test(value.closureId)) {
+              throw new TypeError("closureId must be obw_ followed by 64 lowercase hex characters");
+            }
+            for (const key of [
+              "operationId", "threadId", "sessionId", "requestId", "authorizationId",
+              "applicabilityId", "actorRunId", "guardianAuditId", "causationId", "correlationId",
+            ]) assertId(`Structured authority withdrawal ${key}`, value[key]);
+            if (typeof value.obligationId !== "string" || !OBLIGATION_ID.test(value.obligationId)) {
+              throw new TypeError("Structured authority withdrawal obligationId is invalid");
+            }
+            for (const key of ["authorizedObligationRevision", "currentObligationRevision"]) {
+              if (!Number.isSafeInteger(value[key]) || value[key] < 1) {
+                throw new TypeError(`Structured authority withdrawal ${key} must be a positive integer`);
+              }
+            }
+            for (const key of [
+              "authorizationDigest", "applicabilityDecisionDigest", "authorizedObligationDigest",
+              "currentObligationDigest", "actorOutputDigest", "guardianAuditDigest",
+            ]) digest(`Structured authority withdrawal ${key}`, value[key]);
+            if (!STATUS.has(value.currentObligationStatus)) {
+              throw new TypeError("Structured authority withdrawal currentObligationStatus is invalid");
+            }
+            if (value.guardianDecision !== "pass") {
+              throw new TypeError("Structured authority withdrawal requires Goal Guardian pass");
+            }
+            if (!CAUSE.has(value.withdrawalCause)) {
+              throw new TypeError("Structured authority withdrawal withdrawalCause is invalid");
+            }
+            if (value.reasonCode !== STRUCTURED_AUTHORITY_WITHDRAWAL_REASON) {
+              throw new TypeError("Structured authority withdrawal reasonCode is invalid");
+            }
+            assertIsoTimestamp("Structured authority withdrawal closedAt", value.closedAt);
+            return structuredClone(value);
+          }
+
+          export function structuredAuthorityWithdrawalDigest(value) {
+            return sha256(canonicalJson(normalizeStructuredAuthorityWithdrawal(value)));
+          }
+          EOF
+
+          cat > services/world-kernel/src/structured-authority-withdrawal-schema.mjs <<'EOF'
+          export function createStructuredAuthorityWithdrawalTables(database) {
+            database.exec(`
+              CREATE TABLE IF NOT EXISTS structured_authority_withdrawal_closures (
+                closure_id TEXT PRIMARY KEY CHECK (length(closure_id)=68 AND substr(closure_id,1,4)='obw_' AND substr(closure_id,5) NOT GLOB '*[^0-9a-f]*'),
+                operation_id TEXT NOT NULL UNIQUE,
+                operation_digest TEXT NOT NULL CHECK (length(operation_digest)=71 AND substr(operation_digest,1,7)='sha256:'),
+                thread_id TEXT NOT NULL,
+                session_id TEXT NOT NULL UNIQUE,
+                request_id TEXT NOT NULL,
+                authorization_id TEXT NOT NULL UNIQUE,
+                authorization_digest TEXT NOT NULL CHECK (length(authorization_digest)=71 AND substr(authorization_digest,1,7)='sha256:'),
+                applicability_id TEXT NOT NULL UNIQUE,
+                applicability_decision_digest TEXT NOT NULL CHECK (length(applicability_decision_digest)=71 AND substr(applicability_decision_digest,1,7)='sha256:'),
+                obligation_id TEXT NOT NULL,
+                authorized_obligation_revision INTEGER NOT NULL CHECK (authorized_obligation_revision>=1),
+                authorized_obligation_digest TEXT NOT NULL CHECK (length(authorized_obligation_digest)=71 AND substr(authorized_obligation_digest,1,7)='sha256:'),
+                current_obligation_revision INTEGER NOT NULL CHECK (current_obligation_revision>=1),
+                current_obligation_digest TEXT NOT NULL CHECK (length(current_obligation_digest)=71 AND substr(current_obligation_digest,1,7)='sha256:'),
+                current_obligation_status TEXT NOT NULL CHECK (current_obligation_status IN ('active','satisfied','expired','revoked','discharged')),
+                actor_run_id TEXT NOT NULL UNIQUE,
+                actor_output_digest TEXT NOT NULL CHECK (length(actor_output_digest)=71 AND substr(actor_output_digest,1,7)='sha256:'),
+                guardian_audit_id TEXT NOT NULL UNIQUE,
+                guardian_audit_digest TEXT NOT NULL CHECK (length(guardian_audit_digest)=71 AND substr(guardian_audit_digest,1,7)='sha256:'),
+                withdrawal_cause TEXT NOT NULL CHECK (withdrawal_cause IN ('superseded','status_changed','expired','legacy_tombstoned')),
+                reason_code TEXT NOT NULL CHECK (reason_code='governing_authority_withdrawn'),
+                closure_json TEXT NOT NULL CHECK (json_valid(closure_json)),
+                closure_digest TEXT NOT NULL CHECK (length(closure_digest)=71 AND substr(closure_digest,1,7)='sha256:'),
+                closed_at TEXT NOT NULL,
+                causation_id TEXT NOT NULL,
+                correlation_id TEXT NOT NULL,
+                FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+                FOREIGN KEY (session_id) REFERENCES runtime_sessions(session_id),
+                FOREIGN KEY (authorization_id) REFERENCES participation_authorizations(authorization_id),
+                FOREIGN KEY (applicability_id) REFERENCES obligation_applicability_decisions(applicability_id),
+                FOREIGN KEY (obligation_id, authorized_obligation_revision) REFERENCES obligation_records(obligation_id,revision),
+                FOREIGN KEY (obligation_id, current_obligation_revision) REFERENCES obligation_records(obligation_id,revision),
+                FOREIGN KEY (actor_run_id) REFERENCES actor_runs(actor_run_id),
+                FOREIGN KEY (guardian_audit_id) REFERENCES goal_guardian_audits(audit_id)
+              ) STRICT;
+
+              CREATE INDEX IF NOT EXISTS idx_structured_authority_withdrawal_thread
+                ON structured_authority_withdrawal_closures(thread_id,closed_at,closure_id);
+
+              CREATE TRIGGER IF NOT EXISTS structured_authority_withdrawal_no_update
+                BEFORE UPDATE ON structured_authority_withdrawal_closures
+                BEGIN SELECT RAISE(ABORT,'structured_authority_withdrawal_closures is append-only'); END;
+              CREATE TRIGGER IF NOT EXISTS structured_authority_withdrawal_no_delete
+                BEFORE DELETE ON structured_authority_withdrawal_closures
+                BEGIN SELECT RAISE(ABORT,'structured_authority_withdrawal_closures is append-only'); END;
+
+              CREATE TRIGGER IF NOT EXISTS structured_authority_withdrawal_evidence_guard
+                BEFORE INSERT ON structured_authority_withdrawal_closures
+                WHEN NOT EXISTS (
+                  SELECT 1
+                  FROM runtime_sessions runtime
+                  JOIN thaw_leases lease ON lease.lease_id=runtime.lease_id
+                  JOIN participation_authorizations authorization ON authorization.authorization_id=runtime.authorization_id
+                  JOIN obligation_applicability_decisions applicability ON applicability.applicability_id=NEW.applicability_id
+                  JOIN obligation_records authorized_obligation
+                    ON authorized_obligation.obligation_id=NEW.obligation_id
+                   AND authorized_obligation.revision=NEW.authorized_obligation_revision
+                  JOIN obligation_records current_obligation
+                    ON current_obligation.obligation_id=NEW.obligation_id
+                   AND current_obligation.revision=NEW.current_obligation_revision
+                  JOIN actor_runs actor ON actor.actor_run_id=NEW.actor_run_id
+                  JOIN goal_guardian_audits guardian ON guardian.audit_id=NEW.guardian_audit_id
+                  WHERE runtime.session_id=NEW.session_id
+                    AND runtime.thread_id=NEW.thread_id
+                    AND runtime.request_id=NEW.request_id
+                    AND runtime.status='active'
+                    AND lease.status='active'
+                    AND NEW.closed_at>=lease.acquired_at
+                    AND NEW.closed_at<lease.expires_at
+                    AND authorization.authorization_id=NEW.authorization_id
+                    AND authorization.authorization_digest=NEW.authorization_digest
+                    AND json_extract(authorization.authorization_json,'$.participationBasis')='obligation_override'
+                    AND json_extract(authorization.authorization_json,'$.applicability.applicabilityId')=NEW.applicability_id
+                    AND json_extract(authorization.authorization_json,'$.applicability.decisionDigest')=NEW.applicability_decision_digest
+                    AND json_extract(authorization.authorization_json,'$.applicability.obligationId')=NEW.obligation_id
+                    AND json_extract(authorization.authorization_json,'$.applicability.obligationRevision')=NEW.authorized_obligation_revision
+                    AND json_extract(authorization.authorization_json,'$.applicability.obligationDigest')=NEW.authorized_obligation_digest
+                    AND applicability.result='applies'
+                    AND applicability.thread_id=NEW.thread_id
+                    AND applicability.request_id=NEW.request_id
+                    AND applicability.obligation_id=NEW.obligation_id
+                    AND applicability.obligation_revision=NEW.authorized_obligation_revision
+                    AND applicability.obligation_digest=NEW.authorized_obligation_digest
+                    AND applicability.decision_digest=NEW.applicability_decision_digest
+                    AND authorized_obligation.thread_id=NEW.thread_id
+                    AND authorized_obligation.obligation_digest=NEW.authorized_obligation_digest
+                    AND current_obligation.thread_id=NEW.thread_id
+                    AND current_obligation.obligation_digest=NEW.current_obligation_digest
+                    AND current_obligation.status=NEW.current_obligation_status
+                    AND current_obligation.recorded_at<=NEW.closed_at
+                    AND NOT EXISTS (
+                      SELECT 1 FROM obligation_records newer
+                      WHERE newer.obligation_id=NEW.obligation_id
+                        AND newer.revision>NEW.current_obligation_revision
+                    )
+                    AND actor.session_id=NEW.session_id
+                    AND actor.thread_id=NEW.thread_id
+                    AND actor.output_digest=NEW.actor_output_digest
+                    AND guardian.session_id=NEW.session_id
+                    AND guardian.thread_id=NEW.thread_id
+                    AND guardian.actor_run_id=NEW.actor_run_id
+                    AND guardian.audit_digest=NEW.guardian_audit_digest
+                    AND json_extract(guardian.audit_json,'$.decision')='pass'
+                    AND NOT EXISTS (
+                      SELECT 1 FROM authorization_consumptions consumption
+                      WHERE consumption.authorization_id=NEW.authorization_id
+                    )
+                    AND NOT EXISTS (
+                      SELECT 1 FROM freeze_reports freeze WHERE freeze.session_id=NEW.session_id
+                    )
+                    AND NOT EXISTS (
+                      SELECT 1 FROM structured_obligation_discharges discharge
+                      WHERE discharge.session_id=NEW.session_id
+                    )
+                    AND (
+                      current_obligation.revision<>NEW.authorized_obligation_revision
+                      OR current_obligation.status<>'active'
+                      OR (current_obligation.expires_at IS NOT NULL AND NEW.closed_at>=current_obligation.expires_at)
+                      OR (current_obligation.legacy_source_digest IS NOT NULL AND EXISTS (
+                        SELECT 1 FROM legacy_obligation_tombstones tombstone
+                        WHERE tombstone.thread_id=NEW.thread_id
+                          AND tombstone.legacy_reference_digest=current_obligation.legacy_source_digest
+                      ))
+                    )
+                )
+                BEGIN SELECT RAISE(ABORT,'structured authority withdrawal evidence is not causally bound'); END;
+            `);
+          }
+          EOF
+
+          cat > services/world-kernel/src/structured-authority-withdrawal-store.mjs <<'EOF'
+          import { DatabaseSync } from "node:sqlite";
+
+          import {
+            IntegrityError,
+            assertExactKeys,
+            assertId,
+            assertIsoTimestamp,
+            assertPlainObject,
+            canonicalJson,
+            sha256,
+          } from "./persistence-common.mjs";
+          import {
+            migrateDatabase,
+            normalizeDatabasePath,
+            safeRollback,
+            translateStorageError,
+          } from "./persistence-sqlite.mjs";
+          import {
+            actorOutputDigest,
+            authorizationDigest,
+            guardianAuditDigest,
+            newOpaqueId,
+          } from "./runtime-domain.mjs";
+          import { applicabilityDecisionDigest } from "./obligation-schema.mjs";
+          import {
+            normalizeStructuredObligation,
+            structuredObligationDigest,
+          } from "./obligation-domain.mjs";
+          import {
+            STRUCTURED_AUTHORITY_WITHDRAWAL_REASON,
+            normalizeStructuredAuthorityWithdrawal,
+            structuredAuthorityWithdrawalDigest,
+          } from "./structured-authority-withdrawal.mjs";
+
+          export class StructuredAuthorityWithdrawalNotFoundError extends Error {}
+          export class StructuredAuthorityWithdrawalConflictError extends Error {}
+          export class StructuredAuthorityWithdrawalRejectedError extends Error {}
+
+          function parseJson(name, text) {
+            try { return JSON.parse(text); }
+            catch (error) { throw new IntegrityError(`${name} is not valid JSON: ${error.message}`); }
+          }
+
+          function same(name, left, right) {
+            if (left !== right) throw new IntegrityError(`${name} does not match persisted evidence`);
+          }
+
+          function operationDigest(input) {
+            return sha256(canonicalJson({
+              kind: "structured_authority_withdrawal/1",
+              operationId: input.operationId,
+              threadId: input.threadId,
+              sessionId: input.sessionId,
+              causationId: input.causationId,
+              correlationId: input.correlationId,
+            }));
+          }
+
+          function causeFor(current, authorizedRevision, closedAt, legacyTombstoned) {
+            if (current.obligation.revision !== authorizedRevision) return "superseded";
+            if (current.obligation.status !== "active") return "status_changed";
+            if (current.obligation.expiresAt !== undefined && Date.parse(closedAt) >= Date.parse(current.obligation.expiresAt)) {
+              return "expired";
+            }
+            if (legacyTombstoned) return "legacy_tombstoned";
+            return null;
+          }
+
+          export class StructuredAuthorityWithdrawalStore {
+            #database;
+
+            constructor(databasePath) {
+              this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
+                enableForeignKeyConstraints: true,
+              });
+              this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+              try { migrateDatabase(this.#database); }
+              catch (error) { this.#database.close(); throw error; }
+            }
+
+            close() { this.#database.close(); }
+
+            #rowByOperation(operationId) {
+              return this.#database.prepare(
+                "SELECT * FROM structured_authority_withdrawal_closures WHERE operation_id=?",
+              ).get(operationId);
+            }
+
+            #rowBySession(threadId, sessionId) {
+              return this.#database.prepare(
+                "SELECT * FROM structured_authority_withdrawal_closures WHERE thread_id=? AND session_id=?",
+              ).get(threadId, sessionId);
+            }
+
+            #decode(row) {
+              if (row === undefined) return null;
+              const closure = normalizeStructuredAuthorityWithdrawal(
+                parseJson(`authority withdrawal ${row.closure_id}`, row.closure_json),
+              );
+              same("authority withdrawal canonical JSON", row.closure_json, canonicalJson(closure));
+              same("authority withdrawal digest", row.closure_digest, structuredAuthorityWithdrawalDigest(closure));
+              for (const [name, left, right] of [
+                ["closure ID", row.closure_id, closure.closureId],
+                ["operation", row.operation_id, closure.operationId],
+                ["Thread", row.thread_id, closure.threadId],
+                ["session", row.session_id, closure.sessionId],
+                ["request", row.request_id, closure.requestId],
+                ["authorization", row.authorization_id, closure.authorizationId],
+                ["authorization digest", row.authorization_digest, closure.authorizationDigest],
+                ["applicability", row.applicability_id, closure.applicabilityId],
+                ["applicability digest", row.applicability_decision_digest, closure.applicabilityDecisionDigest],
+                ["obligation", row.obligation_id, closure.obligationId],
+                ["authorized obligation digest", row.authorized_obligation_digest, closure.authorizedObligationDigest],
+                ["current obligation digest", row.current_obligation_digest, closure.currentObligationDigest],
+                ["current obligation status", row.current_obligation_status, closure.currentObligationStatus],
+                ["Actor run", row.actor_run_id, closure.actorRunId],
+                ["Actor output digest", row.actor_output_digest, closure.actorOutputDigest],
+                ["Guardian audit", row.guardian_audit_id, closure.guardianAuditId],
+                ["Guardian audit digest", row.guardian_audit_digest, closure.guardianAuditDigest],
+                ["withdrawal cause", row.withdrawal_cause, closure.withdrawalCause],
+                ["reason", row.reason_code, closure.reasonCode],
+                ["closedAt", row.closed_at, closure.closedAt],
+              ]) same(`authority withdrawal ${name}`, left, right);
+              same("authorized obligation revision", Number(row.authorized_obligation_revision), closure.authorizedObligationRevision);
+              same("current obligation revision", Number(row.current_obligation_revision), closure.currentObligationRevision);
+              return { closure, closureDigest: row.closure_digest, operationDigest: row.operation_digest };
+            }
+
+            getClosure(threadId, sessionId, { required = true } = {}) {
+              assertId("threadId", threadId);
+              assertId("sessionId", sessionId);
+              const value = this.#decode(this.#rowBySession(threadId, sessionId));
+              if (value === null && required) {
+                throw new StructuredAuthorityWithdrawalNotFoundError(
+                  `authority-withdrawal closure was not found for runtime ${sessionId}`,
+                );
+              }
+              return value;
+            }
+
+            closeWithdrawnAuthority(input) {
+              assertPlainObject("authority withdrawal input", input);
+              assertExactKeys("authority withdrawal input", input, [
+                "operationId", "threadId", "sessionId", "closedAt", "causationId", "correlationId",
+              ]);
+              for (const key of ["operationId", "threadId", "sessionId", "causationId", "correlationId"]) {
+                assertId(`authority withdrawal ${key}`, input[key]);
+              }
+              assertIsoTimestamp("authority withdrawal closedAt", input.closedAt);
+              const expectedOperationDigest = operationDigest(input);
+              const priorRow = this.#rowByOperation(input.operationId);
+              if (priorRow !== undefined) {
+                if (priorRow.operation_digest !== expectedOperationDigest) {
+                  throw new StructuredAuthorityWithdrawalConflictError(
+                    `authority-withdrawal operation ${input.operationId} was already used with different input`,
+                  );
+                }
+                return { ...this.#decode(priorRow), idempotent: true };
+              }
+
+              try {
+                this.#database.exec("BEGIN IMMEDIATE");
+                const raced = this.#rowByOperation(input.operationId);
+                if (raced !== undefined) {
+                  if (raced.operation_digest !== expectedOperationDigest) {
+                    throw new StructuredAuthorityWithdrawalConflictError(
+                      `authority-withdrawal operation ${input.operationId} raced with different input`,
+                    );
+                  }
+                  this.#database.exec("COMMIT");
+                  return { ...this.#decode(raced), idempotent: true };
+                }
+                const existingSession = this.#rowBySession(input.threadId, input.sessionId);
+                if (existingSession !== undefined) {
+                  throw new StructuredAuthorityWithdrawalConflictError(
+                    `runtime ${input.sessionId} already has an authority-withdrawal closure`,
+                  );
+                }
+
+                const runtime = this.#database.prepare(`
+                  SELECT s.request_id,s.authorization_id,s.lease_id,s.status AS session_status,
+                    l.status AS lease_status,l.acquired_at,l.expires_at,
+                    a.authorization_json,a.authorization_digest,
+                    ar.actor_run_id,ar.output_json,ar.output_digest,
+                    ga.audit_id,ga.audit_json,ga.audit_digest
+                  FROM runtime_sessions s
+                  JOIN thaw_leases l ON l.lease_id=s.lease_id
+                  JOIN participation_authorizations a ON a.authorization_id=s.authorization_id
+                  LEFT JOIN actor_runs ar ON ar.session_id=s.session_id
+                  LEFT JOIN goal_guardian_audits ga ON ga.session_id=s.session_id
+                  WHERE s.thread_id=? AND s.session_id=?
+                `).get(input.threadId, input.sessionId);
+                if (runtime === undefined) {
+                  throw new StructuredAuthorityWithdrawalNotFoundError(
+                    `runtime ${input.sessionId} was not found for Thread ${input.threadId}`,
+                  );
+                }
+                if (runtime.session_status !== "active" || runtime.lease_status !== "active") {
+                  throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal requires an active runtime and lease");
+                }
+                if (Date.parse(input.closedAt) < Date.parse(runtime.acquired_at) || Date.parse(input.closedAt) >= Date.parse(runtime.expires_at)) {
+                  throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal must occur during the active lease");
+                }
+                if (runtime.actor_run_id === null || runtime.audit_id === null) {
+                  throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal requires completed Actor and Goal Guardian evidence");
+                }
+                const authorization = parseJson(`authorization ${runtime.authorization_id}`, runtime.authorization_json);
+                same("authorization digest", runtime.authorization_digest, authorizationDigest(authorization));
+                if (authorization.participationBasis !== "obligation_override" || authorization.applicability === null) {
+                  throw new StructuredAuthorityWithdrawalRejectedError("authority withdrawal applies only to structured compelled participation");
+                }
+                const applicability = this.#database.prepare(`
+                  SELECT decision_json,decision_digest FROM obligation_applicability_decisions
+                  WHERE applicability_id=?
+                `).get(authorization.applicability.applicabilityId);
+                if (applicability === undefined) throw new IntegrityError("structured authorization lost applicability evidence");
+                const decision = parseJson("authority-withdrawal applicability", applicability.decision_json);
+                same("applicability digest", applicability.decision_digest, applicabilityDecisionDigest(decision));
+                if (decision.result !== "applies") throw new IntegrityError("structured authorization references non-applicable evidence");
+
+                const actorOutput = parseJson(`Actor output ${runtime.actor_run_id}`, runtime.output_json);
+                same("Actor output digest", runtime.output_digest, actorOutputDigest(actorOutput));
+                const guardianAudit = parseJson(`Goal Guardian audit ${runtime.audit_id}`, runtime.audit_json);
+                same("Goal Guardian audit digest", runtime.audit_digest, guardianAuditDigest(guardianAudit));
+                if (guardianAudit.decision !== "pass") {
+                  throw new StructuredAuthorityWithdrawalRejectedError("Goal Guardian reject uses the historical rejection-abandonment path");
+                }
+                for (const [table, column] of [
+                  ["authorization_consumptions", "authorization_id"],
+                  ["freeze_reports", "session_id"],
+                  ["structured_obligation_discharges", "session_id"],
+                ]) {
+                  if (this.#database.prepare(`SELECT 1 AS present FROM ${table} WHERE ${column}=?`).get(
+                    table === "authorization_consumptions" ? runtime.authorization_id : input.sessionId,
+                  ) !== undefined) {
+                    throw new StructuredAuthorityWithdrawalRejectedError("runtime already changed authoritative state");
+                  }
+                }
+
+                const authorizedRevision = Number(authorization.applicability.obligationRevision);
+                const authorizedRow = this.#database.prepare(`
+                  SELECT obligation_json,obligation_digest FROM obligation_records
+                  WHERE thread_id=? AND obligation_id=? AND revision=?
+                `).get(input.threadId, authorization.applicability.obligationId, authorizedRevision);
+                if (authorizedRow === undefined) throw new IntegrityError("structured authorization lost its obligation revision");
+                const authorizedObligation = normalizeStructuredObligation(parseJson("authorized obligation", authorizedRow.obligation_json));
+                same("authorized obligation digest", authorizedRow.obligation_digest, structuredObligationDigest(authorizedObligation));
+                same("authorization obligation digest", authorizedRow.obligation_digest, authorization.applicability.obligationDigest);
+
+                const currentRow = this.#database.prepare(`
+                  SELECT obligation_json,obligation_digest,legacy_source_digest
+                  FROM obligation_records WHERE thread_id=? AND obligation_id=?
+                  ORDER BY revision DESC LIMIT 1
+                `).get(input.threadId, authorization.applicability.obligationId);
+                if (currentRow === undefined) throw new IntegrityError("structured obligation disappeared before authority-withdrawal closure");
+                const current = normalizeStructuredObligation(parseJson("current obligation", currentRow.obligation_json));
+                same("current obligation digest", currentRow.obligation_digest, structuredObligationDigest(current));
+                const legacyTombstoned = currentRow.legacy_source_digest !== null &&
+                  this.#database.prepare(`
+                    SELECT 1 AS present FROM legacy_obligation_tombstones
+                    WHERE thread_id=? AND legacy_reference_digest=?
+                  `).get(input.threadId, currentRow.legacy_source_digest) !== undefined;
+                const withdrawalCause = causeFor(current, authorizedRevision, input.closedAt, legacyTombstoned);
+                if (withdrawalCause === null) {
+                  throw new StructuredAuthorityWithdrawalRejectedError("the governing Structured Obligation remains current execution authority");
+                }
+
+                const closure = normalizeStructuredAuthorityWithdrawal({
+                  closureId: newOpaqueId("obw"),
+                  operationId: input.operationId,
+                  threadId: input.threadId,
+                  sessionId: input.sessionId,
+                  requestId: runtime.request_id,
+                  authorizationId: runtime.authorization_id,
+                  authorizationDigest: runtime.authorization_digest,
+                  applicabilityId: authorization.applicability.applicabilityId,
+                  applicabilityDecisionDigest: applicability.decision_digest,
+                  obligationId: authorization.applicability.obligationId,
+                  authorizedObligationRevision: authorizedRevision,
+                  authorizedObligationDigest: authorizedRow.obligation_digest,
+                  currentObligationRevision: current.obligation.revision,
+                  currentObligationDigest: currentRow.obligation_digest,
+                  currentObligationStatus: current.obligation.status,
+                  actorRunId: runtime.actor_run_id,
+                  actorOutputDigest: runtime.output_digest,
+                  guardianAuditId: runtime.audit_id,
+                  guardianAuditDigest: runtime.audit_digest,
+                  guardianDecision: "pass",
+                  withdrawalCause,
+                  reasonCode: STRUCTURED_AUTHORITY_WITHDRAWAL_REASON,
+                  closedAt: input.closedAt,
+                  causationId: input.causationId,
+                  correlationId: input.correlationId,
+                });
+                const closureDigest = structuredAuthorityWithdrawalDigest(closure);
+                this.#database.prepare(`
+                  INSERT INTO structured_authority_withdrawal_closures(
+                    closure_id,operation_id,operation_digest,thread_id,session_id,request_id,
+                    authorization_id,authorization_digest,applicability_id,applicability_decision_digest,
+                    obligation_id,authorized_obligation_revision,authorized_obligation_digest,
+                    current_obligation_revision,current_obligation_digest,current_obligation_status,
+                    actor_run_id,actor_output_digest,guardian_audit_id,guardian_audit_digest,
+                    withdrawal_cause,reason_code,closure_json,closure_digest,closed_at,causation_id,correlation_id
+                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                `).run(
+                  closure.closureId,input.operationId,expectedOperationDigest,closure.threadId,closure.sessionId,closure.requestId,
+                  closure.authorizationId,closure.authorizationDigest,closure.applicabilityId,closure.applicabilityDecisionDigest,
+                  closure.obligationId,closure.authorizedObligationRevision,closure.authorizedObligationDigest,
+                  closure.currentObligationRevision,closure.currentObligationDigest,closure.currentObligationStatus,
+                  closure.actorRunId,closure.actorOutputDigest,closure.guardianAuditId,closure.guardianAuditDigest,
+                  closure.withdrawalCause,closure.reasonCode,canonicalJson(closure),closureDigest,closure.closedAt,
+                  closure.causationId,closure.correlationId,
+                );
+                const sessionUpdate = this.#database.prepare(`
+                  UPDATE runtime_sessions SET status='aborted',completed_at=?
+                  WHERE session_id=? AND status='active'
+                `).run(closure.closedAt, closure.sessionId);
+                const leaseUpdate = this.#database.prepare(`
+                  UPDATE thaw_leases SET status='released',released_at=?,release_reason='governing_authority_withdrawn'
+                  WHERE lease_id=? AND status='active'
+                `).run(closure.closedAt, runtime.lease_id);
+                if (Number(sessionUpdate.changes) !== 1 || Number(leaseUpdate.changes) !== 1) {
+                  throw new StructuredAuthorityWithdrawalConflictError("runtime changed during authority-withdrawal closure");
+                }
+                const persisted = this.#decode(this.#rowBySession(input.threadId, input.sessionId));
+                this.#database.exec("COMMIT");
+                return { ...persisted, idempotent: false };
+              } catch (error) {
+                safeRollback(this.#database);
+                throw translateStorageError(error);
+              }
+            }
+          }
+
+          export function openStructuredAuthorityWithdrawalStore(databasePath) {
+            return new StructuredAuthorityWithdrawalStore(databasePath);
+          }
+          EOF
+
+          python <<'PY'
+          from pathlib import Path
+
+          def r(path, old, new):
+              p=Path(path); t=p.read_text()
+              if old not in t: raise SystemExit(f"missing anchor {path}: {old[:100]!r}")
+              if t.count(old)!=1: raise SystemExit(f"nonunique anchor {path}: {old[:100]!r}")
+              p.write_text(t.replace(old,new,1))
+
+          # Schema integration + same-version migration atomicity (Claude M2).
+          r('services/world-kernel/src/persistence-sqlite.mjs',
+            '''import {\n  createObligationTables,\n  migrateLegacyConsumedObligations,\n} from "./obligation-schema.mjs";''',
+            '''import {\n  createObligationTables,\n  migrateLegacyConsumedObligations,\n} from "./obligation-schema.mjs";\nimport { createStructuredAuthorityWithdrawalTables } from "./structured-authority-withdrawal-schema.mjs";''')
+          r('services/world-kernel/src/persistence-sqlite.mjs',
+            '''  createExpressionTables(database);\n  createObligationTables(database);\n}''',
+            '''  createExpressionTables(database);\n  createObligationTables(database);\n  createStructuredAuthorityWithdrawalTables(database);\n}''')
+          r('services/world-kernel/src/persistence-sqlite.mjs',
+            "'obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones')",
+            "'obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones','structured_authority_withdrawal_closures')")
+          r('services/world-kernel/src/persistence-sqlite.mjs',
+            '''  if (currentVersion === WORLD_STORE_SCHEMA_VERSION) {\n    createSchema(database);\n    migrateLegacyConsumedObligations(database);\n    return;\n  }''',
+            '''  if (currentVersion === WORLD_STORE_SCHEMA_VERSION) {\n    try {\n      database.exec("BEGIN IMMEDIATE");\n      createSchema(database);\n      migrateLegacyConsumedObligations(database);\n      database.exec("COMMIT");\n    } catch (error) {\n      safeRollback(database);\n      throw error;\n    }\n    return;\n  }''')
+
+          # Structured causal service owns the new closure store and kernel clock.
+          r('services/world-kernel/src/structured-causal-service.mjs',
+            '''  #applicabilityStore;\n  #structuredClock;''',
+            '''  #applicabilityStore;\n  #authorityWithdrawalStore;\n  #structuredClock;''')
+          r('services/world-kernel/src/structured-causal-service.mjs',
+            '''    const clock = options.clock ?? (() => new Date());''',
+            '''    const authorityWithdrawalStore = options.authorityWithdrawalStore;\n    if (authorityWithdrawalStore === null || typeof authorityWithdrawalStore !== "object") {\n      throw new TypeError("authorityWithdrawalStore is required for truthful Structured Obligation lifecycle closure");\n    }\n    for (const method of ["closeWithdrawnAuthority", "getClosure"]) {\n      if (typeof authorityWithdrawalStore[method] !== "function") {\n        throw new TypeError(`authorityWithdrawalStore.${method} is required for truthful Structured Obligation lifecycle closure`);\n      }\n    }\n    const clock = options.clock ?? (() => new Date());''')
+          r('services/world-kernel/src/structured-causal-service.mjs',
+            '''    this.#applicabilityStore = applicabilityStore;\n    this.#structuredClock = clock;''',
+            '''    this.#applicabilityStore = applicabilityStore;\n    this.#authorityWithdrawalStore = authorityWithdrawalStore;\n    this.#structuredClock = clock;''')
+          r('services/world-kernel/src/structured-causal-service.mjs',
+            '''      obligationConsentSemantics: "compulsion_preserves_private_stance",\n    };''',
+            '''      obligationConsentSemantics: "compulsion_preserves_private_stance",\n      authorityWithdrawalClosure: "executed_episode_preserved_without_freeze",\n    };''')
+          insert='''\n  closeWithdrawnAuthority(threadId, sessionId, submission) {\n    assertId("threadId", threadId);\n    assertId("sessionId", sessionId);\n    assertPlainObject("authority withdrawal request", submission);\n    assertExactKeys("authority withdrawal request", submission, [\n      "operationId", "causationId", "correlationId",\n    ]);\n    assertId("authority withdrawal operationId", submission.operationId);\n    assertId("authority withdrawal causationId", submission.causationId);\n    const correlationId = submission.correlationId ?? submission.causationId;\n    assertId("authority withdrawal correlationId", correlationId);\n    return this.#authorityWithdrawalStore.closeWithdrawnAuthority({\n      operationId: submission.operationId,\n      threadId,\n      sessionId,\n      closedAt: this.#now(),\n      causationId: submission.causationId,\n      correlationId,\n    });\n  }\n'''
+          r('services/world-kernel/src/structured-causal-service.mjs',
+            '\n  continueParticipation(threadId, requestId, submission) {',
+            insert+'\n  continueParticipation(threadId, requestId, submission) {')
+
+          # Canonical server owns lifecycle closure storage.
+          r('services/world-kernel/src/server.mjs',
+            '''import { openObligationApplicabilityStore } from "./obligation-applicability-store.mjs";''',
+            '''import { openObligationApplicabilityStore } from "./obligation-applicability-store.mjs";\nimport { openStructuredAuthorityWithdrawalStore } from "./structured-authority-withdrawal-store.mjs";''')
+          r('services/world-kernel/src/server.mjs',
+            '''  if (Object.hasOwn(serviceOptions, "inspectionStore")) {\n    throw new TypeError("canonical Structured Obligation inspection is world-kernel owned");\n  }''',
+            '''  if (Object.hasOwn(serviceOptions, "inspectionStore")) {\n    throw new TypeError("canonical Structured Obligation inspection is world-kernel owned");\n  }\n  if (Object.hasOwn(serviceOptions, "authorityWithdrawalStore")) {\n    throw new TypeError("canonical Structured Obligation authority-withdrawal storage is world-kernel owned");\n  }''')
+          r('services/world-kernel/src/server.mjs',
+            '''  let applicabilityStore;\n  let inspectionStore;''',
+            '''  let applicabilityStore;\n  let authorityWithdrawalStore;\n  let inspectionStore;''')
+          r('services/world-kernel/src/server.mjs',
+            '''    applicabilityStore = openObligationApplicabilityStore(databasePath);\n    // Open only after schema-owning stores have completed their additive repair.''',
+            '''    applicabilityStore = openObligationApplicabilityStore(databasePath);\n    authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);\n    // Open only after schema-owning stores have completed their additive repair.''')
+          r('services/world-kernel/src/server.mjs',
+            '''    inspectionStore?.close();\n    applicabilityStore?.close();''',
+            '''    inspectionStore?.close();\n    authorityWithdrawalStore?.close();\n    applicabilityStore?.close();''')
+          r('services/world-kernel/src/server.mjs',
+            '''      guardianModelAdapter,\n      applicabilityStore,\n    },''',
+            '''      guardianModelAdapter,\n      applicabilityStore,\n      authorityWithdrawalStore,\n    },''')
+          r('services/world-kernel/src/server.mjs',
+            '''        inspectionStore.close();\n        applicabilityStore.close();''',
+            '''        inspectionStore.close();\n        authorityWithdrawalStore.close();\n        applicabilityStore.close();''')
+          r('services/world-kernel/src/server.mjs',
+            '''      applicabilityStore,\n      inspectionStore,\n      service,''',
+            '''      applicabilityStore,\n      authorityWithdrawalStore,\n      inspectionStore,\n      service,''')
+          r('services/world-kernel/src/server.mjs',
+            '''      structuredObligationDischargeEnabled: true,\n      structuredObligationInspectionEnabled: true,''',
+            '''      structuredObligationDischargeEnabled: true,\n      structuredAuthorityWithdrawalClosureEnabled: true,\n      structuredObligationInspectionEnabled: true,''')
+          # There are two cleanup blocks; update remaining catch occurrence.
+          r('services/world-kernel/src/server.mjs',
+            '''    inspectionStore.close();\n    applicabilityStore.close();''',
+            '''    inspectionStore.close();\n    authorityWithdrawalStore.close();\n    applicabilityStore.close();''')
+          r('services/world-kernel/src/server.mjs',
+            '''    structuredObligationDischargeEnabled: true,\n    structuredObligationInspectionEnabled: true,\n    runtimeProfileVersion: 1,''',
+            '''    structuredObligationDischargeEnabled: true,\n    structuredAuthorityWithdrawalClosureEnabled: true,\n    structuredObligationInspectionEnabled: true,\n    runtimeProfileVersion: 1,''')
+
+          # Private POST closure route; caller supplies only operation lineage.
+          r('services/world-kernel/src/causal-http-server.mjs',
+            '''import { PreM2CausalWorldKernelService } from "./causal-service.mjs";''',
+            '''import { PreM2CausalWorldKernelService } from "./causal-service.mjs";\nimport {\n  StructuredAuthorityWithdrawalConflictError,\n  StructuredAuthorityWithdrawalNotFoundError,\n  StructuredAuthorityWithdrawalRejectedError,\n} from "./structured-authority-withdrawal-store.mjs";''')
+          r('services/world-kernel/src/causal-http-server.mjs',
+            '''  if (value instanceof StorageBusyError) {''',
+            '''  if (value instanceof StructuredAuthorityWithdrawalConflictError) {\n    return [409, "AUTHORITY_WITHDRAWAL_CONFLICT", value.message, {}];\n  }\n  if (value instanceof StructuredAuthorityWithdrawalNotFoundError) {\n    return [404, "AUTHORITY_WITHDRAWAL_NOT_FOUND", value.message, {}];\n  }\n  if (value instanceof StructuredAuthorityWithdrawalRejectedError) {\n    return [422, "AUTHORITY_WITHDRAWAL_REJECTED", value.message, {}];\n  }\n  if (value instanceof StorageBusyError) {''')
+          r('services/world-kernel/src/causal-http-server.mjs',
+            '''  if (parts === null || method !== "POST") return null;\n  if (parts[0] !== "threads" || parts[2] !== "private" || parts[3] !== "requests") return null;''',
+            '''  if (parts === null || method !== "POST") return null;\n  if (\n    parts.length === 6 && parts[0] === "threads" && parts[2] === "private" &&\n    parts[3] === "runtime" && parts[5] === "authority-withdrawal"\n  ) {\n    return { kind: "authority_withdrawal", threadId: parts[1], sessionId: parts[4] };\n  }\n  if (parts[0] !== "threads" || parts[2] !== "private" || parts[3] !== "requests") return null;''')
+          r('services/world-kernel/src/causal-http-server.mjs',
+            '''      const body = await readJson(request, maxBodyBytes);\n      if (route.kind === "appraise") {''',
+            '''      const body = await readJson(request, maxBodyBytes);\n      if (route.kind === "authority_withdrawal") {\n        const result = service.closeWithdrawnAuthority(route.threadId, route.sessionId, body);\n        return writeJson(response, result.idempotent ? 200 : 201, result, id);\n      }\n      if (route.kind === "appraise") {''')
+
+          # Read-only inspection of interrupted episode closure.
+          r('services/world-kernel/src/structured-obligation-inspection-store.mjs',
+            '''import { normalizeDatabasePath } from "./persistence-sqlite.mjs";''',
+            '''import { normalizeDatabasePath } from "./persistence-sqlite.mjs";\nimport {\n  normalizeStructuredAuthorityWithdrawal,\n  structuredAuthorityWithdrawalDigest,\n} from "./structured-authority-withdrawal.mjs";''')
+          method='''\n  getRuntimeAuthorityWithdrawal(threadId, sessionId) {\n    this.#requireThread(threadId);\n    assertId("sessionId", sessionId);\n    const row = this.#database.prepare(`\n      SELECT * FROM structured_authority_withdrawal_closures\n      WHERE thread_id=? AND session_id=?\n    `).get(threadId, sessionId);\n    if (row === undefined) return null;\n    const closure = normalizeStructuredAuthorityWithdrawal(\n      parseJson(`authority withdrawal ${row.closure_id}`, row.closure_json),\n    );\n    same("authority withdrawal canonical JSON", row.closure_json, canonicalJson(closure));\n    same("authority withdrawal digest", row.closure_digest, structuredAuthorityWithdrawalDigest(closure));\n    same("authority withdrawal Thread", row.thread_id, closure.threadId);\n    same("authority withdrawal session", row.session_id, closure.sessionId);\n    same("authority withdrawal reason", closure.reasonCode, "governing_authority_withdrawn");\n    const runtime = this.#database.prepare(`\n      SELECT s.status,l.status AS lease_status,l.release_reason,a.authorization_json,a.authorization_digest,\n        ar.actor_run_id,ar.output_digest,ga.audit_id,ga.audit_digest,ga.audit_json\n      FROM runtime_sessions s\n      JOIN thaw_leases l ON l.lease_id=s.lease_id\n      JOIN participation_authorizations a ON a.authorization_id=s.authorization_id\n      LEFT JOIN actor_runs ar ON ar.session_id=s.session_id\n      LEFT JOIN goal_guardian_audits ga ON ga.session_id=s.session_id\n      WHERE s.thread_id=? AND s.session_id=?\n    `).get(threadId, sessionId);\n    if (runtime === undefined) throw new IntegrityError(`authority withdrawal ${closure.closureId} lost runtime evidence`);\n    const authorization = parseJson(`authority withdrawal authorization ${closure.authorizationId}`, runtime.authorization_json);\n    same("authority withdrawal authorization digest", runtime.authorization_digest, authorizationDigest(authorization));\n    same("authority withdrawal authorization ID", authorization.authorizationId, closure.authorizationId);\n    same("authority withdrawal participation basis", authorization.participationBasis, "obligation_override");\n    same("authority withdrawal applicability", authorization.applicability.applicabilityId, closure.applicabilityId);\n    same("authority withdrawal obligation", authorization.applicability.obligationId, closure.obligationId);\n    same("authority withdrawal Actor", runtime.actor_run_id, closure.actorRunId);\n    same("authority withdrawal Actor digest", runtime.output_digest, closure.actorOutputDigest);\n    same("authority withdrawal Guardian", runtime.audit_id, closure.guardianAuditId);\n    same("authority withdrawal Guardian digest", runtime.audit_digest, closure.guardianAuditDigest);\n    const audit = parseJson(`authority withdrawal Guardian ${closure.guardianAuditId}`, runtime.audit_json);\n    same("authority withdrawal Guardian decision", audit.decision, "pass");\n    same("authority withdrawal runtime status", runtime.status, "aborted");\n    same("authority withdrawal lease status", runtime.lease_status, "released");\n    same("authority withdrawal lease reason", runtime.release_reason, "governing_authority_withdrawn");\n    if (this.#database.prepare("SELECT 1 AS present FROM authorization_consumptions WHERE authorization_id=?").get(closure.authorizationId) !== undefined) {\n      throw new IntegrityError(`authority withdrawal ${closure.closureId} unexpectedly consumed authorization`);\n    }\n    if (this.#database.prepare("SELECT 1 AS present FROM freeze_reports WHERE session_id=?").get(sessionId) !== undefined) {\n      throw new IntegrityError(`authority withdrawal ${closure.closureId} unexpectedly has freeze evidence`);\n    }\n    const currentRow = this.#database.prepare(`\n      SELECT obligation_json,obligation_digest FROM obligation_records\n      WHERE thread_id=? AND obligation_id=? ORDER BY revision DESC LIMIT 1\n    `).get(threadId, closure.obligationId);\n    if (currentRow === undefined) throw new IntegrityError(`authority withdrawal ${closure.closureId} lost current obligation`);\n    const current = normalizeStructuredObligation(parseJson("authority withdrawal current obligation", currentRow.obligation_json));\n    same("authority withdrawal current obligation digest", currentRow.obligation_digest, structuredObligationDigest(current));\n    same("authority withdrawal current revision", current.obligation.revision, closure.currentObligationRevision);\n    same("authority withdrawal current digest witness", currentRow.obligation_digest, closure.currentObligationDigest);\n    same("authority withdrawal current status", current.obligation.status, closure.currentObligationStatus);\n    return { closure, closureDigest: row.closure_digest, causalChainVerified: true };\n  }\n'''
+          r('services/world-kernel/src/structured-obligation-inspection-store.mjs',
+            '\n  verifyThread(threadId) {', method+'\n  verifyThread(threadId) {')
+          r('services/world-kernel/src/structured-obligation-inspection-http-server.mjs',
+            '''  if (parts.length === 6 && parts[3] === "runtime" && parts[5] === "obligation-discharge") {\n    return { kind: "runtime_discharge", threadId, sessionId: parts[4] };\n  }''',
+            '''  if (parts.length === 6 && parts[3] === "runtime" && parts[5] === "obligation-discharge") {\n    return { kind: "runtime_discharge", threadId, sessionId: parts[4] };\n  }\n  if (parts.length === 6 && parts[3] === "runtime" && parts[5] === "authority-withdrawal") {\n    return { kind: "runtime_authority_withdrawal", threadId, sessionId: parts[4] };\n  }''')
+          r('services/world-kernel/src/structured-obligation-inspection-http-server.mjs',
+            '''    "getRuntimeDischarge",\n    "verifyThread",''',
+            '''    "getRuntimeDischarge",\n    "getRuntimeAuthorityWithdrawal",\n    "verifyThread",''')
+          r('services/world-kernel/src/structured-obligation-inspection-http-server.mjs',
+            '''      if (route.kind === "runtime_discharge") {\n        return writeJson(response, 200, {\n          discharge: inspectPersistedEvidence(\n            () => inspectionStore.getRuntimeDischarge(route.threadId, route.sessionId),\n          ),\n        }, id);\n      }''',
+            '''      if (route.kind === "runtime_discharge") {\n        return writeJson(response, 200, {\n          discharge: inspectPersistedEvidence(\n            () => inspectionStore.getRuntimeDischarge(route.threadId, route.sessionId),\n          ),\n        }, id);\n      }\n      if (route.kind === "runtime_authority_withdrawal") {\n        return writeJson(response, 200, {\n          authorityWithdrawal: inspectPersistedEvidence(\n            () => inspectionStore.getRuntimeAuthorityWithdrawal(route.threadId, route.sessionId),\n          ),\n        }, id);\n      }''')
+
+          # M3/M4: verify freeze result before commit and assert guarded terminal updates.
+          r('services/world-kernel/src/freeze-store.mjs',
+            '''      this.#database.prepare(\n        "UPDATE runtime_sessions SET status='completed',completed_at=? WHERE session_id=? AND status='active'",\n      ).run(record.completedAt, record.sessionId);\n      this.#database.prepare(`\n        UPDATE thaw_leases SET status='released',released_at=?,release_reason='freeze_completed'\n        WHERE lease_id=? AND status='active'\n      `).run(record.completedAt, record.leaseId);\n\n      persistStructuredObligationDischarge(this.#database, structuredDischarge);\n\n      this.#database.exec("COMMIT");\n    } catch (error) {\n      safeRollback(this.#database);\n      throw translateStorageError(error);\n    }\n    return {\n      freeze: this.getFreeze(record.threadId, record.sessionId),\n      idempotent: false,\n    };''',
+            '''      const runtimeCompletion = this.#database.prepare(\n        "UPDATE runtime_sessions SET status='completed',completed_at=? WHERE session_id=? AND status='active'",\n      ).run(record.completedAt, record.sessionId);\n      const leaseRelease = this.#database.prepare(`\n        UPDATE thaw_leases SET status='released',released_at=?,release_reason='freeze_completed'\n        WHERE lease_id=? AND status='active'\n      `).run(record.completedAt, record.leaseId);\n      if (Number(runtimeCompletion.changes) !== 1 || Number(leaseRelease.changes) !== 1) {\n        throw new FreezeStateChangedError(`Runtime ${record.sessionId} changed during freeze completion`);\n      }\n\n      persistStructuredObligationDischarge(this.#database, structuredDischarge);\n      const persistedFreeze = this.getFreeze(record.threadId, record.sessionId);\n      this.#database.exec("COMMIT");\n      return { freeze: persistedFreeze, idempotent: false };\n    } catch (error) {\n      safeRollback(this.#database);\n      throw translateStorageError(error);\n    }''')
+
+          # Test server profile marker.
+          r('services/world-kernel/test/support/causal-test-server.mjs',
+            '''  structuredObligationDischargeEnabled: runtime.structuredObligationDischargeEnabled,\n  structuredObligationInspectionEnabled: runtime.structuredObligationInspectionEnabled,''',
+            '''  structuredObligationDischargeEnabled: runtime.structuredObligationDischargeEnabled,\n  structuredAuthorityWithdrawalClosureEnabled: runtime.structuredAuthorityWithdrawalClosureEnabled,\n  structuredObligationInspectionEnabled: runtime.structuredObligationInspectionEnabled,''')
+
+          # Upgrade the existing stale-revocation proof into truthful lifecycle closure + restart inspection.
+          r('services/world-kernel/test/causal-process.test.mjs',
+            '''    const runtime = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,\n      { headers: { "x-fibre-private-token": privateToken } },\n    );\n    assert.equal(runtime.response.status, 200);\n    assert.equal(runtime.body.runtime.session.status, "active");\n    assert.equal(runtime.body.runtime.authorization.desiredAction, "clarify");\n\n    const currentStore = openObligationStore(databasePath);''',
+            '''    const runtime = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,\n      { headers: { "x-fibre-private-token": privateToken } },\n    );\n    assert.equal(runtime.response.status, 200);\n    assert.equal(runtime.body.runtime.session.status, "active");\n    assert.equal(runtime.body.runtime.authorization.desiredAction, "clarify");\n\n    const closed = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,\n      {\n        method: "POST",\n        headers: privateHeaders(),\n        body: JSON.stringify({\n          operationId: "op_causal_process_authority_withdrawal",\n          causationId: "cause_causal_process_authority_withdrawal",\n          correlationId: "corr_causal_process_revoked",\n        }),\n      },\n    );\n    assert.equal(closed.response.status, 201);\n    assert.equal(closed.body.closure.reasonCode, "governing_authority_withdrawn");\n    assert.equal(closed.body.closure.withdrawalCause, "superseded");\n    assert.equal(closed.body.closure.guardianDecision, "pass");\n\n    const closedRuntime = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,\n      { headers: { "x-fibre-private-token": privateToken } },\n    );\n    assert.equal(closedRuntime.response.status, 200);\n    assert.equal(closedRuntime.body.runtime.session.status, "aborted");\n    assert.equal(closedRuntime.body.runtime.lease.status, "released");\n    assert.equal(closedRuntime.body.runtime.lease.releaseReason, "governing_authority_withdrawn");\n    assert.equal(closedRuntime.body.runtime.authorization.desiredAction, "clarify");\n\n    const inspectedClosure = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,\n      { headers: { "x-fibre-private-token": privateToken } },\n    );\n    assert.equal(inspectedClosure.response.status, 200);\n    assert.equal(inspectedClosure.body.authorityWithdrawal.causalChainVerified, true);\n    assert.equal(inspectedClosure.body.authorityWithdrawal.closure.closureId, closed.body.closure.closureId);\n\n    const currentStore = openObligationStore(databasePath);''')
+          r('services/world-kernel/test/causal-process.test.mjs',
+            '''    } finally {\n      currentStore.close();\n    }\n  } finally {''',
+            '''    } finally {\n      currentStore.close();\n    }\n\n    const closureDb = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });\n    try {\n      assert.equal(Number(closureDb.prepare(\n        "SELECT COUNT(*) AS count FROM structured_authority_withdrawal_closures WHERE session_id=?",\n      ).get(sessionId).count), 1);\n      assert.equal(Number(closureDb.prepare(\n        "SELECT COUNT(*) AS count FROM authorization_consumptions WHERE authorization_id=?",\n      ).get(authorizationId).count), 0);\n      assert.equal(Number(closureDb.prepare(\n        "SELECT COUNT(*) AS count FROM freeze_reports WHERE session_id=?",\n      ).get(sessionId).count), 0);\n    } finally {\n      closureDb.close();\n    }\n\n    await processHandle.stop();\n    processHandle = await startProcess(databasePath);\n    const restartedClosure = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}/authority-withdrawal`,\n      { headers: { "x-fibre-private-token": privateToken } },\n    );\n    assert.equal(restartedClosure.response.status, 200);\n    assert.deepEqual(restartedClosure.body.authorityWithdrawal, inspectedClosure.body.authorityWithdrawal);\n    const restartedRuntime = await json(\n      `${processHandle.baseUrl}/threads/${thread.threadId}/private/runtime/${sessionId}`,\n      { headers: { "x-fibre-private-token": privateToken } },\n    );\n    assert.equal(restartedRuntime.body.runtime.session.status, "aborted");\n    assert.equal(restartedRuntime.body.runtime.authorization.desiredAction, "clarify");\n  } finally {''')
+          PY
+
+          # Remove this one-shot patcher from the branch before committing code.
+          git rm .github/workflows/pr35-i3-closure.yml
+
+      - name: Validate closure and review fixes
+        run: npm run check
+      - name: Commit closure
+        shell: bash
+        run: |
+          git config user.name "OpenAI review-fix bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Close interrupted structured authority truthfully"
+          git push origin HEAD:agent/structured-obligation-v1
