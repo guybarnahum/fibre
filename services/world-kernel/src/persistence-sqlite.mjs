@@ -294,7 +294,12 @@ export function migrateDatabase(database) {
     if (rebuildEvents) rebuildEventTables(database);
     createSchema(database);
     migrateLegacyConsumedObligations(database);
-    backfillLegacyThreadIdentity(database);
+    const identityMigration = backfillLegacyThreadIdentity(database);
+    if (identityMigration.droppedPostSeedAdditions !== 0) {
+      throw new IntegrityError(
+        `identity migration found ${identityMigration.droppedPostSeedAdditions} post-seed legacy projection additions with no trustworthy provenance; migration refused rather than silently dropping or fabricating identity history`,
+      );
+    }
     backfillMemoryVisualCompanions(database);
     const violations = database.prepare("PRAGMA foreign_key_check").all();
     if (violations.length !== 0) {
