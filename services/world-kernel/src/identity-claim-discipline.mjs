@@ -10,9 +10,14 @@ export const IDENTITY_ATOMIC_CLAIM_POLICY_V1 = Object.freeze({
   version: "1",
 });
 
+export const IDENTITY_ATOMIC_CLAIM_POLICY_V2 = Object.freeze({
+  id: "identity_atomic_material_proposition",
+  version: "2",
+});
+
 // Current write policy. Historical rows never validate against this moving alias;
 // they dispatch through the immutable policy witness stored with the row.
-export const IDENTITY_ATOMIC_CLAIM_POLICY = IDENTITY_ATOMIC_CLAIM_POLICY_V1;
+export const IDENTITY_ATOMIC_CLAIM_POLICY = IDENTITY_ATOMIC_CLAIM_POLICY_V2;
 
 export const IDENTITY_CLAIM_STRUCTURE = "subject_predicate_object:1";
 export const MAX_CLAIM_PREDICATE_BYTES = 120;
@@ -20,6 +25,7 @@ export const MAX_CLAIM_PREDICATE_BYTES = 120;
 const LIST_OR_PARAGRAPH_PATTERN = /(?:\r|\n|^\s*[-*•]\s|\n\s*\d+[.)]\s)/m;
 const MULTI_SENTENCE_PATTERN = /[.!?]\s+[A-Za-z0-9]/;
 const EXPLICIT_BUNDLE_PATTERN = /(?:;|\u2014|\u2013|\b(?:and also|as well as|separately|in addition|additionally|another fact|also has|secondly|thirdly)\b)/i;
+const MULTI_AND_CHAIN_PATTERN = /\band\b[^\r\n.!?;—–]*\band\b/i;
 const PREDICATE_PATTERN = /^[a-z0-9][a-z0-9_]{0,63}$/;
 const PREDICATE_COMPONENT_BUNDLE_PATTERN = /(?:\r|\n|;|\u2014|\u2013|\s+and\s+)/i;
 
@@ -96,8 +102,19 @@ function assertAtomicV1(assertion) {
   return assertion;
 }
 
+function assertAtomicV2(assertion) {
+  assertAtomicV1(assertion);
+  if (MULTI_AND_CHAIN_PATTERN.test(assertion.meaning)) {
+    throw new TypeError(
+      "identity assertion.meaning appears to chain multiple independently addressable propositions with repeated conjunctions; split the claim",
+    );
+  }
+  return assertion;
+}
+
 const HISTORICAL_DISCIPLINE_VALIDATORS = Object.freeze({
   [policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1)]: assertAtomicV1,
+  [policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V2)]: assertAtomicV2,
 });
 
 export function assertRecordedClaimDiscipline(assertion) {
