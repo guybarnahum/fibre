@@ -2,7 +2,7 @@ import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { IDENTITY_DOMAIN_REGISTRIES } from "./identity-domain-registry.mjs";
 import { IDENTITY_CLAIM_STRUCTURE } from "./identity-claim-discipline.mjs";
 
-export const IDENTITY_DOMAIN_REGISTRY_V2_VERSION = "2";
+export const IDENTITY_DOMAIN_REGISTRY_V2_VERSION = "1";
 
 const V1 = IDENTITY_DOMAIN_REGISTRIES["1"];
 
@@ -172,7 +172,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2_DIGEST = `sha256:${sha256(canonicalJson
 export function identityDomainV2Definition(domainId) {
   const definition = IDENTITY_DOMAIN_REGISTRY_V2[domainId];
   if (definition === undefined) {
-    throw new TypeError(`unknown identity domain ${domainId} in registry version 2`);
+    throw new TypeError(`unknown identity domain ${domainId} in current registry`);
   }
   return definition;
 }
