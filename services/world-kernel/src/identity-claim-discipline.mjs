@@ -140,9 +140,24 @@ export function assertCurrentClaimDiscipline(assertion) {
     "identity assertion.admission.claimDiscipline",
     assertion.admission.claimDiscipline,
   );
-  if (policyKey(witness) !== policyKey(IDENTITY_ATOMIC_CLAIM_POLICY)) {
+  const currentKey = policyKey(IDENTITY_ATOMIC_CLAIM_POLICY);
+  const witnessKey = policyKey(witness);
+
+  // Transitional writer compatibility is admission-time only: a caller still naming
+  // the immediately prior v1 discipline is subjected to v2 and the durable row is
+  // rewritten to record the policy that actually admitted it. Historical rows are
+  // never upgraded or reinterpreted.
+  if (
+    witnessKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1) &&
+    currentKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V2)
+  ) {
+    assertion.admission.claimDiscipline = { ...IDENTITY_ATOMIC_CLAIM_POLICY };
+    return assertRecordedClaimDiscipline(assertion);
+  }
+
+  if (witnessKey !== currentKey) {
     throw new TypeError(
-      `new registry v2 identity assertions require current claim discipline ${policyKey(IDENTITY_ATOMIC_CLAIM_POLICY)}`,
+      `new registry v2 identity assertions require current claim discipline ${currentKey}`,
     );
   }
   return assertRecordedClaimDiscipline(assertion);
