@@ -32,6 +32,7 @@ function v2Domain({
   behavioral = ["candidate_causal", "context_only"],
   singletonKinds = [],
   mutationRule,
+  witnessPolicy = null,
 }) {
   return Object.freeze({
     projectionSection,
@@ -41,6 +42,7 @@ function v2Domain({
     allowedBehavioralStatuses: Object.freeze([...behavioral]),
     singletonKinds: Object.freeze([...singletonKinds]),
     mutationRule,
+    witnessPolicy,
     claimStructure: IDENTITY_CLAIM_STRUCTURE,
     authoringStatus: "active",
   });
@@ -59,6 +61,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["inherited", "relational", "birth_created", "echo_source"],
     authorship: ["genesis_authority", "relationship_shared_world_source", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "life_relation_revision",
     mutationRule: "One assertion represents one relation between exact parties; lineage alone never implies personality.",
   }),
 
@@ -68,6 +71,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["relational", "birth_created", "historical_experienced"],
     authorship: ["genesis_authority", "relationship_shared_world_source", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "life_relation_revision",
     mutationRule: "Role and relationship facts remain separate from behavioral meaning or binding authority.",
   }),
 
@@ -77,6 +81,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["inherited", "birth_created", "echo_source"],
     authorship: ["genesis_authority", "human_sponsor_source", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "life_relation_revision",
     mutationRule: "Origin facts may be corrected from evidence but cannot directly mint preferences, values, competence, or willingness.",
   }),
 
@@ -86,6 +91,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["upbringing_cultural", "historical_experienced", "echo_source", "self_authored"],
     authorship: ["genesis_authority", "human_sponsor_source", "relationship_shared_world_source", "thread_self_authored", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "thread_event",
     mutationRule: "One assertion carries one formation claim; demographic labels cannot substitute for lived meaning. Causal promotion is reserved for later standing work.",
   }),
 
@@ -95,6 +101,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["upbringing_cultural", "historical_experienced", "echo_source", "self_authored"],
     authorship: ["genesis_authority", "human_sponsor_source", "relationship_shared_world_source", "thread_self_authored", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "thread_event",
     mutationRule: "Language use or learning must be grounded in lived evidence; ancestry, geography, name, accent, or appearance cannot independently imply language ability or fluency.",
   }),
 
@@ -104,6 +111,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["geographic", "historical_experienced", "echo_source"],
     authorship: ["genesis_authority", "institutional_source", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "place_episode_revision",
     mutationRule: "One assertion represents one place/interval fact; personal meaning belongs in place_meaning.",
   }),
 
@@ -113,6 +121,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["geographic", "historical_experienced", "institutional_role", "echo_source"],
     authorship: ["institutional_source", "genesis_authority", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
+    witnessPolicy: "place_episode_revision",
     mutationRule: "Work place is situated history, not root identity.",
   }),
 
@@ -121,7 +130,9 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     description: "One Thread interpretation of what a particular place means in its life.",
     provenance: ["geographic", "historical_experienced", "self_authored", "echo_source"],
     authorship: ["thread_self_authored", "genesis_authority", "human_sponsor_source", "fibre_policy_derived", "admin_correction"],
-    mutationRule: "Place meaning may change without rewriting the underlying geography fact.",
+    behavioral: ["context_only"],
+    witnessPolicy: "place_episode_revision",
+    mutationRule: "Place meaning may change without rewriting the underlying geography fact; #38 does not allow place to mint character, competence, language ability, values, or willingness.",
   }),
 
   embodiment_visual: v2Domain({
@@ -130,6 +141,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["generated_embodiment", "echo_source", "self_authored"],
     authorship: ["embodiment_generator_tool", "genesis_authority", "human_sponsor_source", "thread_self_authored", "admin_correction"],
     behavioral: ["presentation_only", "context_only"],
+    witnessPolicy: "embodiment_revision",
     mutationRule: "Visual embodiment is versioned and provenance-bound; appearance cannot imply character or competence.",
   }),
 
@@ -139,6 +151,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     provenance: ["generated_embodiment", "echo_source", "self_authored"],
     authorship: ["embodiment_generator_tool", "genesis_authority", "human_sponsor_source", "thread_self_authored", "admin_correction"],
     behavioral: ["presentation_only", "context_only"],
+    witnessPolicy: "embodiment_revision",
     mutationRule: "Voice is versioned and provenance-bound; accent or vocal style cannot imply values, competence, or willingness.",
   }),
 
