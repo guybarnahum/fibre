@@ -47,6 +47,7 @@ export const PLACE_EPISODE_KINDS = Object.freeze([
 
 export const PLACE_PRECISIONS = Object.freeze(["locality", "region", "country", "unspecified"]);
 export const SITUATED_LIFE_VISIBILITIES = Object.freeze(["public", "restricted", "private"]);
+export const SITUATED_LIFE_STATUSES = Object.freeze(["current", "disputed", "corrected", "retracted"]);
 export const SITUATED_LIFE_PROVENANCE = Object.freeze([
   "genesis_created",
   "world_recorded",
@@ -91,12 +92,31 @@ function normalizeRevisionFields(name, value) {
   return { supersedesRevision: value.supersedesRevision };
 }
 
+function assertBoundedDisplayName(name, value) {
+  assertNonEmpty(name, value);
+  if (Buffer.byteLength(value, "utf8") > 160) {
+    throw new TypeError(`${name} exceeds 160 UTF-8 bytes`);
+  }
+}
+
+function normalizeStatus(name, value) {
+  if (value === undefined) return undefined;
+  assertEnum(name, value, SITUATED_LIFE_STATUSES);
+  return value;
+}
+
 function normalizeRelatedParty(value) {
   assertPlainObject("life relation.relatedParty", value);
   assertExactKeys("life relation.relatedParty", value, ["partyId", "kind", "displayName"]);
   assertId("life relation.relatedParty.partyId", value.partyId);
   assertEnum("life relation.relatedParty.kind", value.kind, RELATED_PARTY_KINDS);
-  assertNonEmpty("life relation.relatedParty.displayName", value.displayName);
+  assertBoundedDisplayName("life relation.relatedParty.displayName", value.displayName);
+  if (value.kind === "thread" && !value.partyId.startsWith("thr_")) {
+    throw new TypeError("Thread related party must use a thr_ identifier");
+  }
+  if (value.kind !== "thread" && value.partyId.startsWith("thr_")) {
+    throw new TypeError("thr_ identifiers are reserved for live Thread related parties");
+  }
   return { partyId: value.partyId, kind: value.kind, displayName: value.displayName };
 }
 
@@ -106,6 +126,14 @@ export function lifeRelationId(seed) {
 
 export function placeEpisodeId(seed) {
   return `plce_${sha256(canonicalJson(seed))}`;
+}
+
+export function situatedLifeStatus(record) {
+  return record.status ?? "current";
+}
+
+export function situatedLifeRecordIsCurrent(record) {
+  return ["current", "corrected"].includes(situatedLifeStatus(record));
 }
 
 export function normalizeLifeRelation(value) {
@@ -121,6 +149,7 @@ export function normalizeLifeRelation(value) {
     "validFrom",
     "validTo",
     "visibility",
+    "status",
     "provenance",
     "recordedAt",
     "supersedesRevision",
@@ -135,11 +164,13 @@ export function normalizeLifeRelation(value) {
     value.geneticContributionRole,
     GENETIC_CONTRIBUTION_ROLES,
   );
-  if (
-    value.geneticContributionRole === "parent_genome_source" &&
-    value.relationKind !== "biological_parent"
-  ) {
-    throw new TypeError("only a biological_parent relation may be a parent_genome_source");
+  if (value.geneticContributionRole === "parent_genome_source") {
+    if (value.relationKind !== "biological_parent") {
+      throw new TypeError("only a biological_parent relation may be a parent_genome_source");
+    }
+    if (!["thread", "synthetic_ancestor"].includes(relatedParty.kind)) {
+      throw new TypeError("parent_genome_source requires a live Thread or synthetic ancestor parent");
+    }
   }
   const sourceReferences = normalizeReferences("life relation.sourceReferences", value.sourceReferences);
   const validFrom = normalizeOptionalTimestamp("life relation.validFrom", value.validFrom);
@@ -148,6 +179,7 @@ export function normalizeLifeRelation(value) {
     throw new TypeError("life relation.validTo cannot precede validFrom");
   }
   assertEnum("life relation.visibility", value.visibility, SITUATED_LIFE_VISIBILITIES);
+  const status = normalizeStatus("life relation.status", value.status);
   assertEnum("life relation.provenance", value.provenance, SITUATED_LIFE_PROVENANCE);
   assertIsoTimestamp("life relation.recordedAt", value.recordedAt);
   return {
@@ -161,6 +193,7 @@ export function normalizeLifeRelation(value) {
     validFrom,
     validTo,
     visibility: value.visibility,
+    ...(status === undefined ? {} : { status }),
     provenance: value.provenance,
     recordedAt: value.recordedAt,
     ...revision,
@@ -178,7 +211,7 @@ function normalizePlace(value) {
     "precision",
   ]);
   assertId("place episode.place.placeId", value.placeId);
-  assertNonEmpty("place episode.place.displayName", value.displayName);
+  assertBoundedDisplayName("place episode.place.displayName", value.displayName);
   if (value.countryCode !== null) assertNonEmpty("place episode.place.countryCode", value.countryCode);
   if (value.region !== null) assertNonEmpty("place episode.place.region", value.region);
   if (value.locality !== null) assertNonEmpty("place episode.place.locality", value.locality);
@@ -205,6 +238,7 @@ export function normalizePlaceEpisode(value) {
     "endAt",
     "sourceReferences",
     "visibility",
+    "status",
     "provenance",
     "recordedAt",
     "supersedesRevision",
@@ -224,6 +258,7 @@ export function normalizePlaceEpisode(value) {
   }
   const sourceReferences = normalizeReferences("place episode.sourceReferences", value.sourceReferences);
   assertEnum("place episode.visibility", value.visibility, SITUATED_LIFE_VISIBILITIES);
+  const status = normalizeStatus("place episode.status", value.status);
   assertEnum("place episode.provenance", value.provenance, SITUATED_LIFE_PROVENANCE);
   assertIsoTimestamp("place episode.recordedAt", value.recordedAt);
   return {
@@ -236,6 +271,7 @@ export function normalizePlaceEpisode(value) {
     endAt,
     sourceReferences,
     visibility: value.visibility,
+    ...(status === undefined ? {} : { status }),
     provenance: value.provenance,
     recordedAt: value.recordedAt,
     ...revision,
