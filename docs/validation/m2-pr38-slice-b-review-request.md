@@ -2,6 +2,10 @@
 
 Status: **implementation complete; hostile partial review required before Slice C.**
 
+Exact review head: `2d01566555d639bc01fffa5e96a7b426d1797f4e`
+
+Exact-head validation: Actions run **2254**, `npm run check` passed, **406/406 tests**, repository validation clean.
+
 Scope: Slice B only — lineage/family, geography, lived culture/language, embodiment, schema integration, and read-only inspection.
 
 ## Thesis
@@ -19,7 +23,7 @@ A Thread can be durably situated in family, place, lived culture/language, and p
 7. synthetic/captured/human-derived embodiment truth switching;
 8. Echo/human-source consent or rights bypass;
 9. cache/asset/provider metadata becoming truth authority;
-10. coherent DB tampering, repair, restart, and append-only enforcement;
+10. coherent DB tampering, including recomputed row digests, repair, restart, and append-only enforcement;
 11. cross-domain bypass among lineage, culture, language, geography, and embodiment;
 12. #38 accidentally implementing #39 Genesis or earning #40/#41/#42 credit.
 
