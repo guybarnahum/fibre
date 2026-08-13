@@ -7,7 +7,7 @@ import {
 
 export const IDENTITY_ATOMIC_CLAIM_POLICY = Object.freeze({
   id: "identity_atomic_material_proposition",
-  version: "2",
+  version: "1",
 });
 
 export const IDENTITY_CLAIM_STRUCTURE = "subject_predicate_object:1";
