@@ -23,7 +23,9 @@ import {
   IdentityNotFoundError,
   identityAssertionDigest,
   normalizeIdentityAssertion,
+  rehydrateIdentityAssertion,
 } from "./identity-provenance-domain.mjs";
+import { assertSingleMaterialProposition } from "./identity-claim-discipline.mjs";
 import {
   decodeMemoryVisualCompanionRow,
   persistIdentityAssertionRow,
@@ -41,9 +43,16 @@ import {
   translateStorageError,
 } from "./persistence-sqlite.mjs";
 
+const CLAIM_ID_PATTERN = /^icl_[0-9a-f]{64}$/;
+
 export const IDENTITY_VIEW_DERIVATION_POLICY = Object.freeze({
   id: "identity_view_transaction_time",
   version: "1",
+});
+
+export const IDENTITY_VIEW_DERIVATION_POLICY_V2 = Object.freeze({
+  id: "identity_view_transaction_time",
+  version: "2",
 });
 
 function parseJson(name, value) {
@@ -71,16 +80,32 @@ function registryDigest(registryVersion) {
   throw new IntegrityError(`unknown identity registry version ${registryVersion}`);
 }
 
+function registryDomainBinding(registryVersion, domain) {
+  const definition = definitionForRegistry(domain, registryVersion);
+  return {
+    registryVersion,
+    domain,
+    domainDigest: `sha256:${sha256(canonicalJson({ registryVersion, domain, definition }))}`,
+  };
+}
+
 function rowToAssertion(row) {
   const registryVersion = row.registry_version;
-  const assertion = normalizeIdentityAssertion(
-    parseJson(`identity assertion ${row.assertion_id}`, row.assertion_json),
-    {
-      allowAcceptedCausal: true,
-      allowEndogenous: true,
-      registryVersion,
-    },
-  );
+  let assertion;
+  try {
+    assertion = rehydrateIdentityAssertion(
+      parseJson(`identity assertion ${row.assertion_id}`, row.assertion_json),
+      {
+        allowAcceptedCausal: true,
+        allowEndogenous: true,
+        registryVersion,
+      },
+    );
+  } catch (error) {
+    throw new IntegrityError(
+      `identity assertion ${row.assertion_id} cannot be rehydrated under recorded registry ${registryVersion}: ${error.message}`,
+    );
+  }
   const digest = identityAssertionDigest(assertion, { registryVersion });
   if (digest !== row.assertion_digest || canonicalJson(assertion) !== row.assertion_json) {
     throw new IntegrityError(`identity assertion ${row.assertion_id} failed digest/canonical JSON verification`);
@@ -129,8 +154,21 @@ function sameIdentitySlot(left, right) {
     left.kind === right.kind;
 }
 
+function samePredicateSlot(left, right) {
+  if (left.claimPredicate === undefined && right.claimPredicate === undefined) return true;
+  if (left.claimPredicate === undefined || right.claimPredicate === undefined) return false;
+  return left.claimPredicate.subject === right.claimPredicate.subject &&
+    left.claimPredicate.predicate === right.claimPredicate.predicate;
+}
+
 function activeForPassport(assertion) {
   return assertion.status !== "revoked_for_use" && assertion.status !== "historical";
+}
+
+function behavioralEscalated(previous, current) {
+  return current === "candidate_causal" &&
+    previous !== "candidate_causal" &&
+    previous !== "accepted_causal";
 }
 
 export class IdentityStore {
@@ -338,6 +376,7 @@ export class IdentityStore {
       isCurrentRevision: true,
       domain: assertion.domain,
       kind: assertion.kind,
+      ...(assertion.claimPredicate === undefined ? {} : { claimPredicate: assertion.claimPredicate }),
       meaning: assertion.meaning,
       provenanceClass: assertion.provenanceClass,
       authorship: assertion.authorship,
@@ -352,16 +391,38 @@ export class IdentityStore {
       assertionDigest,
     }));
     const registryVersions = [...new Set(records.map(({ registryVersion }) => registryVersion))].sort();
+    const pureV1 = registryVersions.length <= 1 &&
+      (registryVersions.length === 0 || registryVersions[0] === IDENTITY_DOMAIN_REGISTRY_VERSION);
+    if (pureV1) {
+      const view = {
+        threadId,
+        asOf,
+        derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
+        registry: {
+          version: IDENTITY_DOMAIN_REGISTRY_VERSION,
+          digest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
+        },
+        assertions: items,
+      };
+      return {
+        ...view,
+        viewDigest: `sha256:${sha256(canonicalJson(view))}`,
+      };
+    }
+    const bindingMap = new Map();
+    for (const { assertion, registryVersion } of records) {
+      const key = `${registryVersion}:${assertion.domain}`;
+      if (!bindingMap.has(key)) {
+        bindingMap.set(key, registryDomainBinding(registryVersion, assertion.domain));
+      }
+    }
+    const registryBindings = [...bindingMap.values()].sort((left, right) =>
+      `${left.registryVersion}:${left.domain}`.localeCompare(`${right.registryVersion}:${right.domain}`));
     const view = {
       threadId,
       asOf,
-      derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
-      registry: {
-        versions: registryVersions.map((version) => ({
-          version,
-          digest: registryDigest(version),
-        })),
-      },
+      derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY_V2,
+      registryBindings,
       assertions: items,
     };
     return {
@@ -403,7 +464,7 @@ export class IdentityStore {
         effectiveAt: assertion.effectiveAt,
         recordedAt: assertion.recordedAt,
       }));
-    const passport = {
+    const common = {
       threadId,
       canonicalName: canonical.meaning,
       canonicalNameAssertionId: canonical.assertionId,
@@ -417,8 +478,17 @@ export class IdentityStore {
       publicSelfDescriptionAssertionId: selfDescription?.assertionId ?? null,
       currentIdentityViewDigest: view.viewDigest,
       derivationPolicy: view.derivationPolicy,
-      registry: view.registry,
     };
+    const passport = view.derivationPolicy.version === "1"
+      ? {
+          ...common,
+          registryVersion: IDENTITY_DOMAIN_REGISTRY_VERSION,
+          registryDigest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
+        }
+      : {
+          ...common,
+          registryBindings: view.registryBindings,
+        };
     return {
       ...passport,
       passportDigest: `sha256:${sha256(canonicalJson(passport))}`,
@@ -474,11 +544,15 @@ export class IdentityStore {
     if (candidate?.admission?.policy?.id === "legacy_projection_drift_migration") {
       throw new IdentityConflictError("legacy migration observation policy is not a public identity authoring surface");
     }
+    if (typeof candidate?.claimId !== "string" || !CLAIM_ID_PATTERN.test(candidate.claimId)) {
+      throw new TypeError("identity assertion.claimId must be icl_ followed by 64 lowercase hex characters");
+    }
+    assertSingleMaterialProposition(candidate?.meaning);
 
     const existingClaimRegistry = this.#database.prepare(`
       SELECT registry_version FROM identity_assertion_records
       WHERE claim_id=? ORDER BY revision LIMIT 1
-    `).get(candidate?.claimId)?.registry_version;
+    `).get(candidate.claimId)?.registry_version;
     const registryVersion = existingClaimRegistry ?? IDENTITY_DOMAIN_REGISTRY_V2_VERSION;
     const assertion = normalizeIdentityAssertion(candidate, { registryVersion });
     const { createdAt } = this.#requireThread(assertion.threadId);
@@ -510,6 +584,11 @@ export class IdentityStore {
           throw new IdentityConflictError(`identity claim ${assertion.claimId} already exists`);
         }
         const definition = definitionForRegistry(assertion.domain, registryVersion);
+        if (definition.authoringStatus === "superseded") {
+          throw new IdentityConflictError(
+            `identity domain ${assertion.domain} is superseded for new authoring by ${definition.supersededBy.join(", ")}`,
+          );
+        }
         if (definition.singletonKinds.includes(assertion.kind)) {
           const other = this.#database.prepare(`
             SELECT claim_id FROM identity_assertion_records
@@ -542,6 +621,9 @@ export class IdentityStore {
         if (!sameIdentitySlot(assertion, previous.assertion)) {
           throw new IdentityConflictError(`identity claim ${assertion.claimId} changes identity slot`);
         }
+        if (!samePredicateSlot(assertion, previous.assertion)) {
+          throw new IdentityConflictError(`identity claim ${assertion.claimId} changes claim predicate subject/predicate`);
+        }
         if (assertion.supersedesAssertionId !== previous.assertion.assertionId) {
           throw new IdentityConflictError(
             `identity claim ${assertion.claimId} must supersede ${previous.assertion.assertionId}`,
@@ -549,6 +631,15 @@ export class IdentityStore {
         }
         if (Date.parse(assertion.recordedAt) < Date.parse(previous.assertion.recordedAt)) {
           throw new IdentityConflictError(`identity claim ${assertion.claimId} recordedAt moves backwards`);
+        }
+        if (behavioralEscalated(previous.assertion.behavioralStatus, assertion.behavioralStatus)) {
+          const previousRefs = new Set(previous.assertion.sourceReferences);
+          const hasEvidenceDelta = assertion.sourceReferences.some((reference) => !previousRefs.has(reference));
+          if (assertion.meaning === previous.assertion.meaning || !hasEvidenceDelta) {
+            throw new IdentityConflictError(
+              `identity claim ${assertion.claimId} behavioral escalation requires changed meaning and new evidence`,
+            );
+          }
         }
       }
 
@@ -664,17 +755,21 @@ export class IdentityStore {
     }
 
     const passport = this.getPassport(threadId);
+    const admittedRegistryVersions = [...registryVersions].sort();
+    const singleRegistryVersion = admittedRegistryVersions.length === 1
+      ? admittedRegistryVersions[0]
+      : null;
     return {
       ok: true,
       threadId,
-      registryVersion: IDENTITY_DOMAIN_REGISTRY_VERSION,
-      registryDigest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
-      admittedRegistryVersions: [...registryVersions].sort(),
-      admittedRegistries: [...registryVersions].sort().map((version) => ({
+      registryVersion: singleRegistryVersion,
+      registryDigest: singleRegistryVersion === null ? null : registryDigest(singleRegistryVersion),
+      admittedRegistryVersions,
+      admittedRegistries: admittedRegistryVersions.map((version) => ({
         version,
         digest: registryDigest(version),
       })),
-      derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
+      derivationPolicy: passport.derivationPolicy,
       claimCount: claims.length,
       assertionCount: assertions,
       acceptedCausalAssertions: acceptedCausal,
