@@ -18,6 +18,11 @@ import {
   IDENTITY_VISIBILITIES,
   identityDomainDefinition,
 } from "./identity-domain-registry.mjs";
+import {
+  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
+  identityDomainV2Definition,
+} from "./identity-domain-registry-v2.mjs";
+import { assertRegistryV2ClaimDiscipline } from "./identity-claim-discipline.mjs";
 
 export const MAX_IDENTITY_MEANING_BYTES = 2048;
 export const MAX_IDENTITY_SOURCE_REFERENCES = 32;
@@ -37,6 +42,13 @@ const SOURCE_MODES = new Set([
 export class IdentityConflictError extends Error {}
 export class IdentityNotFoundError extends Error {}
 export class IdentityHistoryIntegrityError extends Error {}
+
+function identityDefinition(domainId, registryVersion) {
+  if (registryVersion === IDENTITY_DOMAIN_REGISTRY_V2_VERSION) {
+    return identityDomainV2Definition(domainId);
+  }
+  return identityDomainDefinition(domainId, { registryVersion });
+}
 
 function assertClaimId(name, value) {
   assertNonEmpty(name, value);
@@ -217,7 +229,7 @@ export function normalizeIdentityAssertion(
     minimum: 1,
   });
   assertId("identity assertion.threadId", candidate.threadId);
-  const definition = identityDomainDefinition(candidate.domain, { registryVersion });
+  const definition = identityDefinition(candidate.domain, registryVersion);
   assertKind("identity assertion.kind", candidate.kind);
   assertNonEmpty("identity assertion.meaning", candidate.meaning);
   if (Buffer.byteLength(candidate.meaning, "utf8") > MAX_IDENTITY_MEANING_BYTES) {
@@ -230,6 +242,9 @@ export function normalizeIdentityAssertion(
   }
   const authorship = normalizeAuthorship(candidate);
   const admission = normalizeAdmission(candidate.admission);
+  if (registryVersion === IDENTITY_DOMAIN_REGISTRY_V2_VERSION) {
+    assertRegistryV2ClaimDiscipline({ ...candidate, admission });
+  }
   const migrationObservation = isLegacyProjectionObservation(candidate, authorship, admission);
   if (
     !definition.allowedProvenanceClasses.includes(candidate.provenanceClass) &&
@@ -290,7 +305,7 @@ export function normalizeIdentityAssertion(
     throw new TypeError("identity assertion.behavioralStatus is invalid");
   }
   if (candidate.behavioralStatus === "accepted_causal" && !allowAcceptedCausal) {
-    throw new TypeError("#37 cannot author accepted_causal identity; #39/#40 standing evidence is required");
+    throw new TypeError("#38 cannot author accepted_causal identity; #40/#41 standing evidence is required");
   }
   if (!definition.allowedBehavioralStatuses.includes(candidate.behavioralStatus)) {
     if (!(candidate.behavioralStatus === "accepted_causal" && allowAcceptedCausal)) {
@@ -300,7 +315,7 @@ export function normalizeIdentityAssertion(
     }
   }
   if (admission.evidenceClassification === "endogenous" && !allowEndogenous) {
-    throw new TypeError("#37 cannot claim endogenous identity authorship; #41 must earn that evidence");
+    throw new TypeError("#38 cannot claim endogenous identity authorship; #42 must earn that evidence");
   }
   if (
     authorship.kind === "thread_self_authored" &&
@@ -391,7 +406,7 @@ function bootstrapAssertion(thread, sourceEventId, {
     recordedAt,
     visibility,
     status: "current",
-    projectionClass: identityDomainDefinition(domain).projectionSection,
+    projectionClass: identityDomainDefinition(domain, { registryVersion: "1" }).projectionSection,
     behavioralStatus,
     admission: bootstrapAdmission(),
   };
@@ -403,7 +418,7 @@ function bootstrapAssertion(thread, sourceEventId, {
       meaning,
       recordedAt,
     }),
-  });
+  }, { registryVersion: "1" });
 }
 
 function snakeKey(value) {
