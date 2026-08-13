@@ -22,6 +22,7 @@ const PHOTO_PROMPT_REQUIRED_SECTIONS = Object.freeze([
   "TRUTH BOUNDARY",
   "REGENERATION",
 ]);
+const MEMORY_CACHE_LOCATOR_SCHEMES = new Set(["cache", "s3"]);
 
 export const MEMORY_VISUAL_COMPANION_POLICY = Object.freeze({
   id: "memory_visual_companion",
@@ -68,10 +69,11 @@ function assertPhotoPrompt(name, value) {
   }
 }
 
-function assertS3CacheRef(name, value) {
+function assertCacheLocator(name, value) {
   assertNonEmpty(name, value);
-  if (!value.startsWith("s3://")) {
-    throw new TypeError(`${name} must be an s3:// cache locator`);
+  const match = /^([a-z][a-z0-9+.-]*):\/\/.+$/i.exec(value);
+  if (match === null || !MEMORY_CACHE_LOCATOR_SCHEMES.has(match[1].toLowerCase())) {
+    throw new TypeError(`${name} must use a supported opaque cache locator scheme`);
   }
 }
 
@@ -108,7 +110,7 @@ export function buildMemoryPhotoPrompt({
     ? `This is a legacy memory reference (${memoryRef}) whose persisted record does not yet contain an admitted narrative summary. Preserve the photo obligation, but do not invent specific people, place, date, action, dialogue, or outcome merely to fill the missing context. A later append-only revision may enrich this prompt from newly admitted evidence before rendering.`
     : `Reconstruct the lived moment summarized by the authoritative memory record: “${memorySummary}” Treat the summary as a semantic anchor, not as license to add unsupported biographical facts.`;
 
-  return `MEMORY PHOTO SOURCE OF TRUTH v${MEMORY_PHOTO_PROMPT_POLICY.version}\n\nMEMORY MOMENT\n${memoryMoment}\n\nTHREAD CONTINUITY\nDepict the same persistent Thread as the memory owner. Preserve visual continuity with identity and embodiment evidence explicitly bound into this companion lineage. Do not substitute a profession, role, stereotype, demographic guess, or generic stock character for the person. Do not silently use mutable current identity when the memory requires an earlier self.\n\nSCENE\nRender one specific, plausible lived instant rather than a montage, infographic, poster, or symbolic illustration. Prefer concrete spatial relationships, ordinary environmental detail, and a moment that could have been photographed by someone present. Do not add events or participants that are not grounded by the memory and its source references.\n\nEMOTIONAL TEXTURE\nExpress the remembered emotional texture through posture, attention, distance, gesture, light, and environment rather than labels or theatrical facial exaggeration. Preserve ambiguity where the evidence is ambiguous.\n\nCOMPOSITION\nUse a naturalistic candid-photograph language: coherent perspective, believable anatomy, physically plausible light, restrained depth of field, and scene-level detail. No captions, speech bubbles, watermarks, UI chrome, visible metadata, or explanatory text. Avoid glamour portraiture unless the memory itself calls for it.\n\nGROUNDING\nThread: ${threadId}. Memory: ${memoryRef}. Creation class: ${createdFrom}. Immutable/source references: ${sourceReferences.join(", ")}. At render time, only evidence explicitly bound to this lineage may supply identity, embodiment, relationship, geography, or historical detail. Missing detail must remain visually noncommittal rather than being fabricated.\n\nTRUTH BOUNDARY\nThis prompt describes a synthetic reconstruction of a memory. The resulting image is not historical photographic evidence and must remain labeled synthetic_representation_not_historical_evidence. A real captured photograph, if later admitted, is a different evidentiary representation and must retain captured_source_evidence truth status.\n\nREGENERATION\nThis layered prompt and its digest are the durable source of truth for a synthetic memory photo revision. The rendered image is a replaceable cache. If its S3 object is missing, corrupt, expired, or deliberately invalidated, regenerate from this exact prompt and the same bound source references, append a new companion revision, and never rewrite prior prompt, provenance, truth status, or cache history.`;
+  return `MEMORY PHOTO SOURCE OF TRUTH v${MEMORY_PHOTO_PROMPT_POLICY.version}\n\nMEMORY MOMENT\n${memoryMoment}\n\nTHREAD CONTINUITY\nDepict the same persistent Thread as the memory owner. Preserve visual continuity only from identity or embodiment assertions whose exact references are explicitly bound into this companion lineage. If no such assertion is bound, keep appearance visually noncommittal rather than consulting mutable current identity or inventing continuity. Do not substitute a profession, role, stereotype, demographic guess, or generic stock character for the person. Do not silently use mutable current identity when the memory requires an earlier self.\n\nSCENE\nRender one specific, plausible lived instant rather than a montage, infographic, poster, or symbolic illustration. Prefer concrete spatial relationships, ordinary environmental detail, and a moment that could have been photographed by someone present. Do not add events or participants that are not grounded by the memory and its source references.\n\nEMOTIONAL TEXTURE\nExpress the remembered emotional texture through posture, attention, distance, gesture, light, and environment rather than labels or theatrical facial exaggeration. Preserve ambiguity where the evidence is ambiguous.\n\nCOMPOSITION\nUse a naturalistic candid-photograph language: coherent perspective, believable anatomy, physically plausible light, restrained depth of field, and scene-level detail. No captions, speech bubbles, watermarks, UI chrome, visible metadata, or explanatory text. Avoid glamour portraiture unless the memory itself calls for it.\n\nGROUNDING\nThread: ${threadId}. Memory: ${memoryRef}. Creation class: ${createdFrom}. Immutable/source references: ${sourceReferences.join(", ")}. At render time, only evidence explicitly bound to this lineage may supply identity, embodiment, relationship, geography, or historical detail. Missing detail must remain visually noncommittal rather than being fabricated.\n\nTRUTH BOUNDARY\nThis prompt describes a synthetic reconstruction of a memory. The resulting image is not historical photographic evidence and must remain labeled synthetic_representation_not_historical_evidence. A real captured photograph, if later admitted, is a different evidentiary representation and must retain captured_source_evidence truth status.\n\nREGENERATION\nThis layered prompt and its digest are the durable source of truth for a synthetic memory photo revision. The rendered image is a replaceable cache. If the cached object is missing, corrupt, expired, or deliberately invalidated, regenerate from this exact prompt and the same bound source references, append a new companion revision, and never rewrite prior prompt, provenance, truth status, or cache history.`;
 }
 
 export function normalizeMemoryVisualCompanion(candidate) {
@@ -199,7 +201,7 @@ export function normalizeMemoryVisualCompanion(candidate) {
   }
 
   if (candidate.status === "available") {
-    assertS3CacheRef("memory visual companion.assetRef", candidate.assetRef);
+    assertCacheLocator("memory visual companion.assetRef", candidate.assetRef);
     if (candidate.unavailableReason !== undefined) {
       throw new TypeError("available memory visual companion cannot have unavailableReason");
     }
