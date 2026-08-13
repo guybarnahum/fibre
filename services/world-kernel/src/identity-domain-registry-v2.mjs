@@ -8,7 +8,7 @@ const V1 = IDENTITY_DOMAIN_REGISTRIES["1"];
 
 const SUPERSEDED_AUTHORING = Object.freeze({
   lineage_family: Object.freeze(["lineage_relation", "family_role", "ancestral_origin"]),
-  upbringing_culture: Object.freeze(["cultural_formation"]),
+  upbringing_culture: Object.freeze(["cultural_formation", "language_formation"]),
   geography: Object.freeze(["geography_residence", "geography_work", "place_meaning"]),
   embodiment: Object.freeze(["embodiment_visual", "embodiment_voice"]),
   lived_episode: Object.freeze(["memory_interpretation"]),
@@ -87,6 +87,15 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     authorship: ["genesis_authority", "human_sponsor_source", "relationship_shared_world_source", "thread_self_authored", "fibre_policy_derived", "admin_correction"],
     behavioral: ["context_only"],
     mutationRule: "One assertion carries one formation claim; demographic labels cannot substitute for lived meaning. Causal promotion is reserved for later standing work.",
+  }),
+
+  language_formation: v2Domain({
+    projectionSection: "language",
+    description: "One lived language-use, acquisition, literacy, or language-context formation claim grounded in explicit experience.",
+    provenance: ["upbringing_cultural", "historical_experienced", "echo_source", "self_authored"],
+    authorship: ["genesis_authority", "human_sponsor_source", "relationship_shared_world_source", "thread_self_authored", "fibre_policy_derived", "admin_correction"],
+    behavioral: ["context_only"],
+    mutationRule: "Language use or learning must be grounded in lived evidence; ancestry, geography, name, accent, or appearance cannot independently imply language ability or fluency.",
   }),
 
   geography_residence: v2Domain({
