@@ -39,11 +39,12 @@ export function formatThreadIdentityInspection(report) {
     lines.push(
       `Thread ${integrity.threadId}: claims=${integrity.claimCount}, assertions=${integrity.assertionCount}, memoryVisuals=${integrity.memoryVisualCompanionCount}`,
       `  acceptedCausal=${integrity.acceptedCausalAssertions}, endogenous=${integrity.endogenousEvidenceAssertions}, registry=v${integrity.registryVersion}`,
+      `  memoryPhotos=${integrity.memoryPhotoRequirementSatisfied ? "SATISFIED" : "OUTSTANDING"}, missing=${integrity.memoriesMissingPhotoCount}`,
       `  passport=${item.passport.canonicalName ?? "(unnamed)"} (${integrity.passportDigest})`,
     );
     for (const visual of integrity.memoryVisualCompanions) {
       lines.push(
-        `  memory ${visual.memoryRef}: ${visual.status}, ${visual.truthStatus}, companion=${visual.companionId}@${visual.revision}`,
+        `  memory ${visual.memoryRef}: ${visual.status}, ${visual.truthStatus}, photo=${visual.photoRequirementSatisfied ? "satisfied" : "outstanding"}, companion=${visual.companionId}@${visual.revision}`,
       );
     }
   }
@@ -74,7 +75,7 @@ function usage() {
   return [
     "Usage: node tools/inspect-thread-identity.mjs <database.sqlite> [--thread <thread-id>] [--json]",
     "",
-    "Read-only inspection of Thread Passport, identity-provenance histories, and memory visual companions.",
+    "Read-only inspection of Thread Passport, identity-provenance histories, memory visual companions, and outstanding photo obligations.",
     "",
   ].join("\n");
 }
