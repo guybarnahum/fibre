@@ -25,19 +25,50 @@ const REGISTRY_SQL = sqlList([
   IDENTITY_DOMAIN_REGISTRY_VERSION,
   IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
 ]);
+const SUPPORTED_REGISTRIES = new Set([
+  IDENTITY_DOMAIN_REGISTRY_VERSION,
+  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
+]);
 const PROVENANCE_SQL = sqlList(IDENTITY_PROVENANCE_CLASSES);
 const AUTHORSHIP_SQL = sqlList(IDENTITY_AUTHORSHIP_KINDS);
 const VISIBILITY_SQL = sqlList(IDENTITY_VISIBILITIES);
 const STATUS_SQL = sqlList(IDENTITY_ASSERTION_STATUSES);
 const BEHAVIORAL_SQL = sqlList(IDENTITY_BEHAVIORAL_STATUSES);
 
-function needsRegistryV2Repair(database) {
-  const row = database.prepare(
+function tableSql(database) {
+  return database.prepare(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='identity_assertion_records'",
-  ).get();
-  if (row === undefined) return false;
-  return !row.sql.includes("'lineage_relation'") ||
-    !row.sql.includes("registry_version IN ('1','2')");
+  ).get()?.sql;
+}
+
+function triggerExists(database, name) {
+  return database.prepare(
+    "SELECT 1 AS present FROM sqlite_master WHERE type='trigger' AND name=?",
+  ).get(name) !== undefined;
+}
+
+function needsRegistryV2Repair(database) {
+  const sql = tableSql(database);
+  if (sql === undefined) return false;
+  return !sql.includes("registry_version IN ('1','2')") ||
+    !triggerExists(database, "identity_assertions_registry_pin") ||
+    !triggerExists(database, "identity_assertions_no_update") ||
+    !triggerExists(database, "identity_assertions_no_delete");
+}
+
+function assertSupportedStoredRegistries(database, hasRegistryVersion) {
+  if (!hasRegistryVersion) return;
+  const rows = database.prepare(
+    "SELECT DISTINCT registry_version FROM identity_assertion_records ORDER BY registry_version",
+  ).all();
+  const unsupported = rows
+    .map((row) => row.registry_version)
+    .filter((version) => !SUPPORTED_REGISTRIES.has(version));
+  if (unsupported.length !== 0) {
+    throw new IntegrityError(
+      `identity registry-v2 repair refuses unsupported recorded registry_version values: ${unsupported.join(", ")}`,
+    );
+  }
 }
 
 function createRegistryV2AssertionTable(database) {
@@ -84,6 +115,19 @@ function createRegistryV2AssertionTable(database) {
     CREATE INDEX idx_identity_assertions_claim_revision
       ON identity_assertion_records(claim_id,revision);
 
+    CREATE TRIGGER identity_assertions_registry_pin
+      BEFORE INSERT ON identity_assertion_records
+      WHEN NEW.revision > 1
+      BEGIN
+        SELECT CASE
+          WHEN (SELECT registry_version FROM identity_assertion_records
+                WHERE claim_id=NEW.claim_id AND revision=1) IS NULL
+            THEN RAISE(ABORT,'identity claim revision must follow an existing revision 1')
+          WHEN NEW.registry_version != (SELECT registry_version FROM identity_assertion_records
+                WHERE claim_id=NEW.claim_id AND revision=1)
+            THEN RAISE(ABORT,'identity claim registry_version is pinned by revision 1')
+        END;
+      END;
     CREATE TRIGGER identity_assertions_no_update
       BEFORE UPDATE ON identity_assertion_records
       BEGIN SELECT RAISE(ABORT,'identity_assertion_records is append-only'); END;
@@ -100,8 +144,10 @@ export function repairIdentityAssertionRegistryV2Schema(database) {
     "PRAGMA table_info(identity_assertion_records)",
   ).all();
   const hasRegistryVersion = columns.some((column) => column.name === "registry_version");
+  assertSupportedStoredRegistries(database, hasRegistryVersion);
 
   database.exec(`
+    DROP TRIGGER IF EXISTS identity_assertions_registry_pin;
     DROP TRIGGER IF EXISTS identity_assertions_no_update;
     DROP TRIGGER IF EXISTS identity_assertions_no_delete;
     DROP INDEX IF EXISTS idx_identity_assertions_thread_domain;
