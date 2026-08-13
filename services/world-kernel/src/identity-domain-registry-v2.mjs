@@ -1,15 +1,26 @@
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { IDENTITY_DOMAIN_REGISTRIES } from "./identity-domain-registry.mjs";
-import { IDENTITY_ATOMIC_CLAIM_POLICY } from "./identity-claim-discipline.mjs";
+import { IDENTITY_CLAIM_STRUCTURE } from "./identity-claim-discipline.mjs";
 
 export const IDENTITY_DOMAIN_REGISTRY_V2_VERSION = "2";
 
 const V1 = IDENTITY_DOMAIN_REGISTRIES["1"];
 
-function disciplined(definition) {
+const SUPERSEDED_AUTHORING = Object.freeze({
+  lineage_family: Object.freeze(["lineage_relation", "family_role", "ancestral_origin"]),
+  upbringing_culture: Object.freeze(["cultural_formation"]),
+  geography: Object.freeze(["geography_residence", "geography_work", "place_meaning"]),
+  embodiment: Object.freeze(["embodiment_visual", "embodiment_voice"]),
+  lived_episode: Object.freeze(["memory_interpretation"]),
+});
+
+function structured(domainId, definition) {
+  const supersededBy = SUPERSEDED_AUTHORING[domainId];
   return Object.freeze({
     ...definition,
-    claimDiscipline: Object.freeze({ ...IDENTITY_ATOMIC_CLAIM_POLICY }),
+    claimStructure: IDENTITY_CLAIM_STRUCTURE,
+    authoringStatus: supersededBy === undefined ? "active" : "superseded",
+    ...(supersededBy === undefined ? {} : { supersededBy }),
   });
 }
 
@@ -22,7 +33,7 @@ function v2Domain({
   singletonKinds = [],
   mutationRule,
 }) {
-  return disciplined(Object.freeze({
+  return Object.freeze({
     projectionSection,
     description,
     allowedProvenanceClasses: Object.freeze([...provenance]),
@@ -30,11 +41,13 @@ function v2Domain({
     allowedBehavioralStatuses: Object.freeze([...behavioral]),
     singletonKinds: Object.freeze([...singletonKinds]),
     mutationRule,
-  }));
+    claimStructure: IDENTITY_CLAIM_STRUCTURE,
+    authoringStatus: "active",
+  });
 }
 
 const inheritedV1 = Object.fromEntries(
-  Object.entries(V1).map(([domainId, definition]) => [domainId, disciplined(definition)]),
+  Object.entries(V1).map(([domainId, definition]) => [domainId, structured(domainId, definition)]),
 );
 
 export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
@@ -54,7 +67,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     description: "One family or household role grounded in an explicit relationship/world record.",
     provenance: ["relational", "birth_created", "historical_experienced"],
     authorship: ["genesis_authority", "relationship_shared_world_source", "fibre_policy_derived", "admin_correction"],
-    behavioral: ["candidate_causal", "context_only"],
+    behavioral: ["context_only"],
     mutationRule: "Role and relationship facts remain separate from behavioral meaning or binding authority.",
   }),
 
@@ -72,7 +85,8 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
     description: "One lived cultural formation claim grounded in household, ritual, migration, regional, or other explicit experience.",
     provenance: ["upbringing_cultural", "historical_experienced", "echo_source", "self_authored"],
     authorship: ["genesis_authority", "human_sponsor_source", "relationship_shared_world_source", "thread_self_authored", "fibre_policy_derived", "admin_correction"],
-    mutationRule: "One assertion carries one formation claim; demographic labels cannot substitute for lived meaning.",
+    behavioral: ["context_only"],
+    mutationRule: "One assertion carries one formation claim; demographic labels cannot substitute for lived meaning. Causal promotion is reserved for later standing work.",
   }),
 
   geography_residence: v2Domain({
@@ -120,7 +134,7 @@ export const IDENTITY_DOMAIN_REGISTRY_V2 = Object.freeze({
   }),
 
   memory_interpretation: v2Domain({
-    projectionSection: "history",
+    projectionSection: "memory",
     description: "One autobiographical interpretation linked to a durable memory record, distinct from historical event truth.",
     provenance: ["historical_experienced", "self_authored", "fibre_derived"],
     authorship: ["thread_self_authored", "fibre_policy_derived", "genesis_authority", "admin_correction"],
