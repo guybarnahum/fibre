@@ -2,9 +2,11 @@
 
 Status: **implementation complete; hostile partial review required before Slice C.**
 
-Exact review head: `2d01566555d639bc01fffa5e96a7b426d1797f4e`
+Implementation checkpoint: `2d01566555d639bc01fffa5e96a7b426d1797f4e`
 
-Exact-head validation: Actions run **2254**, `npm run check` passed, **406/406 tests**, repository validation clean.
+Implementation validation: Actions run **2254**, `npm run check` passed, **406/406 tests**, repository validation clean.
+
+The review-request documentation may advance the branch beyond that implementation checkpoint without changing Slice B behavior. Review the current PR head and compare behavioral changes against the implementation checkpoint above.
 
 Scope: Slice B only — lineage/family, geography, lived culture/language, embodiment, schema integration, and read-only inspection.
 
