@@ -1,3 +1,5 @@
+import { ensureEmbodimentIntegrity } from "./embodiment-integrity.mjs";
+
 export function createEmbodimentTables(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS embodiment_rights_authorities (
@@ -68,4 +70,5 @@ export function createEmbodimentTables(database) {
       BEFORE DELETE ON embodiment_lineage_heads
       BEGIN SELECT RAISE(ABORT,'embodiment_lineage_heads is append-only'); END;
   `);
+  ensureEmbodimentIntegrity(database);
 }
