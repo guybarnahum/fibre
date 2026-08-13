@@ -62,9 +62,23 @@ admission {
 }
 ```
 
-Revision 1 has no predecessor. Later revisions must be contiguous and supersede the immediate prior assertion. A claim may change meaning, visibility, current status, evidence, or interpretation without deleting the earlier assertion.
+The persisted row separately pins the `registry_version` under which that immutable assertion was admitted. Registry version is admission metadata, not mutable view state.
+
+Revision 1 has no predecessor. Later revisions must be contiguous and supersede the immediate prior assertion. A claim may change meaning, visibility, authoring disposition, evidence, or interpretation without deleting the earlier assertion.
 
 The owning Thread, domain, and kind are stable across a claim history. Moving a claim to a different identity slot requires a different claim rather than rewriting its semantic identity.
+
+## Currency is derived, not persisted
+
+Persisted `status` is an **authoring disposition**, not a currency selector. Values such as `current`, `disputed`, `corrected`, `historical`, and `revoked_for_use` describe the disposition recorded with that immutable assertion. Append-only storage therefore never rewrites an older row from `status=current` merely because a later revision supersedes it.
+
+Currentness is derived from lineage ordinality:
+
+- full claim history exposes exactly one `isCurrentRevision=true`: the highest valid contiguous revision;
+- an identity view exposes the one revision selected for each claim at that view's `asOf` and marks that selected revision `isCurrentRevision=true` **for that view**;
+- consumers must never filter persisted `status === "current"` to derive current identity.
+
+This distinction is load-bearing: historical truth and current identity are intentionally different views.
 
 # III. Closed Identity Domain Registry v1
 
@@ -102,7 +116,7 @@ Every domain declares:
 - singleton semantic slots where relevant;
 - its mutation/authority rule.
 
-The registry itself has a deterministic digest. Inspection and later projection can therefore bind a decision to the exact identity vocabulary under which records were admitted.
+The registry itself has a deterministic digest. Every immutable assertion row also pins the registry version under which it was admitted. Read-side validation must revalidate that row against its **pinned historical registry**, not whatever registry happens to be current when it is read. Future registry versions therefore add a new frozen registry entry rather than retroactively changing the semantics of v1 history.
 
 # IV. Claim-level anti-blob rule
 
@@ -113,7 +127,9 @@ The registry itself has a deterministic digest. Inspection and later projection 
 - every assertion has its own stable claim lineage and assertion ID;
 - `meaning` has a hard 2,048 UTF-8 byte upper bound.
 
-A 5,000-word biography record cannot therefore enter the ledger as one assertion. The byte bound, however, is **not** a complete semantic proposition detector: materially independent propositions can still fit below 2,048 bytes. That hostile-review finding remains a named hardening item before #39 causal projection/ablation. Until then, #37 must not claim that the byte limit alone proves semantic claim granularity.
+A 5,000-word biography record cannot therefore enter the ledger as one assertion. The byte bound, however, is **not** a complete semantic proposition detector: materially independent propositions can still fit below 2,048 bytes.
+
+That hostile-review finding is deferred only while #37 has no authoring-at-scale surface. The hardening deadline is **before any PR authors identity assertions at scale**. #38 must therefore either land semantic one-claim enforcement before its lineage/geography/culture writers emit durable assertions, or mechanically constrain every #38 writer to a provisional one-material-proposition-per-assertion discipline. It may not defer the problem until #39 after an immutable corpus already exists.
 
 Long biography, life chapters, and rich exterior prose are derived representations over claim-level records. They are never the source of truth.
 
@@ -153,6 +169,8 @@ admin_correction
 
 A Thread may author the meaning of an experience whose factual provenance is historical. An institution may author an external attribution that the Thread never adopts. An embodiment generator may produce an asset without becoming the author of the Thread's values.
 
+A named migration policy may also preserve an observed legacy projection as `fibre_derived` / `fibre_policy_derived` **without claiming authority for the underlying change**. That exceptional classification is a migration observation, not a normal public authoring permission.
+
 # VI. Evidence classification: #37 cannot steal later credit
 
 Every admitted assertion records:
@@ -161,7 +179,7 @@ Every admitted assertion records:
 exogenous | endogenous
 ```
 
-#37's public write path accepts **exogenous only**. It also rejects `accepted_causal` behavioral status.
+#37's public write path accepts **exogenous only**. It also rejects `accepted_causal` behavioral status. Internal persistence defaults to the same guards; later milestones must opt into stronger evidence only after earning it.
 
 This is deliberate:
 
@@ -177,7 +195,20 @@ Existing Threads are not discarded, and migration must not rewrite their origin.
 
 For a pre-#37 Thread, revision-1 genesis assertions are derived **only from the immutable `THREAD_SEEDED.payload.snapshot`** and cite that exact seed event as source evidence. Current mutable `threads.state_json` is not allowed to masquerade as birth evidence.
 
-If the current legacy projection differs from its seed-time value, migration preserves the seed-time assertion as revision 1 and appends the observed projection drift as **revision 2** with `admin_correction` authorship, explicit correction metadata, `recordedAt = threads.updated_at`, and a source reference to revision 1. Thus a pre-#37 profile edit becomes visible later history rather than fabricated origin.
+If the current legacy projection differs from its seed-time value, migration preserves seed truth as revision 1 and appends the observed projection state as revision 2. That revision is deliberately **not** called an administrator's factual correction:
+
+```text
+provenanceClass   fibre_derived
+authorship.kind   fibre_policy_derived
+status            disputed
+sourceMode         fibre_derivation
+```
+
+Its dispute metadata says that Fibre observed a mutable pre-#37 projection differing from genesis, but **does not know who authorized the change or when it became effective**. The source reference binds the observation to the seed assertion it differs from. The public identity authoring surface cannot impersonate this migration policy.
+
+Pre-#37 storage did not retain a trustworthy valid-time witness for projection drift. The migration therefore uses the observation/recording timestamp as the required `effectiveAt` placeholder but explicitly does not treat it as known valid time. V1 view derivation does not consume that field.
+
+If the current legacy projection contains a claim with no seed-time counterpart, migration does not fabricate provenance for it. Such post-seed additions are counted as `droppedPostSeedAdditions` by the migration report rather than silently being converted into genesis evidence.
 
 For the canonical Mina fixture, seed decomposition creates separate claims for:
 
@@ -193,9 +224,9 @@ For the canonical Mina fixture, seed decomposition creates separate claims for:
 
 Legacy `thread.identity` remains a compatibility projection during M2. The new ledger is the authority for structured identity provenance and future change.
 
-# VIII. Thread Passport v1
+# VIII. Thread Passport v1 and temporal derivation
 
-The Passport is a readable digestible view over current claim revisions, not a mutable document.
+The Passport is a readable digestible view over derived current claim revisions, not a mutable document.
 
 V1 exposes semantics equivalent to:
 
@@ -212,6 +243,7 @@ birthPlaceAssertionId
 publicSelfDescription
 publicSelfDescriptionAssertionId
 currentIdentityViewDigest
+derivationPolicy
 registryVersion
 registryDigest
 passportDigest
@@ -222,6 +254,22 @@ The Passport intentionally does **not** lead with profession. Professional ident
 A name change adds a revision. Prior names remain reconstructible. A current Passport can change while an `asOf` identity view still returns the earlier self from immutable evidence.
 
 Passport slots that must be singular in v1—including `canonical_name`, `origin_orientation`, `birth_place`, and `self_description`—are registered as singleton kinds so arbitrary claim-ID ordering cannot choose between competing claims.
+
+## V1 temporal axis
+
+Identity view v1 is explicitly **transaction-time**:
+
+```text
+derivationPolicy.id      identity_view_transaction_time
+derivationPolicy.version 1
+selection axis           recordedAt
+```
+
+`getIdentityViewAsOf(T)` chooses the highest contiguous revision with `recordedAt <= T`. `effectiveAt` is stored semantic valid-time metadata but is **reserved/non-authoritative for v1 selection**. A future policy may introduce valid-time derivation, but doing so requires a new `derivationPolicy.version`; it may not silently change the meaning of an existing digest.
+
+The complete `derivationPolicy` is part of the canonical view object before `viewDigest` is computed. Therefore:
+
+> same persisted snapshot + same `asOf` + same derivation-policy version => same identity-view digest.
 
 # IX. Memory-photo obligation and source-of-truth contract
 
@@ -298,8 +346,10 @@ A pending photo may therefore coexist with structural integrity `ok`, but inspec
 ```text
 What is the current Passport?
 What are all current identity claims?
-What was identity as of time T?
+What was identity as of time T under which derivation policy?
 What is the full revision history of this claim?
+Which revision is current by ordinality, independent of persisted status?
+Under which registry version was each immutable assertion admitted?
 Who authored each assertion?
 What provenance class and evidence classification does it carry?
 Which assertions are private?
@@ -333,10 +383,14 @@ A pending photo does **not** make the identity ledger corrupt; it makes the sepa
 - non-contiguous claim history;
 - a revision superseding anything but its immediate predecessor;
 - one claim changing Thread owner, domain, or kind;
+- treating persisted `status` as revision currency instead of deriving currentness from ordinality;
+- an immutable identity row being reinterpreted under a different registry version than the one that admitted it;
+- an identity view digest omitting its derivation-policy version;
 - two independent claims occupying a singleton Passport slot instead of revising one lineage;
 - current Passport erasing prior names/self views;
 - migration deriving revision-1 genesis identity from current mutable projection state rather than immutable `THREAD_SEEDED.payload.snapshot`;
-- later legacy projection drift silently replacing seed truth instead of becoming a later correction revision;
+- later legacy projection drift being mislabeled as known administrator authority or known valid-time history;
+- post-seed legacy projection additions disappearing without being counted by migration;
 - an assertion larger than the hard anti-blob byte bound;
 - #37 writing `accepted_causal` evidence;
 - #37 claiming endogenous Thread-authorship evidence;
@@ -366,6 +420,6 @@ A pending photo does **not** make the identity ledger corrupt; it makes the sepa
 - endogenous self-authored Development — #41;
 - reciprocal relationship mechanics — #42.
 
-The hostile-review finding that the 2,048-byte limit is not a complete semantic anti-blob detector also remains a required hardening before #39 claim-level causal ablation. It does not authorize #37 to claim semantic granularity that has not been mechanically demonstrated.
+The hostile-review finding that the 2,048-byte limit is not a complete semantic anti-blob detector remains unclaimed in #37, but its deferral expires **before #38 begins authoring identity assertions at scale**. #38 must not create an immutable multi-proposition corpus and leave #39 to discover that Scenario E cannot ablate it.
 
 #37 earns persistence/provenance infrastructure only. The rubric remains at the pre-M2 checkpoint until later PRs earn causal standing.
