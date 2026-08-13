@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 
-import { canonicalJson } from "./persistence-common.mjs";
+import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
 import { openIdentityStore } from "./identity-store.mjs";
 import { openSituatedLifeStore } from "./situated-life-store.mjs";
@@ -85,23 +85,16 @@ export class SituatedIdentityService {
     const identity = openIdentityStore(this.#databasePath);
     try {
       const stored = identity.recordAssertion(candidate);
+      const evidenceBody = {
+        eventReferences: [...eventReferences],
+        relationWitnesses: lifeRelations.map((record) => ({ relationId: record.relationId, revision: record.revision })),
+        placeWitnesses: placeEpisodes.map((record) => ({ episodeId: record.episodeId, revision: record.revision })),
+      };
       return {
         ...stored,
         evidence: {
-          eventReferences: [...eventReferences],
-          relationWitnesses: lifeRelations.map((record) => ({
-            relationId: record.relationId,
-            revision: record.revision,
-          })),
-          placeWitnesses: placeEpisodes.map((record) => ({
-            episodeId: record.episodeId,
-            revision: record.revision,
-          })),
-          digest: canonicalJson({
-            eventReferences,
-            relationWitnesses,
-            placeWitnesses,
-          }),
+          ...evidenceBody,
+          digest: `sha256:${sha256(canonicalJson(evidenceBody))}`,
         },
       };
     } finally {
