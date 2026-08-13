@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   IDENTITY_ATOMIC_CLAIM_POLICY,
   IDENTITY_ATOMIC_CLAIM_POLICY_V1,
+  IDENTITY_ATOMIC_CLAIM_POLICY_V2,
   IDENTITY_CLAIM_STRUCTURE,
   assertCurrentClaimDiscipline,
   assertRecordedClaimDiscipline,
@@ -21,7 +22,7 @@ import {
   identityDomainRegistryDigest,
 } from "../src/identity-domain-registry.mjs";
 
-function disciplinedAssertion() {
+function disciplinedAssertion(policy = IDENTITY_ATOMIC_CLAIM_POLICY) {
   return {
     claimPredicate: {
       subject: "thread_mina",
@@ -31,7 +32,7 @@ function disciplinedAssertion() {
     meaning: "Mina's mother is the source parent for this lineage relation.",
     admission: {
       policy: { id: "identity_world_admission", version: "1" },
-      claimDiscipline: { ...IDENTITY_ATOMIC_CLAIM_POLICY_V1 },
+      claimDiscipline: { ...policy },
     },
   };
 }
@@ -128,17 +129,37 @@ test("claim predicate makes one proposition a structural record property", () =>
   );
 });
 
-test("historical discipline dispatches by recorded witness while current admission uses current policy", () => {
-  const assertion = disciplinedAssertion();
-  assert.equal(assertRecordedClaimDiscipline(assertion), assertion);
-  assert.equal(assertCurrentClaimDiscipline(assertion), assertion);
-  assert.deepEqual(IDENTITY_ATOMIC_CLAIM_POLICY, IDENTITY_ATOMIC_CLAIM_POLICY_V1);
+test("historical discipline dispatches by recorded witness while current admission can tighten safely", () => {
+  const current = disciplinedAssertion();
+  const historicalV1 = disciplinedAssertion(IDENTITY_ATOMIC_CLAIM_POLICY_V1);
+  assert.equal(assertRecordedClaimDiscipline(historicalV1), historicalV1);
+  assert.equal(assertCurrentClaimDiscipline(current), current);
+  assert.deepEqual(IDENTITY_ATOMIC_CLAIM_POLICY, IDENTITY_ATOMIC_CLAIM_POLICY_V2);
+
+  const oldPolicyBundle = {
+    ...historicalV1,
+    meaning: "Mina is a conservator and a mother of two and a Seoul native and estranged from her mentor",
+  };
+  assert.equal(assertRecordedClaimDiscipline(oldPolicyBundle), oldPolicyBundle);
+
+  const currentPolicyBundle = {
+    ...current,
+    meaning: oldPolicyBundle.meaning,
+  };
+  assert.throws(
+    () => assertCurrentClaimDiscipline(currentPolicyBundle),
+    /chain multiple independently addressable propositions/i,
+  );
 
   assert.throws(
+    () => assertCurrentClaimDiscipline(historicalV1),
+    /current claim discipline/i,
+  );
+  assert.throws(
     () => assertRecordedClaimDiscipline({
-      ...assertion,
+      ...current,
       admission: {
-        ...assertion.admission,
+        ...current.admission,
         claimDiscipline: { id: "identity_atomic_material_proposition", version: "999" },
       },
     }),
