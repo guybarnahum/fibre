@@ -1,1 +1,1 @@
-export * from "./embodiment-store-personhood-v2.mjs";
+export * from "./embodiment-store-canonical.mjs";
