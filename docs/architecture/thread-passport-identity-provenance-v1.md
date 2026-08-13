@@ -1,7 +1,7 @@
 ---
 id: fibre-thread-passport-identity-provenance-v1
 status: proposed
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-13
 canonical: true
 ---
 
@@ -9,7 +9,7 @@ canonical: true
 
 PR #37 implements the first durable substrate required by the merged M2 Identity & Embodiment constitution.
 
-It does **not** claim that identity is already behaviorally causal. That belongs to #39/#40. It does **not** claim endogenous self-authored growth. That belongs to #41.
+It does **not** claim that identity is already behaviorally causal. That belongs to #39/#40. It does **not** claim endogenous self-authored growth. That belongs to #41. It also does **not** claim that the #36 `memory != history` standing gate is complete; ADR-0011 assigns the missing autobiographical-memory epistemic envelope to #38 before #40.
 
 # I. Standing purpose
 
@@ -106,11 +106,14 @@ The registry itself has a deterministic digest. Inspection and later projection 
 
 # IV. Claim-level anti-blob rule
 
-#37 enforces the #36 anti-persona-theater rule structurally.
+#36 requires identity to remain independently addressable and ablatable rather than collapsing back into one biography/persona blob.
 
-An assertion is one independently addressable claim. `meaning` is capped at 2,048 UTF-8 bytes and a causal claim must later be independently removable by assertion ID. A 5,000-word biography record spanning family, culture, work, relationships, and values cannot be admitted as one assertion.
+#37 supplies two mechanical foundations now:
 
-The size limit is not the philosophical definition of granularity; it is a hard backstop. Review still rejects materially distinct propositions bundled below the byte limit.
+- every assertion has its own stable claim lineage and assertion ID;
+- `meaning` has a hard 2,048 UTF-8 byte upper bound.
+
+A 5,000-word biography record cannot therefore enter the ledger as one assertion. The byte bound, however, is **not** a complete semantic proposition detector: materially independent propositions can still fit below 2,048 bytes. That hostile-review finding remains a named hardening item before #39 causal projection/ablation. Until then, #37 must not claim that the byte limit alone proves semantic claim granularity.
 
 Long biography, life chapters, and rich exterior prose are derived representations over claim-level records. They are never the source of truth.
 
@@ -170,9 +173,13 @@ A fixture may carry semantic authorship `thread_self_authored` while the evidenc
 
 # VII. Legacy identity migration
 
-Existing Threads are not discarded. Their current legacy identity is decomposed into independent deterministic claim histories sourced to the immutable `THREAD_SEEDED` event.
+Existing Threads are not discarded, and migration must not rewrite their origin.
 
-For the canonical Mina fixture, migration creates separate claims for:
+For a pre-#37 Thread, revision-1 genesis assertions are derived **only from the immutable `THREAD_SEEDED.payload.snapshot`** and cite that exact seed event as source evidence. Current mutable `threads.state_json` is not allowed to masquerade as birth evidence.
+
+If the current legacy projection differs from its seed-time value, migration preserves the seed-time assertion as revision 1 and appends the observed projection drift as **revision 2** with `admin_correction` authorship, explicit correction metadata, `recordedAt = threads.updated_at`, and a source reference to revision 1. Thus a pre-#37 profile edit becomes visible later history rather than fabricated origin.
+
+For the canonical Mina fixture, seed decomposition creates separate claims for:
 
 - name;
 - origin orientation;
@@ -185,8 +192,6 @@ For the canonical Mina fixture, migration creates separate claims for:
 - each textual inherited/genome disposition separately.
 
 Legacy `thread.identity` remains a compatibility projection during M2. The new ledger is the authority for structured identity provenance and future change.
-
-Migration must never cite the Thread's latest event as if it were genesis. The original seed event is resolved explicitly.
 
 # VIII. Thread Passport v1
 
@@ -216,17 +221,19 @@ The Passport intentionally does **not** lead with profession. Professional ident
 
 A name change adds a revision. Prior names remain reconstructible. A current Passport can change while an `asOf` identity view still returns the earlier self from immutable evidence.
 
-# IX. Memory photo invariant and source-of-truth contract
+Passport slots that must be singular in v1—including `canonical_name`, `origin_orientation`, `birth_place`, and `self_description`—are registered as singleton kinds so arbitrary claim-ID ordering cannot choose between competing claims.
 
-Fibre adopts a stronger product invariant beginning in #37:
+# IX. Memory-photo obligation and source-of-truth contract
+
+The photo requirement is **not retroactively attributed to PR #36**. It is a post-#36 product/architecture amendment ratified by accepted [`ADR-0011`](../decisions/ADR-0011-memory-photo-obligation.md):
 
 > **Every Thread memory should actually have a photo.**
 
-A visual lineage is necessary but no longer sufficient. Every current or migrated Thread memory must have an append-only memory-photo lineage, and that lineage carries an explicit non-waivable completion requirement: only an `available` photo satisfies it. `pending_generation` and `unavailable_with_reason` are operational/transitional states. They may explain why a photo is not currently cached, but they can never become a legitimate permanent photo-less memory state.
+A visual lineage is necessary but not sufficient. Every current or migrated Thread memory must have an append-only memory-photo lineage, and only an `available` current revision satisfies the completion obligation. `pending_generation` and `unavailable_with_reason` remain explicitly outstanding operational states rather than successful permanent photo-less states.
 
 This includes both current `thread_memories` records and migrated legacy `memoryRefs`.
 
-#37 still does not invoke an image model. It establishes the durable source from which the image is rendered. On migration or memory creation it creates revision 1 with semantics equivalent to:
+#37 does not invoke an image model. It establishes the durable source from which a synthetic image may later be rendered. On migration or memory creation it creates revision 1 with semantics equivalent to:
 
 ```text
 status             pending_generation
@@ -253,17 +260,13 @@ REGENERATION
 
 For a synthetic reconstruction, **the exact `photoPrompt` plus its immutable source references is the source of truth for that photo revision**. The rendered image is not. `photoPromptDigest` binds the exact text into the append-only companion record and the companion digest protects the whole canonical record.
 
-When an image is rendered, `assetRef` is a **regenerable S3 cache locator**, not durable truth. The initial #38 renderer is expected to be Nano Banana and may use a path convention such as:
+When an image is rendered, `assetRef` is an **opaque regenerable cache locator**, not durable memory truth. The domain layer supports a small versioned cache-locator scheme boundary; a concrete renderer, object store, bucket layout, image format, or retention policy is replaceable operational machinery owned by #38.
 
-```text
-s3://<memory-photo-cache>/nano-banana/<thread>/<memory>/<render>.webp
-```
+If a cached image disappears, a later revision may return the lineage to `pending_generation` while retaining the same authoritative prompt and prompt digest where the evidence has not changed, then append a new `available` revision with a new cache locator. Earlier cache locations and prompt revisions are never rewritten.
 
-The renderer name, model version, bucket layout, image format, and cache retention policy are replaceable implementation choices. Fibre must remain able to regenerate the image from the canonical prompt and bound evidence without changing the meaning or truth status of the memory. A future renderer may replace Nano Banana without migrating the memory itself.
+Visual continuity may use only identity/embodiment evidence whose exact assertion references are explicitly bound into the companion lineage. If v1 binds none, the prompt requires appearance to remain visually noncommittal rather than consulting mutable current identity or inventing an earlier appearance.
 
-If a cached image disappears, a later revision may return the lineage to `pending_generation` while retaining the same `photoPrompt` and `photoPromptDigest`, then append a new `available` revision with a new S3 cache path. Earlier cache paths and prompt revisions are never rewritten.
-
-Legacy opaque memory references are not an excuse to hallucinate history. If a legacy memory has no admitted narrative summary, #37 creates a conservative layered prompt that explicitly records the missing context and forbids invented historical specifics. That memory remains visibly pending until a later append-only revision admits enough grounded context to render a meaningful photo.
+Legacy opaque memory references are not an excuse to hallucinate history. If a legacy memory has no admitted narrative summary, #37 creates a conservative layered prompt that explicitly records the missing context and forbids invented historical specifics. That memory remains visibly outstanding until a later append-only revision admits enough grounded context to render a meaningful photo.
 
 The companion ID is deterministic from `(threadId, memoryRef)` and the lineage is append-only.
 
@@ -273,11 +276,20 @@ A synthetic reconstruction **never** changes its truth status into historical ph
 
 When the canonical freeze path persists a new autobiographical memory, the initial memory-photo companion must be created in the **same database transaction**.
 
-There must be no committed state in which a newly persisted Thread memory exists without its required photo lineage, canonical layered prompt, prompt digest, source references, and explicit photo-completion obligation.
+There must be no committed state in which a newly persisted Thread memory exists without its photo lineage, canonical layered prompt, prompt digest, source references, and explicit completion obligation.
 
 Schema migration also backfills companions for pre-#37 memories before advancing the world-store schema version.
 
-The atomic transaction does **not** wait on external image generation. It commits the memory plus the authoritative prompt-bearing pending revision. #38 owns asynchronous rendering and the later append-only `available` revision. This keeps external model/storage failures from corrupting life-history persistence while still making photo completion non-optional.
+The atomic transaction does **not** wait on external image generation. It commits the memory plus the authoritative prompt-bearing pending revision. #38 owns asynchronous rendering and the later append-only `available` revision. This keeps external model/storage failures from blocking life-history persistence.
+
+The distinction is intentional:
+
+```text
+structural integrity: memory has a coherent prompt/evidence lineage
+photo completion:     current lineage revision is available
+```
+
+A pending photo may therefore coexist with structural integrity `ok`, but inspection must enumerate it as an outstanding obligation rather than allowing it to disappear into a successful steady state.
 
 # XI. Inspection
 
@@ -297,7 +309,8 @@ Does every memory have a photo lineage?
 What is the canonical photo prompt and prompt digest for each revision?
 Is the current photo synthetic/captured/pending, and what truth status does it carry?
 Does the current revision actually satisfy the mandatory photo requirement?
-Which S3 locator is merely the current regenerable cache?
+How many memories still have an outstanding photo obligation, and which exact memory refs are they?
+Which asset locator is merely the current regenerable cache?
 ```
 
 The intended #37 standing answer for the two credit-sensitive identity counters is:
@@ -309,7 +322,7 @@ endogenousEvidenceAssertions = 0
 
 Any nonzero value from #37 bootstrap data is evidence inflation and fails review.
 
-A pending photo does **not** make the identity ledger corrupt; it makes the separate photo-completion requirement unsatisfied. This distinction lets #37 persist memories safely without pretending #38 has rendered them already.
+A pending photo does **not** make the identity ledger corrupt; it makes the separate photo-completion obligation unsatisfied. `verifyThreadIdentityIntegrity` therefore reports both structural integrity and `memoriesMissingPhotoCount` / exact `memoriesMissingPhoto` references.
 
 # XII. Integrity rules
 
@@ -322,15 +335,17 @@ A pending photo does **not** make the identity ledger corrupt; it makes the sepa
 - one claim changing Thread owner, domain, or kind;
 - two independent claims occupying a singleton Passport slot instead of revising one lineage;
 - current Passport erasing prior names/self views;
-- a migrated identity claim sourcing itself to an unrelated latest event rather than genesis;
-- an assertion larger than the hard anti-blob bound;
+- migration deriving revision-1 genesis identity from current mutable projection state rather than immutable `THREAD_SEEDED.payload.snapshot`;
+- later legacy projection drift silently replacing seed truth instead of becoming a later correction revision;
+- an assertion larger than the hard anti-blob byte bound;
 - #37 writing `accepted_causal` evidence;
-- #37 claiming endogenous Thread authorship;
+- #37 claiming endogenous Thread-authorship evidence;
 - a Thread memory lacking a visual companion lineage;
 - a memory-photo revision lacking a rich canonical prompt or carrying a mismatched prompt digest;
-- a photo-less `pending_generation` or `unavailable_with_reason` state being treated as satisfying the mandatory memory-photo requirement;
-- an `available` memory photo using a non-S3 authoritative-looking asset locator rather than a cache locator;
-- losing an S3 cache object forcing mutation of prior memory/photo truth instead of append-only regeneration;
+- a photo-less `pending_generation` or `unavailable_with_reason` state being reported as satisfying the photo-completion obligation;
+- an `available` memory photo using anything other than a registered opaque cache locator;
+- losing a cached object forcing mutation of prior memory/photo truth instead of append-only regeneration;
+- unbound current identity/embodiment being silently consulted to invent an earlier self;
 - a synthetic image labeled as historical captured evidence;
 - a captured historical photograph being treated as reproducible historical evidence from a synthetic prompt alone;
 - a read-only Inspector mutating the source database.
@@ -341,13 +356,16 @@ A pending photo does **not** make the identity ledger corrupt; it makes the sepa
 
 - full lineage/family relationship structures — #38;
 - geography timeline mechanics — #38;
+- the #36 autobiographical-memory epistemic envelope (`salience`, `accessibility`, retention/recall state, supporting/contradicting evidence, temporal perspective, supersession) — explicitly rescheduled by ADR-0011 to #38 before #40 Scenario V;
 - actual portrait/memory-image generation — #38;
-- Nano Banana invocation, S3 upload, cache invalidation workers, or regeneration scheduling — #38;
+- renderer invocation, object-store upload, cache invalidation workers, or regeneration scheduling — #38;
 - voice asset generation — #38;
 - Identity Context Capsule selection — #39;
 - Dignity/Actor causal consumption of structured identity — #39;
 - A-Z standing gate closure — #40;
 - endogenous self-authored Development — #41;
 - reciprocal relationship mechanics — #42.
+
+The hostile-review finding that the 2,048-byte limit is not a complete semantic anti-blob detector also remains a required hardening before #39 claim-level causal ablation. It does not authorize #37 to claim semantic granularity that has not been mechanically demonstrated.
 
 #37 earns persistence/provenance infrastructure only. The rubric remains at the pre-M2 checkpoint until later PRs earn causal standing.
