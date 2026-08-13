@@ -13,6 +13,7 @@ import {
   IDENTITY_ASSERTION_STATUSES,
   IDENTITY_AUTHORSHIP_KINDS,
   IDENTITY_BEHAVIORAL_STATUSES,
+  IDENTITY_DOMAIN_REGISTRY_VERSION,
   IDENTITY_PROVENANCE_CLASSES,
   IDENTITY_VISIBILITIES,
   identityDomainDefinition,
@@ -160,6 +161,17 @@ function normalizeDisputeCorrection(value, status) {
   };
 }
 
+function isLegacyProjectionObservation(candidate, authorship, admission) {
+  return candidate.status === "disputed" &&
+    candidate.provenanceClass === "fibre_derived" &&
+    authorship.kind === "fibre_policy_derived" &&
+    authorship.entityId === "fibre.world-kernel" &&
+    authorship.policy?.id === "legacy_projection_drift_migration" &&
+    admission.policy.id === "legacy_projection_drift_migration" &&
+    admission.sourceMode === "fibre_derivation" &&
+    admission.evidenceClassification === "exogenous";
+}
+
 export function identityClaimId(seed) {
   return `icl_${sha256(canonicalJson(seed))}`;
 }
@@ -170,7 +182,11 @@ export function identityAssertionId(seed) {
 
 export function normalizeIdentityAssertion(
   candidate,
-  { allowAcceptedCausal = false, allowEndogenous = false } = {},
+  {
+    allowAcceptedCausal = false,
+    allowEndogenous = false,
+    registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION,
+  } = {},
 ) {
   assertPlainObject("identity assertion", candidate);
   assertExactKeys("identity assertion", candidate, [
@@ -201,7 +217,7 @@ export function normalizeIdentityAssertion(
     minimum: 1,
   });
   assertId("identity assertion.threadId", candidate.threadId);
-  const definition = identityDomainDefinition(candidate.domain);
+  const definition = identityDomainDefinition(candidate.domain, { registryVersion });
   assertKind("identity assertion.kind", candidate.kind);
   assertNonEmpty("identity assertion.meaning", candidate.meaning);
   if (Buffer.byteLength(candidate.meaning, "utf8") > MAX_IDENTITY_MEANING_BYTES) {
@@ -212,13 +228,18 @@ export function normalizeIdentityAssertion(
   if (!IDENTITY_PROVENANCE_CLASSES.includes(candidate.provenanceClass)) {
     throw new TypeError("identity assertion.provenanceClass is invalid");
   }
-  if (!definition.allowedProvenanceClasses.includes(candidate.provenanceClass)) {
+  const authorship = normalizeAuthorship(candidate);
+  const admission = normalizeAdmission(candidate.admission);
+  const migrationObservation = isLegacyProjectionObservation(candidate, authorship, admission);
+  if (
+    !definition.allowedProvenanceClasses.includes(candidate.provenanceClass) &&
+    !migrationObservation
+  ) {
     throw new TypeError(
       `identity domain ${candidate.domain} does not allow provenance ${candidate.provenanceClass}`,
     );
   }
-  const authorship = normalizeAuthorship(candidate);
-  if (!definition.allowedAuthorshipKinds.includes(authorship.kind)) {
+  if (!definition.allowedAuthorshipKinds.includes(authorship.kind) && !migrationObservation) {
     throw new TypeError(
       `identity domain ${candidate.domain} does not allow authorship ${authorship.kind}`,
     );
@@ -278,7 +299,6 @@ export function normalizeIdentityAssertion(
       );
     }
   }
-  const admission = normalizeAdmission(candidate.admission);
   if (admission.evidenceClassification === "endogenous" && !allowEndogenous) {
     throw new TypeError("#37 cannot claim endogenous identity authorship; #41 must earn that evidence");
   }
@@ -316,10 +336,14 @@ export function normalizeIdentityAssertion(
   return normalized;
 }
 
-export function identityAssertionDigest(candidate) {
+export function identityAssertionDigest(
+  candidate,
+  { registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION } = {},
+) {
   return `sha256:${sha256(canonicalJson(normalizeIdentityAssertion(candidate, {
     allowAcceptedCausal: true,
     allowEndogenous: true,
+    registryVersion,
   })))}`;
 }
 
