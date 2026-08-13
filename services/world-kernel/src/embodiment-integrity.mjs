@@ -12,9 +12,6 @@ export function embodimentHeadDigest(record, previousHeadDigest = null) {
   }))}`;
 }
 
-// Compatibility alias retained for callers introduced during the Slice-B repair.
-export const embodimentRecordDigest = embodimentHeadDigest;
-
 export function ensureEmbodimentIntegrity(database) {
   const ids = database.prepare("SELECT DISTINCT embodiment_id FROM embodiment_records ORDER BY embodiment_id").all();
   const insertHead = database.prepare(`
