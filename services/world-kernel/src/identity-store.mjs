@@ -13,6 +13,11 @@ import {
   identityDomainDefinition,
 } from "./identity-domain-registry.mjs";
 import {
+  IDENTITY_DOMAIN_REGISTRY_V2_DIGEST,
+  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
+  identityDomainV2Definition,
+} from "./identity-domain-registry-v2.mjs";
+import {
   IdentityConflictError,
   IdentityHistoryIntegrityError,
   IdentityNotFoundError,
@@ -47,6 +52,23 @@ function parseJson(name, value) {
   } catch (error) {
     throw new IntegrityError(`${name} is not valid JSON: ${error.message}`);
   }
+}
+
+function definitionForRegistry(domainId, registryVersion) {
+  if (registryVersion === IDENTITY_DOMAIN_REGISTRY_V2_VERSION) {
+    return identityDomainV2Definition(domainId);
+  }
+  return identityDomainDefinition(domainId, { registryVersion });
+}
+
+function registryDigest(registryVersion) {
+  if (registryVersion === IDENTITY_DOMAIN_REGISTRY_V2_VERSION) {
+    return IDENTITY_DOMAIN_REGISTRY_V2_DIGEST;
+  }
+  if (registryVersion === IDENTITY_DOMAIN_REGISTRY_VERSION) {
+    return IDENTITY_DOMAIN_REGISTRY_DIGEST;
+  }
+  throw new IntegrityError(`unknown identity registry version ${registryVersion}`);
 }
 
 function rowToAssertion(row) {
@@ -182,12 +204,18 @@ export class IdentityStore {
     }
     const history = rows.map(rowToAssertion);
     const first = history[0].assertion;
+    const claimRegistryVersion = history[0].registryVersion;
     if (first.revision !== 1 || first.supersedesAssertionId !== undefined) {
       throw new IdentityHistoryIntegrityError(`identity claim ${claimId} does not begin at revision 1`);
     }
     for (let index = 0; index < history.length; index += 1) {
       const current = history[index].assertion;
       const expectedRevision = index + 1;
+      if (history[index].registryVersion !== claimRegistryVersion) {
+        throw new IdentityHistoryIntegrityError(
+          `identity claim ${claimId} changes registry version from ${claimRegistryVersion} to ${history[index].registryVersion}`,
+        );
+      }
       if (current.revision !== expectedRevision) {
         throw new IdentityHistoryIntegrityError(
           `identity claim ${claimId} is not contiguous at revision ${expectedRevision}`,
@@ -323,13 +351,16 @@ export class IdentityStore {
       admission: assertion.admission,
       assertionDigest,
     }));
+    const registryVersions = [...new Set(records.map(({ registryVersion }) => registryVersion))].sort();
     const view = {
       threadId,
       asOf,
       derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
       registry: {
-        version: IDENTITY_DOMAIN_REGISTRY_VERSION,
-        digest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
+        versions: registryVersions.map((version) => ({
+          version,
+          digest: registryDigest(version),
+        })),
       },
       assertions: items,
     };
@@ -386,8 +417,7 @@ export class IdentityStore {
       publicSelfDescriptionAssertionId: selfDescription?.assertionId ?? null,
       currentIdentityViewDigest: view.viewDigest,
       derivationPolicy: view.derivationPolicy,
-      registryVersion: IDENTITY_DOMAIN_REGISTRY_VERSION,
-      registryDigest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
+      registry: view.registry,
     };
     return {
       ...passport,
@@ -444,7 +474,13 @@ export class IdentityStore {
     if (candidate?.admission?.policy?.id === "legacy_projection_drift_migration") {
       throw new IdentityConflictError("legacy migration observation policy is not a public identity authoring surface");
     }
-    const assertion = normalizeIdentityAssertion(candidate);
+
+    const existingClaimRegistry = this.#database.prepare(`
+      SELECT registry_version FROM identity_assertion_records
+      WHERE claim_id=? ORDER BY revision LIMIT 1
+    `).get(candidate?.claimId)?.registry_version;
+    const registryVersion = existingClaimRegistry ?? IDENTITY_DOMAIN_REGISTRY_V2_VERSION;
+    const assertion = normalizeIdentityAssertion(candidate, { registryVersion });
     const { createdAt } = this.#requireThread(assertion.threadId);
     if (Date.parse(assertion.recordedAt) < Date.parse(createdAt)) {
       throw new IdentityConflictError("identity assertion cannot be recorded before Thread creation");
@@ -457,9 +493,9 @@ export class IdentityStore {
       `).get(assertion.assertionId);
       if (priorById !== undefined) {
         const prior = rowToAssertion(priorById);
-        if (canonicalJson(prior.assertion) !== canonicalJson(assertion)) {
+        if (prior.registryVersion !== registryVersion || canonicalJson(prior.assertion) !== canonicalJson(assertion)) {
           throw new IdentityConflictError(
-            `identity assertion ${assertion.assertionId} already exists with different content`,
+            `identity assertion ${assertion.assertionId} already exists with different content or registry semantics`,
           );
         }
         this.#database.exec("COMMIT");
@@ -473,7 +509,7 @@ export class IdentityStore {
         if (history.length !== 0) {
           throw new IdentityConflictError(`identity claim ${assertion.claimId} already exists`);
         }
-        const definition = identityDomainDefinition(assertion.domain);
+        const definition = definitionForRegistry(assertion.domain, registryVersion);
         if (definition.singletonKinds.includes(assertion.kind)) {
           const other = this.#database.prepare(`
             SELECT claim_id FROM identity_assertion_records
@@ -497,21 +533,26 @@ export class IdentityStore {
             `identity claim ${assertion.claimId} expected revision ${history.length + 1}, got ${assertion.revision}`,
           );
         }
-        const previous = history.at(-1).assertion;
-        if (!sameIdentitySlot(assertion, previous)) {
-          throw new IdentityConflictError(`identity claim ${assertion.claimId} changes identity slot`);
-        }
-        if (assertion.supersedesAssertionId !== previous.assertionId) {
+        const previous = history.at(-1);
+        if (previous.registryVersion !== registryVersion) {
           throw new IdentityConflictError(
-            `identity claim ${assertion.claimId} must supersede ${previous.assertionId}`,
+            `identity claim ${assertion.claimId} cannot change registry version`,
           );
         }
-        if (Date.parse(assertion.recordedAt) < Date.parse(previous.recordedAt)) {
+        if (!sameIdentitySlot(assertion, previous.assertion)) {
+          throw new IdentityConflictError(`identity claim ${assertion.claimId} changes identity slot`);
+        }
+        if (assertion.supersedesAssertionId !== previous.assertion.assertionId) {
+          throw new IdentityConflictError(
+            `identity claim ${assertion.claimId} must supersede ${previous.assertion.assertionId}`,
+          );
+        }
+        if (Date.parse(assertion.recordedAt) < Date.parse(previous.assertion.recordedAt)) {
           throw new IdentityConflictError(`identity claim ${assertion.claimId} recordedAt moves backwards`);
         }
       }
 
-      const stored = persistIdentityAssertionRow(this.#database, assertion);
+      const stored = persistIdentityAssertionRow(this.#database, assertion, { registryVersion });
       this.#database.exec("COMMIT");
       return { ...stored, isCurrentRevision: true, idempotent: false };
     } catch (error) {
@@ -629,6 +670,10 @@ export class IdentityStore {
       registryVersion: IDENTITY_DOMAIN_REGISTRY_VERSION,
       registryDigest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
       admittedRegistryVersions: [...registryVersions].sort(),
+      admittedRegistries: [...registryVersions].sort().map((version) => ({
+        version,
+        digest: registryDigest(version),
+      })),
       derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
       claimCount: claims.length,
       assertionCount: assertions,
