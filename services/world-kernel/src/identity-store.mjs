@@ -26,6 +26,7 @@ import {
   verifyMemoryVisualCompanion,
 } from "./identity-schema.mjs";
 import {
+  memoryPhotoRequirementSatisfied,
   normalizeMemoryVisualCompanion,
 } from "./memory-visual-companion.mjs";
 import {
@@ -577,15 +578,20 @@ export class IdentityStore {
     ).all(threadId);
     for (const row of storedMemories) memoryRefs.add(row.memory_id);
     const visualCompanions = [];
+    const memoriesMissingPhoto = [];
     for (const memoryRef of [...memoryRefs].sort()) {
       const visual = verifyMemoryVisualCompanion(this.#database, threadId, memoryRef);
       this.getMemoryVisualCompanionHistory(threadId, memoryRef);
+      if (!memoryPhotoRequirementSatisfied(visual.companion)) {
+        memoriesMissingPhoto.push(memoryRef);
+      }
       visualCompanions.push({
         memoryRef,
         companionId: visual.companion.companionId,
         revision: visual.companion.revision,
         status: visual.companion.status,
         truthStatus: visual.companion.truthStatus,
+        photoRequirementSatisfied: memoryPhotoRequirementSatisfied(visual.companion),
       });
     }
 
@@ -601,6 +607,9 @@ export class IdentityStore {
       endogenousEvidenceAssertions: endogenous,
       memoryVisualCompanionCount: visualCompanions.length,
       memoryVisualCompanions: visualCompanions,
+      memoryPhotoRequirementSatisfied: memoriesMissingPhoto.length === 0,
+      memoriesMissingPhotoCount: memoriesMissingPhoto.length,
+      memoriesMissingPhoto,
       passportDigest: passport.passportDigest,
       identityViewDigest: passport.currentIdentityViewDigest,
     };
