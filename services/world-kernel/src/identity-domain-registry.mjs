@@ -87,7 +87,7 @@ const WORLD_OR_CORRECTION = [
   "admin_correction",
 ];
 
-export const IDENTITY_DOMAIN_REGISTRY = Object.freeze({
+const IDENTITY_DOMAIN_REGISTRY_V1 = Object.freeze({
   passport_name: domain({
     projectionSection: "passport",
     description: "Canonical current name and superseded names/aliases.",
@@ -225,19 +225,45 @@ export const IDENTITY_DOMAIN_REGISTRY = Object.freeze({
   }),
 });
 
-export const IDENTITY_DOMAIN_REGISTRY_DIGEST = `sha256:${sha256(canonicalJson({
-  version: IDENTITY_DOMAIN_REGISTRY_VERSION,
-  domains: IDENTITY_DOMAIN_REGISTRY,
-}))}`;
+export const IDENTITY_DOMAIN_REGISTRIES = Object.freeze({
+  "1": IDENTITY_DOMAIN_REGISTRY_V1,
+});
 
-export function identityDomainDefinition(domainId) {
-  const definition = IDENTITY_DOMAIN_REGISTRY[domainId];
-  if (definition === undefined) throw new TypeError(`unknown identity domain: ${domainId}`);
+export const IDENTITY_DOMAIN_REGISTRY = IDENTITY_DOMAIN_REGISTRIES[IDENTITY_DOMAIN_REGISTRY_VERSION];
+
+export function identityDomainRegistry(registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION) {
+  const registry = IDENTITY_DOMAIN_REGISTRIES[registryVersion];
+  if (registry === undefined) {
+    throw new TypeError(`unknown identity domain registry version: ${registryVersion}`);
+  }
+  return registry;
+}
+
+export function identityDomainRegistryDigest(registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION) {
+  const registry = identityDomainRegistry(registryVersion);
+  return `sha256:${sha256(canonicalJson({
+    version: registryVersion,
+    domains: registry,
+  }))}`;
+}
+
+export const IDENTITY_DOMAIN_REGISTRY_DIGEST = identityDomainRegistryDigest();
+
+export function identityDomainDefinition(
+  domainId,
+  { registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION } = {},
+) {
+  const definition = identityDomainRegistry(registryVersion)[domainId];
+  if (definition === undefined) {
+    throw new TypeError(`unknown identity domain ${domainId} in registry version ${registryVersion}`);
+  }
   return definition;
 }
 
-export function listIdentityDomainDefinitions() {
-  return Object.entries(IDENTITY_DOMAIN_REGISTRY).map(([domainId, definition]) => ({
+export function listIdentityDomainDefinitions(
+  { registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION } = {},
+) {
+  return Object.entries(identityDomainRegistry(registryVersion)).map(([domainId, definition]) => ({
     domainId,
     ...definition,
   }));
