@@ -12,6 +12,7 @@ export function createSituatedLifeTables(database) {
       recorded_at TEXT NOT NULL,
       supersedes_revision INTEGER,
       record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       PRIMARY KEY (relation_id, revision),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       CHECK ((revision=1 AND supersedes_revision IS NULL) OR (revision>1 AND supersedes_revision=revision-1))
@@ -38,6 +39,7 @@ export function createSituatedLifeTables(database) {
       recorded_at TEXT NOT NULL,
       supersedes_revision INTEGER,
       record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       PRIMARY KEY (episode_id, revision),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       CHECK ((revision=1 AND supersedes_revision IS NULL) OR (revision>1 AND supersedes_revision=revision-1))
