@@ -1,6 +1,6 @@
 import { assertId, assertStringArray } from "./persistence-common.mjs";
-import { IDENTITY_ATOMIC_CLAIM_POLICY } from "./identity-claim-discipline.mjs";
-import { identityDomainV2Definition } from "./identity-domain-registry-v2.mjs";
+import { IDENTITY_ATOMIC_CLAIM_POLICY } from "./identity-current-policy.mjs";
+import { identityDomainDefinition } from "./identity-current-registry.mjs";
 import { identityAssertionId, identityClaimId } from "./identity-provenance-domain.mjs";
 import { lifeRelationRevisionRef, placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import { normalizeLifeRelation, normalizePlaceEpisode } from "./situated-life-domain.mjs";
@@ -52,7 +52,7 @@ export function livedLanguageFormationClaim({
     recordedAt,
     visibility,
     status: "current",
-    projectionClass: identityDomainV2Definition("language_formation").projectionSection,
+    projectionClass: identityDomainDefinition("language_formation").projectionSection,
     behavioralStatus: "context_only",
     admission: {
       policy: { id: "situated_identity_projection", version: "1" },
