@@ -81,6 +81,14 @@ test("v5 migration derives genesis from THREAD_SEEDED and records later projecti
     seed(databasePath);
 
     const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+    const seedEvent = database.prepare(`
+      SELECT event_id FROM thread_events
+      WHERE thread_id=? AND event_type='THREAD_SEEDED'
+      ORDER BY sequence LIMIT 1
+    `).get(fixture.threadId);
+    assert.ok(seedEvent?.event_id);
+    const seedEventId = seedEvent.event_id;
+
     const row = database.prepare(
       "SELECT state_json FROM threads WHERE thread_id=?",
     ).get(fixture.threadId);
@@ -125,7 +133,8 @@ test("v5 migration derives genesis from THREAD_SEEDED and records later projecti
     assert.equal(history[0].revision, 1);
     assert.equal(history[0].provenanceClass, "birth_created");
     assert.equal(history[0].authorship.kind, "genesis_authority");
-    assert.equal(history[0].sourceReferences[0], fixture.provenance.lastEventId);
+    assert.equal(history[0].sourceReferences[0], seedEventId);
+    assert.notEqual(history[0].sourceReferences[0], fixture.provenance.lastEventId);
 
     assert.equal(history[1].meaning, "Mina Park Lee");
     assert.equal(history[1].revision, 2);
