@@ -34,6 +34,8 @@ export const EMBODIMENT_STATUSES = Object.freeze([
 ]);
 export const EMBODIMENT_VISIBILITIES = Object.freeze(["public", "restricted", "private"]);
 
+const ASSET_REF_PATTERN = /^(?:cache|asset):\/\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]+$/;
+
 function assertEnum(name, value, allowed) {
   if (!allowed.includes(value)) throw new TypeError(`${name} is invalid`);
 }
@@ -44,6 +46,26 @@ function normalizeRefs(name, refs, { allowEmpty = false } = {}) {
   if (new Set(refs).size !== refs.length) throw new TypeError(`${name} must be unique`);
   refs.forEach((ref, index) => assertId(`${name}[${index}]`, ref));
   return [...refs];
+}
+
+function normalizeSpecification(value, kind) {
+  assertPlainObject("embodiment.specification", value);
+  const keys = Object.keys(value);
+  if (keys.length === 0) throw new TypeError("embodiment.specification must describe the representation, not merely point at an asset");
+  for (const required of ["method", "description", "model"]) {
+    if (!(required in value)) throw new TypeError(`embodiment.specification.${required} is required`);
+    assertNonEmpty(`embodiment.specification.${required}`, value[required]);
+  }
+  if (Buffer.byteLength(value.description, "utf8") > 1000) {
+    throw new TypeError("embodiment.specification.description exceeds 1000 UTF-8 bytes");
+  }
+  if (kind === "portrait" && /\bvoice\b/i.test(value.method)) {
+    throw new TypeError("portrait specification method cannot describe voice acquisition");
+  }
+  if (kind === "voice" && /\bportrait\b|\bimage\b/i.test(value.method)) {
+    throw new TypeError("voice specification method cannot describe portrait/image acquisition");
+  }
+  return structuredClone(value);
 }
 
 function normalizeAsset(value, kind, status) {
@@ -61,6 +83,7 @@ function normalizeAsset(value, kind, status) {
     "durationMs",
   ]);
   assertNonEmpty("embodiment.asset.assetRef", value.assetRef);
+  if (!ASSET_REF_PATTERN.test(value.assetRef)) throw new TypeError("embodiment.asset.assetRef must be an opaque cache:// or asset:// locator");
   if (!/^sha256:[0-9a-f]{64}$/.test(value.sha256)) throw new TypeError("embodiment.asset.sha256 is invalid");
   assertNonEmpty("embodiment.asset.mediaType", value.mediaType);
   const normalized = {
@@ -69,6 +92,7 @@ function normalizeAsset(value, kind, status) {
     mediaType: value.mediaType,
   };
   if (kind === "portrait") {
+    if (!value.mediaType.startsWith("image/")) throw new TypeError("portrait embodiment asset must use an image media type");
     assertFiniteNumber("embodiment.asset.width", value.width, { integer: true, minimum: 1 });
     assertFiniteNumber("embodiment.asset.height", value.height, { integer: true, minimum: 1 });
     if (value.durationMs !== null) throw new TypeError("portrait embodiment cannot have durationMs");
@@ -76,6 +100,7 @@ function normalizeAsset(value, kind, status) {
     normalized.height = value.height;
     normalized.durationMs = null;
   } else {
+    if (!value.mediaType.startsWith("audio/")) throw new TypeError("voice embodiment asset must use an audio media type");
     assertFiniteNumber("embodiment.asset.durationMs", value.durationMs, { integer: true, minimum: 1 });
     if (value.width !== null || value.height !== null) throw new TypeError("voice embodiment cannot have image dimensions");
     normalized.width = null;
@@ -132,8 +157,8 @@ export function normalizeEmbodimentRepresentation(value) {
   );
   const sourceReferences = normalizeRefs("embodiment.sourceReferences", value.sourceReferences);
 
-  if (value.rightsBasis === "explicit_consent" && permissionReferences.length === 0) {
-    throw new TypeError("explicit_consent embodiment requires permissionReferences");
+  if (["explicit_consent", "public_domain_source"].includes(value.rightsBasis) && permissionReferences.length === 0) {
+    throw new TypeError(`${value.rightsBasis} embodiment requires durable rights authority references`);
   }
   if (
     value.representationKind === "human_source_derivative" &&
@@ -160,8 +185,8 @@ export function normalizeEmbodimentRepresentation(value) {
     throw new TypeError("human-source derivative cannot claim captured historical truth");
   }
 
-  assertPlainObject("embodiment.specification", value.specification);
-  const specificationDigest = embodimentSpecificationDigest(value.specification);
+  const specification = normalizeSpecification(value.specification, value.kind);
+  const specificationDigest = embodimentSpecificationDigest(specification);
   if (value.specificationDigest !== specificationDigest) {
     throw new TypeError("embodiment.specificationDigest does not match canonical specification");
   }
@@ -196,7 +221,7 @@ export function normalizeEmbodimentRepresentation(value) {
     rightsBasis: value.rightsBasis,
     permissionReferences,
     sourceReferences,
-    specification: structuredClone(value.specification),
+    specification,
     specificationDigest,
     status: value.status,
     unavailableReason: value.unavailableReason,
