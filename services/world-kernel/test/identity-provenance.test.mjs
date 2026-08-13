@@ -16,6 +16,11 @@ import {
   identityDomainDefinition,
 } from "../src/identity-domain-registry.mjs";
 import {
+  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
+  identityDomainV2Definition,
+} from "../src/identity-domain-registry-v2.mjs";
+import { IDENTITY_ATOMIC_CLAIM_POLICY } from "../src/identity-claim-discipline.mjs";
+import {
   memoryPhotoPromptDigest,
   memoryPhotoRequirementSatisfied,
   memoryVisualCompanionId,
@@ -44,7 +49,7 @@ function seed(databasePath) {
 
 function admission(sourceMode = "fibre_derivation", evidenceClassification = "exogenous") {
   return {
-    policy: { id: "identity_admission", version: "1" },
+    policy: { ...IDENTITY_ATOMIC_CLAIM_POLICY },
     admittedBy: {
       entityId: "fibre.world-kernel",
       kind: "institution",
@@ -96,6 +101,7 @@ test("#37 bootstraps Mina into claim-level identity, passport, and mandatory mem
     const integrity = identity.verifyThreadIdentityIntegrity(fixture.threadId);
     assert.equal(integrity.ok, true);
     assert.equal(integrity.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
+    assert.deepEqual(integrity.admittedRegistryVersions, ["1"]);
     assert.equal(integrity.claimCount, 13);
     assert.equal(integrity.assertionCount, 13);
     assert.equal(integrity.acceptedCausalAssertions, 0);
@@ -104,6 +110,7 @@ test("#37 bootstraps Mina into claim-level identity, passport, and mandatory mem
 
     const view = identity.getCurrentIdentityView(fixture.threadId);
     assert.equal(view.assertions.length, 13);
+    assert.deepEqual(view.registry.versions.map((item) => item.version), ["1"]);
     assert.equal(view.assertions.filter((item) => item.domain === "upbringing_culture").length, 2);
     assert.equal(view.assertions.filter((item) => item.domain === "inherited_disposition").length, 4);
     assert.ok(view.assertions.every((item) => item.meaning.length < 2048));
@@ -143,13 +150,14 @@ test("#37 bootstraps Mina into claim-level identity, passport, and mandatory mem
     identity.close();
   }));
 
-test("passport change appends a revision and an as-of view preserves the former self", () =>
+test("passport change appends a v1 revision and an as-of view preserves the former self", () =>
   withDatabase((databasePath) => {
     seed(databasePath);
     const identity = openIdentityStore(databasePath);
     const originalName = identity.getCurrentIdentityView(fixture.threadId).assertions.find(
       (item) => item.domain === "passport_name" && item.kind === "canonical_name",
     );
+    assert.equal(originalName.registryVersion, "1");
     const changed = revisionOf(originalName, {
       meaning: "Mina Park Lee",
       provenanceClass: "self_authored",
@@ -160,6 +168,7 @@ test("passport change appends a revision and an as-of view preserves the former 
       behavioralStatus: "candidate_causal",
     });
     const recorded = identity.recordAssertion(changed);
+    assert.equal(recorded.registryVersion, "1");
     assert.equal(recorded.idempotent, false);
     assert.equal(identity.recordAssertion(changed).idempotent, true);
     assert.equal(identity.getPassport(fixture.threadId).canonicalName, "Mina Park Lee");
@@ -172,11 +181,78 @@ test("passport change appends a revision and an as-of view preserves the former 
       before.assertions.find((item) => item.claimId === originalName.claimId).meaning,
       "Mina Park",
     );
-    assert.equal(identity.listClaimHistory(fixture.threadId, originalName.claimId).length, 2);
+    const history = identity.listClaimHistory(fixture.threadId, originalName.claimId);
+    assert.equal(history.length, 2);
+    assert.ok(history.every((item) => item.registryVersion === "1"));
     identity.close();
   }));
 
-test("#37 refuses biography blobs, accepted-causal credit, endogenous credit, and cross-slot revisions", () =>
+test("#38 new claims pin registry v2 and enforce atomic material propositions", () =>
+  withDatabase((databasePath) => {
+    seed(databasePath);
+    const identity = openIdentityStore(databasePath);
+    const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions.find(
+      (item) => item.domain === "passport_name",
+    ).sourceReferences[0];
+    const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "lineage-v2" });
+    const recordedAt = "2026-08-12T23:55:00Z";
+    const base = {
+      assertionId: identityAssertionId({ claimId, revision: 1, recordedAt, meaning: "Mina's mother is her source parent." }),
+      claimId,
+      revision: 1,
+      threadId: fixture.threadId,
+      domain: "lineage_relation",
+      kind: "source_parent",
+      meaning: "Mina's mother is her source parent.",
+      provenanceClass: "relational",
+      authorship: { kind: "relationship_shared_world_source", entityId: "fibre.world-kernel" },
+      sourceReferences: [seedEvent],
+      effectiveAt: recordedAt,
+      recordedAt,
+      visibility: "private",
+      status: "current",
+      projectionClass: identityDomainV2Definition("lineage_relation").projectionSection,
+      behavioralStatus: "context_only",
+      admission: admission(),
+    };
+    const stored = identity.recordAssertion(base);
+    assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_V2_VERSION);
+    assert.equal(identity.getAssertion(fixture.threadId, base.assertionId).registryVersion, "2");
+
+    const bundledClaimId = identityClaimId({ threadId: fixture.threadId, purpose: "bundle-v2" });
+    assert.throws(
+      () => identity.recordAssertion({
+        ...base,
+        claimId: bundledClaimId,
+        assertionId: identityAssertionId({ claimId: bundledClaimId, revision: 1 }),
+        meaning: "Her mother is her source parent. Her father grew up in Seoul.",
+      }),
+      /one material proposition/,
+    );
+
+    const wrongPolicyClaimId = identityClaimId({ threadId: fixture.threadId, purpose: "wrong-policy-v2" });
+    assert.throws(
+      () => identity.recordAssertion({
+        ...base,
+        claimId: wrongPolicyClaimId,
+        assertionId: identityAssertionId({ claimId: wrongPolicyClaimId, revision: 1 }),
+        admission: {
+          ...admission(),
+          policy: { id: "identity_admission", version: "1" },
+        },
+      }),
+      /registry v2 identity assertions require/,
+    );
+
+    const integrity = identity.verifyThreadIdentityIntegrity(fixture.threadId);
+    assert.deepEqual(integrity.admittedRegistryVersions, ["1", "2"]);
+    assert.deepEqual(integrity.admittedRegistries.map((item) => item.version), ["1", "2"]);
+    const view = identity.getCurrentIdentityView(fixture.threadId);
+    assert.deepEqual(view.registry.versions.map((item) => item.version), ["1", "2"]);
+    identity.close();
+  }));
+
+test("#38 refuses biography blobs, accepted-causal credit, endogenous credit, and cross-slot revisions", () =>
   withDatabase((databasePath) => {
     seed(databasePath);
     const identity = openIdentityStore(databasePath);
@@ -199,7 +275,7 @@ test("#37 refuses biography blobs, accepted-causal credit, endogenous credit, an
       recordedAt: "2026-08-12T23:55:00Z",
       visibility: "private",
       status: "current",
-      projectionClass: identityDomainDefinition("artistic_formation").projectionSection,
+      projectionClass: identityDomainV2Definition("artistic_formation").projectionSection,
       behavioralStatus: "candidate_causal",
       admission: admission(),
     };
@@ -221,7 +297,7 @@ test("#37 refuses biography blobs, accepted-causal credit, endogenous credit, an
       assertionId: identityAssertionId({ claimId: causalClaimId, revision: 1 }),
       behavioralStatus: "accepted_causal",
     };
-    assert.throws(() => identity.recordAssertion(causal), /#37 cannot author accepted_causal/);
+    assert.throws(() => identity.recordAssertion(causal), /#38 cannot author accepted_causal/);
 
     const endogenousClaimId = identityClaimId({ x: 4 });
     const endogenous = {
@@ -230,7 +306,7 @@ test("#37 refuses biography blobs, accepted-causal credit, endogenous credit, an
       assertionId: identityAssertionId({ claimId: endogenousClaimId, revision: 1 }),
       admission: admission("thread_runtime", "endogenous"),
     };
-    assert.throws(() => identity.recordAssertion(endogenous), /#41 must earn/);
+    assert.throws(() => identity.recordAssertion(endogenous), /#42 must earn/);
 
     const crossSlot = revisionOf(base, {
       meaning: "This tries to move a claim into another domain.",
@@ -423,6 +499,7 @@ test("v5-style world migration reconstructs identity and memory visual lineages"
     const inspector = openIdentityInspectionStore(databasePath);
     const integrity = inspector.verifyThreadIdentityIntegrity(fixture.threadId);
     assert.equal(integrity.claimCount, 13);
+    assert.deepEqual(integrity.admittedRegistryVersions, ["1"]);
     assert.equal(integrity.memoryVisualCompanionCount, fixture.memoryRefs.length);
     const visual = inspector.getMemoryVisualCompanionHistory(
       fixture.threadId,
