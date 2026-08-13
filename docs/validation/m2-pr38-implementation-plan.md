@@ -94,7 +94,7 @@ Implemented guarantees:
 
 The exact #37-era v6 table shape is covered by regression: reopen repairs its SQL constraints transactionally, preserves all existing v1 assertions, passes identity foreign-key verification, and then admits a new v2 lineage claim.
 
-Slice-A checkpoint: commit `1901c1e1cb4a61e45d592689cd43840012a46182` passed full repository validation in Actions run **2136** before this documentation-only closure commit.
+Slice-A exact-head closure: commit `cfe25dfd76ee3932494b8911530c2b109fb1606b`, Actions run **2138**, full repository validation green.
 
 ### B. Situated life: lineage, geography, culture, embodiment
 
