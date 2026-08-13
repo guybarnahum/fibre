@@ -12,10 +12,6 @@ import {
   openIdentityInspectionStore,
   openIdentityStore,
 } from "../src/identity-store.mjs";
-import {
-  backfillLegacyThreadIdentity,
-  createIdentityTables,
-} from "../src/identity-schema.mjs";
 
 const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -175,7 +171,7 @@ test("v5 migration preserves genesis, observes projection drift, and derives cur
     raw.close();
   }));
 
-test("legacy migration counts post-seed projection additions instead of silently fabricating provenance", () =>
+test("v5 migration refuses and reports unprovenanced post-seed identity additions", () =>
   withDatabase((databasePath) => {
     seed(databasePath);
     const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -183,7 +179,10 @@ test("legacy migration counts post-seed projection additions instead of silently
       "SELECT state_json FROM threads WHERE thread_id=?",
     ).get(fixture.threadId);
     const drifted = JSON.parse(row.state_json);
-    drifted.identity.culture = [...drifted.identity.culture, "Post-seed unprovenanced culture label"];
+    drifted.identity.culture = [
+      ...(drifted.identity.culture ?? []),
+      "Post-seed unprovenanced culture label",
+    ];
     database.prepare(`
       UPDATE threads SET state_json=?,state_hash=?,updated_at=? WHERE thread_id=?
     `).run(
@@ -192,15 +191,20 @@ test("legacy migration counts post-seed projection additions instead of silently
       "2026-08-13T03:20:00Z",
       fixture.threadId,
     );
-
     database.exec(`
       DROP TRIGGER identity_assertions_no_update;
       DROP TRIGGER identity_assertions_no_delete;
       DROP TABLE identity_assertion_records;
+      PRAGMA user_version=5;
     `);
-    createIdentityTables(database);
-    const report = backfillLegacyThreadIdentity(database);
-    assert.equal(report.droppedPostSeedAdditions, 1);
-    assert.equal(report.corrections, 0);
     database.close();
+
+    assert.throws(
+      () => openWorldStore(databasePath),
+      /identity migration found 1 post-seed legacy projection additions .* migration refused/i,
+    );
+
+    const raw = new DatabaseSync(databasePath, { readOnly: true });
+    assert.equal(Number(raw.prepare("PRAGMA user_version").get().user_version), 5);
+    raw.close();
   }));
