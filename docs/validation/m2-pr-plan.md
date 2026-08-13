@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-13
 canonical: true
 ---
 
@@ -28,7 +28,7 @@ MERGED  #35  Structured Obligation v1
 DIRECT / NO PR NUMBER  Interrupted compelled episode persistence + history visibility
 MERGED                          #36  M2 Identity & Embodiment Contract
 ACTIVE                          #37  Thread Passport & Identity Provenance v1
-                                #38  Lineage, Geography & Embodiment v1
+                                #38  Lineage, Geography, Embodiment & Memory Epistemics v1
                                 #39  Identity Projection & Causal Consumption
                                 #40  M2 Standing Gate / M2 closure
 
@@ -172,16 +172,18 @@ Load-bearing requirements:
 - stable claim IDs plus immutable contiguous assertion revisions;
 - provenance, authorship, admission/evidence classification, visibility, supersession, dispute/correction;
 - current and `asOf` identity views plus a non-profession-rooted Passport;
-- deterministic decomposition of legacy flat identity into claim-level genesis evidence;
+- deterministic decomposition of legacy flat identity from immutable `THREAD_SEEDED.payload.snapshot`, with later legacy projection drift represented as later correction rather than fabricated genesis;
 - #37 must author neither `accepted_causal` standing nor endogenous Development evidence;
-- every Thread memory reference receives an append-only visual companion lineage;
+- per accepted [`ADR-0011`](../decisions/ADR-0011-memory-photo-obligation.md), every Thread memory reference receives an append-only prompt/evidence-backed photo companion lineage;
 - synthetic memory reconstructions remain explicitly non-historical evidence;
-- new freeze-created memories receive the pending visual companion atomically;
-- read-only/query-only inspection verifies all histories and credit-sensitive counters.
+- new freeze-created memories receive the pending photo companion atomically without making renderer availability a freeze precondition;
+- read-only/query-only inspection verifies all histories and credit-sensitive counters and enumerates every outstanding memory-photo obligation.
 
-#38 will attach richer lineage/geography/embodiment and actual image/voice assets. #39 remains the causal projection/consumer cutover.
+**#37 does not claim Scenario V (`autobiographical memory is not history`) complete.** ADR-0011 explicitly added the photo requirement after #36 and assigns the missing M2 memory epistemic envelope to #38. A visual lineage cannot substitute for the memory/history distinction.
 
-## #38 — Lineage, Geography & Embodiment v1
+#38 will attach richer lineage/geography/embodiment, actual image/voice assets, photo-completion/regeneration mechanics, and the PR #36 memory epistemic substrate. #39 remains the causal projection/consumer cutover.
+
+## #38 — Lineage, Geography, Embodiment & Memory Epistemics v1
 
 Implement the world-facing identity layers that make a Thread situated rather than merely textual:
 
@@ -198,6 +200,31 @@ Implement the world-facing identity layers that make a Thread situated rather th
 Embodiment assets must carry exact provenance, for example source identity version, generation specification/model, asset hash, creation time, visibility, and supersession.
 
 Do not force portrait/voice to manufacture behavioral differences merely to earn a test. Context-only embodiment is legitimate if labeled honestly.
+
+#38 also owns the explicitly rescheduled PR #36 **memory != history** storage/inspection substrate. Before #40 it must represent semantics equivalent to:
+
+```text
+memoryId
+threadId
+subjectPeriod / eventRefs
+rememberedMeaning
+rememberedAt / asOf
+confidence / uncertainty where represented
+salience
+accessibility
+retentionState
+lastRecalledAt?
+authorship
+supportingEvidenceRefs[]
+contradictingEvidenceRefs[]
+visibility
+status
+supersedesMemoryId?
+```
+
+These are representational requirements, not evidence of human-like forgetting. #38 must make contemporaneous historical evidence and later autobiographical recollection independently inspectable and must not allow either one to rewrite the other.
+
+Per ADR-0011, #38 also owns the actual photo completion mechanism: renderer invocation, opaque cache-locator persistence, retries/regeneration, asset loss/unavailability handling, and richer identity/embodiment evidence binding. Renderer/provider/bucket/format choices are implementation details rather than memory authority.
 
 ## #39 — Identity Projection & Causal Consumption
 
@@ -282,7 +309,8 @@ Also require:
 - private stance plus a downstream participation/action consequence;
 - frozen candidate before held-out Standing scenario authorship;
 - first real provider attempt seals PASS/FAIL;
-- committed evidence bundle and read-only post-seal inspector.
+- committed evidence bundle and read-only post-seal inspector;
+- Scenario V proves autobiographical memory remains epistemically distinct from history after the #38 substrate lands.
 
 M2 does not close merely because two Threads compile different prompt/context text.
 
