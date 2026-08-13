@@ -11,9 +11,25 @@ import {
 } from "./persistence-common.mjs";
 
 const COMPANION_ID_PATTERN = /^mvis_[0-9a-f]{64}$/;
+const PHOTO_PROMPT_MIN_BYTES = 700;
+const PHOTO_PROMPT_REQUIRED_SECTIONS = Object.freeze([
+  "MEMORY MOMENT",
+  "THREAD CONTINUITY",
+  "SCENE",
+  "EMOTIONAL TEXTURE",
+  "COMPOSITION",
+  "GROUNDING",
+  "TRUTH BOUNDARY",
+  "REGENERATION",
+]);
 
 export const MEMORY_VISUAL_COMPANION_POLICY = Object.freeze({
   id: "memory_visual_companion",
+  version: "1",
+});
+
+export const MEMORY_PHOTO_PROMPT_POLICY = Object.freeze({
+  id: "memory_photo_prompt",
   version: "1",
 });
 
@@ -40,10 +56,59 @@ function assertCompanionId(name, value) {
   }
 }
 
+function assertPhotoPrompt(name, value) {
+  assertNonEmpty(name, value);
+  if (Buffer.byteLength(value, "utf8") < PHOTO_PROMPT_MIN_BYTES) {
+    throw new TypeError(`${name} must be a rich layered prompt of at least ${PHOTO_PROMPT_MIN_BYTES} UTF-8 bytes`);
+  }
+  for (const section of PHOTO_PROMPT_REQUIRED_SECTIONS) {
+    if (!value.includes(`\n${section}\n`)) {
+      throw new TypeError(`${name} must contain the ${section} section`);
+    }
+  }
+}
+
+function assertS3CacheRef(name, value) {
+  assertNonEmpty(name, value);
+  if (!value.startsWith("s3://")) {
+    throw new TypeError(`${name} must be an s3:// cache locator`);
+  }
+}
+
 export function memoryVisualCompanionId(threadId, memoryRef) {
   assertId("threadId", threadId);
   assertId("memoryRef", memoryRef);
   return `mvis_${sha256(canonicalJson({ threadId, memoryRef }))}`;
+}
+
+export function memoryPhotoPromptDigest(photoPrompt) {
+  assertPhotoPrompt("memory photo prompt", photoPrompt);
+  return `sha256:${sha256(photoPrompt)}`;
+}
+
+export function buildMemoryPhotoPrompt({
+  threadId,
+  memoryRef,
+  memorySummary,
+  sourceReferences,
+  createdFrom,
+}) {
+  assertId("threadId", threadId);
+  assertId("memoryRef", memoryRef);
+  if (memorySummary !== undefined && memorySummary !== null) {
+    assertNonEmpty("memorySummary", memorySummary);
+  }
+  assertStringArray("sourceReferences", sourceReferences);
+  if (sourceReferences.length === 0) {
+    throw new TypeError("memory photo prompt sourceReferences must not be empty");
+  }
+  assertNonEmpty("createdFrom", createdFrom);
+
+  const memoryMoment = memorySummary === undefined || memorySummary === null
+    ? `This is a legacy memory reference (${memoryRef}) whose persisted record does not yet contain an admitted narrative summary. Preserve the photo obligation, but do not invent specific people, place, date, action, dialogue, or outcome merely to fill the missing context. A later append-only revision may enrich this prompt from newly admitted evidence before rendering.`
+    : `Reconstruct the lived moment summarized by the authoritative memory record: “${memorySummary}” Treat the summary as a semantic anchor, not as license to add unsupported biographical facts.`;
+
+  return `MEMORY PHOTO SOURCE OF TRUTH v${MEMORY_PHOTO_PROMPT_POLICY.version}\n\nMEMORY MOMENT\n${memoryMoment}\n\nTHREAD CONTINUITY\nDepict the same persistent Thread as the memory owner. Preserve visual continuity with identity and embodiment evidence explicitly bound into this companion lineage. Do not substitute a profession, role, stereotype, demographic guess, or generic stock character for the person. Do not silently use mutable current identity when the memory requires an earlier self.\n\nSCENE\nRender one specific, plausible lived instant rather than a montage, infographic, poster, or symbolic illustration. Prefer concrete spatial relationships, ordinary environmental detail, and a moment that could have been photographed by someone present. Do not add events or participants that are not grounded by the memory and its source references.\n\nEMOTIONAL TEXTURE\nExpress the remembered emotional texture through posture, attention, distance, gesture, light, and environment rather than labels or theatrical facial exaggeration. Preserve ambiguity where the evidence is ambiguous.\n\nCOMPOSITION\nUse a naturalistic candid-photograph language: coherent perspective, believable anatomy, physically plausible light, restrained depth of field, and scene-level detail. No captions, speech bubbles, watermarks, UI chrome, visible metadata, or explanatory text. Avoid glamour portraiture unless the memory itself calls for it.\n\nGROUNDING\nThread: ${threadId}. Memory: ${memoryRef}. Creation class: ${createdFrom}. Immutable/source references: ${sourceReferences.join(", ")}. At render time, only evidence explicitly bound to this lineage may supply identity, embodiment, relationship, geography, or historical detail. Missing detail must remain visually noncommittal rather than being fabricated.\n\nTRUTH BOUNDARY\nThis prompt describes a synthetic reconstruction of a memory. The resulting image is not historical photographic evidence and must remain labeled synthetic_representation_not_historical_evidence. A real captured photograph, if later admitted, is a different evidentiary representation and must retain captured_source_evidence truth status.\n\nREGENERATION\nThis layered prompt and its digest are the durable source of truth for a synthetic memory photo revision. The rendered image is a replaceable cache. If its S3 object is missing, corrupt, expired, or deliberately invalidated, regenerate from this exact prompt and the same bound source references, append a new companion revision, and never rewrite prior prompt, provenance, truth status, or cache history.`;
 }
 
 export function normalizeMemoryVisualCompanion(candidate) {
@@ -56,6 +121,8 @@ export function normalizeMemoryVisualCompanion(candidate) {
     "status",
     "representationKind",
     "truthStatus",
+    "photoPrompt",
+    "photoPromptDigest",
     "assetRef",
     "visibility",
     "sourceReferences",
@@ -82,6 +149,10 @@ export function normalizeMemoryVisualCompanion(candidate) {
   }
   if (!MEMORY_VISUAL_TRUTH_STATUSES.includes(candidate.truthStatus)) {
     throw new TypeError("memory visual companion.truthStatus is invalid");
+  }
+  assertPhotoPrompt("memory visual companion.photoPrompt", candidate.photoPrompt);
+  if (candidate.photoPromptDigest !== memoryPhotoPromptDigest(candidate.photoPrompt)) {
+    throw new TypeError("memory visual companion.photoPromptDigest does not match its canonical prompt");
   }
   if (candidate.visibility !== "public" && candidate.visibility !== "restricted" && candidate.visibility !== "private") {
     throw new TypeError("memory visual companion.visibility is invalid");
@@ -128,7 +199,7 @@ export function normalizeMemoryVisualCompanion(candidate) {
   }
 
   if (candidate.status === "available") {
-    assertNonEmpty("memory visual companion.assetRef", candidate.assetRef);
+    assertS3CacheRef("memory visual companion.assetRef", candidate.assetRef);
     if (candidate.unavailableReason !== undefined) {
       throw new TypeError("available memory visual companion cannot have unavailableReason");
     }
@@ -175,12 +246,28 @@ export function memoryVisualCompanionDigest(candidate) {
   return `sha256:${sha256(canonicalJson(normalizeMemoryVisualCompanion(candidate)))}`;
 }
 
+export function memoryPhotoRequirementSatisfied(candidate) {
+  const companion = normalizeMemoryVisualCompanion(candidate);
+  return companion.status === "available";
+}
+
+export function assertMemoryPhotoRequirementSatisfied(candidate) {
+  const companion = normalizeMemoryVisualCompanion(candidate);
+  if (companion.status !== "available") {
+    throw new TypeError(
+      `memory ${companion.memoryRef} photo requirement remains unsatisfied: ${companion.status} is transitional and cannot be a permanent photo-less state`,
+    );
+  }
+  return companion;
+}
+
 export function pendingMemoryVisualCompanion({
   threadId,
   memoryRef,
   recordedAt,
   eventId,
   evidenceRefs = [],
+  memorySummary,
   createdFrom = "persisted_autobiographical_memory",
 }) {
   assertId("threadId", threadId);
@@ -193,6 +280,13 @@ export function pendingMemoryVisualCompanion({
     ...(eventId === undefined ? [] : [eventId]),
     ...evidenceRefs,
   ])];
+  const photoPrompt = buildMemoryPhotoPrompt({
+    threadId,
+    memoryRef,
+    memorySummary,
+    sourceReferences,
+    createdFrom,
+  });
   return normalizeMemoryVisualCompanion({
     companionId: memoryVisualCompanionId(threadId, memoryRef),
     revision: 1,
@@ -201,6 +295,8 @@ export function pendingMemoryVisualCompanion({
     status: "pending_generation",
     representationKind: "synthetic_reconstruction",
     truthStatus: "synthetic_representation_not_historical_evidence",
+    photoPrompt,
+    photoPromptDigest: memoryPhotoPromptDigest(photoPrompt),
     assetRef: null,
     visibility: "private",
     sourceReferences,

@@ -16,6 +16,7 @@ import {
   normalizeIdentityAssertion,
 } from "./identity-provenance-domain.mjs";
 import {
+  assertMemoryPhotoRequirementSatisfied,
   memoryVisualCompanionDigest,
   normalizeMemoryVisualCompanion,
   pendingMemoryVisualCompanion,
@@ -229,6 +230,7 @@ function pendingFromReference(database, threadId, memoryRef, fallbackRecordedAt)
       recordedAt: row.created_at,
       eventId: row.event_id,
       evidenceRefs: parseJson(`memory ${memoryRef} evidence`, row.evidence_refs_json),
+      memorySummary: row.summary,
       createdFrom: "persisted_autobiographical_memory",
     });
   }
@@ -273,14 +275,17 @@ export function ensureMemoryVisualCompanion(database, {
   recordedAt,
   eventId,
   evidenceRefs = [],
+  memorySummary,
   createdFrom = "persisted_autobiographical_memory",
 }) {
+  const persistedMemory = memoryRow(database, threadId, memoryRef);
   const candidate = pendingMemoryVisualCompanion({
     threadId,
     memoryRef,
     recordedAt,
     ...(eventId === undefined ? {} : { eventId }),
     evidenceRefs,
+    memorySummary: memorySummary ?? persistedMemory?.summary,
     createdFrom,
   });
   const existing = database.prepare(`
@@ -382,4 +387,10 @@ export function verifyMemoryVisualCompanion(database, threadId, memoryRef) {
     throw new IntegrityError(`memory ${memoryRef} has no visual companion lineage`);
   }
   return decodeMemoryVisualCompanionRow(row);
+}
+
+export function verifyMemoryPhotoRequirement(database, threadId, memoryRef) {
+  const record = verifyMemoryVisualCompanion(database, threadId, memoryRef);
+  assertMemoryPhotoRequirementSatisfied(record.companion);
+  return record;
 }

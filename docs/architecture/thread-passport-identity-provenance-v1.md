@@ -216,45 +216,68 @@ The Passport intentionally does **not** lead with profession. Professional ident
 
 A name change adds a revision. Prior names remain reconstructible. A current Passport can change while an `asOf` identity view still returns the earlier self from immutable evidence.
 
-# IX. Memory visual companion invariant
+# IX. Memory photo invariant and source-of-truth contract
 
 Fibre adopts a stronger product invariant beginning in #37:
 
-> **Every Thread memory reference has a visual companion lineage.**
+> **Every Thread memory should actually have a photo.**
+
+A visual lineage is necessary but no longer sufficient. Every current or migrated Thread memory must have an append-only memory-photo lineage, and that lineage carries an explicit non-waivable completion requirement: only an `available` photo satisfies it. `pending_generation` and `unavailable_with_reason` are operational/transitional states. They may explain why a photo is not currently cached, but they can never become a legitimate permanent photo-less memory state.
 
 This includes both current `thread_memories` records and migrated legacy `memoryRefs`.
 
-#37 does not generate images. It guarantees the durable place where the visual truth will live. On migration or memory creation it creates revision 1:
+#37 still does not invoke an image model. It establishes the durable source from which the image is rendered. On migration or memory creation it creates revision 1 with semantics equivalent to:
 
 ```text
 status             pending_generation
 representationKind synthetic_reconstruction
+photoPrompt         <rich layered canonical textual prompt>
+photoPromptDigest   sha256:<digest of exact prompt text>
 assetRef            null
 truthStatus          synthetic_representation_not_historical_evidence
 visibility           private
 ```
 
-The companion ID is deterministic from `(threadId, memoryRef)` and the lineage is append-only.
-
-#38 may append later revisions such as:
+The prompt is deliberately rich and layered rather than a one-line caption. The v1 canonical prompt contains distinct sections for:
 
 ```text
-available synthetic reconstruction
-available captured photograph
-unavailable_with_reason
+MEMORY MOMENT
+THREAD CONTINUITY
+SCENE
+EMOTIONAL TEXTURE
+COMPOSITION
+GROUNDING
+TRUTH BOUNDARY
+REGENERATION
 ```
 
-A synthetic reconstruction **never** changes its truth status into historical photographic evidence. A captured photograph must explicitly carry `captured_source_evidence` truth status. Replacing a pending slot with an asset is a new revision; the pending/history record remains.
+For a synthetic reconstruction, **the exact `photoPrompt` plus its immutable source references is the source of truth for that photo revision**. The rendered image is not. `photoPromptDigest` binds the exact text into the append-only companion record and the companion digest protects the whole canonical record.
 
-This makes rich memory albums possible without falsifying the past.
+When an image is rendered, `assetRef` is a **regenerable S3 cache locator**, not durable truth. The initial #38 renderer is expected to be Nano Banana and may use a path convention such as:
+
+```text
+s3://<memory-photo-cache>/nano-banana/<thread>/<memory>/<render>.webp
+```
+
+The renderer name, model version, bucket layout, image format, and cache retention policy are replaceable implementation choices. Fibre must remain able to regenerate the image from the canonical prompt and bound evidence without changing the meaning or truth status of the memory. A future renderer may replace Nano Banana without migrating the memory itself.
+
+If a cached image disappears, a later revision may return the lineage to `pending_generation` while retaining the same `photoPrompt` and `photoPromptDigest`, then append a new `available` revision with a new S3 cache path. Earlier cache paths and prompt revisions are never rewritten.
+
+Legacy opaque memory references are not an excuse to hallucinate history. If a legacy memory has no admitted narrative summary, #37 creates a conservative layered prompt that explicitly records the missing context and forbids invented historical specifics. That memory remains visibly pending until a later append-only revision admits enough grounded context to render a meaningful photo.
+
+The companion ID is deterministic from `(threadId, memoryRef)` and the lineage is append-only.
+
+A synthetic reconstruction **never** changes its truth status into historical photographic evidence. A captured photograph must explicitly carry `captured_source_evidence` truth status. For captured photographs, the captured source remains evidentiary authority; a textual prompt may describe or index it but can never recreate historical photographic truth if the captured source is lost.
 
 # X. Atomic memory creation
 
-When the canonical freeze path persists a new autobiographical memory, the initial memory-visual companion must be created in the **same database transaction**.
+When the canonical freeze path persists a new autobiographical memory, the initial memory-photo companion must be created in the **same database transaction**.
 
-There must be no committed state in which a newly persisted Thread memory exists without its required visual lineage.
+There must be no committed state in which a newly persisted Thread memory exists without its required photo lineage, canonical layered prompt, prompt digest, source references, and explicit photo-completion obligation.
 
 Schema migration also backfills companions for pre-#37 memories before advancing the world-store schema version.
+
+The atomic transaction does **not** wait on external image generation. It commits the memory plus the authoritative prompt-bearing pending revision. #38 owns asynchronous rendering and the later append-only `available` revision. This keeps external model/storage failures from corrupting life-history persistence while still making photo completion non-optional.
 
 # XI. Inspection
 
@@ -270,11 +293,14 @@ What provenance class and evidence classification does it carry?
 Which assertions are private?
 How many assertions claim accepted-causal standing?
 How many claim endogenous evidence?
-Does every memory have a visual lineage?
-Is each memory image synthetic/captured/pending, and what truth status does it carry?
+Does every memory have a photo lineage?
+What is the canonical photo prompt and prompt digest for each revision?
+Is the current photo synthetic/captured/pending, and what truth status does it carry?
+Does the current revision actually satisfy the mandatory photo requirement?
+Which S3 locator is merely the current regenerable cache?
 ```
 
-The intended #37 standing answer for the last two credit-sensitive counters is:
+The intended #37 standing answer for the two credit-sensitive identity counters is:
 
 ```text
 acceptedCausalAssertions = 0
@@ -282,6 +308,8 @@ endogenousEvidenceAssertions = 0
 ```
 
 Any nonzero value from #37 bootstrap data is evidence inflation and fails review.
+
+A pending photo does **not** make the identity ledger corrupt; it makes the separate photo-completion requirement unsatisfied. This distinction lets #37 persist memories safely without pretending #38 has rendered them already.
 
 # XII. Integrity rules
 
@@ -299,7 +327,12 @@ Any nonzero value from #37 bootstrap data is evidence inflation and fails review
 - #37 writing `accepted_causal` evidence;
 - #37 claiming endogenous Thread authorship;
 - a Thread memory lacking a visual companion lineage;
+- a memory-photo revision lacking a rich canonical prompt or carrying a mismatched prompt digest;
+- a photo-less `pending_generation` or `unavailable_with_reason` state being treated as satisfying the mandatory memory-photo requirement;
+- an `available` memory photo using a non-S3 authoritative-looking asset locator rather than a cache locator;
+- losing an S3 cache object forcing mutation of prior memory/photo truth instead of append-only regeneration;
 - a synthetic image labeled as historical captured evidence;
+- a captured historical photograph being treated as reproducible historical evidence from a synthetic prompt alone;
 - a read-only Inspector mutating the source database.
 
 # XIII. PR boundaries
@@ -309,6 +342,7 @@ Any nonzero value from #37 bootstrap data is evidence inflation and fails review
 - full lineage/family relationship structures — #38;
 - geography timeline mechanics — #38;
 - actual portrait/memory-image generation — #38;
+- Nano Banana invocation, S3 upload, cache invalidation workers, or regeneration scheduling — #38;
 - voice asset generation — #38;
 - Identity Context Capsule selection — #39;
 - Dignity/Actor causal consumption of structured identity — #39;

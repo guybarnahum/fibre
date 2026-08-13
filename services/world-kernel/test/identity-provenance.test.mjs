@@ -16,6 +16,8 @@ import {
   identityDomainDefinition,
 } from "../src/identity-domain-registry.mjs";
 import {
+  memoryPhotoPromptDigest,
+  memoryPhotoRequirementSatisfied,
   memoryVisualCompanionId,
 } from "../src/memory-visual-companion.mjs";
 import {
@@ -87,7 +89,7 @@ function revisionOf(previous, overrides = {}) {
   return candidate;
 }
 
-test("#37 bootstraps Mina into claim-level identity, passport, and memory-photo lineage", () =>
+test("#37 bootstraps Mina into claim-level identity, passport, and mandatory memory-photo lineage", () =>
   withDatabase((databasePath) => {
     seed(databasePath);
     const identity = openIdentityStore(databasePath);
@@ -123,6 +125,16 @@ test("#37 bootstraps Mina into claim-level identity, passport, and memory-photo 
     );
     assert.equal(visual[0].companion.status, "pending_generation");
     assert.equal(visual[0].companion.assetRef, null);
+    assert.equal(memoryPhotoRequirementSatisfied(visual[0].companion), false);
+    assert.equal(
+      visual[0].companion.photoPromptDigest,
+      memoryPhotoPromptDigest(visual[0].companion.photoPrompt),
+    );
+    assert.match(visual[0].companion.photoPrompt, /MEMORY MOMENT/);
+    assert.match(visual[0].companion.photoPrompt, /THREAD CONTINUITY/);
+    assert.match(visual[0].companion.photoPrompt, /TRUTH BOUNDARY/);
+    assert.match(visual[0].companion.photoPrompt, /REGENERATION/);
+    assert.match(visual[0].companion.photoPrompt, /does not yet contain an admitted narrative summary/);
     assert.equal(
       visual[0].companion.truthStatus,
       "synthetic_representation_not_historical_evidence",
@@ -230,7 +242,7 @@ test("#37 refuses biography blobs, accepted-causal credit, endogenous credit, an
     identity.close();
   }));
 
-test("memory visual history can become an asset without rewriting synthetic provenance", () =>
+test("memory photo prompt is authoritative while Nano Banana S3 renders remain regenerable cache", () =>
   withDatabase((databasePath) => {
     seed(databasePath);
     const identity = openIdentityStore(databasePath);
@@ -242,27 +254,78 @@ test("memory visual history can become an asset without rewriting synthetic prov
       ...first,
       revision: 2,
       status: "available",
-      assetRef: "asset://memory/mina-first-review/reconstruction-v1",
+      assetRef: "s3://fibre-memory-visuals/nano-banana/mina-first-review/reconstruction-v1.webp",
       recordedAt: "2026-08-12T23:56:00Z",
       supersedesRevision: 1,
     };
     const recorded = identity.recordMemoryVisualCompanion(second);
     assert.equal(recorded.idempotent, false);
     assert.equal(identity.recordMemoryVisualCompanion(second).idempotent, true);
+    assert.equal(memoryPhotoRequirementSatisfied(second), true);
+
+    const cacheLost = {
+      ...second,
+      revision: 3,
+      status: "pending_generation",
+      assetRef: null,
+      recordedAt: "2026-08-12T23:57:00Z",
+      supersedesRevision: 2,
+    };
+    identity.recordMemoryVisualCompanion(cacheLost);
+    assert.equal(memoryPhotoRequirementSatisfied(cacheLost), false);
+    assert.equal(cacheLost.photoPrompt, second.photoPrompt);
+    assert.equal(cacheLost.photoPromptDigest, second.photoPromptDigest);
+
+    const regenerated = {
+      ...cacheLost,
+      revision: 4,
+      status: "available",
+      assetRef: "s3://fibre-memory-visuals/nano-banana/mina-first-review/reconstruction-v2.webp",
+      recordedAt: "2026-08-12T23:58:00Z",
+      supersedesRevision: 3,
+    };
+    identity.recordMemoryVisualCompanion(regenerated);
+    assert.equal(memoryPhotoRequirementSatisfied(regenerated), true);
+    assert.equal(regenerated.photoPromptDigest, first.photoPromptDigest);
+
     const history = identity.getMemoryVisualCompanionHistory(
       fixture.threadId,
       "mem_mina_first_review",
     );
-    assert.equal(history.length, 2);
+    assert.equal(history.length, 4);
     assert.equal(history[0].companion.assetRef, null);
     assert.equal(history[1].companion.status, "available");
+    assert.equal(history[2].companion.status, "pending_generation");
+    assert.equal(history[3].companion.status, "available");
+    assert.equal(history[1].companion.photoPromptDigest, history[3].companion.photoPromptDigest);
     assert.equal(
-      history[1].companion.truthStatus,
+      history[3].companion.truthStatus,
       "synthetic_representation_not_historical_evidence",
     );
     assert.equal(
-      history[1].companion.representationKind,
+      history[3].companion.representationKind,
       "synthetic_reconstruction",
+    );
+
+    assert.throws(
+      () => identity.recordMemoryVisualCompanion({
+        ...regenerated,
+        revision: 5,
+        assetRef: "asset://memory/mina-first-review/not-an-s3-cache",
+        recordedAt: "2026-08-12T23:59:00Z",
+        supersedesRevision: 4,
+      }),
+      /s3:\/\/ cache locator/,
+    );
+    assert.throws(
+      () => identity.recordMemoryVisualCompanion({
+        ...regenerated,
+        revision: 5,
+        photoPrompt: `${regenerated.photoPrompt}\nTampered prompt without a matching digest.`,
+        recordedAt: "2026-08-12T23:59:00Z",
+        supersedesRevision: 4,
+      }),
+      /photoPromptDigest does not match/,
     );
     identity.close();
   }));
@@ -361,5 +424,11 @@ test("v5-style world migration reconstructs identity and memory visual lineages"
     const integrity = inspector.verifyThreadIdentityIntegrity(fixture.threadId);
     assert.equal(integrity.claimCount, 13);
     assert.equal(integrity.memoryVisualCompanionCount, fixture.memoryRefs.length);
+    const visual = inspector.getMemoryVisualCompanionHistory(
+      fixture.threadId,
+      "mem_mina_first_review",
+    )[0].companion;
+    assert.equal(memoryPhotoRequirementSatisfied(visual), false);
+    assert.equal(visual.photoPromptDigest, memoryPhotoPromptDigest(visual.photoPrompt));
     inspector.close();
   }));
