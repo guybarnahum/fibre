@@ -22,7 +22,11 @@ import {
   IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
   identityDomainV2Definition,
 } from "./identity-domain-registry-v2.mjs";
-import { assertRegistryV2ClaimDiscipline } from "./identity-claim-discipline.mjs";
+import {
+  assertCurrentClaimDiscipline,
+  assertRecordedClaimDiscipline,
+  normalizeClaimPredicate,
+} from "./identity-claim-discipline.mjs";
 
 export const MAX_IDENTITY_MEANING_BYTES = 2048;
 export const MAX_IDENTITY_SOURCE_REFERENCES = 32;
@@ -113,6 +117,7 @@ function normalizeAdmission(admission) {
   assertPlainObject("identity assertion.admission", admission);
   assertExactKeys("identity assertion.admission", admission, [
     "policy",
+    "claimDiscipline",
     "admittedBy",
     "evidenceClassification",
     "sourceMode",
@@ -125,12 +130,19 @@ function normalizeAdmission(admission) {
   if (!SOURCE_MODES.has(admission.sourceMode)) {
     throw new TypeError("identity assertion.admission.sourceMode is invalid");
   }
-  return {
+  const normalized = {
     policy,
     admittedBy,
     evidenceClassification: admission.evidenceClassification,
     sourceMode: admission.sourceMode,
   };
+  if (admission.claimDiscipline !== undefined) {
+    normalized.claimDiscipline = normalizePolicy(
+      "identity assertion.admission.claimDiscipline",
+      admission.claimDiscipline,
+    );
+  }
+  return normalized;
 }
 
 function normalizeDisputeCorrection(value, status) {
@@ -192,12 +204,13 @@ export function identityAssertionId(seed) {
   return `ias_${sha256(canonicalJson(seed))}`;
 }
 
-export function normalizeIdentityAssertion(
+function normalizeIdentityAssertionInternal(
   candidate,
   {
     allowAcceptedCausal = false,
     allowEndogenous = false,
     registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION,
+    admissionMode = "current",
   } = {},
 ) {
   assertPlainObject("identity assertion", candidate);
@@ -208,6 +221,7 @@ export function normalizeIdentityAssertion(
     "threadId",
     "domain",
     "kind",
+    "claimPredicate",
     "meaning",
     "provenanceClass",
     "authorship",
@@ -242,8 +256,17 @@ export function normalizeIdentityAssertion(
   }
   const authorship = normalizeAuthorship(candidate);
   const admission = normalizeAdmission(candidate.admission);
+  let claimPredicate;
+  if (candidate.claimPredicate !== undefined) {
+    claimPredicate = normalizeClaimPredicate(candidate.claimPredicate);
+  }
   if (registryVersion === IDENTITY_DOMAIN_REGISTRY_V2_VERSION) {
-    assertRegistryV2ClaimDiscipline({ ...candidate, admission });
+    const disciplineCandidate = { ...candidate, claimPredicate, admission };
+    if (admissionMode === "historical") {
+      assertRecordedClaimDiscipline(disciplineCandidate);
+    } else {
+      assertCurrentClaimDiscipline(disciplineCandidate);
+    }
   }
   const migrationObservation = isLegacyProjectionObservation(candidate, authorship, admission);
   if (
@@ -332,6 +355,7 @@ export function normalizeIdentityAssertion(
     threadId: candidate.threadId,
     domain: candidate.domain,
     kind: candidate.kind,
+    ...(claimPredicate === undefined ? {} : { claimPredicate }),
     meaning: candidate.meaning,
     provenanceClass: candidate.provenanceClass,
     authorship,
@@ -351,15 +375,33 @@ export function normalizeIdentityAssertion(
   return normalized;
 }
 
+export function normalizeIdentityAssertion(candidate, options = {}) {
+  return normalizeIdentityAssertionInternal(candidate, {
+    ...options,
+    admissionMode: "current",
+  });
+}
+
+export function rehydrateIdentityAssertion(candidate, options = {}) {
+  return normalizeIdentityAssertionInternal(candidate, {
+    ...options,
+    admissionMode: "historical",
+  });
+}
+
 export function identityAssertionDigest(
   candidate,
   { registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION } = {},
 ) {
-  return `sha256:${sha256(canonicalJson(normalizeIdentityAssertion(candidate, {
+  const assertion = rehydrateIdentityAssertion(candidate, {
     allowAcceptedCausal: true,
     allowEndogenous: true,
     registryVersion,
-  })))}`;
+  });
+  const payload = registryVersion === IDENTITY_DOMAIN_REGISTRY_VERSION
+    ? assertion
+    : { registryVersion, assertion };
+  return `sha256:${sha256(canonicalJson(payload))}`;
 }
 
 function bootstrapAdmission() {
