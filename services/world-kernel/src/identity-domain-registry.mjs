@@ -146,6 +146,7 @@ export const IDENTITY_DOMAIN_REGISTRY = Object.freeze({
     description: "Place facts and durable place meaning; #38 adds the full geography timeline.",
     provenance: ["geographic", "historical_experienced", "self_authored", "echo_source"],
     authorship: ["genesis_authority", "thread_self_authored", "fibre_policy_derived", "institutional_source", "admin_correction"],
+    singletonKinds: ["birth_place"],
     mutationRule: "Place events append; factual errors correct; personal meaning may be self-authored and superseded.",
   }),
   intellectual_formation: domain({
@@ -211,6 +212,7 @@ export const IDENTITY_DOMAIN_REGISTRY = Object.freeze({
     description: "Current or historical Thread-authored interpretation, value, aspiration, tension, or self-narrative.",
     provenance: ["self_authored", "historical_experienced", "relational", "upbringing_cultural", "geographic", "intellectual_formation"],
     authorship: THREAD_OR_CORRECTION,
+    singletonKinds: ["self_description"],
     mutationRule: "Thread meaning may supersede earlier meaning but cannot rewrite objective history; endogenous agency is not credited before #41.",
   }),
   embodiment: domain({
