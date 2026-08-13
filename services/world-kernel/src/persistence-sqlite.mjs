@@ -19,6 +19,7 @@ import {
   backfillMemoryVisualCompanions,
   createIdentityTables,
 } from "./identity-schema.mjs";
+import { repairIdentityAssertionRegistryV2Schema } from "./identity-schema-v2-repair.mjs";
 
 export function normalizeDatabasePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
@@ -213,6 +214,11 @@ function createSchema(database) {
   createIdentityTables(database);
 }
 
+function createAndRepairSchema(database) {
+  createSchema(database);
+  repairIdentityAssertionRegistryV2Schema(database);
+}
+
 function needsEventSchemaUpgrade(database) {
   const row = database.prepare(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
@@ -277,8 +283,12 @@ export function migrateDatabase(database) {
   if (currentVersion === WORLD_STORE_SCHEMA_VERSION) {
     try {
       database.exec("BEGIN IMMEDIATE");
-      createSchema(database);
+      createAndRepairSchema(database);
       migrateLegacyConsumedObligations(database);
+      const violations = database.prepare("PRAGMA foreign_key_check").all();
+      if (violations.length !== 0) {
+        throw new IntegrityError("same-version schema repair produced foreign-key violations");
+      }
       database.exec("COMMIT");
     } catch (error) {
       safeRollback(database);
@@ -292,7 +302,7 @@ export function migrateDatabase(database) {
   try {
     database.exec("BEGIN IMMEDIATE");
     if (rebuildEvents) rebuildEventTables(database);
-    createSchema(database);
+    createAndRepairSchema(database);
     migrateLegacyConsumedObligations(database);
     const identityMigration = backfillLegacyThreadIdentity(database);
     if (identityMigration.droppedPostSeedAdditions !== 0) {
