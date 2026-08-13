@@ -1,127 +1,85 @@
 # PR #38 Slice A — hostile architecture review disposition
 
-Reviewed checkpoint: `c057582a3660e05615300dbf86bdf74c1d47ffb4`
+Original hostile-review checkpoint: `c057582a3660e05615300dbf86bdf74c1d47ffb4`
 
-Review verdict: **HOLD — 2 S1, 6 S2**.
+Amended re-review checkpoint: `76ea179c09d5ba5c2bf52e6feb7bde49ff19d08b`
 
-This document records the actionable findings and the closure posture on the amended Slice-A head. It does not convert the external review into Fibre-owned standing evidence and does not declare #38 merge-ready.
+Current disposition: **ACCEPTED AFTER AMENDMENT AND TARGETED RE-REVIEW. SLICE B MAY PROCEED.**
+
+This document records architectural closure only. It does not declare PR #38 merge-ready and does not award causal standing or endogenous Development credit.
 
 ## Review thesis
 
-The reviewer found that Slice A had correctly versioned the identity registry per immutable row, but had not applied the same historical-version discipline to claim-admission policy. The then-current implementation re-ran the moving current atomic-claim policy while reading append-only historical rows. The reviewer also demonstrated that the prose heuristic blocked formatting patterns rather than reliably establishing proposition atomicity.
+The first hostile review found that Slice A had correctly versioned the identity registry per immutable row, but had not applied the same historical-version discipline to claim-admission policy. The then-current implementation re-ran the moving current atomic-claim policy while reading append-only historical rows. The reviewer also demonstrated that prose heuristics blocked formatting patterns more reliably than proposition composition.
 
-The required architectural correction was:
+The architectural correction was:
 
-> admission gates belong on the write path; historical reads validate the policy witness recorded with the immutable row.
+> Admission gates belong on the write path; historical reads validate the policy witness recorded with the immutable row.
 
-## S1 disposition
+## S1 closures
 
-### S1-1 — moving admission policy on the read path
+### Moving admission policy on the read path
 
-**Closed on amended Slice A.**
+**Closed.**
 
 - `rehydrateIdentityAssertion()` is distinct from current admission.
-- historical v2 rows dispatch through the immutable `admission.claimDiscipline` witness stored with the assertion.
-- `assertCurrentClaimDiscipline()` is a write-time admission check for new rows.
-- `identityAssertionDigest()` rehydrates under recorded historical semantics rather than comparing historical rows against the moving current-policy alias.
-- `admission.policy` remains the provenance/admission regime; `admission.claimDiscipline` separately records the structural claim-discipline policy.
+- historical v2 rows dispatch through immutable `admission.claimDiscipline` recorded with the assertion.
+- `assertCurrentClaimDiscipline()` is a write-time admission check.
+- `admission.policy` records provenance/admission regime while `admission.claimDiscipline` records the claim-shape regime.
+- policy evolution no longer retroactively invalidates immutable rows.
 
-A future claim-discipline policy version can therefore coexist with rows admitted under `identity_atomic_material_proposition:1` without retroactively invalidating those rows.
+### Atomic composition
 
-### S1-2 — formatting heuristic did not establish atomic composition
+**Closed structurally and versionably.**
 
-**Closed structurally for v2 authoring; prose heuristic retained as defense in depth.**
+- v2 assertions require normalized `{subject,predicate,object}` `claimPredicate` structure.
+- prose checks remain defense in depth.
+- the current discipline is now `identity_atomic_material_proposition:2`, which closes the hostile repeated-conjunction bundle reproduced during re-review.
+- historical `identity_atomic_material_proposition:1` rows remain permanently rehydratable under v1; v1 was not tightened retroactively.
 
-- v2 assertions now require `claimPredicate` with normalized `{subject,predicate,object}` structure.
-- predicate form is bounded and singular.
-- subject/object components reject obvious compound proposition structure.
-- prose checks were tightened for lowercase sentence continuation, semicolons, em/en dashes, and explicit bundles.
-- claim predicate subject/predicate is stable across revisions of the same claim.
+This final residual is important evidence that the policy architecture works: tightening the standard became routine forward versioning rather than destruction of history.
 
-The `meaning` remains prompt-native elaboration; it is no longer the sole machine representation of proposition identity.
+## S2 closures
 
-## S2 disposition
+- `cultural_formation` is context-only in #38.
+- behavioral escalation requires changed meaning and at least one new source reference.
+- public v1 revisions also pass the single-proposition writer guard.
+- coarse v1 domains superseded in v2 are unavailable for new v2 authoring.
+- pure-v1 view/passport canonical shape and digests remain #37-stable.
+- mixed/v2 views bind only registry domains actually used, preventing unrelated future registry additions from drifting existing artifacts.
+- v2 assertion digest binds `registryVersion`; SQL pins registry version across claim revisions.
+- integrity reporting derives admitted registries instead of hard-coding v1.
+- mixed-registry inspection no longer renders `registry=vnull`; it reports the admitted set.
+- `memory_interpretation` projects under `memory`, not `history`.
+- unsupported historical registry values fail explicitly before schema repair mutation.
 
-### S2-1 — behavioral escalation / cultural stereotype bypass
+## Targeted re-review result
 
-**Closed for Slice A.**
+Claude independently re-ran the seven requested attacks against `76ea179...`:
 
-- `cultural_formation` is `context_only` in registry v2.
-- revision escalation to `candidate_causal` requires both changed meaning and at least one new source reference.
-- lineage/family/ancestral-origin/geography facts remain context-only where appropriate.
+1. policy-bump retro-invalidation — **CLOSED**
+2. composition vs `claimPredicate` — **5/6 CLOSED; one residual downgraded to S3**
+3. raw-SQL registry switching — **CLOSED**
+4. pure-v1 digest stability — **CLOSED**
+5. unrelated-domain digest stability — **CLOSED**
+6. v1 authoring bypass — **CLOSED**
+7. zero causal/endogenous credit — **CLOSED (0/0)**
 
-#38 still awards no accepted-causal credit.
+The remaining composition residual has subsequently been closed through claim-discipline v2 without altering the v1 historical validator.
 
-### S2-2 — v1 public write bypass / superseded v1 domains
+## Standing boundary
 
-**Closed at the public authoring boundary.**
+```text
+acceptedCausalAssertions = 0
+endogenousEvidenceAssertions = 0
+```
 
-- `recordAssertion()` applies `assertSingleMaterialProposition()` before registry dispatch, including revisions of v1 claims.
-- v2 marks coarse v1 authoring domains such as `lineage_family`, `upbringing_culture`, `geography`, `embodiment`, and `lived_episode` as superseded for new authoring, with explicit successor domains.
-- immutable historical v1 rows remain readable under v1 semantics.
+Slice A does not award #40 causal individuality, #41 M2 standing, or #42 self-authored Development.
 
-### S2-3 — pure-v1 view/passport digest drift
+## Decision
 
-**Closed.**
+**Slice A is accepted as the substrate for Slice B.**
 
-- pure-v1 identity views retain the v1 canonical registry shape and `identity_view_transaction_time:1` derivation policy.
-- mixed/v2 views use `identity_view_transaction_time:2`.
-- pure-v1 passport shape preserves the v1 `registryVersion` / `registryDigest` binding.
+The invariant carried forward is:
 
-### S2-4 — whole-registry digest causes additive-domain re-drift
-
-**Closed for v2 canonical views.**
-
-- mixed/v2 views bind only the registry/domain definitions actually referenced by assertions through per-domain `registryBindings`.
-- adding an unrelated future domain does not by itself change an untouched Thread view digest.
-
-### S2-5 — registry_version not digest-bound / SQL INSERT pin gap
-
-**Closed.**
-
-- v2 assertion digest payload includes `registryVersion`.
-- SQL has `identity_assertions_registry_pin`, a `BEFORE INSERT` trigger that requires revisions >1 to inherit revision-1 `registry_version`.
-- read failures are wrapped with assertion ID and recorded registry context before view construction.
-
-Historical v1 assertion digest semantics remain unchanged.
-
-### S2-6 — integrity attestation hard-coded registry v1
-
-**Closed.**
-
-- integrity derives admitted registry versions.
-- singular `registryVersion` / `registryDigest` are emitted only when exactly one registry is present; mixed ledgers report the admitted registry set.
-- derivation policy is taken from the actual passport/view.
-
-## Additional review items closed early
-
-The review also recommended several S3 fixes that were inexpensive before B/C volume:
-
-- split `admission.policy` from `admission.claimDiscipline`;
-- project `memory_interpretation` under `memory`, not `history`;
-- refuse unsupported stored `registry_version` values during repair with an explicit `IntegrityError`;
-- validate `claimId` before binding it to SQLite on the public writer path.
-
-## Verified invariants retained
-
-The hostile review explicitly verified these original Slice-A properties and the amended implementation preserves them:
-
-- registry v2 is additive;
-- frozen v1 rows remain historically routed to v1;
-- schema repair is transactional and idempotent;
-- no causal standing is awarded;
-- no endogenous Development credit is awarded.
-
-## Re-review posture
-
-Slice A should not be treated as accepted merely because the fixes are present and CI is green. The amended head must be sent back through the same hostile architecture questions, especially:
-
-1. policy-version bump does not brick historical rows;
-2. compound claims cannot bypass structural v2 admission;
-3. raw SQL cannot switch registry version within a claim lineage;
-4. pure-v1 digests remain #37-stable;
-5. unrelated registry additions do not drift existing v2 views;
-6. v1 historical compatibility does not remain an idiomatic public authoring bypass;
-7. `acceptedCausalAssertions = 0` and `endogenousEvidenceAssertions = 0` remain true.
-
-Only after that re-review should Slice B begin writing lineage, geography, culture, and embodiment data at volume.
+> Admission standards may evolve forward. Immutable history is interpreted under the standard that actually admitted it.
