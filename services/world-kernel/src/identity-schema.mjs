@@ -20,6 +20,7 @@ import {
   identityAssertionId,
   legacySeedIdentityAssertions,
   normalizeIdentityAssertion,
+  rehydrateIdentityAssertion,
 } from "./identity-provenance-domain.mjs";
 import {
   memoryVisualCompanionDigest,
@@ -97,6 +98,19 @@ export function createIdentityTables(database) {
     CREATE INDEX IF NOT EXISTS idx_identity_assertions_claim_revision
       ON identity_assertion_records(claim_id,revision);
 
+    CREATE TRIGGER IF NOT EXISTS identity_assertions_registry_pin
+      BEFORE INSERT ON identity_assertion_records
+      WHEN NEW.revision > 1
+      BEGIN
+        SELECT CASE
+          WHEN (SELECT registry_version FROM identity_assertion_records
+                WHERE claim_id=NEW.claim_id AND revision=1) IS NULL
+            THEN RAISE(ABORT,'identity claim revision must follow an existing revision 1')
+          WHEN NEW.registry_version != (SELECT registry_version FROM identity_assertion_records
+                WHERE claim_id=NEW.claim_id AND revision=1)
+            THEN RAISE(ABORT,'identity claim registry_version is pinned by revision 1')
+        END;
+      END;
     CREATE TRIGGER IF NOT EXISTS identity_assertions_no_update
       BEFORE UPDATE ON identity_assertion_records
       BEGIN SELECT RAISE(ABORT,'identity_assertion_records is append-only'); END;
@@ -210,7 +224,7 @@ export function persistLegacySeedIdentity(database, thread, { sourceEventId } = 
       continue;
     }
     const registryVersion = existing.registry_version;
-    const normalized = normalizeIdentityAssertion(
+    const normalized = rehydrateIdentityAssertion(
       parseJson(`identity assertion ${assertion.assertionId}`, existing.assertion_json),
       {
         allowAcceptedCausal: true,
@@ -308,7 +322,7 @@ function persistLegacyProjectionDrift(database, seedThread, currentThread, {
       continue;
     }
     const registryVersion = existing.registry_version;
-    const normalized = normalizeIdentityAssertion(
+    const normalized = rehydrateIdentityAssertion(
       parseJson(`identity assertion ${observation.assertionId}`, existing.assertion_json),
       {
         allowAcceptedCausal: true,
