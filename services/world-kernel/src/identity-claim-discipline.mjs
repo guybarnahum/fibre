@@ -143,13 +143,13 @@ export function assertCurrentClaimDiscipline(assertion) {
   const currentKey = policyKey(IDENTITY_ATOMIC_CLAIM_POLICY);
   const witnessKey = policyKey(witness);
 
-  // Transitional writer compatibility is admission-time only: a caller still naming
-  // the immediately prior v1 discipline is subjected to v2 and the durable row is
-  // rewritten to record the policy that actually admitted it. Historical rows are
-  // never upgraded or reinterpreted.
+  // Transitional compatibility is limited to the Fibre world-kernel writer envelope.
+  // It is admission-time only: the candidate is subjected to v2 and the durable row
+  // records v2. Historical v1 rows remain forever interpreted under v1.
   if (
     witnessKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1) &&
-    currentKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V2)
+    currentKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V2) &&
+    assertion.admission.admittedBy?.entityId === "fibre.world-kernel"
   ) {
     assertion.admission.claimDiscipline = { ...IDENTITY_ATOMIC_CLAIM_POLICY };
     return assertRecordedClaimDiscipline(assertion);
