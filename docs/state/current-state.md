@@ -272,9 +272,21 @@ The focused re-review found a bounded lifecycle gap: an executed/Guardian-passed
 - private/admin inspection can enumerate all authority-withdrawal closures per Thread and independently verifies causal chains plus new history-event bindings;
 - legacy #35 withdrawal rows remain readable without being rewritten.
 
-Because the append-only event vocabulary changed, the world-store schema is now **v5**.
+Because the append-only event vocabulary changed, that follow-up advanced the world-store schema to **v5**. #37 advances the identity-capable world-store to **v6**.
 
 Neither #35 nor this lifecycle follow-up moves the pre-M2 personhood score. They close authority integrity, social consequence, and truthful life-history substrate needed by later relationship/institution/economic systems without manufacturing rubric credit.
+
+## PR #36 merged; PR #37 active — Thread Passport & Identity Provenance v1
+
+PR #36 is **MERGED / FROZEN** as the four-document M2 constitutional unit. Its hostile vision re-review closed the persona-theater escape hatch before implementation.
+
+PR #37 now implements persistence/provenance only: a closed Identity Domain Registry v1, stable `icl_` claim lineages, immutable `ias_` assertion revisions, derived current/`asOf` identity views, and a readable Passport. Legacy flat identity remains a compatibility projection while its meaning is deterministically decomposed into claim-level genesis evidence.
+
+#37 deliberately reports `acceptedCausalAssertions=0` and `endogenousEvidenceAssertions=0`. #39/#40 must earn causal identity standing; #41 must earn endogenous self-authored Development.
+
+Fibre also adopts the memory-visual invariant: **every Thread memory reference has a visual companion lineage**. #37 creates a private pending synthetic-reconstruction slot for every migrated/new memory and labels it `synthetic_representation_not_historical_evidence`; #38 owns actual generated/captured assets. New freeze-created autobiographical memories and their initial visual lineage are committed atomically.
+
+The world-store schema is **v6**. Read-only identity inspection is available through `npm run inspect:identity`.
 
 ## Model runtime
 
@@ -325,14 +337,14 @@ The awarded movement remains intentionally conservative:
   -> #34 History bends judgment — EARNED / SEALED / MERGED
   -> #35 Structured Obligation v1 — MERGED / REVIEWED
   -> direct no-PR follow-up — interrupted compelled episode persistence + history visibility — LANDED
-  -> #36 M2 Identity & Embodiment Contract
-  -> #37 Thread Passport & Identity Provenance v1
+  -> #36 M2 Identity & Embodiment Contract — MERGED / FROZEN
+  -> #37 Thread Passport & Identity Provenance v1 — ACTIVE
   -> #38 Lineage, Geography & Embodiment v1
   -> #39 Identity Projection & Causal Consumption
   -> #40 M2 Standing Gate / M2 closure
 ```
 
-The detailed continuation plan through #43 is [`m2-pr-plan.md`](../validation/m2-pr-plan.md). #35 and its direct history follow-up are complete; #36 is next and remains contract-only rather than collapsing the M2 sequence into one implementation PR.
+The detailed continuation plan through #43 is [`m2-pr-plan.md`](../validation/m2-pr-plan.md). #35 and its direct history follow-up are complete; #36 is merged/frozen; #37 is the active implementation PR and remains distinct from #38-#40.
 
 ## Deferred capability, not erased capability
 

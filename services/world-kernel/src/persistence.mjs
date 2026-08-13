@@ -49,6 +49,10 @@ import {
   safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import {
+  ensureMemoryVisualCompanion,
+  persistLegacySeedIdentity,
+} from "./identity-schema.mjs";
 
 export {
   WORLD_STORE_SCHEMA_VERSION,
@@ -173,6 +177,15 @@ export class WorldStore {
           eventId,
           provenanceJson,
         );
+      persistLegacySeedIdentity(this.#database, normalized, { sourceEventId: eventId });
+      for (const memoryRef of normalized.memoryRefs) {
+        ensureMemoryVisualCompanion(this.#database, {
+          threadId: normalized.threadId,
+          memoryRef,
+          recordedAt: normalized.provenance.createdAt,
+          createdFrom: "legacy_memory_reference",
+        });
+      }
       this.#database.exec("COMMIT");
     } catch (error) {
       safeRollback(this.#database);

@@ -30,7 +30,8 @@
     "history:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/history-bends-judgment-dev-cli.mjs",
     "history:gate": "node --disable-warning=ExperimentalWarning tools/history-bends-judgment-sealed-inspector.mjs",
     "inspect:db": "node --disable-warning=ExperimentalWarning tools/inspect-world-database.mjs",
-    "inspect:obligations": "node --disable-warning=ExperimentalWarning tools/inspect-structured-obligations.mjs"
+    "inspect:obligations": "node --disable-warning=ExperimentalWarning tools/inspect-structured-obligations.mjs",
+    "inspect:identity": "node --disable-warning=ExperimentalWarning tools/inspect-thread-identity.mjs"
   },
   "engines": {
     "node": ">=22.13"

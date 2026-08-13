@@ -26,8 +26,8 @@ MERGED  #33  Semantic Guardian
 MERGED  #34  History bends judgment
 MERGED  #35  Structured Obligation v1
 DIRECT / NO PR NUMBER  Interrupted compelled episode persistence + history visibility
-                                #36  M2 Identity & Embodiment Contract
-                                #37  Thread Passport & Identity Provenance v1
+MERGED                          #36  M2 Identity & Embodiment Contract
+ACTIVE                          #37  Thread Passport & Identity Provenance v1
                                 #38  Lineage, Geography & Embodiment v1
                                 #39  Identity Projection & Causal Consumption
                                 #40  M2 Standing Gate / M2 closure
@@ -164,28 +164,22 @@ The contract must distinguish inherited, historical, relational, externally attr
 
 ## #37 — Thread Passport & Identity Provenance v1
 
-Build the durable identity aggregate.
+**ACTIVE.** Implement the durable claim-level identity ledger and derived Passport defined by [`thread-passport-identity-provenance-v1.md`](../architecture/thread-passport-identity-provenance-v1.md).
 
-Conceptual shape:
+Load-bearing requirements:
 
-```text
-Thread
- ├─ passport
- │   ├─ canonical name
- │   ├─ origin / birth
- │   ├─ identity assertions
- │   ├─ traits
- │   └─ roles
- ├─ lineage
- ├─ cultural context
- ├─ geography timeline
- ├─ embodiment refs
- └─ identity history
-```
+- closed/versioned Identity Domain Registry;
+- stable claim IDs plus immutable contiguous assertion revisions;
+- provenance, authorship, admission/evidence classification, visibility, supersession, dispute/correction;
+- current and `asOf` identity views plus a non-profession-rooted Passport;
+- deterministic decomposition of legacy flat identity into claim-level genesis evidence;
+- #37 must author neither `accepted_causal` standing nor endogenous Development evidence;
+- every Thread memory reference receives an append-only visual companion lineage;
+- synthetic memory reconstructions remain explicitly non-historical evidence;
+- new freeze-created memories receive the pending visual companion atomically;
+- read-only/query-only inspection verifies all histories and credit-sensitive counters.
 
-The load-bearing requirement is provenance plus change history, not field count.
-
-Identity changes must be append-only/superseding. A new assertion may become current, but the prior assertion remains historical and inspectable.
+#38 will attach richer lineage/geography/embodiment and actual image/voice assets. #39 remains the causal projection/consumer cutover.
 
 ## #38 — Lineage, Geography & Embodiment v1
 

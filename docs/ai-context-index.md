@@ -12,7 +12,7 @@ Use this index to load only the context needed for a task.
 
 Generated packs are non-canonical and must not be edited directly. Each includes its source list, repository revision, manifest version, and content digest. Use the smallest profile sufficient for the task.
 
-Manifest version 9 includes the M2 Identity & Embodiment Contract, M2 Character Formation Model, M2 Interior/Exterior & Situated Identity Contract, and M2 Developmental Continuity & Past Selves Contract directly in `core` and requires every accepted canonical Markdown document under `docs/` to appear in at least one profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources, and symlinked output paths.
+Manifest version 10 includes the four M2 constitutional contracts plus Thread Passport & Identity Provenance v1 directly in `core` and requires every accepted canonical Markdown document under `docs/` to appear in at least one profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources, and symlinked output paths.
 
 Canonical Markdown fragments may additionally declare named `fibre:region` blocks. Human-facing documents needing an exact in-place copy use generated `fibre:include` blocks, synchronized by `npm run includes:sync`. AI context profiles always consume the canonical source file directly, not the generated copy.
 
@@ -29,6 +29,7 @@ Canonical Markdown fragments may additionally declare named `fibre:region` block
 9. `architecture/m2-character-formation-model.md`
 10. `architecture/m2-interior-exterior-situated-identity.md`
 11. `architecture/m2-developmental-continuity-past-selves.md`
+12. `architecture/thread-passport-identity-provenance-v1.md`
 
 ## Identity, interiority, dignity, and development
 
@@ -36,6 +37,7 @@ Canonical Markdown fragments may additionally declare named `fibre:region` block
 - `architecture/m2-character-formation-model.md`
 - `architecture/m2-interior-exterior-situated-identity.md`
 - `architecture/m2-developmental-continuity-past-selves.md`
+- `architecture/thread-passport-identity-provenance-v1.md`
 - `concepts/identity-and-genome.md`
 - `concepts/interiority-and-expression.md`
 - `concepts/dignity.md`
