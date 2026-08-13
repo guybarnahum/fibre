@@ -23,6 +23,7 @@ import {
   RuntimeAbandonRejectedError,
   runtimeAbandonRecordDigest,
 } from "./lifecycle-hardening-domain.mjs";
+import { verifyMemoryVisualCompanion } from "./identity-schema.mjs";
 
 const GENERATED_MEMORY_ID = /^mem_[0-9a-f]{64}$/;
 
@@ -396,6 +397,10 @@ export class LifecycleHardeningStore {
     const generatedProjectionIds = thread.memoryRefs.filter(
       (reference) => GENERATED_MEMORY_ID.test(reference),
     );
+    const visualRefs = new Set([...thread.memoryRefs, ...storedIds]);
+    for (const memoryRef of visualRefs) {
+      verifyMemoryVisualCompanion(this.#database, threadId, memoryRef);
+    }
     const stored = canonicalJson(sorted(storedIds));
     same("freeze-report memory set", canonicalJson(sorted(reportedIds)), stored);
     same("Thread projection memory set", canonicalJson(sorted(generatedProjectionIds)), stored);

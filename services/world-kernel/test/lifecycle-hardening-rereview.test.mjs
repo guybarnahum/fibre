@@ -422,7 +422,7 @@ test("M1 obligation discharge identity is exact UTF-8 prose", async () =>
 test("same-version schema open restores newer lifecycle tables and triggers", async () =>
   withDatabase(async (databasePath) => {
     const lifecycle = openLifecycleHardeningStore(databasePath);
-    assert.equal(lifecycle.storageMetadata().schemaVersion, 5);
+    assert.equal(lifecycle.storageMetadata().schemaVersion, 6);
     lifecycle.close();
 
     let database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -433,11 +433,11 @@ test("same-version schema open restores newer lifecycle tables and triggers", as
       DROP INDEX IF EXISTS idx_runtime_abandons_thread_time;
       DROP TABLE IF EXISTS runtime_abandons;
     `);
-    assert.equal(Number(database.prepare("PRAGMA user_version").get().user_version), 5);
+    assert.equal(Number(database.prepare("PRAGMA user_version").get().user_version), 6);
     database.close();
 
     const reopened = openLifecycleHardeningStore(databasePath);
-    assert.equal(reopened.storageMetadata().schemaVersion, 5);
+    assert.equal(reopened.storageMetadata().schemaVersion, 6);
     reopened.close();
 
     database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });

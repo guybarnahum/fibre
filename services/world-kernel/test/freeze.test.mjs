@@ -10,6 +10,7 @@ import {
   WORLD_STORE_SCHEMA_VERSION,
   openWorldStore,
 } from "../src/persistence.mjs";
+import { openIdentityInspectionStore } from "../src/identity-store.mjs";
 import { openRuntimeStore } from "../src/runtime-store.mjs";
 import { openFreezeStore } from "../src/freeze-store.mjs";
 import { M1FreezeWorldKernelService } from "../src/freeze-service.mjs";
@@ -208,6 +209,27 @@ test("atomically freezes a Guardian-approved runtime, records memory, and surviv
     assert.equal(runtime.service.getRuntime(fixture.threadId, prepared.session.sessionId).lease.status, "released");
     assert.equal(runtime.store.verifyThreadIntegrity(fixture.threadId).version, 2);
     assert.equal(runtime.service.verifyFreezeIntegrity(fixture.threadId, prepared.session.sessionId).runtimeCompleted, true);
+
+    const persistedMemory = result.freeze.memories[0];
+    const identityInspector = openIdentityInspectionStore(databasePath);
+    try {
+      const visualHistory = identityInspector.getMemoryVisualCompanionHistory(
+        fixture.threadId,
+        persistedMemory.memoryId,
+      );
+      assert.equal(visualHistory.length, 1);
+      assert.equal(visualHistory[0].companion.status, "pending_generation");
+      assert.equal(visualHistory[0].companion.representationKind, "synthetic_reconstruction");
+      assert.equal(
+        visualHistory[0].companion.truthStatus,
+        "synthetic_representation_not_historical_evidence",
+      );
+      assert.equal(visualHistory[0].companion.assetRef, null);
+      assert.ok(visualHistory[0].companion.sourceReferences.includes(persistedMemory.memoryId));
+      assert.ok(visualHistory[0].companion.sourceReferences.includes(persistedMemory.eventId));
+    } finally {
+      identityInspector.close();
+    }
 
     const publicEvent = runtime.service.listEvents(fixture.threadId).at(-1);
     assert.equal(publicEvent.eventType, "THREAD_FROZEN");

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added Thread Passport & Identity Provenance v1: a closed identity-domain registry, append-only claim histories with provenance/authorship/evidence classification, deterministic current/`asOf` views, a derived Passport, read-only inspection, and schema-v6 migration of legacy flat identity without claiming new causal or endogenous Development credit.
+- Added the memory-visual companion invariant: every Thread memory reference receives an append-only visual lineage; new freeze-created memories get the initial pending synthetic slot atomically, and synthetic reconstructions can never masquerade as captured historical photographic evidence.
 - Fully closed the deterministic M1 Persistent Thread Round Trip: Mina now proves persistent private dignity/stance, Participation Authorization, restricted disclosure strategy, audience-visible participation response, temporary cognition, Goal Guardian, freeze/abandon/timeout, restart/replay, and credentialed human/database inspection.
 - Extended `npm run demo:m1` with three durable expression branches: willing `accept -> accept`, low-dignity `refuse -> refuse` with no runtime, and obligation-mediated `refuse -> accept` preserving `obligation_override`; all three responses are recorded before work and explicitly claim neither delivery, performed action, nor completion.
 - Added append-only disclosure strategies and audience participation responses, plus durable non-execution authorization for `clarify`, `negotiate`, `delegate`, and `refuse` while keeping execution-capable `accept` exclusive to the thaw/runtime boundary.

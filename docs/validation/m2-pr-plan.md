@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-13
 canonical: true
 ---
 
@@ -26,9 +26,9 @@ MERGED  #33  Semantic Guardian
 MERGED  #34  History bends judgment
 MERGED  #35  Structured Obligation v1
 DIRECT / NO PR NUMBER  Interrupted compelled episode persistence + history visibility
-                                #36  M2 Identity & Embodiment Contract
-                                #37  Thread Passport & Identity Provenance v1
-                                #38  Lineage, Geography & Embodiment v1
+MERGED                          #36  M2 Identity & Embodiment Contract
+ACTIVE                          #37  Thread Passport & Identity Provenance v1
+                                #38  Lineage, Geography, Embodiment & Memory Epistemics v1
                                 #39  Identity Projection & Causal Consumption
                                 #40  M2 Standing Gate / M2 closure
 
@@ -164,30 +164,31 @@ The contract must distinguish inherited, historical, relational, externally attr
 
 ## #37 — Thread Passport & Identity Provenance v1
 
-Build the durable identity aggregate.
+**ACTIVE.** Implement the durable claim-level identity ledger and derived Passport defined by [`thread-passport-identity-provenance-v1.md`](../architecture/thread-passport-identity-provenance-v1.md).
 
-Conceptual shape:
+Load-bearing requirements:
 
-```text
-Thread
- ├─ passport
- │   ├─ canonical name
- │   ├─ origin / birth
- │   ├─ identity assertions
- │   ├─ traits
- │   └─ roles
- ├─ lineage
- ├─ cultural context
- ├─ geography timeline
- ├─ embodiment refs
- └─ identity history
-```
+- closed/versioned Identity Domain Registry, with every immutable assertion row pinned to the registry version under which it was admitted;
+- stable claim IDs plus immutable contiguous assertion revisions;
+- provenance, authorship, admission/evidence classification, visibility, supersession, dispute/correction;
+- currentness derived from revision ordinality rather than persisted assertion `status`;
+- current and `asOf` identity views plus a non-profession-rooted Passport;
+- the view digest binds a named/versioned derivation policy; v1 `asOf` selection is transaction-time over `recordedAt`, while `effectiveAt` remains stored but non-authoritative for v1 selection;
+- deterministic decomposition of legacy flat identity from immutable `THREAD_SEEDED.payload.snapshot`, with later mutable projection drift preserved as a disputed `fibre_policy_derived` migration observation rather than fabricated genesis or falsely attributed administrator authority;
+- post-seed legacy projection additions without provenance are counted rather than silently promoted into identity history;
+- #37 must author neither `accepted_causal` standing nor endogenous Development evidence;
+- per accepted [`ADR-0011`](../decisions/ADR-0011-memory-photo-obligation.md), every Thread memory reference receives an append-only prompt/evidence-backed photo companion lineage;
+- synthetic memory reconstructions remain explicitly non-historical evidence;
+- new freeze-created memories receive the pending photo companion atomically without making renderer availability a freeze precondition;
+- read-only/query-only inspection verifies all histories and credit-sensitive counters and enumerates every outstanding memory-photo obligation.
 
-The load-bearing requirement is provenance plus change history, not field count.
+**#37 does not claim Scenario V (`autobiographical memory is not history`) complete.** ADR-0011 explicitly added the photo requirement after #36 and assigns the missing M2 memory epistemic envelope to #38. A visual lineage cannot substitute for the memory/history distinction.
 
-Identity changes must be append-only/superseding. A new assertion may become current, but the prior assertion remains historical and inspectable.
+#38 will attach richer lineage/geography/embodiment, actual image/voice assets, photo-completion/regeneration mechanics, and the PR #36 memory epistemic substrate. #39 remains the causal projection/consumer cutover.
 
-## #38 — Lineage, Geography & Embodiment v1
+## #38 — Lineage, Geography, Embodiment & Memory Epistemics v1
+
+**Entry condition:** semantic anti-blob hardening must exist **before #38 authors identity assertions at scale**. #38 must either land mechanical one-material-proposition enforcement first or constrain each of its lineage/geography/culture/embodiment writers to a mechanically testable provisional one-claim-per-assertion discipline. It must not create an immutable multi-proposition corpus and defer decomposition until #39, where Scenario E ablation would already be compromised.
 
 Implement the world-facing identity layers that make a Thread situated rather than merely textual:
 
@@ -204,6 +205,31 @@ Implement the world-facing identity layers that make a Thread situated rather th
 Embodiment assets must carry exact provenance, for example source identity version, generation specification/model, asset hash, creation time, visibility, and supersession.
 
 Do not force portrait/voice to manufacture behavioral differences merely to earn a test. Context-only embodiment is legitimate if labeled honestly.
+
+#38 also owns the explicitly rescheduled PR #36 **memory != history** storage/inspection substrate. Before #40 it must represent semantics equivalent to:
+
+```text
+memoryId
+threadId
+subjectPeriod / eventRefs
+rememberedMeaning
+rememberedAt / asOf
+confidence / uncertainty where represented
+salience
+accessibility
+retentionState
+lastRecalledAt?
+authorship
+supportingEvidenceRefs[]
+contradictingEvidenceRefs[]
+visibility
+status
+supersedesMemoryId?
+```
+
+These are representational requirements, not evidence of human-like forgetting. #38 must make contemporaneous historical evidence and later autobiographical recollection independently inspectable and must not allow either one to rewrite the other.
+
+Per ADR-0011, #38 also owns the actual photo completion mechanism: renderer invocation, opaque cache-locator persistence, retries/regeneration, asset loss/unavailability handling, and richer identity/embodiment evidence binding. Renderer/provider/bucket/format choices are implementation details rather than memory authority.
 
 ## #39 — Identity Projection & Causal Consumption
 
@@ -288,7 +314,8 @@ Also require:
 - private stance plus a downstream participation/action consequence;
 - frozen candidate before held-out Standing scenario authorship;
 - first real provider attempt seals PASS/FAIL;
-- committed evidence bundle and read-only post-seal inspector.
+- committed evidence bundle and read-only post-seal inspector;
+- Scenario V proves autobiographical memory remains epistemically distinct from history after the #38 substrate lands.
 
 M2 does not close merely because two Threads compile different prompt/context text.
 

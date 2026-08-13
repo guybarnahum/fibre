@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 9,
+  "version": 11,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -25,6 +25,8 @@
         "docs/architecture/m2-character-formation-model.md",
         "docs/architecture/m2-interior-exterior-situated-identity.md",
         "docs/architecture/m2-developmental-continuity-past-selves.md",
+        "docs/architecture/thread-passport-identity-provenance-v1.md",
+        "docs/decisions/ADR-0011-memory-photo-obligation.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/architecture/structured-obligations-v1.md",
         "docs/validation/semantic-guardian-v3-freeze.md",

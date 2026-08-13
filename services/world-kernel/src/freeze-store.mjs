@@ -15,6 +15,10 @@ import {
   translateStorageError,
 } from "./persistence-sqlite.mjs";
 import {
+  ensureMemoryVisualCompanion,
+  verifyMemoryVisualCompanion,
+} from "./identity-schema.mjs";
+import {
   AuthorizationConsumedError,
   FreezeConflictError,
   FreezeNotFoundError,
@@ -505,6 +509,14 @@ export class FreezeStore {
           memory.createdAt,
           memoryRecordDigest(memory),
         );
+        ensureMemoryVisualCompanion(this.#database, {
+          threadId: memory.threadId,
+          memoryRef: memory.memoryId,
+          recordedAt: memory.createdAt,
+          eventId: memory.eventId,
+          evidenceRefs: memory.evidenceRefs,
+          createdFrom: "persisted_autobiographical_memory",
+        });
       }
       this.#database.prepare(`
         INSERT INTO authorization_consumptions(
@@ -625,7 +637,10 @@ export class FreezeStore {
       eventId: freeze.event.eventId,
       resultingVersion: freeze.report.resultingVersion,
       resultingStateHash: freeze.report.resultingStateHash,
-      acceptedMemoryIds: freeze.memories.map((memory) => memory.memoryId),
+      acceptedMemoryIds: freeze.memories.map((memory) => {
+        verifyMemoryVisualCompanion(this.#database, memory.threadId, memory.memoryId);
+        return memory.memoryId;
+      }),
       dischargedObligations: [...freeze.report.dischargedObligations],
       structuredDischarge,
       runtimeCompleted: true,

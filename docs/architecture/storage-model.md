@@ -23,7 +23,7 @@ The aggregate is reconstructed at a versioned point in time. Snapshots and curre
 
 ## M1 local persistence profile
 
-The M1 adapter uses one local SQLite database and one authoritative `PRAGMA user_version`. Schema version 4 governs all public, restricted-participation, runtime, freeze, consumption, accepted-memory, rejected-runtime-abandonment, and additive pre-M2 Structured Obligation tables. A subsystem-specific version table is not used.
+The local world-kernel adapter uses one SQLite database and one authoritative `PRAGMA user_version`. The current schema is **v6**. It includes the M1/public/runtime/freeze/obligation lifecycle, the v5 interrupted-compelled event vocabulary, and the v6 Thread identity-provenance plus memory-visual-companion ledgers. A subsystem-specific version table is not used.
 
 Public world tables:
 
@@ -42,6 +42,13 @@ Restricted participation and runtime tables:
 - `thread_memories` preserves accepted evidence-bearing memory records;
 - `runtime_abandons` preserves deliberate, non-consuming closure of Guardian-rejected episodes within an active lease window.
 
+M2 identity persistence introduced during PR #37:
+
+- `identity_assertion_records` stores append-only claim-level identity revisions with stable claim identity, domain/kind, meaning, provenance, authorship, visibility, temporal state, behavioral/evidence classification, canonical JSON, and digest;
+- `memory_visual_companion_records` stores append-only visual lineages for every Thread memory reference, including pending synthetic reconstructions and later captured/generated assets with explicit truth status.
+
+The current Passport and `asOf` identity views are derived from these rows. Legacy `thread.identity` remains a compatibility projection during M2 and is not the authoritative mutation surface. New freeze-created memories and their initial visual-companion rows commit in the same transaction.
+
 Structured Obligation v1 additive tables introduced during PR #35:
 
 - `obligation_records` stores append-only Structured Obligation revisions with stable obligation identity, status, scope/terms, provenance, standing/terms visibility, effective/expiry state, and canonical digests;
@@ -50,11 +57,9 @@ Structured Obligation v1 additive tables introduced during PR #35:
 - `structured_obligation_discharges` binds a successful one-shot compelled freeze to its exact prior and terminal obligation revisions plus applicability, authorization, consumption, runtime, freeze-report, and event witnesses;
 - `structured_authority_withdrawal_closures` preserves an executed-but-interrupted compelled episode when its governing authority becomes stale after Actor execution and Guardian pass but before freeze.
 
-The additive tables share schema version 4, but the canonical runtime authority is no longer the historical exact-prose path: Structured Obligation authority now requires Fibre-owned persisted applicability plus current-authority revalidation. Historical M1 prose evidence retains its original replay semantics.
+The Structured Obligation tables originated in schema v4; the canonical runtime authority is no longer the historical exact-prose path: Structured Obligation authority now requires Fibre-owned persisted applicability plus current-authority revalidation. Historical M1 prose evidence retains its original replay semantics.
 
-Schema migrations run inside one immediate transaction when `PRAGMA user_version` advances. Schema versions 1 through 3 migrate to version 4. Version 4 rebuilds the event and command tables when necessary so the immutable event vocabulary can accept `THREAD_FROZEN` without rewriting existing event content. Opening an existing version-4 file also reruns idempotent schema creation so tables and triggers added by a later version-4 build are restored. PR #35's first additive obligation slice uses this established same-version repair mechanism; opening v4 also idempotently derives spent-authority tombstones from existing `authorization_consumptions`. No active Structured Obligation is inferred from `currentState.unresolvedIntentions`.
-
-A later #35 authority cutover may increment the global schema version if it changes an existing authorization, freeze, or consumption table contract. The additive existence of new append-only tables alone does not force a version increment.
+Schema migrations run inside one immediate transaction when `PRAGMA user_version` advances. Historical versions 1-4 preserve the M1 and Structured Obligation migration chain. Version 5 expanded the immutable event vocabulary for `COMPELLED_EPISODE_INTERRUPTED`. Version 6 creates the identity and memory-visual ledgers, deterministically decomposes existing flat identity from the immutable `THREAD_SEEDED` event, and backfills a visual-companion lineage for every existing Thread memory reference before the version advances. No active Structured Obligation is inferred from `currentState.unresolvedIntentions`.
 
 A normal command, event, idempotency record, and projection update commit in one world-store transaction. Runtime authorization, exclusive lease, and runtime-session creation commit in one runtime-store transaction after rereading Thread and private-stance witnesses.
 
@@ -66,7 +71,7 @@ Structured authority-withdrawal closure uses a separate bounded interface over t
 
 The separate WorldStore, RuntimeStore, FreezeStore, LifecycleHardeningStore, Structured Obligation stores, and authority-withdrawal store preserve interface boundaries, not independent consistency domains. They use WAL and bounded busy timeouts. Cross-store invariants are never trusted from a prior application read; the transaction that writes the dependent records rereads every version, hash, ID, digest, lifecycle, and authorization witness it relies on.
 
-Events, commands, requests, appraisals, private stances, authorizations, Actor runs, Guardian audits, runtime abandonments, structured authority-withdrawal closures, authorization consumptions, freeze reports, accepted memory rows, obligation revisions, applicability decisions, structured obligation discharges, and legacy-obligation tombstones are append-only. `thaw_leases` and `runtime_sessions` are mutable only for explicit lifecycle transitions. Triggers preserve immutable IDs, bindings, context, digests, and start times and permit only bounded completion, release, expiration, or abort metadata. Neither table permits deletion.
+Events, commands, requests, appraisals, private stances, authorizations, Actor runs, Guardian audits, runtime abandonments, structured authority-withdrawal closures, authorization consumptions, freeze reports, accepted memory rows, identity assertion revisions, memory visual companion revisions, obligation revisions, applicability decisions, structured obligation discharges, and legacy-obligation tombstones are append-only. `thaw_leases` and `runtime_sessions` are mutable only for explicit lifecycle transitions. Triggers preserve immutable IDs, bindings, context, digests, and start times and permit only bounded completion, release, expiration, or abort metadata. Neither table permits deletion.
 
 Successful obligation-mediated freeze is single-use in historical M1. The consumption record and `THREAD_FROZEN` event preserve the exact unresolved-intention reference, while the projection removes it from `currentState.unresolvedIntentions`. Historical M1 obligation identity is exact UTF-8 prose equality; whitespace, case, or Unicode-normalization differences are different provisional identities. The historical service requires any such reference to be present exactly in the Thread's current unresolved intentions.
 
