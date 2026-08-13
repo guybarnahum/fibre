@@ -168,11 +168,14 @@ The contract must distinguish inherited, historical, relational, externally attr
 
 Load-bearing requirements:
 
-- closed/versioned Identity Domain Registry;
+- closed/versioned Identity Domain Registry, with every immutable assertion row pinned to the registry version under which it was admitted;
 - stable claim IDs plus immutable contiguous assertion revisions;
 - provenance, authorship, admission/evidence classification, visibility, supersession, dispute/correction;
+- currentness derived from revision ordinality rather than persisted assertion `status`;
 - current and `asOf` identity views plus a non-profession-rooted Passport;
-- deterministic decomposition of legacy flat identity from immutable `THREAD_SEEDED.payload.snapshot`, with later legacy projection drift represented as later correction rather than fabricated genesis;
+- the view digest binds a named/versioned derivation policy; v1 `asOf` selection is transaction-time over `recordedAt`, while `effectiveAt` remains stored but non-authoritative for v1 selection;
+- deterministic decomposition of legacy flat identity from immutable `THREAD_SEEDED.payload.snapshot`, with later mutable projection drift preserved as a disputed `fibre_policy_derived` migration observation rather than fabricated genesis or falsely attributed administrator authority;
+- post-seed legacy projection additions without provenance are counted rather than silently promoted into identity history;
 - #37 must author neither `accepted_causal` standing nor endogenous Development evidence;
 - per accepted [`ADR-0011`](../decisions/ADR-0011-memory-photo-obligation.md), every Thread memory reference receives an append-only prompt/evidence-backed photo companion lineage;
 - synthetic memory reconstructions remain explicitly non-historical evidence;
@@ -184,6 +187,8 @@ Load-bearing requirements:
 #38 will attach richer lineage/geography/embodiment, actual image/voice assets, photo-completion/regeneration mechanics, and the PR #36 memory epistemic substrate. #39 remains the causal projection/consumer cutover.
 
 ## #38 — Lineage, Geography, Embodiment & Memory Epistemics v1
+
+**Entry condition:** semantic anti-blob hardening must exist **before #38 authors identity assertions at scale**. #38 must either land mechanical one-material-proposition enforcement first or constrain each of its lineage/geography/culture/embodiment writers to a mechanically testable provisional one-claim-per-assertion discipline. It must not create an immutable multi-proposition corpus and defer decomposition until #39, where Scenario E ablation would already be compromised.
 
 Implement the world-facing identity layers that make a Thread situated rather than merely textual:
 
