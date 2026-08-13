@@ -23,6 +23,7 @@ import { repairIdentityAssertionRegistryV2Schema } from "./identity-schema-v2-re
 import { createSituatedLifeTables } from "./situated-life-schema.mjs";
 import { ensureSituatedLifeDigestColumns } from "./situated-life-integrity.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";
+import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
 
 export function normalizeDatabasePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
@@ -217,6 +218,7 @@ function createSchema(database) {
   createIdentityTables(database);
   createSituatedLifeTables(database);
   createEmbodimentTables(database);
+  createAutobiographicalMemoryTables(database);
 }
 
 function createAndRepairSchema(database) {
@@ -275,7 +277,7 @@ export function migrateDatabase(database) {
     const existingTables = Number(
       database
         .prepare(
-          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses','obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones','structured_authority_withdrawal_closures','identity_assertion_records','memory_visual_companion_records','life_relation_records','place_episode_records','embodiment_records')",
+          "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses','obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones','structured_authority_withdrawal_closures','identity_assertion_records','memory_visual_companion_records','life_relation_records','place_episode_records','embodiment_records','autobiographical_memory_records','autobiographical_memory_lineage_heads')",
         )
         .get().count,
     );
