@@ -9,6 +9,7 @@ import {
   IDENTITY_PROVENANCE_CLASSES,
   IDENTITY_VISIBILITIES,
   IDENTITY_DOMAIN_REGISTRY,
+  IDENTITY_DOMAIN_REGISTRY_VERSION,
 } from "./identity-domain-registry.mjs";
 import {
   identityAssertionDigest,
@@ -17,7 +18,6 @@ import {
   normalizeIdentityAssertion,
 } from "./identity-provenance-domain.mjs";
 import {
-  assertMemoryPhotoRequirementSatisfied,
   memoryVisualCompanionDigest,
   normalizeMemoryVisualCompanion,
   pendingMemoryVisualCompanion,
@@ -55,6 +55,7 @@ export function createIdentityTables(database) {
       ),
       revision INTEGER NOT NULL CHECK (revision >= 1),
       thread_id TEXT NOT NULL,
+      registry_version TEXT NOT NULL,
       domain TEXT NOT NULL CHECK (domain IN (${DOMAIN_SQL})),
       kind TEXT NOT NULL,
       provenance_class TEXT NOT NULL CHECK (provenance_class IN (${PROVENANCE_SQL})),
@@ -131,25 +132,44 @@ export function createIdentityTables(database) {
       BEFORE DELETE ON memory_visual_companion_records
       BEGIN SELECT RAISE(ABORT,'memory_visual_companion_records is append-only'); END;
   `);
+
+  const identityColumns = database.prepare(
+    "PRAGMA table_info(identity_assertion_records)",
+  ).all();
+  if (!identityColumns.some((column) => column.name === "registry_version")) {
+    database.exec(
+      `ALTER TABLE identity_assertion_records ADD COLUMN registry_version TEXT NOT NULL DEFAULT '${IDENTITY_DOMAIN_REGISTRY_VERSION}'`,
+    );
+  }
 }
 
-export function persistIdentityAssertionRow(database, candidate) {
+export function persistIdentityAssertionRow(
+  database,
+  candidate,
+  {
+    allowAcceptedCausal = false,
+    allowEndogenous = false,
+    registryVersion = IDENTITY_DOMAIN_REGISTRY_VERSION,
+  } = {},
+) {
   const assertion = normalizeIdentityAssertion(candidate, {
-    allowAcceptedCausal: true,
-    allowEndogenous: true,
+    allowAcceptedCausal,
+    allowEndogenous,
+    registryVersion,
   });
-  const digest = identityAssertionDigest(assertion);
+  const digest = identityAssertionDigest(assertion, { registryVersion });
   database.prepare(`
     INSERT INTO identity_assertion_records(
-      assertion_id,claim_id,revision,thread_id,domain,kind,provenance_class,
+      assertion_id,claim_id,revision,thread_id,registry_version,domain,kind,provenance_class,
       authorship_kind,visibility,status,projection_class,behavioral_status,
       effective_at,recorded_at,supersedes_assertion_id,assertion_json,assertion_digest
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(
     assertion.assertionId,
     assertion.claimId,
     assertion.revision,
     assertion.threadId,
+    registryVersion,
     assertion.domain,
     assertion.kind,
     assertion.provenanceClass,
@@ -164,26 +184,31 @@ export function persistIdentityAssertionRow(database, candidate) {
     canonicalJson(assertion),
     digest,
   );
-  return { assertion, assertionDigest: digest };
+  return { assertion, assertionDigest: digest, registryVersion };
 }
 
 export function persistLegacySeedIdentity(database, thread, { sourceEventId } = {}) {
   const assertions = legacySeedIdentityAssertions(thread, { sourceEventId });
   for (const assertion of assertions) {
     const existing = database.prepare(`
-      SELECT assertion_json,assertion_digest
+      SELECT registry_version,assertion_json,assertion_digest
       FROM identity_assertion_records WHERE assertion_id=?
     `).get(assertion.assertionId);
     if (existing === undefined) {
       persistIdentityAssertionRow(database, assertion);
       continue;
     }
+    const registryVersion = existing.registry_version;
     const normalized = normalizeIdentityAssertion(
       parseJson(`identity assertion ${assertion.assertionId}`, existing.assertion_json),
-      { allowAcceptedCausal: true, allowEndogenous: true },
+      {
+        allowAcceptedCausal: true,
+        allowEndogenous: true,
+        registryVersion,
+      },
     );
     if (
-      existing.assertion_digest !== identityAssertionDigest(normalized) ||
+      existing.assertion_digest !== identityAssertionDigest(normalized, { registryVersion }) ||
       canonicalJson(normalized) !== canonicalJson(assertion)
     ) {
       throw new IntegrityError(
@@ -194,38 +219,41 @@ export function persistLegacySeedIdentity(database, thread, { sourceEventId } = 
   return assertions;
 }
 
-function legacyProjectionCorrection(seedAssertion, projectedAssertion, recordedAt) {
+function legacyProjectionObservation(seedAssertion, projectedAssertion, recordedAt) {
   const base = {
     ...seedAssertion,
     revision: 2,
     meaning: projectedAssertion.meaning,
-    provenanceClass: projectedAssertion.provenanceClass,
+    provenanceClass: "fibre_derived",
     authorship: {
-      kind: "admin_correction",
+      kind: "fibre_policy_derived",
       entityId: "fibre.world-kernel",
-      policy: { id: "legacy_projection_drift_migration", version: "1" },
+      policy: { id: "legacy_projection_drift_migration", version: "2" },
     },
     sourceReferences: [seedAssertion.assertionId],
+    // The pre-#37 projection did not preserve valid-time provenance. v1 stores the
+    // observation timestamp here only because the schema requires an ISO value;
+    // identity view derivation is transaction-time/recordedAt based.
     effectiveAt: recordedAt,
     recordedAt,
     visibility: projectedAssertion.visibility,
-    status: "corrected",
+    status: "disputed",
     supersedesAssertionId: seedAssertion.assertionId,
     disputeCorrection: {
-      kind: "correction",
-      reason: "Pre-#37 legacy projection differed from the immutable THREAD_SEEDED snapshot; migration preserves genesis as revision 1 and records the observed projection drift as revision 2.",
+      kind: "dispute",
+      reason: "Observed pre-#37 mutable projection state differed from immutable THREAD_SEEDED genesis. Migration preserves the observed state without asserting who authorized it or when it became effective.",
       evidenceReferences: [seedAssertion.assertionId],
     },
     behavioralStatus: "context_only",
     admission: {
-      policy: { id: "legacy_projection_drift_migration", version: "1" },
+      policy: { id: "legacy_projection_drift_migration", version: "2" },
       admittedBy: {
         entityId: "fibre.world-kernel",
         kind: "institution",
         displayName: "Fibre World Kernel",
       },
       evidenceClassification: "exogenous",
-      sourceMode: "admin_correction",
+      sourceMode: "fibre_derivation",
     },
   };
   return normalizeIdentityAssertion({
@@ -235,9 +263,9 @@ function legacyProjectionCorrection(seedAssertion, projectedAssertion, recordedA
       revision: 2,
       meaning: projectedAssertion.meaning,
       recordedAt,
-      migrationPolicy: "legacy_projection_drift_migration:1",
+      migrationPolicy: "legacy_projection_drift_migration:2",
     }),
-  }, { allowAcceptedCausal: true, allowEndogenous: true });
+  });
 }
 
 function persistLegacyProjectionDrift(database, seedThread, currentThread, {
@@ -248,39 +276,48 @@ function persistLegacyProjectionDrift(database, seedThread, currentThread, {
   const currentAssertions = legacySeedIdentityAssertions(currentThread, { sourceEventId });
   const seedByClaim = new Map(seedAssertions.map((assertion) => [assertion.claimId, assertion]));
   let corrections = 0;
+  let droppedPostSeedAdditions = 0;
   for (const projected of currentAssertions) {
     const seedAssertion = seedByClaim.get(projected.claimId);
-    if (seedAssertion === undefined) continue;
+    if (seedAssertion === undefined) {
+      droppedPostSeedAdditions += 1;
+      continue;
+    }
     if (
       projected.meaning === seedAssertion.meaning &&
       projected.visibility === seedAssertion.visibility
     ) {
       continue;
     }
-    const correction = legacyProjectionCorrection(seedAssertion, projected, recordedAt);
+    const observation = legacyProjectionObservation(seedAssertion, projected, recordedAt);
     const existing = database.prepare(`
-      SELECT assertion_json,assertion_digest FROM identity_assertion_records
+      SELECT registry_version,assertion_json,assertion_digest FROM identity_assertion_records
       WHERE assertion_id=?
-    `).get(correction.assertionId);
+    `).get(observation.assertionId);
     if (existing === undefined) {
-      persistIdentityAssertionRow(database, correction);
+      persistIdentityAssertionRow(database, observation);
       corrections += 1;
       continue;
     }
+    const registryVersion = existing.registry_version;
     const normalized = normalizeIdentityAssertion(
-      parseJson(`identity assertion ${correction.assertionId}`, existing.assertion_json),
-      { allowAcceptedCausal: true, allowEndogenous: true },
+      parseJson(`identity assertion ${observation.assertionId}`, existing.assertion_json),
+      {
+        allowAcceptedCausal: true,
+        allowEndogenous: true,
+        registryVersion,
+      },
     );
     if (
-      existing.assertion_digest !== identityAssertionDigest(normalized) ||
-      canonicalJson(normalized) !== canonicalJson(correction)
+      existing.assertion_digest !== identityAssertionDigest(normalized, { registryVersion }) ||
+      canonicalJson(normalized) !== canonicalJson(observation)
     ) {
       throw new IntegrityError(
-        `legacy projection correction ${correction.assertionId} conflicts with persisted identity`,
+        `legacy projection observation ${observation.assertionId} conflicts with persisted identity`,
       );
     }
   }
-  return corrections;
+  return { corrections, droppedPostSeedAdditions };
 }
 
 export function backfillLegacyThreadIdentity(database) {
@@ -296,6 +333,7 @@ export function backfillLegacyThreadIdentity(database) {
   `).all();
   let assertions = 0;
   let corrections = 0;
+  let droppedPostSeedAdditions = 0;
   for (const row of rows) {
     if (row.seed_event_id === null || row.seed_payload_json === null) {
       throw new IntegrityError(`Thread ${row.thread_id} has no seed event for identity provenance`);
@@ -312,12 +350,19 @@ export function backfillLegacyThreadIdentity(database) {
     assertions += persistLegacySeedIdentity(database, seedThread, {
       sourceEventId: row.seed_event_id,
     }).length;
-    corrections += persistLegacyProjectionDrift(database, seedThread, currentThread, {
+    const drift = persistLegacyProjectionDrift(database, seedThread, currentThread, {
       sourceEventId: row.seed_event_id,
       recordedAt: row.updated_at,
     });
+    corrections += drift.corrections;
+    droppedPostSeedAdditions += drift.droppedPostSeedAdditions;
   }
-  return { threads: rows.length, assertions, corrections };
+  return {
+    threads: rows.length,
+    assertions,
+    corrections,
+    droppedPostSeedAdditions,
+  };
 }
 
 function memoryRow(database, threadId, memoryRef) {
@@ -493,10 +538,4 @@ export function verifyMemoryVisualCompanion(database, threadId, memoryRef) {
     throw new IntegrityError(`memory ${memoryRef} has no visual companion lineage`);
   }
   return decodeMemoryVisualCompanionRow(row);
-}
-
-export function verifyMemoryPhotoRequirement(database, threadId, memoryRef) {
-  const record = verifyMemoryVisualCompanion(database, threadId, memoryRef);
-  assertMemoryPhotoRequirementSatisfied(record.companion);
-  return record;
 }
