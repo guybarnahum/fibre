@@ -62,21 +62,21 @@ function revisionOf(previous, overrides = {}) {
   if (overrides.disputeCorrection !== undefined) candidate.disputeCorrection = overrides.disputeCorrection;
   return candidate;
 }
-function v2LineageBase(identity) {
+function v2DisciplineBase(identity) {
   const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions.find((item) => item.domain === "passport_name").sourceReferences[0];
-  const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "lineage-v2" });
+  const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "artistic-v2" });
   const recordedAt = "2026-08-12T23:55:00Z";
   return {
-    assertionId: identityAssertionId({ claimId, revision: 1, recordedAt, meaning: "Mina's mother is her source parent." }),
+    assertionId: identityAssertionId({ claimId, revision: 1, recordedAt, meaning: "Mina values making things by hand." }),
     claimId, revision: 1, threadId: fixture.threadId,
-    domain: "lineage_relation", kind: "source_parent",
-    claimPredicate: { subject: "self", predicate: "has_source_parent", object: "maternal_parent" },
-    meaning: "Mina's mother is her source parent.", provenanceClass: "relational",
-    authorship: { kind: "relationship_shared_world_source", entityId: "fibre.world-kernel" },
+    domain: "artistic_formation", kind: "craft_orientation",
+    claimPredicate: { subject: "self", predicate: "values_practice", object: "handmaking" },
+    meaning: "Mina values making things by hand.", provenanceClass: "historical_experienced",
+    authorship: { kind: "thread_self_authored", entityId: fixture.threadId },
     sourceReferences: [seedEvent], effectiveAt: recordedAt, recordedAt,
     visibility: "private", status: "current",
-    projectionClass: identityDomainV2Definition("lineage_relation").projectionSection,
-    behavioralStatus: "context_only", admission: admission(),
+    projectionClass: identityDomainV2Definition("artistic_formation").projectionSection,
+    behavioralStatus: "candidate_causal", admission: admission(),
   };
 }
 
@@ -120,15 +120,15 @@ test("v1 revisions stay v1 but public writes cannot use the old claims as biogra
 test("v2 writes require a structural predicate and a recorded discipline witness", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(databasePath);
-  const base = v2LineageBase(identity);
+  const base = v2DisciplineBase(identity);
   const stored = identity.recordAssertion(base);
   assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_V2_VERSION);
   assert.deepEqual(identity.getAssertion(fixture.threadId, base.assertionId).assertion.claimPredicate, base.claimPredicate);
   for (const [purpose, meaning] of [
-    ["sentence", "Her mother is her source parent. Her father grew up in Seoul."],
-    ["lower", "Her mother is her source parent. her father grew up in Seoul."],
-    ["semicolon", "Her mother is her source parent; her father grew up in Seoul"],
-    ["dash", "Born in Seoul — her father ran a store — she moved away"],
+    ["sentence", "Mina values handmaking. Her father grew up in Seoul."],
+    ["lower", "Mina values handmaking. her father grew up in Seoul."],
+    ["semicolon", "Mina values handmaking; her father grew up in Seoul"],
+    ["dash", "Mina values handmaking — her father ran a store — she moved away"],
   ]) {
     const claimId = identityClaimId({ purpose });
     assert.throws(() => identity.recordAssertion({ ...base, claimId, assertionId: identityAssertionId({ claimId, revision: 1 }), meaning }), /one material proposition|bundle/i);
@@ -140,7 +140,7 @@ test("v2 writes require a structural predicate and a recorded discipline witness
   assert.equal(integrity.registryVersion, null);
   const view = identity.getCurrentIdentityView(fixture.threadId);
   assert.equal(view.derivationPolicy.version, "2");
-  assert.ok(view.registryBindings.some((item) => item.registryVersion === "2" && item.domain === "lineage_relation"));
+  assert.ok(view.registryBindings.some((item) => item.registryVersion === "2" && item.domain === "artistic_formation"));
   identity.close();
   const reopened = openIdentityStore(databasePath);
   assert.equal(reopened.getCurrentIdentityView(fixture.threadId).assertions.length, 14);
