@@ -94,7 +94,7 @@ Implemented guarantees:
 
 The exact #37-era v6 table shape is covered by regression: reopen repairs its SQL constraints transactionally, preserves all existing v1 assertions, passes identity foreign-key verification, and then admits a new v2 lineage claim.
 
-The Slice-A code checkpoint passed full repository validation in Actions run **2138**. The PR remains subject to exact-head validation after documentation-only closure edits.
+Slice A is complete when the current PR head passes the repository validation workflow. Earlier full code checkpoints passed Actions runs **2126**, **2136**, and **2138** while the closure documentation was being finalized.
 
 ### B. Situated life: lineage, geography, culture, embodiment
 
