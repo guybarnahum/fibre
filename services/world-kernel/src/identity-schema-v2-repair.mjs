@@ -1,3 +1,4 @@
+import { IntegrityError } from "./persistence-common.mjs";
 import {
   IDENTITY_ASSERTION_STATUSES,
   IDENTITY_AUTHORSHIP_KINDS,
@@ -128,6 +129,15 @@ export function repairIdentityAssertionRegistryV2Schema(database) {
 
     DROP TABLE identity_assertion_records_pre_v2;
   `);
+
+  const violations = database.prepare(
+    "PRAGMA foreign_key_check(identity_assertion_records)",
+  ).all();
+  if (violations.length !== 0) {
+    throw new IntegrityError(
+      "identity registry-v2 schema repair produced identity foreign-key violations",
+    );
+  }
 
   return { repaired: true };
 }
