@@ -36,6 +36,11 @@ import {
   translateStorageError,
 } from "./persistence-sqlite.mjs";
 
+export const IDENTITY_VIEW_DERIVATION_POLICY = Object.freeze({
+  id: "identity_view_transaction_time",
+  version: "1",
+});
+
 function parseJson(name, value) {
   try {
     return JSON.parse(value);
@@ -45,11 +50,16 @@ function parseJson(name, value) {
 }
 
 function rowToAssertion(row) {
+  const registryVersion = row.registry_version;
   const assertion = normalizeIdentityAssertion(
     parseJson(`identity assertion ${row.assertion_id}`, row.assertion_json),
-    { allowAcceptedCausal: true, allowEndogenous: true },
+    {
+      allowAcceptedCausal: true,
+      allowEndogenous: true,
+      registryVersion,
+    },
   );
-  const digest = identityAssertionDigest(assertion);
+  const digest = identityAssertionDigest(assertion, { registryVersion });
   if (digest !== row.assertion_digest || canonicalJson(assertion) !== row.assertion_json) {
     throw new IntegrityError(`identity assertion ${row.assertion_id} failed digest/canonical JSON verification`);
   }
@@ -75,11 +85,11 @@ function rowToAssertion(row) {
       throw new IntegrityError(`identity assertion ${assertion.assertionId} ${name} column mismatch`);
     }
   }
-  return { assertion, assertionDigest: digest };
+  return { assertion, assertionDigest: digest, registryVersion };
 }
 
 const ASSERTION_COLUMNS = `
-  assertion_id,claim_id,revision,thread_id,domain,kind,provenance_class,
+  assertion_id,claim_id,revision,thread_id,registry_version,domain,kind,provenance_class,
   authorship_kind,visibility,status,projection_class,behavioral_status,
   effective_at,recorded_at,supersedes_assertion_id,assertion_json,assertion_digest
 `;
@@ -197,7 +207,10 @@ export class IdentityStore {
         throw new IdentityHistoryIntegrityError(`identity claim ${claimId} recordedAt moves backwards`);
       }
     }
-    return history;
+    return history.map((record, index) => ({
+      ...record,
+      isCurrentRevision: index === history.length - 1,
+    }));
   }
 
   #memoryRefExists(threadId, memoryRef) {
@@ -211,7 +224,7 @@ export class IdentityStore {
   getAssertion(threadId, assertionId, { required = true } = {}) {
     this.#requireThread(threadId);
     const row = this.#database.prepare(`
-      SELECT ${ASSERTION_COLUMNS}
+      SELECT claim_id
       FROM identity_assertion_records
       WHERE thread_id=? AND assertion_id=?
     `).get(threadId, assertionId);
@@ -226,7 +239,12 @@ export class IdentityStore {
       }
       return null;
     }
-    return rowToAssertion(row);
+    const record = this.#validatedHistory(threadId, row.claim_id)
+      .find(({ assertion }) => assertion.assertionId === assertionId);
+    if (record === undefined) {
+      throw new IdentityHistoryIntegrityError(`identity assertion ${assertionId} disappeared from its claim history`);
+    }
+    return record;
   }
 
   listClaimHistory(threadId, claimId) {
@@ -283,11 +301,13 @@ export class IdentityStore {
   }
 
   #buildView(threadId, records, asOf) {
-    const items = records.map(({ assertion, assertionDigest }) => ({
+    const items = records.map(({ assertion, assertionDigest, registryVersion }) => ({
       assertionId: assertion.assertionId,
       claimId: assertion.claimId,
       threadId: assertion.threadId,
       revision: assertion.revision,
+      registryVersion,
+      isCurrentRevision: true,
       domain: assertion.domain,
       kind: assertion.kind,
       meaning: assertion.meaning,
@@ -306,6 +326,7 @@ export class IdentityStore {
     const view = {
       threadId,
       asOf,
+      derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
       registry: {
         version: IDENTITY_DOMAIN_REGISTRY_VERSION,
         digest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
@@ -364,6 +385,7 @@ export class IdentityStore {
       publicSelfDescription: selfDescription?.meaning ?? null,
       publicSelfDescriptionAssertionId: selfDescription?.assertionId ?? null,
       currentIdentityViewDigest: view.viewDigest,
+      derivationPolicy: view.derivationPolicy,
       registryVersion: IDENTITY_DOMAIN_REGISTRY_VERSION,
       registryDigest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
     };
@@ -419,6 +441,9 @@ export class IdentityStore {
 
   recordAssertion(candidate) {
     if (this.#readOnly) throw new IdentityConflictError("read-only identity store cannot record assertions");
+    if (candidate?.admission?.policy?.id === "legacy_projection_drift_migration") {
+      throw new IdentityConflictError("legacy migration observation policy is not a public identity authoring surface");
+    }
     const assertion = normalizeIdentityAssertion(candidate);
     const { createdAt } = this.#requireThread(assertion.threadId);
     if (Date.parse(assertion.recordedAt) < Date.parse(createdAt)) {
@@ -438,7 +463,7 @@ export class IdentityStore {
           );
         }
         this.#database.exec("COMMIT");
-        return { ...prior, idempotent: true };
+        return { ...prior, isCurrentRevision: true, idempotent: true };
       }
 
       const history = this.#validatedHistory(assertion.threadId, assertion.claimId, {
@@ -488,7 +513,7 @@ export class IdentityStore {
 
       const stored = persistIdentityAssertionRow(this.#database, assertion);
       this.#database.exec("COMMIT");
-      return { ...stored, idempotent: false };
+      return { ...stored, isCurrentRevision: true, idempotent: false };
     } catch (error) {
       safeRollback(this.#database);
       throw translateStorageError(error);
@@ -561,9 +586,11 @@ export class IdentityStore {
     let assertions = 0;
     let acceptedCausal = 0;
     let endogenous = 0;
+    const registryVersions = new Set();
     for (const { claim_id: claimId } of claims) {
       const history = this.#validatedHistory(threadId, claimId);
       assertions += history.length;
+      history.forEach(({ registryVersion }) => registryVersions.add(registryVersion));
       acceptedCausal += history.filter(
         ({ assertion }) => assertion.behavioralStatus === "accepted_causal",
       ).length;
@@ -601,6 +628,8 @@ export class IdentityStore {
       threadId,
       registryVersion: IDENTITY_DOMAIN_REGISTRY_VERSION,
       registryDigest: IDENTITY_DOMAIN_REGISTRY_DIGEST,
+      admittedRegistryVersions: [...registryVersions].sort(),
+      derivationPolicy: IDENTITY_VIEW_DERIVATION_POLICY,
       claimCount: claims.length,
       assertionCount: assertions,
       acceptedCausalAssertions: acceptedCausal,
