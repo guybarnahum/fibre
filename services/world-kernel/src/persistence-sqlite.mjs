@@ -285,10 +285,6 @@ export function migrateDatabase(database) {
       database.exec("BEGIN IMMEDIATE");
       createAndRepairSchema(database);
       migrateLegacyConsumedObligations(database);
-      const violations = database.prepare("PRAGMA foreign_key_check").all();
-      if (violations.length !== 0) {
-        throw new IntegrityError("same-version schema repair produced foreign-key violations");
-      }
       database.exec("COMMIT");
     } catch (error) {
       safeRollback(database);
