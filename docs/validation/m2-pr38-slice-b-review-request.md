@@ -6,8 +6,6 @@ Implementation checkpoint: `2d01566555d639bc01fffa5e96a7b426d1797f4e`
 
 Implementation validation: Actions run **2254**, `npm run check` passed, **406/406 tests**, repository validation clean.
 
-Subsequent commits through this document update are review-governance only. Review the current PR head and use the implementation checkpoint above to isolate Slice B behavior.
-
 Scope: Slice B only — lineage/family, geography, lived culture/language, embodiment, schema integration, and read-only inspection.
 
 ## Thesis
