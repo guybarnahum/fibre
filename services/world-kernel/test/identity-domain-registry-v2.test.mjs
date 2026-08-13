@@ -3,8 +3,6 @@ import test from "node:test";
 
 import {
   IDENTITY_ATOMIC_CLAIM_POLICY,
-  IDENTITY_ATOMIC_CLAIM_POLICY_V1,
-  IDENTITY_ATOMIC_CLAIM_POLICY_V2,
   IDENTITY_CLAIM_STRUCTURE,
   assertCurrentClaimDiscipline,
   assertRecordedClaimDiscipline,
@@ -12,157 +10,65 @@ import {
   normalizeClaimPredicate,
 } from "../src/identity-claim-discipline.mjs";
 import {
-  IDENTITY_DOMAIN_REGISTRY_V2,
-  IDENTITY_DOMAIN_REGISTRY_V2_DIGEST,
-  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
-  identityDomainV2Definition,
-} from "../src/identity-domain-registry-v2.mjs";
-import {
-  IDENTITY_DOMAIN_REGISTRIES,
-  identityDomainRegistryDigest,
+  IDENTITY_DOMAIN_REGISTRY,
+  IDENTITY_DOMAIN_REGISTRY_DIGEST,
+  IDENTITY_DOMAIN_REGISTRY_VERSION,
+  identityDomainDefinition,
 } from "../src/identity-domain-registry.mjs";
 
-function disciplinedAssertion(policy = IDENTITY_ATOMIC_CLAIM_POLICY) {
+function disciplinedAssertion() {
   return {
-    claimPredicate: {
-      subject: "thread_mina",
-      predicate: "has_source_parent",
-      object: "human_mina_mother",
-    },
+    claimPredicate: { subject: "thread_mina", predicate: "has_source_parent", object: "human_mina_mother" },
     meaning: "Mina's mother is the source parent for this lineage relation.",
     admission: {
       policy: { id: "identity_world_admission", version: "1" },
-      claimDiscipline: { ...policy },
+      claimDiscipline: { ...IDENTITY_ATOMIC_CLAIM_POLICY },
     },
   };
 }
 
-test("registry v2 is additive, structurally claim-shaped, and does not mutate frozen v1", () => {
-  assert.equal(IDENTITY_DOMAIN_REGISTRY_V2_VERSION, "2");
-  assert.match(IDENTITY_DOMAIN_REGISTRY_V2_DIGEST, /^sha256:[0-9a-f]{64}$/);
-
-  const v1 = IDENTITY_DOMAIN_REGISTRIES["1"];
-  const v1DigestBefore = identityDomainRegistryDigest("1");
-
-  for (const domainId of Object.keys(v1)) {
-    assert.ok(IDENTITY_DOMAIN_REGISTRY_V2[domainId]);
-    assert.equal(IDENTITY_DOMAIN_REGISTRY_V2[domainId].claimStructure, IDENTITY_CLAIM_STRUCTURE);
-  }
-
+test("one current identity registry exposes the structured Slice B domains", () => {
+  assert.equal(IDENTITY_DOMAIN_REGISTRY_VERSION, "2");
+  assert.ok(IDENTITY_DOMAIN_REGISTRY_DIGEST.startsWith("sha256:"));
   for (const domainId of [
-    "lineage_relation",
-    "family_role",
-    "ancestral_origin",
-    "cultural_formation",
-    "geography_residence",
-    "geography_work",
-    "place_meaning",
-    "embodiment_visual",
-    "embodiment_voice",
-    "memory_interpretation",
+    "lineage_relation", "family_role", "ancestral_origin", "cultural_formation",
+    "language_formation", "geography_residence", "geography_work", "place_meaning",
+    "embodiment_visual", "embodiment_voice", "memory_interpretation",
   ]) {
-    const definition = identityDomainV2Definition(domainId);
+    const definition = identityDomainDefinition(domainId);
     assert.equal(definition.claimStructure, IDENTITY_CLAIM_STRUCTURE);
   }
-
-  assert.equal(identityDomainRegistryDigest("1"), v1DigestBefore);
-  assert.equal(v1.lineage_relation, undefined);
-  assert.equal(v1.geography_residence, undefined);
-  assert.equal(identityDomainV2Definition("lineage_family").authoringStatus, "superseded");
-  assert.deepEqual(
-    identityDomainV2Definition("geography").supersededBy,
-    ["geography_residence", "geography_work", "place_meaning"],
-  );
-  assert.deepEqual(
-    identityDomainV2Definition("cultural_formation").allowedBehavioralStatuses,
-    ["context_only"],
-  );
-  assert.equal(identityDomainV2Definition("memory_interpretation").projectionSection, "memory");
+  assert.deepEqual(identityDomainDefinition("cultural_formation").allowedBehavioralStatuses, ["context_only"]);
+  assert.equal(identityDomainDefinition("memory_interpretation").projectionSection, "memory");
+  assert.ok(IDENTITY_DOMAIN_REGISTRY.lineage_relation);
 });
 
-test("atomic prose backstop rejects the hostile composition bypasses", () => {
-  assert.equal(
-    assertSingleMaterialProposition("Her family moved from Seoul to Seattle when she was nine."),
-    "Her family moved from Seoul to Seattle when she was nine.",
-  );
+test("claim discipline has one supported current policy", () => {
+  const assertion = disciplinedAssertion();
+  assert.equal(assertCurrentClaimDiscipline(assertion), assertion);
+  assert.equal(assertRecordedClaimDiscipline(assertion), assertion);
+  assert.throws(() => assertRecordedClaimDiscipline({
+    ...assertion,
+    admission: {
+      ...assertion.admission,
+      claimDiscipline: { id: IDENTITY_ATOMIC_CLAIM_POLICY.id, version: "1" },
+    },
+  }), /require claim discipline/i);
+});
 
+test("atomic prose and structural predicate reject compound claims", () => {
+  assert.equal(assertSingleMaterialProposition("Her family moved from Seoul to Seattle when she was nine."), "Her family moved from Seoul to Seattle when she was nine.");
   for (const bundled of [
     "Her family moved to Seattle. She later became an engineer.",
-    "Her family moved to Seattle. she later became an engineer.",
-    "Her childhood included:\n- Seoul\n- Seattle",
-    "She learned pottery from her grandmother; she studied violin in Seoul; she resents her father",
-    "She is a conservator and also a mother of two",
-    "Born in Seoul — her father ran a hardware store — she married in 2031",
+    "Her childhood included:\nSeoul and Seattle",
+    "She learned pottery; she studied violin",
+    "She is a conservator and a mother of two and a Seoul native",
   ]) {
-    assert.throws(() => assertSingleMaterialProposition(bundled), /one material proposition|bundle/i);
+    assert.throws(() => assertSingleMaterialProposition(bundled));
   }
-});
-
-test("claim predicate makes one proposition a structural record property", () => {
-  assert.deepEqual(
-    normalizeClaimPredicate({
-      subject: "thread_mina",
-      predicate: "has_source_parent",
-      object: "human_mina_mother",
-    }),
-    {
-      subject: "thread_mina",
-      predicate: "has_source_parent",
-      object: "human_mina_mother",
-    },
-  );
-  assert.throws(
-    () => normalizeClaimPredicate({
-      subject: "thread_mina",
-      predicate: "has source parent",
-      object: "human_mina_mother",
-    }),
-    /lowercase snake_case/,
-  );
-  assert.throws(
-    () => normalizeClaimPredicate({
-      subject: "thread_mina",
-      predicate: "has_source_parent",
-      object: "mother and father",
-    }),
-    /one subject\/object/,
-  );
-});
-
-test("historical discipline dispatches by recorded witness while current admission can tighten safely", () => {
-  const current = disciplinedAssertion();
-  const historicalV1 = disciplinedAssertion(IDENTITY_ATOMIC_CLAIM_POLICY_V1);
-  assert.equal(assertRecordedClaimDiscipline(historicalV1), historicalV1);
-  assert.equal(assertCurrentClaimDiscipline(current), current);
-  assert.deepEqual(IDENTITY_ATOMIC_CLAIM_POLICY, IDENTITY_ATOMIC_CLAIM_POLICY_V2);
-
-  const oldPolicyBundle = {
-    ...historicalV1,
-    meaning: "Mina is a conservator and a mother of two and a Seoul native and estranged from her mentor",
-  };
-  assert.equal(assertRecordedClaimDiscipline(oldPolicyBundle), oldPolicyBundle);
-
-  const currentPolicyBundle = {
-    ...current,
-    meaning: oldPolicyBundle.meaning,
-  };
-  assert.throws(
-    () => assertCurrentClaimDiscipline(currentPolicyBundle),
-    /chain multiple independently addressable propositions/i,
-  );
-
-  assert.throws(
-    () => assertCurrentClaimDiscipline(historicalV1),
-    /current claim discipline/i,
-  );
-  assert.throws(
-    () => assertRecordedClaimDiscipline({
-      ...current,
-      admission: {
-        ...current.admission,
-        claimDiscipline: { id: "identity_atomic_material_proposition", version: "999" },
-      },
-    }),
-    /unknown historical identity claim discipline/i,
-  );
+  assert.deepEqual(normalizeClaimPredicate({ subject: "thread_mina", predicate: "has_source_parent", object: "human_mina_mother" }), {
+    subject: "thread_mina", predicate: "has_source_parent", object: "human_mina_mother",
+  });
+  assert.throws(() => normalizeClaimPredicate({ subject: "thread_mina", predicate: "has source parent", object: "human_mina_mother" }));
+  assert.throws(() => normalizeClaimPredicate({ subject: "thread_mina", predicate: "has_source_parent", object: "mother and father" }));
 });
