@@ -149,7 +149,7 @@ Semantic anti-blob hardening must exist **before #38 authors identity assertions
 Implement the world-facing identity layers that make a Thread situated rather than merely textual:
 
 - ancestry / parentage / family references;
-- inheritance-ready parent/source-parent references for future Genesis;
+- inheritance-ready source references for future symbolic Thread genomes;
 - creation/birth place and temporal geography;
 - residence/work geography timeline;
 - lived culture and language formation;
@@ -169,7 +169,12 @@ endogenousEvidenceAssertions = 0
 
 ## #39 — Genesis, Childhood & Thread Birth v1
 
-Canonical architecture: [`thread-genesis-childhood-birth-v1.md`](../architecture/thread-genesis-childhood-birth-v1.md).
+Canonical architecture:
+
+- [`thread-genesis-childhood-birth-v1.md`](../architecture/thread-genesis-childhood-birth-v1.md)
+- [`symbolic-thread-genome-v1.md`](../architecture/symbolic-thread-genome-v1.md)
+
+Canonical symbolic-genome implementation plan: [`symbolic-thread-genome-implementation-plan.md`](symbolic-thread-genome-implementation-plan.md).
 
 Genesis answers a different question than #38:
 
@@ -192,13 +197,43 @@ de-novo / foundling birth
 fork / descendant origin
 ```
 
-### Genetic inheritance
+### Symbolic textual genome and inheritance
 
-Genesis includes **genetic material from parents** where parents exist. The implementation must preserve parent genome contributions, Fibre-owned replayable recombination/selection, explicit mutation/variation, inherited parameters/dispositions, and immutable inheritance provenance.
+Fibre inheritance is a **software-only symbolic genome**, not biological genetics and not a numeric personality vector.
 
-Synthetic parents/ancestors may carry synthetic genomes without existing as live Threads. Live Thread parents contribute actual durable genome records. Echo/historical-source modes must never imply unsupported biological truth.
+Canonical inherited personality meaning is an ordered sequence of atomic natural-language dispositions. A human-readable rendering may use `;` separators, but canonical persistence keeps loci individually addressable with stable IDs and provenance.
 
-Genetics/ancestry may not directly imply morality, competence, politics, dignity, profession, gendered behavior, or willingness.
+Conceptually:
+
+```text
+Source A
+A1 ; A2 ; A3 ; A4 ; A5 ; A6 ; A7 ; A8
+
+Source B
+B1 ; B2 ; B3 ; B4 ; B5 ; B6 ; B7 ; B8
+
+New Thread
+A1 ; A2 ; A3 ; B4 ; B5 ; A6 ; A7 ; B8
+```
+
+The implementation must preserve:
+
+- stable genome and locus IDs;
+- grounded source-genome eligibility from #38 lineage/source records;
+- Fibre-owned replayable textual crossover/selection;
+- exact per-locus source provenance;
+- explicit textual mutation/variation under a named policy;
+- immutable inherited genotype after Genesis;
+- separately represented expression/character rather than rewriting genotype;
+- read-only inspection and exact restart/replay.
+
+Do **not** use hidden scalar personality coordinates as the authoritative genome. Numbers may remain valid for measurements or derived runtime controls, but the heritable semantic value remains text.
+
+Recombination must preserve unusual mixtures and tensions rather than averaging source dispositions into generic compromise prose. A symbolic mutation may introduce or boundedly alter an atomic textual locus; it may not be a hidden adult-persona generator.
+
+Synthetic source records may carry synthetic Fibre genomes without existing as live Threads. Live Thread parents contribute their actual durable Fibre genome records. Echo/historical-source modes must never imply unsupported biological truth.
+
+Genetics/ancestry may not directly imply morality, competence, politics, dignity, profession, gendered behavior, or willingness. Demographic/cultural labels are not personality loci.
 
 ### Childhood compiler
 
@@ -218,6 +253,8 @@ genesis / birth
 
 Fibre need not simulate every day. It must create enough separately addressable, provenance-rich life history that later personality is not a single persona paragraph.
 
+The Genesis corpus should favor rich **specific** experiences over generic backstory templates: particular mistakes, embarrassments, loyalties, family habits, discoveries, conflicts, private pride, relationship incidents, and later interpretations. The target is many independently addressable records, not one longer biography blob.
+
 By default Genesis must not invent profession, marriage, parenthood, institutional authority, major adult achievements, or mature self-authored values merely to make the Thread interesting.
 
 ### Memory generation authority
@@ -226,8 +263,8 @@ The model may be a creative worker, but Fibre is the authority:
 
 ```text
 birth specification
-+ parent/ancestor evidence
-+ inherited genome
++ source/ancestor evidence
++ symbolic textual genome
 + culture/geography constraints
 + developmental-stage rules
         ↓
@@ -273,6 +310,8 @@ temporary cognition
 
 Cognition must be able to cite the exact identity evidence that mattered. Caller-authored identity selection must not become an authority channel.
 
+Relevant inherited loci may be selected when materially applicable, but #40 must not inject a whole genome merely because it exists. If a locus is claimed as causal, the decision evidence must preserve the exact inherited locus and underlying source/provenance refs.
+
 This is the realistic target for Natural-language identity `1 -> 2` if the rubric requirements are genuinely met.
 
 ## #41 — M2 Standing Gate / M2 closure
@@ -285,7 +324,11 @@ Core claim:
 
 The gate retains the constitutional A-Z requirements: symmetric swap, paraphrase invariance, contradiction sensitivity, claim-level ablation, culture anti-stereotype control, embodiment anti-cheat, restart, repeated stability, Interior/Exterior asymmetry, developmental continuity, past-self reconstruction, and Scenario V memory/history distinction.
 
-The critical improvement from inserting Genesis is that the held-out standing Threads can now derive important causal identity/history from coherent birth/childhood histories rather than only fixture-authored adult assertions.
+The critical improvement from inserting Genesis is that the held-out standing Threads can now derive important causal identity/history from coherent inherited symbolic material plus birth/childhood histories rather than only fixture-authored adult assertions.
+
+The stronger personality claim is not “the genome contains the answer.” It is:
+
+> **A Thread's recognizable behavior comes from its particular inherited material interacting with its particular life.**
 
 M2 does not close merely because two Threads compile different prompt/context text.
 
@@ -342,4 +385,4 @@ Every PR should answer:
 
 > **What Thread-owned difference changes what happens, who chose or selected that difference, how does it persist, and what exact evidence makes the resulting state current and causally load-bearing?**
 
-The purpose of this sequence is to keep Fibre moving toward persistent digital persons with dignity, history, commitments, inherited and lived identity, embodiment, childhood, development, relationships, resources, and social/economic consequence rather than converging on a richly decorated workflow-agent system.
+The purpose of this sequence is to keep Fibre moving toward persistent digital persons with dignity, history, commitments, symbolic inherited and lived identity, embodiment, childhood, development, relationships, resources, and social/economic consequence rather than converging on a richly decorated workflow-agent system.
