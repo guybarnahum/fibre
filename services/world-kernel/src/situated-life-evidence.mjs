@@ -1,14 +1,13 @@
-import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { normalizeLifeRelation, normalizePlaceEpisode } from "./situated-life-domain.mjs";
 
 export function lifeRelationRevisionRef(candidate) {
   const record = normalizeLifeRelation(candidate);
-  return `lrr_${sha256(canonicalJson(record))}`;
+  return `lrr:${record.relationId}:${record.revision}`;
 }
 
 export function placeEpisodeRevisionRef(candidate) {
   const record = normalizePlaceEpisode(candidate);
-  return `per_${sha256(canonicalJson(record))}`;
+  return `per:${record.episodeId}:${record.revision}`;
 }
 
 export function situatedLifeEvidenceSummary({ lifeRelations = [], placeEpisodes = [] }) {
