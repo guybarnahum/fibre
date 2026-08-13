@@ -15,6 +15,10 @@ import {
   normalizePlaceEpisode,
 } from "./situated-life-domain.mjs";
 import { createSituatedLifeTables } from "./situated-life-schema.mjs";
+import {
+  ensureSituatedLifeDigestColumns,
+  situatedRecordDigest,
+} from "./situated-life-integrity.mjs";
 
 export class SituatedLifeConflictError extends Error {}
 export class SituatedLifeNotFoundError extends Error {}
@@ -47,6 +51,10 @@ function relationFromRow(row) {
   if (row.record_json !== canonicalJson(record)) {
     throw new IntegrityError(`life relation ${record.relationId} is not canonical JSON`);
   }
+  const expectedDigest = situatedRecordDigest("life_relation", record);
+  if (row.record_digest !== expectedDigest) {
+    throw new IntegrityError(`life relation ${record.relationId} digest mismatch`);
+  }
   return record;
 }
 
@@ -68,6 +76,10 @@ function placeFromRow(row) {
   }
   if (row.record_json !== canonicalJson(record)) {
     throw new IntegrityError(`place episode ${record.episodeId} is not canonical JSON`);
+  }
+  const expectedDigest = situatedRecordDigest("place_episode", record);
+  if (row.record_digest !== expectedDigest) {
+    throw new IntegrityError(`place episode ${record.episodeId} digest mismatch`);
   }
   return record;
 }
@@ -121,6 +133,7 @@ export class SituatedLifeStore {
         migrateDatabase(this.#database);
         this.#database.exec("BEGIN IMMEDIATE");
         createSituatedLifeTables(this.#database);
+        ensureSituatedLifeDigestColumns(this.#database);
         this.#database.exec("COMMIT");
       }
     } catch (error) {
@@ -144,7 +157,7 @@ export class SituatedLifeStore {
     const records = this.#database.prepare(`
       SELECT relation_id,revision,thread_id,related_party_id,relation_kind,
         genetic_contribution_role,visibility,provenance,recorded_at,
-        supersedes_revision,record_json
+        supersedes_revision,record_json,record_digest
       FROM life_relation_records
       WHERE thread_id=? AND relation_id=? ORDER BY revision
     `).all(threadId, relationId).map(relationFromRow);
@@ -156,7 +169,7 @@ export class SituatedLifeStore {
     this.#requireThread(threadId);
     const records = this.#database.prepare(`
       SELECT episode_id,revision,thread_id,episode_kind,place_id,visibility,
-        provenance,recorded_at,supersedes_revision,record_json
+        provenance,recorded_at,supersedes_revision,record_json,record_digest
       FROM place_episode_records
       WHERE thread_id=? AND episode_id=? ORDER BY revision
     `).all(threadId, episodeId).map(placeFromRow);
@@ -196,13 +209,13 @@ export class SituatedLifeStore {
         INSERT INTO life_relation_records(
           relation_id,revision,thread_id,related_party_id,relation_kind,
           genetic_contribution_role,visibility,provenance,recorded_at,
-          supersedes_revision,record_json
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+          supersedes_revision,record_json,record_digest
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
       `).run(
         record.relationId, record.revision, record.threadId, record.relatedParty.partyId,
         record.relationKind, record.geneticContributionRole, record.visibility,
         record.provenance, record.recordedAt, record.supersedesRevision ?? null,
-        canonicalJson(record),
+        canonicalJson(record), situatedRecordDigest("life_relation", record),
       );
       this.#database.exec("COMMIT");
       return record;
@@ -231,12 +244,13 @@ export class SituatedLifeStore {
       this.#database.prepare(`
         INSERT INTO place_episode_records(
           episode_id,revision,thread_id,episode_kind,place_id,visibility,
-          provenance,recorded_at,supersedes_revision,record_json
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+          provenance,recorded_at,supersedes_revision,record_json,record_digest
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
       `).run(
         record.episodeId, record.revision, record.threadId, record.episodeKind,
         record.place.placeId, record.visibility, record.provenance, record.recordedAt,
         record.supersedesRevision ?? null, canonicalJson(record),
+        situatedRecordDigest("place_episode", record),
       );
       this.#database.exec("COMMIT");
       return record;
