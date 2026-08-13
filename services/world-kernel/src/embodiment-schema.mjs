@@ -17,6 +17,20 @@ export function createEmbodimentTables(database) {
     CREATE INDEX IF NOT EXISTS idx_embodiment_rights_thread
       ON embodiment_rights_authorities(thread_id, authority_kind, recorded_at, authority_id);
 
+    CREATE TABLE IF NOT EXISTS embodiment_rights_revocations (
+      revocation_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      authority_id TEXT NOT NULL UNIQUE,
+      record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      recorded_at TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (authority_id) REFERENCES embodiment_rights_authorities(authority_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_embodiment_rights_revocations_thread
+      ON embodiment_rights_revocations(thread_id, recorded_at, authority_id);
+
     CREATE TABLE IF NOT EXISTS embodiment_records (
       embodiment_id TEXT NOT NULL,
       revision INTEGER NOT NULL CHECK (revision >= 1),
@@ -57,6 +71,12 @@ export function createEmbodimentTables(database) {
     CREATE TRIGGER IF NOT EXISTS embodiment_rights_no_delete
       BEFORE DELETE ON embodiment_rights_authorities
       BEGIN SELECT RAISE(ABORT,'embodiment_rights_authorities is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS embodiment_rights_revocations_no_update
+      BEFORE UPDATE ON embodiment_rights_revocations
+      BEGIN SELECT RAISE(ABORT,'embodiment_rights_revocations is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS embodiment_rights_revocations_no_delete
+      BEFORE DELETE ON embodiment_rights_revocations
+      BEGIN SELECT RAISE(ABORT,'embodiment_rights_revocations is append-only'); END;
     CREATE TRIGGER IF NOT EXISTS embodiment_no_update
       BEFORE UPDATE ON embodiment_records
       BEGIN SELECT RAISE(ABORT,'embodiment_records is append-only'); END;
