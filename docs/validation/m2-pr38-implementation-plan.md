@@ -36,13 +36,24 @@ Genesis includes parent genetic material where parents exist: explicit parent ge
 
 #38 must therefore leave lineage, genome references, geography, embodiment, culture, and autobiographical memory sufficiently structured that #39 can compile a coherent childhood without schema bypasses or biography blobs.
 
-## Non-negotiable entry condition
+## Non-negotiable entry condition — COMPLETE
 
 Before #38 authors identity assertions at scale, it must close #37's deferred S4 boundary:
 
 > **Each durable identity assertion must carry one independently falsifiable, independently ablatable material proposition.**
 
-A byte limit is not semantic decomposition. #38 must either enforce one-material-proposition admission mechanically or constrain every #38 writer through a mechanically testable one-claim discipline before it can persist lineage, geography, culture, or embodiment meaning.
+Slice A now provides the mechanical boundary before any bulk #38 writer exists:
+
+- new claims admitted through the canonical store use frozen additive registry v2;
+- revisions of existing claims inherit their original registry version and cannot switch semantics mid-history;
+- v1 seed/bootstrap and legacy projection migration are explicitly pinned to v1;
+- all v2 writes require the named `identity_atomic_material_proposition:1` admission policy;
+- obvious multi-proposition biography bundles are rejected mechanically;
+- SQL accepts the v1+v2 frozen domain union;
+- exact #37-era schema-v6 identity tables repair transactionally before v2 authoring, preserving v1 rows and append-only protections;
+- mixed v1/v2 views expose the exact admitted registry versions and digests.
+
+A byte limit is not semantic proof. The mechanical admission policy is a foundation, not permission for future writers to smuggle compound natural-language claims through parser gaps. Slice B/C writers must remain claim-shaped and hostile-reviewable.
 
 No immutable biography blob is allowed to enter the ledger and become later causal debt.
 
@@ -50,40 +61,40 @@ No immutable biography blob is allowed to enter the ledger and become later caus
 
 #38 has four implementation slices. They should remain independently reviewable even if they land in one PR.
 
-### A. Claim discipline + Identity Domain Registry v2
+### A. Claim discipline + Identity Domain Registry v2 — COMPLETE
 
-Freeze registry v2 without mutating v1.
-
-The first implementation slice is now started with:
-
-- `identity-claim-discipline.mjs` — named `identity_atomic_material_proposition:1` admission discipline;
-- `identity-domain-registry-v2.mjs` — additive frozen v2 candidate;
-- tests proving v1 registry semantics/digest remain intact and obvious biography bundles are rejected.
-
-Expected new/expanded domains include claim-level forms of:
+Registry v2 is additive and does not mutate v1. New/expanded claim-level domains include:
 
 ```text
 lineage_relation
 family_role
 ancestral_origin
 cultural_formation
+language_formation
 geography_residence
 geography_work
 place_meaning
+intellectual_formation
 embodiment_visual
 embodiment_voice
 memory_interpretation
 ```
 
-Requirements:
+Implemented guarantees:
 
-- every new immutable assertion will pin `registry_version=2` once v2 is activated;
-- v1 rows continue validating against frozen v1;
+- every new immutable claim admitted by the canonical #38 write path pins `registry_version=2`;
+- an existing claim's revisions remain pinned to that claim's original registry version;
+- v1 rows remain independently readable and digest-verifiable;
+- mixed-registry views bind every admitted registry version/digest;
 - one-material-proposition admission is explicit and tested;
 - relationship/lineage identity facts never imply personality or values by ancestry alone;
 - cultural labels never imply competence, politics, morality, temperament, or willingness;
 - professional role remains a situated layer, never root identity;
-- #38 writers keep `acceptedCausalAssertions=0` and `endogenousEvidenceAssertions=0`.
+- `acceptedCausalAssertions=0` and `endogenousEvidenceAssertions=0` remain the #38 posture.
+
+The exact #37-era v6 table shape is covered by regression: reopen repairs its SQL constraints transactionally, preserves all existing v1 assertions, passes identity foreign-key verification, and then admits a new v2 lineage claim.
+
+Slice-A checkpoint: commit `1901c1e1cb4a61e45d592689cd43840012a46182` passed full repository validation in Actions run **2136** before this documentation-only closure commit.
 
 ### B. Situated life: lineage, geography, culture, embodiment
 
@@ -202,13 +213,14 @@ By the end of #38, an inspector should be able to answer:
 
 ## Predeclared adversarial review
 
-Hostile review should explicitly try to prove that a #38 writer can persist a multi-proposition biography blob; a cultural/lineage/genetic label can smuggle stereotype semantics; a v2 registry change makes v1 history unreadable; currentness can again be misread from authoring status; a place fact and place meaning are collapsed; a portrait/voice swap changes behavioral standing; synthetic media can be mistaken for captured evidence; memory can overwrite history or vice versa; contradiction disappears; a photo-less memory becomes steady state; regeneration changes truth rather than cache state; caller/editor surfaces author identity outside accepted authority; or #38 accidentally awards later causal/endogenous standing.
+Hostile review should explicitly try to prove that a #38 writer can persist a multi-proposition biography blob; a cultural/lineage/genetic label can smuggle stereotype semantics; a v2 registry change makes v1 history unreadable or changes a claim's registry mid-revision-chain; an exact #37 database cannot safely admit v2 after repair; currentness can again be misread from authoring status; a place fact and place meaning are collapsed; a portrait/voice swap changes behavioral standing; synthetic media can be mistaken for captured evidence; memory can overwrite history or vice versa; contradiction disappears; a photo-less memory becomes steady state; regeneration changes truth rather than cache state; caller/editor surfaces author identity outside accepted authority; or #38 accidentally awards later causal/endogenous standing.
 
 ## Completion criteria
 
 ```text
-[ ] registry v2 is activated/frozen and v1 remains independently readable
-[ ] one-material-proposition discipline is enforced before bulk writers
+[x] registry v2 is activated/frozen and v1 remains independently readable
+[x] one-material-proposition discipline is enforced before bulk writers
+[x] exact #37-era v6 identity schema repairs transactionally for v2 admission
 [ ] lineage/family records are durable, provenance-rich, inheritance-ready, and stereotype-safe
 [ ] geography is temporal and place facts are distinct from place meaning
 [ ] culture/language formation is lived/evidenced, not inferred from labels
@@ -222,7 +234,7 @@ Hostile review should explicitly try to prove that a #38 writer can persist a mu
 [ ] adversarial tampering is independently detected
 [ ] acceptedCausalAssertions = 0
 [ ] endogenousEvidenceAssertions = 0
-[ ] full repository validation green on exact head
+[ ] full repository validation green on final exact head
 ```
 
 ## Boundary with Genesis and causal projection
