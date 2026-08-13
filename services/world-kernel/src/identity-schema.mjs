@@ -12,6 +12,10 @@ import {
   IDENTITY_DOMAIN_REGISTRY_VERSION,
 } from "./identity-domain-registry.mjs";
 import {
+  IDENTITY_DOMAIN_REGISTRY_V2,
+  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
+} from "./identity-domain-registry-v2.mjs";
+import {
   identityAssertionDigest,
   identityAssertionId,
   legacySeedIdentityAssertions,
@@ -27,7 +31,14 @@ function sqlList(values) {
   return values.map((value) => `'${value.replaceAll("'", "''")}'`).join(",");
 }
 
-const DOMAIN_SQL = sqlList(Object.keys(IDENTITY_DOMAIN_REGISTRY));
+const DOMAIN_SQL = sqlList([...new Set([
+  ...Object.keys(IDENTITY_DOMAIN_REGISTRY),
+  ...Object.keys(IDENTITY_DOMAIN_REGISTRY_V2),
+])]);
+const REGISTRY_SQL = sqlList([
+  IDENTITY_DOMAIN_REGISTRY_VERSION,
+  IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
+]);
 const PROVENANCE_SQL = sqlList(IDENTITY_PROVENANCE_CLASSES);
 const AUTHORSHIP_SQL = sqlList(IDENTITY_AUTHORSHIP_KINDS);
 const VISIBILITY_SQL = sqlList(IDENTITY_VISIBILITIES);
@@ -55,7 +66,7 @@ export function createIdentityTables(database) {
       ),
       revision INTEGER NOT NULL CHECK (revision >= 1),
       thread_id TEXT NOT NULL,
-      registry_version TEXT NOT NULL,
+      registry_version TEXT NOT NULL CHECK (registry_version IN (${REGISTRY_SQL})),
       domain TEXT NOT NULL CHECK (domain IN (${DOMAIN_SQL})),
       kind TEXT NOT NULL,
       provenance_class TEXT NOT NULL CHECK (provenance_class IN (${PROVENANCE_SQL})),
@@ -195,7 +206,7 @@ export function persistLegacySeedIdentity(database, thread, { sourceEventId } = 
       FROM identity_assertion_records WHERE assertion_id=?
     `).get(assertion.assertionId);
     if (existing === undefined) {
-      persistIdentityAssertionRow(database, assertion);
+      persistIdentityAssertionRow(database, assertion, { registryVersion: "1" });
       continue;
     }
     const registryVersion = existing.registry_version;
@@ -231,9 +242,6 @@ function legacyProjectionObservation(seedAssertion, projectedAssertion, recorded
       policy: { id: "legacy_projection_drift_migration", version: "2" },
     },
     sourceReferences: [seedAssertion.assertionId],
-    // The pre-#37 projection did not preserve valid-time provenance. v1 stores the
-    // observation timestamp here only because the schema requires an ISO value;
-    // identity view derivation is transaction-time/recordedAt based.
     effectiveAt: recordedAt,
     recordedAt,
     visibility: projectedAssertion.visibility,
@@ -265,7 +273,7 @@ function legacyProjectionObservation(seedAssertion, projectedAssertion, recorded
       recordedAt,
       migrationPolicy: "legacy_projection_drift_migration:2",
     }),
-  });
+  }, { registryVersion: "1" });
 }
 
 function persistLegacyProjectionDrift(database, seedThread, currentThread, {
@@ -295,7 +303,7 @@ function persistLegacyProjectionDrift(database, seedThread, currentThread, {
       WHERE assertion_id=?
     `).get(observation.assertionId);
     if (existing === undefined) {
-      persistIdentityAssertionRow(database, observation);
+      persistIdentityAssertionRow(database, observation, { registryVersion: "1" });
       corrections += 1;
       continue;
     }
