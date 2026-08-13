@@ -54,5 +54,49 @@ export function createSituatedLifeTables(database) {
     CREATE TRIGGER IF NOT EXISTS place_episodes_no_delete
       BEFORE DELETE ON place_episode_records
       BEGIN SELECT RAISE(ABORT,'place_episode_records is append-only'); END;
+
+    CREATE TABLE IF NOT EXISTS situated_life_lineage_heads (
+      ledger_kind TEXT NOT NULL CHECK (ledger_kind IN ('life_relation','place_episode')),
+      lineage_id TEXT NOT NULL,
+      revision INTEGER NOT NULL CHECK (revision >= 1),
+      thread_id TEXT NOT NULL,
+      head_digest TEXT NOT NULL CHECK (head_digest LIKE 'sha256:%'),
+      recorded_at TEXT NOT NULL,
+      PRIMARY KEY (ledger_kind,lineage_id,revision),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_situated_life_heads_thread
+      ON situated_life_lineage_heads(thread_id,ledger_kind,lineage_id,revision);
+
+    CREATE TRIGGER IF NOT EXISTS situated_life_heads_no_update
+      BEFORE UPDATE ON situated_life_lineage_heads
+      BEGIN SELECT RAISE(ABORT,'situated_life_lineage_heads is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS situated_life_heads_no_delete
+      BEFORE DELETE ON situated_life_lineage_heads
+      BEGIN SELECT RAISE(ABORT,'situated_life_lineage_heads is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS identity_situated_context_only_guard
+      BEFORE INSERT ON identity_assertion_records
+      WHEN NEW.registry_version='2'
+        AND NEW.domain IN (
+          'lineage_relation','family_role','ancestral_origin',
+          'cultural_formation','language_formation',
+          'geography_residence','geography_work','place_meaning'
+        )
+        AND NEW.behavioral_status <> 'context_only'
+      BEGIN SELECT RAISE(ABORT,'situated identity domains are context_only until causal standing'); END;
+
+    CREATE TRIGGER IF NOT EXISTS identity_lived_event_witness_guard
+      BEFORE INSERT ON identity_assertion_records
+      WHEN NEW.registry_version='2'
+        AND NEW.domain IN ('cultural_formation','language_formation')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM json_each(NEW.assertion_json,'$.sourceReferences') refs
+          JOIN thread_events events
+            ON events.event_id=refs.value AND events.thread_id=NEW.thread_id
+        )
+      BEGIN SELECT RAISE(ABORT,'cultural/language formation requires a resolved Thread-event witness'); END;
   `);
 }
