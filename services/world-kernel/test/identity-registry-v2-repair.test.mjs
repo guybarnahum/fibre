@@ -14,16 +14,9 @@ import {
   IDENTITY_PROVENANCE_CLASSES,
   IDENTITY_VISIBILITIES,
 } from "../src/identity-domain-registry.mjs";
-import {
-  IDENTITY_ATOMIC_CLAIM_POLICY,
-} from "../src/identity-claim-discipline.mjs";
-import {
-  identityDomainV2Definition,
-} from "../src/identity-domain-registry-v2.mjs";
-import {
-  identityAssertionId,
-  identityClaimId,
-} from "../src/identity-provenance-domain.mjs";
+import { IDENTITY_ATOMIC_CLAIM_POLICY_V1 } from "../src/identity-claim-discipline.mjs";
+import { identityDomainV2Definition } from "../src/identity-domain-registry-v2.mjs";
+import { identityAssertionId, identityClaimId } from "../src/identity-provenance-domain.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 
 const fixture = JSON.parse(
@@ -57,6 +50,7 @@ function replaceWithExact37AssertionTable(databasePath) {
 
   database.exec(`
     BEGIN IMMEDIATE;
+    DROP TRIGGER IF EXISTS identity_assertions_registry_pin;
     DROP TRIGGER identity_assertions_no_update;
     DROP TRIGGER identity_assertions_no_delete;
     DROP INDEX idx_identity_assertions_thread_domain;
@@ -94,10 +88,7 @@ function replaceWithExact37AssertionTable(databasePath) {
       UNIQUE (claim_id, revision),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       FOREIGN KEY (supersedes_assertion_id) REFERENCES identity_assertion_records(assertion_id),
-      CHECK (
-        (revision=1 AND supersedes_assertion_id IS NULL) OR
-        (revision>1 AND supersedes_assertion_id IS NOT NULL)
-      )
+      CHECK ((revision=1 AND supersedes_assertion_id IS NULL) OR (revision>1 AND supersedes_assertion_id IS NOT NULL))
     ) STRICT;
 
     INSERT INTO identity_assertion_records
@@ -116,15 +107,45 @@ function replaceWithExact37AssertionTable(databasePath) {
       BEGIN SELECT RAISE(ABORT,'identity_assertion_records is append-only'); END;
     COMMIT;
   `);
-  const schema = database.prepare(
-    "SELECT sql FROM sqlite_master WHERE type='table' AND name='identity_assertion_records'",
-  ).get().sql;
-  assert.equal(schema.includes("'lineage_relation'"), false);
   assert.equal(Number(database.prepare("PRAGMA user_version").get().user_version), 6);
   database.close();
 }
 
-test("same-version #37 database repair preserves v1 rows and admits new v2 claims", () =>
+function v2Candidate(identity) {
+  const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions.find(
+    (item) => item.domain === "passport_name",
+  ).sourceReferences[0];
+  const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "v2-after-37-repair" });
+  const recordedAt = "2026-08-13T04:35:00Z";
+  return {
+    assertionId: identityAssertionId({ claimId, revision: 1, recordedAt }),
+    claimId,
+    revision: 1,
+    threadId: fixture.threadId,
+    domain: "lineage_relation",
+    kind: "source_parent",
+    claimPredicate: { subject: "self", predicate: "has_source_parent", object: "maternal_parent" },
+    meaning: "Mina's mother is a source parent.",
+    provenanceClass: "relational",
+    authorship: { kind: "relationship_shared_world_source", entityId: "fibre.world-kernel" },
+    sourceReferences: [seedEvent],
+    effectiveAt: recordedAt,
+    recordedAt,
+    visibility: "private",
+    status: "current",
+    projectionClass: identityDomainV2Definition("lineage_relation").projectionSection,
+    behavioralStatus: "context_only",
+    admission: {
+      policy: { id: "identity_world_admission", version: "1" },
+      claimDiscipline: { ...IDENTITY_ATOMIC_CLAIM_POLICY_V1 },
+      admittedBy: { entityId: "fibre.world-kernel", kind: "institution", displayName: "Fibre World Kernel" },
+      evidenceClassification: "exogenous",
+      sourceMode: "fibre_derivation",
+    },
+  };
+}
+
+test("same-version #37 repair preserves v1 and safely admits structural v2 claims", () =>
   withDatabase((databasePath) => {
     seed(databasePath);
     replaceWithExact37AssertionTable(databasePath);
@@ -134,58 +155,54 @@ test("same-version #37 database repair preserves v1 rows and admits new v2 claim
     assert.deepEqual(initial.admittedRegistryVersions, ["1"]);
     assert.equal(initial.claimCount, 13);
 
-    const repairedDatabase = new DatabaseSync(databasePath, {
-      readOnly: true,
-      enableForeignKeyConstraints: true,
-    });
+    const repairedDatabase = new DatabaseSync(databasePath, { readOnly: true, enableForeignKeyConstraints: true });
     const repairedSql = repairedDatabase.prepare(
       "SELECT sql FROM sqlite_master WHERE type='table' AND name='identity_assertion_records'",
     ).get().sql;
-    assert.equal(repairedSql.includes("'lineage_relation'"), true);
     assert.equal(repairedSql.includes("registry_version IN ('1','2')"), true);
     assert.deepEqual(repairedDatabase.prepare("PRAGMA foreign_key_check").all(), []);
+    for (const name of ["identity_assertions_registry_pin", "identity_assertions_no_update", "identity_assertions_no_delete"]) {
+      assert.ok(repairedDatabase.prepare("SELECT 1 FROM sqlite_master WHERE type='trigger' AND name=?").get(name));
+    }
     repairedDatabase.close();
 
-    const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions.find(
-      (item) => item.domain === "passport_name",
-    ).sourceReferences[0];
-    const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "v2-after-37-repair" });
-    const recordedAt = "2026-08-13T04:35:00Z";
-    const candidate = {
-      assertionId: identityAssertionId({ claimId, revision: 1, recordedAt }),
-      claimId,
-      revision: 1,
-      threadId: fixture.threadId,
-      domain: "lineage_relation",
-      kind: "source_parent",
-      meaning: "Mina's mother is a source parent.",
-      provenanceClass: "relational",
-      authorship: {
-        kind: "relationship_shared_world_source",
-        entityId: "fibre.world-kernel",
-      },
-      sourceReferences: [seedEvent],
-      effectiveAt: recordedAt,
-      recordedAt,
-      visibility: "private",
-      status: "current",
-      projectionClass: identityDomainV2Definition("lineage_relation").projectionSection,
-      behavioralStatus: "context_only",
-      admission: {
-        policy: { ...IDENTITY_ATOMIC_CLAIM_POLICY },
-        admittedBy: {
-          entityId: "fibre.world-kernel",
-          kind: "institution",
-          displayName: "Fibre World Kernel",
-        },
-        evidenceClassification: "exogenous",
-        sourceMode: "fibre_derivation",
-      },
-    };
+    const candidate = v2Candidate(identity);
     assert.equal(identity.recordAssertion(candidate).registryVersion, "2");
-    assert.deepEqual(
-      identity.verifyThreadIdentityIntegrity(fixture.threadId).admittedRegistryVersions,
-      ["1", "2"],
-    );
+    assert.deepEqual(identity.verifyThreadIdentityIntegrity(fixture.threadId).admittedRegistryVersions, ["1", "2"]);
     identity.close();
+
+    const raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+    const badAssertionId = `ias_${"a".repeat(64)}`;
+    assert.throws(() => raw.prepare(`
+      INSERT INTO identity_assertion_records(
+        assertion_id,claim_id,revision,thread_id,registry_version,domain,kind,provenance_class,
+        authorship_kind,visibility,status,projection_class,behavioral_status,
+        effective_at,recorded_at,supersedes_assertion_id,assertion_json,assertion_digest
+      )
+      SELECT ?,claim_id,2,thread_id,'1',domain,kind,provenance_class,
+        authorship_kind,visibility,status,projection_class,behavioral_status,
+        effective_at,recorded_at,assertion_id,assertion_json,assertion_digest
+      FROM identity_assertion_records WHERE assertion_id=?
+    `).run(badAssertionId, candidate.assertionId), /registry_version is pinned/);
+    raw.close();
+  }));
+
+test("repair fails explicitly before mutation on unsupported historical registry values", () =>
+  withDatabase((databasePath) => {
+    seed(databasePath);
+    replaceWithExact37AssertionTable(databasePath);
+    const raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+    raw.exec("DROP TRIGGER identity_assertions_no_update");
+    raw.prepare("UPDATE identity_assertion_records SET registry_version='999' WHERE rowid=(SELECT min(rowid) FROM identity_assertion_records)").run();
+    raw.close();
+
+    assert.throws(
+      () => openIdentityStore(databasePath),
+      /unsupported recorded registry_version values: 999/,
+    );
+
+    const after = new DatabaseSync(databasePath, { readOnly: true, enableForeignKeyConstraints: true });
+    assert.equal(after.prepare("SELECT count(*) AS n FROM identity_assertion_records WHERE registry_version='999'").get().n, 1);
+    assert.equal(after.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='identity_assertion_records_pre_v2'").get(), undefined);
+    after.close();
   }));
