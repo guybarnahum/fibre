@@ -1,13 +1,39 @@
-import { assertNonEmpty, assertPlainObject } from "./persistence-common.mjs";
+import {
+  assertExactKeys,
+  assertNonEmpty,
+  assertPlainObject,
+  canonicalJson,
+} from "./persistence-common.mjs";
 
-export const IDENTITY_ATOMIC_CLAIM_POLICY = Object.freeze({
+export const IDENTITY_ATOMIC_CLAIM_POLICY_V1 = Object.freeze({
   id: "identity_atomic_material_proposition",
   version: "1",
 });
 
+// Current write policy. Historical rows never validate against this moving alias;
+// they dispatch through the immutable policy witness stored with the row.
+export const IDENTITY_ATOMIC_CLAIM_POLICY = IDENTITY_ATOMIC_CLAIM_POLICY_V1;
+
+export const IDENTITY_CLAIM_STRUCTURE = "subject_predicate_object:1";
+export const MAX_CLAIM_PREDICATE_BYTES = 120;
+
 const LIST_OR_PARAGRAPH_PATTERN = /(?:\r|\n|^\s*[-*•]\s|\n\s*\d+[.)]\s)/m;
-const MULTI_SENTENCE_PATTERN = /[.!?]\s+[A-Z0-9]/;
-const EXPLICIT_BUNDLE_PATTERN = /\b(?:separately|in addition|additionally|another fact|also has|and also|secondly|thirdly)\b/i;
+const MULTI_SENTENCE_PATTERN = /[.!?]\s+[A-Za-z0-9]/;
+const EXPLICIT_BUNDLE_PATTERN = /(?:;|\u2014|\u2013|\b(?:and also|as well as|separately|in addition|additionally|another fact|also has|secondly|thirdly)\b)/i;
+const PREDICATE_PATTERN = /^[a-z0-9][a-z0-9_]{0,63}$/;
+const PREDICATE_COMPONENT_BUNDLE_PATTERN = /(?:\r|\n|;|\u2014|\u2013|\s+and\s+)/i;
+
+function policyKey(policy) {
+  return `${policy.id}:${policy.version}`;
+}
+
+function normalizePolicy(name, policy) {
+  assertPlainObject(name, policy);
+  assertExactKeys(name, policy, ["id", "version"]);
+  assertNonEmpty(`${name}.id`, policy.id);
+  assertNonEmpty(`${name}.version`, policy.version);
+  return { id: policy.id, version: policy.version };
+}
 
 export function assertSingleMaterialProposition(meaning) {
   assertNonEmpty("identity assertion.meaning", meaning);
@@ -29,23 +55,81 @@ export function assertSingleMaterialProposition(meaning) {
   return meaning;
 }
 
-export function assertAtomicClaimAdmission(admission) {
-  assertPlainObject("identity assertion.admission", admission);
-  assertPlainObject("identity assertion.admission.policy", admission.policy);
-  if (
-    admission.policy.id !== IDENTITY_ATOMIC_CLAIM_POLICY.id ||
-    admission.policy.version !== IDENTITY_ATOMIC_CLAIM_POLICY.version
-  ) {
+export function normalizeClaimPredicate(value) {
+  assertPlainObject("identity assertion.claimPredicate", value);
+  assertExactKeys("identity assertion.claimPredicate", value, ["subject", "predicate", "object"]);
+  assertNonEmpty("identity assertion.claimPredicate.subject", value.subject);
+  assertNonEmpty("identity assertion.claimPredicate.predicate", value.predicate);
+  assertNonEmpty("identity assertion.claimPredicate.object", value.object);
+  if (!PREDICATE_PATTERN.test(value.predicate)) {
     throw new TypeError(
-      `registry v2 identity assertions require ${IDENTITY_ATOMIC_CLAIM_POLICY.id}:${IDENTITY_ATOMIC_CLAIM_POLICY.version} admission`,
+      "identity assertion.claimPredicate.predicate must be one lowercase snake_case predicate",
     );
   }
-  return admission;
+  for (const [name, component] of [
+    ["subject", value.subject],
+    ["object", value.object],
+  ]) {
+    if (PREDICATE_COMPONENT_BUNDLE_PATTERN.test(component)) {
+      throw new TypeError(
+        `identity assertion.claimPredicate.${name} must identify one subject/object, not a compound proposition`,
+      );
+    }
+  }
+  const normalized = {
+    subject: value.subject,
+    predicate: value.predicate,
+    object: value.object,
+  };
+  if (Buffer.byteLength(canonicalJson(normalized), "utf8") > MAX_CLAIM_PREDICATE_BYTES) {
+    throw new TypeError(
+      `identity assertion.claimPredicate exceeds ${MAX_CLAIM_PREDICATE_BYTES} UTF-8 bytes`,
+    );
+  }
+  return normalized;
 }
 
-export function assertRegistryV2ClaimDiscipline(assertion) {
+function assertAtomicV1(assertion) {
   assertPlainObject("identity assertion", assertion);
   assertSingleMaterialProposition(assertion.meaning);
-  assertAtomicClaimAdmission(assertion.admission);
+  normalizeClaimPredicate(assertion.claimPredicate);
   return assertion;
 }
+
+const HISTORICAL_DISCIPLINE_VALIDATORS = Object.freeze({
+  [policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1)]: assertAtomicV1,
+});
+
+export function assertRecordedClaimDiscipline(assertion) {
+  assertPlainObject("identity assertion", assertion);
+  assertPlainObject("identity assertion.admission", assertion.admission);
+  const witness = normalizePolicy(
+    "identity assertion.admission.claimDiscipline",
+    assertion.admission.claimDiscipline,
+  );
+  const validator = HISTORICAL_DISCIPLINE_VALIDATORS[policyKey(witness)];
+  if (validator === undefined) {
+    throw new TypeError(
+      `unknown historical identity claim discipline ${policyKey(witness)}`,
+    );
+  }
+  return validator(assertion);
+}
+
+export function assertCurrentClaimDiscipline(assertion) {
+  assertPlainObject("identity assertion", assertion);
+  assertPlainObject("identity assertion.admission", assertion.admission);
+  const witness = normalizePolicy(
+    "identity assertion.admission.claimDiscipline",
+    assertion.admission.claimDiscipline,
+  );
+  if (policyKey(witness) !== policyKey(IDENTITY_ATOMIC_CLAIM_POLICY)) {
+    throw new TypeError(
+      `new registry v2 identity assertions require current claim discipline ${policyKey(IDENTITY_ATOMIC_CLAIM_POLICY)}`,
+    );
+  }
+  return assertRecordedClaimDiscipline(assertion);
+}
+
+// Compatibility alias for existing callers: this is a write-time admission check.
+export const assertRegistryV2ClaimDiscipline = assertCurrentClaimDiscipline;
