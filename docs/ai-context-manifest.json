@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 11,
+  "version": 12,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -21,11 +21,14 @@
         "docs/validation/experiment-lifecycle.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/m2-pr-plan.md",
+        "docs/validation/symbolic-thread-genome-implementation-plan.md",
         "docs/architecture/m2-identity-embodiment-contract.md",
         "docs/architecture/m2-character-formation-model.md",
         "docs/architecture/m2-interior-exterior-situated-identity.md",
         "docs/architecture/m2-developmental-continuity-past-selves.md",
         "docs/architecture/thread-passport-identity-provenance-v1.md",
+        "docs/architecture/thread-genesis-childhood-birth-v1.md",
+        "docs/architecture/symbolic-thread-genome-v1.md",
         "docs/decisions/ADR-0011-memory-photo-obligation.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/architecture/structured-obligations-v1.md",
