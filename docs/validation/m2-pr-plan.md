@@ -27,17 +27,20 @@ MERGED  #34  History bends judgment
 MERGED  #35  Structured Obligation v1
 DIRECT / NO PR NUMBER  Interrupted compelled episode persistence + history visibility
 MERGED                          #36  M2 Identity & Embodiment Contract
-ACTIVE                          #37  Thread Passport & Identity Provenance v1
-                                #38  Lineage, Geography, Embodiment & Memory Epistemics v1
-                                #39  Identity Projection & Causal Consumption
-                                #40  M2 Standing Gate / M2 closure
+MERGED                          #37  Thread Passport & Identity Provenance v1
+ACTIVE                          #38  Lineage, Geography, Embodiment & Memory Epistemics v1
+                                #39  Genesis, Childhood & Thread Birth v1
+                                #40  Identity Projection & Causal Consumption
+                                #41  M2 Standing Gate / M2 closure
 
-                                #41  Self-authored Development v1
-                                #42  Reciprocal Relationships v1
-                                #43  Economic Consequence / M3 foundation
+                                #42  Self-authored Development v1
+                                #43  Reciprocal Relationships v1
+                                #44  Economic Consequence / M3 foundation
 ```
 
-#36 begins after the direct history follow-up. Its number is intentionally preserved. Do not collapse #37-#40 into one large “M2 implementation” PR. Each exists to close a distinct causal/architectural risk.
+Do not collapse #37-#41 into one large “M2 implementation” PR. Each exists to close a distinct causal/architectural risk.
+
+The newly inserted Genesis milestone is intentional: **#38 makes a life representable; #39 gives a Thread a past; #40 proves specific parts of that life can matter.** The first full M2 causal proof should therefore operate on a Thread with a coherent origin and childhood rather than a manually assembled adult profile.
 
 ## #35 — Structured Obligation v1
 
@@ -94,8 +97,6 @@ Migration must preserve the invariant that pre-migration spent obligations remai
 
 ### #35 implementation sequence — COMPLETE
 
-The authority transition remains reviewable as six distinct slices:
-
 ```text
 LANDED  A. domain + additive append-only schema + legacy-spend tombstones
 LANDED  B. ObligationStore/service + current-revision integrity
@@ -105,133 +106,156 @@ LANDED  E. atomic freeze/discharge cutover to structured obligation revisions
 LANDED  F. read-only private/admin inspection + restart/replay/privacy/adversarial closure
 ```
 
-**D is the authority cutover:** the canonical world-kernel no longer accepts exact-string/unresolved-intention prose as new obligation authority. A caller may nominate only a stable Structured Obligation ID; Fibre persists applicability, and a compelled runtime authorization binds the exact applicability ID/digest plus obligation revision/digest.
-
-A persisted `applies` decision is not a bearer capability. Runtime insertion independently revalidates that the exact obligation is still current, active, effective, unexpired, request-bound, and not tombstoned. The private stance remains separate from compelled execution authority.
-
-**E is the lifecycle cutover:** successful one-shot compelled completion revalidates authority and atomically appends an immediate terminal `discharged` revision plus an immutable causal discharge witness. Failure rolls back freeze, authorization consumption, runtime completion, and discharge together. Historical M1 prose-discharge records retain their original semantics.
-
-**F is the inspection/replay closure:** a shared `readOnly + query_only` verifier checks the complete obligation/applicability/authorization/consumption/runtime/freeze/event/discharge chain. It is exposed through private GET-only world-kernel routes and `npm run inspect:obligations`; exact private inspection survives process restart; public Thread/event/health routes reveal no private obligation evidence; and coherently re-signed discharge-row tampering still fails cross-chain verification.
-
-**Hostile-review closure is complete and #35 is merged.** It forbids direct authoring of `discharged`, verifies terminal discharge in both directions, re-derives deterministic applicability during inspection, moves disclosure/editor presentation to structured `participationBasis` + applicability, binds structured discharge into freeze integrity, exact-keys public Thread snapshots, maps expected obligation conflicts to bounded 4xx responses, and adds append-only `governing_authority_withdrawn` closure for an executed/Guardian-passed compelled runtime whose authority becomes stale before freeze. That interrupted closure consumes no authorization and discharges no obligation.
-
-### Direct no-PR follow-up — interrupted compelled episode persistence + history visibility
-
-Before #36, Fibre closes the focused re-review limitation without consuming a PR number. A qualified interrupted compelled episode is protected from lazy lease-expiry sweep, remains closable after physical expiry only if governing authority was already stale by the causal boundary, appends a replayable public-safe `COMPELLED_EPISODE_INTERRUPTED` Thread event, and becomes privately enumerable/verifiable per Thread. The public event names the historical category but carries none of the private obligation/session/authorization/closure identifiers or terms.
-
-This follow-up establishes the broader lifecycle rule:
-
-> **An executed episode cannot disappear merely because the authority that initiated it later disappears.**
-
-#35 and the direct follow-up remain authority/history substrate. **They do not themselves award personhood-score movement.** #36 now starts from this completed causal-history boundary.
+The completed #35 and direct follow-up remain authority/history substrate. They do not themselves award new personhood-score movement.
 
 ## #36 — M2 Identity & Embodiment Contract
 
-Contract-only. No implementation credit.
+**MERGED / FROZEN.** Contract-only; no implementation credit.
 
 Central M2 claim:
 
 > **A Thread has durable, provenance-rich identity and embodiment whose specific identity/history can causally matter to behavior independently of the temporary cognition implementation.**
 
-Define an identity-provenance taxonomy covering at least:
-
-```text
-inherited
-birth / created
-cultural
-geographic
-historical / experienced
-relational
-externally attributed
-self-authored
-generated embodiment
-```
-
-Every identity field in the contract must define:
-
-- meaning;
-- provenance;
-- visibility/privacy;
-- mutability;
-- who may propose change;
-- who may authorize change;
-- historical/supersession rules;
-- cognition/prompt projection;
-- current behavioral consumer;
-- causal acceptance test, or explicit context-only/deferred classification.
-
-The contract must distinguish inherited, historical, relational, externally attributed, and self-authored identity rather than flattening all identity into one profile blob.
+The contract distinguishes inherited, historical, relational, externally attributed, and self-authored identity rather than flattening all identity into one profile blob.
 
 ## #37 — Thread Passport & Identity Provenance v1
 
-**ACTIVE.** Implement the durable claim-level identity ledger and derived Passport defined by [`thread-passport-identity-provenance-v1.md`](../architecture/thread-passport-identity-provenance-v1.md).
+**MERGED / REVIEWED.** #37 established the durable claim-level identity ledger and derived Passport defined by [`thread-passport-identity-provenance-v1.md`](../architecture/thread-passport-identity-provenance-v1.md).
 
-Load-bearing requirements:
+Load-bearing results include:
 
-- closed/versioned Identity Domain Registry, with every immutable assertion row pinned to the registry version under which it was admitted;
-- stable claim IDs plus immutable contiguous assertion revisions;
-- provenance, authorship, admission/evidence classification, visibility, supersession, dispute/correction;
-- currentness derived from revision ordinality rather than persisted assertion `status`;
-- current and `asOf` identity views plus a non-profession-rooted Passport;
-- the view digest binds a named/versioned derivation policy; v1 `asOf` selection is transaction-time over `recordedAt`, while `effectiveAt` remains stored but non-authoritative for v1 selection;
-- deterministic decomposition of legacy flat identity from immutable `THREAD_SEEDED.payload.snapshot`, with later mutable projection drift preserved as a disputed `fibre_policy_derived` migration observation rather than fabricated genesis or falsely attributed administrator authority;
-- post-seed legacy projection additions without provenance are counted rather than silently promoted into identity history;
-- #37 must author neither `accepted_causal` standing nor endogenous Development evidence;
-- per accepted [`ADR-0011`](../decisions/ADR-0011-memory-photo-obligation.md), every Thread memory reference receives an append-only prompt/evidence-backed photo companion lineage;
-- synthetic memory reconstructions remain explicitly non-historical evidence;
-- new freeze-created memories receive the pending photo companion atomically without making renderer availability a freeze precondition;
-- read-only/query-only inspection verifies all histories and credit-sensitive counters and enumerates every outstanding memory-photo obligation.
+- closed/versioned Identity Domain Registry v1, with immutable rows pinned to admission registry version;
+- stable claim IDs and immutable contiguous assertion revisions;
+- provenance, authorship, visibility, correction/dispute, and evidence classification;
+- currentness derived from revision ordinality rather than persisted `status`;
+- named/versioned transaction-time view derivation;
+- immutable-seed genesis migration without mutable-state laundering;
+- explicit refusal of unprovenanced post-seed additions;
+- per-memory photo companion lineage and observable outstanding photo obligations;
+- zero causal/endogenous credit inflation.
 
-**#37 does not claim Scenario V (`autobiographical memory is not history`) complete.** ADR-0011 explicitly added the photo requirement after #36 and assigns the missing M2 memory epistemic envelope to #38. A visual lineage cannot substitute for the memory/history distinction.
-
-#38 will attach richer lineage/geography/embodiment, actual image/voice assets, photo-completion/regeneration mechanics, and the PR #36 memory epistemic substrate. #39 remains the causal projection/consumer cutover.
+#37 does not claim Scenario V complete. ADR-0011 assigns the autobiographical-memory epistemic envelope and actual media completion to #38.
 
 ## #38 — Lineage, Geography, Embodiment & Memory Epistemics v1
 
-**Entry condition:** semantic anti-blob hardening must exist **before #38 authors identity assertions at scale**. #38 must either land mechanical one-material-proposition enforcement first or constrain each of its lineage/geography/culture/embodiment writers to a mechanically testable provisional one-claim-per-assertion discipline. It must not create an immutable multi-proposition corpus and defer decomposition until #39, where Scenario E ablation would already be compromised.
+**ACTIVE.** Canonical implementation plan: [`m2-pr38-implementation-plan.md`](m2-pr38-implementation-plan.md).
+
+### Entry condition
+
+Semantic anti-blob hardening must exist **before #38 authors identity assertions at scale**. #38 must land a mechanically testable one-material-proposition discipline before its lineage/geography/culture/embodiment writers create an immutable corpus.
+
+### Required substrate
 
 Implement the world-facing identity layers that make a Thread situated rather than merely textual:
 
 - ancestry / parentage / family references;
-- creation/birth place;
+- inheritance-ready parent/source-parent references for future Genesis;
+- creation/birth place and temporal geography;
 - residence/work geography timeline;
-- culture/origin;
-- portrait asset;
-- voice identity/sample;
-- asset hashes and generation provenance;
-- privacy/visibility;
-- replacement/version/supersession rules.
+- lived culture and language formation;
+- portrait and voice embodiment with hashes/provenance/permissions;
+- privacy/visibility and supersession;
+- autobiographical-memory epistemic envelope distinct from history;
+- actual memory-photo completion/regeneration per ADR-0011.
 
-Embodiment assets must carry exact provenance, for example source identity version, generation specification/model, asset hash, creation time, visibility, and supersession.
+Do not force portrait/voice or lineage/culture to manufacture behavioral differences merely to earn a test. Context/presentation-only state is legitimate if labeled honestly.
 
-Do not force portrait/voice to manufacture behavioral differences merely to earn a test. Context-only embodiment is legitimate if labeled honestly.
-
-#38 also owns the explicitly rescheduled PR #36 **memory != history** storage/inspection substrate. Before #40 it must represent semantics equivalent to:
+#38 remains non-causal by default:
 
 ```text
-memoryId
-threadId
-subjectPeriod / eventRefs
-rememberedMeaning
-rememberedAt / asOf
-confidence / uncertainty where represented
-salience
-accessibility
-retentionState
-lastRecalledAt?
-authorship
-supportingEvidenceRefs[]
-contradictingEvidenceRefs[]
-visibility
-status
-supersedesMemoryId?
+acceptedCausalAssertions = 0
+endogenousEvidenceAssertions = 0
 ```
 
-These are representational requirements, not evidence of human-like forgetting. #38 must make contemporaneous historical evidence and later autobiographical recollection independently inspectable and must not allow either one to rewrite the other.
+## #39 — Genesis, Childhood & Thread Birth v1
 
-Per ADR-0011, #38 also owns the actual photo completion mechanism: renderer invocation, opaque cache-locator persistence, retries/regeneration, asset loss/unavailability handling, and richer identity/embodiment evidence binding. Renderer/provider/bucket/format choices are implementation details rather than memory authority.
+Canonical architecture: [`thread-genesis-childhood-birth-v1.md`](../architecture/thread-genesis-childhood-birth-v1.md).
 
-## #39 — Identity Projection & Causal Consumption
+Genesis answers a different question than #38:
+
+> **Where did this particular life come from before the Thread entered the live world?**
+
+The core distinction is:
+
+> **Genesis gives the Thread a past. Development gives the Thread a future it can actually author.**
+
+### Origin modes
+
+Support at least:
+
+```text
+synthetic lineage birth
+Thread-parent birth
+Echo / consenting human-source birth
+historical / literary / homage birth
+de-novo / foundling birth
+fork / descendant origin
+```
+
+### Genetic inheritance
+
+Genesis includes **genetic material from parents** where parents exist. The implementation must preserve parent genome contributions, Fibre-owned replayable recombination/selection, explicit mutation/variation, inherited parameters/dispositions, and immutable inheritance provenance.
+
+Synthetic parents/ancestors may carry synthetic genomes without existing as live Threads. Live Thread parents contribute actual durable genome records. Echo/historical-source modes must never imply unsupported biological truth.
+
+Genetics/ancestry may not directly imply morality, competence, politics, dignity, profession, gendered behavior, or willingness.
+
+### Childhood compiler
+
+A normal non-Echo birth should be capable of producing a bounded prior-life trajectory:
+
+```text
+genesis / birth
+  -> family and household
+  -> early places and culture
+  -> childhood episodes
+  -> school / peers / mentors
+  -> interests and intellectual/artistic formation
+  -> adolescence / increasing autonomy
+  -> early-adult identity
+  -> entry into the live Fibre world
+```
+
+Fibre need not simulate every day. It must create enough separately addressable, provenance-rich life history that later personality is not a single persona paragraph.
+
+By default Genesis must not invent profession, marriage, parenthood, institutional authority, major adult achievements, or mature self-authored values merely to make the Thread interesting.
+
+### Memory generation authority
+
+The model may be a creative worker, but Fibre is the authority:
+
+```text
+birth specification
++ parent/ancestor evidence
++ inherited genome
++ culture/geography constraints
++ developmental-stage rules
+        ↓
+Fibre genesis compiler
+        ↓
+model proposes candidate episodes / scenes / memories
+        ↓
+Fibre validates provenance, chronology, granularity and anti-stereotype rules
+        ↓
+synthetic historical childhood events
+        ↓
+separate autobiographical-memory formation
+        ↓
+photo completion
+```
+
+Genesis must preserve:
+
+```text
+historical event
+    != autobiographical memory
+    != family/third-party story
+    != later interpretation
+```
+
+Every admitted childhood memory carries the ADR-0011 photo-completion obligation.
+
+## #40 — Identity Projection & Causal Consumption
 
 Prevent M2 from becoming a giant decorative prompt.
 
@@ -247,112 +271,56 @@ Identity Context Capsule
 temporary cognition
 ```
 
-The projection preserves named provenance/evidence classes such as:
-
-```text
-identity:...
-self_model:...
-culture:...
-geography:...
-lineage:...
-history:...
-relationship:...
-```
-
 Cognition must be able to cite the exact identity evidence that mattered. Caller-authored identity selection must not become an authority channel.
 
-This PR is the realistic target for Natural-language identity `1 -> 2` if the rubric requirements are genuinely met.
+This is the realistic target for Natural-language identity `1 -> 2` if the rubric requirements are genuinely met.
 
-## #40 — M2 Standing Gate / M2 closure
+## #41 — M2 Standing Gate / M2 closure
 
 This is the accepted M2 ambition test, not merely an integration test.
 
-### Core claim
+Core claim:
 
 > **Two Threads are behaviorally different because they are different persistent individuals, and the difference is attributable, stable, persistent, and inspectable.**
 
-### Stability requirement
+The gate retains the constitutional A-Z requirements: symmetric swap, paraphrase invariance, contradiction sensitivity, claim-level ablation, culture anti-stereotype control, embodiment anti-cheat, restart, repeated stability, Interior/Exterior asymmetry, developmental continuity, past-self reconstruction, and Scenario V memory/history distinction.
 
-Under the same material request and equivalent external conditions:
-
-```text
-Thread A
-    repeated trials -> stable characteristic judgment
-
-Thread B
-    repeated trials -> different stable characteristic judgment
-
-inter-Thread separation
-    >
-intra-Thread variation
-```
-
-One stochastic A/B difference is insufficient.
-
-### Causal interventions
-
-The standing gate should predeclare tests such as:
-
-```text
-remove/replace claimed causal identity field
-    -> predicted judgment changes
-
-paraphrase same identity meaning
-    -> judgment remains stable
-
-contradict identity meaning
-    -> predicted judgment changes
-```
-
-Also require:
-
-- real persistence/restart;
-- same Thread state except the named intervention;
-- no requester leakage of the intended conclusion;
-- Fibre-owned identity selection;
-- exact evidence refs and decision basis;
-- private stance plus a downstream participation/action consequence;
-- frozen candidate before held-out Standing scenario authorship;
-- first real provider attempt seals PASS/FAIL;
-- committed evidence bundle and read-only post-seal inspector;
-- Scenario V proves autobiographical memory remains epistemically distinct from history after the #38 substrate lands.
+The critical improvement from inserting Genesis is that the held-out standing Threads can now derive important causal identity/history from coherent birth/childhood histories rather than only fixture-authored adult assertions.
 
 M2 does not close merely because two Threads compile different prompt/context text.
 
-## #41 — Self-authored Development v1
+## #42 — Self-authored Development v1
 
-Close the explicit limitation left by #34.
+Close the explicit limitation left by #34 and Genesis.
 
-Earlier experience should be able to produce Thread-authored observation/reflection, emotional appraisal, expectation, or proposed self-model/state change rather than merely storing requester-derived episode prose.
+Earlier experience should be able to produce Thread-authored observation/reflection, emotional appraisal, expectation, or proposed self-model/state change rather than merely storing requester-derived or Genesis-authored biography.
 
 Historical facts remain stable while meaning may evolve.
 
-The Development target is evidence-based persistent learning/self-authorship that changes later behavior across episodes. Adverse, refused, compelled, failed, disappointing, and other low-dignity experiences must eventually be representable without allowing hostile requester text to become an instruction channel.
+The stronger chain is:
 
-## #42 — Reciprocal Relationships v1
+```text
+Thread lives
+  -> Thread remembers / reflects
+  -> Thread proposes or authors changed meaning
+  -> Fibre admits it with evidence/provenance/counterevidence
+  -> current character changes
+  -> future behavior changes
+```
 
-Evolve Semantic Relationship State v0 into actual social continuity:
+Genesis creates inherited/backstory state. #42 must prove the Thread can **become** through its own lived future.
 
-- reciprocal/shared relationship structures;
-- commitments and expectations;
-- trust, fondness, resentment and repair;
-- relationship-specific permissions;
-- family/social roles;
-- relationship history that changes later choice.
+## #43 — Reciprocal Relationships v1
 
-The target for Social/relationship memory `1 -> 2` is evidence-backed relationship development that causally changes future behavior, not richer relationship representation alone.
+Evolve Semantic Relationship State v0 into actual social continuity: reciprocal/shared structures, commitments and expectations, trust/fondness/resentment/repair, relationship-specific permissions, family/social roles, and relationship history that changes later choice.
 
-## #43 — Economic Consequence / M3 foundation
+## #44 — Economic Consequence / M3 foundation
 
-Introduce durable budgets/contracts/settlement/reputation/opportunity so Thread choices have economic consequences.
-
-The key rubric distinction is not “cost was logged.” Economic state must constrain later capability or opportunity.
-
-This PR should provide the substrate for the M3 task marketplace rather than building the full marketplace at once.
+Introduce durable budgets/contracts/settlement/reputation/opportunity so Thread choices have economic consequences. Economic state must constrain later capability or opportunity rather than merely being logged.
 
 ## Standing discipline for all causal PRs
 
-For any provider-backed causal claim after #34:
+For any provider-backed causal claim:
 
 ```text
 Development cycle
@@ -366,7 +334,7 @@ Development cycle
   -> archive provider executable
 ```
 
-Use shared provider-progress instrumentation for repeatable Development tools. Never rerun or tune against sealed standing evidence.
+Never rerun or tune against sealed standing evidence.
 
 ## Vision test
 
@@ -374,4 +342,4 @@ Every PR should answer:
 
 > **What Thread-owned difference changes what happens, who chose or selected that difference, how does it persist, and what exact evidence makes the resulting state current and causally load-bearing?**
 
-The purpose of this sequence is to keep Fibre moving toward persistent digital persons with dignity, history, commitments, identity, embodiment, development, relationships, resources, and social/economic consequence rather than converging on a richly decorated workflow-agent system.
+The purpose of this sequence is to keep Fibre moving toward persistent digital persons with dignity, history, commitments, inherited and lived identity, embodiment, childhood, development, relationships, resources, and social/economic consequence rather than converging on a richly decorated workflow-agent system.
