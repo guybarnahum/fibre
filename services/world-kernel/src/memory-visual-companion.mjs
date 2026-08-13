@@ -73,7 +73,9 @@ function assertCacheLocator(name, value) {
   assertNonEmpty(name, value);
   const match = /^([a-z][a-z0-9+.-]*):\/\/.+$/i.exec(value);
   if (match === null || !MEMORY_CACHE_LOCATOR_SCHEMES.has(match[1].toLowerCase())) {
-    throw new TypeError(`${name} must use a supported opaque cache locator scheme`);
+    throw new TypeError(
+      `${name} must use a supported opaque cache locator scheme (for example s3:// cache locator or cache:// locator)`,
+    );
   }
 }
 
