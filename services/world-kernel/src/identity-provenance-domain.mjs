@@ -23,6 +23,7 @@ import {
   identityDomainV2Definition,
 } from "./identity-domain-registry-v2.mjs";
 import {
+  IDENTITY_ATOMIC_CLAIM_POLICY,
   assertCurrentClaimDiscipline,
   assertRecordedClaimDiscipline,
   normalizeClaimPredicate,
@@ -407,6 +408,7 @@ export function identityAssertionDigest(
 function bootstrapAdmission() {
   return {
     policy: { id: "legacy_identity_bootstrap", version: "1" },
+    claimDiscipline: { ...IDENTITY_ATOMIC_CLAIM_POLICY },
     admittedBy: {
       entityId: "fibre.world-kernel",
       kind: "institution",
@@ -435,6 +437,11 @@ function bootstrapAssertion(thread, sourceEventId, {
     threadId: thread.threadId,
     domain,
     kind,
+    claimPredicate: {
+      subject: thread.threadId,
+      predicate: "seed_identity",
+      object: key,
+    },
     meaning,
     provenanceClass,
     authorship: {
