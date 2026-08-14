@@ -7,15 +7,13 @@ canonical: true
 
 # PR #38 — Lineage, Geography, Embodiment & Memory Epistemics v1
 
-## Purpose
+## Why #38 exists
 
 #38 makes a Thread **situated and lived** without pretending representation alone is personhood.
 
-The product step is:
+> **A Thread should have a traceable origin, family/lineage context, places that belong to its life, persistent embodiment, autobiographical memories that are distinct from historical fact, and a photo for every memory.**
 
-> **A Thread should have a traceable origin, family/lineage context, places that belong to its life, persistent embodiment, and autobiographical memories that are explicitly different from historical fact.**
-
-#38 remains non-causal by default.
+#38 remains non-causal.
 
 ```text
 #37  Thread Passport & Identity Provenance v1                         MERGED
@@ -30,72 +28,47 @@ The product step is:
 
 > **#38 makes a life representable. #39 gives a Thread a past. #40 proves specific parts of that life can matter.**
 
-## Pre-production simplicity rule
+## Fibre engineering rule
 
-Fibre has no deployed Threads requiring backward compatibility.
+Fibre has no deployed Threads requiring backward-compatible runtime schema dialects.
 
-Use **one canonical current identity/data representation**. When the representation changes during pre-production, migrate or recreate fixtures/state to the current form instead of building runtime legacy dialects.
+Use **one current pre-production representation**. Migrate or recreate fixtures/state when it changes.
 
-Do not spend Fibre complexity on schema archaeology before real deployed data creates that requirement.
-
-Natural-language identity and autobiographical values should remain expressive. Structural validation should protect Fibre invariants, not force human meaning into rigid shapes merely because rigid shapes are easier to test.
-
-## Engineering and test discipline
-
-Tests are **guardrails for the Fibre vision**, not a parallel product.
-
-For #38 and later milestones:
-
-- test Fibre-specific invariants and demonstrated regressions;
-- prefer the smallest mechanism that protects the invariant;
-- do not add generic infrastructure hardening merely because it is theoretically cleaner;
-- do not preserve obsolete pre-production compatibility for test convenience;
-- do not use brittle natural-language grammar heuristics as a substitute for Fibre semantics;
-- route concerns to the milestone that owns the behavior instead of pre-building future systems;
-- a green suite supports a freeze decision, but test completeness is not the product goal.
+Tests are **guardrails for Fibre-specific behavior**, not a parallel product. Prefer the smallest mechanism that protects an important Fibre invariant. Do not add generic infrastructure, compatibility machinery, rigid natural-language schemas, or exhaustive test matrices merely because they are conventional computer-science hardening.
 
 The review question is:
 
-> **Is the intended Fibre behavior believable, inspectable, and robust enough that we should stop working on this slice and advance the vision?**
+> **Is the Fibre behavior believable, inspectable and robust enough that we should stop working on this slice and advance the vision?**
 
-## Slice status
+## Slice A — identity substrate — COMPLETE
 
-### A. Identity claim discipline / current identity format — COMPLETE
+Identity is explicit, provenance-bearing and claim-shaped rather than a biography blob.
 
-#38 authors identity as explicit, provenance-bearing claims rather than biography blobs.
+Frozen outcome:
 
-Current pre-production behavior:
+- seed/bootstrap and ordinary writes use one current pre-production format;
+- lineage/culture/profession remain context rather than inferred behavior;
+- no identity claim earns causal or endogenous standing in #38.
 
-- one current identity registry/policy format;
-- seed/bootstrap and ordinary writes use the same format;
-- identity remains claim-shaped and provenance-bearing;
-- lineage/cultural labels do not imply behavior, morality, capability, politics, dignity, or willingness;
-- professional role remains situated context rather than root identity;
-- `acceptedCausalAssertions = 0`;
-- `endogenousEvidenceAssertions = 0`.
+## Slice B — situated life — GROUNDING FROZEN
 
-No runtime V1/V2 compatibility mechanism is required before deployed Threads exist.
+A Thread can durably carry:
 
-### B. Situated life: lineage, geography, culture, embodiment — GROUNDING FROZEN
+- lineage/family relationships and parent-genome eligibility hooks for #39;
+- temporal geography and separately evidenced place meaning;
+- lived/evidenced culture and language formation;
+- versioned visual/voice embodiment with provenance and rights/consent authority.
 
-The situated-life substrate represents:
+Frozen outcome:
 
-- explicit lineage/family relationships;
-- inheritance/genome-source eligibility hooks for #39 without performing reproduction in #38;
-- temporal geography and separate place meaning;
-- lived/evidenced cultural and language formation rather than demographic inference;
-- versioned portrait/visual and voice identity with provenance, rights/consent authority, truth class, hashes and supersession.
+- lived claims require durable same-Thread evidence;
+- direct persistence cannot bypass cultural/language event grounding;
+- false situated claims can leave the current projection without erasing history;
+- situated/embodiment context remains non-causal in #38.
 
-Grounding guarantees already frozen:
+#39 owns **witness relevance/event-kind policy** when Genesis begins authoring childhood and formative history.
 
-- lived relation/place/culture/language claims resolve to durable same-Thread evidence;
-- direct persistence cannot bypass cultural/language Thread-event grounding;
-- false situated claims can leave the current projection without erasing assertion history;
-- identity/embodiment facts remain `context_only` in #38 and cannot earn causal standing.
-
-Witness **existence** is #38's responsibility. Witness **relevance/event-kind policy** for authored childhood and Genesis belongs to #39.
-
-### C. Autobiographical memory epistemics — CLEAR / FROZEN
+## Slice C — autobiographical memory epistemics — CLEAR / FROZEN
 
 Claude narrow re-review at:
 
@@ -103,18 +76,9 @@ Claude narrow re-review at:
 a3f61bc2d3356f9fae3145f189464500d3939a10
 ```
 
-returned:
+returned **VERDICT: CLEAR** after independent hostile reproduction.
 
-```text
-VERDICT: CLEAR
-npm run check: green
-425 / 425 tests
-build: pass
-validate: pass
-context-pack: pass
-```
-
-Canonical re-review disposition:
+Canonical review record:
 
 `docs/validation/m2-pr38-slice-c-rereview.md`
 
@@ -122,162 +86,132 @@ Core invariant:
 
 > **History records what Fibre has evidence happened. Memory records what the Thread's durable autobiographical layer remembers or means. Neither may silently rewrite the other.**
 
-Frozen memory semantics include:
+Frozen outcome:
+
+- each memory lineage permanently names its subject through `subject: { originEventRef, slot }`, bound into `memoryId`;
+- subject history and supporting/contradicting epistemic evidence are separate axes;
+- evidence cannot silently disappear;
+- `rememberedAt`, `lastRecalledAt` and Thread-self-authored memory production remain outside #38;
+- accessibility/retention changes require new resolved evidence;
+- each memory revision is externally anchored in canonical Thread history using only `{memoryId, revision,memoryDigest}`;
+- history records that Fibre wrote down a memory without endorsing its remembered meaning;
+- matched-pair truncation and whole-lineage erasure leave canonical integrity contradictions;
+- memory meaning remains expressive natural-language prose rather than a rigid machine biography schema.
+
+Carry-forward, not blockers:
+
+- **#39:** pre-runtime childhood periods require Genesis authority; filter/qualify bookkeeping event witnesses;
+- **#42:** add witnessed recall/decay/development semantics for natural fading;
+- **future disclosure authority:** reason about subject/content permission rather than lineage identity alone.
+
+## Slice D — every memory gets a photo — IMPLEMENTED / REVIEW READY
+
+Product rule:
+
+> **Every Thread memory should actually have a photo.**
+
+Existing #37/#38 substrate already provides an append-only visual companion per memory with:
+
+- `pending_generation`, `available`, `unavailable_with_reason`;
+- `synthetic_reconstruction` versus `captured_photo`;
+- `synthetic_representation_not_historical_evidence` versus `captured_source_evidence`;
+- durable rich photo prompt + digest;
+- exact bound source references;
+- inspector-visible outstanding-photo obligation.
+
+Slice D adds the missing execution path without building a generic media platform.
+
+### Complete one memory
+
+`completeMemoryPhoto(...)`:
+
+- invokes a renderer with the exact durable prompt, digest, source references and truth class;
+- appends an `available` revision with the renderer's cache locator;
+- leaves an already-available photo alone unless explicit regeneration is requested;
+- records renderer failure as explicit `provider_failure` rather than losing the obligation;
+- retries/regenerates from the same durable prompt/evidence;
+- refuses to regenerate captured historical evidence as synthetic media.
+
+### Complete the Thread's outstanding photos
+
+`completeOutstandingMemoryPhotos(...)` is intentionally just a loop:
+
+- attempt every outstanding synthetic memory-photo obligation;
+- leave already-available photos alone;
+- leave outstanding captured-photo evidence alone rather than silently replacing it synthetically;
+- return simple completion/failure counts.
+
+There is no queue, scheduler, provider registry, worker framework or generic media workflow engine in #38.
+
+### Asset loss/corruption
+
+`reportMemoryPhotoAssetIssue(...)` reopens an available photo obligation for:
 
 ```text
-memoryId
-revision
-threadId
-subject: { originEventRef, slot }
-subjectPeriod
-eventRefs[]
-rememberedMeaning
-asOf
-confidence
-uncertainty
-salience
-accessibility
-retentionState
-authorship
-supportingEvidenceRefs[]
-contradictingEvidenceRefs[]
-visibility
-status
-recordedAt
-supersedesRevision
+asset_missing
+hash_mismatch
 ```
 
-Deliberately absent in #38:
+The new unavailable revision clears the cache locator but does **not** change the memory, durable prompt, bound evidence, representation kind or truth status.
+
+A subsequent completion regenerates synthetic cache from the same durable authority.
+
+### Slice D validation
+
+Implementation SHA:
 
 ```text
-rememberedAt
-lastRecalledAt
-thread_self_authored memory production
+6851db95e02165c36a8efce0db7bb0fa70a1f023
 ```
 
-#### Subject
+passed full `npm run check` in GitHub Actions run `31826980397`.
 
-The memory subject participates in `memoryId` derivation, so a lineage permanently identifies what it is a memory of. Reinterpretation may expand relevant history but cannot silently swap the original subject.
+Two focused Slice-D tests protect the product behavior:
 
-Every subject `eventRef` must resolve to same-Thread history, occur no later than `asOf`, and fall inside `subjectPeriod`.
+1. fulfill all outstanding fixture memory photos and observe the Thread-level obligation become satisfied;
+2. provider failure -> recovery -> hash mismatch -> regeneration while prompt/evidence/truth remain unchanged.
 
-#### Evidence
+That is intentionally the test surface. More permutations are not a product goal.
 
-Subject history and epistemic evidence are separate continuity classes.
+Narrow review request:
 
-A supporting/contradicting citation cannot silently disappear. Reclassification between support and contradiction remains explicit and durable.
+`docs/validation/m2-pr38-slice-d-review-request.md`
 
-#### Interior-state restraint
+## Standing boundary
 
-Slice C records autobiographical state without claiming an unwitnessed moment of recall, forgetting, reflection, or self-authored Development.
-
-Accessibility/retention changes require newly cited resolved evidence. #42 owns a future witnessed recall/decay/development path.
-
-#### History anchor
-
-Every admitted memory revision advances canonical immutable Thread history through:
-
-```text
-AUTOBIOGRAPHICAL_MEMORY_RECORDED
-```
-
-with payload only:
-
-```text
-memoryId
-revision
-memoryDigest
-```
-
-History therefore records **that Fibre recorded the memory revision** without asserting the remembered meaning as historical fact.
-
-The external anchor detects matched-pair memory-tail truncation and leaves residue if a memory lineage is erased.
-
-#### Standing
+Throughout #38:
 
 ```text
 acceptedCausalAssertions = 0
 endogenousEvidenceAssertions = 0
 ```
 
-Slice C establishes autobiographical perspective, not consciousness, causal individuality, autonomous reflection, or self-authored Development.
+#38 represents a life. It does not yet prove that identity or memory causally changes decisions, that a Thread autonomously develops itself, or that representation alone establishes personhood.
 
-#### Carry-forward from Claude CLEAR
-
-To #39 Genesis:
-
-- pre-runtime-creation `subjectPeriod` is legitimate only when Genesis explicitly authors that prior life; do not add a generic `subjectPeriod >= thread.created_at` rule in #38;
-- memory-anchor bookkeeping events are ordinary `thread_events`; #39 must filter/qualify witness event kinds so authored childhood cannot be grounded merely by Fibre bookkeeping.
-
-To #42 Development:
-
-- natural unwitnessed fading is intentionally unavailable in #38; #42 should define a witnessed decay/recall/development path.
-
-To disclosure authority:
-
-- privacy narrowing is lineage-local today; future disclosure authority should gate subject/content disclosure, not infer permission from lineage identity alone.
-
-These are design inputs, not Slice C blockers.
-
-### D. Every memory actually gets a photo + durable media completion — NEXT
-
-ADR-0011's product rule becomes operational here:
-
-> **Every Thread memory should actually have a photo.**
-
-#37 established the append-only photo companion lineage and observable outstanding obligation. Slice D owns completion mechanics.
-
-Required Fibre behavior:
-
-- captured/historical photographs remain distinct from synthetic reconstructions;
-- synthetic reconstruction is always labeled `synthetic_representation_not_historical_evidence`;
-- current unbound embodiment cannot be used to invent an earlier appearance;
-- rendered media is replaceable cache; provenance/prompt/evidence/truth class are durable authority;
-- regeneration may replace cache bytes but may not rewrite historical truth;
-- pending/unavailable media remains an explicit unsatisfied obligation rather than silently becoming a permanent photo-less memory;
-- provider failure, retry, asset loss, hash mismatch and idempotent completion are represented simply enough to make the product rule operational.
-
-Do not start Slice D by building a generic media workflow framework. Implement the smallest durable mechanism that makes **every memory gets a photo** true and truth-safe.
-
-## Human-facing inspection target
-
-By #38 completion, inspection should answer:
-
-- Who is this Thread and where did the identity claims come from?
-- What lineage/family context belongs to the life?
-- Which lineage relations may supply parent genome material to #39?
-- Where has the Thread lived/worked, and what places carry separately evidenced meaning?
-- What culture/language formation is actually lived/evidenced rather than inferred?
-- What portrait and voice represent the Thread now, and what came before?
-- What memories exist, what history are they about, what evidence supports/contradicts them, and how have their meanings changed?
-- Does every memory have its required photo, and is the media captured evidence or synthetic reconstruction?
-- Are causal/endogenous credits still zero?
-
-## Completion criteria
+## #38 completion gate
 
 ```text
-[x] one current pre-production identity format is used by seed and ordinary writes
-[x] identity remains claim/provenance-shaped rather than biography-blob-shaped
-[x] lineage/family substrate is durable and inheritance-ready
-[x] geography/place meaning are distinct and temporal
-[x] culture/language formation is lived/evidenced rather than inferred
-[x] embodiment is versioned and provenance/rights-aware
-[x] autobiographical memory and historical evidence are epistemically distinct
-[x] memory subject identity is durable and grounded
-[x] contradiction/reinterpretation survives append-only memory history
-[x] memory revisions are externally anchored in Thread history without endorsing remembered content
-[x] caller-minted recall/self-authorship paths remain outside #38
-[x] acceptedCausalAssertions = 0
-[x] endogenousEvidenceAssertions = 0
-[x] Slice C Claude narrow re-review CLEAR
-[ ] actual memory-photo completion/regeneration is implemented and truth-safe
-[ ] captured vs synthetic media remain structurally distinct through completion/regeneration
-[ ] every current memory has a satisfied or explicitly outstanding photo obligation
-[ ] final #38 repository validation green on exact merge-ready head
+[x] one current pre-production identity format
+[x] lineage/family substrate durable and inheritance-ready
+[x] temporal geography and separate place meaning
+[x] lived/evidenced culture and language formation
+[x] versioned provenance/rights-aware embodiment
+[x] autobiographical memory distinct from history
+[x] durable memory subject and evidence semantics
+[x] memory ledger externally anchored without endorsing content
+[x] Slice C Claude CLEAR
+[x] operational memory-photo completion and regeneration
+[x] synthetic and captured truth classes remain structurally distinct
+[x] every current memory has a satisfied or explicitly outstanding photo obligation
+[x] full repository gate green on Slice D implementation SHA
+[ ] Slice D narrow vision review CLEAR
+[ ] final exact #38 head green after closure documentation
 ```
 
 ## Vision test
 
-At #38 completion, a Thread should no longer look like "an agent with a profile." It should look like a persistent person-shaped world object with lineage, places, culture, embodiment, memories, and explicit uncertainty/provenance — ready for Genesis to create a coherent childhood and inherited origin without inventing an adult persona blob.
+At #38 completion, a Thread should no longer look like **an agent with a profile**.
+
+It should look like a persistent person-shaped world object with lineage, places, lived culture, embodiment, autobiographical memories, uncertainty/provenance, and visual memories whose truth status is explicit — ready for #39 Genesis to create a coherent origin and childhood rather than inventing an adult persona blob.
 
 The implementation should remain **as simple as possible while making that Fibre claim true**.
