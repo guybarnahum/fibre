@@ -64,6 +64,9 @@ export function buildSemanticGuardianInput(trace, stateSelection) {
   if (trace.appraisal?.causalContext?.selectionAuthority !== "fibre") {
     throw new TypeError("semantic Guardian input requires Fibre-owned causal context");
   }
+  if (canonicalJson(trace.appraisal?.appraisalPolicy) !== canonicalJson(DIGNITY_GUARDIAN_POLICY)) {
+    throw new TypeError("semantic Guardian input requires the current Guardian policy");
+  }
   if (stateSelection.selectionPolicy?.id !== SEMANTIC_STATE_SELECTION_POLICY.id) {
     throw new TypeError("semantic Guardian input requires Fibre-owned semantic-state selection");
   }
@@ -95,7 +98,7 @@ export function buildSemanticGuardianInput(trace, stateSelection) {
     snapshotVersion: trace.snapshotVersion,
     threadStateHash: trace.threadStateHash,
     requestFingerprint: trace.requestFingerprint,
-    policy: { ...DIGNITY_GUARDIAN_POLICY },
+    policy: structuredClone(trace.appraisal.appraisalPolicy),
     capsuleDigest: digest(capsule),
     stateSelectionDigest: digest(stateSelectionEvidence),
   };
@@ -210,6 +213,9 @@ function decodeAssessment(row, input) {
       record.threadId !== input.threadId || record.requestId !== input.requestId) {
     throw new IntegrityError(`Guardian assessment ${row.assessment_id} input witness failed`);
   }
+  if (canonicalJson(record.policy) !== canonicalJson(input.policy)) {
+    throw new IntegrityError(`Guardian assessment ${row.assessment_id} policy witness failed`);
+  }
   return { ...record, recordDigest: row.record_digest };
 }
 
@@ -311,6 +317,9 @@ export class GuardianCognitionStore {
     assertIsoTimestamp("Guardian assessment recordedAt", recordedAt);
     const existing = this.getAssessmentByAppraisal(input.appraisalId, { required: false });
     if (existing !== null) return { assessment: existing, created: false };
+    if (canonicalJson(input.policy) !== canonicalJson(semanticResult.policy)) {
+      throw new TypeError("Guardian result policy does not match its persisted input policy");
+    }
     assertPlainObject("Guardian semantic result provenance", semanticResult.provenance);
     assertNonEmpty("Guardian provenance.provider", semanticResult.provenance.provider);
     assertNonEmpty("Guardian provenance.modelId", semanticResult.provenance.modelId);
