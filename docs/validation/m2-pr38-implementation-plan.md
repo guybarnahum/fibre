@@ -1,24 +1,22 @@
 ---
 id: validation-m2-pr38-implementation-plan
-status: active
+status: complete
 last-reviewed: 2026-08-14
 canonical: true
 ---
 
 # PR #38 — Lineage, Geography, Embodiment & Memory Epistemics v1
 
-## Why #38 exists
+## Outcome
 
 #38 makes a Thread **situated and lived** without pretending representation alone is personhood.
 
-> **A Thread should have a traceable origin, family/lineage context, places that belong to its life, persistent embodiment, autobiographical memories that are distinct from historical fact, and a photo for every memory.**
-
-#38 remains non-causal.
+A Thread can now durably carry a traceable origin and lineage, places that belong to its life, lived culture/language, persistent embodiment, autobiographical memories that remain distinct from historical fact, and a visual companion obligation for every memory.
 
 ```text
 #37  Thread Passport & Identity Provenance v1                         MERGED
-#38  Lineage, Geography, Embodiment & Memory Epistemics v1          THIS PR
-#39  Genesis, Childhood & Thread Birth v1
+#38  Lineage, Geography, Embodiment & Memory Epistemics v1          COMPLETE
+#39  Genesis, Childhood & Thread Birth v1                            NEXT
 #40  Identity Projection & Causal Consumption
 #41  M2 Standing Gate / M2 closure
 #42  Self-authored Development v1
@@ -30,15 +28,9 @@ canonical: true
 
 ## Fibre engineering rule
 
-Fibre has no deployed Threads requiring backward-compatible runtime schema dialects.
+Use **one current pre-production representation**. Fibre has no deployed Threads requiring backward-compatible runtime schema dialects.
 
-Use **one current pre-production representation**. Migrate or recreate fixtures/state when it changes.
-
-Tests are **guardrails for Fibre-specific behavior**, not a parallel product. Prefer the smallest mechanism that protects an important Fibre invariant. Do not add generic infrastructure, compatibility machinery, rigid natural-language schemas, or exhaustive test matrices merely because they are conventional computer-science hardening.
-
-The review question is:
-
-> **Is the Fibre behavior believable, inspectable and robust enough that we should stop working on this slice and advance the vision?**
+Tests are **guardrails for Fibre-specific behavior**, not a parallel product. Prefer the smallest mechanism that protects an important Fibre invariant. Do not add generic infrastructure, compatibility machinery, rigid natural-language schemas, or exhaustive test matrices merely because they are conventional hardening.
 
 ## Slice A — identity substrate — COMPLETE
 
@@ -46,7 +38,7 @@ Identity is explicit, provenance-bearing and claim-shaped rather than a biograph
 
 Frozen outcome:
 
-- seed/bootstrap and ordinary writes use one current pre-production format;
+- seed/bootstrap and ordinary writes use one current format;
 - lineage/culture/profession remain context rather than inferred behavior;
 - no identity claim earns causal or endogenous standing in #38.
 
@@ -66,21 +58,13 @@ Frozen outcome:
 - false situated claims can leave the current projection without erasing history;
 - situated/embodiment context remains non-causal in #38.
 
-#39 owns **witness relevance/event-kind policy** when Genesis begins authoring childhood and formative history.
+#39 owns witness relevance/event-kind policy when Genesis begins authoring childhood and formative history.
 
 ## Slice C — autobiographical memory epistemics — CLEAR / FROZEN
 
-Claude narrow re-review at:
+Claude narrow re-review at `a3f61bc2d3356f9fae3145f189464500d3939a10` returned **VERDICT: CLEAR**.
 
-```text
-a3f61bc2d3356f9fae3145f189464500d3939a10
-```
-
-returned **VERDICT: CLEAR** after independent hostile reproduction.
-
-Canonical review record:
-
-`docs/validation/m2-pr38-slice-c-rereview.md`
+Review record: `docs/validation/m2-pr38-slice-c-rereview.md`
 
 Core invariant:
 
@@ -88,94 +72,50 @@ Core invariant:
 
 Frozen outcome:
 
-- each memory lineage permanently names its subject through `subject: { originEventRef, slot }`, bound into `memoryId`;
-- subject history and supporting/contradicting epistemic evidence are separate axes;
+- each memory lineage permanently names its subject, bound into `memoryId`;
+- subject history and supporting/contradicting evidence are distinct;
 - evidence cannot silently disappear;
-- `rememberedAt`, `lastRecalledAt` and Thread-self-authored memory production remain outside #38;
-- accessibility/retention changes require new resolved evidence;
-- each memory revision is externally anchored in canonical Thread history using only `{memoryId, revision,memoryDigest}`;
-- history records that Fibre wrote down a memory without endorsing its remembered meaning;
-- matched-pair truncation and whole-lineage erasure leave canonical integrity contradictions;
-- memory meaning remains expressive natural-language prose rather than a rigid machine biography schema.
+- caller-minted recall timestamps and Thread-self-authored memory remain outside #38;
+- each memory revision is externally anchored in Thread history without endorsing remembered meaning;
+- matched-pair truncation and whole-lineage erasure leave integrity contradictions;
+- memory meaning remains expressive natural-language prose.
 
-Carry-forward, not blockers:
+Carry-forward:
 
-- **#39:** pre-runtime childhood periods require Genesis authority; filter/qualify bookkeeping event witnesses;
-- **#42:** add witnessed recall/decay/development semantics for natural fading;
-- **future disclosure authority:** reason about subject/content permission rather than lineage identity alone.
+- **#39:** Genesis authority for pre-live childhood and relevant formative witnesses;
+- **#42:** witnessed recall/decay/development semantics;
+- **future disclosure authority:** content/subject permission beyond lineage identity.
 
-## Slice D — every memory gets a photo — IMPLEMENTED / REVIEW READY
+## Slice D — every memory gets a photo — CLEAR / FROZEN
 
 Product rule:
 
 > **Every Thread memory should actually have a photo.**
 
-Existing #37/#38 substrate already provides an append-only visual companion per memory with:
+Claude's first narrow review found two real Fibre blockers. Both were fixed at `399377fc24f41a154b080fa931ea0c4bdddb417b`, then independently re-attacked and cleared.
 
-- `pending_generation`, `available`, `unavailable_with_reason`;
-- `synthetic_reconstruction` versus `captured_photo`;
-- `synthetic_representation_not_historical_evidence` versus `captured_source_evidence`;
-- durable rich photo prompt + digest;
-- exact bound source references;
-- inspector-visible outstanding-photo obligation.
+Review record: `claude/pr38-slice-d-re-review.md`
 
-Slice D adds the missing execution path without building a generic media platform.
+Frozen outcome:
 
-### Complete one memory
+- recording autobiographical memory revision 1 creates its visual companion in the same transaction;
+- the memory's own `rememberedMeaning` supplies the durable `MEMORY MOMENT` authority for the image prompt;
+- later memory reinterpretation does not silently rewrite that original prompt authority;
+- `completeMemoryPhoto(...)` fulfills one synthetic memory-photo obligation;
+- `completeOutstandingMemoryPhotos(...)` is intentionally a simple loop over outstanding obligations;
+- provider failure remains explicitly outstanding;
+- missing/corrupt cache reopens the obligation without changing prompt/evidence/truth;
+- regeneration uses the same durable authority;
+- a companion lineage cannot change `representationKind`, so synthetic generated media cannot be relabelled as captured historical evidence;
+- photo completion does not change Thread standing or Slice C history.
 
-`completeMemoryPhoto(...)`:
+No queue, scheduler, provider registry, worker framework, retry framework, or generic media workflow engine was added.
 
-- invokes a renderer with the exact durable prompt, digest, source references and truth class;
-- appends an `available` revision with the renderer's cache locator;
-- leaves an already-available photo alone unless explicit regeneration is requested;
-- records renderer failure as explicit `provider_failure` rather than losing the obligation;
-- retries/regenerates from the same durable prompt/evidence;
-- refuses to regenerate captured historical evidence as synthetic media.
+### Carried forward, not a #38 blocker
 
-### Complete the Thread's outstanding photos
+Current memory companion identity derives from `{threadId, memoryRef}`, so a Fibre-created memory has one synthetic visual lineage. A future feature that admits an actual captured photograph for the same memory will need a lineage discriminator so captured evidence can exist beside, rather than replace, the synthetic reconstruction.
 
-`completeOutstandingMemoryPhotos(...)` is intentionally just a loop:
-
-- attempt every outstanding synthetic memory-photo obligation;
-- leave already-available photos alone;
-- leave outstanding captured-photo evidence alone rather than silently replacing it synthetically;
-- return simple completion/failure counts.
-
-There is no queue, scheduler, provider registry, worker framework or generic media workflow engine in #38.
-
-### Asset loss/corruption
-
-`reportMemoryPhotoAssetIssue(...)` reopens an available photo obligation for:
-
-```text
-asset_missing
-hash_mismatch
-```
-
-The new unavailable revision clears the cache locator but does **not** change the memory, durable prompt, bound evidence, representation kind or truth status.
-
-A subsequent completion regenerates synthetic cache from the same durable authority.
-
-### Slice D validation
-
-Implementation SHA:
-
-```text
-6851db95e02165c36a8efce0db7bb0fa70a1f023
-```
-
-passed full `npm run check` in GitHub Actions run `31826980397`.
-
-Two focused Slice-D tests protect the product behavior:
-
-1. fulfill all outstanding fixture memory photos and observe the Thread-level obligation become satisfied;
-2. provider failure -> recovery -> hash mismatch -> regeneration while prompt/evidence/truth remain unchanged.
-
-That is intentionally the test surface. More permutations are not a product goal.
-
-Narrow review request:
-
-`docs/validation/m2-pr38-slice-d-review-request.md`
+This belongs to the future captured-media admission path; #38 does not claim to admit real photographs.
 
 ## Standing boundary
 
@@ -188,7 +128,7 @@ endogenousEvidenceAssertions = 0
 
 #38 represents a life. It does not yet prove that identity or memory causally changes decisions, that a Thread autonomously develops itself, or that representation alone establishes personhood.
 
-## #38 completion gate
+## Completion gate
 
 ```text
 [x] one current pre-production identity format
@@ -200,18 +140,17 @@ endogenousEvidenceAssertions = 0
 [x] durable memory subject and evidence semantics
 [x] memory ledger externally anchored without endorsing content
 [x] Slice C Claude CLEAR
+[x] every newly admitted memory automatically receives a photo obligation
 [x] operational memory-photo completion and regeneration
-[x] synthetic and captured truth classes remain structurally distinct
-[x] every current memory has a satisfied or explicitly outstanding photo obligation
-[x] full repository gate green on Slice D implementation SHA
-[ ] Slice D narrow vision review CLEAR
-[ ] final exact #38 head green after closure documentation
+[x] synthetic/captured truth cannot be relabelled within one lineage
+[x] Slice D Claude CLEAR
+[ ] final exact #38 closure head green before merge
 ```
 
 ## Vision test
 
-At #38 completion, a Thread should no longer look like **an agent with a profile**.
+At #38 completion, a Thread no longer looks like **an agent with a profile**.
 
-It should look like a persistent person-shaped world object with lineage, places, lived culture, embodiment, autobiographical memories, uncertainty/provenance, and visual memories whose truth status is explicit — ready for #39 Genesis to create a coherent origin and childhood rather than inventing an adult persona blob.
+It is a persistent person-shaped world object with lineage, places, lived culture, embodiment, autobiographical memories, uncertainty/provenance, and visual memories whose truth status is explicit — ready for #39 Genesis to create a coherent origin and childhood rather than inventing an adult persona blob.
 
-The implementation should remain **as simple as possible while making that Fibre claim true**.
+The implementation remains **as simple as possible while making that Fibre claim true**.
