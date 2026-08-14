@@ -67,7 +67,7 @@ export function baselineClarifyOutput() {
   return {
     proposedAction: "clarify",
     rationale:
-      "The bounded request is understandable, but this scripted test judgment does not claim willing individualized acceptance.",
+      "The bounded request is understandable, but grounded semantic evidence does not establish willing individualized acceptance.",
   };
 }
 
