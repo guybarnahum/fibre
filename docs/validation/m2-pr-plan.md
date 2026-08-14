@@ -48,7 +48,7 @@ embodiment_records
 autobiographical_memory_records
 ```
 
-Therefore #40 is not merely a relevance selector in front of an existing M2 consumer. It is the first full bridge between the durable M2 life substrate and cognition.
+The completed Pre-Genesis causal-wire proved that one #37 row can be transported through the existing trait channel with exact provenance and affect real Guardian cognition. It did **not** make the rich ledger the canonical cognition consumer. Therefore #40 remains the first full bridge between the durable M2 life substrate and cognition.
 
 The accepted #34 History-bends-judgment proof remains valid sealed historical evidence, but it runs through `thread_memories`. M2 standing may not silently reuse that legacy memory representation as proof of the richer #38 memory/history epistemic contract.
 
@@ -63,7 +63,7 @@ MERGED  #36  M2 Identity & Embodiment Contract
 MERGED  #37  Thread Passport & Identity Provenance v1
 MERGED  #38  Lineage, Geography, Embodiment & Memory Epistemics v1
 
-ENTRY GATE    Pre-Genesis causal-wire preflight
+COMPLETE      Pre-Genesis causal-wire preflight (transport PR #40; not plan milestone #40)
 NEXT    #39  Genesis, Childhood & Thread Birth v1
         #40  Identity Projection & Causal Consumption
         #41  M2 Standing Gate / M2 closure
@@ -132,41 +132,56 @@ endogenousEvidenceAssertions = 0
 
 That was deliberate. #38 proved that a life can be represented honestly and corrected without erasure; it did not claim that the new life ledgers already change judgment.
 
-## Pre-Genesis causal-wire entry gate
+## Pre-Genesis causal-wire entry gate — COMPLETE
 
-Before Genesis authors a childhood corpus at scale, Fibre must cross the new identity ledger into cognition once.
+Before Genesis authors a childhood corpus at scale, Fibre needed to cross the new identity ledger into cognition once.
 
-This is **not a new milestone**, not a score event, and not full #40. It is a cheap entry gate protecting #39 from authoring a large corpus before the consumer contract has ever been exercised.
+This was **not a new milestone**, not a score event, and not full #40. It was a cheap entry gate protecting #39 from authoring a large corpus before the consumer seam had ever been exercised.
 
-Required proof:
+The merged development preflight established:
 
 ```text
 one current #37 claim-level identity assertion
         ↓
-Fibre-owned bounded selection
+Fibre-owned bounded preflight selection
         ↓
-exact assertion ID + digest preserved in cognition evidence
+exact assertion ID + claim ID + digest preserved in cognition evidence
         ↓
-real Guardian evidence schema
+real Guardian v4 evidence schema
         ↓
-judgment differs in a development proof
+real-provider judgment differs
         ↓
 remove exactly that assertion
         ↓
 claimed effect disappears/changes predictably
 ```
 
-Constraints:
+Observed real-provider result:
 
-- use the existing #37 current identity view rather than inventing a parallel identity store;
-- preserve exact assertion/claim identity and digest through the cognition boundary;
-- caller input may not choose the assertion;
-- claim-level ablation must remove only the named assertion;
-- do not build the full #40 relevance engine, generic projection framework, or A-Z gate machinery;
-- do not award Non-interchangeability or Natural-language-identity score movement from this preflight;
-- Genesis implementation is blocked until the wire exists and the development proof demonstrates the seam.
+```text
+with assertion     fit_high__accept
+without assertion  fit_low__clarify
 
-The purpose is to learn the smallest viable Identity Context Capsule contract while the Genesis output shape is still cheap to change.
+claimCitedWithAssertion     true
+claimCitedWithoutAssertion  false
+judgmentChanged             true
+```
+
+After removal, `individualizedAdvantage` and `interchangeability` became unresolved and the Guardian explicitly lacked specialized restoration evidence. The cited evidence ref retained exact claim/assertion/digest identity through the crossing.
+
+### Correct interpretation
+
+The novel result is **plumbing, not a new causality claim**. Earlier Fibre evidence already showed that identity prose can move Guardian judgment. This gate answered the architectural question: **can a durable, provenance-bearing, claim-level #37 row be that prose and remain identifiable as that exact row? Yes.**
+
+The scenario deliberately used a near-verbatim competence match. That is useful for a pipe test and too contrived for a real #40/#41 causal gate. Genesis must not be steered toward task-matched competence statements merely because this preflight used one.
+
+The assertion crossed through the existing `semanticTraits` channel. That proves an existing channel can carry #37 provenance; it does not mean the rich identity ledger has its canonical consumer.
+
+The preflight selector `latest_current_candidate_causal` is fixture-only and **must not survive into #40 as selection policy**. Selection is the authority boundary. #40 must ensure caller-authored or merely well-formed assertions cannot become cognition authority by being recent or marked candidate-causal.
+
+The development assertion is explicitly Fibre-policy-derived/exogenous, not Thread-self-authored. Its witness remains `THREAD_SEEDED`; witness relevance/event-kind policy remains a #39 responsibility.
+
+The gate grants **no standing credit, no score movement, and no accepted-causal mutation**. The 15/26 checkpoint remains unchanged.
 
 ## Cognition-replacement preflight
 
@@ -312,6 +327,8 @@ historical event
 
 Every admitted childhood memory carries the #38 photo-completion obligation.
 
+Genesis also owns the witness-relevance/event-kind rule deferred from #38: generic bookkeeping events such as `THREAD_SEEDED` cannot, by themselves, establish that a claimed childhood or lived episode happened. Genesis-authored historical assertions must be grounded in event kinds/evidence appropriate to the claim.
+
 ## #40 — Identity Projection & Causal Consumption
 
 #40 prevents M2 from becoming a giant decorative prompt and **reconciles the current two-world architecture**.
@@ -335,13 +352,16 @@ Cognition must preserve/cite the exact identity evidence that mattered. Caller-a
 Build and prove:
 
 - bounded Identity Context Capsule with exact included/excluded evidence accounting;
-- selection authority owned by Fibre;
-- exact assertion IDs/claim IDs/digests preserved into Guardian evidence;
-- claim-level ablation mechanics;
+- selection authority owned by Fibre and based on evidence relevance, not `latest_current_candidate_causal` or caller nomination;
+- short capsule-local evidence handles (for example `identity:3`) with a Fibre-side handle → exact claim/assertion/digest provenance table;
+- exact assertion IDs/claim IDs/digests preserved in the Fibre-side audit record even when the model sees only the short handle;
+- claim-level counterfactual mechanics using **substitution controls rather than deletion controls** for standing-grade gates: swap in an equally shaped/approximately equal-length irrelevant assertion so schema shape, enum cardinality and prompt size remain stable while meaning changes;
 - inherited-locus provenance when a locus is actually relevant;
 - at least one non-professional life/history consumer;
 - Interior-only causal evidence can matter without being disclosed in Exterior;
 - no whole-genome or whole-biography injection merely because the data exists.
+
+The first real #40 causal gate should use an **ambiguous, identity-shaped decision where life history rationally matters**, not a direct task/skill match that tells the model the answer.
 
 ### Mandatory M2 memory reconciliation
 
@@ -376,6 +396,10 @@ Core claim:
 The constitutional A-Z map contains 26 scenarios. The current map includes 24 standing gates, Scenario R as diagnostic, and Scenario L as conditional-runtime pending the cognition-replacement preflight.
 
 The gate retains symmetric swap, paraphrase invariance, contradiction sensitivity, claim-level ablation, culture anti-stereotype control, embodiment anti-cheat, restart, repeated stability, Interior/Exterior asymmetry, developmental continuity, past-self reconstruction, and Scenario V memory/history distinction.
+
+For standing-grade claim/development ablations, prefer substitution controls that hold prompt/schema shape approximately constant. Pure deletion may remain useful diagnostically but is insufficient by itself when deletion materially changes context length or citation enum structure.
+
+The v4 evidence journal must record enough metadata to make input digests unambiguous. Journal records now distinguish `v3_capsule` from `v4_bounded_input`; #41's frozen matrix should preserve that distinction when naming exact inputs, selector/policy versions, evidence refs and digests.
 
 The held-out standing Threads should derive important identity/history from coherent inherited symbolic material plus Genesis childhood histories rather than only fixture-authored adult assertions.
 
@@ -432,7 +456,7 @@ Development cycle
 
 Never rerun or tune against sealed standing evidence.
 
-The Pre-Genesis causal-wire is a **development preflight**, not standing evidence and not score authority.
+The Pre-Genesis causal-wire is a **completed development preflight**, not standing evidence and not score authority.
 
 ## Vision test
 
