@@ -1,7 +1,7 @@
 ---
 id: validation-drift-scorecard
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-14
 canonical: true
 ---
 
@@ -146,4 +146,41 @@ Development  0 -> 1
 Total        14/26 -> 15/26
 ```
 
-The checkpoint remains below the rubric's 75% drift threshold, so explicit pre-M2 drift discipline remains active. The next bridge milestone is **#35 Structured Obligation v1**.
+The checkpoint remains below the rubric's 75% drift threshold, so explicit pre-M2 drift discipline remains active.
+
+### Post-#38 M2 substrate checkpoint (accepted 2026-08-14)
+
+**Rubric v2: 15 / 26 — unchanged.** This checkpoint records the deliberate zero score movement across #35, #36, #37 and #38 rather than leaving those merged milestones absent from the score history.
+
+Those milestones materially improved the substrate:
+
+- #35 made Structured Obligations durable social authority without rewriting compulsion as consent;
+- #36 froze the M2 personhood constitution;
+- #37 created claim-level provenance-bearing, revisioned, corrigible identity and Passport authority;
+- #38 created situated life, embodiment, autobiographical-memory epistemics and truth-safe memory-photo obligations.
+
+But none of those milestones claimed or proved that the new #37/#38 identity/life ledgers changed a live cognition decision. The canonical Guardian path still consumes legacy Thread identity/self-model/traits and `thread_memories`; the new identity assertions, situated-life records and autobiographical-memory ledger remain outside the causal cognition path at this checkpoint.
+
+Therefore **no rubric dimension moves**. In particular:
+
+| Dimension | Score | Post-#38 basis |
+|---|---:|---|
+| Persistence | 2 | Unchanged; the new ledgers strengthen durable reconstruction but do not require a higher rubric band. |
+| Non-interchangeability | 1 | Unchanged; no #37/#38 claim has yet caused a controlled behavioral differential. |
+| Natural-language identity | 1 | Rich claim-level prompt-native identity now exists, but its new ledger is not yet a live behavioral consumer. |
+| Dignity and consent | 2 | Unchanged. |
+| Interiority and privacy | 2 | Unchanged; #37/#38 improve visibility semantics without changing the already-earned band. |
+| Authorization integrity | 2 | Unchanged. |
+| Economic consequence | 0 | Unchanged. |
+| Social and relationship memory | 1 | Unchanged; #38 lineage/relations are representation/grounding substrate, not yet reciprocal causal social memory. |
+| Development | 1 | Unchanged; #38 autobiographical memory is richer and corrigible, but #34's accepted causal Development proof still runs on the legacy memory path. |
+| Model supervision | 1 | Unchanged. |
+| Human inspectability | 1 | Strongly improved substrate inspectability, but broad accepted-world inspectability has not yet been standing-tested at the level required for 2. |
+| Institutional plurality | 0 | Unchanged. |
+| Cognition replaceability | 1 | Unchanged; OpenAI/Google runtime seams exist, but same-Thread continuity across a genuine provider/runtime replacement is not yet demonstrated. |
+
+The flat score is intentional evidence discipline, not lack of progress:
+
+> **#35-#38 built the substrate honestly first. The next work must test whether that substrate can carry causal personhood before Genesis authors a childhood corpus at scale.**
+
+The canonical continuation plan therefore inserts a Pre-Genesis causal-wire entry gate before milestone #39 and an early cognition-replacement preflight before M2 standing.
