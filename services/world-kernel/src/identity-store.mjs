@@ -693,6 +693,11 @@ export class IdentityStore {
       }
       if (history.length > 0) {
         const prior = history.at(-1).companion;
+        if (companion.representationKind !== prior.representationKind) {
+          throw new IdentityConflictError(
+            `memory visual ${companion.companionId} cannot change representation kind; captured evidence and synthetic reconstruction are different lineages`,
+          );
+        }
         if (companion.supersedesRevision !== prior.revision) {
           throw new IdentityConflictError(`memory visual ${companion.companionId} must supersede revision ${prior.revision}`);
         }

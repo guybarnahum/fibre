@@ -15,6 +15,7 @@ import {
   AUTOBIOGRAPHICAL_MEMORY_RECORDED,
   buildAutobiographicalMemoryRecordedEvent,
 } from "./autobiographical-memory-anchor.mjs";
+import { ensureMemoryVisualCompanion } from "./identity-schema.mjs";
 
 export class AutobiographicalMemoryConflictError extends Error {}
 export class AutobiographicalMemoryNotFoundError extends Error {}
@@ -292,6 +293,18 @@ export class AutobiographicalMemoryStore {
         WHERE thread_id=? AND version=?
       `).run(nextThread.version, canonicalJson(nextThread), event.stateHash, event.eventId, event.occurredAt, record.threadId, event.expectedVersion);
       if (Number(updated.changes) !== 1) throw new AutobiographicalMemoryConflictError(`Thread ${record.threadId} changed while recording memory`);
+
+      if (record.revision === 1) {
+        ensureMemoryVisualCompanion(this.#database, {
+          threadId: record.threadId,
+          memoryRef: record.memoryId,
+          recordedAt: record.recordedAt,
+          eventId: record.subject.originEventRef,
+          evidenceRefs: record.eventRefs.filter((reference) => reference !== record.subject.originEventRef),
+          memorySummary: record.rememberedMeaning,
+          createdFrom: "persisted_autobiographical_memory",
+        });
+      }
 
       this.#database.exec("COMMIT");
       return record;
