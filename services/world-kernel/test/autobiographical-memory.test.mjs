@@ -36,6 +36,13 @@ function seed(path, thread = fixture) {
   return row;
 }
 
+function firstIdentityAssertion(path) {
+  const db = new DatabaseSync(path);
+  const row = db.prepare("SELECT assertion_id FROM identity_assertion_records WHERE thread_id=? ORDER BY assertion_id LIMIT 1").get(fixture.threadId);
+  db.close();
+  return row.assertion_id;
+}
+
 function record(event, revision = 1, overrides = {}) {
   const subject = { originEventRef: event.event_id, slot: "seed-perspective" };
   return {
@@ -52,8 +59,8 @@ function record(event, revision = 1, overrides = {}) {
     confidence: revision === 1 ? 0.55 : 0.4,
     uncertainty: ["The cited event does not establish every autobiographical detail."],
     salience: 0.8,
-    accessibility: revision === 1 ? "accessible" : "difficult",
-    retentionState: revision === 1 ? "fragmentary" : "uncertain",
+    accessibility: "accessible",
+    retentionState: "fragmentary",
     authorship: {
       kind: "fibre_policy_derived",
       entityId: "fibre.world-kernel",
@@ -119,6 +126,22 @@ test("subjectPeriod must actually contain the history events the memory is about
     store.close();
   }));
 
+test("memory accessibility and retention cannot change without newly cited resolved evidence", () =>
+  withDatabase((path) => {
+    const event = seed(path);
+    const evidence = firstIdentityAssertion(path);
+    const store = openAutobiographicalMemoryStore(path);
+    store.recordMemory(record(event));
+    assert.throws(() => store.recordMemory(record(event, 2, { accessibility: "difficult" })), AutobiographicalMemoryConflictError);
+    assert.throws(() => store.recordMemory(record(event, 2, { retentionState: "uncertain" })), AutobiographicalMemoryConflictError);
+    store.recordMemory(record(event, 2, {
+      accessibility: "difficult",
+      retentionState: "uncertain",
+      supportingEvidenceRefs: [evidence],
+    }));
+    store.close();
+  }));
+
 test("memory visibility cannot widen without disclosure authority", () =>
   withDatabase((path) => {
     const event = seed(path);
@@ -152,12 +175,14 @@ test("memory survives restart and read-only inspection cannot author", () =>
     reader.close();
   }));
 
-test("memory schema refuses caller-written recall events and self-authored Development labels", () => {
+test("memory schema refuses fake interior-event/authorship claims", () => {
   const event = { event_id: "evt_example", occurred_at: "2026-08-02T17:00:00Z" };
   const candidate = record(event);
   assert.throws(() => normalizeAutobiographicalMemory({ ...candidate, rememberedAt: candidate.recordedAt }));
   assert.throws(() => normalizeAutobiographicalMemory({ ...candidate, lastRecalledAt: candidate.recordedAt }));
   assert.throws(() => normalizeAutobiographicalMemory({ ...candidate, authorship: { ...candidate.authorship, kind: "thread_self_authored" } }));
+  assert.throws(() => normalizeAutobiographicalMemory({ ...candidate, authorship: { ...candidate.authorship, entityId: candidate.threadId } }), /cannot attribute/);
+  assert.throws(() => normalizeAutobiographicalMemory({ ...candidate, rememberedMeaning: "vague" }), /material autobiographical/);
 });
 
 test("Thread history anchors memory existence and revision length without claiming remembered content as fact", () =>

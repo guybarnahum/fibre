@@ -101,6 +101,9 @@ export function normalizeAutobiographicalMemory(candidate) {
   }
 
   assertNonEmpty("rememberedMeaning", candidate.rememberedMeaning);
+  if (candidate.rememberedMeaning.trim().length < 12) {
+    throw new TypeError("rememberedMeaning must contain a material autobiographical interpretation");
+  }
   if (Buffer.byteLength(candidate.rememberedMeaning, "utf8") > 2048) {
     throw new TypeError("rememberedMeaning exceeds 2048 UTF-8 bytes");
   }
@@ -129,6 +132,9 @@ export function normalizeAutobiographicalMemory(candidate) {
   assertExactKeys("authorship", candidate.authorship, ["kind", "entityId", "policy"]);
   if (!MEMORY_AUTHORSHIP_KINDS.includes(candidate.authorship.kind)) throw new TypeError("authorship.kind is invalid");
   assertId("authorship.entityId", candidate.authorship.entityId);
+  if (candidate.authorship.entityId === candidate.threadId) {
+    throw new TypeError("#38 memory authorship cannot attribute Fibre/imported memory production to the Thread itself");
+  }
   assertPlainObject("authorship.policy", candidate.authorship.policy);
   assertExactKeys("authorship.policy", candidate.authorship.policy, ["id", "version"]);
   if (

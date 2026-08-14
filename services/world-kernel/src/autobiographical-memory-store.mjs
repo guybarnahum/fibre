@@ -40,6 +40,14 @@ function isEvidenceSuperset(previous, current) {
   const next = evidenceSet(current);
   return [...evidenceSet(previous)].every((ref) => next.has(ref));
 }
+function hasNewEvidence(previous, current) {
+  const prior = evidenceSet(previous);
+  return [...evidenceSet(current)].some((ref) => !prior.has(ref));
+}
+function subjectiveMemoryStateChanged(previous, current) {
+  return previous.accessibility !== current.accessibility ||
+    previous.retentionState !== current.retentionState;
+}
 function isSubjectEventSuperset(previous, current) {
   const next = new Set(current.eventRefs);
   return previous.eventRefs.every((ref) => next.has(ref));
@@ -185,6 +193,9 @@ export class AutobiographicalMemoryStore {
         if (!sameSubject(previous, record)) throw new IntegrityError(`memory ${memoryId} changes its immutable subject`);
         if (!isSubjectEventSuperset(previous, record)) throw new IntegrityError(`memory ${memoryId} erases subject-history references`);
         if (!isEvidenceSuperset(previous, record)) throw new IntegrityError(`memory ${memoryId} erases previously cited evidence`);
+        if (subjectiveMemoryStateChanged(previous, record) && !hasNewEvidence(previous, record)) {
+          throw new IntegrityError(`memory ${memoryId} changes accessibility/retention without new evidence`);
+        }
       }
       history.push(record);
       previousDigest = digest;
@@ -231,6 +242,9 @@ export class AutobiographicalMemoryStore {
         if (!sameSubject(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot change its immutable subject");
         if (!isSubjectEventSuperset(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot erase or replace subject-history references");
         if (!isEvidenceSuperset(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot erase previously cited epistemic evidence");
+        if (subjectiveMemoryStateChanged(previous, record) && !hasNewEvidence(previous, record)) {
+          throw new AutobiographicalMemoryConflictError("memory accessibility/retention changes require new resolved evidence");
+        }
         if (visibilityRank(record.visibility) > visibilityRank(previous.visibility)) throw new AutobiographicalMemoryConflictError("memory visibility cannot widen without a future disclosure-authority path");
       }
 
