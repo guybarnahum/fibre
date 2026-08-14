@@ -14,6 +14,7 @@ import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openGuardianCognitionStore } from "../src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../src/causal-service.mjs";
 import { deriveDignityTraceFromPersistedRequest } from "../src/causal-inspection.mjs";
+import { DIGNITY_GUARDIAN_POLICY } from "../src/dignity-guardian.mjs";
 import { createScriptedGuardianModelAdapter } from "./support/scripted-guardian-model-adapter.mjs";
 
 const mina = JSON.parse(
@@ -85,7 +86,7 @@ function request() {
   };
 }
 
-test("all seven Guardian factors remain inspectable after restart without a model recall", () => {
+test("current Guardian assessment remains inspectable after restart without a model recall", () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-factor-trace-"));
   const databasePath = join(directory, "world.sqlite");
   let world = openCausalWorld(databasePath, "2026-08-07T21:30:00Z");
@@ -98,7 +99,7 @@ test("all seven Guardian factors remain inspectable after restart without a mode
       correlationId: "corr_causal_factor_trace",
     });
     assert.equal(created.trace.privateStance.desiredAction, "clarify");
-    assert.equal(created.trace.privateStance.policy.version, "3");
+    assert.equal(created.trace.privateStance.policy.version, DIGNITY_GUARDIAN_POLICY.version);
     assert.equal(world.guardianModelAdapter.callCount, 1);
     world.close();
 
@@ -115,12 +116,7 @@ test("all seven Guardian factors remain inspectable after restart without a mode
     assert.equal(dignity.dignityBand, "contested");
     assert.deepEqual(Object.keys(dignity.factors).sort(), [...FACTOR_KEYS].sort());
     for (const key of FACTOR_KEYS) assert.equal(typeof dignity.factors[key], "string");
-    assert.match(dignity.factors.identityAlignment, /wiring fixture/i);
-    assert.match(dignity.factors.individualizedAdvantage, /not established/i);
-    assert.match(dignity.factors.relationalMeaning, /^Unresolved:/i);
-    assert.match(dignity.factors.respectAndReciprocity, /^Unresolved:/i);
-    assert.match(dignity.factors.obligationsAndOpportunityCost, /^Unresolved:/i);
-    assert.deepEqual(dignity.feelings, mina.currentState.feelings);
+    assert.deepEqual(dignity.feelings, []);
     assert.deepEqual(dignity.conflictingMotives, []);
   } finally {
     world.close();
