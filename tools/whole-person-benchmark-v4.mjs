@@ -1,3 +1,5 @@
+import { pathToFileURL } from "node:url";
+
 import {
   buildDignityGuardianV4ModelInput,
   buildDignityGuardianV4ResponseSchema,
@@ -9,11 +11,11 @@ import {
   buildWholePersonPass1Cases,
 } from "../experiments/whole-person-benchmark/pass1-v4.mjs";
 
-function usage() {
+export function wholePersonBenchmarkUsage() {
   return `Fibre Whole-Person Benchmark — Guardian v4 Pass 1\n\nUsage:\n  npm run guardian:whole-person\n  npm run guardian:whole-person -- --trials 12\n  npm run guardian:whole-person -- --trials 12 --json\n\nThis is a development diagnostic only. It does not award standing or score movement.\n`;
 }
 
-function parseArgs(argv) {
+export function parseWholePersonBenchmarkArgs(argv) {
   const options = { trials: WHOLE_PERSON_BENCHMARK_V4.trialsPerArm, json: false, help: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -137,7 +139,7 @@ export function evaluateWholePersonPass1(cases, results) {
   };
 }
 
-async function run(options) {
+export async function runWholePersonBenchmark(options) {
   const cases = buildWholePersonPass1Cases();
   const neutrality = wholePersonNeutralityReport(cases);
   assertWholePersonNeutrality(neutrality);
@@ -172,7 +174,7 @@ async function run(options) {
   };
 }
 
-function printSummary(report) {
+export function printWholePersonBenchmarkSummary(report) {
   console.log("Fibre · Whole-Person Benchmark · Guardian v4 Pass 1");
   console.log(`${report.evidentiaryStatus} · ${report.trialsPerArm} trials/arm`);
   console.log("");
@@ -196,12 +198,17 @@ function printSummary(report) {
   console.log(report.diagnostic.interpretation);
 }
 
-const options = parseArgs(process.argv.slice(2));
-if (options.help) {
-  console.log(usage());
-  process.exit(0);
+async function main(argv = process.argv.slice(2)) {
+  const options = parseWholePersonBenchmarkArgs(argv);
+  if (options.help) {
+    console.log(wholePersonBenchmarkUsage());
+    return;
+  }
+  const report = await runWholePersonBenchmark(options);
+  if (options.json) console.log(JSON.stringify(report, null, 2));
+  else printWholePersonBenchmarkSummary(report);
 }
 
-const report = await run(options);
-if (options.json) console.log(JSON.stringify(report, null, 2));
-else printSummary(report);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}
