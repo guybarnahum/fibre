@@ -20,7 +20,7 @@
     "editor": "node tools/serve-thread-editor.mjs",
     "world-kernel": "node --disable-warning=ExperimentalWarning services/world-kernel/src/server.mjs",
     "demo:m1": "node --disable-warning=ExperimentalWarning tools/m1-reviewed-proof.mjs",
-    "demo:m1:editor": "node tools/m1-demo-editor.mjs",
+    "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/m1-demo-editor.mjs",
     "model:smoke": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model-api-smoke.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-counterfactual-dev.mjs",
