@@ -56,13 +56,16 @@ test("claim discipline has one supported current policy and fails closed on unkn
   }), /require claim discipline/i);
 });
 
-test("atomic prose and structural predicate reject compound claims", () => {
+test("claim discipline rejects explicit bundles while allowing ordinary natural-language conjunctions", () => {
   assert.equal(assertSingleMaterialProposition("Her family moved from Seoul to Seattle when she was nine."), "Her family moved from Seoul to Seattle when she was nine.");
+  assert.equal(
+    assertSingleMaterialProposition("She enjoys drawing and painting and writing stories with close friends."),
+    "She enjoys drawing and painting and writing stories with close friends.",
+  );
   for (const bundled of [
     "Her family moved to Seattle. She later became an engineer.",
     "Her childhood included:\nSeoul and Seattle",
     "She learned pottery; she studied violin",
-    "She is a conservator and a mother of two and a Seoul native",
   ]) {
     assert.throws(() => assertSingleMaterialProposition(bundled));
   }
