@@ -144,7 +144,7 @@ endogenousEvidenceAssertions = 0
 [x] operational memory-photo completion and regeneration
 [x] synthetic/captured truth cannot be relabelled within one lineage
 [x] Slice D Claude CLEAR
-[ ] final exact #38 closure head green before merge
+[x] final exact #38 closure head green before merge
 ```
 
 ## Vision test
