@@ -5,13 +5,29 @@ import {
   canonicalJson,
 } from "./persistence-common.mjs";
 
-export const IDENTITY_ATOMIC_CLAIM_POLICY = Object.freeze({
+export const IDENTITY_ATOMIC_CLAIM_POLICY_V1 = Object.freeze({
   id: "identity_atomic_material_proposition",
   version: "1",
 });
 
+export const IDENTITY_ATOMIC_CLAIM_POLICY_V2 = Object.freeze({
+  id: "identity_atomic_material_proposition",
+  version: "2",
+});
+
+// Current write policy. Historical rows never validate against this moving alias;
+// they dispatch through the immutable policy witness stored with the row.
+export const IDENTITY_ATOMIC_CLAIM_POLICY = IDENTITY_ATOMIC_CLAIM_POLICY_V2;
+
 export const IDENTITY_CLAIM_STRUCTURE = "subject_predicate_object:1";
 export const MAX_CLAIM_PREDICATE_BYTES = 120;
+
+const LIST_OR_PARAGRAPH_PATTERN = /(?:\r|\n|^\s*[-*•]\s|\n\s*\d+[.)]\s)/m;
+const MULTI_SENTENCE_PATTERN = /[.!?]\s+[A-Za-z0-9]/;
+const EXPLICIT_BUNDLE_PATTERN = /(?:;|\u2014|\u2013|\b(?:and also|as well as|separately|in addition|additionally|another fact|also has|secondly|thirdly)\b)/i;
+const MULTI_AND_CHAIN_PATTERN = /\band\b[^\r\n.!?;—–]*\band\b/i;
+const PREDICATE_PATTERN = /^[a-z0-9][a-z0-9_]{0,63}$/;
+const PREDICATE_COMPONENT_BUNDLE_PATTERN = /(?:\r|\n|;|\u2014|\u2013|\s+and\s+)/i;
 
 function policyKey(policy) {
   return `${policy.id}:${policy.version}`;
@@ -25,51 +41,24 @@ function normalizePolicy(name, policy) {
   return { id: policy.id, version: policy.version };
 }
 
-function hasRepeatedAnd(text) {
-  const parts = text.toLowerCase().split(" and ");
-  return parts.length > 2;
-}
-
-function hasMultipleSentences(text) {
-  for (let index = 0; index < text.length - 2; index += 1) {
-    if (!".!?".includes(text[index])) continue;
-    if (text[index + 1] !== " ") continue;
-    const next = text[index + 2];
-    if ((next >= "A" && next <= "Z") || (next >= "a" && next <= "z") || (next >= "0" && next <= "9")) return true;
-  }
-  return false;
-}
-
 export function assertSingleMaterialProposition(meaning) {
   assertNonEmpty("identity assertion.meaning", meaning);
-  const lower = meaning.toLowerCase();
-  if (meaning.includes("\n") || meaning.includes(";") || meaning.includes("—") || meaning.includes("–") || hasMultipleSentences(meaning)) {
-    throw new TypeError("identity assertion.meaning must be one material proposition");
+  if (LIST_OR_PARAGRAPH_PATTERN.test(meaning)) {
+    throw new TypeError(
+      "identity assertion.meaning must be one material proposition, not a paragraph/list bundle",
+    );
   }
-  for (const marker of [" and also ", " as well as ", " separately ", " in addition ", " additionally ", " another fact ", " also has ", " secondly ", " thirdly "]) {
-    if (lower.includes(marker)) throw new TypeError("identity assertion.meaning must not bundle independently addressable propositions");
+  if (MULTI_SENTENCE_PATTERN.test(meaning)) {
+    throw new TypeError(
+      "identity assertion.meaning must be one material proposition; split independently falsifiable sentences into separate assertions",
+    );
   }
-  if (hasRepeatedAnd(meaning)) {
-    throw new TypeError("identity assertion.meaning must not chain multiple independently addressable propositions");
+  if (EXPLICIT_BUNDLE_PATTERN.test(meaning)) {
+    throw new TypeError(
+      "identity assertion.meaning appears to bundle independently addressable propositions; split the claim",
+    );
   }
   return meaning;
-}
-
-function validPredicate(value) {
-  if (value.length < 1 || value.length > 64) return false;
-  for (let index = 0; index < value.length; index += 1) {
-    const char = value[index];
-    const alpha = char >= "a" && char <= "z";
-    const digit = char >= "0" && char <= "9";
-    if (!alpha && !digit && char !== "_") return false;
-    if (index === 0 && char === "_") return false;
-  }
-  return true;
-}
-
-function compoundComponent(value) {
-  const lower = value.toLowerCase();
-  return value.includes("\n") || value.includes(";") || value.includes("—") || value.includes("–") || lower.includes(" and ");
 }
 
 export function normalizeClaimPredicate(value) {
@@ -78,29 +67,101 @@ export function normalizeClaimPredicate(value) {
   assertNonEmpty("identity assertion.claimPredicate.subject", value.subject);
   assertNonEmpty("identity assertion.claimPredicate.predicate", value.predicate);
   assertNonEmpty("identity assertion.claimPredicate.object", value.object);
-  if (!validPredicate(value.predicate)) {
-    throw new TypeError("identity assertion.claimPredicate.predicate must be one lowercase snake_case predicate");
+  if (!PREDICATE_PATTERN.test(value.predicate)) {
+    throw new TypeError(
+      "identity assertion.claimPredicate.predicate must be one lowercase snake_case predicate",
+    );
   }
-  if (compoundComponent(value.subject) || compoundComponent(value.object)) {
-    throw new TypeError("identity assertion.claimPredicate subject/object must each identify one thing");
+  for (const [name, component] of [
+    ["subject", value.subject],
+    ["object", value.object],
+  ]) {
+    if (PREDICATE_COMPONENT_BUNDLE_PATTERN.test(component)) {
+      throw new TypeError(
+        `identity assertion.claimPredicate.${name} must identify one subject/object, not a compound proposition`,
+      );
+    }
   }
-  const normalized = { subject: value.subject, predicate: value.predicate, object: value.object };
+  const normalized = {
+    subject: value.subject,
+    predicate: value.predicate,
+    object: value.object,
+  };
   if (Buffer.byteLength(canonicalJson(normalized), "utf8") > MAX_CLAIM_PREDICATE_BYTES) {
-    throw new TypeError(`identity assertion.claimPredicate exceeds ${MAX_CLAIM_PREDICATE_BYTES} UTF-8 bytes`);
+    throw new TypeError(
+      `identity assertion.claimPredicate exceeds ${MAX_CLAIM_PREDICATE_BYTES} UTF-8 bytes`,
+    );
   }
   return normalized;
 }
 
-export function assertCurrentClaimDiscipline(assertion) {
+function assertAtomicV1(assertion) {
   assertPlainObject("identity assertion", assertion);
-  assertPlainObject("identity assertion.admission", assertion.admission);
-  const witness = normalizePolicy("identity assertion.admission.claimDiscipline", assertion.admission.claimDiscipline);
-  if (policyKey(witness) !== policyKey(IDENTITY_ATOMIC_CLAIM_POLICY)) {
-    throw new TypeError(`identity assertions require claim discipline ${policyKey(IDENTITY_ATOMIC_CLAIM_POLICY)}`);
-  }
   assertSingleMaterialProposition(assertion.meaning);
   normalizeClaimPredicate(assertion.claimPredicate);
   return assertion;
 }
 
-export const assertRecordedClaimDiscipline = assertCurrentClaimDiscipline;
+function assertAtomicV2(assertion) {
+  assertAtomicV1(assertion);
+  if (MULTI_AND_CHAIN_PATTERN.test(assertion.meaning)) {
+    throw new TypeError(
+      "identity assertion.meaning appears to chain multiple independently addressable propositions with repeated conjunctions; split the claim",
+    );
+  }
+  return assertion;
+}
+
+const HISTORICAL_DISCIPLINE_VALIDATORS = Object.freeze({
+  [policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1)]: assertAtomicV1,
+  [policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V2)]: assertAtomicV2,
+});
+
+export function assertRecordedClaimDiscipline(assertion) {
+  assertPlainObject("identity assertion", assertion);
+  assertPlainObject("identity assertion.admission", assertion.admission);
+  const witness = normalizePolicy(
+    "identity assertion.admission.claimDiscipline",
+    assertion.admission.claimDiscipline,
+  );
+  const validator = HISTORICAL_DISCIPLINE_VALIDATORS[policyKey(witness)];
+  if (validator === undefined) {
+    throw new TypeError(
+      `unknown historical identity claim discipline ${policyKey(witness)}`,
+    );
+  }
+  return validator(assertion);
+}
+
+export function assertCurrentClaimDiscipline(assertion) {
+  assertPlainObject("identity assertion", assertion);
+  assertPlainObject("identity assertion.admission", assertion.admission);
+  const witness = normalizePolicy(
+    "identity assertion.admission.claimDiscipline",
+    assertion.admission.claimDiscipline,
+  );
+  const currentKey = policyKey(IDENTITY_ATOMIC_CLAIM_POLICY);
+  const witnessKey = policyKey(witness);
+
+  // Transitional compatibility is limited to the Fibre world-kernel writer envelope.
+  // It is admission-time only: the candidate is subjected to v2 and the durable row
+  // records v2. Historical v1 rows remain forever interpreted under v1.
+  if (
+    witnessKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1) &&
+    currentKey === policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V2) &&
+    assertion.admission.admittedBy?.entityId === "fibre.world-kernel"
+  ) {
+    assertion.admission.claimDiscipline = { ...IDENTITY_ATOMIC_CLAIM_POLICY };
+    return assertRecordedClaimDiscipline(assertion);
+  }
+
+  if (witnessKey !== currentKey) {
+    throw new TypeError(
+      `new registry v2 identity assertions require current claim discipline ${currentKey}`,
+    );
+  }
+  return assertRecordedClaimDiscipline(assertion);
+}
+
+// Compatibility alias for existing callers: this is a write-time admission check.
+export const assertRegistryV2ClaimDiscipline = assertCurrentClaimDiscipline;
