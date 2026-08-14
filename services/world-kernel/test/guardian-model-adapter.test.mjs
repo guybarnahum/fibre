@@ -93,6 +93,7 @@ test("OpenAI Guardian sends the frozen sampling configuration and journals the b
     assert.equal(lines.length, 1);
     assert.equal(lines[0].type, "model_response");
     assert.equal(lines[0].cycle, "test_guardian_cycle");
+    assert.equal(lines[0].inputShape, "v3_capsule");
     assert.deepEqual(lines[0].modelOutput, { appraisal: "bounded finding" });
     assert.match(lines[0].capsuleDigest, /^sha256:[0-9a-f]{64}$/);
     assert.match(lines[0].promptHash, /^sha256:[0-9a-f]{64}$/);
@@ -103,6 +104,38 @@ test("OpenAI Guardian sends the frozen sampling configuration and journals the b
     else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournal;
     if (previousCycle === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID;
     else process.env.FIBRE_GUARDIAN_EVIDENCE_CYCLE_ID = previousCycle;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("OpenAI Guardian journals v4 bounded input shape without requiring a capsule wrapper", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-guardian-v4-evidence-"));
+  const journal = join(directory, "judgments.ndjson");
+  const previousJournal = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+  process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = journal;
+  try {
+    const adapter = createOpenAIResponsesGuardianAdapter({
+      apiKey: "test-key",
+      modelId: "gpt-5.1-2025-11-13",
+      operationalRetryDelayMs: 0,
+      fetchImpl: async () => response(completedBody()),
+    });
+    await adapter.invoke({
+      systemPrompt: "Bounded Guardian v4 prompt",
+      input: {
+        requester: { id: "human_test", name: "Test" },
+        evidence: [{ ref: "thread:identity", kind: "identity", text: "Specific identity evidence." }],
+      },
+      responseSchema: { type: "object", additionalProperties: true },
+      clientRequestId: "guardian-v4:thr_test:req_test",
+    });
+
+    const [record] = readFileSync(journal, "utf8").trim().split("\n").map(JSON.parse);
+    assert.equal(record.inputShape, "v4_bounded_input");
+    assert.match(record.capsuleDigest, /^sha256:[0-9a-f]{64}$/);
+  } finally {
+    if (previousJournal === undefined) delete process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
+    else process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL = previousJournal;
     rmSync(directory, { recursive: true, force: true });
   }
 });
