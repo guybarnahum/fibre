@@ -14,8 +14,18 @@ jobs:
         run: npm run build
       - name: Test domain package
         run: node --disable-warning=ExperimentalWarning --test packages/domain/test/*.test.mjs
-      - name: Test world-kernel
-        run: node --disable-warning=ExperimentalWarning --test services/world-kernel/test/*.test.mjs
+      - name: Test Slice C memory
+        run: node --disable-warning=ExperimentalWarning --test services/world-kernel/test/autobiographical-memory.test.mjs
+      - name: Test identity
+        run: node --disable-warning=ExperimentalWarning --test services/world-kernel/test/identity-*.test.mjs
+      - name: Test situated life
+        run: node --disable-warning=ExperimentalWarning --test services/world-kernel/test/situated-*.test.mjs
+      - name: Test embodiment
+        run: node --disable-warning=ExperimentalWarning --test services/world-kernel/test/embodiment-*.test.mjs
+      - name: Test remaining world-kernel
+        run: |
+          files=$(find services/world-kernel/test -name '*.test.mjs' | grep -Ev '/(autobiographical-memory|identity-|situated-|embodiment-)')
+          node --disable-warning=ExperimentalWarning --test $files
       - name: Test repository tooling
         run: node --disable-warning=ExperimentalWarning --test tools/*.test.mjs
       - name: Build AI context pack
