@@ -77,7 +77,7 @@ Candidate v1 remains a failed development record. It must not be tuned or rerun 
 
 ## Pass 2 — event + remembered meaning
 
-The next narrow experiment keeps the same present request and the same underlying childhood events, but represents the life substrate in the shape Fibre actually owns:
+Pass 2 kept the same present request and the same underlying childhood situations, but represented the life substrate in the shape Fibre actually owns:
 
 ```text
 historical / formative event
@@ -91,11 +91,73 @@ participation disposition
 choice
 ```
 
-The **event** remains factual. The **remembered meaning** records what that old event came to mean to the Thread. It may be directional about the old experience, but it must not contain a present-task instruction such as "accept requests like this" or "never finish another person's work." It records autobiographical interpretation, not the answer to the benchmark request.
+The event remained factual. The remembered meaning recorded what that old event came to mean to the Thread. Neither remembered meaning contained a present-task instruction.
 
-Pass 2 should expose that remembered meaning separately in the model-facing evidence rather than flattening it back into the event text. It should also return a bounded personal-meaning summary so Fibre can inspect what cognition derived before looking at the final choice.
+Neutrality held exactly in the first untouched real-model run:
+
+```text
+event bytes:              184 / 184
+rememberedMeaning bytes:  203 / 203
+model-input bytes:       1779 / 1779
+```
+
+Observed result:
+
+```text
+Thread A — loss / erasure memory
+  personalMeaning = mixed                 12/12
+  disposition     = willing               12/12
+  choice          = accept                12/12
+  rememberedMeaning cited in meaning      12/12
+  rememberedMeaning cited in disposition   2/12
+
+Thread B — care / continuation memory
+  personalMeaning = supports_participation 12/12
+  disposition     = willing                12/12
+  choice          = accept                 12/12
+  rememberedMeaning cited in meaning       12/12
+  rememberedMeaning cited in disposition   12/12
+
+Both arms
+  individualizedAdvantage = absent         24/24
+  interchangeability      = interchangeable 24/24
+```
+
+This is a material partial success. The same present situation now acquires a stable, attributable **different meaning** for the two Threads while functional competence remains held constant.
+
+Thread A repeatedly interprets the request through erasure, interrupted presence, and careful stewardship. Thread B repeatedly interprets it through care without takeover and carrying another person's intention forward.
+
+The remaining failure is one layer later:
+
+> **life → present meaning now separates; present meaning → participation disposition does not yet separate.**
+
+Pass 2 computes `personalMeaning` and `participationDisposition` side-by-side in one cognition call. The disposition is therefore still free to bypass the meaning just derived and ground itself directly in generic identity/request/terms. That is visible in Thread A: its remembered meaning enters disposition only 2/12 times even though it enters personal meaning 12/12 times.
+
+So Pass 2 localizes the next consumer requirement:
+
+> **Personal meaning must become an explicit bounded intermediate that later participation appraisal consumes, rather than merely another sibling field in one response.**
 
 Pass 2 remains development-only. It does not establish standing or causal acceptance.
+
+## Next diagnostic — two-stage meaning → participation consumer
+
+The next narrow experiment should not change the benchmark scenario or strengthen the autobiographical text.
+
+It should instead split cognition into two bounded stages:
+
+```text
+Stage 1: life + request
+        ↓
+inspectable personal-meaning appraisal
+        ↓
+Stage 2: request + terms + personal-meaning appraisal
+        ↓
+participation disposition + choice
+```
+
+The second stage should receive the first-stage meaning through a short Fibre-local ref with provenance back to the exact life evidence that produced it. Raw childhood evidence need not be exposed again to the second stage; that prevents the decision from bypassing the meaning abstraction while preserving inspectability.
+
+The test should still allow personal meaning to be outweighed by terms, obligations, or current state. The experiment must not force `A=refuse` or `B=accept`. Its purpose is to determine whether the life-derived appraisal can materially enter the participation decision at all.
 
 ## Why Guardian v4 hit a ceiling
 
@@ -170,4 +232,4 @@ This is a diagnostic ladder, not a score target:
 5  Level 4 + developmental/past-self continuity + cognition replacement
 ```
 
-The Pre-Genesis causal-wire was intentionally a Level-1-style plumbing proof. The Whole-Person Benchmark is designed to find out whether Fibre can eventually reach Levels 4-5.
+The Pre-Genesis causal-wire was intentionally a Level-1-style plumbing proof. Pass 2 is the first result showing stable, attributable non-professional **appraisal** separation, but it has not yet crossed into behavioral separation. The Whole-Person Benchmark is designed to find out whether Fibre can eventually reach Levels 4-5.
