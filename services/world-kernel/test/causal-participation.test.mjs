@@ -13,6 +13,7 @@ import { openCausalContextStore } from "../src/causal-context-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openGuardianCognitionStore } from "../src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../src/causal-service.mjs";
+import { DIGNITY_GUARDIAN_POLICY } from "../src/dignity-guardian.mjs";
 import { createScriptedGuardianModelAdapter } from "./support/scripted-guardian-model-adapter.mjs";
 
 const mina = JSON.parse(
@@ -158,9 +159,9 @@ test("same request proves Fibre-owned appraisal without claiming causal individu
       ).trace;
 
       assert.equal(minaTrace.requestFingerprint, danielTrace.requestFingerprint);
-      assert.equal(minaTrace.privateStance.policy.id, "dignity_guardian");
-      assert.equal(minaTrace.privateStance.policy.version, "3");
-      assert.equal(danielTrace.privateStance.policy.version, "3");
+      assert.equal(minaTrace.privateStance.policy.id, DIGNITY_GUARDIAN_POLICY.id);
+      assert.equal(minaTrace.privateStance.policy.version, DIGNITY_GUARDIAN_POLICY.version);
+      assert.equal(danielTrace.privateStance.policy.version, DIGNITY_GUARDIAN_POLICY.version);
       assert.equal(minaTrace.privateStance.desiredAction, "clarify");
       assert.equal(danielTrace.privateStance.desiredAction, "clarify");
       assert.equal(minaTrace.privateStance.dignityBand, "contested");

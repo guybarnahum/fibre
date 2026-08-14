@@ -13,6 +13,7 @@ import { openCausalContextStore } from "../src/causal-context-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openGuardianCognitionStore } from "../src/guardian-cognition-store.mjs";
 import { PreM2CausalWorldKernelService } from "../src/causal-service.mjs";
+import { DIGNITY_GUARDIAN_POLICY } from "../src/dignity-guardian.mjs";
 import {
   closeWorldKernelHttpServer,
   listenWorldKernelHttpServer,
@@ -98,7 +99,7 @@ async function startCausalApi() {
   };
 }
 
-test("canonical private API derives a persisted v3 stance and rejects caller-authored private cognition", async () => {
+test("canonical private API derives the current Guardian stance and rejects caller-authored private cognition", async () => {
   const runtime = await startCausalApi();
   try {
     assert.throws(
@@ -144,9 +145,9 @@ test("canonical private API derives a persisted v3 stance and rejects caller-aut
     assert.equal(created.response.status, 201);
     assert.equal(created.body.trace.privateStance.desiredAction, "clarify");
     assert.equal(created.body.trace.privateStance.dignityBand, "contested");
-    assert.equal(created.body.trace.privateStance.policy.version, "3");
+    assert.equal(created.body.trace.privateStance.policy.version, DIGNITY_GUARDIAN_POLICY.version);
     assert.equal(created.body.trace.appraisal.causalContext.selectionAuthority, "fibre");
-    assert.match(created.body.trace.privateStance.privateRationale, /does not yet have grounded semantic evidence/i);
+    assert.match(created.body.trace.privateStance.privateRationale, /grounded semantic evidence/i);
     assert.equal(runtime.guardianModelAdapter.callCount, 1);
 
     const exactRetry = await json(

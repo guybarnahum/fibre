@@ -9,6 +9,7 @@ import test from "node:test";
 
 import { openObligationStore } from "../src/obligation-store.mjs";
 import { requestFingerprint } from "../src/private-participation.mjs";
+import { DIGNITY_GUARDIAN_POLICY } from "../src/dignity-guardian.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -176,7 +177,7 @@ async function seedAndAcquireCompelledRuntime(processHandle, databasePath, threa
   });
   assert.equal(appraisal.response.status, 201);
   assert.equal(appraisal.body.trace.privateStance.desiredAction, "clarify");
-  assert.equal(appraisal.body.trace.privateStance.policy.version, "3");
+  assert.equal(appraisal.body.trace.privateStance.policy.version, DIGNITY_GUARDIAN_POLICY.version);
   assert.deepEqual(appraisal.body.trace.appraisal.obligations, []);
 
   const continued = await json(
@@ -731,4 +732,3 @@ test("withdrawn compelled episode remains closable after lease expiry and cannot
     rmSync(directory, { recursive: true, force: true });
   }
 });
-
