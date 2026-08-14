@@ -91,7 +91,9 @@ participation disposition
 choice
 ```
 
-The remembered meaning may be directional about the old experience, but it must not contain a present-task instruction such as "accept requests like this" or "never finish another person's work." It records what the old experience came to mean to that Thread, not the answer to the benchmark request.
+The **event** remains factual. The **remembered meaning** records what that old event came to mean to the Thread. It may be directional about the old experience, but it must not contain a present-task instruction such as "accept requests like this" or "never finish another person's work." It records autobiographical interpretation, not the answer to the benchmark request.
+
+Pass 2 should expose that remembered meaning separately in the model-facing evidence rather than flattening it back into the event text. It should also return a bounded personal-meaning summary so Fibre can inspect what cognition derived before looking at the final choice.
 
 Pass 2 remains development-only. It does not establish standing or causal acceptance.
 
