@@ -43,7 +43,7 @@ function recordDevelopmentAssertion(databasePath) {
     claimPredicate: { subject: "self", predicate: "practices", object: "archival_16mm_film_restoration" },
     meaning,
     provenanceClass: "historical_experienced",
-    authorship: { kind: "thread_self_authored", entityId: fixture.threadId },
+    authorship: { kind: "fibre_policy_derived", entityId: "fibre.world-kernel" },
     sourceReferences: [seedEvent],
     effectiveAt: recordedAt,
     recordedAt,
