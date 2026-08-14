@@ -1,0 +1,32 @@
+name: Whole-Person candidate live
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  whole-person-candidate:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'agent/whole-person-guardian-candidate'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      FIBRE_GUARDIAN_MODEL_ID: gpt-5.1-2025-11-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Require live OpenAI credential
+        shell: bash
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY is not configured" >&2
+            exit 1
+          fi
+      - name: Run unchanged Whole-Person pair through candidate Guardian
+        run: npm run guardian:whole-person:candidate -- --trials 12 --json
