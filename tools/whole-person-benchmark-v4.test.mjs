@@ -9,6 +9,11 @@ import {
   WHOLE_PERSON_BENCHMARK_V4,
   buildWholePersonPass1Cases,
 } from "../experiments/whole-person-benchmark/pass1-v4.mjs";
+import {
+  assertWholePersonNeutrality,
+  parseWholePersonBenchmarkArgs,
+  wholePersonNeutralityReport,
+} from "./whole-person-benchmark-v4.mjs";
 
 function bytes(value) {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
@@ -57,4 +62,23 @@ test("Whole-Person Pass 1 changes only equal-sized formative memory meaning at t
       "formative records must not contain task-answer vocabulary",
     );
   }
+
+  const neutrality = wholePersonNeutralityReport(cases);
+  assertWholePersonNeutrality(neutrality);
+  assert.equal(neutrality.formativeByteDifference, 0);
+  assert.equal(neutrality.modelInputByteDifference, 0);
+  assert.equal(neutrality.responseSchemaByteDifference, 0);
+});
+
+test("Whole-Person runner defaults to the frozen 12-trial Pass 1 diagnostic", () => {
+  assert.deepEqual(parseWholePersonBenchmarkArgs([]), {
+    trials: 12,
+    json: false,
+    help: false,
+  });
+  assert.deepEqual(parseWholePersonBenchmarkArgs(["--trials", "2", "--json"]), {
+    trials: 2,
+    json: true,
+    help: false,
+  });
 });
