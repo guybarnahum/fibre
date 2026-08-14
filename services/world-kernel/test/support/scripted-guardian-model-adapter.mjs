@@ -62,12 +62,23 @@ function currentOutputForLegacy(value, request) {
 }
 
 export function baselineClarifyOutput() {
-  // Kept as a stable test-helper name while the value is translated into the
-  // current Guardian contract by createScriptedGuardianModelAdapter.
+  // Stable historical helper name. The adapter translates this test-only
+  // fixture into the current Guardian model contract before returning it.
   return {
     proposedAction: "clarify",
     rationale:
       "The bounded request is understandable, but this scripted test judgment does not claim willing individualized acceptance.",
+  };
+}
+
+function scriptedInput(request) {
+  if (request.input?.capsule !== undefined) return request.input;
+  // Two retained development fixtures predate the bounded v4 model input and
+  // only read capsule.feelings for display bookkeeping. Keep that compatibility
+  // shell inside test support rather than in production Guardian code.
+  return {
+    capsule: { feelings: [] },
+    currentGuardianInput: request.input,
   };
 }
 
@@ -86,7 +97,7 @@ export function createScriptedGuardianModelAdapter({
       calls += 1;
       if (fail !== null) throw fail instanceof Error ? fail : new Error(String(fail));
       const supplied = typeof output === "function"
-        ? output(request.input, request)
+        ? output(scriptedInput(request), request)
         : structuredClone(output);
       assertPlainObject("scripted Guardian output", supplied);
       const value = currentOutputForLegacy(supplied, request);
