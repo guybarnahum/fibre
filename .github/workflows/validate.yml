@@ -8,17 +8,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check Markdown projections
-        run: npm run includes:check
-      - name: Test Slice C autobiographical memory
-        run: node --test services/world-kernel/test/autobiographical-memory.test.mjs
-      - name: Test world-kernel
-        run: node --test services/world-kernel/test/*.test.mjs
-      - name: Test domain package
-        run: node --test packages/domain/test/*.test.mjs
-      - name: Test repository tooling
-        run: node --test tools/*.test.mjs
-      - name: Build AI context pack
-        run: npm run context-pack
-      - name: Validate generated repository
-        run: node tools/validate-repo.mjs --generated
+      - run: npm run check

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { openWorldStore } from "../src/persistence.mjs";
+import { IDENTITY_DOMAIN_REGISTRY_VERSION } from "../src/identity-domain-registry.mjs";
 import { lifeRelationId, placeEpisodeId } from "../src/situated-life-domain.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
 import { SituatedIdentityService } from "../src/situated-identity-service.mjs";
@@ -59,5 +60,5 @@ test("cultural formation requires Fibre-resolved lived evidence and remains cont
     });
     assert.equal(stored.assertion.domain, "cultural_formation");
     assert.equal(stored.assertion.behavioralStatus, "context_only");
-    assert.equal(stored.registryVersion, "2");
+    assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
   }));

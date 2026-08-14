@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { openWorldStore } from "../src/persistence.mjs";
+import { IDENTITY_DOMAIN_REGISTRY_VERSION } from "../src/identity-domain-registry.mjs";
 import { SituatedLanguageService } from "../src/situated-language-service.mjs";
 
 const fixture = JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"));
@@ -24,6 +25,6 @@ test("language formation requires a real lived event and remains context-only", 
     const stored = service.recordLanguageFormation({ ...input, eventReferences: [seeded.provenance.lastEventId] });
     assert.equal(stored.assertion.domain, "language_formation");
     assert.equal(stored.assertion.behavioralStatus, "context_only");
-    assert.equal(stored.registryVersion, "2");
+    assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

@@ -25,11 +25,6 @@ function normalizePolicy(name, policy) {
   return { id: policy.id, version: policy.version };
 }
 
-function hasRepeatedAnd(text) {
-  const parts = text.toLowerCase().split(" and ");
-  return parts.length > 2;
-}
-
 function hasMultipleSentences(text) {
   for (let index = 0; index < text.length - 2; index += 1) {
     if (!".!?".includes(text[index])) continue;
@@ -48,9 +43,6 @@ export function assertSingleMaterialProposition(meaning) {
   }
   for (const marker of [" and also ", " as well as ", " separately ", " in addition ", " additionally ", " another fact ", " also has ", " secondly ", " thirdly "]) {
     if (lower.includes(marker)) throw new TypeError("identity assertion.meaning must not bundle independently addressable propositions");
-  }
-  if (hasRepeatedAnd(meaning)) {
-    throw new TypeError("identity assertion.meaning must not chain multiple independently addressable propositions");
   }
   return meaning;
 }

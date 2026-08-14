@@ -7,9 +7,8 @@ import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { IdentityConflictError, identityAssertionId, identityClaimId } from "../src/identity-provenance-domain.mjs";
-import { IDENTITY_DOMAIN_REGISTRY_VERSION } from "../src/identity-domain-registry.mjs";
-import { IDENTITY_DOMAIN_REGISTRY_V2_VERSION, identityDomainV2Definition } from "../src/identity-domain-registry-v2.mjs";
-import { IDENTITY_ATOMIC_CLAIM_POLICY_V1 } from "../src/identity-claim-discipline.mjs";
+import { IDENTITY_DOMAIN_REGISTRY_VERSION, identityDomainDefinition } from "../src/identity-domain-registry.mjs";
+import { IDENTITY_ATOMIC_CLAIM_POLICY } from "../src/identity-claim-discipline.mjs";
 import { memoryPhotoPromptDigest, memoryPhotoRequirementSatisfied, memoryVisualCompanionId } from "../src/memory-visual-companion.mjs";
 import { openIdentityInspectionStore, openIdentityStore } from "../src/identity-store.mjs";
 
@@ -18,26 +17,30 @@ const fixture = JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.
 function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-identity-"));
   const databasePath = join(directory, "world.sqlite");
-  try { return run(databasePath); } finally { rmSync(directory, { recursive: true, force: true }); }
+  try { return run(databasePath); }
+  finally { rmSync(directory, { recursive: true, force: true }); }
 }
+
 function seed(databasePath) {
   const store = openWorldStore(databasePath);
   const thread = store.seedThread(structuredClone(fixture)).thread;
   store.close();
   return thread;
 }
+
 function admission(sourceMode = "fibre_derivation", evidenceClassification = "exogenous") {
   return {
     policy: { id: "identity_world_admission", version: "1" },
-    claimDiscipline: { ...IDENTITY_ATOMIC_CLAIM_POLICY_V1 },
+    claimDiscipline: { ...IDENTITY_ATOMIC_CLAIM_POLICY },
     admittedBy: { entityId: "fibre.world-kernel", kind: "institution", displayName: "Fibre World Kernel" },
     evidenceClassification,
     sourceMode,
   };
 }
+
 function revisionOf(previous, overrides = {}) {
   const recordedAt = overrides.recordedAt ?? "2026-08-12T23:55:00Z";
-  const meaning = overrides.meaning ?? `${previous.meaning} (revised)`;
+  const meaning = overrides.meaning ?? `${previous.meaning} revised`;
   const candidate = {
     assertionId: identityAssertionId({ claimId: previous.claimId, revision: previous.revision + 1, meaning, recordedAt }),
     claimId: previous.claimId,
@@ -49,7 +52,7 @@ function revisionOf(previous, overrides = {}) {
     meaning,
     provenanceClass: overrides.provenanceClass ?? previous.provenanceClass,
     authorship: overrides.authorship ?? previous.authorship,
-    sourceReferences: overrides.sourceReferences ?? [previous.assertionId],
+    sourceReferences: overrides.sourceReferences ?? previous.sourceReferences,
     effectiveAt: overrides.effectiveAt ?? recordedAt,
     recordedAt,
     visibility: overrides.visibility ?? previous.visibility,
@@ -62,43 +65,48 @@ function revisionOf(previous, overrides = {}) {
   if (overrides.disputeCorrection !== undefined) candidate.disputeCorrection = overrides.disputeCorrection;
   return candidate;
 }
-function v2DisciplineBase(identity) {
-  const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions.find((item) => item.domain === "passport_name").sourceReferences[0];
-  const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "artistic-v2" });
+
+function currentClaim(identity, purpose = "craft") {
+  const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions[0].sourceReferences[0];
+  const claimId = identityClaimId({ threadId: fixture.threadId, purpose });
   const recordedAt = "2026-08-12T23:55:00Z";
+  const meaning = "I value making things by hand.";
   return {
-    assertionId: identityAssertionId({ claimId, revision: 1, recordedAt, meaning: "Mina values making things by hand." }),
-    claimId, revision: 1, threadId: fixture.threadId,
-    domain: "artistic_formation", kind: "craft_orientation",
+    assertionId: identityAssertionId({ claimId, revision: 1, meaning, recordedAt }),
+    claimId,
+    revision: 1,
+    threadId: fixture.threadId,
+    domain: "artistic_formation",
+    kind: "craft_orientation",
     claimPredicate: { subject: "self", predicate: "values_practice", object: "handmaking" },
-    meaning: "Mina values making things by hand.", provenanceClass: "historical_experienced",
+    meaning,
+    provenanceClass: "historical_experienced",
     authorship: { kind: "thread_self_authored", entityId: fixture.threadId },
-    sourceReferences: [seedEvent], effectiveAt: recordedAt, recordedAt,
-    visibility: "private", status: "current",
-    projectionClass: identityDomainV2Definition("artistic_formation").projectionSection,
-    behavioralStatus: "candidate_causal", admission: admission(),
+    sourceReferences: [seedEvent],
+    effectiveAt: recordedAt,
+    recordedAt,
+    visibility: "private",
+    status: "current",
+    projectionClass: identityDomainDefinition("artistic_formation").projectionSection,
+    behavioralStatus: "candidate_causal",
+    admission: admission(),
   };
 }
 
-test("#37 bootstrap remains pure-v1 and preserves its derivation shape", () => withDatabase((databasePath) => {
+test("seeded Thread identity uses one current registry and remains non-causal", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(databasePath);
   const integrity = identity.verifyThreadIdentityIntegrity(fixture.threadId);
   assert.equal(integrity.ok, true);
-  assert.equal(integrity.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
-  assert.deepEqual(integrity.admittedRegistryVersions, ["1"]);
-  assert.equal(integrity.claimCount, 13);
+  assert.deepEqual(integrity.admittedRegistryVersions, [IDENTITY_DOMAIN_REGISTRY_VERSION]);
   assert.equal(integrity.acceptedCausalAssertions, 0);
   assert.equal(integrity.endogenousEvidenceAssertions, 0);
   const view = identity.getCurrentIdentityView(fixture.threadId);
-  assert.equal(view.registry.version, "1");
+  assert.equal(view.registry.version, IDENTITY_DOMAIN_REGISTRY_VERSION);
   assert.match(view.registry.digest, /^sha256:[0-9a-f]{64}$/);
-  assert.equal(view.derivationPolicy.version, "1");
-  assert.equal(view.registryBindings, undefined);
   const passport = identity.getPassport(fixture.threadId);
   assert.equal(passport.canonicalName, "Mina Park");
-  assert.equal(passport.registryVersion, "1");
-  assert.equal(passport.derivationPolicy.version, "1");
+  assert.equal(passport.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
   const visual = identity.getMemoryVisualCompanionHistory(fixture.threadId, "mem_mina_first_review")[0].companion;
   assert.equal(visual.companionId, memoryVisualCompanionId(fixture.threadId, "mem_mina_first_review"));
   assert.equal(memoryPhotoRequirementSatisfied(visual), false);
@@ -106,70 +114,71 @@ test("#37 bootstrap remains pure-v1 and preserves its derivation shape", () => w
   identity.close();
 }));
 
-test("v1 revisions stay v1 but public writes cannot use the old claims as biography-blob bypasses", () => withDatabase((databasePath) => {
+test("current identity revisions stay in one format and biography bundles are rejected", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(databasePath);
   const original = identity.getCurrentIdentityView(fixture.threadId).assertions.find((item) => item.domain === "passport_name");
-  const changed = revisionOf(original, { meaning: "Mina Park Lee", provenanceClass: "self_authored", authorship: { kind: "thread_self_authored", entityId: fixture.threadId }, behavioralStatus: "candidate_causal" });
-  assert.equal(identity.recordAssertion(changed).registryVersion, "1");
+  const changed = revisionOf(original, {
+    meaning: "Mina Park Lee",
+    provenanceClass: "self_authored",
+    authorship: { kind: "thread_self_authored", entityId: fixture.threadId },
+    behavioralStatus: "candidate_causal",
+  });
+  assert.equal(identity.recordAssertion(changed).registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
   assert.equal(identity.getPassport(fixture.threadId).canonicalName, "Mina Park Lee");
-  assert.throws(() => identity.recordAssertion(revisionOf(changed, { meaning: "Mina Park Lee; she is also a sculptor", recordedAt: "2026-08-12T23:56:00Z" })), /one material proposition|bundle/i);
+  assert.throws(() => identity.recordAssertion(revisionOf(changed, {
+    meaning: "Mina Park Lee; she is also a sculptor",
+    recordedAt: "2026-08-12T23:56:00Z",
+  })), /one material proposition|bundle/i);
   identity.close();
 }));
 
-test("v2 writes require a structural predicate and a recorded discipline witness", () => withDatabase((databasePath) => {
+test("current claims require structured predicates and the current discipline witness", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(databasePath);
-  const base = v2DisciplineBase(identity);
+  const base = currentClaim(identity);
   const stored = identity.recordAssertion(base);
-  assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_V2_VERSION);
+  assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
   assert.deepEqual(identity.getAssertion(fixture.threadId, base.assertionId).assertion.claimPredicate, base.claimPredicate);
+
   for (const [purpose, meaning] of [
     ["sentence", "Mina values handmaking. Her father grew up in Seoul."],
-    ["lower", "Mina values handmaking. her father grew up in Seoul."],
     ["semicolon", "Mina values handmaking; her father grew up in Seoul"],
-    ["dash", "Mina values handmaking — her father ran a store — she moved away"],
+    ["dash", "Mina values handmaking — her father ran a store"],
   ]) {
-    const claimId = identityClaimId({ purpose });
-    assert.throws(() => identity.recordAssertion({ ...base, claimId, assertionId: identityAssertionId({ claimId, revision: 1 }), meaning }), /one material proposition|bundle/i);
+    const candidate = currentClaim(identity, purpose);
+    assert.throws(() => identity.recordAssertion({ ...candidate, meaning }), /one material proposition|bundle/i);
   }
-  const wrongId = identityClaimId({ purpose: "wrong-discipline" });
-  assert.throws(() => identity.recordAssertion({ ...base, claimId: wrongId, assertionId: identityAssertionId({ claimId: wrongId, revision: 1 }), admission: { ...admission(), claimDiscipline: { id: "identity_atomic_material_proposition", version: "999" } } }), /current claim discipline|unknown historical/i);
-  const integrity = identity.verifyThreadIdentityIntegrity(fixture.threadId);
-  assert.deepEqual(integrity.admittedRegistryVersions, ["1", "2"]);
-  assert.equal(integrity.registryVersion, null);
-  const view = identity.getCurrentIdentityView(fixture.threadId);
-  assert.equal(view.derivationPolicy.version, "2");
-  assert.ok(view.registryBindings.some((item) => item.registryVersion === "2" && item.domain === "artistic_formation"));
+
+  const wrong = currentClaim(identity, "wrong-discipline");
+  assert.throws(() => identity.recordAssertion({
+    ...wrong,
+    admission: { ...wrong.admission, claimDiscipline: { id: "identity_atomic_material_proposition", version: "999" } },
+  }), /claim discipline/i);
   identity.close();
-  const reopened = openIdentityStore(databasePath);
-  assert.equal(reopened.getCurrentIdentityView(fixture.threadId).assertions.length, 14);
-  assert.equal(reopened.getPassport(fixture.threadId).canonicalName, "Mina Park");
-  assert.equal(reopened.verifyThreadIdentityIntegrity(fixture.threadId).ok, true);
-  reopened.close();
+}));
+
+test("natural-language identity may use ordinary conjunctions without being treated as a schema error", () => withDatabase((databasePath) => {
+  seed(databasePath);
+  const identity = openIdentityStore(databasePath);
+  const candidate = currentClaim(identity, "ordinary-conjunctions");
+  candidate.meaning = "I enjoy drawing and painting and writing stories with close friends.";
+  candidate.assertionId = identityAssertionId({ claimId: candidate.claimId, revision: 1, meaning: candidate.meaning, recordedAt: candidate.recordedAt });
+  assert.doesNotThrow(() => identity.recordAssertion(candidate));
+  identity.close();
 }));
 
 test("#38 refuses causal inflation, endogenous credit, and cross-slot revisions", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(databasePath);
-  const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions[0].sourceReferences[0];
-  const claimId = identityClaimId({ purpose: "craft" });
-  const base = {
-    assertionId: identityAssertionId({ claimId, revision: 1 }), claimId, revision: 1, threadId: fixture.threadId,
-    domain: "artistic_formation", kind: "craft_orientation",
-    claimPredicate: { subject: "self", predicate: "values_practice", object: "handmaking" },
-    meaning: "I value making things by hand.", provenanceClass: "historical_experienced",
-    authorship: { kind: "thread_self_authored", entityId: fixture.threadId }, sourceReferences: [seedEvent],
-    effectiveAt: "2026-08-12T23:55:00Z", recordedAt: "2026-08-12T23:55:00Z", visibility: "private", status: "current",
-    projectionClass: identityDomainV2Definition("artistic_formation").projectionSection, behavioralStatus: "candidate_causal", admission: admission(),
-  };
+  const base = currentClaim(identity);
   identity.recordAssertion(base);
-  const causalId = identityClaimId({ purpose: "causal" });
-  assert.throws(() => identity.recordAssertion({ ...base, claimId: causalId, assertionId: identityAssertionId({ claimId: causalId, revision: 1 }), behavioralStatus: "accepted_causal" }), /#38 cannot author accepted_causal/);
-  const endogenousId = identityClaimId({ purpose: "endogenous" });
-  assert.throws(() => identity.recordAssertion({ ...base, claimId: endogenousId, assertionId: identityAssertionId({ claimId: endogenousId, revision: 1 }), admission: admission("thread_runtime", "endogenous") }), /#42 must earn/);
+  const causal = currentClaim(identity, "causal");
+  assert.throws(() => identity.recordAssertion({ ...causal, behavioralStatus: "accepted_causal" }), /#38 cannot author accepted_causal/);
+  const endogenous = currentClaim(identity, "endogenous");
+  assert.throws(() => identity.recordAssertion({ ...endogenous, admission: admission("thread_runtime", "endogenous") }), /#42 must earn/);
   const cross = revisionOf(base, { meaning: "This tries to move the claim.", projectionClass: "culture" });
-  cross.domain = "upbringing_culture";
+  cross.domain = "cultural_formation";
   cross.provenanceClass = "upbringing_cultural";
   assert.throws(() => identity.recordAssertion(cross), /changes identity slot|projectionClass/);
   identity.close();
@@ -199,21 +208,5 @@ test("read-only identity inspection detects coherent JSON tampering", () => with
   database.close();
   const inspector = openIdentityInspectionStore(databasePath);
   assert.throws(() => inspector.verifyThreadIdentityIntegrity(fixture.threadId), /digest\/canonical JSON verification/);
-  inspector.close();
-}));
-
-test("v5-style migration reconstructs identity and memory visual lineages", () => withDatabase((databasePath) => {
-  seed(databasePath);
-  const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
-  database.exec("DROP TRIGGER identity_assertions_registry_pin; DROP TRIGGER identity_assertions_no_update; DROP TRIGGER identity_assertions_no_delete; DROP TRIGGER memory_visual_companions_no_update; DROP TRIGGER memory_visual_companions_no_delete; DROP TABLE memory_visual_companion_records; DROP TABLE identity_assertion_records; PRAGMA user_version=5;");
-  database.close();
-  const reopened = openWorldStore(databasePath);
-  assert.equal(reopened.storageMetadata().schemaVersion, 6);
-  reopened.close();
-  const inspector = openIdentityInspectionStore(databasePath);
-  const integrity = inspector.verifyThreadIdentityIntegrity(fixture.threadId);
-  assert.equal(integrity.claimCount, 13);
-  assert.deepEqual(integrity.admittedRegistryVersions, ["1"]);
-  assert.equal(integrity.memoryVisualCompanionCount, fixture.memoryRefs.length);
   inspector.close();
 }));

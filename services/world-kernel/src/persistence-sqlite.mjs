@@ -19,6 +19,7 @@ import {
   backfillMemoryVisualCompanions,
   createIdentityTables,
 } from "./identity-schema.mjs";
+import { createIdentityGroundingGuards } from "./identity-grounding-guard.mjs";
 import { repairIdentityAssertionRegistryV2Schema } from "./identity-schema-v2-repair.mjs";
 import { createSituatedLifeTables } from "./situated-life-schema.mjs";
 import { ensureSituatedLifeDigestColumns } from "./situated-life-integrity.mjs";
@@ -177,6 +178,7 @@ function createSchema(database) {
   createObligationTables(database);
   createStructuredAuthorityWithdrawalTables(database);
   createIdentityTables(database);
+  createIdentityGroundingGuards(database);
   createSituatedLifeTables(database);
   createEmbodimentTables(database);
   createAutobiographicalMemoryTables(database);
