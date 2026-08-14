@@ -57,9 +57,9 @@ function rendererInput(current) {
 }
 
 /**
- * Resolve a Thread memory's synthetic-photo obligation using its already-durable
- * prompt. The renderer is deliberately an injected boundary: Fibre owns the
- * prompt, provenance and truth status; a provider only returns a cache locator.
+ * Resolve one Thread memory's synthetic-photo obligation using its already-durable
+ * prompt. Fibre owns the prompt, provenance and truth status; the renderer only
+ * returns a replaceable cache locator.
  */
 export async function completeMemoryPhoto({
   identityStore,
@@ -115,6 +115,64 @@ export async function completeMemoryPhoto({
   return {
     ...identityStore.recordMemoryVisualCompanion(available),
     rendered: true,
+  };
+}
+
+/**
+ * Fulfill every currently outstanding synthetic memory-photo obligation for a
+ * Thread. This is intentionally a simple loop, not a queue or media workflow.
+ * Captured-photo evidence is never auto-replaced with synthetic media.
+ */
+export async function completeOutstandingMemoryPhotos({
+  identityStore,
+  threadId,
+  recordedAt,
+  render,
+}) {
+  if (typeof identityStore?.listMemoryVisualCompanions !== "function") {
+    throw new TypeError("identityStore must expose current memory visual companions");
+  }
+  assertId("threadId", threadId);
+  assertIsoTimestamp("recordedAt", recordedAt);
+  if (typeof render !== "function") throw new TypeError("render must be a function");
+
+  const current = identityStore.listMemoryVisualCompanions(threadId);
+  const results = [];
+  let alreadyAvailable = 0;
+  let completed = 0;
+  let failed = 0;
+  let capturedOutstanding = 0;
+
+  for (const { companion } of current) {
+    if (companion.status === "available") {
+      alreadyAvailable += 1;
+      continue;
+    }
+    if (companion.representationKind !== "synthetic_reconstruction") {
+      capturedOutstanding += 1;
+      continue;
+    }
+    const result = await completeMemoryPhoto({
+      identityStore,
+      threadId,
+      memoryRef: companion.memoryRef,
+      recordedAt,
+      render,
+    });
+    results.push(result);
+    if (result.companion.status === "available") completed += 1;
+    else failed += 1;
+  }
+
+  return {
+    threadId,
+    memoryCount: current.length,
+    attempted: results.length,
+    completed,
+    failed,
+    alreadyAvailable,
+    capturedOutstanding,
+    results,
   };
 }
 

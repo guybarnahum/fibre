@@ -8,6 +8,7 @@ import { openWorldStore } from "../src/persistence.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import {
   completeMemoryPhoto,
+  completeOutstandingMemoryPhotos,
   reportMemoryPhotoAssetIssue,
 } from "../src/memory-photo-completion.mjs";
 
@@ -28,32 +29,36 @@ function seed(databasePath) {
   world.close();
 }
 
-test("Slice D resolves the memory-photo obligation from the durable Fibre prompt", async () =>
+test("Slice D fulfills every outstanding memory-photo obligation from durable Fibre prompts", async () =>
   withDatabase(async (databasePath) => {
     seed(databasePath);
     const identity = openIdentityStore(databasePath);
     const memoryRef = fixture.memoryRefs[0];
     const pending = identity.getMemoryVisualCompanionHistory(fixture.threadId, memoryRef).at(-1).companion;
 
-    const completed = await completeMemoryPhoto({
+    const batch = await completeOutstandingMemoryPhotos({
       identityStore: identity,
       threadId: fixture.threadId,
-      memoryRef,
       recordedAt: "2026-08-14T18:05:00Z",
       render: async (request) => {
         assert.equal(request.photoPrompt, pending.photoPrompt);
         assert.equal(request.photoPromptDigest, pending.photoPromptDigest);
         assert.equal(request.truthStatus, "synthetic_representation_not_historical_evidence");
         return {
-          assetRef: "s3://fibre-memory-visuals/mina/first-memory.webp",
+          assetRef: `s3://fibre-memory-visuals/${request.memoryRef}.webp`,
           generatedBy: "fibre.test-renderer",
         };
       },
     });
 
-    assert.equal(completed.companion.status, "available");
-    assert.equal(completed.companion.photoPromptDigest, pending.photoPromptDigest);
-    assert.equal(completed.companion.truthStatus, "synthetic_representation_not_historical_evidence");
+    assert.equal(batch.memoryCount, fixture.memoryRefs.length);
+    assert.equal(batch.attempted, fixture.memoryRefs.length);
+    assert.equal(batch.completed, fixture.memoryRefs.length);
+    assert.equal(batch.failed, 0);
+    const completed = identity.getMemoryVisualCompanionHistory(fixture.threadId, memoryRef).at(-1).companion;
+    assert.equal(completed.status, "available");
+    assert.equal(completed.photoPromptDigest, pending.photoPromptDigest);
+    assert.equal(completed.truthStatus, "synthetic_representation_not_historical_evidence");
     assert.equal(identity.verifyThreadIdentityIntegrity(fixture.threadId).memoryPhotoRequirementSatisfied, true);
 
     const idempotent = await completeMemoryPhoto({
