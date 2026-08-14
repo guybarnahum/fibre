@@ -18,6 +18,7 @@ export const EVENT_TYPES = new Set([
   "SELF_MODEL_UPDATED",
   "THREAD_FROZEN",
   "COMPELLED_EPISODE_INTERRUPTED",
+  "AUTOBIOGRAPHICAL_MEMORY_RECORDED",
 ]);
 export const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
