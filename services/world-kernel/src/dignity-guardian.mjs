@@ -30,7 +30,6 @@ export const buildGuardianEvidence = buildDignityGuardianV4Evidence;
 export const buildGuardianModelInput = buildDignityGuardianV4ModelInput;
 export const buildGuardianResponseSchema = buildDignityGuardianV4ResponseSchema;
 export const guardianResolvedSchemaHash = dignityGuardianV4ResolvedSchemaHash;
-export const runGuardian = semanticDignityGuardianV4;
 
 function rawV4Output(output) {
   if (output !== null && typeof output === "object" && !Array.isArray(output) &&
@@ -55,6 +54,32 @@ function rawV4Output(output) {
   };
 }
 
+function completeDerivedAssessment(assessment) {
+  if (assessment.proposedAction !== "clarify" || assessment.repairQuestions.length > 0) {
+    return assessment;
+  }
+  return {
+    ...assessment,
+    repairQuestions: [
+      "What specific Thread-owned fact would materially change participation fit for this request?",
+    ],
+  };
+}
+
+function completeGuardianResult(result) {
+  return {
+    ...result,
+    assessment: completeDerivedAssessment(result.assessment),
+  };
+}
+
+export function runGuardian(capsule, modelAdapter, options = {}) {
+  const result = semanticDignityGuardianV4(capsule, modelAdapter, options);
+  return result !== null && typeof result === "object" && typeof result.then === "function"
+    ? result.then(completeGuardianResult)
+    : completeGuardianResult(result);
+}
+
 // Generic names are retained only as the stable active Guardian API used by
 // persistence/inspection code. They resolve to the current policy, not to v3.
 export function validateSemanticGuardianModelOutput(capsule, output) {
@@ -66,5 +91,7 @@ export function validateSemanticGuardianModelOutput(capsule, output) {
 }
 
 export function derivePrivateAssessmentFromSemanticOutput(capsule, output) {
-  return derivePrivateAssessmentFromV4Output(capsule, rawV4Output(output));
+  return completeDerivedAssessment(
+    derivePrivateAssessmentFromV4Output(capsule, rawV4Output(output)),
+  );
 }
