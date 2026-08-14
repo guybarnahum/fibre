@@ -137,3 +137,164 @@ endogenousEvidenceAssertions = 0
 ```
 
 Slice D remains out of scope until this gate clears.
+
+---
+
+## Closure disposition — 2026-08-14
+
+The HOLD above remains the authoritative first-review record. The implementation has now addressed each blocking attack surface. **Claude re-review is still required before Slice C closes.**
+
+### S1-1 / S1-1a disposition — repaired by one current pre-production format
+
+The reviewed-SHA failure was valid: `d0792f7...` could not reliably seed a Thread.
+
+The proposed remediation of preserving a legacy/current registry and historical policy-dispatch runtime is superseded by an explicit owner decision: **Fibre has no deployed Threads yet, so pre-production uses one canonical current identity format.** Seed/bootstrap and new writes use the same current format; obsolete pre-production data is recreated or migrated rather than interpreted through runtime legacy branches.
+
+This changes the remediation, not the finding that the reviewed SHA was broken.
+
+Current evidence:
+
+- Thread seed/bootstrap authors the same structured current identity format as ordinary writes;
+- the registry/policy runtime has one supported current pre-production format;
+- ordinary natural-language identity is not rejected by brittle grammar heuristics;
+- lived culture/language grounding is enforced at the persistence boundary, so direct `IdentityStore` writes cannot bypass same-Thread event grounding.
+
+### S1-2 disposition — CLOSED FOR RE-ATTACK
+
+Every admitted autobiographical memory revision is now externally anchored in immutable Thread history through:
+
+```text
+AUTOBIOGRAPHICAL_MEMORY_RECORDED
+```
+
+The anchor payload contains only:
+
+```text
+memoryId
+revision
+memoryDigest
+```
+
+The memory record, memory lineage head, Thread-history anchor, command witness, and Thread projection/version advance are committed atomically.
+
+Consequences:
+
+- matched-pair memory record/head tail truncation leaves a contradictory Thread-history anchor;
+- whole-lineage deletion leaves historical anchor residue;
+- the anchor records **that Fibre recorded a memory revision**, not that the memory interpretation was historically true;
+- `rememberedMeaning` is deliberately absent from the historical anchor payload.
+
+A hostile regression now performs matched-pair tail truncation and requires integrity failure.
+
+### S2-1 disposition — CLOSED FOR RE-ATTACK
+
+Memory subject identity is now durable:
+
+```text
+subject: {
+  originEventRef,
+  slot
+}
+```
+
+`memoryId` must recompute from `{threadId, originEventRef, slot}`. The subject is immutable across revisions, the origin event must remain a subject event, and previous subject-history references cannot silently disappear.
+
+Changing the subject means creating a different memory lineage rather than reinterpreting the old one.
+
+### S2-2 disposition — CLOSED FOR RE-ATTACK
+
+Every `eventRef` must:
+
+- resolve to the same Thread's immutable history;
+- occur no later than the memory's `asOf`;
+- fall within the declared `subjectPeriod`.
+
+The former “1998–2004 childhood witnessed only by a 2026 event” path is mechanically rejected.
+
+### S2-3 disposition — CLOSED FOR RE-ATTACK
+
+The fake-interiority paths have been narrowed deliberately:
+
+- `rememberedAt` was removed;
+- `lastRecalledAt` remains rejected;
+- `thread_self_authored` remains unavailable for Slice C memory;
+- an allowed Fibre/imported authorship class may not set `authorship.entityId` to the owning Thread;
+- changing `accessibility` or `retentionState` between revisions requires at least one newly cited **resolved epistemic evidence reference**.
+
+Slice C therefore records memory state/perspective without claiming an unwitnessed moment of recall, forgetting, reflection, or self-authored Development.
+
+### S2-4 disposition — CLOSED FOR RE-ATTACK
+
+Subject history and epistemic evidence are now separate continuity classes.
+
+Evidence continuity is computed over:
+
+```text
+supportingEvidenceRefs ∪ contradictingEvidenceRefs
+```
+
+`eventRefs` cannot satisfy that continuity requirement. A prior supporting or contradicting citation cannot silently disappear merely because it remains part of the memory subject.
+
+Explicit support ↔ contradiction reclassification remains allowed because the evidence reference stays durably cited.
+
+### S3-1 disposition — bounded without brittle natural-language parsing
+
+`rememberedMeaning` now has:
+
+- a material-content floor rejecting trivial values;
+- a 2048-byte upper bound.
+
+The closure patch deliberately does **not** attempt to infer semantic atomicity from generic English grammar such as counting conjunctions. Fibre depends on expressive, differentiated natural-language identity and autobiographical text; consumer-specific semantic constraints belong with the future consumer if #40 needs them.
+
+### Additional closure hardening
+
+During closure work, a direct-store bypass was found in the already-frozen situated-life substrate: service-level cultural/language event checks could be bypassed by writing directly through `IdentityStore`.
+
+The persistence boundary now requires `cultural_formation` and `language_formation` assertions to include a resolved same-Thread `thread_event` witness. This is adjacent hardening, not a reopening of Slice B.
+
+The anti-inflation boundary remains:
+
+```text
+acceptedCausalAssertions = 0
+endogenousEvidenceAssertions = 0
+```
+
+### Validation evidence
+
+Implementation baseline:
+
+```text
+ae8e8638c511b248cba6c61e8cf534b224c460cd
+```
+
+GitHub Actions run:
+
+```text
+31824559697
+```
+
+That run passed all decomposed repository gates:
+
+- Markdown projections;
+- build;
+- domain package tests;
+- Slice C autobiographical-memory tests;
+- identity tests;
+- situated-life tests;
+- embodiment tests;
+- remaining world-kernel tests;
+- repository tooling tests;
+- AI context-pack generation;
+- generated-repository validation.
+
+The targeted Slice C suite is **11 / 11 green**, including subject pinning, period grounding, evidence reclassification, fresh-evidence requirements for accessibility/retention, no fake interior authorship, Thread-history anchoring, and matched-pair truncation detection.
+
+The final Claude handoff commit restores the normal `npm run check` workflow and updates review documentation only. Its exact SHA must also be green before it is handed to Claude.
+
+## Re-review posture
+
+All prior S1/S2 findings are **closed for re-attack, not self-cleared**.
+
+Claude should use `docs/validation/m2-pr38-slice-c-review-request.md` for the narrow re-review and either CLEAR Slice C or identify a concrete remaining S1/S2 attack.
+
+Slice D remains untouched until Claude clears this gate.
