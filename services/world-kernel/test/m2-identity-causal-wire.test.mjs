@@ -19,10 +19,10 @@ const fixture = JSON.parse(readFileSync(
   "utf8",
 ));
 
-function withDatabase(run) {
+async function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-m2-causal-wire-"));
   const databasePath = join(directory, "world.sqlite");
-  try { return run(databasePath); }
+  try { return await run(databasePath); }
   finally { rmSync(directory, { recursive: true, force: true }); }
 }
 
