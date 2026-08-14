@@ -28,6 +28,11 @@ export function inspectThreadIdentity(databasePath, { threadId = null } = {}) {
   }
 }
 
+function registryLabel(integrity) {
+  if (integrity.registryVersion !== null) return `v${integrity.registryVersion}`;
+  return integrity.admittedRegistryVersions.map((version) => `v${version}`).join("+");
+}
+
 export function formatThreadIdentityInspection(report) {
   const lines = [
     `Thread Identity: ${report.ok ? "PASS" : "FAIL"}`,
@@ -38,7 +43,7 @@ export function formatThreadIdentityInspection(report) {
     const integrity = item.integrity;
     lines.push(
       `Thread ${integrity.threadId}: claims=${integrity.claimCount}, assertions=${integrity.assertionCount}, memoryVisuals=${integrity.memoryVisualCompanionCount}`,
-      `  acceptedCausal=${integrity.acceptedCausalAssertions}, endogenous=${integrity.endogenousEvidenceAssertions}, registry=v${integrity.registryVersion}`,
+      `  acceptedCausal=${integrity.acceptedCausalAssertions}, endogenous=${integrity.endogenousEvidenceAssertions}, registry=${registryLabel(integrity)}`,
       `  memoryPhotos=${integrity.memoryPhotoRequirementSatisfied ? "SATISFIED" : "OUTSTANDING"}, missing=${integrity.memoriesMissingPhotoCount}`,
       `  passport=${item.passport.canonicalName ?? "(unnamed)"} (${integrity.passportDigest})`,
     );

@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc -b",
     "test": "npm run build && node --disable-warning=ExperimentalWarning --test packages/domain/test/*.test.mjs services/world-kernel/test/*.test.mjs tools/*.test.mjs",
-    "validate": "node tools/validate-repo.mjs",
+    "validate": "node tools/validate-repo.mjs && node --disable-warning=ExperimentalWarning tools/validate-world-seed.mjs",
     "includes:sync": "node tools/sync-markdown-includes.mjs",
     "includes:check": "node tools/sync-markdown-includes.mjs --check",
     "context-pack": "node tools/build-context-pack.mjs",

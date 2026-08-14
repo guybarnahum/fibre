@@ -1,0 +1,1 @@
+export const AUTOBIOGRAPHICAL_MEMORY_SLICE = "C";
