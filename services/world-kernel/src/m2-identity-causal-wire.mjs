@@ -10,6 +10,7 @@ import { semanticDignityGuardianV4 } from "./dignity-guardian-v4.mjs";
 export const M2_IDENTITY_CAUSAL_WIRE_POLICY = Object.freeze({
   id: "m2_identity_causal_wire_preflight",
   version: "1",
+  selection: "latest_current_candidate_causal",
 });
 
 const SHA256 = /^sha256:[0-9a-f]{64}$/;
@@ -32,11 +33,19 @@ function assertIdentityView(identityView, threadId) {
   }
 }
 
-function currentCandidateAssertions(identityView) {
-  return identityView.assertions.filter((assertion) =>
-    assertion?.isCurrentRevision === true &&
-    assertion.status === "current" &&
-    assertion.behavioralStatus === "candidate_causal");
+function selectPreflightAssertion(identityView) {
+  const candidates = identityView.assertions
+    .filter((assertion) =>
+      assertion?.isCurrentRevision === true &&
+      assertion.status === "current" &&
+      assertion.behavioralStatus === "candidate_causal")
+    .sort((left, right) =>
+      left.recordedAt.localeCompare(right.recordedAt) ||
+      left.assertionId.localeCompare(right.assertionId));
+  if (candidates.length === 0) {
+    throw new TypeError("M2 causal-wire preflight requires a current candidate_causal assertion");
+  }
+  return candidates.at(-1);
 }
 
 function evidenceKey(assertion) {
@@ -87,13 +96,7 @@ export function prepareM2IdentityCausalWirePreflight(capsule, identityView) {
   }
   assertIdentityView(identityView, capsule.threadId);
 
-  const candidates = currentCandidateAssertions(identityView);
-  if (candidates.length !== 1) {
-    throw new TypeError(
-      `M2 causal-wire preflight requires exactly one current candidate_causal assertion; found ${candidates.length}`,
-    );
-  }
-  const projection = projectAssertion(candidates[0], identityView);
+  const projection = projectAssertion(selectPreflightAssertion(identityView), identityView);
   if (Object.hasOwn(capsule.semanticTraits, projection.traitKey)) {
     throw new TypeError("M2 causal-wire evidence key collides with existing semantic traits");
   }
