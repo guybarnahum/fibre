@@ -73,7 +73,7 @@ Therefore:
 
 > **An event is not yet character. A Thread's durable autobiographical interpretation of that event is part of character.**
 
-Candidate v1 remains a failed development record. It must not be tuned or rerun into a pass.
+Candidate v1 remains a failed development record. It must not be tuned or rerun into a pass. Its implementation/result may live in the closed development PR and Git history rather than remain as a second active Guardian implementation.
 
 ## Pass 2 — event + remembered meaning
 
