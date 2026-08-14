@@ -48,7 +48,7 @@ function recordCandidateAssertion(databasePath) {
     claimPredicate: { subject: "self", predicate: "practices", object: "hand_bound_album_repair" },
     meaning,
     provenanceClass: "historical_experienced",
-    authorship: { kind: "thread_self_authored", entityId: fixture.threadId },
+    authorship: { kind: "fibre_policy_derived", entityId: "fibre.world-kernel" },
     sourceReferences: [seedEvent],
     effectiveAt: recordedAt,
     recordedAt,
