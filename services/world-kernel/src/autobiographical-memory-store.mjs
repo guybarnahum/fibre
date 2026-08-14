@@ -1,6 +1,11 @@
 import { DatabaseSync } from "node:sqlite";
 import { IntegrityError, canonicalJson } from "./persistence-common.mjs";
-import { migrateDatabase, normalizeDatabasePath, safeRollback, translateStorageError } from "./persistence-sqlite.mjs";
+import {
+  migrateDatabase,
+  normalizeDatabasePath,
+  safeRollback,
+  translateStorageError,
+} from "./persistence-sqlite.mjs";
 import {
   autobiographicalMemoryIsCurrent,
   autobiographicalMemoryRecordDigest,
@@ -11,16 +16,33 @@ export class AutobiographicalMemoryConflictError extends Error {}
 export class AutobiographicalMemoryNotFoundError extends Error {}
 
 function parseRecord(row) {
-  try { return JSON.parse(row.record_json); }
-  catch (error) { throw new IntegrityError(`memory ${row.memory_id} JSON is invalid: ${error.message}`); }
+  try {
+    return JSON.parse(row.record_json);
+  } catch (error) {
+    throw new IntegrityError(`memory ${row.memory_id} JSON is invalid: ${error.message}`);
+  }
 }
-function visibilityRank(value) { return { private: 0, restricted: 1, public: 2 }[value]; }
+
+function visibilityRank(value) {
+  return { private: 0, restricted: 1, public: 2 }[value];
+}
+
 function evidenceSet(record) {
-  return new Set([...record.eventRefs, ...record.supportingEvidenceRefs, ...record.contradictingEvidenceRefs]);
+  return new Set([...record.supportingEvidenceRefs, ...record.contradictingEvidenceRefs]);
 }
+
 function isEvidenceSuperset(previous, current) {
   const next = evidenceSet(current);
   return [...evidenceSet(previous)].every((ref) => next.has(ref));
+}
+
+function isSubjectEventSuperset(previous, current) {
+  const next = new Set(current.eventRefs);
+  return previous.eventRefs.every((ref) => next.has(ref));
+}
+
+function sameSubject(previous, current) {
+  return canonicalJson(previous.subject) === canonicalJson(current.subject);
 }
 
 export class AutobiographicalMemoryStore {
@@ -30,29 +52,43 @@ export class AutobiographicalMemoryStore {
   constructor(databasePath, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
     this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly, enableForeignKeyConstraints: true,
+      readOnly,
+      enableForeignKeyConstraints: true,
     });
     try {
-      if (readOnly) this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      else {
+      if (readOnly) {
+        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
+      } else {
         this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
         migrateDatabase(this.#database);
       }
     } catch (error) {
-      this.#database.close(); throw error;
+      this.#database.close();
+      throw error;
     }
   }
 
-  close() { this.#database.close(); }
-  queryOnly() { return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1; }
+  close() {
+    this.#database.close();
+  }
+
+  queryOnly() {
+    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
+  }
 
   #requireThread(threadId) {
     const row = this.#database.prepare("SELECT created_at FROM threads WHERE thread_id=?").get(threadId);
-    if (row === undefined) throw new AutobiographicalMemoryNotFoundError(`Thread ${threadId} was not found`);
+    if (row === undefined) {
+      throw new AutobiographicalMemoryNotFoundError(`Thread ${threadId} was not found`);
+    }
     return row;
   }
 
   #requireEventRefs(record) {
+    const start = Date.parse(record.subjectPeriod.startAt);
+    const end = record.subjectPeriod.endAt === null
+      ? null
+      : Date.parse(record.subjectPeriod.endAt);
     for (const ref of record.eventRefs) {
       const event = this.#database.prepare(
         "SELECT occurred_at FROM thread_events WHERE thread_id=? AND event_id=?",
@@ -62,8 +98,16 @@ export class AutobiographicalMemoryStore {
           `memory event reference ${ref} does not resolve to Thread ${record.threadId} history`,
         );
       }
-      if (Date.parse(event.occurred_at) > Date.parse(record.asOf)) {
-        throw new AutobiographicalMemoryConflictError(`memory cannot cite future event ${ref} relative to asOf`);
+      const occurredAt = Date.parse(event.occurred_at);
+      if (occurredAt > Date.parse(record.asOf)) {
+        throw new AutobiographicalMemoryConflictError(
+          `memory cannot cite future event ${ref} relative to asOf`,
+        );
+      }
+      if (occurredAt < start || (end !== null && occurredAt > end)) {
+        throw new AutobiographicalMemoryConflictError(
+          `memory subject event ${ref} falls outside subjectPeriod`,
+        );
       }
     }
   }
@@ -94,52 +138,96 @@ export class AutobiographicalMemoryStore {
   memoryHistory(threadId, memoryId, { required = true } = {}) {
     this.#requireThread(threadId);
     const rows = this.#database.prepare(`
-      SELECT memory_id,revision,thread_id,status,visibility,remembered_at,as_of,
+      SELECT memory_id,revision,thread_id,status,visibility,as_of,
         recorded_at,supersedes_revision,record_json,record_digest
       FROM autobiographical_memory_records
       WHERE thread_id=? AND memory_id=? ORDER BY revision
     `).all(threadId, memoryId);
     if (rows.length === 0) {
-      if (required) throw new AutobiographicalMemoryNotFoundError(`memory ${memoryId} was not found`);
+      if (required) {
+        throw new AutobiographicalMemoryNotFoundError(`memory ${memoryId} was not found`);
+      }
       return [];
     }
+
     const heads = this.#database.prepare(`
       SELECT revision,thread_id,head_digest,recorded_at
       FROM autobiographical_memory_lineage_heads
       WHERE memory_id=? ORDER BY revision
     `).all(memoryId);
-    if (heads.length !== rows.length) throw new IntegrityError(`memory ${memoryId} head chain length mismatch`);
+    if (heads.length !== rows.length) {
+      throw new IntegrityError(`memory ${memoryId} head chain length mismatch`);
+    }
 
     const history = [];
     let previousDigest = null;
     for (let index = 0; index < rows.length; index += 1) {
       const row = rows[index];
       const record = normalizeAutobiographicalMemory(parseRecord(row));
-      if (record.revision !== index + 1) throw new IntegrityError(`memory ${memoryId} has non-contiguous revisions`);
+      if (record.revision !== index + 1) {
+        throw new IntegrityError(`memory ${memoryId} has non-contiguous revisions`);
+      }
+
       const checks = [
-        [row.memory_id, record.memoryId, "memory ID"], [Number(row.revision), record.revision, "revision"],
-        [row.thread_id, record.threadId, "Thread"], [row.status, record.status, "status"],
-        [row.visibility, record.visibility, "visibility"], [row.remembered_at, record.rememberedAt, "rememberedAt"],
-        [row.as_of, record.asOf, "asOf"], [row.recorded_at, record.recordedAt, "recordedAt"],
+        [row.memory_id, record.memoryId, "memory ID"],
+        [Number(row.revision), record.revision, "revision"],
+        [row.thread_id, record.threadId, "Thread"],
+        [row.status, record.status, "status"],
+        [row.visibility, record.visibility, "visibility"],
+        [row.as_of, record.asOf, "asOf"],
+        [row.recorded_at, record.recordedAt, "recordedAt"],
         [row.supersedes_revision, record.supersedesRevision ?? null, "supersedes revision"],
       ];
       for (const [actual, expected, field] of checks) {
-        if (actual !== expected) throw new IntegrityError(`memory ${memoryId} ${field} column mismatch`);
+        if (actual !== expected) {
+          throw new IntegrityError(`memory ${memoryId} ${field} column mismatch`);
+        }
       }
-      if (row.record_json !== canonicalJson(record)) throw new IntegrityError(`memory ${memoryId} is not canonical JSON`);
+      if (row.record_json !== canonicalJson(record)) {
+        throw new IntegrityError(`memory ${memoryId} is not canonical JSON`);
+      }
+
+      this.#requireEventRefs(record);
+      this.#requireEvidence(record);
       const digest = autobiographicalMemoryRecordDigest(record, previousDigest);
-      if (row.record_digest !== digest) throw new IntegrityError(`memory ${memoryId} digest mismatch at revision ${record.revision}`);
+      if (row.record_digest !== digest) {
+        throw new IntegrityError(`memory ${memoryId} digest mismatch at revision ${record.revision}`);
+      }
+
       const head = heads[index];
-      if (Number(head.revision) !== record.revision || head.thread_id !== threadId || head.head_digest !== digest || head.recorded_at !== record.recordedAt) {
+      if (
+        Number(head.revision) !== record.revision ||
+        head.thread_id !== threadId ||
+        head.head_digest !== digest ||
+        head.recorded_at !== record.recordedAt
+      ) {
         throw new IntegrityError(`memory ${memoryId} lineage head mismatch at revision ${record.revision}`);
       }
+
       if (index > 0) {
         const previous = history[index - 1];
-        if (record.supersedesRevision !== previous.revision) throw new IntegrityError(`memory ${memoryId} does not supersede its predecessor`);
-        if (Date.parse(record.recordedAt) < Date.parse(previous.recordedAt)) throw new IntegrityError(`memory ${memoryId} recordedAt moves backwards`);
-        if (record.threadId !== previous.threadId) throw new IntegrityError(`memory ${memoryId} changes Thread identity`);
+        if (record.supersedesRevision !== previous.revision) {
+          throw new IntegrityError(`memory ${memoryId} does not supersede its predecessor`);
+        }
+        if (Date.parse(record.recordedAt) < Date.parse(previous.recordedAt)) {
+          throw new IntegrityError(`memory ${memoryId} recordedAt moves backwards`);
+        }
+        if (record.threadId !== previous.threadId) {
+          throw new IntegrityError(`memory ${memoryId} changes Thread identity`);
+        }
+        if (!sameSubject(previous, record)) {
+          throw new IntegrityError(`memory ${memoryId} changes its immutable subject`);
+        }
+        if (!isSubjectEventSuperset(previous, record)) {
+          throw new IntegrityError(`memory ${memoryId} erases subject-history references`);
+        }
+        if (!isEvidenceSuperset(previous, record)) {
+          throw new IntegrityError(`memory ${memoryId} erases previously cited evidence`);
+        }
       }
-      history.push(record); previousDigest = digest;
+
+      history.push(record);
+      previousDigest = digest;
     }
     return history;
   }
@@ -149,24 +237,32 @@ export class AutobiographicalMemoryStore {
     const ids = this.#database.prepare(
       "SELECT DISTINCT memory_id FROM autobiographical_memory_records WHERE thread_id=? ORDER BY memory_id",
     ).all(threadId);
-    return ids.map(({ memory_id: id }) => this.memoryHistory(threadId, id).at(-1)).filter(autobiographicalMemoryIsCurrent);
+    return ids
+      .map(({ memory_id: id }) => this.memoryHistory(threadId, id).at(-1))
+      .filter(autobiographicalMemoryIsCurrent);
   }
 
   inspectThread(threadId) {
     return {
       threadId,
       memories: this.listCurrentMemories(threadId),
-      standingCredit: { acceptedCausalAssertions: 0, endogenousEvidenceAssertions: 0 },
+      standingCredit: {
+        acceptedCausalAssertions: 0,
+        endogenousEvidenceAssertions: 0,
+      },
     };
   }
 
   recordMemory(candidate) {
-    if (this.#readOnly) throw new AutobiographicalMemoryConflictError("read-only memory store cannot write");
+    if (this.#readOnly) {
+      throw new AutobiographicalMemoryConflictError("read-only memory store cannot write");
+    }
     const record = normalizeAutobiographicalMemory(candidate);
     const thread = this.#requireThread(record.threadId);
     if (Date.parse(record.recordedAt) < Date.parse(thread.created_at)) {
       throw new AutobiographicalMemoryConflictError("memory cannot be recorded before Thread creation");
     }
+
     try {
       this.#database.exec("BEGIN IMMEDIATE");
       this.#requireEventRefs(record);
@@ -177,28 +273,54 @@ export class AutobiographicalMemoryStore {
           `memory ${record.memoryId} expected revision ${history.length + 1}`,
         );
       }
+
       const previous = history.at(-1) ?? null;
       if (previous !== null) {
+        if (!sameSubject(previous, record)) {
+          throw new AutobiographicalMemoryConflictError(
+            "memory revision cannot change its immutable subject",
+          );
+        }
+        if (!isSubjectEventSuperset(previous, record)) {
+          throw new AutobiographicalMemoryConflictError(
+            "memory revision cannot erase or replace subject-history references",
+          );
+        }
         if (!isEvidenceSuperset(previous, record)) {
-          throw new AutobiographicalMemoryConflictError("memory revision cannot erase previously cited evidence");
+          throw new AutobiographicalMemoryConflictError(
+            "memory revision cannot erase previously cited epistemic evidence",
+          );
         }
         if (visibilityRank(record.visibility) > visibilityRank(previous.visibility)) {
-          throw new AutobiographicalMemoryConflictError("memory visibility cannot widen without a future disclosure-authority path");
+          throw new AutobiographicalMemoryConflictError(
+            "memory visibility cannot widen without a future disclosure-authority path",
+          );
         }
       }
-      const previousDigest = previous === null ? null : this.#database.prepare(
-        "SELECT record_digest FROM autobiographical_memory_records WHERE memory_id=? AND revision=?",
-      ).get(record.memoryId, previous.revision).record_digest;
+
+      const previousDigest = previous === null
+        ? null
+        : this.#database.prepare(
+          "SELECT record_digest FROM autobiographical_memory_records WHERE memory_id=? AND revision=?",
+        ).get(record.memoryId, previous.revision).record_digest;
       const digest = autobiographicalMemoryRecordDigest(record, previousDigest);
+
       this.#database.prepare(`
         INSERT INTO autobiographical_memory_records(
-          memory_id,revision,thread_id,status,visibility,remembered_at,as_of,recorded_at,
+          memory_id,revision,thread_id,status,visibility,as_of,recorded_at,
           supersedes_revision,record_json,record_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
       `).run(
-        record.memoryId, record.revision, record.threadId, record.status, record.visibility,
-        record.rememberedAt, record.asOf, record.recordedAt, record.supersedesRevision ?? null,
-        canonicalJson(record), digest,
+        record.memoryId,
+        record.revision,
+        record.threadId,
+        record.status,
+        record.visibility,
+        record.asOf,
+        record.recordedAt,
+        record.supersedesRevision ?? null,
+        canonicalJson(record),
+        digest,
       );
       this.#database.prepare(`
         INSERT INTO autobiographical_memory_lineage_heads(
@@ -209,7 +331,13 @@ export class AutobiographicalMemoryStore {
       return record;
     } catch (error) {
       safeRollback(this.#database);
-      if (error instanceof IntegrityError || error instanceof AutobiographicalMemoryConflictError || error instanceof AutobiographicalMemoryNotFoundError) throw error;
+      if (
+        error instanceof IntegrityError ||
+        error instanceof AutobiographicalMemoryConflictError ||
+        error instanceof AutobiographicalMemoryNotFoundError
+      ) {
+        throw error;
+      }
       throw translateStorageError(error);
     }
   }
@@ -218,6 +346,7 @@ export class AutobiographicalMemoryStore {
 export function openAutobiographicalMemoryStore(databasePath) {
   return new AutobiographicalMemoryStore(databasePath);
 }
+
 export function openAutobiographicalMemoryInspectionStore(databasePath) {
   return new AutobiographicalMemoryStore(databasePath, { readOnly: true });
 }

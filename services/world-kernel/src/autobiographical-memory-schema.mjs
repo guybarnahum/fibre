@@ -9,7 +9,6 @@ export function createAutobiographicalMemoryTables(database) {
       thread_id TEXT NOT NULL,
       status TEXT NOT NULL CHECK (status IN ('current','disputed','corrected','retracted')),
       visibility TEXT NOT NULL CHECK (visibility IN ('public','restricted','private')),
-      remembered_at TEXT NOT NULL,
       as_of TEXT NOT NULL,
       recorded_at TEXT NOT NULL,
       supersedes_revision INTEGER,
