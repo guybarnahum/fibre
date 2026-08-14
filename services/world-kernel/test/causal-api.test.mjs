@@ -147,7 +147,7 @@ test("canonical private API derives the current Guardian stance and rejects call
     assert.equal(created.body.trace.privateStance.dignityBand, "contested");
     assert.equal(created.body.trace.privateStance.policy.version, DIGNITY_GUARDIAN_POLICY.version);
     assert.equal(created.body.trace.appraisal.causalContext.selectionAuthority, "fibre");
-    assert.match(created.body.trace.privateStance.privateRationale, /does not claim willing individualized acceptance/i);
+    assert.match(created.body.trace.privateStance.privateRationale, /grounded semantic evidence/i);
     assert.equal(runtime.guardianModelAdapter.callCount, 1);
 
     const exactRetry = await json(
