@@ -122,7 +122,6 @@ test("current identity revisions stay in one format and biography bundles are re
     meaning: "Mina Park Lee",
     provenanceClass: "self_authored",
     authorship: { kind: "thread_self_authored", entityId: fixture.threadId },
-    behavioralStatus: "candidate_causal",
   });
   assert.equal(identity.recordAssertion(changed).registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
   assert.equal(identity.getPassport(fixture.threadId).canonicalName, "Mina Park Lee");
@@ -177,7 +176,11 @@ test("#38 refuses causal inflation, endogenous credit, and cross-slot revisions"
   assert.throws(() => identity.recordAssertion({ ...causal, behavioralStatus: "accepted_causal" }), /#38 cannot author accepted_causal/);
   const endogenous = currentClaim(identity, "endogenous");
   assert.throws(() => identity.recordAssertion({ ...endogenous, admission: admission("thread_runtime", "endogenous") }), /#42 must earn/);
-  const cross = revisionOf(base, { meaning: "This tries to move the claim.", projectionClass: "culture" });
+  const cross = revisionOf(base, {
+    meaning: "This tries to move the claim.",
+    projectionClass: "culture",
+    behavioralStatus: "context_only",
+  });
   cross.domain = "cultural_formation";
   cross.provenanceClass = "upbringing_cultural";
   assert.throws(() => identity.recordAssertion(cross), /changes identity slot|projectionClass/);
@@ -202,7 +205,7 @@ test("read-only identity inspection detects coherent JSON tampering", () => with
   const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
   const row = database.prepare("SELECT assertion_id,assertion_json FROM identity_assertion_records WHERE thread_id=? AND domain='self_authored_identity' LIMIT 1").get(fixture.threadId);
   const tampered = JSON.parse(row.assertion_json);
-  tampered.meaning = `${tampered.meaning} silently rewritten`;
+  tampered.visibility = tampered.visibility === "public" ? "restricted" : "public";
   database.exec("DROP TRIGGER identity_assertions_no_update");
   database.prepare("UPDATE identity_assertion_records SET assertion_json=? WHERE assertion_id=?").run(JSON.stringify(tampered), row.assertion_id);
   database.close();
