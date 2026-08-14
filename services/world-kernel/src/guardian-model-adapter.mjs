@@ -74,6 +74,10 @@ function canonicalDigest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
 }
 
+function boundedInputDigest(input) {
+  return canonicalDigest(input.capsule ?? input);
+}
+
 function evidenceJournalPath() {
   const value = process.env.FIBRE_GUARDIAN_EVIDENCE_JOURNAL;
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
@@ -374,7 +378,7 @@ export function createOpenAIResponsesGuardianAdapter({
             cycle: evidenceCycleId(),
             clientRequestId,
             attempt,
-            capsuleDigest: canonicalDigest(input.capsule),
+            capsuleDigest: boundedInputDigest(input),
             promptHash: sha256Digest(systemPrompt),
             responseSchemaHash: canonicalDigest(responseSchema),
             provider: provenance.provider,
@@ -404,7 +408,7 @@ export function createOpenAIResponsesGuardianAdapter({
             cycle: evidenceCycleId(),
             clientRequestId,
             attempt,
-            capsuleDigest: canonicalDigest(input.capsule),
+            capsuleDigest: boundedInputDigest(input),
             promptHash: sha256Digest(systemPrompt),
             responseSchemaHash: canonicalDigest(responseSchema),
             failure,
