@@ -16,7 +16,7 @@ The two implementation authorities are:
 - [`../architecture/genesis-compiler-contract-v1.md`](../architecture/genesis-compiler-contract-v1.md) — what Genesis cognition may know, produce, mechanically repair/reject, and publish;
 - this document — how #39 is implemented, verified, frozen, and reviewed slice by slice.
 
-Governing canon includes [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md), especially:
+Governing canon includes [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md), especially:
 
 > **A diagnostic must retain the possibility of a bad reading. Any property enforced at admission ceases to be measurable, and any metric that can only return success or an error is not a measurement.**
 

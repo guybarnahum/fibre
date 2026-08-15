@@ -22,6 +22,6 @@ Fibre is currently a private concept and prototype project.
 
 Answer what applies; a change that only touches wording or tooling will answer little of it.
 
-A change the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md) covers must also satisfy that guard and answer the [fidelity and ambition questions](docs/vision/invariants.md#required-proposal-and-release-questions).
+A change the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md) covers must also satisfy that guard and answer the [fidelity and ambition questions](docs/foundations/invariants.md#required-proposal-and-release-questions).
 
 Never treat a compelling LLM-generated proposal as accepted merely because it is well written.

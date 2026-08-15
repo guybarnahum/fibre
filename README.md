@@ -8,9 +8,9 @@ This repository is the canonical, version-controlled source for Fibre's concept,
 
 ## The Thirteen Principles of Fibre
 
-The exact list below is generated from the canonical region in [`docs/vision/principles.md`](docs/vision/principles.md). Edit the source and run `npm run includes:sync`; repository validation rejects drift.
+The exact list below is generated from the canonical region in [`docs/foundations/principles.md`](docs/foundations/principles.md). Edit the source and run `npm run includes:sync`; repository validation rejects drift.
 
-<!-- fibre:include src="docs/vision/principles.md" region="canonical-list" -->
+<!-- fibre:include src="docs/foundations/principles.md" region="canonical-list" -->
 1. **A Thread is a life, not a process.** Compute may stop; identity, memory, obligations, relationships, and trajectory persist.
 
 2. **Difference must change what happens.** Culture, lineage, embodiment, books, traits, and experience must alter perception and choice, not merely decorate a profile.
@@ -40,10 +40,10 @@ The exact list below is generated from the canonical region in [`docs/vision/pri
 
 ## Start here
 
-1. Read [`docs/vision/constitution.md`](docs/vision/constitution.md).
-2. Read [`docs/vision/principles.md`](docs/vision/principles.md).
+1. Read [`docs/foundations/constitution.md`](docs/foundations/constitution.md).
+2. Read [`docs/foundations/principles.md`](docs/foundations/principles.md).
 3. Read [`docs/state/current-state.md`](docs/state/current-state.md).
-4. Read [`docs/vision/invariants.md`](docs/vision/invariants.md).
+4. Read [`docs/foundations/invariants.md`](docs/foundations/invariants.md).
 5. Read [`docs/concepts/interiority-and-expression.md`](docs/concepts/interiority-and-expression.md).
 6. For implementation, read [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md).
 7. For LLM workers, read [`AGENTS.md`](AGENTS.md).
@@ -66,7 +66,7 @@ The exact list below is generated from the canonical region in [`docs/vision/pri
 Exact fragments that must remain identical across Markdown documents use generated include blocks:
 
 ```md
-<!-- fibre:include src="docs/vision/principles.md" region="canonical-list" -->
+<!-- fibre:include src="docs/foundations/principles.md" region="canonical-list" -->
 ...generated Markdown...
 <!-- /fibre:include -->
 ```

@@ -21,7 +21,7 @@ And:
 
 Genesis admission protects truth, typing, provenance, chronology, rights, and pass boundaries. Personhood quality is measured only after output is admitted and frozen.
 
-This contract is subordinate to the Fibre Constitution, [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md), [`thread-genesis-childhood-birth-v1.md`](thread-genesis-childhood-birth-v1.md), [`symbolic-thread-genome-v1.md`](symbolic-thread-genome-v1.md), ADR-0012, and ADR-0013.
+This contract is subordinate to the Fibre Constitution, [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md), [`thread-genesis-childhood-birth-v1.md`](thread-genesis-childhood-birth-v1.md), [`symbolic-thread-genome-v1.md`](symbolic-thread-genome-v1.md), ADR-0012, and ADR-0013.
 
 #39 does not claim Whole-Person causality or M2 standing. It creates durable life substrate for #40 and #41.
 

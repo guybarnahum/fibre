@@ -12,7 +12,7 @@ import { expectedMarkdownIncludeProjections } from "./markdown-includes-lib.mjs"
 const required = [
   "README.md", "AGENTS.md", "CLAUDE.md",
   "docs/ai-context-manifest.json",
-  "docs/vision/constitution.md", "docs/vision/invariants.md",
+  "docs/foundations/constitution.md", "docs/foundations/invariants.md",
   "docs/state/current-state.md", "docs/architecture/thread-lifecycle.md",
   "schemas/thread.schema.json", "apps/thread-editor/index.html"
 ];
