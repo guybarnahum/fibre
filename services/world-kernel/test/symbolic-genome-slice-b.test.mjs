@@ -10,6 +10,7 @@ import {
   assertAtomicGenomeLocus,
   buildDeNovoSymbolicGenome,
   buildRecombinedSymbolicGenome,
+  buildSyntheticAncestorSymbolicGenome,
   symbolicGenomeDigest,
 } from "../src/symbolic-genome-domain.mjs";
 import { SymbolicGenomeStore } from "../src/symbolic-genome-store.mjs";
@@ -125,6 +126,7 @@ test("deterministic crossover preserves exact source loci and explicit mutation 
       }],
     });
     assert.deepEqual(replay, child);
+    assert.deepEqual(child.header.owner, { kind: "thread", ownerId: "thr_genome_child" });
     assert.equal(child.loci[0].provenance.sourceGenomeRef, sourceA.header.genomeId);
     assert.equal(child.loci.at(-1).provenance.sourceGenomeRef, sourceB.header.genomeId);
     assert.equal(child.loci[2].provenance.kind, "mutated");
@@ -139,6 +141,7 @@ test("deterministic crossover preserves exact source loci and explicit mutation 
     assert.equal(store.recordGenome(child).idempotent, true);
     const inspected = store.inspectGenome(child.header.genomeId);
     assert.equal(inspected.sources.length, 2);
+    assert.deepEqual(inspected.sources[0].owner, sourceA.header.owner);
     assert.equal(inspected.genome.genomeDigest, child.genomeDigest);
     assert.deepEqual(inspected.genome.loci, child.loci);
     store.close();
@@ -149,7 +152,7 @@ test("deterministic crossover preserves exact source loci and explicit mutation 
     reader.close();
   }));
 
-test("source eligibility requires two persisted genomes belonging to live source Threads", () =>
+test("Thread-owned source genomes require the exact persisted source owner and a live source Thread", () =>
   withDatabase((databasePath) => {
     seedParents(databasePath);
     const store = new SymbolicGenomeStore(databasePath);
@@ -161,10 +164,10 @@ test("source eligibility requires two persisted genomes belonging to live source
       selectionSeed: "eligibility-seed",
       createdAt: "2026-08-15T18:20:00Z",
     });
-    const wrongParent = structuredClone(child);
-    wrongParent.header.sourceEligibility.sourceThreadRefs[0] = "thr_not_the_source";
-    wrongParent.genomeDigest = symbolicGenomeDigest(wrongParent);
-    assert.throws(() => store.recordGenome(wrongParent), /does not belong to its declared source Thread/);
+    const wrongOwner = structuredClone(child);
+    wrongOwner.header.sourceEligibility.sourceOwners[0] = { kind: "thread", ownerId: "thr_not_the_source" };
+    wrongOwner.genomeDigest = symbolicGenomeDigest(wrongOwner);
+    assert.throws(() => store.recordGenome(wrongOwner), /does not belong to its declared source owner/);
 
     const orphanSource = buildDeNovoSymbolicGenome({
       threadId: "thr_not_live",
@@ -180,7 +183,43 @@ test("source eligibility requires two persisted genomes belonging to live source
       selectionSeed: "orphan-seed",
       createdAt: "2026-08-15T18:22:00Z",
     });
-    assert.throws(() => store.recordGenome(orphanChild), /is not live and cannot contribute/);
+    assert.throws(() => store.recordGenome(orphanChild), /is not live and cannot contribute through the Thread-owner path/);
+    store.close();
+  }));
+
+test("synthetic-lineage source genomes belong to synthetic ancestors without minting fake parent Threads", () =>
+  withDatabase((databasePath) => {
+    const world = openWorldStore(databasePath);
+    world.close();
+    const store = new SymbolicGenomeStore(databasePath);
+    const mother = buildSyntheticAncestorSymbolicGenome({
+      ancestorId: "ancestor.synthetic.mother",
+      genesisId: "gen_synthetic_lineage_sources",
+      values: parentAValues,
+      createdAt: "2026-08-15T18:25:00Z",
+    });
+    const father = buildSyntheticAncestorSymbolicGenome({
+      ancestorId: "ancestor.synthetic.father",
+      genesisId: "gen_synthetic_lineage_sources",
+      values: parentBValues,
+      createdAt: "2026-08-15T18:26:00Z",
+    });
+    store.recordGenome(mother);
+    store.recordGenome(father);
+    const child = buildRecombinedSymbolicGenome({
+      threadId: "thr_synthetic_lineage_child",
+      genesisId: "gen_synthetic_lineage_child",
+      sourceGenomes: [mother, father],
+      selectionSeed: "synthetic-lineage-seed",
+      createdAt: "2026-08-15T18:27:00Z",
+    });
+    assert.doesNotThrow(() => store.recordGenome(child));
+    assert.deepEqual(child.header.sourceEligibility.sourceOwners, [
+      { kind: "synthetic_ancestor", ownerId: "ancestor.synthetic.mother" },
+      { kind: "synthetic_ancestor", ownerId: "ancestor.synthetic.father" },
+    ]);
+    assert.equal(store.listThreadGenomes("thr_synthetic_lineage_child").length, 1);
+    assert.equal(store.listOwnerGenomes({ kind: "synthetic_ancestor", ownerId: "ancestor.synthetic.mother" }).length, 1);
     store.close();
   }));
 
