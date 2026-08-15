@@ -139,6 +139,8 @@ The control is **trial-independent at both cognition surfaces**:
 
 This is 48 generation calls plus 24 rating calls. Cross-trial voice clustering is therefore unavailable to both generator and rater.
 
+Candidate position is also controlled rather than left to hash luck. The 24 situation IDs are deterministically ranked by a seeded digest and assigned **exactly 12 Genome-A-left and 12 Genome-A-right**. A fixed left-only or right-only rater therefore scores exactly 12/24 by construction. The rater never receives the hidden Genome-A side; the emitted artifact attaches that side only after the blind choice exists and reports accuracy separately for A-left and A-right trials.
+
 A different rater provider/model should be used when available. If generator and rater are identical, that fact is recorded explicitly as an interpretation bound rather than hidden.
 
 The harness reports the exact one-sided binomial tail against 50% chance. It does **not** emit `pass`, `verdict`, or any admission decision.
@@ -160,7 +162,7 @@ A weak run does not make an otherwise truthful genome record inadmissible. It is
 
 The hand-authored Slice-B genomes are an **instrument check**, not H's actual denominator.
 
-At Slice G, after the five cohort WorldSpecs are frozen genome-blind and the five actual cohort genomes are frozen/assigned but **before cohort life generation**, re-run the same independent discrimination instrument against a predeclared pair schedule over the Genesis-produced cohort genomes. Freeze the pair schedule before any control output is seen.
+At Slice G, after the five cohort WorldSpecs are frozen genome-blind and the five actual cohort genomes are frozen/assigned but **before cohort life generation**, re-run the same independent, position-balanced discrimination instrument against a predeclared pair schedule over the Genesis-produced cohort genomes. Freeze the pair schedule before any control output is seen.
 
 That Slice-G cohort-genome result is the ceiling used to interpret H. If hand-authored exemplars discriminate but Genesis-produced genomes do not, the finding belongs to genome generation/recombination and must be visible before cohort life generation.
 
@@ -220,6 +222,8 @@ Fail the implementation if:
 [x] read-only inspection
 [x] exact restart/replay
 [x] trial-independent 24-trial live positive-control harness
+[x] exact seeded 12/12 A-left/A-right candidate-position balance
+[x] per-side position/accuracy evidence recorded after blind rating
 [x] predeclared Slice-B interpretation
 [x] Slice-G external frozen-genome reuse surface
 [ ] live Slice-B positive-control result recorded before interpreting genome propagation
