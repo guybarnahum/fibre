@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 13,
+  "version": 14,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -22,6 +22,7 @@
         "docs/validation/experiment-lifecycle.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/m2-pr-plan.md",
+        "docs/validation/m2-pr39-implementation-plan.md",
         "docs/validation/m2-pr39-genesis-quality-constraints.md",
         "docs/validation/whole-person-prefreeze-characterization.md",
         "docs/validation/symbolic-thread-genome-implementation-plan.md",
