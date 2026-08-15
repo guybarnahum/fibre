@@ -22,6 +22,7 @@
     "demo:m1": "node --disable-warning=ExperimentalWarning tools/m1-reviewed-proof.mjs",
     "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/m1-demo-editor.mjs",
     "model:smoke": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model-api-smoke.mjs",
+    "genesis:genome-control": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-genome-positive-control.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-counterfactual-dev.mjs",
     "guardian:whole-person": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/whole-person-benchmark-v4.mjs",
