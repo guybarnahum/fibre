@@ -82,6 +82,10 @@ Formation-theory diversity is a separate design lever from cultural diversity. C
 
 > **If Fibre claims that cognition used evidence, omission of that evidence must remain observable.**
 
+More generally:
+
+> **A diagnostic must retain the possibility of a bad reading. Any property enforced at admission ceases to be measurable, and any metric that can only return success or an error is not a measurement.**
+
 A citation or provenance reference may be validated for eligibility after it exists. A measurement of whether cognition used the evidence may not require that citation as a schema precondition, because a metric that can only report 100% or fail is not a measurement.
 
 The same principle applies to generation and evaluation:
