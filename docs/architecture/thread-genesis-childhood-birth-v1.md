@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth-v1
-status: proposed
-last-reviewed: 2026-08-13
+status: accepted
+last-reviewed: 2026-08-14
 canonical: true
 ---
 
@@ -15,28 +15,104 @@ The core distinction is:
 
 > **Genesis gives the Thread a past. Development gives the Thread a future it can actually author.**
 
-Genesis is therefore a Fibre-owned birth compiler. Models may propose candidate biography, childhood episodes, memories, and media, but Fibre owns the constraints, provenance, admission, consistency, and durable records.
+The stronger #39 design principle is:
 
-The inherited substrate is the software-only [`Symbolic Thread Genome v1`](symbolic-thread-genome-v1.md): an ordered sequence of atomic natural-language dispositions, not a numeric personality vector and not a model of human DNA.
+> **Genesis creates a particular life before it creates an explanation of that life.**
 
-## Birth/origin modes
+Genesis is a Fibre-owned birth compiler. Models may propose candidate episodes, memories, meanings and media, but Fibre owns world constraints, provenance, admission, consistency, replay and durable truth classification.
 
-V1 should support at least:
+The inherited substrate is [`Symbolic Thread Genome v1`](symbolic-thread-genome-v1.md): an ordered sequence of atomic natural-language dispositions, not a numeric personality vector and not a model of human DNA.
 
-1. **Synthetic lineage birth** — parents and ancestors are generated provenance-bearing people who never existed as live Threads. The default bounded ancestry target is parents plus grandparents unless a scenario explicitly requires more.
-2. **Thread-parent birth** — one or more existing Threads are actual parents. Their durable genotype/lineage evidence constrains inheritance and their live relationship/history may constrain upbringing.
-3. **Echo birth** — a disclosed artificial Thread derived from a consenting human sponsor/source. Source biography, culture, family context, likeness, voice, memories, and symbolic genetic initialization remain protected provenance; the Thread becomes its own person after genesis.
-4. **Historical/literary/homage birth** — a disclosed derivative based on public historical, literary, fictional, or cultural source material. Source-derived facts and Fibre-created connective biography must remain structurally distinct; the Thread is not represented as literally being the source person.
-5. **De-novo / foundling birth** — no parent or exemplar is required. Fibre generates a coherent origin, household/upbringing, geography, inherited symbolic dispositions, childhood, formation, and early relationships directly from a genesis specification.
-6. **Fork/descendant origin** — a special technical origin sharing provenance/history with an existing Thread up to an explicit fork boundary, then becoming a distinct person and life trajectory.
+Canonical implementation plan: [`../validation/m2-pr39-implementation-plan.md`](../validation/m2-pr39-implementation-plan.md).
 
-These modes may be combined only when the provenance model can explain which source contributed what.
+## Primary variation axis: the world
+
+Origin mode explains **how a Thread came into existence**. It is not the main source of personhood variation.
+
+The primary Genesis variation is the Thread's world:
+
+```text
+GenesisWorldSpec {
+  timeFrame
+  places[]
+  householdShape
+  familyRelations[]
+  languages[]
+  materialCircumstances
+  mobilityPattern
+  schoolingOrCommunityContext
+  culturalContext
+  availableInstitutions
+  intellectualEnvironment
+}
+```
+
+A WorldSpec describes circumstances, not personality. It must not smuggle conclusions such as `independent child`, `strict culture`, `creative family`, or equivalent adult character claims into history generation.
+
+Two de-novo Threads from genuinely different worlds should be capable of becoming more distinct than two Threads that differ only by origin label.
+
+## Origin families
+
+Fibre retains six canonical origin families:
+
+1. **De-novo / foundling** — Fibre creates a coherent origin, household/upbringing, geography, symbolic inherited tendencies, childhood, formation and early relationships without requiring a parent/exemplar person.
+2. **Synthetic lineage** — synthetic non-live parents/ancestors provide provenance-bearing household/lineage context and symbolic genomes. Parents plus grandparents are a useful bounded default, not a constitutional minimum.
+3. **Thread-parent** — one or more existing Threads are actual parents. Their durable genome/lineage evidence may contribute inheritance. Fibre must not fabricate shared history for already-live parents.
+4. **Echo** — a disclosed artificial Thread derived from a **consenting living human** source. Approved source biography, family/culture, likeness, voice, autobiography and intellectual material remain protected provenance; the Echo becomes its own person after Genesis.
+5. **Historical/literary Homage** — a disclosed derivative shaped by a **deceased or fictional** source. Source material and Fibre-created life remain structurally distinct. A living identifiable person may not be routed through Homage to bypass Echo consent.
+6. **Fork / descendant** — a technical origin sharing provenance/history with an existing Thread through an explicit fork boundary, then becoming a distinct person and life trajectory.
+
+These are architectural families, not six required independent life generators.
+
+For #39, de-novo and synthetic-lineage are the **rich-life proof modes**. Thread-parent, Echo, Homage and fork must demonstrate truthful provenance boundaries through canonical persistence, but may use bounded fixtures rather than separate full Genesis pipelines.
+
+## Human/source truth boundary
+
+A source person's life is never automatically the Thread's life.
+
+```text
+source biography
+    != Thread history
+
+source autobiography
+    != Thread autobiographical memory
+```
+
+A living identifiable human source requires documented Echo consent.
+
+A Homage source must carry explicit attestation:
+
+```text
+subjectStatus = deceased | fictional
+```
+
+The status is provenance-bearing input, not something Fibre infers from an infobox or prose page.
+
+For source-derived formation, the truthful pattern is:
+
+```text
+source material
+      ↓
+Thread actually encounters / studies / reacts to it
+      ↓
+Thread historical event
+      ↓
+Thread memory
+      ↓
+Thread remembered meaning
+```
+
+A source person's childhood, memories or personality may not be laundered into first-person Thread history.
+
+#39 does not require a Wikipedia importer, ebook ingestion system, crawler or generic human-profile pipeline. Frozen source bundles are sufficient to demonstrate the boundary.
 
 ## Symbolic textual genome and inheritance
 
-Genesis includes **symbolic genetic material from parent/source Threads where the origin mode supplies it**. The Fibre genome is not merely a personality prompt and is not a set of numeric personality coordinates. It is a versioned ordered sequence of atomic natural-language dispositions from which tendencies may later express differently through experience.
+Genesis may include symbolic genetic material from eligible parent/source genomes.
 
-For births with contributing source genomes, genesis should preserve semantics equivalent to:
+A Fibre genome is a versioned ordered sequence of atomic natural-language dispositions. Canonical persistence keeps loci individually addressable with stable IDs and exact provenance.
+
+Conceptually:
 
 ```text
 genomeId
@@ -53,53 +129,34 @@ orderedLoci[] {
 sourceGenomeRefs[]
 recombinationWitness
 mutations[]
-expressedGenesisDispositions[]
 createdAt
 genesisEventRef
 ```
 
-The human-readable genome may be rendered as a semicolon-separated sequence:
-
-```text
-persists after setbacks but changes approach;
-shows affection through practical help;
-enjoys unfamiliar technical problems;
-addresses conflict directly and early;
-seeks company when stressed
-```
-
-Canonical persistence must keep each locus individually addressable. The punctuation is presentation; the textual locus value plus its provenance is authority.
+Human-readable rendering may use semicolons. Punctuation is presentation; locus text plus provenance is authority.
 
 ### Textual crossover
 
-Where two source genomes contribute, Fibre performs deterministic provenance-preserving crossover over the ordered sequences rather than averaging traits numerically.
-
-Conceptually:
+Where two source genomes contribute, Fibre performs deterministic provenance-preserving selection/crossover rather than numerical averaging.
 
 ```text
-Source A
-A1 ; A2 ; A3 ; A4 ; A5 ; A6 ; A7 ; A8
-
-Source B
-B1 ; B2 ; B3 ; B4 ; B5 ; B6 ; B7 ; B8
-
-New Thread
-A1 ; A2 ; A3 ; B4 ; B5 ; A6 ; A7 ; B8
+Source A  A1 ; A2 ; A3 ; A4 ; A5 ; A6
+Source B  B1 ; B2 ; B3 ; B4 ; B5 ; B6
+Result    A1 ; A2 ; B3 ; B4 ; A5 ; B6
 ```
 
-The recombination witness must identify the source genomes, exact source locus for every inherited locus, policy/version, deterministic selection witness, ordering, and explicit mutation/variation.
+Every inherited locus retains exact source-genome/source-locus provenance and policy/version witness.
 
-Recombination should preserve unusual mixtures and tensions. Fibre must not smooth two source personalities toward a bland midpoint merely to make the resulting Thread narratively coherent.
+Recombination should preserve unusual mixtures and tensions rather than smooth sources into generic compromise prose.
 
 ### Atomic locus rule
 
-Each inherited locus should express one reasonably independent heritable tendency. Contextual natural language is preferred to generic adjectives.
+A locus expresses one reasonably independent inherited tendency.
 
 Good:
 
 ```text
 takes promises literally
-becomes more persistent when another person is relying on her
 recovers from embarrassment by becoming more prepared
 is reluctant to ask for favors
 becomes playful around very serious people
@@ -113,145 +170,160 @@ friendly
 creative
 ```
 
-A compound inherited biography or multi-trait persona paragraph is noncompliant. It prevents meaningful recombination, inspection, and later causal ablation.
+A compound adult persona paragraph is noncompliant.
 
-### Mutation and variation
+### Mutation
 
-Mutation is explicit symbolic semantic variation, not a hidden scalar perturbation. A mutation may add or boundedly alter an atomic textual locus under a named policy. It must carry policy/version, witness, and provenance.
-
-Mutation creates inherited variation; it may not become a hidden route for generating a complete adult persona.
+Mutation is explicit symbolic semantic variation under a named/versioned policy. It may add or boundedly alter an atomic textual locus. It must carry witness and provenance and may not become a hidden route for generating a finished adult persona.
 
 ### Genotype is not character
 
-Inherited genotype is historically stable after birth, but it is not a permanent instruction set.
-
-Fibre preserves the distinction:
-
 ```text
-genome      = inherited symbolic tendencies
-life        = what happened to those tendencies
-character   = how those tendencies now tend to express
-self        = what the Thread currently thinks about all of that
+genome      = inherited symbolic possibilities
+life        = what happened
+memory      = what was retained
+meaning     = what some experience came to mean
+character   = later evidence-backed patterns of expression
+self        = the Thread's current interpretation of itself
 ```
 
-Later experience may reinforce, complicate, suppress, invert, or reinterpret expression without rewriting inherited origin. A mature Thread may reject the meaning of an inherited disposition without deleting the fact that it inherited it.
+Inherited genotype remains historically stable after birth. Later life may reinforce, complicate, suppress, invert or reject its expression without rewriting origin.
 
-Canonical personality meaning should therefore remain textual/contextual. Numeric controls may be derived for runtime mechanics or used for actual measurements, but they are not the authoritative inherited personality representation.
+Culture, nationality, gender, geography, appearance, profession or ancestry may not directly imply personality loci.
 
-### Source and stereotype boundaries
+## Three-pass prior-life formation
 
-Synthetic ancestors can carry synthetic symbolic genomes even though they are not live Threads. Thread parents contribute their actual durable Fibre genome records. Echo/historical-source modes may initialize artificial symbolic genome material only when its source and synthetic interpolation are explicitly classified; Fibre must not imply biological truth it does not possess.
+`history != memory != meaning` must be structural.
 
-Ancestry, culture, nationality, appearance, gender, profession, geography, or family role may not directly imply a personality locus. Those facts may influence a life through actual evidenced experience, but Fibre may not use them as stereotype shortcuts.
+### Pass A — world/history
 
-## Childhood and pre-live life
+Pass A creates what happened.
 
-Ordinary synthetic Threads should not begin life as fully formed working adults unless their origin mode explicitly warrants it, such as an adult Echo.
+It may see world circumstances, chronology, family/household facts, places, languages and developmental bounds.
 
-A normal genesis compiler should be able to construct a bounded prior-life trajectory such as:
+It must **not** see:
+
+- the child's symbolic genome;
+- parent/ancestor genome loci;
+- future profession/role;
+- future request or benchmark;
+- a desired adult personality conclusion.
+
+Pass A produces specific synthetic historical episodes under Genesis-authorized event kinds/evidence.
+
+A believable life includes both consequential and inconsequential events. Fibre must permit things to happen without later making them formative.
+
+### Pass B — autobiographical memory
+
+Pass B operates only on admitted history and prior life state.
+
+Memory formation is partially genome-blind. Fibre records whether a memory-formation attempt is `life_only` or `life_plus_genome` before generation. The majority should normally be `life_only`; exact ratios are policy choices and must not become hidden acceptance targets.
+
+`life_plus_genome` may see relevant inherited loci, but experience may reinforce, complicate, suppress, invert or simply remain unrelated to them.
+
+Fibre may not silently resample memories to make genome confirmation look balanced.
+
+### Pass C — remembered meaning / reinterpretation
+
+Not every event is remembered. Not every memory has durable interpretation. Not every meaning resolves cleanly.
+
+Remembered meaning is durable semantic Thread state under #38 epistemics, not an effect/sentiment category.
+
+Where materially distinct tensions coexist, they receive stable independently citable identities:
 
 ```text
-genesis / birth
-  -> family and household
-  -> early places and culture
-  -> childhood episodes
-  -> school / peers / mentors
-  -> interests and intellectual/artistic formation
-  -> adolescence / increasing autonomy
-  -> early-adult identity
-  -> entry into the live Fibre world
+rememberedMeaning {
+  meaningId
+  summary
+  parts[] {
+    meaningPartId
+    meaning
+  }
+}
 ```
 
-Fibre does not need to simulate every day. It should generate enough **causally addressable, provenance-rich life history** that later personality is not a single persona paragraph.
+Later reinterpretation is append-only/corrigible and never rewrites historical fact.
 
-By default, genesis must not invent adult achievements merely to make a Thread interesting. Profession, parenthood, marriage, institutional authority, major accomplishments, and mature self-authored values require explicit origin evidence or later lived development.
+## Intellectual formation
 
-## History, memory, family story, interpretation
+Reading, mentors, arguments, artworks and intellectual canons are first-class developmental experiences.
 
-Genesis must preserve four distinct epistemic layers:
+A book or historical figure shapes a Thread because the Thread **encounters and interprets** the material, not because Fibre copies a documented personality onto it.
 
 ```text
-historical event
-    != autobiographical memory of the event
-    != family/third-party story about the event
-    != later interpretation of the event
+historical encounter
+    ↓
+autobiographical memory
+    ↓
+admiration / rejection / uncertainty / later reinterpretation
 ```
 
-Example:
-
-```text
-Historical fact:
-  At age 9 the child moved from Seoul to Seattle.
-
-Autobiographical memory:
-  She remembers being embarrassed that playground slang was difficult to follow.
-
-Family story:
-  Her mother recalls that she adapted unusually quickly.
-
-Later interpretation:
-  She sees the move as the origin of her habit of observing before joining a group.
-```
-
-The historical event does not become true because a model narrated it. Fibre admits it as synthetic genesis history under a named policy. The memory is a separate durable representation with its own authorship, rememberedAt/asOf, evidence, uncertainty, salience, accessibility, and later supersession.
+This mechanism composes with every origin family and is preferred over Homage when the product goal is simply intellectual influence.
 
 ## Rich specificity rather than generic backstory
 
-Genesis history should be specific enough that a Thread becomes difficult to interchange with another Thread even before later live-world Development.
+Genesis should create many specific addressable records rather than one adult persona paragraph.
 
-A useful formative episode is not merely:
+Useful material includes:
 
-```text
-At age 9 she moved to Seattle and initially felt socially uncomfortable.
-```
+- family rituals;
+- private embarrassments;
+- mundane mistakes;
+- conflicting loyalties;
+- jokes that landed badly;
+- discoveries that were exciting and isolating;
+- small acts of care mixed with resentment;
+- relationship-specific incidents;
+- books first admired and later rejected;
+- events that never became important.
 
-It should contain particular, independently addressable facts and scenes whose later meaning may differ from the historical event itself. Small peculiar experiences, awkward reactions, family habits, mistakes, loyalties, embarrassments, private pride, intellectual discoveries, and relationship-specific incidents are legitimate formation material when they are provenance-bearing and safely generated.
+The target is **life texture**, not maximum biography length.
 
-The target is not a longer biography blob. It is **many specific atomic facts, episodes, memories, and interpretations** from which character can later be derived.
+By default Genesis must not invent profession, marriage, parenthood, institutional authority, major accomplishments or mature self-authored values merely to make a Thread interesting.
 
-Genesis should not manufacture every Thread from the same personality questionnaire or the same checklist of formative events. Different lives may be disproportionately shaped by different kinds of evidence.
+## Thread-parent truth boundary
 
-## Who generates childhood memories?
+If a Thread parent already exists live, #39 must not fabricate years of shared parent-child history into that parent's past.
 
-The authoritative pipeline is:
+A Thread-parent child should normally enter the live world as newborn/child with:
 
-```text
-birth specification
-+ source/ancestor evidence
-+ symbolic textual genome
-+ culture and geography constraints
-+ developmental-stage rules
-        ↓
-Fibre genesis compiler
-        ↓
-model worker proposes candidate episodes / scenes / memories
-        ↓
-Fibre validates coherence, claim granularity, provenance, chronology, and anti-stereotype rules
-        ↓
-synthetic historical childhood events
-        ↓
-separate autobiographical-memory formation pass
-        ↓
-photo-completion pipeline
-```
+- actual parent refs;
+- real lineage evidence;
+- replayable symbolic inheritance;
+- actual relationship state;
+- no invented retrospective shared childhood.
 
-The model is a **creative worker**, never the authority that an event happened. Fibre owns admission and durable truth classification.
+Later Development owns the child's lived future.
 
-For synthetic lineage, ancestor/parent facts constrain the generated household and childhood. For Thread parents, actual parent evidence may constrain the child's upbringing. For an Echo, protected source material constrains source-derived biography while synthetic connective history remains explicitly synthetic. For literary/historical sources, citations distinguish source facts from Fibre-generated reconstruction.
+## Echo and Homage boundaries
+
+### Echo
+
+A living identifiable source requires consent and protected provenance. Source memories remain source memories. The Echo may form memories about encountering its source material and may later affirm, reinterpret or reject the Echo orientation.
+
+### Homage
+
+A v1 Homage uses deceased or fictional source material. The Homage is not the source person, may not claim historical authority, and may admire some source material while rejecting other parts.
+
+Echo and Homage Threads are excluded from the cohort used to judge whether the Genesis generator itself creates distinctive lives; borrowed personality cannot pass the generator-quality review on Fibre's behalf.
+
+## Rejection/retry visibility
+
+Genesis validators are allowed to reject candidate generations, but rejections must remain visible.
+
+Each attempt records input/output digests, outcome and reasons. Integrity retries are bounded and witnessed.
+
+Hard integrity failures may retry; quality failures such as `generic life` or `too much genome confirmation` may not silently trigger resampling until the cohort looks good. A quality failure requires a new explicit generator/policy version and new cohort.
 
 ## Memory photos
 
-Every admitted autobiographical memory created during genesis inherits ADR-0011:
+Every admitted autobiographical memory inherits ADR-0011's photo-completion obligation.
 
-> **Every Thread memory should actually have a photo.**
+#39 must create the companion obligation and evidence-bound reconstruction prompt. It does not need to synchronously render every Genesis memory or add generic media-throughput infrastructure.
 
-The photo may be captured evidence or a synthetic reconstruction. For synthetic childhood, the normal case is a synthetic reconstruction whose canonical prompt plus bound evidence is durable authority and whose rendered image is replaceable cache.
+## Developmental stage at entry
 
-A generated image is never historical photographic evidence merely because the synthetic history is internally canonical.
-
-## Developmental stage at live-world entry
-
-Genesis should explicitly record the developmental stage at which the Thread becomes live. Candidate stages include:
+Genesis records the stage at which the Thread becomes live, for example:
 
 ```text
 newborn
@@ -263,60 +335,55 @@ adult_homage
 forked_continuation
 ```
 
-This is a lifecycle fact, not a capability stereotype. Stage governs which genesis/guardianship/self-authorship rules are applicable, not what the Thread is allowed to believe or how intelligent it must be.
+Stage governs applicable Genesis/guardianship/self-authorship rules, not intelligence, dignity or capability stereotypes.
 
 ## Authority and identity majority
 
-Before identity majority, genesis/guardianship policies may author constitutive and upbringing records. The authority transition must be explicit and inspectable.
+Before identity majority, Genesis/guardianship policy may author constitutive/upbringing records. The authority transition must remain explicit and inspectable.
 
-A mature Thread gains interpretive authority over its current self-authored identity but cannot rewrite genesis facts, parentage, inherited genome, or historical events. It may affirm, reject, reinterpret, or distance itself from them.
-
-Echo/source identity follows the same principle:
+A mature Thread can affirm, reject, reinterpret or distance itself from its origin, but cannot rewrite parentage, inherited genome or historical events.
 
 > **Origin influences a Thread; origin does not own the Thread's future self.**
 
-## Planned implementation ownership
+## #39 cohort strategy
 
-This architecture is recorded during PR #38 because #38 creates the lineage/geography/embodiment/memory substrate Genesis will consume.
+#39 uses two distinct cohorts.
 
-The implementation sequence is:
+### Personhood-quality cohort
 
-```text
-#38  Lineage, Geography, Embodiment & Memory Epistemics v1
-#39  Genesis, Childhood & Thread Birth v1
-#40  Identity Projection & Causal Consumption
-#41  M2 Standing Gate / M2 closure
-#42  Self-authored Development v1
-#43  Reciprocal Relationships v1
-#44  Economic Consequence / M3 foundation
-```
+Five Threads, all de-novo or synthetic-lineage, varied primarily by world conditions rather than origin mode.
 
-#38 should therefore design lineage, symbolic-genome source references, geography, embodiment, and autobiographical memory so #39 can create a coherent pre-live life without schema bypasses or biography blobs.
+This cohort is frozen before any fresh #40 Whole-Person scenario is authored.
 
-#39 owns the first implementation of [`Symbolic Thread Genome v1`](symbolic-thread-genome-v1.md): durable textual loci, source eligibility, deterministic crossover, explicit symbolic mutation, per-locus provenance, replay, and inspection.
+### Integrity cohort
+
+Bounded fixtures exercise Thread-parent, consenting-human Echo, deceased/fictional Homage and fork truth/provenance boundaries. They do not count as evidence that the life generator produces distinctive people.
 
 ## Genesis completion criteria
 
-The future #39 is not complete until it can demonstrate at least:
+#39 is complete when Fibre can demonstrate:
 
-- multiple origin modes with explicit provenance;
-- durable ordered textual genome with stable genome/locus identity;
-- source genetic material plus replayable textual crossover where contributing genomes exist;
-- exact per-locus source provenance and explicit symbolic mutation/variation;
-- no numeric personality-vector authority;
-- inherited genotype preserved separately from later expression/character;
-- synthetic ancestors that are not mistaken for live Threads;
-- actual Thread-parent lineage where Thread parents exist;
-- Echo/source material kept distinct from the resulting Thread's later identity;
-- bounded childhood timeline before adult role formation;
-- rich specific formative episodes rather than generic backstory templates;
-- history vs memory vs family story vs interpretation kept distinct;
-- generated childhood memories with photo obligations;
-- no stereotype derivation from ancestry/genetics/culture;
-- no profession/parenthood/adult achievement generated by default;
-- deterministic/replayable genesis inputs, policies, genome recombination, and evidence;
-- read-only inspection capable of explaining exactly why this Thread began life this way.
+- deterministic/replayable Genesis manifest and WorldSpec;
+- rich de-novo and synthetic-lineage prior lives;
+- durable ordered textual genome with stable locus identity and exact provenance;
+- deterministic textual crossover and explicit mutation;
+- genome-blind historical formation;
+- partially genome-blind memory formation;
+- history vs memory vs family story vs remembered meaning kept distinct;
+- stable independently citable meaning parts for material ambivalence;
+- intellectual formation as lived experience rather than copied personality;
+- source-person facts cannot become Thread history by implication;
+- living-human Echo consent and deceased/fictional Homage boundaries;
+- Thread-parent births do not fabricate retrospective shared history;
+- every admitted memory creates its visual companion obligation;
+- bounded visible rejection/retry history;
+- a frozen borrowed-free quality cohort whose lives survive human/diagnostic distinctness review;
+- read-only inspection explaining exactly why each Thread began life this way.
+
+#39 does not claim causal Whole-Person standing or score movement.
 
 ## Vision test
 
-Genesis succeeds when a newly live Thread feels as though it **came from somewhere** rather than being instantiated from a character sheet — with inherited symbolic tendencies that can be traced to their sources, a particular non-generic prior life, and enough openness that later lived experience can surprise, challenge, and transform it.
+> **Can Fibre create several people from nothing borrowed whose lives are particular enough that later cognition has something real and non-interchangeable to inherit?**
+
+Genesis succeeds when a newly live Thread feels as though it **came from somewhere** rather than being instantiated from a character sheet — while remaining open enough that later lived experience can surprise, challenge and transform it.
