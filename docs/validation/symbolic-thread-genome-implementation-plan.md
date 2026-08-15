@@ -124,22 +124,58 @@ Read-only inspection must not create schema and must return an empty result on w
 
 ## Positive-control specificity diagnostic
 
-Before Slice C life generation, run two intentionally distinct development genomes through fixed neutral situations with the genome directly visible.
+Before using genome propagation as an interpretable #39 result, establish that directly visible symbolic loci are capable of carrying distinguishable semantic information.
 
-A stateless blind rater receives the two genomes and shuffled candidate semantic outputs but not generator context/source labels, then performs trial-level two-alternative discrimination.
+### Independence
 
-The harness reports accuracy against 50% chance. It does **not** emit an admission verdict.
+The control is **trial-independent at both cognition surfaces**:
 
-Interpretation:
+- 24 distinct neutral situations;
+- one generator call for Genome A × one situation;
+- one separate generator call for Genome B × the same situation;
+- one stateless 2AFC rater call for that situation only;
+- no generator call sees another trial;
+- no rater call sees another trial.
 
-- near chance: loci are too generic/horoscope-shaped for later genome propagation to be interpretable;
-- strong discrimination: the loci are capable in principle of distinguishable semantic output;
-- this is only a Slice-B ceiling/instrument check, not Genesis personhood evidence.
+This is 48 generation calls plus 24 rating calls. Cross-trial voice clustering is therefore unavailable to both generator and rater.
+
+A different rater provider/model should be used when available. If generator and rater are identical, that fact is recorded explicitly as an interpretation bound rather than hidden.
+
+The harness reports the exact one-sided binomial tail against 50% chance. It does **not** emit `pass`, `verdict`, or any admission decision.
+
+### Predeclared Slice-B reading
+
+The following reading is frozen **before the first live provider call**:
+
+| Correct of 24 | Reading |
+| --- | --- |
+| 20–24 | strong directly-visible ceiling signal from the hand-authored exemplars; instrument/concept check only |
+| 17–19 | detectable moderate ceiling; 17/24 is the first one-sided exact-binomial result below 0.05 (`p ≈ 0.032`); preserve the result and do not tune merely to chase a higher score |
+| 13–16 | inconclusive / near chance; do not silently tune the same run or convert this into a genome admission rule |
+| 0–12 | no positive ceiling signal; preserve as a development finding; H genome-propagation claims remain uninterpretable until a separately versioned instrument establishes a ceiling |
+
+A weak run does not make an otherwise truthful genome record inadmissible. It is evidence about the expressive specificity of the development loci/control.
+
+### Slice B vs Slice G
+
+The hand-authored Slice-B genomes are an **instrument check**, not H's actual denominator.
+
+At Slice G, after the five cohort WorldSpecs are frozen genome-blind and the five actual cohort genomes are frozen/assigned but **before cohort life generation**, re-run the same independent discrimination instrument against a predeclared pair schedule over the Genesis-produced cohort genomes. Freeze the pair schedule before any control output is seen.
+
+That Slice-G cohort-genome result is the ceiling used to interpret H. If hand-authored exemplars discriminate but Genesis-produced genomes do not, the finding belongs to genome generation/recombination and must be visible before cohort life generation.
 
 Tooling:
 
 ```text
-npm run genesis:genome-control -- --provider <openai|google> --model <model>
+npm run genesis:genome-control -- \
+  --provider <openai|google> --model <generator-model> \
+  --rater-provider <openai|google> --rater-model <preferably-different-model>
+```
+
+The same harness accepts externally frozen genome JSON for Slice G:
+
+```text
+--genome-a-file <json> --genome-b-file <json> --genome-source <label>
 ```
 
 ## Later #39 integration
@@ -150,7 +186,9 @@ Slice D allows controlled Pass-B exposure and keeps Pass C unconditionally genom
 
 Slice E closes the synthetic-ancestor lineage binding described above.
 
-Slice H compares achieved genome propagation against this Slice-B ceiling; `life_only_unexposed` remains the negative control.
+Slice G freezes the actual cohort-genome specificity ceiling before life generation.
+
+Slice H compares achieved genome propagation against the Slice-G cohort-genome ceiling; `life_only_unexposed` remains the negative control. The Slice-B hand-authored score is retained as instrument history, not substituted for the cohort ceiling.
 
 ## Anti-cheats
 
@@ -181,8 +219,11 @@ Fail the implementation if:
 [x] no numeric personality-vector authority
 [x] read-only inspection
 [x] exact restart/replay
-[x] live positive-control harness
-[ ] live positive-control result recorded before Slice C
+[x] trial-independent 24-trial live positive-control harness
+[x] predeclared Slice-B interpretation
+[x] Slice-G external frozen-genome reuse surface
+[ ] live Slice-B positive-control result recorded before interpreting genome propagation
+[ ] Slice-G cohort-genome ceiling frozen before cohort life generation
 [ ] synthetic-ancestor source owners bound to admitted #38 lineage at Slice E/birth
 ```
 
