@@ -33,9 +33,25 @@ import {
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
 
+const GENESIS_TABLES = Object.freeze([
+  "genesis_world_specs",
+  "genesis_manifests",
+  "genesis_generation_attempts",
+]);
+
 function parseRecord(name, json) {
   try { return JSON.parse(json); }
   catch (error) { throw new IntegrityError(`${name} is not valid JSON: ${error.message}`); }
+}
+
+function tableExists(database, tableName) {
+  return database.prepare(
+    "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
+  ).get(tableName) !== undefined;
+}
+
+function genesisSchemaPresent(database) {
+  return GENESIS_TABLES.every((tableName) => tableExists(database, tableName));
 }
 
 function assertCurrentPublicationValidators(manifest) {
@@ -110,6 +126,10 @@ export class GenesisStore {
 
   getWorldSpec(worldSpecId, { required = true } = {}) {
     assertId("worldSpecId", worldSpecId);
+    if (!tableExists(this.#database, "genesis_world_specs")) {
+      if (!required) return null;
+      throw new GenesisNotFoundError("Genesis WorldSpec storage is not present in this world");
+    }
     const row = this.#database.prepare(
       "SELECT record_json,record_digest FROM genesis_world_specs WHERE world_spec_id=?",
     ).get(worldSpecId);
@@ -167,6 +187,7 @@ export class GenesisStore {
 
   listGenerationAttempts(genesisId) {
     assertId("genesisId", genesisId);
+    if (!tableExists(this.#database, "genesis_generation_attempts")) return [];
     return this.#database.prepare(`
       SELECT record_json,record_digest FROM genesis_generation_attempts
       WHERE genesis_id=? ORDER BY candidate_attempt_number,recorded_at,attempt_id
@@ -320,6 +341,10 @@ export class GenesisStore {
 
   getManifest(genesisId, { required = true } = {}) {
     assertId("genesisId", genesisId);
+    if (!tableExists(this.#database, "genesis_manifests")) {
+      if (!required) return null;
+      throw new GenesisNotFoundError("Genesis manifest storage is not present in this world");
+    }
     const row = this.#database.prepare(
       "SELECT record_json,record_digest FROM genesis_manifests WHERE genesis_id=?",
     ).get(genesisId);
@@ -336,6 +361,9 @@ export class GenesisStore {
   }
 
   inspectGenesis(genesisId) {
+    if (!genesisSchemaPresent(this.#database)) {
+      return { genesisId, manifest: null, worldSpec: null, attempts: [], threadPublished: false };
+    }
     const manifestRecord = this.getManifest(genesisId, { required: false });
     const attempts = this.listGenerationAttempts(genesisId);
     if (manifestRecord === null) return { genesisId, manifest: null, worldSpec: null, attempts, threadPublished: false };
