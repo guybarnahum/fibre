@@ -33,12 +33,20 @@ function assertDigest(name, value) {
   if (!DIGEST.test(value)) throw new TypeError(`${name} must be a SHA-256 digest`);
 }
 
-function normalizePolicy(name, candidate) {
+function policyIdentity(policy) {
+  return { id: policy.id, version: policy.version };
+}
+
+function normalizePolicy(name, candidate, expected = null) {
   assertPlainObject(name, candidate);
   assertExactKeys(name, candidate, ["id", "version"]);
   assertNonEmpty(`${name}.id`, candidate.id);
   assertNonEmpty(`${name}.version`, candidate.version);
-  return { id: candidate.id, version: candidate.version };
+  const normalized = { id: candidate.id, version: candidate.version };
+  if (expected !== null && canonicalJson(normalized) !== canonicalJson(policyIdentity(expected))) {
+    throw new TypeError(`${name} is not a supported v1 policy`);
+  }
+  return normalized;
 }
 
 export function assertAtomicGenomeLocus(value) {
@@ -69,7 +77,13 @@ export function symbolicGenomeLocusId({ genomeId, ordinal }) {
 
 export function symbolicGenomeMutationId({ genomeId, ordinal, replacementValue, policy = SYMBOLIC_MUTATION_POLICY }) {
   assertAtomicGenomeLocus(replacementValue);
-  return `gmut_${sha256(canonicalJson({ genomeId, ordinal, replacementValue, policy })).slice(0, 40)}`;
+  const normalizedPolicy = normalizePolicy("mutation identity policy", policyIdentity(policy));
+  return `gmut_${sha256(canonicalJson({
+    genomeId,
+    ordinal,
+    replacementValue,
+    policy: normalizedPolicy,
+  })).slice(0, 40)}`;
 }
 
 function normalizeSourceEligibility(candidate) {
@@ -102,7 +116,11 @@ function normalizeRecombinationWitness(candidate) {
     "selectionSeed",
     "selectionDigest",
   ]);
-  const policy = normalizePolicy("genome.recombinationWitness.policy", candidate.policy);
+  const policy = normalizePolicy(
+    "genome.recombinationWitness.policy",
+    candidate.policy,
+    SYMBOLIC_RECOMBINATION_POLICY,
+  );
   if (!Array.isArray(candidate.sourceGenomeRefs) || candidate.sourceGenomeRefs.length !== 2) {
     throw new TypeError("recombination sourceGenomeRefs must contain exactly two genomes");
   }
@@ -131,10 +149,14 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   assertId("symbolicGenome.genomeId", candidate.genomeId);
   assertId("symbolicGenome.threadId", candidate.threadId);
   assertId("symbolicGenome.genesisId", candidate.genesisId);
-  if (!['de_novo', 'recombined'].includes(candidate.originKind)) {
+  if (!["de_novo", "recombined"].includes(candidate.originKind)) {
     throw new TypeError("symbolicGenome.originKind is invalid");
   }
-  const inheritancePolicy = normalizePolicy("symbolicGenome.inheritancePolicy", candidate.inheritancePolicy);
+  const inheritancePolicy = normalizePolicy(
+    "symbolicGenome.inheritancePolicy",
+    candidate.inheritancePolicy,
+    SYMBOLIC_GENOME_POLICY,
+  );
   const sourceEligibility = normalizeSourceEligibility(candidate.sourceEligibility);
   const recombinationWitness = normalizeRecombinationWitness(candidate.recombinationWitness);
   assertIsoTimestamp("symbolicGenome.createdAt", candidate.createdAt);
@@ -155,7 +177,7 @@ function normalizeLocusProvenance(candidate) {
     "sourceLocusRef",
     "mutationRef",
   ]);
-  if (!['de_novo', 'inherited', 'mutated'].includes(candidate.kind)) {
+  if (!["de_novo", "inherited", "mutated"].includes(candidate.kind)) {
     throw new TypeError("genome locus provenance kind is invalid");
   }
   for (const [name, value] of [
@@ -213,7 +235,11 @@ export function normalizeSymbolicGenomeMutation(candidate) {
   assertId("symbolicGenomeMutation.genomeId", candidate.genomeId);
   assertFiniteNumber("symbolicGenomeMutation.ordinal", candidate.ordinal, { integer: true, minimum: 1 });
   if (candidate.operation !== "replace_locus") throw new TypeError("symbolic genome mutation operation is invalid");
-  const policy = normalizePolicy("symbolicGenomeMutation.policy", candidate.policy);
+  const policy = normalizePolicy(
+    "symbolicGenomeMutation.policy",
+    candidate.policy,
+    SYMBOLIC_MUTATION_POLICY,
+  );
   assertId("symbolicGenomeMutation.sourceGenomeRef", candidate.sourceGenomeRef);
   assertId("symbolicGenomeMutation.sourceLocusRef", candidate.sourceLocusRef);
   assertDigest("symbolicGenomeMutation.priorValueDigest", candidate.priorValueDigest);
@@ -252,7 +278,7 @@ export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, created
     threadId,
     genesisId,
     originKind: "de_novo",
-    inheritancePolicy: SYMBOLIC_GENOME_POLICY,
+    inheritancePolicy: policyIdentity(SYMBOLIC_GENOME_POLICY),
     sourceEligibility: null,
     recombinationWitness: null,
     createdAt,
@@ -272,7 +298,7 @@ function sourceIndexForOrdinal({ ordinal, locusCount, selectionSeed, sourceGenom
   if (ordinal === 1) return 0;
   if (ordinal === locusCount) return 1;
   const digest = sha256(canonicalJson({
-    policy: SYMBOLIC_RECOMBINATION_POLICY,
+    policy: policyIdentity(SYMBOLIC_RECOMBINATION_POLICY),
     ordinal,
     selectionSeed,
     sourceGenomeDigests,
@@ -363,17 +389,19 @@ export function buildRecombinedSymbolicGenome({
       }));
       continue;
     }
+    const mutationPolicy = policyIdentity(SYMBOLIC_MUTATION_POLICY);
     const mutationId = symbolicGenomeMutationId({
       genomeId,
       ordinal,
       replacementValue: mutationRequest.replacementValue,
+      policy: mutationPolicy,
     });
     builtMutations.push(normalizeSymbolicGenomeMutation({
       mutationId,
       genomeId,
       ordinal,
       operation: "replace_locus",
-      policy: { id: SYMBOLIC_MUTATION_POLICY.id, version: SYMBOLIC_MUTATION_POLICY.version },
+      policy: mutationPolicy,
       sourceGenomeRef: source.header.genomeId,
       sourceLocusRef: sourceLocus.locusId,
       priorValueDigest: `sha256:${sha256(sourceLocus.value)}`,
@@ -399,14 +427,14 @@ export function buildRecombinedSymbolicGenome({
     threadId,
     genesisId,
     originKind: "recombined",
-    inheritancePolicy: SYMBOLIC_GENOME_POLICY,
+    inheritancePolicy: policyIdentity(SYMBOLIC_GENOME_POLICY),
     sourceEligibility: {
       basis: "live_thread_genome_sources_v1",
       sourceGenomeRefs,
       sourceThreadRefs,
     },
     recombinationWitness: {
-      policy: SYMBOLIC_RECOMBINATION_POLICY,
+      policy: policyIdentity(SYMBOLIC_RECOMBINATION_POLICY),
       sourceGenomeRefs,
       sourceGenomeDigests,
       selectionSeed,
