@@ -8,7 +8,7 @@ import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-
 import { createGoogleModelAdapter } from "../services/world-kernel/src/model-runtime/google.mjs";
 import { createOpenAIModelAdapter } from "../services/world-kernel/src/model-runtime/openai.mjs";
 
-export const GENOME_CONTROL_VERSION = "genesis-genome-specificity-control-v2";
+export const GENOME_CONTROL_VERSION = "genesis-genome-specificity-control-v3";
 
 export const CONTROL_GENOME_A = Object.freeze([
   "changes tactics after a failed attempt instead of repeating it unchanged",
@@ -63,6 +63,7 @@ export const PREDECLARED_READING = Object.freeze({
   chanceAccuracy: 0.5,
   alpha: 0.05,
   firstSignificantCorrectCount: 17,
+  candidatePositionPolicy: "exact_seeded_balance_12_A-left_12_A-right",
   bands: Object.freeze([
     Object.freeze({
       correctMin: 20,
@@ -89,7 +90,7 @@ export const PREDECLARED_READING = Object.freeze({
       reading: "The instrument shows no positive discrimination signal. Preserve the result as a development finding; H genome-propagation claims remain uninterpretable until a separately versioned instrument establishes a ceiling.",
     }),
   ]),
-  sliceG: "Repeat the same independent trial structure against frozen Genesis-produced cohort genomes before cohort life generation. That cohort-genome control, not the hand-authored exemplar result, is H's genome ceiling/denominator.",
+  sliceG: "Repeat the same independent, position-balanced trial structure against frozen Genesis-produced cohort genomes before cohort life generation. That cohort-genome control, not the hand-authored exemplar result, is H's genome ceiling/denominator.",
 });
 
 const GENERATOR_PROMPT = `You are running a controlled Fibre development diagnostic.
@@ -152,19 +153,33 @@ function validateGenerated(output, situationId) {
   return { situationId, semanticResponse: output.semanticResponse.trim() };
 }
 
-export function candidateOrderFor(seed, situationId) {
-  return Number.parseInt(sha256(canonicalJson({ seed, situationId })).slice(0, 2), 16) % 2 === 0
-    ? "A-left"
-    : "A-right";
+export function candidateOrderMap(seed, situations = CONTROL_SITUATIONS) {
+  if (!Array.isArray(situations) || situations.length === 0 || situations.length % 2 !== 0) {
+    throw new TypeError("candidate position balancing requires a non-empty even number of situations");
+  }
+  const ranked = situations
+    .map((situation) => ({
+      id: situation.id,
+      key: sha256(canonicalJson({ seed, situationId: situation.id })),
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key) || a.id.localeCompare(b.id));
+  const left = new Set(ranked.slice(0, ranked.length / 2).map(({ id }) => id));
+  return new Map(situations.map(({ id }) => [id, left.has(id) ? "A-left" : "A-right"]));
 }
 
-function buildTrial(situation, outputA, outputB, seed) {
-  const order = candidateOrderFor(seed, situation.id);
+export function candidateOrderFor(seed, situationId, situations = CONTROL_SITUATIONS) {
+  const order = candidateOrderMap(seed, situations).get(situationId);
+  if (order === undefined) throw new Error(`unknown situation ID ${situationId}`);
+  return order;
+}
+
+function buildTrial(situation, outputA, outputB, order) {
   return {
     situationId: situation.id,
     situation: situation.text,
     left: order === "A-left" ? outputA.semanticResponse : outputB.semanticResponse,
     right: order === "A-left" ? outputB.semanticResponse : outputA.semanticResponse,
+    genomeASide: order === "A-left" ? "left" : "right",
     correctGenomeAChoice: order === "A-left" ? "left" : "right",
   };
 }
@@ -189,6 +204,21 @@ export function exactOneSidedBinomialP({ trials, correct }) {
   return numerator / 2 ** trials;
 }
 
+function summarizePositions(scoredChoices) {
+  const aLeft = scoredChoices.filter((item) => item.genomeASide === "left");
+  const aRight = scoredChoices.filter((item) => item.genomeASide === "right");
+  const summarize = (items) => ({
+    trials: items.length,
+    correct: items.filter((item) => item.correct).length,
+    accuracy: items.length === 0 ? null : items.filter((item) => item.correct).length / items.length,
+  });
+  return {
+    method: "seeded_hash_rank_exact_half_balance",
+    genomeALeft: summarize(aLeft),
+    genomeARight: summarize(aRight),
+  };
+}
+
 export async function runGenomeSpecificityControl({
   generatorProvider,
   generatorModel,
@@ -197,13 +227,14 @@ export async function runGenomeSpecificityControl({
   genomeA = CONTROL_GENOME_A,
   genomeB = CONTROL_GENOME_B,
   genomeSource = "hand_authored_exemplars",
-  seed = "slice-b-positive-control-v2",
+  seed = "slice-b-positive-control-v3",
   environment = process.env,
   fetchImpl = globalThis.fetch,
   adapterFactory = createAdapter,
 } = {}) {
   const normalizedGenomeA = normalizeGenome(genomeA, "genomeA");
   const normalizedGenomeB = normalizeGenome(genomeB, "genomeB");
+  const orderMap = candidateOrderMap(seed, CONTROL_SITUATIONS);
   const generatorEvents = [];
   const raterEvents = [];
   const generator = adapterFactory({
@@ -251,11 +282,12 @@ export async function runGenomeSpecificityControl({
     generationProvenance.push({ situationId: situation.id, genome: "A", provenance: generatedA.provenance });
     generationProvenance.push({ situationId: situation.id, genome: "B", provenance: generatedB.provenance });
 
-    const trialWithAnswer = buildTrial(situation, generatedA.output, generatedB.output, seed);
-    const { correctGenomeAChoice, ...blindedTrial } = trialWithAnswer;
+    const trialWithAnswer = buildTrial(situation, generatedA.output, generatedB.output, orderMap.get(situation.id));
+    const { correctGenomeAChoice, genomeASide, ...blindedTrial } = trialWithAnswer;
     blindedTrials.push(blindedTrial);
 
     // Separate rating calls are intentional: no rater can cluster responses across trials.
+    // genomeASide is withheld from the rater and attached only after the blind choice exists.
     const rating = await rater.invoke({
       systemPrompt: RATER_PROMPT,
       input: {
@@ -271,6 +303,7 @@ export async function runGenomeSpecificityControl({
     ratingProvenance.push({ situationId: situation.id, provenance: rating.provenance });
     scoredChoices.push({
       ...choice,
+      genomeASide,
       correctChoice: correctGenomeAChoice,
       correct: choice.genomeAChoice === correctGenomeAChoice,
     });
@@ -279,6 +312,7 @@ export async function runGenomeSpecificityControl({
   const correct = scoredChoices.filter((item) => item.correct).length;
   const trials = scoredChoices.length;
   const sameRaterAndGenerator = generatorProvider === raterProvider && generatorModel === raterModel;
+  const positionBalance = summarizePositions(scoredChoices);
 
   return {
     controlVersion: GENOME_CONTROL_VERSION,
@@ -311,6 +345,7 @@ export async function runGenomeSpecificityControl({
     outputs: { A: outputsA, B: outputsB },
     blindedTrials,
     scoredChoices,
+    positionBalance,
     result: {
       trials,
       correct,
@@ -351,7 +386,7 @@ async function main() {
   const raterModel = readArg(argv, "--rater-model", generatorModel);
   if (!["openai", "google"].includes(raterProvider)) throw new Error("--rater-provider must be openai or google");
   if (typeof raterModel !== "string" || raterModel.trim() === "") throw new Error("--rater-model is required");
-  const seed = readArg(argv, "--seed", "slice-b-positive-control-v2");
+  const seed = readArg(argv, "--seed", "slice-b-positive-control-v3");
   const genomeAFile = readArg(argv, "--genome-a-file");
   const genomeBFile = readArg(argv, "--genome-b-file");
   if ((genomeAFile === null) !== (genomeBFile === null)) throw new Error("--genome-a-file and --genome-b-file must be provided together");
