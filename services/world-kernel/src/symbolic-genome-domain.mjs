@@ -25,6 +25,11 @@ export const SYMBOLIC_MUTATION_POLICY = Object.freeze({
   maxReplacements: 2,
 });
 
+export const SYMBOLIC_GENOME_OWNER_KINDS = Object.freeze([
+  "thread",
+  "synthetic_ancestor",
+]);
+
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
 const MAX_LOCUS_BYTES = 320;
 
@@ -49,6 +54,22 @@ function normalizePolicy(name, candidate, expected = null) {
   return normalized;
 }
 
+export function normalizeSymbolicGenomeOwner(candidate) {
+  assertPlainObject("symbolicGenome.owner", candidate);
+  assertExactKeys("symbolicGenome.owner", candidate, ["kind", "ownerId"]);
+  if (!SYMBOLIC_GENOME_OWNER_KINDS.includes(candidate.kind)) {
+    throw new TypeError("symbolicGenome.owner.kind is invalid");
+  }
+  assertId("symbolicGenome.owner.ownerId", candidate.ownerId);
+  if (candidate.kind === "thread" && !candidate.ownerId.startsWith("thr_")) {
+    throw new TypeError("Thread-owned symbolic genome must use a thr_ owner identifier");
+  }
+  if (candidate.kind === "synthetic_ancestor" && candidate.ownerId.startsWith("thr_")) {
+    throw new TypeError("synthetic ancestor genome owner cannot use a live Thread identifier");
+  }
+  return { kind: candidate.kind, ownerId: candidate.ownerId };
+}
+
 export function assertAtomicGenomeLocus(value) {
   assertNonEmpty("genome locus value", value);
   if (Buffer.byteLength(value, "utf8") > MAX_LOCUS_BYTES) {
@@ -63,10 +84,10 @@ export function assertAtomicGenomeLocus(value) {
   }
 }
 
-export function symbolicGenomeId({ threadId, genesisId }) {
-  assertId("threadId", threadId);
+export function symbolicGenomeId({ owner, genesisId }) {
+  const normalizedOwner = normalizeSymbolicGenomeOwner(owner);
   assertId("genesisId", genesisId);
-  return `genome_${sha256(canonicalJson({ threadId, genesisId })).slice(0, 40)}`;
+  return `genome_${sha256(canonicalJson({ owner: normalizedOwner, genesisId })).slice(0, 40)}`;
 }
 
 export function symbolicGenomeLocusId({ genomeId, ordinal }) {
@@ -89,21 +110,23 @@ export function symbolicGenomeMutationId({ genomeId, ordinal, replacementValue, 
 function normalizeSourceEligibility(candidate) {
   if (candidate === null) return null;
   assertPlainObject("genome.sourceEligibility", candidate);
-  assertExactKeys("genome.sourceEligibility", candidate, ["basis", "sourceGenomeRefs", "sourceThreadRefs"]);
-  if (candidate.basis !== "live_thread_genome_sources_v1") {
+  assertExactKeys("genome.sourceEligibility", candidate, ["basis", "sourceGenomeRefs", "sourceOwners"]);
+  if (candidate.basis !== "symbolic_genome_sources_v1") {
     throw new TypeError("genome.sourceEligibility.basis is invalid");
   }
   if (!Array.isArray(candidate.sourceGenomeRefs) || candidate.sourceGenomeRefs.length !== 2) {
     throw new TypeError("genome.sourceEligibility.sourceGenomeRefs must contain exactly two genomes");
   }
-  if (!Array.isArray(candidate.sourceThreadRefs) || candidate.sourceThreadRefs.length !== 2) {
-    throw new TypeError("genome.sourceEligibility.sourceThreadRefs must contain exactly two Threads");
+  if (!Array.isArray(candidate.sourceOwners) || candidate.sourceOwners.length !== 2) {
+    throw new TypeError("genome.sourceEligibility.sourceOwners must contain exactly two owners");
   }
   candidate.sourceGenomeRefs.forEach((value, index) => assertId(`sourceGenomeRefs[${index}]`, value));
-  candidate.sourceThreadRefs.forEach((value, index) => assertId(`sourceThreadRefs[${index}]`, value));
+  const sourceOwners = candidate.sourceOwners.map(normalizeSymbolicGenomeOwner);
   if (new Set(candidate.sourceGenomeRefs).size !== 2) throw new TypeError("source genomes must be distinct");
-  if (new Set(candidate.sourceThreadRefs).size !== 2) throw new TypeError("source Threads must be distinct");
-  return structuredClone(candidate);
+  if (new Set(sourceOwners.map((owner) => `${owner.kind}:${owner.ownerId}`)).size !== 2) {
+    throw new TypeError("source genome owners must be distinct");
+  }
+  return { basis: candidate.basis, sourceGenomeRefs: [...candidate.sourceGenomeRefs], sourceOwners };
 }
 
 function normalizeRecombinationWitness(candidate) {
@@ -138,7 +161,7 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   assertPlainObject("symbolicGenome", candidate);
   assertExactKeys("symbolicGenome", candidate, [
     "genomeId",
-    "threadId",
+    "owner",
     "genesisId",
     "originKind",
     "inheritancePolicy",
@@ -147,7 +170,7 @@ export function normalizeSymbolicGenomeHeader(candidate) {
     "createdAt",
   ]);
   assertId("symbolicGenome.genomeId", candidate.genomeId);
-  assertId("symbolicGenome.threadId", candidate.threadId);
+  const owner = normalizeSymbolicGenomeOwner(candidate.owner);
   assertId("symbolicGenome.genesisId", candidate.genesisId);
   if (!["de_novo", "recombined"].includes(candidate.originKind)) {
     throw new TypeError("symbolicGenome.originKind is invalid");
@@ -160,13 +183,15 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   const sourceEligibility = normalizeSourceEligibility(candidate.sourceEligibility);
   const recombinationWitness = normalizeRecombinationWitness(candidate.recombinationWitness);
   assertIsoTimestamp("symbolicGenome.createdAt", candidate.createdAt);
+  const expectedId = symbolicGenomeId({ owner, genesisId: candidate.genesisId });
+  if (candidate.genomeId !== expectedId) throw new TypeError("symbolicGenome.genomeId is not stable for owner+genesisId");
   if (candidate.originKind === "de_novo" && (sourceEligibility !== null || recombinationWitness !== null)) {
     throw new TypeError("de_novo genome cannot carry source/recombination witnesses");
   }
   if (candidate.originKind === "recombined" && (sourceEligibility === null || recombinationWitness === null)) {
     throw new TypeError("recombined genome requires source eligibility and recombination witnesses");
   }
-  return structuredClone({ ...candidate, inheritancePolicy, sourceEligibility, recombinationWitness });
+  return structuredClone({ ...candidate, owner, inheritancePolicy, sourceEligibility, recombinationWitness });
 }
 
 function normalizeLocusProvenance(candidate) {
@@ -270,12 +295,13 @@ function assertContiguousLoci(loci) {
   }
 }
 
-export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, createdAt }) {
+function buildDeNovoForOwner({ owner, genesisId, values, createdAt }) {
   if (!Array.isArray(values) || values.length < 2) throw new TypeError("de_novo genome values must contain at least two loci");
-  const genomeId = symbolicGenomeId({ threadId, genesisId });
+  const normalizedOwner = normalizeSymbolicGenomeOwner(owner);
+  const genomeId = symbolicGenomeId({ owner: normalizedOwner, genesisId });
   const header = normalizeSymbolicGenomeHeader({
     genomeId,
-    threadId,
+    owner: normalizedOwner,
     genesisId,
     originKind: "de_novo",
     inheritancePolicy: policyIdentity(SYMBOLIC_GENOME_POLICY),
@@ -292,6 +318,24 @@ export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, created
   }));
   assertContiguousLoci(loci);
   return { header, loci, mutations: [], genomeDigest: symbolicGenomeDigest({ header, loci }) };
+}
+
+export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, createdAt }) {
+  return buildDeNovoForOwner({
+    owner: { kind: "thread", ownerId: threadId },
+    genesisId,
+    values,
+    createdAt,
+  });
+}
+
+export function buildSyntheticAncestorSymbolicGenome({ ancestorId, genesisId, values, createdAt }) {
+  return buildDeNovoForOwner({
+    owner: { kind: "synthetic_ancestor", ownerId: ancestorId },
+    genesisId,
+    values,
+    createdAt,
+  });
 }
 
 function sourceIndexForOrdinal({ ordinal, locusCount, selectionSeed, sourceGenomeDigests }) {
@@ -325,16 +369,19 @@ export function buildRecombinedSymbolicGenome({
   if (!Array.isArray(sourceGenomes) || sourceGenomes.length !== 2) {
     throw new TypeError("recombination requires exactly two source genomes");
   }
-  const [sourceA, sourceB] = sourceGenomes;
-  for (const [index, source] of sourceGenomes.entries()) {
-    normalizeSymbolicGenomeHeader(source.header);
-    source.loci = source.loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
-    assertContiguousLoci(source.loci);
+  const normalizedSources = sourceGenomes.map((source, index) => {
+    const header = normalizeSymbolicGenomeHeader(source.header);
+    const loci = source.loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
+    const sourceMutations = (source.mutations ?? []).map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
+    assertContiguousLoci(loci);
     assertDigest(`sourceGenomes[${index}].genomeDigest`, source.genomeDigest);
-    if (symbolicGenomeDigest(source) !== source.genomeDigest) {
-      throw new TypeError(`source genome ${source.header.genomeId} digest does not match content`);
+    const normalized = { header, loci, mutations: sourceMutations, genomeDigest: source.genomeDigest };
+    if (symbolicGenomeDigest(normalized) !== source.genomeDigest) {
+      throw new TypeError(`source genome ${header.genomeId} digest does not match content`);
     }
-  }
+    return normalized;
+  });
+  const [sourceA, sourceB] = normalizedSources;
   if (sourceA.loci.length !== sourceB.loci.length) {
     throw new TypeError("v1 textual crossover requires source genomes with equal locus counts");
   }
@@ -354,10 +401,11 @@ export function buildRecombinedSymbolicGenome({
     mutationOrdinals.add(mutation.ordinal);
   }
 
-  const genomeId = symbolicGenomeId({ threadId, genesisId });
-  const sourceGenomeRefs = sourceGenomes.map((source) => source.header.genomeId);
-  const sourceGenomeDigests = sourceGenomes.map((source) => source.genomeDigest);
-  const sourceThreadRefs = sourceGenomes.map((source) => source.header.threadId);
+  const owner = { kind: "thread", ownerId: threadId };
+  const genomeId = symbolicGenomeId({ owner, genesisId });
+  const sourceGenomeRefs = normalizedSources.map((source) => source.header.genomeId);
+  const sourceGenomeDigests = normalizedSources.map((source) => source.genomeDigest);
+  const sourceOwners = normalizedSources.map((source) => source.header.owner);
   const selections = [];
   const builtMutations = [];
   const loci = [];
@@ -370,7 +418,7 @@ export function buildRecombinedSymbolicGenome({
       selectionSeed,
       sourceGenomeDigests,
     });
-    const source = sourceGenomes[sourceIndex];
+    const source = normalizedSources[sourceIndex];
     const sourceLocus = source.loci[index];
     selections.push({ ordinal, sourceGenomeRef: source.header.genomeId, sourceLocusRef: sourceLocus.locusId });
     const mutationRequest = mutations.find((item) => item.ordinal === ordinal) ?? null;
@@ -424,14 +472,14 @@ export function buildRecombinedSymbolicGenome({
 
   const header = normalizeSymbolicGenomeHeader({
     genomeId,
-    threadId,
+    owner,
     genesisId,
     originKind: "recombined",
     inheritancePolicy: policyIdentity(SYMBOLIC_GENOME_POLICY),
     sourceEligibility: {
-      basis: "live_thread_genome_sources_v1",
+      basis: "symbolic_genome_sources_v1",
       sourceGenomeRefs,
-      sourceThreadRefs,
+      sourceOwners,
     },
     recombinationWitness: {
       policy: policyIdentity(SYMBOLIC_RECOMBINATION_POLICY),
