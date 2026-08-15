@@ -48,6 +48,7 @@ For behavior, identity, communication, or request-processing work, also read:
 - Private context-selection authority is part of Thread agency. Standing causal-individuality proofs may not substitute caller-authored private subsets for Fibre/Thread-owned attention and retrieval.
 - Authorization that differs from private desire requires a non-empty reference resolving to a recorded Thread obligation or governing decision.
 - Meaning-bearing identity, relationship, skill, need, and task fields are primarily natural-language prompt partials.
+- **A derived category is never a safe stand-in for the semantic meaning it compresses.** Fibre may derive labels, enums, scores, ranks, or other categories for inspection, indexing, control, or ablation, but the underlying meaning-bearing content must remain separately addressable and authoritative.
 - Execution models and orchestration frameworks are replaceable cognitive machinery.
 - Live Threads are stored in the Fibre world, not in Git.
 - Economic and experiential consequences persist across executions.
@@ -148,6 +149,7 @@ Do not use “out of scope for this milestone” to erase a capability from the 
 - Request-content binding is an adversarial integrity boundary. Do not replace it with a convenience checksum.
 - Private appraisal context is selected only from Thread-owned records. Record included and excluded references so narrowing remains inspectable. For standing causal-individuality evidence, selection/retrieval authority must itself be Fibre/Thread-owned or use the same declared default policy for both Threads; caller-supplied private subsets are provisional scaffolding, not evidence of Thread agency.
 - Do not treat an opaque record reference as evidence that the referenced content reached cognition. Where history or identity content is claimed as causal, resolve and inspect the bounded content that the consumer actually received.
+- **Do not expose a Fibre-derived verdict as though it were evidence semantics.** Types and provenance may be model-visible; derived conclusions such as effect labels, relevance ranks, confidence/strength flags, or compressed categories must not override or replace the separately addressable semantic evidence from which they were derived. If a downstream contract genuinely needs a derived measurement as independent evidence, name and justify that role explicitly.
 - Private stance and disclosure strategy use restricted visibility; ordinary requesters receive only intended external expression and shared commitments.
 - Audience-visible responses may reference a disclosure strategy by ID but must not automatically carry restricted disclosure mode, withheld reasons, or private rationale.
 - Check acceptance posture both when selecting a disclosure strategy and when minting an external response.
