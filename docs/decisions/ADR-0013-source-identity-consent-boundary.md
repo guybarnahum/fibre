@@ -45,4 +45,4 @@ subjectStatus:
 
 ADR-0006 remains authoritative for Fibre's support of Original, Echo, and Homage identities and for mature Thread re-authorship. This ADR supersedes it only where source eligibility, living-human consent, and source-history boundaries were previously unspecified.
 
-The broader personhood canon is [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md).
+The broader personhood canon is [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md).

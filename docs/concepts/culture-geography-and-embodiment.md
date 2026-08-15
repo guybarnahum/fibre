@@ -19,4 +19,4 @@ Geography includes city of birth, childhood residences, formative cities, curren
 
 A Thread may have a generated face, visual age, fashion cues, voice, speech tempo, accent influence, and audio samples. Embodiment contributes to self-model and human relationships but must not become a shortcut for stereotypes.
 
-The governing vision canon is [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md).
+The governing vision canon is [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md).

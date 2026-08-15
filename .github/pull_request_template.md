@@ -9,7 +9,7 @@
 - Which canonical scenario demonstrates it?
 - What observable behavior should change?
 - What human-inspectable artifact demonstrates it?
-- What drift risk does it introduce? (drift tests: `docs/vision/invariants.md`)
+- What drift risk does it introduce? (drift tests: `docs/foundations/invariants.md`)
 - Which ADR records the durable decision?
 
 ## Ambition assessment

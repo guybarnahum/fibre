@@ -37,4 +37,4 @@ Fibre preserves historical evidence that the current autobiographical account do
 
 A generated or developed life is suspiciously authored when every historical event becomes formative, every memory supports the current self-story, or all remembered meanings fit together without residue or contradiction.
 
-The governing vision canon is [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md).
+The governing vision canon is [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md).

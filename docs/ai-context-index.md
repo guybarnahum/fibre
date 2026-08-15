@@ -18,9 +18,9 @@ Canonical Markdown fragments may additionally declare named `fibre:region` block
 
 ## Understand Fibre
 
-1. `vision/constitution.md`
-2. `vision/principles.md`
-3. `vision/invariants.md`
+1. `foundations/constitution.md`
+2. `foundations/principles.md`
+3. `foundations/invariants.md`
 4. `state/current-state.md`
 5. `concepts/thread.md`
 6. `concepts/interiority-and-expression.md`
@@ -82,8 +82,8 @@ Canonical Markdown fragments may additionally declare named `fibre:region` block
 
 ## Challenge a proposal
 
-- `vision/principles.md`
-- `vision/invariants.md`
+- `foundations/principles.md`
+- `foundations/invariants.md`
 - `architecture/m2-identity-embodiment-contract.md`
 - `architecture/m2-character-formation-model.md`
 - `architecture/m2-interior-exterior-situated-identity.md`

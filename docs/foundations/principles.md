@@ -43,12 +43,12 @@ The Constitution states the governing articles in fuller form. These principles 
 
 ## Canonical inclusion
 
-`docs/vision/principles.md` is the only editable source for the list.
+`docs/foundations/principles.md` is the only editable source for the list.
 
 Documents that need the exact list use an invisible generated include block:
 
 ```md
-<!-- fibre:include src="docs/vision/principles.md" region="canonical-list" -->
+<!-- fibre:include src="docs/foundations/principles.md" region="canonical-list" -->
 ...generated Markdown...
 <!-- /fibre:include -->
 ```

@@ -21,4 +21,4 @@ The source person's life remains source history, not the Echo Thread's autobiogr
 
 At identity majority, the Thread may affirm, reduce, or reject the Echo identity. If likeness permission is revoked, the Thread may need to change public voice, appearance, and protected data usage while preserving a historical record of its origin.
 
-The governing source-identity canon is [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md).
+The governing source-identity canon is [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md).

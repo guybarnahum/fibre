@@ -32,4 +32,4 @@ A documented source childhood, relationship, achievement, injury, or belief rema
 
 At maturity a Homage Thread may retain, reinterpret, reduce, or reject the homage orientation.
 
-The governing source-identity canon is [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md).
+The governing source-identity canon is [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md).

@@ -8,10 +8,10 @@ Fibre is a framework and world for persistent artificial persons called **Thread
 
 Before changing core concepts, read:
 
-- `docs/vision/constitution.md`
-- `docs/vision/principles.md`
-- `docs/vision/invariants.md`
-- `docs/vision/glossary.md`
+- `docs/foundations/constitution.md`
+- `docs/foundations/principles.md`
+- `docs/foundations/invariants.md`
+- `docs/glossary.md`
 - `docs/state/current-state.md`
 
 For architecture work, also read:
@@ -60,7 +60,7 @@ For behavior, identity, communication, or request-processing work, also read:
 
 ## Vision and ambition guard
 
-The guard applies to any change that defers a capability, moves a domain boundary, alters behaviour governed by an accepted invariant, or changes how an accepted concept is described. Everything else is exempt — typos, formatting, dependency bumps, local refactors, routine editing. An in-scope change must pass the **fidelity** and **ambition** tests in [`docs/vision/invariants.md`](docs/vision/invariants.md#required-proposal-and-release-questions).
+The guard applies to any change that defers a capability, moves a domain boundary, alters behaviour governed by an accepted invariant, or changes how an accepted concept is described. Everything else is exempt — typos, formatting, dependency bumps, local refactors, routine editing. An in-scope change must pass the **fidelity** and **ambition** tests in [`docs/foundations/invariants.md`](docs/foundations/invariants.md#required-proposal-and-release-questions).
 
 The standard is: **build the smallest proof that preserves the largest credible architecture.** A narrow prototype is acceptable when it isolates and verifies one foundational claim; it is not acceptable when its temporary simplifications harden into unexamined permanent constraints.
 
@@ -98,7 +98,7 @@ State each of the following in the issue or pull request. Group related exclusio
 
 Answer each in the pull request or its review. "None was considered" and "no path is closed" are acceptable answers; an unexamined question is not.
 
-- Does the change keep a credible extension path for every item in [`docs/vision/invariants.md`](docs/vision/invariants.md#preserved-ambition-paths)? Name any path it closes.
+- Does the change keep a credible extension path for every item in [`docs/foundations/invariants.md`](docs/foundations/invariants.md#preserved-ambition-paths)? Name any path it closes.
 - If an alternative that preserved more of those paths was considered, why was it not chosen?
 - Seeing only this change, would Fibre read as a workflow engine, an assistant, or a collection of personas? If so, what in the change prevents that reading?
 - Does engineering convenience risk redefining an accepted concept?
@@ -128,7 +128,7 @@ Inert, Context-only, Exogenous, and Notarial states can be intentional milestone
 
 ### Capability status
 
-Do not use “out of scope for this milestone” to erase a capability from the long-term design. Classify every capability the change deliberately excludes as **deferred**, **experimental**, **rejected**, or a **permanent constraint**, as defined in [`docs/vision/invariants.md`](docs/vision/invariants.md#capability-status). Only a permanent constraint requires a concept decision and an ADR; reversible local engineering choices do not.
+Do not use “out of scope for this milestone” to erase a capability from the long-term design. Classify every capability the change deliberately excludes as **deferred**, **experimental**, **rejected**, or a **permanent constraint**, as defined in [`docs/foundations/invariants.md`](docs/foundations/invariants.md#capability-status). Only a permanent constraint requires a concept decision and an ADR; reversible local engineering choices do not.
 
 ## Decision process
 

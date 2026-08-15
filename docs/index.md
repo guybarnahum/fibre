@@ -4,8 +4,8 @@ The documentation is modular so humans and LLM workers can load only the context
 
 ## Canonical order
 
-1. `vision/constitution.md`
-2. `vision/invariants.md`
+1. `foundations/constitution.md`
+2. `foundations/invariants.md`
 3. `state/current-state.md`
 4. Relevant concept or architecture document
 5. Related ADRs
@@ -13,7 +13,7 @@ The documentation is modular so humans and LLM workers can load only the context
 
 ## Authority
 
-- Accepted documents under `docs/vision`, `docs/concepts`, and `docs/architecture` are canonical.
+- Accepted documents under `docs/vision`, `docs/foundations`, `docs/concepts`, and `docs/architecture` are canonical.
 - ADRs explain why durable decisions were made.
 - `docs/state/current-state.md` is the compact current summary.
 - `source-material/` and `docs/history/` preserve provenance but may contain superseded terminology.

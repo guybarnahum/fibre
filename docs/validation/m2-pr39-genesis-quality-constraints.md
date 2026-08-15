@@ -15,7 +15,7 @@ They supplement:
 
 - [`../architecture/genesis-compiler-contract-v1.md`](../architecture/genesis-compiler-contract-v1.md)
 - [`m2-pr39-implementation-plan.md`](m2-pr39-implementation-plan.md)
-- [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md)
+- [`../foundations/interpretive-personhood.md`](../foundations/interpretive-personhood.md)
 - [`../decisions/ADR-0012-semantic-meaning-over-derived-categories.md`](../decisions/ADR-0012-semantic-meaning-over-derived-categories.md)
 
 They are quality/evaluation constraints, not a second compiler contract and not a new milestone.
