@@ -13,24 +13,15 @@ This contract defines the creative and admission boundary for Fibre milestone **
 
 It governs what Genesis cognition may know, what it may produce, what Fibre may reject before birth, what must remain measurable after birth, and how a candidate life becomes authoritative Thread state.
 
-The governing doctrine is:
-
 > **Fibre may prevent an impossible life from becoming history. It must not prevent an uninteresting life from becoming evidence that Genesis needs improvement.**
 
-And, more generally:
+And:
 
 > **Gate the form. Measure the tendency.**
 
 Genesis admission protects truth, typing, provenance, chronology, rights, and pass boundaries. Personhood quality is measured only after output is admitted and frozen.
 
-This contract is subordinate to:
-
-- [`../vision/constitution.md`](../vision/constitution.md)
-- [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md)
-- [`thread-genesis-childhood-birth-v1.md`](thread-genesis-childhood-birth-v1.md)
-- [`symbolic-thread-genome-v1.md`](symbolic-thread-genome-v1.md)
-- [`../decisions/ADR-0012-semantic-meaning-over-derived-categories.md`](../decisions/ADR-0012-semantic-meaning-over-derived-categories.md)
-- [`../decisions/ADR-0013-source-identity-consent-boundary.md`](../decisions/ADR-0013-source-identity-consent-boundary.md)
+This contract is subordinate to the Fibre Constitution, [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md), [`thread-genesis-childhood-birth-v1.md`](thread-genesis-childhood-birth-v1.md), [`symbolic-thread-genome-v1.md`](symbolic-thread-genome-v1.md), ADR-0012, and ADR-0013.
 
 #39 does not claim Whole-Person causality or M2 standing. It creates durable life substrate for #40 and #41.
 
@@ -38,133 +29,101 @@ This contract is subordinate to:
 
 ## 1. Admission doctrine: mechanical integrity only
 
-A #39 quality diagnostic must retain the possibility of observing a bad result in admitted Genesis output.
+A #39 quality diagnostic must retain the possibility of observing bad quality in admitted Genesis output.
 
-Therefore no admission rule may semantically judge whether a generated person is interesting, distinctive, psychologically rich, sufficiently ambivalent, insufficiently stereotyped, appropriately genome-mediated, or aesthetically convincing.
+Therefore **#39 has no validator-cognition surface**. Admission uses only structural, reference, rights, chronology, digest, allowlist, and narrow lexical/category-form checks.
 
-**#39 has no validator-cognition surface.** Admission is implemented with structural, reference, rights, chronology, digest, allowlist, and narrow lexical/category-form checks only.
-
-### 1.1 Admission gates
-
-The v1 admission surface is limited to mechanically testable integrity failures such as:
+### Admission gates
 
 | Gate | Mechanical basis |
 | --- | --- |
-| schema or digest invalid | structural validation |
-| forbidden input field visible to a pass | actual model-input object field set must match the pass allowlist; digest the exact object |
-| chronology violation | event before birth, after the developmental window, out of order, or inconsistent with known life/death/move bounds |
-| participant grounding violation | participant neither previously known nor validly introduced through a WorldSpec-afforded role |
-| source history laundering | a source fact is asserted as Thread autobiography rather than encountered through a Thread-life event |
-| living-human source violation | `subjectStatus` and documented consent/provenance checks |
-| Pass-A interiority form | narrow lexical/category-form rejection when observable history contains explicit lesson/meaning/policy language |
-| Pass-C future-policy form | narrow lexical/category-form rejection when remembered meaning explicitly states a universal future behavioral rule |
-| reference/provenance violation | unresolved, cross-Thread, future, or otherwise ineligible stable reference |
+| schema/digest invalid | structural validation |
+| forbidden pass input | actual model-input object must match the frozen field allowlist; digest exact input |
+| chronology invalid | outside developmental window, impossible ordering, life/death/move conflict |
+| participant ungrounded | neither pre-existing nor validly introduced through a WorldSpec affordance |
+| source history laundering | source fact asserted as Thread autobiography rather than a Thread encounter |
+| living-human rights violation | explicit `subjectStatus` + consent/provenance check |
+| Pass-A interiority form | narrow lexical/category check for explicit lesson/meaning/policy text in observable history |
+| Pass-C future-policy form | narrow lexical/category check for explicit universal behavioral policy in meaning |
+| reference/provenance invalid | unresolved, cross-Thread, future, or otherwise ineligible ref |
 
-Examples of Pass-A category-form phrases that may be rejected include explicit constructions such as `learned that`, `from then on`, `which made her/him/them`, `came to understand`, or equivalent direct insertion of interpretation into an observable episode.
+Examples of Pass-A category-form phrases include explicit constructions such as `learned that`, `from then on`, `which made her/him/them`, or `came to understand` when they insert interpretation into an observable episode.
 
-Examples of Pass-C policy-form phrases include explicit universal rules such as `I always`, `I never`, `from then on I`, `whenever X I`, or `I refuse to` when used as a future behavior policy rather than recollected semantic meaning.
+Examples of Pass-C policy-form phrases include `I always`, `I never`, `from then on I`, `whenever X I`, or `I refuse to` when used as a universal future behavior rule.
 
-These lexical checks are intentionally narrow and may over-reject. A false integrity rejection costs a bounded retry and remains visible in rejection accounting. They must not evolve into semantic quality judges.
+These lexical checks may over-reject. That cost is bounded and visible. They must not evolve into semantic quality judges.
 
-### 1.2 Properties that are measured and never gated
+### Measured, never gated
 
-The following remain admissible even when poor:
+Never reject a candidate merely for:
 
-- plot-shapedness or narrative over-determination;
-- stereotype tendency that is not a mechanically traceable forbidden derivation;
-- soft prescriptiveness or tidy moralizing;
-- genome predictability / genome propagation strength;
+- plot-shapedness;
+- stereotype tendency not mechanically traceable to a forbidden derivation;
+- soft prescriptiveness / tidy moralizing;
+- genome propagation strength;
 - sentiment coupling;
-- life attribution and distinctness;
-- narrative integration;
+- weak attribution/distinctness;
+- excessive or insufficient narrative integration;
 - uniform articulacy;
-- self-account overreach or lack of it;
+- perfect self-account coherence;
 - funnel proportions;
-- offered-versus-used event structures;
-- structure-grounded versus world-emergent episode ratio;
+- offered-versus-used structure ratio;
+- structure-grounded versus world-emergent ratio;
 - generator monoculture.
 
-Those properties are evidence about the generator. If Fibre gates them away, the diagnostics measure the validator rather than Genesis.
+Those are generator findings. Gating them would make the diagnostics measure the gate rather than Genesis.
 
 ---
 
 ## 2. Candidate Genesis and atomic birth
 
-Genesis cognition does **not** write directly into canonical Thread history while it is still generating.
+Genesis cognition does **not** write directly into canonical Thread life while generation is in progress.
 
-A Genesis attempt produces **candidate Genesis state** outside authoritative Thread life. Candidate state may be held in bounded transient/provisional storage, but it is not:
+A Genesis attempt produces **candidate Genesis state** outside authoritative Thread state. Candidate state is not history, memory, identity, relationship, place, or cognition authority and is not returned by normal hydration/restart.
 
-- Thread history;
-- autobiographical memory;
-- identity authority;
-- relationship authority;
-- place authority;
-- cognition-visible Thread state;
-- part of hydration/restart reconstruction.
-
-Only after all three passes complete and all mechanical integrity gates clear does Fibre publish the candidate.
+Only after all passes complete and all mechanical gates clear does Fibre publish the candidate.
 
 > **Birth is the atomic transition from candidate Genesis into the Fibre world.**
 
-Publication writes the admitted life into the existing #37/#38 authorities as one atomic world operation. Failure during publication leaves no partially born Thread.
+Publication writes the admitted life into the existing #37/#38 authorities as one atomic world operation. A failure during publication leaves no partially born Thread.
 
-### 2.1 Publication ordering
+Implementation may stage the complete publication bundle before the final database transaction. It must **not** hold a database write transaction open while model calls run.
 
-The publisher must construct the authoritative records in a deterministic order sufficient to preserve:
+### Publication must preserve
 
 - Thread seed/snapshot validity;
-- historical event chronology and event-chain integrity;
-- identity and lineage references;
-- relationship references;
-- place episodes;
-- autobiographical memory anchors;
-- remembered-meaning revisions/parts;
+- deterministic historical chronology;
+- identity/lineage/relationship/place refs;
+- autobiographical-memory anchors;
+- remembered-meaning revisions and stable meaning parts;
 - visual-companion obligations;
-- contiguous event sequence and state-hash/replay discipline where the existing event model requires them.
+- event sequence, state-hash, and replay discipline wherever the current event model requires them.
 
-Implementation may stage these writes before the final database transaction. It must not keep a database write transaction open while waiting for model calls.
+### First live version
 
-### 2.2 First live Thread version
+Genesis does not cosmetically reset a Thread with an admitted prior life to `version = 1`.
 
-Genesis does **not** cosmetically reset an adult or young-adult Thread with a full admitted prior life to `version = 1` merely because it has just entered the live world.
-
-The first live version is the exact resulting Thread version produced by atomic publication under the existing event/version semantics. The Genesis manifest records it as `publication.resultingThreadVersion`.
-
-The first post-birth command therefore uses that actual version as its `expectedVersion`.
-
-### 2.3 Failed attempts
-
-A failed candidate is discarded from Thread authority. Its rejection witness is recorded separately after candidate discard/rollback.
-
-Conceptually:
+The first live version is the exact resulting version produced by atomic publication under current Fibre event/version semantics. Record it as:
 
 ```text
-GenerationAttempt {
-  attemptId
-  genesisId
-  provisionalThreadId
-  attemptNumber
-  failedPass
-  failedGate
-  rejectedContentDigest
-  rejectedContent?       // bounded audit payload; never Thread authority
-  inputDigest
-  outputDigest
-  recordedAt
-}
+publication.resultingThreadVersion
 ```
 
-Rejected candidate content, if retained for audit, is explicitly excluded from Thread hydration, history, memory, and cognition.
+The first post-birth command uses that actual value as `expectedVersion`.
 
-The v1 attempt cap is **3 attempts per Thread Genesis**. After the third failed attempt, Genesis is recorded as failed and no live Thread exists. The cap is a versioned policy choice, not Fibre constitution.
+### Failed attempts
+
+Failed candidate state is discarded from Thread authority. Its rejection witness is recorded separately and may retain a bounded rejected payload for audit, but that payload is excluded from hydration, history, memory, and cognition.
+
+V1 caps Genesis at **3 candidate attempts per Thread**. After the third failure, Genesis is recorded failed and no live Thread exists. This is a versioned #39 policy, not constitution.
 
 ---
 
 ## 3. Frozen creative authority
 
-Prompts are part of creative authority and must be replayable artifacts, not undocumented strings behind a policy name.
+Prompts are part of the creative authority.
 
-Every Genesis manifest records:
+Every manifest records:
 
 ```text
 cognition {
@@ -176,9 +135,9 @@ cognition {
 }
 ```
 
-The exact model input object for each cognition call is canonicalized and digested before dispatch. Pass allowlists are checked against that actual object.
+Before dispatch, canonicalize and digest the exact model input object. Check its field set against the pass allowlist.
 
-One pinned creative configuration is used across the five-Thread #39 cohort. #39 does not swap providers to rescue weak differentiation; generator monoculture is a result to measure.
+One pinned creative configuration is used across the final five-Thread cohort. #39 does not swap providers to rescue weak differentiation; generator monoculture is a result to measure.
 
 ---
 
@@ -186,35 +145,29 @@ One pinned creative configuration is used across the five-Thread #39 cohort. #39
 
 Pass A creates **what happened**.
 
-### 4.1 Visible inputs
-
-Pass A may see only:
+### Visible
 
 - `GenesisWorldSpec`;
-- household/community factual roster and world-afforded roles;
-- developmental window;
-- chronology already formed earlier in the same candidate life;
+- factual household/community roster;
+- WorldSpec-afforded roles/institutions/relationship possibilities;
+- developmental window and chronology endpoint;
+- already-admitted candidate episodes;
 - previously introduced candidate participants;
-- the sampled slice of the EventStructurePool for the current window;
-- deterministic generation/witness values required by the policy.
+- sampled EventStructurePool affordances;
+- deterministic witness values required by policy.
 
-Factual roster content may include composition, ages, occupations, deaths, moves, institutions, and relationship facts. It does not include personality descriptions.
+Factual roster content may include ages, occupations, deaths, moves, institutions, and relationship facts. It does not include personality descriptions.
 
-### 4.2 Structurally absent inputs
+### Structurally absent
 
-Pass A does not receive:
-
-- the Thread's genome or any genome locus;
+- Thread genome/loci;
 - parent/ancestor loci or personality descriptors;
-- remembered meaning or later autobiographical interpretation;
-- future profession, Fibre role, request, benchmark, or #40 material;
-- a desired adult conclusion;
-- entry-stage purpose beyond the mechanical chronology endpoint required to bound generation;
-- source-work titles, authors, character names, quotations, or source scenes used by humans to author abstractions.
+- remembered meanings;
+- future profession/Fibre role/request/benchmark/#40 material;
+- desired adult conclusions;
+- source-work titles, authors, characters, quotations, or source scenes used by human authors.
 
-### 4.3 Output schema
-
-Conceptually:
+### Output
 
 ```text
 Episode {
@@ -223,23 +176,21 @@ Episode {
   ageAtEvent
   placeRef
   participantRefs[]
-  observableAction       // what a witness present could report
-  structureRef?          // absent for world-emergent episodes
+  observableAction
+  structureRef?
   introducedParticipants[]?
 }
 ```
 
-There is no field for significance, lesson, trait, impact, inner state, remembered meaning, or future policy.
+No field exists for significance, lesson, trait, impact, inner state, remembered meaning, or future policy.
 
-`observableAction` is deliberately bounded prose. The implementation should use a small byte/character ceiling sufficient for concrete observable detail but hostile to essay-like editorializing; the exact limit is a versioned schema value.
+`observableAction` is bounded prose: enough for concrete witnessable detail, not an interpretive essay. The exact byte/character ceiling is a versioned schema value.
 
-### 4.4 World-grounded participant introduction
+### Participant introduction
 
-The life may meet people who were not pre-authored in the initial roster.
+A life may meet people not pre-authored in the initial roster.
 
 A new participant may enter only through a role the WorldSpec actually affords.
-
-Conceptually:
 
 ```text
 NewParticipant {
@@ -249,27 +200,19 @@ NewParticipant {
 }
 ```
 
-Mechanical gates require:
+Mechanical validity requires:
 
-1. `roleRef` resolves to a WorldSpec-afforded role/institution/relationship possibility;
-2. every later `participantRef` is either in the initial roster or was introduced in a strictly earlier episode.
+1. the role resolves to a WorldSpec affordance;
+2. a participant used in an episode is either in the initial roster, was introduced earlier, **or is explicitly introduced in that same episode** through a valid affordance;
+3. after introduction, the same stable provisional ID is reused.
 
-Examples:
-
-- `school_teacher` requires a school/education institution;
-- `shopkeeper` requires local commerce;
-- `cousin` requires an extended-family affordance;
-- a person encountered during a move requires the corresponding place/mobility context.
-
-The human WorldSpec author therefore need not pre-author the Thread's entire social world.
+Examples: a `school_teacher` needs schooling; a `shopkeeper` needs commerce; a `cousin` needs an extended-family affordance.
 
 ---
 
 ## 5. EventStructurePool
 
-An EventStructure is an **affordance**, never a plot, scene, required event, or statement of what became formative.
-
-Conceptually:
+An EventStructure is an **affordance**, never a plot, required event, or statement of significance.
 
 ```text
 EventStructure {
@@ -284,102 +227,94 @@ EventStructure {
 }
 ```
 
-`formative_capable` means only that an event of this type could matter. It does not say that it did matter to a particular Thread.
+`formative_capable` means only that such an event could matter.
 
-### 5.1 Specificity ceiling
+### Specificity ceiling
 
-A structure is admissible into the pool only if its human author can produce **at least three one-line instantiation witnesses in materially different worlds**, differing materially in era, economy, and culture.
+A structure enters the pool only if its human author can produce at least **three** one-line instantiations in materially different worlds, differing in era, economy, and culture.
 
-The witnesses establish that the abstraction is a relocatable situation type rather than one identifiable source scene.
-
-They are provenance only and are never shown to Pass A.
-
-Example:
+Those witnesses prove relocation/generalization and are **never shown to Pass A**.
 
 ```text
 admissible:
   an adult resolves a young person's difficulty without consulting them
 
-scene-shaped / rejected from pool:
+scene-shaped:
   the aunt finishes the dead brother's model ship
 ```
 
-### 5.2 Sampling policy
+### Sampling
 
-The v1 development default per developmental window is to offer approximately **8–10** structures, weighted for developmental-range eligibility, with at least **40% `low` consequenceClass** among the offered structures.
+Development default per developmental window: approximately **8–10** offered structures, weighted for developmental-range eligibility, with at least **40% `low` consequenceClass** in the offered input distribution.
 
-This low-consequence requirement is a property of the **offered input distribution**, not a quota on the generated life. Pass A is explicitly told that structures are possibilities rather than a checklist.
+That 40% constrains what Fibre offers, not what the generated life must use.
 
-The exact cohort policy is frozen at Slice G before any cohort output exists.
+Pass A is told the structures are possibilities, not a checklist.
 
-### 5.3 Offered, used, and world-emergent episodes
+### Offered, used, and world-emergent
 
-The Genesis manifest records which structures were offered to Pass A and which were actually instantiated.
-
-Pass A is also permitted to create **world-emergent episodes with no `structureRef`** when they are grounded in the WorldSpec and chronology.
-
-Record and later measure:
+Record:
 
 ```text
 structures offered
 structures instantiated
 episodes structure-grounded
-pisodes world-emergent
+episodes world-emergent
 ```
 
-There is no admission floor or target ratio for world-emergent episodes. A life that uses nearly everything it is offered, or is nearly entirely structure-grounded, is a diagnostic finding rather than an admission failure.
+World-emergent episodes have no `structureRef` and are grounded directly in WorldSpec + chronology.
+
+There is **no floor or target** for world-emergent output. A life that is 95% structure-grounded is a quality finding, not an admission failure.
 
 ---
 
 ## 6. Pass B — autobiographical memory formation
 
-Pass B determines what the Thread **retains autobiographically** from admitted candidate history.
+Pass B determines what the Thread **retains autobiographically**.
 
-### 6.1 Visible inputs
+### Visible
 
-Pass B may see:
-
-- admitted candidate history up to the remembering moment;
-- age at remembering;
+- candidate history available up to the remembering moment;
+- age/time of remembering;
 - prior candidate memories;
-- relevant factual relationship/world context;
-- for `life_plus_genome` calls only, bounded relevant genome loci.
+- relevant factual world/relationship context;
+- for `life_plus_genome` only, bounded relevant genome loci.
 
-Pass B never sees later events or meanings that have not yet formed.
+It never sees later events or later meanings.
 
-### 6.2 Built-in treatment and negative control
+### Treatment assignment
 
-Before each Pass-B call, the policy deterministically records one mode:
+Before each eligible Pass-B call, the policy records exactly one mode:
 
 ```text
 life_only
 life_plus_genome
 ```
 
-For the #39 quality cohort, Slice G freezes `life_plus_genome` in the **30–40%** range so the treatment subset is large enough to analyze while the majority remains genome-blind.
+For the final cohort, Slice G freezes `life_plus_genome` in the **30–40%** range.
 
-This distinction is not merely audit metadata. Because Pass A and Pass C are genome-blind, it creates an internal experimental control:
+Assignment must be **content-independent**: chosen by a frozen deterministic/randomized policy (for example stable hashing/stratification over eligible attempt IDs), not by semantic inspection of which memories look likely to benefit from genome visibility.
 
-- `life_only` is the **negative control** for genome leakage;
-- `life_plus_genome` is the only legitimate path by which genome may influence later meaning, by shaping attention/retention at memory formation.
+Because A and C are genome-blind:
 
-### 6.3 Output schema
+- `life_only` is the negative control;
+- `life_plus_genome` is the only legitimate direct genome-visibility path, where inheritance may shape attention/retention.
 
-Conceptually:
+### Output
 
 ```text
 MemoryFormation {
   outcome: remembered | not_remembered
-  episodeRefs[]?          // required when remembered
-  rememberedContent?     // present when remembered
+  episodeRefs[]?
+  rememberedContent?
   uncertainty[]?
   formationMode
 }
 ```
 
-There is no meaning field in Pass B.
+There is no meaning field.
 
-`not_remembered` is a first-class outcome. Pass B must be offered more historical episodes than it ultimately remembers; the exact observed funnel remains a diagnostic, not an admission quota.
+`not_remembered` is a first-class legal outcome. **Admission does not require any minimum amount of forgetting.** If every event becomes remembered, the funnel diagnostic is allowed to expose that failure.
 
 ---
 
@@ -387,13 +322,11 @@ There is no meaning field in Pass B.
 
 Pass C creates **what a remembered experience durably came to mean**.
 
-### 7.1 Pass C is always genome-blind in v1
+### Always genome-blind in v1
 
-Pass C never receives the Thread genome, parent/ancestor loci, or any derived genome verdict.
+Pass C never receives the Thread genome, parent/ancestor loci, or a derived genome verdict.
 
-This is a hard v1 contract.
-
-The only legitimate route by which genome signal may reach remembered meaning is:
+The only legitimate direct path for genome signal is:
 
 ```text
 genome
@@ -402,71 +335,48 @@ genome
   -> genome-blind Pass-C meaning
 ```
 
-This makes the Slice-H genome analysis interpretable rather than self-confirming.
-
-### 7.2 Visible inputs
-
-Pass C may see:
-
-- the memory being interpreted;
-- chronology available up to the meaning-formation moment;
-- age/time of meaning formation;
-- for reinterpretation, the eligible triggering later episode;
-- earlier durable meaning being reconsidered.
-
-### 7.3 Output schema
-
-Initial meaning formation:
+### Initial meaning output
 
 ```text
 MeaningFormation {
   outcome: durable_meaning | no_durable_meaning
   summary?
-  parts[]? {
-    meaningPartId
-    meaning
-  }
+  parts[]? { meaningPartId, meaning }
 }
 ```
 
-`no_durable_meaning` is first-class. Some memories remain memories without becoming durable self-interpretation.
+`no_durable_meaning` is first-class and never quality-gated away. Meaning parts have stable independent citation identities.
 
-Meaning parts have stable independently citable identities.
+### Reinterpretation eligibility
 
-### 7.4 Reinterpretation eligibility
+A later episode may create a reinterpretation opportunity when it occurs at least the policy-defined time after the earlier meaning and shares one of:
 
-A later admitted episode creates **reinterpretation eligibility** when it occurs at least the policy-defined temporal distance after the earlier meaning and has one of these grounded relationships to it:
-
-- same `structureRef` or same explicit structure family;
+- same structure / explicit structure family;
 - same concrete person/relationship;
-- same intellectual/source subject encountered by the Thread.
+- same intellectual/source subject actually encountered by the Thread.
 
-V1 uses **5 years** as the default temporal distance and caps reinterpretation opportunities at **3 per Thread**. These are versioned Genesis-policy choices, not constitutional values.
+V1 defaults: **5 years** minimum distance; at most **3 reinterpretation opportunities per Thread**. These are versioned policy values.
 
-The trigger creates an opportunity to reconsider; it does not require revision.
-
-Reinterpretation has three first-class outcomes:
+The trigger creates eligibility, not mandatory revision.
 
 ```text
 revised
-  -> a new durable meaning supersedes the prior meaning
+  new meaning supersedes prior meaning
 
 unchanged
-  -> the later event was a genuine echo, but the existing meaning remains authoritative
+  a genuine later echo occurred, but the prior meaning survived
 
 none
-  -> no new durable meaning is formed from the eligibility event
+  no new durable meaning formed from the eligible echo
 ```
 
-`unchanged` is semantically distinct from `none` and remains observable. Revised-versus-unchanged behavior becomes a later characterization of narrative integration rather than an admission requirement.
+`unchanged` is distinct from `none`. Revised/unchanged/none proportions are measured, not gated.
 
 ---
 
 ## 8. Entry stage and developmental boundary
 
 Entry stage is policy-owned, not chosen by creative cognition.
-
-Conceptually:
 
 ```text
 entry {
@@ -478,19 +388,17 @@ entry {
 }
 ```
 
-`chronologyEndsAt` bounds Pass A mechanically. No Genesis episode may occur after it.
+`chronologyEndsAt` mechanically bounds Pass A.
 
-For the five-Thread quality cohort, entry stage/age is held approximately common so life duration does not become an attribution shortcut. Narrative-integration differences must emerge from life content rather than simply from one Thread having more years of biography.
-
-Other origin modes may have different policy-owned entry semantics, for example Thread-parent newborn/child entry or fork entry at the fork boundary.
+For the five-Thread quality cohort, entry age/stage is held approximately common so life duration does not become an attribution shortcut. Other origin modes may use different policy-owned entry semantics.
 
 ---
 
-## 9. World authorship provenance
+## 9. World authorship and control validity
 
-World/source philosophy is defined in [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md) and the #39 plan. The compiler consumes the resulting WorldSpec, not the source works that informed human authorship.
+World/source philosophy is defined by Fibre canon. Source works inform human abstraction; the compiler receives the resulting WorldSpec, not the work that inspired it.
 
-Every development/cohort world records:
+Every world records:
 
 ```text
 WorldAuthorship {
@@ -503,15 +411,28 @@ WorldAuthorship {
 }
 ```
 
-A source-familiarity leak review happens before a WorldSpec is frozen for use: a knowledgeable reviewer should not be able to identify a specific source work from the WorldSpec merely because it inspired the world structure.
+A knowledgeable reviewer should not be able to identify a specific source work merely from the WorldSpec.
 
-The world-familiarity probe characterizes whether the pinned worker has materially sparse representation of one candidate world. Weak familiarity may cause replacement **before cohort freeze** or may be recorded as a known handicap. It is not a post-H excuse to regenerate a weak Thread.
+### Cohort genome/world independence
+
+For the final quality cohort, the negative-control interpretation requires avoiding upstream human-authored genome/world correlation.
+
+Therefore:
+
+1. cohort WorldSpecs are authored and frozen **without access to the cohort genomes**;
+2. symbolic genomes / synthetic parent genomes are assigned or frozen only after the WorldSpecs are frozen;
+3. WorldSpec factual parent/household content must not be backfilled from those loci;
+4. Pass-B `life_only` / `life_plus_genome` assignment is content-independent.
+
+This is an experimental-control rule for #39, not a claim that real family environments are genetically independent.
+
+Without this control, above-chance `life_only` discrimination could reflect an upstream world/genome correlation rather than a pass leak.
 
 ---
 
 ## 10. Persistence delta: no second life authority
 
-#39 may introduce durable Genesis/provenance authority for facts #37/#38 do not already own, for example:
+#39 may introduce durable authority only for genuinely new Genesis/provenance state, for example:
 
 ```text
 GenesisManifest
@@ -525,7 +446,7 @@ MutationWitness
 MeaningPart identity extension
 ```
 
-Everything else publishes into existing authoritative Fibre domains:
+Everything else publishes into existing Fibre authorities:
 
 ```text
 identity assertions
@@ -533,66 +454,64 @@ lineage / life relations
 place episodes
 Thread history/events
 embodiment
-rich autobiographical memory
+autobiographical memory
 memory visual-companion obligation
 ```
 
-Hard Slice-A rule:
+Hard rule:
 
 > **No new Genesis table may become authoritative for biography, memory, relationship, place, embodiment, or identity content already owned by #37/#38.**
 
-A `genesis_biography`, `genesis_memories`, `genesis_relationships`, or equivalent parallel life model is a design failure, not a convenience.
+`genesis_biography`, `genesis_memories`, or equivalent parallel life models are design failures.
 
-`GenerationAttempt` audit payloads are not an exception: rejected candidate material is explicitly non-authoritative and excluded from hydration/cognition.
+Rejected `GenerationAttempt` audit payloads remain explicitly non-authoritative.
 
 ---
 
-## 11. Genome discrimination semantics created by this contract
+## 11. Genome discrimination semantics
 
 Slice B and Slice H measure different things.
 
 ### Slice B — locus-capability positive control
 
-Controlled content written with intentionally different genomes visible asks whether the textual loci are specific enough in principle to support distinguishable output.
+Controlled content written with intentionally different genomes visible tests whether loci are specific enough **in principle** to support distinguishable output. This is a ceiling/instrument check.
 
-This establishes a **capability ceiling / instrument check**. If Slice B is near chance, the loci are too generic and actual-life genome propagation is uninterpretable.
+If B is near chance, H is uninterpretable because the loci themselves are too generic.
 
-### Slice H — achieved propagation through lived attention
+### Slice H — achieved propagation
 
-Pass C is genome-blind, so actual remembered meaning can carry genome signal only through Pass-B attention/retention.
+Actual Pass-C meanings are genome-blind. Analyze the H meanings by their Pass-B formation mode.
 
-Analyze `life_plus_genome` and `life_only` subsets separately. Slice G must predeclare the reading of all four qualitative cells:
-
-| Observed H pattern | Reading |
+| H pattern | Reading |
 | --- | --- |
 | `life_plus_genome` above chance; `life_only` at chance | intended mechanism: inheritance propagated through attention and nowhere else |
-| both at chance | genome was inert even when visible at B; real finding, not instrument failure if Slice B positive control was strong |
-| `life_only` above chance | **negative-control failure / leak**; no legitimate genome path exists for this subset |
-| both near ceiling | over-determination; lived meaning has become a demonstration of genome |
+| both at chance | genome inert even when visible at B; real result if B positive control was strong |
+| `life_only` above chance | **negative-control failure**; investigate pass leakage and first verify no upstream genome/world control was violated |
+| both near ceiling | over-determination; lived meaning is effectively demonstrating genome |
 
-The healthy target is not mechanically “higher is better.” Slice G freezes the numerical interpretation before cohort generation.
+Healthy is not “higher is better.” Slice G freezes numerical thresholds and uncertainty treatment before H.
 
-A leak finding is integrity-significant because it demonstrates an effect that input allowlist tests failed to explain, even if the plumbing itself appears blind.
+If the cohort control-validity rules above hold, reproducible above-chance `life_only` discrimination is evidence of an unexplained genome path and blocks closure until understood.
 
 ---
 
-## 12. Replay and inspection obligations
+## 12. Replay and inspection
 
 A reviewer must be able to inspect:
 
-- exact WorldSpec and world-authorship provenance;
-- entry policy and chronology endpoint;
-- exact cognition provider/model/prompt/schema/sampling digests;
-- EventStructurePool digest and per-window offered structures;
-- which structures were used;
-- which episodes were world-emergent;
+- WorldSpec + authorship provenance;
+- entry policy / chronology endpoint;
+- cognition provider/model/prompt/schema/sampling digests;
+- EventStructurePool digest and offered structures;
+- structures used vs ignored;
+- world-emergent episodes;
 - participant introductions and their WorldSpec affordances;
-- every Pass-B `life_only` / `life_plus_genome` assignment;
-- `remembered` / `not_remembered` outcomes;
-- `durable_meaning` / `no_durable_meaning` outcomes;
-- reinterpretation eligibility and `revised` / `unchanged` / `none` outcomes;
-- all rejected attempts and mechanical reasons;
-- exact admitted record refs;
+- every Pass-B treatment assignment;
+- remembered/not-remembered outcomes;
+- durable/no-durable meaning outcomes;
+- reinterpretation eligibility and revised/unchanged/none outcomes;
+- rejected attempts and mechanical reasons;
+- admitted record refs;
 - atomic publication witness and first live Thread version;
 - outstanding memory-photo obligations.
 
@@ -600,20 +519,20 @@ Restart must reconstruct exactly the same admitted Thread state and Genesis prov
 
 ---
 
-## 13. Explicit non-goals
+## 13. Non-goals
 
 This contract does not implement or authorize:
 
 - semantic validator cognition at admission;
 - quality resampling;
 - provider swapping to rescue cohort distinctness;
-- #40 identity relevance/projection;
+- #40 relevance/projection;
 - Guardian tuning;
 - Whole-Person standing;
-- post-live #42 self-authored development;
-- generic Wikipedia/book ingestion;
-- a new Genesis-owned biography or memory authority;
-- synchronous rendering of every memory image.
+- #42 post-live development;
+- generic source ingestion;
+- a Genesis-owned biography/memory authority;
+- synchronous rendering of all memory images.
 
 ---
 
@@ -642,4 +561,4 @@ JUDGE PERSONHOOD QUALITY
 
 The compiler may refuse records that cannot truthfully belong to the Thread or to the field in which they are being placed.
 
-It may not curate away the evidence that its own creative system produced a dull, over-integrated, stereotyped, genome-inert, genome-dominated, plot-shaped, or otherwise weak person.
+It may not curate away evidence that its own creative system produced a dull, over-integrated, stereotyped, genome-inert, genome-dominated, plot-shaped, or otherwise weak person.
