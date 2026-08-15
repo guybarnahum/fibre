@@ -13,7 +13,7 @@ Milestone **#39** must prove that Fibre can create several provenance-rich prior
 
 The two implementation authorities are:
 
-- [`../architecture/genesis-compiler-contract-v1.md`](../architecture/genesis-compiler-contract-v1.md) — what Genesis cognition may know, produce, reject, and publish;
+- [`../architecture/genesis-compiler-contract-v1.md`](../architecture/genesis-compiler-contract-v1.md) — what Genesis cognition may know, produce, mechanically repair/reject, and publish;
 - this document — how #39 is implemented, verified, frozen, and reviewed slice by slice.
 
 Governing canon includes [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md), especially:
@@ -64,15 +64,16 @@ Verdict is `CLEAR` or `HOLD` for C/D/F/G. H may also return `REDESIGN` when the 
 
 ## Fibre claim
 
-> Fibre can describe a world and provenance for a life, generate against provisional state, and publish a complete admitted life atomically without creating a second biography/memory authority.
+> Fibre can describe a world and provenance for a life, generate against provisional state, repair only mechanical record form, and publish a complete admitted life atomically without creating a second biography/memory authority.
 
 ## Implement
 
 - `GenesisWorldSpec` with factual world circumstances only;
 - `WorldAuthorship` provenance;
 - `GenesisManifest` skeleton;
-- `GenerationAttempt` / rejection witness;
+- `GenerationAttempt` with record-repair and attempt-failure witnesses;
 - cognition/prompt/schema/model digest fields;
+- current #37/#38 publication-validator-set witness;
 - candidate Genesis boundary;
 - atomic birth/publication API;
 - entry-stage policy and chronology endpoint;
@@ -82,6 +83,29 @@ Verdict is `CLEAR` or `HOLD` for C/D/F/G. H may also return `REDESIGN` when the 
 WorldSpec must structurally exclude finished personality conclusions, required politics/morality, future role, or desired behavior.
 
 World/source authoring follows the canon: source works inform human abstraction, never compiler context. `Take the structure; move the instance.`
+
+## Retry verification — hard distinction
+
+Implement both retry scopes before creative cohort work:
+
+```text
+record-level form repair
+  one malformed generated record is regenerated
+  surrounding candidate state is preserved
+  no quality verdict or desired semantic direction is supplied
+
+attempt-level retry
+  whole candidate restarts only for cross-record/global structural failure,
+  publication/replay failure, rights/provenance structure failure,
+  or exhausted record repair
+```
+
+V1 defaults:
+
+- record: original + at most two form repairs;
+- candidate: at most three whole-life attempts.
+
+Both are versioned/frozen policy. Every repair/rejection is recorded by gate.
 
 ## Persistence verification — hard rule
 
@@ -98,7 +122,41 @@ NO parallel identity authority
 
 New #39 persistence is limited to Genesis/world/generation provenance, symbolic genome/witnesses, event-structure provenance, and the minimal meaning-part extension.
 
-Rejected candidate audit material is never hydration/cognition authority.
+Rejected/repaired candidate audit material is never hydration/cognition authority.
+
+## Existing-domain validator preflight
+
+Before creative generation, build deterministic publication fixtures and exercise the **actual current #37/#38 validators** that atomic birth must satisfy.
+
+The baseline inventory includes:
+
+### Identity
+
+- one-material-proposition discipline;
+- no list/paragraph/multi-sentence bundle;
+- no explicit bundle punctuation/forms currently rejected by `assertSingleMaterialProposition` (including semicolon, em/en dash and named bundle phrases);
+- v2 repeated-conjunction discipline;
+- lowercase snake-case claim predicate and current predicate byte bound.
+
+### Autobiographical memory
+
+- memory identity tied to immutable origin event + slot;
+- non-empty `eventRefs` containing the origin event;
+- event refs resolve to the same Thread and lie inside `subjectPeriod` and not after `asOf`;
+- current `rememberedMeaning` material/byte bounds where the existing persisted record requires it;
+- valid Fibre/imported authorship and evidence refs;
+- contiguous append-only revision and matching Thread-history anchor/version chain.
+
+### Situated identity/life evidence
+
+- cultural/language formation resolves a Thread-event witness;
+- lineage/family/ancestry resolves a life-relation revision witness;
+- geography/place resolves a place-episode revision witness;
+- current situated identity domains remain `context_only` until later standing.
+
+The code validators, not this prose list, remain authority. Slice A records a validator-set version/digest witness and tests candidate publication against those same contracts.
+
+Single-record shape failures are record-form repair when possible; cross-record/replay failures are attempt-level.
 
 ## Birth/publication verification
 
@@ -108,6 +166,7 @@ Using deterministic fixtures before creative generation:
 - publication writes all admitted life records or none;
 - simulated failure mid-publication leaves no half-born Thread;
 - event/version/state-hash semantics remain replayable;
+- publication succeeds through the current identity/memory/situated validators;
 - the manifest records the exact resulting first-live version;
 - first live command must use that actual version as `expectedVersion`.
 
@@ -115,8 +174,10 @@ Using deterministic fixtures before creative generation:
 
 - a WorldSpec contains conclusions such as `independent`, `strict`, `creative`, or future-role hints;
 - candidate memories appear in normal Thread reads before birth;
+- a single lexical identity/meaning form failure discards an otherwise coherent life instead of using bounded record repair;
 - a failed publication leaves an identity, memory, place, or event behind;
 - implementation creates a `genesis_*` biography/memory parallel world;
+- generated records first encounter known #37/#38 constraints only at final publication;
 - first live version is reset for aesthetics instead of reflecting publication semantics.
 
 A is reviewed with B/C rather than blocking alone.
@@ -214,10 +275,10 @@ No autobiographical memory/meaning should exist yet.
 - actual Pass-A input object matches its allowlist and digest;
 - no genome/future/source-instance field reaches the call;
 - chronology endpoint is enforced;
-- participant refs are initial-roster or validly introduced earlier;
+- participant refs are initial-roster, validly introduced earlier, or introduced in the same episode through an afforded role;
 - introduced role is afforded by the WorldSpec;
 - no meaning/significance field exists in the output schema;
-- narrow interiority-form lexical checks reject explicit interpretation smuggled into `observableAction`.
+- narrow interiority-form lexical checks use record-level repair and record their rejection profile.
 
 ## Claude blocking gate C
 
@@ -228,10 +289,11 @@ Attack:
 - Is the pool authoring the life rather than offering affordances?
 - Is the early event set already screenplay-shaped?
 - Are the development worlds accidentally becoming future cohort material?
+- Are lexical form repairs silently selecting whole lives out of existence?
 
 ### What failure looks like
 
-A sequence whose episodes obviously add up to a moral lesson; every offered structure is used; no mundane/world-emergent incidents occur; source-fiction scenes remain recognizable; events contain phrases explaining what they taught the child.
+A sequence whose episodes obviously add up to a moral lesson; every offered structure is used; no mundane/world-emergent incidents occur; source-fiction scenes remain recognizable; events contain phrases explaining what they taught the child; a high interiority-form rejection rate is hidden because only surviving records are shown.
 
 **HOLD/CLEAR.**
 
@@ -260,20 +322,59 @@ remembered
 not_remembered
 ```
 
-Every call records:
+Every call records direct mode:
 
 ```text
 life_only
 life_plus_genome
 ```
 
-The development policy explores the same mechanism later frozen at G. Pass B has no meaning field.
+and prior treatment-memory exposure, producing three analysis strata:
+
+```text
+life_only_unexposed
+life_only_exposed
+life_plus_genome
+```
+
+Definitions:
+
+- `life_only_unexposed`: current call is genome-blind and no prior remembered memory visible to it was formed under treatment;
+- `life_only_exposed`: current call is genome-blind but at least one prior visible remembered memory was formed under treatment;
+- `life_plus_genome`: current call sees the frozen genome exposure policy.
+
+The middle stratum is legitimate within-life propagation, not automatically a leak.
+
+Treatment calls see **the whole symbolic genome or one fixed deterministic locus subset chosen independently of content**. Never relevance-select loci based on the episode/memory.
+
+Pass B has no meaning field.
 
 ## Pass C
 
-Pass C is **unconditionally genome-blind**.
+Pass C is **unconditionally genome-blind and one-memory-scoped in v1**.
 
-Implement:
+### Initial call visible
+
+- the one target memory's remembered content and uncertainty;
+- stable memory/provenance refs without resolving extra history;
+- age/time and chronology position of meaning formation.
+
+### Reinterpretation call additionally visible
+
+- the one prior meaning being reconsidered;
+- the one mechanically eligible later episode in bounded observable form;
+- the typed eligibility relation.
+
+### Structurally absent
+
+- all genomes/loci/genome verdicts;
+- sibling memories;
+- underlying episode content for the target memory;
+- other meanings except the target prior meaning in reinterpretation;
+- entry-stage purpose, adult role/context, future benchmark/#40 material;
+- anything after the call's `asOf` / applicable chronology boundary.
+
+Implement initial outcomes:
 
 ```text
 durable_meaning
@@ -284,7 +385,7 @@ with stable `meaningId` and independently citable `meaningPartId` values.
 
 Meaning may be ambivalent, incomplete, mistaken, or unresolved. It may not structurally contain an explicit universal future behavior policy.
 
-### Reinterpretation eligibility
+## Reinterpretation eligibility
 
 A later episode may create a reinterpretation opportunity when it is sufficiently later and shares one of:
 
@@ -292,7 +393,7 @@ A later episode may create a reinterpretation opportunity when it is sufficientl
 - same concrete person/relationship;
 - same intellectual/source subject actually encountered by the Thread.
 
-V1 defaults: at least five years later; maximum three opportunities per Thread.
+V1 defaults: at least five years later; maximum three **run** opportunities per Thread.
 
 First-class outcomes:
 
@@ -304,6 +405,16 @@ none
 
 `unchanged` means the prior meaning survived a genuine later echo. It is not the same as `none`.
 
+Eligibility is computed before applying the cap. Record:
+
+```text
+eligible
+run
+skipped_by_cap
+```
+
+If the cap binds, deterministic chronology/stable-ID selection chooses run opportunities; never semantic ranking.
+
 ## Development characterization — measure, never gate
 
 Characterize:
@@ -314,7 +425,10 @@ Characterize:
 - soft prescriptiveness;
 - sentiment coupling;
 - self-account overreach;
-- revised / unchanged / none reinterpretation behavior.
+- `life_only_unexposed` / `life_only_exposed` / `life_plus_genome` counts;
+- revised / unchanged / none outcomes over **run** reinterpretations;
+- reinterpretation eligible vs run vs cap-skipped;
+- per-gate record repair/rejection profile.
 
 If results are weak, stop and change the compiler, then use **new development worlds**. Do not keep regenerating against the same worlds until they improve.
 
@@ -323,15 +437,18 @@ If results are weak, stop and change the compiler, then use **new development wo
 Attack:
 
 - Did the horoscope move from A into B/C?
-- Are `life_only` calls truly genome-free?
-- Is C truly genome-blind?
+- Is `life_only_unexposed` genuinely free of direct and prior-memory genome exposure?
+- Does `life_only_exposed` behave as an informative middle term rather than being mislabeled a leak?
+- Is genome exposure whole/fixed rather than relevance-selected?
+- Does Pass C actually enforce its one-memory allowlist and remain unable to reread underlying history?
 - Do meanings remain semantic rather than derived labels or policy rules?
 - Does history contain material the self-account cannot absorb?
 - Can some memories remain memories without becoming lessons?
+- Are form repair/rejection rates visible rather than hidden survivorship?
 
 ### What failure looks like
 
-Nearly every episode is remembered; nearly every memory has a clean durable lesson; meanings paraphrase genome loci; every later echo triggers revision; all Threads understand themselves equally well; semantic parts collapse into `mixed` or another category.
+Nearly every episode is remembered; nearly every memory has a clean durable lesson; meanings paraphrase genome loci; Pass C sees sibling memories or underlying event content; treatment loci are chosen because they match the episode; `life_only_unexposed` is too small or not actually unexposed; every later echo triggers revision; all Threads understand themselves equally well; semantic parts collapse into `mixed`; high lexical repair rates selectively remove prescriptive-register lives without being reported.
 
 **HOLD/CLEAR.**
 
@@ -454,6 +571,17 @@ Vary primarily:
 - origin mode;
 - lived content from which narrative integration may later emerge.
 
+## Genome/world control validity
+
+Freeze in this order:
+
+1. author and freeze cohort WorldSpecs **without seeing cohort genomes**;
+2. only then freeze/assign symbolic genomes / synthetic parent genomes;
+3. do not backfill WorldSpec parent/household facts from loci;
+4. freeze content-independent Pass-B direct-treatment assignment/position stratification.
+
+This is what makes `life_only_unexposed` interpretable as a negative control.
+
 ### Convergent pair
 
 Design two worlds where convergence on some broad belief is plausible despite very different cultural texture and different concrete routes.
@@ -479,7 +607,7 @@ Do not put those conclusions directly into WorldSpec personality fields. The var
 
 Run the cold familiarity probe on all candidate worlds using the pinned worker, with no Genesis context. Replace a materially under-represented world **before freeze**, or record the known handicap before H. Never use familiarity after H as a reason to regenerate a weak Thread.
 
-## Freeze cognition
+## Freeze cognition and admission
 
 Freeze exactly:
 
@@ -491,19 +619,28 @@ sampling config
 policy version
 EventStructurePool digest and sampling policy
 entry policy
-retry cap
+record-form repair cap
+whole-candidate attempt cap
 admission gate list
+publication-validator-set witness
 ```
 
 One common creative configuration is used across all five Threads.
 
-## Freeze Pass-B genome treatment
+## Freeze Pass-B genome treatment and cell arithmetic
 
-Set `life_plus_genome` to a deterministic **30–40%** of eligible Pass-B calls; the exact value and assignment method are frozen now.
+Freeze all of:
 
-The rest are `life_only`.
+- exact `life_plus_genome` proportion in the **30–40%** range;
+- whole-genome or exact fixed deterministic locus-subset exposure policy;
+- content-independent assignment method;
+- any position stratification used to protect a clean early control cell;
+- expected/minimum analyzable counts for:
+  - `life_only_unexposed`;
+  - `life_only_exposed`;
+  - `life_plus_genome`.
 
-This creates a built-in treatment and negative control because A and C are genome-blind.
+Before H, calculate the expected cell sizes under the planned number/order of eligible Pass-B calls. If `life_only_unexposed` would be too small, adjust the **position-stratified assignment before freeze**, never after seeing outcomes.
 
 ## Freeze independent raters
 
@@ -531,20 +668,29 @@ Raters attribute on **route, tension, and residue**, not merely belief position.
 
 Blindly rate historical-event sentiment and remembered-meaning valence separately, then characterize correlation. Strong coupling suggests mood is being mistaken for interpretation.
 
-### D3 — genome propagation, four-cell reading
+### D3 — genome propagation: three strata, predeclared readings
 
 Slice B is the positive-control ceiling. H is achieved propagation through life.
 
-Analyze H meanings by Pass-B formation mode:
+Primary comparisons use:
+
+```text
+life_only_unexposed   clean negative control
+life_only_exposed     within-life prior-memory propagation
+life_plus_genome      direct treatment
+```
+
+Predeclare at least these readings:
 
 | H pattern | Predeclared reading |
 | --- | --- |
-| `life_plus_genome` above chance; `life_only` at chance | intended propagation through attention |
-| both at chance | genome inert even when visible; real result, not instrument failure if B was strong |
-| `life_only` above chance | **negative-control failure / leak**; stop and explain |
-| both near ceiling | over-determination; life demonstrates genome |
+| treatment above chance; `life_only_unexposed` at chance | intended direct propagation through attention |
+| `life_only_exposed` above clean control and plausibly between/near treatment | informative propagation through prior memory history, not automatically a leak |
+| all three at chance | genome inert even when visible; real result, not instrument failure if B was strong |
+| `life_only_unexposed` reproducibly above chance | **negative-control failure**; stop and explain after checking world/genome/assignment controls |
+| treatment and clean control near ceiling | over-determination or broken control |
 
-Freeze numerical thresholds/uncertainty treatment before H. Do not reduce this to one scalar target. Healthy is expected to be modest rather than at either extreme.
+Freeze numerical thresholds, uncertainty treatment, and minimum cell sizes before H. Do not reduce this to one scalar target. Healthy is expected to be modest rather than at either extreme.
 
 ### D4 — life funnel
 
@@ -573,7 +719,10 @@ Freeze how to report, without admission floors:
 
 - structures offered vs instantiated;
 - structure-grounded vs world-emergent episodes;
-- revised vs unchanged vs none reinterpretation outcomes;
+- reinterpretation **eligible vs run vs skipped-by-cap**;
+- revised vs unchanged vs none over run reinterpretations;
+- per-gate record-form repair counts/rates;
+- record-repair exhaustion and candidate-attempt failure profile;
 - articulacy variance;
 - generator monoculture indications.
 
@@ -588,15 +737,19 @@ Quality thresholds may fail. They may not trigger silent regeneration.
 Attack:
 
 - Are development and cohort worlds genuinely disjoint?
+- Were worlds frozen without genome knowledge?
 - Could generic prose, source leakage, sentiment, setting, or style pass the diagnostics?
 - Are any thresholds chosen after seeing output?
-- Is `life_only` a real negative control?
+- Is `life_only_unexposed` a real and sufficiently sized negative control?
+- Is `life_only_exposed` correctly separated from a leak?
+- Is genome exposure fixed/whole rather than relevance-selected?
 - Is the convergent pair allowed to agree without being penalized?
-- Has any measured tendency secretly become an admission rule?
+- Has any measured tendency secretly become an admission rule through record/attempt survivorship?
+- Are rejection/repair rates guaranteed to remain visible?
 
 ### What failure looks like
 
-Cohort worlds resemble development fixtures; raters know the build; thresholds are absent or adjustable; one diagnostic can only pass or crash; a world is chosen because the model already generated well on it; `life_plus_genome` is too sparse to analyze.
+Cohort worlds resemble development fixtures; raters know the build; thresholds are absent or adjustable; one diagnostic can only pass or crash; a world is chosen because the model already generated well on it; treatment/control cell arithmetic was never checked; relevance selection chooses genome loci; `life_only_unexposed` is too sparse; lexical repair/rejection profile is omitted.
 
 **HOLD/CLEAR.**
 
@@ -611,11 +764,12 @@ Cohort worlds resemble development fixtures; raters know the build; thresholds a
 ## Procedure
 
 1. Run the pinned compiler against the five frozen WorldSpecs for the first time.
-2. Allow only the predeclared bounded mechanical-integrity retries.
-3. As soon as the first **integrity-valid five-Thread cohort** exists, freeze it.
+2. Allow only the predeclared bounded **record-form repairs** and **attempt-level mechanical retries**, recording every gate/repair.
+3. As soon as the first mechanically integrity-valid five-Thread cohort exists, freeze it.
 4. Do **not** regenerate for quality.
 5. Run the frozen diagnostics with independent raters.
-6. Record every result, including weak or embarrassing ones.
+6. Report the per-gate repair/rejection profile so survivorship pressure is visible.
+7. Record every result, including weak or embarrassing ones.
 
 If the cohort is weak, preserve it and diagnose the generator. A later generator revision creates a separately versioned cohort; it never replaces the failed evidence.
 
@@ -632,14 +786,17 @@ A reviewer must be able to answer:
 - Which episodes emerged from the world without a structure?
 - Who entered the life later, and what WorldSpec affordance grounded them?
 - Which events were not remembered?
+- For each Pass-B call, was it `life_only_unexposed`, `life_only_exposed`, or `life_plus_genome`?
 - Which memories never acquired durable meaning?
 - What meanings contain independently citable tension?
-- Which later echoes produced `revised`, `unchanged`, or `none`?
+- How many reinterpretation opportunities were eligible, run, and skipped by cap?
+- Which run echoes produced `revised`, `unchanged`, or `none`?
 - Where does the Thread fail to understand its own experience?
 - Where does current self-account leak against durable history?
 - Which beliefs converge with another Thread, and why are route/tension/residue still different?
 - Which memory-photo obligations remain pending?
-- What was rejected mechanically during Genesis and why?
+- What was mechanically repaired/rejected during Genesis and by which gate?
+- Did any record exhaust its repair cap or force a whole-candidate retry?
 - What first-live Thread version resulted from birth publication?
 
 ## Claude blocking gate H
@@ -650,7 +807,8 @@ Primary hostile question:
 
 Also attack:
 
-- `life_only` genome leakage;
+- `life_only_unexposed` genome leakage;
+- the relationship between unexposed, exposed, and treatment strata;
 - genome over-determination;
 - generator monoculture;
 - screenplay-shaped funnels;
@@ -658,11 +816,13 @@ Also attack:
 - cultural determinism;
 - lack of ordinary/non-formative life;
 - uniform articulacy;
-- source/plot residue.
+- source/plot residue;
+- survivorship filtering revealed by high lexical/domain-form repair rates;
+- reinterpretation-cap truncation.
 
 ### What failure looks like
 
-Normalized excerpts become interchangeable; the convergent pair is distinguishable only by setting; both genome subsets approach ceiling; `life_only` carries genome signal; nearly all events become remembered meanings; every Thread explains its childhood neatly; every life uses the same kinds of dramatic structures; switching the worker is proposed as a rescue.
+Normalized excerpts become interchangeable; the convergent pair is distinguishable only by setting; clean control carries genome signal; all three strata approach ceiling; nearly all events become remembered meanings; every Thread explains its childhood neatly; every life uses the same kinds of dramatic structures; high form-repair rates indicate the generator repeatedly fights admission; the reinterpretation cap binds heavily but only run outcomes are reported; switching the worker is proposed as a rescue.
 
 Verdict:
 
@@ -676,24 +836,30 @@ Verdict:
 
 Automated tests protect Fibre-specific integrity only. At minimum:
 
-1. exact pass input allowlists/digests;
+1. exact pass input allowlists/digests for A, B, and C;
 2. Pass A and Pass C genome blindness;
-3. deterministic genome crossover/mutation witnesses;
-4. chronology/entry boundary;
-5. participant grounding through WorldSpec affordances;
-6. source-person history cannot become Thread history by implication;
-7. living identifiable person requires documented-consent Echo; Homage requires deceased/fictional attestation;
-8. event != memory != meaning structurally;
-9. `not_remembered` and `no_durable_meaning` are legal first-class outcomes;
-10. meaning parts have stable independent refs;
-11. reinterpretation is append-only and supports `revised` / `unchanged` / `none`;
-12. rejected attempts are bounded, visible, and never Thread authority;
-13. atomic birth leaves all-or-nothing canonical state;
-14. no Genesis-owned duplicate biography/memory/relationship/place/embodiment/identity authority;
-15. every admitted memory creates its #38 photo obligation;
-16. restart reconstructs exactly the same admitted life and Genesis provenance.
+3. Pass C initial meaning sees one target memory only and cannot resolve underlying history/sibling memories;
+4. deterministic genome crossover/mutation witnesses;
+5. treatment locus exposure is whole-genome or fixed deterministic, never content/relevance-selected;
+6. Pass-B direct assignment is content-independent and prior-treatment exposure/analysis stratum is recorded;
+7. chronology/entry boundary;
+8. participant grounding through WorldSpec affordances;
+9. source-person history cannot become Thread history by implication;
+10. living identifiable person requires documented-consent Echo; Homage requires deceased/fictional attestation;
+11. event != memory != meaning structurally;
+12. `not_remembered` and `no_durable_meaning` are legal first-class outcomes;
+13. meaning parts have stable independent refs;
+14. reinterpretation is append-only, supports `revised` / `unchanged` / `none`, and records eligible/run/skipped-by-cap;
+15. record-form repairs preserve surrounding candidate state and are bounded/witnessed;
+16. whole-candidate retries occur only for structural/publication failure or exhausted record repair;
+17. per-gate repair/rejection profile remains inspectable;
+18. deterministic fixtures pass the current inherited #37/#38 publication validators before creative cohort work;
+19. atomic birth leaves all-or-nothing canonical state;
+20. no Genesis-owned duplicate biography/memory/relationship/place/embodiment/identity authority;
+21. every admitted memory creates its #38 photo obligation;
+22. restart reconstructs exactly the same admitted life and Genesis provenance.
 
-Do **not** convert plot shape, attribution, sentiment, genome propagation, funnel ratios, self-account overreach, world-emergent ratios, or articulacy into admission unit-test gates.
+Do **not** convert plot shape, attribution, sentiment, genome propagation, funnel ratios, self-account overreach, world-emergent ratios, articulacy, or rejection-rate quality interpretation into admission unit-test gates.
 
 ---
 
@@ -701,6 +867,7 @@ Do **not** convert plot shape, attribution, sentiment, genome propagation, funne
 
 #39 does not implement:
 
+- semantic validator cognition;
 - Guardian tuning;
 - Whole-Person behavioral standing;
 - #40 Identity Context Capsule/relevance selection;
@@ -720,19 +887,22 @@ Do **not** convert plot shape, attribution, sentiment, genome propagation, funne
 #39 closes only when Fibre can:
 
 1. build candidate de-novo and synthetic-lineage lives under the frozen three-pass contract;
-2. publish each admitted life atomically into existing #37/#38 authorities;
-3. preserve exact world/genome/cognition/generation provenance;
-4. keep Pass A and Pass C genome-blind while making Pass-B genome treatment observable;
-5. preserve historical excess: events can be forgotten; memories can remain uninterpreted; interpretations can remain unresolved or later survive/revise;
-6. preserve culture as lived texture rather than conclusion;
-7. truthfully demonstrate Thread-parent/Echo/Homage/fork source boundaries;
-8. freeze the cohort protocol before generating the cohort;
-9. freeze the first integrity-valid five-Thread cohort without quality resampling;
-10. report the five primary diagnostics plus the frozen secondary characterizations;
-11. treat `life_only` genome discrimination as a negative control and explain any above-chance leak before closure;
-12. show a plausible convergence case with divergent route/tension/residue;
-13. preserve weak outcomes as evidence rather than selecting them away;
-14. leave #40/#41 causal and standing claims explicitly unearned.
+2. mechanically repair malformed individual records without silently selecting away whole lives, while exposing the full per-gate repair/rejection profile;
+3. publish each admitted life atomically into existing #37/#38 authorities under their actual current validators;
+4. preserve exact world/genome/cognition/generation/publication provenance;
+5. keep Pass A and Pass C genome-blind while making Pass-B direct treatment and prior-treatment exposure observable;
+6. preserve an analyzable `life_only_unexposed` negative control and distinguish it from `life_only_exposed` propagation;
+7. use only whole/fixed deterministic genome exposure in treatment calls;
+8. preserve historical excess: events can be forgotten; memories can remain uninterpreted; interpretations can remain unresolved or later survive/revise;
+9. preserve culture as lived texture rather than conclusion;
+10. truthfully demonstrate Thread-parent/Echo/Homage/fork source boundaries;
+11. freeze the cohort protocol before generating the cohort;
+12. freeze the first integrity-valid five-Thread cohort without quality resampling;
+13. report the five primary diagnostics plus frozen secondary characterizations, including repair/rejection and reinterpretation denominator accounting;
+14. explain any above-chance `life_only_unexposed` signal before closure;
+15. show a plausible convergence case with divergent route/tension/residue;
+16. preserve weak outcomes as evidence rather than selecting them away;
+17. leave #40/#41 causal and standing claims explicitly unearned.
 
 ## Vision test
 
