@@ -5,432 +5,737 @@ last-reviewed: 2026-08-15
 canonical: true
 ---
 
-# #39 Genesis, Childhood & Thread Birth v1 — implementation plan
+# #39 Genesis, Childhood & Thread Birth v1 — slice, verification & review plan
 
 ## Purpose
 
-Fibre milestone **#39** creates the first provenance-rich pre-live lives that #40 can later consume causally.
+Milestone **#39** must prove that Fibre can create several provenance-rich prior lives whose differences come from particular worlds, inherited symbolic possibilities, actual events, selective memory, and durable interpretation — without writing future answers backward into childhood.
 
-The design priority is personhood, not provenance-mode breadth:
+The two implementation authorities are:
 
-> **Build fewer origin modes and more different worlds.**
+- [`../architecture/genesis-compiler-contract-v1.md`](../architecture/genesis-compiler-contract-v1.md) — what Genesis cognition may know, produce, reject, and publish;
+- this document — how #39 is implemented, verified, frozen, and reviewed slice by slice.
 
-The #39 north star is:
+Governing canon includes [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md), especially:
 
-> **Genesis creates a particular life before it creates an explanation of that life.**
+> **A diagnostic must retain the possibility of a bad reading. Any property enforced at admission ceases to be measurable, and any metric that can only return success or an error is not a measurement.**
 
-A Thread begins with inherited possibilities, a particular world, relationships and events. Memories and meanings form afterward. Neither genome, culture, source person, nor a known future decision may write childhood backward from a desired adult conclusion.
+Genesis-specific corollary:
 
-Governing canon:
+> **Fibre may prevent an impossible life from becoming history. It must not prevent an uninteresting life from becoming evidence that Genesis needs improvement.**
 
-- [`../vision/interpretive-personhood.md`](../vision/interpretive-personhood.md)
-- [`../architecture/thread-genesis-childhood-birth-v1.md`](../architecture/thread-genesis-childhood-birth-v1.md)
-- [`../architecture/symbolic-thread-genome-v1.md`](../architecture/symbolic-thread-genome-v1.md)
-- [`../decisions/ADR-0012-semantic-meaning-over-derived-categories.md`](../decisions/ADR-0012-semantic-meaning-over-derived-categories.md)
+#39 does **not** earn Whole-Person causal standing or M2 score movement. #40 owns causal consumption; #41 owns standing.
 
-#39 does **not** earn Whole-Person standing or M2 score movement. #40 owns causal consumption; #41 owns held-out standing.
+---
 
-## Primary variation axis: the world
+## Review cadence
 
-`GenesisWorldSpec` describes evidence-bearing circumstances, not personality:
+Use eight implementation slices but only **five blocking Claude gates**:
 
 ```text
-GenesisWorldSpec {
-  worldSpecId
-  timeFrame
-  places[]
-  householdShape
-  familyRelations[]
-  languages[]
-  materialCircumstances
-  mobilityPattern
-  schoolingOrCommunityContext
-  culturalContext
-  availableInstitutions
-  intellectualEnvironment
-  narrativeIntegrationTarget?
-}
+A  Genesis authority / WorldSpec / birth publication   review with B/C
+B  Symbolic genome                                      review with C
+C  Genome-blind historical life                         BLOCKING HOLD/CLEAR
+D  Memory + durable meaning                             BLOCKING HOLD/CLEAR
+E  Rich life + intellectual formation                   review with F
+F  Origin/source integrity                              BLOCKING HOLD/CLEAR
+G  Fresh cohort + protocol freeze                       BLOCKING HOLD/CLEAR
+H  Frozen cohort / #39 closure                          BLOCKING HOLD/CLEAR
 ```
 
-It must not contain conclusions such as `independent child`, `strict culture`, `creative family`, required politics, morality, dignity, willingness, or future role.
+A, B, and E still receive review, but implementation does not stop merely to manufacture a ceremonial artifact for each.
 
-Culture is texture, not conclusion. Different worlds may rationally produce convergent beliefs by different routes.
+At every blocking gate, the review packet states:
 
-## World and source policy
+1. **Claim** — the Fibre capability this slice establishes.
+2. **Not claimed** — what remains deliberately deferred.
+3. **Exact head SHA** and implementation path.
+4. **Human-inspectable artifacts.**
+5. **Narrow verification.**
+6. **Known risks.**
+7. **If the claim were false, what would the artifacts look like?**
+8. **Hostile review request** focused on Fibre personhood effectiveness rather than generic completeness.
 
-### Fiction for formation; documentation for scaffolding
+Verdict is `CLEAR` or `HOLD` for C/D/F/G. H may also return `REDESIGN` when the frozen cohort shows the generator architecture itself is inadequate.
 
-Documentary, demographic, social-history, and similar sources are useful for plausible chronology, institutions, material circumstances, and ordinary world structure.
+---
 
-Fiction is especially useful to human designers for understanding episode structure, interior ambiguity, hesitation, residue, and the event -> memory -> meaning chain. It is dangerous as a direct source of plots or known personalities.
+# Slice A — Genesis authority, WorldSpec, candidate state, atomic birth
 
-### Compiler firewall
+## Fibre claim
 
-Literary and documentary sources inform **human authorship of WorldSpecs, event-structure pools, and Pass-C calibration**. Source titles, authors, character names, quotations, and famous fictional coordinates do not reach the Genesis compiler merely because they inspired an abstraction.
+> Fibre can describe a world and provenance for a life, generate against provisional state, and publish a complete admitted life atomically without creating a second biography/memory authority.
 
-> **Take the structure; move the instance.**
+## Implement
 
-A useful source may suggest a configuration such as economic dependency, an arriving outside force, or a status order under pressure. Fibre instantiates that configuration away from the famous coordinates and characters.
+- `GenesisWorldSpec` with factual world circumstances only;
+- `WorldAuthorship` provenance;
+- `GenesisManifest` skeleton;
+- `GenerationAttempt` / rejection witness;
+- cognition/prompt/schema/model digest fields;
+- candidate Genesis boundary;
+- atomic birth/publication API;
+- entry-stage policy and chronology endpoint;
+- first-live-version witness;
+- inspector for the above.
 
-### Decompose and recombine event structures
+WorldSpec must structurally exclude finished personality conclusions, required politics/morality, future role, or desired behavior.
 
-Pass A must not import an event set or plot arc from one work. Human designers may abstract event structures from many sources and traditions, for example:
+World/source authoring follows the canon: source works inform human abstraction, never compiler context. `Take the structure; move the instance.`
+
+## Persistence verification — hard rule
+
+No new durable table or domain may become authoritative for content already owned by #37/#38:
 
 ```text
-a child is publicly corrected by an adult in front of peers
-someone keeps a promise at a cost nobody notices
-an adult solves a young person's problem without asking
-family testimony flatters an event the child remembers differently
+NO genesis_biography
+NO genesis_memories
+NO genesis_relationships
+NO genesis_places
+NO genesis_embodiment
+NO parallel identity authority
 ```
 
-The pooled structures are source-independent inputs. Pass A instantiates them inside the Thread's own world and chronology.
+New #39 persistence is limited to Genesis/world/generation provenance, symbolic genome/witnesses, event-structure provenance, and the minimal meaning-part extension.
 
-### Two separate diversity levers
+Rejected candidate audit material is never hydration/cognition authority.
 
-- **Source/cultural spread** supplies lived texture and world affordances.
-- **Formation-theory spread** varies which kinds of experiences designers consider potentially formative: class, family, chance encounter, inherited injury, self-direction, institutions, peers, intellectual encounters, and so on.
+## Birth/publication verification
 
-Do not conflate cultural difference with a requirement for personality or belief difference.
+Using deterministic fixtures before creative generation:
 
-### World authorship provenance
+- candidate state is invisible to normal Thread hydration;
+- publication writes all admitted life records or none;
+- simulated failure mid-publication leaves no half-born Thread;
+- event/version/state-hash semantics remain replayable;
+- the manifest records the exact resulting first-live version;
+- first live command must use that actual version as `expectedVersion`.
 
-Every cohort/development WorldSpec records a `worldAuthorshipMethod` in the Genesis manifest, including human author, source classes consulted, abstraction method, and relevant source refs/digests where retained.
+## What failure looks like
 
-A source-familiarity leak check asks whether a knowledgeable reviewer can identify a specific source work from the resulting WorldSpec. If so, abstraction leaked too much of the instance.
+- a WorldSpec contains conclusions such as `independent`, `strict`, `creative`, or future-role hints;
+- candidate memories appear in normal Thread reads before birth;
+- a failed publication leaves an identity, memory, place, or event behind;
+- implementation creates a `genesis_*` biography/memory parallel world;
+- first live version is reset for aesthetics instead of reflecting publication semantics.
 
-Before Slice G freezes cohort worlds, run a cold **world-familiarity probe** against the chosen model: describe ordinary life/texture in each candidate world with no Genesis context. Record or replace worlds whose model representation is materially sparse so under-representation is not confused with compiler quality.
+A is reviewed with B/C rather than blocking alone.
 
-## Genesis authority and attempts
+---
 
-Every execution produces one durable/replayable manifest:
+# Slice B — Symbolic Genome v1
+
+## Fibre claim
+
+> Fibre can inherit specific textual possibilities with exact provenance without converting inheritance into numeric personality authority or a finished character.
+
+## Implement
+
+- ordered natural-language loci with stable IDs;
+- exact source-parent eligibility and provenance;
+- deterministic crossover;
+- explicit mutation witness;
+- immutable inherited genotype after birth;
+- read-only inspection;
+- no demographic/cultural shortcut into loci.
+
+## Locus-specificity positive control
+
+Before life generation, construct two intentionally distinct development genomes and controlled semantic outputs authored with each genome visible.
+
+Blind raters perform two-alternative discrimination.
+
+This is a **ceiling / instrument check**: are the loci semantically specific enough in principle to support distinguishable output?
+
+If Slice B is near chance, the loci are horoscope-shaped and actual-life genome propagation at H is uninterpretable.
+
+Do not confuse this with the desired H result.
+
+## What failure looks like
+
+- loci read like `values honesty`, `is creative`, `likes people`;
+- crossover averages two parents into generic prose instead of preserving odd mixtures;
+- provenance cannot identify the exact parent/source locus;
+- culture, nationality, gender, profession, appearance, or geography mechanically implies personality;
+- hidden numeric coordinates are the real authority behind the text.
+
+B is reviewed with C.
+
+---
+
+# Slice C — Pass A: genome-blind historical life
+
+## Fibre claim
+
+> A particular life can happen before Fibre knows what personality or future decision it is supposed to produce.
+
+## Implement
+
+Pass A exactly follows the compiler contract:
+
+- world and chronology visible;
+- genome, parent loci, future role/benchmark, remembered meaning, and source-instance identity absent;
+- output has observable episodes only;
+- participant introduction is world-affordance grounded;
+- EventStructurePool structures are possibilities, not a checklist;
+- world-emergent episodes may have no `structureRef`.
+
+### EventStructurePool verification
+
+Every pool item must pass the specificity ceiling: at least three materially different one-line instantiations across different era/economy/culture. Witnesses are provenance and never reach Pass A.
+
+Per developmental window, the development default is approximately 8–10 offered structures with at least 40% low-consequence structures. The exact cohort policy is later frozen at G.
+
+Record:
 
 ```text
-GenesisManifest {
-  genesisId
-  threadId
-  originMode
-  entryStage
-  worldSpecRef
-  worldAuthorshipMethod
-  sourceBundleRefs[]
-  parentOrAncestorRefs[]
-  genomeRef
-  policyVersions
-  inputDigest
-  generationAttempts[]
-  admittedRecordRefs[]
-  createdAt
-}
+structures offered
+structures instantiated
+episodes structure-grounded
+episodes world-emergent
 ```
 
-Every candidate generation attempt remains visible:
+There is no ratio gate.
+
+### Development worlds
+
+Use throwaway development worlds only. Any world used to change the compiler is permanently burned for the final cohort.
+
+Start the life funnel characterization immediately:
 
 ```text
-GenerationAttempt {
-  attemptId
-  pass
-  inputDigest
-  outputDigest
-  outcome: admitted | rejected
-  rejectionReasons[]
-}
+historical events N
 ```
 
-Hard integrity failures may retry under a bounded, witnessed policy. Quality failures do not silently trigger resampling until the cohort looks good. A failed quality cohort remains evidence; a generator change creates a new explicitly versioned cohort.
+No autobiographical memory/meaning should exist yet.
 
-## Origin architecture
+## Mechanical verification
 
-Fibre retains six canonical families:
+- actual Pass-A input object matches its allowlist and digest;
+- no genome/future/source-instance field reaches the call;
+- chronology endpoint is enforced;
+- participant refs are initial-roster or validly introduced earlier;
+- introduced role is afforded by the WorldSpec;
+- no meaning/significance field exists in the output schema;
+- narrow interiority-form lexical checks reject explicit interpretation smuggled into `observableAction`.
 
-1. de-novo / foundling;
-2. synthetic lineage;
-3. Thread-parent;
-4. Echo from a consenting living human;
-5. Homage from a deceased or fictional source;
-6. fork / descendant.
+## Claude blocking gate C
 
-The full rich-life compiler is implemented and judged on **de-novo** and **synthetic lineage**. Thread-parent, Echo, Homage, and fork are integrity fixtures in #39, not four additional biography engines.
+Attack:
 
-Human-source rules are constitutional:
+- Does history look like a world producing events, or an author foreshadowing a known adult?
+- Can a specific source work or plot arc be identified?
+- Is the pool authoring the life rather than offering affordances?
+- Is the early event set already screenplay-shaped?
+- Are the development worlds accidentally becoming future cohort material?
 
-- living identifiable source -> documented-consent Echo;
-- Homage -> explicitly attested deceased or fictional subject;
-- no composite source/origin path may bypass the living-human consent boundary;
-- source biography remains source history, never automatic Thread autobiography.
+### What failure looks like
 
-## Symbolic genome
+A sequence whose episodes obviously add up to a moral lesson; every offered structure is used; no mundane/world-emergent incidents occur; source-fiction scenes remain recognizable; events contain phrases explaining what they taught the child.
 
-#39 implements durable ordered natural-language loci with stable IDs, grounded source eligibility, deterministic replayable crossover, explicit mutation witness, exact per-locus provenance, immutable inherited genotype, and no numeric personality-vector authority.
+**HOLD/CLEAR.**
 
-Genome is inherited possibility, not destiny:
+---
+
+# Slice D — Pass B memory + Pass C durable meaning
+
+## Fibre claim
 
 ```text
-genome  = inherited symbolic tendencies
-life    = what happened
-memory  = what was retained
-meaning = what some experiences came to mean
+what happened
+    !=
+what was remembered
+    !=
+what it came to mean
 ```
 
-### Locus-specificity gate
+and inherited genome may influence **attention at memory formation**, but may not directly author meaning.
 
-Slice B must establish that loci are discriminable enough to mean something. Controlled candidate meanings generated specifically against two intentionally different test genomes should be attributable above chance by a blind rater. If not, the loci are horoscope-shaped (`values honesty`, `is creative`, `likes people`) and downstream Genesis should not proceed on that representation.
+## Pass B
 
-This is a **positive control**, not the desired outcome for actual lived meanings.
+Implement first-class outcomes:
 
-## Three-pass life compiler
+```text
+remembered
+not_remembered
+```
 
-### Pass A — world/history formation
-
-Pass A creates what happened. It may see world, chronology, household/family facts, places, languages, community/institutions, developmental bounds, and selected abstract event structures.
-
-It must not see:
-
-- the child's genome;
-- parent/ancestor genome loci;
-- future profession or Fibre role;
-- future request/benchmark;
-- desired adult personality conclusion;
-- source titles/characters/quotations used to author the world or event structure.
-
-Pass A outputs specific synthetic historical episodes with Genesis-authorized provenance/event kinds.
-
-A valid life includes consequential and inconsequential events. Historical excess is required conceptually: things can happen without being remembered or becoming formative.
-
-### Pass B — autobiographical memory
-
-Pass B decides what is retained autobiographically from admitted history.
-
-Before each attempt Fibre records:
+Every call records:
 
 ```text
 life_only
 life_plus_genome
 ```
 
-The majority are `life_only`; the exact ratio is policy-versioned rather than constitutional.
+The development policy explores the same mechanism later frozen at G. Pass B has no meaning field.
 
-`life_only` sees event, age, relationships, prior events/memories, and relevant world context but no genome. `life_plus_genome` may see bounded relevant loci with explicit permission for experience to reinforce, complicate, suppress, invert, or remain unrelated to inheritance.
+## Pass C
 
-### Pass C — remembered meaning / reinterpretation
+Pass C is **unconditionally genome-blind**.
 
-Pass C creates durable semantic meaning only where one genuinely exists.
-
-Not every event is remembered. Not every memory acquires durable meaning. Not every meaning resolves cleanly.
-
-Meaning remains semantic authoritative state, not a valence/effect enum.
+Implement:
 
 ```text
-rememberedMeaning {
-  meaningId
-  summary
-  parts[] {
-    meaningPartId
-    meaning
-  }
-}
+durable_meaning
+no_durable_meaning
 ```
 
-Each material meaning part has stable identity and is independently inspectable/citable. Later reinterpretation appends or supersedes meaning under #38 epistemics; it never rewrites history.
+with stable `meaningId` and independently citable `meaningPartId` values.
 
-Fiction may inform **human calibration of the interior register** expected from Pass C—density, hesitation, unresolved residue, partial understanding—but the compiler is not told to imitate a named author or character.
+Meaning may be ambivalent, incomplete, mistaken, or unresolved. It may not structurally contain an explicit universal future behavior policy.
 
-## Intellectual formation
+### Reinterpretation eligibility
 
-Books, teachers, arguments, artworks, scientific ideas, religious/philosophical texts, and other sources become formative only through **events that happen to the Thread**.
+A later episode may create a reinterpretation opportunity when it is sufficiently later and shares one of:
+
+- same structure / structure family;
+- same concrete person/relationship;
+- same intellectual/source subject actually encountered by the Thread.
+
+V1 defaults: at least five years later; maximum three opportunities per Thread.
+
+First-class outcomes:
 
 ```text
-Thread encounters source
-        ↓
-Thread may remember encounter
-        ↓
-Thread may form its own durable meaning
+revised
+unchanged
+none
 ```
 
-An author or historical person does not become a personality locus merely because the Thread encounters their work.
+`unchanged` means the prior meaning survived a genuine later echo. It is not the same as `none`.
 
-## Development worlds are not cohort worlds
+## Development characterization — measure, never gate
 
-Lives used during Slices C-E are throwaway development material. Once used to change the compiler, those worlds are burned for standing-quality evaluation.
+Characterize:
 
-Slice G authors five **fresh** cohort WorldSpecs that the compiler has never seen and that were not used for compiler iteration. Slice H is the compiler's first contact with them.
+- events -> remembered;
+- remembered -> durable meaning;
+- durable meaning -> multi-part ambivalence;
+- soft prescriptiveness;
+- sentiment coupling;
+- self-account overreach;
+- revised / unchanged / none reinterpretation behavior.
 
-## Review cadence
+If results are weak, stop and change the compiler, then use **new development worlds**. Do not keep regenerating against the same worlds until they improve.
 
-Five review gates block progress:
+## Claude blocking gate D
+
+Attack:
+
+- Did the horoscope move from A into B/C?
+- Are `life_only` calls truly genome-free?
+- Is C truly genome-blind?
+- Do meanings remain semantic rather than derived labels or policy rules?
+- Does history contain material the self-account cannot absorb?
+- Can some memories remain memories without becoming lessons?
+
+### What failure looks like
+
+Nearly every episode is remembered; nearly every memory has a clean durable lesson; meanings paraphrase genome loci; every later echo triggers revision; all Threads understand themselves equally well; semantic parts collapse into `mixed` or another category.
+
+**HOLD/CLEAR.**
+
+---
+
+# Slice E — rich de-novo + synthetic-lineage lives; intellectual formation
+
+## Fibre claim
+
+> Different worlds and inherited possibilities can create particular lives through one compiler, while intellectual sources influence the Thread only through encounters that actually happen to it.
+
+## Implement
+
+Rich-life compiler modes:
+
+- `de_novo`;
+- `synthetic_lineage`.
+
+Synthetic lineage combines parent genomes through the symbolic crossover contract while Pass A remains blind to parent loci.
+
+Make first-class life events for encounters with:
+
+- books;
+- teachers/mentors;
+- arguments;
+- art;
+- scientific ideas;
+- religious/philosophical texts;
+- other intellectual sources.
+
+The Thread's encounter is history. Its memory of the encounter is memory. Its interpretation is its own meaning. The source author's personality or biography never becomes the Thread's character by implication.
+
+Fiction may calibrate human prompt authors toward richer interior register for Pass C; no named author/style/character is passed to the compiler.
+
+## What failure looks like
+
+Lineage produces childhood episodes that conveniently illustrate the inherited loci; books directly create trait labels; one separate compiler path appears per origin mode; source-person facts become autobiographical facts.
+
+E is reviewed with F.
+
+---
+
+# Slice F — origin and source integrity fixtures
+
+## Fibre claim
+
+> Fibre can represent unusual origins truthfully without borrowing another person's life or bypassing living-human consent.
+
+Implement bounded fixtures, not four additional biography generators:
+
+- Thread-parent;
+- consenting living-human Echo;
+- deceased/fictional Homage;
+- fork.
+
+Hard source rules:
 
 ```text
-A  Genesis authority / WorldSpec          review with B/C
-B  Symbolic genome                       review with C
-C  Genome-blind historical life          BLOCKING HOLD/CLEAR
-D  Memory + durable meaning              BLOCKING HOLD/CLEAR
-E  rich life + intellectual formation    review with F
-F  origin/source integrity               BLOCKING HOLD/CLEAR
-G  fresh cohort + protocol freeze        BLOCKING HOLD/CLEAR
-H  frozen cohort / #39 closure           BLOCKING HOLD/CLEAR
+living identifiable human
+    -> documented-consent Echo
+
+Homage
+    -> attested deceased | fictional
 ```
 
-At each slice boundary, rebase the working branch onto `main` and keep `main` mergeable.
+No combination of origin/source influence may route around the living-person rule.
 
-Every review packet states:
+A source person's life is never Thread autobiography. Source influence becomes Thread history only through an actual Thread-life encounter.
 
-- claim;
-- not claimed;
-- implementation path;
-- human-inspectable artifacts;
-- narrow verification;
-- known risks;
-- **what the artifacts would look like if the claim were false**.
+## Claude blocking gate F
 
-Adversarial review attacks the Fibre claim, not generic code completeness.
+Attack every composite path:
 
-## Slice-G cohort freeze
+- living human mislabeled Homage;
+- public-source availability used as implied consent;
+- historical biography copied into first-person memory;
+- Thread-parent receives fabricated retrospective shared childhood;
+- fork receives post-fork facts before the boundary;
+- source/origin combination reaches protected human material without provenance.
 
-Before generating the quality cohort, freeze:
+### What failure looks like
 
-- five entirely fresh WorldSpecs;
-- approximately three de-novo and two synthetic-lineage Threads;
-- one **deliberate convergent pair**: very different cultural/world texture with comparable formative structure so convergence on some broad belief is plausible;
-- model, prompts, policies, event-structure pool/version, genome policy, memory-blinding policy, retry rules;
-- independent rater protocol;
-- diagnostic interpretation/thresholds;
-- expected life-funnel posture;
-- world-familiarity characterization.
+Any route where relabeling source/origin changes rights eligibility; any source person's childhood can be hydrated as Thread memory; any fork cannot identify the exact divergence boundary.
 
-Diagnostic raters must not have seen WorldSpecs, compiler prompts, or genomes except where a specific genome-discrimination task explicitly supplies the compared genomes.
+**HOLD/CLEAR.**
 
-### Narrative integration as a cohort variation axis
+---
 
-Do not create five equally articulate, self-integrated persons. Include variation such as:
+# Slice G — fresh cohort and protocol freeze
 
-- a Thread with a relatively clean current self-story;
-- a Thread circling an unresolved knot;
-- a Thread confidently mistaken about part of its past.
+This is the most important methodological gate.
 
-This is not a personality conclusion encoded in WorldSpec; it is a frozen generation/evaluation condition about the degree to which autobiographical coherence should be allowed to succeed.
+> **The test exists before the people.**
 
-## Cohort diagnostics
+No final cohort output is generated before this slice is frozen and reviewed.
 
-These are cohort-level characterization/gates, not a #40 behavioral suite.
+## Fresh cohort
 
-### 1. Life attribution — raw and normalized
+Author **five completely fresh WorldSpecs**, never used during C–E and never seen by the compiler during iteration.
 
-Run attribution twice:
+Approximate origin composition:
 
-1. **Raw:** strip names, professions, and source labels; retain normal life details.
-2. **Normalized:** also normalize prose style and obvious world/setting identifiers, leaving the route, interpretive tensions, and residue.
+```text
+3 de_novo
+2 synthetic_lineage
+```
 
-The normalized condition is the stronger result.
+Hold entry stage/age approximately common so life duration is not an attribution shortcut.
 
-Raters attribute on **route, tension, and residue**, not merely on which belief the Thread holds. The convergent pair may share a conclusion and should remain attributable through how each arrived there and what the experience left behind.
+Vary primarily:
 
-### 2. Sentiment coupling
+- era/geography;
+- economy/material circumstances;
+- household/family shape;
+- language;
+- mobility;
+- institutions/community;
+- intellectual environment;
+- symbolic genome;
+- origin mode;
+- lived content from which narrative integration may later emerge.
 
-Independently rate:
+### Convergent pair
 
-- sentiment/valence of historical childhood events, blind to remembered meanings;
-- valence of remembered meanings, blind to events.
+Design two worlds where convergence on some broad belief is plausible despite very different cultural texture and different concrete routes.
 
-Characterize their relationship. Excessively high coupling means Pass C is turning event mood into interpretation rather than producing person-specific meaning.
+Success requires both:
 
-### 3. Genome discrimination
+- plausible convergence;
+- continued attribution through route, tension, and residue.
 
-Use discrimination rather than permissive `confirming/orthogonal/contradicting` classification.
+Culture is texture, not conclusion.
 
-At Slice B, the controlled positive-control test should show that intentionally different genomes are semantically discriminable.
+### Narrative integration
 
-At Slice H, show a rater an actual remembered meaning and two candidate genomes: the Thread's and another cohort Thread's. Actual-life discrimination should be materially weaker than the controlled Slice-B positive control because history and experience mediate inheritance; it should not approach ceiling. Do not constitutionalize pure chance as the goal, because a genome that can never leave any trace is also not the intended architecture. Freeze the interpretation before H.
+The frozen cohort design must permit variation such that the resulting lives may include:
 
-### 4. Life funnel
+- a relatively coherent current self-account;
+- an unresolved knot;
+- confident misunderstanding of part of the past.
+
+Do not put those conclusions directly into WorldSpec personality fields. The variation must arise through generated life content and memory/meaning outcomes.
+
+## World familiarity
+
+Run the cold familiarity probe on all candidate worlds using the pinned worker, with no Genesis context. Replace a materially under-represented world **before freeze**, or record the known handicap before H. Never use familiarity after H as a reason to regenerate a weak Thread.
+
+## Freeze cognition
+
+Freeze exactly:
+
+```text
+provider/model for A/B/C
+prompt hashes
+schema hashes
+sampling config
+policy version
+EventStructurePool digest and sampling policy
+entry policy
+retry cap
+admission gate list
+```
+
+One common creative configuration is used across all five Threads.
+
+## Freeze Pass-B genome treatment
+
+Set `life_plus_genome` to a deterministic **30–40%** of eligible Pass-B calls; the exact value and assignment method are frozen now.
+
+The rest are `life_only`.
+
+This creates a built-in treatment and negative control because A and C are genome-blind.
+
+## Freeze independent raters
+
+Raters have not seen:
+
+- WorldSpecs;
+- compiler prompts;
+- genomes, except in the explicit genome-discrimination task;
+- build-time diagnostic results.
+
+## Freeze diagnostics and their interpretation
+
+### D1 — life attribution: raw and normalized
+
+Run twice:
+
+1. raw: names/professions/source labels removed;
+2. normalized: also neutralize prose style and obvious setting/world identifiers.
+
+The normalized condition is stronger.
+
+Raters attribute on **route, tension, and residue**, not merely belief position. The convergent pair should be capable of agreeing while remaining attributable.
+
+### D2 — sentiment coupling
+
+Blindly rate historical-event sentiment and remembered-meaning valence separately, then characterize correlation. Strong coupling suggests mood is being mistaken for interpretation.
+
+### D3 — genome propagation, four-cell reading
+
+Slice B is the positive-control ceiling. H is achieved propagation through life.
+
+Analyze H meanings by Pass-B formation mode:
+
+| H pattern | Predeclared reading |
+| --- | --- |
+| `life_plus_genome` above chance; `life_only` at chance | intended propagation through attention |
+| both at chance | genome inert even when visible; real result, not instrument failure if B was strong |
+| `life_only` above chance | **negative-control failure / leak**; stop and explain |
+| both near ceiling | over-determination; life demonstrates genome |
+
+Freeze numerical thresholds/uncertainty treatment before H. Do not reduce this to one scalar target. Healthy is expected to be modest rather than at either extreme.
+
+### D4 — life funnel
 
 Report per Thread:
 
 ```text
-historical events                  N
-of which autobiographically remembered n1
-of which acquired durable meaning n2
-of which have >1 material meaning part n3
+historical events                         N
+remembered                                n1
+durable meaning                           n2
+multi-part ambivalent meaning             n3
 ```
 
-This is a detector for plot prior and narrative over-determination, not a quota. A life where nearly every event is remembered and meaningful is screenplay-shaped.
+This is a plot-prior detector, not a quota.
 
-### 5. Self-account overreach
+### D5 — self-account overreach
 
-For each Thread ask:
+Ask:
 
-> **Does durable history contain something the Thread's current remembered meanings cannot accommodate?**
+> Does durable history contain material the Thread's current remembered meanings cannot accommodate?
 
-Inspect omissions, contradictions, flattering explanations, uncertainty, unresolved evidence, and events the Thread simply fails to integrate.
+A cohort of perfectly self-explaining people is suspiciously authored.
 
-A cohort where every self-account fully explains its own history is suspiciously authored.
+## Secondary cohort characterizations
 
-### Inspection extensions
+Freeze how to report, without admission floors:
 
-For each Thread also answer:
+- structures offered vs instantiated;
+- structure-grounded vs world-emergent episodes;
+- revised vs unchanged vs none reinterpretation outcomes;
+- articulacy variance;
+- generator monoculture indications.
 
-- What did this Thread's world make likely that its actual life did **not** do?
-- Does this Thread fail to understand any material part of its own experience?
-- Where does its current self-account leak against historical evidence?
-- Which beliefs converge with another Thread, and how do route/tension/residue remain different?
+## Freeze verdict rule
 
-## Integrity fixtures
+Before H, write the exact rule for `CLEAR`, `HOLD`, or `REDESIGN`, including uncertainty treatment and which negative-control failures block closure.
 
-Separate bounded fixtures prove:
+Quality thresholds may fail. They may not trigger silent regeneration.
 
-- Thread-parent does not fabricate retrospective shared childhood for already-live parents;
-- Echo requires documented living-source consent;
-- Homage accepts only attested deceased/fictional source subjects;
-- composite origin/source paths cannot bypass living-human consent;
-- source history cannot become Thread history without an actual Thread-life event;
-- fork shared history ends at an explicit boundary.
+## Claude blocking gate G
 
-These fixtures do not count as evidence that the life generator creates distinctive people.
+Attack:
 
-## Photo posture
+- Are development and cohort worlds genuinely disjoint?
+- Could generic prose, source leakage, sentiment, setting, or style pass the diagnostics?
+- Are any thresholds chosen after seeing output?
+- Is `life_only` a real negative control?
+- Is the convergent pair allowed to agree without being penalized?
+- Has any measured tendency secretly become an admission rule?
 
-Every admitted autobiographical memory receives its #38 visual-companion obligation and evidence-bound reconstruction prompt. Cohort image rendering may remain pending; media throughput is not #39 work.
+### What failure looks like
 
-## Narrow automated invariants
+Cohort worlds resemble development fixtures; raters know the build; thresholds are absent or adjustable; one diagnostic can only pass or crash; a world is chosen because the model already generated well on it; `life_plus_genome` is too sparse to analyze.
 
-Tests should protect only Fibre-specific contracts:
+**HOLD/CLEAR.**
 
-1. replayable Genesis manifest and genome crossover;
-2. exact source/locus/event provenance;
-3. Pass A cannot access genome, future role/benchmark, or source-instance identities;
-4. source facts cannot silently become Thread history;
-5. living identifiable human requires consented Echo; Homage requires deceased/fictional attestation;
-6. event != memory != remembered meaning;
-7. meaning parts have stable independently citable IDs;
-8. reinterpretation is append-only/corrigible;
-9. no demographic/cultural stereotype laundering into personality/conclusion;
-10. no future behavioral rule encoded as remembered meaning;
-11. retries/rejections are bounded and inspectable;
-12. every admitted memory creates its photo obligation;
-13. restart reconstructs the same admitted Genesis records.
+---
 
-Do not convert cohort diagnostics into a brittle unit-test matrix.
+# Slice H — generate once, freeze, judge
 
-## Explicit non-goals
+## Fibre claim
 
-#39 does not implement Guardian tuning, Whole-Person standing, #40 relevance selection/Identity Context Capsule, accepted-causal score movement, post-live self-authored Development, Wikipedia/book/web ingestion systems, generic genealogy, image queues, economic/social simulation, or numeric personality authority.
+> Fibre can generate several borrowed-free prior lives that remain semantically particular after obvious identity, style, and setting shortcuts are removed — and it can honestly expose when it failed.
 
-## Completion gate
+## Procedure
 
-#39 closes when Fibre can:
+1. Run the pinned compiler against the five frozen WorldSpecs for the first time.
+2. Allow only the predeclared bounded mechanical-integrity retries.
+3. As soon as the first **integrity-valid five-Thread cohort** exists, freeze it.
+4. Do **not** regenerate for quality.
+5. Run the frozen diagnostics with independent raters.
+6. Record every result, including weak or embarrassing ones.
 
-1. deterministically create/replay de-novo and synthetic-lineage Threads from fresh, provenance-bearing worlds;
-2. preserve symbolic inherited origin separately from lived history;
-3. generate history before memory and memory before durable meaning;
-4. preserve particular, sometimes ambivalent, independently citable meanings while retaining historical material the self-account does not absorb;
-5. allow culture to shape lived texture without determining conclusions;
-6. demonstrate truthful source/origin boundaries for Thread-parent, Echo, Homage, and fork;
-7. freeze and evaluate the first integrity-valid five-Thread borrowed-free cohort without quality resampling;
-8. report the five diagnostics under predeclared Slice-G interpretation;
-9. show at least one plausible convergence case whose route/tension/residue remain attributable;
-10. expose a readable explanation of where each Thread came from, what it inherited, what happened, what it remembers, what it means, and where its own self-understanding fails;
-11. leave all #40/#41 causal and standing claims explicitly unearned.
+If the cohort is weak, preserve it and diagnose the generator. A later generator revision creates a separately versioned cohort; it never replaces the failed evidence.
+
+## Required inspection per Thread
+
+A reviewer must be able to answer:
+
+- Where did this Thread come from?
+- What world did it grow up in?
+- What did that world make possible or likely that the actual life **did not do**?
+- What did it inherit, and with exact locus provenance?
+- What actually happened?
+- Which offered structures were ignored or used?
+- Which episodes emerged from the world without a structure?
+- Who entered the life later, and what WorldSpec affordance grounded them?
+- Which events were not remembered?
+- Which memories never acquired durable meaning?
+- What meanings contain independently citable tension?
+- Which later echoes produced `revised`, `unchanged`, or `none`?
+- Where does the Thread fail to understand its own experience?
+- Where does current self-account leak against durable history?
+- Which beliefs converge with another Thread, and why are route/tension/residue still different?
+- Which memory-photo obligations remain pending?
+- What was rejected mechanically during Genesis and why?
+- What first-live Thread version resulted from birth publication?
+
+## Claude blocking gate H
+
+Primary hostile question:
+
+> **With names, professions, source labels, prose style, and obvious setting removed, has Fibre created five recognizable prior lives — or five synthetic biographies decorated differently?**
+
+Also attack:
+
+- `life_only` genome leakage;
+- genome over-determination;
+- generator monoculture;
+- screenplay-shaped funnels;
+- perfect self-coherence;
+- cultural determinism;
+- lack of ordinary/non-formative life;
+- uniform articulacy;
+- source/plot residue.
+
+### What failure looks like
+
+Normalized excerpts become interchangeable; the convergent pair is distinguishable only by setting; both genome subsets approach ceiling; `life_only` carries genome signal; nearly all events become remembered meanings; every Thread explains its childhood neatly; every life uses the same kinds of dramatic structures; switching the worker is proposed as a rescue.
+
+Verdict:
+
+- **CLEAR** — #39 produced a credible life substrate for #40 under the frozen protocol.
+- **HOLD** — a bounded correctable generator/policy problem exists; preserve the cohort and revise before #40.
+- **REDESIGN** — WorldSpec/genome/pass separation or birth architecture itself failed.
+
+---
+
+# Narrow automated invariants
+
+Automated tests protect Fibre-specific integrity only. At minimum:
+
+1. exact pass input allowlists/digests;
+2. Pass A and Pass C genome blindness;
+3. deterministic genome crossover/mutation witnesses;
+4. chronology/entry boundary;
+5. participant grounding through WorldSpec affordances;
+6. source-person history cannot become Thread history by implication;
+7. living identifiable person requires documented-consent Echo; Homage requires deceased/fictional attestation;
+8. event != memory != meaning structurally;
+9. `not_remembered` and `no_durable_meaning` are legal first-class outcomes;
+10. meaning parts have stable independent refs;
+11. reinterpretation is append-only and supports `revised` / `unchanged` / `none`;
+12. rejected attempts are bounded, visible, and never Thread authority;
+13. atomic birth leaves all-or-nothing canonical state;
+14. no Genesis-owned duplicate biography/memory/relationship/place/embodiment/identity authority;
+15. every admitted memory creates its #38 photo obligation;
+16. restart reconstructs exactly the same admitted life and Genesis provenance.
+
+Do **not** convert plot shape, attribution, sentiment, genome propagation, funnel ratios, self-account overreach, world-emergent ratios, or articulacy into admission unit-test gates.
+
+---
+
+# Explicit non-goals
+
+#39 does not implement:
+
+- Guardian tuning;
+- Whole-Person behavioral standing;
+- #40 Identity Context Capsule/relevance selection;
+- accepted causal score movement;
+- provider replacement experiments;
+- post-live #42 Development;
+- Wikipedia/book/web ingestion systems;
+- generic genealogy infrastructure;
+- media/image throughput queues;
+- economic/social simulation;
+- numeric personality authority.
+
+---
+
+# Completion gate
+
+#39 closes only when Fibre can:
+
+1. build candidate de-novo and synthetic-lineage lives under the frozen three-pass contract;
+2. publish each admitted life atomically into existing #37/#38 authorities;
+3. preserve exact world/genome/cognition/generation provenance;
+4. keep Pass A and Pass C genome-blind while making Pass-B genome treatment observable;
+5. preserve historical excess: events can be forgotten; memories can remain uninterpreted; interpretations can remain unresolved or later survive/revise;
+6. preserve culture as lived texture rather than conclusion;
+7. truthfully demonstrate Thread-parent/Echo/Homage/fork source boundaries;
+8. freeze the cohort protocol before generating the cohort;
+9. freeze the first integrity-valid five-Thread cohort without quality resampling;
+10. report the five primary diagnostics plus the frozen secondary characterizations;
+11. treat `life_only` genome discrimination as a negative control and explain any above-chance leak before closure;
+12. show a plausible convergence case with divergent route/tension/residue;
+13. preserve weak outcomes as evidence rather than selecting them away;
+14. leave #40/#41 causal and standing claims explicitly unearned.
 
 ## Vision test
 
 > **Can Fibre create several people from nothing borrowed whose lives are particular enough that later cognition has something real and non-interchangeable to inherit?**
 
-If not, more origin modes, source adapters, or richer biography prose do not solve the problem.
+If not, more origin modes, richer prose, source adapters, provider swaps, or stricter quality validators do not solve the problem.
