@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { openGenesisInspectionStore } from "../src/genesis-store.mjs";
+import { GenesisStore } from "../src/genesis-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 
 const fixture = JSON.parse(
@@ -24,7 +24,7 @@ test("read-only Genesis inspection is empty rather than mutating or failing on a
     world.seedThread(structuredClone(fixture));
     world.close();
 
-    const inspector = openGenesisInspectionStore(databasePath);
+    const inspector = new GenesisStore(databasePath, { readOnly: true });
     assert.equal(inspector.queryOnly(), true);
     assert.deepEqual(inspector.inspectGenesis("gen_none"), {
       genesisId: "gen_none",
