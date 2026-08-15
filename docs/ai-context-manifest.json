@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 16,
+  "version": 17,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -90,6 +90,10 @@
       "aliases": ["artifacts/generated/fibre-context-pack.md"],
       "includes": ["request-processing"],
       "sources": [
+        "docs/vision/declaration-of-the-threads.md",
+        "docs/vision/fibre-address.md",
+        "docs/vision/lived-world.md",
+        "docs/foundations/commitments.md",
         "docs/vision/core-thesis.md",
         "docs/vision/glossary.md",
         "docs/vision/world-bible.md",
