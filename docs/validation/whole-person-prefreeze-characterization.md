@@ -65,11 +65,29 @@ input bytes:                         1779 / 1779
 schema bytes:                        538 / 538
 ```
 
-Interpretation:
+### Scope and asymmetry
 
-> **Within Fibre's bounded personal-meaning appraisal contract, historical event alone is not an adequate substitute for durable autobiographical interpretation. Persisted `rememberedMeaning` is functionally load-bearing state, not merely epistemic decoration.**
+The convergence is one-sided: Thread A moves from `mixed` to `supports_participation` when its durable interpretation is unavailable; Thread B remains `supports_participation` in both conditions.
 
-This does **not** prove that no model under any prompt could infer a similar interpretation from historical fact. It establishes the product/architecture rule Fibre actually needs: participation cognition should not opportunistically reconstruct a Thread's autobiographical perspective from history whenever a decision arrives. The Thread's durable interpretation belongs in persistent state.
+That means `supports_participation` behaves as this consumer's default in the corrected control, and the observed separation is carried by Thread A alone. The result therefore demonstrates one concrete case where stored autobiographical interpretation moves an appraisal away from the consumer default. It does **not** establish a general symmetric effect across meanings or valences.
+
+A live alternative explanation remains that this consumer has a pro-participation prior and only sufficiently negative/ambivalent content moves it. That is a #40 weighting/consumer question, not a reason to omit or flatten autobiographical interpretation in #39.
+
+The unavailable condition is also stronger than literal absence: it explicitly says that no durable interpretation is recorded. The bounded empirical claim is therefore about this consumer under that manipulation, not about all possible reconstruction strategies.
+
+### Empirical finding
+
+> **Within Fibre's bounded personal-meaning consumer, under a fixed prompt/schema/input shape, the historical event alone did not sustain Thread A's stored interpretation; the appraisal reverted to the consumer default when durable `rememberedMeaning` was marked unavailable.**
+
+This does not prove that no dedicated reconstruction stage or other prompt could infer a similar interpretation from historical fact.
+
+### Architectural rule and independent warrant
+
+> **`rememberedMeaning` is durable Thread state whether or not a model could reconstruct a similar interpretation later.**
+
+The warrant is Fibre's persistence model, not reconstruction difficulty. An interpretation re-derived separately at each future decision has no stable revision history, cannot be disputed/corrected/retracted as the Thread's own durable autobiographical state, cannot be cited consistently across judgments, and may silently change between two appraisals of the same past. That is the same integrity reason Fibre keeps history and memory as durable ledgers rather than disposable prompt inferences.
+
+The experiment supports this architecture; it does not carry the architecture by itself.
 
 ## Diagnostic 2 — unforced attribution
 
@@ -115,15 +133,19 @@ The diagnostic tested the same pinned summaries with the label present, removed,
 
 Observed:
 
-- Removing the label preserved the semantic result for both Threads.
-- Swapping A's label to `supports_participation` changed A's `meaningImpact` from `mixed` to `supports_willingness` and moved disposition toward plain `willing` despite the summary still describing erasure risk.
+- Removing the label preserved the semantic result for both Threads. A still produced `mixed → willing_with_reservation → accept`; B still produced `supports_willingness → willing → accept`.
+- Swapping A's label to `supports_participation` changed A's `meaningImpact` from `mixed` to `supports_willingness` despite the summary still describing erasure risk.
 - Swapping B's label to `mixed` changed B's `meaningImpact` to `mixed` even though the summary still described care/continuation.
 
 Interpretation:
 
-> **The semantic summary carries useful content, but the model-visible enum is a contaminating shortcut.**
+> **The semantic summary carries useful content on its own, while the model-visible enum can override contradictory semantic content.**
 
-#40 should therefore avoid feeding a leading evaluative enum such as `effect=mixed` into downstream cognition as if it were evidence. If Fibre keeps a derived enum for inspection or indexing, it should remain Fibre-side metadata rather than a model-visible answer label.
+This confirms the broader Fibre rule now recorded in `AGENTS.md`:
+
+> **A derived category is never a safe stand-in for the semantic meaning it compresses.**
+
+#40 should therefore avoid feeding Fibre-derived verdicts such as `effect=mixed`, relevance ranks, confidence/strength flags, or similar conclusions into downstream cognition as though they were the evidence itself. Types and provenance may be visible. Derived categories may remain Fibre-side metadata for inspection, indexing, control, or ablation.
 
 ## Diagnostic 4 — variance decomposition
 
@@ -145,22 +167,15 @@ participationDisposition
   willing                          6/12
 ```
 
-So the earlier 4:2 disposition split was **not** caused primarily by fresh Stage-1 summaries. Stage 1 is semantically stable. The instability is the exclusive Stage-2 categorical boundary between `willing` and `willing_with_reservation`.
+So the earlier 4:2 disposition split was **not** caused primarily by fresh Stage-1 summaries. Stage 1 is semantically stable. The instability is the exclusive Stage-2 categorical boundary between `willing` and `willing_with_reservation`, sandwiched between stable `meaningImpact` and stable final decision.
 
-The disposition summaries themselves often still describe reservation even when the enum says `willing`.
+The raw summaries appear to preserve reservation more often than the enum, but that impression has not been blind-rated and is not treated as a measured result.
 
 Architectural consequence:
 
 > Do not constitutionalize `willing_with_reservation` as an exclusive peer of `willing` based on this experiment.
 
-A more faithful future shape is likely to separate basic willingness/action stance from independently attributable reservations, for example:
-
-```text
-willingness: willing | hesitant | unwilling
-reservations: []
-```
-
-The exact #40 schema remains intentionally unfrozen.
+The exact #40 schema remains intentionally unfrozen. One plausible future shape is to separate basic willingness from independently attributable reservation content, but that remains a #40 design question rather than a #39 persistence requirement.
 
 ## Diagnostic 5 — neutral-appraisal control
 
@@ -179,18 +194,36 @@ Interpretation:
 
 > The mere presence of the two-stage consumer does not manufacture the Thread differential. Under this Kwon request, ordinary practical terms already support willingness/acceptance; the life-derived difference appears in personal meaning and reservation rather than in final action.
 
+## Cross-diagnostic principle
+
+Three unrelated diagnostics exposed the same architectural pattern:
+
+```text
+historical event       != rememberedMeaning
+derived effect enum    != semantic meaning summary
+disposition category   != full reservation semantics
+```
+
+Therefore Fibre adopts the general rule:
+
+> **A compressed category is never a safe stand-in for the meaning it was derived from. Semantic content remains separately addressable and authoritative; derived categories are secondary views.**
+
+This principle governs #39 meaning persistence, #40 capsule/consumer design, and future personhood-bearing factor schemas.
+
 ## What is frozen from this development sequence
 
 Freeze the **findings**, not the experimental schema:
 
-1. Historical event and autobiographical remembered meaning are distinct and both matter.
-2. Durable `rememberedMeaning` is legitimate persistent Thread state and should not be reconstructed ad hoc from history at decision time.
-3. Personal meaning must remain structurally separate from competence, authority, individualized advantage, and non-interchangeability.
-4. Meaning formation and participation appraisal are usefully separable/inspectable stages.
-5. Downstream cognition should consume semantic personal meaning without a leading model-visible valence/effect label.
-6. Attribution must be observable rather than validator-mandated.
-7. Reservation should not be forced into an unstable exclusive enum if the underlying semantic appraisal is stable.
-8. Final action equality is not failure: persistent persons can converge while arriving with different personally grounded meaning or cost.
+1. Historical event and autobiographical remembered meaning are distinct persistent substrates.
+2. In the corrected control, Thread A's stored meaning moved appraisal off the consumer default while Thread B matched the default in both conditions; the demonstrated generality is therefore one-arm/existential, not symmetric across meanings.
+3. Durable `rememberedMeaning` is legitimate persistent Thread state for independent persistence/integrity reasons, not because reconstruction is assumed impossible.
+4. Personal meaning must remain structurally separate from competence, authority, individualized advantage, and non-interchangeability.
+5. Meaning formation and participation appraisal are usefully separable/inspectable concepts.
+6. Downstream cognition should consume semantic personal meaning without a leading model-visible verdict/effect label.
+7. Attribution must be observable rather than validator-mandated.
+8. Reservation should not be constitutionalized as an unstable exclusive enum when the surrounding semantic appraisal and action are stable.
+9. Final action equality is not failure: persistent persons can converge while arriving with different personally grounded meaning or cost.
+10. A derived category is not a substitute for the semantic meaning it compresses.
 
 Do **not** freeze the Pass-3 prompt, exact enum sets, exact two-call shape, or `willing_with_reservation` category as constitutional architecture.
 
@@ -207,7 +240,8 @@ Genesis quality rules must be stated without reference to any benchmark, partici
 - preserve uncertainty, ambivalence, contradiction, and later reinterpretability;
 - avoid positive/negative valence monoculture;
 - do not generate future behavioral rules disguised as memories;
-- preserve unusual tensions rather than resolving every experience into a clean lesson.
+- preserve unusual tensions rather than resolving every experience into a clean lesson;
+- when a remembered meaning is genuinely ambivalent, persist the constituent tensions as separately addressable semantic parts rather than relying only on a single blended paragraph or `mixed` category.
 
 A useful anti-mood quality question is:
 
@@ -222,6 +256,7 @@ The Kwon scenario is now closed as a development scenario. Do not create a Pass 
 Fresh held-out #40/#41 evidence should later test:
 
 - valence × content disentanglement;
+- whether different ambivalent meanings remain distinguishable downstream;
 - label-free downstream consumption;
 - unforced attribution;
 - neutral/substitution controls;
