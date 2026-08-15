@@ -9,137 +9,142 @@ canonical: true
 
 ## Scope
 
-These constraints refine Fibre planning milestone **#39 — Genesis, Childhood & Thread Birth v1** after the Whole-Person development experiments and hostile pre-freeze audit.
+These constraints govern Fibre milestone **#39 — Genesis, Childhood & Thread Birth v1**.
 
-They supplement [`../architecture/thread-genesis-childhood-birth-v1.md`](../architecture/thread-genesis-childhood-birth-v1.md) and [`whole-person-benchmark.md`](whole-person-benchmark.md).
+They supplement:
 
-They are **not** a new milestone and do not move the M2 score.
+- [`../architecture/thread-genesis-childhood-birth-v1.md`](../architecture/thread-genesis-childhood-birth-v1.md)
+- [`m2-pr39-implementation-plan.md`](m2-pr39-implementation-plan.md)
+- [`whole-person-benchmark.md`](whole-person-benchmark.md)
+- [`../decisions/ADR-0012-semantic-meaning-over-derived-categories.md`](../decisions/ADR-0012-semantic-meaning-over-derived-categories.md)
 
-## Core Genesis rule
+They are not a new milestone and do not move the M2 score.
+
+## Core rule
 
 > **Genesis creates a particular prior life whose meaning exists before future requests. It must not manufacture behavioral answers for consumers it knows about.**
 
-The Whole-Person characterization reinforced a product-relevant distinction:
+And:
+
+> **Build fewer origin modes and more different worlds.**
+
+The dominant #39 quality risk is generator monoculture, not lack of origin-mode variety.
+
+## Structural epistemics
+
+The compiler must preserve:
 
 ```text
 historical event
     != autobiographical memory
+    != family / third-party story
     != durable remembered meaning / interpretation
 ```
 
-The empirical finding is deliberately bounded: in the corrected Kwon control, Thread A's stored interpretation moved the personal-meaning appraisal off the consumer default while the historical event plus an explicit unavailable-meaning placeholder did not. Thread B matched the consumer default in both conditions. This is one concrete demonstration, not a universal claim that every event fails to support useful inference.
+The distinction is structural through separate generation/admission passes, not merely a prompt instruction.
 
-The architectural requirement is independent of that empirical result: #39 treats autobiographical interpretation as first-class persistent life state because a Thread's durable interpretation needs revision history, stable citation, corrigibility, and continuity across future judgments. It must not exist only as an inference regenerated opportunistically when a later decision happens.
+`rememberedMeaning` is first-class durable Thread state because it needs stable identity, revision history, corrigibility and citation across future judgments. Whether a model could later reconstruct a similar interpretation does not change that architecture.
 
-## Request blindness
+## Request and conclusion blindness
 
-Genesis-created childhood events and remembered meanings are authored before live-world requests exist.
+Genesis-created history and meaning are authored before live-world requests exist.
 
-The **generator design itself** must also avoid benchmark contamination. Genesis prompts, validators, quality bars, and fixtures may not instruct the model to create experiences that will later affect:
+Genesis prompts, validators, quality bars and fixtures may not instruct the model to create experiences that will later support:
 
 - participation;
 - willingness;
 - Guardian factors;
 - task acceptance/refusal;
-- any named Whole-Person benchmark scenario;
-- any anticipated downstream causal test.
+- a named Whole-Person benchmark;
+- a future professional role;
+- an anticipated downstream causal result.
 
-Quality criteria must be stated only in terms of the life itself: specificity, coherence, provenance, developmental plausibility, ambivalence, uncertainty, and non-prescriptiveness.
+### Pass-A blindness
 
-## Event and interpretation formation
+Historical-event generation may not see:
 
-A formative episode should be admitted in at least two separately addressable stages where an autobiographical memory exists:
+- the child Thread's genome;
+- parent/ancestor genome loci;
+- intended adult profession or Fibre role;
+- future request/benchmark;
+- desired adult character conclusion.
+
+World circumstances are allowed. Personality conclusions are not.
+
+## Partial genome blindness in memory formation
+
+Pass B must not turn the genome into a horoscope.
+
+Before a memory-formation attempt, Fibre records one mode:
 
 ```text
-synthetic historical episode
-        ↓
-autobiographical memory formation
-        ↓
-remembered meaning / interpretation
+life_only
+life_plus_genome
 ```
 
-The interpretation may arise immediately or later in the synthetic chronology. It is not required for every event.
+Most attempts should normally be `life_only`; the exact ratio is versioned policy rather than a constitutional target.
 
-A remembered meaning must not rewrite the historical event. Later reinterpretation must remain append-only/corrigible under #38 memory epistemics.
+`life_plus_genome` may see relevant inherited loci, but the generated memory/meaning may reinforce, complicate, suppress, invert or ignore them.
+
+Do not silently resample memories to engineer an attractive confirmation/contradiction distribution.
 
 ## Meaning is semantic state, not its category
 
-Fibre now carries the general invariant:
+Repository-wide invariant:
 
 > **A derived category is never a safe stand-in for the semantic meaning it compresses.**
 
-Genesis therefore persists meaning-bearing natural language as authoritative, separately addressable state. Any future enum such as `mixed`, positive/negative sentiment label, salience bucket, or other classification is a derived view and may not replace the underlying semantic content.
+Natural-language meaning remains authoritative. `mixed`, positive/negative labels, salience buckets or similar classifications may be derived views only.
 
-This matters especially for ambivalence. Two different remembered meanings may both be classifiable as `mixed` while expressing entirely different tensions. #39 must preserve those tensions rather than collapsing them to the shared category.
+### Separately addressable ambivalence
 
-## Ambivalence over valence monoculture
-
-Genesis must not systematically produce:
-
-```text
-bad event  → negative lesson
-kind event → positive lesson
-```
-
-That would create sentiment-controlled personas rather than people.
-
-Prefer lived material containing tensions such as:
-
-```text
-I was grateful someone finished it,
-and I still felt that something of him disappeared when they did.
-```
-
-or:
-
-```text
-I resented that nobody asked us,
-and years later understood it as an act of care.
-```
-
-A Thread may retain unresolved or contradictory meanings. Genesis is not required to turn each experience into a clean moral.
-
-### Separately addressable tensions
-
-When a remembered meaning contains materially distinct or opposing tensions, persist enough structure that the tensions remain independently inspectable/citable rather than surviving only inside one blended paragraph.
-
-Conceptually:
+Materially distinct tensions receive stable citation targets:
 
 ```text
 rememberedMeaning {
-  summary: "I was grateful someone finished it, and something of him felt lost when they did."
+  meaningId
+  summary
   parts: [
-    { meaning: "someone cared enough to finish what he could not" },
-    { meaning: "completion made part of his interrupted presence feel less visible" }
+    { meaningPartId, meaning },
+    { meaningPartId, meaning }
   ]
 }
 ```
 
-The exact physical schema is a #39 implementation choice. The invariant is semantic granularity: a later consumer must not be forced to treat every ambivalence as the same undifferentiated `mixed` state.
+Two different ambivalences must not become interchangeable because both can be labelled `mixed`.
 
-Anti-mood quality question:
+## Ambivalence over valence monoculture
 
-> **Can a reader predict the Thread's future disposition merely from the sentiment of its childhood alone? If yes, the generated life is too valence-simple.**
-
-This is a generation-quality heuristic, not a runtime decision test.
-
-## Non-prescriptive remembered meaning
-
-Good remembered meaning describes what an experience came to mean:
+Genesis must not systematically create:
 
 ```text
-The completed object felt both cared for and less recognizably his.
+bad event  -> negative lesson
+kind event -> positive lesson
 ```
 
-Bad remembered meaning encodes a future policy:
+A Thread may retain unresolved or contradictory meanings.
+
+Quality question:
+
+> **Can a reader predict the Thread's likely disposition merely from the sentiment of its childhood? If yes, Genesis is generating moods rather than people.**
+
+## Non-prescriptive meaning
+
+Good:
 
 ```text
-I refuse to finish other people's unfinished work.
+The intervention felt protective and also made me feel that the decision no longer belonged to me.
 ```
 
-Genesis may generate tendencies and interpretations. It may not write future request answers into memory.
+Bad:
 
-## Particularity
+```text
+I never let other people make decisions for me.
+```
+
+Genesis may create interpretations. It may not encode future behavioral policy disguised as memory.
+
+## Particularity and ordinary life
 
 Prefer small, peculiar, separately addressable experiences over generic biography:
 
@@ -147,92 +152,170 @@ Prefer small, peculiar, separately addressable experiences over generic biograph
 - family rituals;
 - conflicting loyalties;
 - mistaken assumptions;
+- jokes that landed badly;
 - moments of generosity mixed with resentment;
-- discoveries that were exciting and isolating at once;
+- intellectual discoveries;
 - relationship-specific incidents;
-- small acts later reinterpreted differently;
-- interests that emerged through concrete experiences rather than labels.
+- books first admired and later rejected;
+- ordinary events that never became important.
 
-The goal is not maximum event count. It is a **non-interchangeable life texture** that remains open to future interpretation.
+A life where every event becomes formative is a plot, not a life.
 
-## Symbolic genome relationship
+Not every event is remembered. Not every memory receives durable meaning.
 
-The symbolic genome supplies inherited textual tendencies; Genesis life determines how those tendencies encounter experience.
+## World variation over origin-mode variation
 
-Do not generate episodes merely to prove a locus. Do not rewrite a locus because an episode conflicts with it.
+The personhood-quality cohort varies primarily by:
 
-Preferred shape:
+- geography;
+- household/family structure;
+- languages;
+- material circumstances;
+- mobility;
+- school/community environment;
+- relationship structure;
+- intellectual formation.
+
+World specs may not contain adult personality labels.
+
+Echo/Homage/source-derived Threads are excluded from the quality cohort so borrowed personality cannot make the generator look better than it is.
+
+## Source and human-subject integrity
+
+A source person's life is not Thread history.
+
+A living identifiable human requires a consenting Echo source.
+
+A v1 Homage requires explicit provenance-bearing:
 
 ```text
-inherited tendency
-        +
-particular experience
-        ↓
-expression may reinforce / complicate / suppress / invert
+subjectStatus = deceased | fictional
 ```
 
-Preserve tensions rather than averaging them into a generic adult persona.
+A living public figure may not be reframed as Homage to bypass Echo consent.
+
+Source encounters may become real Thread life events. Source biographies themselves may not be rewritten as first-person Thread memory.
+
+## Intellectual formation
+
+Books, mentors, artworks and ideas should influence a Thread through actual encounters in its own life.
+
+```text
+encounter
+  -> memory
+  -> interpretation
+  -> possible later reinterpretation
+```
+
+Do not copy the source person's/character's known personality as the Thread's finished character.
+
+## Rejection/retry discipline
+
+Every rejected candidate generation records:
+
+- pass;
+- input digest;
+- output digest;
+- rejection reason(s).
+
+Integrity retries are bounded and visible in the GenesisManifest.
+
+Examples of integrity rejection:
+
+- chronology violation;
+- source laundering;
+- stereotype derivation;
+- invalid provenance;
+- future behavioral rule encoded as meaning;
+- event/memory/meaning conflation;
+- invalid meaning-part granularity.
+
+Quality failures must not silently resample until compliant.
+
+If the first integrity-valid cohort is too generic, too genome-confirming or otherwise fails quality review, change/version the generator and create a new explicitly identified cohort.
+
+Report rejection rates and reasons. Persistent high rejection means the generator is fighting the rules; implausibly zero rejection may mean validators are inert.
+
+## Cohort diagnostics
+
+These are cohort-level characterization, not #40 behavioral standing.
+
+### 1. Blind life attribution
+
+Strip names, professions and source labels. Shuffle memories/meanings. Reviewers attempt to group excerpts into originating lives.
+
+The intent is to test whether the life itself is distinctive.
+
+### 2. Sentiment predictability
+
+Review whether childhood/event sentiment trivially predicts the resulting person. Valence monoculture fails the Genesis vision test.
+
+### 3. Genome-confirmation characterization
+
+Blind-rate durable remembered meanings against inherited loci as:
+
+```text
+genome_confirming
+genome_orthogonal
+genome_contradicting_or_complicating
+```
+
+Report the distribution. If meanings overwhelmingly confirm the genome, inheritance is writing the person instead of merely influencing possibility.
+
+Do not resample meanings to improve the result.
+
+### 4. Style-normalized semantic distinctness
+
+Normalize excerpts into a common neutral writing style and repeat attribution/inspection.
+
+If distinctness disappears after style normalization, Genesis produced narrator variation rather than life variation.
+
+#39 does not need mature self-authored voice; that belongs to later Development.
 
 ## Provenance and witness relevance
 
-#39 remains responsible for Genesis authority:
+#39 owns Genesis authority:
 
 - synthetic historical episodes require Genesis-authorized event kinds/evidence;
-- generic bookkeeping such as `THREAD_SEEDED` cannot establish a claimed lived experience;
-- event, memory, family story, and interpretation remain separately typed;
-- exact source/ancestor/genome provenance remains inspectable;
-- generated memory photos inherit the #38 visual-companion obligation.
+- bookkeeping such as `THREAD_SEEDED` cannot establish a childhood episode;
+- event, memory, story and interpretation remain separately typed;
+- source/ancestor/genome provenance remains inspectable;
+- every admitted autobiographical memory receives the #38 visual-companion obligation.
 
-## Hydrated Thread outcome
+## Photo posture
 
-A newly live Thread should expose enough structured prior life to hydrate conceptually as:
+#39 creates the photo obligation and evidence-bound reconstruction prompt.
 
-```text
-ThreadPerson {
-  identity
-  lineage
-  genome
-  situatedLife
-  embodiment
-  history[]
-  memories[] {
-    eventRefs
-    rememberedContent
-    rememberedMeaning {
-      summary
-      parts[]?
-    }
-    uncertainty
-    photo / photo status / truth class
-  }
-}
-```
+It does not need to synchronously render every Genesis memory or build queue/throughput infrastructure. Pending photo work remains operational debt under ADR-0011.
 
-This is conceptual shape, not a mandate for one physical object or table.
-
-## Narrow #39 tests
+## Narrow automated tests
 
 Tests should protect Fibre-specific invariants only:
 
-1. deterministic/replayable Genesis inputs and symbolic-genome recombination;
+1. deterministic/replayable Genesis manifest and symbolic-genome recombination;
 2. exact source/locus/event provenance;
-3. event != memory != remembered meaning;
-4. unavailable meaning is represented honestly rather than silently invented;
-5. append-only reinterpretation/correction;
-6. witness relevance appropriate to the claimed episode;
-7. no ancestry/culture/demographic stereotype laundering into personality;
-8. no future behavioral rule encoded in remembered meaning;
-9. materially distinct ambivalent tensions remain separately addressable rather than collapsing to one category;
-10. every admitted memory receives its photo obligation.
+3. Pass A cannot access genome or future role/benchmark inputs;
+4. source facts cannot become Thread history by implication;
+5. living human requires Echo consent; Homage requires deceased/fictional attestation;
+6. event != memory != remembered meaning;
+7. meaning parts have stable independently citable IDs;
+8. unavailable meaning is represented honestly rather than invented;
+9. append-only reinterpretation/correction;
+10. witness relevance appropriate to claimed episodes;
+11. no ancestry/culture/demographic stereotype laundering;
+12. no future behavioral rule encoded in remembered meaning;
+13. bounded visible rejection/retry history;
+14. every admitted memory receives its photo obligation;
+15. restart reconstructs the same admitted Genesis state.
 
-Do not build a large behavioral standing suite inside #39. Whole-Person behavioral standing belongs to #40/#41 after a cohort exists.
+Do not turn cohort-quality diagnostics into a brittle unit-test matrix.
 
 ## Held-out discipline
 
-The Genesis cohort must exist **before** the next Whole-Person claim scenario is authored.
+The borrowed-free Genesis quality cohort must exist and be frozen **before** the next Whole-Person claim scenario is authored.
 
-The future scenario should be authored without access to the cohort's Interior childhood/history. This prevents the benchmark from shaping Genesis and prevents Genesis from shaping the benchmark.
+That future scenario must be authored without access to the cohort's private childhood/interior material.
 
 ## #39 completion implication
 
-#39 is complete when Fibre can create and replay a particular provenance-rich prior life with inherited symbolic tendencies, specific historical episodes, separately formed autobiographical memories and remembered meanings, preserved semantic tensions, and photo obligations — without encoding future decisions or requiring a downstream consumer to make the life interesting.
+#39 is complete when Fibre can create and replay particular provenance-rich prior lives with inherited symbolic possibilities, different worlds, specific historical episodes, separately formed memories and meanings, preserved semantic tensions, visible generation failures and photo obligations — while keeping future behavior open.
