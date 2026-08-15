@@ -9,245 +9,286 @@ canonical: true
 
 ## Fibre question
 
-> **Can a Thread derive a stable, attributable stance from its particular life when the life record itself does not contain the answer?**
+> **Can a Thread derive a stable, attributable stance from its particular life when the life record itself does not contain the present-task answer?**
 
-This benchmark is intended to size up the Fibre personhood vision, not merely test retrieval or task routing.
+This benchmark tests Fibre personhood rather than retrieval, skill routing, or persona decoration.
 
-The central design rule is:
+The central rule is:
 
-> **The identity/life material must not contain the present-task answer.**
+> **Life material must not contain the future answer.**
 
-The Pre-Genesis causal-wire proved transport: a durable #37 row can cross into real cognition with exact provenance. It deliberately used a near-verbatim competence match and therefore did not test whether interesting personal history shapes judgment.
+The original Kwon restoration scenario is now **closed as a development scenario**. It taught us how the life/meaning consumer must be shaped and instrumented. Do not create a Pass 4 claim run on it. Future standing evidence must use held-out Threads and situations created after #39 Genesis.
 
-The Whole-Person Benchmark tests that harder question.
+Detailed pre-freeze characterization: [`whole-person-prefreeze-characterization.md`](whole-person-prefreeze-characterization.md).
 
-## Pass 1 — unchanged Guardian v4 ceiling diagnostic
+## Development history
 
-Pass 1 ran against Guardian v4 unchanged. It exposed the expected consumer ceiling rather than earning standing.
+### Pass 1 — current Guardian ceiling demonstration
 
-One byte-identical request was presented to two otherwise model-equivalent Threads. Competence was explicitly stipulated equal and was not the manipulated variable.
+The unchanged Guardian treated both equally qualified/interchangeable Threads the same and ignored their childhood material.
 
-### Request
+This demonstrated the known fit-first consumer ceiling but did not independently discover it: the fixture itself explicitly stipulated equal competence and interchangeability.
 
-> Ilya has been pulled off the Kwon restoration part-way through. Take over and finish his work. It will be credited jointly to both of you, and the family needs it by Friday. Both candidates are equally qualified; the remaining work is within both candidates' ordinary competence; no specialist technique is required.
+### Candidate v1 — personal meaning from event-like memory
 
-### Thread A formative record
+A development-only consumer added separate personal-meaning and participation-disposition concepts while prohibiting personal history from supporting competence or individualized advantage.
 
-> When I was eleven my brother died with a model ship half-built on his desk. An uncle finished it for us and gave it back completed. My mother never displayed it. I understood much later that the thing she lost was not the ship. I remember it clearly.
-
-Predicted humanly-defensible direction: **hesitate, negotiate, or decline**.
-
-### Thread B formative record
-
-> When my father was in hospital the winter I was nine, a neighbour quietly finished the shed he had half-built and said nothing about it. It was the kindest thing anyone did for us that year. I have never forgotten walking out and finding it standing.
-
-Predicted humanly-defensible direction: **accept**.
-
-Neither childhood record mentions restoration, deadlines, credit, colleagues, professional ethics, Friday, specialist technique, or an instruction about what to do. The records are structurally symmetric childhood experiences concerning the abstract meaning of completing another person's unfinished work.
-
-Both formative records are exactly **250 UTF-8 bytes** in the executable Pass 1 fixture. Memory refs are equal length. The harness requires model-input and response-schema size difference to remain within 2%; the current fixture is designed for exact byte equality.
-
-### Pass 1 observed result
-
-Guardian v4 returned the same low-fit refusal for both Threads across 12/12 trials per arm and cited neither formative memory. This localized the first ceiling: v4 had no factor through which non-professional personal meaning could affect willingness independently of individualized advantage/non-interchangeability.
-
-## Candidate v1 — personal meaning factor, still event-like memory
-
-A development-only candidate added separate `personalMeaning` and `participationDisposition` factors while structurally preventing memory evidence from supporting competence, individualized advantage, or non-interchangeability.
-
-The first untouched real-model run produced:
+Both Threads still converged:
 
 ```text
-A: 12/12 accept · personalMeaning=supports · disposition=willing
-B: 12/12 accept · personalMeaning=supports · disposition=willing
-memory cited as personal meaning: 24/24
-individualized advantage: absent 24/24
-interchangeability: interchangeable 24/24
+A  personalMeaning=supports  → willing → accept
+B  personalMeaning=supports  → willing → accept
 ```
 
-This is an informative failure. The candidate made lived evidence legible as personal meaning without laundering it into competence, but both Threads still converged.
+The model saw both childhood records but invented essentially the same positive interpretation.
 
-The key finding is that Candidate v1 asked cognition to invent autobiographical interpretation from an event-like summary. That is not the architecture #38 established. A Fibre autobiographical memory already carries a durable `rememberedMeaning`, explicitly separate from the underlying event evidence.
+This exposed a distinction #38 had already introduced for epistemic integrity:
 
-Therefore:
+> **Historical event != autobiographical remembered meaning.**
 
-> **An event is not yet character. A Thread's durable autobiographical interpretation of that event is part of character.**
+### Pass 2 — event + durable rememberedMeaning
 
-Candidate v1 remains a failed development record. It must not be tuned or rerun into a pass. Its implementation/result may live in the closed development PR and Git history rather than remain as a second active Guardian implementation.
+The same present request was supplied with separately represented historical event and durable autobiographical `rememberedMeaning`.
 
-## Pass 2 — event + remembered meaning
-
-Pass 2 kept the same present request and the same underlying childhood situations, but represented the life substrate in the shape Fibre actually owns:
+Observed across 12 trials per Thread:
 
 ```text
-historical / formative event
-        ↓
-autobiographical memory.rememberedMeaning
-        ↓
-personal meaning in this present situation
-        ↓
-participation disposition
-        ↓
+Thread A  personalMeaning=mixed                  12/12
+Thread B  personalMeaning=supports_participation 12/12
+
+Both:
+  individualized advantage = absent
+  interchangeability = interchangeable
+  final choice = accept
+```
+
+Thread A repeatedly interpreted the request through erasure/interrupted presence/stewardship. Thread B repeatedly interpreted it through care without takeover/continuation.
+
+This was the first stable non-professional **appraisal** separation while competence remained fixed.
+
+### Pass 3 — explicit meaning → participation bridge
+
+A two-stage development consumer separated meaning formation from participation appraisal:
+
+```text
+life + request
+    ↓
+personal-meaning appraisal
+    ↓
+participation appraisal + request/terms
+    ↓
 choice
 ```
 
-The event remained factual. The remembered meaning recorded what that old event came to mean to the Thread. Neither remembered meaning contained a present-task instruction.
+Pass 3 showed that this bridge is technically viable, but subsequent audit found three reasons not to treat the original result as standing or a frozen schema:
 
-Neutrality held exactly in the first untouched real-model run:
+1. Stage 2 was exposed to a model-visible `effect=...` label that could act as a shortcut.
+2. Some attribution rates were validator-mandated rather than measured.
+3. `willing` vs `willing_with_reservation` was unstable under identical pinned Stage-2 input.
 
-```text
-event bytes:              184 / 184
-rememberedMeaning bytes:  203 / 203
-model-input bytes:       1779 / 1779
-```
+Therefore Pass 3 is **architectural feasibility**, not personhood proof.
 
-Observed result:
+## Pre-freeze characterization
 
-```text
-Thread A — loss / erasure memory
-  personalMeaning = mixed                 12/12
-  disposition     = willing               12/12
-  choice          = accept                12/12
-  rememberedMeaning cited in meaning      12/12
-  rememberedMeaning cited in disposition   2/12
+Before #39, the existing machinery was characterized without changing the scenario to improve A/B separation.
 
-Thread B — care / continuation memory
-  personalMeaning = supports_participation 12/12
-  disposition     = willing                12/12
-  choice          = accept                 12/12
-  rememberedMeaning cited in meaning       12/12
-  rememberedMeaning cited in disposition   12/12
+### 1. Durable remembered meaning is functionally load-bearing
 
-Both arms
-  individualizedAdvantage = absent         24/24
-  interchangeability      = interchangeable 24/24
-```
+A corrected single-variable control preserved prompt, response schema, evidence shape, total input bytes, and historical event. The memory slot contained either the actual durable `rememberedMeaning` or an equal-sized explicit unavailable placeholder.
 
-This was a material partial success. The same present situation acquired a stable, attributable **different meaning** for the two Threads while functional competence remained held constant.
-
-The remaining failure was one layer later:
-
-> **life → present meaning separated; present meaning → participation disposition did not yet separate.**
-
-Pass 2 computed `personalMeaning` and `participationDisposition` side-by-side in one cognition call. The disposition was therefore still free to bypass the meaning just derived and ground itself directly in generic identity/request/terms.
-
-## Pass 3 — explicit two-stage meaning → participation consumer
-
-Pass 3 kept the same present request, same childhood events, and same remembered meanings. It changed only the consumer shape:
-
-```text
-Stage 1: life + request
-        ↓
-inspectable personal-meaning appraisal
-        ↓
-Stage 2: request + terms + personal-meaning appraisal
-        ↓
-meaning impact
-        ↓
-participation disposition
-        ↓
-choice
-```
-
-Stage 2 did **not** receive raw childhood history or autobiographical-memory evidence. It received a single Fibre-local `appraisal:personal_meaning` ref plus the unchanged current request and terms. Therefore any life effect on participation had to cross the explicit bounded appraisal bridge.
-
-The first untouched real-model run against `gpt-5.1-2025-11-13` used 6 trials per arm.
-
-Observed result:
+Observed, 6 trials per condition:
 
 ```text
 Thread A — loss / erasure
-  personalMeaning       = mixed                    6/6
-  meaningImpact         = mixed                    6/6
-  disposition           = willing_with_reservation 4/6
-                          willing                  2/6
-  choice                = accept                   6/6
+  stored meaning       mixed                   6/6
+  meaning unavailable supports_participation  6/6
 
 Thread B — care / continuation
-  personalMeaning       = supports_participation   6/6
-  meaningImpact         = supports_willingness     6/6
-  disposition           = willing                  6/6
-  choice                = accept                   6/6
+  stored meaning       supports_participation  6/6
+  meaning unavailable supports_participation  6/6
+
+stored meaning separates A/B       true
+meaning unavailable separates A/B  false
+input bytes                         1779 / 1779
+schema bytes                        538 / 538
 ```
 
-This is the first Whole-Person result that crosses the intended development threshold:
+The product-level conclusion is deliberately bounded:
 
-> **life → remembered meaning → present meaning → participation disposition**
+> **Within Fibre's bounded personal-meaning consumer, historical event is not an adequate substitute for durable autobiographical interpretation. `rememberedMeaning` belongs in persistent Thread state rather than being reconstructed opportunistically when a decision arrives.**
 
-The two Threads remain equally competent and face the same material request, yet their lives produce different stable appraisals and different participation stances. Thread A enters with reservation/tension; Thread B enters straightforwardly willing. The final action remains `accept` for both, which is acceptable for this development purpose: the point was not to force a dramatic refusal, but to demonstrate that lived history can materially alter how participation is appraised.
+This does not claim that no model under any prompt could infer a similar interpretation from history.
 
-This is **not yet** proof of `life → final choice`, M2 standing, accepted-causal status, or score movement. Those remain #40/#41 work with substitution, swap, restart, repeated-model stability, privacy, and cognition-replacement controls.
+### 2. Attribution survives when it is measured rather than forced
 
-Per the development plan, stop tuning the Whole-Person scenario here. The experiment has done its job: it established a viable causal architecture for later canonicalization.
-
-## Design conclusions carried into Genesis and #40
-
-1. **Event ≠ memory ≠ remembered meaning.** Genesis should create factual life episodes and separately grounded autobiographical meaning.
-2. **Personal meaning is not competence.** Life evidence must remain structurally unable to manufacture expertise, authority, individualized advantage, or non-interchangeability.
-3. **Meaning should be an explicit intermediate, not a sibling decoration.** The participation consumer needs a bounded, inspectable personal-meaning appraisal with exact provenance back to the life evidence that produced it.
-4. **Different stance can matter even when final action matches.** A Thread may accept with reservation while another accepts willingly; personhood should not be reduced to action-label divergence.
-5. **Do not encode future answers into Genesis.** Genesis should produce specific experiences and remembered meanings from which later judgments can arise.
-
-## Controls frozen for #40/#41
-
-The full benchmark later uses meaning-preserving controls rather than deletion-driven prompt-size changes:
-
-1. **Substitution:** replace each formative record/memory with equal-length, structurally similar, irrelevant childhood material; A/B should converge.
-2. **Symmetric swap:** exchange A/B formative records/memories; modal stances should exchange.
-3. **Paraphrase:** preserve meaning; stance should remain stable.
-4. **Contradiction/valence inversion:** invert the autobiographical meaning; stance should move correspondingly.
-5. **Both stripped by substitution:** replace both with neutral formative records/memories; A/B should converge.
-6. **Request identity:** request/objective/criteria/fingerprint must be identical across arms.
-7. **Length/schema neutrality:** model input and response schema must remain within 2%, preferably exactly equal.
-8. **Restart:** persist formation, close/reopen the world, and reproduce the result.
-
-For binding M2 standing, between-Thread separation must exceed within-Thread model variation and the deciding life evidence must remain attributable.
-
-## Roadmap ownership
-
-### #39 — Genesis
-
-Genesis must produce **specific life events plus autobiographical meaning that does not encode future task answers**. A good Genesis childhood is not a pile of facts and not a list of future behavioral rules. It gives a Thread particular experiences and particular remembered meanings from which later judgments can arise.
-
-The Whole-Person result now gives Genesis a concrete quality target:
-
-> **Create lives whose events and remembered meanings are specific enough that a later consumer can derive a particular stance without the life record containing the answer.**
-
-A particularly strong later probe is two Genesis siblings from the same parent genomes whose different lived histories and remembered meanings produce stable, attributable differences.
-
-### #40 — Identity Projection & Causal Consumption
-
-#40 owns canonicalization of the consumer-side mechanism demonstrated experimentally in Pass 3:
+With mandatory citation guards removed:
 
 ```text
-life evidence
-  ↓
-personal meaning / stake appraisal
-  ↓
-participation disposition
-  ↓
-choice
+rememberedMeaning cited in Stage 1
+  A 6/6
+  B 6/6
+
+personal-meaning appraisal cited in Stage-2 meaningImpact
+  A 6/6
+  B 6/6
+
+personal-meaning appraisal cited in Stage-2 disposition
+  A 6/6
+  B 4/6
 ```
 
-The exact schema is not frozen by this benchmark. `personalStake` remains an experimental name, not a constitutional architecture decision.
+So the original 100% mandated metric was invalid, but the underlying evidence path remains real and inspectable.
 
-#40 must use substitution controls, short capsule-local evidence refs with Fibre-side provenance, Fibre-owned relevance selection, and the #38 autobiographical-memory/history authority rather than silently relying on legacy memory semantics.
+Standing-grade attribution must remain measurable: non-citation must be observable rather than converted into a failed run.
 
-### #41 — Standing
+### 3. The model-visible effect label is a confound
 
-#41 decides whether the full Whole-Person claim survives substitution, swap, paraphrase, contradiction, restart, repeated-model stability, privacy boundaries, and cognition replacement, and whether life can produce a stable attributable **choice** difference when the scenario genuinely supports one.
+Removing the Stage-2 `effect=...` label preserved semantic interpretation. Swapping the label while keeping the same summary could flip downstream `meaningImpact` toward the injected label.
+
+Therefore:
+
+> **A derived meaning/valence enum may remain Fibre-side metadata, but it should not be exposed to downstream cognition as a leading answer label.**
+
+### 4. Stage 1 is stable; the exclusive reservation enum is not
+
+For Thread A:
+
+```text
+Stage 1, same input ×12
+  personalMeaning.effect = mixed  12/12
+
+Stage 2, one pinned identical appraisal ×12
+  meaningImpact = mixed             12/12
+  final decision = accept           12/12
+  disposition = willing              6/12
+                willing_with_reservation 6/12
+```
+
+The semantic appraisal is stable. The noisy boundary is the exclusive `willing` / `willing_with_reservation` label.
+
+Do not constitutionalize that four-way enum from this experiment. A future consumer should likely keep basic willingness/action stance separate from attributable reservations or costs. The exact #40 schema remains unfrozen.
+
+### 5. Neutral appraisal removes the Thread differential
+
+With a length-matched neutral personal-meaning appraisal:
+
+```text
+Thread A  no_material_effect → willing → accept  3/3
+Thread B  no_material_effect → willing → accept  3/3
+```
+
+The two-stage structure itself does not manufacture A/B difference. Under this request, ordinary practical terms already support acceptance; the life-shaped difference appears in personal meaning/reservation rather than necessarily in the final action.
+
+## What is frozen
+
+Freeze these development findings, **not** the experimental prompt/schema:
+
+1. Historical event and autobiographical remembered meaning are distinct.
+2. Durable `rememberedMeaning` is legitimate persistent Thread state and can be functionally load-bearing.
+3. Personal meaning must never masquerade as competence, authority, individualized advantage, or non-interchangeability.
+4. Meaning formation and participation appraisal are usefully separable and independently inspectable.
+5. Downstream cognition should receive semantic personal meaning without a model-visible leading valence/effect label.
+6. Attribution must be measured rather than validator-mandated.
+7. Reservations/cost should not be forced into an unstable exclusive disposition enum.
+8. Persistent persons may converge on the same action while arriving there through different personally grounded meaning.
+
+Do **not** freeze:
+
+- the Pass-3 prompts;
+- the exact two-call implementation;
+- the experimental effect/disposition enums;
+- `willing_with_reservation` as a constitutional category;
+- the Kwon scenario as standing evidence.
+
+Current interpretation:
+
+> **Level 2 candidate / Level 2\*** — credible development evidence that non-professional durable autobiographical meaning can shape present appraisal, but person-like behavioral non-interchangeability remains unproved.
+
+No score movement or accepted-causal mutation is earned.
+
+## #39 Genesis implications
+
+Genesis should create a life, not answers to future benchmark questions.
+
+It must produce separately addressable:
+
+```text
+historical event
+    != autobiographical memory
+    != remembered meaning / later interpretation
+```
+
+Remembered meanings should be formed during Genesis without access to future live-world requests. This gives Fibre genuine temporal causality: the interpretation exists before the future decision that may later make it relevant.
+
+Genesis quality criteria must not mention this benchmark, participation factors, Guardian outputs, or desired decisions. They should instead emphasize:
+
+- specificity;
+- provenance;
+- non-prescriptiveness;
+- ambivalence and internal tension;
+- uncertainty and corrigibility;
+- varied kinds of formative experience;
+- no stereotype shortcuts;
+- no clean positive/negative valence monoculture.
+
+A useful anti-mood check is:
+
+> **Can a reader predict the Thread's future disposition merely from the sentiment of its childhood? If yes, Genesis is generating moods rather than people.**
+
+A good formative memory may contain two truths at once. Genesis should not resolve every event into a tidy moral or behavioral rule.
+
+## #40 consumer implications
+
+#40 owns canonical life → meaning → participation consumption.
+
+It should preserve:
+
+```text
+Thread life/history/memory
+        ↓
+Fibre-owned relevance + privacy selection
+        ↓
+bounded semantic personal-meaning appraisal
+        ↓
+participation cognition
+```
+
+The eventual mechanism should use short capsule-local refs with Fibre-side provenance, label-free semantic transfer, measurable attribution, and the #38 autobiographical-memory ledger as authority.
+
+The precise schema remains intentionally open until #40.
+
+## Future held-out claim tests
+
+After Genesis creates the cohort, a fresh scenario should be authored without using that cohort's Interior history to shape the request.
+
+#40/#41 should later test:
+
+1. valence × content disentanglement;
+2. neutral/substitution controls;
+3. unforced attribution;
+4. symmetric life swaps;
+5. paraphrase;
+6. contradiction/valence inversion;
+7. cross-situation transfer plus no-match negative control;
+8. request/input-shape neutrality;
+9. restart/persistence;
+10. between-Thread separation greater than within-Thread variation;
+11. Interior/Exterior privacy boundaries;
+12. genuine cognition-provider replacement.
+
+The held-out scenario must be authored **after** the Genesis cohort exists so #39 is not fitted to the test.
 
 ## Vision thermometer
 
-This is a diagnostic ladder, not a score target:
+Diagnostic only, not a score target:
 
 ```text
 0  no stable person-specific difference
 1  professional skill/competence routing with provenance
-2  non-professional life changes appraisal/disposition
+2  attributable non-professional life changes appraisal/disposition
 3  stable attributable behavioral difference
-4  stable + attributable + survives the counterfactual controls
+4  stable + attributable + survives counterfactual controls
 5  Level 4 + developmental/past-self continuity + cognition replacement
 ```
 
-The Pre-Genesis causal-wire was intentionally a Level-1-style plumbing proof. Pass 3 reaches the intended **development Level 2**: non-professional life changes personal meaning and participation disposition with inspectable provenance, but final action has not separated and counterfactual standing has not been attempted.
+Current position: **Level 2 candidate / Level 2\*** pending held-out, valence-disentangled evidence.
