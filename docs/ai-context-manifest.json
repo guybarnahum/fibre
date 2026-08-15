@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 18,
+  "version": 19,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -94,7 +94,7 @@
         "docs/vision/fibre-address.md",
         "docs/vision/lived-world.md",
         "docs/foundations/commitments.md",
-        "docs/vision/core-thesis.md",
+        "docs/index.md",
         "docs/glossary.md",
         "docs/foundations/world-bible.md",
         "docs/foundations/non-goals.md",

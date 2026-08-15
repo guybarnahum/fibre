@@ -12,7 +12,7 @@ Use this index to load only the context needed for a task.
 
 Generated packs are non-canonical and must not be edited directly. Each includes its source list, repository revision, manifest version, and content digest. Use the smallest profile sufficient for the task.
 
-Manifest version 11 includes the four M2 constitutional contracts, Thread Passport & Identity Provenance v1, and ADR-0011's explicit memory-photo completion amendment directly in `core` and requires every accepted canonical Markdown document under `docs/` to appear in at least one profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources, and symlinked output paths.
+The manifest requires every accepted canonical Markdown document under `docs/` to appear in at least one profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources, and symlinked output paths.
 
 Canonical Markdown fragments may additionally declare named `fibre:region` blocks. Human-facing documents needing an exact in-place copy use generated `fibre:include` blocks, synchronized by `npm run includes:sync`. AI context profiles always consume the canonical source file directly, not the generated copy.
 
