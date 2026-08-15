@@ -16,6 +16,7 @@ import {
   normalizeSymbolicGenomeHeader,
   normalizeSymbolicGenomeLocus,
   normalizeSymbolicGenomeMutation,
+  normalizeSymbolicGenomeOwner,
   replayRecombinationSelection,
   symbolicGenomeDigest,
 } from "./symbolic-genome-domain.mjs";
@@ -56,6 +57,10 @@ function canonicalBundle(bundle) {
     mutations: bundle.mutations,
     genomeDigest: bundle.genomeDigest,
   });
+}
+
+function sameOwner(left, right) {
+  return left.kind === right.kind && left.ownerId === right.ownerId;
 }
 
 export class SymbolicGenomeStore {
@@ -147,12 +152,18 @@ export class SymbolicGenomeStore {
     return bundle === null ? null : structuredClone(bundle);
   }
 
-  listThreadGenomes(threadId) {
-    assertId("threadId", threadId);
+  listOwnerGenomes(ownerCandidate) {
+    const owner = normalizeSymbolicGenomeOwner(ownerCandidate);
     if (!tableExists(this.#database, "symbolic_genomes")) return [];
     return this.#database.prepare(`
-      SELECT genome_id FROM symbolic_genomes WHERE thread_id=? ORDER BY created_at,genome_id
-    `).all(threadId).map(({ genome_id: genomeId }) => this.getGenome(genomeId));
+      SELECT genome_id FROM symbolic_genomes
+      WHERE owner_kind=? AND owner_id=? ORDER BY created_at,genome_id
+    `).all(owner.kind, owner.ownerId).map(({ genome_id: genomeId }) => this.getGenome(genomeId));
+  }
+
+  listThreadGenomes(threadId) {
+    assertId("threadId", threadId);
+    return this.listOwnerGenomes({ kind: "thread", ownerId: threadId });
   }
 
   #validateRecombinedSources(bundle) {
@@ -164,12 +175,18 @@ export class SymbolicGenomeStore {
     }
     const sources = sourceRefs.map((sourceRef, index) => {
       const source = this.#readBundle(sourceRef);
-      if (source.header.threadId !== header.sourceEligibility.sourceThreadRefs[index]) {
-        throw new SymbolicGenomeConflictError(`source genome ${sourceRef} does not belong to its declared source Thread`);
+      const expectedOwner = header.sourceEligibility.sourceOwners[index];
+      if (!sameOwner(source.header.owner, expectedOwner)) {
+        throw new SymbolicGenomeConflictError(`source genome ${sourceRef} does not belong to its declared source owner`);
       }
-      if (!this.#threadExists(source.header.threadId)) {
-        throw new SymbolicGenomeConflictError(`source Thread ${source.header.threadId} is not live and cannot contribute a v1 genome`);
+      if (source.header.owner.kind === "thread" && !this.#threadExists(source.header.owner.ownerId)) {
+        throw new SymbolicGenomeConflictError(
+          `source Thread ${source.header.owner.ownerId} is not live and cannot contribute through the Thread-owner path`,
+        );
       }
+      // Synthetic ancestors are intentionally not fake Threads. Slice E/birth must bind the
+      // exact ancestor owner ID to the admitted lineage relation before a synthetic-lineage
+      // Thread becomes live. Slice B only proves the source genome and owner provenance.
       if (source.genomeDigest !== header.recombinationWitness.sourceGenomeDigests[index]) {
         throw new SymbolicGenomeConflictError(`source genome ${sourceRef} digest changed from the recombination witness`);
       }
@@ -214,12 +231,7 @@ export class SymbolicGenomeStore {
     const header = normalizeSymbolicGenomeHeader(candidateBundle.header);
     const loci = candidateBundle.loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
     const mutations = (candidateBundle.mutations ?? []).map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
-    const bundle = {
-      header,
-      loci,
-      mutations,
-      genomeDigest: candidateBundle.genomeDigest,
-    };
+    const bundle = { header, loci, mutations, genomeDigest: candidateBundle.genomeDigest };
     if (loci.some((locus) => locus.genomeId !== header.genomeId) || mutations.some((mutation) => mutation.genomeId !== header.genomeId)) {
       throw new SymbolicGenomeConflictError("locus/mutation belongs to another genome");
     }
@@ -250,11 +262,12 @@ export class SymbolicGenomeStore {
       this.#database.exec("BEGIN IMMEDIATE");
       this.#database.prepare(`
         INSERT INTO symbolic_genomes(
-          genome_id,thread_id,genesis_id,origin_kind,header_json,genome_digest,created_at
-        ) VALUES (?,?,?,?,?,?,?)
+          genome_id,owner_kind,owner_id,genesis_id,origin_kind,header_json,genome_digest,created_at
+        ) VALUES (?,?,?,?,?,?,?,?)
       `).run(
         header.genomeId,
-        header.threadId,
+        header.owner.kind,
+        header.owner.ownerId,
         header.genesisId,
         header.originKind,
         canonicalJson(header),
@@ -316,7 +329,7 @@ export class SymbolicGenomeStore {
           const source = this.#readBundle(sourceRef);
           return {
             genomeId: source.header.genomeId,
-            threadId: source.header.threadId,
+            owner: source.header.owner,
             genomeDigest: source.genomeDigest,
             locusCount: source.loci.length,
           };
