@@ -19,7 +19,7 @@ They are **not** a new milestone and do not move the M2 score.
 
 > **Genesis creates a particular prior life whose meaning exists before future requests. It must not manufacture behavioral answers for consumers it knows about.**
 
-The Whole-Person characterization established a product-relevant distinction:
+The Whole-Person characterization reinforced a product-relevant distinction:
 
 ```text
 historical event
@@ -27,7 +27,9 @@ historical event
     != durable remembered meaning / interpretation
 ```
 
-Within Fibre's bounded personal-meaning consumer, the historical event was not an adequate substitute for durable `rememberedMeaning`. Therefore #39 must treat autobiographical interpretation as first-class persistent life state rather than assuming later cognition can reconstruct it correctly from history on demand.
+The empirical finding is deliberately bounded: in the corrected Kwon control, Thread A's stored interpretation moved the personal-meaning appraisal off the consumer default while the historical event plus an explicit unavailable-meaning placeholder did not. Thread B matched the consumer default in both conditions. This is one concrete demonstration, not a universal claim that every event fails to support useful inference.
+
+The architectural requirement is independent of that empirical result: #39 treats autobiographical interpretation as first-class persistent life state because a Thread's durable interpretation needs revision history, stable citation, corrigibility, and continuity across future judgments. It must not exist only as an inference regenerated opportunistically when a later decision happens.
 
 ## Request blindness
 
@@ -60,6 +62,16 @@ The interpretation may arise immediately or later in the synthetic chronology. I
 
 A remembered meaning must not rewrite the historical event. Later reinterpretation must remain append-only/corrigible under #38 memory epistemics.
 
+## Meaning is semantic state, not its category
+
+Fibre now carries the general invariant:
+
+> **A derived category is never a safe stand-in for the semantic meaning it compresses.**
+
+Genesis therefore persists meaning-bearing natural language as authoritative, separately addressable state. Any future enum such as `mixed`, positive/negative sentiment label, salience bucket, or other classification is a derived view and may not replace the underlying semantic content.
+
+This matters especially for ambivalence. Two different remembered meanings may both be classifiable as `mixed` while expressing entirely different tensions. #39 must preserve those tensions rather than collapsing them to the shared category.
+
 ## Ambivalence over valence monoculture
 
 Genesis must not systematically produce:
@@ -86,6 +98,24 @@ and years later understood it as an act of care.
 ```
 
 A Thread may retain unresolved or contradictory meanings. Genesis is not required to turn each experience into a clean moral.
+
+### Separately addressable tensions
+
+When a remembered meaning contains materially distinct or opposing tensions, persist enough structure that the tensions remain independently inspectable/citable rather than surviving only inside one blended paragraph.
+
+Conceptually:
+
+```text
+rememberedMeaning {
+  summary: "I was grateful someone finished it, and something of him felt lost when they did."
+  parts: [
+    { meaning: "someone cared enough to finish what he could not" },
+    { meaning: "completion made part of his interrupted presence feel less visible" }
+  ]
+}
+```
+
+The exact physical schema is a #39 implementation choice. The invariant is semantic granularity: a later consumer must not be forced to treat every ambivalence as the same undifferentiated `mixed` state.
 
 Anti-mood quality question:
 
@@ -168,7 +198,10 @@ ThreadPerson {
   memories[] {
     eventRefs
     rememberedContent
-    rememberedMeaning
+    rememberedMeaning {
+      summary
+      parts[]?
+    }
     uncertainty
     photo / photo status / truth class
   }
@@ -189,7 +222,8 @@ Tests should protect Fibre-specific invariants only:
 6. witness relevance appropriate to the claimed episode;
 7. no ancestry/culture/demographic stereotype laundering into personality;
 8. no future behavioral rule encoded in remembered meaning;
-9. every admitted memory receives its photo obligation.
+9. materially distinct ambivalent tensions remain separately addressable rather than collapsing to one category;
+10. every admitted memory receives its photo obligation.
 
 Do not build a large behavioral standing suite inside #39. Whole-Person behavioral standing belongs to #40/#41 after a cohort exists.
 
@@ -201,4 +235,4 @@ The future scenario should be authored without access to the cohort's Interior c
 
 ## #39 completion implication
 
-#39 is complete when Fibre can create and replay a particular provenance-rich prior life with inherited symbolic tendencies, specific historical episodes, separately formed autobiographical memories and remembered meanings, and photo obligations — without encoding future decisions or requiring a downstream consumer to make the life interesting.
+#39 is complete when Fibre can create and replay a particular provenance-rich prior life with inherited symbolic tendencies, specific historical episodes, separately formed autobiographical memories and remembered meanings, preserved semantic tensions, and photo obligations — without encoding future decisions or requiring a downstream consumer to make the life interesting.
