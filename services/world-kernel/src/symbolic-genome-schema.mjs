@@ -2,7 +2,8 @@ export function createSymbolicGenomeTables(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS symbolic_genomes (
       genome_id TEXT PRIMARY KEY,
-      thread_id TEXT NOT NULL,
+      owner_kind TEXT NOT NULL CHECK (owner_kind IN ('thread','synthetic_ancestor')),
+      owner_id TEXT NOT NULL,
       genesis_id TEXT NOT NULL,
       origin_kind TEXT NOT NULL CHECK (origin_kind IN ('de_novo','recombined')),
       header_json TEXT NOT NULL CHECK (json_valid(header_json)),
@@ -11,7 +12,7 @@ export function createSymbolicGenomeTables(database) {
         substr(genome_digest,8) NOT GLOB '*[^0-9a-f]*'
       ),
       created_at TEXT NOT NULL,
-      UNIQUE (thread_id, genesis_id)
+      UNIQUE (owner_kind, owner_id, genesis_id)
     ) STRICT;
 
     CREATE TABLE IF NOT EXISTS symbolic_genome_loci (
@@ -49,8 +50,8 @@ export function createSymbolicGenomeTables(database) {
       FOREIGN KEY (genome_id) REFERENCES symbolic_genomes(genome_id)
     ) STRICT;
 
-    CREATE INDEX IF NOT EXISTS idx_symbolic_genome_thread
-      ON symbolic_genomes(thread_id, created_at, genome_id);
+    CREATE INDEX IF NOT EXISTS idx_symbolic_genome_owner
+      ON symbolic_genomes(owner_kind, owner_id, created_at, genome_id);
     CREATE INDEX IF NOT EXISTS idx_symbolic_genome_loci_order
       ON symbolic_genome_loci(genome_id, ordinal);
 
