@@ -44,16 +44,17 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-// Gemini's generateContent response-format path accepts only part of the JSON
-// Schema surface in practice. Strip provider-rejected constraint keywords while
-// preserving Fibre's canonical schema for local validation and provenance.
+// generateContent uses Google's legacy Schema protobuf rather than the newer
+// Interactions response_format JSON-Schema surface. Translate shared Fibre
+// schemas to that provider subset without weakening Fibre's canonical schema.
 function googleSchema(value) {
   if (Array.isArray(value)) return value.map(googleSchema);
   if (value === null || typeof value !== "object") return value;
   const result = {};
   for (const [key, item] of Object.entries(value)) {
     if (key === "minLength" || key === "maxLength" || key === "additionalProperties") continue;
-    result[key] = googleSchema(item);
+    if (key === "type" && typeof item === "string") result[key] = item.toUpperCase();
+    else result[key] = googleSchema(item);
   }
   return result;
 }
@@ -139,7 +140,7 @@ export function createGoogleModelAdapter({
     maxOutputTokens,
     retryLimit,
     retryDelayMs,
-    structuredOutput: "response_format_json_schema",
+    structuredOutput: "json_schema",
   });
   let terminalFailure = null;
 
@@ -172,12 +173,8 @@ export function createGoogleModelAdapter({
                 contents: [{ role: "user", parts: [{ text: JSON.stringify(input) }] }],
                 generationConfig: {
                   maxOutputTokens,
-                  responseFormat: {
-                    text: {
-                      mimeType: "application/json",
-                      schema: googleSchema(responseSchema),
-                    },
-                  },
+                  responseMimeType: "application/json",
+                  responseSchema: googleSchema(responseSchema),
                 },
               }),
               signal: controller.signal,
