@@ -126,6 +126,8 @@ Read-only inspection must not create schema and must return an empty result on w
 
 Before using genome propagation as an interpretable #39 result, establish that directly visible symbolic loci are capable of carrying distinguishable semantic information.
 
+Recorded first complete live result: [`m2-pr39-slice-b-genome-control-result.md`](m2-pr39-slice-b-genome-control-result.md).
+
 ### Independence
 
 The control is **trial-independent at both cognition surfaces**:
@@ -226,7 +228,7 @@ Fail the implementation if:
 [x] per-side position/accuracy evidence recorded after blind rating
 [x] predeclared Slice-B interpretation
 [x] Slice-G external frozen-genome reuse surface
-[ ] live Slice-B positive-control result recorded before interpreting genome propagation
+[x] live Slice-B positive-control result recorded before interpreting genome propagation
 [ ] Slice-G cohort-genome ceiling frozen before cohort life generation
 [ ] synthetic-ancestor source owners bound to admitted #38 lineage at Slice E/birth
 ```
