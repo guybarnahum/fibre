@@ -2,6 +2,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { createGoogleModelAdapter } from "../services/world-kernel/src/model-runtime/google.mjs";
 import { createOpenAIModelAdapter } from "../services/world-kernel/src/model-runtime/openai.mjs";
@@ -24,7 +25,7 @@ import {
 
 const DEFAULT_EPISODES = 8;
 const DEFAULT_SEED = "slice-c-dev-burned-001";
-const EVIDENCE_VERSION = "pr39-slice-c-pass-a-development-v2";
+const EVIDENCE_VERSION = "pr39-slice-c-pass-a-development-v3";
 
 export const SLICE_C_DEV_WORLD = Object.freeze({
   worldSpecId: "world_slice_c_dev_burned_001",
@@ -61,6 +62,7 @@ export const SLICE_C_DEV_SUBJECT = Object.freeze({
   bornAt: "1992-05-14T00:00:00Z",
 });
 
+// This is the total development span, not a single creative call window.
 export const SLICE_C_DEV_WINDOW = Object.freeze({
   windowId: "middle_childhood",
   startAt: "1998-05-14T00:00:00Z",
@@ -100,6 +102,49 @@ function loadWorld(path) {
   return JSON.parse(readFileSync(resolve(path), "utf8"));
 }
 
+function rounded(value) {
+  return Number(value.toFixed(6));
+}
+
+export function stratifySliceCDevelopmentWindow(baseWindow = SLICE_C_DEV_WINDOW, episodeCount = DEFAULT_EPISODES) {
+  if (!Number.isSafeInteger(episodeCount) || episodeCount < 1) throw new TypeError("episodeCount must be a positive integer");
+  const startMs = Date.parse(baseWindow.startAt);
+  const endMs = Date.parse(baseWindow.endAt);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) throw new TypeError("developmental span timestamps are invalid");
+  if (!Number.isFinite(baseWindow.minAge) || !Number.isFinite(baseWindow.maxAge) || baseWindow.maxAge < baseWindow.minAge) {
+    throw new TypeError("developmental span ages are invalid");
+  }
+
+  const inclusiveMillis = endMs - startMs + 1;
+  const ageSpan = baseWindow.maxAge - baseWindow.minAge;
+  const windows = [];
+  for (let index = 0; index < episodeCount; index += 1) {
+    const sliceStart = startMs + Math.floor((inclusiveMillis * index) / episodeCount);
+    const sliceEnd = startMs + Math.floor((inclusiveMillis * (index + 1)) / episodeCount) - 1;
+    windows.push(Object.freeze({
+      windowId: `${baseWindow.windowId}_stratum_${String(index + 1).padStart(2, "0")}`,
+      startAt: new Date(sliceStart).toISOString(),
+      endAt: new Date(sliceEnd).toISOString(),
+      minAge: rounded(baseWindow.minAge + (ageSpan * index) / episodeCount),
+      maxAge: rounded(baseWindow.minAge + (ageSpan * (index + 1)) / episodeCount),
+    }));
+  }
+  return Object.freeze(windows);
+}
+
+export function buildSliceCDevelopmentPlan({ episodeCount = DEFAULT_EPISODES, seed = DEFAULT_SEED } = {}) {
+  if (typeof seed !== "string" || seed.trim() === "") throw new TypeError("seed is required");
+  const windows = stratifySliceCDevelopmentWindow(SLICE_C_DEV_WINDOW, episodeCount);
+  return Object.freeze(windows.map((developmentalWindow) => Object.freeze({
+    developmentalWindow,
+    offeredStructures: Object.freeze(sampleEventStructures(
+      GENESIS_EVENT_STRUCTURE_POOL_V1,
+      developmentalWindow,
+      { seed: `${seed}:structures:${developmentalWindow.windowId}` },
+    )),
+  })));
+}
+
 function generatorEvidence({ provider, model, events }) {
   return {
     provider,
@@ -111,11 +156,36 @@ function generatorEvidence({ provider, model, events }) {
   };
 }
 
-function poolEvidence(offeredStructures) {
+function poolEvidence(plan) {
+  const uniqueOfferedStructureIds = [
+    ...new Set(plan.flatMap(({ offeredStructures }) => offeredStructures.map(({ structureId }) => structureId))),
+  ];
   return {
     version: "genesis-event-structure-pool-v1",
     digest: GENESIS_EVENT_STRUCTURE_POOL_V1_DIGEST,
-    offeredStructureIds: offeredStructures.map(({ structureId }) => structureId),
+    offerPolicy: "one_deterministic_chronology_stratum_per_generated_episode",
+    totalOfferSlots: plan.reduce((sum, item) => sum + item.offeredStructures.length, 0),
+    uniqueOfferedStructureIds,
+    windows: plan.map(({ developmentalWindow, offeredStructures }) => ({
+      ...structuredClone(developmentalWindow),
+      offeredStructureIds: offeredStructures.map(({ structureId }) => structureId),
+    })),
+  };
+}
+
+function uniqueOfferedStructures(plan) {
+  const byId = new Map();
+  for (const { offeredStructures } of plan) {
+    for (const structure of offeredStructures) byId.set(structure.structureId, structure);
+  }
+  return [...byId.values()];
+}
+
+function funnelEvidence(episodes, plan) {
+  return {
+    ...passAFunnelMetrics(episodes, uniqueOfferedStructures(plan)),
+    developmentalWindows: plan.length,
+    structureOfferSlots: plan.reduce((sum, item) => sum + item.offeredStructures.length, 0),
   };
 }
 
@@ -132,9 +202,7 @@ function failureRepairProfile(recordResults, error) {
   const profile = summarizePassARepairProfile(recordResults);
   const repairs = Array.isArray(error?.repairEvidence) ? error.repairEvidence : [];
   const repairsByGate = { ...profile.recordRepairsByGate };
-  for (const repair of repairs) {
-    repairsByGate[repair.failedGate] = (repairsByGate[repair.failedGate] ?? 0) + 1;
-  }
+  for (const repair of repairs) repairsByGate[repair.failedGate] = (repairsByGate[repair.failedGate] ?? 0) + 1;
   return {
     ...profile,
     recordsGenerated: profile.recordsGenerated + (Array.isArray(error?.calls) ? error.calls.length : 0),
@@ -149,7 +217,7 @@ export function buildSliceCFailureEvidence({
   model,
   seed,
   worldSpec,
-  offeredStructures,
+  plan,
   events,
   episodes,
   recordResults,
@@ -164,14 +232,15 @@ export function buildSliceCFailureEvidence({
     burnedForFinalCohort: true,
     seed,
     generator: generatorEvidence({ provider, model, events }),
-    eventStructurePool: poolEvidence(offeredStructures),
+    eventStructurePool: poolEvidence(plan),
     worldSpec: structuredClone(worldSpec),
     subject: structuredClone(SLICE_C_DEV_SUBJECT),
-    developmentalWindow: structuredClone(SLICE_C_DEV_WINDOW),
+    developmentalSpan: structuredClone(SLICE_C_DEV_WINDOW),
     episodes: structuredClone(episodes),
     recordEvidence: successfulRecordEvidence(recordResults),
     failure: {
       failedEpisodeOrdinal,
+      developmentalWindow: structuredClone(plan[failedEpisodeOrdinal - 1]?.developmentalWindow ?? null),
       code: error?.code ?? null,
       gate: error?.gate ?? null,
       message: error?.message ?? String(error),
@@ -180,7 +249,7 @@ export function buildSliceCFailureEvidence({
       calls: Array.isArray(error?.calls) ? structuredClone(error.calls) : [],
       repairs: Array.isArray(error?.repairEvidence) ? structuredClone(error.repairEvidence) : [],
     },
-    funnel: passAFunnelMetrics(episodes, offeredStructures),
+    funnel: funnelEvidence(episodes, plan),
     rejectionRepairProfile: failureRepairProfile(recordResults, error),
     memoryRecords: [],
     meaningRecords: [],
@@ -194,42 +263,40 @@ export async function runSliceCPassADevelopment({
   seed = DEFAULT_SEED,
   worldSpec = SLICE_C_DEV_WORLD,
   onProgress = null,
+  adapterOverride = null,
 } = {}) {
   if (!["openai", "google"].includes(provider)) throw new TypeError("provider must be openai or google");
   if (typeof model !== "string" || model.trim() === "") throw new TypeError("model is required");
   if (!Number.isSafeInteger(episodeCount) || episodeCount < 1) throw new TypeError("episodeCount must be a positive integer");
   if (typeof seed !== "string" || seed.trim() === "") throw new TypeError("seed is required");
+  if (adapterOverride !== null && typeof adapterOverride?.invoke !== "function") throw new TypeError("adapterOverride must expose invoke()");
 
   const events = [];
-  const adapter = createAdapter({
-    provider,
-    model,
-    observer: (event) => {
-      events.push(event);
-      if (event?.type === "operational_failure" && typeof onProgress === "function") {
-        onProgress({ type: "operational_failure", event });
-      }
-    },
-  });
-  const offeredStructures = sampleEventStructures(GENESIS_EVENT_STRUCTURE_POOL_V1, SLICE_C_DEV_WINDOW, { seed: `${seed}:structures` });
+  const observer = (event) => {
+    events.push(event);
+    if (event?.type === "operational_failure" && typeof onProgress === "function") onProgress({ type: "operational_failure", event });
+  };
+  const adapter = adapterOverride ?? createAdapter({ provider, model, observer });
+  const plan = buildSliceCDevelopmentPlan({ episodeCount, seed });
   const episodes = [];
   const previouslyIntroducedParticipants = [];
   const recordResults = [];
 
   for (let index = 0; index < episodeCount; index += 1) {
+    const ordinal = index + 1;
+    const { developmentalWindow, offeredStructures } = plan[index];
     const input = buildPassAInput({
       worldSpec,
       subject: SLICE_C_DEV_SUBJECT,
-      developmentalWindow: SLICE_C_DEV_WINDOW,
-      chronologyEndsAt: SLICE_C_DEV_WINDOW.endAt,
+      developmentalWindow,
+      chronologyEndsAt: developmentalWindow.endAt,
       initialRoster: SLICE_C_DEV_ROSTER,
       priorEpisodes: episodes,
       previouslyIntroducedParticipants,
       eventStructurePool: GENESIS_EVENT_STRUCTURE_POOL_V1,
       offeredStructures,
     });
-    const ordinal = index + 1;
-    if (typeof onProgress === "function") onProgress({ type: "episode_start", ordinal, total: episodeCount });
+    if (typeof onProgress === "function") onProgress({ type: "episode_start", ordinal, total: episodeCount, developmentalWindow });
     const startedAt = Date.now();
     let result;
     try {
@@ -238,7 +305,7 @@ export async function runSliceCPassADevelopment({
         input,
         clientRequestId: `slice-c-dev:${seed}:episode:${String(ordinal).padStart(2, "0")}`,
         onRecordRepair: (repair) => {
-          if (typeof onProgress === "function") onProgress({ type: "record_repair", ordinal, total: episodeCount, repair });
+          if (typeof onProgress === "function") onProgress({ type: "record_repair", ordinal, total: episodeCount, developmentalWindow, repair });
         },
       });
     } catch (error) {
@@ -247,7 +314,7 @@ export async function runSliceCPassADevelopment({
         model,
         seed,
         worldSpec,
-        offeredStructures,
+        plan,
         events,
         episodes,
         recordResults,
@@ -264,6 +331,7 @@ export async function runSliceCPassADevelopment({
         type: "episode_complete",
         ordinal,
         total: episodeCount,
+        developmentalWindow,
         elapsedMs: Date.now() - startedAt,
         episode: result.episode,
         repairs: result.repairs.length,
@@ -279,13 +347,13 @@ export async function runSliceCPassADevelopment({
     burnedForFinalCohort: true,
     seed,
     generator: generatorEvidence({ provider, model, events }),
-    eventStructurePool: poolEvidence(offeredStructures),
+    eventStructurePool: poolEvidence(plan),
     worldSpec: structuredClone(worldSpec),
     subject: structuredClone(SLICE_C_DEV_SUBJECT),
-    developmentalWindow: structuredClone(SLICE_C_DEV_WINDOW),
+    developmentalSpan: structuredClone(SLICE_C_DEV_WINDOW),
     episodes,
     recordEvidence: successfulRecordEvidence(recordResults),
-    funnel: passAFunnelMetrics(episodes, offeredStructures),
+    funnel: funnelEvidence(episodes, plan),
     rejectionRepairProfile: summarizePassARepairProfile(recordResults),
     memoryRecords: [],
     meaningRecords: [],
@@ -312,6 +380,7 @@ async function main() {
   process.stderr.write(`GENESIS PASS A DEV: START · ${episodeCount} historical episodes\n`);
   process.stderr.write(`Generator: ${provider}/${model}\n`);
   process.stderr.write(`World: ${worldFile ?? `${SLICE_C_DEV_WORLD.worldSpecId} (built-in, burned)`}\n`);
+  process.stderr.write(`Chronology: ${episodeCount} deterministic strata across ${SLICE_C_DEV_WINDOW.minAge}-${SLICE_C_DEV_WINDOW.maxAge}\n`);
 
   const startedAt = Date.now();
   let result;
@@ -324,14 +393,15 @@ async function main() {
       worldSpec: loadWorld(worldFile),
       onProgress(event) {
         if (event.type === "episode_start") {
-          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] generating ...\n`);
+          const window = event.developmentalWindow;
+          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] generating · age ${window.minAge}-${window.maxAge} ...\n`);
         } else if (event.type === "record_repair") {
           const bytes = event.repair.failedConstraint?.rejectedObservableActionUtf8Bytes;
           const detail = Number.isSafeInteger(bytes) ? ` · ${bytes} bytes` : "";
           process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] record repair ${event.repair.repairOrdinal} · ${event.repair.failedGate}${detail}\n`);
         } else if (event.type === "episode_complete") {
           const grounding = event.episode.structureRef === null ? "world-emergent" : event.episode.structureRef;
-          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] ✓ ${event.elapsedMs} ms · ${grounding} · repairs ${event.repairs}\n`);
+          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] ✓ ${event.elapsedMs} ms · age ${event.episode.ageAtEvent} · ${grounding} · repairs ${event.repairs}\n`);
         } else if (event.type === "operational_failure") {
           const failure = event.event.failure ?? {};
           process.stderr.write(`MODEL ${failure.code ?? "ERROR"}: ${failure.message ?? "operational failure"}\n`);
@@ -359,7 +429,8 @@ async function main() {
   const elapsedSeconds = (Date.now() - startedAt) / 1000;
   process.stderr.write(`GENESIS PASS A DEV: COMPLETE\n`);
   process.stderr.write(`Historical events: ${result.funnel.historicalEvents}\n`);
-  process.stderr.write(`Structures: ${result.funnel.structuresInstantiated}/${result.funnel.structuresOffered} instantiated\n`);
+  process.stderr.write(`Chronology strata: ${result.funnel.developmentalWindows}\n`);
+  process.stderr.write(`Structures: ${result.funnel.structuresInstantiated}/${result.funnel.structuresOffered} unique instantiated/offered · ${result.funnel.structureOfferSlots} offer slots\n`);
   process.stderr.write(`Grounded/emergent: ${result.funnel.episodesStructureGrounded}/${result.funnel.episodesWorldEmergent}\n`);
   process.stderr.write(`Record repairs: ${result.rejectionRepairProfile.recordRepairs}\n`);
   process.stderr.write(`Memory/meaning records: 0/0\n`);
@@ -367,7 +438,9 @@ async function main() {
   if (outputPath !== null) process.stderr.write(`Artifact: ${outputPath}\n`);
 }
 
-main().catch((error) => {
-  process.stderr.write(`GENESIS PASS A DEV: FAILED\n${error?.code ? `${error.code}: ` : ""}${error?.message ?? String(error)}\n`);
-  process.exitCode = 1;
-});
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    process.stderr.write(`GENESIS PASS A DEV: FAILED\n${error?.code ? `${error.code}: ` : ""}${error?.message ?? String(error)}\n`);
+    process.exitCode = 1;
+  });
+}
