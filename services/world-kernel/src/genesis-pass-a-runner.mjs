@@ -4,16 +4,20 @@ import {
   GENESIS_PASS_A_RESPONSE_SCHEMA,
   GenesisPassAValidationError,
   passAEpisodeOutputDigest,
-  passAInputDigest,
 } from "./genesis-pass-a-domain.mjs";
 import {
   assertPassAHistoryConsistency,
   validateConsistentPassAEpisode,
 } from "./genesis-pass-a-consistency.mjs";
+import {
+  passACognitionInputDigest,
+  projectPassAInputForCognition,
+} from "./genesis-pass-a-cognition.mjs";
 
 export const GENESIS_PASS_A_PROMPT = `You are Fibre Genesis Pass A. Create exactly one concrete historical episode: what happened, not what it meant.
 Use only the supplied world, factual roster, chronology, prior episodes, introduced participants, and offered EventStructure affordances.
 The offered structures are possibilities, never a checklist. You may produce a world-emergent episode by returning structureRef=null.
+If structureRef is non-null, it must exactly match a structureId in the current offeredStructures array; prior history does not authorize a structure for the current episode.
 Describe only externally witnessable action and circumstance. Do not explain significance, lessons, traits, personality, inner-state conclusions, remembered meaning, or future behavior.
 Keep observableAction concise and no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes; one or two concrete sentences is normally enough.
 Do not foreshadow a profession, adult role, benchmark, later request, or desired personality conclusion.
@@ -113,12 +117,13 @@ export async function generatePassAEpisode({
   if (typeof clientRequestId !== "string" || clientRequestId.trim() === "") throw new TypeError("Pass-A clientRequestId is required");
 
   const consistentInput = assertPassAHistoryConsistency(input);
-  const initialInputDigest = passAInputDigest(consistentInput);
+  const cognitionInput = projectPassAInputForCognition(consistentInput);
+  const initialInputDigest = passACognitionInputDigest(cognitionInput);
   const calls = [];
   const repairs = [];
   let result = await adapter.invoke({
     systemPrompt: GENESIS_PASS_A_PROMPT,
-    input: consistentInput,
+    input: cognitionInput,
     responseSchema: GENESIS_PASS_A_RESPONSE_SCHEMA,
     clientRequestId: `${clientRequestId}:initial`,
   });
@@ -166,7 +171,7 @@ export async function generatePassAEpisode({
       const repairOrdinal = generatedVersion;
       const failedConstraint = repairConstraint(error, rejectedEpisode);
       const repairInput = {
-        passAInput: consistentInput,
+        passAInput: cognitionInput,
         rejectedEpisode,
         failedGate: error.gate,
         failedConstraint,
