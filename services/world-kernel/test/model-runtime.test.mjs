@@ -169,7 +169,7 @@ test("runtime changes provider by config only and Google translates the shared i
   assert.equal(request.body.systemInstruction.parts[0].text, "Return the bounded result.");
   assert.equal(request.body.generationConfig.responseFormat.text.mimeType, "application/json");
   assert.equal(request.body.generationConfig.responseFormat.text.schema.type, "object");
-  assert.equal(request.body.generationConfig.responseFormat.text.schema.additionalProperties, false);
+  assert.equal(Object.hasOwn(request.body.generationConfig.responseFormat.text.schema, "additionalProperties"), false);
   assert.equal(request.body.generationConfig.responseFormat.text.schema.properties.decision.type, "string");
   assert.equal(Object.hasOwn(request.body.generationConfig.responseFormat.text.schema.properties.decision, "minLength"), false);
   assert.equal(Object.hasOwn(request.body.generationConfig, "responseSchema"), false);

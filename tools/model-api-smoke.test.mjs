@@ -84,7 +84,7 @@ test("Google live-smoke path validates generateContent JSON-Schema response-form
   assert.equal(request.init.headers["x-goog-api-key"], "test-key");
   assert.equal(request.body.generationConfig.responseFormat.text.mimeType, "application/json");
   assert.equal(request.body.generationConfig.responseFormat.text.schema.type, "object");
-  assert.equal(request.body.generationConfig.responseFormat.text.schema.additionalProperties, false);
+  assert.equal(Object.hasOwn(request.body.generationConfig.responseFormat.text.schema, "additionalProperties"), false);
   assert.equal(Object.hasOwn(request.body.generationConfig, "responseSchema"), false);
   assert.equal(result.status, "passed");
   assert.equal(result.usage.totalTokens, 9);

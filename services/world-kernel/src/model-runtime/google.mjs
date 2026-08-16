@@ -44,15 +44,15 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-// Gemini's JSON-Schema response-format path accepts ordinary lowercase JSON
-// Schema, including additionalProperties. Keep the existing narrow removal of
-// unsupported string-length hints so shared Fibre schemas remain provider-safe.
+// Gemini's generateContent response-format path accepts only part of the JSON
+// Schema surface in practice. Strip provider-rejected constraint keywords while
+// preserving Fibre's canonical schema for local validation and provenance.
 function googleSchema(value) {
   if (Array.isArray(value)) return value.map(googleSchema);
   if (value === null || typeof value !== "object") return value;
   const result = {};
   for (const [key, item] of Object.entries(value)) {
-    if (key === "minLength" || key === "maxLength") continue;
+    if (key === "minLength" || key === "maxLength" || key === "additionalProperties") continue;
     result[key] = googleSchema(item);
   }
   return result;
