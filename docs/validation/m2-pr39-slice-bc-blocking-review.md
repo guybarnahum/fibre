@@ -185,7 +185,7 @@ ges_familiar_person_temporarily_absent 2   # moderate
 ges_routine_plan_shift                 1
 ```
 
-The same seed therefore moved from an illegal stale structure reference to a clean completed history, and the previous `18/18` all-low pattern did not persist: two moderate structures were instantiated once consequence-policy labels were removed from cognition.
+The same Fibre seed fixes the structure-offer schedule but does **not** make the OpenAI generator deterministic. The replay therefore provides comparative evidence, not causal proof about one prompt field. Under the corrected boundary, the stale-reference failure disappeared and the previous `18/18` all-low pattern did not persist: two moderate structures were instantiated. This is consistent with the removed policy/provenance cues having influenced earlier selection, but does not establish that `consequenceClass` alone caused the earlier bias.
 
 The eight admitted observable episodes were:
 
