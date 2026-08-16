@@ -15,6 +15,7 @@ export const GENESIS_PASS_A_PROMPT = `You are Fibre Genesis Pass A. Create exact
 Use only the supplied world, factual roster, chronology, prior episodes, introduced participants, and offered EventStructure affordances.
 The offered structures are possibilities, never a checklist. You may produce a world-emergent episode by returning structureRef=null.
 Describe only externally witnessable action and circumstance. Do not explain significance, lessons, traits, personality, inner-state conclusions, remembered meaning, or future behavior.
+Keep observableAction concise and no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes; one or two concrete sentences is normally enough.
 Do not foreshadow a profession, adult role, benchmark, later request, or desired personality conclusion.
 The provisional Thread identified by subject.provisionalThreadId must participate in the episode.
 A participant must already exist in the roster/history or be introduced in this same episode through a role explicitly afforded by the world.
@@ -25,11 +26,16 @@ Advance chronology beyond the last prior episode and remain within chronologyEnd
 export const GENESIS_PASS_A_REPAIR_PROMPT = `You are Fibre Genesis record-form repair for Pass A.
 Repair only the rejected episode's observableAction wording so it satisfies the observable-history form contract.
 Preserve episodeId, occurredAt, ageAtEvent, placeRef, participantRefs, structureRef, and introducedParticipants exactly.
+observableAction must be no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes. Shorten wording rather than changing any event fact.
 Do not improve the life, make it more interesting, change its meaning, or select a different event.
 Remove explicit lesson, significance, personality, inner-state conclusion, remembered-meaning, or future-policy wording and describe only witnessable action/circumstance.`;
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
+}
+
+function utf8Bytes(value) {
+  return typeof value === "string" ? Buffer.byteLength(value, "utf8") : null;
 }
 
 export function passAPromptHash() {
@@ -83,6 +89,18 @@ function repairable(error) {
   ].includes(error.gate);
 }
 
+function repairConstraint(error, rejectedEpisode) {
+  const constraint = {
+    failedGate: error.gate,
+    failureMessage: error.message,
+  };
+  if (error.gate === "pass_a_observable_action_bounds") {
+    constraint.maxObservableActionUtf8Bytes = GENESIS_PASS_A_POLICY.maxObservableActionBytes;
+    constraint.rejectedObservableActionUtf8Bytes = utf8Bytes(rejectedEpisode?.observableAction);
+  }
+  return constraint;
+}
+
 export async function generatePassAEpisode({
   adapter,
   repairAdapter = adapter,
@@ -132,22 +150,31 @@ export async function generatePassAEpisode({
             { record: error.record ?? candidate },
           );
           exhausted.cause = error;
+          exhausted.calls = structuredClone(calls);
           exhausted.repairs = repairs.map(({ rejectedEpisode, ...repair }) => repair);
+          exhausted.repairEvidence = structuredClone(repairs);
           throw exhausted;
+        }
+        if (error instanceof GenesisPassAValidationError) {
+          error.calls = structuredClone(calls);
+          error.repairEvidence = structuredClone(repairs);
         }
         throw error;
       }
 
       const rejectedEpisode = error.record ?? candidate;
       const repairOrdinal = generatedVersion;
+      const failedConstraint = repairConstraint(error, rejectedEpisode);
       const repairInput = {
         passAInput: consistentInput,
         rejectedEpisode,
         failedGate: error.gate,
+        failedConstraint,
       };
       const repairRecord = {
         repairOrdinal,
         failedGate: error.gate,
+        failedConstraint,
         rejectedContentDigest: digest(rejectedEpisode),
         rejectedEpisode: structuredClone(rejectedEpisode),
         repairInputDigest: digest(repairInput),
@@ -156,6 +183,7 @@ export async function generatePassAEpisode({
         await onRecordRepair({
           repairOrdinal,
           failedGate: error.gate,
+          failedConstraint: structuredClone(failedConstraint),
           rejectedContentDigest: repairRecord.rejectedContentDigest,
           inputDigest: repairRecord.repairInputDigest,
           outputDigest: digest(rejectedEpisode),

@@ -24,6 +24,7 @@ import {
 
 const DEFAULT_EPISODES = 8;
 const DEFAULT_SEED = "slice-c-dev-burned-001";
+const EVIDENCE_VERSION = "pr39-slice-c-pass-a-development-v2";
 
 export const SLICE_C_DEV_WORLD = Object.freeze({
   worldSpecId: "world_slice_c_dev_burned_001",
@@ -99,6 +100,93 @@ function loadWorld(path) {
   return JSON.parse(readFileSync(resolve(path), "utf8"));
 }
 
+function generatorEvidence({ provider, model, events }) {
+  return {
+    provider,
+    model,
+    promptHash: passAPromptHash(),
+    repairPromptHash: passARepairPromptHash(),
+    schemaHash: passASchemaHash(),
+    modelEvents: structuredClone(events),
+  };
+}
+
+function poolEvidence(offeredStructures) {
+  return {
+    version: "genesis-event-structure-pool-v1",
+    digest: GENESIS_EVENT_STRUCTURE_POOL_V1_DIGEST,
+    offeredStructureIds: offeredStructures.map(({ structureId }) => structureId),
+  };
+}
+
+function successfulRecordEvidence(recordResults) {
+  return recordResults.map((result) => ({
+    inputDigest: result.inputDigest,
+    episodeDigest: result.episodeDigest,
+    calls: result.calls,
+    repairs: result.repairs,
+  }));
+}
+
+function failureRepairProfile(recordResults, error) {
+  const profile = summarizePassARepairProfile(recordResults);
+  const repairs = Array.isArray(error?.repairEvidence) ? error.repairEvidence : [];
+  const repairsByGate = { ...profile.recordRepairsByGate };
+  for (const repair of repairs) {
+    repairsByGate[repair.failedGate] = (repairsByGate[repair.failedGate] ?? 0) + 1;
+  }
+  return {
+    ...profile,
+    recordsGenerated: profile.recordsGenerated + (Array.isArray(error?.calls) ? error.calls.length : 0),
+    recordRepairs: profile.recordRepairs + repairs.length,
+    recordRepairsByGate: repairsByGate,
+    recordRepairExhaustions: error?.gate === "record_repair_exhausted" ? 1 : 0,
+  };
+}
+
+export function buildSliceCFailureEvidence({
+  provider,
+  model,
+  seed,
+  worldSpec,
+  offeredStructures,
+  events,
+  episodes,
+  recordResults,
+  failedEpisodeOrdinal,
+  error,
+}) {
+  return {
+    evidenceVersion: EVIDENCE_VERSION,
+    status: "failed",
+    generatedAt: new Date().toISOString(),
+    developmentOnly: true,
+    burnedForFinalCohort: true,
+    seed,
+    generator: generatorEvidence({ provider, model, events }),
+    eventStructurePool: poolEvidence(offeredStructures),
+    worldSpec: structuredClone(worldSpec),
+    subject: structuredClone(SLICE_C_DEV_SUBJECT),
+    developmentalWindow: structuredClone(SLICE_C_DEV_WINDOW),
+    episodes: structuredClone(episodes),
+    recordEvidence: successfulRecordEvidence(recordResults),
+    failure: {
+      failedEpisodeOrdinal,
+      code: error?.code ?? null,
+      gate: error?.gate ?? null,
+      message: error?.message ?? String(error),
+      causeGate: error?.cause?.gate ?? null,
+      rejectedRecord: error?.record === null || error?.record === undefined ? null : structuredClone(error.record),
+      calls: Array.isArray(error?.calls) ? structuredClone(error.calls) : [],
+      repairs: Array.isArray(error?.repairEvidence) ? structuredClone(error.repairEvidence) : [],
+    },
+    funnel: passAFunnelMetrics(episodes, offeredStructures),
+    rejectionRepairProfile: failureRepairProfile(recordResults, error),
+    memoryRecords: [],
+    meaningRecords: [],
+  };
+}
+
 export async function runSliceCPassADevelopment({
   provider,
   model,
@@ -143,14 +231,31 @@ export async function runSliceCPassADevelopment({
     const ordinal = index + 1;
     if (typeof onProgress === "function") onProgress({ type: "episode_start", ordinal, total: episodeCount });
     const startedAt = Date.now();
-    const result = await generatePassAEpisode({
-      adapter,
-      input,
-      clientRequestId: `slice-c-dev:${seed}:episode:${String(ordinal).padStart(2, "0")}`,
-      onRecordRepair: (repair) => {
-        if (typeof onProgress === "function") onProgress({ type: "record_repair", ordinal, total: episodeCount, repair });
-      },
-    });
+    let result;
+    try {
+      result = await generatePassAEpisode({
+        adapter,
+        input,
+        clientRequestId: `slice-c-dev:${seed}:episode:${String(ordinal).padStart(2, "0")}`,
+        onRecordRepair: (repair) => {
+          if (typeof onProgress === "function") onProgress({ type: "record_repair", ordinal, total: episodeCount, repair });
+        },
+      });
+    } catch (error) {
+      error.sliceCDevelopmentEvidence = buildSliceCFailureEvidence({
+        provider,
+        model,
+        seed,
+        worldSpec,
+        offeredStructures,
+        events,
+        episodes,
+        recordResults,
+        failedEpisodeOrdinal: ordinal,
+        error,
+      });
+      throw error;
+    }
     episodes.push(result.episode);
     previouslyIntroducedParticipants.push(...result.episode.introducedParticipants);
     recordResults.push(result);
@@ -167,34 +272,19 @@ export async function runSliceCPassADevelopment({
   }
 
   return {
-    evidenceVersion: "pr39-slice-c-pass-a-development-v1",
+    evidenceVersion: EVIDENCE_VERSION,
+    status: "complete",
     generatedAt: new Date().toISOString(),
     developmentOnly: true,
     burnedForFinalCohort: true,
     seed,
-    generator: {
-      provider,
-      model,
-      promptHash: passAPromptHash(),
-      repairPromptHash: passARepairPromptHash(),
-      schemaHash: passASchemaHash(),
-      modelEvents: events,
-    },
-    eventStructurePool: {
-      version: "genesis-event-structure-pool-v1",
-      digest: GENESIS_EVENT_STRUCTURE_POOL_V1_DIGEST,
-      offeredStructureIds: offeredStructures.map(({ structureId }) => structureId),
-    },
+    generator: generatorEvidence({ provider, model, events }),
+    eventStructurePool: poolEvidence(offeredStructures),
     worldSpec: structuredClone(worldSpec),
     subject: structuredClone(SLICE_C_DEV_SUBJECT),
     developmentalWindow: structuredClone(SLICE_C_DEV_WINDOW),
     episodes,
-    recordEvidence: recordResults.map((result) => ({
-      inputDigest: result.inputDigest,
-      episodeDigest: result.episodeDigest,
-      calls: result.calls,
-      repairs: result.repairs,
-    })),
+    recordEvidence: successfulRecordEvidence(recordResults),
     funnel: passAFunnelMetrics(episodes, offeredStructures),
     rejectionRepairProfile: summarizePassARepairProfile(recordResults),
     memoryRecords: [],
@@ -224,26 +314,44 @@ async function main() {
   process.stderr.write(`World: ${worldFile ?? `${SLICE_C_DEV_WORLD.worldSpecId} (built-in, burned)`}\n`);
 
   const startedAt = Date.now();
-  const result = await runSliceCPassADevelopment({
-    provider,
-    model,
-    episodeCount,
-    seed,
-    worldSpec: loadWorld(worldFile),
-    onProgress(event) {
-      if (event.type === "episode_start") {
-        process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] generating ...\n`);
-      } else if (event.type === "record_repair") {
-        process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] record repair ${event.repair.repairOrdinal} · ${event.repair.failedGate}\n`);
-      } else if (event.type === "episode_complete") {
-        const grounding = event.episode.structureRef === null ? "world-emergent" : event.episode.structureRef;
-        process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] ✓ ${event.elapsedMs} ms · ${grounding} · repairs ${event.repairs}\n`);
-      } else if (event.type === "operational_failure") {
-        const failure = event.event.failure ?? {};
-        process.stderr.write(`MODEL ${failure.code ?? "ERROR"}: ${failure.message ?? "operational failure"}\n`);
+  let result;
+  try {
+    result = await runSliceCPassADevelopment({
+      provider,
+      model,
+      episodeCount,
+      seed,
+      worldSpec: loadWorld(worldFile),
+      onProgress(event) {
+        if (event.type === "episode_start") {
+          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] generating ...\n`);
+        } else if (event.type === "record_repair") {
+          const bytes = event.repair.failedConstraint?.rejectedObservableActionUtf8Bytes;
+          const detail = Number.isSafeInteger(bytes) ? ` · ${bytes} bytes` : "";
+          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] record repair ${event.repair.repairOrdinal} · ${event.repair.failedGate}${detail}\n`);
+        } else if (event.type === "episode_complete") {
+          const grounding = event.episode.structureRef === null ? "world-emergent" : event.episode.structureRef;
+          process.stderr.write(`[episode ${String(event.ordinal).padStart(2, "0")}/${event.total}] ✓ ${event.elapsedMs} ms · ${grounding} · repairs ${event.repairs}\n`);
+        } else if (event.type === "operational_failure") {
+          const failure = event.event.failure ?? {};
+          process.stderr.write(`MODEL ${failure.code ?? "ERROR"}: ${failure.message ?? "operational failure"}\n`);
+        }
+      },
+    });
+  } catch (error) {
+    const evidence = error?.sliceCDevelopmentEvidence ?? null;
+    if (evidence !== null) {
+      const text = `${JSON.stringify(evidence, null, 2)}\n`;
+      if (outputPath !== null) {
+        writeFileSync(outputPath, text, "utf8");
+        process.stderr.write(`Failure artifact: ${outputPath}\n`);
+      } else {
+        process.stdout.write(text);
       }
-    },
-  });
+    }
+    throw error;
+  }
+
   const text = `${JSON.stringify(result, null, 2)}\n`;
   if (outputPath !== null) writeFileSync(outputPath, text, "utf8");
   else process.stdout.write(text);
