@@ -53,8 +53,21 @@ function googleSchema(value) {
   const result = {};
   for (const [key, item] of Object.entries(value)) {
     if (key === "minLength" || key === "maxLength" || key === "additionalProperties") continue;
-    if (key === "type" && typeof item === "string") result[key] = item.toUpperCase();
-    else result[key] = googleSchema(item);
+    if (key === "type" && typeof item === "string") {
+      result[key] = item.toUpperCase();
+      continue;
+    }
+    if (key === "type" && Array.isArray(item)) {
+      const nonNull = item.filter((type) => type !== "null");
+      const hasNull = item.includes("null");
+      if (!hasNull || nonNull.length !== 1 || typeof nonNull[0] !== "string") {
+        throw new TypeError("Google generateContent schema translation supports nullable unions only");
+      }
+      result.type = nonNull[0].toUpperCase();
+      result.nullable = true;
+      continue;
+    }
+    result[key] = googleSchema(item);
   }
   return result;
 }

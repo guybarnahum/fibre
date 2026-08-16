@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 19,
+  "version": 20,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -27,6 +27,7 @@
         "docs/validation/m2-pr39-genesis-quality-constraints.md",
         "docs/validation/whole-person-prefreeze-characterization.md",
         "docs/validation/symbolic-thread-genome-implementation-plan.md",
+        "docs/validation/m2-pr39-slice-b-genome-control-result.md",
         "docs/architecture/m2-identity-embodiment-contract.md",
         "docs/architecture/m2-character-formation-model.md",
         "docs/architecture/m2-interior-exterior-situated-identity.md",
