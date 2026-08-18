@@ -141,8 +141,12 @@ test("cap selection is invariant to candidate input order and uses chronology th
   const forward = scheduleReinterpretationOpportunities(source);
   const reverse = scheduleReinterpretationOpportunities([...source].reverse());
   const runIds = (items) => items.filter((item) => item.run).map((item) => item.opportunityId).sort();
+  const runEpisodeRefs = (items) => items.filter((item) => item.run).map((item) => item.trigger.episodeRef);
   assert.deepEqual(runIds(forward), runIds(reverse));
-  assert.equal(forward.find((item) => item.trigger.episodeRef === "ep_z").skippedByCap, true);
+  assert.deepEqual(runEpisodeRefs(forward), ["ep_a", "ep_z", "ep_b"]);
+  assert.deepEqual(runEpisodeRefs(reverse), ["ep_a", "ep_z", "ep_b"]);
+  assert.equal(forward.find((item) => item.trigger.episodeRef === "ep_c").skippedByCap, true);
+  assert.equal(reverse.find((item) => item.trigger.episodeRef === "ep_c").skippedByCap, true);
 });
 
 test("duplicate opportunities are rejected rather than consuming the cap twice", () => {
