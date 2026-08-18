@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr39-slice-bc-blocking-review
 status: draft
-last-reviewed: 2026-08-16
+last-reviewed: 2026-08-18
 canonical: false
 ---
 
@@ -20,9 +20,9 @@ or
 HOLD
 ```
 
-Do not score aesthetic quality. Attack whether the implementation preserves the scientific boundary claimed by Slices B and C, and whether the development evidence exposes rather than gates generator tendencies.
+Do not score aesthetic quality. Attack whether the implementation preserves the scientific boundary claimed by Slices B and C, whether Slice-A publication obligations required by C actually landed, and whether the development evidence exposes rather than gates generator tendencies.
 
-## Implementation under review
+## Implementation and review heads
 
 Slice-C implementation code head:
 
@@ -31,9 +31,57 @@ abd6b3b037e2246021f20e6132942e3a34eb4d62
 Tighten Slice C cognition affordance boundary
 ```
 
-The review-packet commit is documentation-only and follows that implementation head.
+Documentation/review clarification baseline before this packet refresh:
 
-At the implementation head, the GitHub `validate` workflow completed successfully with `npm run check` green.
+```text
+19f1e8aa5a942d94e922b2f15846f333e3a5b278
+Close conditions documentation residuals
+```
+
+A GitHub compare from `abd6b3b...` through `19f1e8aa...` shows **documentation changes only**: no source, test, schema, tool, or runtime implementation files changed after the Slice-C implementation head. The packet refresh commit itself is also documentation-only.
+
+Review the implementation behavior at `abd6b3b...` against the **current governing #39 contracts** at the review branch head. If a later clarification exposes an implementation gap, that is a legitimate `HOLD`; do not grandfather code merely because the clarification was written later.
+
+At the implementation head, the GitHub `validate` workflow completed successfully with `npm run check` green. Later documentation-only commits do not constitute new implementation evidence.
+
+## Post-implementation developmental/conditions clarification
+
+The later childhood/conditions review did **not** reopen Slice C or authorize motivational machinery inside Genesis. Its surviving #39 boundary is negative and narrow:
+
+```text
+Pass A
+  genome blind
+  mechanical-condition blind
+  no Fibre-computed semantic needs
+
+Pass B
+  no mechanical-condition values
+  no condition-derived salience/ranking/preselection
+  no Fibre-computed semantic needs
+
+Pass C
+  genome blind
+  mechanical-condition blind
+  no Fibre-computed semantic needs
+```
+
+The childhood insight retained for #39 is about **reachable experience** rather than a normative developmental ladder: early life is more caregiver/institution mediated; later life may become increasingly self-directed. Conversation is legitimate observable history. Richer developmental ranges and conversational/social affordances belong to Slice E / EventStructurePool v2 before G freeze, not to a semantic Gate-C quota.
+
+The future conditions/endogenous-motivation experiment is explicitly post-#39 and roadmap-anchored to #42. It must not be used to justify any hidden condition, need, salience, or drive input in Pass A/B/C.
+
+This philosophical clarification is **not** the B+C blocking verdict. This packet requests that verdict now.
+
+## Slice-A carry obligation that C must close
+
+The accepted Slice-A review resolution left one explicit publication obligation for the first Slice-C persistence work:
+
+> An admitted Pass-A historical episode must become canonical Thread history through the existing event/replay authority; it cannot remain only candidate Genesis state, a seed snapshot, or a private Genesis table.
+
+The intended contract was equivalent to a bounded `THREAD_LIFE_EPISODE_RECORDED` life event with stable episode identity/chronology, replay/version/state-hash semantics, and atomic birth publishing seed + admitted episodes. The exact current executable event name may be reviewed from code, but **enum-only support is insufficient**: payload, replay, publication, and resulting first-live version must all be real.
+
+The reviewer must verify this directly. A repository search at packet preparation found no exact `THREAD_LIFE_EPISODE_RECORDED` / `LIFE_EPISODE` symbol, so do not assume the carry obligation landed merely because Pass-A generation exists. If it is implemented under a different current event name/shape, identify the exact files/functions and prove equivalence. If admitted Pass-A episodes still cannot become canonical `thread_events` with replay/version semantics, return `HOLD`.
+
+This matters immediately for Slice D because #38 autobiographical memory requires same-Thread event references and subject-period grounding. Slice D must not be built on non-authoritative Genesis-only history.
 
 ## Slice B claim
 
@@ -54,11 +102,13 @@ Gemini generator / OpenAI blind rater   19/24  p=0.003305375576019287
 
 The cross-provider result satisfies the predeclared `17-19/24` detectable-moderate ceiling. This is an instrument ceiling only, not personhood evidence, causal standing, or an admission gate.
 
+The later conditions review additionally clarified that Fibre must not create a second immutable numeric drive/personality genome. If inherited runtime modulation is ever earned later, numeric controls must be derived from ordinary textual loci under a frozen policy; that future possibility is not part of Slice B or C.
+
 ## Slice C claim
 
 > A particular life can happen before Fibre knows what personality or future decision it is supposed to produce.
 
-Pass A sees world/chronology/factual people/current EventStructure affordances. It does **not** see genome, parent/ancestor loci, remembered meaning, future role/benchmark/request, source-instance identity, prior EventStructure provenance, or consequence-class policy labels.
+Pass A sees world/chronology/factual people/current EventStructure affordances. It does **not** see genome, parent/ancestor loci, remembered meaning, future role/benchmark/request, source-instance identity, prior EventStructure provenance, consequence-class policy labels, mechanical conditions, or Fibre-computed semantic needs.
 
 Output remains observable history only. There is no meaning/significance/trait/impact/inner-state/future-policy field.
 
@@ -180,7 +230,7 @@ Result:
 Grounded structures:
 
 ```text
-ges_small_help_request                 3
+ges_small_help_request                  3
 ges_familiar_person_temporarily_absent 2   # moderate
 ges_routine_plan_shift                 1
 ```
@@ -213,9 +263,13 @@ The implementation currently does **not** reject, rewrite, rebalance, or quota t
 
 Reviewer should decide whether this remaining pattern is merely a visible generator finding, or whether some still-hidden authoring mechanism means the pool/world/compiler is actually constructing a predetermined character.
 
+The later developmental review should not be used to demand a normative child-to-adult arc or a quota of conflict/agency. Its only current relevance is that caregiver-controlled access and conversation are legitimate historical affordances, and Slice E should eventually broaden them.
+
 ## Claimed
 
+- Slice B supplies a textual-genome specificity ceiling without making inherited meaning a finished character.
 - Pass A is genome-blind.
+- Pass A is mechanical-condition/need-blind.
 - Pass A has no future adult/benchmark/request target.
 - Pass A history is chronologically sparse across the development span in the development harness.
 - history is observable-event shaped rather than explicit meaning/personality shaped;
@@ -232,14 +286,17 @@ Reviewer should decide whether this remaining pattern is merely a visible genera
 - that every life must contain conflict, error, adversity, or rebellion;
 - that the remaining helper/responsibility attractor is solved;
 - that genome affects history, memory, or meaning;
+- that mechanical conditions/endogenous motivation exist in #39;
+- that richer developmental-range/conversation EventStructurePool v2 has landed yet;
 - that the final five-Thread cohort is frozen;
-- Whole-Person causal standing or M2 movement.
+- Whole-Person causal standing or M2 movement;
+- Gate-C clearance merely because the later philosophical review found no conceptual reason to reopen C.
 
 ## Hostile review request
 
 Please attack at least these questions:
 
-1. Can any genome, inherited personality, future-role, benchmark, source-instance, or remembered-meaning information reach Pass A directly or indirectly?
+1. Can any genome, inherited personality, future-role, benchmark, source-instance, remembered-meaning, mechanical-condition, or Fibre-computed-need information reach Pass A directly or indirectly?
 2. Does hiding prior `structureRef` from cognition preserve factual continuity while avoiding stale structure-ID priming?
 3. Is removing `consequenceClass` / developmental-range metadata from cognition consistent with the contract's requirement that Fibre sample the offer distribution, rather than making those labels part of the creative stimulus?
 4. Can Pass A cite an unoffered current structure through any path that bypasses `pass_a_structure_ref` validation?
@@ -249,18 +306,25 @@ Please attack at least these questions:
 8. Are world-emergent episodes genuinely permitted without a ratio floor/target?
 9. Is any development world or artifact capable of leaking into the later final cohort despite the burned-world rule?
 10. Does Slice B still provide a meaningful textual-genome specificity ceiling without becoming a finished-character authority that contaminates Slice C?
+11. Did Slice C actually close the Slice-A publication carry obligation: can each admitted Pass-A episode become canonical same-Thread history with bounded payload, replay/version/state-hash semantics, atomic birth, and a resulting first-live version? Identify exact code/tests. If not, `HOLD`.
+12. Would current #38 autobiographical memory be able to cite those published episodes as real same-Thread `eventRefs` with `subjectPeriod` grounding, rather than relying on `THREAD_SEEDED` or Genesis-private state?
+13. Do the current governing docs' explicit condition/need exclusions reveal any implementation input that was previously treated as merely factual context but would now violate the boundary?
+14. Does the later childhood-access clarification accidentally impose a hidden developmental screenplay on current C? It should not; if code does so, identify it.
 
 ### False CLEAR examples
 
 Return `HOLD` if, among other things, you find:
 
-- hidden genome/future/source-person information reaches Pass A;
+- hidden genome/future/source-person/condition/need information reaches Pass A;
 - consequence/policy labels still reach creative cognition through another field;
 - prior structure provenance still primes or constrains current affordance selection;
 - a stale/unoffered structure can be admitted;
 - chronology scheduling selects for a desired personality or quality result rather than time coverage;
 - repair can materially change the event;
 - the development evidence was curated by rejecting quiet, repetitive, cooperative, or otherwise uninteresting lives;
-- the helper/responsibility pattern is mechanically authored by hidden policy rather than merely observed in admitted output.
+- the helper/responsibility pattern is mechanically authored by hidden policy rather than merely observed in admitted output;
+- admitted Pass-A episodes cannot be published as authoritative, replayable Thread life events at atomic birth;
+- future Slice-D memory would have to cite seed bookkeeping or Genesis-private candidate records instead of canonical Thread history;
+- any hidden mechanical condition or Fibre-computed semantic need is present in Genesis cognition.
 
-If no blocking defect is found, return `CLEAR` and identify residual risks that should be carried into Slice G/H rather than converted into Slice-C gates.
+If no blocking defect is found, return `CLEAR` and identify residual risks that should be carried into Slice E/G/H or post-#39 work rather than converted into Slice-C gates.
