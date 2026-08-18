@@ -144,6 +144,14 @@ function chronologyStableOrder(left, right) {
 export function scheduleReinterpretationOpportunities(candidates) {
   if (!Array.isArray(candidates)) throw new TypeError("reinterpretation candidates must be an array");
   const evaluated = candidates.map(evaluateReinterpretationOpportunity);
+  const opportunityIds = new Set();
+  for (const opportunity of evaluated) {
+    if (opportunityIds.has(opportunity.opportunityId)) {
+      throw new TypeError(`duplicate reinterpretation opportunity ${opportunity.opportunityId}`);
+    }
+    opportunityIds.add(opportunity.opportunityId);
+  }
+
   const byThread = new Map();
   for (const opportunity of evaluated) {
     const items = byThread.get(opportunity.threadId) ?? [];
@@ -197,4 +205,31 @@ export function summarizeReinterpretationSchedule(decisions) {
     skippedByCap: decisions.filter((item) => item.skippedByCap).length,
     ineligible: decisions.filter((item) => !item.eligible).length,
   });
+}
+
+export function reinterpretationAccountingByThread(decisions) {
+  if (!Array.isArray(decisions)) throw new TypeError("reinterpretation schedule must be an array");
+  const byThread = new Map();
+  for (const decision of decisions) {
+    assertId("reinterpretation accounting threadId", decision.threadId);
+    const items = byThread.get(decision.threadId) ?? [];
+    items.push(decision);
+    byThread.set(decision.threadId, items);
+  }
+  return Object.freeze([...byThread.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([threadId, items]) => {
+      const eligible = items.filter((item) => item.eligible).sort(chronologyStableOrder);
+      const run = eligible.filter((item) => item.run);
+      const skipped = eligible.filter((item) => item.skippedByCap);
+      return Object.freeze({
+        threadId,
+        reinterpretationEligibleCount: eligible.length,
+        reinterpretationRunCount: run.length,
+        reinterpretationSkippedByCapCount: skipped.length,
+        eligibleOpportunityRefs: Object.freeze(eligible.map((item) => item.opportunityId)),
+        runOpportunityRefs: Object.freeze(run.map((item) => item.opportunityId)),
+        skippedByCapOpportunityRefs: Object.freeze(skipped.map((item) => item.opportunityId)),
+      });
+    }));
 }
