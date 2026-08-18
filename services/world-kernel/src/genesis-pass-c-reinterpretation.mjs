@@ -9,8 +9,10 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import {
+  GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,
   PASS_C_REINTERPRETATION_RELATIONS,
+  normalizePassCInput,
 } from "./genesis-pass-c-domain.mjs";
 
 const RELATION_PRECEDENCE = Object.freeze([...PASS_C_REINTERPRETATION_RELATIONS]);
@@ -193,6 +195,24 @@ export function passCTriggerFromScheduledOpportunity(candidate) {
     occurredAt: candidate.trigger.occurredAt,
     observableAction: candidate.trigger.observableAction,
     relation: candidate.relation,
+  });
+}
+
+export function buildScheduledReinterpretationPassCInput({
+  scheduledOpportunity,
+  targetMemory,
+  priorMeaning,
+  formation,
+}) {
+  const trigger = passCTriggerFromScheduledOpportunity(scheduledOpportunity);
+  return normalizePassCInput({
+    inputVersion: GENESIS_PASS_C_INPUT_VERSION,
+    mode: "reinterpretation",
+    targetMemory,
+    formation,
+    priorMeaning,
+    trigger,
+    policyWitness: { policyVersion: GENESIS_PASS_C_POLICY.version },
   });
 }
 
