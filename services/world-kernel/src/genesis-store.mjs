@@ -29,6 +29,14 @@ import {
   normalizePublishedGenesisEpisode,
 } from "./genesis-life-episode.mjs";
 import {
+  AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
+  normalizeAutobiographicalMemory,
+} from "./autobiographical-memory-domain.mjs";
+import {
+  appendAutobiographicalMemoryRevisionInTransaction,
+  assertAutobiographicalMemoryRevisionCompatibility,
+} from "./autobiographical-memory-persistence.mjs";
+import {
   genesisRecordDigest,
   normalizeGenerationAttempt,
   normalizeGenesisManifest,
@@ -87,6 +95,51 @@ function normalizeBirthEpisodes(candidates, manifest) {
       throw new GenesisConflictError("published Genesis episodes must advance lived chronology");
     }
     previousOccurredAt = episode.occurredAt;
+  }
+  return normalized;
+}
+
+function normalizeBirthMemories(candidates, { manifest, threadId, lifeEventIds }) {
+  if (!Array.isArray(candidates)) throw new TypeError("publishBirth memories must be an array");
+  const normalized = candidates.map((candidate) => normalizeAutobiographicalMemory(candidate));
+  const revisionKeys = new Set();
+  for (const record of normalized) {
+    if (record.recordFormat !== AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) {
+      throw new GenesisConflictError("Genesis birth may publish only explicit autobiographical_memory_v2 records");
+    }
+    if (record.threadId !== threadId) throw new GenesisConflictError("Genesis memory belongs to another Thread");
+    if (record.authorship.kind !== "fibre_genesis_authored") {
+      throw new GenesisConflictError("Genesis birth memory must use fibre_genesis_authored authorship");
+    }
+    if (record.recordedAt !== manifest.publication.publishedAt) {
+      throw new GenesisConflictError("Genesis memory recordedAt must equal birth publication time");
+    }
+    if (Date.parse(record.asOf) > Date.parse(manifest.entry.chronologyEndsAt)) {
+      throw new GenesisConflictError(`Genesis memory ${record.memoryId} asOf exceeds chronologyEndsAt`);
+    }
+    for (const ref of record.eventRefs) {
+      if (!lifeEventIds.has(ref)) {
+        throw new GenesisConflictError(
+          `Genesis memory ${record.memoryId} subject event ${ref} is not an admitted Pass-A life event`,
+        );
+      }
+    }
+    const revisionKey = `${record.memoryId}:${record.revision}`;
+    if (revisionKeys.has(revisionKey)) throw new GenesisConflictError(`duplicate Genesis memory revision ${revisionKey}`);
+    revisionKeys.add(revisionKey);
+  }
+
+  normalized.sort((left, right) =>
+    left.memoryId.localeCompare(right.memoryId) || left.revision - right.revision);
+  const previousByMemory = new Map();
+  for (const record of normalized) {
+    const previous = previousByMemory.get(record.memoryId) ?? null;
+    if (previous === null) {
+      if (record.revision !== 1) throw new GenesisConflictError(`Genesis memory ${record.memoryId} must begin at revision 1`);
+    } else {
+      assertAutobiographicalMemoryRevisionCompatibility(previous, record, GenesisConflictError);
+    }
+    previousByMemory.set(record.memoryId, record);
   }
   return normalized;
 }
@@ -268,8 +321,13 @@ export class GenesisStore {
   }
 
   publishBirth(
-    { manifest: manifestCandidate, thread: threadCandidate, episodes: episodeCandidates = [] },
-    { failAfterSeedForTest = false } = {},
+    {
+      manifest: manifestCandidate,
+      thread: threadCandidate,
+      episodes: episodeCandidates = [],
+      memories: memoryCandidates = [],
+    },
+    { failAfterSeedForTest = false, failAfterFirstMemoryForTest = false } = {},
   ) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot publish birth");
     const manifest = normalizeGenesisManifest(manifestCandidate);
@@ -281,12 +339,6 @@ export class GenesisStore {
     const normalizedEpisodes = normalizeBirthEpisodes(episodeCandidates, manifest);
     if (manifest.threadId !== seedSnapshot.threadId) throw new GenesisConflictError("manifest/thread identity mismatch");
 
-    const derivedFirstLiveVersion = seedSnapshot.version + normalizedEpisodes.length;
-    if (manifest.publication.resultingThreadVersion !== derivedFirstLiveVersion) {
-      throw new GenesisConflictError(
-        `manifest first-live version ${manifest.publication.resultingThreadVersion} does not match derived event-chain version ${derivedFirstLiveVersion}`,
-      );
-    }
     this.getWorldSpec(manifest.worldSpecRef);
     assertCurrentPublicationValidators(manifest);
     if (this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(seedSnapshot.threadId) !== undefined) {
@@ -352,13 +404,22 @@ export class GenesisStore {
       return { event, payloadJson: canonicalJson(payload), provenanceJson: canonicalJson(provenance) };
     });
 
-    validateThreadSnapshot(publishedThread);
-    if (publishedThread.version !== derivedFirstLiveVersion) {
-      throw new IntegrityError("derived Genesis Thread version disagrees with episode chain");
+    const lifeEventIds = new Set(publishedEpisodes.map(({ event }) => event.eventId));
+    const normalizedMemories = normalizeBirthMemories(memoryCandidates, {
+      manifest,
+      threadId: seedSnapshot.threadId,
+      lifeEventIds,
+    });
+    const derivedFirstLiveVersion = seedSnapshot.version + publishedEpisodes.length + normalizedMemories.length;
+    if (manifest.publication.resultingThreadVersion !== derivedFirstLiveVersion) {
+      throw new GenesisConflictError(
+        `manifest first-live version ${manifest.publication.resultingThreadVersion} does not match derived event-chain version ${derivedFirstLiveVersion}`,
+      );
     }
 
-    const finalStateJson = canonicalJson(publishedThread);
-    const finalStateHash = threadStateHash(publishedThread);
+    validateThreadSnapshot(publishedThread);
+    const episodeStateJson = canonicalJson(publishedThread);
+    const episodeStateHash = threadStateHash(publishedThread);
 
     try {
       this.#database.exec("BEGIN IMMEDIATE");
@@ -370,8 +431,8 @@ export class GenesisStore {
         publishedThread.threadId,
         publishedThread.version,
         publishedThread.status,
-        finalStateJson,
-        finalStateHash,
+        episodeStateJson,
+        episodeStateHash,
         publishedThread.provenance.lastEventId,
         seedSnapshot.provenance.createdAt,
         publishedAt,
@@ -395,8 +456,8 @@ export class GenesisStore {
         seedProvenanceJson,
       );
 
-      // The exact live #37/#38 validators/triggers remain authority. Slice A intentionally
-      // exercises them inside the same publication transaction rather than copying them.
+      // The exact live #37/#38 validators/triggers remain authority. Genesis exercises them
+      // inside the same publication transaction rather than creating parallel birth stores.
       persistLegacySeedIdentity(this.#database, seedSnapshot, { sourceEventId: seedEventId });
       for (const memoryRef of seedSnapshot.memoryRefs) {
         ensureMemoryVisualCompanion(this.#database, {
@@ -432,6 +493,27 @@ export class GenesisStore {
         );
       }
 
+      const memoryHeadById = new Map();
+      for (let index = 0; index < normalizedMemories.length; index += 1) {
+        const record = normalizedMemories[index];
+        const previous = memoryHeadById.get(record.memoryId) ?? null;
+        const appended = appendAutobiographicalMemoryRevisionInTransaction(this.#database, record, {
+          previousRecord: previous?.record ?? null,
+          previousDigest: previous?.recordDigest ?? null,
+          ConflictErrorType: GenesisConflictError,
+          createdFrom: "genesis_birth",
+        });
+        publishedThread = appended.thread;
+        memoryHeadById.set(record.memoryId, appended);
+        if (failAfterFirstMemoryForTest && index === 0) {
+          throw new GenesisConflictError("simulated Slice-D memory publication failure");
+        }
+      }
+
+      validateThreadSnapshot(publishedThread);
+      if (publishedThread.version !== derivedFirstLiveVersion) {
+        throw new IntegrityError("derived Genesis Thread version disagrees with complete birth event chain");
+      }
       const manifestDigest = this.#insertManifest(manifest);
       this.#database.exec("COMMIT");
       return {
