@@ -10,6 +10,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { autobiographicalMeaningPartId } from "./autobiographical-memory-domain.mjs";
+import { autobiographicalMeaningId } from "./autobiographical-meaning-identity.mjs";
 
 export const GENESIS_PASS_C_INPUT_VERSION = "genesis-pass-c-input-v1";
 export const GENESIS_PASS_C_POLICY = Object.freeze({
@@ -63,6 +64,10 @@ function normalizeHistoricalMeaningText(value, path) {
   // Prior durable state was already admitted by its writer. Re-check shape, not today's form policy.
   assertNonEmpty(path, value);
   return value;
+}
+
+export function genesisMeaningId(memoryRef) {
+  return autobiographicalMeaningId(memoryRef);
 }
 
 export function genesisMeaningPartId({ memoryRef, ordinal }) {
@@ -178,7 +183,7 @@ function normalizeMeaningPayload(candidate, memoryRef) {
     meaningPartId: genesisMeaningPartId({ memoryRef, ordinal: index + 1 }),
     meaning: part.meaning,
   }));
-  return { summary, parts };
+  return { meaningId: genesisMeaningId(memoryRef), summary, parts };
 }
 
 export function normalizeInitialPassCModelOutput(candidate, inputCandidate) {
@@ -190,7 +195,7 @@ export function normalizeInitialPassCModelOutput(candidate, inputCandidate) {
   if (candidate.outcome === "no_durable_meaning") {
     if (candidate.summary !== null) throw new TypeError("no_durable_meaning must use summary=null");
     if (!Array.isArray(candidate.parts) || candidate.parts.length !== 0) throw new TypeError("no_durable_meaning must use parts=[]");
-    return Object.freeze({ outcome: candidate.outcome, summary: null, parts: [] });
+    return Object.freeze({ outcome: candidate.outcome, meaningId: null, summary: null, parts: [] });
   }
   return Object.freeze({ outcome: candidate.outcome, ...normalizeMeaningPayload(candidate, input.targetMemory.memoryRef) });
 }
@@ -201,10 +206,11 @@ export function normalizeReinterpretationPassCModelOutput(candidate, inputCandid
   assertPlainObject("Pass-C model output", candidate);
   assertExactKeys("Pass-C model output", candidate, ["outcome", "summary", "parts"]);
   if (!["revised", "unchanged", "none"].includes(candidate.outcome)) throw new TypeError("Pass-C reinterpretation outcome is invalid");
+  const meaningId = genesisMeaningId(input.targetMemory.memoryRef);
   if (candidate.outcome !== "revised") {
     if (candidate.summary !== null) throw new TypeError(`${candidate.outcome} reinterpretation must use summary=null`);
     if (!Array.isArray(candidate.parts) || candidate.parts.length !== 0) throw new TypeError(`${candidate.outcome} reinterpretation must use parts=[]`);
-    return Object.freeze({ outcome: candidate.outcome, summary: null, parts: [] });
+    return Object.freeze({ outcome: candidate.outcome, meaningId, summary: null, parts: [] });
   }
   return Object.freeze({ outcome: candidate.outcome, ...normalizeMeaningPayload(candidate, input.targetMemory.memoryRef) });
 }
