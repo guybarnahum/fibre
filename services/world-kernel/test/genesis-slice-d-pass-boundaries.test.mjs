@@ -421,13 +421,15 @@ test("Pass C assigns meaning-part IDs itself; cognition cannot author citation i
 
 test("no_durable_meaning is legal and does not erase the remembered content that reached Pass C", () => {
   const input = initialPassCInput();
+  const rememberedContent = input.targetMemory.rememberedContent;
+  const normalizedInput = normalizePassCInput(input);
   const result = normalizeInitialPassCModelOutput({
     outcome: "no_durable_meaning",
     summary: null,
     parts: [],
   }, input);
   assert.deepEqual(result, { outcome: "no_durable_meaning", summary: null, parts: [] });
-  assert.match(input.targetMemory.rememberedContent, /near-empty room/);
+  assert.equal(normalizedInput.targetMemory.rememberedContent, rememberedContent);
 });
 
 test("Pass C rejects explicit universal future policy while leaving ordinary ambivalent meaning legal", () => {
