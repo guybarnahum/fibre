@@ -189,6 +189,10 @@ test("Pass C and the memory ledger derive exactly the same MeaningPart identity"
     genesisMeaningPartId({ memoryRef: memoryId, ordinal: 3 }),
     autobiographicalMeaningPartId({ memoryId, ordinal: 3 }),
   );
+  assert.equal(
+    genesisMeaningPartId({ memoryRef: "mem_provisional_slice_d", ordinal: 1 }),
+    autobiographicalMeaningPartId({ memoryId: "mem_provisional_slice_d", ordinal: 1 }),
+  );
 });
 
 test("v2 digest binds remembered content and durable meaning independently", () => {
@@ -209,6 +213,22 @@ test("the existing #38 store persists and reopens v2 memory without a parallel G
     const first = genesisRecord(event);
     const writer = openAutobiographicalMemoryStore(databasePath);
     writer.recordMemory(first);
+
+    const {
+      recordFormat: ignoredFormat,
+      rememberedContent: ignoredContent,
+      meaningOutcome: ignoredOutcome,
+      meaningParts: ignoredParts,
+      ...legacyRevision
+    } = genesisRecord(event, 2, {
+      rememberedMeaning: "This attempts to reinterpret a v2 lineage as the legacy v1 record shape.",
+    });
+    assert.equal(typeof ignoredFormat, "string");
+    assert.equal(typeof ignoredContent, "string");
+    assert.equal(typeof ignoredOutcome, "string");
+    assert.ok(Array.isArray(ignoredParts));
+    assert.throws(() => writer.recordMemory(legacyRevision), /cannot change record format/);
+
     writer.recordMemory(genesisRecord(event, 2, durableMeaning(first.memoryId)));
     writer.close();
 
@@ -228,6 +248,10 @@ test("the existing #38 store persists and reopens v2 memory without a parallel G
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN ('genesis_memories','genesis_memory_records','genesis_meanings')
     `).all();
+    const visualCompanions = database.prepare(`
+      SELECT COUNT(*) AS count FROM memory_visual_companion_records WHERE memory_ref=?
+    `).get(first.memoryId);
     database.close();
     assert.deepEqual(parallelGenesisMemoryTables, []);
+    assert.equal(Number(visualCompanions.count), 1);
   }));
