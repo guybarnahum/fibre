@@ -54,6 +54,7 @@ function isSubjectEventSuperset(previous, current) {
   return previous.eventRefs.every((ref) => next.has(ref));
 }
 function sameSubject(previous, current) { return canonicalJson(previous.subject) === canonicalJson(current.subject); }
+function memoryRecordFormat(record) { return record.recordFormat ?? "autobiographical_memory_v1"; }
 
 export class AutobiographicalMemoryStore {
   #database;
@@ -191,6 +192,7 @@ export class AutobiographicalMemoryStore {
         if (record.supersedesRevision !== previous.revision) throw new IntegrityError(`memory ${memoryId} does not supersede its predecessor`);
         if (Date.parse(record.recordedAt) < Date.parse(previous.recordedAt)) throw new IntegrityError(`memory ${memoryId} recordedAt moves backwards`);
         if (record.threadId !== previous.threadId) throw new IntegrityError(`memory ${memoryId} changes Thread identity`);
+        if (memoryRecordFormat(record) !== memoryRecordFormat(previous)) throw new IntegrityError(`memory ${memoryId} changes record format within one lineage`);
         if (!sameSubject(previous, record)) throw new IntegrityError(`memory ${memoryId} changes its immutable subject`);
         if (!isSubjectEventSuperset(previous, record)) throw new IntegrityError(`memory ${memoryId} erases subject-history references`);
         if (!isEvidenceSuperset(previous, record)) throw new IntegrityError(`memory ${memoryId} erases previously cited evidence`);
@@ -240,6 +242,7 @@ export class AutobiographicalMemoryStore {
 
       const previous = history.at(-1) ?? null;
       if (previous !== null) {
+        if (memoryRecordFormat(record) !== memoryRecordFormat(previous)) throw new AutobiographicalMemoryConflictError("memory revision cannot change record format");
         if (!sameSubject(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot change its immutable subject");
         if (!isSubjectEventSuperset(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot erase or replace subject-history references");
         if (!isEvidenceSuperset(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot erase previously cited epistemic evidence");
@@ -301,7 +304,7 @@ export class AutobiographicalMemoryStore {
           recordedAt: record.recordedAt,
           eventId: record.subject.originEventRef,
           evidenceRefs: record.eventRefs.filter((reference) => reference !== record.subject.originEventRef),
-          memorySummary: record.rememberedMeaning,
+          memorySummary: record.rememberedMeaning ?? record.rememberedContent,
           createdFrom: "persisted_autobiographical_memory",
         });
       }
