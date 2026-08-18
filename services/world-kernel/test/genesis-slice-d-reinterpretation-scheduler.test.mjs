@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { GENESIS_PASS_C_POLICY, genesisMeaningId } from "../src/genesis-pass-c-domain.mjs";
 import {
+  GENESIS_PASS_C_POLICY,
+  genesisMeaningId,
+  genesisMeaningPartId,
+} from "../src/genesis-pass-c-domain.mjs";
+import {
+  buildScheduledReinterpretationPassCInput,
   evaluateReinterpretationOpportunity,
   passCTriggerFromScheduledOpportunity,
   reinterpretationAccountingByThread,
@@ -208,6 +213,52 @@ test("Pass C receives only the bounded trigger and typed relation, never schedul
   assert.equal(Object.hasOwn(trigger, "relationFacts"), false);
   assert.equal(Object.hasOwn(trigger, "minimumTriggerAt"), false);
   assert.throws(() => passCTriggerFromScheduledOpportunity({ ...scheduled, run: false, disposition: "skipped_by_cap" }), /scheduled run/);
+});
+
+test("the normal Pass-C reinterpretation constructor accepts only a scheduled run opportunity", () => {
+  const scheduled = scheduleReinterpretationOpportunities([
+    candidate({ episodeRef: "ep_run_1", occurredAt: "2015-01-01T00:00:00Z" }),
+    candidate({ episodeRef: "ep_run_2", occurredAt: "2016-01-01T00:00:00Z", memoryRef: "mem_d4_002" }),
+    candidate({ episodeRef: "ep_run_3", occurredAt: "2017-01-01T00:00:00Z", memoryRef: "mem_d4_003" }),
+    candidate({ episodeRef: "ep_skipped", occurredAt: "2018-01-01T00:00:00Z", memoryRef: "mem_d4_004" }),
+  ]);
+  const run = scheduled[0];
+  const input = buildScheduledReinterpretationPassCInput({
+    scheduledOpportunity: run,
+    targetMemory: {
+      memoryRef: run.memoryRef,
+      episodeRefs: ["ep_original_memory"],
+      rememberedContent: "I remember the earlier episode clearly enough to reconsider what it meant.",
+      uncertainty: ["Some details remain uncertain."],
+    },
+    priorMeaning: {
+      summary: "I had treated the earlier event as dependable private space for attention.",
+      parts: [{
+        meaningPartId: genesisMeaningPartId({ memoryRef: run.memoryRef, ordinal: 1 }),
+        meaning: "The earlier event had come to represent dependable private space.",
+      }],
+    },
+    formation: {
+      asOf: run.trigger.occurredAt,
+      ageAtFormation: 16,
+      chronologyIndex: 7,
+    },
+  });
+  assert.equal(input.mode, "reinterpretation");
+  assert.deepEqual(Object.keys(input.trigger).sort(), ["episodeRef", "observableAction", "occurredAt", "relation"]);
+  assert.equal(Object.hasOwn(input, "genome"), false);
+  assert.equal(Object.hasOwn(input.trigger, "relationFacts"), false);
+
+  const skipped = scheduled.find((item) => item.disposition === "skipped_by_cap");
+  assert.throws(
+    () => buildScheduledReinterpretationPassCInput({
+      scheduledOpportunity: skipped,
+      targetMemory: input.targetMemory,
+      priorMeaning: input.priorMeaning,
+      formation: input.formation,
+    }),
+    /scheduled run/,
+  );
 });
 
 test("meaning identity is stable for one memory and separate from meaning-part identity", () => {
