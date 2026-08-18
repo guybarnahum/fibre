@@ -49,7 +49,7 @@ export function normalizePublishedGenesisEpisode(candidate) {
 export function genesisLifeEpisodeEventId({ threadId, genesisId, episode: candidate }) {
   assertId("threadId", threadId);
   assertId("genesisId", genesisId);
-  const episode = normalizePassAEpisode(candidate);
+  const episode = normalizePassAEpisode(candidate, { enforceObservableForm: false });
   const digest = sha256(canonicalJson({ threadId, genesisId, episode }));
   return `evt_${threadId}_life_${digest.slice(0, 24)}`;
 }
@@ -87,7 +87,10 @@ export function applyGenesisLifeEpisodeEventToThread(thread, event, ErrorType = 
 
     assertPlainObject(`event ${event.eventId} payload`, event.payload);
     assertExactKeys(`event ${event.eventId} payload`, event.payload, PAYLOAD_KEYS);
-    const episode = normalizePassAEpisode({ ...structuredClone(event.payload), occurredAt: event.occurredAt });
+    const episode = normalizePassAEpisode(
+      { ...structuredClone(event.payload), occurredAt: event.occurredAt },
+      { enforceObservableForm: false },
+    );
     assertLifeEpisodeProvenance(event, episode);
 
     const expectedEventId = genesisLifeEpisodeEventId({
