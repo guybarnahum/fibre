@@ -9,6 +9,7 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
+import { autobiographicalMeaningPartId } from "./autobiographical-memory-domain.mjs";
 
 export const GENESIS_PASS_C_INPUT_VERSION = "genesis-pass-c-input-v1";
 export const GENESIS_PASS_C_POLICY = Object.freeze({
@@ -65,9 +66,7 @@ function normalizeHistoricalMeaningText(value, path) {
 }
 
 export function genesisMeaningPartId({ memoryRef, ordinal }) {
-  assertId("memoryRef", memoryRef);
-  assertFiniteNumber("ordinal", ordinal, { integer: true, minimum: 1 });
-  return `mpart_${sha256(canonicalJson({ memoryRef, ordinal })).slice(0, 40)}`;
+  return autobiographicalMeaningPartId({ memoryId: memoryRef, ordinal });
 }
 
 function normalizeTargetMemory(candidate) {
