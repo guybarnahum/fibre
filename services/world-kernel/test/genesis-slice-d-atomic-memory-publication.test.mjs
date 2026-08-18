@@ -263,7 +263,7 @@ test("Genesis atomically publishes v2 memory through #38 authority and counts it
     `).get(thread.threadId, memory.memoryId);
     database.close();
     assert.equal(companion.memory_ref, memory.memoryId);
-    assert.equal(companion.status, "pending");
+    assert.equal(companion.status, "pending_generation");
   }));
 
 test("Genesis publishes multiple meaning revisions through one memory lineage without rewriting Pass-B content", () =>
@@ -397,39 +397,65 @@ test("failure after the first memory append rolls back Thread, events, memory, a
     genesis.close();
   }));
 
-test("ordinary #38 writes and Genesis birth both use the shared transactional memory append authority", () => {
-  const event = { event_id: "evt_shared_memory_authority", occurred_at: "2026-08-18T20:00:00Z" };
-  const subject = { originEventRef: event.event_id, slot: "shared-path" };
-  const ordinary = {
-    memoryId: autobiographicalMemoryId({
+test("ordinary #38 v2 writes use the same lineage rule that forbids Pass-C from rewriting Pass-B recollection", () =>
+  withDatabase((databasePath) => {
+    const world = openWorldStore(databasePath);
+    world.seedThread(structuredClone(mina));
+    world.close();
+    const database = new DatabaseSync(databasePath);
+    const event = database.prepare(
+      "SELECT event_id,occurred_at FROM thread_events WHERE thread_id=? ORDER BY sequence LIMIT 1",
+    ).get(mina.threadId);
+    database.close();
+
+    const subject = { originEventRef: event.event_id, slot: "shared-v2-path" };
+    const memoryId = autobiographicalMemoryId({
       threadId: mina.threadId,
       originReference: subject.originEventRef,
       slot: subject.slot,
-    }),
-    revision: 1,
-    threadId: mina.threadId,
-    subject,
-    subjectPeriod: { startAt: event.occurred_at, endAt: event.occurred_at },
-    eventRefs: [event.event_id],
-    rememberedMeaning: "This fixture exists only to keep the imported ordinary-store symbol exercised.",
-    asOf: "2026-08-18T20:00:00Z",
-    confidence: 0.5,
-    uncertainty: [],
-    salience: 0.5,
-    accessibility: "accessible",
-    retentionState: "retained",
-    authorship: {
-      kind: "fibre_policy_derived",
-      entityId: "fibre.world-kernel",
-      policy: { ...AUTOBIOGRAPHICAL_MEMORY_POLICY },
-    },
-    supportingEvidenceRefs: [],
-    contradictingEvidenceRefs: [],
-    visibility: "private",
-    status: "current",
-    recordedAt: PUBLISHED_AT,
-  };
-  assert.equal(typeof openAutobiographicalMemoryStore, "function");
-  assert.equal(typeof ordinary.memoryId, "string");
-  assert.equal(AutobiographicalMemoryConflictError.prototype instanceof Error, true);
-});
+    });
+    const first = {
+      recordFormat: AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
+      memoryId,
+      revision: 1,
+      threadId: mina.threadId,
+      subject,
+      subjectPeriod: { startAt: event.occurred_at, endAt: event.occurred_at },
+      eventRefs: [event.event_id],
+      rememberedContent: "I remember the seeded beginning as a concrete event, though several details remain uncertain.",
+      rememberedMeaning: null,
+      meaningOutcome: "no_durable_meaning",
+      meaningParts: [],
+      asOf: "2026-08-18T20:00:00Z",
+      confidence: 0.5,
+      uncertainty: ["Some details remain uncertain."],
+      salience: 0.5,
+      accessibility: "accessible",
+      retentionState: "fragmentary",
+      authorship: {
+        kind: "fibre_policy_derived",
+        entityId: "fibre.world-kernel",
+        policy: { ...AUTOBIOGRAPHICAL_MEMORY_POLICY },
+      },
+      supportingEvidenceRefs: [],
+      contradictingEvidenceRefs: [],
+      visibility: "private",
+      status: "current",
+      recordedAt: "2030-01-01T00:00:00Z",
+    };
+    const writer = openAutobiographicalMemoryStore(databasePath);
+    writer.recordMemory(first);
+    assert.throws(
+      () => writer.recordMemory({
+        ...first,
+        revision: 2,
+        supersedesRevision: 1,
+        status: "corrected",
+        asOf: "2027-01-01T00:00:00Z",
+        recordedAt: "2030-01-01T00:01:00Z",
+        rememberedContent: "I replace the original recollection with a different scene during meaning revision.",
+      }),
+      (error) => error instanceof AutobiographicalMemoryConflictError && /cannot rewrite rememberedContent/.test(error.message),
+    );
+    writer.close();
+  }));
