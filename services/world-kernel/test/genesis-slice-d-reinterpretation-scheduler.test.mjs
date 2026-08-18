@@ -5,6 +5,7 @@ import { GENESIS_PASS_C_POLICY, genesisMeaningId } from "../src/genesis-pass-c-d
 import {
   evaluateReinterpretationOpportunity,
   passCTriggerFromScheduledOpportunity,
+  reinterpretationAccountingByThread,
   reinterpretationRelationFromFacts,
   scheduleReinterpretationOpportunities,
   summarizeReinterpretationSchedule,
@@ -64,6 +65,15 @@ test("reinterpretation requires both a five-year interval and a mechanical relat
   assert.equal(eligible.minimumTriggerAt, "2014-01-01T00:00:00.000Z");
   assert.equal(eligible.eligible, true);
   assert.equal(eligible.relation, "same_structure_family");
+});
+
+test("five-year policy uses the calendar anniversary, including Feb 29", () => {
+  const leap = evaluateReinterpretationOpportunity(candidate({
+    priorMeaningFormedAt: "2008-02-29T12:00:00Z",
+    occurredAt: "2013-02-28T12:00:00Z",
+  }));
+  assert.equal(leap.minimumTriggerAt, "2013-02-28T12:00:00.000Z");
+  assert.equal(leap.ageEligible, true);
 });
 
 test("relation choice uses fixed mechanical precedence rather than semantic ranking", () => {
@@ -130,6 +140,31 @@ test("cap selection is invariant to candidate input order and uses chronology th
   assert.equal(forward.find((item) => item.trigger.episodeRef === "ep_z").skippedByCap, true);
 });
 
+test("duplicate opportunities are rejected rather than consuming the cap twice", () => {
+  const duplicate = candidate();
+  assert.throws(
+    () => scheduleReinterpretationOpportunities([duplicate, structuredClone(duplicate)]),
+    /duplicate reinterpretation opportunity/,
+  );
+});
+
+test("cap accounting records the complete eligible set before selecting run opportunities", () => {
+  const scheduled = scheduleReinterpretationOpportunities([
+    candidate({ episodeRef: "ep_04", occurredAt: "2018-01-01T00:00:00Z", memoryRef: "mem_d4_004" }),
+    candidate({ episodeRef: "ep_02", occurredAt: "2016-01-01T00:00:00Z", memoryRef: "mem_d4_002" }),
+    candidate({ episodeRef: "ep_01", occurredAt: "2015-01-01T00:00:00Z", memoryRef: "mem_d4_001" }),
+    candidate({ episodeRef: "ep_03", occurredAt: "2017-01-01T00:00:00Z", memoryRef: "mem_d4_003" }),
+  ]);
+  const [accounting] = reinterpretationAccountingByThread(scheduled);
+  assert.equal(accounting.reinterpretationEligibleCount, 4);
+  assert.equal(accounting.reinterpretationRunCount, 3);
+  assert.equal(accounting.reinterpretationSkippedByCapCount, 1);
+  assert.equal(accounting.eligibleOpportunityRefs.length, 4);
+  assert.equal(accounting.runOpportunityRefs.length, 3);
+  assert.equal(accounting.skippedByCapOpportunityRefs.length, 1);
+  assert.equal(accounting.eligibleOpportunityRefs.includes(accounting.skippedByCapOpportunityRefs[0]), true);
+});
+
 test("the cap is per Thread, not a global semantic budget", () => {
   const candidates = [];
   for (const threadId of ["thr_d4_a", "thr_d4_b"]) {
@@ -145,6 +180,9 @@ test("the cap is per Thread, not a global semantic budget", () => {
   const scheduled = scheduleReinterpretationOpportunities(candidates);
   assert.equal(scheduled.filter((item) => item.threadId === "thr_d4_a" && item.run).length, 3);
   assert.equal(scheduled.filter((item) => item.threadId === "thr_d4_b" && item.run).length, 3);
+  const accounting = reinterpretationAccountingByThread(scheduled);
+  assert.deepEqual(accounting.map((item) => item.reinterpretationRunCount), [3, 3]);
+  assert.deepEqual(accounting.map((item) => item.reinterpretationSkippedByCapCount), [1, 1]);
 });
 
 test("scheduler facts cannot carry condition, salience or semantic ranking fields", () => {
