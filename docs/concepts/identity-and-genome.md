@@ -1,7 +1,7 @@
 ---
 id: concept-identity-genome
 status: accepted
-last-reviewed: 2026-08-13
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -139,6 +139,14 @@ life        = what happened to those tendencies
 character   = how those tendencies now tend to express
 self        = what the Thread currently thinks about all of that
 ```
+
+## Needs and mechanical-condition sensitivity
+
+Semantic needs are **not** genome loci. Fibre must not encode a finished conclusion such as `needs recognition`, `needs belonging`, or `must reproduce` as inherited personality authority merely because the conclusion is placed in the genome.
+
+Likewise Fibre must not create a second canonical **numeric drive genome** or a fixed inherited vector of condition gains underneath the textual genome. Such coefficients would be more fate-like than textual loci: a Thread can resist, reinterpret, or reject an inherited textual disposition through life, but it cannot reinterpret a hidden number that directly scales its cognition.
+
+If later controlled experiments establish that inherited modulation is necessary, Fibre may derive a bounded temporary numeric runtime control from relevant textual loci through a frozen, versioned, inspectable projection policy. The natural-language locus remains the inherited authority and provenance surface; the derived number is runtime machinery and may never silently overwrite the textual genotype.
 
 ## Numbers and runtime controls
 

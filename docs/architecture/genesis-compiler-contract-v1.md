@@ -1,7 +1,7 @@
 ---
 id: architecture-genesis-compiler-contract-v1
 status: accepted
-last-reviewed: 2026-08-15
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -259,7 +259,8 @@ Factual roster content may include ages, occupations, deaths, moves, institution
 - remembered meanings;
 - future profession/Fibre role/request/benchmark/#40 material;
 - desired adult conclusions;
-- source-work titles, authors, characters, quotations, or source scenes used by human authors.
+- source-work titles, authors, characters, quotations, or source scenes used by human authors;
+- Fibre-computed mechanical conditions, condition labels, or values derived from them.
 
 ### Output
 
@@ -376,6 +377,15 @@ Pass B determines what the Thread **retains autobiographically**.
 
 It never sees later events or later meanings.
 
+### Structurally absent from every Pass-B call
+
+- Fibre-computed mechanical conditions or condition labels;
+- any value derived from a mechanical condition;
+- condition-derived salience, ranking, memory eligibility, or preselection;
+- Fibre-computed semantic need conclusions supplied as though they were Thread-owned state.
+
+A mechanical condition may be a factual value about the world/runtime, but that does **not** make it admissible `factual world/relationship context` for Genesis. Using hidden conditions to choose which memories Pass B gets to consider would make Fibre author salience and would confound the treatment/control design.
+
 Genome loci are **never relevance-selected** for a treatment call. A content-driven selector would confound “genome shaped attention” with “Fibre chose loci that already matched the content.” The cohort freezes one policy: whole genome or a deterministic subset such as ordinal first-k / stable-hash selection independent of semantic content.
 
 ### Treatment assignment and exposure strata
@@ -464,7 +474,8 @@ A reinterpretation call may additionally receive:
 - other prior meanings, except the single prior meaning explicitly supplied for reinterpretation;
 - entry-stage purpose, adult role/context, future request/benchmark/#40 material;
 - any life content after the call's `asOf` / beyond the applicable `chronologyEndsAt` boundary;
-- source-work identity that was not itself encountered by the Thread.
+- source-work identity that was not itself encountered by the Thread;
+- Fibre-computed mechanical conditions, condition-derived values, or Fibre-computed semantic need conclusions.
 
 The exact Pass-C input object is canonicalized, allowlist-checked, and digested exactly like A and B. This is load-bearing: C must not recover what memory omitted by silently rereading history, nor absorb genome signal through sibling memories.
 
@@ -685,6 +696,7 @@ This contract does not implement or authorize:
 - semantic validator cognition at admission;
 - quality resampling;
 - semantic/content-driven locus selection for Pass B;
+- Fibre-computed mechanical conditions, condition-triggered cognition, or condition-derived modulation inside Genesis;
 - provider swapping to rescue cohort distinctness;
 - #40 relevance/projection;
 - Guardian tuning;
@@ -703,14 +715,17 @@ WORLD OFFERS POSSIBILITIES
           ↓
 PASS A — things happen
   genome blind
+  condition / need blind
           ↓
 PASS B — some things are remembered
   life_only | life_plus_genome
   prior-treatment exposure recorded
+  no condition-derived salience
           ↓
 PASS C — some memories acquire meaning
   one memory at a time
   always genome blind
+  condition / Fibre-computed-need blind
           ↓
 RECORD-FORM REPAIR WHERE NEEDED
   visible and bounded

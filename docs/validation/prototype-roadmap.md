@@ -1,11 +1,13 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
 # Prototype roadmap
+
+> **Current continuation authority:** milestone numbering and sequencing after completed #38 are governed by [`m2-pr-plan.md`](m2-pr-plan.md). This roadmap retains older numbering in sections below as historical planning context until a separate bookkeeping cleanup reconciles it; do not use those older numbers to override the active continuation plan.
 
 ## M0 — Concept lock
 

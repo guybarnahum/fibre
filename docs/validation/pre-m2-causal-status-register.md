@@ -1,7 +1,7 @@
 ---
 id: validation-pre-m2-causal-status-register
 status: accepted
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -10,6 +10,8 @@ canonical: true
 This register describes the current pre-M2 mechanism maturity after the accepted Semantic Guardian v4 and History bends judgment v4 standing proofs, merged Structured Obligation v1, and its direct interrupted-compelled-history follow-up. It does **not** modify or reinterpret the closed M1 causal-status register.
 
 The maturity labels follow `AGENTS.md`: **Named-only**, **Stored-only**, **Context-only**, and **Behaviorally/future-state causal**.
+
+These labels classify **evidence and meaning-bearing Thread mechanisms**. `mechanical-causal` is descriptive vocabulary for substrate/runtime machinery, not a causal-status class. No mechanical or substrate mechanism that causally affects cognition may be cited as evidence for an identity, memory, meaning, character, need, emotion, or value claim, or contribute to any causal-status determination. Such machinery must be justified and tested through its own computation witnesses and ablations rather than being laundered into evidence about who a Thread is.
 
 | Mechanism | Current maturity | Current evidence / authorship | Current consequence | Next proof required |
 |---|---|---|---|---|

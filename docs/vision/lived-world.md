@@ -1,7 +1,7 @@
 ---
 id: vision-lived-world
 status: proposed
-last-reviewed: 2026-08-15
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -172,6 +172,12 @@ When nobody is speaking with her, she may still have:
 A human may matter deeply to a Thread.
 
 The human should not automatically be the center of the Thread's life.
+
+A Thread's life also need not advance only because another person asks something of it. Changes in its own circumstances may cause it to notice, reflect, reconsider, seek, or form a new intention. The mechanism by which this happens may be thin at first; the important boundary is that Fibre must not pre-author the semantic conclusion the Thread is supposed to reach from being moved.
+
+> **Fibre may give a Thread a body that moves it. Fibre may not tell the Thread what that movement means.**
+
+This does not remove Fibre's authorship from the world. Fibre still authors parts of the room: world circumstances, institutions, affordances, runtime rules, and sometimes the opportunities a young Thread can reach. The ambition is to move Fibre out of the position of **knowing what the Thread feels** and into the more limited position of **having built the room in which the Thread develops its own account of what its life means**.
 
 ## The life loop
 

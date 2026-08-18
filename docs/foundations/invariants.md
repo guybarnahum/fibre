@@ -1,7 +1,7 @@
 ---
 id: fibre-invariants
 status: accepted
-last-reviewed: 2026-08-06
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -13,6 +13,9 @@ A design is drifting if it produces any of the following:
 - Identity becomes a static persona label.
 - Thread-owned identity, genome, history, relationships, needs, culture, geography, embodiment, or development are persisted and inspectable but have no causal path to a different appraisal, stance, term, authorization, action, relationship state, opportunity, or resource consequence.
 - A caller, fixture, or test authors the consequential private judgment — score, desired action, factors, feelings, or outcome — while Fibre only validates and stores it, but the result is described as Thread-owned agency.
+- A Fibre-computed mechanical condition, runtime parameter, or substrate mechanism is rendered to cognition as a semantic need, emotion, value, meaning, explanation, or self-knowledge and then described as Thread-owned interiority.
+- A hidden mechanical/substrate mechanism causally affects cognition or episode initiation without a versioned/replayable computation, durable input/causation witness, bounded policy, inspectable effect, and falsifiable ablation path.
+- A mechanical/substrate mechanism is cited as evidence for an identity, memory, meaning, character, need, emotion, or value claim, or is used to promote a field/domain's causal-status classification.
 - Two materially different Threads can receive the same material request under the same external conditions and Fibre has no mechanism by which those Thread-owned differences can make them choose differently when the accepted concepts say they should.
 - A milestone treats different prompt or capsule contents as sufficient proof of non-interchangeability without requiring any attributable behavioral or future-state consequence.
 - History is remembered but cannot bend a later appraisal, authority decision, relationship, opportunity, resource state, or action.
@@ -70,6 +73,7 @@ Fibre's architecture must keep a credible extension path open for each of the fo
 - culture, geography, and embodiment
 - books and intellectual formation
 - development over time
+- **endogenous motivation: mechanical conditions, bounded modulation, and Thread-authored interpretation of lived effects**
 - economic accounts and consequences
 - task markets, bids, and contracts
 - organizations and institutions
@@ -97,6 +101,8 @@ Thread-owned identity / history / relationship / need / obligation
 ```
 
 Not every pull request must span that entire chain. A foundational PR may legitimately build one socket or invariant. But a milestone must not claim that identity, dignity, relationship, development, or personhood has become functional merely because a new record can be stored, hashed, injected into a prompt, or displayed in the editor.
+
+Mechanical/substrate causality is a different evidence discipline: it may be externally attributable through exact computation witnesses and ablation while remaining structurally unavailable as Thread semantic evidence. Its effect cannot substitute for the Thread-owned causal chain above and cannot by itself earn identity, interiority, or personhood standing.
 
 Security review remains important where the threat model calls for it. It is a separate lens, not the default meaning of “adversarial” for Fibre development.
 

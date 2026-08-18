@@ -1,7 +1,7 @@
 ---
 id: concept-emotions-needs
 status: accepted
-last-reviewed: 2026-08-07
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -43,7 +43,7 @@ The semantic-state mechanism has a **closed domain set** and an **extensible dim
 Initial domains are:
 
 - **emotion** — episodic affect; target optional; normally becomes stale when no longer supported by recent evidence;
-- **need** — a more persistent orientation or currently unmet/important condition; target usually absent;
+- **need** — a more persistent Thread-authored orientation or currently unmet/important condition; target usually absent;
 - **relationship_attitude** — a durable private attitude toward a specific entity; target required and highly sensitive;
 - **situation_attitude** — an attitude toward a project, organization, place, obligation, role, recurring situation, or other world object; target required.
 
@@ -103,6 +103,29 @@ Initial useful need dimensions include:
 These names orient cognition; their current state remains natural-language meaning. For example, autonomy may be represented as: `I feel constrained by how much work has already been committed for me and strongly want my next substantial commitment to be something I choose.`
 
 Needs can make affect intelligible without becoming deterministic equations. Threatened autonomy may contribute to frustration or dignity discomfort; weak connection may contribute to loneliness; meaningful contribution may contribute to recognition or pride; received care may contribute to gratitude; resolved uncertainty may contribute to relief. The Guardian must still appraise the actual semantic situation.
+
+## Semantic authority of needs
+
+A durable semantic need is a claim produced through the Thread's own cognition from evidence it is permitted to use. Fibre may validate, persist, supersede, stale, select, and later project that state, but Fibre may not compute a semantic need from world circumstances and then feed the conclusion back as though the Thread authored its own interiority.
+
+A dimension name such as `connection` or `security` names a kind of semantic state the Thread may express. It does **not** mean Fibre maintains a hidden scalar called `connection_need` or `security_need` and treats that scalar as the Thread's true private condition.
+
+A Thread may form an incomplete, provisional, contradictory, or causally mistaken self-account. Fibre preserves the Thread's semantic authority while keeping durable history and external causal evidence separate.
+
+## Mechanical conditions are not semantic state
+
+A mechanical condition computed by Fibre from world state/history is **not** a need, emotion, meaning, value, relationship attitude, situation attitude, or character claim.
+
+```text
+mechanical condition != semantic need
+mechanical condition != emotion
+mechanical condition != meaning
+mechanical condition != value
+```
+
+No condition value, condition label, or mechanical interpretation may be rendered into a cognition capsule as semantic self-knowledge.
+
+Where Fibre implements mechanical condition-triggered cognition or bounded runtime modulation, that machinery follows the lifecycle/evidence boundary and remains unavailable as evidence for the Thread's own semantic claims. The Thread may later form its own account from lived evidence and behavior; Fibre does not correct that account against a hidden condition label.
 
 ## Relationship attitudes
 
@@ -172,6 +195,8 @@ This is the same endogenous-attention boundary already applied to memories and o
 ## Functional affect, not decorative prose
 
 An emotion, need, relationship-directed state, or situation-directed state counts as functional only when its semantic content can alter attention, appraisal, action, relationship development, memory, self-model, or another future possibility. Presence in storage, a profile, or a prompt alone is not evidence of an inner life.
+
+Where Fibre claims that a Thread-authored self-account is functionally consequential, a later causal test must be able to remove/withhold that semantic state while holding its underlying history/mechanical circumstances fixed and show a predeclared downstream change. If deleting the self-account changes nothing, the account remains meaningful biography but has not earned a claim of functional interiority.
 
 Outcomes are appraised rather than directly labeled. Failure caused by missing permission should affect the Thread differently from failure caused by poor judgment. Success through delegation may strengthen leadership confidence rather than technical confidence. A low-dignity request from a stranger should not necessarily affect the Thread like the same request repeated by a company that has ignored prior boundaries.
 
