@@ -11,11 +11,11 @@ import {
   autobiographicalMemoryRecordDigest,
   normalizeAutobiographicalMemory,
 } from "./autobiographical-memory-domain.mjs";
+import { AUTOBIOGRAPHICAL_MEMORY_RECORDED } from "./autobiographical-memory-anchor.mjs";
 import {
-  AUTOBIOGRAPHICAL_MEMORY_RECORDED,
-  buildAutobiographicalMemoryRecordedEvent,
-} from "./autobiographical-memory-anchor.mjs";
-import { ensureMemoryVisualCompanion } from "./identity-schema.mjs";
+  appendAutobiographicalMemoryRevisionInTransaction,
+  assertAutobiographicalMemoryRevisionCompatibility,
+} from "./autobiographical-memory-persistence.mjs";
 
 export class AutobiographicalMemoryConflictError extends Error {}
 export class AutobiographicalMemoryNotFoundError extends Error {}
@@ -25,36 +25,10 @@ function parseRecord(row) {
   catch (error) { throw new IntegrityError(`memory ${row.memory_id} JSON is invalid: ${error.message}`); }
 }
 
-function parseThread(row) {
-  try { return JSON.parse(row.state_json); }
-  catch (error) { throw new IntegrityError(`Thread ${row.thread_id} JSON is invalid: ${error.message}`); }
-}
-
 function parseAnchor(row) {
   try { return JSON.parse(row.payload_json); }
   catch (error) { throw new IntegrityError(`memory anchor ${row.event_id} JSON is invalid: ${error.message}`); }
 }
-
-function visibilityRank(value) { return { private: 0, restricted: 1, public: 2 }[value]; }
-function evidenceSet(record) { return new Set([...record.supportingEvidenceRefs, ...record.contradictingEvidenceRefs]); }
-function isEvidenceSuperset(previous, current) {
-  const next = evidenceSet(current);
-  return [...evidenceSet(previous)].every((ref) => next.has(ref));
-}
-function hasNewEvidence(previous, current) {
-  const prior = evidenceSet(previous);
-  return [...evidenceSet(current)].some((ref) => !prior.has(ref));
-}
-function subjectiveMemoryStateChanged(previous, current) {
-  return previous.accessibility !== current.accessibility ||
-    previous.retentionState !== current.retentionState;
-}
-function isSubjectEventSuperset(previous, current) {
-  const next = new Set(current.eventRefs);
-  return previous.eventRefs.every((ref) => next.has(ref));
-}
-function sameSubject(previous, current) { return canonicalJson(previous.subject) === canonicalJson(current.subject); }
-function memoryRecordFormat(record) { return record.recordFormat ?? "autobiographical_memory_v1"; }
 
 export class AutobiographicalMemoryStore {
   #database;
@@ -189,16 +163,8 @@ export class AutobiographicalMemoryStore {
 
       if (index > 0) {
         const previous = history[index - 1];
-        if (record.supersedesRevision !== previous.revision) throw new IntegrityError(`memory ${memoryId} does not supersede its predecessor`);
         if (Date.parse(record.recordedAt) < Date.parse(previous.recordedAt)) throw new IntegrityError(`memory ${memoryId} recordedAt moves backwards`);
-        if (record.threadId !== previous.threadId) throw new IntegrityError(`memory ${memoryId} changes Thread identity`);
-        if (memoryRecordFormat(record) !== memoryRecordFormat(previous)) throw new IntegrityError(`memory ${memoryId} changes record format within one lineage`);
-        if (!sameSubject(previous, record)) throw new IntegrityError(`memory ${memoryId} changes its immutable subject`);
-        if (!isSubjectEventSuperset(previous, record)) throw new IntegrityError(`memory ${memoryId} erases subject-history references`);
-        if (!isEvidenceSuperset(previous, record)) throw new IntegrityError(`memory ${memoryId} erases previously cited evidence`);
-        if (subjectiveMemoryStateChanged(previous, record) && !hasNewEvidence(previous, record)) {
-          throw new IntegrityError(`memory ${memoryId} changes accessibility/retention without new evidence`);
-        }
+        assertAutobiographicalMemoryRevisionCompatibility(previous, record, IntegrityError);
       }
       history.push(record);
       previousDigest = digest;
@@ -232,85 +198,24 @@ export class AutobiographicalMemoryStore {
 
     try {
       this.#database.exec("BEGIN IMMEDIATE");
-      const threadRow = this.#requireThread(record.threadId);
-      if (Date.parse(record.recordedAt) < Date.parse(threadRow.created_at)) throw new AutobiographicalMemoryConflictError("memory cannot be recorded before Thread creation");
-      if (Date.parse(record.recordedAt) < Date.parse(threadRow.updated_at)) throw new AutobiographicalMemoryConflictError("memory cannot be recorded before the Thread's latest historical event");
-      this.#requireEventRefs(record);
-      this.#requireEvidence(record);
       const history = this.memoryHistory(record.threadId, record.memoryId, { required: false });
-      if (history.length !== record.revision - 1) throw new AutobiographicalMemoryConflictError(`memory ${record.memoryId} expected revision ${history.length + 1}`);
-
+      if (history.length !== record.revision - 1) {
+        throw new AutobiographicalMemoryConflictError(`memory ${record.memoryId} expected revision ${history.length + 1}`);
+      }
       const previous = history.at(-1) ?? null;
-      if (previous !== null) {
-        if (memoryRecordFormat(record) !== memoryRecordFormat(previous)) throw new AutobiographicalMemoryConflictError("memory revision cannot change record format");
-        if (!sameSubject(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot change its immutable subject");
-        if (!isSubjectEventSuperset(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot erase or replace subject-history references");
-        if (!isEvidenceSuperset(previous, record)) throw new AutobiographicalMemoryConflictError("memory revision cannot erase previously cited epistemic evidence");
-        if (subjectiveMemoryStateChanged(previous, record) && !hasNewEvidence(previous, record)) {
-          throw new AutobiographicalMemoryConflictError("memory accessibility/retention changes require new resolved evidence");
-        }
-        if (visibilityRank(record.visibility) > visibilityRank(previous.visibility)) throw new AutobiographicalMemoryConflictError("memory visibility cannot widen without a future disclosure-authority path");
-      }
-
-      const previousDigest = previous === null ? null : this.#database.prepare("SELECT record_digest FROM autobiographical_memory_records WHERE memory_id=? AND revision=?").get(record.memoryId, previous.revision).record_digest;
-      const digest = autobiographicalMemoryRecordDigest(record, previousDigest);
-      const thread = parseThread(threadRow);
-      if (thread.version !== Number(threadRow.version) || thread.provenance.lastEventId !== threadRow.last_event_id) throw new IntegrityError(`Thread ${record.threadId} projection columns do not match memory anchor source state`);
-      const sequence = Number(this.#database.prepare("SELECT COALESCE(MAX(sequence),0)+1 AS next_sequence FROM thread_events WHERE thread_id=?").get(record.threadId).next_sequence);
-      const { nextThread, event } = buildAutobiographicalMemoryRecordedEvent(thread, {
-        memoryId: record.memoryId,
-        revision: record.revision,
-        memoryDigest: digest,
-        recordedAt: record.recordedAt,
-        sequence,
+      const previousDigest = previous === null
+        ? null
+        : this.#database.prepare(
+          "SELECT record_digest FROM autobiographical_memory_records WHERE memory_id=? AND revision=?",
+        ).get(record.memoryId, previous.revision).record_digest;
+      const appended = appendAutobiographicalMemoryRevisionInTransaction(this.#database, record, {
+        previousRecord: previous,
+        previousDigest,
+        ConflictErrorType: AutobiographicalMemoryConflictError,
+        createdFrom: "persisted_autobiographical_memory",
       });
-
-      this.#database.prepare(`
-        INSERT INTO autobiographical_memory_records(
-          memory_id,revision,thread_id,status,visibility,as_of,recorded_at,
-          supersedes_revision,record_json,record_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
-      `).run(record.memoryId, record.revision, record.threadId, record.status, record.visibility, record.asOf, record.recordedAt, record.supersedesRevision ?? null, canonicalJson(record), digest);
-      this.#database.prepare(`
-        INSERT INTO autobiographical_memory_lineage_heads(memory_id,revision,thread_id,head_digest,recorded_at)
-        VALUES (?,?,?,?,?)
-      `).run(record.memoryId, record.revision, record.threadId, digest, record.recordedAt);
-      this.#database.prepare(`
-        INSERT INTO thread_events(
-          event_id,thread_id,sequence,expected_version,resulting_version,event_type,
-          command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
-          authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        event.eventId, event.threadId, event.sequence, event.expectedVersion, event.resultingVersion,
-        event.eventType, event.commandId, event.commandDigest, canonicalJson(event.payload), canonicalJson(event.actor),
-        event.occurredAt, event.stateHash, event.authorizationId, event.causationId, event.correlationId,
-        event.payloadSchemaVersion, canonicalJson(event.provenance),
-      );
-      this.#database.prepare(`
-        INSERT INTO commands(thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at)
-        VALUES (?,?,?,?,?,?,?)
-      `).run(event.threadId, event.commandId, event.commandDigest, event.expectedVersion, event.resultingVersion, event.eventId, event.occurredAt);
-      const updated = this.#database.prepare(`
-        UPDATE threads SET version=?,state_json=?,state_hash=?,last_event_id=?,updated_at=?
-        WHERE thread_id=? AND version=?
-      `).run(nextThread.version, canonicalJson(nextThread), event.stateHash, event.eventId, event.occurredAt, record.threadId, event.expectedVersion);
-      if (Number(updated.changes) !== 1) throw new AutobiographicalMemoryConflictError(`Thread ${record.threadId} changed while recording memory`);
-
-      if (record.revision === 1) {
-        ensureMemoryVisualCompanion(this.#database, {
-          threadId: record.threadId,
-          memoryRef: record.memoryId,
-          recordedAt: record.recordedAt,
-          eventId: record.subject.originEventRef,
-          evidenceRefs: record.eventRefs.filter((reference) => reference !== record.subject.originEventRef),
-          memorySummary: record.rememberedMeaning ?? record.rememberedContent,
-          createdFrom: "persisted_autobiographical_memory",
-        });
-      }
-
       this.#database.exec("COMMIT");
-      return record;
+      return appended.record;
     } catch (error) {
       safeRollback(this.#database);
       if (error instanceof IntegrityError || error instanceof AutobiographicalMemoryConflictError || error instanceof AutobiographicalMemoryNotFoundError) throw error;
