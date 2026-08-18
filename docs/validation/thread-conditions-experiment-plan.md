@@ -9,6 +9,8 @@ canonical: false
 
 > **Experimental, not accepted Fibre mechanism.** Canonical documents define the boundaries this experiment must respect. This document owns the mechanisms, hypotheses, build order, and falsification tests. Nothing here changes #39 Genesis pass inputs or earns personhood standing by itself.
 
+**Roadmap home:** milestone **#42 — Self-authored Development v1** in [`m2-pr-plan.md`](m2-pr-plan.md). This experiment is a candidate route into #42 and later development; it does not expand #39-#41 or pre-award #42 capability.
+
 ## Purpose
 
 Fibre needs a path by which a live Thread can be moved by its own circumstances without Fibre supplying a semantic conclusion about what the Thread feels, needs, values, or should do.

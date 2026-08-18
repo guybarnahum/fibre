@@ -1,7 +1,7 @@
 ---
 id: architecture-m2-identity-embodiment-contract
 status: proposed
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -670,6 +670,8 @@ Each identity field/domain must be registered with one of these statuses during 
 | `authority_only` | record affects authority/permissions rather than personality judgment |
 
 The status is evidence accounting, not a permanent limitation. A field can move from context-only to accepted-causal in a later milestone after a real consumer and causal proof exist.
+
+Mechanical/substrate causality is outside this table: no mechanical condition or runtime mechanism may be cited as evidence for any identity, memory, meaning, or character claim, or contribute to a causal-status determination; see [`../validation/pre-m2-causal-status-register.md`](../validation/pre-m2-causal-status-register.md) and [`../foundations/invariants.md`](../foundations/invariants.md).
 
 # XI. Required M2 acceptance scenarios
 

@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-14
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -429,6 +429,8 @@ Thread lives
 ```
 
 Historical facts remain stable while meaning may evolve. Genesis creates inherited/backstory state; #42 proves the Thread can **become** through its own lived future.
+
+The experimental conditions/endogenous-motivation path is anchored to #42: [`thread-conditions-experiment-plan.md`](thread-conditions-experiment-plan.md) may test condition-triggered cognition, bounded modulation, Thread-authored naming, and their ablations as a route toward self-authored development. It remains experimental and does not expand #39-#41 or pre-award #42 capability.
 
 ## #43 — Reciprocal Relationships v1
 
