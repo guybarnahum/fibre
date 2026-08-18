@@ -183,7 +183,7 @@ function normalizeMeaningPayload(candidate, memoryRef) {
     meaningPartId: genesisMeaningPartId({ memoryRef, ordinal: index + 1 }),
     meaning: part.meaning,
   }));
-  return { meaningId: genesisMeaningId(memoryRef), summary, parts };
+  return { summary, parts };
 }
 
 export function normalizeInitialPassCModelOutput(candidate, inputCandidate) {
@@ -195,7 +195,7 @@ export function normalizeInitialPassCModelOutput(candidate, inputCandidate) {
   if (candidate.outcome === "no_durable_meaning") {
     if (candidate.summary !== null) throw new TypeError("no_durable_meaning must use summary=null");
     if (!Array.isArray(candidate.parts) || candidate.parts.length !== 0) throw new TypeError("no_durable_meaning must use parts=[]");
-    return Object.freeze({ outcome: candidate.outcome, meaningId: null, summary: null, parts: [] });
+    return Object.freeze({ outcome: candidate.outcome, summary: null, parts: [] });
   }
   return Object.freeze({ outcome: candidate.outcome, ...normalizeMeaningPayload(candidate, input.targetMemory.memoryRef) });
 }
@@ -206,11 +206,10 @@ export function normalizeReinterpretationPassCModelOutput(candidate, inputCandid
   assertPlainObject("Pass-C model output", candidate);
   assertExactKeys("Pass-C model output", candidate, ["outcome", "summary", "parts"]);
   if (!["revised", "unchanged", "none"].includes(candidate.outcome)) throw new TypeError("Pass-C reinterpretation outcome is invalid");
-  const meaningId = genesisMeaningId(input.targetMemory.memoryRef);
   if (candidate.outcome !== "revised") {
     if (candidate.summary !== null) throw new TypeError(`${candidate.outcome} reinterpretation must use summary=null`);
     if (!Array.isArray(candidate.parts) || candidate.parts.length !== 0) throw new TypeError(`${candidate.outcome} reinterpretation must use parts=[]`);
-    return Object.freeze({ outcome: candidate.outcome, meaningId, summary: null, parts: [] });
+    return Object.freeze({ outcome: candidate.outcome, summary: null, parts: [] });
   }
   return Object.freeze({ outcome: candidate.outcome, ...normalizeMeaningPayload(candidate, input.targetMemory.memoryRef) });
 }
