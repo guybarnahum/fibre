@@ -108,8 +108,7 @@ export function autobiographicalMemoryId({ threadId, originReference, slot }) {
 }
 
 export function autobiographicalMeaningPartId({ memoryId, ordinal }) {
-  assertNonEmpty("memoryId", memoryId);
-  if (!MEMORY_ID.test(memoryId)) throw new TypeError("meaning-part memoryId must be a canonical autobiographical memory ID");
+  assertId("memoryId", memoryId);
   assertFiniteNumber("ordinal", ordinal, { integer: true, minimum: 1 });
   return `mpart_${sha256(canonicalJson({ memoryRef: memoryId, ordinal })).slice(0, 40)}`;
 }
