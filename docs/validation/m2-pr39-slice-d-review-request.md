@@ -148,4 +148,20 @@ Please attack the following, not merely inspect happy-path examples:
 
 ## Verification status
 
-Repository execution is performed in the maintainer environment. At packet creation, D4 verification is **pending**. Do not CLEAR from this packet until the current head has a green focused run, full `npm test`, and `npm run check`.
+Gate-D candidate reviewed head:
+
+```text
+faf8f7b846c8e0c40cb9c1da3e98e1e40b6e0ab8
+```
+
+Maintainer verification on 2026-08-18 after pulling that head:
+
+```text
+focused Slice-D scheduler rerun: green
+npm test: 504 tests / 504 pass / 0 fail
+npm run check: green
+```
+
+The prior `4663198` run exposed one incorrect test expectation in the chronology/stable-ID cap-selection fixture: the scheduler correctly selected both 2015 opportunities before later 2016/2017 opportunities, while the test incorrectly expected one 2015 opportunity to be cap-skipped. Commit `faf8f7b8` corrected only that test expectation and strengthened the order-invariance assertion; scheduler implementation was unchanged.
+
+This verification establishes mechanical readiness for hostile Gate-D review. It does **not** close Gate D. Slice E remains blocked until the reviewer returns explicit `CLEAR` on the reviewed head or a later reviewed fix head.
