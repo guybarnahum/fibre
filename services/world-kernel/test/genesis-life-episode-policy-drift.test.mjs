@@ -26,6 +26,10 @@ function withDatabase(run) {
   finally { rmSync(directory, { recursive: true, force: true }); }
 }
 
+function dropEventUpdateTrigger(database) {
+  database.exec("DROP TRIGGER thread_events_no_update");
+}
+
 function worldSpec() {
   return {
     worldSpecId: "world_policy_drift_001",
@@ -175,7 +179,11 @@ test("published Genesis history survives later Pass-A form-policy drift while co
     };
     const historicalStateHash = threadStateHash(historicalThread);
 
+    // Deliberately bypass the append-only test guard only to synthesize a database
+    // that represents history written under an older admission policy. Production
+    // append-only behavior is tested elsewhere and remains unchanged.
     let database = new DatabaseSync(databasePath);
+    dropEventUpdateTrigger(database);
     database.prepare(`
       UPDATE thread_events
       SET event_id=?, payload_json=?, state_hash=?
@@ -209,6 +217,7 @@ test("published Genesis history survives later Pass-A form-policy drift while co
         "The child learned that the library closes later after reading a different posted notice.",
     };
     database = new DatabaseSync(databasePath);
+    dropEventUpdateTrigger(database);
     database.prepare(
       "UPDATE thread_events SET payload_json=? WHERE event_id=?",
     ).run(canonicalJson(tamperedPayload), historicalEventId);
