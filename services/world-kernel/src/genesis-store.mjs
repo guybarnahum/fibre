@@ -23,6 +23,12 @@ import {
 } from "./identity-schema.mjs";
 import { createGenesisTables } from "./genesis-schema.mjs";
 import {
+  THREAD_LIFE_EPISODE_RECORDED,
+  applyGenesisLifeEpisodeEventToThread,
+  genesisLifeEpisodeEventId,
+  normalizePublishedGenesisEpisode,
+} from "./genesis-life-episode.mjs";
+import {
   genesisRecordDigest,
   normalizeGenerationAttempt,
   normalizeGenesisManifest,
@@ -62,6 +68,27 @@ function assertCurrentPublicationValidators(manifest) {
       "Genesis publication validator witness does not match the current executable validator set",
     );
   }
+}
+
+function normalizeBirthEpisodes(candidates, manifest) {
+  if (!Array.isArray(candidates)) throw new TypeError("publishBirth episodes must be an array");
+  const normalized = candidates.map((candidate) => normalizePublishedGenesisEpisode(candidate));
+  const episodeIds = new Set();
+  let previousOccurredAt = null;
+  for (const { episode } of normalized) {
+    if (episodeIds.has(episode.episodeId)) {
+      throw new GenesisConflictError(`duplicate published Genesis episode ${episode.episodeId}`);
+    }
+    episodeIds.add(episode.episodeId);
+    if (Date.parse(episode.occurredAt) > Date.parse(manifest.entry.chronologyEndsAt)) {
+      throw new GenesisConflictError(`Genesis episode ${episode.episodeId} exceeds chronologyEndsAt`);
+    }
+    if (previousOccurredAt !== null && Date.parse(episode.occurredAt) <= Date.parse(previousOccurredAt)) {
+      throw new GenesisConflictError("published Genesis episodes must advance lived chronology");
+    }
+    previousOccurredAt = episode.occurredAt;
+  }
+  return normalized;
 }
 
 export class GenesisStore {
@@ -240,42 +267,98 @@ export class GenesisStore {
     }
   }
 
-  publishBirth({ manifest: manifestCandidate, thread: threadCandidate }, { failAfterSeedForTest = false } = {}) {
+  publishBirth(
+    { manifest: manifestCandidate, thread: threadCandidate, episodes: episodeCandidates = [] },
+    { failAfterSeedForTest = false } = {},
+  ) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot publish birth");
     const manifest = normalizeGenesisManifest(manifestCandidate);
     if (manifest.publication.status !== "published") {
       throw new TypeError("publishBirth requires publication.status=published");
     }
     validateThreadSnapshot(threadCandidate);
-    const thread = normalizeSeedSnapshot(threadCandidate);
-    if (manifest.threadId !== thread.threadId) throw new GenesisConflictError("manifest/thread identity mismatch");
-    if (manifest.publication.resultingThreadVersion !== thread.version) {
-      throw new GenesisConflictError("manifest first-live version does not match the published Thread version");
+    const seedSnapshot = normalizeSeedSnapshot(threadCandidate);
+    const normalizedEpisodes = normalizeBirthEpisodes(episodeCandidates, manifest);
+    if (manifest.threadId !== seedSnapshot.threadId) throw new GenesisConflictError("manifest/thread identity mismatch");
+
+    const derivedFirstLiveVersion = seedSnapshot.version + normalizedEpisodes.length;
+    if (manifest.publication.resultingThreadVersion !== derivedFirstLiveVersion) {
+      throw new GenesisConflictError(
+        `manifest first-live version ${manifest.publication.resultingThreadVersion} does not match derived event-chain version ${derivedFirstLiveVersion}`,
+      );
     }
     this.getWorldSpec(manifest.worldSpecRef);
     assertCurrentPublicationValidators(manifest);
-    if (this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(thread.threadId) !== undefined) {
-      throw new ThreadAlreadyExistsError(`Thread ${thread.threadId} already exists`);
+    if (this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(seedSnapshot.threadId) !== undefined) {
+      throw new ThreadAlreadyExistsError(`Thread ${seedSnapshot.threadId} already exists`);
     }
 
-    const occurredAt = manifest.publication.publishedAt;
-    if (Date.parse(occurredAt) < Date.parse(thread.provenance.createdAt)) {
+    const publishedAt = manifest.publication.publishedAt;
+    if (Date.parse(publishedAt) < Date.parse(seedSnapshot.provenance.createdAt)) {
       throw new GenesisConflictError("birth publication cannot predate Thread creation provenance");
     }
-    const eventId = thread.provenance.lastEventId;
-    const stateJson = canonicalJson(thread);
-    const stateHash = threadStateHash(thread);
-    const payloadJson = canonicalJson({ snapshot: thread });
-    const actorJson = canonicalJson({
-      entityId: thread.provenance.createdBy,
+
+    const seedEventId = seedSnapshot.provenance.lastEventId;
+    const actor = {
+      entityId: seedSnapshot.provenance.createdBy,
       kind: "other",
-      displayName: thread.provenance.createdBy,
-    });
-    const provenanceJson = canonicalJson({
+      displayName: seedSnapshot.provenance.createdBy,
+    };
+    const actorJson = canonicalJson(actor);
+    const seedStateHash = threadStateHash(seedSnapshot);
+    const seedPayloadJson = canonicalJson({ snapshot: seedSnapshot });
+    const seedProvenanceJson = canonicalJson({
       source: "genesis_birth",
       genesisId: manifest.genesisId,
       worldSpecRef: manifest.worldSpecRef,
     });
+
+    let publishedThread = seedSnapshot;
+    const publishedEpisodes = normalizedEpisodes.map(({ episode, payload }, index) => {
+      const eventId = genesisLifeEpisodeEventId({
+        threadId: seedSnapshot.threadId,
+        genesisId: manifest.genesisId,
+        episode,
+      });
+      const provenance = {
+        source: "genesis_birth",
+        genesisId: manifest.genesisId,
+        worldSpecRef: manifest.worldSpecRef,
+        episodeId: episode.episodeId,
+        pass: "A",
+      };
+      const event = {
+        eventId,
+        threadId: seedSnapshot.threadId,
+        sequence: index + 2,
+        expectedVersion: publishedThread.version,
+        resultingVersion: publishedThread.version + 1,
+        eventType: THREAD_LIFE_EPISODE_RECORDED,
+        commandId: null,
+        commandDigest: null,
+        payload,
+        actor,
+        occurredAt: episode.occurredAt,
+        stateHash: "sha256:" + "0".repeat(64),
+        authorizationId: null,
+        causationId: seedEventId,
+        correlationId: manifest.genesisId,
+        payloadSchemaVersion: 1,
+        provenance,
+      };
+      const nextThread = applyGenesisLifeEpisodeEventToThread(publishedThread, event, IntegrityError);
+      event.stateHash = threadStateHash(nextThread);
+      publishedThread = nextThread;
+      return { event, payloadJson: canonicalJson(payload), provenanceJson: canonicalJson(provenance) };
+    });
+
+    validateThreadSnapshot(publishedThread);
+    if (publishedThread.version !== derivedFirstLiveVersion) {
+      throw new IntegrityError("derived Genesis Thread version disagrees with episode chain");
+    }
+
+    const finalStateJson = canonicalJson(publishedThread);
+    const finalStateHash = threadStateHash(publishedThread);
 
     try {
       this.#database.exec("BEGIN IMMEDIATE");
@@ -284,14 +367,14 @@ export class GenesisStore {
           thread_id,version,status,state_json,state_hash,last_event_id,created_at,updated_at
         ) VALUES (?,?,?,?,?,?,?,?)
       `).run(
-        thread.threadId,
-        thread.version,
-        thread.status,
-        stateJson,
-        stateHash,
-        eventId,
-        thread.provenance.createdAt,
-        occurredAt,
+        publishedThread.threadId,
+        publishedThread.version,
+        publishedThread.status,
+        finalStateJson,
+        finalStateHash,
+        publishedThread.provenance.lastEventId,
+        seedSnapshot.provenance.createdAt,
+        publishedAt,
       );
       this.#database.prepare(`
         INSERT INTO thread_events(
@@ -300,36 +383,59 @@ export class GenesisStore {
           authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
         ) VALUES (?,?,1,0,?,'THREAD_SEEDED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
       `).run(
-        eventId,
-        thread.threadId,
-        thread.version,
-        payloadJson,
+        seedEventId,
+        seedSnapshot.threadId,
+        seedSnapshot.version,
+        seedPayloadJson,
         actorJson,
-        occurredAt,
-        stateHash,
-        eventId,
+        publishedAt,
+        seedStateHash,
+        seedEventId,
         manifest.genesisId,
-        provenanceJson,
+        seedProvenanceJson,
       );
 
       // The exact live #37/#38 validators/triggers remain authority. Slice A intentionally
       // exercises them inside the same publication transaction rather than copying them.
-      persistLegacySeedIdentity(this.#database, thread, { sourceEventId: eventId });
-      for (const memoryRef of thread.memoryRefs) {
+      persistLegacySeedIdentity(this.#database, seedSnapshot, { sourceEventId: seedEventId });
+      for (const memoryRef of seedSnapshot.memoryRefs) {
         ensureMemoryVisualCompanion(this.#database, {
-          threadId: thread.threadId,
+          threadId: seedSnapshot.threadId,
           memoryRef,
-          recordedAt: thread.provenance.createdAt,
+          recordedAt: seedSnapshot.provenance.createdAt,
           createdFrom: "legacy_memory_reference",
         });
       }
 
       if (failAfterSeedForTest) throw new GenesisConflictError("simulated Slice-A publication failure");
 
+      for (const { event, payloadJson, provenanceJson } of publishedEpisodes) {
+        this.#database.prepare(`
+          INSERT INTO thread_events(
+            event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+            command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+            authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+          ) VALUES (?,?,?,?,?,'THREAD_LIFE_EPISODE_RECORDED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
+        `).run(
+          event.eventId,
+          event.threadId,
+          event.sequence,
+          event.expectedVersion,
+          event.resultingVersion,
+          payloadJson,
+          actorJson,
+          event.occurredAt,
+          event.stateHash,
+          event.causationId,
+          event.correlationId,
+          provenanceJson,
+        );
+      }
+
       const manifestDigest = this.#insertManifest(manifest);
       this.#database.exec("COMMIT");
       return {
-        thread: structuredClone(thread),
+        thread: structuredClone(publishedThread),
         manifest: structuredClone(manifest),
         manifestDigest,
       };

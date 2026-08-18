@@ -12,6 +12,7 @@ import {
   StaleThreadVersionError,
   ThreadAlreadyExistsError,
   ThreadNotFoundError,
+  UNCOMMANDED_EVENT_TYPES,
   assertExactKeys,
   assertId,
   assertIsoTimestamp,
@@ -271,7 +272,7 @@ export class WorldStore {
   }
 
   #assertCommandWitness(event) {
-    if (event.eventType === "THREAD_SEEDED") return;
+    if (UNCOMMANDED_EVENT_TYPES.has(event.eventType)) return;
     const record = this.#commandRecord(event.threadId, event.commandId);
     if (record === undefined) {
       throw new IntegrityError(`event ${event.eventId} has no accepted command witness`);

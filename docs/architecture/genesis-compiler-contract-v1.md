@@ -204,6 +204,8 @@ publication.resultingThreadVersion
 
 The first post-birth command uses that actual value as `expectedVersion`.
 
+For a Genesis-published Thread, `sequence` is publication order and `occurred_at` is lived time. `THREAD_SEEDED` is sequence 1 at publication time, while compiled prior-life events atomically published after it may carry earlier `occurred_at` values; sequence order and lived chronology are not required to agree.
+
 ### Failed attempts
 
 Failed candidate state is discarded from Thread authority. Its rejection witness is recorded separately and may retain a bounded rejected payload for audit, but that payload is excluded from hydration, history, memory, and cognition.

@@ -21,6 +21,10 @@ import {
 import { applyFreezeEventToThread } from "./freeze-domain.mjs";
 import { applyInterruptedCompelledEpisodeEventToThread } from "./interrupted-compelled-episode.mjs";
 import {
+  THREAD_LIFE_EPISODE_RECORDED,
+  applyGenesisLifeEpisodeEventToThread,
+} from "./genesis-life-episode.mjs";
+import {
   AUTOBIOGRAPHICAL_MEMORY_RECORDED,
   applyAutobiographicalMemoryRecordedEvent,
 } from "./autobiographical-memory-anchor.mjs";
@@ -155,6 +159,9 @@ export function applyEventToThread(thread, event) {
     if (event.expectedVersion !== 0 || event.resultingVersion !== snapshot.version) throw new IntegrityError(`seed event ${event.eventId} has invalid version metadata`);
     if (event.commandId !== null || event.commandDigest !== null) throw new IntegrityError(`seed event ${event.eventId} must not carry command metadata`);
     return snapshot;
+  }
+  if (event.eventType === THREAD_LIFE_EPISODE_RECORDED) {
+    return applyGenesisLifeEpisodeEventToThread(thread, event, IntegrityError);
   }
   if (event.eventType === "SELF_MODEL_UPDATED") {
     if (thread === null) throw new IntegrityError(`event ${event.eventId} appears before a seed event`);

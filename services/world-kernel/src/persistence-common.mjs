@@ -15,10 +15,15 @@ export const UPDATE_SELF_MODEL_STATUSES = new Set(["frozen", "dormant"]);
 export const COMMAND_TYPES = new Set(["UPDATE_SELF_MODEL"]);
 export const EVENT_TYPES = new Set([
   "THREAD_SEEDED",
+  "THREAD_LIFE_EPISODE_RECORDED",
   "SELF_MODEL_UPDATED",
   "THREAD_FROZEN",
   "COMPELLED_EPISODE_INTERRUPTED",
   "AUTOBIOGRAPHICAL_MEMORY_RECORDED",
+]);
+export const UNCOMMANDED_EVENT_TYPES = new Set([
+  "THREAD_SEEDED",
+  "THREAD_LIFE_EPISODE_RECORDED",
 ]);
 export const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 

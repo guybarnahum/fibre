@@ -83,7 +83,6 @@ function cognition() {
 function genesisThread(overrides = {}) {
   const thread = structuredClone(mina);
   thread.threadId = "thr_genesis_slice_a";
-  thread.version = 3;
   thread.relationshipRefs = [];
   thread.memoryRefs = [];
   thread.provenance = {
@@ -174,12 +173,12 @@ test("atomic birth publishes the existing Thread authority and final manifest wi
     genesis.recordWorldSpec(worldSpec());
     const thread = genesisThread();
     const result = genesis.publishBirth({ manifest: publishedManifest(thread), thread });
-    assert.equal(result.thread.version, 3);
-    assert.equal(result.manifest.publication.resultingThreadVersion, 3);
+    assert.equal(result.thread.version, thread.version);
+    assert.equal(result.manifest.publication.resultingThreadVersion, thread.version);
 
     const world = openWorldStore(databasePath);
     const live = world.getThread(thread.threadId);
-    assert.equal(live.version, 3);
+    assert.equal(live.version, thread.version);
     assert.equal(world.listEvents(thread.threadId).length, 1);
     assert.equal(world.listEvents(thread.threadId)[0].eventType, "THREAD_SEEDED");
     assert.deepEqual(world.replayThread(thread.threadId), live);
@@ -188,7 +187,7 @@ test("atomic birth publishes the existing Thread authority and final manifest wi
     const inspection = genesis.inspectGenesis(result.manifest.genesisId);
     assert.equal(inspection.threadPublished, true);
     assert.equal(inspection.worldSpec.record.worldSpecId, "world_slice_a_001");
-    assert.equal(inspection.manifest.manifest.publication.resultingThreadVersion, 3);
+    assert.equal(inspection.manifest.manifest.publication.resultingThreadVersion, thread.version);
     genesis.close();
   }));
 
