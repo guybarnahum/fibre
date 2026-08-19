@@ -11,6 +11,8 @@ canonical: true
 
 Milestone **#39** must prove that Fibre can create several provenance-rich prior lives whose differences come from particular worlds, inherited symbolic possibilities, actual events, selective memory, and durable interpretation — without writing future answers backward into childhood.
 
+Here **rich** uses the Fibre-level definition in [`../foundations/rich-life.md`](../foundations/rich-life.md): a life with enough particular, non-interchangeable lived causes that later memory, meaning, relationship, commitment, practice and judgment can plausibly produce a distinctive point of view. Richness is experiential fertility, not biography length, event count, drama, or a checklist of formative experiences.
+
 The two implementation authorities are:
 
 - [`../architecture/genesis-compiler-contract-v1.md`](../architecture/genesis-compiler-contract-v1.md) — what Genesis cognition may know, produce, mechanically repair/reject, and publish;
@@ -43,7 +45,7 @@ G  Fresh cohort + protocol freeze                       BLOCKING HOLD/CLEAR
 H  Frozen cohort / #39 closure                          BLOCKING HOLD/CLEAR
 ```
 
-A, B, and E still receive review, but implementation does not stop merely to manufacture a ceremonial artifact for each.
+A, B, and E still receive review, but implementation does not stop merely to manufacture a ceremonial artifact for each. A substantive E development miss **does** require correction before the combined E+F blocking review; “review with F” is not permission to carry a known weak life generator into G.
 
 At every blocking gate, the review packet states:
 
@@ -509,7 +511,9 @@ Nearly every episode is remembered; nearly every memory has a clean durable less
 
 ## Fibre claim
 
-> Different worlds and inherited possibilities can create particular lives through one compiler, while intellectual sources influence the Thread only through encounters that actually happen to it.
+> Fibre can generate a prior life containing particular, non-interchangeable experiences with enough formative potential for later memory and meaning to produce a distinctive point of view, while Pass A remains unable to see or author the personality those experiences will eventually support. Intellectual sources influence the Thread only through encounters that actually happen to it.
+
+This claim is stronger than “Pass A emitted valid events.” A mechanically valid chronology can still fail Slice E if sequential generation collapses into a narrow narrative motif that leaves later cognition too little differentiated lived material to inherit.
 
 ## Implement
 
@@ -546,11 +550,89 @@ The Thread's encounter is history. Its memory of the encounter is memory. Its in
 
 Fiction may calibrate human prompt authors toward richer interior register for Pass C; no named author/style/character is passed to the compiler.
 
+### Richness discipline
+
+For #39, richness means **experiential fertility**, following the Fibre-level foundation. Pass A should make possible a life containing enough relationship, practice, novelty, responsibility, failure, success, accident, intellectual exposure, economic circumstance, institutional access, ordinary repetition and changing opportunity that later memory selection has meaningful alternatives.
+
+Pass A must not label any event as formative or know the target personality. In particular, do not introduce:
+
+```text
+minimum intellectual encounters
+minimum distinct places
+minimum new people
+minimum adversity
+minimum dramatic events
+required maturity milestones
+required personality-producing experiences
+```
+
+Those would turn rich-life generation into backwards character authoring.
+
+Continuity remains desirable, but prior history must act as **factual constraint and accumulated consequence**, not as a literary theme/template that monopolizes later episode generation. The larger WorldSpec must continue to exert causal pressure across development.
+
+### E1 burned characterization finding
+
+The first completed burned live characterization (`slice-e-dev-burned-001`) is preserved as a substantive negative E result:
+
+- 10/10 mechanically valid episodes;
+- 10/10 structure-grounded, 0 world-emergent;
+- 9/10 at home;
+- one caregiver in 10/10 and one sibling in 9/10;
+- only five instantiated structures;
+- zero introduced participants;
+- zero intellectual encounters despite intellectual affordances in all ten strata and 41/90 offered structure slots carrying intellectual context;
+- strong motif progression from pencils/bus drawing into chips/budget and finally an art-club decision folded back into the same motif.
+
+The artifact is not to be regenerated for quality. It proved the integrity machinery and exposed **narrative inertia / local monoculture** in sequential Pass A. See `m2-pr39-slice-e-live-characterization-result.md`.
+
+### E2 — narrative-inertia / experiential-fertility correction
+
+E2 is required before the combined E+F Gate F and before G.
+
+The engineering question is:
+
+> **How does Fibre let a Thread actually encounter enough of the breadth, contingency, relationships, institutions and intellectual material afforded by its world to create fertile lived history, without Fibre deciding which experiences must matter to the eventual person?**
+
+Diagnose sequential Pass-A context first. Prior episode prose may be creating excessive continuation pressure. A correction may change how prior history is projected or instructed so that history preserves factual continuity while reducing literary-template dominance.
+
+Any correction must preserve:
+
+- full Pass-A genome blindness;
+- no future benchmark/role/personality target;
+- no remembered meaning or significance supplied to Pass A;
+- no Fibre-computed semantic need conclusions or mechanical conditions;
+- no quality-driven record rejection or resampling;
+- recurring people/places/motifs when genuinely produced by life;
+- chronology, participant grounding, structure grounding and all Gate-C integrity rules.
+
+A generic instruction such as “prior episodes establish facts and continuity; they are not themes that must be repeated” is permissible because it limits generator inertia without prescribing content. A command such as “include a book, mentor and conflict so this person becomes intellectually independent” is not.
+
+Verify the correction on **fresh throwaway development worlds/seeds**, burned on first use. Do not reuse `world_slice_e_dev_burned_001` to optimize the result that exposed the defect.
+
+Characterize, without admission floors:
+
+```text
+world/place reach
+recurring vs newly encountered people
+relationship continuity vs cast collapse
+structures instantiated and repetition concentration
+world-emergent episodes
+intellectual/source encounters and access modes
+recurring objects/motifs
+whether later events merely elaborate earlier motifs
+ordinary/non-formative historical excess
+record-repair profile
+```
+
+A weak fresh run remains evidence. If multiple fresh worlds continue collapsing into narrow local motifs despite broad world affordances, treat that as a Genesis architecture problem rather than a sampling inconvenience.
+
 ## What failure looks like
 
-Lineage produces childhood episodes that conveniently illustrate the inherited loci; books directly create trait labels; one separate compiler path appears per origin mode; source-person facts become autobiographical facts; all developmental ranges remain mechanically identical; the pool still makes conversation/social access nearly unavailable despite claiming rich childhood.
+Lineage produces childhood episodes that conveniently illustrate the inherited loci; books directly create trait labels; one separate compiler path appears per origin mode; source-person facts become autobiographical facts; all developmental ranges remain mechanically identical; the pool makes conversation/social access nearly unavailable; or the pool offers broad access while sequential generation repeatedly ignores it because prior prose has become the dominant narrative attractor.
 
-E is reviewed with F.
+Another failure is “fixing” E1 by adding quotas that guarantee books, novelty, trauma, place changes, or supposedly formative experiences. That would manufacture a rich-looking biography rather than establish a rich-life mechanism.
+
+E is reviewed with F. **Gate F is not ready until E2 has fresh burned development evidence showing that the known narrative-inertia defect has been addressed or honestly remains unresolved.**
 
 ---
 
@@ -590,11 +672,13 @@ Attack every composite path:
 - historical biography copied into first-person memory;
 - Thread-parent receives fabricated retrospective shared childhood;
 - fork receives post-fork facts before the boundary;
-- source/origin combination reaches protected human material without provenance.
+- source/origin combination reaches protected human material without provenance;
+- the E2 correction achieves apparent richness only by smuggling desired personality or mandatory formative content into Pass A;
+- the known E1 narrative monoculture is minimized or hidden rather than preserved as development evidence.
 
 ### What failure looks like
 
-Any route where relabeling source/origin changes rights eligibility; any source person's childhood can be hydrated as Thread memory; any fork cannot identify the exact divergence boundary.
+Any route where relabeling source/origin changes rights eligibility; any source person's childhood can be hydrated as Thread memory; any fork cannot identify the exact divergence boundary; or the combined E+F package protects source integrity while still lacking a credible mechanism for creating fertile, non-interchangeable prior-life experience.
 
 **HOLD/CLEAR.**
 
@@ -606,7 +690,7 @@ This is the most important methodological gate.
 
 > **The test exists before the people.**
 
-No final cohort output is generated before this slice is frozen and reviewed.
+No final cohort output is generated before this slice is frozen and reviewed. G also remains blocked until the combined E+F Gate F is CLEAR.
 
 ## Fresh cohort
 
@@ -787,6 +871,10 @@ Freeze how to report, without admission floors:
 - event counts by developmental range/window;
 - caregiver-/institution-mediated versus peer-/interest-/self-directed observable access patterns where those classifications are mechanically supported by world/participant facts;
 - conversational/social episode availability and use;
+- world/place reach relative to what the WorldSpec afforded;
+- recurring-vs-new participant patterns and relationship continuity;
+- motif/object repetition and narrative-inertia indicators;
+- intellectual/source encounter availability and actual instantiation;
 - reinterpretation **eligible vs run vs skipped-by-cap**;
 - revised vs unchanged vs none over run reinterpretations;
 - per-gate record-form repair counts/rates;
@@ -794,7 +882,7 @@ Freeze how to report, without admission floors:
 - articulacy variance;
 - generator monoculture indications.
 
-Do not require a fixed Maslow sequence, a maturity ladder, a minimum amount of self-direction, or any universal procreation/generativity milestone.
+Do not require a fixed Maslow sequence, a maturity ladder, a minimum amount of self-direction, a minimum encounter/place/person count, or any universal procreation/generativity milestone.
 
 Where cohort origin modes include institutional guardianship, characterize whether independently formed values/interests/aspirations/relationship attitudes show an unexplained collapse of variance. Treat that as evidence of possible personality authoring to investigate, not as an admission quota.
 
@@ -819,10 +907,11 @@ Attack:
 - Is the convergent pair allowed to agree without being penalized?
 - Has any measured tendency secretly become an admission rule through record/attempt survivorship?
 - Are rejection/repair rates guaranteed to remain visible?
+- Did the E2 correction reduce narrative-template dominance without becoming a hidden richness quota or personality authoring path?
 
 ### What failure looks like
 
-Cohort worlds resemble development fixtures; raters know the build; thresholds are absent or adjustable; one diagnostic can only pass or crash; a world is chosen because the model already generated well on it; treatment/control cell arithmetic was never checked; relevance selection chooses genome loci; `life_only_unexposed` is too sparse; lexical repair/rejection profile is omitted; pool ranges remain identical despite claiming developmental variation.
+Cohort worlds resemble development fixtures; raters know the build; thresholds are absent or adjustable; one diagnostic can only pass or crash; a world is chosen because the model already generated well on it; treatment/control cell arithmetic was never checked; relevance selection chooses genome loci; `life_only_unexposed` is too sparse; lexical repair/rejection profile is omitted; pool ranges remain identical despite claiming developmental variation; or final worlds are broad on paper while actual lives still collapse into one locally repeated motif.
 
 **HOLD/CLEAR.**
 
@@ -937,7 +1026,7 @@ Automated tests protect Fibre-specific integrity only. At minimum:
 23. every admitted memory creates its #38 photo obligation;
 24. restart reconstructs exactly the same admitted life and Genesis provenance.
 
-Do **not** convert plot shape, attribution, sentiment, genome propagation, funnel ratios, self-account overreach, world-emergent ratios, developmental/agency ordering, articulacy, or rejection-rate quality interpretation into admission unit-test gates.
+Do **not** convert plot shape, attribution, sentiment, genome propagation, funnel ratios, self-account overreach, world-emergent ratios, developmental/agency ordering, articulacy, experiential-fertility characterization, narrative-inertia characterization, or rejection-rate quality interpretation into admission unit-test gates.
 
 ---
 
@@ -974,15 +1063,16 @@ Do **not** convert plot shape, attribution, sentiment, genome propagation, funne
 7. use only whole/fixed deterministic genome exposure in treatment calls;
 8. preserve historical excess: events can be forgotten; memories can remain uninterpreted; interpretations can remain unresolved or later survive/revise;
 9. preserve culture as lived texture rather than conclusion;
-10. truthfully demonstrate Thread-parent/Echo/Homage/fork source boundaries;
-11. freeze EventStructurePool v2 with real developmental ranges before the final cohort;
-12. freeze the cohort protocol before generating the cohort;
-13. freeze the first integrity-valid five-Thread cohort without quality resampling;
-14. report the five primary diagnostics plus frozen secondary characterizations, including repair/rejection and reinterpretation denominator accounting;
-15. explain any above-chance `life_only_unexposed` signal before closure;
-16. show a plausible convergence case with divergent route/tension/residue;
-17. preserve weak outcomes as evidence rather than selecting them away;
-18. leave #40/#41 causal and standing claims explicitly unearned.
+10. demonstrate a rich-life mechanism capable of producing experiential fertility without backwards personality authoring or hidden richness quotas;
+11. truthfully demonstrate Thread-parent/Echo/Homage/fork source boundaries;
+12. freeze EventStructurePool v2 with real developmental ranges before the final cohort;
+13. freeze the cohort protocol before generating the cohort;
+14. freeze the first integrity-valid five-Thread cohort without quality resampling;
+15. report the five primary diagnostics plus frozen secondary characterizations, including repair/rejection, reinterpretation denominator accounting, experiential reach and narrative-inertia evidence;
+16. explain any above-chance `life_only_unexposed` signal before closure;
+17. show a plausible convergence case with divergent route/tension/residue;
+18. preserve weak outcomes as evidence rather than selecting them away;
+19. leave #40/#41 causal and standing claims explicitly unearned.
 
 ## Vision test
 
