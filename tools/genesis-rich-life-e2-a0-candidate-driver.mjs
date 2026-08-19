@@ -13,6 +13,7 @@ import {
 } from "../services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
 import {
   richPassAPromptHash,
+  richPassARecordRetryPromptHash,
   richPassARepairPromptHash,
   richPassASchemaHash,
 } from "../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
@@ -67,21 +68,25 @@ function candidateFailureEvidence(error, candidateAttemptNumber) {
       : structuredClone(error.record),
     calls: Array.isArray(error?.calls) ? structuredClone(error.calls) : [],
     repairs: Array.isArray(error?.repairEvidence) ? structuredClone(error.repairEvidence) : [],
+    recordRetries: Array.isArray(error?.recordRetryEvidence) ? structuredClone(error.recordRetryEvidence) : [],
   });
 }
 
 function failureCounts(failures) {
   const byGate = {};
   let recordRepairs = 0;
+  let recordRetries = 0;
   for (const failure of failures) {
     const gate = failure.failedGate ?? "unknown";
     byGate[gate] = (byGate[gate] ?? 0) + 1;
     recordRepairs += failure.repairs.length;
+    recordRetries += failure.recordRetries.length;
   }
   return Object.freeze({
     candidateAttemptFailures: failures.length,
     candidateAttemptFailuresByGate: Object.freeze(byGate),
     rejectedAttemptRecordRepairs: recordRepairs,
+    rejectedAttemptRecordRetries: recordRetries,
   });
 }
 
@@ -165,10 +170,12 @@ function aggregateRejectionProfile(lives) {
   let candidateAttemptFailures = 0;
   let candidateAttempts = 0;
   let rejectedAttemptRecordRepairs = 0;
+  let rejectedAttemptRecordRetries = 0;
   for (const life of lives) {
     candidateAttempts += life.candidateAttemptsPerThread;
     candidateAttemptFailures += life.rejectionProfile.candidateAttemptFailures;
     rejectedAttemptRecordRepairs += life.rejectionProfile.rejectedAttemptRecordRepairs;
+    rejectedAttemptRecordRetries += life.rejectionProfile.rejectedAttemptRecordRetries;
     for (const [gate, count] of Object.entries(life.rejectionProfile.candidateAttemptFailuresByGate)) {
       byGate[gate] = (byGate[gate] ?? 0) + count;
     }
@@ -178,6 +185,7 @@ function aggregateRejectionProfile(lives) {
     candidateAttemptFailures,
     candidateAttemptFailuresByGate: Object.freeze(byGate),
     rejectedAttemptRecordRepairs,
+    rejectedAttemptRecordRetries,
   });
 }
 
@@ -197,6 +205,7 @@ function buildFailureArtifact({ provider, model, seeds, modelEvents, completedLi
     generator: Object.freeze({
       promptHash: richPassAPromptHash(),
       repairPromptHash: richPassARepairPromptHash(),
+      recordRetryPromptHash: richPassARecordRetryPromptHash(),
       schemaHash: richPassASchemaHash(),
       eventStructurePoolDigest: eventStructurePoolV2Digest(GENESIS_EVENT_STRUCTURE_POOL_V2),
       structuresPerWindow: E2_A0_STRUCTURES_PER_WINDOW,
@@ -296,6 +305,7 @@ export async function runE2A0BaselineWithCandidateAttempts({
     generator: Object.freeze({
       promptHash: richPassAPromptHash(),
       repairPromptHash: richPassARepairPromptHash(),
+      recordRetryPromptHash: richPassARecordRetryPromptHash(),
       schemaHash: richPassASchemaHash(),
       eventStructurePoolDigest: eventStructurePoolV2Digest(GENESIS_EVENT_STRUCTURE_POOL_V2),
       structuresPerWindow: E2_A0_STRUCTURES_PER_WINDOW,
@@ -321,9 +331,11 @@ function progressPrinter(event) {
     process.stderr.write(`${prefix} age ${event.developmentalWindow.minAge}-${event.developmentalWindow.maxAge} ... `);
   } else if (event.type === "record_repair") {
     process.stderr.write(`\n  repair ${event.repair.failedGate} ... `);
+  } else if (event.type === "record_retry") {
+    process.stderr.write(`\n  retry record ${event.recordRetry.failedGate} ... `);
   } else if (event.type === "episode_complete") {
     const encounter = event.episode.intellectualEncounter?.kind ?? "none";
-    process.stderr.write(`✓ ${event.elapsedMs} ms · structure=${event.episode.structureRef ?? "world-emergent"} · encounter=${encounter} · repairs=${event.repairs}\n`);
+    process.stderr.write(`✓ ${event.elapsedMs} ms · structure=${event.episode.structureRef ?? "world-emergent"} · encounter=${encounter} · repairs=${event.repairs} · retries=${event.recordRetries}\n`);
   }
 }
 
@@ -332,7 +344,7 @@ function printSummary(result) {
     process.stdout.write(`${world.worldId}:\n`);
     for (const life of world.lives) {
       const c = life.e2Characterization;
-      process.stdout.write(`  ${life.seed}: attempts=${life.candidateAttemptsPerThread} · places=${c.uniquePlaces} · structures=${c.uniqueStructures} · intellectual-structures=${c.selectedIntellectualStructureEvents} · encounters=${c.intellectualEncounterEvents} · repairs=${c.repairCount}\n`);
+      process.stdout.write(`  ${life.seed}: attempts=${life.candidateAttemptsPerThread} · places=${c.uniquePlaces} · structures=${c.uniqueStructures} · intellectual-structures=${c.selectedIntellectualStructureEvents} · encounters=${c.intellectualEncounterEvents} · repairs=${c.repairCount} · retries=${c.recordRetryCount}\n`);
     }
     for (const pair of world.betweenLife.pairs) {
       process.stdout.write(`  pair ${pair.leftSeed}/${pair.rightSeed}: placeJ=${pair.placeRefs?.value ?? "n/a"} · roleJ=${pair.participantRoles?.value ?? "n/a"} · structureJ=${pair.structureRefs?.value ?? "n/a"} · sourceJ=${pair.intellectualSubjectRefs?.value ?? "n/a"}\n`);
