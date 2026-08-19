@@ -58,11 +58,10 @@ test("Slice E v2 treats listed counterpart roles as alternatives without weakeni
 
   assert.doesNotThrow(() => validateRichPassAEpisode(candidate, input));
 
+  const legacyCandidate = structuredClone(candidate);
+  delete legacyCandidate.intellectualEncounter;
   assert.throws(
-    () => validateConsistentPassAEpisode(
-      { ...structuredClone(candidate), intellectualEncounter: undefined },
-      input,
-    ),
+    () => validateConsistentPassAEpisode(legacyCandidate, input),
     /without a participant in required role/,
   );
 
