@@ -13,6 +13,8 @@ Characterize whether the Slice-E rich-life instrument actually produces developm
 
 The run must not tune against the final Slice-G/H cohort. The world and seed below are therefore permanently burned once used.
 
+The Fibre-level meaning of **rich life** is defined in [`../foundations/rich-life.md`](../foundations/rich-life.md): experiential fertility for later individuality, not merely long prose, event variety, drama, or a quota of intellectual encounters.
+
 ## Frozen run
 
 ```text
@@ -104,7 +106,58 @@ Implementation and regression head: `fcdc1955ea93bc4e1c2a0781f5f07aafa76cfd44`.
 
 The same burned world and seed remain mandatory for Attempt 5.
 
-## Exact command
+## Attempt 5 — completed; substantive rich-life miss
+
+After the progressive isolated repair fix, the full mechanical suite was green at 533/533 and repository validation/context packs passed. Attempt 5 used the same frozen world, seed, origin mode and model.
+
+All ten chronology strata completed. Five episodes required one `pass_a_observable_action_bounds` repair; none exhausted repair and there were no provider/protocol failures. The completed evidence artifact reports `developmentOnly: true`, `burnedForFinalCohort: true`, and `admissionVerdict: null`.
+
+The completed life is preserved as the canonical negative development sample for this compiler state. Its key characterization is:
+
+```text
+historical episodes:           10
+structure-grounded:            10
+world-emergent:                 0
+distinct instantiated structures: 5
+home episodes:                  9
+same caregiver present:        10
+same sibling present:           9
+introduced participants:        0
+intellectual encounters:        0
+```
+
+Every stratum offered intellectual affordances; 41 of the 90 offered slots carried `intellectual_encounter` context, yet none instantiated. The chronology also developed strong motif inertia from pencils/bus drawings into chips/budget and finally an art-club decision folded back into that same established motif.
+
+Under Fibre's stronger `Rich Life` foundation this is a **substantive Slice-E miss**, not merely an aesthetically weak sample. The mechanism produced a valid and coherent life but did not demonstrate enough experiential fertility for later differentiation. See `m2-pr39-slice-e-live-characterization-result.md` for the full reading.
+
+Do not rerun this seed/world for quality. The artifact has served its diagnostic purpose.
+
+## E2 — next development protocol
+
+E2 must address the mechanism exposed by Attempt 5 before the combined E+F Gate F and before G.
+
+The correction target is narrative inertia, not the absence of a particular content category. Fibre must preserve enough prior history for chronology, people, relationships and consequences to remain coherent while preventing prior episode prose from becoming a literary template that monopolizes later generation.
+
+Do not add quotas for books, places, people, adversity, intellectual encounters, novelty, or supposedly formative events. Pass A remains unable to know what later personality or point of view should emerge.
+
+Use **fresh throwaway development worlds/seeds**, burned on first use, to characterize the revised mechanism. Inspect:
+
+- world/place reach relative to affordances;
+- recurring versus newly encountered people;
+- relationship continuity versus cast collapse;
+- structure diversity and repetition concentration;
+- world-emergent events;
+- intellectual/source encounters and access modes;
+- recurring object/motif concentration;
+- whether later events merely elaborate earlier motifs;
+- ordinary/non-formative historical excess;
+- record-form repair profile.
+
+There is still no per-Thread richness admission threshold. Weak fresh runs remain evidence. Repeated collapse across fresh worlds is a generator-architecture finding, not a reason to reroll until a prettier life appears.
+
+## Historical command
+
+The completed Attempt-5 invocation used:
 
 ```bash
 npm run genesis:rich-life-dev -- \
@@ -113,31 +166,16 @@ npm run genesis:rich-life-dev -- \
   --origin-mode synthetic_lineage \
   --episodes 10 \
   --seed slice-e-dev-burned-001 \
-  --out /tmp/fibre-m2-pr39-slice-e-burned-001.json \
+  --out ./fibre-m2-pr39-slice-e-burned-001.json \
   --overwrite
 ```
 
-The evidence artifact must report `developmentOnly: true`, `burnedForFinalCohort: true`, and `admissionVerdict: null`.
-
-## What to inspect
-
-Inspect the generated life as a chronology, not as ten independent samples. Record without tuning:
-
-- age spread and whether episodes actually advance through childhood/adolescence;
-- ordinary/social versus higher-consequence balance;
-- structure-grounded versus world-emergent episodes;
-- intellectual-encounter count, kinds, access modes, and ages;
-- whether access visibly shifts from caregiver/institution mediation toward peer/self-directed opportunities with age;
-- whether book/text, conversation/argument, art, scientific idea, mentor/teacher, overheard discussion, and philosophical/religious possibilities are represented in the instrument and which actually instantiate;
-- whether intellectual encounter metadata remains observable-history fact rather than lesson, trait, belief, significance, or adult-policy language;
-- participant continuity and whether relationships/people recur rather than every episode introducing a disposable cast;
-- repairs/rejections and any provider/schema failures;
-- monoculture, over-articulation, moral neatness, excessive consequence, or profession/identity foreshadowing.
+This command is historical evidence. **Do not run it again to improve quality.**
 
 ## Interpretation discipline
 
-There is no richness threshold and no pass/fail score for this development run. A sparse, repetitive, bland, or overly neat life is a finding about the instrument. Do not reject or regenerate it merely to obtain a prettier result.
+A mechanical contract violation may be fixed and rerun with the same burned seed while no complete artifact exists, with every failure and repair recorded. Once a complete artifact exists, a purely behavioral/quality weakness is preserved as evidence and correction moves to fresh development worlds.
 
-A mechanical contract violation may be fixed and rerun with the same burned seed, with the failure and repair recorded. A purely aesthetic or quality weakness must be recorded rather than silently tuned away.
+Richness does not mean forcing more visible variety. It means giving later personhood enough non-interchangeable lived material to work with while preserving the possibility that some events are mundane, forgotten, misunderstood, or never become formative.
 
 This run does not establish genome causality, source/origin integrity, final cohort quality, M2 standing, or future behavior. Those remain owned by G/H, F, and #40/#41 respectively.
