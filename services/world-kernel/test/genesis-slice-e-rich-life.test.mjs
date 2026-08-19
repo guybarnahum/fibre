@@ -135,7 +135,7 @@ function richEpisode(overrides = {}) {
   };
 }
 
-test("EventStructurePool v2 replaces the flat developmental instrument with varied overlapping ranges", () => {
+test("EventStructurePool v2 uses varied developmental ranges and offers only full-stratum affordances", () => {
   const pool = normalizeEventStructurePoolV2(GENESIS_EVENT_STRUCTURE_POOL_V2);
   assert.ok(pool.length >= 24);
   const ranges = new Set(pool.map(({ structure }) => `${structure.developmentalRange.minAge}-${structure.developmentalRange.maxAge}`));
@@ -144,15 +144,18 @@ test("EventStructurePool v2 replaces the flat developmental instrument with vari
   assert.match(eventStructurePoolV2Digest(pool), /^sha256:[0-9a-f]{64}$/);
 
   for (const range of [
-    { minAge: 5, maxAge: 7 },
-    { minAge: 8, maxAge: 10 },
-    { minAge: 11, maxAge: 13 },
-    { minAge: 14, maxAge: 18 },
+    { minAge: 6, maxAge: 7 },
+    { minAge: 8, maxAge: 9 },
+    { minAge: 11, maxAge: 12 },
+    { minAge: 14, maxAge: 15 },
   ]) {
     const sample = sampleEventStructuresV2(pool, range, { seed: `range-${range.minAge}`, count: 9 });
     assert.equal(sample.length, 9);
     assert.ok(sample.filter(({ structure }) => structure.consequenceClass === "low").length >= 4);
     assert.equal(new Set(sample.map(({ structure }) => structure.structureId)).size, 9);
+    assert.equal(sample.every(({ structure }) =>
+      structure.developmentalRange.minAge <= range.minAge &&
+      structure.developmentalRange.maxAge >= range.maxAge), true);
   }
 });
 
