@@ -64,6 +64,24 @@ Implementation repair-protocol head: `697ff74e2e3df67a10599ca4cd4b5ec179e5c877`.
 
 The same burned world and seed remain mandatory for Attempt 3.
 
+## Attempt 3 — hidden developmental-range constraint
+
+After the narrowed repair protocol, the full mechanical suite was green at 531/531 and `npm run check` passed. The third invocation again used the same frozen world and seed.
+
+The first generated episode selected `ges_v2_drawing_or_making_seen` in the first age stratum (6–7.1999). That structure's reviewed developmental range begins at age 7. The v2 sampler had inherited the legacy overlap rule, so the structure was eligible because part of its range overlapped the stratum. But Pass-A cognition intentionally does not receive structure developmental-range policy labels, so the model could legally choose an age below 7 and then be rejected by the authoritative structure-range validator.
+
+This is a hidden-constraint defect in offer construction, not a generated-life quality failure and not a reason to expose range policy labels to cognition. The repair preserves the Gate-C information boundary:
+
+- legacy/v1 EventStructure sampling remains overlap-based and unchanged;
+- rich Pool-v2 sampling now offers a structure only when its reviewed developmental range fully contains the entire current developmental stratum;
+- the rich Pass-A builder independently rejects a manually supplied partial-stratum offer, so bypassing the sampler cannot recreate the hidden constraint;
+- the model still does not receive consequence labels or developmental-range policy labels;
+- the authoritative episode range validator remains unchanged.
+
+Implementation full-stratum-offer head: `498e9724e555091f25580db5e3b9de78e10ac0a9`.
+
+The same burned world and seed remain mandatory for Attempt 4.
+
 ## Exact command
 
 ```bash
