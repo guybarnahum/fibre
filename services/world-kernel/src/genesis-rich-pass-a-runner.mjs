@@ -38,7 +38,10 @@ Describe only externally witnessable action and circumstance. Do not explain sig
 Keep observableAction concise and no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes.
 The provisional Thread identified by subject.provisionalThreadId must participate in the episode.
 A participant must already exist in the roster/history or be introduced in this same episode through a role explicitly afforded by the world.
-If structureRef is non-null, it must exactly match a currently offered structure and at least one of that v2 structure's listed counterpart roles must actually participate.
+If structureRef is non-null, it must exactly match a currently offered structure. Each offered structure carries a counterpartMode:
+- present_required: at least one listed participatingRole must actually participate;
+- present_optional: the subject may realize the structure without a listed counterpart, though any participant that is used must still be grounded normally;
+- known_required: at least one listed participatingRole must already exist in the factual roster/history, but that known person need not participate in this episode.
 Advance chronology beyond prior history, remain within chronologyEndsAt, and keep ageAtEvent consistent with bornAt and occurredAt.
 
 If this exact scene includes a genuine intellectual encounter, you may add intellectualEncounter. Use it only to record what was encountered and how access happened: a book, teacher/mentor, argument, conversation, overheard discussion, art, scientific idea, religious/philosophical text, or another intellectual source.
@@ -51,6 +54,26 @@ Return only a replacement observableAction. Fibre preserves every other event fi
 Rewrite only what is already present in rejectedObservableAction: do not invent, reverse, upgrade, interpret, or import facts.
 Use one plain concise sentence. Obey both failedConstraint.targetRepairUtf8Bytes and failedConstraint.targetRepairWords; both targets become stricter on a repeated failure and remain below the authoritative ${GENESIS_PASS_A_POLICY.maxObservableActionBytes}-byte limit.
 Remove explicit lesson, significance, personality, inner-state conclusion, remembered-meaning, or future-policy wording. Return JSON matching the supplied one-field schema.`;
+
+export const GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT = `You are Fibre Genesis record retry for rich Pass A.
+The previous candidate for this one episode failed a mechanical record-validity gate and has been discarded. You do not receive that rejected episode.
+Generate one entirely new episode from the same frozen passAInput. Obey the same observable-history, chronology, participant, structure, counterpartMode, and intellectual-encounter contracts as normal Pass A.
+failedGate is supplied only to make the mechanical contract failure visible; it is not a quality signal. Do not make the replacement richer, more interesting, more intellectual, more diverse, or more consequential because a retry occurred.
+The offered structures remain possibilities, never a checklist, and a world-emergent episode remains legal.`;
+
+const RECORD_RETRYABLE_GATES = Object.freeze(new Set([
+  "pass_a_output_schema",
+  "pass_a_chronology",
+  "pass_a_place_ref",
+  "pass_a_participant_ref",
+  "pass_a_participant_introduction",
+  "pass_a_structure_ref",
+  "pass_a_structure_participation",
+  "pass_a_subject_participation",
+  "pass_a_episode_identity",
+  "pass_a_age_witness",
+  "pass_a_intellectual_encounter",
+]));
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
@@ -95,21 +118,25 @@ function validateConsistentRichEpisode(candidate, input) {
   }
 
   // validateRichPassAEpisode already validates the real v2 structureRef, its
-  // developmental range and the rich any-of counterpart-role policy. Re-run the
-  // legacy consistency validator with structureRef suppressed so we reuse its
-  // chronology, age, subject-participation and duplicate-ID guards without
-  // accidentally applying the Gate-C all-roles semantics a second time.
+  // developmental range and the rich counterpart policy. Re-run the legacy
+  // consistency validator with structureRef suppressed so we reuse chronology,
+  // age, subject-participation and duplicate-ID guards without applying Gate-C
+  // all-roles semantics to v2.
   const consistencyEpisode = stripEncounter(rich);
   consistencyEpisode.structureRef = null;
   validateConsistentPassAEpisode(consistencyEpisode, input);
   return rich;
 }
 
-function repairable(error) {
+function formRepairable(error) {
   return error instanceof GenesisPassAValidationError && [
     "pass_a_interiority_form",
     "pass_a_observable_action_bounds",
   ].includes(error.gate);
+}
+
+function recordRetryable(error) {
+  return error instanceof GenesisPassAValidationError && RECORD_RETRYABLE_GATES.has(error.gate);
 }
 
 function repairTargets(repairOrdinal) {
@@ -146,8 +173,24 @@ function applyRepairObservableAction(rejectedEpisode, output) {
   };
 }
 
+function exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions) {
+  const exhausted = new GenesisPassAValidationError(
+    "record_repair_exhausted",
+    `rich Pass-A record generation exhausted after ${generatedVersions} generated versions`,
+    { record: error?.record ?? candidate },
+  );
+  exhausted.cause = error;
+  exhausted.calls = structuredClone(calls);
+  exhausted.repairs = repairs.map(({ rejectedEpisode, ...repair }) => repair);
+  exhausted.repairEvidence = structuredClone(repairs);
+  exhausted.recordRetries = recordRetries.map(({ rejectedEpisode, ...retry }) => retry);
+  exhausted.recordRetryEvidence = structuredClone(recordRetries);
+  return exhausted;
+}
+
 export function richPassAPromptHash() { return digest(GENESIS_RICH_PASS_A_PROMPT); }
 export function richPassARepairPromptHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_PROMPT); }
+export function richPassARecordRetryPromptHash() { return digest(GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT); }
 export function richPassASchemaHash() { return digest(GENESIS_RICH_PASS_A_RESPONSE_SCHEMA); }
 export function richPassARepairSchemaHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA); }
 
@@ -157,6 +200,7 @@ export async function generateRichPassAEpisode({
   input,
   clientRequestId,
   onRecordRepair = null,
+  onRecordRetry = null,
 }) {
   if (adapter === null || typeof adapter?.invoke !== "function") throw new TypeError("rich Pass-A adapter must expose invoke()");
   if (repairAdapter === null || typeof repairAdapter?.invoke !== "function") throw new TypeError("rich Pass-A repair adapter must expose invoke()");
@@ -167,6 +211,8 @@ export async function generateRichPassAEpisode({
   const inputDigest = passACognitionInputDigest(cognitionInput);
   const calls = [];
   const repairs = [];
+  const recordRetries = [];
+  let generatedVersions = 0;
 
   let result = await adapter.invoke({
     systemPrompt: GENESIS_RICH_PASS_A_PROMPT,
@@ -174,12 +220,12 @@ export async function generateRichPassAEpisode({
     responseSchema: GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
     clientRequestId: `${clientRequestId}:initial`,
   });
+  generatedVersions += 1;
   let candidate = rawEpisode(result.output);
   calls.push({ kind: "initial", inputDigest, outputDigest: digest(result.output), provenance: result.provenance });
 
-  for (let generatedVersion = 1; generatedVersion <= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord; generatedVersion += 1) {
+  while (true) {
     try {
-      if (generatedVersion > 1) assertRichRepairPreservesEpisodeFacts(repairs[0].rejectedEpisode, candidate);
       const episode = validateConsistentRichEpisode(candidate, consistentInput);
       return {
         episode,
@@ -187,74 +233,120 @@ export async function generateRichPassAEpisode({
         episodeDigest: digest(episode),
         calls,
         repairs: repairs.map(({ rejectedEpisode, ...repair }) => repair),
+        recordRetries: recordRetries.map(({ rejectedEpisode, ...retry }) => retry),
       };
     } catch (error) {
-      if (!repairable(error) || generatedVersion >= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord) {
-        if (repairable(error) && generatedVersion >= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord) {
-          const exhausted = new GenesisPassAValidationError(
-            "record_repair_exhausted",
-            `rich Pass-A record repair exhausted after ${generatedVersion} generated versions`,
-            { record: error.record ?? candidate },
-          );
-          exhausted.cause = error;
-          exhausted.calls = structuredClone(calls);
-          exhausted.repairs = repairs.map(({ rejectedEpisode, ...repair }) => repair);
-          exhausted.repairEvidence = structuredClone(repairs);
-          throw exhausted;
+      if (formRepairable(error)) {
+        if (generatedVersions >= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord) {
+          throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions);
         }
-        if (error instanceof GenesisPassAValidationError) {
-          error.calls = structuredClone(calls);
-          error.repairEvidence = structuredClone(repairs);
-        }
-        throw error;
-      }
 
-      const rejectedEpisode = structuredClone(candidate);
-      const repairOrdinal = generatedVersion;
-      const failedConstraint = repairConstraint(error, rejectedEpisode, repairOrdinal);
-      const repairInput = {
-        rejectedObservableAction: rejectedEpisode.observableAction,
-        failedGate: error.gate,
-        failedConstraint,
-      };
-      const repairRecord = {
-        repairOrdinal,
-        failedGate: error.gate,
-        failedConstraint,
-        rejectedContentDigest: digest(rejectedEpisode),
-        rejectedEpisode,
-        repairInputDigest: digest(repairInput),
-      };
-      if (typeof onRecordRepair === "function") {
-        await onRecordRepair({
+        const rejectedEpisode = structuredClone(candidate);
+        const repairOrdinal = repairs.length + 1;
+        const failedConstraint = repairConstraint(error, rejectedEpisode, repairOrdinal);
+        const repairInput = {
+          rejectedObservableAction: rejectedEpisode.observableAction,
+          failedGate: error.gate,
+          failedConstraint,
+        };
+        const repairRecord = {
           repairOrdinal,
           failedGate: error.gate,
-          failedConstraint: structuredClone(failedConstraint),
-          rejectedContentDigest: repairRecord.rejectedContentDigest,
-          inputDigest: repairRecord.repairInputDigest,
-          outputDigest: digest(rejectedEpisode),
-          rejectedContent: structuredClone(rejectedEpisode),
-        });
-      }
-      repairs.push(repairRecord);
+          failedConstraint,
+          rejectedContentDigest: digest(rejectedEpisode),
+          rejectedEpisode,
+          repairInputDigest: digest(repairInput),
+        };
+        if (typeof onRecordRepair === "function") {
+          await onRecordRepair({
+            repairOrdinal,
+            failedGate: error.gate,
+            failedConstraint: structuredClone(failedConstraint),
+            rejectedContentDigest: repairRecord.rejectedContentDigest,
+            inputDigest: repairRecord.repairInputDigest,
+            outputDigest: digest(rejectedEpisode),
+            rejectedContent: structuredClone(rejectedEpisode),
+          });
+        }
+        repairs.push(repairRecord);
 
-      result = await repairAdapter.invoke({
-        systemPrompt: GENESIS_RICH_PASS_A_REPAIR_PROMPT,
-        input: repairInput,
-        responseSchema: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
-        clientRequestId: `${clientRequestId}:repair:${repairOrdinal}`,
-      });
-      candidate = applyRepairObservableAction(rejectedEpisode, result.output);
-      calls.push({
-        kind: "record_repair",
-        repairOrdinal,
-        failedGate: error.gate,
-        inputDigest: repairRecord.repairInputDigest,
-        outputDigest: digest(result.output),
-        provenance: result.provenance,
-      });
+        result = await repairAdapter.invoke({
+          systemPrompt: GENESIS_RICH_PASS_A_REPAIR_PROMPT,
+          input: repairInput,
+          responseSchema: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
+          clientRequestId: `${clientRequestId}:repair:${repairOrdinal}`,
+        });
+        generatedVersions += 1;
+        candidate = applyRepairObservableAction(rejectedEpisode, result.output);
+        assertRichRepairPreservesEpisodeFacts(rejectedEpisode, candidate);
+        calls.push({
+          kind: "record_repair",
+          repairOrdinal,
+          failedGate: error.gate,
+          inputDigest: repairRecord.repairInputDigest,
+          outputDigest: digest(result.output),
+          provenance: result.provenance,
+        });
+        continue;
+      }
+
+      if (recordRetryable(error)) {
+        if (generatedVersions >= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord) {
+          throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions);
+        }
+
+        const rejectedEpisode = structuredClone(error.record ?? candidate);
+        const recordRetryOrdinal = recordRetries.length + 1;
+        const retryInput = {
+          passAInput: cognitionInput,
+          failedGate: error.gate,
+        };
+        const retryRecord = {
+          recordRetryOrdinal,
+          failedGate: error.gate,
+          rejectedContentDigest: digest(rejectedEpisode),
+          rejectedEpisode,
+          retryInputDigest: digest(retryInput),
+        };
+        if (typeof onRecordRetry === "function") {
+          await onRecordRetry({
+            recordRetryOrdinal,
+            failedGate: error.gate,
+            rejectedContentDigest: retryRecord.rejectedContentDigest,
+            inputDigest: retryRecord.retryInputDigest,
+            outputDigest: digest(rejectedEpisode),
+            rejectedContent: structuredClone(rejectedEpisode),
+          });
+        }
+        recordRetries.push(retryRecord);
+
+        result = await adapter.invoke({
+          systemPrompt: GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT,
+          input: retryInput,
+          responseSchema: GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
+          clientRequestId: `${clientRequestId}:record-retry:${recordRetryOrdinal}`,
+        });
+        generatedVersions += 1;
+        candidate = rawEpisode(result.output);
+        calls.push({
+          kind: "record_retry",
+          recordRetryOrdinal,
+          failedGate: error.gate,
+          inputDigest: retryRecord.retryInputDigest,
+          outputDigest: digest(result.output),
+          provenance: result.provenance,
+        });
+        continue;
+      }
+
+      if (error instanceof GenesisPassAValidationError) {
+        error.calls = structuredClone(calls);
+        error.repairs = repairs.map(({ rejectedEpisode, ...repair }) => repair);
+        error.repairEvidence = structuredClone(repairs);
+        error.recordRetries = recordRetries.map(({ rejectedEpisode, ...retry }) => retry);
+        error.recordRetryEvidence = structuredClone(recordRetries);
+      }
+      throw error;
     }
   }
-
-  throw new Error("unreachable rich Pass-A generation state");
 }
