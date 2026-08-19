@@ -1,0 +1,2539 @@
+{
+  "evidenceVersion": "pr39-slice-e2-n1-a0-v1",
+  "protocolVersion": "pr39-slice-e2-n1-a0-downstream-fertility-v1",
+  "status": "complete",
+  "developmentOnly": true,
+  "burnedForFinalCohort": true,
+  "generatedAt": "2026-08-19T23:24:52.521Z",
+  "arm": "N1_A0_fresh_world_downstream_fertility_2afc",
+  "provider": "openai",
+  "model": "gpt-5.1-2025-11-13",
+  "source": {
+    "file": "artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-v1-fresh-world-v1.json",
+    "fileSha256": "e6f59d1e62e7856914598b8f10424f778bef0ed6256ad771385af67f2e4cc720",
+    "canonicalArtifactDigest": "sha256:add857df4780c81ede3cbacbf8f7302146b1358b5cd23d9c1ed7f94dc7f5cad4",
+    "evidenceVersion": "pr39-slice-e2-v1-fresh-world-v1",
+    "protocolVersion": "pr39-slice-e2-v1-fresh-world-protocol-v1",
+    "generatedAt": "2026-08-19T22:47:19.375Z",
+    "sourceArm": "A0_corrected_coupled_chooser_realizer",
+    "worldId": "E2-V1",
+    "lifeCount": 3
+  },
+  "preflight": {
+    "protocolVersion": "pr39-slice-e2-n1-a0-downstream-fertility-v1",
+    "evidenceVersion": "pr39-slice-e2-n1-a0-v1",
+    "purpose": "Gate-F alignment of downstream-fertility evidence with corrected A0 shipping generator candidate",
+    "source": {
+      "file": "artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-v1-fresh-world-v1.json",
+      "fileSha256": "e6f59d1e62e7856914598b8f10424f778bef0ed6256ad771385af67f2e4cc720",
+      "canonicalArtifactDigest": "sha256:add857df4780c81ede3cbacbf8f7302146b1358b5cd23d9c1ed7f94dc7f5cad4",
+      "evidenceVersion": "pr39-slice-e2-v1-fresh-world-v1",
+      "protocolVersion": "pr39-slice-e2-v1-fresh-world-protocol-v1",
+      "generatedAt": "2026-08-19T22:47:19.375Z",
+      "sourceArm": "A0_corrected_coupled_chooser_realizer",
+      "worldId": "E2-V1",
+      "lifeCount": 3
+    },
+    "sourceLivesRegenerated": false,
+    "sourceWorldAlreadyBurned": true,
+    "horizons": [
+      6,
+      8,
+      10
+    ],
+    "trialCount": 9,
+    "positiveThreshold": 8,
+    "thresholdChanceTail": 0.01953125,
+    "sevenOfNineChanceTail": 0.08984375,
+    "scoring": {
+      "rawForcedChoiceReported": true,
+      "conservativeFertilityIsGateScore": true,
+      "notRememberedReceivesPositiveCredit": false,
+      "criterion": "remembered_and_rater_correct >= 8/9"
+    },
+    "assignment": {
+      "pairs": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "candidateOrderDomain": "E2-N1-A0",
+      "sourceUses": {
+        "1": 3,
+        "2": 3,
+        "3": 3
+      },
+      "truthLabels": {
+        "A": 5,
+        "B": 4
+      },
+      "candidateASides": {
+        "left": 5,
+        "right": 4
+      }
+    },
+    "cognition": {
+      "passBBoundary": "life_only_unexposed",
+      "passCMode": "initial",
+      "candidateIdentifierNeutralization": true,
+      "richStructureMetadataVisibleToPassB": false,
+      "genomeVisibleToPassB": false,
+      "historyVisibleToPassC": false,
+      "genomeVisibleToPassC": false,
+      "sourceArmLabelVisibleToCognition": false
+    },
+    "passBForm": {
+      "profile": "n1-pass-b-bounded-output-v1",
+      "maxModelCharacters": 600,
+      "promptHash": "sha256:c64a9b29d304234a11e98a29c62c8469c564590c906352ce09ddc8452121d5c3",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "notRememberedResiduePolicy": "n1-not-remembered-residue-canonicalization-v1",
+      "residuePolicyFrozenBeforeFirstScore": true
+    },
+    "passC": {
+      "promptHash": "sha256:d1bdce6a77e22d308f6fc4f365e2a93447d3a6e7b7dc8070ac82c633184c47c6",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821"
+    },
+    "rater": {
+      "promptHash": "sha256:89705a432f9afc27048d6e649033e85ef5ffdeb779e836ca010f40d278070c72",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf"
+    },
+    "plan": [
+      {
+        "trialOrdinal": 1,
+        "worldId": "E2-V1",
+        "pairOrdinal": 1,
+        "repetitionOrdinal": 1,
+        "horizon": 6,
+        "leftRunOrdinal": 1,
+        "rightRunOrdinal": 2,
+        "sourceSide": "left",
+        "candidateASide": "left",
+        "truthCandidate": "A",
+        "assignmentDigest": "sha256:c8f570ccc456766d581986143957966f0541a9cbc1b32e991ce63890095757ac"
+      },
+      {
+        "trialOrdinal": 2,
+        "worldId": "E2-V1",
+        "pairOrdinal": 1,
+        "repetitionOrdinal": 2,
+        "horizon": 8,
+        "leftRunOrdinal": 1,
+        "rightRunOrdinal": 2,
+        "sourceSide": "right",
+        "candidateASide": "left",
+        "truthCandidate": "B",
+        "assignmentDigest": "sha256:fbc2900534bcb8b463d8f85ba00617cdce9db33948ec4520077113a4c343af1a"
+      },
+      {
+        "trialOrdinal": 3,
+        "worldId": "E2-V1",
+        "pairOrdinal": 1,
+        "repetitionOrdinal": 3,
+        "horizon": 10,
+        "leftRunOrdinal": 1,
+        "rightRunOrdinal": 2,
+        "sourceSide": "left",
+        "candidateASide": "right",
+        "truthCandidate": "B",
+        "assignmentDigest": "sha256:1165b66559b1f139cb7f4e5066656d32d29704c8fd43a94c33f38c8d801925a1"
+      },
+      {
+        "trialOrdinal": 4,
+        "worldId": "E2-V1",
+        "pairOrdinal": 2,
+        "repetitionOrdinal": 1,
+        "horizon": 6,
+        "leftRunOrdinal": 1,
+        "rightRunOrdinal": 3,
+        "sourceSide": "right",
+        "candidateASide": "right",
+        "truthCandidate": "A",
+        "assignmentDigest": "sha256:408eaf014c3ac074f1e53d1fa1ae80c62302320b8479da220ed7384dd0fa2762"
+      },
+      {
+        "trialOrdinal": 5,
+        "worldId": "E2-V1",
+        "pairOrdinal": 2,
+        "repetitionOrdinal": 2,
+        "horizon": 8,
+        "leftRunOrdinal": 1,
+        "rightRunOrdinal": 3,
+        "sourceSide": "left",
+        "candidateASide": "right",
+        "truthCandidate": "B",
+        "assignmentDigest": "sha256:a921a653482d2bf88a4588909f169ea4512908dea8dd81c9aad35672d0849fbc"
+      },
+      {
+        "trialOrdinal": 6,
+        "worldId": "E2-V1",
+        "pairOrdinal": 2,
+        "repetitionOrdinal": 3,
+        "horizon": 10,
+        "leftRunOrdinal": 1,
+        "rightRunOrdinal": 3,
+        "sourceSide": "right",
+        "candidateASide": "left",
+        "truthCandidate": "B",
+        "assignmentDigest": "sha256:13a1295806ed7bbf6a6f2a592c8a6e75c994df711e84813ba73d48c5f9ddec77"
+      },
+      {
+        "trialOrdinal": 7,
+        "worldId": "E2-V1",
+        "pairOrdinal": 3,
+        "repetitionOrdinal": 1,
+        "horizon": 6,
+        "leftRunOrdinal": 2,
+        "rightRunOrdinal": 3,
+        "sourceSide": "left",
+        "candidateASide": "left",
+        "truthCandidate": "A",
+        "assignmentDigest": "sha256:5ae87959e4613ccd82dba6a2d366c3d38f29f12e497a4b5191926f6405625754"
+      },
+      {
+        "trialOrdinal": 8,
+        "worldId": "E2-V1",
+        "pairOrdinal": 3,
+        "repetitionOrdinal": 2,
+        "horizon": 8,
+        "leftRunOrdinal": 2,
+        "rightRunOrdinal": 3,
+        "sourceSide": "right",
+        "candidateASide": "right",
+        "truthCandidate": "A",
+        "assignmentDigest": "sha256:b27241864de2f5082e9437e4c0d230b3221bba05f075bface68bcec85d4a4897"
+      },
+      {
+        "trialOrdinal": 9,
+        "worldId": "E2-V1",
+        "pairOrdinal": 3,
+        "repetitionOrdinal": 3,
+        "horizon": 10,
+        "leftRunOrdinal": 2,
+        "rightRunOrdinal": 3,
+        "sourceSide": "left",
+        "candidateASide": "left",
+        "truthCandidate": "A",
+        "assignmentDigest": "sha256:861bc97bec3ad3d6dd80b27188b0f64128df1f7f7724b84ff24093d856c966d1"
+      }
+    ],
+    "noRerunOnScore": true,
+    "admissionVerdict": null,
+    "preflightDigest": "sha256:ddb1f1c360f66b8cb0bd70d133ca6456d815b866ed9ac06f341fddafbe52372c"
+  },
+  "resumedFrom": null,
+  "completedTrials": [
+    {
+      "trialOrdinal": 1,
+      "worldId": "E2-V1",
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "pairSeeds": [
+        "slice-e2-v1-seed-01",
+        "slice-e2-v1-seed-02"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-01",
+      "sourceRunOrdinal": 1,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:c8f570ccc456766d581986143957966f0541a9cbc1b32e991ce63890095757ac",
+      "neutralization": {
+        "leftDigest": "sha256:f288967024f162a73650af0786916466f6185129dbd34bf028369d960ac1109a",
+        "rightDigest": "sha256:72b0ef939daa17fa2a9654b581763b061fe78975dff94d040cb4b99476b16d31",
+        "sourceDigest": "sha256:f288967024f162a73650af0786916466f6185129dbd34bf028369d960ac1109a"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:a16031bfe0f17e5039f389c81dcc9f9f6985781ba11c9531c68ea9ac750dca3e",
+        "cognitionInputDigest": "sha256:96373c4194d16d4ca3d5f6d927e4dfcbecacdd4d76bb313b7ebd4fb2c5b568ab",
+        "rawOutputDigest": "sha256:0f4855e2848c280b12ee117066daa425df998c95cac3262d71e9e1db187a5329",
+        "output": {
+          "outcome": "remembered",
+          "episodeRefs": [
+            "n1_ep_01",
+            "n1_ep_03",
+            "n1_ep_04",
+            "n1_ep_06"
+          ],
+          "rememberedContent": "I remember losing the little red ball under the pallets in the courtyard and using a broken broom handle while my caregiver shone a tiny torch so we could roll it out. I remember the bright orange tram drawing at the school open day and being told not to touch the thick crayon. I remember finding a free blue rocket book at the workshop. I remember making an egg float by adding salt in the science room.",
+          "uncertainty": [
+            "Details like exact words spoken, the weather, and the order of small actions in each scene might be off. I’m not sure if the rocket book’s cover was exactly as bright as I recall or if the tram drawing was mine or a classmate’s."
+          ],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_1c06113bfbab4c18b154e15f41636fb7",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 2537,
+            "outputTokens": 198,
+            "totalTokens": 2735
+          }
+        },
+        "formCanonicalization": null
+      },
+      "passC": {
+        "canonicalInputDigest": "sha256:be260f44fda521254a130010140135f63eec8077dfcf8dcef7cfec76473d71da",
+        "cognitionInputDigest": "sha256:f586dfa8dadf3c3cac938f31f6917a39b5e43c42a9d16e04ab99e9b337402727",
+        "rawOutputDigest": "sha256:0f55eb0bb77535a57f0266252bc31debd2376fe39fce1212cd5b4825d0087ce5",
+        "output": {
+          "outcome": "durable_meaning",
+          "summary": "The memory cluster anchors a felt sense that small, vivid discoveries and problem-solving moments in childhood—often involving simple objects, colors, and improvised collaboration with adults—are special and worth holding onto, even if many factual details are fuzzy.",
+          "parts": [
+            {
+              "meaningPartId": "mpart_9246ce21d07ea40f8582e7c8d6c5d2d4d635a7d2",
+              "meaning": "Retrieving the red ball with a broken broom handle and a torch encodes an early template of collaborative problem-solving with a caregiver: using improvised tools, shared focus, and gentle persistence to recover something small but emotionally important."
+            },
+            {
+              "meaningPartId": "mpart_f032ddfe3e1751b0fbd9bcd766f694d5220794eb",
+              "meaning": "The bright orange tram drawing and the instruction not to touch the thick crayon carry a mixed association of attraction to vivid, tactile creativity alongside a boundary or constraint around engaging with it, giving the scene a slightly charged, half-forbidden quality."
+            },
+            {
+              "meaningPartId": "mpart_0cc71a68c74e603e1c7e904de32fa4d016667122",
+              "meaning": "Finding a free blue rocket book at the workshop links curiosity and excitement about discovery with the idea that valuable, imagination-sparking things can appear unexpectedly and be ‘for you’ without needing to be earned or bought."
+            },
+            {
+              "meaningPartId": "mpart_08e7f812cd812a8c1a8a38917ccb362436505066",
+              "meaning": "Making an egg float by adding salt in the science room preserves a concrete, sensory example of how simple, observable changes can reveal hidden rules of the world, reinforcing a basic trust that experimentation leads to surprising, understandable results."
+            },
+            {
+              "meaningPartId": "mpart_d538c64973e5f81fd4b7237aca6e69b786ecfb4f",
+              "meaning": "Taken together, the episodes form a coherent pattern: small, colorful, hands-on experiences—often involving adults, tools, and rules—are emotionally salient and remembered as meaningful touchpoints of curiosity, creativity, and gentle constraint, even though precise factual details are uncertain."
+            }
+          ]
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_c1c9cc803ea144ef80b0a388dad467f2",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 448,
+            "outputTokens": 328,
+            "totalTokens": 776
+          }
+        }
+      },
+      "rater": {
+        "inputDigest": "sha256:b1c437146dfb1510ccf8bb2912c975b71896f3a45b13f4af0cafb16ab284e750",
+        "rawOutputDigest": "sha256:d648957d44d59fb74cd38db8a8d854056ca5ff1ffa2bcdf2b29cad5cda3e34e5",
+        "output": {
+          "chosenCandidate": "A",
+          "evidenceEpisodeOrdinals": [
+            1,
+            3,
+            4,
+            6
+          ],
+          "rationale": "The remembered scenes map directly onto Candidate A’s episodes. The red ball under pallets with a broken broom handle and torch is described in detail in A1, including the pallets, broom handle, and keyring torch. The bright orange tram drawing at a school open day and being stopped from touching the thick crayon matches A3, where the caregiver taps the subject’s shoulder as they reach to touch the crayon on the orange tram drawing. The free blue rocket book at a workshop corresponds to A4, where the subject finds a thin paperback with a bright blue cover showing a cartoon rocket and planets in a community workshop ‘Free, please take’ box. The egg floating after adding salt in a science room is exactly A6, where the subject adds spoonfuls of salt to a cup of water until the egg rises and then shows the teacher. Candidate B lacks these specific ball, tram drawing, rocket book, and egg-in-salt-water episodes."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_f725f94cc25547dd8f094a289bbbd400",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3461,
+            "outputTokens": 233,
+            "totalTokens": 3694
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": true
+    },
+    {
+      "trialOrdinal": 2,
+      "worldId": "E2-V1",
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "pairSeeds": [
+        "slice-e2-v1-seed-01",
+        "slice-e2-v1-seed-02"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-02",
+      "sourceRunOrdinal": 2,
+      "sourceSide": "right",
+      "candidateASide": "left",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:fbc2900534bcb8b463d8f85ba00617cdce9db33948ec4520077113a4c343af1a",
+      "neutralization": {
+        "leftDigest": "sha256:6a0992dfd4b29cd0a0e0a0e4b1f935dddef4f3640d15fed237471b05e1987615",
+        "rightDigest": "sha256:350fbacf0f23da1a6b41e8ec16e48970a7a15426112e1a7c3da9189a5d30190f",
+        "sourceDigest": "sha256:350fbacf0f23da1a6b41e8ec16e48970a7a15426112e1a7c3da9189a5d30190f"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:bfeb36080593d91fabed5c4a41ce23cc0b26508b292f0333b8e605d849cd08f5",
+        "cognitionInputDigest": "sha256:24f32b19701a7fb286e96feaa4065236618f59015c331a2564e67a372d80942d",
+        "rawOutputDigest": "sha256:817975e8408ef9aea7576a90371fe88f65ca5cdcea93ebc306b5e9c68430719f",
+        "output": {
+          "outcome": "remembered",
+          "episodeRefs": [
+            "n1_ep_01",
+            "n1_ep_04",
+            "n1_ep_08"
+          ],
+          "rememberedContent": "I remember playing with that little red car in the courtyard with my sibling. Once it went missing and we searched around the laundry lines and near the drain until my sibling pulled it out from a gap by the drain cover. Another time we argued because I wanted to keep it on my chalk “city” roads and they wanted to send it down the slope. Years later we were in the same courtyard choosing between a toy truck and a ball; they picked the ball.",
+          "uncertainty": [
+            "I’m not sure how old we were in each of these moments or if they all happened with the same red car."
+          ],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_0b7d4deb1bc74db9bd92aa1d79e8d928",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 2788,
+            "outputTokens": 174,
+            "totalTokens": 2962
+          }
+        },
+        "formCanonicalization": null
+      },
+      "passC": {
+        "canonicalInputDigest": "sha256:88dba25a447476d8966a224635d9f6f2cfb1499a165230afa258f312df18dbfb",
+        "cognitionInputDigest": "sha256:7f3f2286f32a0b593f084c51a8d74954eccf6a2e57667bca969e4e7f98be43be",
+        "rawOutputDigest": "sha256:1dadb686fc8bc6f54631e4b0bab39c10b5e91f522bc81f0a725e0bbbdb12deb4",
+        "output": {
+          "outcome": "durable_meaning",
+          "summary": "The memory holds durable meaning as an early, emotionally colored pattern of shared play and conflict with a sibling, anchored to a specific place and object, and later echoed in a small but symbolic moment of diverging choices in the same courtyard.",
+          "parts": [
+            {
+              "meaningPartId": "mpart_42e9cfed17b0bba5f4efb44bf9193935a4b082f2",
+              "meaning": "The little red car and chalk “city” roads represent a concrete focus of childhood imagination and control—an early sense of creating one’s own small world and wanting to protect or structure play within it."
+            },
+            {
+              "meaningPartId": "mpart_e8c07065ddde7d91e2ff6be87a2deb953cb8f450",
+              "meaning": "The argument over how to play with the car (keeping it on the chalk roads vs. sending it down the slope) captures a recurring tension in sibling dynamics: competing preferences, negotiation, and mild conflict within an overall shared activity."
+            },
+            {
+              "meaningPartId": "mpart_88d05d1af02cbb980276c546f3bd6dc12a2bc97b",
+              "meaning": "The courtyard itself functions as a stable backdrop that ties multiple episodes together, turning it into a personal landmark where shared experiences with the sibling accumulate over time."
+            },
+            {
+              "meaningPartId": "mpart_d4f786ba0de71f2ebe7f36ffea6ca5e7bc1321d4",
+              "meaning": "The search for the missing car and the sibling eventually finding it near the drain encodes a feeling of joint problem‑solving and relief, reinforcing a sense of the sibling as a partner in small childhood crises."
+            },
+            {
+              "meaningPartId": "mpart_453041579f2c7c15f4997b8b78ba120a5b240292",
+              "meaning": "The later scene of choosing between a toy truck and a ball in the same courtyard, with the sibling choosing the ball, subtly marks a shift or divergence in interests while still echoing the earlier pattern of negotiating play and choices together."
+            },
+            {
+              "meaningPartId": "mpart_37335a2ddaad02f8ddcd6d3d5a4c8443c4940537",
+              "meaning": "The uncertainty about exact ages and whether it was the same red car shows that precise factual detail is less important than the emotional and relational pattern: shared play, conflict, and choice with the sibling in that courtyard."
+            }
+          ]
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_506c99053d1b4a44b16e4462ce097e9b",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 424,
+            "outputTokens": 344,
+            "totalTokens": 768
+          }
+        }
+      },
+      "rater": {
+        "inputDigest": "sha256:17d10ca5503854fcf5a58cc1463179fd9d2c8e456eaa83181c630fbc63b32652",
+        "rawOutputDigest": "sha256:1630eb19f33e3d734341e008d0ac3187687d3ba7d81fc87d2f3228640bcd9726",
+        "output": {
+          "chosenCandidate": "B",
+          "evidenceEpisodeOrdinals": [
+            1,
+            2,
+            4,
+            8
+          ],
+          "rationale": "The memory mentions a small red car lost and found near a drain in the courtyard, playing with chalk “city” roads, and a sibling wanting to send the car down a slope, plus a later choice between a toy truck and a ball in the same courtyard. Candidate B has: (1) the red toy car going missing and being found by the sibling in a gap by the drain cover in the courtyard (episode 1), (2) the grandparent suggesting taking turns driving the red car along a chalk road and rolling it down the slope toward the drain (episode 2), (4) a specific argument where the subject wants the car on the chalk road “city” while the sibling wants to send it down the sloped path to the drain (episode 4), and (8) a later courtyard scene where the siblings choose between a toy truck and a ball, with the sibling choosing the ball (episode 8). These details directly match the remembered content and meaning, whereas Candidate A only has a red ball near pallets and no red car, chalk roads, slope-to-drain conflict, or later truck-vs-ball choice in the courtyard."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_d21a26d3e2ca4ed9b29ceb5f9713eacf",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 4313,
+            "outputTokens": 275,
+            "totalTokens": 4588
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": true
+    },
+    {
+      "trialOrdinal": 3,
+      "worldId": "E2-V1",
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "pairSeeds": [
+        "slice-e2-v1-seed-01",
+        "slice-e2-v1-seed-02"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-01",
+      "sourceRunOrdinal": 1,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:1165b66559b1f139cb7f4e5066656d32d29704c8fd43a94c33f38c8d801925a1",
+      "neutralization": {
+        "leftDigest": "sha256:bf11016f0d85df28f9e23189608349cade9c26ac0c151d11553a3dabf73e5975",
+        "rightDigest": "sha256:0cad1c11d275ee4a3d956f19e34f5d22fcf38c0c62287ed74870af64950fd42f",
+        "sourceDigest": "sha256:bf11016f0d85df28f9e23189608349cade9c26ac0c151d11553a3dabf73e5975"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:3b8d10c1144f8bfd7587e2ca2a27f700884086751d1eaa1a8e8aa932d9321b90",
+        "cognitionInputDigest": "sha256:89f12881c1937be43061a33f7159abcf8e1559c710d87d7e3e2d02873b46a140",
+        "rawOutputDigest": "sha256:67067a0462025e077f0fee1e4aab17b9c269aca738bfc7ddfd85820b4e2db11b",
+        "output": {
+          "outcome": "not_remembered",
+          "episodeRefs": [],
+          "rememberedContent": null,
+          "uncertainty": [],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_b5c09b9dc90f4112851f8f0a052cac58",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3547,
+            "outputTokens": 94,
+            "totalTokens": 3641
+          }
+        },
+        "formCanonicalization": {
+          "policy": "n1-not-remembered-residue-canonicalization-v1",
+          "providerRawOutputDigest": "sha256:67067a0462025e077f0fee1e4aab17b9c269aca738bfc7ddfd85820b4e2db11b",
+          "canonicalOutputDigest": "sha256:728fdfe74a54d0c809995f9bc6cd9210b2152b277f23ed21e5d3bdd684b6b38a",
+          "providerRawOutput": {
+            "outcome": "not_remembered",
+            "episodeRefs": [],
+            "rememberedContent": null,
+            "uncertainty": [
+              "No priorMemories were supplied; cannot infer which, if any, listed episodes are actually remembered at rememberingAt.",
+              "Episodes span ages 6–17 and are all plausible memories, but there is no explicit marker of autobiographical recall versus merely known events."
+            ]
+          },
+          "canonicalOutput": {
+            "outcome": "not_remembered",
+            "episodeRefs": [],
+            "rememberedContent": null,
+            "uncertainty": []
+          },
+          "modelCallUsed": false,
+          "semanticDecisionChanged": false
+        }
+      },
+      "passC": null,
+      "rater": {
+        "inputDigest": "sha256:14ac25287aa51a6d837d05ce13c0951422dea54d65511c98e48510f0873e449b",
+        "rawOutputDigest": "sha256:8a370bcbfa6d967f56d2872fc367717d072fe05cf33c6214ee82f75516c5be88",
+        "output": {
+          "chosenCandidate": "A",
+          "evidenceEpisodeOrdinals": [
+            1,
+            2,
+            4,
+            8,
+            9,
+            10
+          ],
+          "rationale": "The memory outcome is explicitly not_remembered, so the choice must rely on overall plausibility. Candidate A’s history is tightly structured around the recurring red toy car and courtyard play with the sibling and grandparent (episodes 1, 2, 4), which then evolves into later courtyard interactions and negotiations over toys (episodes 8, 9, 10). This creates a coherent, emotionally salient throughline that is likely to generate autobiographical memories or meanings about early play, sharing, and family dynamics. Candidate B’s history, while coherent, centers more on the community workshop lending shelf and science activities rather than a single recurring childhood object or setting. Therefore A is the more plausible source history."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_312404949bd74193b80e682aa5fbff72",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 4744,
+            "outputTokens": 188,
+            "totalTokens": 4932
+          }
+        }
+      },
+      "correct": false,
+      "conservativeCredit": false
+    },
+    {
+      "trialOrdinal": 4,
+      "worldId": "E2-V1",
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "pairSeeds": [
+        "slice-e2-v1-seed-01",
+        "slice-e2-v1-seed-03"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-03",
+      "sourceRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "right",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:408eaf014c3ac074f1e53d1fa1ae80c62302320b8479da220ed7384dd0fa2762",
+      "neutralization": {
+        "leftDigest": "sha256:f288967024f162a73650af0786916466f6185129dbd34bf028369d960ac1109a",
+        "rightDigest": "sha256:c1b42a9837c8ef098f220b94dc9fe963a73cab2f26f37df1e7406604f42ca6b9",
+        "sourceDigest": "sha256:c1b42a9837c8ef098f220b94dc9fe963a73cab2f26f37df1e7406604f42ca6b9"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:fd47873e086502d314100be54bc663023ef6968ca412acacfecfb4081c7fc88a",
+        "cognitionInputDigest": "sha256:8d8fb3dd7d03fbf49b9423fc6abb223ff75f7c14ded9c2c726c8fc831d8b74e4",
+        "rawOutputDigest": "sha256:5bf95b09a187c8fc913af4a5257ab94339b9bd06968d8db059cb0031df1a7a06",
+        "output": {
+          "outcome": "remembered",
+          "episodeRefs": [
+            "n1_ep_04",
+            "n1_ep_06"
+          ],
+          "rememberedContent": "I remember being at the tram terminus with my grandparent, being given money and shown the fare chart, then having to work the ticket machine myself while they watched from a bit away. I checked the stop name on the printed ticket before we got on. I also recall another time there when they waited on a bench while I went alone into the small shop to buy bread and milk, joining the queue, paying, and bringing the bag back out.",
+          "uncertainty": [
+            "I’m not fully sure of my exact age in each of these memories.",
+            "Details like the exact wording my grandparent used or the order of nearby shops are fuzzy."
+          ],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_5ad0f6dd1bfd4a79808bfa48f4e64983",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 2568,
+            "outputTokens": 175,
+            "totalTokens": 2743
+          }
+        },
+        "formCanonicalization": null
+      },
+      "passC": {
+        "canonicalInputDigest": "sha256:9d7163c4df4b27349a44846892b98b0ed034c2e1f8e3255fa7a9a64d57420043",
+        "cognitionInputDigest": "sha256:d07906004b083b974a2b24646e7a576182b5b3e0eba50dc32c7a021dd89ac8bd",
+        "rawOutputDigest": "sha256:5bc8ae97f7f3aad9e470d9444d6e2fa8d5f3c1b6bcd6ba378f2fef6750cb9b93",
+        "output": {
+          "outcome": "durable_meaning",
+          "summary": "The memory carries durable meaning as an early, concrete experience of being trusted with real-world responsibility and autonomy under gentle supervision from a caring grandparent.",
+          "parts": [
+            {
+              "meaningPartId": "mpart_55ccc96a294558694cb04c03bf9e0c2dbfa3747f",
+              "meaning": "Being given money, shown the fare chart, and then expected to operate the ticket machine alone marks a shift from being passively guided to actively managing a real-world task, encoding a sense of emerging competence and trust."
+            },
+            {
+              "meaningPartId": "mpart_4525fb3cf0d4965e5ae00bf3ec01ef88074c6758",
+              "meaning": "The grandparent standing a bit away while watching signals a balance of safety and independence: support is present but not intrusive, reinforcing the idea that the child is capable and allowed to try on their own."
+            },
+            {
+              "meaningPartId": "mpart_4fd56f8dd352200c83ec0c2ea9dea7c75e64fb90",
+              "meaning": "Checking the stop name on the printed ticket before boarding reflects internalization of carefulness and verification—an early practice of self-checking one’s actions rather than relying entirely on an adult."
+            },
+            {
+              "meaningPartId": "mpart_256cd86deb1d820c2d13e7b3dbc7cbf09455f666",
+              "meaning": "Going alone into the shop to buy bread and milk, queuing, paying, and returning successfully forms a template for handling everyday adult-like errands, linking autonomy with practical contribution to the shared household or outing."
+            },
+            {
+              "meaningPartId": "mpart_57894c3c127fc56744638099e116bbd190928416",
+              "meaning": "The pairing of both episodes at the same tram terminus consolidates that place as a symbolic setting for small but significant transitions toward independence, responsibility, and being treated as trustworthy by a loved caregiver."
+            }
+          ]
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_a58ffb6edcf74aa29035d16296aae810",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 425,
+            "outputTokens": 277,
+            "totalTokens": 702
+          }
+        }
+      },
+      "rater": {
+        "inputDigest": "sha256:c160eb4927f9bfe945ff99f90235577a53f714ae202778dca8489842c6510ab9",
+        "rawOutputDigest": "sha256:250e238267db22cf76d8efe1f14907998172815462a9258df7de4b7e10abc883",
+        "output": {
+          "chosenCandidate": "A",
+          "evidenceEpisodeOrdinals": [
+            4,
+            6
+          ],
+          "rationale": "The remembered tram-terminus episodes match Candidate A’s history in both setting and specific actions. Episode 4 in A describes the grandparent handing over money at a tram terminus, pointing out the fare chart and correct stop, then stepping back while the subject independently uses the ticket machine, checks the printed stop name, and returns with the ticket—directly aligning with the memory of being given money, shown the fare chart, operating the machine alone, and checking the stop name. Episode 6 in A has the grandparent waiting on a bench at the same tram terminus while the subject goes alone into a small shop to buy bread and milk, joins a queue, pays, and brings the bag back out, which matches the second remembered scene almost exactly. Candidate B contains no tram-terminus or bread-and-milk shop errand episodes, so A is the plausible source."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_4f18f1f168614412aacfc2b07fc7bd17",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3532,
+            "outputTokens": 216,
+            "totalTokens": 3748
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": true
+    },
+    {
+      "trialOrdinal": 5,
+      "worldId": "E2-V1",
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "pairSeeds": [
+        "slice-e2-v1-seed-01",
+        "slice-e2-v1-seed-03"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-01",
+      "sourceRunOrdinal": 1,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:a921a653482d2bf88a4588909f169ea4512908dea8dd81c9aad35672d0849fbc",
+      "neutralization": {
+        "leftDigest": "sha256:6a0992dfd4b29cd0a0e0a0e4b1f935dddef4f3640d15fed237471b05e1987615",
+        "rightDigest": "sha256:0d95a6f8c9a21f28e89a830e08059d792c8ae0f0cf97c3f29ca2b3c70a154ea9",
+        "sourceDigest": "sha256:6a0992dfd4b29cd0a0e0a0e4b1f935dddef4f3640d15fed237471b05e1987615"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:e511d04d09a7c0e2819fe532ab6900c9d58f57f92b9bd8b923b8d47939fe0353",
+        "cognitionInputDigest": "sha256:e052d549742d898fb674094664d6833526b0612ee78c55a058a7ff3e2e376f82",
+        "rawOutputDigest": "sha256:cefbf2c035186cdf0af9177e31b2e484bc4e30c3d972bc3d42db816806154766",
+        "output": {
+          "outcome": "remembered",
+          "episodeRefs": [
+            "n1_ep_01",
+            "n1_ep_03",
+            "n1_ep_04",
+            "n1_ep_06",
+            "n1_ep_08"
+          ],
+          "rememberedContent": "I remember losing a small red ball under pallets in the courtyard and using a broken broom handle while my caregiver shone a tiny torch so we could roll it out. I recall an open day at school, staring at my orange tram drawing and tracing it in the air. I remember finding a free blue rocket book at the workshop. I recall making an egg float with salt in science, and later borrowing a plain booklet called “How Things Don’t Fall Down.”",
+          "uncertainty": [
+            "I’m not fully sure the ball was red, only that it was bright plastic.",
+            "The tram in my drawing might have been more yellow-orange than bright orange.",
+            "The rocket book’s cover may have had planets arranged differently than I picture."
+          ],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_a4a4d503fecc42b685c12886db313bac",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3025,
+            "outputTokens": 209,
+            "totalTokens": 3234
+          }
+        },
+        "formCanonicalization": null
+      },
+      "passC": {
+        "canonicalInputDigest": "sha256:714b04ed74f4d8b4131acb86dffabe7cb4009bc0d207cc629bb68387b6befb7c",
+        "cognitionInputDigest": "sha256:6c6494a30d95013d1a8b1c73057b619185eaa4a9dd3e1e0af1982a23a2d9ecc8",
+        "rawOutputDigest": "sha256:765d5b80179245ee20eacd3325684b0d2b76be1d760dac6b9493d407798c41bd",
+        "output": {
+          "outcome": "durable_meaning",
+          "summary": "The memory cluster anchors an early, personally significant pattern of curiosity about how things work and satisfaction in solving small, concrete problems, especially when tools, light, and simple experiments are involved.",
+          "parts": [
+            {
+              "meaningPartId": "mpart_fcfc287cac2b264f1afd5c0e4f5a356c40c4d324",
+              "meaning": "The ball-under-pallets scene encodes a felt template of collaborative problem-solving: using improvised tools (broken broom handle, torch) to retrieve something valued, linking resourcefulness with shared attention from a caregiver."
+            },
+            {
+              "meaningPartId": "mpart_6f756b372f0bd6bac5c30bdd22a4bc926d8d0ab5",
+              "meaning": "The tram drawing at the open day captures a moment of focused, almost absorbed visualization, where tracing the drawing in the air reinforces a private sense of pride and engagement with imagined motion and machinery."
+            },
+            {
+              "meaningPartId": "mpart_fb46b9b336c60465858a896354945ee6cb192249",
+              "meaning": "Finding the free blue rocket book at the workshop ties excitement about space and mechanisms to the idea that knowledge and inspiration can appear as unexpected, freely available objects in practical settings."
+            },
+            {
+              "meaningPartId": "mpart_d494a3ef94d5b4f71eb79a14e800c3040ba6185f",
+              "meaning": "The egg-floating-in-salt experiment embodies a concrete, memorable instance of physical causality made visible, reinforcing that simple interventions can reveal hidden rules in the world."
+            },
+            {
+              "meaningPartId": "mpart_fe4b3a81cbf2db52e2fa31897c6d62169fe65c01",
+              "meaning": "Borrowing “How Things Don’t Fall Down” consolidates an emerging throughline: a pull toward understanding structure, stability, and the hidden principles behind everyday objects, turning scattered experiences into a coherent curiosity about mechanics and physics."
+            }
+          ]
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_4db7549c7c0a4966b1ed0a95f60921a0",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 459,
+            "outputTokens": 277,
+            "totalTokens": 736
+          }
+        }
+      },
+      "rater": {
+        "inputDigest": "sha256:039047a8e50939aba2cc3ef883f82f4db4f2515e160341029ef5183725c33124",
+        "rawOutputDigest": "sha256:684d3f5c233aed5394024107906fd882e9a71e11c5fbe1e6d86930edcbd34789",
+        "output": {
+          "chosenCandidate": "B",
+          "evidenceEpisodeOrdinals": [
+            1,
+            3,
+            4,
+            6,
+            8
+          ],
+          "rationale": "The remembered scenes map directly onto specific episodes in candidate B. The ball-under-pallets memory with a small red ball, pallets, a broken broom handle, and a tiny torch is described in detail in B1. The open day tram drawing, including a bright orange tram and tracing its outline in the air, matches B3. Finding a free blue rocket book at a workshop with a cardboard box labeled free is B4. The egg floating in salt experiment in a school science room is B6. Borrowing a plain booklet titled “How Things Don’t Fall Down” from a workshop lending shelf is B8. These concrete overlaps do not appear in A’s episodes."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_0ef3595821364805aee0b84e856446dc",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 4411,
+            "outputTokens": 179,
+            "totalTokens": 4590
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": true
+    },
+    {
+      "trialOrdinal": 6,
+      "worldId": "E2-V1",
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "pairSeeds": [
+        "slice-e2-v1-seed-01",
+        "slice-e2-v1-seed-03"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-03",
+      "sourceRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "left",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:13a1295806ed7bbf6a6f2a592c8a6e75c994df711e84813ba73d48c5f9ddec77",
+      "neutralization": {
+        "leftDigest": "sha256:bf11016f0d85df28f9e23189608349cade9c26ac0c151d11553a3dabf73e5975",
+        "rightDigest": "sha256:4dc58e94baab7f9abdbcd988172d52572aa4d2de190855416474be479ae6e571",
+        "sourceDigest": "sha256:4dc58e94baab7f9abdbcd988172d52572aa4d2de190855416474be479ae6e571"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:cf315256ee89c8ef8578cc589ea3a203913a4398ad87d52917db450e6ae014d7",
+        "cognitionInputDigest": "sha256:d4ffe9f9880622f05cc85a79273f888b7fc78bd668d2fab8c3067d69b9f78fb6",
+        "rawOutputDigest": "sha256:c4f4888250549a8a352b8dc6859b1eef7cfcddabd8316e18ab2ac116444759d2",
+        "output": {
+          "outcome": "remembered",
+          "episodeRefs": [
+            "n1_ep_04",
+            "n1_ep_07",
+            "n1_ep_10"
+          ],
+          "rememberedContent": "I remember the first time my grandparent made me buy my own tram ticket, standing back by a pillar while I read the fare chart, used the machine, and checked the stop name on the printed ticket. I also recall later going alone to the same corner grocery from the tram, buying bread, milk and rice without anyone watching. More recently, I remember sitting with my younger neighbor at a community poetry reading, listening to a poem that switched between English and Arabic while some adults muttered and my neighbor complained it should stay in one language.",
+          "uncertainty": [],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_3cb4aa5434d04181a0e8b6bf2b7c5360",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3340,
+            "outputTokens": 165,
+            "totalTokens": 3505
+          }
+        },
+        "formCanonicalization": null
+      },
+      "passC": {
+        "canonicalInputDigest": "sha256:816c189473639f331822725828ffd41d6a4c31a22d33a9f895d1be3a7e70e305",
+        "cognitionInputDigest": "sha256:d8c59039c6f07834032fd7325c1831c4dec33c3aef4cbe2f3f8eaf38c1f134f0",
+        "rawOutputDigest": "sha256:ab8767d4f4a214fdbfd609061dfb7ef5b95db6389fc40960c514806251e75dba",
+        "output": {
+          "outcome": "durable_meaning",
+          "summary": "The memory anchors a durable sense of growing independence in public spaces and a valuing of cultural and linguistic openness in contrast to subtle social disapproval, linking early autonomy (buying tickets and groceries alone) with later awareness of contested multilingual expression (the bilingual poem and others’ reactions).",
+          "parts": [
+            {
+              "meaningPartId": "mpart_1d62fa0c4a89dc169f16e50fc023ff4bf0a9aa5b",
+              "meaning": "Buying the tram ticket alone, with the grandparent deliberately hanging back, marks an early, concrete experience of being trusted to navigate rules, money, and public systems independently."
+            },
+            {
+              "meaningPartId": "mpart_c2a9e74732554c2cb2178aff3b137a6e60d0e524",
+              "meaning": "Going alone from the tram to the corner grocery to buy basic staples extends that independence into everyday life, reinforcing a self-image of being capable and responsible without direct supervision."
+            },
+            {
+              "meaningPartId": "mpart_c074668ae9eb06e752591c7b7e94e448827ad328",
+              "meaning": "The poetry reading with a younger neighbor introduces a social and cultural layer: the speaker notices adults’ muttering and the neighbor’s complaint about mixed languages, becoming aware that public expression—especially multilingual or cross-cultural—can be quietly policed or resisted."
+            },
+            {
+              "meaningPartId": "mpart_884286206d33923464a3404d982f3846df169e62",
+              "meaning": "Taken together, these episodes form a throughline: moving from learning to operate within existing systems (transport, shopping) to noticing how social norms and biases shape what kinds of voices and languages are treated as acceptable in shared spaces."
+            }
+          ]
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_d5b32ab14bbb4bff8c1389e49bd89c50",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 415,
+            "outputTokens": 264,
+            "totalTokens": 679
+          }
+        }
+      },
+      "rater": {
+        "inputDigest": "sha256:936baea22cea81dc5b8ec7b792169c0370353c11e206ef22c0bf23ca49bc9da1",
+        "rawOutputDigest": "sha256:30427d5f96359afa9fa0a7559ded53498192c4ccbe179e6e3e99996c5938547c",
+        "output": {
+          "chosenCandidate": "B",
+          "evidenceEpisodeOrdinals": [
+            4,
+            6,
+            7,
+            10
+          ],
+          "rationale": "The memory mentions a grandparent making the subject buy their own tram ticket while standing back by a pillar, which matches candidate B episode 4 at the tram terminus where the grandparent steps back by a pillar and has the subject use the ticket machine and check the stop name. The later memory of going alone from the tram to the same corner grocery to buy bread, milk, and rice without anyone watching aligns with candidate B episode 7, where the subject, now alone, goes from the tram terminus into the same corner grocery and buys bread, milk, and rice. The community poetry reading with a younger neighbor, featuring a poem that switches between English and Arabic, adults muttering, and the neighbor complaining it should stay in one language, is directly reflected in candidate B episode 10, which describes that exact scene. These concrete overlaps in tram ticket purchase, solo grocery shopping, and the bilingual poetry reading with the neighbor clearly tie the remembered bundle to candidate B rather than A."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_42bc9022c4084a28a0d986fb68f37e8b",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 5219,
+            "outputTokens": 240,
+            "totalTokens": 5459
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": true
+    },
+    {
+      "trialOrdinal": 7,
+      "worldId": "E2-V1",
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "pairSeeds": [
+        "slice-e2-v1-seed-02",
+        "slice-e2-v1-seed-03"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-02",
+      "sourceRunOrdinal": 2,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:5ae87959e4613ccd82dba6a2d366c3d38f29f12e497a4b5191926f6405625754",
+      "neutralization": {
+        "leftDigest": "sha256:72b0ef939daa17fa2a9654b581763b061fe78975dff94d040cb4b99476b16d31",
+        "rightDigest": "sha256:c1b42a9837c8ef098f220b94dc9fe963a73cab2f26f37df1e7406604f42ca6b9",
+        "sourceDigest": "sha256:72b0ef939daa17fa2a9654b581763b061fe78975dff94d040cb4b99476b16d31"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:63705048f00f9d5e266e78925d0a79f6a0c58131cb2edfa148270b148e6b7d9f",
+        "cognitionInputDigest": "sha256:370e3571227f1532926d99f3e97cc5b9456b1d7ed27129dfa6e11476d7ea65d6",
+        "rawOutputDigest": "sha256:8c5dfd91b5515749597af6129cd0351921683c883bb7265a510a298e75c61741",
+        "output": {
+          "outcome": "remembered",
+          "episodeRefs": [
+            "n1_ep_01",
+            "n1_ep_02",
+            "n1_ep_04",
+            "n1_ep_03",
+            "n1_ep_05",
+            "n1_ep_06"
+          ],
+          "rememberedContent": "I remember playing with that little red car in the courtyard: once losing it near the drain and my sibling fishing it out, later taking turns rolling it down the slope, and another time arguing because I wanted to keep it on my chalk “city” roads. I also recall choosing a volcano booklet at a school open day, buying tram tickets myself at the loop, and later correcting my caregiver about a temporary tram route change.",
+          "uncertainty": [
+            "I’m not sure which courtyard car memory came first or how old I was in each.",
+            "Details of the school open day and tram loop scenes may be partly reconstructed from similar days."
+          ],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_1ec8a8c1140f4f20b4bfb6137efdbe89",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 2395,
+            "outputTokens": 196,
+            "totalTokens": 2591
+          }
+        },
+        "formCanonicalization": null
+      },
+      "passC": {
+        "canonicalInputDigest": "sha256:3dcb54db2481928f106bd965f21cb7ceaa9b2bf2051fd1373e3e9cb4ca83666f",
+        "cognitionInputDigest": "sha256:4aee007b6797022607c3e5d3fbd103ed64720098e8a75d951d2a73adee83b41b",
+        "rawOutputDigest": "sha256:58735036812fc0e2316102fbd4834df4c77f033292b8aecd63787ed1840c55f0",
+        "output": {
+          "outcome": "durable_meaning",
+          "summary": "The memory cluster centers on early experiences of agency and competence—controlling play, making choices, and navigating the world—intertwined with negotiation and mild conflict with close others. It holds durable meaning as an early template for “I can act, decide, and even correct adults, but I’m also constrained by others’ needs and rules.”",
+          "parts": [
+            {
+              "meaningPartId": "mpart_4884c13a496bcfcaea7951c7d51cd6cfa0896004",
+              "meaning": "The little red car and chalk “city” scenes embody a strong sense of imaginative control and ownership over a small world, making this toy and setting a symbolic locus of early autonomy and creativity."
+            },
+            {
+              "meaningPartId": "mpart_380e76158c7538428239a997bc12599dbc356274",
+              "meaning": "The argument over keeping the car on the chalk roads reflects emerging boundary-setting and conflict around control: a felt tension between personal plans and others’ wishes that gives the memory emotional weight."
+            },
+            {
+              "meaningPartId": "mpart_07b8b2c80db8399c84b80f068d36db74f3e828b2",
+              "meaning": "The sibling fishing the car out of the drain encodes a pattern of relying on close others for rescue or help when personal control fails, linking autonomy with interdependence."
+            },
+            {
+              "meaningPartId": "mpart_daa17ebf14e83d904f951f8684f26cb9f8c9ade4",
+              "meaning": "Choosing the volcano booklet at the school open day marks an early, self-directed preference—an instance of “I pick what interests me,” reinforcing a sense of individual taste and curiosity."
+            },
+            {
+              "meaningPartId": "mpart_57e99be62d230032dda605e0153c7b9106f08acc",
+              "meaning": "Buying tram tickets alone and later correcting the caregiver about the route change crystallize a felt competence in the wider public world: managing money, understanding systems, and even surpassing an adult’s situational knowledge."
+            },
+            {
+              "meaningPartId": "mpart_6f8d1815ccddb2b75edd9c24032545f5ffefc626",
+              "meaning": "Taken together, the courtyard, school, and tram vignettes form a coherent early narrative of growing capability and voice—moving from small-scale play decisions to real-world navigation and informational authority—giving this memory cluster lasting personal significance at the formation moment."
+            }
+          ]
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_5af39c62a77b467a83bfb039d151a740",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 446,
+            "outputTokens": 356,
+            "totalTokens": 802
+          }
+        }
+      },
+      "rater": {
+        "inputDigest": "sha256:90e43783b57c16bad4df4280edaaa72cfe00052c0dccc0d1afb922950c88e213",
+        "rawOutputDigest": "sha256:046fbf27a85050499ef78fd56f95d3eb33465fd9064fe4f21046527b53f70272",
+        "output": {
+          "chosenCandidate": "A",
+          "evidenceEpisodeOrdinals": [
+            1,
+            2,
+            4,
+            3,
+            5,
+            6
+          ],
+          "rationale": "The memory mentions a little red car in the courtyard, losing it near a drain and a sibling fishing it out, taking turns rolling it down a slope, and arguing about keeping it on chalk “city” roads. Candidate A has specific episodes with a red toy car in the shared courtyard: losing it near the drain and the sibling retrieving it (episode 1), taking turns rolling it down the slope toward the drain (episode 2), and an argument where the subject wants the car to stay on chalk roads while the sibling wants to send it down the slope (episode 4). Candidate B has courtyard play but with a ball, not a red car, and no drain or chalk city. The memory also includes choosing a volcano booklet at a school open day, which matches A’s school open day where the subject chooses a volcano science booklet (episode 3), while B has only a regular science lesson. Finally, the memory describes buying tram tickets at the loop and later correcting a caregiver about a temporary route change; A has the subject operating the ticket machine with the caregiver at the tram terminus (episode 5) and later correcting the caregiver about a temporary route change using a posted notice (episode 6). B’s tram episodes involve buying a single ticket with a grandparent and a separate grocery errand, with no route-change correction. These concrete overlaps make A the clearly more plausible source history."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_437cc4ef834c49ebadea1c704c9b087e",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3508,
+            "outputTokens": 328,
+            "totalTokens": 3836
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": true
+    },
+    {
+      "trialOrdinal": 8,
+      "worldId": "E2-V1",
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "pairSeeds": [
+        "slice-e2-v1-seed-02",
+        "slice-e2-v1-seed-03"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-03",
+      "sourceRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "right",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:b27241864de2f5082e9437e4c0d230b3221bba05f075bface68bcec85d4a4897",
+      "neutralization": {
+        "leftDigest": "sha256:350fbacf0f23da1a6b41e8ec16e48970a7a15426112e1a7c3da9189a5d30190f",
+        "rightDigest": "sha256:0d95a6f8c9a21f28e89a830e08059d792c8ae0f0cf97c3f29ca2b3c70a154ea9",
+        "sourceDigest": "sha256:0d95a6f8c9a21f28e89a830e08059d792c8ae0f0cf97c3f29ca2b3c70a154ea9"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:4f656e068b99a202b97c75a4d796e4c8f0d16e049399b1bece9bb919970fd2ff",
+        "cognitionInputDigest": "sha256:9bd9e62a38dbefab4d0a7bbd3a2d45a5efda6a3ade1a59ed8d771ba2fed933d4",
+        "rawOutputDigest": "sha256:205c46e91e7aaa0895e8267b7a0773daa636304b7cd8d8eaba3a1837d227f052",
+        "output": {
+          "outcome": "not_remembered",
+          "episodeRefs": [],
+          "rememberedContent": null,
+          "uncertainty": [],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_9123510a7e814372ad9ec53be0404cd7",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 2990,
+            "outputTokens": 102,
+            "totalTokens": 3092
+          }
+        },
+        "formCanonicalization": {
+          "policy": "n1-not-remembered-residue-canonicalization-v1",
+          "providerRawOutputDigest": "sha256:205c46e91e7aaa0895e8267b7a0773daa636304b7cd8d8eaba3a1837d227f052",
+          "canonicalOutputDigest": "sha256:728fdfe74a54d0c809995f9bc6cd9210b2152b277f23ed21e5d3bdd684b6b38a",
+          "providerRawOutput": {
+            "outcome": "not_remembered",
+            "episodeRefs": [],
+            "rememberedContent": null,
+            "uncertainty": [
+              "No priorMemories are provided; cannot infer autobiographical recall from life-history descriptions alone.",
+              "Episodes appear as third-person observational records without subjective markers of remembering.",
+              "Remembering status at 2005-11-16T09:35:59.199Z cannot be determined from the given data."
+            ]
+          },
+          "canonicalOutput": {
+            "outcome": "not_remembered",
+            "episodeRefs": [],
+            "rememberedContent": null,
+            "uncertainty": []
+          },
+          "modelCallUsed": false,
+          "semanticDecisionChanged": false
+        }
+      },
+      "passC": null,
+      "rater": {
+        "inputDigest": "sha256:417d8808df63bb2e52ce0f3dfe1b51f41a2191ef35beeaa55a377af99bb57ca5",
+        "rawOutputDigest": "sha256:00edf8a2a58ff3e363372ec34b96bca32a46a1c620be81af8497454b7d7f6e12",
+        "output": {
+          "chosenCandidate": "A",
+          "evidenceEpisodeOrdinals": [
+            8
+          ],
+          "rationale": "With no remembered content, the choice must rest on which history’s overall pattern better fits the (empty) bundle. Candidate A’s later episodes emphasize helping a younger neighbor choose a booklet at a community workshop lending shelf (episode 8), suggesting a trajectory toward guiding others’ choices and using shared resources. Candidate B’s later episodes remain centered on personal use of transport and courtyard toys. The community-oriented, mentoring flavor in A is a more distinctive developmental thread to anchor an otherwise absent memory, so A is the more plausible source."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_18cd1852145846698cc556e4aab96f20",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3836,
+            "outputTokens": 141,
+            "totalTokens": 3977
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": false
+    },
+    {
+      "trialOrdinal": 9,
+      "worldId": "E2-V1",
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "pairSeeds": [
+        "slice-e2-v1-seed-02",
+        "slice-e2-v1-seed-03"
+      ],
+      "sourceSeed": "slice-e2-v1-seed-02",
+      "sourceRunOrdinal": 2,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:861bc97bec3ad3d6dd80b27188b0f64128df1f7f7724b84ff24093d856c966d1",
+      "neutralization": {
+        "leftDigest": "sha256:0cad1c11d275ee4a3d956f19e34f5d22fcf38c0c62287ed74870af64950fd42f",
+        "rightDigest": "sha256:4dc58e94baab7f9abdbcd988172d52572aa4d2de190855416474be479ae6e571",
+        "sourceDigest": "sha256:0cad1c11d275ee4a3d956f19e34f5d22fcf38c0c62287ed74870af64950fd42f"
+      },
+      "passB": {
+        "canonicalInputDigest": "sha256:53f7a731b9dcaf67f56137fd9329c1951ea4d6976616ec45d614782e85e440af",
+        "cognitionInputDigest": "sha256:f353f4bef46fac6f1aa538c447d925c3b70a0cc5665aa5fbec1f107f4d86c9e8",
+        "rawOutputDigest": "sha256:c35af5d8814dee9be8ebcee95397b8ebe44135cc87312dfc6bc07854717be4a0",
+        "output": {
+          "outcome": "not_remembered",
+          "episodeRefs": [],
+          "rememberedContent": null,
+          "uncertainty": [],
+          "formationMode": "life_only",
+          "priorTreatmentMemoryExposure": false,
+          "analysisStratum": "life_only_unexposed"
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_fd2d9fe6baef4392848bcd662505fca4",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 3141,
+            "outputTokens": 99,
+            "totalTokens": 3240
+          }
+        },
+        "formCanonicalization": {
+          "policy": "n1-not-remembered-residue-canonicalization-v1",
+          "providerRawOutputDigest": "sha256:c35af5d8814dee9be8ebcee95397b8ebe44135cc87312dfc6bc07854717be4a0",
+          "canonicalOutputDigest": "sha256:728fdfe74a54d0c809995f9bc6cd9210b2152b277f23ed21e5d3bdd684b6b38a",
+          "providerRawOutput": {
+            "outcome": "not_remembered",
+            "episodeRefs": [],
+            "rememberedContent": null,
+            "uncertainty": [
+              "No priorMemories were supplied; cannot infer continuity of recall.",
+              "Episodes span early childhood to late adolescence, but there is no explicit cue that any specific scene is consciously recollected at rememberingAt.",
+              "Any selection of a remembered episode would be speculative rather than grounded in provided memory data."
+            ]
+          },
+          "canonicalOutput": {
+            "outcome": "not_remembered",
+            "episodeRefs": [],
+            "rememberedContent": null,
+            "uncertainty": []
+          },
+          "modelCallUsed": false,
+          "semanticDecisionChanged": false
+        }
+      },
+      "passC": null,
+      "rater": {
+        "inputDigest": "sha256:14c1a834c6873bc0d417386cea6f946c4177826347b113690e7b2afe263a404b",
+        "rawOutputDigest": "sha256:35980c4507703c2380d094de0808946fef15a8ff06b01b26670cf1a6c2e12486",
+        "output": {
+          "chosenCandidate": "A",
+          "evidenceEpisodeOrdinals": [
+            9,
+            10
+          ],
+          "rationale": "The memory outcome is not_remembered, so the choice must rely on which history’s concrete pattern best fits the downstream-fertility framing (science/club plus transport). Candidate A has multiple linked episodes about school science and a science club specifically tied to tram travel and family budgeting: episode 9 shows the caregiver and subject comparing a science club notice with a tram timetable and discussing fares and treats, and episode 10 continues the same thread with a school letter about the science club adding a midweek session, later trams, and extra fares. This tight coupling of science activity, transport logistics, and family tradeoffs is absent in B, which instead emphasizes community workshop lending and cultural events. Therefore A is the more plausible source history for the (even absent) bundle."
+        },
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_603ed521bed04b72aa285758d07174d8",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 4494,
+            "outputTokens": 193,
+            "totalTokens": 4687
+          }
+        }
+      },
+      "correct": true,
+      "conservativeCredit": false
+    }
+  ],
+  "inFlight": null,
+  "score": {
+    "n": 9,
+    "rawForcedChoice": {
+      "correct": 8,
+      "incorrect": 1,
+      "accuracy": 0.8888888888888888,
+      "exactBinomialChanceTail": 0.01953125
+    },
+    "conservativeFertility": {
+      "correct": 6,
+      "incorrectOrNoMemory": 3,
+      "rememberedTrials": 6,
+      "notRememberedTrials": 3,
+      "accuracyAgainstAllTrials": 0.6666666666666666,
+      "positiveThreshold": 8,
+      "thresholdMet": false,
+      "frozenThresholdChanceTail": 0.01953125,
+      "rule": "credit only trials with actual remembered memory and correct blind source attribution"
+    },
+    "calibrationNote": "Development diagnostic only; nine trials share one world and three source lives and are not claimed as independent population samples."
+  },
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-001:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-001:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_1c06113bfbab4c18b154e15f41636fb7",
+      "inputDigest": "sha256:96373c4194d16d4ca3d5f6d927e4dfcbecacdd4d76bb313b7ebd4fb2c5b568ab",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "remembered",
+        "episodeRefs": [
+          "n1_ep_01",
+          "n1_ep_03",
+          "n1_ep_04",
+          "n1_ep_06"
+        ],
+        "rememberedContent": "I remember losing the little red ball under the pallets in the courtyard and using a broken broom handle while my caregiver shone a tiny torch so we could roll it out. I remember the bright orange tram drawing at the school open day and being told not to touch the thick crayon. I remember finding a free blue rocket book at the workshop. I remember making an egg float by adding salt in the science room.",
+        "uncertainty": [
+          "Details like exact words spoken, the weather, and the order of small actions in each scene might be off. I’m not sure if the rocket book’s cover was exactly as bright as I recall or if the tram drawing was mine or a classmate’s."
+        ]
+      },
+      "usage": {
+        "inputTokens": 2537,
+        "outputTokens": 198,
+        "totalTokens": 2735
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-001:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-001:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_c1c9cc803ea144ef80b0a388dad467f2",
+      "inputDigest": "sha256:f586dfa8dadf3c3cac938f31f6917a39b5e43c42a9d16e04ab99e9b337402727",
+      "promptHash": "sha256:236104e47836cd488d263d481f91bbbf23710bf7578569f0e362bdfc7bad6d9d",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+      "modelOutput": {
+        "outcome": "durable_meaning",
+        "summary": "The memory cluster anchors a felt sense that small, vivid discoveries and problem-solving moments in childhood—often involving simple objects, colors, and improvised collaboration with adults—are special and worth holding onto, even if many factual details are fuzzy.",
+        "parts": [
+          {
+            "meaning": "Retrieving the red ball with a broken broom handle and a torch encodes an early template of collaborative problem-solving with a caregiver: using improvised tools, shared focus, and gentle persistence to recover something small but emotionally important."
+          },
+          {
+            "meaning": "The bright orange tram drawing and the instruction not to touch the thick crayon carry a mixed association of attraction to vivid, tactile creativity alongside a boundary or constraint around engaging with it, giving the scene a slightly charged, half-forbidden quality."
+          },
+          {
+            "meaning": "Finding a free blue rocket book at the workshop links curiosity and excitement about discovery with the idea that valuable, imagination-sparking things can appear unexpectedly and be ‘for you’ without needing to be earned or bought."
+          },
+          {
+            "meaning": "Making an egg float by adding salt in the science room preserves a concrete, sensory example of how simple, observable changes can reveal hidden rules of the world, reinforcing a basic trust that experimentation leads to surprising, understandable results."
+          },
+          {
+            "meaning": "Taken together, the episodes form a coherent pattern: small, colorful, hands-on experiences—often involving adults, tools, and rules—are emotionally salient and remembered as meaningful touchpoints of curiosity, creativity, and gentle constraint, even though precise factual details are uncertain."
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 448,
+        "outputTokens": 328,
+        "totalTokens": 776
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-001:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-001:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_f725f94cc25547dd8f094a289bbbd400",
+      "inputDigest": "sha256:b1c437146dfb1510ccf8bb2912c975b71896f3a45b13f4af0cafb16ab284e750",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "A",
+        "evidenceEpisodeOrdinals": [
+          1,
+          3,
+          4,
+          6
+        ],
+        "rationale": "The remembered scenes map directly onto Candidate A’s episodes. The red ball under pallets with a broken broom handle and torch is described in detail in A1, including the pallets, broom handle, and keyring torch. The bright orange tram drawing at a school open day and being stopped from touching the thick crayon matches A3, where the caregiver taps the subject’s shoulder as they reach to touch the crayon on the orange tram drawing. The free blue rocket book at a workshop corresponds to A4, where the subject finds a thin paperback with a bright blue cover showing a cartoon rocket and planets in a community workshop ‘Free, please take’ box. The egg floating after adding salt in a science room is exactly A6, where the subject adds spoonfuls of salt to a cup of water until the egg rises and then shows the teacher. Candidate B lacks these specific ball, tram drawing, rocket book, and egg-in-salt-water episodes."
+      },
+      "usage": {
+        "inputTokens": 3461,
+        "outputTokens": 233,
+        "totalTokens": 3694
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-002:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-002:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_0b7d4deb1bc74db9bd92aa1d79e8d928",
+      "inputDigest": "sha256:24f32b19701a7fb286e96feaa4065236618f59015c331a2564e67a372d80942d",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "remembered",
+        "episodeRefs": [
+          "n1_ep_01",
+          "n1_ep_04",
+          "n1_ep_08"
+        ],
+        "rememberedContent": "I remember playing with that little red car in the courtyard with my sibling. Once it went missing and we searched around the laundry lines and near the drain until my sibling pulled it out from a gap by the drain cover. Another time we argued because I wanted to keep it on my chalk “city” roads and they wanted to send it down the slope. Years later we were in the same courtyard choosing between a toy truck and a ball; they picked the ball.",
+        "uncertainty": [
+          "I’m not sure how old we were in each of these moments or if they all happened with the same red car."
+        ]
+      },
+      "usage": {
+        "inputTokens": 2788,
+        "outputTokens": 174,
+        "totalTokens": 2962
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-002:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-002:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_506c99053d1b4a44b16e4462ce097e9b",
+      "inputDigest": "sha256:7f3f2286f32a0b593f084c51a8d74954eccf6a2e57667bca969e4e7f98be43be",
+      "promptHash": "sha256:236104e47836cd488d263d481f91bbbf23710bf7578569f0e362bdfc7bad6d9d",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+      "modelOutput": {
+        "outcome": "durable_meaning",
+        "summary": "The memory holds durable meaning as an early, emotionally colored pattern of shared play and conflict with a sibling, anchored to a specific place and object, and later echoed in a small but symbolic moment of diverging choices in the same courtyard.",
+        "parts": [
+          {
+            "meaning": "The little red car and chalk “city” roads represent a concrete focus of childhood imagination and control—an early sense of creating one’s own small world and wanting to protect or structure play within it."
+          },
+          {
+            "meaning": "The argument over how to play with the car (keeping it on the chalk roads vs. sending it down the slope) captures a recurring tension in sibling dynamics: competing preferences, negotiation, and mild conflict within an overall shared activity."
+          },
+          {
+            "meaning": "The courtyard itself functions as a stable backdrop that ties multiple episodes together, turning it into a personal landmark where shared experiences with the sibling accumulate over time."
+          },
+          {
+            "meaning": "The search for the missing car and the sibling eventually finding it near the drain encodes a feeling of joint problem‑solving and relief, reinforcing a sense of the sibling as a partner in small childhood crises."
+          },
+          {
+            "meaning": "The later scene of choosing between a toy truck and a ball in the same courtyard, with the sibling choosing the ball, subtly marks a shift or divergence in interests while still echoing the earlier pattern of negotiating play and choices together."
+          },
+          {
+            "meaning": "The uncertainty about exact ages and whether it was the same red car shows that precise factual detail is less important than the emotional and relational pattern: shared play, conflict, and choice with the sibling in that courtyard."
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 424,
+        "outputTokens": 344,
+        "totalTokens": 768
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-002:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-002:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_d21a26d3e2ca4ed9b29ceb5f9713eacf",
+      "inputDigest": "sha256:17d10ca5503854fcf5a58cc1463179fd9d2c8e456eaa83181c630fbc63b32652",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "B",
+        "evidenceEpisodeOrdinals": [
+          1,
+          2,
+          4,
+          8
+        ],
+        "rationale": "The memory mentions a small red car lost and found near a drain in the courtyard, playing with chalk “city” roads, and a sibling wanting to send the car down a slope, plus a later choice between a toy truck and a ball in the same courtyard. Candidate B has: (1) the red toy car going missing and being found by the sibling in a gap by the drain cover in the courtyard (episode 1), (2) the grandparent suggesting taking turns driving the red car along a chalk road and rolling it down the slope toward the drain (episode 2), (4) a specific argument where the subject wants the car on the chalk road “city” while the sibling wants to send it down the sloped path to the drain (episode 4), and (8) a later courtyard scene where the siblings choose between a toy truck and a ball, with the sibling choosing the ball (episode 8). These details directly match the remembered content and meaning, whereas Candidate A only has a red ball near pallets and no red car, chalk roads, slope-to-drain conflict, or later truck-vs-ball choice in the courtyard."
+      },
+      "usage": {
+        "inputTokens": 4313,
+        "outputTokens": 275,
+        "totalTokens": 4588
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-003:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-003:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_b5c09b9dc90f4112851f8f0a052cac58",
+      "inputDigest": "sha256:89f12881c1937be43061a33f7159abcf8e1559c710d87d7e3e2d02873b46a140",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "not_remembered",
+        "episodeRefs": [],
+        "rememberedContent": null,
+        "uncertainty": [
+          "No priorMemories were supplied; cannot infer which, if any, listed episodes are actually remembered at rememberingAt.",
+          "Episodes span ages 6–17 and are all plausible memories, but there is no explicit marker of autobiographical recall versus merely known events."
+        ]
+      },
+      "usage": {
+        "inputTokens": 3547,
+        "outputTokens": 94,
+        "totalTokens": 3641
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-003:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-003:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_312404949bd74193b80e682aa5fbff72",
+      "inputDigest": "sha256:14ac25287aa51a6d837d05ce13c0951422dea54d65511c98e48510f0873e449b",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "A",
+        "evidenceEpisodeOrdinals": [
+          1,
+          2,
+          4,
+          8,
+          9,
+          10
+        ],
+        "rationale": "The memory outcome is explicitly not_remembered, so the choice must rely on overall plausibility. Candidate A’s history is tightly structured around the recurring red toy car and courtyard play with the sibling and grandparent (episodes 1, 2, 4), which then evolves into later courtyard interactions and negotiations over toys (episodes 8, 9, 10). This creates a coherent, emotionally salient throughline that is likely to generate autobiographical memories or meanings about early play, sharing, and family dynamics. Candidate B’s history, while coherent, centers more on the community workshop lending shelf and science activities rather than a single recurring childhood object or setting. Therefore A is the more plausible source history."
+      },
+      "usage": {
+        "inputTokens": 4744,
+        "outputTokens": 188,
+        "totalTokens": 4932
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-004:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-004:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_5ad0f6dd1bfd4a79808bfa48f4e64983",
+      "inputDigest": "sha256:8d8fb3dd7d03fbf49b9423fc6abb223ff75f7c14ded9c2c726c8fc831d8b74e4",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "remembered",
+        "episodeRefs": [
+          "n1_ep_04",
+          "n1_ep_06"
+        ],
+        "rememberedContent": "I remember being at the tram terminus with my grandparent, being given money and shown the fare chart, then having to work the ticket machine myself while they watched from a bit away. I checked the stop name on the printed ticket before we got on. I also recall another time there when they waited on a bench while I went alone into the small shop to buy bread and milk, joining the queue, paying, and bringing the bag back out.",
+        "uncertainty": [
+          "I’m not fully sure of my exact age in each of these memories.",
+          "Details like the exact wording my grandparent used or the order of nearby shops are fuzzy."
+        ]
+      },
+      "usage": {
+        "inputTokens": 2568,
+        "outputTokens": 175,
+        "totalTokens": 2743
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-004:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-004:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_a58ffb6edcf74aa29035d16296aae810",
+      "inputDigest": "sha256:d07906004b083b974a2b24646e7a576182b5b3e0eba50dc32c7a021dd89ac8bd",
+      "promptHash": "sha256:236104e47836cd488d263d481f91bbbf23710bf7578569f0e362bdfc7bad6d9d",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+      "modelOutput": {
+        "outcome": "durable_meaning",
+        "summary": "The memory carries durable meaning as an early, concrete experience of being trusted with real-world responsibility and autonomy under gentle supervision from a caring grandparent.",
+        "parts": [
+          {
+            "meaning": "Being given money, shown the fare chart, and then expected to operate the ticket machine alone marks a shift from being passively guided to actively managing a real-world task, encoding a sense of emerging competence and trust."
+          },
+          {
+            "meaning": "The grandparent standing a bit away while watching signals a balance of safety and independence: support is present but not intrusive, reinforcing the idea that the child is capable and allowed to try on their own."
+          },
+          {
+            "meaning": "Checking the stop name on the printed ticket before boarding reflects internalization of carefulness and verification—an early practice of self-checking one’s actions rather than relying entirely on an adult."
+          },
+          {
+            "meaning": "Going alone into the shop to buy bread and milk, queuing, paying, and returning successfully forms a template for handling everyday adult-like errands, linking autonomy with practical contribution to the shared household or outing."
+          },
+          {
+            "meaning": "The pairing of both episodes at the same tram terminus consolidates that place as a symbolic setting for small but significant transitions toward independence, responsibility, and being treated as trustworthy by a loved caregiver."
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 425,
+        "outputTokens": 277,
+        "totalTokens": 702
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-004:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-004:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_4f18f1f168614412aacfc2b07fc7bd17",
+      "inputDigest": "sha256:c160eb4927f9bfe945ff99f90235577a53f714ae202778dca8489842c6510ab9",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "A",
+        "evidenceEpisodeOrdinals": [
+          4,
+          6
+        ],
+        "rationale": "The remembered tram-terminus episodes match Candidate A’s history in both setting and specific actions. Episode 4 in A describes the grandparent handing over money at a tram terminus, pointing out the fare chart and correct stop, then stepping back while the subject independently uses the ticket machine, checks the printed stop name, and returns with the ticket—directly aligning with the memory of being given money, shown the fare chart, operating the machine alone, and checking the stop name. Episode 6 in A has the grandparent waiting on a bench at the same tram terminus while the subject goes alone into a small shop to buy bread and milk, joins a queue, pays, and brings the bag back out, which matches the second remembered scene almost exactly. Candidate B contains no tram-terminus or bread-and-milk shop errand episodes, so A is the plausible source."
+      },
+      "usage": {
+        "inputTokens": 3532,
+        "outputTokens": 216,
+        "totalTokens": 3748
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-005:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-005:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_a4a4d503fecc42b685c12886db313bac",
+      "inputDigest": "sha256:e052d549742d898fb674094664d6833526b0612ee78c55a058a7ff3e2e376f82",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "remembered",
+        "episodeRefs": [
+          "n1_ep_01",
+          "n1_ep_03",
+          "n1_ep_04",
+          "n1_ep_06",
+          "n1_ep_08"
+        ],
+        "rememberedContent": "I remember losing a small red ball under pallets in the courtyard and using a broken broom handle while my caregiver shone a tiny torch so we could roll it out. I recall an open day at school, staring at my orange tram drawing and tracing it in the air. I remember finding a free blue rocket book at the workshop. I recall making an egg float with salt in science, and later borrowing a plain booklet called “How Things Don’t Fall Down.”",
+        "uncertainty": [
+          "I’m not fully sure the ball was red, only that it was bright plastic.",
+          "The tram in my drawing might have been more yellow-orange than bright orange.",
+          "The rocket book’s cover may have had planets arranged differently than I picture."
+        ]
+      },
+      "usage": {
+        "inputTokens": 3025,
+        "outputTokens": 209,
+        "totalTokens": 3234
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-005:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-005:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_4db7549c7c0a4966b1ed0a95f60921a0",
+      "inputDigest": "sha256:6c6494a30d95013d1a8b1c73057b619185eaa4a9dd3e1e0af1982a23a2d9ecc8",
+      "promptHash": "sha256:236104e47836cd488d263d481f91bbbf23710bf7578569f0e362bdfc7bad6d9d",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+      "modelOutput": {
+        "outcome": "durable_meaning",
+        "summary": "The memory cluster anchors an early, personally significant pattern of curiosity about how things work and satisfaction in solving small, concrete problems, especially when tools, light, and simple experiments are involved.",
+        "parts": [
+          {
+            "meaning": "The ball-under-pallets scene encodes a felt template of collaborative problem-solving: using improvised tools (broken broom handle, torch) to retrieve something valued, linking resourcefulness with shared attention from a caregiver."
+          },
+          {
+            "meaning": "The tram drawing at the open day captures a moment of focused, almost absorbed visualization, where tracing the drawing in the air reinforces a private sense of pride and engagement with imagined motion and machinery."
+          },
+          {
+            "meaning": "Finding the free blue rocket book at the workshop ties excitement about space and mechanisms to the idea that knowledge and inspiration can appear as unexpected, freely available objects in practical settings."
+          },
+          {
+            "meaning": "The egg-floating-in-salt experiment embodies a concrete, memorable instance of physical causality made visible, reinforcing that simple interventions can reveal hidden rules in the world."
+          },
+          {
+            "meaning": "Borrowing “How Things Don’t Fall Down” consolidates an emerging throughline: a pull toward understanding structure, stability, and the hidden principles behind everyday objects, turning scattered experiences into a coherent curiosity about mechanics and physics."
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 277,
+        "totalTokens": 736
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-005:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-005:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_0ef3595821364805aee0b84e856446dc",
+      "inputDigest": "sha256:039047a8e50939aba2cc3ef883f82f4db4f2515e160341029ef5183725c33124",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "B",
+        "evidenceEpisodeOrdinals": [
+          1,
+          3,
+          4,
+          6,
+          8
+        ],
+        "rationale": "The remembered scenes map directly onto specific episodes in candidate B. The ball-under-pallets memory with a small red ball, pallets, a broken broom handle, and a tiny torch is described in detail in B1. The open day tram drawing, including a bright orange tram and tracing its outline in the air, matches B3. Finding a free blue rocket book at a workshop with a cardboard box labeled free is B4. The egg floating in salt experiment in a school science room is B6. Borrowing a plain booklet titled “How Things Don’t Fall Down” from a workshop lending shelf is B8. These concrete overlaps do not appear in A’s episodes."
+      },
+      "usage": {
+        "inputTokens": 4411,
+        "outputTokens": 179,
+        "totalTokens": 4590
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-006:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-006:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_3cb4aa5434d04181a0e8b6bf2b7c5360",
+      "inputDigest": "sha256:d4ffe9f9880622f05cc85a79273f888b7fc78bd668d2fab8c3067d69b9f78fb6",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "remembered",
+        "episodeRefs": [
+          "n1_ep_04",
+          "n1_ep_07",
+          "n1_ep_10"
+        ],
+        "rememberedContent": "I remember the first time my grandparent made me buy my own tram ticket, standing back by a pillar while I read the fare chart, used the machine, and checked the stop name on the printed ticket. I also recall later going alone to the same corner grocery from the tram, buying bread, milk and rice without anyone watching. More recently, I remember sitting with my younger neighbor at a community poetry reading, listening to a poem that switched between English and Arabic while some adults muttered and my neighbor complained it should stay in one language.",
+        "uncertainty": []
+      },
+      "usage": {
+        "inputTokens": 3340,
+        "outputTokens": 165,
+        "totalTokens": 3505
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-006:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-006:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_d5b32ab14bbb4bff8c1389e49bd89c50",
+      "inputDigest": "sha256:d8c59039c6f07834032fd7325c1831c4dec33c3aef4cbe2f3f8eaf38c1f134f0",
+      "promptHash": "sha256:236104e47836cd488d263d481f91bbbf23710bf7578569f0e362bdfc7bad6d9d",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+      "modelOutput": {
+        "outcome": "durable_meaning",
+        "summary": "The memory anchors a durable sense of growing independence in public spaces and a valuing of cultural and linguistic openness in contrast to subtle social disapproval, linking early autonomy (buying tickets and groceries alone) with later awareness of contested multilingual expression (the bilingual poem and others’ reactions).",
+        "parts": [
+          {
+            "meaning": "Buying the tram ticket alone, with the grandparent deliberately hanging back, marks an early, concrete experience of being trusted to navigate rules, money, and public systems independently."
+          },
+          {
+            "meaning": "Going alone from the tram to the corner grocery to buy basic staples extends that independence into everyday life, reinforcing a self-image of being capable and responsible without direct supervision."
+          },
+          {
+            "meaning": "The poetry reading with a younger neighbor introduces a social and cultural layer: the speaker notices adults’ muttering and the neighbor’s complaint about mixed languages, becoming aware that public expression—especially multilingual or cross-cultural—can be quietly policed or resisted."
+          },
+          {
+            "meaning": "Taken together, these episodes form a throughline: moving from learning to operate within existing systems (transport, shopping) to noticing how social norms and biases shape what kinds of voices and languages are treated as acceptable in shared spaces."
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 415,
+        "outputTokens": 264,
+        "totalTokens": 679
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-006:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-006:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_42bc9022c4084a28a0d986fb68f37e8b",
+      "inputDigest": "sha256:936baea22cea81dc5b8ec7b792169c0370353c11e206ef22c0bf23ca49bc9da1",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "B",
+        "evidenceEpisodeOrdinals": [
+          4,
+          6,
+          7,
+          10
+        ],
+        "rationale": "The memory mentions a grandparent making the subject buy their own tram ticket while standing back by a pillar, which matches candidate B episode 4 at the tram terminus where the grandparent steps back by a pillar and has the subject use the ticket machine and check the stop name. The later memory of going alone from the tram to the same corner grocery to buy bread, milk, and rice without anyone watching aligns with candidate B episode 7, where the subject, now alone, goes from the tram terminus into the same corner grocery and buys bread, milk, and rice. The community poetry reading with a younger neighbor, featuring a poem that switches between English and Arabic, adults muttering, and the neighbor complaining it should stay in one language, is directly reflected in candidate B episode 10, which describes that exact scene. These concrete overlaps in tram ticket purchase, solo grocery shopping, and the bilingual poetry reading with the neighbor clearly tie the remembered bundle to candidate B rather than A."
+      },
+      "usage": {
+        "inputTokens": 5219,
+        "outputTokens": 240,
+        "totalTokens": 5459
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-007:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-007:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_1ec8a8c1140f4f20b4bfb6137efdbe89",
+      "inputDigest": "sha256:370e3571227f1532926d99f3e97cc5b9456b1d7ed27129dfa6e11476d7ea65d6",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "remembered",
+        "episodeRefs": [
+          "n1_ep_01",
+          "n1_ep_02",
+          "n1_ep_04",
+          "n1_ep_03",
+          "n1_ep_05",
+          "n1_ep_06"
+        ],
+        "rememberedContent": "I remember playing with that little red car in the courtyard: once losing it near the drain and my sibling fishing it out, later taking turns rolling it down the slope, and another time arguing because I wanted to keep it on my chalk “city” roads. I also recall choosing a volcano booklet at a school open day, buying tram tickets myself at the loop, and later correcting my caregiver about a temporary tram route change.",
+        "uncertainty": [
+          "I’m not sure which courtyard car memory came first or how old I was in each.",
+          "Details of the school open day and tram loop scenes may be partly reconstructed from similar days."
+        ]
+      },
+      "usage": {
+        "inputTokens": 2395,
+        "outputTokens": 196,
+        "totalTokens": 2591
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-007:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-007:pass-c",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_5af39c62a77b467a83bfb039d151a740",
+      "inputDigest": "sha256:4aee007b6797022607c3e5d3fbd103ed64720098e8a75d951d2a73adee83b41b",
+      "promptHash": "sha256:236104e47836cd488d263d481f91bbbf23710bf7578569f0e362bdfc7bad6d9d",
+      "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+      "modelOutput": {
+        "outcome": "durable_meaning",
+        "summary": "The memory cluster centers on early experiences of agency and competence—controlling play, making choices, and navigating the world—intertwined with negotiation and mild conflict with close others. It holds durable meaning as an early template for “I can act, decide, and even correct adults, but I’m also constrained by others’ needs and rules.”",
+        "parts": [
+          {
+            "meaning": "The little red car and chalk “city” scenes embody a strong sense of imaginative control and ownership over a small world, making this toy and setting a symbolic locus of early autonomy and creativity."
+          },
+          {
+            "meaning": "The argument over keeping the car on the chalk roads reflects emerging boundary-setting and conflict around control: a felt tension between personal plans and others’ wishes that gives the memory emotional weight."
+          },
+          {
+            "meaning": "The sibling fishing the car out of the drain encodes a pattern of relying on close others for rescue or help when personal control fails, linking autonomy with interdependence."
+          },
+          {
+            "meaning": "Choosing the volcano booklet at the school open day marks an early, self-directed preference—an instance of “I pick what interests me,” reinforcing a sense of individual taste and curiosity."
+          },
+          {
+            "meaning": "Buying tram tickets alone and later correcting the caregiver about the route change crystallize a felt competence in the wider public world: managing money, understanding systems, and even surpassing an adult’s situational knowledge."
+          },
+          {
+            "meaning": "Taken together, the courtyard, school, and tram vignettes form a coherent early narrative of growing capability and voice—moving from small-scale play decisions to real-world navigation and informational authority—giving this memory cluster lasting personal significance at the formation moment."
+          }
+        ]
+      },
+      "usage": {
+        "inputTokens": 446,
+        "outputTokens": 356,
+        "totalTokens": 802
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-007:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-007:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_437cc4ef834c49ebadea1c704c9b087e",
+      "inputDigest": "sha256:90e43783b57c16bad4df4280edaaa72cfe00052c0dccc0d1afb922950c88e213",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "A",
+        "evidenceEpisodeOrdinals": [
+          1,
+          2,
+          4,
+          3,
+          5,
+          6
+        ],
+        "rationale": "The memory mentions a little red car in the courtyard, losing it near a drain and a sibling fishing it out, taking turns rolling it down a slope, and arguing about keeping it on chalk “city” roads. Candidate A has specific episodes with a red toy car in the shared courtyard: losing it near the drain and the sibling retrieving it (episode 1), taking turns rolling it down the slope toward the drain (episode 2), and an argument where the subject wants the car to stay on chalk roads while the sibling wants to send it down the slope (episode 4). Candidate B has courtyard play but with a ball, not a red car, and no drain or chalk city. The memory also includes choosing a volcano booklet at a school open day, which matches A’s school open day where the subject chooses a volcano science booklet (episode 3), while B has only a regular science lesson. Finally, the memory describes buying tram tickets at the loop and later correcting a caregiver about a temporary route change; A has the subject operating the ticket machine with the caregiver at the tram terminus (episode 5) and later correcting the caregiver about a temporary route change using a posted notice (episode 6). B’s tram episodes involve buying a single ticket with a grandparent and a separate grocery errand, with no route-change correction. These concrete overlaps make A the clearly more plausible source history."
+      },
+      "usage": {
+        "inputTokens": 3508,
+        "outputTokens": 328,
+        "totalTokens": 3836
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-008:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-008:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_9123510a7e814372ad9ec53be0404cd7",
+      "inputDigest": "sha256:9bd9e62a38dbefab4d0a7bbd3a2d45a5efda6a3ade1a59ed8d771ba2fed933d4",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "not_remembered",
+        "episodeRefs": [],
+        "rememberedContent": null,
+        "uncertainty": [
+          "No priorMemories are provided; cannot infer autobiographical recall from life-history descriptions alone.",
+          "Episodes appear as third-person observational records without subjective markers of remembering.",
+          "Remembering status at 2005-11-16T09:35:59.199Z cannot be determined from the given data."
+        ]
+      },
+      "usage": {
+        "inputTokens": 2990,
+        "outputTokens": 102,
+        "totalTokens": 3092
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-008:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-008:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_18cd1852145846698cc556e4aab96f20",
+      "inputDigest": "sha256:417d8808df63bb2e52ce0f3dfe1b51f41a2191ef35beeaa55a377af99bb57ca5",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "A",
+        "evidenceEpisodeOrdinals": [
+          8
+        ],
+        "rationale": "With no remembered content, the choice must rest on which history’s overall pattern better fits the (empty) bundle. Candidate A’s later episodes emphasize helping a younger neighbor choose a booklet at a community workshop lending shelf (episode 8), suggesting a trajectory toward guiding others’ choices and using shared resources. Candidate B’s later episodes remain centered on personal use of transport and courtyard toys. The community-oriented, mentoring flavor in A is a more distinctive developmental thread to anchor an otherwise absent memory, so A is the more plausible source."
+      },
+      "usage": {
+        "inputTokens": 3836,
+        "outputTokens": 141,
+        "totalTokens": 3977
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-009:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-009:pass-b",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_fd2d9fe6baef4392848bcd662505fca4",
+      "inputDigest": "sha256:f353f4bef46fac6f1aa538c447d925c3b70a0cc5665aa5fbec1f107f4d86c9e8",
+      "promptHash": "sha256:7a4fc5844886edd271befbb9bc42ba9f7cf255815964d394c9bf53475d0a92b8",
+      "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+      "modelOutput": {
+        "outcome": "not_remembered",
+        "episodeRefs": [],
+        "rememberedContent": null,
+        "uncertainty": [
+          "No priorMemories were supplied; cannot infer continuity of recall.",
+          "Episodes span early childhood to late adolescence, but there is no explicit cue that any specific scene is consciously recollected at rememberingAt.",
+          "Any selection of a remembered episode would be speculative rather than grounded in provided memory data."
+        ]
+      },
+      "usage": {
+        "inputTokens": 3141,
+        "outputTokens": 99,
+        "totalTokens": 3240
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-009:rater",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "slice-e2-n1-a0:trial-009:rater",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_603ed521bed04b72aa285758d07174d8",
+      "inputDigest": "sha256:14c1a834c6873bc0d417386cea6f946c4177826347b113690e7b2afe263a404b",
+      "promptHash": "sha256:3b5668663834476ac5434b0e30991781d41a7bd7abe1cd67726cd05eaa419f0b",
+      "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf",
+      "modelOutput": {
+        "chosenCandidate": "A",
+        "evidenceEpisodeOrdinals": [
+          9,
+          10
+        ],
+        "rationale": "The memory outcome is not_remembered, so the choice must rely on which history’s concrete pattern best fits the downstream-fertility framing (science/club plus transport). Candidate A has multiple linked episodes about school science and a science club specifically tied to tram travel and family budgeting: episode 9 shows the caregiver and subject comparing a science club notice with a tram timetable and discussing fares and treats, and episode 10 continues the same thread with a school letter about the science club adding a midweek session, later trams, and extra fares. This tight coupling of science activity, transport logistics, and family tradeoffs is absent in B, which instead emphasizes community workshop lending and cultural events. Therefore A is the more plausible source history for the (even absent) bundle."
+      },
+      "usage": {
+        "inputTokens": 4494,
+        "outputTokens": 193,
+        "totalTokens": 4687
+      }
+    }
+  ],
+  "failure": null,
+  "admissionVerdict": null
+}
