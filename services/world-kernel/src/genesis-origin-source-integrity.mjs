@@ -13,6 +13,9 @@ import {
   genesisIntellectualSubjectRef,
 } from "./genesis-intellectual-encounter.mjs";
 import { normalizeRichPassAEpisode } from "./genesis-rich-life-episode.mjs";
+import { THREAD_LIFE_EPISODE_RECORDED } from "./genesis-life-episode.mjs";
+import { WorldStore } from "./persistence.mjs";
+import { GenesisOriginAuthorityStore } from "./genesis-origin-authority-store.mjs";
 
 export const GENESIS_SOURCE_ORIGIN_KINDS = Object.freeze([
   "thread_parent",
@@ -247,11 +250,58 @@ export function projectOriginSourceForThreadLife(candidate) {
   });
 }
 
+export function assertGenesisOriginAuthorityResolved({ originFixture, authorityStore }) {
+  const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
+  if (!["echo", "homage"].includes(fixture.originKind)) {
+    throw new TypeError("durable source authority resolution requires Echo or Homage origin");
+  }
+  if (!(authorityStore instanceof GenesisOriginAuthorityStore)) {
+    throw new TypeError("origin authority resolution requires GenesisOriginAuthorityStore");
+  }
+  const authorityRef = fixture.originKind === "echo"
+    ? fixture.sourceBundle.consentAuthorityRef
+    : fixture.sourceBundle.subjectStatusAttestationRef;
+  const expectedKind = fixture.originKind === "echo"
+    ? "living_source_consent"
+    : "subject_status_attestation";
+  const resolved = authorityStore.getAuthority(authorityRef);
+  if (resolved.record.authorityKind !== expectedKind) {
+    throw new TypeError(`${fixture.originKind} authority ${authorityRef} has the wrong authority kind`);
+  }
+  if (resolved.record.sourcePartyId !== fixture.sourceBundle.sourcePartyId) {
+    throw new TypeError(`${fixture.originKind} authority ${authorityRef} belongs to another source party`);
+  }
+  if (resolved.record.subjectStatus !== fixture.sourceBundle.subjectStatus) {
+    throw new TypeError(`${fixture.originKind} authority ${authorityRef} does not attest the fixture subject status`);
+  }
+  return Object.freeze({
+    fixtureId: fixture.fixtureId,
+    originKind: fixture.originKind,
+    authorityRef,
+    authorityKind: resolved.record.authorityKind,
+    sourcePartyId: resolved.record.sourcePartyId,
+    subjectStatus: resolved.record.subjectStatus,
+    authorityRecordDigest: resolved.recordDigest,
+  });
+}
+
+function assertCanonicalHistoryStore(historyStore) {
+  if (!(historyStore instanceof WorldStore)) {
+    throw new TypeError("origin history proof requires the canonical WorldStore");
+  }
+}
+
+function replayedEvents(historyStore, threadId) {
+  assertCanonicalHistoryStore(historyStore);
+  historyStore.replayThread(threadId);
+  return historyStore.listEvents(threadId);
+}
+
 export function assertSourceMaterialEncounteredByThread({
   originFixture,
   sourceMaterialRef,
   encounterEpisodeRef,
-  episodes,
+  historyStore,
 }) {
   const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
   if (!["echo", "homage"].includes(fixture.originKind)) {
@@ -259,13 +309,24 @@ export function assertSourceMaterialEncounteredByThread({
   }
   assertId("sourceMaterialRef", sourceMaterialRef);
   assertId("encounterEpisodeRef", encounterEpisodeRef);
-  if (!Array.isArray(episodes)) throw new TypeError("episodes must be an array");
   const material = fixture.sourceBundle.approvedMaterials.find((item) => item.subjectRef === sourceMaterialRef);
   if (material === undefined) throw new TypeError(`source material ${sourceMaterialRef} is not approved by the origin fixture`);
-  const episodeCandidate = episodes.find((item) => item?.episodeId === encounterEpisodeRef);
-  if (episodeCandidate === undefined) throw new TypeError(`encounter episode ${encounterEpisodeRef} is not present in Thread history`);
-  const episode = normalizeRichPassAEpisode(episodeCandidate, { enforceObservableForm: false });
-  if (!episode.participantRefs.includes(fixture.threadId)) throw new TypeError("source-material encounter episode does not involve the origin Thread");
+
+  const events = replayedEvents(historyStore, fixture.threadId);
+  const event = events.find((candidate) =>
+    candidate.eventType === THREAD_LIFE_EPISODE_RECORDED
+    && candidate.payload?.episodeId === encounterEpisodeRef);
+  if (event === undefined) {
+    throw new TypeError(`encounter episode ${encounterEpisodeRef} is not present in canonical Thread history`);
+  }
+  if (event.threadId !== fixture.threadId) throw new TypeError("source-material encounter event belongs to another Thread");
+  const episode = normalizeRichPassAEpisode(
+    { ...structuredClone(event.payload), occurredAt: event.occurredAt },
+    { enforceObservableForm: false },
+  );
+  if (!episode.participantRefs.includes(fixture.threadId)) {
+    throw new TypeError("source-material encounter episode does not involve the origin Thread");
+  }
   if (episode.intellectualEncounter === undefined || episode.intellectualEncounter === null) {
     throw new TypeError("source material cannot become Thread formation without an intellectual encounter");
   }
@@ -277,5 +338,34 @@ export function assertSourceMaterialEncounteredByThread({
     threadId: fixture.threadId,
     sourceMaterialRef: material.subjectRef,
     encounterEpisodeRef: episode.episodeId,
+    encounterEventRef: event.eventId,
+    encounterSequence: event.sequence,
+  });
+}
+
+export function assertForkBoundaryAgainstCanonicalHistory({ originFixture, historyStore }) {
+  const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
+  if (fixture.originKind !== "fork") throw new TypeError("canonical fork-boundary proof requires fork origin");
+  const events = replayedEvents(historyStore, fixture.fork.sourceThreadRef);
+  const divergenceEvent = events.find((event) => event.sequence === fixture.fork.divergenceSequence);
+  if (divergenceEvent === undefined) {
+    throw new TypeError(`fork source Thread has no event at divergence sequence ${fixture.fork.divergenceSequence}`);
+  }
+  if (divergenceEvent.eventId !== fixture.fork.divergenceEventRef) {
+    throw new TypeError("fork divergenceEventRef does not match canonical source chronology");
+  }
+  const canonicalPrefix = events
+    .filter((event) => event.sequence <= fixture.fork.divergenceSequence)
+    .map((event) => event.eventId);
+  if (canonicalJson(canonicalPrefix) !== canonicalJson(fixture.fork.inheritedHistoryEventRefs)) {
+    throw new TypeError("fork inherited history is not the exact canonical source prefix through divergence");
+  }
+  return Object.freeze({
+    fixtureId: fixture.fixtureId,
+    sourceThreadRef: fixture.fork.sourceThreadRef,
+    divergenceEventRef: divergenceEvent.eventId,
+    divergenceSequence: divergenceEvent.sequence,
+    inheritedHistoryEventRefs: Object.freeze([...canonicalPrefix]),
+    canonicalPrefixDigest: `sha256:${sha256(canonicalJson(canonicalPrefix))}`,
   });
 }
