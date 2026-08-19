@@ -3,26 +3,20 @@ import {
   assertId,
   assertPlainObject,
   assertStringArray,
-  canonicalJson,
 } from "./persistence-common.mjs";
-import {
-  GENESIS_PASS_A_RESPONSE_SCHEMA,
-  GenesisPassAValidationError,
-  assertPassAInputBoundary,
-  normalizePassAEpisode,
-  validatePassAEpisode,
-} from "./genesis-pass-a-domain.mjs";
 import { projectPassAInputForCognition } from "./genesis-pass-a-cognition.mjs";
-import {
-  GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA,
-  normalizeGenesisIntellectualEncounter,
-} from "./genesis-intellectual-encounter.mjs";
-import {
-  buildPassAInputWithEventStructurePoolV2,
-} from "./genesis-event-structure-pool-v2.mjs";
+import { buildPassAInputWithEventStructurePoolV2 } from "./genesis-event-structure-pool-v2.mjs";
+
+export {
+  GENESIS_RICH_PASS_A_OUTPUT_VERSION,
+  GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
+  assertRichRepairPreservesEpisodeFacts,
+  normalizeRichPassAEpisode,
+  normalizeRichPassAModelOutput,
+  validateRichPassAEpisode,
+} from "./genesis-rich-life-episode.mjs";
 
 export const GENESIS_RICH_LIFE_MODES = Object.freeze(["de_novo", "synthetic_lineage"]);
-export const GENESIS_RICH_PASS_A_OUTPUT_VERSION = "genesis-rich-pass-a-output-v1";
 
 function normalizeLineageWitness(candidate) {
   assertPlainObject("syntheticLineageWitness", candidate);
@@ -49,64 +43,10 @@ export function assertRichLifeCompilerMode({ originMode, syntheticLineageWitness
   return Object.freeze({ originMode, syntheticLineageWitness: normalizeLineageWitness(syntheticLineageWitness) });
 }
 
-function splitRichEpisode(candidate) {
-  assertPlainObject("rich Pass-A episode", candidate);
-  const hasEncounter = Object.hasOwn(candidate, "intellectualEncounter");
-  const base = structuredClone(candidate);
-  delete base.intellectualEncounter;
-  return { base, encounterCandidate: hasEncounter ? candidate.intellectualEncounter : null };
-}
-
-export function normalizeRichPassAEpisode(candidate, { enforceObservableForm = true } = {}) {
-  const { base, encounterCandidate } = splitRichEpisode(candidate);
-  const episode = normalizePassAEpisode(base, { enforceObservableForm });
-  if (encounterCandidate === null || encounterCandidate === undefined) return episode;
-  const intellectualEncounter = normalizeGenesisIntellectualEncounter(encounterCandidate, {
-    participantRefs: episode.participantRefs,
-  });
-  return Object.freeze({ ...episode, intellectualEncounter });
-}
-
-export function validateRichPassAEpisode(candidate, inputCandidate) {
-  const input = assertPassAInputBoundary(inputCandidate);
-  const { base, encounterCandidate } = splitRichEpisode(candidate);
-  const episode = validatePassAEpisode(base, input);
-  if (encounterCandidate === null || encounterCandidate === undefined) return episode;
-  try {
-    const intellectualEncounter = normalizeGenesisIntellectualEncounter(encounterCandidate, {
-      participantRefs: episode.participantRefs,
-    });
-    return Object.freeze({ ...episode, intellectualEncounter });
-  } catch (error) {
-    throw new GenesisPassAValidationError("pass_a_intellectual_encounter", error.message, { record: candidate });
-  }
-}
-
-export function normalizeRichPassAModelOutput(candidate, inputCandidate) {
-  assertPlainObject("rich Pass-A model output", candidate);
-  assertExactKeys("rich Pass-A model output", candidate, ["episode"]);
-  return Object.freeze({
-    outputVersion: GENESIS_RICH_PASS_A_OUTPUT_VERSION,
-    episode: validateRichPassAEpisode(candidate.episode, inputCandidate),
-  });
-}
-
-export function assertRichRepairPreservesEpisodeFacts(previousCandidate, repairedCandidate) {
-  const previous = normalizeRichPassAEpisode(previousCandidate, { enforceObservableForm: false });
-  const repaired = normalizeRichPassAEpisode(repairedCandidate, { enforceObservableForm: false });
-  const facts = (episode) => {
-    const copy = structuredClone(episode);
-    delete copy.observableAction;
-    return copy;
-  };
-  if (canonicalJson(facts(previous)) !== canonicalJson(facts(repaired))) {
-    throw new GenesisPassAValidationError(
-      "pass_a_record_repair_changed_facts",
-      "Pass-A rich-life form repair changed event or intellectual-encounter facts instead of repairing only observableAction",
-      { record: repaired },
-    );
-  }
-  return repaired;
+function stableOfferOrder(entries) {
+  if (!Array.isArray(entries)) throw new TypeError("offeredEntries must be an array");
+  return [...entries].sort((left, right) =>
+    left.structure.structureId.localeCompare(right.structure.structureId));
 }
 
 export function buildRichLifePassAInput({
@@ -118,29 +58,12 @@ export function buildRichLifePassAInput({
   // constructing Pass A. The same Pass-A builder is therefore used for de_novo and
   // synthetic_lineage; inherited material cannot become a childhood-event authoring path.
   assertRichLifeCompilerMode({ originMode, syntheticLineageWitness });
-  return buildPassAInputWithEventStructurePoolV2(passAInputArgs);
+  return buildPassAInputWithEventStructurePoolV2({
+    ...passAInputArgs,
+    offeredEntries: stableOfferOrder(passAInputArgs.offeredEntries),
+  });
 }
 
 export function projectRichLifePassAInputForCognition(candidate) {
   return projectPassAInputForCognition(candidate);
 }
-
-export const GENESIS_RICH_PASS_A_RESPONSE_SCHEMA = Object.freeze({
-  type: "object",
-  additionalProperties: false,
-  required: ["episode"],
-  properties: {
-    episode: {
-      ...structuredClone(GENESIS_PASS_A_RESPONSE_SCHEMA.properties.episode),
-      properties: {
-        ...structuredClone(GENESIS_PASS_A_RESPONSE_SCHEMA.properties.episode.properties),
-        intellectualEncounter: {
-          anyOf: [
-            { type: "null" },
-            structuredClone(GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA),
-          ],
-        },
-      },
-    },
-  },
-});
