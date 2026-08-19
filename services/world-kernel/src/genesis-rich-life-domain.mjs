@@ -8,7 +8,10 @@ import {
 } from "./persistence-common.mjs";
 import { projectPassAInputForCognition } from "./genesis-pass-a-cognition.mjs";
 import { buildPassAInputWithEventStructurePoolV2 } from "./genesis-event-structure-pool-v2.mjs";
-import { richCounterpartMode } from "./genesis-rich-participation-policy.mjs";
+import {
+  GENESIS_RICH_COUNTERPART_POLICY_VERSION,
+  richCounterpartMode,
+} from "./genesis-rich-participation-policy.mjs";
 import {
   normalizeSymbolicGenomeHeader,
   symbolicGenomeDigest,
@@ -97,12 +100,19 @@ export function buildRichLifePassAInput({
   // constructing Pass A. The same Pass-A builder is therefore used for de_novo and
   // synthetic_lineage; inherited material cannot become a childhood-event authoring path.
   assertRichLifeCompilerMode({ originMode, syntheticLineageWitness });
-  return buildPassAInputWithEventStructurePoolV2({
+  const input = buildPassAInputWithEventStructurePoolV2({
     ...passAInputArgs,
     priorEpisodes: (passAInputArgs.priorEpisodes ?? []).map(baseHistoryEpisode),
     // Stable ID order prevents pool authoring order from becoming an accidental prompt signal.
     offeredEntries: stableOfferOrder(passAInputArgs.offeredEntries),
   });
+  return {
+    ...input,
+    policyWitness: {
+      ...input.policyWitness,
+      policyVersion: `${input.policyWitness.policyVersion}+${GENESIS_RICH_COUNTERPART_POLICY_VERSION}`,
+    },
+  };
 }
 
 export function projectRichLifePassAInputForCognition(candidate) {
