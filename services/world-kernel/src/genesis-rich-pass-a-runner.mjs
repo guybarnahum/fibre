@@ -18,6 +18,9 @@ import {
 import { projectRichLifePassAInputForCognition } from "./genesis-rich-life-domain.mjs";
 
 export const GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A_POLICY.maxObservableActionBytes / 2);
+export const GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A_POLICY.maxObservableActionBytes / 4);
+export const GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS = 80;
+export const GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS = 40;
 
 export const GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
@@ -43,9 +46,10 @@ subjectLabel must be a short factual label for the encountered subject, not a le
 Do not add intellectualEncounter merely to make the life look rich. Returning no intellectualEncounter is legal.`;
 
 export const GENESIS_RICH_PASS_A_REPAIR_PROMPT = `You are Fibre Genesis record-form repair for rich Pass A.
-Return only a replacement observableAction for the rejected episode. Fibre will preserve every other event and intellectual-encounter field mechanically; do not restate them.
-Describe only the same externally witnessable action and circumstance already present in the rejected episode. Do not add, remove, improve, reinterpret, or replace event facts.
-Use one concise sentence. Target no more than ${GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES} UTF-8 bytes, and never exceed the authoritative ${GENESIS_PASS_A_POLICY.maxObservableActionBytes}-byte limit.
+You receive only the rejected observableAction and the exact failed form constraint. You do not receive the world, roster, structure, event identity, chronology, or intellectual-encounter metadata.
+Return only a replacement observableAction. Fibre preserves every other event field mechanically.
+Rewrite only what is already present in rejectedObservableAction: do not invent, reverse, upgrade, interpret, or import facts.
+Use one plain concise sentence. Obey both failedConstraint.targetRepairUtf8Bytes and failedConstraint.targetRepairWords; both targets become stricter on a repeated failure and remain below the authoritative ${GENESIS_PASS_A_POLICY.maxObservableActionBytes}-byte limit.
 Remove explicit lesson, significance, personality, inner-state conclusion, remembered-meaning, or future-policy wording. Return JSON matching the supplied one-field schema.`;
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
@@ -108,24 +112,31 @@ function repairable(error) {
   ].includes(error.gate);
 }
 
-function repairConstraint(error, rejectedEpisode) {
-  const constraint = { failedGate: error.gate, failureMessage: error.message };
+function repairTargets(repairOrdinal) {
+  return repairOrdinal <= 1
+    ? {
+      targetRepairUtf8Bytes: GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES,
+      targetRepairWords: GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS,
+    }
+    : {
+      targetRepairUtf8Bytes: GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES,
+      targetRepairWords: GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS,
+    };
+}
+
+function repairConstraint(error, rejectedEpisode, repairOrdinal) {
+  const constraint = {
+    failedGate: error.gate,
+    failureMessage: error.message,
+    authoritativeMaxObservableActionUtf8Bytes: GENESIS_PASS_A_POLICY.maxObservableActionBytes,
+    ...repairTargets(repairOrdinal),
+  };
   if (error.gate === "pass_a_observable_action_bounds") {
-    constraint.maxObservableActionUtf8Bytes = GENESIS_PASS_A_POLICY.maxObservableActionBytes;
-    constraint.targetRepairUtf8Bytes = GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES;
     constraint.rejectedObservableActionUtf8Bytes = typeof rejectedEpisode?.observableAction === "string"
       ? Buffer.byteLength(rejectedEpisode.observableAction, "utf8")
       : null;
   }
   return constraint;
-}
-
-function modelRepairEpisode(candidate) {
-  const copy = structuredClone(candidate);
-  if (copy.intellectualEncounter !== undefined && copy.intellectualEncounter !== null) {
-    delete copy.intellectualEncounter.subjectRef;
-  }
-  return copy;
 }
 
 function applyRepairObservableAction(rejectedEpisode, output) {
@@ -200,10 +211,9 @@ export async function generateRichPassAEpisode({
 
       const rejectedEpisode = structuredClone(candidate);
       const repairOrdinal = generatedVersion;
-      const failedConstraint = repairConstraint(error, rejectedEpisode);
+      const failedConstraint = repairConstraint(error, rejectedEpisode, repairOrdinal);
       const repairInput = {
-        passAInput: cognitionInput,
-        rejectedEpisode: modelRepairEpisode(rejectedEpisode),
+        rejectedObservableAction: rejectedEpisode.observableAction,
         failedGate: error.gate,
         failedConstraint,
       };
