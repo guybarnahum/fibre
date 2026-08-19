@@ -3,9 +3,15 @@ import {
   assertId,
   assertPlainObject,
   assertStringArray,
+  canonicalJson,
+  sha256,
 } from "./persistence-common.mjs";
 import { projectPassAInputForCognition } from "./genesis-pass-a-cognition.mjs";
 import { buildPassAInputWithEventStructurePoolV2 } from "./genesis-event-structure-pool-v2.mjs";
+import {
+  normalizeSymbolicGenomeHeader,
+  symbolicGenomeDigest,
+} from "./symbolic-genome-domain.mjs";
 
 export {
   GENESIS_RICH_PASS_A_OUTPUT_VERSION,
@@ -28,9 +34,35 @@ function normalizeLineageWitness(candidate) {
   assertId("syntheticLineageWitness.genomeRef", candidate.genomeRef);
   assertStringArray("syntheticLineageWitness.parentOrAncestorRefs", candidate.parentOrAncestorRefs);
   if (candidate.parentOrAncestorRefs.length < 2) throw new TypeError("synthetic_lineage requires at least two parent/ancestor refs");
+  candidate.parentOrAncestorRefs.forEach((value, index) => assertId(`syntheticLineageWitness.parentOrAncestorRefs[${index}]`, value));
   if (new Set(candidate.parentOrAncestorRefs).size !== candidate.parentOrAncestorRefs.length) throw new TypeError("synthetic lineage parent/ancestor refs must be unique");
   assertId("syntheticLineageWitness.recombinationWitnessRef", candidate.recombinationWitnessRef);
   return structuredClone(candidate);
+}
+
+export function syntheticLineageWitnessFromRecombinedGenome(bundle) {
+  assertPlainObject("synthetic lineage symbolic genome", bundle);
+  const header = normalizeSymbolicGenomeHeader(bundle.header);
+  if (header.originKind !== "recombined") throw new TypeError("synthetic lineage requires a recombined symbolic genome");
+  if (header.sourceEligibility === null || header.recombinationWitness === null) {
+    throw new TypeError("synthetic lineage recombined genome is missing source/recombination provenance");
+  }
+  const actualDigest = symbolicGenomeDigest({
+    header,
+    loci: bundle.loci,
+    mutations: bundle.mutations ?? [],
+  });
+  if (bundle.genomeDigest !== actualDigest) throw new TypeError("synthetic lineage genome digest does not match its symbolic genome content");
+  const sourceOwners = header.sourceEligibility.sourceOwners;
+  if (sourceOwners.some((owner) => owner.kind !== "synthetic_ancestor")) {
+    throw new TypeError("Slice E synthetic_lineage requires synthetic-ancestor source genomes");
+  }
+  const witness = {
+    genomeRef: header.genomeId,
+    parentOrAncestorRefs: sourceOwners.map((owner) => owner.ownerId),
+    recombinationWitnessRef: `recomb_${sha256(canonicalJson(header.recombinationWitness)).slice(0, 40)}`,
+  };
+  return Object.freeze(normalizeLineageWitness(witness));
 }
 
 export function assertRichLifeCompilerMode({ originMode, syntheticLineageWitness = null }) {
