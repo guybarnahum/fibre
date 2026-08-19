@@ -30,7 +30,7 @@
     "genesis:e2-h6-participation": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-h6-participation.mjs",
     "genesis:e2-a2": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-a2.mjs",
     "genesis:e2-a2b": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-a2b-driver.mjs",
-    "genesis:e2-n1": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-n1-driver.mjs",
+    "genesis:e2-n1": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-n1-repair-driver.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-counterfactual-dev.mjs",
     "guardian:whole-person": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/whole-person-benchmark-v4.mjs",
