@@ -186,7 +186,7 @@ test("A2 form repair preserves an invalid encounter until authoritative validati
   assert.deepEqual(calls[2].input.selectedOpportunity, selectedOpportunity);
 });
 
-test("selected present-required structure retry receives only its frozen counterpart contract", async () => {
+test("selected present-required retry exposes the validator participantRefs representation contract", async () => {
   const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
   const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[1]);
   const item = plan.find(({ offeredEntries }) => offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_drawing_or_making_seen"));
@@ -244,11 +244,15 @@ test("selected present-required structure retry receives only its frozen counter
   assert.equal(result.episode.episodeId, valid.episodeId);
   assert.deepEqual(Object.keys(calls[1].input).sort(), ["failedConstraint", "failedGate", "passAInput", "selectedOpportunity"]);
   assert.deepEqual(calls[1].input.failedConstraint, {
-    rule: "The frozen selected opportunity has counterpartMode=present_required. At least one allowed counterpart must actually participate in this episode.",
+    rule: "The frozen selected opportunity has counterpartMode=present_required. The validator counts an allowed counterpart only when that participant's ID appears in episode.participantRefs; mentioning a caregiver, peer, teacher, or other counterpart only in observableAction does not satisfy the gate. Use a known participant from passAInput.initialRoster or passAInput.previouslyIntroducedParticipants whose role matches participatingRoles, and include that participant ID in episode.participantRefs. Or, when legal, introduce an allowed-role participant in episode.introducedParticipants and include the same provisionalPersonId in episode.participantRefs.",
     counterpartMode: "present_required",
     participatingRoles: ["peer", "caregiver", "teacher"],
+    participantRefsRequired: true,
     sameEpisodeIntroductionAllowed: true,
+    sameEpisodeIntroductionParticipantRefRequired: true,
   });
+  assert.ok(calls[1].input.passAInput.initialRoster.some((participant) =>
+    participant.participantId === caregiver.participantId && participant.factualRoles.includes("caregiver")));
   const retrySerialized = JSON.stringify(calls[1].input);
   assert.equal(retrySerialized.includes(invalid.episodeId), false);
   assert.equal(retrySerialized.includes(invalid.observableAction), false);
