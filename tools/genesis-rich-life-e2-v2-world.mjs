@@ -6,6 +6,24 @@ function world(candidate) {
   return Object.freeze(normalizeGenesisWorldSpec(candidate));
 }
 
+export const E2_V2_WORLD_AUTHORING_RECORD = Object.freeze({
+  version: "pr39-slice-e2-v2-world-authoring-record-v1",
+  recordedBeforeFirstModelUse: true,
+  authorKnowledgeAtRecordTime: Object.freeze([
+    "E2-V1 generation and N1-on-A0 results were already known when E2-V2 was authored.",
+    "The old Pass-B epistemic/detection framing defect and its not_remembered pattern were already known.",
+  ]),
+  differencesFromE2V1: Object.freeze([
+    "Household composition changes from one caregiver plus grandparent and younger sibling to two caregivers plus an older cousin.",
+    "Daily mobility changes from tram/bicycle emphasis to bus/walking with occasional rides from relatives.",
+    "The public-space mix changes from community workshop, tram loop and river fields to branch library/civic hall, bus-market interchange and canalside park.",
+    "The bilingual context changes from English/Arabic to English/Tagalog.",
+    "The calendar shifts later while preserving the same ordinary childhood-through-adolescence age span and urban public-institution access pattern.",
+  ]),
+  reasonForDifferences: "Create a second ordinary, source-free developmental substrate that is materially distinct from E2-V1 while preserving comparable access constraints. The changes were not selected to target any known remembered/not_remembered episode, desired adult identity, target personality, genome signal, or N2 score.",
+  knownConfoundDisclosure: "The author could not unsee E2-V1 or the failed N1-on-A0 run. This record makes that author-after-observation fact explicit; N2 therefore remains development evidence rather than an independent population sample.",
+});
+
 // E2-V2 is a second source-free fresh world for the corrected Pass-B N2 instrument.
 // Its role is only to supply three additional A0 lives so the 18-trial protocol can
 // be frozen against six source lives. First model use burns the world.
@@ -71,7 +89,7 @@ export const E2_V2_WORLD = world({
   worldAuthorship: {
     authorId: "fibre_slice_e2_n2_validation",
     sourcesConsulted: [],
-    abstractionMethod: "Source-free synthetic fresh world authored after the Pass-B formation-semantics defect was identified, without access to a validation genome, named source person, target personality, target adult role or N2 output.",
+    abstractionMethod: "Source-free synthetic fresh world authored after the Pass-B formation-semantics defect was identified, without access to a validation genome, named source person, target personality, target adult role or N2 output. Relative to E2-V1 it deliberately changes household composition, transit mode, public-space mix, bilingual context and calendar to create a materially distinct ordinary substrate; those changes were not selected to target known remembered/not_remembered episodes or a desired score.",
     relocationWitness: "The fixture can be relocated to another dense transit-served neighborhood with a public school, market, library/civic space and public park while preserving household scheduling and access constraints without preserving any intended character outcome.",
     familiarityProbe: null,
     createdAt: authoredAt,
