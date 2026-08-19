@@ -77,6 +77,9 @@ export function assertRichRepairPreservesEpisodeFacts(previousCandidate, repaire
   return repaired;
 }
 
+const encounterSchema = structuredClone(GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA);
+encounterSchema.type = ["object", "null"];
+
 export const GENESIS_RICH_PASS_A_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
   additionalProperties: false,
@@ -84,14 +87,13 @@ export const GENESIS_RICH_PASS_A_RESPONSE_SCHEMA = Object.freeze({
   properties: {
     episode: {
       ...structuredClone(GENESIS_PASS_A_RESPONSE_SCHEMA.properties.episode),
+      required: [
+        ...structuredClone(GENESIS_PASS_A_RESPONSE_SCHEMA.properties.episode.required),
+        "intellectualEncounter",
+      ],
       properties: {
         ...structuredClone(GENESIS_PASS_A_RESPONSE_SCHEMA.properties.episode.properties),
-        intellectualEncounter: {
-          anyOf: [
-            { type: "null" },
-            structuredClone(GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA),
-          ],
-        },
+        intellectualEncounter: encounterSchema,
       },
     },
   },
