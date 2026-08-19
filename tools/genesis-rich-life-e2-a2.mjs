@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 import { createGoogleModelAdapter } from "../services/world-kernel/src/model-runtime/google.mjs";
@@ -37,7 +37,7 @@ import {
 } from "./genesis-rich-life-e2-a0-candidate-driver.mjs";
 import { E2_DIAGNOSTIC_WORLDS } from "./genesis-rich-life-e2-worlds.mjs";
 
-export const E2_A2_EVIDENCE_VERSION = "pr39-slice-e2-a2-v1";
+export const E2_A2_EVIDENCE_VERSION = "pr39-slice-e2-a2-v2";
 export const E2_A2_PROTOCOL_VERSION = "pr39-slice-e2-a2-selection-realization-v1";
 export const E2_A2_ARM = "A2_stateless_opportunity_selection";
 export const E2_A2_SELECTOR_INPUT_VERSION = "pr39-slice-e2-a2-selector-input-v1";
@@ -152,7 +152,7 @@ export function normalizeE2A2Selection(candidate, offeredEntries) {
 export function e2A2SelectorPromptHash() { return digest(E2_A2_SELECTOR_PROMPT); }
 export function e2A2SelectorSchemaHash() { return digest(E2_A2_SELECTOR_RESPONSE_SCHEMA); }
 
-async function freezeSelectorSchedule({ worldFixture, seed, adapter, onProgress = null }) {
+export async function freezeE2A2SelectorSchedule({ worldFixture, seed, adapter, onProgress = null }) {
   const plan = buildE2A0Plan(worldFixture, seed);
   const selections = [];
   const evidence = [];
@@ -204,6 +204,54 @@ async function freezeSelectorSchedule({ worldFixture, seed, adapter, onProgress 
     selections: Object.freeze(selections),
     evidence: Object.freeze(evidence),
     scheduleDigest: digest(selections),
+  });
+}
+
+export function rehydrateE2A2SelectorSchedule({ worldFixture, seed, scheduleEvidence }) {
+  if (scheduleEvidence === null || typeof scheduleEvidence !== "object" || Array.isArray(scheduleEvidence)) {
+    throw new TypeError("A2 resume selector schedule must be an object");
+  }
+  if (scheduleEvidence.worldId !== worldFixture.id || scheduleEvidence.seed !== seed) {
+    throw new TypeError("A2 resume selector schedule world/seed mismatch");
+  }
+  const plan = buildE2A0Plan(worldFixture, seed);
+  if (!Array.isArray(scheduleEvidence.evidence) || scheduleEvidence.evidence.length !== plan.length) {
+    throw new TypeError("A2 resume selector schedule does not cover the full frozen life");
+  }
+  const selections = [];
+  const evidence = [];
+  for (let index = 0; index < plan.length; index += 1) {
+    const ordinal = index + 1;
+    const { developmentalWindow, offeredEntries } = plan[index];
+    const prior = scheduleEvidence.evidence[index];
+    if (prior.ordinal !== ordinal) throw new TypeError(`A2 resume selector ordinal mismatch at ${ordinal}`);
+    const offeredStructureIds = offeredEntries.map((entry) => entry.structure.structureId).sort();
+    if (canonicalJson(prior.offeredStructureIds) !== canonicalJson(offeredStructureIds)) {
+      throw new TypeError(`A2 resume offered structures changed at selector ${ordinal}`);
+    }
+    const selectorInput = buildE2A2SelectorInput({
+      worldFixture,
+      developmentalWindow,
+      offeredEntries,
+      ordinal,
+      total: plan.length,
+    });
+    if (prior.selectorInputDigest !== digest(selectorInput)) {
+      throw new TypeError(`A2 resume selector input digest changed at ${ordinal}`);
+    }
+    const selection = normalizeE2A2Selection(prior.selection, offeredEntries);
+    selections.push(selection);
+    evidence.push(Object.freeze(structuredClone(prior)));
+  }
+  const scheduleDigest = digest(selections);
+  if (scheduleEvidence.scheduleDigest !== scheduleDigest) {
+    throw new TypeError("A2 resume selector schedule digest mismatch");
+  }
+  return Object.freeze({
+    plan,
+    selections: Object.freeze(selections),
+    evidence: Object.freeze(evidence),
+    scheduleDigest,
   });
 }
 
@@ -308,7 +356,7 @@ function characterizeLife(life) {
   });
 }
 
-async function runA2Life({
+export async function runE2A2Life({
   worldFixture,
   provider,
   model,
@@ -471,7 +519,19 @@ function aggregateRejectionProfile(lives) {
   });
 }
 
-function buildFailureArtifact({ provider, model, modelEvents, completedLives, selectorSchedules, error }) {
+function buildResumeWitness(resumeArtifact, reusedCompletedLives, reusedSelectorSchedules) {
+  if (resumeArtifact === null) return null;
+  return Object.freeze({
+    sourceEvidenceVersion: resumeArtifact.evidenceVersion ?? null,
+    sourceProtocolVersion: resumeArtifact.protocolVersion ?? null,
+    sourceGeneratedAt: resumeArtifact.generatedAt ?? null,
+    sourceArtifactDigest: digest(resumeArtifact),
+    reusedCompletedLives,
+    reusedSelectorSchedules,
+  });
+}
+
+function buildFailureArtifact({ provider, model, modelEvents, completedLives, selectorSchedules, error, resumeWitness }) {
   return Object.freeze({
     evidenceVersion: E2_A2_EVIDENCE_VERSION,
     protocolVersion: E2_A2_PROTOCOL_VERSION,
@@ -483,6 +543,7 @@ function buildFailureArtifact({ provider, model, modelEvents, completedLives, se
     provider,
     model,
     seeds: Object.freeze([...E2_A0_DEFAULT_SEEDS]),
+    resumedFrom: resumeWitness,
     selector: Object.freeze({
       promptHash: e2A2SelectorPromptHash(),
       schemaHash: e2A2SelectorSchemaHash(),
@@ -513,31 +574,91 @@ function buildFailureArtifact({ provider, model, modelEvents, completedLives, se
   });
 }
 
-export async function runE2A2({ provider, model, adapterOverride = null, onProgress = null } = {}) {
+function validateResumeArtifact(resumeArtifact, { provider, model }) {
+  if (resumeArtifact === null) return;
+  if (resumeArtifact === null || typeof resumeArtifact !== "object" || Array.isArray(resumeArtifact)) {
+    throw new TypeError("A2 resume artifact must be an object");
+  }
+  if (resumeArtifact.arm !== E2_A2_ARM) throw new TypeError("A2 resume artifact arm mismatch");
+  if (resumeArtifact.protocolVersion !== E2_A2_PROTOCOL_VERSION) throw new TypeError("A2 resume protocol mismatch");
+  if (resumeArtifact.status !== "failed") throw new TypeError("A2 resume requires a failed source artifact");
+  if (resumeArtifact.provider !== provider || resumeArtifact.model !== model) throw new TypeError("A2 resume provider/model mismatch");
+  if (!Array.isArray(resumeArtifact.selector?.schedules)) throw new TypeError("A2 resume artifact lacks selector schedules");
+  if (!Array.isArray(resumeArtifact.completedLives)) throw new TypeError("A2 resume artifact lacks completedLives");
+}
+
+export async function runE2A2({
+  provider,
+  model,
+  adapterOverride = null,
+  onProgress = null,
+  resumeArtifact = null,
+} = {}) {
   if (!["openai", "google"].includes(provider) && adapterOverride === null) throw new TypeError("provider must be openai or google");
   if (typeof model !== "string" || model.trim() === "") throw new TypeError("model is required");
-  const modelEvents = [];
+  validateResumeArtifact(resumeArtifact, { provider, model });
+
+  const priorModelEvents = resumeArtifact?.generator?.modelEvents ?? [];
+  const modelEvents = structuredClone(priorModelEvents);
   const adapter = adapterOverride ?? createAdapter({
     provider,
     model,
     observer: (event) => modelEvents.push(event),
   });
-  const lives = [];
-  const selectorSchedules = [];
+  const lives = structuredClone(resumeArtifact?.completedLives ?? []);
+  const selectorSchedules = structuredClone(resumeArtifact?.selector?.schedules ?? []);
+  let reusedCompletedLives = 0;
+  let reusedSelectorSchedules = 0;
+
+  const keyMatches = (candidate, worldId, seed, runOrdinal) =>
+    candidate.worldId === worldId && candidate.seed === seed && candidate.runOrdinal === runOrdinal;
 
   try {
     for (const worldFixture of E2_DIAGNOSTIC_WORLDS) {
       for (let index = 0; index < E2_A0_DEFAULT_SEEDS.length; index += 1) {
         const seed = E2_A0_DEFAULT_SEEDS[index];
         const runOrdinal = index + 1;
-        const frozenSchedule = await freezeSelectorSchedule({ worldFixture, seed, adapter, onProgress });
-        selectorSchedules.push(Object.freeze({
-          worldId: worldFixture.id,
-          seed,
-          runOrdinal,
-          scheduleDigest: frozenSchedule.scheduleDigest,
-          evidence: structuredClone(frozenSchedule.evidence),
-        }));
+        const completed = lives.find((life) => keyMatches(life, worldFixture.id, seed, runOrdinal));
+        if (completed !== undefined) {
+          reusedCompletedLives += 1;
+          if (typeof onProgress === "function") onProgress({
+            type: "completed_life_reused",
+            worldId: worldFixture.id,
+            seed,
+            runOrdinal,
+          });
+          continue;
+        }
+
+        const priorSchedules = selectorSchedules.filter((schedule) =>
+          keyMatches(schedule, worldFixture.id, seed, runOrdinal));
+        if (priorSchedules.length > 1) throw new TypeError("A2 resume artifact contains duplicate selector schedules");
+        let frozenSchedule;
+        if (priorSchedules.length === 1) {
+          frozenSchedule = rehydrateE2A2SelectorSchedule({
+            worldFixture,
+            seed,
+            scheduleEvidence: priorSchedules[0],
+          });
+          reusedSelectorSchedules += 1;
+          if (typeof onProgress === "function") onProgress({
+            type: "selector_schedule_reused",
+            worldId: worldFixture.id,
+            seed,
+            runOrdinal,
+            scheduleDigest: frozenSchedule.scheduleDigest,
+          });
+        } else {
+          frozenSchedule = await freezeE2A2SelectorSchedule({ worldFixture, seed, adapter, onProgress });
+          selectorSchedules.push(Object.freeze({
+            worldId: worldFixture.id,
+            seed,
+            runOrdinal,
+            scheduleDigest: frozenSchedule.scheduleDigest,
+            evidence: structuredClone(frozenSchedule.evidence),
+          }));
+        }
+
         const life = await runE2A0ThreadWithCandidateAttempts({
           worldFixture,
           provider,
@@ -545,7 +666,7 @@ export async function runE2A2({ provider, model, adapterOverride = null, onProgr
           seed,
           runOrdinal,
           adapter,
-          candidateRunner: (args) => runA2Life({ ...args, frozenSchedule }),
+          candidateRunner: (args) => runE2A2Life({ ...args, frozenSchedule }),
           maxCandidateAttempts: E2_A0_MAX_CANDIDATE_ATTEMPTS,
           onProgress,
         });
@@ -553,6 +674,7 @@ export async function runE2A2({ provider, model, adapterOverride = null, onProgr
       }
     }
   } catch (error) {
+    const resumeWitness = buildResumeWitness(resumeArtifact, reusedCompletedLives, reusedSelectorSchedules);
     error.e2A2FailureArtifact = buildFailureArtifact({
       provider,
       model,
@@ -560,6 +682,7 @@ export async function runE2A2({ provider, model, adapterOverride = null, onProgr
       completedLives: lives,
       selectorSchedules,
       error,
+      resumeWitness,
     });
     throw error;
   }
@@ -575,6 +698,7 @@ export async function runE2A2({ provider, model, adapterOverride = null, onProgr
     });
   });
 
+  const resumeWitness = buildResumeWitness(resumeArtifact, reusedCompletedLives, reusedSelectorSchedules);
   return Object.freeze({
     evidenceVersion: E2_A2_EVIDENCE_VERSION,
     protocolVersion: E2_A2_PROTOCOL_VERSION,
@@ -587,6 +711,7 @@ export async function runE2A2({ provider, model, adapterOverride = null, onProgr
     provider,
     model,
     seeds: Object.freeze([...E2_A0_DEFAULT_SEEDS]),
+    resumedFrom: resumeWitness,
     selector: Object.freeze({
       promptHash: e2A2SelectorPromptHash(),
       schemaHash: e2A2SelectorSchemaHash(),
@@ -627,6 +752,14 @@ function progressPrinter(event) {
     process.stderr.write(`✓ ${event.selection.structureRef ?? "world-emergent"}\n`);
     return;
   }
+  if (event.type === "selector_schedule_reused") {
+    process.stderr.write(`[E2 A2 ${event.worldId} ${event.seed}] reuse frozen selector schedule ${event.scheduleDigest}\n`);
+    return;
+  }
+  if (event.type === "completed_life_reused") {
+    process.stderr.write(`[E2 A2 ${event.worldId} ${event.seed}] reuse completed life from failure artifact\n`);
+    return;
+  }
   if (event.type === "candidate_attempt_start") {
     process.stderr.write(`[E2 A2 ${event.worldId} run ${event.runOrdinal}/3] candidate attempt ${event.candidateAttemptNumber}/${event.maxCandidateAttempts}\n`);
     return;
@@ -661,25 +794,31 @@ function printSummary(result) {
     }
   }
   process.stdout.write(`Candidate attempts: ${result.rejectionProfile.candidateAttempts} · rejected attempts: ${result.rejectionProfile.candidateAttemptFailures}\n`);
+  if (result.resumedFrom !== null) {
+    process.stdout.write(`Resumed: selector schedules=${result.resumedFrom.reusedSelectorSchedules} · completed lives=${result.resumedFrom.reusedCompletedLives}\n`);
+  }
 }
 
 async function main() {
   const argv = process.argv.slice(2);
   if (argv.includes("--help") || argv.includes("-h")) {
-    process.stdout.write("Usage: npm run genesis:e2-a2 -- --provider <openai|google> --model <model> [--out <file>] [--overwrite]\n");
+    process.stdout.write("Usage: npm run genesis:e2-a2 -- --provider <openai|google> --model <model> [--resume <failed-artifact>] [--out <file>] [--overwrite]\n");
     return;
   }
   const provider = readArg(argv, "--provider");
   const model = readArg(argv, "--model");
+  const resumePath = readArg(argv, "--resume");
   const outputPath = readArg(argv, "--out");
   const overwrite = argv.includes("--overwrite");
   if (!["openai", "google"].includes(provider)) throw new Error("--provider must be openai or google");
   if (typeof model !== "string" || model.trim() === "") throw new Error("--model is required");
+  if (resumePath !== null && !existsSync(resumePath)) throw new Error(`resume artifact does not exist: ${resumePath}`);
   if (outputPath !== null && existsSync(outputPath) && !overwrite) throw new Error(`output exists: ${outputPath}; pass --overwrite to replace it`);
+  const resumeArtifact = resumePath === null ? null : JSON.parse(readFileSync(resumePath, "utf8"));
 
-  process.stderr.write(`E2 A2: START · ${E2_DIAGNOSTIC_WORLDS.length} worlds · ${E2_A0_DEFAULT_SEEDS.length} lives/world · ${E2_A0_EPISODES} selector+episode slots/life · ${E2_A0_STRUCTURES_PER_WINDOW} offers/window\n`);
+  process.stderr.write(`E2 A2: START · ${E2_DIAGNOSTIC_WORLDS.length} worlds · ${E2_A0_DEFAULT_SEEDS.length} lives/world · ${E2_A0_EPISODES} selector+episode slots/life · ${E2_A0_STRUCTURES_PER_WINDOW} offers/window${resumePath === null ? "" : ` · resume=${resumePath}`}\n`);
   try {
-    const result = await runE2A2({ provider, model, onProgress: progressPrinter });
+    const result = await runE2A2({ provider, model, resumeArtifact, onProgress: progressPrinter });
     const text = `${JSON.stringify(result, null, 2)}\n`;
     if (outputPath !== null) writeFileSync(outputPath, text, "utf8");
     else process.stdout.write(text);
