@@ -79,7 +79,9 @@ Current rich Pass-A cognition receives, for every episode:
 
 As the life grows, prior-event prose grows into a large authored narrative corpus while the world remains mostly static descriptive context. A plausible failure mode is therefore that the model optimizes for literary/local continuation because repeating existing people, objects and places is the easiest way to remain coherent and grounded.
 
-That is a hypothesis, not yet the diagnosis.
+A second structural concern is historical density. The E1 run generated only ten canonical episodes across roughly twelve developmental years — about one recorded event every fourteen months. Event count is not richness, but sparse historical sampling may force each episode to carry too much narrative continuity and leave too little ordinary historical excess for later memory selection.
+
+These are hypotheses, not yet diagnoses.
 
 # E2 claim
 
@@ -168,9 +170,19 @@ Examples of legitimate exogenous pressure include a school activity existing tha
 
 The production mechanism must not manufacture events because they would be useful for character formation.
 
-## H4 — mixed mechanism
+## H4 — historical sparsity / representative-episode pressure
 
-The E1 failure may require more than one explanation. For example, reducing prose inertia may help but not overcome a static world; exogenous world pressure may help but still be folded back into the prior motif during scene realization.
+**Hypothesis:** ten episodes across twelve years is too sparse a historical substrate for the intended funnel. When every generated episode stands in for more than a year of life, the model may over-connect episodes, reuse salient prior material, and make each selected event feel narratively representative. Later Pass B then has too little historical excess from which to forget selectively.
+
+Evidence for H4 would include materially different life texture when the same developmental span is generated at higher event density under otherwise unchanged current Pass-A behavior.
+
+Higher density is not itself success. If more episodes simply repeat the same motif more often, H4 is contradicted or insufficient. If density creates a checklist of trivial filler, that is also not rich life.
+
+A production density change must be justified by historical and downstream-memory needs, not by a target count of "interesting" events.
+
+## H5 — mixed mechanism
+
+The E1 failure may require more than one explanation. For example, reducing prose inertia may help but not overcome a static world; exogenous world pressure may help but still be folded back into the prior motif during scene realization; higher event density may provide more opportunity while also amplifying prose inertia.
 
 If evidence is mixed, E2 should prefer the smallest composition of independently justified mechanisms rather than a large "make life richer" prompt.
 
@@ -193,14 +205,15 @@ Requirements:
 - no authored plot arc;
 - permanently burned for G/H on first model call.
 
-Use the same pinned provider/model, EventStructurePool v2, developmental span policy and episode count across all arms. Hold seeds and offered-structure plans paired by world where technically possible.
+Use the same pinned provider/model, EventStructurePool v2 and developmental span policy across all arms. Hold seeds and offered-structure plans paired by world where technically possible. Arms A0-A3 use the existing ten-episode density; A4 changes density intentionally to isolate H4.
 
-Run four **diagnostic arms** against each world.
+Run five **diagnostic arms** against each world.
 
 ### A0 — current sequential Pass A control
 
 Current production behavior unchanged:
 
+- ten episodes;
 - full prior episode prose;
 - one call chooses and realizes the episode;
 - static WorldSpec plus current affordances.
@@ -248,11 +261,21 @@ Pass A may use or ignore all of them.
 
 Purpose: isolate H3.
 
-### Optional A4 — combined arm
+### A4 — higher historical-density diagnostic
+
+Retain current Pass-A cognition and world semantics, but increase the number of chronology strata across the same childhood/adolescent span using a **predeclared density** chosen before any model result is seen.
+
+The review should challenge the exact density before implementation. A reasonable diagnostic starting point is 24 episodes across ages 6–17.999, roughly two canonical historical episodes per year, because it materially changes sparsity without attempting to simulate daily life.
+
+Purpose: isolate H4.
+
+A4 must not preferentially generate "important" events. The same EventStructure availability and ordinary/low-consequence discipline applies. More history should create more historical excess, not twenty-four formative beats.
+
+### Optional A5 — combined arm
 
 Do **not** run a combined arm initially.
 
-A4 is permitted only if A1-A3 show that two mechanisms have independent value and the interaction itself needs diagnosis. Predeclare A4 before seeing its output and record why the combination is justified.
+A5 is permitted only if A1-A4 show that two mechanisms have independent value and the interaction itself needs diagnosis. Predeclare A5 before seeing its output and record why the combination is justified.
 
 ## Stage E2-A stopping rule
 
@@ -275,6 +298,7 @@ Per life:
 
 ```text
 episode count / chronology spread
+mean and maximum temporal gap between episodes
 unique structureRefs
 structure concentration (top-share and HHI)
 world-emergent count
@@ -298,6 +322,8 @@ world opportunities ignored / not evidenced
 ```
 
 There is no required uptake ratio.
+
+For A4, normalize concentration and encounter measures by event count as well as reporting raw counts. Do not declare density successful merely because raw unique counts rise with more episodes.
 
 ## Narrative-inertia characterization
 
@@ -357,6 +383,12 @@ H3 is supported when A3 causes independently available world changes/opportuniti
 
 If every supplied opportunity is used, suspect checklist pressure rather than success.
 
+## H4 supported
+
+H4 is supported when A4 creates materially more historical excess and independently caused lived material **after normalization for the larger event count**, without merely multiplying the same motifs or producing filler.
+
+If A4's apparent improvement disappears after normalization, density alone is not the mechanism. If A4 amplifies repetition, sparsity was not the primary problem and may have been masking stronger prose inertia.
+
 ## No hypothesis supported
 
 If all arms remain locally monocultural, do not tune prompts repeatedly. Treat the result as evidence that the current single-episode sequential architecture may be insufficient and return to architecture before G.
@@ -378,6 +410,7 @@ Potential production directions include, but are not preselected by this plan:
 - a different projection of prior history that preserves factual constraints without feeding all historical prose as narrative context;
 - separation of opportunity choice from scene realization;
 - an explicit exogenous world-happenings layer that evolves independently of the Thread;
+- a justified increase in historical event density;
 - a bounded combination of the above.
 
 A production design that needs a new derived continuity representation must specify its authority status. It may not silently become a second biography, memory or meaning authority.
@@ -478,6 +511,8 @@ Claude should focus on:
 - whether A1 destroys historical continuity and then mistakes randomness for richness;
 - whether A2 turns EventStructure choice into a hidden plot planner;
 - whether A3 turns world opportunities into required beats;
+- whether A4 confuses more events with richer life or creates representative-event pressure elsewhere;
+- whether ten episodes was an invalid baseline for the history→memory funnel in the first place;
 - whether the proposed measurements reward a checklist biography;
 - whether an independent world-happenings layer would be genuine world state or another Genesis authoring channel;
 - whether a continuity summary would become a second biography authority;
