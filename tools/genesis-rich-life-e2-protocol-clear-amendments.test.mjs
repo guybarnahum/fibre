@@ -7,6 +7,7 @@ import {
 } from "./genesis-rich-life-e2-v2-a0-reviewed.mjs";
 import { E2_V2_WORLD_AUTHORING_RECORD } from "./genesis-rich-life-e2-v2-world.mjs";
 import {
+  decorateN2Preflight,
   decorateN2Snapshot,
   n2ReviewPlan,
   pairedPassBFramingComparison,
@@ -44,6 +45,7 @@ test("protocol-clear R1-R4 remain observational and are written into evidence wi
   assert.deepEqual(v2Preflight.worldAuthoringRecord, E2_V2_WORLD_AUTHORING_RECORD);
   assert.equal(v2Preflight.worldAuthoringRecord.recordedBeforeFirstModelUse, true);
   assert.match(v2Preflight.worldAuthoringRecord.reasonForDifferences, /not selected to target/i);
+  assert.match(v2Preflight.reviewedPreflightDigest, /^sha256:[0-9a-f]{64}$/);
 
   const v2Artifact = decorateE2V2A0Artifact({
     evidenceVersion: "v2-source",
@@ -51,12 +53,17 @@ test("protocol-clear R1-R4 remain observational and are written into evidence wi
   });
   assert.deepEqual(v2Artifact.worldAuthoringRecord, E2_V2_WORLD_AUTHORING_RECORD);
   assert.deepEqual(v2Artifact.preflight.worldAuthoringRecord, E2_V2_WORLD_AUTHORING_RECORD);
+  assert.equal(v2Artifact.preflight.reviewedPreflightDigest, v2Preflight.reviewedPreflightDigest);
 
   const review = n2ReviewPlan();
   assert.equal(review.criteriaChangedByReviewRecommendations, false);
   assert.equal(review.memoryRateCharacterization.nearTotalRecallThreshold, 17);
   assert.equal(review.pairedFramingComparison.gateUse, false);
   assert.match(review.firstValidTestRationale, /first pairing/i);
+
+  const reviewedN2Preflight = decorateN2Preflight({ protocolVersion: "n2" });
+  assert.match(reviewedN2Preflight.reviewedPreflightDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.equal(reviewedN2Preflight.preExecutionReview.criteriaChangedByReviewRecommendations, false);
 
   const oldArtifact = oldInstrumentArtifact();
   const newTrials = trialPlanOutcomes(8);
@@ -98,4 +105,5 @@ test("protocol-clear R1-R4 remain observational and are written into evidence wi
   assert.equal(snapshot.score.memoryFormation.characterization.gateUse, false);
   assert.equal(snapshot.pairedPassBFramingComparison.gateUse, false);
   assert.equal(snapshot.pairedPassBFramingComparison.newRemembered, 8);
+  assert.equal(snapshot.preflight.reviewedPreflightDigest, reviewedN2Preflight.reviewedPreflightDigest);
 });
