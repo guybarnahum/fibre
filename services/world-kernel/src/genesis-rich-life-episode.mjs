@@ -113,21 +113,26 @@ export function normalizeRichPassAModelOutput(candidate, inputCandidate) {
 }
 
 export function assertRichRepairPreservesEpisodeFacts(previousCandidate, repairedCandidate) {
-  const previous = normalizeRichPassAEpisode(previousCandidate, { enforceObservableForm: false });
-  const repaired = normalizeRichPassAEpisode(repairedCandidate, { enforceObservableForm: false });
-  const facts = (episode) => {
-    const copy = structuredClone(episode);
+  // Form repair owns only observableAction. Compare the raw remaining model facts
+  // without normalizing them: they may still contain an independent mechanical
+  // defect that authoritative validation must classify immediately after repair.
+  // Normalizing here would let the preservation check accidentally become a second
+  // validation path and can leak a raw TypeError instead of a record-retryable gate.
+  assertPlainObject("previous rich Pass-A repair candidate", previousCandidate);
+  assertPlainObject("repaired rich Pass-A repair candidate", repairedCandidate);
+  const facts = (candidate) => {
+    const copy = structuredClone(candidate);
     delete copy.observableAction;
     return copy;
   };
-  if (canonicalJson(facts(previous)) !== canonicalJson(facts(repaired))) {
+  if (canonicalJson(facts(previousCandidate)) !== canonicalJson(facts(repairedCandidate))) {
     throw new GenesisPassAValidationError(
       "pass_a_record_repair_changed_facts",
       "Pass-A rich-life form repair changed event or intellectual-encounter facts instead of repairing only observableAction",
-      { record: repaired },
+      { record: repairedCandidate },
     );
   }
-  return repaired;
+  return repairedCandidate;
 }
 
 const encounterSchema = structuredClone(GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA);
