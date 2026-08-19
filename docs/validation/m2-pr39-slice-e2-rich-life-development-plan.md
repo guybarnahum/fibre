@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr39-slice-e2-rich-life-development-plan
 status: proposed
-last-reviewed: 2026-08-18
+last-reviewed: 2026-08-19
 canonical: false
 ---
 
@@ -32,6 +32,10 @@ distinctive point of view
 ```
 
 E2 may improve the first transition. It may not write later answers backward into history.
+
+A second discipline follows directly from the Rich Life foundation:
+
+> **Within-life breadth is not the same thing as between-life particularity. A life that visits more places is not necessarily more particular; the stronger question is whether its lived causes can be exchanged with another Thread's without changing what later becomes available to memory, meaning, relationship or judgment.**
 
 ## Why E2 exists
 
@@ -66,6 +70,16 @@ The result demonstrated continuity, but not enough independent lived causes. The
 
 The artifact remains permanent negative development evidence. It must not be rerun or replaced to obtain a prettier outcome.
 
+### E1 H6-a evidence already available
+
+The preserved E1 artifact gives one cheap diagnostic result before E2 implementation:
+
+- the ten initial model outputs chose `intellectualEncounter: null`;
+- the recorded repairs are `pass_a_observable_action_bounds` repairs;
+- there is no recorded `pass_a_intellectual_encounter` repair path in the completed run.
+
+Therefore the zero-intellectual result is **avoidance rather than failed encounter validation**. This does not by itself prove that required-and-nullable schema economics caused the avoidance, but it means affordance/schema cost is a live upstream hypothesis and must be tested before blaming sequential prose alone.
+
 ## Current mechanism under suspicion
 
 Current rich Pass-A cognition receives, for every episode:
@@ -77,9 +91,11 @@ Current rich Pass-A cognition receives, for every episode:
 - **every prior episode's `observableAction` prose**, plus its date/place/participants;
 - no genome, meaning, future role, semantic needs or conditions.
 
-As the life grows, prior-event prose grows into a large authored narrative corpus while the world remains mostly static descriptive context. A plausible failure mode is therefore that the model optimizes for literary/local continuation because repeating existing people, objects and places is the easiest way to remain coherent and grounded.
+As the life grows, prior-event prose grows into a large authored narrative corpus while the world remains mostly static descriptive context. A plausible failure mode is literary/local continuation pressure.
 
 A second structural concern is historical density. The E1 run generated only ten canonical episodes across roughly twelve developmental years — about one recorded event every fourteen months. Event count is not richness, but sparse historical sampling may force each episode to carry too much narrative continuity and leave too little ordinary historical excess for later memory selection.
+
+A third concern is now explicit: the binding constraint may be the **affordance surface itself** — realization diversity of the pool, roster/place grounding density, offer width, and output-schema cost — rather than the sequential cognition architecture.
 
 These are hypotheses, not yet diagnoses.
 
@@ -108,7 +124,9 @@ Pass A remains unable to see:
 - Fibre-computed semantic needs;
 - Fibre-computed mechanical conditions;
 - source-person personality or biography;
-- any label saying an event is or should become formative.
+- any label saying an event is or should become formative;
+- any richness/fertility rater output;
+- any diagnostic Pass-B/Pass-C output.
 
 ## History authority
 
@@ -116,6 +134,7 @@ Pass A remains unable to see:
 - History, memory and meaning remain distinct authorities.
 - No E2 diagnostic summary becomes canonical Thread history merely because cognition saw it.
 - Existing Gate-C chronology, participant grounding, structure grounding, replay and publication authority remain unchanged unless separately reviewed.
+- A production continuity representation, if needed, must be a **pure deterministic prompt-time projection of canonical episodes**: no independent ID, no persistence, no citation identity, no independent version, and no authority to add or rewrite facts. It must be recomputable from canonical history on every call.
 
 ## No backwards character authoring
 
@@ -139,6 +158,7 @@ The absence of any such category remains a legal life outcome.
 - Richness diagnostics may not reject individual episodes or whole lives.
 - No run may be regenerated because it is bland, repetitive, narrow, overly domestic, insufficiently intellectual or otherwise aesthetically disappointing.
 - Development worlds are burned on first model use and cannot enter G/H.
+- Diagnostic Pass-B/Pass-C runs are burned measurement only: never published, never citable, never supplied to Pass A, and never used to regenerate a history until its funnel looks better.
 
 # Competing hypotheses
 
@@ -146,389 +166,396 @@ E2 begins by distinguishing causes rather than immediately editing the prompt.
 
 ## H1 — prose inertia
 
-**Hypothesis:** full prior `observableAction` prose acts as a literary continuation attractor. Salient objects, wording, participants and local motifs become increasingly easy to repeat even when the current world affords unrelated experiences.
+**Hypothesis:** full prior `observableAction` prose acts as a literary continuation attractor. Salient objects and wording become increasingly easy to repeat even when the current world affords unrelated experiences.
 
-Evidence for H1 would include a substantial reduction in motif/participant/place concentration when prior prose is experimentally reduced or hidden while other world/affordance inputs remain unchanged.
+Important amendment: prior structured history also carries place/participant repetition. Therefore H1 is **not** supported merely because lexical motifs drop when prose is removed.
 
-A diagnostic prose ablation may intentionally be unsuitable as the final production design because it can lose continuity facts. Its purpose is causal diagnosis.
+Predeclared reading: H1 requires both:
+
+1. a material reduction in lexical motif carryover versus paired A0; and
+2. a material reduction in place/participant concentration versus paired A0.
+
+For the diagnostic reading, `material` means an arm-level change of at least **15 percentage points in top-share concentration** in the same direction in both diagnostic worlds, alongside a clear reduction in the frozen lexical-overlap indicator. If lexical carryover changes without setting/cast concentration changing, record: `prose_carries_motifs_but_not_locality`; do not freeze a prose-only correction.
+
+A1 also fails as a production direction if continuity collapses into disconnected cast/place churn. Breadth created by amnesia is not Rich Life.
 
 ## H2 — opportunity-selection and scene-realization coupling
 
-**Hypothesis:** asking one cognition call simultaneously to choose *what kind of thing happens* and to realize a fully grounded coherent scene biases selection toward familiar people/places because those are safest to instantiate against the accumulated history.
+**Hypothesis:** asking one cognition call simultaneously to choose *what kind of thing happens* and to realize a fully grounded scene biases selection toward familiar situations because they are safest to instantiate.
 
-Evidence for H2 would include broader world/affordance use when opportunity choice is separated from concrete scene realization, even if full history is later available for realization.
+The diagnostic opportunity-choice step must **not see cumulative Thread state at all**. Its exact cognition allowlist is frozen before use:
 
-A production design inspired by H2 must still allow world-emergent history and may not make an EventStructure checklist mandatory.
+```text
+world public/factual projection
+developmental window
+chronology index
+current offered affordances
+policy witness
+```
+
+Structurally absent:
+
+```text
+prior episodes
+prior prose
+known/introduced participant set
+current relationship state
+genome
+memory / meaning
+richness diagnostics
+future material
+```
+
+The allowlist and input digest are mechanical evidence. Step 1 chooses only an offered `structureRef` or bounded `world_emergent` intent. Step 2 receives the canonical factual history required to realize one valid episode.
+
+This makes A2 a test of selection/realization coupling rather than a hidden plot planner. Any future addition of life-so-far state to step 1 requires a new reviewed protocol version.
+
+Predeclared reading: H2 is supported only if A2 improves world/affordance reach relative to paired A0 in both worlds **without** increasing between-life structural overlap into the negative band defined below and without a collapse of recurring relationships.
 
 ## H3 — static-world under-pressure
 
-**Hypothesis:** a broad static WorldSpec describes what is available but supplies too little temporally local external pressure. Prior personal history changes every episode; school, institutions, neighborhood, public events and other people's lives remain nearly identical text each time. The personal narrative therefore wins the salience competition.
+**Hypothesis:** a broad static WorldSpec supplies too little temporally local external pressure, while personal history grows every episode.
 
-Evidence for H3 would include broader lived causes when Pass A receives independently generated or authored **time-local world happenings/opportunities** that are factual possibilities rather than personality targets.
+A3 is valid only if exogenous happenings are mechanically Thread-blind.
 
-Examples of legitimate exogenous pressure include a school activity existing that term, a library talk being scheduled, a caregiver work change, a neighborhood closure, a visiting relative, a peer group forming, a transit disruption, a public celebration, or a community workshop becoming available. The Thread may encounter, ignore or miss these opportunities.
+### Exogenous-world independence rule
 
-The production mechanism must not manufacture events because they would be useful for character formation.
+For E2, the happenings generator receives only a **public-world/calendar projection**:
+
+```text
+time frame / calendar stratum
+places and public geography
+available institutions
+public cultural/material context
+public infrastructure
+```
+
+It receives none of:
+
+```text
+subject identity or age
+household shape
+family relations
+roster / known participants
+prior episodes or motifs
+genome
+memory / meaning
+future benchmark
+```
+
+The exact input is witnessed and mechanically allowlisted.
+
+The happenings stream is generated **once per WorldSpec/stratum and reused unchanged across every seed and every arm that consumes it**. It is not regenerated for a Thread. This is what makes it exogenous rather than a curated formative-opportunity channel.
+
+Most happenings may be irrelevant to the child. Uptake is not a success target. Predeclared warning bands:
+
+- 100% uptake of offered happenings across a life = invalid/checklist pressure;
+- median uptake above 70% across seeds = strong checklist-pressure warning;
+- low or zero uptake remains legal.
+
+If A3 becomes production, exogenous world happenings and values derived from them are **Pass-A input / Genesis provenance only**. They are structurally absent from Pass B and Pass C unless Gate D is explicitly reopened and reviewed.
+
+Predeclared reading: H3 is supported when the frozen exogenous stream changes actual lived causes versus A0 across both worlds while many happenings remain unused, without between-life template collapse.
 
 ## H4 — historical sparsity / representative-episode pressure
 
-**Hypothesis:** ten episodes across twelve years is too sparse a historical substrate for the intended funnel. When every generated episode stands in for more than a year of life, the model may over-connect episodes, reuse salient prior material, and make each selected event feel narratively representative. Later Pass B then has too little historical excess from which to forget selectively.
+**Hypothesis:** ten episodes across twelve years is too sparse a historical substrate for the intended history→memory funnel.
 
-Evidence for H4 would include materially different life texture when the same developmental span is generated at higher event density under otherwise unchanged current Pass-A behavior.
+A density experiment must not confound event count with total affordance draws.
 
-Higher density is not itself success. If more episodes simply repeat the same motif more often, H4 is contradicted or insufficient. If density creates a checklist of trivial filler, that is also not rich life.
+The primary density arm is therefore **matched-total-offers**: 24 chronology strata across the same developmental span, while the deterministic offer scheduler distributes approximately the same total number of offered structures as A0 across the 24 strata (subject to full-stratum eligibility and the existing low-consequence discipline). The exact deterministic distribution is frozen before model use.
 
-A production density change must be justified by historical and downstream-memory needs, not by a target count of "interesting" events.
+A matched-per-window 24×9 arm is not run initially. It is permitted only if the matched-total arm supports H4 and the interaction with offer exposure itself needs diagnosis.
+
+Predeclared reading: H4 is supported only if matched-total higher density creates more historical excess / downstream memory-route divergence without materially increasing motif concentration or filler-like repetition. More raw unique structures or people is not evidence because event count changed.
 
 ## H5 — mixed mechanism
 
-The E1 failure may require more than one explanation. For example, reducing prose inertia may help but not overcome a static world; exogenous world pressure may help but still be folded back into the prior motif during scene realization; higher event density may provide more opportunity while also amplifying prose inertia.
+The E1 failure may require more than one explanation. If evidence is mixed, E2 should prefer the smallest composition of independently justified mechanisms rather than a large `make life richer` prompt.
 
-If evidence is mixed, E2 should prefer the smallest composition of independently justified mechanisms rather than a large "make life richer" prompt.
+## H6 — affordance-surface / schema-economics constraint
 
-# Development protocol
+**Hypothesis:** the binding constraint sits upstream of sequential cognition: EventStructure realizations are too degenerate in a given WorldSpec, current rosters/places make a small set of scenes much cheaper to ground, offer width is too narrow, and/or optional rich metadata such as `intellectualEncounter` is costly enough that `null` dominates.
 
-E2 has three stages: diagnosis, mechanism freeze, and fresh validation.
+H6 has priority because it is cheaper to test and can make H1–H4 underpowered or irrelevant.
 
-No production generator change is selected before the diagnostic protocol is frozen and externally reviewed.
+### H6-a — preserved-artifact probe — completed
 
-## Stage E2-A — paired mechanism diagnosis
+E1 shows encounter **avoidance**, not encounter repair failure: initial outputs choose `intellectualEncounter:null`; recorded repairs are observable-action-bound repairs. Record this result; do not infer causality from it yet.
 
-Author **two completely new diagnostic WorldSpecs**, `E2-D1` and `E2-D2`, before any model run.
+### H6-b — realization-diversity probe
 
-Requirements:
+Before new life generation, run a blind structure-realization review against the actual failed E1 WorldSpec and again against each authored D1/D2 world.
 
-- clearly different era/geography/household/institutional texture from E1 and from each other;
-- no access to synthetic genome values during authoring;
-- enough concrete public/family/institutional affordance to make multiple life paths plausible;
-- no desired adult role/personality;
-- no authored plot arc;
-- permanently burned for G/H on first model call.
+For each eligible EventStructure ask, without showing E1 output:
 
-Use the same pinned provider/model, EventStructurePool v2 and developmental span policy across all arms. Hold seeds and offered-structure plans paired by world where technically possible. Arms A0-A3 use the existing ten-episode density; A4 changes density intentionally to isolate H4.
+- how many materially different plausible scenes can this structure realize in this world?
+- how many distinct place/participant configurations are plausible?
+- how many plausible realizations are outside the subject household?
+- does the structure effectively collapse to the same scene as another offered structure under this world?
 
-Run five **diagnostic arms** against each world.
+Predeclared H6 warning: if **more than half** of eligible structures have no more than two materially distinct plausible realizations, or more than half collapse into the same small household configuration, treat realization degeneracy as live and do not interpret A1–A4 until the affordance surface is corrected or explicitly controlled.
 
-### A0 — current sequential Pass A control
+### H6-c / A6 — same-density wider-offer probe
 
-Current production behavior unchanged:
+On fresh diagnostic worlds only, before expensive H1–H4 arms, run current A0 behavior at the same ten-episode density but with a **materially wider offer set per stratum**.
 
-- ten episodes;
-- full prior episode prose;
-- one call chooses and realizes the episode;
-- static WorldSpec plus current affordances.
+The widened count is chosen mechanically after D1/D2 eligibility is known: use the largest common fixed count supported by every stratum in both worlds, provided it is at least 12; otherwise H6-c is recorded as unavailable and the eligible-count limitation itself is evidence.
 
-This establishes the paired control on fresh worlds rather than treating E1 as the only baseline.
+Everything else remains A0.
 
-### A1 — prior-prose ablation diagnostic
+Predeclared reading: if wider offers materially reduce concentration / increase independent lived causes across n≥3 seeds without between-life template collapse, H6 receives priority and E2 corrects the affordance surface before testing more elaborate prompt-assembly mechanisms.
 
-Keep prior chronology, episode IDs, place refs, participant refs, participant introductions and structural continuity metadata, but remove prior `observableAction` prose from cognition.
+# Stage 0 — review resolution and world authoring discipline
 
-Purpose: isolate H1.
+Claude's pre-implementation review returned `CLEAR WITH AMENDMENTS`; its resolution is recorded separately.
 
-This is **diagnostic only** unless a later design proves how all continuity-relevant facts remain available without creating a second history authority.
+Before any new model run:
 
-Do not quietly promote this arm into production because it happens to look diverse.
+1. author D1/D2 without seeing any development genome;
+2. record an explicit D1/D2-vs-E1 WorldSpec change log and rationale, especially roster density, places, institutions and household/public access;
+3. do **not** rerun E1 as an anchor — the original burned world remains untouched;
+4. freeze all diagnostic interpretation bands below;
+5. run H6-b before life generation.
 
-### A2 — separated opportunity-choice diagnostic
+# Stage E2-A — staged mechanism diagnosis
 
-Use two cognition steps:
+The experiment is deliberately staged to avoid an unnecessary factorial.
 
-1. **opportunity choice** sees world, developmental window, known participants and current offered affordances, but not prior `observableAction` prose or any genome/meaning/personality material; it chooses either one offered `structureRef` or a bounded `world_emergent` intent;
-2. **scene realization** receives that chosen opportunity plus the normal factual history needed to produce one valid observable episode.
+## Phase A — H6 first
 
-The choice output contains no lesson, theme, personality, salience score or statement that the event should matter later.
+For each of D1 and D2:
 
-Purpose: isolate H2.
+- run A0 current control at **n=3 independent provider executions / seeds**;
+- run H6-c/A6 widened-offer behavior at **n=3** using paired Fibre seeds/offered schedules where applicable.
 
-The opportunity-choice call may choose a familiar situation. Fibre does not penalize that choice for repetition.
+If H6-b + H6-c together explain the E1 failure convincingly, stop. Preserve the results, correct/freeze the affordance mechanism, and proceed to fresh E2-B validation. Do not run H1–H4 merely because they were planned.
 
-### A3 — time-local world-pressure diagnostic
+If H6 is unsupported or insufficient, continue.
 
-Retain current single-step Pass A but add a small set of **exogenous time-local world opportunities** for the current stratum.
+## Phase B — H1–H4
 
-Those opportunities must be created independently of:
+For D1 and D2, run **n=3** per arm:
 
-- the Thread genome;
-- prior Thread motifs;
-- desired personality;
-- future benchmarks;
-- memory/meaning outcomes.
+```text
+A0  current control
+A1  prior-prose ablation diagnostic
+A2  stateless opportunity choice + scene realization
+A3  Thread-blind exogenous public-world happenings
+A4  higher density with matched total offer exposure
+```
 
-They describe things happening or becoming available in the world, not instructions that the Thread must participate.
+A0 observations from Phase A may be reused if the protocol is identical.
 
-Pass A may use or ignore all of them.
+A combined arm is prohibited initially. It may be added only after individual mechanisms show independent evidence and its purpose/reading is frozen before output.
 
-Purpose: isolate H3.
+If D1 and D2 disagree materially about mechanism after n=3, author one additional fresh diagnostic world rather than resolving the ambiguity by taste.
 
-### A4 — higher historical-density diagnostic
+# Between-life particularity — required, not optional
 
-Retain current Pass-A cognition and world semantics, but increase the number of chronology strata across the same childhood/adolescent span using a **predeclared density** chosen before any model result is seen.
+Every arm that looks broader within a life must also be checked for **same-world between-life template collapse**.
 
-The review should challenge the exact density before implementation. A reasonable diagnostic starting point is 24 episodes across ages 6–17.999, roughly two canonical historical episodes per year, because it materially changes sparsity without attempting to simulate daily life.
+For the n=3 histories in each world/arm compute pairwise overlap on:
 
-Purpose: isolate H4.
+```text
+placeRef sets
+non-subject participant-role sets
+structureRef sets
+intellectual subjectRef sets
+```
 
-A4 must not preferentially generate "important" events. The same EventStructure availability and ordinary/low-consequence discipline applies. More history should create more historical excess, not twenty-four formative beats.
+Report Jaccard values and exact intersections. Do not combine them into one richness score.
 
-### Optional A5 — combined arm
+Predeclared interpretation:
 
-Do **not** run a combined arm initially.
+- an arm that improves within-life breadth while pairwise overlap rises by **≥0.15 absolute Jaccard** over A0 on at least two structural dimensions in both worlds is a **template-collapse warning**, not a richness success;
+- high overlap can be legitimate when the world itself is narrow, so the WorldSpec change log and H6 realization probe remain part of interpretation;
+- low overlap is not automatically good: random cast churn and setting tourism remain failure modes.
 
-A5 is permitted only if A1-A4 show that two mechanisms have independent value and the interaction itself needs diagnosis. Predeclare A5 before seeing its output and record why the combination is justified.
+## Swap-resistance / source-life discrimination
 
-## Stage E2-A stopping rule
+Repurpose the existing blind 2AFC discipline, but do **not** treat mere seed distinguishability as success or failure.
 
-After both diagnostic worlds complete all frozen arms:
+The E2 form is:
 
-- preserve every result;
-- compare mechanisms using the frozen characterization dimensions below;
-- do not pick the arm with the prettiest biography;
-- choose a production mechanism only when there is evidence tied to a specific hypothesis and its integrity costs are understood.
+1. take two same-world histories from different seeds;
+2. remove Thread IDs, names, obvious setting labels and prose-style clues where feasible;
+3. generate diagnostic `life_only` memory/funnel outputs from one history under the frozen Pass-B/C contracts;
+4. ask a blind rater which of the two histories provides the better evidential source for those downstream records, based on concrete lived route rather than wording/style.
 
-If the two worlds disagree materially about mechanism, author one additional fresh diagnostic world before choosing. Do not resolve ambiguity by subjective preference.
+Near chance means the histories are functionally swappable for the downstream material and is negative evidence for particularity. Above-chance matching is positive only when reviewer inspection shows it rests on lived events/relationships/tensions rather than cosmetic seed markers or a common template with trivial parameters.
+
+This differs intentionally from a generic `can you tell seed A from seed B?` task. Fibre wants life-specific causal material, not arbitrary seed fingerprints.
 
 # Characterization dimensions
 
-No single metric defines richness. Report the following together.
+No single metric defines richness.
 
-## Mechanically derived
-
-Per life:
+## Mechanically derived per life
 
 ```text
 episode count / chronology spread
-mean and maximum temporal gap between episodes
+mean and maximum temporal gap
 unique structureRefs
-structure concentration (top-share and HHI)
+structure top-share + HHI
 world-emergent count
-unique placeRefs
-place concentration
+unique placeRefs + place top-share
 unique non-subject participants
-newly introduced participants
-participant concentration excluding subject
-intellectual-encounter count
-intellectual encounter kinds / access modes / unique subjects
+new introductions
+participant top-share excluding subject
+intellectual encounters / kinds / access modes / subjects
 record repair count and gates
 provider/protocol failures
 ```
 
-If A3 exists, additionally report:
+If A3 is present also report world happenings offered / evidenced / unused.
+
+## Narrative inertia
+
+Use deterministic lexical indicators plus a blind rater. The rater asks whether later events add independently caused lived material or mainly elaborate prior wording/motifs. Rater output is characterization only.
+
+## World reach
+
+A blind rater sees WorldSpec + history with arm identity removed and identifies what materially available parts of the world entered the life, what remained unused, and whether apparent breadth looks like plausible exposure or a checklist tour.
+
+## Experiential fertility — downstream mechanical probe is load-bearing
+
+The former qualitative fertility rater remains useful as color but is no longer the load-bearing instrument.
+
+For candidate histories, run the already-cleared memory/meaning machinery diagnostically with **life-only, genome-unexposed treatment** and multiple independent executions. These runs are never published and never feed back into Pass A.
+
+Measure:
 
 ```text
-world opportunities offered
-world opportunities visibly encountered
-world opportunities ignored / not evidenced
+memory-set overlap/divergence across repeated runs of the same history
+which different episodes become retained across runs
+whether one motif monopolizes remembered material
+cross-life source matching / swap resistance
 ```
 
-There is no required uptake ratio.
+A fertile history should permit more than one plausible selective-memory route. Identical memory funnels across repeated runs can indicate a monocultural substrate, though stable retention of a genuinely dominant event remains a possible explanation and must be inspected rather than automatically failed.
 
-For A4, normalize concentration and encounter measures by event count as well as reporting raw counts. Do not declare density successful merely because raw unique counts rise with more episodes.
+The downstream probe is used in Phase A only if H6-c looks promising, and in E2-B for A0 versus the frozen production mechanism. It is not necessary to spend Pass-B/C calls on every obviously failed diagnostic arm.
 
-## Narrative-inertia characterization
+# Interpretation freeze
 
-Measure repeated concrete motifs without treating repetition itself as failure.
+Before the first D1/D2 model output, embed this protocol version and these directional readings into the run artifact.
 
-Use both:
+The main predeclared magnitudes are:
 
-1. deterministic lexical indicators where possible: repeated distinctive nouns/phrases across nonadjacent episodes, pairwise observableAction token overlap, recurring object labels;
-2. a blind qualitative rater that receives only the life chronology and the Rich Life definition, not arm identity, and answers:
-   - Does prior episode wording appear to become a template for later events?
-   - Do later episodes add independently caused lived material or mainly elaborate an existing motif?
-   - Are recurring motifs plausible continuity or generator monoculture?
+```text
+H1: >=15pp reduction in both place/participant top-share + lexical reduction, both worlds
+between-life warning: >=0.15 absolute Jaccard increase vs A0 on >=2 dimensions, both worlds
+A3 checklist invalid: 100% happenings uptake; >70% median uptake is strong warning
+H6-b degeneracy warning: >50% structures with <=2 materially distinct realizations or same local configuration
+```
 
-Rater output is characterization, not admission authority.
+For H2/H3/H4/H6-c, no single scalar threshold can establish Rich Life. Their required direction is frozen: improvement must appear across both worlds and n=3 seeds, must survive between-life checks, and must not be explained solely by increased opportunity draws or random churn.
 
-## World-reach characterization
-
-A blind rater receives WorldSpec + generated history with implementation arm removed and answers:
-
-- Which materially available parts of the world actually entered the life?
-- Which remained unused?
-- Does the life feel causally exposed to household, peers, institutions, public world and contingency, or mostly self-referential to its prior episodes?
-- Is any apparent breadth a checklist-like tour of WorldSpec categories rather than plausible life?
-
-## Experiential-fertility characterization
-
-A separate blind rater sees only the chronology, with names/obvious setting labels normalized where feasible, and the Fibre Rich Life definition.
-
-It assesses:
-
-- whether episodes contain specific non-interchangeable lived material;
-- whether there are multiple plausible later memory/meaning routes rather than one prewritten lesson;
-- whether the life provides tensions, relationships, practices, accidents, unfinished situations or exposures from which later individuality could emerge;
-- whether the life already looks backwards-authored to explain a personality.
-
-Do not ask the rater to infer or praise the person's personality. E2 is about substrate fertility, not finished character.
-
-# Interpreting Stage E2-A
-
-Use mechanism-linked evidence rather than one aggregate score.
-
-## H1 supported
-
-H1 is supported when A1 reduces narrative-template reuse across both diagnostic worlds without merely producing disconnected random vignettes, while A0 continues to show materially stronger local motif carryover.
-
-If A1 improves breadth but causes factual continuity loss, that still supports H1 while demonstrating that naive prose removal is not production-safe.
-
-## H2 supported
-
-H2 is supported when A2 selects/realizes materially broader causes than A0 while maintaining coherent history, especially when A1 alone does not explain the difference.
-
-If the opportunity-choice step itself begins selecting novelty or diversity because of prompt wording, the arm is invalid; it has become hidden quality optimization.
-
-## H3 supported
-
-H3 is supported when A3 causes independently available world changes/opportunities to enter or redirect history across both worlds without requiring their uptake, and the result is not merely a tour through provided opportunities.
-
-If every supplied opportunity is used, suspect checklist pressure rather than success.
-
-## H4 supported
-
-H4 is supported when A4 creates materially more historical excess and independently caused lived material **after normalization for the larger event count**, without merely multiplying the same motifs or producing filler.
-
-If A4's apparent improvement disappears after normalization, density alone is not the mechanism. If A4 amplifies repetition, sparsity was not the primary problem and may have been masking stronger prose inertia.
-
-## No hypothesis supported
-
-If all arms remain locally monocultural, do not tune prompts repeatedly. Treat the result as evidence that the current single-episode sequential architecture may be insufficient and return to architecture before G.
+If only one world or one seed looks improved, record the hypothesis as unresolved rather than choosing it.
 
 # Production mechanism selection
 
-After Stage E2-A, write a short result document that states:
+After diagnosis, write a result document stating:
 
-- which hypotheses were supported, contradicted or unresolved;
-- exact evidence;
-- the smallest production correction justified by that evidence;
-- integrity risks introduced by that correction;
-- explicit rejected alternatives.
+- H1–H6 supported / contradicted / unresolved;
+- exact evidence and interpretation-band results;
+- smallest production correction justified by evidence;
+- authority/integrity risks;
+- rejected alternatives;
+- whether the open granularity question below remains likely.
 
-Then freeze the chosen E2 mechanism **before fresh validation**.
+Then freeze the chosen mechanism before validation.
 
-Potential production directions include, but are not preselected by this plan:
+Potential directions remain possibilities, not preselected answers:
 
-- a different projection of prior history that preserves factual constraints without feeding all historical prose as narrative context;
-- separation of opportunity choice from scene realization;
-- an explicit exogenous world-happenings layer that evolves independently of the Thread;
-- a justified increase in historical event density;
-- a bounded combination of the above.
+- change prior-history prompt projection while keeping it ephemeral and derivable;
+- separate stateless opportunity choice from scene realization;
+- add genuinely Thread-blind public-world happenings;
+- change affordance width/content/schema economics;
+- justified historical-density change;
+- bounded combination only if independently supported.
 
-A production design that needs a new derived continuity representation must specify its authority status. It may not silently become a second biography, memory or meaning authority.
+# Open architectural question — history granularity
 
-# Stage E2-B — fresh validation of the frozen correction
+E2 does **not** add another canonical historical unit merely to rescue the experiment, but it records this question before seeing results:
 
-Author **two additional fresh validation WorldSpecs**, `E2-V1` and `E2-V2`, after the production correction is frozen and before seeing validation output.
+> Is a life represented only as discrete dated episodes too coarse for childhood history?
 
-Both are permanently burned for G/H.
+Real lives also contain durations and practices: years of walking to school with the same children, a caregiver working nights for a season, recurring drawing practice, a long club membership, an extended illness, a routine that slowly disappears.
 
-For each validation world, run exactly:
+If H6 and H1–H4 remain weak, do not keep tuning episode generation. Revisit whether Fibre needs provenance-bearing historical **durations/practices/standing circumstances** distinct from point episodes. That is an architectural redesign requiring its own authority review, not an E2 prompt tweak.
+
+# Stage E2-B — fresh validation of frozen correction
+
+Author two additional fresh validation WorldSpecs, `E2-V1` and `E2-V2`, after production mechanism freeze and before seeing validation output.
+
+Record the same world-authoring change log relative to D1/D2.
+
+For each validation world run exactly:
 
 ```text
-current A0 baseline
-frozen E2 production mechanism
+A0 current baseline: n=3
+frozen E2 mechanism: n=3
 ```
 
-Use paired seeds/offered-affordance plans where applicable.
+Use paired Fibre seeds/offered schedules where applicable. Do not modify the mechanism or interpretation bands between V1 and V2. Do not rerun for quality.
 
-Do not modify the mechanism between V1 and V2.
+Run the between-life overlap and diagnostic life-only memory/funnel probes on both cells.
 
-Do not rerun a validation life for quality.
+# E2 readiness for combined E+F review
 
-If a mechanical defect prevents completion, record and repair it under the normal bounded development discipline. Aesthetic weakness is not a mechanical defect.
+E2 has no standalone ceremonial CLEAR/HOLD, but Gate F cannot begin until the evidence is interpretable.
 
-# E2 readiness interpretation
+E2 is ready when fresh validation supports all of these:
 
-E2 does not receive a standalone CLEAR/HOLD ceremony, but Gate F cannot begin until its evidence is interpretable.
-
-E2 is **ready for combined E+F review** when fresh validation shows all of:
-
-1. the chosen mechanism addresses the diagnosed cause rather than simply instructing the model to be diverse;
+1. the correction addresses a diagnosed mechanism rather than saying `be diverse`;
 2. factual continuity remains coherent;
-3. the world continues to contribute independent lived causes across development rather than prior episode prose monopolizing later generation;
-4. lives contain materially more non-interchangeable experiential substrate without mandatory books, people, places, conflict, adversity or novelty quotas;
-5. Pass-A information boundaries remain intact;
-6. weak/unused opportunities and non-formative-looking episodes remain legal and visible;
-7. generator repair/rejection evidence remains visible;
-8. no new authority can rewrite or reinterpret history under the guise of continuity management.
+3. world/people/institutions/chance can still add independent lived causes;
+4. between-life evidence does not show that apparent breadth is a same-world template;
+5. diagnostic memory/funnel evidence shows multiple plausible downstream routes rather than one monopolizing motif, without feeding that evidence back into generation;
+6. no books/people/places/conflict/adversity/novelty quota exists;
+7. Pass-A information boundaries remain intact;
+8. unused opportunities and narrow outcomes remain legal and visible;
+9. repair/rejection evidence remains visible;
+10. no continuity mechanism becomes a second biography authority.
 
-This is **not** a numerical admission threshold. A validation world may still be narrow. The combined evidence must make a credible engineering case that the known E1 mechanism has been addressed rather than hidden.
+A validation world may still be narrow. This is not an admission threshold. The combined evidence must establish that Fibre has a credible rich-life mechanism and has not merely hidden E1 behind broader-looking biographies.
 
-If both validation worlds still show the same strong local monoculture as E1 despite broad world affordances, E2 remains unresolved and Gate F should not be asked to CLEAR the combined claim.
+# Required E2 evidence artifact
 
-# What E2 must not optimize
-
-Do not tune against:
-
-- intellectual-encounter count;
-- unique-place count;
-- unique-person count;
-- structure count;
-- world-emergent ratio;
-- sentiment variety;
-- dramatic intensity;
-- adversity;
-- moral complexity;
-- articulacy;
-- apparent adult sophistication;
-- any future #40 decision.
-
-Those are observations. Optimizing directly for them would turn diagnostics into authoring pressure.
-
-# Required evidence artifact
-
-Each E2 diagnostic/validation run should preserve:
+Each run preserves:
 
 ```text
-E2 protocol version
-implementation head
-provider/model
-prompt/schema hashes for every cognition stage
-worldSpec + digest
-seed / paired-arm seed mapping
-EventStructurePool version + digest
+protocol version / implementation head
+provider/model + prompt/schema hashes
+worldSpec + digest + authoring-delta witness
+seed and paired-arm mapping
+EventStructurePool version/digest
 developmental windows
 offered structures per window
-any exogenous world opportunities and their independent-generation witness
-exact cognition-input digest per call
-episodes
-record repairs/rejections
-mechanical characterization
-blind-rater protocol + outputs
+H6 realization-probe evidence
+exogenous-world input witness / stream when applicable
+exact cognition-input digest per stage
+opportunity-choice allowlist/digest when applicable
+episodes + repairs/rejections
+within-life mechanical characterization
+between-life pairwise-overlap characterization
+blind-rater protocol/output
+life-only diagnostic funnel outputs when run
+predeclared interpretation bands
 admissionVerdict: null
 developmentOnly: true
 burnedForFinalCohort: true
 ```
-
-No E2 artifact becomes final-cohort evidence.
-
-# Claude pre-implementation review
-
-Before E2 code changes, ask Claude to attack this plan as a Fibre personhood mechanism, not as generic experiment design.
-
-Claude should focus on:
-
-- whether any arm secretly authors diversity, novelty or formative experiences;
-- whether A1 destroys historical continuity and then mistakes randomness for richness;
-- whether A2 turns EventStructure choice into a hidden plot planner;
-- whether A3 turns world opportunities into required beats;
-- whether A4 confuses more events with richer life or creates representative-event pressure elsewhere;
-- whether ten episodes was an invalid baseline for the history→memory funnel in the first place;
-- whether the proposed measurements reward a checklist biography;
-- whether an independent world-happenings layer would be genuine world state or another Genesis authoring channel;
-- whether a continuity summary would become a second biography authority;
-- whether paired use of the same development world across diagnostic arms is methodologically legitimate;
-- whether the validation protocol is sufficiently protected from tuning;
-- whether the plan actually tests experiential fertility rather than superficial variety.
-
-Implement only after this review is resolved.
 
 # Relationship to F/G/H
 
 - The already-started Slice-F source-integrity work remains valid but pauses as the critical path while E2 is unresolved.
 - Gate F reviews E + E2 + F together.
 - G remains blocked until Gate F is CLEAR.
-- G/H final cohort worlds must be completely fresh and never used in E2.
-- H remains the place where Fibre judges whether several frozen lives are truly particular and attributable after obvious shortcuts are removed.
+- G/H worlds must be completely fresh and never used in E2.
+- H remains the final frozen-cohort judgment of whether several lives are particular and attributable after obvious shortcuts are removed.
 
 # Fibre-level question
 
