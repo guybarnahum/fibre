@@ -16,6 +16,7 @@ import { buildRichLifePassAInput } from "../services/world-kernel/src/genesis-ri
 import {
   generateRichPassAEpisode,
   richPassAPromptHash,
+  richPassARecordRetryPromptHash,
   richPassARepairPromptHash,
   richPassASchemaHash,
 } from "../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
@@ -160,6 +161,7 @@ function characterizeLife(life) {
     selectedIntellectualStructureEvents: selectedIntellectualStructures.length,
     intellectualEncounterEvents: life.episodes.filter((episode) => episode.intellectualEncounter !== undefined).length,
     repairCount: life.recordEvidence.reduce((sum, record) => sum + record.repairs.length, 0),
+    recordRetryCount: life.recordEvidence.reduce((sum, record) => sum + record.recordRetries.length, 0),
   });
 }
 
@@ -245,6 +247,17 @@ export async function runE2A0Life({
           repair,
         });
       },
+      onRecordRetry: (recordRetry) => {
+        if (typeof onProgress === "function") onProgress({
+          type: "record_retry",
+          worldId: worldFixture.id,
+          seed,
+          runOrdinal,
+          ordinal,
+          total: plan.length,
+          recordRetry,
+        });
+      },
     });
     episodes.push(result.episode);
     recordEvidence.push({
@@ -252,6 +265,7 @@ export async function runE2A0Life({
       episodeDigest: result.episodeDigest,
       calls: result.calls,
       repairs: result.repairs,
+      recordRetries: result.recordRetries,
     });
     if (typeof onProgress === "function") onProgress({
       type: "episode_complete",
@@ -263,6 +277,7 @@ export async function runE2A0Life({
       elapsedMs: Date.now() - startedAt,
       episode: result.episode,
       repairs: result.repairs.length,
+      recordRetries: result.recordRetries.length,
     });
   }
 
@@ -352,6 +367,7 @@ export async function runE2A0Baseline({
     generator: Object.freeze({
       promptHash: richPassAPromptHash(),
       repairPromptHash: richPassARepairPromptHash(),
+      recordRetryPromptHash: richPassARecordRetryPromptHash(),
       schemaHash: richPassASchemaHash(),
       eventStructurePoolDigest: eventStructurePoolV2Digest(GENESIS_EVENT_STRUCTURE_POOL_V2),
       structuresPerWindow: E2_A0_STRUCTURES_PER_WINDOW,
@@ -368,9 +384,11 @@ function progressPrinter(event) {
     process.stderr.write(`${prefix} age ${event.developmentalWindow.minAge}-${event.developmentalWindow.maxAge} ... `);
   } else if (event.type === "record_repair") {
     process.stderr.write(`\n  repair ${event.repair.failedGate} ... `);
+  } else if (event.type === "record_retry") {
+    process.stderr.write(`\n  retry record ${event.recordRetry.failedGate} ... `);
   } else if (event.type === "episode_complete") {
     const encounter = event.episode.intellectualEncounter?.kind ?? "none";
-    process.stderr.write(`✓ ${event.elapsedMs} ms · structure=${event.episode.structureRef ?? "world-emergent"} · encounter=${encounter} · repairs=${event.repairs}\n`);
+    process.stderr.write(`✓ ${event.elapsedMs} ms · structure=${event.episode.structureRef ?? "world-emergent"} · encounter=${encounter} · repairs=${event.repairs} · retries=${event.recordRetries}\n`);
   }
 }
 
@@ -402,7 +420,7 @@ async function main() {
     process.stdout.write(`${world.worldId}:\n`);
     for (const life of world.lives) {
       const c = life.e2Characterization;
-      process.stdout.write(`  ${life.seed}: places=${c.uniquePlaces} · structures=${c.uniqueStructures} · intellectual-structures=${c.selectedIntellectualStructureEvents} · encounters=${c.intellectualEncounterEvents} · repairs=${c.repairCount}\n`);
+      process.stdout.write(`  ${life.seed}: places=${c.uniquePlaces} · structures=${c.uniqueStructures} · intellectual-structures=${c.selectedIntellectualStructureEvents} · encounters=${c.intellectualEncounterEvents} · repairs=${c.repairCount} · retries=${c.recordRetryCount}\n`);
     }
     for (const pair of world.betweenLife.pairs) {
       process.stdout.write(`  pair ${pair.leftSeed}/${pair.rightSeed}: placeJ=${pair.placeRefs?.value ?? "n/a"} · roleJ=${pair.participantRoles?.value ?? "n/a"} · structureJ=${pair.structureRefs?.value ?? "n/a"} · sourceJ=${pair.intellectualSubjectRefs?.value ?? "n/a"}\n`);
