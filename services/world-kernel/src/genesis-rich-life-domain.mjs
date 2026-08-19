@@ -8,6 +8,7 @@ import {
 } from "./persistence-common.mjs";
 import { projectPassAInputForCognition } from "./genesis-pass-a-cognition.mjs";
 import { buildPassAInputWithEventStructurePoolV2 } from "./genesis-event-structure-pool-v2.mjs";
+import { richCounterpartMode } from "./genesis-rich-participation-policy.mjs";
 import {
   normalizeSymbolicGenomeHeader,
   symbolicGenomeDigest,
@@ -105,5 +106,12 @@ export function buildRichLifePassAInput({
 }
 
 export function projectRichLifePassAInputForCognition(candidate) {
-  return projectPassAInputForCognition(candidate);
+  const cognition = projectPassAInputForCognition(candidate);
+  return Object.freeze({
+    ...cognition,
+    offeredStructures: Object.freeze(cognition.offeredStructures.map((structure) => Object.freeze({
+      ...structuredClone(structure),
+      counterpartMode: richCounterpartMode(structure.structureId),
+    }))),
+  });
 }
