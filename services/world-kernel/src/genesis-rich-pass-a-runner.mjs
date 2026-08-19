@@ -1,4 +1,4 @@
-import { canonicalJson, sha256 } from "./persistence-common.mjs";
+import { assertExactKeys, canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   GENESIS_PASS_A_POLICY,
   GenesisPassAValidationError,
@@ -17,6 +17,17 @@ import {
 } from "./genesis-rich-life-episode.mjs";
 import { projectRichLifePassAInputForCognition } from "./genesis-rich-life-domain.mjs";
 
+export const GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A_POLICY.maxObservableActionBytes / 2);
+
+export const GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA = Object.freeze({
+  type: "object",
+  additionalProperties: false,
+  required: ["observableAction"],
+  properties: {
+    observableAction: { type: "string" },
+  },
+});
+
 export const GENESIS_RICH_PASS_A_PROMPT = `You are Fibre Genesis Pass A for rich-life development. Create exactly one concrete historical episode: what happened, not what it meant.
 Use only the supplied world, factual roster, chronology, prior episodes, introduced participants, and offered EventStructure affordances.
 The offered structures are possibilities, never a checklist. You may produce a world-emergent episode by returning structureRef=null.
@@ -32,11 +43,10 @@ subjectLabel must be a short factual label for the encountered subject, not a le
 Do not add intellectualEncounter merely to make the life look rich. Returning no intellectualEncounter is legal.`;
 
 export const GENESIS_RICH_PASS_A_REPAIR_PROMPT = `You are Fibre Genesis record-form repair for rich Pass A.
-Repair only the rejected episode's observableAction wording so it satisfies the observable-history form contract.
-Preserve episodeId, occurredAt, ageAtEvent, placeRef, participantRefs, structureRef, introducedParticipants, and every intellectualEncounter fact exactly.
-observableAction must be no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes. Shorten wording rather than changing event facts.
-Do not improve the life, make it more interesting, add or remove an intellectual encounter, change its source/access facts, or change its meaning.
-Remove explicit lesson, significance, personality, inner-state conclusion, remembered-meaning, or future-policy wording and describe only witnessable action/circumstance.`;
+Return only a replacement observableAction for the rejected episode. Fibre will preserve every other event and intellectual-encounter field mechanically; do not restate them.
+Describe only the same externally witnessable action and circumstance already present in the rejected episode. Do not add, remove, improve, reinterpret, or replace event facts.
+Use one concise sentence. Target no more than ${GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES} UTF-8 bytes, and never exceed the authoritative ${GENESIS_PASS_A_POLICY.maxObservableActionBytes}-byte limit.
+Remove explicit lesson, significance, personality, inner-state conclusion, remembered-meaning, or future-policy wording. Return JSON matching the supplied one-field schema.`;
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
@@ -54,6 +64,21 @@ function rawEpisode(output) {
     throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A model output must contain one episode");
   }
   return output.episode;
+}
+
+function rawRepairObservableAction(output) {
+  if (output === null || typeof output !== "object" || Array.isArray(output)) {
+    throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A repair output must be an object");
+  }
+  try {
+    assertExactKeys("rich Pass-A repair output", output, ["observableAction"]);
+  } catch (error) {
+    throw new GenesisPassAValidationError("pass_a_output_schema", error.message, { record: output });
+  }
+  if (typeof output.observableAction !== "string" || output.observableAction.trim() === "") {
+    throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A repair observableAction must be a non-empty string", { record: output });
+  }
+  return output.observableAction;
 }
 
 function validateConsistentRichEpisode(candidate, input) {
@@ -87,6 +112,7 @@ function repairConstraint(error, rejectedEpisode) {
   const constraint = { failedGate: error.gate, failureMessage: error.message };
   if (error.gate === "pass_a_observable_action_bounds") {
     constraint.maxObservableActionUtf8Bytes = GENESIS_PASS_A_POLICY.maxObservableActionBytes;
+    constraint.targetRepairUtf8Bytes = GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES;
     constraint.rejectedObservableActionUtf8Bytes = typeof rejectedEpisode?.observableAction === "string"
       ? Buffer.byteLength(rejectedEpisode.observableAction, "utf8")
       : null;
@@ -102,9 +128,17 @@ function modelRepairEpisode(candidate) {
   return copy;
 }
 
+function applyRepairObservableAction(rejectedEpisode, output) {
+  return {
+    ...structuredClone(rejectedEpisode),
+    observableAction: rawRepairObservableAction(output),
+  };
+}
+
 export function richPassAPromptHash() { return digest(GENESIS_RICH_PASS_A_PROMPT); }
 export function richPassARepairPromptHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_PROMPT); }
 export function richPassASchemaHash() { return digest(GENESIS_RICH_PASS_A_RESPONSE_SCHEMA); }
+export function richPassARepairSchemaHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA); }
 
 export async function generateRichPassAEpisode({
   adapter,
@@ -197,10 +231,10 @@ export async function generateRichPassAEpisode({
       result = await repairAdapter.invoke({
         systemPrompt: GENESIS_RICH_PASS_A_REPAIR_PROMPT,
         input: repairInput,
-        responseSchema: GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
+        responseSchema: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
         clientRequestId: `${clientRequestId}:repair:${repairOrdinal}`,
       });
-      candidate = rawEpisode(result.output);
+      candidate = applyRepairObservableAction(rejectedEpisode, result.output);
       calls.push({
         kind: "record_repair",
         repairOrdinal,
