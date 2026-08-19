@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-import { sha256 } from "../services/world-kernel/src/persistence-common.mjs";
+import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
 import {
   E2_N2_SOURCE_V1_FILE,
   E2_N2_SOURCE_V2_FILE,
@@ -14,6 +14,8 @@ import {
 export const E2_N2_OLD_EPISTEMIC_A0_FILE = "artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-n1-a0-v1.json";
 export const E2_N2_OLD_EPISTEMIC_A0_FILE_SHA256 = "8b8497fe687dfcb5a728024b83ca65c0f5e88006c645b0fbf5d92524e1adb122";
 export const E2_N2_NEAR_TOTAL_RECALL_THRESHOLD = 17;
+
+const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
 function readArg(argv, name, fallback = null) {
   const exact = argv.indexOf(name);
@@ -105,9 +107,13 @@ export function n2ReviewPlan() {
 }
 
 export function decorateN2Preflight(preflight) {
-  return Object.freeze({
+  const reviewed = {
     ...structuredClone(preflight),
     preExecutionReview: structuredClone(n2ReviewPlan()),
+  };
+  return Object.freeze({
+    ...reviewed,
+    reviewedPreflightDigest: digest(reviewed),
   });
 }
 
@@ -155,14 +161,16 @@ async function main() {
   const oldRead = readJsonWithSha(oldPath);
   validateOldInstrument(oldRead.artifact, oldRead.fileSha256);
 
+  const basePreflight = buildN2Preflight({
+    sourceV1: sourceV1Read.artifact,
+    sourceV1FileSha256: sourceV1Read.fileSha256,
+    sourceV2: sourceV2Read.artifact,
+    sourceV2FileSha256: sourceV2Read.fileSha256,
+  });
+  const reviewedPreflight = decorateN2Preflight(basePreflight);
+
   if (argv.includes("--preflight")) {
-    const preflight = decorateN2Preflight(buildN2Preflight({
-      sourceV1: sourceV1Read.artifact,
-      sourceV1FileSha256: sourceV1Read.fileSha256,
-      sourceV2: sourceV2Read.artifact,
-      sourceV2FileSha256: sourceV2Read.fileSha256,
-    }));
-    const text = `${JSON.stringify(preflight, null, 2)}\n`;
+    const text = `${JSON.stringify(reviewedPreflight, null, 2)}\n`;
     if (outputPath === null) process.stdout.write(text);
     else writeFileSync(outputPath, text, "utf8");
     return;
@@ -175,9 +183,16 @@ async function main() {
   if (existsSync(outputPath) && resumePath === null) throw new Error(`output exists: ${outputPath}; started/completed N2 evidence must not be overwritten`);
   if (resumePath !== null && !existsSync(resumePath)) throw new Error(`resume artifact does not exist: ${resumePath}`);
   const resumeArtifact = resumePath === null ? null : JSON.parse(readFileSync(resumePath, "utf8"));
-  const writeCheckpoint = async (snapshot) => writeFileSync(outputPath, `${JSON.stringify(decorateN2Snapshot(snapshot, oldRead.artifact), null, 2)}\n`, "utf8");
+  if (resumeArtifact?.preflight?.reviewedPreflightDigest !== undefined && resumeArtifact.preflight.reviewedPreflightDigest !== reviewedPreflight.reviewedPreflightDigest) {
+    throw new TypeError("N2 reviewed preflight mismatch on resume");
+  }
+  const writeCheckpoint = async (snapshot) => {
+    const decorated = decorateN2Snapshot(snapshot, oldRead.artifact);
+    if (decorated.preflight.reviewedPreflightDigest !== reviewedPreflight.reviewedPreflightDigest) throw new TypeError("N2 reviewed preflight changed during execution");
+    writeFileSync(outputPath, `${JSON.stringify(decorated, null, 2)}\n`, "utf8");
+  };
 
-  process.stderr.write("E2 N2 reviewed execution: START · protocol-cleared · R1-R4 folded before first model use\n");
+  process.stderr.write(`E2 N2 reviewed execution: START · reviewedPreflight=${reviewedPreflight.reviewedPreflightDigest} · R1-R4 frozen\n`);
   try {
     const result = await runN2({
       provider,
@@ -190,6 +205,7 @@ async function main() {
       onCheckpoint: writeCheckpoint,
     });
     const decorated = decorateN2Snapshot(result, oldRead.artifact);
+    if (decorated.preflight.reviewedPreflightDigest !== reviewedPreflight.reviewedPreflightDigest) throw new TypeError("N2 reviewed preflight changed before finalization");
     writeFileSync(outputPath, `${JSON.stringify(decorated, null, 2)}\n`, "utf8");
     printSummary(decorated);
     process.stdout.write(`Artifact: ${outputPath}\n`);
