@@ -7,11 +7,11 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { normalizePassAEpisode } from "./genesis-pass-a-domain.mjs";
+import { normalizeRichPassAEpisode } from "./genesis-rich-life-domain.mjs";
 
 export const THREAD_LIFE_EPISODE_RECORDED = "THREAD_LIFE_EPISODE_RECORDED";
 
-const PAYLOAD_KEYS = Object.freeze([
+const LEGACY_PAYLOAD_KEYS = Object.freeze([
   "episodeId",
   "ageAtEvent",
   "placeRef",
@@ -20,6 +20,16 @@ const PAYLOAD_KEYS = Object.freeze([
   "structureRef",
   "introducedParticipants",
 ]);
+const RICH_PAYLOAD_KEYS = Object.freeze([...LEGACY_PAYLOAD_KEYS, "intellectualEncounter"]);
+
+function assertPayloadKeys(candidate, name) {
+  const actual = Object.keys(candidate).sort();
+  const matches = [LEGACY_PAYLOAD_KEYS, RICH_PAYLOAD_KEYS].some((keys) => {
+    const expected = [...keys].sort();
+    return actual.length === expected.length && actual.every((key, index) => key === expected[index]);
+  });
+  if (!matches) assertExactKeys(name, candidate, LEGACY_PAYLOAD_KEYS);
+}
 
 function payloadFromEpisode(episode) {
   const payload = {
@@ -31,6 +41,9 @@ function payloadFromEpisode(episode) {
     structureRef: episode.structureRef,
     introducedParticipants: structuredClone(episode.introducedParticipants),
   };
+  if (Object.hasOwn(episode, "intellectualEncounter")) {
+    payload.intellectualEncounter = structuredClone(episode.intellectualEncounter);
+  }
   const payloadBytes = Buffer.byteLength(canonicalJson(payload), "utf8");
   if (payloadBytes > MAX_COMMAND_PAYLOAD_BYTES) {
     throw new TypeError(`Genesis life episode payload exceeds ${MAX_COMMAND_PAYLOAD_BYTES} UTF-8 bytes`);
@@ -39,7 +52,7 @@ function payloadFromEpisode(episode) {
 }
 
 export function normalizePublishedGenesisEpisode(candidate) {
-  const episode = normalizePassAEpisode(candidate);
+  const episode = normalizeRichPassAEpisode(candidate);
   return {
     episode,
     payload: payloadFromEpisode(episode),
@@ -49,7 +62,7 @@ export function normalizePublishedGenesisEpisode(candidate) {
 export function genesisLifeEpisodeEventId({ threadId, genesisId, episode: candidate }) {
   assertId("threadId", threadId);
   assertId("genesisId", genesisId);
-  const episode = normalizePassAEpisode(candidate, { enforceObservableForm: false });
+  const episode = normalizeRichPassAEpisode(candidate, { enforceObservableForm: false });
   const digest = sha256(canonicalJson({ threadId, genesisId, episode }));
   return `evt_${threadId}_life_${digest.slice(0, 24)}`;
 }
@@ -86,8 +99,8 @@ export function applyGenesisLifeEpisodeEventToThread(thread, event, ErrorType = 
     if (event.expectedVersion !== thread.version) throw new ErrorType(`life episode event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`);
 
     assertPlainObject(`event ${event.eventId} payload`, event.payload);
-    assertExactKeys(`event ${event.eventId} payload`, event.payload, PAYLOAD_KEYS);
-    const episode = normalizePassAEpisode(
+    assertPayloadKeys(event.payload, `event ${event.eventId} payload`);
+    const episode = normalizeRichPassAEpisode(
       { ...structuredClone(event.payload), occurredAt: event.occurredAt },
       { enforceObservableForm: false },
     );
