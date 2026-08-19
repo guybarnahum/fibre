@@ -46,6 +46,24 @@ Implementation fix head before rerun verification: `7b7e1522a02bc8a4bb213d6d5474
 
 Per the frozen protocol, the same burned world and seed remain in force for the rerun. This prevents the failure from becoming a reason to search for a more flattering sample.
 
+## Attempt 2 — record-form repair exhaustion
+
+After the role-semantics repair, the full mechanical suite was green at 530/530 and `npm run check` passed. The second invocation used the same frozen world and seed.
+
+Episode 1 completed with no repair. Episode 2 failed only the existing `pass_a_observable_action_bounds` form gate. Two model-authored record-form repairs were attempted, but both again exceeded the authoritative 1200 UTF-8-byte ceiling, so the third generated version correctly terminated with `record_repair_exhausted`.
+
+This is another mechanical runner defect rather than a quality judgment about the generated life. The validator and 1200-byte authority are not relaxed. Instead the repair protocol is narrowed:
+
+- repair cognition may author only one field: replacement `observableAction`;
+- Fibre mechanically preserves episode ID, chronology, age, place, participant refs, structure ref, participant introductions, and all intellectual-encounter facts from the rejected episode;
+- repair output has a dedicated one-field structured-output schema, so a model cannot reauthor event identity while ostensibly repairing form;
+- byte-bound repair instructions target 600 UTF-8 bytes, leaving a 2x margin under the unchanged authoritative 1200-byte ceiling;
+- each rejected version and repair remains counted in repair evidence; exhaustion remains legal if the narrowed repair still cannot satisfy the gate.
+
+Implementation repair-protocol head: `697ff74e2e3df67a10599ca4cd4b5ec179e5c877`.
+
+The same burned world and seed remain mandatory for Attempt 3.
+
 ## Exact command
 
 ```bash
