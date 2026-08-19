@@ -21,7 +21,7 @@ export const GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A
 export const GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A_POLICY.maxObservableActionBytes / 4);
 export const GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS = 80;
 export const GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS = 40;
-export const GENESIS_RICH_PASS_A_RECORD_RETRY_CONSTRAINT_VERSION = "genesis-rich-pass-a-record-retry-constraint-v2";
+export const GENESIS_RICH_PASS_A_RECORD_RETRY_CONSTRAINT_VERSION = "genesis-rich-pass-a-record-retry-constraint-v3";
 
 export const GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
@@ -207,10 +207,12 @@ function selectedStructureParticipationConstraint(selectedOpportunity, cognition
   if (structure === undefined || !Array.isArray(structure.participatingRoles) || structure.participatingRoles.length === 0) return null;
   if (structure.counterpartMode === "present_required") {
     return Object.freeze({
-      rule: "The frozen selected opportunity has counterpartMode=present_required. At least one allowed counterpart must actually participate in this episode.",
+      rule: "The frozen selected opportunity has counterpartMode=present_required. The validator counts an allowed counterpart only when that participant's ID appears in episode.participantRefs; mentioning a caregiver, peer, teacher, or other counterpart only in observableAction does not satisfy the gate. Use a known participant from passAInput.initialRoster or passAInput.previouslyIntroducedParticipants whose role matches participatingRoles, and include that participant ID in episode.participantRefs. Or, when legal, introduce an allowed-role participant in episode.introducedParticipants and include the same provisionalPersonId in episode.participantRefs.",
       counterpartMode: "present_required",
       participatingRoles: Object.freeze([...structure.participatingRoles]),
+      participantRefsRequired: true,
       sameEpisodeIntroductionAllowed: true,
+      sameEpisodeIntroductionParticipantRefRequired: true,
     });
   }
   if (structure.counterpartMode === "known_required") {
