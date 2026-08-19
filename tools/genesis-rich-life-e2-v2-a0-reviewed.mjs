@@ -3,12 +3,15 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
+import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
 import {
   E2_V2_A0_EVIDENCE_VERSION,
   buildE2V2A0Preflight,
   runE2V2A0Source,
 } from "./genesis-rich-life-e2-v2-a0.mjs";
 import { E2_V2_WORLD_AUTHORING_RECORD } from "./genesis-rich-life-e2-v2-world.mjs";
+
+const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
 function readArg(argv, name, fallback = null) {
   const exact = argv.indexOf(name);
@@ -18,9 +21,13 @@ function readArg(argv, name, fallback = null) {
 }
 
 export function decorateE2V2A0Preflight(preflight) {
-  return Object.freeze({
+  const reviewed = {
     ...structuredClone(preflight),
     worldAuthoringRecord: structuredClone(E2_V2_WORLD_AUTHORING_RECORD),
+  };
+  return Object.freeze({
+    ...reviewed,
+    reviewedPreflightDigest: digest(reviewed),
   });
 }
 
@@ -30,6 +37,22 @@ export function decorateE2V2A0Artifact(artifact) {
     preflight: decorateE2V2A0Preflight(artifact.preflight),
     worldAuthoringRecord: structuredClone(E2_V2_WORLD_AUTHORING_RECORD),
   });
+}
+
+function progressPrinter(event) {
+  if (event.type === "candidate_attempt_start") {
+    process.stderr.write(`[E2-V2 A0 seed=${event.seed}] candidate ${event.candidateAttemptNumber}/${event.maxCandidateAttempts}\n`);
+  } else if (event.type === "candidate_attempt_failed") {
+    process.stderr.write(`[E2-V2 A0 seed=${event.seed}] candidate ${event.candidateAttemptNumber} rejected · ${event.failure.failedGate ?? event.failure.code ?? "validation"}: ${event.failure.message}\n`);
+  } else if (event.type === "episode_start") {
+    process.stderr.write(`[E2-V2 A0 seed=${event.seed} episode=${String(event.ordinal).padStart(2, "0")}/${event.total}] ... `);
+  } else if (event.type === "record_repair") {
+    process.stderr.write(`\n  repair ${event.repair.failedGate} ... `);
+  } else if (event.type === "record_retry") {
+    process.stderr.write(`\n  retry ${event.recordRetry.failedGate} ... `);
+  } else if (event.type === "episode_complete") {
+    process.stderr.write(`✓ structure=${event.episode.structureRef ?? "world-emergent"} · encounter=${event.episode.intellectualEncounter?.kind ?? "none"} · repairs=${event.repairs} · retries=${event.recordRetries}\n`);
+  }
 }
 
 async function main() {
@@ -53,9 +76,11 @@ async function main() {
   if (outputPath === null) throw new TypeError("E2-V2 burned source generation requires --out <file>");
   if (existsSync(outputPath)) throw new Error(`E2-V2 output already exists: ${outputPath}; this fresh world must not be overwritten or rerun`);
 
-  process.stderr.write(`E2-V2 A0 reviewed execution: START · evidence=${E2_V2_A0_EVIDENCE_VERSION} · authoring record frozen before burn\n`);
+  const reviewedPreflight = decorateE2V2A0Preflight(buildE2V2A0Preflight());
+  process.stderr.write(`E2-V2 A0 reviewed execution: START · evidence=${E2_V2_A0_EVIDENCE_VERSION} · reviewedPreflight=${reviewedPreflight.reviewedPreflightDigest}\n`);
   try {
-    const result = decorateE2V2A0Artifact(await runE2V2A0Source({ provider, model }));
+    const result = decorateE2V2A0Artifact(await runE2V2A0Source({ provider, model, onProgress: progressPrinter }));
+    if (result.preflight.reviewedPreflightDigest !== reviewedPreflight.reviewedPreflightDigest) throw new TypeError("E2-V2 reviewed preflight changed during execution");
     writeFileSync(outputPath, `${JSON.stringify(result, null, 2)}\n`, "utf8");
     process.stdout.write(`E2-V2 A0: complete · structureJ=${result.meanPairwiseJaccard.structureRefs} · placeJ=${result.meanPairwiseJaccard.placeRefs}\n`);
     process.stdout.write(`Artifact: ${outputPath}\n`);
