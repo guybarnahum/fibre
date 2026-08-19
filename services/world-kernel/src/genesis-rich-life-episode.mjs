@@ -25,6 +25,36 @@ function splitRichEpisode(candidate) {
   return { base, encounterCandidate: hasEncounter ? candidate.intellectualEncounter : null };
 }
 
+function participantRoleMap(input, sameEpisodeIntroductions = []) {
+  const roles = new Map();
+  for (const participant of input.initialRoster) roles.set(participant.participantId, new Set(participant.factualRoles));
+  for (const participant of input.previouslyIntroducedParticipants) roles.set(participant.provisionalPersonId, new Set([participant.roleRef]));
+  for (const participant of sameEpisodeIntroductions) roles.set(participant.provisionalPersonId, new Set([participant.roleRef]));
+  return roles;
+}
+
+// EventStructurePool v2 deliberately treats participatingRoles as alternative
+// counterpart roles. This is a rich-life-only policy: legacy Pass A continues to
+// require every listed participatingRole. Keeping the rule here prevents Slice E
+// from weakening the Gate-C validator while allowing portable affordances such as
+// “caregiver OR sibling OR peer” to remain one reviewed structure.
+export function assertRichStructureParticipation(episode, input) {
+  if (episode.structureRef === null) return;
+  const structure = input.offeredStructures.find(({ structureId }) => structureId === episode.structureRef);
+  if (structure === undefined) return; // validatePassAEpisode owns the missing-ref error.
+  if (structure.participatingRoles.length === 0) return;
+  const participantRoles = participantRoleMap(input, episode.introducedParticipants);
+  const represented = structure.participatingRoles.some((allowedRole) =>
+    episode.participantRefs.some((participantId) => participantRoles.get(participantId)?.has(allowedRole)));
+  if (!represented) {
+    throw new GenesisPassAValidationError(
+      "pass_a_structure_participation",
+      `episode ${episode.episodeId} cites ${structure.structureId} without a participant in any allowed counterpart role (${structure.participatingRoles.join(", ")})`,
+      { record: episode },
+    );
+  }
+}
+
 export function normalizeRichPassAEpisode(candidate, { enforceObservableForm = true } = {}) {
   const { base, encounterCandidate } = splitRichEpisode(candidate);
   const episode = normalizePassAEpisode(base, { enforceObservableForm });
@@ -39,6 +69,7 @@ export function validateRichPassAEpisode(candidate, inputCandidate) {
   const input = assertPassAInputBoundary(inputCandidate);
   const { base, encounterCandidate } = splitRichEpisode(candidate);
   const episode = validatePassAEpisode(base, input);
+  assertRichStructureParticipation(episode, input);
   if (encounterCandidate === null || encounterCandidate === undefined) return episode;
   try {
     const intellectualEncounter = normalizeGenesisIntellectualEncounter(encounterCandidate, {
