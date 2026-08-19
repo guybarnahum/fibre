@@ -13,7 +13,7 @@ function ageAt(bornAt, occurredAt) {
   return (Date.parse(occurredAt) - Date.parse(bornAt)) / YEAR_MS;
 }
 
-test("selected peer opportunity cannot escape to an easier offered structure and may be realized by introducing a legal peer", async () => {
+function selectedPeerFixture() {
   const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
   const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[0]);
   const item = plan.find(({ offeredEntries }) => {
@@ -40,6 +40,11 @@ test("selected peer opportunity cannot escape to an easier offered structure and
     structureRef: "ges_v2_peer_joke_or_reference_missed",
   });
   const occurredAt = new Date(Date.parse(item.developmentalWindow.startAt) + (7 * 24 * 60 * 60 * 1000)).toISOString();
+  return { worldFixture, input, selectedOpportunity, occurredAt };
+}
+
+test("selected peer opportunity cannot escape to an easier offered structure and may be realized by introducing a legal peer", async () => {
+  const { worldFixture, input, selectedOpportunity, occurredAt } = selectedPeerFixture();
   const easierButWrong = {
     episodeId: "episode_e2_selected_wrong",
     occurredAt,
@@ -101,4 +106,77 @@ test("selected peer opportunity cannot escape to an easier offered structure and
   assert.deepEqual(Object.keys(calls[1].input).sort(), ["failedGate", "passAInput", "selectedOpportunity"]);
   assert.deepEqual(calls[1].input.selectedOpportunity, selectedOpportunity);
   assert.equal(JSON.stringify(calls[1].input).includes(easierButWrong.observableAction), false);
+});
+
+test("A2 form repair preserves an invalid encounter until authoritative validation classifies it for record retry", async () => {
+  const { worldFixture, input, selectedOpportunity, occurredAt } = selectedPeerFixture();
+  const peerId = "person_e2_a2_retry_peer";
+  const overlongAction = "A peer repeats a playground phrase while the subject asks what it means near the school yard. ".repeat(20);
+  assert.ok(Buffer.byteLength(overlongAction, "utf8") > 1200);
+  const invalid = {
+    episodeId: "episode_e2_selected_invalid_encounter",
+    occurredAt,
+    ageAtEvent: ageAt(worldFixture.subject.bornAt, occurredAt),
+    placeRef: worldFixture.worldSpec.places[1].placeId,
+    participantRefs: [worldFixture.subject.provisionalThreadId, peerId],
+    observableAction: overlongAction,
+    structureRef: "ges_v2_peer_joke_or_reference_missed",
+    introducedParticipants: [{
+      provisionalPersonId: peerId,
+      roleRef: "peer",
+      introducedAt: occurredAt,
+    }],
+    intellectualEncounter: {
+      kind: "conversation",
+      subjectKind: "conversation",
+      subjectLabel: "playground phrase exchange",
+      participantRef: peerId,
+      accessMode: "peer_mediated",
+    },
+  };
+  const validRetry = {
+    ...structuredClone(invalid),
+    episodeId: "episode_e2_selected_valid_retry",
+    observableAction: "A newly met peer repeats a different playground phrase, and the subject asks what it refers to before the bell rings.",
+    intellectualEncounter: null,
+  };
+
+  const calls = [];
+  const outputs = [
+    { episode: invalid },
+    { observableAction: "A newly met peer repeats a playground phrase, and the subject asks what it refers to before the bell rings." },
+    { episode: validRetry },
+  ];
+  let index = 0;
+  const adapter = {
+    async invoke(request) {
+      calls.push(structuredClone(request));
+      return {
+        output: outputs[index++],
+        provenance: { provider: "fixture", modelId: "selected-opportunity-multidefect-fixture" },
+      };
+    },
+  };
+
+  const result = await generateRichPassAEpisode({
+    adapter,
+    input,
+    selectedOpportunity,
+    clientRequestId: "slice-e-selected-opportunity-multidefect",
+  });
+
+  assert.equal(result.repairs.length, 1);
+  assert.equal(result.repairs[0].failedGate, "pass_a_observable_action_bounds");
+  assert.equal(result.recordRetries.length, 1);
+  assert.equal(result.recordRetries[0].failedGate, "pass_a_intellectual_encounter");
+  assert.deepEqual(result.calls.map(({ kind }) => kind), ["initial", "record_repair", "record_retry"]);
+  assert.equal(result.episode.episodeId, validRetry.episodeId);
+  assert.equal(result.episode.structureRef, selectedOpportunity.structureRef);
+  assert.equal(result.episode.introducedParticipants[0].roleRef, "peer");
+  assert.equal(result.episode.intellectualEncounter, undefined);
+  assert.deepEqual(Object.keys(calls[2].input).sort(), ["failedGate", "passAInput", "selectedOpportunity"]);
+  const retrySerialized = JSON.stringify(calls[2].input);
+  assert.equal(retrySerialized.includes(invalid.episodeId), false);
+  assert.equal(retrySerialized.includes(overlongAction), false);
+  assert.deepEqual(calls[2].input.selectedOpportunity, selectedOpportunity);
 });
