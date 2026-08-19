@@ -200,20 +200,30 @@ test("repeated byte repair sees only the previous action and tightens the second
   assert.ok(Buffer.byteLength(result.episode.observableAction, "utf8") <= 1200);
 });
 
-test("rich runner rejects repair output that tries to reauthor fields outside observableAction", async () => {
+test("malformed form-repair output becomes one final record-local retry without exposing the rejected scene", async () => {
   const calls = [];
-  await assert.rejects(
-    () => generateRichPassAEpisode({
-      adapter: adapter([
-        { episode: episode("The student learned that books would always matter after opening the astronomy book.") },
-        {
-          observableAction: "The student opens the astronomy book and compares two diagrams.",
-          intellectualEncounter: { accessMode: "self_directed" },
-        },
-      ], calls),
-      input: input(),
-      clientRequestId: "slice-e-rich-runner-bad-repair",
-    }),
-    /unsupported field set|not allowed/,
-  );
+  const initial = episode("The student learned that books would always matter after opening the astronomy book.");
+  const result = await generateRichPassAEpisode({
+    adapter: adapter([
+      { episode: initial },
+      {
+        observableAction: "The student opens the astronomy book and compares two diagrams.",
+        intellectualEncounter: { accessMode: "self_directed" },
+      },
+      { episode: episode("The student opens a short astronomy book at a library table and compares two diagrams while the teacher works nearby.") },
+    ], calls),
+    input: input(),
+    clientRequestId: "slice-e-rich-runner-bad-repair",
+  });
+
+  assert.equal(result.repairs.length, 1);
+  assert.equal(result.recordRetries.length, 1);
+  assert.equal(result.recordRetries[0].failedGate, "pass_a_output_schema");
+  assert.deepEqual(result.calls.map(({ kind }) => kind), ["initial", "record_repair", "record_retry"]);
+  assert.equal(calls.length, 3);
+  assert.deepEqual(Object.keys(calls[2].input).sort(), ["failedGate", "passAInput"]);
+  const retryInput = JSON.stringify(calls[2].input);
+  assert.equal(retryInput.includes("The student opens the astronomy book and compares two diagrams."), false);
+  assert.equal(retryInput.includes("\"intellectualEncounter\":{\"accessMode\":\"self_directed\"}"), false);
+  assert.equal(result.episode.episodeId, "ep_slice_e_runner_001");
 });
