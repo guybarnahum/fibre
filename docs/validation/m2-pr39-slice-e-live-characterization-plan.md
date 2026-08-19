@@ -29,6 +29,23 @@ EventStructurePool: genesis-event-structure-pool-v2
 
 The model choice follows the repository's configured OpenAI reasoning model. The synthetic lineage is a real deterministic crossover of two synthetic-ancestor symbolic genomes, but the lineage/genome witness is discarded before Pass-A cognition.
 
+## Attempt 1 — mechanical instrument failure
+
+The first invocation of the frozen run reached episode 1 and produced a candidate using `ges_v2_lost_small_item` with the subject and one caregiver. It was rejected by the inherited Gate-C structure-participation validator because Pool v2 had authored `participatingRoles: [caregiver, sibling, peer]` to mean alternatives while the legacy contract correctly interprets that field as requiring every listed role.
+
+This is an instrument-contract defect, not a richness/quality observation and not a reason to choose another seed. No episode was admitted and no evidence artifact was completed.
+
+The repair is deliberately scoped to rich Pool-v2 semantics:
+
+- legacy/v1 Pass A retains the Gate-C rule that every listed `participatingRole` must be represented;
+- rich Pool v2 treats a multi-valued `participatingRoles` list as allowed counterpart alternatives and requires at least one listed counterpart role to participate;
+- all other structureRef, developmental-range, chronology, age, subject-participation, participant-grounding and duplicate-ID checks continue through the existing Pass-A validators;
+- the exact failed `lost_small_item` shape is a regression control, including proof that legacy Pass A still rejects it.
+
+Implementation fix head before rerun verification: `7b7e1522a02bc8a4bb213d6d5474142158e4bb69`.
+
+Per the frozen protocol, the same burned world and seed remain in force for the rerun. This prevents the failure from becoming a reason to search for a more flattering sample.
+
 ## Exact command
 
 ```bash
