@@ -17,13 +17,45 @@ import {
 import { richCounterpartMode } from "./genesis-rich-participation-policy.mjs";
 
 export const GENESIS_RICH_PASS_A_OUTPUT_VERSION = "genesis-rich-pass-a-output-v1";
+export const GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD = "subjectPersonRef";
+
+function canonicalizeModelFacingEncounter(candidate) {
+  if (candidate === null || candidate === undefined) return candidate;
+  assertPlainObject("intellectualEncounter", candidate);
+
+  // Canonical/persisted encounters continue to use participantRef. Model cognition
+  // uses the less ambiguous subjectPersonRef so a teacher/mentor who merely mediates
+  // access to a book/path is not mistaken for the encountered subject itself.
+  if (!Object.hasOwn(candidate, GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD)) {
+    return structuredClone(candidate);
+  }
+  if (Object.hasOwn(candidate, "participantRef")) {
+    throw new TypeError("model intellectualEncounter cannot contain both subjectPersonRef and participantRef");
+  }
+  assertExactKeys("model intellectualEncounter", candidate, [
+    "kind",
+    "subjectKind",
+    "subjectLabel",
+    GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD,
+    "accessMode",
+  ]);
+  const canonical = structuredClone(candidate);
+  canonical.participantRef = canonical[GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD];
+  delete canonical[GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD];
+  return canonical;
+}
 
 function splitRichEpisode(candidate) {
   assertPlainObject("rich Pass-A episode", candidate);
   const hasEncounter = Object.hasOwn(candidate, "intellectualEncounter");
   const base = structuredClone(candidate);
   delete base.intellectualEncounter;
-  return { base, encounterCandidate: hasEncounter ? candidate.intellectualEncounter : null };
+  return {
+    base,
+    encounterCandidate: hasEncounter
+      ? canonicalizeModelFacingEncounter(candidate.intellectualEncounter)
+      : null,
+  };
 }
 
 function participantRoleMap(input, sameEpisodeIntroductions = []) {
@@ -89,7 +121,13 @@ export function normalizeRichPassAEpisode(candidate, { enforceObservableForm = t
 
 export function validateRichPassAEpisode(candidate, inputCandidate) {
   const input = assertPassAInputBoundary(inputCandidate);
-  const { base, encounterCandidate } = splitRichEpisode(candidate);
+  let split;
+  try {
+    split = splitRichEpisode(candidate);
+  } catch (error) {
+    throw new GenesisPassAValidationError("pass_a_intellectual_encounter", error.message, { record: candidate });
+  }
+  const { base, encounterCandidate } = split;
   const episode = validatePassAEpisode(base, input);
   assertRichStructureParticipation(episode, input);
   if (encounterCandidate === null || encounterCandidate === undefined) return episode;
@@ -137,6 +175,17 @@ export function assertRichRepairPreservesEpisodeFacts(previousCandidate, repaire
 
 const encounterSchema = structuredClone(GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA);
 encounterSchema.type = ["object", "null"];
+encounterSchema.required = encounterSchema.required.map((key) =>
+  key === "participantRef" ? GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD : key);
+encounterSchema.properties[GENESIS_RICH_MODEL_SUBJECT_PERSON_REF_FIELD] = {
+  ...structuredClone(encounterSchema.properties.participantRef),
+  description: "The encountered subject's episode participant ID only when subjectKind=person; otherwise null. A teacher, mentor, caregiver, librarian, or peer who merely mediates access belongs in episode.participantRefs, not here.",
+};
+delete encounterSchema.properties.participantRef;
+encounterSchema.properties.subjectKind = {
+  ...structuredClone(encounterSchema.properties.subjectKind),
+  description: "What the intellectual encounter is about. Use person only when the encountered subject itself is an episode participant; a mediator who points to a text, path, practice, idea, event, or community is not automatically the subject.",
+};
 
 export const GENESIS_RICH_PASS_A_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
