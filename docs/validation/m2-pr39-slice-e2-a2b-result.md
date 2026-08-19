@@ -1,23 +1,17 @@
 ---
 id: validation-m2-pr39-slice-e2-a2b-result
-status: superseded
+status: candidate
 last-reviewed: 2026-08-19
 canonical: false
 ---
 
 # Milestone #39 — Slice E2 A2b result
 
-## Superseded completion record
+## Result
 
-This file previously stated that `A2b_plausibility_surface_seeded_contingency` had completed on both E2 diagnostic worlds. That statement is **superseded and must not be used as evidence**.
+`A2b_plausibility_surface_seeded_contingency` completed on both E2 diagnostic worlds after the evidence-preserving continuation from the earlier failed artifacts.
 
-Subsequent user-run evidence on 2026-08-19 established that the evidence-preserving continuation still fails mechanically on E2-D1 / `slice-e2-a0-seed-02`, slot 4, with frozen selected opportunity:
-
-```text
-ges_v2_drawing_or_making_seen
-```
-
-Repository verification immediately before that run was user-run and green:
+Repository verification immediately before the successful continuation was user-run and green:
 
 ```text
 563 tests
@@ -26,81 +20,193 @@ Repository verification immediately before that run was user-run and green:
 repository validation passed with generated context packs
 ```
 
-The continuation correctly reused:
-
-- the completed E2-D1 / seed-01 life from the earlier failure artifact; and
-- the frozen E2-D1 / seed-02 plausibility/draw schedule `sha256:94a64d7b086c7c69f7cb4d91fb322d3ed91adeee701c4cf6162dd697a65b633c`.
-
-It did not reroll the frozen opportunity schedule.
-
-## Second continuation failure
-
-All three whole-candidate attempts failed at the same selected slot.
+Completed development artifact:
 
 ```text
-attempt 1
-  slot 4 drawing_or_making_seen
-  -> pass_a_structure_participation
-  -> record retry
-  -> pass_a_structure_participation
-  -> record retry
-  -> record_repair_exhausted
-
-attempt 2
-  slot 4 drawing_or_making_seen
-  -> pass_a_structure_participation
-  -> record retry
-  -> pass_a_structure_participation
-  -> record retry
-  -> record_repair_exhausted
-
-attempt 3
-  slot 4 drawing_or_making_seen
-  -> pass_a_structure_participation
-  -> record retry
-  -> pass_a_observable_action_bounds
-  -> form repair
-  -> record_repair_exhausted
+fibre-m2-pr39-slice-e2-a2b-v3.json
 ```
 
-The CLI wrote the failed continuation artifact:
+The artifact is development-only and burned for final-cohort use. It records:
 
 ```text
-fibre-m2-pr39-slice-e2-a2b-v2.json
+status:                    complete
+worlds:                    2
+lives / world:             3
+episodes / life:           10
+admitted episodes:         60
+candidate attempts:        8
+rejected attempts:         2
+reused completed lives:    1
+reused frozen schedules:   1
+admission verdict:         null
 ```
 
-That artifact is development-only, burned evidence. It is **not** a completed A2b result.
+The continuation reused the already-completed E2-D1 / seed-01 life and the already-burned E2-D1 / seed-02 plausibility/draw schedule. It did not reroll those decisions.
 
-## Diagnosis
+**A2b materially corrects A2's deterministic opportunity-template collapse while preserving the useful H2 separation of opportunity selection from scene realization. The plausibility-model layer itself contributed no discrimination on D1/D2.**
 
-The first retry correction exposed the selected structure's counterpart mode and allowed roles, but the live model still repeatedly failed the authoritative participation gate.
+This is a development mechanism result, not a production freeze and not an admission verdict.
 
-For `present_required`, the validator does not infer participation from prose. A qualifying known or same-episode-introduced participant must be represented by ID in `episode.participantRefs`.
+## Mechanical outcome
 
-E2-D1 already has known caregivers that can satisfy `ges_v2_drawing_or_making_seen`. The remaining defect is therefore a retry-interface mismatch: the retry constraint says that an allowed counterpart must participate, but does not state the exact record representation that the validator checks or identify the already-visible known participant IDs that satisfy the role contract.
-
-The next correction must remain mechanical only:
-
-- expose the exact `episode.participantRefs` requirement for `present_required`;
-- provide a deterministic projection of already-visible eligible known participant IDs and matching roles;
-- retain legal same-episode introduction as an alternative, with the introduced provisional ID also required in `episode.participantRefs`;
-- expose no rejected episode, rejected prose, richness signal, novelty signal, place preference, or quality feedback;
-- do not change the frozen A2b opportunity schedule.
-
-## Interpretation
-
-Current state:
+Across the six completed lives:
 
 ```text
-H2 selection/realization coupling:          strongly supported by A2
-A2 deterministic single winner:             rejected
-A2b seeded contingency:                     promising but mechanically incomplete
-A2b plausibility filtering on observed D1:  non-discriminating
-A2b completed result:                       NOT ESTABLISHED
-N1 downstream fertility:                   FROZEN BUT BLOCKED
-production mechanism freeze:                NOT YET
+mean distinct places / life:             3.33   (range 2..4)
+mean distinct structures / life:         8.17   (range 7..9)
+introduced participants:                10      (5/6 lives introduce someone)
+selected intellectual structures:       29 / 60
+intellectual encounters:                23 / 60
+world-emergent episodes:                 6 / 60
+record-form repairs:                    27
+record retries:                          1
+new-counterpart-pressure episodes:       5
+pressure realized with introduction:     5 / 5
 ```
 
-The predeclared N1 protocol remains useful, but it must not run until A2b can complete mechanically under its already-frozen evidence-preserving schedule.
+Every completed life contains intellectual encounters; counts range from 2 to 5. The E1 pattern of zero intellectual realization therefore does not reproduce under A2b.
 
-No admission verdict is earned by the current A2b evidence.
+The two rejected whole-candidate attempts both occurred in E2-D1 / seed-02 and ended in `record_repair_exhausted`. The final surviving life for that frozen schedule completed on attempt 3.
+
+Because the opportunity schedule was already frozen, candidate rejection could not substitute a different abstract event route. It could still select among scene realizations that are easier for the model to encode mechanically. That survivorship pressure remains material evidence and must not be erased from interpretation.
+
+## Plausibility layer: non-discriminating on D1/D2
+
+Every plausibility call approved:
+
+```text
+all 9 offered EventStructures
++ world_emergent
+= 10 plausible routes
+```
+
+For all six lives:
+
+```text
+mean plausible routes / window = 10.00
+singleton plausibility windows = 0
+all-offers-plausible windows    = 60 / 60
+```
+
+Therefore the model plausibility layer added no selection information on these two diagnostic worlds under this protocol. The mechanism actually exercised was effectively:
+
+```text
+blind eligible opportunity surface
+        ↓
+uniform frozen seeded contingency
+        ↓
+selected opportunity
+        ↓
+factual scene realization
+```
+
+This does not establish that a plausibility model could never be useful. It establishes that this call added no discrimination here. Any production design that retains it must justify the extra cognition independently rather than preserving it merely because it appeared in the development arm.
+
+## Between-life particularity
+
+### E2-D1
+
+Pairwise Jaccard:
+
+```text
+place:      1.000, 0.750, 0.750   mean = 0.833
+role:       0.750, 0.750, 1.000   mean = 0.833
+structure:  0.143, 0.063, 0.071   mean = 0.092
+source:     0,     0,     0       mean = 0
+```
+
+### E2-D2
+
+```text
+place:      0.750, 0.667, 0.500   mean = 0.639
+role:       1.000, 0.500, 0.500   mean = 0.667
+structure:  0.200, 0.000, 0.143   mean = 0.114
+source:     0,     0,     0       mean = 0
+```
+
+## H6 → A2 → A2b comparison
+
+Mean same-world Jaccard:
+
+```text
+                    H6       A2       A2b
+D1 place           0.833    1.000     0.833
+D1 role            1.000    0.633     0.833
+D1 structure       0.313    0.576     0.092
+
+D2 place           0.639    1.000     0.639
+D2 role            1.000    0.733     0.667
+D2 structure       0.410    0.643     0.114
+```
+
+A2 triggered the predeclared template-collapse warning because place and structure overlap each worsened by at least `0.15` in both worlds relative to H6.
+
+A2b does **not** trigger that warning:
+
+- place overlap returns exactly to the H6 diagnostic baseline in both worlds;
+- structure overlap falls dramatically below both H6 and A2 in both worlds;
+- role overlap improves relative to H6 in both worlds, although D2 remains more role-overlapping than D1;
+- intellectual-subject overlap remains zero.
+
+The strongest evidence here is not that every life visits many places. It is that the six lives no longer share a common event-structure skeleton.
+
+## Remaining locality caveat
+
+A2b is not uniformly broad in locality.
+
+The clearest case is E2-D2 / seed-03:
+
+```text
+distinct places: 2
+place top-share: 0.70
+structures:      7
+encounters:      3
+introduced:      0
+```
+
+This life remains substantially more home/locality-concentrated than the others. That is a real warning, but it is not by itself a reason to tune Pass A again. Rich Life is not a place-count quota. The next load-bearing question is whether the actual differences among these lived histories survive selective memory and meaning formation.
+
+## H2 interpretation
+
+The diagnostic chain now supports:
+
+```text
+H6 combined chooser/realizer
+  -> grounding cost suppresses new cast and route realization
+
+A2 deterministic stateless winner
+  -> cast expands
+  -> common opportunity skeleton appears
+
+A2b frozen seeded contingency
+  -> cast expansion survives
+  -> deterministic structure-template collapse disappears
+```
+
+Current interpretation:
+
+```text
+H2 selection/realization coupling:       SUPPORTED
+A2 deterministic single winner:          REJECTED
+A2b seeded contingency:                  SUPPORTED AS DEVELOPMENT MECHANISM
+A2b plausibility filtering on D1/D2:     NON-DISCRIMINATING
+production mechanism freeze:             NOT YET
+```
+
+## Next load-bearing question: N1 downstream fertility
+
+A2b establishes event-route particularity. It does not yet establish Fibre's stronger Rich-Life claim.
+
+The predeclared N1 diagnostic is now unblocked:
+
+> do these different lived histories produce distinguishable autobiographical memory and meaning when Pass B is `life_only`, genome-unexposed, and Pass C sees only the resulting memory?
+
+N1 is frozen as an 18-trial same-world 2AFC diagnostic over horizons 6, 8, and 10. Each of the six source lives is used exactly three times; truth labels and candidate order are balanced 9/9. The positive threshold is 13/18, whose exact one-sided chance tail is approximately `0.0481262`.
+
+N1 must consume `fibre-m2-pr39-slice-e2-a2b-v3.json` as frozen input. Its output must not feed back into Pass A and A2b must not be regenerated to improve downstream results.
+
+A positive N1 result must be grounded in concrete lived causes, not neutralized identifiers, seed identity, EventStructure labels, model metadata, or formatting artifacts. A chance-level result would mean A2b's route particularity has not yet demonstrated downstream experiential fertility; it would not automatically imply that more Pass-A breadth is the correct fix.
+
+Only after N1 and fresh validation-world evidence should E2 be considered ready for combined E+F hostile review.
+
+No admission verdict is earned by this development result.
