@@ -40,9 +40,10 @@ The vision is outward-facing and orienting. It may speak in cultural, philosophi
 2. [`foundations/constitution.md`](foundations/constitution.md)
 3. [`foundations/principles.md`](foundations/principles.md)
 4. [`foundations/invariants.md`](foundations/invariants.md)
-5. [`state/current-state.md`](state/current-state.md)
-6. The relevant concept and architecture documents
-7. Related ADRs and validation material
+5. [`foundations/rich-life.md`](foundations/rich-life.md)
+6. [`state/current-state.md`](state/current-state.md)
+7. The relevant concept and architecture documents
+8. Related ADRs and validation material
 
 Foundations are the builder-facing interpretation of the vision. Accepted foundations are binding project doctrine; implementation that contradicts them is a defect requiring explicit resolution.
 
