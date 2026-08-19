@@ -24,7 +24,7 @@ Describe only externally witnessable action and circumstance. Do not explain sig
 Keep observableAction concise and no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes.
 The provisional Thread identified by subject.provisionalThreadId must participate in the episode.
 A participant must already exist in the roster/history or be introduced in this same episode through a role explicitly afforded by the world.
-If structureRef is non-null, it must exactly match a currently offered structure and the required roles must actually participate.
+If structureRef is non-null, it must exactly match a currently offered structure and at least one of that v2 structure's listed counterpart roles must actually participate.
 Advance chronology beyond prior history, remain within chronologyEndsAt, and keep ageAtEvent consistent with bornAt and occurredAt.
 
 If this exact scene includes a genuine intellectual encounter, you may add intellectualEncounter. Use it only to record what was encountered and how access happened: a book, teacher/mentor, argument, conversation, overheard discussion, art, scientific idea, religious/philosophical text, or another intellectual source.
@@ -64,7 +64,15 @@ function validateConsistentRichEpisode(candidate, input) {
     if (error instanceof GenesisPassAValidationError && error.record !== candidate) error.record = structuredClone(candidate);
     throw error;
   }
-  validateConsistentPassAEpisode(stripEncounter(rich), input);
+
+  // validateRichPassAEpisode already validates the real v2 structureRef, its
+  // developmental range and the rich any-of counterpart-role policy. Re-run the
+  // legacy consistency validator with structureRef suppressed so we reuse its
+  // chronology, age, subject-participation and duplicate-ID guards without
+  // accidentally applying the Gate-C all-roles semantics a second time.
+  const consistencyEpisode = stripEncounter(rich);
+  consistencyEpisode.structureRef = null;
+  validateConsistentPassAEpisode(consistencyEpisode, input);
   return rich;
 }
 
