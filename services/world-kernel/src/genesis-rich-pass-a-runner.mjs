@@ -45,7 +45,7 @@ If structureRef is non-null, it must exactly match a currently offered structure
 Advance chronology beyond prior history, remain within chronologyEndsAt, and keep ageAtEvent consistent with bornAt and occurredAt.
 
 If this exact scene includes a genuine intellectual encounter, you may add intellectualEncounter. Use it only to record what was encountered and how access happened: a book, teacher/mentor, argument, conversation, overheard discussion, art, scientific idea, religious/philosophical text, or another intellectual source.
-subjectLabel must be a short factual label for the encountered subject, not a lesson or interpretation. For a person subject, participantRef must be that person's episode participant ID. For a non-person subject, participantRef must be null.
+subjectLabel must be a short factual label for the encountered subject, not a lesson or interpretation. subjectPersonRef identifies the encountered subject itself only when subjectKind=person; otherwise subjectPersonRef must be null. A teacher, mentor, caregiver, librarian, or peer who merely points to or provides access to a non-person subject remains an ordinary episode participant and must not be placed in subjectPersonRef.
 Do not add intellectualEncounter merely to make the life look rich. Returning no intellectualEncounter is legal.`;
 
 export const GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_PROMPT = `${GENESIS_RICH_PASS_A_PROMPT}
@@ -66,7 +66,8 @@ Remove explicit lesson, significance, personality, inner-state conclusion, remem
 export const GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT = `You are Fibre Genesis record retry for rich Pass A.
 The previous candidate for this one episode failed a mechanical record-validity gate and has been discarded. You do not receive that rejected episode.
 Generate one entirely new episode from the same frozen passAInput. Obey the same observable-history, chronology, participant, structure, counterpartMode, and intellectual-encounter contracts as normal Pass A.
-failedGate is supplied only to make the mechanical contract failure visible; it is not a quality signal. Do not make the replacement richer, more interesting, more intellectual, more diverse, or more consequential because a retry occurred.
+failedGate is supplied only to make the mechanical contract failure visible; it is not a quality signal. When failedConstraint is present, it states only a fixed gate-level mechanical rule and contains no rejected-scene content.
+Do not make the replacement richer, more interesting, more intellectual, more diverse, or more consequential because a retry occurred.
 The offered structures remain possibilities, never a checklist, and a world-emergent episode remains legal.`;
 
 export const GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT = `${GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT}
@@ -89,6 +90,10 @@ const RECORD_RETRYABLE_GATES = Object.freeze(new Set([
   "pass_a_intellectual_encounter",
   "pass_a_selected_opportunity",
 ]));
+
+const INTELLECTUAL_ENCOUNTER_RETRY_CONSTRAINT = Object.freeze({
+  rule: "intellectualEncounter.subjectPersonRef identifies the encountered subject only when subjectKind=person; otherwise subjectPersonRef must be null. A person who merely mediates access to a text, path, practice, idea, event, artwork, community, or other non-person subject belongs in episode.participantRefs instead.",
+});
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
@@ -193,6 +198,13 @@ function formRepairable(error) {
 
 function recordRetryable(error) {
   return error instanceof GenesisPassAValidationError && RECORD_RETRYABLE_GATES.has(error.gate);
+}
+
+function recordRetryConstraint(error) {
+  if (!(error instanceof GenesisPassAValidationError)) return null;
+  return error.gate === "pass_a_intellectual_encounter"
+    ? INTELLECTUAL_ENCOUNTER_RETRY_CONSTRAINT
+    : null;
 }
 
 function repairTargets(repairOrdinal) {
@@ -383,15 +395,26 @@ export async function generateRichPassAEpisode({
 
         const rejectedEpisode = structuredClone(error.record ?? candidate ?? {});
         const recordRetryOrdinal = recordRetries.length + 1;
+        const failedConstraint = recordRetryConstraint(error);
         const retryInput = normalizedSelectedOpportunity === null
-          ? { passAInput: cognitionInput, failedGate: error.gate }
-          : { passAInput: cognitionInput, selectedOpportunity: normalizedSelectedOpportunity, failedGate: error.gate };
+          ? {
+            passAInput: cognitionInput,
+            failedGate: error.gate,
+            ...(failedConstraint === null ? {} : { failedConstraint }),
+          }
+          : {
+            passAInput: cognitionInput,
+            selectedOpportunity: normalizedSelectedOpportunity,
+            failedGate: error.gate,
+            ...(failedConstraint === null ? {} : { failedConstraint }),
+          };
         const retryPrompt = normalizedSelectedOpportunity === null
           ? GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT
           : GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT;
         const retryRecord = {
           recordRetryOrdinal,
           failedGate: error.gate,
+          failedConstraint: failedConstraint === null ? null : structuredClone(failedConstraint),
           rejectedContentDigest: digest(rejectedEpisode),
           rejectedEpisode,
           retryInputDigest: digest(retryInput),
@@ -400,6 +423,7 @@ export async function generateRichPassAEpisode({
           await onRecordRetry({
             recordRetryOrdinal,
             failedGate: error.gate,
+            failedConstraint: failedConstraint === null ? null : structuredClone(failedConstraint),
             rejectedContentDigest: retryRecord.rejectedContentDigest,
             inputDigest: retryRecord.retryInputDigest,
             outputDigest: digest(rejectedEpisode),
@@ -419,6 +443,7 @@ export async function generateRichPassAEpisode({
           kind: "record_retry",
           recordRetryOrdinal,
           failedGate: error.gate,
+          failedConstraint: failedConstraint === null ? null : structuredClone(failedConstraint),
           inputDigest: retryRecord.retryInputDigest,
           outputDigest: digest(result.output),
           provenance: result.provenance,
