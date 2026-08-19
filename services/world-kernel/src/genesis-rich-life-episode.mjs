@@ -14,6 +14,7 @@ import {
   GENESIS_INTELLECTUAL_ENCOUNTER_RESPONSE_SCHEMA,
   normalizeGenesisIntellectualEncounter,
 } from "./genesis-intellectual-encounter.mjs";
+import { richCounterpartMode } from "./genesis-rich-participation-policy.mjs";
 
 export const GENESIS_RICH_PASS_A_OUTPUT_VERSION = "genesis-rich-pass-a-output-v1";
 
@@ -33,16 +34,37 @@ function participantRoleMap(input, sameEpisodeIntroductions = []) {
   return roles;
 }
 
-// EventStructurePool v2 deliberately treats participatingRoles as alternative
-// counterpart roles. This is a rich-life-only policy: legacy Pass A continues to
-// require every listed participatingRole. Keeping the rule here prevents Slice E
-// from weakening the Gate-C validator while allowing portable affordances such as
-// “caregiver OR sibling OR peer” to remain one reviewed structure.
+function knownCounterpartExists(input, structure) {
+  const knownRoles = participantRoleMap(input);
+  return [...knownRoles.values()].some((roles) =>
+    structure.participatingRoles.some((allowedRole) => roles.has(allowedRole)));
+}
+
+// EventStructurePool v2 treats participatingRoles as alternative counterpart roles.
+// The reviewed rich counterpart policy says whether a counterpart must be present,
+// may be absent for a genuinely self-directed realization, or must merely have been
+// known before an episode whose subject is that counterpart's unavailability.
+// Legacy Pass A remains untouched.
 export function assertRichStructureParticipation(episode, input) {
   if (episode.structureRef === null) return;
   const structure = input.offeredStructures.find(({ structureId }) => structureId === episode.structureRef);
   if (structure === undefined) return; // validatePassAEpisode owns the missing-ref error.
   if (structure.participatingRoles.length === 0) return;
+
+  const mode = richCounterpartMode(structure.structureId);
+  if (mode === "present_optional") return;
+
+  if (mode === "known_required") {
+    if (!knownCounterpartExists(input, structure)) {
+      throw new GenesisPassAValidationError(
+        "pass_a_structure_participation",
+        `episode ${episode.episodeId} cites ${structure.structureId} without a previously known counterpart in any allowed role (${structure.participatingRoles.join(", ")})`,
+        { record: episode },
+      );
+    }
+    return;
+  }
+
   const participantRoles = participantRoleMap(input, episode.introducedParticipants);
   const represented = structure.participatingRoles.some((allowedRole) =>
     episode.participantRefs.some((participantId) => participantRoles.get(participantId)?.has(allowedRole)));
