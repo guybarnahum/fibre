@@ -7,7 +7,7 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { normalizeRichPassAEpisode } from "./genesis-rich-life-domain.mjs";
+import { normalizeRichPassAEpisode } from "./genesis-rich-life-episode.mjs";
 
 export const THREAD_LIFE_EPISODE_RECORDED = "THREAD_LIFE_EPISODE_RECORDED";
 
