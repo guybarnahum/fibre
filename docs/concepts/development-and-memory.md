@@ -1,7 +1,7 @@
 ---
 id: concept-development-memory
 status: accepted
-last-reviewed: 2026-08-15
+last-reviewed: 2026-08-19
 canonical: true
 ---
 
@@ -28,6 +28,16 @@ Historical events remain stable while their meaning may evolve. A Thread may lat
 Remembered meaning is not merely a compressed historical summary or an inference that cognition reconstructs on demand. It is constitutive Thread state with its own identity, provenance, chronology, revision lineage, corrigibility, and stable citation surface.
 
 A temporary model may infer a plausible interpretation from history, but that inference does not become the Thread's autobiographical authority unless Fibre admits it through the appropriate memory/development process.
+
+## Memory formation is constitutive, not detection
+
+When Fibre invokes autobiographical memory formation, the cognition forms what the Thread retains from the admissible visible history at that moment. It is **not** being asked to detect or verify a memory that must already exist elsewhere.
+
+Absence of prior memories is therefore normal and is not evidence that nothing can be retained. Prior memories are earlier Thread-owned autobiographical context when they exist; they are not a prerequisite proving that a new memory already exists.
+
+`not_remembered` remains a first-class legal outcome. Fibre does not require every lived event to become memory, and a formation prompt must not force retention merely because an event is available in history.
+
+This distinction is load-bearing for Genesis and later development: asking whether an episode *is already remembered* turns memory formation into an epistemic lookup problem, while Fibre's authority model requires a constitutive process that may admit a new autobiographical memory.
 
 ## Lived coherence has seams
 
