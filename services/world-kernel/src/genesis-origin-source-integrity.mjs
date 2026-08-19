@@ -60,7 +60,7 @@ function normalizeThreadParent(candidate) {
 function normalizeApprovedMaterial(candidate, index) {
   const name = `originFixture.sourceBundle.approvedMaterials[${index}]`;
   assertPlainObject(name, candidate);
-  assertExactKeys(name, candidate, ["kind", "subjectKind", "subjectLabel"]);
+  assertExactKeys(name, candidate, ["kind", "subjectKind", "subjectLabel", "subjectRef"]);
   assertEnum(`${name}.kind`, candidate.kind, GENESIS_INTELLECTUAL_ENCOUNTER_KINDS);
   assertEnum(`${name}.subjectKind`, candidate.subjectKind, GENESIS_INTELLECTUAL_SUBJECT_KINDS);
   if (candidate.subjectKind === "person") {
@@ -74,6 +74,9 @@ function normalizeApprovedMaterial(candidate, index) {
     subjectLabel: candidate.subjectLabel,
     participantRef: null,
   });
+  if (Object.hasOwn(candidate, "subjectRef") && candidate.subjectRef !== subjectRef) {
+    throw new TypeError(`${name}.subjectRef is Fibre-derived and does not match its subject`);
+  }
   return Object.freeze({
     kind: candidate.kind,
     subjectKind: candidate.subjectKind,
