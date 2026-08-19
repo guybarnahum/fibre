@@ -65,14 +65,31 @@ export function canonicalizeN1NotRememberedResidue(artifact) {
   return next;
 }
 
-function countCanonicalizations(artifact) {
+function residueWitnesses(artifact) {
   return (artifact?.modelEvents ?? []).filter((event) =>
     event?.type === "n1_not_remembered_residue_canonicalization"
-    && event?.policy === E2_N1_NOT_REMEMBERED_RESIDUE_POLICY).length;
+    && event?.policy === E2_N1_NOT_REMEMBERED_RESIDUE_POLICY);
+}
+
+function countCanonicalizations(artifact) {
+  return residueWitnesses(artifact).length;
 }
 
 export function decorateN1ResidueArtifact(snapshot) {
   const decorated = structuredClone(snapshot);
+  const witnesses = residueWitnesses(decorated);
+  const byTrial = new Map(witnesses.map((witness) => [witness.trialOrdinal, witness]));
+  for (const trial of decorated.completedTrials ?? []) {
+    const witness = byTrial.get(trial.trialOrdinal);
+    if (witness === undefined || trial.passB === null || typeof trial.passB !== "object") continue;
+    trial.passB.formCanonicalization = {
+      policy: E2_N1_NOT_REMEMBERED_RESIDUE_POLICY,
+      providerRawOutputDigest: witness.originalOutputDigest,
+      canonicalOutputDigest: witness.canonicalOutputDigest,
+      modelCallUsed: false,
+      semanticDecisionChanged: false,
+    };
+  }
   decorated.executionAmendment = {
     ...(decorated.executionAmendment ?? {}),
     notRememberedResiduePolicy: E2_N1_NOT_REMEMBERED_RESIDUE_POLICY,
