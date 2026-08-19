@@ -110,6 +110,11 @@ function normalizeEntry(candidate, index) {
   return Object.freeze({ structure, contextKinds: Object.freeze([...candidate.contextKinds]), accessModes: Object.freeze([...candidate.accessModes]) });
 }
 
+function coversDevelopmentalRange(structure, range) {
+  return structure.developmentalRange.minAge <= range.minAge
+    && structure.developmentalRange.maxAge >= range.maxAge;
+}
+
 export function normalizeEventStructurePoolV2(candidates) {
   if (!Array.isArray(candidates) || candidates.length < 24) throw new TypeError("EventStructurePool v2 requires at least 24 reviewed affordances");
   const entries = candidates.map(normalizeEntry);
@@ -135,10 +140,17 @@ export function eventStructurePoolV2Digest(candidates = GENESIS_EVENT_STRUCTURE_
 
 export function sampleEventStructuresV2(candidates, developmentalRange, options) {
   const entries = normalizeEventStructurePoolV2(candidates);
-  const structures = entries.map((item) => item.structure);
-  const selected = sampleEventStructures(structures, developmentalRange, options);
+  // Rich cognition intentionally does not receive developmental-range policy labels.
+  // Therefore every offered structure must be valid for every age the model may choose
+  // within this stratum; overlap-only eligibility would create impossible hidden constraints.
+  const coveringEntries = entries.filter((item) => coversDevelopmentalRange(item.structure, developmentalRange));
+  const selected = sampleEventStructures(
+    coveringEntries.map((item) => item.structure),
+    developmentalRange,
+    options,
+  );
   const selectedIds = new Set(selected.map((item) => item.structureId));
-  return Object.freeze(entries.filter((item) => selectedIds.has(item.structure.structureId)));
+  return Object.freeze(coveringEntries.filter((item) => selectedIds.has(item.structure.structureId)));
 }
 
 export function buildPassAInputWithEventStructurePoolV2({
@@ -155,6 +167,11 @@ export function buildPassAInputWithEventStructurePoolV2({
   const pool = normalizeEventStructurePoolV2(eventStructurePoolV2);
   if (!Array.isArray(offeredEntries)) throw new TypeError("offeredEntries must be an EventStructurePool v2 entry array");
   const offered = offeredEntries.map((entryCandidate, index) => normalizeEntry(entryCandidate, index).structure);
+  for (const structure of offered) {
+    if (!coversDevelopmentalRange(structure, developmentalWindow)) {
+      throw new TypeError(`offered rich structure ${structure.structureId} does not cover the entire developmental window`);
+    }
+  }
   const input = buildPassAInput({
     worldSpec,
     subject,
