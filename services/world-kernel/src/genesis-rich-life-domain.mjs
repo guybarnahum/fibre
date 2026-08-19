@@ -49,6 +49,12 @@ function stableOfferOrder(entries) {
     left.structure.structureId.localeCompare(right.structure.structureId));
 }
 
+function baseHistoryEpisode(episode) {
+  const projected = structuredClone(episode);
+  delete projected.intellectualEncounter;
+  return projected;
+}
+
 export function buildRichLifePassAInput({
   originMode,
   syntheticLineageWitness = null,
@@ -60,6 +66,8 @@ export function buildRichLifePassAInput({
   assertRichLifeCompilerMode({ originMode, syntheticLineageWitness });
   return buildPassAInputWithEventStructurePoolV2({
     ...passAInputArgs,
+    priorEpisodes: (passAInputArgs.priorEpisodes ?? []).map(baseHistoryEpisode),
+    // Stable ID order prevents pool authoring order from becoming an accidental prompt signal.
     offeredEntries: stableOfferOrder(passAInputArgs.offeredEntries),
   });
 }
