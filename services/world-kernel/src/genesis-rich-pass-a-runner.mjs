@@ -85,17 +85,25 @@ function stripEncounter(candidate) {
 
 function rawEpisode(output) {
   if (output === null || typeof output !== "object" || Array.isArray(output)) {
-    throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A model output must be an object");
+    throw new GenesisPassAValidationError(
+      "pass_a_output_schema",
+      "rich Pass-A model output must be an object",
+      { record: output },
+    );
   }
   if (output.episode === null || typeof output.episode !== "object" || Array.isArray(output.episode)) {
-    throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A model output must contain one episode");
+    throw new GenesisPassAValidationError(
+      "pass_a_output_schema",
+      "rich Pass-A model output must contain one episode",
+      { record: output },
+    );
   }
   return output.episode;
 }
 
 function rawRepairObservableAction(output) {
   if (output === null || typeof output !== "object" || Array.isArray(output)) {
-    throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A repair output must be an object");
+    throw new GenesisPassAValidationError("pass_a_output_schema", "rich Pass-A repair output must be an object", { record: output });
   }
   try {
     assertExactKeys("rich Pass-A repair output", output, ["observableAction"]);
@@ -213,6 +221,8 @@ export async function generateRichPassAEpisode({
   const repairs = [];
   const recordRetries = [];
   let generatedVersions = 0;
+  let candidate = null;
+  let pendingError = null;
 
   let result = await adapter.invoke({
     systemPrompt: GENESIS_RICH_PASS_A_PROMPT,
@@ -221,11 +231,20 @@ export async function generateRichPassAEpisode({
     clientRequestId: `${clientRequestId}:initial`,
   });
   generatedVersions += 1;
-  let candidate = rawEpisode(result.output);
   calls.push({ kind: "initial", inputDigest, outputDigest: digest(result.output), provenance: result.provenance });
+  try {
+    candidate = rawEpisode(result.output);
+  } catch (error) {
+    pendingError = error;
+  }
 
   while (true) {
     try {
+      if (pendingError !== null) {
+        const error = pendingError;
+        pendingError = null;
+        throw error;
+      }
       const episode = validateConsistentRichEpisode(candidate, consistentInput);
       return {
         episode,
@@ -277,8 +296,6 @@ export async function generateRichPassAEpisode({
           clientRequestId: `${clientRequestId}:repair:${repairOrdinal}`,
         });
         generatedVersions += 1;
-        candidate = applyRepairObservableAction(rejectedEpisode, result.output);
-        assertRichRepairPreservesEpisodeFacts(rejectedEpisode, candidate);
         calls.push({
           kind: "record_repair",
           repairOrdinal,
@@ -287,6 +304,13 @@ export async function generateRichPassAEpisode({
           outputDigest: digest(result.output),
           provenance: result.provenance,
         });
+        try {
+          candidate = applyRepairObservableAction(rejectedEpisode, result.output);
+          assertRichRepairPreservesEpisodeFacts(rejectedEpisode, candidate);
+        } catch (repairError) {
+          candidate = rejectedEpisode;
+          pendingError = repairError;
+        }
         continue;
       }
 
@@ -295,7 +319,7 @@ export async function generateRichPassAEpisode({
           throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions);
         }
 
-        const rejectedEpisode = structuredClone(error.record ?? candidate);
+        const rejectedEpisode = structuredClone(error.record ?? candidate ?? {});
         const recordRetryOrdinal = recordRetries.length + 1;
         const retryInput = {
           passAInput: cognitionInput,
@@ -327,7 +351,6 @@ export async function generateRichPassAEpisode({
           clientRequestId: `${clientRequestId}:record-retry:${recordRetryOrdinal}`,
         });
         generatedVersions += 1;
-        candidate = rawEpisode(result.output);
         calls.push({
           kind: "record_retry",
           recordRetryOrdinal,
@@ -336,6 +359,12 @@ export async function generateRichPassAEpisode({
           outputDigest: digest(result.output),
           provenance: result.provenance,
         });
+        try {
+          candidate = rawEpisode(result.output);
+        } catch (retryError) {
+          candidate = null;
+          pendingError = retryError;
+        }
         continue;
       }
 
