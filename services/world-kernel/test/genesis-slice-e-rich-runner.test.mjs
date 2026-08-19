@@ -7,6 +7,9 @@ import { GENESIS_RICH_PASS_A_RESPONSE_SCHEMA } from "../src/genesis-rich-life-ep
 import {
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
   GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES,
+  GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS,
+  GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES,
+  GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS,
   generateRichPassAEpisode,
 } from "../src/genesis-rich-pass-a-runner.mjs";
 
@@ -131,6 +134,11 @@ test("rich runner repair can author only replacement observableAction while Fibr
   assert.equal(calls.length, 2);
   assert.deepEqual(calls[1].responseSchema, GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA);
   assert.deepEqual(Object.keys(calls[1].responseSchema.properties), ["observableAction"]);
+  assert.deepEqual(Object.keys(calls[1].input), ["rejectedObservableAction", "failedGate", "failedConstraint"]);
+  const repairInput = JSON.stringify(calls[1].input);
+  for (const hidden of ["episodeId", "person_teacher", "intellectualEncounter", "passAInput", "world_slice_e_runner"]) {
+    assert.equal(repairInput.includes(hidden), false);
+  }
 });
 
 test("rich runner bounds repair asks well below the authoritative byte ceiling", async () => {
@@ -147,10 +155,48 @@ test("rich runner bounds repair asks well below the authoritative byte ceiling",
   });
   assert.equal(result.repairs.length, 1);
   assert.equal(result.repairs[0].failedGate, "pass_a_observable_action_bounds");
-  assert.equal(result.repairs[0].failedConstraint.maxObservableActionUtf8Bytes, 1200);
+  assert.equal(result.repairs[0].failedConstraint.authoritativeMaxObservableActionUtf8Bytes, 1200);
   assert.equal(result.repairs[0].failedConstraint.targetRepairUtf8Bytes, GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES);
+  assert.equal(result.repairs[0].failedConstraint.targetRepairWords, GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS);
   assert.equal(GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES, 600);
+  assert.equal(GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS, 80);
   assert.ok(result.repairs[0].failedConstraint.rejectedObservableActionUtf8Bytes > 1200);
+  assert.ok(Buffer.byteLength(result.episode.observableAction, "utf8") <= 1200);
+});
+
+test("repeated byte repair sees only the previous action and tightens the second target", async () => {
+  const calls = [];
+  const initialOverlong = "The student checks the catalog and shelf label while the teacher waits nearby. ".repeat(24);
+  const firstRepairStillOverlong = "The student compares the catalog number with the shelf label and points to the mismatch. ".repeat(22);
+  assert.ok(Buffer.byteLength(initialOverlong, "utf8") > 1200);
+  assert.ok(Buffer.byteLength(firstRepairStillOverlong, "utf8") > 1200);
+
+  const result = await generateRichPassAEpisode({
+    adapter: adapter([
+      { episode: episode(initialOverlong) },
+      { observableAction: firstRepairStillOverlong },
+      { observableAction: "The student compares the catalog number with the shelf label and points out the mismatch to the teacher." },
+    ], calls),
+    input: input(),
+    clientRequestId: "slice-e-rich-runner-progressive-byte-repair",
+  });
+
+  assert.equal(result.repairs.length, 2);
+  assert.equal(result.repairs[0].failedConstraint.targetRepairUtf8Bytes, GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES);
+  assert.equal(result.repairs[0].failedConstraint.targetRepairWords, GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS);
+  assert.equal(result.repairs[1].failedConstraint.targetRepairUtf8Bytes, GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES);
+  assert.equal(result.repairs[1].failedConstraint.targetRepairWords, GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS);
+  assert.equal(GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES, 300);
+  assert.equal(GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS, 40);
+  assert.equal(calls.length, 3);
+  assert.equal(calls[1].input.rejectedObservableAction, initialOverlong);
+  assert.equal(calls[2].input.rejectedObservableAction, firstRepairStillOverlong);
+  for (const repairCall of calls.slice(1)) {
+    const serialized = JSON.stringify(repairCall.input);
+    for (const hidden of ["episodeId", "person_teacher", "intellectualEncounter", "passAInput", "world_slice_e_runner"]) {
+      assert.equal(serialized.includes(hidden), false);
+    }
+  }
   assert.ok(Buffer.byteLength(result.episode.observableAction, "utf8") <= 1200);
 });
 
