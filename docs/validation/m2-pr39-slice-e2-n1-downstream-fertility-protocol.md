@@ -7,7 +7,7 @@ canonical: false
 
 # Milestone #39 — Slice E2 N1 downstream-fertility protocol
 
-Status: **pre-run frozen development protocol**
+Status: **pre-run frozen development protocol, amended before code/model use**
 
 Purpose: test whether the particular histories produced by the frozen A2b development artifact survive canonical memory selection and meaning formation strongly enough that a blind rater can distinguish which same-world life produced them.
 
@@ -106,10 +106,11 @@ N1 must prevent cosmetic A2b identifiers from becoming a matching channel.
 Before Pass B, each source life is independently rewritten into a neutral diagnostic namespace:
 
 - subject ID -> `thr_n1_subject`;
-- chronological episode IDs -> `n1_ep_01` through `n1_ep_10`;
+- chronological episode IDs -> `n1_ep_01` through the current remembering horizon;
 - world place IDs -> stable neutral place IDs within that world;
-- participant IDs -> neutral aliases assigned by deterministic first appearance;
-- introduced-participant IDs use the same neutral aliases.
+- participant IDs -> neutral aliases assigned deterministically;
+- introduced-participant IDs use the same neutral aliases;
+- literal source IDs occurring inside `observableAction` are replaced with the same neutral aliases.
 
 Only identifiers are neutralized. Observable history content, chronology, ages, world descriptions and factual relationships between events are preserved.
 
@@ -122,7 +123,7 @@ The rater receives:
 1. the generated memory outcome;
 2. if remembered, normalized remembered content and uncertainty;
 3. if Pass C ran, the initial meaning outcome and any durable meaning text;
-4. two neutralized same-world candidate histories labeled `A` and `B`.
+4. two neutralized same-world candidate histories labeled `A` and `B`, each truncated at the exact remembering horizon used by Pass B.
 
 Each candidate history exposes only:
 
@@ -149,15 +150,46 @@ seed01 / seed03
 seed02 / seed03
 ```
 
-Run three independent B/C/rater executions per pair:
+The three repetitions are **not three identical temperature-zero inputs**. They use three frozen remembering horizons:
 
 ```text
-2 worlds × 3 pairs/world × 3 repetitions = 18 trials
+repetition 1 -> after episode 6
+repetition 2 -> after episode 8
+repetition 3 -> after episode 10
 ```
 
-Source-life assignment and candidate A/B presentation order are frozen deterministically from world ordinal, pair ordinal and repetition ordinal before any model call. They do not depend on generated memory/meaning or rater output.
+For a given horizon, Pass B sees only history through that episode. The rater sees both candidate histories only through the same horizon. Pass C forms meaning at that same as-of boundary.
+
+For each world and each horizon, the three pair edges are source-oriented as a cycle so every one of the three lives is the source exactly once at that horizon. The orientation reverses at the middle horizon. Therefore every source life contributes exactly:
+
+```text
+one episode-6 source trial
+one episode-8 source trial
+one episode-10 source trial
+```
+
+across its two pair relationships.
+
+This yields:
+
+```text
+2 worlds × 3 pairs/world × 3 distinct horizons = 18 trials
+6 source lives × 3 distinct horizons = 18 distinct Pass-B source-life/horizon inputs
+```
+
+Candidate A/B presentation order is frozen independently by SHA-256 over only protocol identity plus world ordinal, pair ordinal and horizon/repetition ordinal. It does not depend on source history, memory, meaning or rater output.
+
+The frozen assignment yields every source life exactly three source trials. Candidate truth labels are balanced 9 `A` / 9 `B`; no always-A or always-B strategy can exceed chance by construction.
 
 No trial may be rerun because its memory, meaning or rater answer looks weak.
+
+## Why the horizon amendment exists
+
+The initial pre-run draft described three independent executions per pair but held the Pass-B input otherwise constant. At temperature 0 those calls could be highly correlated or even identical, making an 18-trial binomial interpretation stronger than the evidence.
+
+This amendment was made **before N1 implementation and before any N1 model call**. Distinct remembering horizons make the three executions semantically distinct while preserving the same source artifact, pair count, trial count, model, cost class and downstream-fertility question.
+
+The trials are still not claimed to be fully independent biological observations; the exact-binomial value is a frozen development diagnostic threshold, not publication-grade inferential proof.
 
 ## Primary estimand
 
@@ -177,17 +209,17 @@ Predeclared one-sided positive threshold:
 
 ```text
 >= 13 / 18 correct
-exact binomial p = 0.048126220703125
+exact binomial chance-tail = 0.048126220703125
 ```
 
 For reference:
 
 ```text
-12 / 18 -> p = 0.1189422607421875
-14 / 18 -> p = 0.01544189453125
+12 / 18 -> 0.1189422607421875
+14 / 18 -> 0.01544189453125
 ```
 
-The threshold is frozen before N1 model use and must not be changed after seeing results.
+The threshold is frozen before N1 model use and must not be changed after seeing results. Because trials share worlds and source lives, the chance-tail is treated as a diagnostic calibration, not a claim of fully independent-sample statistical significance.
 
 ## Grounding requirement
 
@@ -216,18 +248,18 @@ gpt-5.1-2025-11-13
 
 for Pass B, Pass C and the blind diagnostic rater in this development run.
 
-All calls use temperature 0 under the existing adapter configuration. Repeated executions are separate model calls, not retries-until-good.
+All calls use temperature 0 under the existing adapter configuration. The three horizons are separate canonical cognition inputs, not retries-until-good.
 
 ## Evidence and non-feedback
 
 Record:
 
 - source artifact digest;
-- neutralization digest for each candidate life;
+- neutralization digest for each candidate life/horizon;
+- frozen source assignment, remembering horizon and blinded candidate ordering;
 - Pass-B canonical input/cognition/output digests and provenance;
 - Pass-C canonical input/cognition/output digests and provenance when run;
 - rater input/output digests and provenance;
-- source assignment and blinded candidate ordering;
 - rater-cited episode ordinals;
 - correct/incorrect result;
 - aggregate exact-binomial score.
