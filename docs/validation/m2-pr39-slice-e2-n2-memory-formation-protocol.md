@@ -17,6 +17,16 @@ This is a new instrument. It does not inherit the old N1 `13/18` threshold or th
 
 The prior burned artifacts remain permanent evidence and are not rerun.
 
+## Why N2 is the first valid test of the shipping-generator candidate
+
+Three downstream-fertility executions now exist or are planned, but they are not three repeated attempts at the same test:
+
+1. **N1-v2** used A2b histories. That generator family was later retired after E2-V1 fresh-world falsification, so N1-v2 cannot establish downstream fertility for the generator carried forward from Slice E.
+2. **N1-on-A0** used the corrected A0 histories but exercised an epistemic Pass-B prompt that contradicted Fibre's constitutive memory contract. Its `6/9` remains permanent evidence from that faulty instrument and is not reinterpreted into a pass or failure of A0.
+3. **N2** is the first pairing of the corrected A0 shipping-generator candidate with a Pass-B instrument that explicitly matches the constitutive contract.
+
+N2 is therefore a replacement instrument justified by a doctrine defect that would have required correction even if the prior score had been `9/9`, not another run authorized by a disappointing score.
+
 ## Doctrine correction frozen before N2
 
 Normative rule:
@@ -48,6 +58,8 @@ SHA-256: e6f59d1e62e7856914598b8f10424f778bef0ed6256ad771385af67f2e4cc720
 
 No E2-V1 life is regenerated or replaced.
 
+These three lives also create a frozen within-life paired framing comparison because the same lives at the same 6/8/10 horizons were previously processed by the old epistemic N1-on-A0 instrument. That comparison is specified below and is observational only.
+
 ### E2-V2
 
 Three A0 lives generated once on a second source-free fresh WorldSpec:
@@ -55,11 +67,30 @@ Three A0 lives generated once on a second source-free fresh WorldSpec:
 ```text
 tools/genesis-rich-life-e2-v2-world.mjs
 tools/genesis-rich-life-e2-v2-a0.mjs
+tools/genesis-rich-life-e2-v2-a0-reviewed.mjs
 ```
 
 The E2-V2 world, seeds, offered schedules, generator witness and requirement that **all three completed lives flow into N2** are frozen before first model use.
 
 There is no post-generation source-life selection. If source generation cannot complete under the existing three-candidate cap, that failed artifact is retained and the world is not regenerated or tuned.
+
+### E2-V2 authoring disclosure relative to E2-V1
+
+E2-V2 was authored after E2-V1 and the failed N1-on-A0 run were known. That fact cannot be undone and is disclosed rather than hidden.
+
+Relative to E2-V1, E2-V2 changes:
+
+- household composition: one caregiver + grandparent + younger sibling → two caregivers + older cousin;
+- primary public transport: tram/bicycle emphasis → bus/walking with occasional family rides;
+- public-space mix: community workshop / tram loop / river fields → branch library+civic hall / bus-market interchange / canalside park;
+- bilingual context: English+Arabic → English+Tagalog;
+- calendar: later historical period while preserving the same ordinary childhood-through-adolescence age span.
+
+Reason:
+
+> Create a second ordinary, source-free developmental substrate that is materially distinct from E2-V1 while preserving comparable access constraints. The changes are not selected to target any known remembered/not_remembered episode, desired adult identity, target personality, genome signal, or N2 score.
+
+The exact authoring record is frozen in `E2_V2_WORLD_AUTHORING_RECORD` and is written into E2-V2 preflight/evidence before first model use.
 
 ## Trial plan
 
@@ -75,11 +106,11 @@ one source life per pair/horizon trial
 Across two worlds:
 
 ```text
-trial count:        18
-source lives:        6
-uses per source life: 3
-truth labels:       9 A / 9 B
-candidate ordering: 9 left-as-A / 9 right-as-A
+trial count:          18
+source lives:          6
+uses per source life:  3
+truth labels:          9 A / 9 B
+candidate ordering:    9 left-as-A / 9 right-as-A
 ```
 
 Assignments are deterministic and content-independent. No trial assignment depends on history wording, memory plausibility, structure IDs or later score.
@@ -202,6 +233,8 @@ No post-hoc substitution is allowed:
 - perfect attribution of too few memories cannot compensate for low memory formation;
 - durable-meaning rate, raw forced choices on no-memory cases, structure overlap and stylistic quality cannot replace either criterion.
 
+The conditional threshold moves with `m`, but the combined procedure remains conservative: under no source-attribution ability and planning memory rate `q=0.70`, the unconditional probability that both criteria pass is approximately `0.0271`, below nominal `0.05`.
+
 Planning characterization, not a promise of result:
 
 ```text
@@ -214,12 +247,64 @@ approximate probability of satisfying both criteria = 0.8647
 
 These calculations assume independent Bernoulli trials for planning only. The actual development trials share worlds/source lives, so N2 remains a development diagnostic rather than publication-grade population inference.
 
+## Predeclared memory-rate characterization — no ceiling gate
+
+The final artifact reports:
+
+```text
+rememberedRate = remembered / 18
+```
+
+Criterion A supplies only a floor. There is deliberately no upper memory-rate gate because Fibre has not calibrated a natural recall rate.
+
+However, before first model use we predeclare that **either extreme is an instrument finding to examine**:
+
+```text
+remembered < 10/18   -> low-recall observation and Criterion A failure
+remembered >= 17/18  -> near-total-recall observation for review
+```
+
+The `>=17/18` near-total marker is characterization only. It does not cause a pass or fail and cannot replace either criterion. A very high rate could mean the constitutive correction repaired the old detection bias, or it could mean the new framing introduced pressure in the opposite direction; the result must be inspected rather than automatically celebrated.
+
+`not_remembered` remains legal even if it causes Criterion A to fail.
+
+## Predeclared paired framing comparison — observational only
+
+Three N2 source lives are exactly the same frozen E2-V1 A0 lives, at the same horizons, that were processed by N1-on-A0 under the old epistemic prompt.
+
+Therefore N2 reports this paired comparison:
+
+```text
+same E2-V1 lives
+same pair/source schedule
+same horizons 6 / 8 / 10
+
+old epistemic Pass B:     6 remembered / 9
+new constitutive Pass B:  X remembered / 9
+```
+
+The final artifact records all nine old/new outcome pairs and the change in remembered count.
+
+Interpretation is frozen before execution:
+
+- if the memory count rises on those identical histories, that supports the proposed mechanism of the semantics correction;
+- if it does not rise, the task-semantics explanation is weakened and that must be reported;
+- this comparison is **observational only** and cannot replace Criterion A or Criterion B.
+
+The old artifact is byte-bound before N2:
+
+```text
+artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-n1-a0-v1.json
+SHA-256: 8b8497fe687dfcb5a728024b83ca65c0f5e88006c645b0fbf5d92524e1adb122
+```
+
 ## Burn discipline
 
 - E2-V2 burns on first model use.
 - N2 source bindings are digested before the first N2 Pass-B call.
 - No prompt, threshold, world, seed, horizon, source life, assignment or scoring rule changes after first N2 model use.
 - `not_remembered` remains legal even if it causes Criterion A to fail.
+- The remembered-rate and paired-framing observations are reported but have no gate authority.
 - A negative N2 result is retained and reported; no rerun is authorized by score.
 
 ## Scope
