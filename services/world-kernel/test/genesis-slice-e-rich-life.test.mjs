@@ -98,7 +98,7 @@ function offered(minAge = 11, maxAge = 13, seed = "slice-e-offer-001") {
   );
 }
 
-function buildInput({ originMode = "de_novo", syntheticLineageWitness = null } = {}) {
+function buildInput({ originMode = "de_novo", syntheticLineageWitness = null, priorEpisodes = [], previouslyIntroducedParticipants = [] } = {}) {
   return buildRichLifePassAInput({
     originMode,
     syntheticLineageWitness,
@@ -107,8 +107,8 @@ function buildInput({ originMode = "de_novo", syntheticLineageWitness = null } =
     developmentalWindow: window(),
     chronologyEndsAt: "2010-12-31T23:59:59Z",
     initialRoster: roster(),
-    priorEpisodes: [],
-    previouslyIntroducedParticipants: [],
+    priorEpisodes,
+    previouslyIntroducedParticipants,
     eventStructurePoolV2: GENESIS_EVENT_STRUCTURE_POOL_V2,
     offeredEntries: offered(),
   });
@@ -184,6 +184,22 @@ test("de_novo and synthetic_lineage use the same Pass-A cognition boundary and t
   }
 });
 
+test("prior intellectual source identity stays out of later Pass-A cognition while the observable history remains", () => {
+  const prior = richEpisode({
+    episodeId: "ep_slice_e_prior_source",
+    occurredAt: "2008-06-01T16:00:00Z",
+    ageAtEvent: 11.42,
+    observableAction: "The student opens a library astronomy book, compares two diagrams, and returns it before leaving.",
+  });
+  const input = buildInput({ priorEpisodes: [prior] });
+  const cognition = projectRichLifePassAInputForCognition(input);
+  assert.equal(cognition.priorEpisodes.length, 1);
+  assert.match(cognition.priorEpisodes[0].observableAction, /astronomy book/);
+  const serialized = JSON.stringify(cognition.priorEpisodes[0]);
+  assert.equal(serialized.includes("intellectualEncounter"), false);
+  assert.equal(serialized.includes("isrc_"), false);
+});
+
 test("Slice E compiler modes are narrow and synthetic lineage requires its policy-side inheritance witness", () => {
   assert.deepEqual(assertRichLifeCompilerMode({ originMode: "de_novo" }), { originMode: "de_novo", syntheticLineageWitness: null });
   assert.throws(() => assertRichLifeCompilerMode({ originMode: "synthetic_lineage" }), /requires a policy-side lineage witness/);
@@ -236,7 +252,7 @@ test("person intellectual encounters reuse a grounded participant identity rathe
   }), input), /participantRef must be a participant in the episode/);
 });
 
-test("the required intellectual encounter categories are first-class in the response contract", () => {
+test("the required intellectual encounter categories are first-class and no encounter is required-but-nullable", () => {
   for (const kind of [
     "book",
     "teacher_or_mentor",
@@ -248,9 +264,11 @@ test("the required intellectual encounter categories are first-class in the resp
     "religious_or_philosophical_text",
     "other_intellectual_source",
   ]) assert.equal(GENESIS_INTELLECTUAL_ENCOUNTER_KINDS.includes(kind), true);
-  const schemaKinds = GENESIS_RICH_PASS_A_RESPONSE_SCHEMA.properties.episode.properties
-    .intellectualEncounter.anyOf[1].properties.kind.enum;
-  assert.deepEqual(schemaKinds, GENESIS_INTELLECTUAL_ENCOUNTER_KINDS);
+  const episodeSchema = GENESIS_RICH_PASS_A_RESPONSE_SCHEMA.properties.episode;
+  const encounterSchema = episodeSchema.properties.intellectualEncounter;
+  assert.equal(episodeSchema.required.includes("intellectualEncounter"), true);
+  assert.deepEqual(encounterSchema.type, ["object", "null"]);
+  assert.deepEqual(encounterSchema.properties.kind.enum, GENESIS_INTELLECTUAL_ENCOUNTER_KINDS);
 });
 
 test("record repair may rewrite observable form but cannot alter an encounter witness", () => {
