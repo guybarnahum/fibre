@@ -48,6 +48,14 @@ If this exact scene includes a genuine intellectual encounter, you may add intel
 subjectLabel must be a short factual label for the encountered subject, not a lesson or interpretation. For a person subject, participantRef must be that person's episode participant ID. For a non-person subject, participantRef must be null.
 Do not add intellectualEncounter merely to make the life look rich. Returning no intellectualEncounter is legal.`;
 
+export const GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_PROMPT = `${GENESIS_RICH_PASS_A_PROMPT}
+
+For this diagnostic call, a separate stateless selector has already fixed selectedOpportunity. You are realizing that opportunity, not choosing what kind of event happens.
+If selectedOpportunity.selectionKind=offered_structure, episode.structureRef must exactly equal selectedOpportunity.structureRef.
+If selectedOpportunity.selectionKind=world_emergent, episode.structureRef must be null.
+Do not substitute an easier offered structure. If the selected structure requires a counterpart not already known, you may introduce a new participant only through the existing world-afforded participant-introduction contract.
+The selector did not choose this opportunity because it is important, rich, diverse, intellectual, dramatic, formative, or useful. Do not add those properties.`;
+
 export const GENESIS_RICH_PASS_A_REPAIR_PROMPT = `You are Fibre Genesis record-form repair for rich Pass A.
 You receive only the rejected observableAction and the exact failed form constraint. You do not receive the world, roster, structure, event identity, chronology, or intellectual-encounter metadata.
 Return only a replacement observableAction. Fibre preserves every other event field mechanically.
@@ -61,6 +69,12 @@ Generate one entirely new episode from the same frozen passAInput. Obey the same
 failedGate is supplied only to make the mechanical contract failure visible; it is not a quality signal. Do not make the replacement richer, more interesting, more intellectual, more diverse, or more consequential because a retry occurred.
 The offered structures remain possibilities, never a checklist, and a world-emergent episode remains legal.`;
 
+export const GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT = `${GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT}
+A stateless selector fixed selectedOpportunity before this life candidate was realized. The rejected episode did not change that selection.
+If selectedOpportunity.selectionKind=offered_structure, the replacement episode.structureRef must exactly equal selectedOpportunity.structureRef.
+If selectedOpportunity.selectionKind=world_emergent, the replacement episode.structureRef must be null.
+Do not substitute another opportunity merely because the prior record failed mechanically.`;
+
 const RECORD_RETRYABLE_GATES = Object.freeze(new Set([
   "pass_a_output_schema",
   "pass_a_chronology",
@@ -73,6 +87,7 @@ const RECORD_RETRYABLE_GATES = Object.freeze(new Set([
   "pass_a_episode_identity",
   "pass_a_age_witness",
   "pass_a_intellectual_encounter",
+  "pass_a_selected_opportunity",
 ]));
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
@@ -136,6 +151,39 @@ function validateConsistentRichEpisode(candidate, input) {
   return rich;
 }
 
+function normalizeSelectedOpportunity(candidate, input) {
+  if (candidate === null || candidate === undefined) return null;
+  if (typeof candidate !== "object" || Array.isArray(candidate)) throw new TypeError("selectedOpportunity must be an object or null");
+  assertExactKeys("selectedOpportunity", candidate, ["selectionKind", "structureRef"]);
+  if (!["offered_structure", "world_emergent"].includes(candidate.selectionKind)) {
+    throw new TypeError("selectedOpportunity.selectionKind is invalid");
+  }
+  if (candidate.selectionKind === "world_emergent") {
+    if (candidate.structureRef !== null) throw new TypeError("world_emergent selectedOpportunity requires structureRef=null");
+    return Object.freeze({ selectionKind: "world_emergent", structureRef: null });
+  }
+  if (typeof candidate.structureRef !== "string" || candidate.structureRef.trim() === "") {
+    throw new TypeError("offered_structure selectedOpportunity requires a structureRef");
+  }
+  if (!input.offeredStructures.some((structure) => structure.structureId === candidate.structureRef)) {
+    throw new TypeError(`selectedOpportunity structure ${candidate.structureRef} is not currently offered`);
+  }
+  return Object.freeze({ selectionKind: "offered_structure", structureRef: candidate.structureRef });
+}
+
+function assertSelectedOpportunityRealized(episode, selectedOpportunity) {
+  if (selectedOpportunity === null) return episode;
+  const expected = selectedOpportunity.selectionKind === "world_emergent" ? null : selectedOpportunity.structureRef;
+  if (episode.structureRef !== expected) {
+    throw new GenesisPassAValidationError(
+      "pass_a_selected_opportunity",
+      `episode ${episode.episodeId} realized ${episode.structureRef ?? "world_emergent"} instead of frozen selected opportunity ${expected ?? "world_emergent"}`,
+      { record: episode },
+    );
+  }
+  return episode;
+}
+
 function formRepairable(error) {
   return error instanceof GenesisPassAValidationError && [
     "pass_a_interiority_form",
@@ -197,8 +245,10 @@ function exhaustRecord(error, candidate, calls, repairs, recordRetries, generate
 }
 
 export function richPassAPromptHash() { return digest(GENESIS_RICH_PASS_A_PROMPT); }
+export function richPassASelectedOpportunityPromptHash() { return digest(GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_PROMPT); }
 export function richPassARepairPromptHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_PROMPT); }
 export function richPassARecordRetryPromptHash() { return digest(GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT); }
+export function richPassASelectedOpportunityRetryPromptHash() { return digest(GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT); }
 export function richPassASchemaHash() { return digest(GENESIS_RICH_PASS_A_RESPONSE_SCHEMA); }
 export function richPassARepairSchemaHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA); }
 
@@ -207,6 +257,7 @@ export async function generateRichPassAEpisode({
   repairAdapter = adapter,
   input,
   clientRequestId,
+  selectedOpportunity = null,
   onRecordRepair = null,
   onRecordRetry = null,
 }) {
@@ -215,8 +266,17 @@ export async function generateRichPassAEpisode({
   if (typeof clientRequestId !== "string" || clientRequestId.trim() === "") throw new TypeError("rich Pass-A clientRequestId is required");
 
   const consistentInput = assertPassAHistoryConsistency(input);
+  const normalizedSelectedOpportunity = normalizeSelectedOpportunity(selectedOpportunity, consistentInput);
   const cognitionInput = projectRichLifePassAInputForCognition(consistentInput);
-  const inputDigest = passACognitionInputDigest(cognitionInput);
+  const initialInput = normalizedSelectedOpportunity === null
+    ? cognitionInput
+    : Object.freeze({ passAInput: cognitionInput, selectedOpportunity: normalizedSelectedOpportunity });
+  const initialPrompt = normalizedSelectedOpportunity === null
+    ? GENESIS_RICH_PASS_A_PROMPT
+    : GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_PROMPT;
+  const inputDigest = normalizedSelectedOpportunity === null
+    ? passACognitionInputDigest(cognitionInput)
+    : digest(initialInput);
   const calls = [];
   const repairs = [];
   const recordRetries = [];
@@ -225,8 +285,8 @@ export async function generateRichPassAEpisode({
   let pendingError = null;
 
   let result = await adapter.invoke({
-    systemPrompt: GENESIS_RICH_PASS_A_PROMPT,
-    input: cognitionInput,
+    systemPrompt: initialPrompt,
+    input: initialInput,
     responseSchema: GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
     clientRequestId: `${clientRequestId}:initial`,
   });
@@ -246,10 +306,12 @@ export async function generateRichPassAEpisode({
         throw error;
       }
       const episode = validateConsistentRichEpisode(candidate, consistentInput);
+      assertSelectedOpportunityRealized(episode, normalizedSelectedOpportunity);
       return {
         episode,
         inputDigest,
         episodeDigest: digest(episode),
+        selectedOpportunity: normalizedSelectedOpportunity,
         calls,
         repairs: repairs.map(({ rejectedEpisode, ...repair }) => repair),
         recordRetries: recordRetries.map(({ rejectedEpisode, ...retry }) => retry),
@@ -321,10 +383,12 @@ export async function generateRichPassAEpisode({
 
         const rejectedEpisode = structuredClone(error.record ?? candidate ?? {});
         const recordRetryOrdinal = recordRetries.length + 1;
-        const retryInput = {
-          passAInput: cognitionInput,
-          failedGate: error.gate,
-        };
+        const retryInput = normalizedSelectedOpportunity === null
+          ? { passAInput: cognitionInput, failedGate: error.gate }
+          : { passAInput: cognitionInput, selectedOpportunity: normalizedSelectedOpportunity, failedGate: error.gate };
+        const retryPrompt = normalizedSelectedOpportunity === null
+          ? GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT
+          : GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT;
         const retryRecord = {
           recordRetryOrdinal,
           failedGate: error.gate,
@@ -345,7 +409,7 @@ export async function generateRichPassAEpisode({
         recordRetries.push(retryRecord);
 
         result = await adapter.invoke({
-          systemPrompt: GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT,
+          systemPrompt: retryPrompt,
           input: retryInput,
           responseSchema: GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
           clientRequestId: `${clientRequestId}:record-retry:${recordRetryOrdinal}`,
