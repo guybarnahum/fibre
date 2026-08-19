@@ -11,10 +11,7 @@ import {
   eventStructurePoolV2Digest,
   normalizeEventStructurePoolV2,
 } from "../services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
-import {
-  SLICE_E_DEV_SPAN,
-  SLICE_E_DEV_WORLD,
-} from "./genesis-rich-life-dev.mjs";
+import { SLICE_E_DEV_SPAN, SLICE_E_DEV_WORLD } from "./genesis-rich-life-dev.mjs";
 import {
   E2_D1_SPAN,
   E2_D1_WORLD,
@@ -25,7 +22,7 @@ import {
 export const E2_H6_PROBE_VERSION = "pr39-slice-e2-h6-realization-probe-v1";
 
 export const E2_H6_PROMPT = `You are performing a blind Fibre Rich-Life affordance-surface review.
-You receive one factual Genesis WorldSpec, one developmental span, and the abstract EventStructurePool-v2 entries. You do NOT receive any generated life, prior episode, genome, personality target, memory, meaning, benchmark, seed, or prior failure result.
+You receive one factual world projection, one developmental span, and the abstract EventStructurePool-v2 entries. You do NOT receive any generated life, prior episode, genome, personality target, memory, meaning, benchmark, seed, world provenance, prior failure result, or experiment-arm identity.
 
 For every supplied structure, assess how broadly that abstract situation could be realized in THIS world without inventing a personality or desired developmental outcome.
 
@@ -44,9 +41,9 @@ const OUTSIDE_BANDS = Object.freeze(["none", "one_narrow_path", "multiple"]);
 export const E2_H6_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
   additionalProperties: false,
-  required: ["worldSpecId", "ratings"],
+  required: ["probeWorldId", "ratings"],
   properties: {
-    worldSpecId: { type: "string" },
+    probeWorldId: { type: "string" },
     ratings: {
       type: "array",
       items: {
@@ -77,21 +74,42 @@ export const E2_H6_RESPONSE_SCHEMA = Object.freeze({
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
+function blindWorldProjection(worldSpec) {
+  return Object.freeze({
+    timeFrame: structuredClone(worldSpec.timeFrame),
+    places: worldSpec.places.map((place, index) => Object.freeze({
+      placeRef: `place_${String(index + 1).padStart(2, "0")}`,
+      description: place.description,
+    })),
+    householdShape: worldSpec.householdShape,
+    familyRelations: [...worldSpec.familyRelations],
+    languages: [...worldSpec.languages],
+    materialCircumstances: worldSpec.materialCircumstances,
+    mobilityPattern: worldSpec.mobilityPattern,
+    schoolingOrCommunityContext: worldSpec.schoolingOrCommunityContext,
+    culturalContext: worldSpec.culturalContext,
+    availableInstitutions: [...worldSpec.availableInstitutions],
+    intellectualEnvironment: worldSpec.intellectualEnvironment,
+    affordedRoles: [...worldSpec.affordedRoles],
+  });
+}
+
 function structureProjection(entry) {
-  return {
+  return Object.freeze({
     structureId: entry.structure.structureId,
     abstractSituation: entry.structure.abstractSituation,
     participatingRoles: [...entry.structure.participatingRoles],
     developmentalRange: structuredClone(entry.structure.developmentalRange),
     contextKinds: [...entry.contextKinds],
     accessModes: [...entry.accessModes],
-  };
+  });
 }
 
-function probeInput(worldSpec, developmentalSpan) {
+function probeInput(probeWorldId, worldSpec, developmentalSpan) {
   return Object.freeze({
     probeVersion: E2_H6_PROBE_VERSION,
-    worldSpec: structuredClone(worldSpec),
+    probeWorldId,
+    world: blindWorldProjection(worldSpec),
     developmentalSpan: structuredClone(developmentalSpan),
     structures: normalizeEventStructurePoolV2(GENESIS_EVENT_STRUCTURE_POOL_V2).map(structureProjection),
   });
@@ -102,30 +120,26 @@ function assertBand(name, value, allowed) {
 }
 
 function normalizeProbeOutput(candidate, input) {
-  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
-    throw new TypeError("H6 probe output must be an object");
-  }
-  if (candidate.worldSpecId !== input.worldSpec.worldSpecId) {
-    throw new TypeError("H6 probe output worldSpecId does not match input world");
-  }
+  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) throw new TypeError("H6 probe output must be an object");
+  if (candidate.probeWorldId !== input.probeWorldId) throw new TypeError("H6 probe output probeWorldId does not match input");
   if (!Array.isArray(candidate.ratings)) throw new TypeError("H6 probe ratings must be an array");
 
   const expectedIds = input.structures.map((item) => item.structureId);
   const expectedSet = new Set(expectedIds);
   const seen = new Set();
+  const expectedKeys = [
+    "distinctConfigurationBand",
+    "householdDominant",
+    "outsideHouseholdPlausibility",
+    "plausibleSceneCountBand",
+    "realizationDegenerateWith",
+    "reason",
+    "structureId",
+  ];
+
   const ratings = candidate.ratings.map((rating, index) => {
     if (rating === null || typeof rating !== "object" || Array.isArray(rating)) throw new TypeError(`H6 rating[${index}] must be an object`);
-    const keys = Object.keys(rating).sort();
-    const expectedKeys = [
-      "distinctConfigurationBand",
-      "householdDominant",
-      "outsideHouseholdPlausibility",
-      "plausibleSceneCountBand",
-      "realizationDegenerateWith",
-      "reason",
-      "structureId",
-    ];
-    if (canonicalJson(keys) !== canonicalJson(expectedKeys)) throw new TypeError(`H6 rating[${index}] has unexpected keys`);
+    if (canonicalJson(Object.keys(rating).sort()) !== canonicalJson(expectedKeys)) throw new TypeError(`H6 rating[${index}] has unexpected keys`);
     if (!expectedSet.has(rating.structureId)) throw new TypeError(`H6 rating references unknown structure ${rating.structureId}`);
     if (seen.has(rating.structureId)) throw new TypeError(`H6 rating duplicates structure ${rating.structureId}`);
     seen.add(rating.structureId);
@@ -135,13 +149,9 @@ function normalizeProbeOutput(candidate, input) {
     if (typeof rating.householdDominant !== "boolean") throw new TypeError(`H6 rating ${rating.structureId} householdDominant must be boolean`);
     if (!Array.isArray(rating.realizationDegenerateWith)) throw new TypeError(`H6 rating ${rating.structureId} realizationDegenerateWith must be an array`);
     for (const otherId of rating.realizationDegenerateWith) {
-      if (!expectedSet.has(otherId) || otherId === rating.structureId) {
-        throw new TypeError(`H6 rating ${rating.structureId} has invalid realizationDegenerateWith value ${otherId}`);
-      }
+      if (!expectedSet.has(otherId) || otherId === rating.structureId) throw new TypeError(`H6 rating ${rating.structureId} has invalid realizationDegenerateWith value ${otherId}`);
     }
-    if (new Set(rating.realizationDegenerateWith).size !== rating.realizationDegenerateWith.length) {
-      throw new TypeError(`H6 rating ${rating.structureId} repeats realizationDegenerateWith IDs`);
-    }
+    if (new Set(rating.realizationDegenerateWith).size !== rating.realizationDegenerateWith.length) throw new TypeError(`H6 rating ${rating.structureId} repeats realizationDegenerateWith IDs`);
     if (typeof rating.reason !== "string" || rating.reason.trim() === "") throw new TypeError(`H6 rating ${rating.structureId} reason is required`);
     if (Buffer.byteLength(rating.reason, "utf8") > 240) throw new TypeError(`H6 rating ${rating.structureId} reason exceeds 240 UTF-8 bytes`);
     return Object.freeze({
@@ -160,7 +170,7 @@ function normalizeProbeOutput(candidate, input) {
     throw new TypeError(`H6 probe omitted structures: ${missing.join(", ")}`);
   }
   ratings.sort((a, b) => a.structureId.localeCompare(b.structureId));
-  return Object.freeze({ worldSpecId: candidate.worldSpecId, ratings: Object.freeze(ratings) });
+  return Object.freeze({ probeWorldId: candidate.probeWorldId, ratings: Object.freeze(ratings) });
 }
 
 function characterize(ratings) {
@@ -194,25 +204,26 @@ function characterize(ratings) {
 export async function runE2H6Probe({ adapter, provider, model, worlds = null } = {}) {
   if (adapter === null || typeof adapter?.invoke !== "function") throw new TypeError("H6 probe adapter must expose invoke()");
   const selected = worlds ?? [
-    { label: "E1", worldSpec: SLICE_E_DEV_WORLD, developmentalSpan: SLICE_E_DEV_SPAN },
-    { label: "E2-D1", worldSpec: E2_D1_WORLD, developmentalSpan: E2_D1_SPAN },
-    { label: "E2-D2", worldSpec: E2_D2_WORLD, developmentalSpan: E2_D2_SPAN },
+    { label: "E1", probeWorldId: "probe_world_01", worldSpec: SLICE_E_DEV_WORLD, developmentalSpan: SLICE_E_DEV_SPAN },
+    { label: "E2-D1", probeWorldId: "probe_world_02", worldSpec: E2_D1_WORLD, developmentalSpan: E2_D1_SPAN },
+    { label: "E2-D2", probeWorldId: "probe_world_03", worldSpec: E2_D2_WORLD, developmentalSpan: E2_D2_SPAN },
   ];
   const results = [];
   for (const item of selected) {
-    const input = probeInput(item.worldSpec, item.developmentalSpan);
+    const input = probeInput(item.probeWorldId, item.worldSpec, item.developmentalSpan);
     const result = await adapter.invoke({
       systemPrompt: E2_H6_PROMPT,
       input,
       responseSchema: E2_H6_RESPONSE_SCHEMA,
-      clientRequestId: `slice-e2-h6:${item.label}`,
+      clientRequestId: `slice-e2-h6:${item.probeWorldId}`,
     });
     const normalized = normalizeProbeOutput(result.output, input);
     results.push(Object.freeze({
       label: item.label,
+      probeWorldId: item.probeWorldId,
       worldSpecId: item.worldSpec.worldSpecId,
       worldSpecDigest: genesisRecordDigest("world_spec", item.worldSpec),
-      inputDigest: digest(input),
+      blindWorldInputDigest: digest(input),
       outputDigest: digest(normalized),
       provenance: structuredClone(result.provenance),
       ratings: normalized.ratings,
@@ -247,7 +258,7 @@ function createAdapter({ provider, model, observer }) {
 }
 
 function usage() {
-  process.stdout.write("Usage: node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-h6-probe.mjs --provider <openai|google> --model <model> [--out <file>] [--overwrite]\n");
+  process.stdout.write("Usage: npm run genesis:e2-h6-probe -- --provider <openai|google> --model <model> [--out <file>] [--overwrite]\n");
 }
 
 async function main() {
