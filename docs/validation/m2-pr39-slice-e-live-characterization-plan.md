@@ -82,6 +82,28 @@ Implementation full-stratum-offer head: `498e9724e555091f25580db5e3b9de78e10ac0a
 
 The same burned world and seed remain mandatory for Attempt 4.
 
+## Attempt 4 — repeated isolated-field repair still failed to converge
+
+After aligning the stale overlapping-range test, the full mechanical suite was green at 532/532 and `npm run check` passed. Attempt 4 again used the same frozen world and seed.
+
+Episodes 1–3 completed. Episode 1 required no repair; episodes 2 and 3 each required one `pass_a_observable_action_bounds` repair and then admitted. Episode 4 failed the same byte gate, and both permitted one-field model repairs again exceeded the authoritative 1200 UTF-8-byte ceiling, ending in `record_repair_exhausted`.
+
+The one-field output boundary therefore removed event-field rewriting but did not yet make repair cognition reliably convergent. The remaining defect was that repair cognition still received the full Pass-A input plus the complete rejected episode, and every retry received the same 600-byte target. That gave a form-only repair call unnecessary scene/world context and no progressively stronger instruction after it had already ignored the first bound.
+
+The repair is tightened without truncating or otherwise mechanically rewriting the historical prose:
+
+- repair cognition now receives only `rejectedObservableAction`, `failedGate`, and the exact failed constraint; it receives no world, roster, structure, event ID, chronology, participant metadata, lineage, or intellectual-encounter metadata;
+- Fibre still carries every non-`observableAction` field forward mechanically;
+- the first repair target is 600 UTF-8 bytes / 80 words;
+- if that replacement itself fails the byte gate, the second and final repair target tightens to 300 UTF-8 bytes / 40 words and sees only the immediately prior replacement;
+- a regression reproduces Attempt 4 exactly: initial action over 1200 bytes, first repair still over 1200, second repair concise, with the repair input proved free of event/world identity fields;
+- deterministic prefix truncation was explicitly rejected because `observableAction` is historical content and truncation could silently delete event facts;
+- the authoritative 1200-byte gate and three-generated-version exhaustion rule remain unchanged.
+
+Implementation and regression head: `fcdc1955ea93bc4e1c2a0781f5f07aafa76cfd44`.
+
+The same burned world and seed remain mandatory for Attempt 5.
+
 ## Exact command
 
 ```bash
