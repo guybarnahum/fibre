@@ -251,7 +251,7 @@ test("live #37 identity validation fails inside birth and leaves no half-born Th
     genesis.close();
   }));
 
-test("Slice A adds provenance tables but no parallel biography, memory, relation, place, embodiment, or identity authority", () =>
+test("Genesis support tables do not create parallel biography, memory, relation, place, embodiment, or identity authority", () =>
   withDatabase((databasePath) => {
     const genesis = new GenesisStore(databasePath);
     const raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -261,6 +261,7 @@ test("Slice A adds provenance tables but no parallel biography, memory, relation
     assert.deepEqual(tables, [
       "genesis_generation_attempts",
       "genesis_manifests",
+      "genesis_origin_authorities",
       "genesis_world_specs",
     ]);
     assert.equal(tables.some((name) => /biograph|memor|relation|place|embod|identity/.test(name)), false);
