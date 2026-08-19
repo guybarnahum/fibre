@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
+import { buildRichLifePassAInput } from "../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
+  SLICE_E_DEV_ROSTER,
   SLICE_E_DEV_SPAN,
+  SLICE_E_DEV_SUBJECT,
+  SLICE_E_DEV_WORLD,
   buildSliceEDevelopmentPlan,
   buildSliceESyntheticLineage,
   stratifySliceEDevelopmentSpan,
@@ -23,6 +28,31 @@ test("Slice E development spans childhood through adolescence with one determini
   assert.deepEqual(first, second);
   assert.equal(first.every((item) => item.offeredEntries.length === 9), true);
   assert.equal(first.every((item) => item.offeredEntries.filter((entry) => entry.structure.consequenceClass === "low").length >= 4), true);
+  assert.equal(first.every(({ developmentalWindow, offeredEntries }) => offeredEntries.every(({ structure }) =>
+    structure.developmentalRange.minAge <= developmentalWindow.minAge
+      && structure.developmentalRange.maxAge >= developmentalWindow.maxAge)), true);
+  assert.equal(first[0].offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_drawing_or_making_seen"), false);
+});
+
+test("rich Pass A refuses a manually supplied offer that covers only part of a developmental stratum", () => {
+  const item = buildSliceEDevelopmentPlan({ episodeCount: 10, seed: "slice-e-dev-burned-001" })[0];
+  const partial = GENESIS_EVENT_STRUCTURE_POOL_V2.find(({ structure }) => structure.structureId === "ges_v2_drawing_or_making_seen");
+  assert.ok(partial);
+  const offeredEntries = [...item.offeredEntries];
+  offeredEntries[0] = partial;
+
+  assert.throws(() => buildRichLifePassAInput({
+    originMode: "de_novo",
+    worldSpec: SLICE_E_DEV_WORLD,
+    subject: SLICE_E_DEV_SUBJECT,
+    developmentalWindow: item.developmentalWindow,
+    chronologyEndsAt: item.developmentalWindow.endAt,
+    initialRoster: SLICE_E_DEV_ROSTER,
+    priorEpisodes: [],
+    previouslyIntroducedParticipants: [],
+    eventStructurePoolV2: GENESIS_EVENT_STRUCTURE_POOL_V2,
+    offeredEntries,
+  }), /does not cover the entire developmental window/);
 });
 
 test("Slice E synthetic development lineage is a stable recombined genome witness", () => {
