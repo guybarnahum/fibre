@@ -3,12 +3,15 @@ import { DatabaseSync } from "node:sqlite";
 import {
   IntegrityError,
   ThreadAlreadyExistsError,
+  UNCOMMANDED_EVENT_TYPES,
   assertId,
   canonicalJson,
   threadStateHash,
 } from "./persistence-common.mjs";
 import {
+  applyEventToThread,
   normalizeSeedSnapshot,
+  rowToEvent,
   validateThreadSnapshot,
 } from "./persistence-domain.mjs";
 import {
@@ -43,6 +46,11 @@ import {
   normalizeGenesisWorldSpec,
   publicationValidatorSetWitness,
 } from "./genesis-domain.mjs";
+import {
+  genesisOriginAuthorityDigest,
+  normalizeGenesisOriginAuthority,
+} from "./genesis-origin-authority.mjs";
+import { normalizeGenesisOriginIntegrityFixture } from "./genesis-origin-source-integrity.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -51,6 +59,13 @@ const GENESIS_TABLES = Object.freeze([
   "genesis_world_specs",
   "genesis_manifests",
   "genesis_generation_attempts",
+]);
+
+const SOURCE_DERIVED_ORIGIN_MODES = Object.freeze([
+  "thread_parent",
+  "echo",
+  "homage",
+  "fork",
 ]);
 
 function parseRecord(name, json) {
@@ -76,6 +91,187 @@ function assertCurrentPublicationValidators(manifest) {
       "Genesis publication validator witness does not match the current executable validator set",
     );
   }
+}
+
+function assertExactReferenceList(name, actual, expected) {
+  if (canonicalJson(actual) !== canonicalJson(expected)) {
+    throw new GenesisConflictError(`${name} does not exactly match the verified origin witness`);
+  }
+}
+
+function canonicalThreadEventsInTransaction(database, threadId) {
+  assertId("origin source threadId", threadId);
+  const rows = database.prepare(`
+    SELECT event_id, thread_id, sequence, expected_version, resulting_version,
+           event_type, command_id, command_digest, payload_json, actor_json,
+           occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+           payload_schema_version, provenance_json
+    FROM thread_events WHERE thread_id=? ORDER BY sequence ASC
+  `).all(threadId);
+  if (rows.length === 0) {
+    throw new GenesisConflictError(`origin source Thread ${threadId} has no canonical history`);
+  }
+
+  const events = rows.map(rowToEvent);
+  let replayed = null;
+  for (const [index, event] of events.entries()) {
+    if (event.sequence !== index + 1) {
+      throw new IntegrityError(`origin source Thread ${threadId} event sequence has a gap`);
+    }
+    if (!UNCOMMANDED_EVENT_TYPES.has(event.eventType)) {
+      const command = database.prepare(`
+        SELECT command_digest, expected_version, resulting_version, event_id, created_at
+        FROM commands WHERE thread_id=? AND command_id=?
+      `).get(event.threadId, event.commandId);
+      if (command === undefined) {
+        throw new IntegrityError(`origin source event ${event.eventId} has no accepted command witness`);
+      }
+      if (
+        command.command_digest !== event.commandDigest ||
+        Number(command.expected_version) !== event.expectedVersion ||
+        Number(command.resulting_version) !== event.resultingVersion ||
+        command.event_id !== event.eventId ||
+        command.created_at !== event.occurredAt
+      ) {
+        throw new IntegrityError(`origin source event ${event.eventId} disagrees with its command witness`);
+      }
+    }
+    replayed = applyEventToThread(replayed, event);
+    if (threadStateHash(replayed) !== event.stateHash) {
+      throw new IntegrityError(`origin source event ${event.eventId} state hash failed replay`);
+    }
+  }
+
+  const projection = database.prepare(`
+    SELECT thread_id,version,status,state_hash,last_event_id
+    FROM threads WHERE thread_id=?
+  `).get(threadId);
+  if (projection === undefined) {
+    throw new GenesisConflictError(`origin source Thread ${threadId} does not exist`);
+  }
+  if (
+    replayed.threadId !== threadId ||
+    Number(projection.version) !== replayed.version ||
+    projection.status !== replayed.status ||
+    projection.state_hash !== threadStateHash(replayed) ||
+    projection.last_event_id !== replayed.provenance.lastEventId
+  ) {
+    throw new IntegrityError(`origin source Thread ${threadId} projection disagrees with canonical replay`);
+  }
+  return events;
+}
+
+function originAuthorityInTransaction(database, authorityRef) {
+  assertId("origin authorityRef", authorityRef);
+  const row = database.prepare(
+    "SELECT record_json,record_digest FROM genesis_origin_authorities WHERE authority_ref=?",
+  ).get(authorityRef);
+  if (row === undefined) {
+    throw new GenesisConflictError(`Genesis origin authority ${authorityRef} was not found`);
+  }
+  const record = normalizeGenesisOriginAuthority(
+    parseRecord(`Genesis origin authority ${authorityRef}`, row.record_json),
+  );
+  const recordDigest = genesisOriginAuthorityDigest(record);
+  if (recordDigest !== row.record_digest || canonicalJson(record) !== row.record_json) {
+    throw new IntegrityError(`Genesis origin authority ${authorityRef} failed canonical/digest verification`);
+  }
+  return { record, recordDigest };
+}
+
+function assertBirthOriginWitnessesInTransaction(database, manifest, originFixtureCandidate) {
+  const sourceDerived = SOURCE_DERIVED_ORIGIN_MODES.includes(manifest.originMode);
+  if (!sourceDerived) {
+    if (originFixtureCandidate !== null && originFixtureCandidate !== undefined) {
+      throw new GenesisConflictError(`${manifest.originMode} birth cannot carry a source-derived origin fixture`);
+    }
+    if (manifest.sourceBundleRefs.length !== 0) {
+      throw new GenesisConflictError(`${manifest.originMode} birth cannot publish sourceBundleRefs`);
+    }
+    return null;
+  }
+
+  if (originFixtureCandidate === null || originFixtureCandidate === undefined) {
+    throw new GenesisConflictError(`${manifest.originMode} birth requires a verified originFixture`);
+  }
+  const fixture = normalizeGenesisOriginIntegrityFixture(originFixtureCandidate);
+  if (fixture.threadId !== manifest.threadId) {
+    throw new GenesisConflictError("originFixture/thread identity mismatch");
+  }
+  if (fixture.originKind !== manifest.originMode) {
+    throw new GenesisConflictError("originFixture/originMode mismatch");
+  }
+
+  if (fixture.originKind === "thread_parent") {
+    if (manifest.sourceBundleRefs.length !== 0) {
+      throw new GenesisConflictError("thread-parent birth cannot publish sourceBundleRefs");
+    }
+    assertExactReferenceList(
+      "manifest.parentOrAncestorRefs",
+      manifest.parentOrAncestorRefs,
+      fixture.threadParent.parentThreadRefs,
+    );
+    for (const parentThreadRef of fixture.threadParent.parentThreadRefs) {
+      canonicalThreadEventsInTransaction(database, parentThreadRef);
+    }
+    return fixture;
+  }
+
+  if (fixture.originKind === "echo" || fixture.originKind === "homage") {
+    if (manifest.parentOrAncestorRefs.length !== 0) {
+      throw new GenesisConflictError(`${fixture.originKind} birth cannot publish parentOrAncestorRefs`);
+    }
+    const authorityRef = fixture.originKind === "echo"
+      ? fixture.sourceBundle.consentAuthorityRef
+      : fixture.sourceBundle.subjectStatusAttestationRef;
+    assertExactReferenceList("manifest.sourceBundleRefs", manifest.sourceBundleRefs, [authorityRef]);
+    const resolved = originAuthorityInTransaction(database, authorityRef);
+    const expectedKind = fixture.originKind === "echo"
+      ? "living_source_consent"
+      : "subject_status_attestation";
+    if (resolved.record.authorityKind !== expectedKind) {
+      throw new GenesisConflictError(`${fixture.originKind} authority ${authorityRef} has the wrong authority kind`);
+    }
+    if (resolved.record.sourcePartyId !== fixture.sourceBundle.sourcePartyId) {
+      throw new GenesisConflictError(`${fixture.originKind} authority ${authorityRef} belongs to another source party`);
+    }
+    if (resolved.record.subjectStatus !== fixture.sourceBundle.subjectStatus) {
+      throw new GenesisConflictError(`${fixture.originKind} authority ${authorityRef} does not attest the fixture subject status`);
+    }
+    return fixture;
+  }
+
+  if (fixture.originKind === "fork") {
+    if (manifest.sourceBundleRefs.length !== 0) {
+      throw new GenesisConflictError("fork birth cannot publish sourceBundleRefs");
+    }
+    assertExactReferenceList(
+      "manifest.parentOrAncestorRefs",
+      manifest.parentOrAncestorRefs,
+      [fixture.fork.sourceThreadRef],
+    );
+    const events = canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef);
+    const divergenceEvent = events.find((event) => event.sequence === fixture.fork.divergenceSequence);
+    if (divergenceEvent === undefined) {
+      throw new GenesisConflictError(
+        `fork source Thread has no event at divergence sequence ${fixture.fork.divergenceSequence}`,
+      );
+    }
+    if (divergenceEvent.eventId !== fixture.fork.divergenceEventRef) {
+      throw new GenesisConflictError("fork divergenceEventRef does not match canonical source chronology");
+    }
+    const canonicalPrefix = events
+      .filter((event) => event.sequence <= fixture.fork.divergenceSequence)
+      .map((event) => event.eventId);
+    assertExactReferenceList(
+      "originFixture.fork.inheritedHistoryEventRefs",
+      fixture.fork.inheritedHistoryEventRefs,
+      canonicalPrefix,
+    );
+    return fixture;
+  }
+
+  throw new GenesisConflictError(`unsupported source-derived origin mode ${manifest.originMode}`);
 }
 
 function normalizeBirthEpisodes(candidates, manifest) {
@@ -326,6 +522,7 @@ export class GenesisStore {
       thread: threadCandidate,
       episodes: episodeCandidates = [],
       memories: memoryCandidates = [],
+      originFixture: originFixtureCandidate = null,
     },
     { failAfterSeedForTest = false, failAfterFirstMemoryForTest = false } = {},
   ) {
@@ -423,6 +620,7 @@ export class GenesisStore {
 
     try {
       this.#database.exec("BEGIN IMMEDIATE");
+      assertBirthOriginWitnessesInTransaction(this.#database, manifest, originFixtureCandidate);
       this.#database.prepare(`
         INSERT INTO threads(
           thread_id,version,status,state_json,state_hash,last_event_id,created_at,updated_at
