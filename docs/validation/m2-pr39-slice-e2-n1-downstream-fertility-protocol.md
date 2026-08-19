@@ -26,12 +26,14 @@ This is a **diagnostic of experiential fertility**, not an admission gate and no
 Use exactly the completed development artifact:
 
 ```text
-fibre-m2-pr39-slice-e2-a2b-v2.json
+fibre-m2-pr39-slice-e2-a2b-v3.json
 arm: A2b_plausibility_surface_seeded_contingency
 worlds: E2-D1, E2-D2
 lives/world: 3
 episodes/life: 10
 ```
+
+The earlier `a2b-v1` and `a2b-v2` artifacts are failed/burned continuation evidence and are not valid N1 sources. The completed v3 artifact preserves their already-burned completed-life and frozen-schedule evidence rather than rerolling it.
 
 The source artifact is development-only and burned for final-cohort use.
 
