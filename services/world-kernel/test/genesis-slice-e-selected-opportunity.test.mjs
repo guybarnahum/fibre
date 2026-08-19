@@ -185,3 +185,71 @@ test("A2 form repair preserves an invalid encounter until authoritative validati
   assert.equal(retrySerialized.includes(invalid.intellectualEncounter.subjectLabel), false);
   assert.deepEqual(calls[2].input.selectedOpportunity, selectedOpportunity);
 });
+
+test("selected present-required structure retry receives only its frozen counterpart contract", async () => {
+  const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
+  const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[1]);
+  const item = plan.find(({ offeredEntries }) => offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_drawing_or_making_seen"));
+  assert.ok(item, "frozen E2-D1 schedule must offer drawing_or_making_seen");
+  const input = buildRichLifePassAInput({
+    originMode: "de_novo",
+    worldSpec: worldFixture.worldSpec,
+    subject: worldFixture.subject,
+    developmentalWindow: item.developmentalWindow,
+    chronologyEndsAt: item.developmentalWindow.endAt,
+    initialRoster: worldFixture.initialRoster,
+    priorEpisodes: [],
+    previouslyIntroducedParticipants: [],
+    eventStructurePoolV2: GENESIS_EVENT_STRUCTURE_POOL_V2,
+    offeredEntries: item.offeredEntries,
+  });
+  const selectedOpportunity = Object.freeze({ selectionKind: "offered_structure", structureRef: "ges_v2_drawing_or_making_seen" });
+  const occurredAt = new Date(Date.parse(item.developmentalWindow.startAt) + (7 * 24 * 60 * 60 * 1000)).toISOString();
+  const caregiver = worldFixture.initialRoster.find((participant) => participant.factualRoles.includes("caregiver"));
+  assert.ok(caregiver);
+  const invalid = {
+    episodeId: "episode_e2_selected_drawing_no_counterpart",
+    occurredAt,
+    ageAtEvent: ageAt(worldFixture.subject.bornAt, occurredAt),
+    placeRef: worldFixture.worldSpec.places[0].placeId,
+    participantRefs: [worldFixture.subject.provisionalThreadId],
+    observableAction: "The subject leaves an unfinished drawing on the table and looks over one penciled corner.",
+    structureRef: selectedOpportunity.structureRef,
+    introducedParticipants: [],
+    intellectualEncounter: null,
+  };
+  const valid = {
+    ...structuredClone(invalid),
+    episodeId: "episode_e2_selected_drawing_with_counterpart",
+    participantRefs: [worldFixture.subject.provisionalThreadId, caregiver.participantId],
+    observableAction: "A caregiver notices the unfinished drawing and points to one line that stops short of the drawn doorway.",
+  };
+  const calls = [];
+  let index = 0;
+  const outputs = [{ episode: invalid }, { episode: valid }];
+  const adapter = {
+    async invoke(request) {
+      calls.push(structuredClone(request));
+      return { output: outputs[index++], provenance: { provider: "fixture", modelId: "selected-structure-retry-fixture" } };
+    },
+  };
+  const result = await generateRichPassAEpisode({
+    adapter,
+    input,
+    selectedOpportunity,
+    clientRequestId: "slice-e-selected-structure-participation",
+  });
+  assert.equal(result.recordRetries.length, 1);
+  assert.equal(result.recordRetries[0].failedGate, "pass_a_structure_participation");
+  assert.equal(result.episode.episodeId, valid.episodeId);
+  assert.deepEqual(Object.keys(calls[1].input).sort(), ["failedConstraint", "failedGate", "passAInput", "selectedOpportunity"]);
+  assert.deepEqual(calls[1].input.failedConstraint, {
+    rule: "The frozen selected opportunity has counterpartMode=present_required. At least one allowed counterpart must actually participate in this episode.",
+    counterpartMode: "present_required",
+    participatingRoles: ["peer", "caregiver", "teacher"],
+    sameEpisodeIntroductionAllowed: true,
+  });
+  const retrySerialized = JSON.stringify(calls[1].input);
+  assert.equal(retrySerialized.includes(invalid.episodeId), false);
+  assert.equal(retrySerialized.includes(invalid.observableAction), false);
+});
