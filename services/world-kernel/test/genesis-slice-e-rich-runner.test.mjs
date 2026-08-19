@@ -4,7 +4,11 @@ import test from "node:test";
 import { GENESIS_EVENT_STRUCTURE_POOL_V2, sampleEventStructuresV2 } from "../src/genesis-event-structure-pool-v2.mjs";
 import { buildRichLifePassAInput } from "../src/genesis-rich-life-domain.mjs";
 import { GENESIS_RICH_PASS_A_RESPONSE_SCHEMA } from "../src/genesis-rich-life-episode.mjs";
-import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
+import {
+  GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
+  GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES,
+  generateRichPassAEpisode,
+} from "../src/genesis-rich-pass-a-runner.mjs";
 
 function input() {
   const developmentalWindow = {
@@ -108,12 +112,13 @@ test("rich runner keeps lineage out of cognition and admits a structured intelle
   }
 });
 
-test("rich runner record repair preserves encounter facts while repairing observable form", async () => {
+test("rich runner repair can author only replacement observableAction while Fibre preserves every other fact", async () => {
   const calls = [];
+  const initial = episode("The student learned that science would always guide every future decision after opening the astronomy book.");
   const result = await generateRichPassAEpisode({
     adapter: adapter([
-      { episode: episode("The student learned that science would always guide every future decision after opening the astronomy book.") },
-      { episode: episode("The student opens the astronomy book, compares two diagrams, and points to one difference while the teacher stands nearby.") },
+      { episode: initial },
+      { observableAction: "The student opens the astronomy book, compares two diagrams, and points to one difference while the teacher stands nearby." },
     ], calls),
     input: input(),
     clientRequestId: "slice-e-rich-runner-repair",
@@ -121,25 +126,48 @@ test("rich runner record repair preserves encounter facts while repairing observ
   assert.equal(result.repairs.length, 1);
   assert.equal(result.repairs[0].failedGate, "pass_a_interiority_form");
   assert.equal(result.episode.intellectualEncounter.accessMode, "institution_mediated");
+  assert.equal(result.episode.episodeId, initial.episodeId);
+  assert.deepEqual(result.episode.participantRefs, initial.participantRefs);
   assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].responseSchema, GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA);
+  assert.deepEqual(Object.keys(calls[1].responseSchema.properties), ["observableAction"]);
 });
 
-test("rich runner rejects repair that changes the intellectual encounter instead of selecting a nicer life", async () => {
+test("rich runner bounds repair asks well below the authoritative byte ceiling", async () => {
+  const calls = [];
+  const overlong = "The student checks one shelf label against the catalog. ".repeat(30);
+  assert.ok(Buffer.byteLength(overlong, "utf8") > 1200);
+  const result = await generateRichPassAEpisode({
+    adapter: adapter([
+      { episode: episode(overlong) },
+      { observableAction: "The student checks one shelf label against the catalog and asks the teacher to confirm the call number." },
+    ], calls),
+    input: input(),
+    clientRequestId: "slice-e-rich-runner-byte-repair",
+  });
+  assert.equal(result.repairs.length, 1);
+  assert.equal(result.repairs[0].failedGate, "pass_a_observable_action_bounds");
+  assert.equal(result.repairs[0].failedConstraint.maxObservableActionUtf8Bytes, 1200);
+  assert.equal(result.repairs[0].failedConstraint.targetRepairUtf8Bytes, GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES);
+  assert.equal(GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES, 600);
+  assert.ok(result.repairs[0].failedConstraint.rejectedObservableActionUtf8Bytes > 1200);
+  assert.ok(Buffer.byteLength(result.episode.observableAction, "utf8") <= 1200);
+});
+
+test("rich runner rejects repair output that tries to reauthor fields outside observableAction", async () => {
   const calls = [];
   await assert.rejects(
     () => generateRichPassAEpisode({
       adapter: adapter([
         { episode: episode("The student learned that books would always matter after opening the astronomy book.") },
-        { episode: episode("The student opens an astronomy book and compares two diagrams.", {
-          intellectualEncounter: {
-            ...episode("x").intellectualEncounter,
-            accessMode: "self_directed",
-          },
-        }) },
+        {
+          observableAction: "The student opens the astronomy book and compares two diagrams.",
+          intellectualEncounter: { accessMode: "self_directed" },
+        },
       ], calls),
       input: input(),
       clientRequestId: "slice-e-rich-runner-bad-repair",
     }),
-    /changed event or intellectual-encounter facts/,
+    /unsupported field set|not allowed/,
   );
 });
