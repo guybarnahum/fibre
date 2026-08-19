@@ -13,12 +13,14 @@ function ageAt(bornAt, occurredAt) {
   return (Date.parse(occurredAt) - Date.parse(bornAt)) / YEAR_MS;
 }
 
-test("selected peer opportunity cannot escape to an easier structure and may be realized by introducing a legal peer", async () => {
+test("selected peer opportunity cannot escape to an easier offered structure and may be realized by introducing a legal peer", async () => {
   const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
   const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[0]);
-  const item = plan.find(({ offeredEntries }) =>
-    offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_peer_joke_or_reference_missed"));
-  assert.ok(item, "frozen E2-D1 schedule must expose peer_joke_or_reference_missed");
+  const item = plan.find(({ offeredEntries }) => {
+    const ids = new Set(offeredEntries.map(({ structure }) => structure.structureId));
+    return ids.has("ges_v2_peer_joke_or_reference_missed") && ids.has("ges_v2_adult_finishes_task_unasked");
+  });
+  assert.ok(item, "frozen E2-D1 schedule must expose both peer-joke and easier caregiver alternatives");
 
   const input = buildRichLifePassAInput({
     originMode: "de_novo",
@@ -44,8 +46,8 @@ test("selected peer opportunity cannot escape to an easier structure and may be 
     ageAtEvent: ageAt(worldFixture.subject.bornAt, occurredAt),
     placeRef: worldFixture.worldSpec.places[0].placeId,
     participantRefs: [worldFixture.subject.provisionalThreadId, worldFixture.initialRoster[1].participantId],
-    observableAction: "The subject helps a caregiver sort a small stack of household papers at the table.",
-    structureRef: "ges_v2_small_help_request",
+    observableAction: "A caregiver takes over a small unfinished household task while the subject stands beside the table.",
+    structureRef: "ges_v2_adult_finishes_task_unasked",
     introducedParticipants: [],
     intellectualEncounter: null,
   };
