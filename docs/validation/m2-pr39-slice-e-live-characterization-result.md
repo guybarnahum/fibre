@@ -94,22 +94,44 @@ Accordingly the result is a substantive negative characterization:
 
 Do not reinterpret this as a schema failure: the schema/provider/authority path for intellectual encounters is mechanically exercised by deterministic tests. The live finding is about generator behavior and life composition.
 
-## Richness / monoculture finding
+## Rich-life finding
 
-The life is not generic in the sense of disconnected interchangeable vignettes. It has persistent household details and genuine episode-to-episode continuity. But it is narrow in a different way:
+Fibre's canonical [`../foundations/rich-life.md`](../foundations/rich-life.md) definition treats richness as **experiential fertility for later individuality**, not as biography length, event count, scenic variety, drama, or a quota of intellectual encounters.
+
+Against that stronger definition, this run is a **substantive Slice-E miss**, not merely an aesthetically weak sample.
+
+The life is not generic in the sense of disconnected interchangeable vignettes. It has persistent household details and genuine episode-to-episode continuity. But it is narrow in a way that deprives later memory and meaning of sufficiently differentiated raw material:
 
 - 90% of episodes occur at home;
 - the same caregiver appears in 100%;
 - the sibling appears in 90%;
-- 50% of episodes use one of only two repeated early structures, and the final 30% all use `family_decision_with_future_effect`;
+- only five distinct structures instantiate;
+- the final 30% all use `family_decision_with_future_effect`;
 - the broader public world is almost unused;
 - no new participant is introduced;
-- no intellectual source is encountered;
+- no intellectual source is encountered despite sustained availability;
 - one mundane motif (drawing/pencils) mutates into another mundane motif (chips/budget) and becomes increasingly narratively load-bearing.
 
-The result therefore shows **narrative inertia / local monoculture** rather than the intended broad developmental richness. In particular, the final art-club decision is over-neat: a potentially expanding adolescent opportunity is folded back into the established chips/budget motif instead of widening the life.
+The final art-club decision is especially diagnostic: a potentially widening adolescent opportunity is absorbed into the established chips/budget motif rather than opening new experiential territory.
 
-This is not an admission failure because Slice E deliberately has no richness threshold. Rejecting or regenerating this life because it is narrow would destroy the diagnostic.
+This does **not** mean that a rich Thread must read books, leave home a fixed number of times, meet a quota of people, experience trauma, or satisfy a diversity checklist. A quiet home-centered life can be deeply formative. The defect is that this generator appears to let prior episode prose dominate later history so strongly that the larger world stops exerting enough causal pressure.
+
+The relevant failure pattern is:
+
+```text
+first salient episode
+    -> narrative motif
+    -> repeated elaboration
+    -> increasingly self-referential chronology
+```
+
+rather than:
+
+```text
+world + recurring people + institutions + chance + new access + prior consequences
+    -> particular lived experiences
+    -> selective memory / meaning later decides what mattered
+```
 
 ## What did work
 
@@ -125,10 +147,38 @@ The negative behavioral result should not erase the architecture that held:
 - current developmental-range and role constraints no longer hide impossible requirements from cognition;
 - weak/ugly live output survives as evidence instead of being quality-gated away.
 
-## Interpretation and next step
+## Required E2 follow-up before Gate F/G
 
-Do **not** tune EventStructurePool-v2, prior-history visibility, prompts, selection weights, or the burned world against this sample before the E+F review. The run has already served its development purpose and is permanently burned.
+Do **not** regenerate `slice-e-dev-burned-001` to obtain a prettier life. The completed artifact remains the canonical negative development evidence for this compiler state.
 
-Slice E has no independent blocking gate. Proceed to Slice F origin/source integrity with this result carried forward as an explicit known risk. Gate F reviews E+F together and may legitimately return `HOLD` if the observed narrative inertia and zero intellectual formation make the combined claim inadequate for G.
+Instead, Slice E requires a bounded **E2 narrative-inertia / experiential-fertility correction** before the combined E+F blocking review and before G can freeze a final cohort.
 
-If Gate F later requires an E redesign, the redesign must be motivated by this recorded negative evidence and verified on a fresh development world/seed, not by regenerating this burned sample until it looks richer.
+E2 must diagnose and change the mechanism, not prescribe the desired biography. In particular:
+
+- prior history should constrain factual continuity without becoming a literary theme/template for the next episode;
+- the current world, developmental access, relationships, institutions, and affordances must retain enough causal influence to create new lived material;
+- Pass A must remain blind to future personality, future benchmark, remembered meaning, genome, and any Fibre-authored declaration that an event is formative;
+- no minimum intellectual-encounter count, place count, participant count, adversity count, or structure-diversity quota becomes an admission rule;
+- continuity remains legitimate, including recurring people, places, rituals, objects, and unresolved consequences;
+- characterization must make narrative inertia and experiential reach visible rather than silently selecting away narrow lives.
+
+Verify E2 on **fresh throwaway development worlds/seeds**, burned on first use. Reuse the same broad characterization dimensions, expanded to include world/place reach, participant continuity versus cast collapse, new-vs-recurring participants, structural repetition, recurring-object/motif concentration, world-emergent episodes, intellectual/source encounters, and whether later episodes merely elaborate earlier motifs.
+
+A weak fresh result remains evidence. Do not reroll it for quality. If multiple fresh worlds continue collapsing into local narrative monoculture, treat that as a Genesis architecture problem rather than a sampling inconvenience.
+
+## Interpretation and sequencing
+
+The current E result therefore changes the immediate #39 critical path:
+
+```text
+E burned characterization -> substantive rich-life miss
+    -> E2 mechanism diagnosis/correction
+    -> fresh burned E development characterization
+    -> finish F durable origin/source integrity
+    -> combined E+F Gate F
+    -> CLEAR before G
+```
+
+Existing Slice-F work already landed may remain; it should not be discarded. But E2 is now a prerequisite for claiming the combined E+F package is ready for hostile review, and G remains blocked.
+
+The target is not a prettier synthetic biography. The target is a prior-life mechanism capable of producing **non-interchangeable lived causes** from which later memory, meaning, relationship, commitment, and judgment can plausibly make this Thread different from other Threads.
