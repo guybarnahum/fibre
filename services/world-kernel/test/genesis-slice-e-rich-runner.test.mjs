@@ -3,10 +3,8 @@ import test from "node:test";
 
 import { GENESIS_EVENT_STRUCTURE_POOL_V2, sampleEventStructuresV2 } from "../src/genesis-event-structure-pool-v2.mjs";
 import { buildRichLifePassAInput } from "../src/genesis-rich-life-domain.mjs";
-import {
-  GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
-  generateRichPassAEpisode,
-} from "../src/genesis-rich-pass-a-runner.mjs";
+import { GENESIS_RICH_PASS_A_RESPONSE_SCHEMA } from "../src/genesis-rich-life-episode.mjs";
+import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
 
 function input() {
   const developmentalWindow = {
