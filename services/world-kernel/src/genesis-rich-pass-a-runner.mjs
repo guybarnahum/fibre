@@ -21,6 +21,7 @@ export const GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A
 export const GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES = Math.floor(GENESIS_PASS_A_POLICY.maxObservableActionBytes / 4);
 export const GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS = 80;
 export const GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_WORDS = 40;
+export const GENESIS_RICH_PASS_A_RECORD_RETRY_CONSTRAINT_VERSION = "genesis-rich-pass-a-record-retry-constraint-v2";
 
 export const GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
@@ -200,11 +201,36 @@ function recordRetryable(error) {
   return error instanceof GenesisPassAValidationError && RECORD_RETRYABLE_GATES.has(error.gate);
 }
 
-function recordRetryConstraint(error) {
+function selectedStructureParticipationConstraint(selectedOpportunity, cognitionInput) {
+  if (selectedOpportunity?.selectionKind !== "offered_structure") return null;
+  const structure = cognitionInput.offeredStructures.find(({ structureId }) => structureId === selectedOpportunity.structureRef);
+  if (structure === undefined || !Array.isArray(structure.participatingRoles) || structure.participatingRoles.length === 0) return null;
+  if (structure.counterpartMode === "present_required") {
+    return Object.freeze({
+      rule: "The frozen selected opportunity has counterpartMode=present_required. At least one allowed counterpart must actually participate in this episode.",
+      counterpartMode: "present_required",
+      participatingRoles: Object.freeze([...structure.participatingRoles]),
+      sameEpisodeIntroductionAllowed: true,
+    });
+  }
+  if (structure.counterpartMode === "known_required") {
+    return Object.freeze({
+      rule: "The frozen selected opportunity has counterpartMode=known_required. At least one allowed counterpart must already exist in the factual roster/history; a same-episode introduction does not satisfy this precondition.",
+      counterpartMode: "known_required",
+      participatingRoles: Object.freeze([...structure.participatingRoles]),
+      sameEpisodeIntroductionAllowed: false,
+    });
+  }
+  return null;
+}
+
+function recordRetryConstraint(error, { selectedOpportunity, cognitionInput }) {
   if (!(error instanceof GenesisPassAValidationError)) return null;
-  return error.gate === "pass_a_intellectual_encounter"
-    ? INTELLECTUAL_ENCOUNTER_RETRY_CONSTRAINT
-    : null;
+  if (error.gate === "pass_a_intellectual_encounter") return INTELLECTUAL_ENCOUNTER_RETRY_CONSTRAINT;
+  if (error.gate === "pass_a_structure_participation") {
+    return selectedStructureParticipationConstraint(selectedOpportunity, cognitionInput);
+  }
+  return null;
 }
 
 function repairTargets(repairOrdinal) {
@@ -395,7 +421,10 @@ export async function generateRichPassAEpisode({
 
         const rejectedEpisode = structuredClone(error.record ?? candidate ?? {});
         const recordRetryOrdinal = recordRetries.length + 1;
-        const failedConstraint = recordRetryConstraint(error);
+        const failedConstraint = recordRetryConstraint(error, {
+          selectedOpportunity: normalizedSelectedOpportunity,
+          cognitionInput,
+        });
         const retryInput = normalizedSelectedOpportunity === null
           ? {
             passAInput: cognitionInput,
