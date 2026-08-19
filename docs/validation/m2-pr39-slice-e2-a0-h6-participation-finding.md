@@ -11,6 +11,8 @@ canonical: false
 
 The fresh E2 A0 baseline is **frozen as a failed mechanical baseline**. It must not be rerun after the H6 correction and relabeled as A0.
 
+**Execution amendment:** until the H6 participation arm below is read, this document supersedes the original Phase-A sequence in `m2-pr39-slice-e2-rich-life-development-plan.md`. In particular, A0 is complete as failed evidence and H6-c/A6 wider-offer generation is unavailable under the cleared 8-10 offer contract. The next live arm is the bounded H6 participation correction defined here; H1-H4 remain untouched.
+
 The failure revealed a concrete H6 mechanism before H1-H4 were touched:
 
 > **EventStructurePool v2 described several experiences as self-directed while the rich participation validator mechanically required a listed counterpart to participate. Fibre was therefore rejecting valid independent realizations of affordances it had explicitly authored as independent.**
