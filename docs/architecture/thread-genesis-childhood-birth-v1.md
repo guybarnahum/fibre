@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth-v1
 status: accepted
-last-reviewed: 2026-08-14
+last-reviewed: 2026-08-18
 canonical: true
 ---
 
@@ -22,6 +22,8 @@ The stronger #39 design principle is:
 Genesis is a Fibre-owned birth compiler. Models may propose candidate episodes, memories, meanings and media, but Fibre owns world constraints, provenance, admission, consistency, replay and durable truth classification.
 
 The inherited substrate is [`Symbolic Thread Genome v1`](symbolic-thread-genome-v1.md): an ordered sequence of atomic natural-language dispositions, not a numeric personality vector and not a model of human DNA.
+
+The Fibre-level meaning of a **rich life** is defined by [`../foundations/rich-life.md`](../foundations/rich-life.md). Genesis must apply that foundation as experiential fertility for later individuality, not as biography length, drama, or a quota of formative events.
 
 Canonical implementation plan: [`../validation/m2-pr39-implementation-plan.md`](../validation/m2-pr39-implementation-plan.md).
 
@@ -260,24 +262,53 @@ admiration / rejection / uncertainty / later reinterpretation
 
 This mechanism composes with every origin family and is preferred over Homage when the product goal is simply intellectual influence.
 
-## Rich specificity rather than generic backstory
+## Rich life: formative potential without authored destiny
 
-Genesis should create many specific addressable records rather than one adult persona paragraph.
+Genesis must create more than valid chronology. It must create a prior life with enough **non-interchangeable lived causes** that later memory and meaning have real material from which a distinctive point of view can emerge.
 
-Useful material includes:
+The important word is **potential**. Pass A may generate experiences with developmental consequence, tension, novelty, relationship, practice, failure, achievement, intellectual exposure, responsibility, accident, or ordinary repetition. Pass A may not know which experiences will become formative or what personality they should produce.
 
-- family rituals;
-- private embarrassments;
-- mundane mistakes;
-- conflicting loyalties;
-- jokes that landed badly;
-- discoveries that were exciting and isolating;
-- small acts of care mixed with resentment;
-- relationship-specific incidents;
-- books first admired and later rejected;
+```text
+particular experience
+    != remembered experience
+    != durable meaning
+    != character claim
+    != future behavior rule
+```
+
+Useful raw material can include:
+
+- family rituals and recurring practices;
+- private embarrassments and mundane mistakes;
+- conflicting loyalties and small responsibilities;
+- jokes that landed badly or became shared language;
+- discoveries that were exciting, isolating, confusing, or quickly forgotten;
+- acts of care mixed with resentment;
+- relationship-specific incidents, repair, distance, trust and rupture;
+- books, arguments, art, craft, teachers and ideas actually encountered;
+- institutions that opened or closed opportunities;
+- economic constraints and tradeoffs;
+- public successes and failures;
+- choices that had consequences without becoming moral lessons;
 - events that never became important.
 
-The target is **life texture**, not maximum biography length.
+The target is **experiential fertility**, not maximum biography length.
+
+### Continuity without narrative monoculture
+
+Prior history must remain available enough to preserve factual continuity, recurring relationships and real consequences. But prior episode prose must not become a literary template that causes every later episode to elaborate the first salient motif.
+
+> **The past should constrain the future without monopolizing it.**
+
+A rich prior life should remain open to causal pressure from the larger world: new people, institutions, opportunities, accidents, intellectual material, changing access, failures, obligations and consequences. Recurring motifs are legitimate when they emerge from life. Generator inertia is not.
+
+This distinction is especially important for sequential Pass A. A coherent ten-event history can still fail the rich-life requirement if nine later events merely decorate the first event's theme while most of the WorldSpec never reaches lived history.
+
+### No richness quota
+
+Do not solve richness by requiring a fixed number of books, places, peers, intellectual encounters, adversities, achievements, or structure categories. Do not manufacture trauma or drama to create depth. Do not reject a quiet or home-centered life merely because another life would look more varied.
+
+Development diagnostics may characterize world reach, participant continuity, structure repetition, world-emergent episodes, intellectual/source encounters, motif concentration, ignored opportunities and later memory/meaning consequences. Those measures expose generator behavior; they do not declare individual events formative in advance.
 
 By default Genesis must not invent profession, marriage, parenthood, institutional authority, major accomplishments or mature self-authored values merely to make a Thread interesting.
 
@@ -364,7 +395,7 @@ Bounded fixtures exercise Thread-parent, consenting-human Echo, deceased/fiction
 #39 is complete when Fibre can demonstrate:
 
 - deterministic/replayable Genesis manifest and WorldSpec;
-- rich de-novo and synthetic-lineage prior lives;
+- rich de-novo and synthetic-lineage prior lives with experiential fertility rather than merely valid chronology;
 - durable ordered textual genome with stable locus identity and exact provenance;
 - deterministic textual crossover and explicit mutation;
 - genome-blind historical formation;
