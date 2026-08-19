@@ -16,14 +16,14 @@ function ratingsFor(request) {
   }));
 }
 
-test("H6 probe is blind to generated life and produces one complete rating set per world", async () => {
+test("H6 probe hides generated life and world experiment identity from the rater", async () => {
   const requests = [];
   const adapter = {
     async invoke(request) {
       requests.push(structuredClone(request));
       return {
         output: {
-          worldSpecId: request.input.worldSpec.worldSpecId,
+          probeWorldId: request.input.probeWorldId,
           ratings: ratingsFor(request),
         },
         provenance: { provider: "test", model: "test-rater" },
@@ -31,11 +31,7 @@ test("H6 probe is blind to generated life and produces one complete rating set p
     },
   };
 
-  const artifact = await runE2H6Probe({
-    adapter,
-    provider: "test",
-    model: "test-rater",
-  });
+  const artifact = await runE2H6Probe({ adapter, provider: "test", model: "test-rater" });
 
   assert.equal(requests.length, 3);
   assert.equal(artifact.results.length, 3);
@@ -47,12 +43,26 @@ test("H6 probe is blind to generated life and produces one complete rating set p
     assert.deepEqual(Object.keys(request.input).sort(), [
       "developmentalSpan",
       "probeVersion",
+      "probeWorldId",
       "structures",
-      "worldSpec",
+      "world",
     ]);
+    assert.match(request.input.probeWorldId, /^probe_world_0[1-3]$/);
     const serialized = JSON.stringify(request.input);
-    for (const forbidden of ["episodes", "priorEpisodes", "genome", "memory", "rememberedMeaning", "benchmark", "seed"]) {
-      assert.equal(serialized.includes(`\"${forbidden}\"`), false);
+    for (const forbidden of [
+      "episodes",
+      "priorEpisodes",
+      "genome",
+      "rememberedMeaning",
+      "benchmark",
+      "seed",
+      "worldSpecId",
+      "worldAuthorship",
+      "burned",
+      "slice_e2",
+      "slice_e_dev",
+    ]) {
+      assert.equal(serialized.includes(forbidden), false);
     }
     assert.equal(request.input.structures.length, GENESIS_EVENT_STRUCTURE_POOL_V2.length);
   }
