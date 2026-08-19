@@ -11,6 +11,8 @@ canonical: true
 
 **Thread** — A persistent artificial person whose identity, history, relationships, resources, and character evolve through time.
 
+**Rich life** — A life containing particular, non-interchangeable lived experiences with enough formative potential that selective memory, interpretation, relationship, practice, commitment, and accumulated consequence can later produce a distinctive point of view. Richness is experiential fertility, not biography length, event count, drama, intellectualism, trauma, or a diversity quota; no individual experience is pre-labeled as formative merely to make a Thread distinctive.
+
 **Frozen Thread** — A persistent Thread with no active model execution.
 
 **Thaw** — Reconstruct relevant Thread context and invoke temporary cognition in response to an event or intention.
