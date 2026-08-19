@@ -174,9 +174,14 @@ test("A2 form repair preserves an invalid encounter until authoritative validati
   assert.equal(result.episode.structureRef, selectedOpportunity.structureRef);
   assert.equal(result.episode.introducedParticipants[0].roleRef, "peer");
   assert.equal(result.episode.intellectualEncounter, undefined);
-  assert.deepEqual(Object.keys(calls[2].input).sort(), ["failedGate", "passAInput", "selectedOpportunity"]);
+  assert.deepEqual(Object.keys(calls[2].input).sort(), ["failedConstraint", "failedGate", "passAInput", "selectedOpportunity"]);
+  assert.equal(calls[2].input.failedGate, "pass_a_intellectual_encounter");
+  assert.deepEqual(calls[2].input.failedConstraint, {
+    rule: "intellectualEncounter.subjectPersonRef identifies the encountered subject only when subjectKind=person; otherwise subjectPersonRef must be null. A person who merely mediates access to a text, path, practice, idea, event, artwork, community, or other non-person subject belongs in episode.participantRefs instead.",
+  });
   const retrySerialized = JSON.stringify(calls[2].input);
   assert.equal(retrySerialized.includes(invalid.episodeId), false);
   assert.equal(retrySerialized.includes(overlongAction), false);
+  assert.equal(retrySerialized.includes(invalid.intellectualEncounter.subjectLabel), false);
   assert.deepEqual(calls[2].input.selectedOpportunity, selectedOpportunity);
 });
