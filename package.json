@@ -26,6 +26,7 @@
     "genesis:pass-a-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-pass-a-dev.mjs",
     "genesis:rich-life-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-dev.mjs",
     "genesis:e2-h6-probe": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-h6-probe.mjs",
+    "genesis:e2-a0": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis-rich-life-e2-a0.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/semantic-guardian-v4-counterfactual-dev.mjs",
     "guardian:whole-person": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/whole-person-benchmark-v4.mjs",
