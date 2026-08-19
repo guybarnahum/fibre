@@ -17,6 +17,12 @@ import {
   E2_N1_PASS_B_FORM_PROFILE,
   E2_N1_PASS_B_MAX_MODEL_CHARACTERS,
 } from "./genesis-rich-life-e2-n1-bounded-driver.mjs";
+import {
+  E2_N1_NOT_REMEMBERED_RESIDUE_FAILURE,
+  E2_N1_NOT_REMEMBERED_RESIDUE_POLICY,
+  canonicalizeN1NotRememberedResidue,
+  isCanonicalizableN1NotRememberedResidue,
+} from "./genesis-rich-life-e2-n1-residue-driver.mjs";
 import { E2_DIAGNOSTIC_WORLDS } from "./genesis-rich-life-e2-worlds.mjs";
 
 function fixtureLife(worldFixture, runOrdinal = 1) {
@@ -134,10 +140,45 @@ test("N1 exact-binomial development threshold is frozen at 13 of 18", () => {
   assert.equal(exactBinomialTailHalf(18, 13), 0.048126220703125);
   assert.equal(exactBinomialTailHalf(18, 14), 0.01544189453125);
 
-  // The v2 execution amendment changes form only, before any scored N1 trial.
+  // The v2 execution amendment changes form only, before the first scored N1-v2 trial.
   assert.equal(E2_N1_BOUNDED_EVIDENCE_VERSION, "pr39-slice-e2-n1-v2");
   assert.equal(E2_N1_PASS_B_FORM_PROFILE, "n1-pass-b-bounded-output-v1");
   assert.equal(E2_N1_PASS_B_MAX_MODEL_CHARACTERS, 600);
   assert.equal(E2_N1_BOUNDED_PASS_B_RESPONSE_SCHEMA.properties.rememberedContent.maxLength, 600);
   assert.match(E2_N1_BOUNDED_PASS_B_PROMPT, /at most 600 characters total/);
+
+  // After trial 1 was scored, a separate mechanical amendment may only erase
+  // forbidden residue from an otherwise-valid not_remembered decision.
+  assert.equal(E2_N1_NOT_REMEMBERED_RESIDUE_POLICY, "n1-not-remembered-residue-canonicalization-v1");
+  const failed = {
+    evidenceVersion: E2_N1_BOUNDED_EVIDENCE_VERSION,
+    status: "failed",
+    failure: { message: E2_N1_NOT_REMEMBERED_RESIDUE_FAILURE },
+    inFlight: {
+      trialOrdinal: 2,
+      passBRaw: {
+        output: {
+          outcome: "not_remembered",
+          episodeRefs: [],
+          rememberedContent: null,
+          uncertainty: ["explanatory residue"],
+        },
+      },
+    },
+    modelEvents: [],
+  };
+  assert.equal(isCanonicalizableN1NotRememberedResidue(failed), true);
+  const canonicalized = canonicalizeN1NotRememberedResidue(failed);
+  assert.deepEqual(canonicalized.inFlight.passBRaw.output, {
+    outcome: "not_remembered",
+    episodeRefs: [],
+    rememberedContent: null,
+    uncertainty: [],
+  });
+  assert.equal(canonicalized.modelEvents.at(-1).modelCallUsed, false);
+  assert.equal(canonicalized.modelEvents.at(-1).semanticDecisionChanged, false);
+
+  const wrongRefs = structuredClone(failed);
+  wrongRefs.inFlight.passBRaw.output.episodeRefs = ["n1_ep_01"];
+  assert.equal(isCanonicalizableN1NotRememberedResidue(wrongRefs), false);
 });
