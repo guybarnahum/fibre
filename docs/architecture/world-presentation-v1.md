@@ -33,18 +33,23 @@ A `WorldPresentation`:
 - is not evidence for Thread identity, memory, meaning, character, needs, beliefs or future behavior;
 - may not infer personality, ideology, profession, destiny, formative significance or benchmark-relevant behavior from geography, culture or material conditions.
 
-If presentation text conflicts with the authoritative WorldSpec, the WorldSpec wins and the presentation must be corrected.
+If presentation conflicts with the authoritative WorldSpec, the WorldSpec wins and the presentation must be corrected.
 
 ## V1 record
 
 V1 is **one presentation record per World**, stored independently so a World owns its own human-facing copy, visual grounding and asset references.
 
+For a presentation derived from a frozen WorldSpec, exact source binding is required:
+
 ```text
 contractVersion
+presentationRevision
 scope
 authority = derived_non_cognitive_presentation
 derivationPolicy
 worldSpecRef
+sourceWorldSpecPath
+worldSpecDigest
 displayName
 shortDescription
 longDescription
@@ -63,11 +68,19 @@ visualProfile {
   technologyAndInfrastructure
   publicInstitutions
   visualAnchors[]
+  temporalLayers {
+    <period>...
+    continuities
+  }
   avoid[]
 }
 assetShotIdeas[]
 assetRefs[]
 ```
+
+`presentationRevision` identifies the presentation derivation/version. `sourceWorldSpecPath` is an artifact locator where applicable; it is not production domain authority. `worldSpecDigest` binds the presentation to the exact factual WorldSpec from which it was derived.
+
+A presentation generated before a WorldSpec is frozen may omit the final digest only while explicitly marked draft/provisional; it must not be treated as current public presentation authority after a frozen source exists.
 
 Presentation records are not cohort bundles. A catalog/API may aggregate multiple `WorldPresentation` records at read time, but the durable artifact/persistence unit is the individual World.
 
@@ -77,7 +90,7 @@ Visual metadata should be rich enough that an image/3D/scene-generation layer do
 
 A good `visualProfile` answers:
 
-- what kind of geography/climate is visible;
+- what geography/climate is visible;
 - what buildings and public infrastructure are ordinary;
 - what streets, transit and public spaces look like;
 - what household/institution interiors plausibly contain;
@@ -85,12 +98,31 @@ A good `visualProfile` answers:
 - what vegetation/landscape is appropriate;
 - what mobility modes and everyday vehicles are normal;
 - what languages/signage may appear;
-- what clothing/everyday objects fit the time and setting;
+- what clothing/everyday objects fit the setting;
 - what technology/infrastructure level is ordinary;
 - which visual anchors make the World recognizable across assets;
+- what changes across the World's chronology;
+- what remains visually continuous across that chronology;
 - what visual shortcuts/stereotypes must be avoided.
 
 The record should describe **environmental truth**, not write a provider-specific image prompt. Provider/model prompt composition belongs to the asset-generation layer.
+
+## Temporal visual grounding
+
+When a World spans materially different periods, `temporalLayers` should make asset generation time-aware.
+
+For example, a 2004–2026 World may need to distinguish:
+
+```text
+early chronology  feature phones / more analog public information
+middle chronology smartphones and expanding digital access
+late chronology   contemporary digital services and infrastructure
+continuities      geography, institutions, built fabric and ordinary local rhythms that persist
+```
+
+This is presentation metadata about ordinary environmental change. It may not invent a Thread event, memory, formative episode or life outcome.
+
+The asset-generation layer should combine the relevant temporal layer with the requested scene/date rather than treating the latest visual profile as timeless.
 
 ## Asset references
 
@@ -111,6 +143,7 @@ Examples include:
 - home exterior/interior;
 - school/library/community institution;
 - market/transit/public-space scene;
+- seasonal or chronology-specific variants;
 - maps or diagrams;
 - later ambient audio/video/3D scene assets.
 
@@ -140,15 +173,28 @@ Assets               referenced media
 
 This makes it possible to improve presentation while preserving the historical/scientific WorldSpec.
 
+## Supersession and history
+
+A presentation may be superseded when its source WorldSpec is superseded or when presentation quality improves.
+
+Do not silently repoint a presentation that participated in a frozen experiment. Preserve the old record as historical presentation evidence, then create/update the current presentation with a new source binding.
+
+The current presentation's `worldSpecRef` and `worldSpecDigest` must resolve to the same factual World.
+
 ## Slice G
 
-The five #39 G1 Worlds keep their authoritative WorldSpecs under:
+The accepted #39 G1-v2 WorldSpecs live under:
 
 ```text
 artifacts/validation/m2-pr39/g/worlds/
+  world-g1-01-v2.json
+  world-g1-02-v2.json
+  world-g1-03-v2.json
+  world-g1-04-v2.json
+  world-g1-05-v2.json
 ```
 
-Their companion presentation metadata lives one file per World under:
+Their current companion presentations live one file per World under:
 
 ```text
 artifacts/validation/m2-pr39/g/worlds/presentation/
@@ -159,9 +205,15 @@ artifacts/validation/m2-pr39/g/worlds/presentation/
   world-g1-05.presentation.json
 ```
 
-Each is derived from the corresponding already-authored genome-blind G1 world facts and must never be fed back into the Genesis cohort-generation path.
+Each current file is bound to the exact accepted v2 WorldSpec digest and includes 2004–2026 temporal visual grounding.
 
-Because presentation is non-cognitive, adding or improving it does not alter the G1 WorldSpec freeze, familiarity result or world digest. It also must not be used to rescue or regenerate a weak final Thread.
+The superseded generic G1-v1 presentations are preserved under:
+
+```text
+artifacts/validation/m2-pr39/g/worlds/presentation/v1/
+```
+
+Presentation must never be fed back into the Genesis cohort-generation path. Adding or improving presentation does not alter the G1 WorldSpec freeze, familiarity result or world digest and may not be used to rescue/regenerate a weak Thread.
 
 ## Future production persistence
 
@@ -178,6 +230,8 @@ World / WorldSpec facts
 
 Thread cognition never receives WorldPresentation by default.
 ```
+
+In production, a stable World identifier plus a source-version/digest binding should replace Git artifact paths as the durable reference mechanism.
 
 This preserves the core rule:
 
