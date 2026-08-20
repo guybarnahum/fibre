@@ -1,7 +1,7 @@
 ---
 id: architecture-symbolic-thread-genome-v1
 status: accepted
-last-reviewed: 2026-08-15
+last-reviewed: 2026-08-20
 canonical: true
 ---
 
@@ -35,7 +35,7 @@ This distinction is required by the accepted Genesis origin families:
 
 A synthetic ancestor must **not** be minted as a fake live Thread merely to hold a genome.
 
-For a Thread-owned source genome, eligibility requires the exact persisted source owner and a live source Thread. For synthetic-lineage source genomes, Slice B preserves the exact synthetic-ancestor owner; Slice E/birth must bind that owner ID to the admitted #38 biological-parent / `parent_genome_source` lineage evidence before the child becomes live.
+For a Thread-owned source genome, eligibility requires the exact persisted source owner and a live source Thread. For synthetic-lineage source genomes, the exact synthetic-ancestor owner remains non-live and inspectable. Before a synthetic-lineage child becomes live, #39 birth publication binds those exact source-owner IDs to the child manifest and revision-1 #38 `biological_parent` / `parent_genome_source` lineage records.
 
 Genome ownership therefore preserves source identity. It does not by itself fabricate or replace the child’s relationship ledger.
 
@@ -177,9 +177,29 @@ This is a **capability ceiling / instrument check**, not Genesis personhood evid
 - a strong result only establishes that the loci can matter when directly visible;
 - later Slice-H propagation may legitimately be much weaker because Pass A and Pass C are genome-blind and life intervenes.
 
+## Birth binding
+
+The child genome may exist before the child is live. That is intentional: it is a frozen/provisional Genesis input, not proof that a Thread already exists.
+
+When `GenesisManifest.genomeRef` is present, live birth verifies the canonical persisted bundle through the same transaction-level verifier used by `SymbolicGenomeStore`. The referenced genome must belong to the exact child Thread and Genesis.
+
+For `synthetic_lineage`, publication additionally requires:
+
+```text
+manifest.parentOrAncestorRefs
+        == exact ordered genome source-owner IDs
+        == exact synthetic_ancestor parties in #38 parent_genome_source relations
+```
+
+Those relation records are the relationship authority. Genome source ownership is not allowed to silently manufacture family/lineage state by itself.
+
+A birth mismatch fails closed and leaves no live child. The already-persisted immutable genome remains as provisional provenance rather than being destructively deleted or rewritten.
+
+This publication binding does not make genome content visible to Pass A.
+
 ## Implementation ownership
 
-#38 supplies grounded lineage/source references. It does not make genome values causal.
+#38 supplies grounded lineage/source records. It does not make genome values causal.
 
 #39, **Genesis, Childhood & Thread Birth v1**, owns the first implementation of this symbolic-genome contract and must provide:
 
@@ -196,7 +216,8 @@ This is a **capability ceiling / instrument check**, not Genesis personhood evid
 11. restart/replay reconstruction of the exact same genome;
 12. no numeric personality-vector authority;
 13. no demographic or cultural stereotype inference;
-14. no direct generation of a finished adult character or profession from the genome.
+14. no direct generation of a finished adult character or profession from the genome;
+15. live-birth verification that child/genesis/source-owner provenance agrees with admitted #38 lineage before synthetic-lineage publication commits.
 
 #40 may select relevant inherited loci for cognition, but it must preserve exact evidence references and may not inject the entire genome simply because it exists.
 
