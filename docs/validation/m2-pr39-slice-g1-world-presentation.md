@@ -15,15 +15,20 @@ That surface must not become a hidden Genesis-authoring channel.
 
 Canonical presentation contract: [`../architecture/world-presentation-v1.md`](../architecture/world-presentation-v1.md).
 
-## Artifact
+## Artifacts
 
-The G1 companion bundle is:
+G1 uses one presentation artifact per World:
 
 ```text
-artifacts/validation/m2-pr39/g/worlds/presentation/g1-world-presentations-v1.json
+artifacts/validation/m2-pr39/g/worlds/presentation/
+  world-g1-01.presentation.json
+  world-g1-02.presentation.json
+  world-g1-03.presentation.json
+  world-g1-04.presentation.json
+  world-g1-05.presentation.json
 ```
 
-It contains one presentation record for each G1 World:
+The mapping is:
 
 ```text
 world_slice_g1_01_river_delta     River Delta District
@@ -33,8 +38,9 @@ world_slice_g1_04_tropical_coast  Tropical Coastal City
 world_slice_g1_05_northern_lake   Northern Lake City
 ```
 
-Each record includes:
+Each file includes:
 
+- exact `worldSpecRef`;
 - display name;
 - short website description;
 - longer human-readable description;
@@ -56,9 +62,11 @@ Each record includes:
 - several asset-shot ideas;
 - future stable asset references.
 
+A website or editor may aggregate these independent records into a catalog at read time. The durable artifact unit remains one World.
+
 ## Derivation rule
 
-The bundle is derived only from already-authored G1 WorldSpec facts.
+Each presentation is derived only from its already-authored G1 WorldSpec facts.
 
 It must not add or infer:
 
@@ -88,9 +96,9 @@ outside genome assignment
 outside H attribution evidence
 ```
 
-The presentation bundle may never be passed to Pass A, Pass B, Pass C, record repair, genome generation or any H rater.
+Presentation files may never be passed to Pass A, Pass B, Pass C, record repair, genome generation or any H rater.
 
-If product copy is later improved, that does not reopen the G1 WorldSpec freeze. If the presentation conflicts with a WorldSpec, correct presentation; do not rewrite the frozen world to fit the presentation.
+If product copy is later improved, that does not reopen the G1 WorldSpec freeze. If a presentation conflicts with a WorldSpec, correct presentation; do not rewrite the frozen world to fit presentation.
 
 ## Asset-generation boundary
 
@@ -112,6 +120,4 @@ Asset generation remains presentation work. It must not alter the Thread's gener
 
 ## G1 status interaction
 
-At the time this companion was authored, the maintainer had already reported the five frozen cold familiarity calls accepted at `density=4/4` each, and the local tool had emitted final WorldSpec/result files. Those exact generated files still require normal Git preservation before G1 is formally closed.
-
-The presentation work does not substitute for that evidence-preservation step and does not authorize G2 genomes early.
+The presentation split is a non-cognitive representation change only. It does not alter the five final WorldSpecs, the completed familiarity calls, their digests, or any cohort protocol authority, and does not authorize G2 before normal G1 evidence preservation/closure.
