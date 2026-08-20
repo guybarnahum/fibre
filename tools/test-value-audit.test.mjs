@@ -45,6 +45,8 @@ test("test-value audit distinguishes semantic tests from mechanical tombstones a
     `);
     put(root, "tools/dynamic.test.mjs", `
       import test from "node:test";
+      const codeShapedString = 'import "./ghost.test.mjs"; test("ghost", () => {});';
+      void codeShapedString;
       const cases = [1, 2];
       for (const value of cases) test(\`generated \${value}\`, () => {});
     `);
@@ -68,6 +70,7 @@ test("test-value audit distinguishes semantic tests from mechanical tombstones a
     const dynamic = audit.records.find((record) => record.path === "tools/dynamic.test.mjs");
     assert.equal(dynamic.zeroDeclaredTests, false);
     assert.equal(dynamic.declaredTestCalls, 1);
+    assert.deepEqual(dynamic.importedTestFiles, []);
     assert.equal(dynamic.commentOnly, false);
     assert.equal(dynamic.family, "experimental-or-repo-tooling");
   }));
