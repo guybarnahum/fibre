@@ -9,13 +9,13 @@ canonical: false
 
 ## Purpose
 
-The Pre-G seam closes known doctrine, authority, regression, evidence-lifecycle and documentation obligations from Slices A–F **before** Slice G freezes the final #39 cohort and protocol.
+The Pre-G seam closes known doctrine, authority, regression, evidence-lifecycle, integration and documentation obligations from Slices A–F **before** Slice G freezes the final #39 cohort and protocol.
 
 G's methodological boundary remains:
 
 > **The test exists before the people.**
 
-No Slice-G cohort WorldSpec, cohort genome, familiarity result, G/H model call, or generated final-cohort life may exist until this seam closes.
+No Slice-G cohort WorldSpec, cohort genome, familiarity result, G/H model call or generated final-cohort life may exist until this seam closes.
 
 This seam is cleanup/preflight work. It earns no Whole-Person standing and does not reopen the already-cleared C, D or F gates.
 
@@ -42,8 +42,8 @@ The Gate-F reviewed evidence head remains `f960e8851ac0eeb2d03b1830740e813beeb10
 | 4 | Older C/D carry-forwards | **COMPLETE** | [`m2-pr39-pre-g-stage4-carry-forwards.md`](m2-pr39-pre-g-stage4-carry-forwards.md) |
 | 5 | Test-value audit | **COMPLETE** | [`m2-pr39-pre-g-stage5-test-value-audit.md`](m2-pr39-pre-g-stage5-test-value-audit.md) |
 | 6 | Retired experiment/artifact hygiene | **COMPLETE** | [`m2-pr39-pre-g-stage6-retired-experiment-hygiene.md`](m2-pr39-pre-g-stage6-retired-experiment-hygiene.md) |
-| 7 | Documentation/plan reconciliation | **IMPLEMENTED / AWAITING LOCAL VERIFICATION** | [`m2-pr39-pre-g-stage7-documentation-reconciliation.md`](m2-pr39-pre-g-stage7-documentation-reconciliation.md); current docs/context must agree and repository context checks must be green |
-| 8 | Branch/repository hygiene | PENDING | reconcile latest `main`, preserve evidence hashes, full check green, clean tree, exact seam-closing head recorded |
+| 7 | Documentation/plan reconciliation | **IMPLEMENTED / AWAITING LOCAL VERIFICATION** | [`m2-pr39-pre-g-stage7-documentation-reconciliation.md`](m2-pr39-pre-g-stage7-documentation-reconciliation.md); current docs/context agree and repository context checks are green |
+| 8 | Branch/repository + final integration hygiene | PENDING | close the genome/lineage birth-binding gap, reconcile latest `main`, preserve evidence hashes, full check green, clean tree, exact seam-closing head recorded |
 | 9 | Narrow Pre-G readiness review | PENDING | hostile cleanup review finds no unsafe carry-forward before G |
 
 ## Closed carry-forwards through Stage 6
@@ -62,20 +62,45 @@ The seam has already established:
 - byte-preserving relocation of retained scientific instruments plus compatibility regressions;
 - a green maintainer verification envelope covering active, repro, all, audit and repository checks.
 
-## Stage 7 reconciliation target
+## Stage 7 reconciliation
 
 Stage 7 makes the **current operating story** match the implemented branch while keeping historical evidence available in the appropriate context layer.
 
-It reconciles:
-
-- root orientation (`README.md`);
-- current-state and current-priority documents;
-- the persistent storage description through #38/#39;
-- the prototype roadmap and active M2 milestone numbering;
-- the AI context index and manifest so `core` emphasizes current authority while `full` retains sealed/failed historical evidence;
-- this seam ledger and the Stage-5/6 closure records.
+It reconciles root orientation, current state/priorities, persistent storage, roadmap numbering, AI-context lifecycle, the Stage-5/6 closure records and this seam ledger.
 
 Stage 7 changes no Genesis compiler policy, model prompt/schema, world, genome, treatment assignment, rater, admission rule, experimental artifact or Gate-F result.
+
+### Semantic reconciliation finding — genome/lineage birth binding remains open
+
+The documentation audit found one real implementation carry-forward already named by the accepted symbolic-genome plan rather than a stale-document-only problem.
+
+The accepted requirement is:
+
+> synthetic-ancestor source owner IDs must be bound to admitted #38 `biological_parent` / `parent_genome_source` lineage evidence before a synthetic-lineage child becomes live.
+
+Current code establishes the pieces separately:
+
+- `SymbolicGenomeStore` verifies persisted genome ownership, source ownership/digests, deterministic crossover and mutation provenance;
+- #38 life relations provide the durable `biological_parent` + `parent_genome_source` authority;
+- the Rich-Life policy-side witness proves an in-memory recombined genome and deliberately removes genome material before Pass A;
+- `GenesisManifest` records `genomeRef` and `parentOrAncestorRefs`.
+
+But `GenesisStore.publishBirth()` currently does **not** resolve `manifest.genomeRef` against persisted symbolic-genome state or require the genome's source owner IDs to match admitted #38 parent-genome-source relations inside the live birth boundary.
+
+Therefore this is a **G blocker**. Before the cohort/protocol freeze, publication must make at least these properties load-bearing:
+
+```text
+manifest.genomeRef resolves to a persisted symbolic genome
+referenced genome belongs to the child Thread
+referenced genome genesisId matches the birth genesisId
+synthetic-lineage manifest parentOrAncestorRefs match the genome source owners
+those synthetic-ancestor source owners match admitted #38 biological_parent + parent_genome_source relations
+mismatch / missing genome / missing lineage leaves no live Thread
+```
+
+The exact transaction design is an implementation decision, but the child may not become live with an unverified genome/lineage provenance seam.
+
+This finding does not invalidate Gate F's Echo/Homage/fork/source-rights result and does not alter Pass-A genome blindness. It closes the previously explicit unchecked Slice-E/birth completion item before G.
 
 ## Hard seam rules
 
@@ -104,6 +129,8 @@ Model-free code/test/doc work required to close the seam remains allowed.
 [x] test portfolio inventoried and value dispositions recorded
 [x] retained experiments separated from current mechanism
 [~] canonical docs/context reconciled — Stage 7 implementation landed; local context/check verification pending
+[ ] persisted symbolic genome is bound to child/genesis at birth
+[ ] synthetic-lineage genome source owners are bound to admitted #38 parent-genome-source relations before live publication
 [ ] latest main reconciled
 [ ] full check green after final seam changes
 [ ] evidence hashes confirmed stable after repository hygiene

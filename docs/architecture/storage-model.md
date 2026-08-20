@@ -46,28 +46,13 @@ Snapshots accelerate reads but do not replace history. Replay must be able to re
 
 ### Private participation/runtime authority
 
-Restricted tables preserve the request-to-life chain, including:
+Restricted tables preserve the request-to-life chain, including activation requests, request-appraisal capsules, private participation stances, request-bound authorizations, thaw leases/runtime sessions, Actor/Guardian records, closure outcomes, authorization consumption, freeze reports and expression/disclosure records.
 
-- activation requests and request-appraisal capsules;
-- private participation stances;
-- request-bound participation authorizations;
-- thaw leases and runtime sessions;
-- Actor runs and Goal Guardian audits;
-- runtime abandonment/timeout/authority-withdrawal outcomes;
-- authorization consumption and freeze reports;
-- audience-expression/disclosure records where applicable.
-
-Private stance, authorization, disclosure, expression and performed action remain distinct records. Public routes expose only the appropriate safe projection.
+Private stance, authorization, disclosure, expression and performed action remain distinct authorities. Public routes expose only their appropriate safe projection.
 
 ### Structured Obligation authority
 
-Structured Obligation v1 uses stable append-only records for:
-
-- obligation revisions;
-- Fibre-owned request-bound applicability decisions;
-- legacy consumed-authority tombstones;
-- one-shot discharge witnesses;
-- structured authority-withdrawal closures.
+Structured Obligation v1 uses stable append-only records for obligation revisions, Fibre-owned applicability decisions, legacy consumed-authority tombstones, one-shot discharge witnesses and authority-withdrawal closures.
 
 A caller may nominate an obligation; only Fibre determines whether it governs the request. Successful compelled completion must leave the matching durable social consequence atomically. Historical applicability is evidence, not perpetual authority.
 
@@ -85,6 +70,8 @@ The Passport and `asOf` identity views are derived. Legacy flat identity remains
 
 #38 adds dedicated durable authorities for situated life, including lineage/family relationships, temporal place/culture formation and versioned embodiment/asset provenance. These records remain distinct from identity assertions even when identity claims cite them as evidence.
 
+A `parent_genome_source` is a specifically typed `biological_parent` relation whose related party is a live Thread or synthetic ancestor. That record is the durable #38 authority a synthetic-lineage birth must eventually bind to.
+
 ### Autobiographical memory and meaning
 
 Autobiographical memory is distinct from historical fact. Current memory records preserve stable memory identity, event evidence, subject period, uncertainty, authorship/provenance, append-only revisions and exact history anchors.
@@ -101,7 +88,7 @@ Every admitted memory has a visual companion lineage. A generated reconstruction
 
 Genesis adds **provenance and compilation authority**, not a parallel biography authority.
 
-`GenesisStore` opens the same SQLite world and first migrates the versioned world schema, then creates bounded additive Genesis tables when needed:
+`GenesisStore` opens the same SQLite world and creates bounded additive Genesis tables when needed:
 
 ```text
 genesis_world_specs
@@ -110,17 +97,9 @@ genesis_generation_attempts
 genesis_origin_authorities
 ```
 
-These records preserve:
+These preserve factual WorldSpec/authorship, exact cognition/publication provenance, repair/attempt failures, source-rights/status witnesses and the first-live publication witness. They do **not** own admitted biography, memory, identity, place, relationship or embodiment.
 
-- factual WorldSpec and authorship;
-- exact compiler/model/schema/policy/publication provenance;
-- record-repair and candidate-attempt failures;
-- source/consent/status authority witnesses;
-- first-live publication witness.
-
-They do **not** own the admitted Thread biography, memory, identity, place, relationship or embodiment. Atomic birth publishes canonical life content into the existing Thread authorities or publishes nothing.
-
-The symbolic-genome store similarly uses immutable additive tables:
+The symbolic-genome store separately uses immutable additive tables:
 
 ```text
 symbolic_genomes
@@ -128,7 +107,15 @@ symbolic_genome_loci
 symbolic_genome_mutations
 ```
 
-The genome tables preserve textual locus order, source provenance, deterministic recombination and explicit mutation witnesses. They are inherited origin authority, not developed character or a hidden numeric personality state.
+Those records preserve textual locus order, source provenance, deterministic recombination and explicit mutation witnesses. They are inherited origin authority, not developed character or a hidden numeric personality state.
+
+### Current Pre-G integration boundary
+
+The two stores share the same SQLite world but do not currently form one birth transaction. `GenesisStore.publishBirth()` atomically publishes the Thread seed, identity bootstrap, Pass-A life events, admitted autobiographical memories/visual obligations and Genesis manifest after source/origin checks. It currently treats `manifest.genomeRef` as a syntactically valid reference rather than resolving the corresponding persisted symbolic genome inside publication.
+
+Therefore the accepted symbolic-genome plan's remaining synthetic-lineage obligation is real and explicit: **before Slice G, birth must make the persisted genome/lineage relationship load-bearing**. For a synthetic-lineage child, publication must verify that the referenced genome belongs to the child and Genesis, and that its source owner IDs match admitted #38 `biological_parent` + `parent_genome_source` lineage evidence before the child becomes live.
+
+This is a Pre-G implementation gap, not permission to fold genome facts into Pass A. Pass A remains genome blind.
 
 ## Transaction boundaries
 
@@ -144,23 +131,15 @@ Representative atomic boundaries include:
 - freeze, including authorization consumption and accepted life changes;
 - Structured Obligation discharge;
 - interrupted compelled authority-withdrawal closure;
-- Genesis birth publication across seed/identity/life-event/memory/visual/genome/provenance state.
+- current Genesis birth publication across seed/identity/life-event/memory/visual/Genesis-provenance state.
 
-A mid-transaction failure must not leave half a life, half a discharge or half a birth.
+A mid-transaction failure must not leave half a life, half a discharge or half a birth. Genome/lineage binding remains the explicit Pre-G extension to the Genesis publication boundary rather than being falsely described as already atomic.
 
 ## Append-only and correction discipline
 
 Meaningful historical records are immutable or append-only. Current projections may change only through validated transitions.
 
-Fibre does not repair life history by overwriting it. Legitimate correction patterns include:
-
-```text
-append new event
-append/supersede identity assertion
-append memory revision/reinterpretation
-append relationship/obligation revision
-rebuild a damaged current projection from intact history
-```
+Fibre does not repair life history by overwriting it. Legitimate correction patterns include appending a new event, superseding an identity assertion, appending a memory revision/reinterpretation, appending relationship/obligation revisions, or rebuilding a damaged current projection from intact history.
 
 Projection repair may reconstruct current state from authoritative events; it may not rewrite the events to make the projection convenient.
 
@@ -172,13 +151,6 @@ Current inspection families include world/replay, identity, Structured Obligatio
 
 ## Repository/world separation
 
-Live Thread data is not committed to Git. The repository may contain:
-
-- schemas and migrations;
-- synthetic fixtures;
-- deterministic examples;
-- redacted or frozen experiment artifacts;
-- retained proof/repro instruments;
-- human-readable validation reports.
+Live Thread data is not committed to Git. The repository may contain schemas/migrations, synthetic fixtures, deterministic examples, redacted/frozen experiment artifacts, retained proof/repro instruments and human-readable validation reports.
 
 The database/object-store world contains the living Threads. Git contains the laws, machinery and retained scientific evidence used to build and audit that world.

@@ -66,7 +66,7 @@ Gate F  CLEAR
 
 The combined E+F result established that corrected Genesis histories can produce selective autobiography and durable meaning whose downstream content remains attributable to the particular development life, while source/origin boundaries reject consent bypass and biography laundering. This is development evidence, not final-cohort evidence and not standing.
 
-The current work is the **Pre-G cleanup seam**. Its purpose is to close doctrine, authority, regression, evidence-lifecycle and documentation drift before G creates any final-cohort material.
+The current work is the **Pre-G cleanup seam**. Its purpose is to close doctrine, authority, regression, evidence-lifecycle, integration and documentation drift before G creates any final-cohort material.
 
 Current seam posture:
 
@@ -75,6 +75,8 @@ Stages 0-6  COMPLETE
 Stage 7     documentation/context reconciliation implemented; local verification pending
 Stages 8-9  pending
 ```
+
+Stage 7 surfaced one real remaining G-blocker already named by the accepted symbolic-genome plan: the persisted child genome and synthetic-ancestor source owners are not yet made load-bearing against admitted #38 `biological_parent` / `parent_genome_source` relations inside the live birth publication path. That integration must close before G.
 
 No Slice-G final WorldSpec, cohort genome, familiarity result, G/H model call or final-cohort life has been created. The methodological rule remains:
 
@@ -86,9 +88,11 @@ See [`../validation/m2-pr39-pre-g-seam-status.md`](../validation/m2-pr39-pre-g-s
 
 ### Genesis authority and atomic birth
 
-#39 has a candidate-only Genesis boundary, `GenesisWorldSpec`, authorship/provenance, manifests, generation-attempt witnesses, bounded mechanical record repair, whole-candidate structural retry and atomic publication into existing Thread authorities.
+#39 has a candidate-only Genesis boundary, `GenesisWorldSpec`, authorship/provenance, manifests, generation-attempt witnesses, bounded mechanical record repair, whole-candidate structural retry and atomic publication of seed/identity/life-event/memory/visual/Genesis-provenance state into existing Thread authorities.
 
 Genesis does **not** own a parallel biography, memory, identity, place, relationship or embodiment world.
+
+The symbolic genome is currently persisted by its own bounded store in the same world. Binding that persisted genome and its synthetic-lineage owners to the child/Genesis/#38 lineage inside live birth remains the explicit Pre-G integration item; current documentation does not claim it is already part of the atomic birth transaction.
 
 ### Symbolic genome
 
@@ -140,7 +144,7 @@ Thread-parent, Echo, Homage and fork paths are integrity/origin fixtures, not al
 
 The versioned world-store schema remains **v6**. It contains the persistent M1/#35 lifecycle plus #37/#38 identity, situated-life, embodiment and autobiographical-memory authorities.
 
-#39 adds immutable/additive Genesis and symbolic-genome provenance tables through their bounded stores. Those tables record world/genome/generation/source/birth provenance; canonical life content still publishes into the existing Thread event, identity and autobiographical-memory authorities.
+#39 adds immutable/additive Genesis and symbolic-genome provenance tables through their bounded stores. Canonical life content still publishes into existing Thread event, identity and autobiographical-memory authorities.
 
 Human/operator inspection includes the Thread Editor plus read-only world, identity, obligation, Genesis and symbolic-genome inspection surfaces.
 
