@@ -1,94 +1,184 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-20
 canonical: true
 ---
 
 # Storage model
 
-A Thread is a logical aggregate, not necessarily one row or document.
+A Thread is a logical aggregate reconstructed from durable world state. It is not one source file, prompt, row or temporary process.
 
-Suggested durable stores:
+The long-term architecture may use several physical stores—relational state, append-only events, graphs, semantic indexes, object storage, secrets and double-entry ledgers—but domain authority is defined by explicit records, provenance, versions and replay contracts rather than by a particular cloud/database product.
 
-- Relational database for identity indexes, tasks, contracts, evaluations, and derived balances
-- Append-only event store for life and world events
-- Graph relationships for family, trust, ownership, mentorship, and organizational links
-- Vector/semantic memory index with provenance
-- Object storage for artifacts, portraits, voice, books, and archives
-- Secret/resource vault for credentials and external authorizations
-- Double-entry ledger for FC, USD, and model-token accounting
+## Current local persistence profile
 
-The aggregate is reconstructed at a versioned point in time. Snapshots and current-state projections may accelerate loading but never replace event history.
+The current local world kernel uses one SQLite database with one authoritative `PRAGMA user_version` for the versioned world-store schema.
 
-## M1 local persistence profile
+```text
+WORLD_STORE_SCHEMA_VERSION = 6
+```
 
-The local world-kernel adapter uses one SQLite database and one authoritative `PRAGMA user_version`. The current schema is **v6**. It includes the M1/public/runtime/freeze/obligation lifecycle, the v5 interrupted-compelled event vocabulary, and the v6 Thread identity-provenance plus memory-visual-companion ledgers. A subsystem-specific version table is not used.
+SQLite is a prototype implementation choice, not a permanent Fibre constraint. The durable contracts are the important part: identity, event order, versions, hashes, idempotency, authorization, append-only history, privacy boundaries and cross-record causal witnesses must remain portable to later adapters.
 
-Public world tables:
+## Core Thread world authority
 
-- `threads` stores the current projection, lifecycle status, version, last event, and SHA-256 state hash;
-- `thread_events` stores ordered immutable `THREAD_SEEDED`, `SELF_MODEL_UPDATED`, and `THREAD_FROZEN` events with expected/resulting versions, actor, causation, correlation, provenance, authorization evidence, and per-event state hashes;
-- `commands` stores accepted idempotency keys, operation digests, and resulting event/version witnesses.
+The main world schema contains the persistent M1/runtime/social/identity/life substrate.
 
-Restricted participation and runtime tables:
+### Thread projection and history
 
-- `activation_requests`, `request_appraisals`, and `private_participation_stances` preserve the interior request/appraisal/stance chain;
-- `participation_authorizations` preserves current-state execution authority;
-- `thaw_leases` and `runtime_sessions` preserve exclusive temporary-cognition state;
-- `actor_runs` and `goal_guardian_audits` preserve deterministic worker proposals and audits;
-- `authorization_consumptions` preserves one-time use of execution authority and any discharged legacy obligation references;
-- `freeze_reports` preserves restricted accepted/rejected change decisions and causal witnesses;
-- `thread_memories` preserves accepted evidence-bearing memory records;
-- `runtime_abandons` preserves deliberate, non-consuming closure of Guardian-rejected episodes within an active lease window.
+- `threads` — current Thread projection, lifecycle status, version, state hash and last-event witness;
+- `thread_events` — immutable ordered life/world events with expected/resulting versions, causation/correlation, actor/provenance and state hashes;
+- `commands` — accepted idempotency keys, operation digests and resulting event/version witnesses.
 
-M2 identity persistence introduced during PR #37:
+The current event vocabulary includes, among others:
 
-- `identity_assertion_records` stores append-only claim-level identity revisions with stable claim identity, domain/kind, meaning, provenance, authorship, visibility, temporal state, behavioral/evidence classification, canonical JSON, and digest;
-- `memory_visual_companion_records` stores append-only visual lineages for every Thread memory reference, including pending synthetic reconstructions and later captured/generated assets with explicit truth status.
+```text
+THREAD_SEEDED
+THREAD_LIFE_EPISODE_RECORDED
+SELF_MODEL_UPDATED
+THREAD_FROZEN
+COMPELLED_EPISODE_INTERRUPTED
+AUTOBIOGRAPHICAL_MEMORY_RECORDED
+```
 
-The current Passport and `asOf` identity views are derived from these rows. Legacy `thread.identity` remains a compatibility projection during M2 and is not the authoritative mutation surface. New freeze-created memories and their initial visual-companion rows commit in the same transaction.
+Snapshots accelerate reads but do not replace history. Replay must be able to rederive the authoritative projection.
 
-Structured Obligation v1 additive tables introduced during PR #35:
+### Private participation/runtime authority
 
-- `obligation_records` stores append-only Structured Obligation revisions with stable obligation identity, status, scope/terms, provenance, standing/terms visibility, effective/expiry state, and canonical digests;
-- `obligation_applicability_decisions` stores Fibre-owned request-bound applicability decisions separately from the obligation itself;
-- `legacy_obligation_tombstones` preserves deterministic evidence that an exact pre-#35 obligation reference was already consumed and therefore cannot be reactivated through migration;
-- `structured_obligation_discharges` binds a successful one-shot compelled freeze to its exact prior and terminal obligation revisions plus applicability, authorization, consumption, runtime, freeze-report, and event witnesses;
-- `structured_authority_withdrawal_closures` preserves an executed-but-interrupted compelled episode when its governing authority becomes stale after Actor execution and Guardian pass but before freeze.
+Restricted tables preserve the request-to-life chain, including:
 
-The Structured Obligation tables originated in schema v4; the canonical runtime authority is no longer the historical exact-prose path: Structured Obligation authority now requires Fibre-owned persisted applicability plus current-authority revalidation. Historical M1 prose evidence retains its original replay semantics.
+- activation requests and request-appraisal capsules;
+- private participation stances;
+- request-bound participation authorizations;
+- thaw leases and runtime sessions;
+- Actor runs and Goal Guardian audits;
+- runtime abandonment/timeout/authority-withdrawal outcomes;
+- authorization consumption and freeze reports;
+- audience-expression/disclosure records where applicable.
 
-Schema migrations run inside one immediate transaction when `PRAGMA user_version` advances. Historical versions 1-4 preserve the M1 and Structured Obligation migration chain. Version 5 expanded the immutable event vocabulary for `COMPELLED_EPISODE_INTERRUPTED`. Version 6 creates the identity and memory-visual ledgers, deterministically decomposes existing flat identity from the immutable `THREAD_SEEDED` event, and backfills a visual-companion lineage for every existing Thread memory reference before the version advances. No active Structured Obligation is inferred from `currentState.unresolvedIntentions`.
+Private stance, authorization, disclosure, expression and performed action remain distinct records. Public routes expose only the appropriate safe projection.
 
-A normal command, event, idempotency record, and projection update commit in one world-store transaction. Runtime authorization, exclusive lease, and runtime-session creation commit in one runtime-store transaction after rereading Thread and private-stance witnesses.
+### Structured Obligation authority
 
-Freeze uses a third interface over the same SQLite file because it owns a wider atomic boundary. One immediate freeze transaction rereads the Thread, authorization, lease, session, Actor, and Guardian witnesses and then atomically appends the freeze event, advances the projection, records accepted memories, records authorization consumption, records the freeze report, completes the session, and releases the lease.
+Structured Obligation v1 uses stable append-only records for:
 
-Rejected-runtime closure uses a fourth interface over the same file. One immediate abandonment transaction rereads the active session, lease, authorization, and persisted Guardian reject, then appends the abandonment record, aborts the session, and releases the lease without advancing Thread life state or consuming authority.
+- obligation revisions;
+- Fibre-owned request-bound applicability decisions;
+- legacy consumed-authority tombstones;
+- one-shot discharge witnesses;
+- structured authority-withdrawal closures.
 
-Structured authority-withdrawal closure uses a separate bounded interface over the same file. It applies only to a structured compelled runtime with Actor evidence and Goal Guardian pass when the exact governing authority has become superseded, non-active, expired, or legacy-tombstoned before freeze. One immediate transaction appends the immutable withdrawal closure, aborts the runtime, and releases the lease with `governing_authority_withdrawn`; it records no freeze, consumes no authorization, and does not discharge the obligation.
+A caller may nominate an obligation; only Fibre determines whether it governs the request. Successful compelled completion must leave the matching durable social consequence atomically. Historical applicability is evidence, not perpetual authority.
 
-The separate WorldStore, RuntimeStore, FreezeStore, LifecycleHardeningStore, Structured Obligation stores, and authority-withdrawal store preserve interface boundaries, not independent consistency domains. They use WAL and bounded busy timeouts. Cross-store invariants are never trusted from a prior application read; the transaction that writes the dependent records rereads every version, hash, ID, digest, lifecycle, and authorization witness it relies on.
+## M2 life authorities through #38
 
-Events, commands, requests, appraisals, private stances, authorizations, Actor runs, Guardian audits, runtime abandonments, structured authority-withdrawal closures, authorization consumptions, freeze reports, accepted memory rows, identity assertion revisions, memory visual companion revisions, obligation revisions, applicability decisions, structured obligation discharges, and legacy-obligation tombstones are append-only. `thaw_leases` and `runtime_sessions` are mutable only for explicit lifecycle transitions. Triggers preserve immutable IDs, bindings, context, digests, and start times and permit only bounded completion, release, expiration, or abort metadata. Neither table permits deletion.
+#37/#38 added the durable person/life substrate needed by Genesis and later causal consumption.
 
-Successful obligation-mediated freeze is single-use in historical M1. The consumption record and `THREAD_FROZEN` event preserve the exact unresolved-intention reference, while the projection removes it from `currentState.unresolvedIntentions`. Historical M1 obligation identity is exact UTF-8 prose equality; whitespace, case, or Unicode-normalization differences are different provisional identities. The historical service requires any such reference to be present exactly in the Thread's current unresolved intentions.
+### Identity
 
-Structured Obligation v1 does **not** promote those unresolved-intention strings into active obligations. A legitimate active commitment must be explicitly represented with stable ID, issuer/parties, scope, terms, provenance, visibility, satisfaction semantics, and Fibre-owned applicability evidence. Previously consumed exact references are migrated only to tombstones, preserving the invariant that spent authority remains spent.
+`identity_assertion_records` stores append-only claim-level identity revisions with stable claim identity, provenance, authorship, visibility, temporal state, evidence/behavioral classification, canonical content and digest.
 
-A deliberate Guardian-reject abandonment is available only while the lease remains active and unexpired. If nobody closes the episode in time, later lease reclamation records a distinct timeout outcome through the persisted Guardian reject, expired lease, and aborted session; it does not synthesize an abandonment decision on the Thread's behalf. Failed freeze, Guardian reject, abandonment, state races, and lease expiry do not consume or discharge an obligation.
+The Passport and `asOf` identity views are derived. Legacy flat identity remains a compatibility projection rather than the authoritative mutation surface.
 
-Normal projection reads verify identity, canonical hash, denormalized columns, and the last-event witness. Deterministic replay validates sequence, versions, event identity, command/operation digests, derived event IDs, command witnesses, authorization evidence, freeze-report witnesses, accepted memory references, legacy obligation discharge, and per-event state hashes before requiring the final replayed state to match the projection.
+### Lineage, place and embodiment
 
-Runtime reads rederive acquisition, authorization, execution-context, session, Actor, and Guardian digests. Freeze reads additionally rederive the freeze operation, report, consumption, memory, event, and resulting-state witnesses. Abandonment reads rederive the closure record and verify matching Guardian reject, session abort, lease release, and non-consumption. The `THREAD_FROZEN` commit digest binds the request, session, authorization, report, Actor, Guardian, kernel completion time, exact decisions, discharged obligations, prior state, and resulting lifecycle status.
+#38 adds dedicated durable authorities for situated life, including lineage/family relationships, temporal place/culture formation and versioned embodiment/asset provenance. These records remain distinct from identity assertions even when identity claims cite them as evidence.
 
-The public event API may project a safe subset of a private-backed event. The authoritative stored event remains replayable, while the public `THREAD_FROZEN` response exposes accepted memory references and counts but withholds concrete authorization, runtime, report, Actor, Guardian, causal, and private-rationale fields.
+### Autobiographical memory and meaning
 
-`provenance.lastEventId` is projection metadata. Seed normalizes the stored snapshot to its deterministic seed event.
+Autobiographical memory is distinct from historical fact. Current memory records preserve stable memory identity, event evidence, subject period, uncertainty, authorship/provenance, append-only revisions and exact history anchors.
 
-The projection-repair operation rederives the current row from intact event history without rewriting life history.
+Genesis-capable memory records distinguish remembered content from durable remembered meaning. Reinterpretation appends/supersedes meaning without rewriting the underlying event or prior memory revision.
 
-SQLite is an M1/pre-M2 implementation choice, not a permanent world architecture. Event, command, version, identity, idempotency, lease, authorization, consumption, freeze, abandonment, obligation, applicability, and hash contracts remain explicit so a future adapter can preserve behavior.
+Historical reads validate durable structure and lineage without retroactively applying every future current-write content-size policy. New writes still obey current admission policy.
 
-Live Thread data is not committed to Git. The repository may contain synthetic fixtures, templates, redacted archives, schema examples, and human-inspectable test reports.
+### Memory visual companions
+
+Every admitted memory has a visual companion lineage. A generated reconstruction is explicitly synthetic representation and may never be relabeled captured historical evidence.
+
+## #39 Genesis and symbolic-genome provenance
+
+Genesis adds **provenance and compilation authority**, not a parallel biography authority.
+
+`GenesisStore` opens the same SQLite world and first migrates the versioned world schema, then creates bounded additive Genesis tables when needed:
+
+```text
+genesis_world_specs
+genesis_manifests
+genesis_generation_attempts
+genesis_origin_authorities
+```
+
+These records preserve:
+
+- factual WorldSpec and authorship;
+- exact compiler/model/schema/policy/publication provenance;
+- record-repair and candidate-attempt failures;
+- source/consent/status authority witnesses;
+- first-live publication witness.
+
+They do **not** own the admitted Thread biography, memory, identity, place, relationship or embodiment. Atomic birth publishes canonical life content into the existing Thread authorities or publishes nothing.
+
+The symbolic-genome store similarly uses immutable additive tables:
+
+```text
+symbolic_genomes
+symbolic_genome_loci
+symbolic_genome_mutations
+```
+
+The genome tables preserve textual locus order, source provenance, deterministic recombination and explicit mutation witnesses. They are inherited origin authority, not developed character or a hidden numeric personality state.
+
+## Transaction boundaries
+
+Fibre uses separate store interfaces to preserve responsibility boundaries even when they share one SQLite consistency domain.
+
+A consequential write transaction rereads the exact current versions, IDs, hashes, lifecycle state and authority witnesses it depends on. Cross-store invariants are not trusted from an earlier application read.
+
+Representative atomic boundaries include:
+
+- normal command/event/projection update;
+- request/appraisal persistence;
+- runtime authorization plus lease/session acquisition;
+- freeze, including authorization consumption and accepted life changes;
+- Structured Obligation discharge;
+- interrupted compelled authority-withdrawal closure;
+- Genesis birth publication across seed/identity/life-event/memory/visual/genome/provenance state.
+
+A mid-transaction failure must not leave half a life, half a discharge or half a birth.
+
+## Append-only and correction discipline
+
+Meaningful historical records are immutable or append-only. Current projections may change only through validated transitions.
+
+Fibre does not repair life history by overwriting it. Legitimate correction patterns include:
+
+```text
+append new event
+append/supersede identity assertion
+append memory revision/reinterpretation
+append relationship/obligation revision
+rebuild a damaged current projection from intact history
+```
+
+Projection repair may reconstruct current state from authoritative events; it may not rewrite the events to make the projection convenient.
+
+## Read-only inspection
+
+Human/operator inspection uses bounded read-only surfaces. Database inspectors open SQLite read-only and use `PRAGMA query_only` where applicable. Inspection verifies chains rather than silently repairing them.
+
+Current inspection families include world/replay, identity, Structured Obligations, Genesis and symbolic genome. The Thread Editor remains a human-facing application over validated APIs, not a raw database mutation surface.
+
+## Repository/world separation
+
+Live Thread data is not committed to Git. The repository may contain:
+
+- schemas and migrations;
+- synthetic fixtures;
+- deterministic examples;
+- redacted or frozen experiment artifacts;
+- retained proof/repro instruments;
+- human-readable validation reports.
+
+The database/object-store world contains the living Threads. Git contains the laws, machinery and retained scientific evidence used to build and audit that world.

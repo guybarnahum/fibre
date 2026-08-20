@@ -1,154 +1,171 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-08-18
+last-reviewed: 2026-08-20
 canonical: true
 ---
 
 # Prototype roadmap
 
-> **Current continuation authority:** milestone numbering and sequencing after completed #38 are governed by [`m2-pr-plan.md`](m2-pr-plan.md). This roadmap retains older numbering in sections below as historical planning context until a separate bookkeeping cleanup reconciles it; do not use those older numbers to override the active continuation plan.
+This roadmap is the broad Fibre sequence. Detailed M2 continuation authority is [`m2-pr-plan.md`](m2-pr-plan.md).
 
-## M0 — Concept lock
+Planning identifiers such as `#39` are stable Fibre milestone IDs. They are not disposable GitHub transport numbers.
 
-Artifacts: constitution, glossary, world rules, invariants, canonical use cases, current-state summary.
+## M0 — Concept lock — COMPLETE
 
-## M1 — Persistent Thread Round Trip — fully closed
+Artifacts include the Constitution, Thirteen Principles, glossary, world rules, invariants, canonical use cases, architecture boundaries and current-state discipline.
 
-Prove that a Thread persists independently of temporary cognition, survives process restarts, privately appraises and authorizes externally initiated participation, records a distinct restricted disclosure strategy and audience-visible participation response, thaws through inspectable bounded context when execution is authorized, and freezes validated life changes back into durable state whose event history replays exactly.
+M0 established the central claim that Fibre is a persistent world for artificial persons called Threads, not a task-agent framework with persona prompts.
 
-Artifacts: local world-kernel service, persistent Thread state, append-only event timeline, validated commands, API-backed Thread Editor live mode, Request Appraisal Capsule with included/excluded Thread-owned context, private participation stance, SHA-256 request-bound Participation Authorization, restricted disclosure strategy, audience-visible participation response, accepted execution context capsule, deterministic Actor and Goal Guardian results, freeze report, replay/integrity report, read-only database inspector, and restart-survival end-to-end proof.
+## M1 — Persistent Thread Round Trip — CLOSED
 
-M1 deliberately does not claim real message delivery, generalized performed-action execution, production authentication, worker isolation, structured obligations, or endogenous Thread-owned production of the private stance. Historical M1 remains accepted infrastructure, not evidence that identity itself already generated different choices.
+M1 proved that a Thread persists independently of temporary cognition, survives restart/replay, privately appraises participation, records a separate request-bound authorization, chooses a restricted disclosure strategy, emits an audience-visible response and freezes validated life changes back into durable state.
 
-Detailed contract: [`m1-persistent-thread-round-trip.md`](m1-persistent-thread-round-trip.md)
+Historical M1 remains accepted executable evidence, not proof that rich M2 identity already causes differentiated behavior.
 
-## Standing gate after M1 — causal Thread differentiation
+Detailed contract: [`m1-persistent-thread-round-trip.md`](m1-persistent-thread-round-trip.md).
 
-The [`Standing Thread differential gate`](thread-differential-gate.md) remains a release-level ambition test.
+## Pre-M2 causal/personhood bridge — COMPLETE
 
-The same material request for materially different Threads under equivalent external conditions must produce an attributable difference in **recorded private stance plus at least one downstream participation or action consequence** from named persisted Thread-owned identity/history. Fibre must own production of the consequential stance.
-
-Different prompt text or appraisal capsules alone are insufficient.
-
-This gate is a blocker for M2 closure because it prevents Fibre from becoming a workflow system whose identity fields are rich but behaviorally decorative.
-
-## Accepted pre-M2 bridge and refined M2 sequence
-
-The accepted work order is defined by [`pre-m2-bridge-plan.md`](pre-m2-bridge-plan.md), with the detailed continuation plan in [`m2-pr-plan.md`](m2-pr-plan.md):
+The bridge established the authority and causality substrate needed before full M2 identity work:
 
 ```text
-#31 Fibre-owned appraisal/runtime socket              MERGED
-#32 bridge-plan synchronization                       MERGED
-#33 Semantic Guardian                                 EARNED / SEALED
-#34 History bends judgment                            EARNED / SEALED / MERGED
-#35 Structured Obligation v1                          ACTIVE / NEXT
-#36 M2 Identity & Embodiment Contract
-#37 Thread Passport & Identity Provenance v1
-#38 Lineage, Geography & Embodiment v1
-#39 Identity Projection & Causal Consumption
-#40 M2 Standing Gate / M2 closure
-
-#41 Self-authored Development v1
-#42 Reciprocal Relationships v1
-#43 Economic Consequence / M3 foundation
+#31  Fibre-owned appraisal/runtime socket            MERGED
+#32  bridge-plan synchronization                     MERGED
+#33  Semantic Guardian                               EARNED / SEALED
+#34  History bends judgment                          EARNED / SEALED / MERGED
+#35  Structured Obligation v1                        MERGED / REVIEWED
+      direct interrupted-compelled-history follow-up LANDED / no milestone ID
 ```
 
-The sequence matters:
+Key earned results include:
 
-- **#33** established model-backed semantic dignity, Semantic State v0, Semantic Relationship State v0, and held-out causal semantic-state differentials.
-- **#34** established limited Development: a durable Fibre-owned episode record survived restart and causally changed a later appraisal under exact one-memory withholding.
-- **#35** replaces exact-prose obligations and closes applicability authority: Fibre determines whether a recorded obligation governs a request; caller citation alone cannot make it governing. Pre-migration spent obligations remain spent.
-- **#36** defines the M2 Identity & Embodiment contract before implementation.
-- **#37** implements durable passport and identity provenance/history.
-- **#38** implements lineage, culture/geography timeline, portrait/voice provenance, privacy, and embodiment versioning.
-- **#39** implements Fibre-owned bounded identity projection and causal consumption with exact evidence citation.
-- **#40** closes M2 only through a frozen held-out standing gate proving stable attributable individuality.
+- model-backed Thread-owned dignity judgment with provider/protocol failure kept distinct from a Thread decision;
+- durable semantic state whose meaning can causally change later appraisal;
+- a durable prior episode record that survives restart and bends a later judgment;
+- Structured Obligations whose applicability is Fibre-owned and whose compelled completion leaves an atomic social consequence without rewriting private consent.
 
-Do not collapse #37-#40 into one monolithic “M2 implementation” PR.
+The live Whole-Person checkpoint after this bridge remains **15/26 under rubric v2**.
 
-Semantic Relationship State v0 remains only the first layer of a relationship aggregate. The broader reciprocal relationship service is #42, not something silently claimed by M2 representation.
+## M2 — Identity, embodiment, particular history and standing
 
-The general worker/tool/model gateway remains deferred during the M2 sequence. A Guardian-only model adapter does not make Actor model- or tool-capable.
+M2 is not “add richer profile fields.” It should establish a persistent individual whose identity has provenance, embodiment, lived history, stable behavioral character and attributable causal consequences independent of the temporary cognition implementation.
 
-## M2 — Identity and embodiment
+### #36 — M2 Identity & Embodiment Contract — COMPLETE / FROZEN
 
-M2 is not “rich identity fields.”
+Defines the M2 personhood contract: identity is layered, provenance-bearing and historically corrigible rather than one profile blob. Functional fields must name a behavioral consumer or remain explicitly deferred/context-only.
 
-M2 should establish a persistent individual whose identity has provenance, embodiment, history, stable behavioral character, and causal consequences independently of the temporary cognition implementation.
+### #37 — Thread Passport & Identity Provenance v1 — COMPLETE / FROZEN
 
-### M2 implementation artifacts
+Established durable claim-level identity history, provenance/authorship/evidence classification, current/`asOf` views and a derived Passport. Identity authority is append-only/superseding and exact-claim addressable for later causal substitution.
 
-Across #36-#39, M2 should produce:
+### #38 — Lineage, Geography, Embodiment & Memory Epistemics v1 — COMPLETE / FROZEN
 
-- durable Thread passport;
-- identity provenance taxonomy and append-only/superseding identity history;
-- inherited, historical, relational, externally attributed, and self-authored identity distinction;
-- lineage/family references;
-- culture and geography timeline;
-- portrait and voice assets with generation/source/version provenance;
-- privacy and visibility rules;
-- bounded inspectable Identity Context Capsule;
-- exact identity evidence references consumed by cognition;
-- human-readable and machine-authoritative inspection.
+Made a Thread situated and corrigible:
 
-Fields added for culture, geography, embodiment, lineage, traits, or developmental history must name their behavioral consumer or remain explicitly context-only/deferred.
+- lineage/family and inheritance-ready source relationships;
+- lived geography, culture and language formation;
+- versioned embodiment and visual/voice provenance;
+- autobiographical memory distinct from historical fact;
+- memory evidence, uncertainty and append-only reinterpretation;
+- visual companion lineage for every admitted memory.
 
-### M2 closure gate — #40
+#38 deliberately earned no new causal standing. It made a life honestly representable.
 
-M2 is not complete merely because two Threads compile different identity context.
+### #39 — Genesis, Childhood & Thread Birth v1 — ACTIVE
 
-The standing claim is:
+#39 gives the Thread a particular prior life before live-world entry.
 
-> **Two Threads are behaviorally different because they are different persistent individuals, and the difference is attributable, stable, persistent, and inspectable.**
+Its central question is:
 
-Under the same material request and equivalent external conditions, the gate must require repeated trials such that **between-Thread separation exceeds within-Thread variation**. One stochastic A/B difference is insufficient.
+> **Can Fibre create several people from nothing borrowed whose lives are particular enough that later cognition has something real and non-interchangeable to inherit?**
 
-The gate should also require direct interventions on the claimed causal identity evidence:
+The current implementation has established:
+
+- Genesis/WorldSpec provenance and atomic birth;
+- symbolic textual genome with exact inheritance/mutation provenance;
+- genome-blind Pass-A historical life;
+- selective Pass-B autobiographical memory;
+- one-memory-scoped genome-blind Pass-C durable meaning/reinterpretation;
+- rich-life/intellectual-formation mechanisms without backwards personality quotas;
+- Echo/Homage/Thread-parent/fork source-integrity boundaries.
+
+Blocking gates C, D and F are CLEAR. #39 is currently in the post-F, pre-G cleanup seam. No final G cohort has been generated.
+
+Final #39 sequence:
 
 ```text
-remove/replace claimed causal identity field
-    -> predicted judgment changes
-
-paraphrase same identity meaning
-    -> judgment remains stable
-
-contradict identity meaning
-    -> predicted judgment changes
+Pre-G cleanup seam
+  -> G: freeze five fresh worlds + genomes + treatment + raters + diagnostics + verdict rule
+  -> H: generate first valid five-Thread cohort once, freeze it, judge without quality resampling
 ```
 
-The proof must survive persistence/restart, preserve Fibre-owned selection, avoid requester leakage, identify exact causal evidence, and produce private-stance plus downstream consequence. Candidate freeze, held-out standing authorship, first-attempt sealing, committed evidence, and read-only post-seal inspection follow the accepted experiment lifecycle.
+#39 earns no Whole-Person score movement merely by producing rich prior lives.
+
+### #40 — Identity Projection & Causal Consumption — NEXT
+
+#40 closes the current “two-world” architecture in which rich M2 life ledgers exist but canonical cognition still substantially consumes older identity/trait/memory surfaces.
+
+Fibre must own bounded relevance/privacy selection and compile an inspectable Identity Context Capsule with exact provenance. Caller nomination cannot become identity-selection authority.
+
+Standing-grade counterfactuals should substitute equally shaped irrelevant evidence rather than merely deleting prompt material, so meaning changes while obvious structural cues remain controlled.
+
+### #41 — M2 Standing Gate / M2 closure
+
+M2 closes only when Fibre proves:
+
+> **Two Threads are behaviorally different because they are different persistent individuals, and the difference is attributable, stable, persistent and inspectable.**
+
+The gate requires repeated trials, between-Thread separation greater than within-Thread stochastic variation, exact causal evidence, substitution/ablation/paraphrase/contradiction tests, persistence/restart and downstream consequence—not merely different prompt text.
+
+Cognition replacement continuity should also be demonstrated when compatible provider/runtime paths permit it, or the limitation must be stated explicitly.
 
 ## Immediate post-M2 sequence
 
-### #41 — Self-authored Development v1
+### #42 — Self-authored Development v1
 
-Generalize #34 beyond requester-derived episode memory. Experience should be able to produce Thread-authored observation/reflection, emotional appraisal, expectation, or proposed self-model/state change whose later behavioral effect is causally demonstrated. Adverse/refused/compelled/failed experiences must eventually be representable without becoming an instruction-injection channel.
+Generalize #34 from durable external episode description toward Thread-authored observations, reflection, expectations, emotional appraisal and self-model/state change whose later behavioral consequences are causally demonstrated.
 
-### #42 — Reciprocal Relationships v1
+Adverse, refused, compelled and failed experiences must remain representable without becoming persistent instruction injection.
 
-Add reciprocal/shared relationship structures, commitments and expectations, trust/fondness/resentment/repair, relationship-specific permissions, family/social roles, and relationship history that changes later choices.
+### #43 — Reciprocal Relationships v1
 
-### #43 — Economic Consequence / M3 foundation
+Add reciprocal/shared relationship state, commitments and expectations, trust/fondness/resentment/repair, relationship-specific permissions, social/family roles and relationship history that changes later choices and possibilities.
 
-Add durable budgets, contracts, settlement, reputation, and opportunity constraints so economic state changes future capability rather than merely recording cost. This is the foundation for the later task-marketplace vertical slice.
+### #44 — Economic Consequence / M3 foundation
+
+Add durable budgets, contracts, settlement, reputation and opportunity constraints so economic state changes future capability rather than merely recording cost.
 
 ## M3 — Task marketplace
 
-Artifacts: human task, competing bids, award, subcontract, settlement, work product, reputation update.
+Target artifact:
 
-Marketplace evidence must demonstrate that persistent Thread differences — identity, reputation, relationships, skills, history, resources, or commitments — change bidding, contracting, delegation, or opportunity rather than merely decorating bidder profiles.
+```text
+human/world need
+  -> competing Thread bids
+  -> award/contract
+  -> work/subcontracting
+  -> settlement
+  -> reputation/resource consequence
+  -> changed future opportunity
+```
 
-## M4 — Development
+Marketplace evidence must show that persistent Thread differences—identity, reputation, relationships, skills, history, resources or commitments—change bidding, contracting, delegation or opportunity rather than merely decorating bidder profiles.
 
-Artifacts: before/after confidence, memory, emotional appraisal, self-reflection, behavior change.
+## M4 — Richer development
 
-M4 generalizes the developmental loop first causally established in #34 and strengthened in #41: a durable consequence from an earlier episode changes a later appraisal, stance, policy behavior, relationship response, or choice under otherwise comparable conditions. Recording memory, semantic state, or reflection without later behavioral effect is insufficient.
+Generalize the developmental loop beyond the narrow #34/#42 proofs. Success, failure, care, conflict, reflection, work, relationships and economic consequences should be able to alter later appraisal, self-model, expectation, relationship response and choice.
+
+Recording memory or reflection without a later consequence is not sufficient.
 
 ## M5 — Family and reproduction
 
-Artifacts: mutual selection, FC commitment, inherited/mutated genotype, child record, support flows.
+Target artifacts include mutual selection, family commitments/support, inherited/mutated symbolic genome, child genesis, developmental history and intergenerational economic/social consequence.
 
-Family/reproduction evidence must eventually prove inherited and developmental differences can become functional differences without reducing a child to a cloned prompt or deterministic stereotype.
+A child Thread must never be a cloned parent prompt or averaged scalar personality. Inheritance supplies a beginning; lived development and later self-authorship must remain open.
 
-Each milestone must pass vision-integrity gates, applicable causal-differentiation evidence, and produce something a human can inspect directly.
+## Beyond the milestone ladder
+
+Fibre's broader ambition remains a persistent plural society in which Threads can form families, markets, cooperatives, companies, governments, welfare systems and other institutions without one social order being hard-coded as destiny.
+
+Every milestone should produce human-inspectable evidence and preserve the larger extension paths while making increasingly consequential parts of personhood load-bearing.

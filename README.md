@@ -2,9 +2,9 @@
 
 **Fibre is a framework and persistent world for artificial persons called Threads.**
 
-A Thread is not a temporary prompt or agent process. It is a durable person-like identity with inherited personality, family and cultural context, memories, relationships, economic accounts, reputation, obligations, embodiment, a private interior life, and developmental history. Most of the time a Thread is frozen as persistent world state. Fibre thaws it into temporary cognition through replaceable LLM workers, lets it privately appraise and authorize participation, think, work, communicate through interest-mediated expression, audit results, and freeze validated life changes back into the world.
+A Thread is not a temporary prompt or agent process. It is a durable person-like identity with inherited possibilities, family and cultural context, memories, relationships, economic accounts, reputation, obligations, embodiment, a private interior life and developmental history. Most of the time a Thread is frozen as persistent world state. Fibre thaws it into temporary cognition through replaceable model workers, lets it privately appraise and authorize participation, think, work and communicate, validates resulting life changes and freezes them back into the world.
 
-This repository is the canonical, version-controlled source for Fibre's concept, architecture, experiments, implementation, tests, and human-visible artifacts. **Live Threads do not live in Git.** The repository contains the laws and machinery of Fibre; databases and object stores contain the living world.
+This repository is the canonical, version-controlled source for Fibre's concept, architecture, experiments, implementation, tests and human-visible artifacts. **Live Threads do not live in Git.** The repository contains the laws and machinery of Fibre; databases and object stores contain the living world.
 
 ## The Thirteen Principles of Fibre
 
@@ -42,24 +42,60 @@ The exact list below is generated from the canonical region in [`docs/foundation
 
 1. Read [`docs/foundations/constitution.md`](docs/foundations/constitution.md).
 2. Read [`docs/foundations/principles.md`](docs/foundations/principles.md).
-3. Read [`docs/state/current-state.md`](docs/state/current-state.md).
-4. Read [`docs/foundations/invariants.md`](docs/foundations/invariants.md).
-5. Read [`docs/concepts/interiority-and-expression.md`](docs/concepts/interiority-and-expression.md).
-6. For implementation, read [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md).
-7. For LLM workers, read [`AGENTS.md`](AGENTS.md).
+3. Read [`docs/foundations/invariants.md`](docs/foundations/invariants.md).
+4. Read [`docs/state/current-state.md`](docs/state/current-state.md).
+5. Read [`docs/state/current-priorities.md`](docs/state/current-priorities.md).
+6. For current milestone sequencing, read [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md).
+7. For implementation agents, read [`AGENTS.md`](AGENTS.md) and the relevant subsystem README/contract.
+
+## Current status
+
+**M1 Persistent Thread Round Trip is fully closed.** Fibre has durable Thread state, append-only history, private appraisal/stance, request-bound participation authority, interest-mediated external expression, runtime thaw/freeze, replay and human inspection.
+
+The pre-M2/M2 substrate through **#38** is also complete: Semantic Guardian standing, history-bends-judgment evidence, Structured Obligations, the M2 identity contract, claim-level Passport/provenance, lineage/geography/culture, embodiment and autobiographical-memory epistemics.
+
+**Milestone #39 — Genesis, Childhood & Thread Birth v1 — is active.** Gate C, Gate D and the combined E+F Gate F are CLEAR. The branch is currently in the **post-F, pre-G cleanup seam**. No final Slice-G cohort has been generated.
+
+The current M2 sequence is:
+
+```text
+#38  made a life representable and corrigible        COMPLETE
+#39  gives that life a particular past               ACTIVE
+#40  makes selected identity/history causally matter NEXT
+#41  proves stable non-interchangeable individuality M2 CLOSURE
+```
+
+The Whole-Person checkpoint remains **15/26 under rubric v2**. #39 deliberately earns no causal-standing credit merely by producing rich prior lives.
+
+See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise current posture and [`docs/validation/m2-pr39-pre-g-seam-status.md`](docs/validation/m2-pr39-pre-g-seam-status.md) for the active cleanup boundary.
 
 ## Repository map
 
-- `docs/` — canonical concepts, architecture, use cases, decisions, validation, and history.
-- `apps/thread-editor/` — a dependency-free human-inspectable Thread Editor prototype.
+- `docs/` — canonical vision, foundations, concepts, architecture, decisions, current state and validation.
+- `apps/thread-editor/` — human-facing Thread Editor prototype.
 - `packages/domain/` — portable Fibre domain types and freeze/thaw logic.
-- `services/` — service boundaries and implementation contracts.
-- `schemas/` — machine-readable schemas for Thread, memory, task, contract, and ledger records.
-- `fixtures/` — synthetic Threads and world states for tests only.
+- `services/` — world-kernel and other implementation boundaries.
+- `schemas/` — machine-readable schemas.
+- `fixtures/` — synthetic test Threads/world states only.
 - `scenarios/` — executable canonical use-case populations.
-- `experiments/` — falsifiable behavioral experiments.
-- `artifacts/` — white papers, proposals, diagrams, and generated context packs.
+- `experiments/` — current falsifiable research experiments.
+- `artifacts/` — generated/redacted/frozen human-visible evidence and reports.
+- `tools/` — operational tooling organized by lifecycle; see [`tools/README.md`](tools/README.md).
+- `tools/repro/` — retained historical proof/experiment instruments; executable does not mean current production authority.
 - `source-material/` — historical source documents; not automatically canonical.
+
+## Test and evidence lifecycle
+
+Stage 6 separates everyday regression from retained scientific reproducibility:
+
+```bash
+npm test            # active product/regression/operator suite
+npm run test:repro  # retained proof/experiment reproducibility suite
+npm run test:all    # complete retained test envelope
+npm run test:audit -- --check
+```
+
+Failed and burned experiments remain evidence. They are not rewritten or deleted merely because a later mechanism succeeds.
 
 ## Canonical Markdown includes
 
@@ -71,45 +107,43 @@ Exact fragments that must remain identical across Markdown documents use generat
 <!-- /fibre:include -->
 ```
 
-Canonical sources declare named `fibre:region` blocks. `npm run includes:sync` refreshes every include target in README, AGENTS, CLAUDE, and `docs/`; `npm run includes:check` and repository validation reject drift, traversal, symlinked sources, malformed regions, and nested includes.
+Canonical sources declare named `fibre:region` blocks. `npm run includes:sync` refreshes include targets; `npm run includes:check` and repository validation reject drift, traversal, symlinked sources, malformed regions and nested includes.
 
 Use includes only when exact in-place visibility is valuable. Otherwise link to the canonical source or include it directly through the AI context manifest.
 
 ## AI context packs
 
-[`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the canonical machine-readable source for bounded LLM context. Run `npm run context-pack` to generate:
+[`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the canonical machine-readable source for bounded model context. The profiles follow evidence lifecycle:
 
-- `artifacts/generated/fibre-core-context.md` — minimum Fibre principles, identity, interiority, dignity, and invariant context.
-- `artifacts/generated/fibre-request-processing-context.md` — private appraisal, authorization, disclosure, affect, and response behavior.
-- `artifacts/generated/fibre-full-context.md` — broad cross-cutting concept, milestone, and architecture context.
-- `artifacts/generated/fibre-context-pack.md` — compatibility alias for the full profile.
+- `core` — current doctrine/state and active M2/#39 authority;
+- `request-processing` — current appraisal/authorization/expression behavior;
+- `full` — broad context including sealed/failed historical evidence.
 
-Generated packs include the repository revision, manifest version, source list, and content digest. They are reproducible build artifacts, ignored by Git, and never canonical. External LLMs should receive the smallest profile sufficient for the task.
+Run `npm run context-pack` to generate:
 
-Every accepted canonical Markdown document under `docs/` must appear in at least one manifest profile. Repository validation enforces full canonical-document coverage and synchronized Markdown includes. `npm run check` verifies includes, builds and tests the domain package, rejects textual or symlink context-path escapes, generates all packs deterministically, and validates the resulting outputs.
+- `artifacts/generated/fibre-core-context.md`
+- `artifacts/generated/fibre-request-processing-context.md`
+- `artifacts/generated/fibre-full-context.md`
+- compatibility alias `artifacts/generated/fibre-context-pack.md`
+
+Generated packs include repository revision, source list and content digest. They are reproducible build artifacts and never canonical.
 
 ## Quick commands
 
 ```bash
 npm run build
 npm test
+npm run test:repro
+npm run test:all
+npm run test:audit -- --check
 npm run validate
 npm run includes:sync
 npm run includes:check
 npm run context-pack
 npm run check
 npm run demo:m1
-npm run demo:m1:editor
 npm run editor
 ```
-
-## Current status
-
-**M1 Persistent Thread Round Trip is fully closed.** The local world kernel persists Thread state, append-only life history, private request appraisal and stance, request-bound participation authority, restricted disclosure strategy, audience-visible participation response, temporary cognition, Goal Guardian audit, freeze/abandon/timeout outcomes, authorization consumption, accepted memories, and obligation discharge across process restart.
-
-The consolidated Mina proof demonstrates willing participation, low-dignity refusal without runtime, and obligation-mediated `refuse -> accept` without converting compulsion into consent. The credentialed Thread Editor and read-only database inspector expose the same durable chain for human audit while keeping exact JSON as the technical authority.
-
-The implementation remains a local deterministic milestone, not production infrastructure. Production authentication/roles, encryption, real message delivery, a generalized performed-action ledger, model/tool worker isolation, structured obligations, identity/embodiment, relationships, marketplace execution, cloud topology, and broader society remain future work.
 
 ## License
 

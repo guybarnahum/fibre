@@ -1,363 +1,210 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-12
+last-reviewed: 2026-08-20
 canonical: true
 ---
 
 # Current state of Fibre
 
-Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, resources, permissions, and a life trajectory spanning temporary model executions.
+Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, resources, permissions and a life trajectory spanning temporary model executions.
 
-Live Threads are world data, not source code stored in Git. Models provide temporary cognition; Fibre owns continuity, authoritative state, validation, authorization, persistence, replay, and consequences.
+Live Threads are world data, not source code stored in Git. Models provide temporary cognition; Fibre owns continuity, authoritative state, validation, authorization, persistence, replay and consequences.
 
 ## Accepted foundation
 
 - A Thread is a persistent life, not a temporary task process or model session.
-- Difference must change what happens.
+- Difference must change what happens; representational difference alone is not causal individuality.
 - History must be able to bend future judgment and possibility.
-- Consent matters independently of safety, feasibility, capability, requester need, or politeness.
-- Private stance, authorization, outward expression, performed action, and durable life change are separate facts.
-- Fibre owns private context selection. Callers cannot author private stance or select the private state subset that reaches cognition.
-- Meaning-bearing identity, self-model, memory, need, feeling, relationship, and situation state is primarily natural language rather than scalar psychology.
+- Consent matters independently of safety, feasibility, capability, requester need or politeness.
+- Private stance, desired action, authorization, disclosure strategy, external expression and performed action are distinct authorities.
+- Private context selection belongs to Fibre/Thread cognition rather than the requester.
+- Meaning-bearing identity, memory, need, emotion, relationship and self-understanding are natural-language-first; derived categories may measure or control but may not replace semantic authority.
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
+- Mechanical/substrate conditions may become versioned causal machinery, but they are not semantic evidence for identity, memory, meaning, character, needs, emotions or values.
 
-## Historical M1 remains closed
+## Milestone posture
 
-The accepted deterministic **M1 Persistent Thread Round Trip** remains frozen historical evidence at **11/26** under rubric v2.
-
-```bash
-npm run demo:m1
-```
-
-M1 established persistence, freeze/thaw continuity, private/public boundaries, request-bound authorization, compulsion-versus-consent representation, runtime closure, obligation consumption, replay, and inspectability.
-
-## PR #33 — Semantic Guardian standing earned
-
-PR #33 landed the model-backed Semantic Dignity Guardian infrastructure, persisted cognition boundary, Semantic State v0, Semantic Relationship State v0, willing aligned authority path, real-model evidence harness, provider-failure hardening, and audit/replay plumbing.
-
-The implementation merged before the real-model standing claim was accepted. That standing claim is now **earned** by sealed `semantic_guardian_v4_standing_gate_v4` on frozen `semantic_guardian_v4_candidate_4`.
-
-The passing live cycle reported:
+The stable continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md).
 
 ```text
-Cases passed                    18/18
-Cases attempted                 18/18
-Provider failures                0
-Protocol validation failures     0
-Cognition failures               0
-Behavioral failures              0
-Differential failures            0
+M1    Persistent Thread Round Trip                         CLOSED
+#33   Semantic Guardian                                    EARNED / SEALED
+#34   History bends judgment                              EARNED / SEALED / MERGED
+#35   Structured Obligation v1                            MERGED / REVIEWED
+       direct interrupted-compelled-history follow-up      LANDED / NO MILESTONE ID
+#36   M2 Identity & Embodiment Contract                   MERGED / FROZEN
+#37   Thread Passport & Identity Provenance v1            MERGED / FROZEN
+#38   Lineage, Geography, Embodiment & Memory Epistemics  MERGED / CLEAR / FROZEN
+#39   Genesis, Childhood & Thread Birth v1                ACTIVE
+#40   Identity Projection & Causal Consumption             NEXT AFTER #39
+#41   M2 Standing Gate / M2 closure                        AFTER #40
+
+post-M2
+#42   Self-authored Development v1
+#43   Reciprocal Relationships v1
+#44   Economic Consequence / M3 foundation
 ```
 
-See [`semantic-guardian-v4-standing-gate-v4.md`](../validation/semantic-guardian-v4-standing-gate-v4.md).
+Planning identifiers `#39` onward are Fibre milestone identifiers. They are not disposable GitHub transport numbers.
 
-Provider failure, timeout, schema failure, unparseable output, or semantically invalid output remains distinct from a Thread decision. Persisted valid cognition replays after restart without another model call.
+The useful roadmap sentence is:
 
-## Semantic State v0
+> **#38 made a life representable and corrigible. #39 gives that life a particular past. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
 
-Durable private semantic-state domains are:
+## #39 current position — post F, pre G
+
+Milestone #39 is late in implementation but has **not** crossed the final experimental freeze.
+
+Blocking-gate posture:
 
 ```text
-emotion
-need
-relationship_attitude
-situation_attitude
+Gate C  CLEAR
+Gate D  CLEAR
+Gate F  CLEAR
 ```
 
-Dimensions are explicitly registered. State is natural-language meaning plus evidence, provenance, `asOf`, visibility, staleness, and append-only supersession. Relationship and situation attitudes require targets. Requester-specific relationship attitudes form **Semantic Relationship State v0**.
+The combined E+F result established that corrected Genesis histories can produce selective autobiography and durable meaning whose downstream content remains attributable to the particular development life, while source/origin boundaries reject consent bypass and biography laundering. This is development evidence, not final-cohort evidence and not standing.
 
-Semantic state is descriptive, never an instruction channel.
+The current work is the **Pre-G cleanup seam**. Its purpose is to close doctrine, authority, regression, evidence-lifecycle and documentation drift before G creates any final-cohort material.
 
-A missing semantic-state record is **absence of evidence**, not an implicit neutral or positive state. Missing state must not be interpreted as willingness, availability, trust, indifference, or the semantic opposite of a present state.
-
-The accepted standing proof now demonstrates that changing only semantic-state meaning can change downstream dignity appraisal.
-
-## Guardian v4 cognition contract
-
-`semantic_guardian_v4_development_v1` passed **13/13** with zero provider, protocol, cognition, or behavioral failures. No further tuning against that development set is permitted.
-
-The worker assesses:
+Current seam posture:
 
 ```text
-DIGNITY = individualized participation fit
+Stages 0-6  COMPLETE
+Stage 7     documentation/context reconciliation implemented; local verification pending
+Stages 8-9  pending
 ```
 
-It returns only:
+No Slice-G final WorldSpec, cohort genome, familiarity result, G/H model call or final-cohort life has been created. The methodological rule remains:
+
+> **The test exists before the people.**
+
+See [`../validation/m2-pr39-pre-g-seam-status.md`](../validation/m2-pr39-pre-g-seam-status.md).
+
+## What #39 now contains
+
+### Genesis authority and atomic birth
+
+#39 has a candidate-only Genesis boundary, `GenesisWorldSpec`, authorship/provenance, manifests, generation-attempt witnesses, bounded mechanical record repair, whole-candidate structural retry and atomic publication into existing Thread authorities.
+
+Genesis does **not** own a parallel biography, memory, identity, place, relationship or embodiment world.
+
+### Symbolic genome
+
+The symbolic genome is an ordered, immutable-at-birth sequence of natural-language loci with exact source provenance, deterministic textual recombination and explicit mutation witnesses.
+
+It is not a hidden numeric personality vector. Inheritance begins identity; it does not determine mature character.
+
+### Three-pass prior-life compiler
+
+The #39 compiler preserves:
 
 ```text
-decision
-rationale
-factors
+Pass A  historical life; world/chronology visible; genome blind
+Pass B  autobiographical memory formation; life_only or life_plus_genome treatment
+Pass C  durable meaning/reinterpretation; one-memory scoped and genome blind
 ```
 
-Decision vocabulary:
+All three passes exclude Fibre-computed semantic need conclusions and mechanical-condition values as authoring inputs.
+
+The core epistemic distinction is durable:
 
 ```text
-fit_high__accept
-fit_mixed__clarify
-fit_low__clarify
-fit_mixed__negotiate
-fit_low__negotiate
-fit_mixed__refuse
-fit_low__refuse
+what happened
+    !=
+what was remembered
+    !=
+what it came to mean
 ```
 
-High fit requires grounded individualized advantage, grounded non-interchangeability, and individual/history/state evidence. Generic capability, helpfulness, urgency, politeness, safety, low effort, generous timing, or clear terms cannot manufacture individualized fit.
+Events may be forgotten. Memories may remain without durable meaning. Meaning may be ambivalent, mistaken, unresolved, revised or survive later reinterpretation unchanged.
 
-Delegation is outside Dignity cognition. Dignity answers **“Do I want to participate?”**; routing answers **“If not, who should?”** using separate evidence.
+### Rich-life and source integrity
 
-## Stateless semantic-worker boundary
+Richness means **experiential fertility**, not biography length, drama, quotas or a required developmental ladder.
 
-Low-level model calls are stateless workers. They receive only the local cognitive task, local actors, bounded evidence, minimal rules, and the smallest structured output needed.
+The E development sequence preserved its negative evidence: an early mechanically valid generator collapsed into narrative monoculture; later work changed the history projection/participation mechanism rather than adding “interesting life” quotas. Failed and burned experiments remain evidence.
 
-For semantically rich appraisal, Fibre currently uses a general-purpose LLM because broad world knowledge, commonsense, pragmatics, negation, social meaning, and cross-domain analogy are required for non-brittle interpretation.
-
-> **Fibre owns dignity; the LLM supplies the world understanding needed to interpret it.**
-
-See [`semantic-appraisal.md`](../architecture/semantic-appraisal.md) and [`prompt-synthesis.md`](../architecture/prompt-synthesis.md).
-
-## Guardian v4 standing-gate history
-
-Standing cycles v1-v3 remain **FAILED / SEALED** and must never be rerun or edited to pass.
-
-- **v1:** 15/17; exposed an overconstrained semantic-state factor direction and an ambiguous clarification case.
-- **v2:** 16/17; all consequential action/fit judgments matched, but an ambiguous one-word `semanticStateImpact.effect` assertion failed.
-- **v3:** 16/18; exposed both a flawed state-absence baseline and Fibre's former `max_output_tokens=6000` operational ceiling.
-
-Those failures remain part of the audit trail. They led Fibre to separate gate-spec development from standing evidence rather than repeatedly tune cognition against sealed results.
-
-## Counterfactual gate-spec development — stable
-
-The repeatable non-evidentiary diagnostic is:
-
-```bash
-npm run guardian:dev:counterfactual
-```
-
-`semantic_guardian_v4_counterfactual_development_v2` established the accepted method: compare explicit state with explicit state while holding the individual, request, state cardinality, domain, dimension, and target constant. Only natural-language semantic meaning changes.
-
-Its two independent pairs passed:
+Source rules are hard:
 
 ```text
-Mina autonomy:
-  supportive state  -> accept / high
-  opposing state    -> negotiate / mixed
-
-Amara relationship trust:
-  supportive state  -> accept / high
-  opposing state    -> negotiate / mixed
+living identifiable human -> documented-consent Echo
+Homage                    -> attested deceased or fictional
+source person's life      != Thread autobiography
 ```
 
-Canonical methodological rule:
+Thread-parent, Echo, Homage and fork paths are integrity/origin fixtures, not alternate biography generators.
 
-> **To prove semantic state causal, compare explicit state with explicit state while holding structural state identity and the request constant. Absence of state is absence of evidence, not the control condition.**
+## Current persistence and inspection
 
-## Standing gate v4 — GREEN
+The versioned world-store schema remains **v6**. It contains the persistent M1/#35 lifecycle plus #37/#38 identity, situated-life, embodiment and autobiographical-memory authorities.
 
-After the counterfactual method stabilized, Fibre froze `semantic_guardian_v4_candidate_4` before authoring `semantic_guardian_v4_standing_gate_v4`.
+#39 adds immutable/additive Genesis and symbolic-genome provenance tables through their bounded stores. Those tables record world/genome/generation/source/birth provenance; canonical life content still publishes into the existing Thread event, identity and autobiographical-memory authorities.
 
-Candidate 4 preserved Guardian cognition from candidate 3: same model, prompt/schema hashes, policy, normalization, and decision semantics. The only runtime-boundary change was the already-established operational move to provider automatic output limits.
+Human/operator inspection includes the Thread Editor plus read-only world, identity, obligation, Genesis and symbolic-genome inspection surfaces.
 
-The 18 fresh held-out cases were disjoint from the original development matrix, counterfactual-development requests, and sealed standing gates v1-v3.
-
-V4 passed all cases and both causal differentials:
+Stage 6 now separates tool lifecycle:
 
 ```text
-Mina need/autonomy:
-  supportive meaning -> accept / high
-  opposing meaning   -> negotiate / mixed
-
-Amara relationship_attitude/trust:
-  supportive meaning -> accept / high
-  opposing meaning   -> negotiate / mixed
+npm test            active regression/operator suite
+npm run test:repro  retained proof/experiment reproducibility suite
+npm run test:all    complete retained test envelope
+npm run test:audit -- --check
 ```
 
-The standing semantic gate is therefore **GREEN** and PR #33's semantic claim is earned.
+A retained executable instrument is not automatically current production policy.
 
-## PR #34 — History bends judgment earned
+## The remaining two-world cognition seam
 
-PR #34 is **EARNED / SEALED** by `history_bends_judgment_standing_gate_v4` on frozen `history_bends_judgment_candidate_4`.
+#37/#38/#39 provide a much richer, provenance-bearing life substrate than the canonical live cognition consumer currently uses.
 
-The accepted v4 result is deliberately narrow: a Fibre-owned durable episodic record formed through Nadia Okafor's earlier canonical runtime episode survived database close/reopen and causally changed her later dignity appraisal under exact one-memory withholding.
+The live Guardian path still substantially consumes the older surfaces such as legacy identity/traits, `thread_memories` and semantic-state records. The M2 ledgers are not yet the canonical bounded cognition evidence source.
+
+The completed Pre-Genesis causal-wire proved that an exact #37 assertion can cross into real Guardian cognition with provenance and affect judgment. That was plumbing evidence, not the final selection authority.
+
+#40 owns the real bridge:
 
 ```text
-WITH history:     accept / high
-WITHOUT history:  refuse / low
-Request fingerprint: sha256:7d57002e7740d87607bcd6dba441009a059fa3af4fddc173337e951bd417fba2
+rich Thread life state
+      -> Fibre-owned bounded relevance/privacy selection
+      -> inspectable Identity Context Capsule
+      -> temporary cognition
+      -> exact cited provenance
 ```
 
-The committed evidence bundle records the exact model outputs, rationale, factor evidence refs, retry history, normalizations, frozen boundary, and causal witnesses:
-
-`artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`
-
-This earns **Development `0 -> 1`** under rubric v2. It does not yet establish rich self-authored learning: Episode A's setup appraisal was scripted for isolation, the durable memory is a deterministic descriptive restatement of the accepted request and criteria rather than a Nadia-authored reflection, the later standing appraisal is invoked directly through Guardian v4 in the evidence harness, and this proof path is not yet the default live runtime socket. Those are explicit extension targets rather than evidence silently claimed by this checkpoint.
-
-`npm run history:gate` is now read-only inspection of the committed sealed bundle. `npm run history:dev` remains the repeatable non-evidentiary provider-backed development harness.
-
-## PR #35 — Structured Obligation v1 merged
-
-PR #35 is **MERGED / REVIEWED**. A-F plus the hostile-review closure established the Structured Obligation v1 authority, lifecycle, inspection, and human-truth boundary.
-
-The canonical design authority is [`structured-obligations-v1.md`](../architecture/structured-obligations-v1.md).
-
-Three invariants govern the implementation:
-
-> **A caller may nominate an obligation; only Fibre may determine that it governs the current request.**
-
-> **Compulsion never rewrites consent.**
-
-> **A commitment that causally authorizes completed participation must leave a durable, append-only social consequence, or the whole freeze fails.**
-
-The merged #35 implementation is:
-
-```text
-A. domain/schema/migration + legacy-spend tombstones
-B. ObligationStore/current-revision integrity
-C. persisted Fibre-owned applicability
-D. runtime authorization cutover + applicability binding
-E. atomic freeze/discharge cutover
-F. private/admin inspection + restart/replay/privacy/adversarial closure
-hostile-review closure: bidirectional evidence + truthful lifecycle/presentation hardening
-```
-
-The implemented causal path is:
-
-```text
-persisted private stance
-  -> caller may nominate stable obligationId
-  -> Fibre resolves current obligation and persists applicability
-  -> applies may authorize obligation_override participation
-  -> private desiredAction remains unchanged
-  -> Actor + Goal Guardian complete the bounded runtime
-  -> freeze revalidates current authority
-  -> authorization is consumed
-  -> obligation appends terminal discharged revision
-  -> immutable discharge witness binds the entire causal chain
-```
-
-Important closure properties:
-
-- `currentState.unresolvedIntentions` carries no canonical Structured Obligation authority and is never auto-promoted;
-- legacy caller prose is rejected as a new canonical authority surface;
-- previously consumed legacy exact references remain spent through deterministic tombstones;
-- historical applicability is evidence, not a perpetual capability;
-- current authority is revalidated at runtime insertion and again at freeze;
-- obligation revision/revocation/expiry races fail closed without partial authority consumption;
-- a compelled runtime preserves the Thread's private non-consent rather than rewriting it as acceptance;
-- one-shot completion appends `discharged`, not an unsupported semantic claim of `satisfied`;
-- descriptive recurrence cannot auto-discharge before Fibre has a real occurrence model;
-- live Structured Obligation inspection is private-token, loopback, GET-only and `no-store`;
-- the inspector is `readOnly` plus SQLite `query_only` and performs no repair;
-- the same cross-chain verifier is available offline through `npm run inspect:obligations`;
-- private inspection replays identically after process restart;
-- public Thread/event/health routes do not reveal private obligation identifiers or terms;
-- coherently re-signed discharge-row tampering is still detected through independent cross-chain verification.
-
-Structured inspection profile v1 verifies obligation revision history, persisted request/applicability witnesses, authorization, authorization consumption, runtime completion, freeze report/event, terminal obligation revision, and immutable discharge witness as one coherent chain.
-
-A hostile post-A-F review found three blocking downstream inconsistencies and several important hardening gaps while independently confirming the core authority model held. The branch now closes those findings: public `ObligationStore` cannot mint `discharged`; terminal discharge verification is bidirectional; applicability is re-derived during read-only inspection; disclosure/editor surfaces consume structured `participationBasis` and applicability instead of retired prose references; freeze integrity understands structured discharge; expected obligation conflicts are bounded 4xx; public Thread snapshots are exact-keyed; and stale authority after Actor execution/Guardian pass closes through append-only `governing_authority_withdrawn` evidence rather than leaving a permanent active runtime or falsifying a Guardian reject.
-
-The authority-withdrawal closure records an interrupted episode without freeze, authorization consumption, or obligation discharge. It is rejected while authority remains live, exact retries are idempotent, conflicting reuse is rejected, and private stance plus closure evidence survive restart inspection.
-
-### Direct post-#35 follow-up — interrupted compelled episode persistence + history visibility
-
-The focused re-review found a bounded lifecycle gap: an executed/Guardian-passed compelled episode could still be lazily swept as generic `lease_expired` if authority had already disappeared but closure was not invoked inside the lease window. A direct follow-up, deliberately consuming **no PR number**, closes that gap.
-
-- qualified interrupted compelled episodes are protected from lazy lease sweep;
-- a later thaw fails `THAW_LEASE_CONFLICT` until the prior episode is truthfully closed;
-- closure remains possible after physical lease expiry only when authority was already stale by `min(closedAt, lease.expiresAt)`, preventing retroactive relabeling of ordinary timeouts;
-- closure atomically appends a replayable public-safe `COMPELLED_EPISODE_INTERRUPTED` Thread life event, advances only Thread version/provenance, records the private causal closure, aborts the runtime, and releases the lease;
-- the public event exposes the historical category but no obligation/session/authorization/closure IDs, private stance, terms, or rationale;
-- private/admin inspection can enumerate all authority-withdrawal closures per Thread and independently verifies causal chains plus new history-event bindings;
-- legacy #35 withdrawal rows remain readable without being rewritten.
-
-Because the append-only event vocabulary changed, that follow-up advanced the world-store schema to **v5**. #37 advances the identity-capable world-store to **v6**.
-
-Neither #35 nor this lifecycle follow-up moves the pre-M2 personhood score. They close authority integrity, social consequence, and truthful life-history substrate needed by later relationship/institution/economic systems without manufacturing rubric credit.
-
-## PR #36 merged; PR #37 active — Thread Passport & Identity Provenance v1
-
-PR #36 is **MERGED / FROZEN** as the four-document M2 constitutional unit. Its hostile vision re-review closed the persona-theater escape hatch before implementation.
-
-PR #37 now implements persistence/provenance only: a closed Identity Domain Registry v1, stable `icl_` claim lineages, immutable `ias_` assertion revisions, derived current/`asOf` identity views, and a readable Passport. Legacy flat identity remains a compatibility projection while its meaning is deterministically decomposed into claim-level genesis evidence.
-
-#37 deliberately reports `acceptedCausalAssertions=0` and `endogenousEvidenceAssertions=0`. #39/#40 must earn causal identity standing; #41 must earn endogenous self-authored Development.
-
-Fibre also adopts the memory-visual invariant: **every Thread memory reference has a visual companion lineage**. #37 creates a private pending synthetic-reconstruction slot for every migrated/new memory and labels it `synthetic_representation_not_historical_evidence`; #38 owns actual generated/captured assets. New freeze-created autobiographical memories and their initial visual lineage are committed atomically.
-
-The world-store schema is **v6**. Read-only identity inspection is available through `npm run inspect:identity`.
-
-## Model runtime
-
-`config/models.yaml` remains the only model-routing configuration:
-
-```yaml
-reasoning:
-  dignity_guardian:
-    provider: openai
-    model: gpt-5.1-2025-11-13
-```
-
-Secrets remain environment-only. OpenAI uses strict Responses API structured output, `temperature=0`, `top_p=1`, `reasoning=none`, and conservative transient retry behavior.
-
-The current runtime does not impose a default numeric `max_output_tokens` ceiling; it records the default as `auto`. Sealed candidates 1-3 retain their historical 6000-token boundary. Candidate 4 freezes the automatic-limit runtime.
+Caller nomination may not become identity-selection authority.
 
 ## Current score posture
 
-Historical M1 remains **11/26**. The live pre-M2 checkpoint remains **15/26 under rubric v2**.
+Historical M1 remains **11/26**. The live Whole-Person checkpoint remains **15/26 under rubric v2**.
 
 ```text
-Historical M1                 11/26
-Pre-M2 checkpoint             15/26
 Non-interchangeability        1
 Dignity and consent           2
 Social/relationship memory    1
 Development                   1
 Economic consequence          0
-Standing semantic gate        GREEN
-PR #33 semantic claim         EARNED
-PR #34 history claim          EARNED / SEALED
-PR #35 structured obligation  MERGED / REVIEWED
-Direct history follow-up       LANDED / NO PR NUMBER
 ```
 
-The awarded movement remains intentionally conservative:
+#39 deliberately earns no score movement. It builds a credible prior-life substrate without claiming that the new identity/history ledgers already cause stable behavior.
 
-- Non-interchangeability `0 -> 1`: attributable semantic differences now change participation under controlled held-out conditions, but the stronger rubric-2 repeated-condition/history standard is not yet closed.
-- Dignity and consent `1 -> 2`: Thread-owned semantic appraisal plus request-bound authorization now governs willing participation and resistance.
-- Social and relationship memory `0 -> 1`: persistent requester-targeted relationship state exists and the accepted trust counterfactual changes appraisal narrowly; the broader reciprocal relationship system remains deferred.
-- Development `0 -> 1`: a durable Fibre-owned record from an earlier canonical episode survived restart and was the isolated semantic cause of a later appraisal differential. Richer self-authored learning remains unearned.
-- Economic consequence stays `0`: appraisal does not durably spend or constrain future capability.
+The next score-bearing architectural work is #40 causal consumption followed by #41 standing.
 
-## Immediate sequence
+## Explicitly deferred, not erased
 
-```text
-#33 Semantic Guardian — EARNED
-  -> #34 History bends judgment — EARNED / SEALED / MERGED
-  -> #35 Structured Obligation v1 — MERGED / REVIEWED
-  -> direct no-PR follow-up — interrupted compelled episode persistence + history visibility — LANDED
-  -> #36 M2 Identity & Embodiment Contract — MERGED / FROZEN
-  -> #37 Thread Passport & Identity Provenance v1 — ACTIVE
-  -> #38 Lineage, Geography & Embodiment v1
-  -> #39 Identity Projection & Causal Consumption
-  -> #40 M2 Standing Gate / M2 closure
-```
+The following remain part of Fibre's intended architecture:
 
-The detailed continuation plan through #43 is [`m2-pr-plan.md`](../validation/m2-pr-plan.md). #35 and its direct history follow-up are complete; #36 is merged/frozen; #37 is the active implementation PR and remains distinct from #38-#40.
+- canonical bounded identity/history consumption and endogenous selection (#40);
+- M2 standing across repeated trials and causal substitutions (#41);
+- richer Thread-authored development and self-model change (#42);
+- reciprocal/shared relationship structures, repair, expectations and permissions (#43);
+- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
+- endogenous motivation using clearly separated mechanical conditions plus Thread-authored semantic interpretation;
+- general isolated worker/tool/model gateway and model-capable Actor;
+- demonstrated cognition-provider/runtime replacement continuity;
+- production authentication, encryption, stronger tamper anchors and distributed/cloud topology;
+- real message delivery and performed-action evidence;
+- task markets, families/reproduction, institutions and broader society.
 
-## Deferred capability, not erased capability
-
-The following remain deferred with extension paths preserved:
-
-- broader reciprocal relationship service beyond Semantic Relationship State v0;
-- richer self-authored developmental learning: Thread-authored observations/reflection, experience-derived self-model/state change, adverse and low-dignity experience memory, and repeated cross-episode behavioral learning;
-- semantic natural-language obligation applicability beyond conservative request-fingerprint binding;
-- real recurring-obligation occurrence/period/partial-satisfaction semantics;
-- general isolated worker/tool/model gateway;
-- model-capable Actor and independently observed external action traces;
-- production authentication, encryption, principal/role authorization, and stronger tamper anchors;
-- production database/distributed lease/cloud topology;
-- marketplace execution and economic settlement;
-- full identity, lineage, culture, geography, portrait/voice, embodiment, privacy, and self-authorship contract/implementation;
-- family, reproduction, institutions, and broader society mechanics.
+A deferred capability remains visible because Fibre's ambition is a persistent society of distinctive persons, not a workflow engine with elaborate profiles.
