@@ -61,8 +61,8 @@ That verification baseline applies to the reviewed Gate-F head. Every seam stage
 | 1 | Pass-C doctrine audit | **COMPLETE** | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal; local full verification green |
 | 2 | Memory/meaning instrumentation | **COMPLETE** | citation share and meaning-rate characterization exist without becoming admission gates; local full verification green |
 | 3 | Slice-F canonical delegation | **COMPLETE** | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected; local full verification green |
-| 4 | Older C/D carry-forwards | **IMPLEMENTED / VERIFY** | long Thread-ID predicate budget and historical-memory read-policy drift are closed with regressions; local full verification green |
-| 5 | Test-value audit | PENDING | tests are inventoried by invariant; keep/consolidate/archive/delete decisions and coverage gaps are explicit |
+| 4 | Older C/D carry-forwards | **COMPLETE** | long Thread-ID Genesis publication and historical-memory read-policy drift are closed with load-bearing regressions; local full verification green |
+| 5 | Test-value audit | **IN PROGRESS / INVENTORY REVIEW** | tests are inventoried by invariant; keep/consolidate/retain/delete decisions and coverage gaps are explicit |
 | 6 | Retired experiment/artifact hygiene | PENDING | current mechanism, retained scientific evidence and dead scaffolding are clearly separated without erasing failed evidence |
 | 7 | Documentation/plan reconciliation | PENDING | canonical #39 docs/context packs describe the current architecture and no retired mechanism appears current |
 | 8 | Branch/repository hygiene | PENDING | latest main reconciled, full check green, evidence hashes stable, clean tree, exact seam-closing head recorded |
@@ -195,27 +195,31 @@ Carry-forward record:
 
 [`m2-pr39-pre-g-stage4-carry-forwards.md`](m2-pr39-pre-g-stage4-carry-forwards.md)
 
-### C: long Thread-ID publication
+### C: long Thread-ID Genesis publication
 
-The Thread ID contract permits identifiers up to 256 characters while identity claim predicates have a separate 120-byte canonical-JSON budget.
+The initial Stage-4 implementation closed the known 120-byte identity claim-predicate overflow. Its first local full-suite run then failed exactly where a load-bearing regression should fail: the synthetic 256-character Thread reached seed normalization, where the derived seed event ID embedded the complete Thread ID and exceeded Fibre's separate 256-character general ID contract.
 
-Legacy/Genesis identity bootstrap previously placed the complete Thread ID directly in `claimPredicate.subject`, so a valid long Thread could fail publication as a side effect of identity bootstrap.
+That failure exposed a second real composition bug rather than a bad test expectation.
 
-Stage 4 now:
+Stage 4 therefore closed the complete **Genesis birth path** required before G:
 
-- preserves the exact historical predicate for ordinary short IDs;
-- compacts only an overflowing seed predicate subject into a deterministic `thread_<24 hex>` reference;
-- compacts an unusually long seed object too only if still required;
-- keeps the complete Thread ID authoritative in the assertion row, assertion `threadId`, claim-ID seed, Thread history and Thread projection;
-- still subjects the bounded result to the existing 120-byte claim-predicate validator.
+- ordinary short Thread IDs preserve their historical deterministic IDs byte-for-byte;
+- only a derived Thread-scoped ID that would exceed the 256-character contract compacts the embedded Thread-ID segment into a deterministic hash reference;
+- seed event IDs are bounded;
+- Genesis Pass-A life-event IDs are bounded;
+- ordinary command event IDs use the same compatibility-preserving helper;
+- identity seed claim predicates remain within their independent 120-byte canonical-JSON budget;
+- the full Thread ID remains authoritative in Thread state, history, identity assertions and publication.
 
-The regression publishes a real 256-character Thread ID and inspects its durable identity rows.
+The regression now publishes a real 256-character Thread with a Pass-A life episode, replays it, and verifies the generated event IDs and identity predicates remain valid.
+
+This does **not** claim every future runtime-derived identifier has been exhaustively tested at max Thread-ID length. Stage 5 records that adjacent coverage limitation explicitly rather than inflating the Genesis result into a runtime-wide claim.
 
 ### D: historical-memory policy drift
 
 Current memory content limits are admission-time policy, not a reason to make already admitted history unreadable after software policy changes.
 
-Stage 4 now separates:
+Stage 4 separates:
 
 ```text
 normalizeAutobiographicalMemory(...)
@@ -231,7 +235,41 @@ Digest verification and `autobiographicalMemoryIsCurrent()` use historical rehyd
 
 The regression creates a mechanically complete synthetic historical ledger record that exceeds today's V2 `rememberedContent` limit, proves current admission rejects it, and proves read-only history/current-memory inspection still verifies and returns it.
 
-Local full verification is required before Stage 4 becomes `COMPLETE`.
+Local maintainer verification after the long-ID follow-up:
+
+```text
+full tests                     581/581 pass
+repository check               green
+```
+
+Stage 4 is therefore **COMPLETE**.
+
+## Stage 5 — test-value audit
+
+Audit record:
+
+[`m2-pr39-pre-g-stage5-test-value-audit.md`](m2-pr39-pre-g-stage5-test-value-audit.md)
+
+Stage 5 treats the suite as an invariant portfolio, not a score to minimize or maximize.
+
+The first implementation pass adds `tools/test-value-audit.mjs`, which inventories exactly the three `npm test` source globs and reports per-file scope, heuristic invariant family, source digest/size, static declared test calls, literal test titles, imports of other `*.test.mjs`, zero-declaration status and comment-only status.
+
+Repository-wide mechanical signals include:
+
+```text
+byte-identical duplicate test files
+test files importing other test files
+test-path tombstones with no executable test
+duplicate test titles across files
+```
+
+Only the first three can become automatic mechanical cleanup findings. A duplicate title is a review signal only because similar wording at domain/store/replay/API/transaction/hostile boundaries may protect materially different failure paths.
+
+Two already-obsolete comment-only identity `*.test.mjs` tombstones were removed in this first pass; neither contained an assertion, and no semantic test was deleted.
+
+`tools/test-value-audit.test.mjs` protects the audit's own distinction between executable tests, comment-only tombstones, test-import aliases, exact duplicate bodies and merely duplicated titles.
+
+Stage 5 remains **IN PROGRESS** until the maintainer runs the machine inventory on the current branch, we review every mechanical finding, major invariant families receive an explicit value disposition, coverage gaps are recorded, and the full suite/check remains green after any chosen cleanup.
 
 ## Hard seam rules
 
@@ -255,10 +293,10 @@ Model-free code/test/doc work required to close the seam remains allowed.
 [x] citation-share selectivity diagnostic available and locally verified
 [x] Slice-F duplicated semantic authority removed and locally verified
 [x] known Slice-F mutation gaps killed by tests and locally verified
-[~] long Thread-ID publication risk — implementation/regression landed; local verification pending
-[~] historical-memory read-policy drift — implementation/regression landed; local verification pending
-[ ] tests inventoried by protected invariant and coverage gaps
-[ ] redundant/obsolete tests deliberately handled
+[x] long Thread-ID Genesis publication risk closed and locally verified
+[x] historical-memory read-policy drift closed and locally verified
+[~] tests inventoried by protected invariant and coverage gaps — machine audit landed; local inventory pending
+[~] redundant/obsolete tests deliberately handled — two empty tombstones removed; full disposition pending
 [ ] retained experiments separated from current mechanism
 [ ] canonical docs/context packs reconciled
 [ ] latest main reconciled
