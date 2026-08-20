@@ -54,6 +54,8 @@ Historical tools used `../services`, `../fixtures`, `../experiments` and similar
 
 To preserve byte identity, Stage 6 adds narrow Git symlink bridges at category boundaries, including the nested `tools/repro/pr39/` boundary. Recursive test discovery ignores them because they are symlinks rather than directories.
 
+Some existing active tests and retained repro instruments also imported former **file paths** directly. Those edges are preserved with narrow file-level relocation aliases. One exception is the historical `tools/m1-demo-world-kernel.mjs` executable path: it is a small compatibility wrapper rather than a symlink because its `isMain` guard must remain correct when Node executes the old path directly.
+
 New tooling must not depend on new compatibility bridges. They are a relocation mechanism, not a new architecture layer.
 
 ## Active versus reproducibility tests
@@ -85,6 +87,42 @@ Stage 6 does not change the interpretation of any retained result:
 - N2 remains the corrected development evidence used in Gate-F closure;
 - failed/burned artifacts remain in their existing artifact paths and are not regenerated.
 
+## First relocation verification — failed for path compatibility
+
+The first maintainer verification at `b22434dba442693629193e581ae15928a653df51` was intentionally retained as evidence rather than dismissed as cleanup noise.
+
+The suite-classification/audit infrastructure itself passed, but execution exposed missing relocation edges:
+
+```text
+suite/audit targeted tests    4/4 pass
+active suite                  511/523 pass, 12 fail
+repro suite                   28/31 pass, 3 fail
+all suite                     539/554 pass, 15 fail
+test-value audit              mechanically clean
+```
+
+Every reported failure was a module-resolution or executable-path failure caused by the Stage-6 move. The failures covered:
+
+- active Slice-E tests importing former root-level E2/dev tool paths;
+- process tests spawning the historical root-level M1 world-kernel executable;
+- active editor/inspection/Pass-C tests expecting former sibling tool paths;
+- retained Guardian standing tests expecting current Guardian development siblings;
+- retained M1 proof/editor tests expecting editor/inspector siblings.
+
+No failed assertion indicated a semantic/authority change in the moved implementations.
+
+Corrections:
+
+```text
+304988ef9d957812a8999dbf6c14734ca7416e44  restore relocation compatibility edges
+dc77e4cd4cdcd649b69b8dd345ce8a02fc33c279  make relocation compatibility load-bearing
+dcf73bd6090cfab57fe2a2b79d5a658393b4940e  preserve historical M1 executable main semantics
+```
+
+`tools/test-infra/stage6-relocation-compatibility.test.mjs` now verifies the known file-level relocation graph is resolvable/importable. The retained scientific targets remain byte-identical; compatibility code lives outside those retained blobs.
+
+Stage 6 remains `implemented_awaiting_verification` until the corrected tree passes the full verification envelope below.
+
 ## Verification required
 
 Before Stage 6 becomes COMPLETE, the maintainer must verify:
@@ -92,6 +130,7 @@ Before Stage 6 becomes COMPLETE, the maintainer must verify:
 ```bash
 node --disable-warning=ExperimentalWarning --test tools/test-infra/test-suite-lifecycle.test.mjs
 node --disable-warning=ExperimentalWarning --test tools/test-infra/test-value-audit.test.mjs
+node --disable-warning=ExperimentalWarning --test tools/test-infra/stage6-relocation-compatibility.test.mjs
 npm test
 npm run test:repro
 npm run test:all
