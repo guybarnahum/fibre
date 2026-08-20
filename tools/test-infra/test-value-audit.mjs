@@ -235,9 +235,26 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
 }
 
 function renderTable(summary) {
-  const lines = ["| Scope | Files | Declared calls | Bytes |", "| --- | ---: | ---: | ---: |"];
-  for (const [scope, values] of Object.entries(summary)) lines.push(`| ${scope} | ${values.files} | ${values.declaredTestCalls} | ${values.bytes} |`);
-  return lines.join("\n");
+  const rows = [
+    ["Scope", "Files", "Declared calls", "Bytes"],
+    ...Object.entries(summary).map(([scope, values]) => [
+      scope,
+      String(values.files),
+      String(values.declaredTestCalls),
+      String(values.bytes),
+    ]),
+  ];
+  const widths = rows[0].map((_, column) => Math.max(
+    column === 0 ? 3 : 4,
+    ...rows.map((row) => row[column].length),
+  ));
+  const renderRow = (row) => `| ${row.map((cell, column) =>
+    column === 0 ? cell.padEnd(widths[column]) : cell.padStart(widths[column])
+  ).join(" | ")} |`;
+  const separator = `| ${widths.map((width, column) =>
+    column === 0 ? "-".repeat(width) : `${"-".repeat(width - 1)}:`
+  ).join(" | ")} |`;
+  return [renderRow(rows[0]), separator, ...rows.slice(1).map(renderRow)].join("\n");
 }
 
 function renderAudit(audit) {
