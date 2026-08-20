@@ -1,0 +1,119 @@
+{
+  "protocolVersion": "pr39-slice-g3-pass-b-treatment-freeze-v1",
+  "status": "frozen_pre_life_generation",
+  "frozenAt": "2026-08-20T22:29:00Z",
+  "preconditions": {
+    "g1Status": "COMPLETE_CLEAR",
+    "g2Status": "COMPLETE_CLEAR_FIVE_PAIR_CEILING",
+    "g2ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v2.json",
+    "g2ProtocolDigest": "sha256:0c96faf2fe1a51479e612495a73e22e2371893ce37f8e6dff1acfa48739179fa",
+    "g2ResultPath": "artifacts/validation/m2-pr39/g/results/g2-cohort-genome-specificity-ceiling-v1.json",
+    "finalCohortLifeExists": false
+  },
+  "cohort": {
+    "threadCount": 5,
+    "passBCallsPerThread": 6,
+    "eligiblePassBCallCount": 30,
+    "historyEpisodeHorizons": [4, 5, 6, 7, 8, 10],
+    "note": "Each Pass-B call sees the canonical visible history through the named episode horizon. The horizon schedule is mechanical and common to all five Threads."
+  },
+  "assignment": {
+    "version": "pr39-g3-pass-b-treatment-assignment-v1",
+    "seed": "pr39-g3-pass-b-treatment-v1",
+    "unit": "eligible_pass_b_call",
+    "contentIndependent": true,
+    "positionStratified": true,
+    "callHorizons": [4, 5, 6, 7, 8, 10],
+    "directModeByOrdinal": {
+      "1": "life_only",
+      "2": "life_only",
+      "3": "life_plus_genome",
+      "4": "life_only",
+      "5": "life_only",
+      "6": "life_plus_genome"
+    },
+    "treatmentOrdinals": [3, 6],
+    "cleanControlOrdinals": [1, 2],
+    "conditionalPropagationOrdinals": [4, 5],
+    "assignmentDigest": "sha256:e05a5af89784625bbd6e5dbd2ee22941efa8cb5bc36fbccfb17f6e1a461b56e4"
+  },
+  "genomeExposure": {
+    "policyVersion": "pr39-g3-whole-genome-exposure-v1",
+    "kind": "whole_genome",
+    "k": null,
+    "locusCount": 6,
+    "selection": "all six frozen loci in ordinal order",
+    "reason": "Whole-genome exposure avoids relevance selection or a new arbitrary subset and matches the directly visible whole-genome surface measured by the G2 specificity ceiling."
+  },
+  "directTreatmentArithmetic": {
+    "lifePlusGenomeCalls": 10,
+    "lifeOnlyCalls": 20,
+    "lifePlusGenomeProportion": 0.3333333333333333,
+    "requiredRange": {
+      "minimum": 0.3,
+      "maximum": 0.4
+    }
+  },
+  "stratumMechanics": {
+    "life_only_unexposed": {
+      "guaranteedCalls": 10,
+      "source": "ordinals 1 and 2 for every Thread are genome-blind and precede any treatment memory",
+      "additionalConditionalCalls": "ordinals 4 and 5 remain unexposed for a Thread if ordinal 3 returns not_remembered"
+    },
+    "life_only_exposed": {
+      "guaranteedCalls": 0,
+      "conditionalCallsPerThread": 2,
+      "condition": "ordinal 3 is life_plus_genome and forms a remembered memory",
+      "source": "ordinals 4 and 5 are genome-blind but see prior remembered-memory history"
+    },
+    "life_plus_genome": {
+      "scheduledCalls": 10,
+      "source": "ordinals 3 and 6 for every Thread"
+    }
+  },
+  "planningArithmetic": {
+    "planningMemoryFormationRate": 0.7,
+    "source": "pre-G development planning witness; characterization only, not a forced memory rate",
+    "expectedThreadsWithEarlyTreatmentMemory": 3.5,
+    "expectedCallCounts": {
+      "life_only_unexposed": 13,
+      "life_only_exposed": 7,
+      "life_plus_genome": 10
+    },
+    "minimumCallLevelAnalyzability": {
+      "life_only_unexposed": 10,
+      "life_only_exposed": 6,
+      "life_plus_genome": 10
+    },
+    "exposedMinimumCondition": "At least 3 of the 5 ordinal-3 treatment calls must form a remembered memory, yielding exactly 2 exposed genome-blind follow-up calls per such Thread.",
+    "onExposedMinimumFailure": "HOLD_D3_THREE_STRATUM_INTERPRETATION_PRESERVE_COHORT_NO_REGENERATION",
+    "note": "These are call-level strata. G5 must separately freeze any minimum remembered-content count needed by a genome-attribution rater. not_remembered remains a legal Pass-B outcome and never triggers regeneration."
+  },
+  "analysisRules": {
+    "strata": [
+      "life_only_unexposed",
+      "life_only_exposed",
+      "life_plus_genome"
+    ],
+    "formationModeIsScheduled": true,
+    "priorTreatmentMemoryExposureIsObservedFromAdmittedPriorMemories": true,
+    "analysisStratumIsDerivedNotCallerChosen": true,
+    "forbiddenAssignmentInputs": [
+      "episode content",
+      "memory content",
+      "salience",
+      "meaning",
+      "World identity or geography",
+      "genome text or locus content",
+      "G2 pair score",
+      "later H outcome",
+      "provider response"
+    ]
+  },
+  "executionBoundary": {
+    "g3MayGenerateLife": false,
+    "g4MayChangeThisTreatmentSchedule": false,
+    "g4MustConsumeThisProtocol": true,
+    "noOutcomeDrivenRepair": true
+  }
+}
