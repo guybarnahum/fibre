@@ -107,7 +107,7 @@ function familyFor(path) {
   for (const [needle, family] of FAMILY_RULES) {
     if (name.includes(needle)) return family;
   }
-  return path.includes("/tools/") ? "experimental-or-repo-tooling" : "other";
+  return path.startsWith("tools/") ? "experimental-or-repo-tooling" : "other";
 }
 
 function summarizeBy(records, key) {
@@ -140,9 +140,9 @@ function duplicateGroups(records, selector) {
 export function buildTestValueAudit(root = DEFAULT_ROOT) {
   const records = testFiles(root).map(({ scope, path }) => {
     const source = readFileSync(path, "utf8");
-    const declared = declaredTestCount(source);
-    const importedTests = importedTestFiles(source);
     const stripped = stripComments(source);
+    const declared = declaredTestCount(stripped);
+    const importedTests = importedTestFiles(stripped);
     return {
       path: normalizedPath(root, path),
       scope,
@@ -150,7 +150,7 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
       bytes: Buffer.byteLength(source, "utf8"),
       sha256: sha256(source),
       declaredTestCalls: declared,
-      testTitles: testTitles(source),
+      testTitles: testTitles(stripped),
       importedTestFiles: importedTests,
       commentOnly: stripped.length === 0,
       zeroDeclaredTests: declared === 0,
