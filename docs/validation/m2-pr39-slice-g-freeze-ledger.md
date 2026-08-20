@@ -36,6 +36,33 @@ quality regeneration      forbidden after first integrity-valid H cohort
 
 The common exact entry age remains `PENDING` only because the chronology schedule has not yet been frozen. It must be fixed before the five WorldSpecs become final.
 
+### Repository artifact home
+
+Slice G's frozen machine-readable experiment artifacts live under:
+
+```text
+artifacts/validation/m2-pr39/g/
+  protocol/
+  worlds/
+  genomes/
+  cohort/
+  results/
+```
+
+The storage meaning is fixed:
+
+- `worlds/` contains the five frozen final WorldSpec JSON records after G1;
+- `genomes/` contains frozen cohort and synthetic-parent genome artifacts after G2;
+- `protocol/` contains machine-readable assignment/configuration/rater/verdict freezes as they become exact;
+- `cohort/` remains empty until Gate G is CLEAR, then may contain frozen exports/snapshots of the generated experimental Threads;
+- `results/` contains later G/H machine-readable outputs and diagnostic evidence.
+
+These Git artifacts are experimental inputs, snapshots and evidence. They are **not** the live Thread/World persistence authority. During execution, WorldSpecs, genomes and Threads still pass through the normal Fibre stores and domain admission contracts.
+
+Reusable synthetic examples that are not part of this frozen experiment remain under `fixtures/`; human-readable protocol/review/verdict records remain under `docs/validation/`.
+
+The canonical distinction is documented in [`../architecture/storage-model.md`](../architecture/storage-model.md) and the practical artifact convention in [`../../artifacts/validation/README.md`](../../artifacts/validation/README.md).
+
 ### World/genome separation
 
 Frozen ordering:
@@ -117,6 +144,8 @@ final world digests
 convergent-pair designation
 ```
 
+The five final WorldSpec JSON records are frozen under `artifacts/validation/m2-pr39/g/worlds/`.
+
 No cohort genome may be authored or assigned before G1 is frozen.
 
 ## G2 — cohort genomes and specificity ceiling
@@ -132,6 +161,8 @@ After the worlds are frozen genome-blind:
 - freeze the independent cohort-genome pair schedule before seeing control outputs;
 - run the existing trial-independent, position-balanced genome-discrimination instrument;
 - preserve the cohort-genome result as H's specificity ceiling.
+
+Frozen G2 genome artifacts belong under `artifacts/validation/m2-pr39/g/genomes/`.
 
 The Slice-B hand-authored genome-control result remains instrument history; it is not H's denominator.
 
@@ -326,7 +357,7 @@ Before asking for CLEAR, the packet must make it possible to verify:
 ```text
 Pre-G seam   COMPLETE
 Stage 9      CLEAR
-G0           FROZEN — protocol shell / sequencing only
+G0           FROZEN — protocol shell / sequencing / artifact home
 G1           NEXT — author five fresh genome-blind world candidates
 G2–G6        BLOCKED on prior G steps
 H            FORBIDDEN until Gate G CLEAR
