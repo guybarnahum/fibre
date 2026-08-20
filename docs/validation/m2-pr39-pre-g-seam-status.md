@@ -60,8 +60,8 @@ That verification baseline applies to the reviewed Gate-F head. Every seam stage
 | 0 | Seal Gate F | **COMPLETE** | Gate-F verdict, evidence, negative runs, selectivity finding and carry-forwards are durably recorded |
 | 1 | Pass-C doctrine audit | **COMPLETE** | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal; local full verification green |
 | 2 | Memory/meaning instrumentation | **COMPLETE** | citation share and meaning-rate characterization exist without becoming admission gates; local full verification green |
-| 3 | Slice-F canonical delegation | **IMPLEMENTED / VERIFY** | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected; local full verification green |
-| 4 | Older C/D carry-forwards | PENDING | long Thread-ID predicate budget and historical-memory read-policy drift are closed with regressions |
+| 3 | Slice-F canonical delegation | **COMPLETE** | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected; local full verification green |
+| 4 | Older C/D carry-forwards | **IMPLEMENTED / VERIFY** | long Thread-ID predicate budget and historical-memory read-policy drift are closed with regressions; local full verification green |
 | 5 | Test-value audit | PENDING | tests are inventoried by invariant; keep/consolidate/archive/delete decisions and coverage gaps are explicit |
 | 6 | Retired experiment/artifact hygiene | PENDING | current mechanism, retained scientific evidence and dead scaffolding are clearly separated without erasing failed evidence |
 | 7 | Documentation/plan reconciliation | PENDING | canonical #39 docs/context packs describe the current architecture and no retired mechanism appears current |
@@ -187,7 +187,51 @@ Implementation:
 
 Stage 3 does not reopen Gate F or change any accepted origin/source rule. It removes a future semantic-drift path while preserving the already-cleared transaction boundary.
 
-Local full verification is required before Stage 3 becomes `COMPLETE`.
+The maintainer reported the Stage-3 targeted tests, full suite and repository check all passed. Stage 3 is therefore **COMPLETE**.
+
+## Stage 4 — older C/D carry-forwards
+
+Carry-forward record:
+
+[`m2-pr39-pre-g-stage4-carry-forwards.md`](m2-pr39-pre-g-stage4-carry-forwards.md)
+
+### C: long Thread-ID publication
+
+The Thread ID contract permits identifiers up to 256 characters while identity claim predicates have a separate 120-byte canonical-JSON budget.
+
+Legacy/Genesis identity bootstrap previously placed the complete Thread ID directly in `claimPredicate.subject`, so a valid long Thread could fail publication as a side effect of identity bootstrap.
+
+Stage 4 now:
+
+- preserves the exact historical predicate for ordinary short IDs;
+- compacts only an overflowing seed predicate subject into a deterministic `thread_<24 hex>` reference;
+- compacts an unusually long seed object too only if still required;
+- keeps the complete Thread ID authoritative in the assertion row, assertion `threadId`, claim-ID seed, Thread history and Thread projection;
+- still subjects the bounded result to the existing 120-byte claim-predicate validator.
+
+The regression publishes a real 256-character Thread ID and inspects its durable identity rows.
+
+### D: historical-memory policy drift
+
+Current memory content limits are admission-time policy, not a reason to make already admitted history unreadable after software policy changes.
+
+Stage 4 now separates:
+
+```text
+normalizeAutobiographicalMemory(...)
+    current admission; content policy enforced by default
+
+rehydrateAutobiographicalMemory(...)
+    historical read; moving content-size policy not re-applied
+```
+
+Historical mode still enforces the durable memory structure, subject identity, chronology, evidence shape, format and lineage semantics.
+
+Digest verification and `autobiographicalMemoryIsCurrent()` use historical rehydration. History-vs-history revision validation uses historical mode on both sides. A new write against an old predecessor still validates the new record under current content policy.
+
+The regression creates a mechanically complete synthetic historical ledger record that exceeds today's V2 `rememberedContent` limit, proves current admission rejects it, and proves read-only history/current-memory inspection still verifies and returns it.
+
+Local full verification is required before Stage 4 becomes `COMPLETE`.
 
 ## Hard seam rules
 
@@ -209,10 +253,10 @@ Model-free code/test/doc work required to close the seam remains allowed.
 [x] Pass-C semantics audited and contract-conformant
 [x] no_durable_meaning remains genuinely possible
 [x] citation-share selectivity diagnostic available and locally verified
-[~] Slice-F duplicated semantic authority removed — implementation landed; local verification pending
-[~] known Slice-F mutation gaps killed by tests — regressions landed; local verification pending
-[ ] long Thread-ID publication risk closed
-[ ] historical-memory read-policy drift closed
+[x] Slice-F duplicated semantic authority removed and locally verified
+[x] known Slice-F mutation gaps killed by tests and locally verified
+[~] long Thread-ID publication risk — implementation/regression landed; local verification pending
+[~] historical-memory read-policy drift — implementation/regression landed; local verification pending
 [ ] tests inventoried by protected invariant and coverage gaps
 [ ] redundant/obsolete tests deliberately handled
 [ ] retained experiments separated from current mechanism
