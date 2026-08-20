@@ -100,7 +100,20 @@ function longThread() {
   return thread;
 }
 
-function manifest(thread) {
+function longBirthEpisodes() {
+  return [{
+    episodeId: "ep_pre_g_stage4_long_thread",
+    occurredAt: "2008-05-01T16:00:00Z",
+    ageAtEvent: 8,
+    placeRef: "place_pre_g_stage4",
+    participantRefs: [],
+    observableAction: "The child returns a library book at the desk and chooses another from a nearby shelf.",
+    structureRef: null,
+    introducedParticipants: [],
+  }];
+}
+
+function manifest(thread, publishedEpisodes = []) {
   return {
     genesisId: "gen_pre_g_stage4_long_thread",
     threadId: thread.threadId,
@@ -120,7 +133,7 @@ function manifest(thread) {
     publication: {
       status: "published",
       publishedAt: "2026-08-20T03:00:00Z",
-      resultingThreadVersion: thread.version,
+      resultingThreadVersion: thread.version + publishedEpisodes.length,
     },
     createdAt: "2026-08-20T02:52:00Z",
   };
@@ -281,11 +294,26 @@ test("Genesis publication supports the full Thread-ID contract without exceeding
     assert.equal(shortAssertions[0].claimPredicate.subject, mina.threadId);
 
     const thread = longThread();
+    const episodes = longBirthEpisodes();
     const genesis = new GenesisStore(databasePath);
     genesis.recordWorldSpec(worldSpec());
-    const published = genesis.publishBirth({ manifest: manifest(thread), thread });
+    const published = genesis.publishBirth({
+      manifest: manifest(thread, episodes),
+      thread,
+      episodes,
+    });
     assert.equal(published.thread.threadId, thread.threadId);
+    assert.equal(published.thread.version, thread.version + episodes.length);
     genesis.close();
+
+    const world = openWorldStore(databasePath);
+    const replayed = world.replayThread(thread.threadId);
+    const events = world.listEvents(thread.threadId);
+    world.close();
+    assert.deepEqual(replayed, published.thread);
+    assert.equal(events.length, 2);
+    assert.ok(events.every((event) => event.eventId.length <= 256));
+    assert.ok(events.every((event) => event.eventId.startsWith("evt_thread_")));
 
     const database = new DatabaseSync(databasePath);
     const rows = database.prepare(
