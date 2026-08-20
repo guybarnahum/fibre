@@ -127,6 +127,61 @@ The Stage-2 regression reads the retained N2 JSON and verifies that:
 
 The N2 artifact itself is not rewritten.
 
+## Machine-derived N2 baseline
+
+After Stage 2 implementation, the maintainer ran the shared characterization directly over the sealed N2 artifact. The exact derived result was:
+
+```text
+observations                         18
+remembered                           18
+not remembered                        0
+remembered rate                       1.0
+
+durable meaning                      18
+no durable meaning                     0
+remembered -> durable meaning rate     1.0
+
+cited episodes total                 27
+cited episodes / memory
+  mean                                1.50
+  min                                 1
+  max                                 3
+
+citation share of visible history
+  mean                                0.19074074074074074
+  min                                 0.10
+  max                                 0.50
+```
+
+By visible-history size:
+
+```text
+horizon 6  (n=6)
+  mean cited episodes                 1.3333333333333333
+  mean citation share                 0.2222222222222222
+  min/max citation share              0.16666666666666666 / 0.50
+
+horizon 8  (n=6)
+  mean cited episodes                 1.3333333333333333
+  mean citation share                 0.16666666666666666
+  min/max citation share              0.125 / 0.25
+
+horizon 10 (n=6)
+  mean cited episodes                 1.8333333333333333
+  mean citation share                 0.18333333333333332
+  min/max citation share              0.10 / 0.30
+```
+
+These values are mechanically consistent: the three horizon groups cite `8 + 8 + 11 = 27` episodes, and `27 / 18 = 1.50` cited episodes per formed memory overall.
+
+### Correction to the Gate-F review narrative
+
+The hostile Gate-F review correctly computed the aggregate values (`1.50` cited episodes per memory and about `0.191` citation share), but its printed horizon-6 breakdown said `1.00` cited / `0.167` share. That row is arithmetically inconsistent with the retained artifact and with the review's own aggregate total.
+
+The machine-derived Stage-2 characterization above is authoritative for the numerical breakdown. This correction does **not** alter the N2 artifact, either frozen criterion, or Gate-F CLEAR verdict.
+
+The supported interpretation is slightly narrower than the original prose: N2 shows strong selective retention overall, with roughly one-fifth of visible history cited on average. The per-horizon means do not demonstrate a perfectly flat retention share; horizon 6 contains greater variation because one memory cites 3 of 6 visible episodes. No monotonic increase in citation share with larger horizons is observed.
+
 ## Use in Slice G/H
 
 When G freezes the final diagnostic/reporting protocol, use this shared characterization shape for initial memory/meaning reporting rather than defining a second experiment-specific metric.
