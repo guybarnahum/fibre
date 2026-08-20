@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-pre-g-stage7-documentation-reconciliation
-status: implemented_awaiting_verification
+status: complete
 last-reviewed: 2026-08-20
 canonical: false
 ---
@@ -84,29 +84,21 @@ No historical source is deleted from context coverage merely because it leaves `
 
 ## Semantic reconciliation finding: real Pre-G integration gap
 
-The Stage-7 audit also found one place where the **plan is more complete than the live publication path**.
+The Stage-7 audit also found one place where the **plan was more complete than the live publication path**.
 
-The accepted [`symbolic-thread-genome-implementation-plan.md`](symbolic-thread-genome-implementation-plan.md) still correctly leaves this item unchecked:
+The accepted [`symbolic-thread-genome-implementation-plan.md`](symbolic-thread-genome-implementation-plan.md) required synthetic-ancestor source owners to be bound to admitted #38 `biological_parent` / `parent_genome_source` lineage evidence before a synthetic-lineage child becomes live.
 
-```text
-[ ] synthetic-ancestor source owners bound to admitted #38 lineage at Slice E/birth
-```
+At Stage-7 close, the pieces existed separately:
 
-Code review confirms the gap is real:
+- `SymbolicGenomeStore` verified persisted genome/source ownership and deterministic recombination;
+- #38 `life_relation_records` represented `biological_parent` with `parent_genome_source` and a `synthetic_ancestor` related party;
+- Rich-Life policy code could derive a synthetic-lineage witness from an actual recombined genome and intentionally kept it out of Pass A;
+- `GenesisManifest` recorded `genomeRef` and `parentOrAncestorRefs`;
+- but `GenesisStore.publishBirth()` did not yet make those records mutually load-bearing.
 
-- `SymbolicGenomeStore` can verify persisted genome/source ownership and deterministic recombination;
-- #38 `life_relation_records` can represent `biological_parent` with `parent_genome_source` and a `synthetic_ancestor` related party;
-- Rich-Life policy code can derive a synthetic-lineage witness from an actual recombined genome and intentionally keeps it out of Pass A;
-- `GenesisManifest` records `genomeRef` and `parentOrAncestorRefs`;
-- **but `GenesisStore.publishBirth()` does not resolve `manifest.genomeRef` against persisted symbolic-genome state or bind the genome source owners to the admitted #38 parent-genome-source relations before the child becomes live.**
+Stage 7 correctly classified this as a **Pre-G implementation blocker**, not as a documentation-only defect or a reason to reopen Gate F. Stage 8 owns its closure.
 
-The first Stage-7 storage rewrite briefly overstated the current birth transaction by including `genome` in its atomic-boundary description. The follow-up correction removes that overclaim and records the real boundary explicitly.
-
-### Classification
-
-This is not a documentation-only defect and is not a reason to reopen Gate F. It is a **known Pre-G implementation blocker** already anticipated by the accepted symbolic-genome plan.
-
-Before G, the live publication boundary must prove at least:
+The required boundary is:
 
 ```text
 manifest.genomeRef resolves
@@ -117,11 +109,11 @@ source owners == admitted #38 biological_parent + parent_genome_source relations
 failure/mismatch leaves no live child
 ```
 
-The implementation must preserve Pass-A genome blindness and must not turn lineage/genome facts into childhood-event authoring instructions.
+Pass A remains genome blind.
 
 ## Files reconciled
 
-Stage 7 updates:
+Stage 7 updated:
 
 ```text
 README.md
@@ -135,7 +127,7 @@ docs/validation/m2-pr39-pre-g-stage5-test-value-audit.md
 docs/validation/m2-pr39-pre-g-seam-status.md
 ```
 
-and adds this Stage-7 record.
+and added this Stage-7 record.
 
 ## What remains historical on purpose
 
@@ -149,11 +141,11 @@ Stage 7 does **not** modernize a sealed experiment so it looks like the current 
 
 **Causal individuality:** Stage 7 earns none. It accurately records that #39 creates a particular prior-life substrate, #40 will make selected identity/history causally matter, and #41 must prove stable non-interchangeable individuality.
 
-No ADR is required because Stage 7 changes no accepted conceptual boundary. The newly surfaced genome/lineage integration gap is an implementation completion obligation under the already accepted #39 genome plan.
+No ADR is required because Stage 7 changes no accepted conceptual boundary. The genome/lineage integration finding is an implementation completion obligation under the already accepted #39 genome plan.
 
-## Verification required
+## Final verification — COMPLETE
 
-Because Stage 7 changes canonical Markdown and the context manifest, it is not COMPLETE until the maintainer runs:
+The maintainer reported the complete Stage-7 documentation/context verification green on 2026-08-20:
 
 ```bash
 npm run includes:check
@@ -162,16 +154,8 @@ npm run validate
 npm run check
 ```
 
-Expected result:
+This establishes synchronized Markdown includes, accepted-canonical-document context coverage, deterministic context generation, valid source/output path boundaries and a green repository check on the Stage-7 tree.
 
-```text
-Markdown includes synchronized
-all accepted canonical docs covered by at least one context profile
-context packs generate deterministically
-no context source/output path violations
-repository check green
-```
+No provider/model execution occurred or was required.
 
-No provider/model execution is required or permitted for Stage 7.
-
-After that verification, Stage 7 may be marked **COMPLETE**. The genome/lineage publication gap remains a separate explicit Pre-G implementation item to close before Slice G, naturally alongside Stage 8 final integration/repository hygiene.
+Stage 7 is **COMPLETE**. Stage 8 owns final integration and repository hygiene before the narrow Pre-G review.
