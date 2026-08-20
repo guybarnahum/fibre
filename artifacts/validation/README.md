@@ -65,6 +65,28 @@ During execution, authoritative state is admitted into the Fibre world store thr
 
 An exported Thread must therefore be treated as a frozen representation of experiment state, not as a production persistence model in which a Thread is one file.
 
+## World presentation metadata
+
+Human-facing World copy and visual grounding belong in a companion `WorldPresentation`, not inside the authoritative Genesis WorldSpec.
+
+For validation Worlds, presentation metadata may live under:
+
+```text
+worlds/presentation/
+```
+
+It may contain:
+
+- display name and short/long website descriptions;
+- rich environmental visual profiles;
+- visual anchors and asset-shot ideas;
+- explicit visual shortcuts/stereotypes to avoid;
+- stable asset references once media exists.
+
+Presentation metadata is **derived and non-cognitive**. It must not be fed into Genesis, included in WorldSpec digests, used as identity/character evidence or used to regenerate a weak experimental Thread. If presentation copy conflicts with the WorldSpec, the WorldSpec is authoritative.
+
+See [`../../docs/architecture/world-presentation-v1.md`](../../docs/architecture/world-presentation-v1.md).
+
 ## Slice G convention
 
 Milestone #39 Slice G uses:
@@ -73,6 +95,8 @@ Milestone #39 Slice G uses:
 artifacts/validation/m2-pr39/g/
   protocol/
   worlds/
+    candidates/
+    presentation/
   genomes/
   cohort/
   results/
@@ -90,6 +114,8 @@ protocol shell
 ```
 
 No final-cohort Thread export belongs under `cohort/` before Gate G is CLEAR.
+
+The Slice-G presentation layer is explicitly outside that causal freeze: it may improve how a frozen World is shown, but it may not alter the WorldSpec or enter cohort cognition.
 
 ## Production direction
 
