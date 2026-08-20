@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   WORLD_FAMILIARITY_POLICY,
+  WORLD_FAMILIARITY_SYSTEM_PROMPT,
   classifyWorldFamiliarity,
   projectWorldForFamiliarity,
 } from "./genesis-world-familiarity-probe.mjs";
@@ -39,6 +40,12 @@ test("G1 familiarity projection excludes experiment identity and authorship", ()
   assert.equal("createdAt" in projected, false);
   assert.equal(projected.places[0].placeId, undefined);
   assert.equal(projected.places[0].description, "A public neighborhood setting.");
+});
+
+test("G1 cold familiarity surface contains no experiment or genome language", () => {
+  const projected = projectWorldForFamiliarity(world);
+  const surface = `${WORLD_FAMILIARITY_SYSTEM_PROMPT}\n${JSON.stringify(projected)}`;
+  assert.doesNotMatch(surface, /Fibre|Genesis|genome|worldSpecId|worldAuthorship/i);
 });
 
 test("G1 familiarity HOLD rule is deterministic and predeclared", () => {
