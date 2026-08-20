@@ -1,18 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-
-const require = createRequire(import.meta.url);
-const ts = require("typescript");
-if (
-  typeof ts?.createSourceFile !== "function"
-  || ts?.ScriptTarget?.Latest === undefined
-  || ts?.ScriptKind?.JS === undefined
-) {
-  throw new TypeError("test-value audit requires the TypeScript parser API");
-}
 
 const DEFAULT_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
@@ -84,61 +73,129 @@ function testFiles(root = DEFAULT_ROOT) {
   return result.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function isTestCallee(expression) {
-  if (ts.isIdentifier(expression)) return expression.text === "test" || expression.text === "it";
-  if (!ts.isPropertyAccessExpression(expression)) return false;
-  if (!ts.isIdentifier(expression.expression)) return false;
-  if (!new Set(["test", "it"]).has(expression.expression.text)) return false;
-  return new Set(["only", "skip", "todo"]).has(expression.name.text);
+// This audit intentionally avoids a JavaScript-parser dependency. It needs only a
+// conservative lexical distinction between executable source and code-shaped text in
+// comments/string fixtures. Strings and comments are blanked while newlines/positions
+// are preserved; template literals are treated as data in their entirety because Fibre's
+// test declarations/imports are not authored inside template interpolations.
+function lexicalView(source) {
+  const masked = [...source];
+  const strings = [];
+
+  function blank(start, end) {
+    for (let index = start; index < end; index += 1) {
+      if (masked[index] !== "\n" && masked[index] !== "\r") masked[index] = " ";
+    }
+  }
+
+  let index = 0;
+  while (index < source.length) {
+    if (source[index] === "/" && source[index + 1] === "/") {
+      const start = index;
+      index += 2;
+      while (index < source.length && source[index] !== "\n") index += 1;
+      blank(start, index);
+      continue;
+    }
+    if (source[index] === "/" && source[index + 1] === "*") {
+      const start = index;
+      index += 2;
+      while (index < source.length && !(source[index] === "*" && source[index + 1] === "/")) index += 1;
+      index = Math.min(source.length, index + 2);
+      blank(start, index);
+      continue;
+    }
+
+    const quote = source[index];
+    if (quote === "'" || quote === '"' || quote === "`") {
+      const start = index;
+      let interpolated = false;
+      index += 1;
+      while (index < source.length) {
+        if (source[index] === "\\") {
+          index = Math.min(source.length, index + 2);
+          continue;
+        }
+        if (quote === "`" && source[index] === "$" && source[index + 1] === "{") {
+          interpolated = true;
+        }
+        if (source[index] === quote) {
+          index += 1;
+          break;
+        }
+        index += 1;
+      }
+      const end = index;
+      strings.push({
+        start,
+        end,
+        quote,
+        interpolated,
+        rawValue: source.slice(start + 1, Math.max(start + 1, end - 1)),
+      });
+      blank(start, end);
+      continue;
+    }
+    index += 1;
+  }
+
+  return { masked: masked.join(""), strings };
 }
 
-function analyzeTestSource(source, path) {
-  const sourceFile = ts.createSourceFile(
-    path,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.JS,
-  );
-  let declaredTestCalls = 0;
-  const titles = [];
+function precedingStatement(masked, position) {
+  const semicolon = masked.lastIndexOf(";", position - 1);
+  const newline = masked.lastIndexOf("\n", position - 1);
+  const start = Math.max(semicolon, newline) + 1;
+  return masked.slice(start, position).trim();
+}
+
+function importedTestFilesFromView(view) {
   const imports = new Set();
-
-  function visit(node) {
-    if (
-      ts.isImportDeclaration(node)
-      && ts.isStringLiteral(node.moduleSpecifier)
-      && node.moduleSpecifier.text.endsWith(".test.mjs")
-    ) {
-      imports.add(node.moduleSpecifier.text);
-    }
-
-    if (ts.isCallExpression(node) && isTestCallee(node.expression)) {
-      declaredTestCalls += 1;
-      const [firstArgument] = node.arguments;
-      if (
-        firstArgument !== undefined
-        && (ts.isStringLiteral(firstArgument) || ts.isNoSubstitutionTemplateLiteral(firstArgument))
-      ) {
-        titles.push(firstArgument.text);
-      }
-    }
-    ts.forEachChild(node, visit);
+  for (const token of view.strings) {
+    if (!token.rawValue.endsWith(".test.mjs")) continue;
+    const prefix = precedingStatement(view.masked, token.start);
+    if (!prefix.startsWith("import")) continue;
+    if (/^import\s*\(/.test(prefix)) continue;
+    imports.add(token.rawValue);
   }
-  visit(sourceFile);
+  return [...imports].sort();
+}
 
+function firstLiteralArgument(view, callEnd) {
+  for (const token of view.strings) {
+    if (token.start < callEnd) continue;
+    if (view.masked.slice(callEnd, token.start).trim() !== "") return null;
+    if (token.quote === "`" && token.interpolated) return null;
+    return token.rawValue;
+  }
+  return null;
+}
+
+function analyzeTestSource(source) {
+  const view = lexicalView(source);
+  const titles = [];
+  let declaredTestCalls = 0;
+  const pattern = /\b(?:test|it)(?:\.(?:only|skip|todo))?\s*\(/g;
+  for (const match of view.masked.matchAll(pattern)) {
+    const preceding = match.index > 0 ? view.masked[match.index - 1] : "";
+    if (preceding === "." || /[$\w]/.test(preceding)) continue;
+    declaredTestCalls += 1;
+    const title = firstLiteralArgument(view, match.index + match[0].length);
+    if (title !== null) titles.push(title);
+  }
   return {
     declaredTestCalls,
     testTitles: titles,
-    importedTestFiles: [...imports].sort(),
+    importedTestFiles: importedTestFilesFromView(view),
   };
 }
 
 function stripComments(source) {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|\s)\/\/.*$/gm, "$1")
-    .trim();
+  const { masked, strings } = lexicalView(source);
+  if (strings.length === 0) return masked.trim();
+  // A string expression is executable source, so comment-only classification must not
+  // confuse "all lexical strings were masked" with "the file contained only comments".
+  return `${masked}${strings.map((token) => token.rawValue).join("")}`.trim();
 }
 
 function familyFor(path) {
@@ -179,7 +236,7 @@ function duplicateGroups(records, selector) {
 export function buildTestValueAudit(root = DEFAULT_ROOT) {
   const records = testFiles(root).map(({ scope, path }) => {
     const source = readFileSync(path, "utf8");
-    const analysis = analyzeTestSource(source, normalizedPath(root, path));
+    const analysis = analyzeTestSource(source);
     const stripped = stripComments(source);
     return {
       path: normalizedPath(root, path),
