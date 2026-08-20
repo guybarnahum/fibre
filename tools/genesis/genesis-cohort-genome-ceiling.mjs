@@ -15,7 +15,6 @@ import {
   CONTROL_SITUATIONS,
   GENOME_CONTROL_VERSION,
   PREDECLARED_READING,
-  exactOneSidedBinomialP,
   runGenomeSpecificityControl,
 } from "../repro/pr39/genome-control/genesis-genome-positive-control.mjs";
 
@@ -198,8 +197,7 @@ export function summarizeG2Ceiling({ protocol, pairResults }) {
       correct,
       accuracy: correct / trials,
       chanceAccuracy: 0.5,
-      exactOneSidedBinomialP: exactOneSidedBinomialP({ trials, correct }),
-      interpretation: "Descriptive cohort-wide summary only; the frozen G2 decision rule is the five-pair vector plus genome-coverage rule.",
+      interpretation: "Descriptive only. The five controls reuse genomes across heterogeneous pairs, so no pooled inferential p-value is claimed. The frozen G2 decision rule is the five-pair vector plus genome-coverage rule.",
     },
   };
 }
@@ -338,7 +336,7 @@ async function main() {
   }
   process.stdout.write(`Detectable pairs: ${result.detectablePairCount}/5\n`);
   process.stdout.write(`Genome coverage: ${result.coveredGenomeSlots.join(",")}\n`);
-  process.stdout.write(`Aggregate: ${result.aggregate.correct}/${result.aggregate.trials} (${(result.aggregate.accuracy * 100).toFixed(1)}%)\n`);
+  process.stdout.write(`Aggregate (descriptive): ${result.aggregate.correct}/${result.aggregate.trials} (${(result.aggregate.accuracy * 100).toFixed(1)}%)\n`);
   process.stdout.write(`Artifact: ${readJson(protocolPath).control.aggregateResultPath}\n`);
   if (!result.usableCeilingForH) process.exitCode = 2;
 }
