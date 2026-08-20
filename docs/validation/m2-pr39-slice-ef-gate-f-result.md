@@ -90,32 +90,43 @@ This is directional corroboration of the semantics correction, not independent p
 
 The trial-level `remembered` outcome means that at least one memory formed; it does **not** mean the visible history was remembered wholesale.
 
-Hostile review derived the more appropriate selectivity measure directly from the retained N2 artifact:
+The hostile review correctly identified citation share as the more appropriate selectivity measure and correctly computed the aggregate values. Pre-G Stage 2 subsequently derived the breakdown mechanically from the sealed artifact and corrected one arithmetic error in the review's horizon-6 row.
+
+Authoritative machine-derived characterization:
 
 ```text
 cited episodes
-  mean 1.50
-  min  1
-  max  3
+  total 27
+  mean  1.50
+  min   1
+  max   3
 
 share of visible horizon
-  mean 0.191
-  max  0.500
+  mean 0.19074074074074074
+  min  0.10
+  max  0.50
 
-horizon 6
-  mean cited 1.00
-  mean share 0.167
+horizon 6 (n=6)
+  mean cited 1.3333333333333333
+  mean share 0.2222222222222222
+  share min/max 0.16666666666666666 / 0.50
 
-horizon 8
-  mean cited 1.33
-  mean share 0.167
+horizon 8 (n=6)
+  mean cited 1.3333333333333333
+  mean share 0.16666666666666666
+  share min/max 0.125 / 0.25
 
-horizon 10
-  mean cited 1.83
-  mean share 0.183
+horizon 10 (n=6)
+  mean cited 1.8333333333333333
+  mean share 0.18333333333333332
+  share min/max 0.10 / 0.30
 ```
 
-The near-total trial-level memory flag is therefore explained rather than ignored: every trial formed some memory, while each memory retained only a small and approximately stable fraction of what was visible. For future #39 diagnostics, **citation share of the visible history is the preferred memory-selectivity characterization**; remembered/not-remembered remains a separate funnel outcome.
+The review's printed horizon-6 value (`1.00` cited / `0.167` share) was inconsistent with both the retained artifact and the review's own aggregate `1.50` cited-episode mean. The machine-derived values above are authoritative for the numerical breakdown. The sealed N2 artifact, frozen criteria and Gate-F verdict are unchanged.
+
+The supported interpretation remains that every trial formed some memory while each memory retained only a selective fraction of the visible history. N2 shows roughly one-fifth citation share overall and no monotonic increase in citation share as larger horizons become visible. It does **not** establish a perfectly flat retention share at each horizon.
+
+For future #39 diagnostics, **citation share of the visible history is the preferred memory-selectivity characterization**; remembered/not-remembered remains a separate funnel outcome.
 
 ## What Gate F establishes
 
