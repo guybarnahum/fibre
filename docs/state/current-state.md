@@ -36,7 +36,7 @@ M1    Persistent Thread Round Trip                         CLOSED
 #36   M2 Identity & Embodiment Contract                   MERGED / FROZEN
 #37   Thread Passport & Identity Provenance v1            MERGED / FROZEN
 #38   Lineage, Geography, Embodiment & Memory Epistemics  MERGED / CLEAR / FROZEN
-#39   Genesis, Childhood & Thread Birth v1                ACTIVE
+#39   Genesis, Childhood & Thread Birth v1                ACTIVE — SLICE G
 #40   Identity Projection & Causal Consumption             NEXT AFTER #39
 #41   M2 Standing Gate / M2 closure                        AFTER #40
 
@@ -50,9 +50,9 @@ Planning identifiers `#39` onward are Fibre milestone identifiers. They are not 
 
 > **#38 made a life representable and corrigible. #39 gives that life a particular past. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
 
-## #39 current position — post F, pre G
+## #39 current position — Slice G protocol freeze
 
-Milestone #39 is late in implementation but has **not** crossed the final experimental freeze.
+Milestone #39 has crossed the Pre-G seam but has **not** generated the final cohort.
 
 ```text
 Gate C  CLEAR
@@ -60,20 +60,29 @@ Gate D  CLEAR
 Gate F  CLEAR
 
 Pre-G seam
-Stages 0-7  COMPLETE
-Stage 8     final integration/repository hygiene IMPLEMENTED; local verification pending
-Stage 9     narrow readiness review pending
+Stages 0-8  COMPLETE
+Stage 9     CLEAR
+
+Current     Slice G fresh cohort + protocol freeze
+Next        Gate G blocking review
+Then        Slice H generate-once/freeze/judge
 ```
 
-Stage 7 reconciled repository documentation and AI-context lifecycle and its maintainer verification passed `includes:check`, `context-pack`, `validate` and `check`.
+The exact maintainer-tested Pre-G implementation/evidence head is:
 
-Stage 8 implements the last known Pre-G correctness gap: synthetic-lineage birth now makes persisted symbolic-genome provenance and #38 parent-genome-source lineage mutually load-bearing before the child becomes live. The implementation is not yet called COMPLETE until its targeted and full local test envelope passes.
+```text
+a956c86b1392636988ee4ffc67b8630460c63c6d
+```
 
-No Slice-G final WorldSpec, cohort genome, familiarity result, G/H model call or final-cohort life has been created. The methodological rule remains:
+At that head the maintainer reported the targeted Stage-8 regression, active/repro/all suites, test-value audit, documentation/context/repository checks and clean-tree/main-ancestry checks green. The exact E2-V2 zero-call failure artifact is now preserved in Git. Stage 9 found one incidental #38 relation-array-order dependency, closed it, and then returned CLEAR after the mechanical closure conditions were satisfied.
+
+The methodological rule now advances one boundary:
 
 > **The test exists before the people.**
 
-See [`../validation/m2-pr39-pre-g-seam-status.md`](../validation/m2-pr39-pre-g-seam-status.md).
+Slice G may author/freeze the five final WorldSpecs, cohort genomes and experiment protocol. It still may **not generate a final-cohort life** until the entire G protocol is frozen and the blocking Gate-G review is CLEAR.
+
+See [`../validation/m2-pr39-pre-g-seam-status.md`](../validation/m2-pr39-pre-g-seam-status.md) and [`../validation/m2-pr39-pre-g-stage9-readiness-review.md`](../validation/m2-pr39-pre-g-stage9-readiness-review.md).
 
 ## What #39 now contains
 
@@ -91,17 +100,17 @@ Genesis does **not** own a parallel biography, memory, identity, place, relation
 
 The symbolic genome is an ordered sequence of natural-language loci with exact source provenance, deterministic textual recombination and explicit mutation witnesses. It is not a hidden numeric personality vector. Inheritance begins identity; it does not determine mature character.
 
-Stage 8 now makes the accepted synthetic-lineage boundary load-bearing:
+Stage 8 makes the accepted synthetic-lineage boundary load-bearing:
 
 ```text
 manifest genomeRef -> canonical persisted genome
 genome owner        -> exact child Thread
 genome genesisId    -> exact birth Genesis
-source owners       -> exact manifest parent/ancestor refs
-source owners       -> exact #38 biological_parent + parent_genome_source records
+source owners       -> exact ordered manifest parent/ancestor refs
+source owners       -> exact #38 biological_parent + parent_genome_source relation set
 ```
 
-Ordinary `SymbolicGenomeStore` and Genesis use one shared transaction-level genome verifier. Ordinary `SituatedLifeStore` and Genesis use one shared relation append/digest/head/witness primitive. Genesis owns only the cross-domain birth binding rather than a second genome or lineage persistence authority.
+The manifest/genome source sequence is ordered; the incoming #38 relation array is not. Ordinary `SymbolicGenomeStore` and Genesis use one shared transaction-level genome verifier. Ordinary `SituatedLifeStore` and Genesis use one shared relation append/digest/head/witness primitive. Genesis owns only the cross-domain birth binding rather than a second genome or lineage persistence authority.
 
 ### Three-pass prior-life compiler
 
@@ -142,6 +151,27 @@ source person's life      != Thread autobiography
 ```
 
 Thread-parent, Echo, Homage and fork paths are integrity/origin fixtures, not alternate biography generators.
+
+## Slice G active boundary
+
+Slice G must freeze the final experiment before H creates the cohort. At minimum G owns:
+
+```text
+five fresh WorldSpecs, authored before cohort-genome visibility
+world freeze and cold familiarity handling
+cohort genomes / synthetic parents and cohort-genome specificity ceiling
+content-independent Pass-B treatment assignment and cell arithmetic
+provider/model, prompt/schema hashes, sampling and policy witnesses
+EventStructurePool v2 digest/developmental policy
+record-repair and candidate-attempt caps
+publication-validator-set witness
+independent raters
+D1-D5 diagnostics and secondary characterizations
+numerical thresholds / uncertainty treatment
+exact CLEAR / HOLD / REDESIGN rule
+```
+
+No threshold may be chosen after seeing final-cohort output. No weak final Thread may be silently regenerated for quality.
 
 ## Current persistence and inspection
 
