@@ -1,0 +1,71 @@
+{
+  "worldSpecId": "world_slice_g1_02_inland_rail",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_g1_02_home",
+      "description": "A rented row-house unit in an inland rail-and-manufacturing city where residential streets sit near workshops, warehouses and older industrial corridors."
+    },
+    {
+      "placeId": "place_g1_02_school",
+      "description": "A comprehensive public school with academic classrooms, practical workshops, sports facilities, music rooms and access to vocational guidance."
+    },
+    {
+      "placeId": "place_g1_02_tram",
+      "description": "A tram and regional-rail stop used by students and shift workers, with posted service rules, transfers and occasional disruptions."
+    },
+    {
+      "placeId": "place_g1_02_workshop_market",
+      "description": "A commercial street of repair shops, bakeries, second-hand stores, small manufacturers and household services."
+    },
+    {
+      "placeId": "place_g1_02_civic_center",
+      "description": "A municipal cultural and adult-education center with a library branch, evening courses, exhibitions, public meetings and low-cost events."
+    }
+  ],
+  "householdShape": "Two caregivers, the subject and one older sibling share a rented home; one caregiver works regular hours while the other has rotating shifts.",
+  "familyRelations": [
+    "The older sibling is three years older than the subject.",
+    "Extended family members live in another part of the city and are seen several times a year."
+  ],
+  "languages": [
+    "Polish",
+    "German"
+  ],
+  "materialCircumstances": "Basic needs are stable but household choices are budget-conscious; work schedules, rent, transit costs and repair of durable goods shape ordinary planning.",
+  "mobilityPattern": "Daily travel mixes walking, tram and regional rail; school and family routines occasionally cross industrial, residential and civic districts.",
+  "schoolingOrCommunityContext": "School offers both academic and practical routes without requiring an early specialization; municipal courses, clubs, libraries and workplaces are visible but unevenly accessible.",
+  "culturalContext": "The city contains families tied to manufacturing and services, students, newer migrants, civic associations, trade organizations, faith communities and secular institutions; public norms and workplace practices are not always identical.",
+  "availableInstitutions": [
+    "public_school",
+    "tram_network",
+    "regional_rail",
+    "municipal_library",
+    "adult_education_center",
+    "vocational_workshops"
+  ],
+  "intellectualEnvironment": "Classroom subjects, practical demonstrations, local newspapers, technical manuals, library books, music and exhibitions, workplace stories, public meetings and ordinary arguments provide varied access to ideas without prescribing which ones matter.",
+  "affordedRoles": [
+    "caregiver",
+    "sibling",
+    "peer",
+    "teacher",
+    "neighbor",
+    "librarian",
+    "mentor",
+    "shopkeeper",
+    "technician"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_slice_g_world_authoring",
+    "sourcesConsulted": [],
+    "abstractionMethod": "Fresh synthetic Slice-G candidate authored from ordinary structural world knowledge before any cohort genome was authored, assigned, inspected or generated; no named person, source work, target personality, future profession or downstream benchmark was used as a template.",
+    "relocationWitness": "The world can be relocated to another inland industrial city with mixed academic/practical schooling, shift work, public transit and civic education while retaining no intended adult profession, ideology or personality.",
+    "familiarityProbe": null,
+    "createdAt": "2026-08-20T18:15:00Z"
+  },
+  "createdAt": "2026-08-20T18:15:00Z"
+}
