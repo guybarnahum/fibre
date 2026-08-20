@@ -10,6 +10,7 @@ import {
   autobiographicalMemoryIsCurrent,
   autobiographicalMemoryRecordDigest,
   normalizeAutobiographicalMemory,
+  rehydrateAutobiographicalMemory,
 } from "./autobiographical-memory-domain.mjs";
 import { AUTOBIOGRAPHICAL_MEMORY_RECORDED } from "./autobiographical-memory-anchor.mjs";
 import {
@@ -125,7 +126,7 @@ export class AutobiographicalMemoryStore {
     let previousDigest = null;
     for (let index = 0; index < rows.length; index += 1) {
       const row = rows[index];
-      const record = normalizeAutobiographicalMemory(parseRecord(row));
+      const record = rehydrateAutobiographicalMemory(parseRecord(row));
       if (record.revision !== index + 1) throw new IntegrityError(`memory ${memoryId} has non-contiguous revisions`);
       const checks = [
         [row.memory_id, record.memoryId, "memory ID"],
@@ -164,7 +165,9 @@ export class AutobiographicalMemoryStore {
       if (index > 0) {
         const previous = history[index - 1];
         if (Date.parse(record.recordedAt) < Date.parse(previous.recordedAt)) throw new IntegrityError(`memory ${memoryId} recordedAt moves backwards`);
-        assertAutobiographicalMemoryRevisionCompatibility(previous, record, IntegrityError);
+        assertAutobiographicalMemoryRevisionCompatibility(previous, record, IntegrityError, {
+          enforceCurrentContentPolicy: false,
+        });
       }
       history.push(record);
       previousDigest = digest;
