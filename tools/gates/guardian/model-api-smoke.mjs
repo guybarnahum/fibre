@@ -1,0 +1,1 @@
+../../model/model-api-smoke.mjs
