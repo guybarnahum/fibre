@@ -1,0 +1,73 @@
+{
+  "worldSpecId": "world_slice_g1_03_highland_region",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_g1_03_home",
+      "description": "A modest apartment on a steep residential street in a highland regional city, within walking distance of small stores and a local bus route."
+    },
+    {
+      "placeId": "place_g1_03_school",
+      "description": "A public secondary school serving several neighborhoods, with standard classrooms, a courtyard, a small laboratory, a computer room and rotating extracurricular activities."
+    },
+    {
+      "placeId": "place_g1_03_market",
+      "description": "A large municipal market where food, clothing, household goods and repair services are sold by many small vendors."
+    },
+    {
+      "placeId": "place_g1_03_bus_terminal",
+      "description": "A regional bus terminal connecting the city to surrounding towns and rural districts, with variable travel times and crowded peak periods."
+    },
+    {
+      "placeId": "place_g1_03_culture_house",
+      "description": "A public cultural house used for library services, music or dance groups, exhibitions, civic meetings, tutoring and occasional visiting programs."
+    }
+  ],
+  "householdShape": "One caregiver and the subject share the apartment; an aunt, uncle and two cousins live nearby and participate regularly in meals, errands and family events.",
+  "familyRelations": [
+    "The cousins are close in age to the subject but live in a separate household.",
+    "Another parent lives in a different region and has intermittent in-person contact."
+  ],
+  "languages": [
+    "Spanish",
+    "Quechua"
+  ],
+  "materialCircumstances": "Food and housing are usually secure, while income varies seasonally; public transport, shared family help and careful spending are important to routine decisions.",
+  "mobilityPattern": "Most daily movement is by foot and local bus; several times a year family or school travel uses regional buses to nearby towns or outlying communities.",
+  "schoolingOrCommunityContext": "School and extended-family networks overlap with markets, neighborhood groups and public cultural programs; opportunities outside the core curriculum depend on time, transport and availability.",
+  "culturalContext": "The city combines long-established regional families, internal migrants, multilingual households, commercial and public-sector work, religious and secular organizations and changing links between city and surrounding communities.",
+  "availableInstitutions": [
+    "public_school",
+    "municipal_market",
+    "local_bus",
+    "regional_bus",
+    "public_library_service",
+    "cultural_house",
+    "community_health_center"
+  ],
+  "intellectualEnvironment": "School subjects, oral family histories, radio, library materials, public internet access, music and visual arts, practical commerce, civic meetings, religious/philosophical material and everyday disagreement are accessible in different combinations; none is mandatory.",
+  "affordedRoles": [
+    "caregiver",
+    "aunt",
+    "uncle",
+    "cousin",
+    "peer",
+    "teacher",
+    "neighbor",
+    "librarian",
+    "mentor",
+    "vendor"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_slice_g_world_authoring",
+    "sourcesConsulted": [],
+    "abstractionMethod": "Fresh synthetic Slice-G candidate authored from ordinary structural world knowledge before any cohort genome was authored, assigned, inspected or generated; no named person, source work, target personality, future profession or downstream benchmark was used as a template.",
+    "relocationWitness": "The same structural world could be relocated to another highland regional city with extended-family proximity, multilingual life, public markets and uneven regional mobility without retaining any intended character arc or conclusion.",
+    "familiarityProbe": null,
+    "createdAt": "2026-08-20T18:15:00Z"
+  },
+  "createdAt": "2026-08-20T18:15:00Z"
+}
