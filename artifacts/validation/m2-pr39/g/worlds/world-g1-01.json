@@ -1,0 +1,77 @@
+{
+  "worldSpecId": "world_slice_g1_01_river_delta",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_g1_01_home",
+      "description": "A mid-rise apartment building in a dense river-delta district, with small shops, courtyards and frequent pedestrian traffic at street level."
+    },
+    {
+      "placeId": "place_g1_01_school",
+      "description": "A public neighborhood school with ordinary classrooms, a science room, arts rooms, a yard and several after-school clubs that vary by year."
+    },
+    {
+      "placeId": "place_g1_01_transit",
+      "description": "A bus-and-ferry interchange where posted schedules, crowding, weather and maintenance all affect ordinary travel."
+    },
+    {
+      "placeId": "place_g1_01_library",
+      "description": "A district public library with children's and adult collections, newspapers, public computers, study tables, community notices and occasional talks or workshops."
+    },
+    {
+      "placeId": "place_g1_01_market",
+      "description": "A mixed indoor-outdoor market district with groceries, prepared food, repair stalls, household goods and short-term service work."
+    }
+  ],
+  "householdShape": "One caregiver, the subject, a younger sibling and one grandparent share an apartment; another close adult relative lives nearby and is part of regular household logistics.",
+  "familyRelations": [
+    "The younger sibling is four years younger than the subject.",
+    "The nearby adult relative sometimes provides childcare or transport but does not live in the household."
+  ],
+  "languages": [
+    "English",
+    "Vietnamese"
+  ],
+  "materialCircumstances": "Housing and food are generally stable, while discretionary spending and private transport are limited; public transit, repair, reuse and shared neighborhood services are routine.",
+  "mobilityPattern": "Most movement is on foot, by bus or by ferry; the household makes occasional trips to other districts for work, family visits, appointments and larger purchases.",
+  "schoolingOrCommunityContext": "School, library, market streets and transit create overlapping public settings with peers and adults outside the household; access to optional activities depends on cost, schedule and transport.",
+  "culturalContext": "The district includes multilingual households, long-established residents and newer arrivals, secular and religious communities, small businesses, public services and ordinary disagreement about neighborhood change.",
+  "availableInstitutions": [
+    "public_school",
+    "district_library",
+    "bus_network",
+    "passenger_ferry",
+    "public_market",
+    "community_clinic"
+  ],
+  "intellectualEnvironment": "School lessons, library collections, newspapers, public computers, repair manuals, family conversations, community notices, performances, religious or philosophical material and ordinary disagreement are available unevenly; none is a required interest or conclusion.",
+  "affordedRoles": [
+    "caregiver",
+    "grandparent",
+    "sibling",
+    "relative",
+    "peer",
+    "teacher",
+    "librarian",
+    "neighbor",
+    "shopkeeper",
+    "mentor"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_slice_g_world_authoring",
+    "sourcesConsulted": [],
+    "abstractionMethod": "Fresh synthetic Slice-G candidate authored from ordinary structural world knowledge before any cohort genome was authored, assigned, inspected or generated; no named person, source work, target personality, future profession or downstream benchmark was used as a template.",
+    "relocationWitness": "The same structural world could be relocated to another dense river-port district with multilingual households, public transit, markets and library access without preserving any intended biography, belief or personality outcome.",
+    "familiarityProbe": {
+      "probedAt": "2026-08-20T18:27:20.409Z",
+      "model": "openai/gpt-5.1-2025-11-13",
+      "densityScore": 4,
+      "comparisonNotes": "This setting is highly familiar for a general language model: an early-21st-century, lower-to-middle income urban district with public transit, public school, public library, mixed market economy, and multigenerational apartment household. All listed institutions (school, library, bus and ferry networks, public market, community clinic) are common in training data, as are English/Vietnamese bilingual contexts in a river-delta city. Everyday life patterns—walking and transit-based mobility, constrained discretionary spending, repair/reuse culture, after-school clubs, informal childcare by relatives, and mixed secular/religious community life—are well within ordinary-world coverage. The model is unlikely to need to invent basic structures; uncertainties would be about local specifics (exact city, policies, prices, detailed schedules, or fine-grained cultural practices), not about the general shape of daily life."
+    },
+    "createdAt": "2026-08-20T18:15:00Z"
+  },
+  "createdAt": "2026-08-20T18:15:00Z"
+}
