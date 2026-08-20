@@ -1,0 +1,22 @@
+{
+  "header": {
+    "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af",
+    "owner": { "kind": "synthetic_ancestor", "ownerId": "ancestor_pr39_g2_02_a" },
+    "genesisId": "genesis_pr39_g2_02_parent_a",
+    "originKind": "de_novo",
+    "inheritancePolicy": { "id": "fibre_symbolic_genome", "version": "1" },
+    "sourceEligibility": null,
+    "recombinationWitness": null,
+    "createdAt": "2026-08-20T20:00:00Z"
+  },
+  "loci": [
+    { "locusId": "gloc_d9c1a217054c0aa85848f31f9edf592c37bb70af", "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "ordinal": 1, "value": "changes tactics quickly after an approach fails twice", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_b6e628bc59cd1fcfd50c6d6f5a0a3e55f4a7f429", "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "ordinal": 2, "value": "asks for evidence when an authority gives a rule without a reason", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_1687c44cdfaaff1df903305b0b71fa39e02b538a", "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "ordinal": 3, "value": "shows care by taking on practical burdens without making a display of it", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_cf3afb12b52a8ed9faff84d34f6b186696887602", "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "ordinal": 4, "value": "seeks conversation after long stretches of solitary concentration", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_6ab557fe55703f1108b47ff95c47bb791f3c1502", "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "ordinal": 5, "value": "prefers to address small conflicts before they become habitual", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_b9e1ac53d023996a15f4e9a1c5bf0f383b8f3740", "genomeId": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "ordinal": 6, "value": "keeps notes when several explanations remain plausible", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } }
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:e650b92cb66fbc85ecf1b1c03b64b144643193932084646be8890a0ed7922bc7"
+}
