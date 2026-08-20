@@ -11,7 +11,7 @@ canonical: false
 
 Slice G creates the **test before the people**.
 
-The Pre-G seam is COMPLETE and Stage 9 is CLEAR. This ledger is the first Slice-G artifact. It exists before any final-cohort WorldSpec, genome assignment, familiarity result, or life-generation call.
+The Pre-G seam is COMPLETE and Stage 9 is CLEAR. This ledger existed before any final-cohort WorldSpec, genome assignment, familiarity result, or life-generation call.
 
 The governing rule is stronger than ordinary reproducibility:
 
@@ -19,9 +19,7 @@ The governing rule is stronger than ordinary reproducibility:
 
 This document is therefore a freeze ledger, not a result record. Any field marked `PENDING` must become exact and immutable before Gate G. No PENDING value may be resolved by looking at final-cohort life output because no such output may exist yet.
 
-## G0 — protocol shell frozen now
-
-The following decisions are frozen before final-world authoring begins.
+## G0 — protocol shell frozen
 
 ### Cohort size and origin composition
 
@@ -29,12 +27,14 @@ The following decisions are frozen before final-world authoring begins.
 final Threads             5
 origin composition        3 de_novo + 2 synthetic_lineage
 entry stage               young_adult for all five
-entry-age policy          one common exact age, to be fixed before world freeze
+entry age                 22 for all five
+common bornAt             2004-08-20T00:00:00Z
+chronology end             2026-08-20T00:00:00Z
 final life generation     forbidden before Gate G CLEAR
 quality regeneration      forbidden after first integrity-valid H cohort
 ```
 
-The common exact entry age remains `PENDING` only because the chronology schedule has not yet been frozen. It must be fixed before the five WorldSpecs become final.
+The exact common age/chronology policy was frozen at G1 candidate authoring before familiarity output and before any cohort genome exists.
 
 ### Repository artifact home
 
@@ -51,11 +51,11 @@ artifacts/validation/m2-pr39/g/
 
 The storage meaning is fixed:
 
-- `worlds/` contains the five frozen final WorldSpec JSON records after G1;
+- `worlds/` contains the five frozen final WorldSpec JSON records after G1; candidate pre-familiarity records may remain under `worlds/candidates/` as evidence;
 - `genomes/` contains frozen cohort and synthetic-parent genome artifacts after G2;
 - `protocol/` contains machine-readable assignment/configuration/rater/verdict freezes as they become exact;
 - `cohort/` remains empty until Gate G is CLEAR, then may contain frozen exports/snapshots of the generated experimental Threads;
-- `results/` contains later G/H machine-readable outputs and diagnostic evidence.
+- `results/` contains G/H machine-readable outputs and diagnostic evidence.
 
 These Git artifacts are experimental inputs, snapshots and evidence. They are **not** the live Thread/World persistence authority. During execution, WorldSpecs, genomes and Threads still pass through the normal Fibre stores and domain admission contracts.
 
@@ -120,22 +120,58 @@ adult behavior policy
 
 ### Convergent pair
 
-Exactly one predeclared pair of the five worlds will be designated the **convergent pair** before life generation.
+The convergent pair is frozen before cohort genomes exist:
 
-The two worlds must make convergence on at least one broad belief or judgment *plausible* through materially different routes, while not specifying that conclusion in the WorldSpecs.
+```text
+world_slice_g1_02_inland_rail
+world_slice_g1_04_tropical_coast
+```
+
+The predeclared broad question is:
+
+> **How to respond when formal procedures and observed everyday practice diverge.**
+
+That question is protocol-only. It may not be passed to Pass A, Pass B, Pass C, record repair, genome generation or cohort publication. The two worlds merely make partial convergence plausible through materially different lived routes; the WorldSpecs themselves do not prescribe a conclusion.
 
 H will judge whether the pair can converge while remaining attributable through route, tension and residue.
 
-The pair IDs remain `PENDING` until the five world candidates exist; designation must occur before genomes are exposed to the world-design step.
-
 ## G1 — final WorldSpecs
 
-Status: **PENDING**.
+Status: **IN PROGRESS — candidate freeze complete; cold familiarity execution pending.**
 
-Deliverables:
+Record: [`m2-pr39-slice-g1-world-candidate-freeze.md`](m2-pr39-slice-g1-world-candidate-freeze.md).
+
+Machine-readable candidate/protocol authority:
 
 ```text
-five canonical WorldSpec JSON records
+artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v1.json
+artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-01-candidate-v1.json
+artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-02-candidate-v1.json
+artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-03-candidate-v1.json
+artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-04-candidate-v1.json
+artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-05-candidate-v1.json
+```
+
+The candidate manifest freezes exact candidate digests, freshness witness, 3/2 origin assignment, common age/chronology, convergent pair and the cold familiarity interpretation rule before the first familiarity output exists.
+
+The cold familiarity worker is pinned to `openai/gpt-5.1-2025-11-13`, one stateless call per candidate. The model-visible surface is an anonymized ordinary-setting projection and excludes experiment identity, WorldSpec/place IDs, authorship, genomes, personality/future targets, the convergent-pair hypothesis and downstream diagnostics.
+
+Predeclared material-under-representation HOLD:
+
+```text
+densityScore <= 1
+OR
+at least two coverage-domain scores <= 1
+```
+
+If any candidate hits that rule, preserve it and its result as burned G1 evidence and version a newly authored replacement before final world freeze. Do not replace a world for aesthetics or expected H performance.
+
+If all five clear, the probe emits the five final WorldSpec JSON records under `artifacts/validation/m2-pr39/g/worlds/`, each with a non-null familiarity witness, and records their final digests in the result artifact.
+
+G1 exit requires:
+
+```text
+five canonical final WorldSpec JSON records
 one common exact entry age / chronology policy
 freshness witness for each world
 factual source/abstraction authorship witness
@@ -144,9 +180,7 @@ final world digests
 convergent-pair designation
 ```
 
-The five final WorldSpec JSON records are frozen under `artifacts/validation/m2-pr39/g/worlds/`.
-
-No cohort genome may be authored or assigned before G1 is frozen.
+No cohort genome may be authored or assigned before G1 is COMPLETE.
 
 ## G2 — cohort genomes and specificity ceiling
 
@@ -358,9 +392,9 @@ Before asking for CLEAR, the packet must make it possible to verify:
 Pre-G seam   COMPLETE
 Stage 9      CLEAR
 G0           FROZEN — protocol shell / sequencing / artifact home
-G1           NEXT — author five fresh genome-blind world candidates
-G2–G6        BLOCKED on prior G steps
+G1           IN PROGRESS — candidates + policy frozen; five cold familiarity calls next
+G2–G6        BLOCKED on G1
 H            FORBIDDEN until Gate G CLEAR
 ```
 
-No provider/model call and no final-cohort life generation is authorized by this G0 record alone.
+Only the five cold familiarity calls frozen by G1 are currently authorized. No cohort genome generation/assignment and no final-cohort life-generation call is authorized yet.
