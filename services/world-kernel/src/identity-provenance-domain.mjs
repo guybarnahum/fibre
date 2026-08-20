@@ -24,6 +24,7 @@ import {
 } from "./identity-domain-registry-v2.mjs";
 import {
   IDENTITY_ATOMIC_CLAIM_POLICY,
+  MAX_CLAIM_PREDICATE_BYTES,
   assertCurrentClaimDiscipline,
   assertRecordedClaimDiscipline,
   normalizeClaimPredicate,
@@ -419,6 +420,38 @@ function bootstrapAdmission() {
   };
 }
 
+function seedPredicateBytes(value) {
+  return Buffer.byteLength(canonicalJson(value), "utf8");
+}
+
+function compactSeedPredicateReference(prefix, value) {
+  return `${prefix}_${sha256(value).slice(0, 24)}`;
+}
+
+function bootstrapClaimPredicate(threadId, key) {
+  let predicate = {
+    subject: threadId,
+    predicate: "seed_identity",
+    object: key,
+  };
+  if (seedPredicateBytes(predicate) <= MAX_CLAIM_PREDICATE_BYTES) {
+    return normalizeClaimPredicate(predicate);
+  }
+
+  predicate = {
+    ...predicate,
+    subject: compactSeedPredicateReference("thread", threadId),
+  };
+  if (seedPredicateBytes(predicate) <= MAX_CLAIM_PREDICATE_BYTES) {
+    return normalizeClaimPredicate(predicate);
+  }
+
+  return normalizeClaimPredicate({
+    ...predicate,
+    object: compactSeedPredicateReference("seed", key),
+  });
+}
+
 function bootstrapAssertion(thread, sourceEventId, {
   key,
   domain,
@@ -437,11 +470,7 @@ function bootstrapAssertion(thread, sourceEventId, {
     threadId: thread.threadId,
     domain,
     kind,
-    claimPredicate: {
-      subject: thread.threadId,
-      predicate: "seed_identity",
-      object: key,
-    },
+    claimPredicate: bootstrapClaimPredicate(thread.threadId, key),
     meaning,
     provenanceClass,
     authorship: {
