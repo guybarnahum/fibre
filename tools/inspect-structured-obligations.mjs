@@ -1,0 +1,1 @@
+inspect/inspect-structured-obligations.mjs
