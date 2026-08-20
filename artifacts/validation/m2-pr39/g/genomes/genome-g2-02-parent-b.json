@@ -1,0 +1,22 @@
+{
+  "header": {
+    "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696",
+    "owner": { "kind": "synthetic_ancestor", "ownerId": "ancestor_pr39_g2_02_b" },
+    "genesisId": "genesis_pr39_g2_02_parent_b",
+    "originKind": "de_novo",
+    "inheritancePolicy": { "id": "fibre_symbolic_genome", "version": "1" },
+    "sourceEligibility": null,
+    "recombinationWitness": null,
+    "createdAt": "2026-08-20T20:00:00Z"
+  },
+  "loci": [
+    { "locusId": "gloc_3b1dd83ed35d817e29a17570317427b517a0856a", "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "ordinal": 1, "value": "keeps small promises even when nobody is likely to notice", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_9846365b47579a097ccd7327f2fdec1b07c6f1c3", "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "ordinal": 2, "value": "looks for a concrete counterexample when a generalization feels too easy", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_a76728b6f5a400a31cda9343ff3cfb3387a09c89", "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "ordinal": 3, "value": "uses humor to soften excessive formality in familiar groups", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_5e20e3ca6673ab3458f4fda8ecf258ed528146d8", "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "ordinal": 4, "value": "waits before asking for favors when the other person seems overloaded", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_82ff835b614dd5a952002972b1be68139b29e935", "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "ordinal": 5, "value": "tries a different route when routine has become automatic", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_06e83e9986694f12e75044ad2f029ee5273adf74", "genomeId": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "ordinal": 6, "value": "becomes more persistent when someone else is depending on completion", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } }
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:2839902cedc39c4740a927165bc656a4ad5d75b8392cb99028f6a7f9847cadcd"
+}
