@@ -7,6 +7,7 @@ import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   autobiographicalMemoryRecordDigest,
   normalizeAutobiographicalMemory,
+  rehydrateAutobiographicalMemory,
 } from "./autobiographical-memory-domain.mjs";
 import { buildAutobiographicalMemoryRecordedEvent } from "./autobiographical-memory-anchor.mjs";
 import { ensureMemoryVisualCompanion } from "./identity-schema.mjs";
@@ -68,9 +69,12 @@ export function assertAutobiographicalMemoryRevisionCompatibility(
   previousCandidate,
   currentCandidate,
   ErrorType = TypeError,
+  { enforceCurrentContentPolicy = true } = {},
 ) {
-  const previous = normalizeAutobiographicalMemory(previousCandidate);
-  const current = normalizeAutobiographicalMemory(currentCandidate);
+  const previous = rehydrateAutobiographicalMemory(previousCandidate);
+  const current = normalizeAutobiographicalMemory(currentCandidate, {
+    enforceContentPolicy: enforceCurrentContentPolicy,
+  });
   if (current.threadId !== previous.threadId || current.memoryId !== previous.memoryId) {
     throw new ErrorType("memory revision cannot change memory or Thread identity");
   }
