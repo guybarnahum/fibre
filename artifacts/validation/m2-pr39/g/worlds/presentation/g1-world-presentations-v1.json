@@ -1,0 +1,228 @@
+{
+  "contractVersion": "world-presentation-v1",
+  "scope": "m2-pr39-slice-g1",
+  "authority": "derived_non_cognitive_presentation",
+  "derivationPolicy": "Each presentation record is derived only from its referenced frozen/candidate WorldSpec factual fields. Presentation copy and visual metadata are for human-facing UI, editorial presentation and later asset generation. They are not Genesis cognition input, do not alter WorldSpec semantics, do not participate in WorldSpec digests, and may not infer personality, beliefs, profession, biography outcomes or required formative events.",
+  "presentations": [
+    {
+      "worldSpecRef": "world_slice_g1_01_river_delta",
+      "displayName": "River Delta District",
+      "shortDescription": "A dense multilingual river-port neighborhood where multigenerational family life overlaps with schools, markets, buses, ferries and a public library.",
+      "longDescription": "A young person grows up in a compact river-delta district shaped by apartment living, pedestrian streets, public transit and a busy market economy. Their household includes a caregiver, younger sibling and grandparent, with another close relative nearby. Daily life moves between school, bus and ferry routes, neighborhood shops, a district library and shared public services. Money is generally stable but limited, making repair, reuse and public infrastructure ordinary parts of life rather than exceptional circumstances.",
+      "visualProfile": {
+        "overallCharacter": "Dense, lived-in river-port urbanism with layered residential, commercial and civic activity at pedestrian scale.",
+        "geographyAndClimate": "Low-lying river-delta setting organized around waterways and ferry movement; weather can visibly affect transit and street activity without requiring a specific city or country.",
+        "builtEnvironment": "Mid-rise apartment blocks, small street-level shops, courtyards, market structures, school buildings, ferry facilities and a neighborhood library.",
+        "streetsAndPublicRealm": "Busy sidewalks, narrow commercial streets, transit queues, market edges, courtyards and ordinary shared public space rather than monumental boulevards.",
+        "interiors": "Compact family apartment rooms, practical school interiors, library study tables and computer areas, modest shop interiors and sheltered ferry waiting areas.",
+        "materialsAndTextures": "Concrete, painted masonry, tile, metal railings, market awnings, weathered transit surfaces, paper notices, reused household objects and practical repair materials.",
+        "lightAndAtmosphere": "Humid river-port atmosphere with variable daylight, reflective water, overcast or bright conditions, and mixed artificial light around markets and transit after dark.",
+        "vegetationAndLandscape": "Urban trees, planted courtyards and waterside vegetation may appear, but the world should read primarily as a dense inhabited district rather than a scenic natural landscape.",
+        "mobilityAndVehicles": "Walking, city buses, passenger ferries and occasional service vehicles dominate; private-car ownership should not visually define the setting.",
+        "signageAndLanguage": "English and Vietnamese may both appear on plausible neighborhood notices, shop signs or library material; avoid excessive decorative bilingualism or invented official branding.",
+        "clothingAndEverydayObjects": "Ordinary contemporary urban clothing across ages; school bags, grocery bags, umbrellas or rain gear when appropriate, transit cards/tickets, phones, books, repaired household goods and market purchases.",
+        "technologyAndInfrastructure": "Contemporary public computers, phones, transit signage, utility infrastructure, market electronics and ordinary repair equipment; neither futuristic nor nostalgically outdated.",
+        "publicInstitutions": "Public school, district library, bus network, passenger ferry, public market and community clinic should feel embedded in everyday neighborhood life.",
+        "visualAnchors": [
+          "mid-rise apartment over active street-level commerce",
+          "bus-and-ferry interchange with ordinary commuters",
+          "mixed indoor-outdoor public market",
+          "district library with study tables and public computers",
+          "multigenerational apartment household"
+        ],
+        "avoid": [
+          "specific real-city landmarks or flags",
+          "tourism-poster riverfront imagery",
+          "poverty spectacle",
+          "luxury high-rise skyline as the dominant setting",
+          "personality-coded visual symbolism",
+          "future profession or destiny cues"
+        ]
+      },
+      "assetShotIdeas": [
+        "Hero: street-level view connecting apartment blocks, market activity and distant ferry infrastructure",
+        "Neighborhood: morning bus-and-ferry interchange with commuters and school-age pedestrians",
+        "Institution: warm but ordinary district-library interior with bilingual material visible incidentally",
+        "Home: compact multigenerational apartment kitchen/living area with practical reused objects",
+        "Detail: repair stall or household-goods counter showing the repair-and-reuse economy"
+      ],
+      "assetRefs": []
+    },
+    {
+      "worldSpecRef": "world_slice_g1_02_inland_rail",
+      "displayName": "Inland Rail City",
+      "shortDescription": "A budget-conscious inland manufacturing city of row houses, workshops, trams, regional rail and civic education.",
+      "longDescription": "This world centers on a rented row-house household in an inland rail-and-manufacturing city. Residential streets sit close to workshops, warehouses and older industrial corridors, while school offers both academic classrooms and practical facilities. Daily travel by foot, tram and regional rail connects the household to repair shops, small manufacturers, a municipal library and adult-education center. Family routines are stable but shaped by rent, shift schedules, transit costs and the practical maintenance of durable goods.",
+      "visualProfile": {
+        "overallCharacter": "Working inland city where residential life, public transit, workshops and civic institutions visibly interlock.",
+        "geographyAndClimate": "Inland continental setting without a specified country or exact climate; seasons may be visible but should not dominate unless required by a specific asset.",
+        "builtEnvironment": "Rented row houses, older industrial buildings, warehouses, repair shops, tram infrastructure, public school buildings and a municipal cultural center.",
+        "streetsAndPublicRealm": "Mixed residential-industrial streets, tram stops, rail approaches, modest commercial strips, courtyards and civic plazas or entrances.",
+        "interiors": "Practical row-house rooms, school workshops and classrooms, repair-shop interiors, library shelves, adult-education rooms and modest cultural exhibition space.",
+        "materialsAndTextures": "Brick, plaster, concrete, steel rails, workshop metal, wood workbenches, worn transit surfaces, paper schedules, tools and repaired appliances.",
+        "lightAndAtmosphere": "Clear or overcast inland light, industrial shadows, warm interior workshop lighting and ordinary municipal illumination rather than cinematic grit.",
+        "vegetationAndLandscape": "Street trees, small yards or planted civic areas may soften the industrial fabric; avoid turning the setting into either a green suburb or a polluted wasteland.",
+        "mobilityAndVehicles": "Walking, trams, regional trains, bicycles and practical service vehicles; shift-worker transit is more visually important than private luxury cars.",
+        "signageAndLanguage": "Polish and German may appear naturally on transit information, shop signage, school or library materials; no national flagging is necessary.",
+        "clothingAndEverydayObjects": "Ordinary contemporary clothing, work jackets, backpacks, transit passes, tools, second-hand goods, bakery bags, notebooks, musical materials and repaired household objects.",
+        "technologyAndInfrastructure": "Current but non-futuristic rail systems, workshop machinery, school computers, library technology, household appliances and municipal information systems.",
+        "publicInstitutions": "Comprehensive school, tram and regional rail, municipal library, adult-education center and practical/vocational workshops.",
+        "visualAnchors": [
+          "row houses beside older workshop and warehouse fabric",
+          "tram stop used by students and shift workers",
+          "repair-shop and small-manufacturer commercial street",
+          "school practical workshop alongside ordinary classrooms",
+          "municipal cultural and adult-education center"
+        ],
+        "avoid": [
+          "specific real industrial landmarks",
+          "post-apocalyptic industrial decay",
+          "factory-worker stereotype as identity shorthand",
+          "nationalist iconography",
+          "future career cues",
+          "moralized contrast between academic and practical work"
+        ]
+      },
+      "assetShotIdeas": [
+        "Hero: row-house street with tram wires, workshops and everyday pedestrians",
+        "Transit: regional-rail platform or tram stop during ordinary shift/school movement",
+        "Institution: school practical workshop adjacent to conventional academic spaces",
+        "Civic: municipal culture center with library and evening-course activity",
+        "Detail: repair bench with tools and an appliance mid-repair"
+      ],
+      "assetRefs": []
+    },
+    {
+      "worldSpecRef": "world_slice_g1_03_highland_region",
+      "displayName": "Highland Regional City",
+      "shortDescription": "A steep multilingual highland city linked to surrounding towns through markets, extended family, buses and public cultural programs.",
+      "longDescription": "A small household sits on a steep residential street in a highland regional city, while close relatives live nearby and remain part of ordinary meals, errands and family events. Walking and local buses connect school, a large municipal market, neighborhood services and a public cultural house; regional buses provide less predictable links to surrounding towns and rural districts. Income varies seasonally, so family help, public transport and careful spending are recurring features of daily life.",
+      "visualProfile": {
+        "overallCharacter": "Steep, compact regional-city life with visible ties between urban neighborhoods, public markets and the surrounding highland region.",
+        "geographyAndClimate": "Elevated highland terrain with sloped streets, broad regional views where appropriate, variable mountain weather and strong daylight; avoid specifying a real city.",
+        "builtEnvironment": "Modest apartment buildings, hillside residential streets, public school, large municipal market, bus terminal and multipurpose cultural house.",
+        "streetsAndPublicRealm": "Steep sidewalks and roads, market approaches, bus queues, neighborhood storefronts, courtyards and civic gathering spaces.",
+        "interiors": "Compact apartment interiors, school classroom/computer spaces, dense market stalls, bus-terminal waiting areas and flexible cultural-house rooms used for library, tutoring, exhibitions or meetings.",
+        "materialsAndTextures": "Painted masonry, concrete, tile, corrugated or metal market elements, woven or textile goods where naturally sold, paper bus tickets/notices, produce crates and everyday repair materials.",
+        "lightAndAtmosphere": "High-altitude clarity mixed with fast-changing cloud or cool shadows; strong sun can create crisp contrast on steep streets without turning every image into scenic landscape photography.",
+        "vegetationAndLandscape": "Sparse-to-moderate urban planting, hillside vegetation and distant highland terrain where visible; built neighborhood life remains the primary subject.",
+        "mobilityAndVehicles": "Walking, local buses and regional coaches dominate; crowded terminal periods and variable travel times can be visually evident.",
+        "signageAndLanguage": "Spanish and Quechua may appear plausibly in public, market, school or cultural material; avoid treating indigenous-language presence as decorative exoticism.",
+        "clothingAndEverydayObjects": "Contemporary everyday urban/regional clothing, school bags, market baskets, phones, radios, bus tickets, books, household goods and practical commerce items; no costume-like ethnic shorthand.",
+        "technologyAndInfrastructure": "Public internet access, ordinary phones/computers, radio, bus infrastructure, market equipment and school technology at contemporary everyday levels.",
+        "publicInstitutions": "Public school, municipal market, local/regional bus systems, library service, cultural house and community health center.",
+        "visualAnchors": [
+          "steep residential street with modest apartment buildings",
+          "large municipal market full of everyday commerce",
+          "regional bus terminal linking city and outlying communities",
+          "public cultural house with mixed civic and educational use",
+          "extended-family movement between nearby households"
+        ],
+        "avoid": [
+          "specific famous Andean landmarks",
+          "tourism or folkloric staging",
+          "ethnic costume as default clothing",
+          "poverty spectacle",
+          "romanticized rural-vs-urban morality",
+          "personality or destiny symbolism"
+        ]
+      },
+      "assetShotIdeas": [
+        "Hero: steep neighborhood street descending toward market and bus activity",
+        "Market: municipal market aisle with food, clothing and repair vendors",
+        "Transit: regional bus terminal during a crowded but ordinary departure period",
+        "Institution: flexible cultural-house room set up for library/tutoring/exhibition use",
+        "Home: modest apartment meal or errand-preparation scene with nearby relatives coming and going"
+      ],
+      "assetRefs": []
+    },
+    {
+      "worldSpecRef": "world_slice_g1_04_tropical_coast",
+      "displayName": "Tropical Coastal City",
+      "shortDescription": "A busy coastal city world of extended household ties, minibuses, open markets, schools, community programs and waterfront commerce.",
+      "longDescription": "This world follows daily life in a compact family home on a busy street in a tropical coastal city. Two caregivers, the subject and two cousins share the household while extended relatives remain scattered across the metropolitan area. Walking, minibuses and shared taxis connect school, a major open market, community programs, commercial districts and the waterfront. Essentials are covered, but uneven income, transport, school costs, repairs and obligations to relatives make planning and tradeoffs part of ordinary household life.",
+      "visualProfile": {
+        "overallCharacter": "Energetic tropical coastal urban life centered on neighborhood commerce, shared transport, extended households and community institutions.",
+        "geographyAndClimate": "Warm humid coastal climate with intense sun, rain and weather-driven street changes; the waterfront exists as one part of the city rather than a resort backdrop.",
+        "builtEnvironment": "Compact family homes, small businesses, public school buildings, open-market structures, community center spaces, dense commercial streets and waterfront infrastructure.",
+        "streetsAndPublicRealm": "Busy neighborhood streets, minibus/shared-taxi junctions, market lanes, shaded storefront edges, school grounds and community gathering areas.",
+        "interiors": "Compact shared household rooms, school classrooms/lab/library room, community-center multipurpose rooms, repair stalls and dense market interiors or covered sections.",
+        "materialsAndTextures": "Painted concrete and masonry, metal roofing or awnings where plausible, fabric market canopies, wood and metal stalls, road dust after dry periods, wet pavement after rain, plastic crates, tools and everyday goods.",
+        "lightAndAtmosphere": "Bright tropical daylight, humid haze, deep shade under roofs or awnings, dramatic rain light and warm evening street illumination; avoid glossy vacation imagery.",
+        "vegetationAndLandscape": "Tropical street trees and planted yards may appear alongside dense built areas; vegetation supports the climate setting but should not overwhelm the urban character.",
+        "mobilityAndVehicles": "Walking, minibuses and shared taxis dominate local movement, with ordinary commercial/service vehicles and traffic congestion visible where appropriate.",
+        "signageAndLanguage": "English and Twi may appear naturally in shop, school, transport, media or community signage; avoid invented political messaging or excessive language display for effect.",
+        "clothingAndEverydayObjects": "Contemporary everyday clothing across ages, school bags, market totes, phones, radios, household repair items, fabric, electronics, public-health materials and shared-transport fare/payment objects.",
+        "technologyAndInfrastructure": "Contemporary phones, local/international radio, market electronics, repair tools, school science/computer equipment, public-health infrastructure and everyday power/transport systems.",
+        "publicInstitutions": "Public school, major market, minibus network, community center, public-health service, library room and local media.",
+        "visualAnchors": [
+          "compact family home opening onto a busy neighborhood street",
+          "minibus and shared-taxi junction",
+          "large open market mixing food, fabric, electronics and repair",
+          "community center during tutoring or public-health activity",
+          "coastal-city street life with the waterfront present but not dominant"
+        ],
+        "avoid": [
+          "beach-resort or safari imagery",
+          "specific national monuments or flags",
+          "poverty spectacle",
+          "generic pan-African visual stereotypes",
+          "religious imagery used to imply personality",
+          "future profession or moral-conclusion cues"
+        ]
+      },
+      "assetShotIdeas": [
+        "Hero: busy residential-commercial street with shared transport and market activity",
+        "Transit: minibus junction during an ordinary school/work travel period",
+        "Market: open-market lane mixing food, fabric, electronics and repair stalls",
+        "Community: multipurpose center during tutoring, health or meeting use",
+        "Home: compact extended-household living area with practical everyday objects"
+      ],
+      "assetRefs": []
+    },
+    {
+      "worldSpecRef": "world_slice_g1_05_northern_lake",
+      "displayName": "Northern Lake City",
+      "shortDescription": "A cold-climate bilingual regional city where stable public institutions, buses, libraries and community programs shape everyday life across strong seasons.",
+      "longDescription": "A small duplex household in a northern lake city provides a stable base for life shaped by seasonal weather, public transit and bilingual civic institutions. One caregiver, one step-caregiver and the subject share the home, while a close grandparent lives across the city and another parent lives elsewhere. Walking and municipal buses connect school, the central library, recreation programs, health services and shopping, with winter conditions sometimes changing ordinary plans.",
+      "visualProfile": {
+        "overallCharacter": "Stable regional-city life with strong seasonal cues, modest housing and visible dependence on durable public institutions.",
+        "geographyAndClimate": "Northern lake-region climate with winter snow/ice and large seasonal daylight changes; lake presence may be visible in some assets but need not dominate every scene.",
+        "builtEnvironment": "Small duplexes, public school campus, municipal bus stops, central public library, recreation hall, health-service buildings and modest commercial areas.",
+        "streetsAndPublicRealm": "Residential sidewalks, plowed winter streets when seasonal, bus shelters, school grounds, library approaches and community recreation spaces.",
+        "interiors": "Practical duplex rooms, school labs/arts/workshop areas, library study rooms and public computers, recreation-hall activity rooms and indoor winter gathering spaces.",
+        "materialsAndTextures": "Wood siding or painted masonry where plausible, concrete, snow-wet asphalt, salt/grit, winter clothing fabrics, library wood/laminate surfaces, sports flooring and practical household materials.",
+        "lightAndAtmosphere": "Low winter sun, blue or gray cold-weather light, warm indoor illumination, bright summer evenings and dramatic seasonal contrast without making the world permanently wintry.",
+        "vegetationAndLandscape": "Deciduous and coniferous urban trees, lake-region vegetation, snow cover seasonally and ordinary maintained parks or yards.",
+        "mobilityAndVehicles": "Walking and municipal buses dominate routine travel, with winter delays visible seasonally and occasional intercity travel represented by bus/train/car only when needed.",
+        "signageAndLanguage": "English and French may appear naturally on municipal, library, school or transit information; avoid turning bilingual signage into a visual gimmick.",
+        "clothingAndEverydayObjects": "Seasonally appropriate contemporary clothing, backpacks, winter boots/coats when applicable, transit passes, books, sports/hobby equipment, phones, workshop tools and household utility items.",
+        "technologyAndInfrastructure": "Contemporary school labs, public computers, phones, municipal transit systems, winter-maintenance infrastructure and ordinary household heating/utilities.",
+        "publicInstitutions": "Public school, municipal bus system, central public library, recreation hall, community health service and local-college programs.",
+        "visualAnchors": [
+          "small duplex on an ordinary northern residential street",
+          "municipal bus shelter during contrasting seasonal conditions",
+          "bilingual central library interior",
+          "recreation hall with mixed youth and community use",
+          "school campus with labs, arts rooms and practical workshop spaces"
+        ],
+        "avoid": [
+          "specific famous lake-city landmarks",
+          "permanent Christmas/winter-holiday aesthetic",
+          "wilderness replacing city life",
+          "national identity symbolism",
+          "affluence-coded ski-resort imagery",
+          "personality or career symbolism"
+        ]
+      },
+      "assetShotIdeas": [
+        "Hero: neighborhood street and bus corridor in a seasonally distinctive but ordinary city scene",
+        "Winter transit: municipal bus shelter after snow clearing, with routine commuters",
+        "Institution: bilingual central-library interior with study rooms and public computers",
+        "Community: recreation hall during hobby-club or youth-group use",
+        "Home: modest duplex interior with practical seasonal household details"
+      ],
+      "assetRefs": []
+    }
+  ]
+}
