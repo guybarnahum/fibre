@@ -155,8 +155,9 @@ function importedTestFilesFromView(view) {
     if (!token.rawValue.endsWith(".test.mjs")) continue;
     const prefix = precedingStatement(view.masked, token.start);
     // Recognize the JavaScript import keyword, not identifiers such as
-    // `importedTestFiles` that merely begin with the same letters.
-    if (!/^import(?:\s|\{|\*|["'])/.test(prefix)) continue;
+    // `importedTestFiles` that merely begin with the same letters. A side-effect
+    // import masks its quoted specifier, leaving exactly `import` as the prefix.
+    if (!/^import(?:$|\s|\{|\*|["'])/.test(prefix)) continue;
     if (/^import\s*\(/.test(prefix)) continue;
     imports.add(token.rawValue);
   }
@@ -260,26 +261,31 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
   );
   const titleGroups = new Map();
   for (const record of titleRecords) {
-    const paths = titleGroups.get(record.title) ?? [];
-    paths.push(record.path);
-    titleGroups.set(record.title, paths);
+    const current = titleGroups.get(record.title) ?? new Set();
+    current.add(record.path);
+    titleGroups.set(record.title, current);
   }
   const duplicateTitles = [...titleGroups.entries()]
-    .filter(([, paths]) => new Set(paths).size > 1)
-    .map(([title, paths]) => ({ title, paths: [...new Set(paths)].sort() }))
+    .filter(([, paths]) => paths.size > 1)
+    .map(([title, paths]) => ({ title, paths: [...paths].sort() }))
     .sort((left, right) => left.title.localeCompare(right.title));
 
-  const testImportAliases = records.filter((record) => record.importedTestFiles.length > 0);
-  const zeroDeclared = records.filter((record) => record.zeroDeclaredTests);
-  const commentOnly = records.filter((record) => record.commentOnly);
+  const testImportAliases = records
+    .filter((record) => record.importedTestFiles.length > 0)
+    .map((record) => ({
+      path: record.path,
+      importedTestFiles: record.importedTestFiles,
+      declaredTestCalls: record.declaredTestCalls,
+    }));
+  const zeroDeclaredTests = records
+    .filter((record) => record.zeroDeclaredTests)
+    .map((record) => record.path);
+  const commentOnlyTestFiles = records
+    .filter((record) => record.commentOnly)
+    .map((record) => record.path);
 
   return {
     version: "fibre-test-value-audit-v1",
-    runnerContract: {
-      source: "package.json#scripts.test",
-      scopes: TEST_SCOPES.map(({ scope, directory }) => ({ scope, glob: `${directory}/*.test.mjs` })),
-      note: "declaredTestCalls is a static source count, not the Node test runner's runtime test total.",
-    },
     totals: {
       files: records.length,
       declaredTestCalls: records.reduce((sum, record) => sum + record.declaredTestCalls, 0),
@@ -287,26 +293,29 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
     },
     byScope: summarizeBy(records, "scope"),
     byFamily: summarizeBy(records, "family"),
+    records,
     hygiene: {
       exactDuplicateBodies,
+      testImportAliases,
+      zeroDeclaredTests,
+      commentOnlyTestFiles,
       duplicateTitles,
-      testImportAliases: testImportAliases.map((record) => ({
-        path: record.path,
-        importedTestFiles: record.importedTestFiles,
-        declaredTestCalls: record.declaredTestCalls,
-      })),
-      zeroDeclaredTests: zeroDeclared.map((record) => ({
-        path: record.path,
-        commentOnly: record.commentOnly,
-        importedTestFiles: record.importedTestFiles,
-      })),
-      commentOnlyTestFiles: commentOnly.map((record) => record.path),
     },
-    records,
   };
 }
 
-export function renderTestValueAuditMarkdown(audit) {
+function renderTable(summary) {
+  const lines = [
+    "| Scope | Files | Declared calls | Bytes |",
+    "| --- | ---: | ---: | ---: |",
+  ];
+  for (const [scope, values] of Object.entries(summary)) {
+    lines.push(`| ${scope} | ${values.files} | ${values.declaredTestCalls} | ${values.bytes} |`);
+  }
+  return lines.join("\n");
+}
+
+function renderAudit(audit) {
   const lines = [
     "# Fibre test-value audit",
     "",
@@ -321,45 +330,40 @@ export function renderTestValueAuditMarkdown(audit) {
     "",
     "### By scope",
     "",
-    "| Scope | Files | Declared calls | Bytes |",
-    "| --- | ---: | ---: | ---: |",
+    renderTable(audit.byScope),
+    "",
+    "### By invariant family",
+    "",
+    renderTable(audit.byFamily),
+    "",
+    "## Exact duplicate test-file bodies",
+    "",
   ];
-  for (const [scope, summary] of Object.entries(audit.byScope)) {
-    lines.push(`| ${scope} | ${summary.files} | ${summary.declaredTestCalls} | ${summary.bytes} |`);
-  }
-  lines.push("", "### By invariant family", "", "| Family | Files | Declared calls | Bytes |", "| --- | ---: | ---: | ---: |");
-  for (const [family, summary] of Object.entries(audit.byFamily)) {
-    lines.push(`| ${family} | ${summary.files} | ${summary.declaredTestCalls} | ${summary.bytes} |`);
-  }
-
-  const section = (title, items, formatter) => {
-    lines.push("", `## ${title}`, "");
-    if (items.length === 0) {
-      lines.push("None detected.");
-      return;
+  if (audit.hygiene.exactDuplicateBodies.length === 0) lines.push("None detected.");
+  else {
+    for (const group of audit.hygiene.exactDuplicateBodies) {
+      lines.push(`- \`${group.paths.join("` = `")}\``);
     }
-    for (const item of items) lines.push(`- ${formatter(item)}`);
-  };
-  section(
-    "Exact duplicate test-file bodies",
-    audit.hygiene.exactDuplicateBodies,
-    (item) => `${item.paths.map((path) => `\`${path}\``).join(", ")}`,
-  );
-  section(
-    "Test files importing other test files",
-    audit.hygiene.testImportAliases,
-    (item) => `\`${item.path}\` imports ${item.importedTestFiles.map((path) => `\`${path}\``).join(", ")}`,
-  );
-  section(
-    "Zero-declaration test files",
-    audit.hygiene.zeroDeclaredTests,
-    (item) => `\`${item.path}\` — commentOnly=${item.commentOnly}; importedTests=${item.importedTestFiles.length}`,
-  );
-  section(
-    "Duplicate test titles across files",
-    audit.hygiene.duplicateTitles,
-    (item) => `\`${item.title}\` — ${item.paths.map((path) => `\`${path}\``).join(", ")}`,
-  );
+  }
+  lines.push("", "## Test files importing other test files", "");
+  if (audit.hygiene.testImportAliases.length === 0) lines.push("None detected.");
+  else {
+    for (const record of audit.hygiene.testImportAliases) {
+      lines.push(`- \`${record.path}\` imports ${record.importedTestFiles.map((path) => `\`${path}\``).join(", ")}`);
+    }
+  }
+  lines.push("", "## Zero-declaration test files", "");
+  if (audit.hygiene.zeroDeclaredTests.length === 0) lines.push("None detected.");
+  else {
+    for (const path of audit.hygiene.zeroDeclaredTests) lines.push(`- \`${path}\``);
+  }
+  lines.push("", "## Duplicate test titles across files", "");
+  if (audit.hygiene.duplicateTitles.length === 0) lines.push("None detected.");
+  else {
+    for (const record of audit.hygiene.duplicateTitles) {
+      lines.push(`- \`${record.title}\`: ${record.paths.map((path) => `\`${path}\``).join(", ")}`);
+    }
+  }
   lines.push(
     "",
     "## Interpretation rule",
@@ -367,47 +371,42 @@ export function renderTestValueAuditMarkdown(audit) {
     "Exact duplicate bodies, test-import aliases, and comment-only `*.test.mjs` tombstones are mechanical cleanup candidates.",
     "Duplicate titles are review signals only: domain, store, replay, API, transaction, hostile-mutation, and protocol tests may intentionally exercise the same named invariant at different load-bearing boundaries.",
     "No semantic test should be removed solely to reduce the test count.",
-    "",
   );
   return `${lines.join("\n")}\n`;
 }
 
-function parseArguments(argv) {
-  const options = { json: null, markdown: null, check: false };
+function parseArgs(argv) {
+  const args = { check: false, json: null, markdown: null };
   for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    if (argument === "--json") options.json = argv[++index];
-    else if (argument === "--markdown") options.markdown = argv[++index];
-    else if (argument === "--check") options.check = true;
-    else throw new TypeError(`unknown argument: ${argument}`);
+    const arg = argv[index];
+    if (arg === "--check") args.check = true;
+    else if (arg === "--json") args.json = argv[++index];
+    else if (arg === "--markdown") args.markdown = argv[++index];
+    else throw new TypeError(`unknown test-value audit option: ${arg}`);
   }
-  if (options.json === undefined || options.markdown === undefined) {
-    throw new TypeError("--json and --markdown require output paths");
-  }
-  return options;
+  return args;
 }
 
-function blockingMechanicalFindings(audit) {
-  return [
-    ...audit.hygiene.exactDuplicateBodies.map((item) => `exact duplicate bodies: ${item.paths.join(", ")}`),
-    ...audit.hygiene.testImportAliases.map((item) => `test import alias: ${item.path}`),
-    ...audit.hygiene.commentOnlyTestFiles.map((path) => `comment-only test tombstone: ${path}`),
-  ];
-}
-
-function main() {
-  const options = parseArguments(process.argv.slice(2));
+function main(argv = process.argv.slice(2)) {
+  const args = parseArgs(argv);
   const audit = buildTestValueAudit();
-  const markdown = renderTestValueAuditMarkdown(audit);
-  if (options.json) writeFileSync(resolve(options.json), `${JSON.stringify(audit, null, 2)}\n`);
-  if (options.markdown) writeFileSync(resolve(options.markdown), markdown);
-  if (!options.json && !options.markdown) process.stdout.write(markdown);
-  if (options.check) {
-    const findings = blockingMechanicalFindings(audit);
-    if (findings.length > 0) {
-      for (const finding of findings) console.error(`TEST-AUDIT: ${finding}`);
-      process.exitCode = 1;
-    }
+  if (args.json) writeFileSync(args.json, JSON.stringify(audit, null, 2));
+  if (args.markdown) writeFileSync(args.markdown, renderAudit(audit));
+  if (!args.json && !args.markdown) process.stdout.write(renderAudit(audit));
+
+  const blockers = [];
+  for (const group of audit.hygiene.exactDuplicateBodies) {
+    blockers.push(`exact duplicate test bodies: ${group.paths.join(", ")}`);
+  }
+  for (const record of audit.hygiene.testImportAliases) {
+    blockers.push(`test import alias: ${record.path}`);
+  }
+  for (const path of audit.hygiene.commentOnlyTestFiles) {
+    blockers.push(`comment-only test tombstone: ${path}`);
+  }
+  if (args.check && blockers.length > 0) {
+    for (const blocker of blockers) process.stderr.write(`TEST-AUDIT: ${blocker}\n`);
+    process.exitCode = 1;
   }
 }
 
