@@ -93,8 +93,9 @@ function order(name, left, right) {
   if (Date.parse(left) > Date.parse(right)) throw new TypeError(`${name} moves backwards in time`);
 }
 
-function assertMaterialText(name, value, maxBytes) {
+function assertMaterialText(name, value, maxBytes, { enforceContentPolicy = true } = {}) {
   assertNonEmpty(name, value);
+  if (!enforceContentPolicy) return value;
   if (value.trim().length < 12) throw new TypeError(`${name} must contain material autobiographical content`);
   if (Buffer.byteLength(value, "utf8") > maxBytes) throw new TypeError(`${name} exceeds ${maxBytes} UTF-8 bytes`);
   return value;
@@ -203,22 +204,16 @@ function normalizeCommon(candidate) {
   }
 }
 
-function normalizeLegacyMemory(candidate) {
+function normalizeLegacyMemory(candidate, { enforceContentPolicy = true } = {}) {
   assertExactKeys("autobiographical memory", candidate, LEGACY_MEMORY_KEYS);
   normalizeCommon(candidate);
-  assertNonEmpty("rememberedMeaning", candidate.rememberedMeaning);
-  if (candidate.rememberedMeaning.trim().length < 12) {
-    throw new TypeError("rememberedMeaning must contain a material autobiographical interpretation");
-  }
-  if (Buffer.byteLength(candidate.rememberedMeaning, "utf8") > 2048) {
-    throw new TypeError("rememberedMeaning exceeds 2048 UTF-8 bytes");
-  }
+  assertMaterialText("rememberedMeaning", candidate.rememberedMeaning, 2048, { enforceContentPolicy });
   const normalized = structuredClone(candidate);
   if (normalized.supersedesRevision === undefined) delete normalized.supersedesRevision;
   return normalized;
 }
 
-function normalizeMeaningPart(candidate, index, memoryId) {
+function normalizeMeaningPart(candidate, index, memoryId, { enforceContentPolicy = true } = {}) {
   const path = `meaningParts[${index}]`;
   assertPlainObject(path, candidate);
   assertExactKeys(path, candidate, ["meaningPartId", "meaning"]);
@@ -226,11 +221,11 @@ function normalizeMeaningPart(candidate, index, memoryId) {
   if (!MEANING_PART_ID.test(candidate.meaningPartId)) throw new TypeError(`${path}.meaningPartId is invalid`);
   const expectedId = autobiographicalMeaningPartId({ memoryId, ordinal: index + 1 });
   if (candidate.meaningPartId !== expectedId) throw new TypeError(`${path}.meaningPartId is not stable for memory+ordinal`);
-  assertMaterialText(`${path}.meaning`, candidate.meaning, AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxMeaningPartBytes);
+  assertMaterialText(`${path}.meaning`, candidate.meaning, AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxMeaningPartBytes, { enforceContentPolicy });
   return structuredClone(candidate);
 }
 
-function normalizeGenesisMemory(candidate) {
+function normalizeGenesisMemory(candidate, { enforceContentPolicy = true } = {}) {
   assertExactKeys("autobiographical memory", candidate, GENESIS_MEMORY_KEYS);
   if (candidate.recordFormat !== AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) {
     throw new TypeError(`unsupported autobiographical memory recordFormat ${candidate.recordFormat}`);
@@ -240,13 +235,15 @@ function normalizeGenesisMemory(candidate) {
     "rememberedContent",
     candidate.rememberedContent,
     AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxRememberedContentBytes,
+    { enforceContentPolicy },
   );
   if (!MEMORY_MEANING_OUTCOMES.includes(candidate.meaningOutcome)) throw new TypeError("meaningOutcome is invalid");
   if (!Array.isArray(candidate.meaningParts)) throw new TypeError("meaningParts must be an array");
-  if (candidate.meaningParts.length > AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxMeaningParts) {
+  if (enforceContentPolicy && candidate.meaningParts.length > AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxMeaningParts) {
     throw new TypeError(`meaningParts exceeds ${AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxMeaningParts} parts`);
   }
-  const meaningParts = candidate.meaningParts.map((part, index) => normalizeMeaningPart(part, index, candidate.memoryId));
+  const meaningParts = candidate.meaningParts.map((part, index) =>
+    normalizeMeaningPart(part, index, candidate.memoryId, { enforceContentPolicy }));
   if (candidate.meaningOutcome === "no_durable_meaning") {
     if (candidate.rememberedMeaning !== null) throw new TypeError("no_durable_meaning must use rememberedMeaning=null");
     if (meaningParts.length !== 0) throw new TypeError("no_durable_meaning must use meaningParts=[]");
@@ -255,6 +252,7 @@ function normalizeGenesisMemory(candidate) {
       "rememberedMeaning",
       candidate.rememberedMeaning,
       AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxRememberedMeaningBytes,
+      { enforceContentPolicy },
     );
     if (meaningParts.length === 0) throw new TypeError("durable_meaning requires at least one independently citable meaning part");
   }
@@ -263,15 +261,21 @@ function normalizeGenesisMemory(candidate) {
   return normalized;
 }
 
-export function normalizeAutobiographicalMemory(candidate) {
+export function normalizeAutobiographicalMemory(candidate, { enforceContentPolicy = true } = {}) {
   assertPlainObject("autobiographical memory", candidate);
-  if (candidate.recordFormat === undefined) return normalizeLegacyMemory(candidate);
-  if (candidate.recordFormat === AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) return normalizeGenesisMemory(candidate);
+  if (candidate.recordFormat === undefined) return normalizeLegacyMemory(candidate, { enforceContentPolicy });
+  if (candidate.recordFormat === AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) {
+    return normalizeGenesisMemory(candidate, { enforceContentPolicy });
+  }
   throw new TypeError(`unsupported autobiographical memory recordFormat ${candidate.recordFormat}`);
 }
 
+export function rehydrateAutobiographicalMemory(candidate) {
+  return normalizeAutobiographicalMemory(candidate, { enforceContentPolicy: false });
+}
+
 export function autobiographicalMemoryRecordDigest(record, previousDigest = null) {
-  const normalized = normalizeAutobiographicalMemory(record);
+  const normalized = rehydrateAutobiographicalMemory(record);
   if (previousDigest !== null && !/^sha256:[0-9a-f]{64}$/.test(previousDigest)) {
     throw new TypeError("previous memory digest is invalid");
   }
@@ -283,5 +287,5 @@ export function autobiographicalMemoryRecordDigest(record, previousDigest = null
 }
 
 export function autobiographicalMemoryIsCurrent(record) {
-  return normalizeAutobiographicalMemory(record).status !== "retracted";
+  return rehydrateAutobiographicalMemory(record).status !== "retracted";
 }
