@@ -37,41 +37,39 @@ If presentation text conflicts with the authoritative WorldSpec, the WorldSpec w
 
 ## V1 record
 
-The initial machine-readable form is:
+V1 is **one presentation record per World**, stored independently so a World owns its own human-facing copy, visual grounding and asset references.
 
 ```text
 contractVersion
 scope
 authority = derived_non_cognitive_presentation
 derivationPolicy
-presentations[] {
-  worldSpecRef
-  displayName
-  shortDescription
-  longDescription
-  visualProfile {
-    overallCharacter
-    geographyAndClimate
-    builtEnvironment
-    streetsAndPublicRealm
-    interiors
-    materialsAndTextures
-    lightAndAtmosphere
-    vegetationAndLandscape
-    mobilityAndVehicles
-    signageAndLanguage
-    clothingAndEverydayObjects
-    technologyAndInfrastructure
-    publicInstitutions
-    visualAnchors[]
-    avoid[]
-  }
-  assetShotIdeas[]
-  assetRefs[]
+worldSpecRef
+displayName
+shortDescription
+longDescription
+visualProfile {
+  overallCharacter
+  geographyAndClimate
+  builtEnvironment
+  streetsAndPublicRealm
+  interiors
+  materialsAndTextures
+  lightAndAtmosphere
+  vegetationAndLandscape
+  mobilityAndVehicles
+  signageAndLanguage
+  clothingAndEverydayObjects
+  technologyAndInfrastructure
+  publicInstitutions
+  visualAnchors[]
+  avoid[]
 }
+assetShotIdeas[]
+assetRefs[]
 ```
 
-The exact persistence implementation may later normalize these into per-World rows/documents. V1 intentionally establishes the semantic contract first.
+Presentation records are not cohort bundles. A catalog/API may aggregate multiple `WorldPresentation` records at read time, but the durable artifact/persistence unit is the individual World.
 
 ## Visual-data discipline
 
@@ -150,25 +148,24 @@ The five #39 G1 Worlds keep their authoritative WorldSpecs under:
 artifacts/validation/m2-pr39/g/worlds/
 ```
 
-Their companion presentation metadata lives under:
+Their companion presentation metadata lives one file per World under:
 
 ```text
 artifacts/validation/m2-pr39/g/worlds/presentation/
+  world-g1-01.presentation.json
+  world-g1-02.presentation.json
+  world-g1-03.presentation.json
+  world-g1-04.presentation.json
+  world-g1-05.presentation.json
 ```
 
-The initial bundle is:
-
-```text
-g1-world-presentations-v1.json
-```
-
-It is derived from the already-authored genome-blind G1 world facts and must never be fed back into the Genesis cohort generation path.
+Each is derived from the corresponding already-authored genome-blind G1 world facts and must never be fed back into the Genesis cohort-generation path.
 
 Because presentation is non-cognitive, adding or improving it does not alter the G1 WorldSpec freeze, familiarity result or world digest. It also must not be used to rescue or regenerate a weak final Thread.
 
 ## Future production persistence
 
-Production Fibre will likely expose a bounded World presentation service/table and a separate object-asset authority. The exact physical database is deferred.
+Production Fibre should expose a bounded per-World presentation service/table/document and a separate object-asset authority. A catalog is a derived read projection, not the storage unit.
 
 The durable conceptual relationship is:
 
