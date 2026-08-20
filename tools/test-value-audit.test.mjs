@@ -65,8 +65,7 @@ test("test-value audit distinguishes semantic tests from mechanical tombstones a
     assert.equal(dynamic.zeroDeclaredTests, false);
     assert.equal(dynamic.declaredTestCalls, 1);
     assert.equal(dynamic.commentOnly, false);
-  });
-});
+  }));
 
 test("test-value audit reports byte-identical test files without treating shared titles as proof of duplication", () =>
   withAuditFixture((root) => {
@@ -93,5 +92,4 @@ test("test-value audit reports byte-identical test files without treating shared
       "services/world-kernel/test/b.test.mjs",
       "tools/c.test.mjs",
     ]);
-  });
-});
+  }));
