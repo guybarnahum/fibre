@@ -42,13 +42,13 @@ The Gate-F reviewed evidence head remains `f960e8851ac0eeb2d03b1830740e813beeb10
 | 4 | Older C/D carry-forwards | **COMPLETE** | [`m2-pr39-pre-g-stage4-carry-forwards.md`](m2-pr39-pre-g-stage4-carry-forwards.md) |
 | 5 | Test-value audit | **COMPLETE** | [`m2-pr39-pre-g-stage5-test-value-audit.md`](m2-pr39-pre-g-stage5-test-value-audit.md) |
 | 6 | Retired experiment/artifact hygiene | **COMPLETE** | [`m2-pr39-pre-g-stage6-retired-experiment-hygiene.md`](m2-pr39-pre-g-stage6-retired-experiment-hygiene.md) |
-| 7 | Documentation/plan reconciliation | **IMPLEMENTED / AWAITING LOCAL VERIFICATION** | [`m2-pr39-pre-g-stage7-documentation-reconciliation.md`](m2-pr39-pre-g-stage7-documentation-reconciliation.md); current docs/context agree and repository context checks are green |
-| 8 | Branch/repository + final integration hygiene | PENDING | close the genome/lineage birth-binding gap, reconcile latest `main`, preserve evidence hashes, full check green, clean tree, exact seam-closing head recorded |
+| 7 | Documentation/plan reconciliation | **COMPLETE** | [`m2-pr39-pre-g-stage7-documentation-reconciliation.md`](m2-pr39-pre-g-stage7-documentation-reconciliation.md); maintainer context/document envelope green |
+| 8 | Branch/repository + final integration hygiene | **IMPLEMENTED / AWAITING LOCAL VERIFICATION** | [`m2-pr39-pre-g-stage8-repository-integration-hygiene.md`](m2-pr39-pre-g-stage8-repository-integration-hygiene.md); genome/lineage binding load-bearing, latest-main/full-check/clean-tree closure pending |
 | 9 | Narrow Pre-G readiness review | PENDING | hostile cleanup review finds no unsafe carry-forward before G |
 
-## Closed carry-forwards through Stage 6
+## Closed carry-forwards through Stage 7
 
-The seam has already established:
+The seam has established:
 
 - canonical constitutive Pass-C prompts while preserving the burned N1/N2 historical prompt as evidence;
 - `no_durable_meaning` as a legal first-class outcome;
@@ -60,47 +60,37 @@ The seam has already established:
 - a test-value audit that found no case for bulk semantic-test deletion;
 - explicit `active`, `repro`, and `all` test lifecycles;
 - byte-preserving relocation of retained scientific instruments plus compatibility regressions;
-- a green maintainer verification envelope covering active, repro, all, audit and repository checks.
+- Stage-6 active/repro/all/audit/check verification green;
+- current-state, roadmap, storage and AI-context lifecycle reconciled;
+- Stage-7 includes/context/validate/check verification green.
 
-## Stage 7 reconciliation
+## Stage 8 — genome/lineage integration
 
-Stage 7 makes the **current operating story** match the implemented branch while keeping historical evidence available in the appropriate context layer.
-
-It reconciles root orientation, current state/priorities, persistent storage, roadmap numbering, AI-context lifecycle, the Stage-5/6 closure records and this seam ledger.
-
-Stage 7 changes no Genesis compiler policy, model prompt/schema, world, genome, treatment assignment, rater, admission rule, experimental artifact or Gate-F result.
-
-### Semantic reconciliation finding — genome/lineage birth binding remains open
-
-The documentation audit found one real implementation carry-forward already named by the accepted symbolic-genome plan rather than a stale-document-only problem.
-
-The accepted requirement is:
+Stage 7 found one real G-blocker already required by the accepted symbolic-genome plan:
 
 > synthetic-ancestor source owner IDs must be bound to admitted #38 `biological_parent` / `parent_genome_source` lineage evidence before a synthetic-lineage child becomes live.
 
-Current code establishes the pieces separately:
+Stage-8 implementation now makes this load-bearing inside `GenesisStore.publishBirth()`.
 
-- `SymbolicGenomeStore` verifies persisted genome ownership, source ownership/digests, deterministic crossover and mutation provenance;
-- #38 life relations provide the durable `biological_parent` + `parent_genome_source` authority;
-- the Rich-Life policy-side witness proves an in-memory recombined genome and deliberately removes genome material before Pass A;
-- `GenesisManifest` records `genomeRef` and `parentOrAncestorRefs`.
+For any referenced symbolic genome, publication verifies the persisted canonical bundle through the same transaction-level verifier as `SymbolicGenomeStore`, including child owner and `genesisId` binding.
 
-But `GenesisStore.publishBirth()` currently does **not** resolve `manifest.genomeRef` against persisted symbolic-genome state or require the genome's source owner IDs to match admitted #38 parent-genome-source relations inside the live birth boundary.
-
-Therefore this is a **G blocker**. Before the cohort/protocol freeze, publication must make at least these properties load-bearing:
+For `synthetic_lineage`, publication additionally requires:
 
 ```text
-manifest.genomeRef resolves to a persisted symbolic genome
-referenced genome belongs to the child Thread
-referenced genome genesisId matches the birth genesisId
-synthetic-lineage manifest parentOrAncestorRefs match the genome source owners
-those synthetic-ancestor source owners match admitted #38 biological_parent + parent_genome_source relations
-mismatch / missing genome / missing lineage leaves no live Thread
+recombined child genome
+all source owners are synthetic_ancestor
+ordered manifest.parentOrAncestorRefs == ordered genome source owners
+exact matching revision-1 biological_parent / parent_genome_source relations
+relations are current, genesis_created and cite the birth seed event
 ```
 
-The exact transaction design is an implementation decision, but the child may not become live with an unverified genome/lineage provenance seam.
+Those relations are appended through the same #38 persistence primitive as `SituatedLifeStore`, including canonical lineage-head and relation-revision evidence witnesses.
 
-This finding does not invalidate Gate F's Echo/Homage/fork/source-rights result and does not alter Pass-A genome blindness. It closes the previously explicit unchecked Slice-E/birth completion item before G.
+The live-birth transaction now fails closed on missing genome, wrong child, wrong Genesis, source substitution, missing lineage or post-lineage failure. A failed transaction leaves no live child/lineage/manifest. The immutable genome remains a pre-birth/provisional input rather than being rewritten or deleted.
+
+Pass A remains genome blind.
+
+Stage-8 record: [`m2-pr39-pre-g-stage8-repository-integration-hygiene.md`](m2-pr39-pre-g-stage8-repository-integration-hygiene.md).
 
 ## Hard seam rules
 
@@ -128,13 +118,13 @@ Model-free code/test/doc work required to close the seam remains allowed.
 [x] historical-memory read-policy drift closed
 [x] test portfolio inventoried and value dispositions recorded
 [x] retained experiments separated from current mechanism
-[~] canonical docs/context reconciled — Stage 7 implementation landed; local context/check verification pending
-[ ] persisted symbolic genome is bound to child/genesis at birth
-[ ] synthetic-lineage genome source owners are bound to admitted #38 parent-genome-source relations before live publication
-[ ] latest main reconciled
-[ ] full check green after final seam changes
-[ ] evidence hashes confirmed stable after repository hygiene
-[ ] clean tree and exact seam-closing HEAD recorded
+[x] canonical docs/context reconciled and Stage-7 local verification green
+[~] persisted symbolic genome bound to child/genesis at birth — implementation landed; local verification pending
+[~] synthetic-lineage source owners bound to #38 parent-genome-source relations — implementation landed; local verification pending
+[~] latest main reconciled — behind 0 during Stage-8 implementation; repeat immediately before closure
+[ ] full active/repro/all/audit/document/repository verification green after Stage-8 changes
+[ ] evidence hashes / retained scientific paths confirmed stable after repository hygiene
+[ ] clean tree and exact verified Stage-8 HEAD recorded
 [ ] narrow Pre-G readiness review CLEAR
 [ ] no Slice-G cohort/model use occurred before seam closure
 ```
