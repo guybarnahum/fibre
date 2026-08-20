@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-pre-g-stage6-retired-experiment-hygiene
-status: implemented_awaiting_verification
+status: complete
 last-reviewed: 2026-08-20
 canonical: false
 ---
@@ -117,15 +117,15 @@ Corrections:
 304988ef9d957812a8999dbf6c14734ca7416e44  restore relocation compatibility edges
 dc77e4cd4cdcd649b69b8dd345ce8a02fc33c279  make relocation compatibility load-bearing
 dcf73bd6090cfab57fe2a2b79d5a658393b4940e  preserve historical M1 executable main semantics
+1425afa3f8ec301a80cf389a95270bc7a1f3ca18  make editor entrypoint symlink-safe
+0548d2b22b820ab4a5019f7b63cc50caff1f151e  add relocated-editor entrypoint regression
 ```
 
-`tools/test-infra/stage6-relocation-compatibility.test.mjs` now verifies the known file-level relocation graph is resolvable/importable. The retained scientific targets remain byte-identical; compatibility code lives outside those retained blobs.
+`tools/test-infra/stage6-relocation-compatibility.test.mjs` verifies the known file-level relocation graph is resolvable/importable. `tools/editor/serve-thread-editor-entrypoint.test.mjs` additionally proves the canonical editor executable starts correctly when invoked through the retained M1 compatibility symlink. The retained scientific targets remain byte-identical; compatibility code lives outside those retained blobs.
 
-Stage 6 remains `implemented_awaiting_verification` until the corrected tree passes the full verification envelope below.
+## Final verification — COMPLETE
 
-## Verification required
-
-Before Stage 6 becomes COMPLETE, the maintainer must verify:
+The maintainer reported the complete post-correction verification envelope green on 2026-08-20:
 
 ```bash
 node --disable-warning=ExperimentalWarning --test tools/test-infra/test-suite-lifecycle.test.mjs
@@ -138,7 +138,9 @@ npm run test:audit -- --check
 npm run check
 ```
 
-Required invariant:
+The active suite included the new relocated-editor regression and passed in full. The retained repro suite, the complete retained test envelope, the mechanical test-value audit, and repository check also passed.
+
+Required invariant is therefore satisfied:
 
 ```text
 active ∩ repro = ∅
@@ -147,4 +149,6 @@ all suites green
 repository check green
 ```
 
-No Slice-G world, genome, cohort or model call occurs in Stage 6.
+No Slice-G world, genome, cohort or model call occurred during Stage 6.
+
+Stage 6 is **COMPLETE**.
