@@ -9,36 +9,19 @@ canonical: false
 
 ## Purpose
 
-The five G1 Worlds need a human-facing surface for the website/editor and enough grounded visual information to generate environment assets later.
+The G1 Worlds need a human-facing surface for the website/editor and enough grounded visual information to generate environment assets later.
 
 That surface must not become a hidden Genesis-authoring channel.
 
 Canonical presentation contract: [`../architecture/world-presentation-v1.md`](../architecture/world-presentation-v1.md).
 
-## Artifacts
+Concrete-world authoring rule: [`../architecture/world-context-specificity-v1.md`](../architecture/world-context-specificity-v1.md).
 
-G1 uses one presentation artifact per World:
+## Per-World artifact rule
 
-```text
-artifacts/validation/m2-pr39/g/worlds/presentation/
-  world-g1-01.presentation.json
-  world-g1-02.presentation.json
-  world-g1-03.presentation.json
-  world-g1-04.presentation.json
-  world-g1-05.presentation.json
-```
+G1 uses one presentation artifact per World. A website or editor may aggregate them into a catalog at read time; the durable presentation artifact unit remains one World.
 
-The mapping is:
-
-```text
-world_slice_g1_01_river_delta     River Delta District
-world_slice_g1_02_inland_rail     Inland Rail City
-world_slice_g1_03_highland_region Highland Regional City
-world_slice_g1_04_tropical_coast  Tropical Coastal City
-world_slice_g1_05_northern_lake   Northern Lake City
-```
-
-Each file includes:
+Each presentation includes:
 
 - exact `worldSpecRef`;
 - display name;
@@ -62,11 +45,40 @@ Each file includes:
 - several asset-shot ideas;
 - future stable asset references.
 
-A website or editor may aggregate these independent records into a catalog at read time. The durable artifact unit remains one World.
+## Current v1 presentation artifacts
+
+```text
+artifacts/validation/m2-pr39/g/worlds/presentation/
+  world-g1-01.presentation.json
+  world-g1-02.presentation.json
+  world-g1-03.presentation.json
+  world-g1-04.presentation.json
+  world-g1-05.presentation.json
+```
+
+These five files remain bound to the preserved **G1-v1 generic WorldSpecs**:
+
+```text
+world_slice_g1_01_river_delta
+world_slice_g1_02_inland_rail
+world_slice_g1_03_highland_region
+world_slice_g1_04_tropical_coast
+world_slice_g1_05_northern_lake
+```
+
+They must not be silently repointed to the G1-v2 concrete Worlds.
+
+## G1-v2 presentation rule
+
+Human review found that G1-v1 was too geographically interchangeable. G1-v2 is now being corrected at the **WorldSpec** layer first, using Cần Thơ, Łódź, Cusco, Accra and Greater Sudbury as concrete settings.
+
+Do not use presentation prose to paper over missing WorldSpec facts.
+
+After the v2 familiarity rerun clears and the exact final `world-g1-0X-v2.json` files/digests are preserved, create a new per-World v2 presentation artifact for each accepted v2 World. Those records should derive architecture, signage, climate, transport, institutions and other visual anchors from the concrete WorldSpec and may then drive image/video/3D asset generation.
 
 ## Derivation rule
 
-Each presentation is derived only from its already-authored G1 WorldSpec facts.
+A presentation is derived only from its referenced WorldSpec facts.
 
 It must not add or infer:
 
@@ -80,7 +92,9 @@ required adversity
 benchmark behavior
 ```
 
-Visual elaboration may make implicit environmental facts usable for asset generation—for example, a tropical coastal climate may imply humid light and rain conditions—but it may not fabricate specific real-city landmarks, national identity, a source biography or a personality-coded aesthetic.
+Visual elaboration may make authoritative environmental facts easier to render, but it may not invent a country, locality, landmark, institutional fact, national identity, source biography or personality-coded aesthetic absent from the WorldSpec.
+
+If the asset generator needs to guess the World's country or local culture, fix the WorldSpec first.
 
 ## Scientific boundary
 
@@ -98,7 +112,7 @@ outside H attribution evidence
 
 Presentation files may never be passed to Pass A, Pass B, Pass C, record repair, genome generation or any H rater.
 
-If product copy is later improved, that does not reopen the G1 WorldSpec freeze. If a presentation conflicts with a WorldSpec, correct presentation; do not rewrite the frozen world to fit presentation.
+If product copy is later improved, that does not reopen a frozen WorldSpec. If a presentation conflicts with a WorldSpec, correct presentation; do not rewrite the frozen world to fit presentation.
 
 ## Asset-generation boundary
 
@@ -117,7 +131,3 @@ material/detail scene
 ```
 
 Asset generation remains presentation work. It must not alter the Thread's generated life or be used as evidence that the Thread actually experienced an event unless a separate authoritative life record says so.
-
-## G1 status interaction
-
-The presentation split is a non-cognitive representation change only. It does not alter the five final WorldSpecs, the completed familiarity calls, their digests, or any cohort protocol authority, and does not authorize G2 before normal G1 evidence preservation/closure.
