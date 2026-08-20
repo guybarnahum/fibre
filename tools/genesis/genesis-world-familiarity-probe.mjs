@@ -6,6 +6,7 @@ import { createGoogleModelAdapter } from "../services/world-kernel/src/model-run
 import { createOpenAIModelAdapter } from "../services/world-kernel/src/model-runtime/openai.mjs";
 import { normalizeGenesisWorldSpec } from "../services/world-kernel/src/genesis-domain.mjs";
 import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
+import { createProviderProgressHeartbeat } from "./provider-progress.mjs";
 
 export const WORLD_FAMILIARITY_VERSION = "pr39-slice-g1-world-familiarity-v1";
 export const WORLD_FAMILIARITY_SYSTEM_PROMPT = `You are a cold setting-familiarity assessor.
@@ -169,19 +170,24 @@ export async function runWorldFamiliarityProbe({
   fetchImpl = globalThis.fetch,
   adapter = null,
   now = () => new Date().toISOString(),
+  progress = () => {},
 } = {}) {
   const manifest = validateManifest(readJson(manifestPath));
   ensureWritableNewFile(outPath);
   if (manifest.familiarityPolicy.provider !== provider || manifest.familiarityPolicy.model !== model) {
     throw new Error("provider/model must exactly match the frozen G1 familiarity policy");
   }
+  if (typeof progress !== "function") throw new TypeError("progress must be a function");
 
   const worker = adapter ?? createAdapter({ provider, model, environment, fetchImpl });
   const promptHash = digest(WORLD_FAMILIARITY_SYSTEM_PROMPT);
   const schemaHash = digest(WORLD_FAMILIARITY_RESPONSE_SCHEMA);
   const results = [];
 
-  for (const candidate of manifest.candidateWorlds) {
+  for (let index = 0; index < manifest.candidateWorlds.length; index += 1) {
+    const candidate = manifest.candidateWorlds[index];
+    const ordinal = index + 1;
+    const phase = `world ${ordinal}/${manifest.candidateWorlds.length}`;
     const raw = readJson(candidate.path);
     const world = normalizeGenesisWorldSpec(raw);
     const candidateDigest = digest(world);
@@ -192,6 +198,7 @@ export async function runWorldFamiliarityProbe({
       throw new Error(`candidate ${candidate.worldSpecId} already contains familiarity output`);
     }
 
+    progress(phase, `Calling ${provider}/${model} for ${candidate.worldSpecId}`);
     const invocation = await worker.invoke({
       systemPrompt: WORLD_FAMILIARITY_SYSTEM_PROMPT,
       input: { setting: projectWorldForFamiliarity(world) },
@@ -200,6 +207,11 @@ export async function runWorldFamiliarityProbe({
     });
     const classification = classifyWorldFamiliarity(invocation.output);
     const probedAt = now();
+    progress(
+      phase,
+      `${classification.materiallyUnderrepresented ? "HOLD" : "accepted"} · density=${invocation.output.densityScore}/4` +
+        `${classification.thinCoverageDomains.length ? ` · thin=${classification.thinCoverageDomains.join(",")}` : ""}`,
+    );
     results.push({
       slot: candidate.slot,
       worldSpecId: candidate.worldSpecId,
@@ -277,9 +289,14 @@ Usage:
     --out artifacts/validation/m2-pr39/g/results/g1-world-familiarity-v1.json
 
 This performs exactly one stateless model call per frozen candidate world. The worker sees only an anonymized ordinary-setting projection, not Fibre/Genesis context, world IDs, genomes, personalities, future roles, or downstream diagnostics.
+Provider waits emit the shared elapsed-time heartbeat and never alter model or experiment semantics.
 
 If any candidate is materially under-represented, the result artifact is still written but no final WorldSpec files are emitted.
 `;
+}
+
+function progressPrinter(phase, message) {
+  process.stderr.write(`genesis:world-familiarity · ${phase} · ${message}\n`);
 }
 
 async function main() {
@@ -288,21 +305,29 @@ async function main() {
     process.stdout.write(usage());
     return;
   }
-  const result = await runWorldFamiliarityProbe({
-    provider: options.provider,
-    model: options.model,
-    manifestPath: options.manifest,
-    outPath: options.out,
-  });
-  process.stdout.write(`SLICE G1 WORLD FAMILIARITY: ${result.allAccepted ? "ALL ACCEPTED" : "HOLD"}\n`);
-  for (const item of result.results) {
-    process.stdout.write(
-      `${item.slot}. ${item.worldSpecId}: density=${item.densityScore}/4` +
-      `${item.thinCoverageDomains.length ? ` thin=${item.thinCoverageDomains.join(",")}` : ""}` +
-      `${item.materiallyUnderrepresented ? " UNDER-REPRESENTED" : ""}\n`,
-    );
+  const heartbeat = createProviderProgressHeartbeat({ progress: progressPrinter });
+  try {
+    const result = await runWorldFamiliarityProbe({
+      provider: options.provider,
+      model: options.model,
+      manifestPath: options.manifest,
+      outPath: options.out,
+      progress: heartbeat.report,
+    });
+    heartbeat.finish();
+    process.stdout.write(`SLICE G1 WORLD FAMILIARITY: ${result.allAccepted ? "ALL ACCEPTED" : "HOLD"}\n`);
+    for (const item of result.results) {
+      process.stdout.write(
+        `${item.slot}. ${item.worldSpecId}: density=${item.densityScore}/4` +
+        `${item.thinCoverageDomains.length ? ` thin=${item.thinCoverageDomains.join(",")}` : ""}` +
+        `${item.materiallyUnderrepresented ? " UNDER-REPRESENTED" : ""}\n`,
+      );
+    }
+    if (!result.allAccepted) process.exitCode = 2;
+  } catch (error) {
+    heartbeat.finish("Provider call ended");
+    throw error;
   }
-  if (!result.allAccepted) process.exitCode = 2;
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
