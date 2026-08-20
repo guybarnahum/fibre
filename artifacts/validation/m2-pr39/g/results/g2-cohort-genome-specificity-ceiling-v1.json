@@ -1,0 +1,197 @@
+{
+  "evidenceVersion": "pr39-slice-g2-cohort-genome-specificity-ceiling-v1",
+  "protocolVersion": "pr39-slice-g2-cohort-genome-freeze-v2",
+  "protocolPath": "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v2.json",
+  "protocolDigest": "sha256:0c96faf2fe1a51479e612495a73e22e2371893ce37f8e6dff1acfa48739179fa",
+  "generatedAt": "2026-08-20T21:59:16.973Z",
+  "generator": {
+    "provider": "google",
+    "model": "gemini-3.6-flash"
+  },
+  "rater": {
+    "provider": "openai",
+    "model": "gpt-5.1-2025-11-13"
+  },
+  "instrumentVersion": "genesis-genome-specificity-control-v3",
+  "pairSchedulePolicy": "five_edge_cycle_each_assigned_genome_once_as_A_once_as_B",
+  "assignmentPolicy": {
+    "version": "pr39-g2-world-genome-assignment-v2",
+    "seed": "pr39-g2-world-genome-assignment-v2",
+    "originClassPreserved": true,
+    "algorithm": "Within each origin class, hash-rank frozen Worlds by sha256(canonicalJson({seed,kind:'world',digest:worldSpecDigest})) and frozen genomes by sha256(canonicalJson({seed,kind:'genome',digest:genomeDigest})); assign each ranked World the next ranked genome cyclically (offset +1).",
+    "cyclicOffset": 1,
+    "purpose": "Eliminate authoring-time World/genome pairing while preserving the G1-frozen 3 de_novo + 2 synthetic_lineage composition. The rule uses only frozen digests, origin class and a fixed seed; it does not inspect locus or World semantics.",
+    "mapping": [
+      {
+        "cohortSlot": 1,
+        "genomeSourceSlot": 4
+      },
+      {
+        "cohortSlot": 2,
+        "genomeSourceSlot": 5
+      },
+      {
+        "cohortSlot": 3,
+        "genomeSourceSlot": 1
+      },
+      {
+        "cohortSlot": 4,
+        "genomeSourceSlot": 3
+      },
+      {
+        "cohortSlot": 5,
+        "genomeSourceSlot": 2
+      }
+    ],
+    "mappingDigest": "sha256:0388246fe95037ca2191e10f9e94dbafc1efb239f5bb865bbf06da27c264b05e"
+  },
+  "worldGenomeBindings": [
+    {
+      "slot": 1,
+      "genomeSourceSlot": 4,
+      "worldSpecId": "world_slice_g1_01_can_tho",
+      "worldSpecDigest": "sha256:6e88b0bd8aba69894ae5583603a841d139687d57cea9bfb8c05086e1be118c7d",
+      "genomeId": "genome_6480e89a07bbe2698d0f5caad95976aa7ff2ea63",
+      "genomeDigest": "sha256:57e45ea7d518a9fdc9c2e1c3594e5ce2f839a33e8f36d9db8d0476bc4d6e07b0"
+    },
+    {
+      "slot": 2,
+      "genomeSourceSlot": 5,
+      "worldSpecId": "world_slice_g1_02_lodz",
+      "worldSpecDigest": "sha256:291aa0255fa9d70c4dc30f26c442606d4e03245bcb1b843a889ddc082f081a0a",
+      "genomeId": "genome_78ff3bedb98576e59c7f4608fd3793fdf33e4dcc",
+      "genomeDigest": "sha256:f8cb20995c54843d4c0bef9a171b830e79cad8a9f0819ab1b9e151fbadadcadb"
+    },
+    {
+      "slot": 3,
+      "genomeSourceSlot": 1,
+      "worldSpecId": "world_slice_g1_03_cusco",
+      "worldSpecDigest": "sha256:bbf23626457d9f93ff2cf70c129c4d549f998a228bd67852450879b1e70f6290",
+      "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4",
+      "genomeDigest": "sha256:4ec9592b7e065bdde4e63ebb0c70b4c5f9752b43f6f5f87ec45961a373ff20ad"
+    },
+    {
+      "slot": 4,
+      "genomeSourceSlot": 3,
+      "worldSpecId": "world_slice_g1_04_accra",
+      "worldSpecDigest": "sha256:02e52c82398b87cfcecee31651d81dbb223d00e2da8a7410c4553bd0514547db",
+      "genomeId": "genome_a920ffbc71cc00f8c869139e548f18ba642f05de",
+      "genomeDigest": "sha256:32248f3d909e102fc2865fa29522cdfea09585ca2d7ad9915014a842c1a483fc"
+    },
+    {
+      "slot": 5,
+      "genomeSourceSlot": 2,
+      "worldSpecId": "world_slice_g1_05_greater_sudbury",
+      "worldSpecDigest": "sha256:a2ce5453912040c78561bafaceb21d1cded8f05f84aaf9bc10e831d4288098d0",
+      "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247",
+      "genomeDigest": "sha256:548357c6563e7b7a21f9377673be62f5441b16c070d7af01cf5adaa926bad73f"
+    }
+  ],
+  "usableCeilingForH": true,
+  "verdict": "CLEAR",
+  "rule": {
+    "detectablePairCorrectAtLeast": 17,
+    "minimumDetectablePairs": 3,
+    "requireEveryGenomeIncidentToAtLeastOneDetectablePair": true,
+    "onFailure": "HOLD_G2_PRESERVE_RESULTS_NO_GENOME_REWRITE",
+    "note": "Per-pair signal bands are the already-frozen v3 instrument bands. Aggregate accuracy is descriptive only; the cohort ceiling is the five-pair vector plus coverage rule."
+  },
+  "pairSummaries": [
+    {
+      "pairId": "p01",
+      "genomeASlot": 1,
+      "genomeBSlot": 2,
+      "seed": "pr39-g2-ceiling-p01-v1",
+      "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p01-v1.json",
+      "correct": 23,
+      "trials": 24,
+      "accuracy": 0.9583333333333334,
+      "exactOneSidedBinomialP": 0.0000014901161193847656,
+      "detectable": true,
+      "band": {
+        "label": "strong_ceiling_signal",
+        "reading": "The hand-authored exemplar loci carry a strong directly visible semantic signal. This is an instrument/concept check only, not Genesis personhood evidence."
+      }
+    },
+    {
+      "pairId": "p02",
+      "genomeASlot": 2,
+      "genomeBSlot": 3,
+      "seed": "pr39-g2-ceiling-p02-v1",
+      "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p02-v1.json",
+      "correct": 19,
+      "trials": 24,
+      "accuracy": 0.7916666666666666,
+      "exactOneSidedBinomialP": 0.003305375576019287,
+      "detectable": true,
+      "band": {
+        "label": "detectable_moderate_ceiling",
+        "reading": "The hand-authored exemplar loci carry detectable directly visible semantic signal. Preserve the result; do not rewrite loci merely to chase a higher score."
+      }
+    },
+    {
+      "pairId": "p03",
+      "genomeASlot": 3,
+      "genomeBSlot": 4,
+      "seed": "pr39-g2-ceiling-p03-v1",
+      "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p03-v1.json",
+      "correct": 15,
+      "trials": 24,
+      "accuracy": 0.625,
+      "exactOneSidedBinomialP": 0.15372812747955322,
+      "detectable": false,
+      "band": {
+        "label": "inconclusive_near_chance",
+        "reading": "This run does not establish an above-chance ceiling at the predeclared alpha. Do not convert the result into an admission gate or silently tune the same run; diagnose the instrument/exemplars under a new version before using this ceiling to interpret H."
+      }
+    },
+    {
+      "pairId": "p04",
+      "genomeASlot": 4,
+      "genomeBSlot": 5,
+      "seed": "pr39-g2-ceiling-p04-v1",
+      "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p04-v1.json",
+      "correct": 21,
+      "trials": 24,
+      "accuracy": 0.875,
+      "exactOneSidedBinomialP": 0.0001385807991027832,
+      "detectable": true,
+      "band": {
+        "label": "strong_ceiling_signal",
+        "reading": "The hand-authored exemplar loci carry a strong directly visible semantic signal. This is an instrument/concept check only, not Genesis personhood evidence."
+      }
+    },
+    {
+      "pairId": "p05",
+      "genomeASlot": 5,
+      "genomeBSlot": 1,
+      "seed": "pr39-g2-ceiling-p05-v1",
+      "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p05-v1.json",
+      "correct": 21,
+      "trials": 24,
+      "accuracy": 0.875,
+      "exactOneSidedBinomialP": 0.0001385807991027832,
+      "detectable": true,
+      "band": {
+        "label": "strong_ceiling_signal",
+        "reading": "The hand-authored exemplar loci carry a strong directly visible semantic signal. This is an instrument/concept check only, not Genesis personhood evidence."
+      }
+    }
+  ],
+  "detectablePairCount": 4,
+  "coveredGenomeSlots": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "everyGenomeCoveredByDetectablePair": true,
+  "aggregate": {
+    "trials": 120,
+    "correct": 99,
+    "accuracy": 0.825,
+    "chanceAccuracy": 0.5,
+    "interpretation": "Descriptive only. The five controls reuse genomes across heterogeneous pairs, so no pooled inferential p-value is claimed. The frozen G2 decision rule is the five-pair vector plus genome-coverage rule."
+  }
+}

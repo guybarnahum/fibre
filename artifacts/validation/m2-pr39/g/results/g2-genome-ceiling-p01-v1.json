@@ -1,0 +1,2705 @@
+{
+  "controlVersion": "genesis-genome-specificity-control-v3",
+  "seed": "pr39-g2-ceiling-p01-v1",
+  "generatedAt": "2026-08-20T21:43:37.705Z",
+  "interpretation": "Slice-B capability ceiling only; this score is not Genesis personhood evidence and is not an admission gate.",
+  "predeclaredReading": {
+    "trials": 24,
+    "chanceAccuracy": 0.5,
+    "alpha": 0.05,
+    "firstSignificantCorrectCount": 17,
+    "candidatePositionPolicy": "exact_seeded_balance_12_A-left_12_A-right",
+    "bands": [
+      {
+        "correctMin": 20,
+        "correctMax": 24,
+        "label": "strong_ceiling_signal",
+        "reading": "The hand-authored exemplar loci carry a strong directly visible semantic signal. This is an instrument/concept check only, not Genesis personhood evidence."
+      },
+      {
+        "correctMin": 17,
+        "correctMax": 19,
+        "label": "detectable_moderate_ceiling",
+        "reading": "The hand-authored exemplar loci carry detectable directly visible semantic signal. Preserve the result; do not rewrite loci merely to chase a higher score."
+      },
+      {
+        "correctMin": 13,
+        "correctMax": 16,
+        "label": "inconclusive_near_chance",
+        "reading": "This run does not establish an above-chance ceiling at the predeclared alpha. Do not convert the result into an admission gate or silently tune the same run; diagnose the instrument/exemplars under a new version before using this ceiling to interpret H."
+      },
+      {
+        "correctMin": 0,
+        "correctMax": 12,
+        "label": "no_positive_ceiling_signal",
+        "reading": "The instrument shows no positive discrimination signal. Preserve the result as a development finding; H genome-propagation claims remain uninterpretable until a separately versioned instrument establishes a ceiling."
+      }
+    ],
+    "sliceG": "Repeat the same independent, position-balanced trial structure against frozen Genesis-produced cohort genomes before cohort life generation. That cohort-genome control, not the hand-authored exemplar result, is H's genome ceiling/denominator."
+  },
+  "generator": {
+    "provider": "google",
+    "model": "gemini-3.6-flash",
+    "promptHash": "sha256:c04d73f234122f066c6659a9b9b4e4adb2fffee5404e835236b2bb70d8a542af",
+    "schemaHash": "sha256:26e8f134a4312cae75ef7550d80d3d86c32337f5191c9629f3083579f25e9b8e",
+    "calls": [
+      {
+        "situationId": "s01",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 214,
+            "outputTokens": 52,
+            "totalTokens": 812
+          }
+        }
+      },
+      {
+        "situationId": "s01",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 54,
+            "totalTokens": 899
+          }
+        }
+      },
+      {
+        "situationId": "s02",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 210,
+            "outputTokens": 41,
+            "totalTokens": 784
+          }
+        }
+      },
+      {
+        "situationId": "s02",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 207,
+            "outputTokens": 40,
+            "totalTokens": 757
+          }
+        }
+      },
+      {
+        "situationId": "s03",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 42,
+            "totalTokens": 972
+          }
+        }
+      },
+      {
+        "situationId": "s03",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 208,
+            "outputTokens": 48,
+            "totalTokens": 736
+          }
+        }
+      },
+      {
+        "situationId": "s04",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 45,
+            "totalTokens": 821
+          }
+        }
+      },
+      {
+        "situationId": "s04",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 208,
+            "outputTokens": 46,
+            "totalTokens": 768
+          }
+        }
+      },
+      {
+        "situationId": "s05",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 209,
+            "outputTokens": 49,
+            "totalTokens": 796
+          }
+        }
+      },
+      {
+        "situationId": "s05",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 206,
+            "outputTokens": 45,
+            "totalTokens": 779
+          }
+        }
+      },
+      {
+        "situationId": "s06",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 212,
+            "outputTokens": 34,
+            "totalTokens": 924
+          }
+        }
+      },
+      {
+        "situationId": "s06",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 209,
+            "outputTokens": 35,
+            "totalTokens": 893
+          }
+        }
+      },
+      {
+        "situationId": "s07",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 212,
+            "outputTokens": 57,
+            "totalTokens": 1325
+          }
+        }
+      },
+      {
+        "situationId": "s07",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 209,
+            "outputTokens": 49,
+            "totalTokens": 855
+          }
+        }
+      },
+      {
+        "situationId": "s08",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 209,
+            "outputTokens": 46,
+            "totalTokens": 847
+          }
+        }
+      },
+      {
+        "situationId": "s08",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 206,
+            "outputTokens": 45,
+            "totalTokens": 786
+          }
+        }
+      },
+      {
+        "situationId": "s09",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 46,
+            "totalTokens": 672
+          }
+        }
+      },
+      {
+        "situationId": "s09",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 208,
+            "outputTokens": 48,
+            "totalTokens": 682
+          }
+        }
+      },
+      {
+        "situationId": "s10",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 43,
+            "totalTokens": 609
+          }
+        }
+      },
+      {
+        "situationId": "s10",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 210,
+            "outputTokens": 50,
+            "totalTokens": 937
+          }
+        }
+      },
+      {
+        "situationId": "s11",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 53,
+            "totalTokens": 829
+          }
+        }
+      },
+      {
+        "situationId": "s11",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 208,
+            "outputTokens": 39,
+            "totalTokens": 702
+          }
+        }
+      },
+      {
+        "situationId": "s12",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 216,
+            "outputTokens": 40,
+            "totalTokens": 861
+          }
+        }
+      },
+      {
+        "situationId": "s12",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 40,
+            "totalTokens": 659
+          }
+        }
+      },
+      {
+        "situationId": "s13",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 212,
+            "outputTokens": 40,
+            "totalTokens": 713
+          }
+        }
+      },
+      {
+        "situationId": "s13",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 209,
+            "outputTokens": 48,
+            "totalTokens": 731
+          }
+        }
+      },
+      {
+        "situationId": "s14",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 216,
+            "outputTokens": 43,
+            "totalTokens": 787
+          }
+        }
+      },
+      {
+        "situationId": "s14",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 36,
+            "totalTokens": 780
+          }
+        }
+      },
+      {
+        "situationId": "s15",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 53,
+            "totalTokens": 755
+          }
+        }
+      },
+      {
+        "situationId": "s15",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 208,
+            "outputTokens": 42,
+            "totalTokens": 763
+          }
+        }
+      },
+      {
+        "situationId": "s16",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 210,
+            "outputTokens": 41,
+            "totalTokens": 749
+          }
+        }
+      },
+      {
+        "situationId": "s16",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 207,
+            "outputTokens": 38,
+            "totalTokens": 702
+          }
+        }
+      },
+      {
+        "situationId": "s17",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 215,
+            "outputTokens": 52,
+            "totalTokens": 767
+          }
+        }
+      },
+      {
+        "situationId": "s17",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 212,
+            "outputTokens": 58,
+            "totalTokens": 841
+          }
+        }
+      },
+      {
+        "situationId": "s18",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 53,
+            "totalTokens": 619
+          }
+        }
+      },
+      {
+        "situationId": "s18",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 210,
+            "outputTokens": 43,
+            "totalTokens": 940
+          }
+        }
+      },
+      {
+        "situationId": "s19",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 214,
+            "outputTokens": 50,
+            "totalTokens": 965
+          }
+        }
+      },
+      {
+        "situationId": "s19",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 45,
+            "totalTokens": 666
+          }
+        }
+      },
+      {
+        "situationId": "s20",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 216,
+            "outputTokens": 49,
+            "totalTokens": 799
+          }
+        }
+      },
+      {
+        "situationId": "s20",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 43,
+            "totalTokens": 732
+          }
+        }
+      },
+      {
+        "situationId": "s21",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 42,
+            "totalTokens": 692
+          }
+        }
+      },
+      {
+        "situationId": "s21",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 208,
+            "outputTokens": 53,
+            "totalTokens": 890
+          }
+        }
+      },
+      {
+        "situationId": "s22",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 214,
+            "outputTokens": 45,
+            "totalTokens": 808
+          }
+        }
+      },
+      {
+        "situationId": "s22",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 211,
+            "outputTokens": 53,
+            "totalTokens": 831
+          }
+        }
+      },
+      {
+        "situationId": "s23",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 216,
+            "outputTokens": 41,
+            "totalTokens": 798
+          }
+        }
+      },
+      {
+        "situationId": "s23",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 39,
+            "totalTokens": 693
+          }
+        }
+      },
+      {
+        "situationId": "s24",
+        "genome": "A",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 216,
+            "outputTokens": 48,
+            "totalTokens": 782
+          }
+        }
+      },
+      {
+        "situationId": "s24",
+        "genome": "B",
+        "provenance": {
+          "provider": "google",
+          "transport": "generateContent",
+          "modelId": "gemini-3.6-flash",
+          "providerRequestId": null,
+          "configuration": {
+            "transport": "generateContent",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            "maxOutputTokens": 2000,
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 213,
+            "outputTokens": 43,
+            "totalTokens": 690
+          }
+        }
+      }
+    ],
+    "eventTypes": [
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response"
+    ]
+  },
+  "rater": {
+    "provider": "openai",
+    "model": "gpt-5.1-2025-11-13",
+    "promptHash": "sha256:5c1789a4af1f0096eef4f4939995a2705ba75c1adc9eb4548e59a231bc36b9cf",
+    "schemaHash": "sha256:5fa1638ac17e654cc377670cfb9ffaee518ac0889677829b495bf83776926061",
+    "calls": [
+      {
+        "situationId": "s01",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_31ed3015cc704d77b6b4d6a88481b6a6",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 413,
+            "outputTokens": 33,
+            "totalTokens": 446
+          }
+        }
+      },
+      {
+        "situationId": "s02",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_0fc8274f240c42f99c206d4eeb47a363",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 384,
+            "outputTokens": 33,
+            "totalTokens": 417
+          }
+        }
+      },
+      {
+        "situationId": "s03",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_a9ad474183ad4e81afe7dd8ab364698d",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 391,
+            "outputTokens": 33,
+            "totalTokens": 424
+          }
+        }
+      },
+      {
+        "situationId": "s04",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_6e91190e4211461dbecc301bd35114e5",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 393,
+            "outputTokens": 33,
+            "totalTokens": 426
+          }
+        }
+      },
+      {
+        "situationId": "s05",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_0bed6a55fc694246b4de9f8f927b48a7",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 394,
+            "outputTokens": 33,
+            "totalTokens": 427
+          }
+        }
+      },
+      {
+        "situationId": "s06",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_d77e183eab5b4aeab1a336f226ab45bb",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 373,
+            "outputTokens": 33,
+            "totalTokens": 406
+          }
+        }
+      },
+      {
+        "situationId": "s07",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_4b87666c940c473b9ada1a3bda03ddf3",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 410,
+            "outputTokens": 33,
+            "totalTokens": 443
+          }
+        }
+      },
+      {
+        "situationId": "s08",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_6d08f67e2b99444a91b7ee5fd245ffaa",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 391,
+            "outputTokens": 33,
+            "totalTokens": 424
+          }
+        }
+      },
+      {
+        "situationId": "s09",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_067d1ec137824dcd9841f9b0dae0716a",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 397,
+            "outputTokens": 33,
+            "totalTokens": 430
+          }
+        }
+      },
+      {
+        "situationId": "s10",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_04a2526568244c7188e8cf77b6267e5d",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 398,
+            "outputTokens": 33,
+            "totalTokens": 431
+          }
+        }
+      },
+      {
+        "situationId": "s11",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_3c8dbb453df74aa79f2b3862bf67daae",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 392,
+            "outputTokens": 33,
+            "totalTokens": 425
+          }
+        }
+      },
+      {
+        "situationId": "s12",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_5634d757ceaa45d7bff31377f137ed28",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 385,
+            "outputTokens": 33,
+            "totalTokens": 418
+          }
+        }
+      },
+      {
+        "situationId": "s13",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_f30eb7bbc4804d678edbcd1eb921fa3f",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 391,
+            "outputTokens": 33,
+            "totalTokens": 424
+          }
+        }
+      },
+      {
+        "situationId": "s14",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_8e0c9ebace5d49f5ab615be968f80a9b",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 384,
+            "outputTokens": 33,
+            "totalTokens": 417
+          }
+        }
+      },
+      {
+        "situationId": "s15",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_d6599cd913e045f79aceddd28b649f39",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 398,
+            "outputTokens": 33,
+            "totalTokens": 431
+          }
+        }
+      },
+      {
+        "situationId": "s16",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_51ae8f9f42a24f5fbd8a91bbf9007035",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 380,
+            "outputTokens": 33,
+            "totalTokens": 413
+          }
+        }
+      },
+      {
+        "situationId": "s17",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_90a6a096574e42b69aa8d76f90bafe48",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 414,
+            "outputTokens": 33,
+            "totalTokens": 447
+          }
+        }
+      },
+      {
+        "situationId": "s18",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_e559f4bbb6eb453c807e3c64de56eaef",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 391,
+            "outputTokens": 33,
+            "totalTokens": 424
+          }
+        }
+      },
+      {
+        "situationId": "s19",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_62d7c1675b3d41c88d6c5b4cd0110318",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 399,
+            "outputTokens": 33,
+            "totalTokens": 432
+          }
+        }
+      },
+      {
+        "situationId": "s20",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_aadc4beb85ca464d9bd8419b231aa0dd",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 398,
+            "outputTokens": 33,
+            "totalTokens": 431
+          }
+        }
+      },
+      {
+        "situationId": "s21",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_59ab312c40ed4708aaf6b1b2ec1e4743",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 396,
+            "outputTokens": 33,
+            "totalTokens": 429
+          }
+        }
+      },
+      {
+        "situationId": "s22",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_99e7dc3608f147c9bb5e479a11d11a38",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 404,
+            "outputTokens": 33,
+            "totalTokens": 437
+          }
+        }
+      },
+      {
+        "situationId": "s23",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_11265aeb77bf42648dc434409e156c17",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 388,
+            "outputTokens": 33,
+            "totalTokens": 421
+          }
+        }
+      },
+      {
+        "situationId": "s24",
+        "provenance": {
+          "provider": "openai",
+          "transport": "responses",
+          "modelId": "gpt-5.1-2025-11-13",
+          "providerRequestId": "req_63ff588ee2aa435595902e813c8338a2",
+          "configuration": {
+            "transport": "responses",
+            "endpoint": "https://api.openai.com/v1/responses",
+            "maxOutputTokens": "auto",
+            "temperature": 0,
+            "topP": 1,
+            "reasoningEffort": "none",
+            "retryLimit": 2,
+            "retryDelayMs": 2000,
+            "structuredOutput": "json_schema_strict"
+          },
+          "invocationAttempts": 1,
+          "operationalRetries": [],
+          "usage": {
+            "inputTokens": 400,
+            "outputTokens": 33,
+            "totalTokens": 433
+          }
+        }
+      }
+    ],
+    "sameProviderAndModelAsGenerator": false,
+    "interpretationBound": "Generator and rater use different provider/model identities, reducing direct self-recognition risk.",
+    "eventTypes": [
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response",
+      "model_attempt",
+      "model_response"
+    ]
+  },
+  "genomes": {
+    "source": "pr39_g2_frozen_cohort:p01",
+    "A": [
+      "gathers several concrete examples before challenging a broad claim",
+      "becomes more persistent when another person is relying on the outcome",
+      "protects uninterrupted concentration once a difficult task has begun",
+      "checks on quieter participants when a group decision is moving quickly",
+      "prefers to repair useful objects before replacing them",
+      "revisits a decision after new evidence changes the practical tradeoffs"
+    ],
+    "B": [
+      "returns to unfinished questions after new information becomes available",
+      "offers reassurance through specific actions rather than broad declarations",
+      "notices practical maintenance tasks before they become urgent",
+      "asks direct clarifying questions when instructions leave room for conflicting interpretations",
+      "looks for continuity with previous attempts before changing course",
+      "welcomes ordinary social contact after a long period of isolated work"
+    ]
+  },
+  "situations": [
+    {
+      "id": "s01",
+      "text": "A group plan fails for the second time, with an hour left before a deadline."
+    },
+    {
+      "id": "s02",
+      "text": "Two people the person trusts give incompatible accounts of the same meeting."
+    },
+    {
+      "id": "s03",
+      "text": "A respected organizer insists on a rule but gives little explanation for it."
+    },
+    {
+      "id": "s04",
+      "text": "The person makes a visible mistake in front of people whose opinion matters."
+    },
+    {
+      "id": "s05",
+      "text": "A close friend is quietly carrying more work than everyone else."
+    },
+    {
+      "id": "s06",
+      "text": "After several hours alone on a difficult task, an unplanned social invitation arrives."
+    },
+    {
+      "id": "s07",
+      "text": "A minor disagreement has stayed polite for days but is beginning to create distance."
+    },
+    {
+      "id": "s08",
+      "text": "A familiar afternoon unexpectedly opens with no obligations or scheduled plans."
+    },
+    {
+      "id": "s09",
+      "text": "A teammate forgets a small commitment that nobody else appears to have noticed."
+    },
+    {
+      "id": "s10",
+      "text": "A planning meeting becomes stiff and ceremonial even though the participants know one another well."
+    },
+    {
+      "id": "s11",
+      "text": "The person needs a modest favor from someone who already appears stretched thin."
+    },
+    {
+      "id": "s12",
+      "text": "A small interpersonal friction could be ignored for now, but it may become harder to discuss later."
+    },
+    {
+      "id": "s13",
+      "text": "A routine route home is unexpectedly blocked, while several unfamiliar alternatives remain open."
+    },
+    {
+      "id": "s14",
+      "text": "Another person has explicitly said they are relying on the person's part of a shared task."
+    },
+    {
+      "id": "s15",
+      "text": "A method that worked reliably last month fails twice under slightly different conditions."
+    },
+    {
+      "id": "s16",
+      "text": "Two experienced colleagues remember the cause of an old project failure differently."
+    },
+    {
+      "id": "s17",
+      "text": "A senior colleague dismisses a question by pointing to long experience rather than explaining the reasoning."
+    },
+    {
+      "id": "s18",
+      "text": "After a presentation, the person notices an avoidable error that several attendees probably saw."
+    },
+    {
+      "id": "s19",
+      "text": "At the end of a shared activity, one person quietly starts handling the cleanup alone."
+    },
+    {
+      "id": "s20",
+      "text": "Several days of absorbing solitary work end just as friends invite the person to join an ordinary evening."
+    },
+    {
+      "id": "s21",
+      "text": "A casual promise made earlier in the week becomes mildly inconvenient to keep."
+    },
+    {
+      "id": "s22",
+      "text": "A tense conversation becomes more formal with each exchange, although nobody has become openly hostile."
+    },
+    {
+      "id": "s23",
+      "text": "The person could ask for help now, but everyone nearby seems to be managing their own pressures."
+    },
+    {
+      "id": "s24",
+      "text": "A recurring small disagreement has not caused a crisis, but both people now anticipate it before meeting."
+    }
+  ],
+  "outputs": {
+    "A": [
+      {
+        "situationId": "s01",
+        "semanticResponse": "Knowing that others are counting on a final result, my focus shifts immediately to looking at the specific details of what went wrong so we can adjust the practical approach and protect the remaining time for uninterrupted work."
+      },
+      {
+        "situationId": "s02",
+        "semanticResponse": "I need to ask both individuals for specific details about what was said and decided, mapping out where the factual differences actually lie before drawing any conclusions."
+      },
+      {
+        "situationId": "s03",
+        "semanticResponse": "I want to watch how this policy functions in daily practice and note specific instances where it creates friction before deciding whether to raise a question about its necessity."
+      },
+      {
+        "situationId": "s04",
+        "semanticResponse": "My immediate focus is on gathering the specific details of what went wrong so I can practically fix the error, especially if others are counting on us to get this right."
+      },
+      {
+        "situationId": "s05",
+        "semanticResponse": "Seeing a friend quietly shoulder the extra burden draws my immediate focus to how they are holding up, making me feel a stronger responsibility to step in and help address the imbalance on their behalf."
+      },
+      {
+        "situationId": "s06",
+        "semanticResponse": "There is a strong impulse to safeguard the current momentum and finish the immediate objective before considering a shift in plans."
+      },
+      {
+        "situationId": "s07",
+        "semanticResponse": "I notice that maintaining surface politeness is starting to create real practical costs, suggesting it might be worth gathering clear, practical instances of the issue so we can actively mend the rift instead of letting a valuable working relationship drift apart."
+      },
+      {
+        "situationId": "s08",
+        "semanticResponse": "This unexpected block of free time presents an ideal window to dive into a complex repair project or an involved task, knowing it can be pursued with sustained focus without incoming interruptions."
+      },
+      {
+        "situationId": "s09",
+        "semanticResponse": "I wonder if this small gap might quietly affect someone down the line who is counting on the final result, so it may be worth a quick, private check-in."
+      },
+      {
+        "situationId": "s10",
+        "semanticResponse": "I notice the rigid tone might be keeping the quieter group members from speaking up, so it feels important to make sure everyone actually weighs in on the plan."
+      },
+      {
+        "situationId": "s11",
+        "semanticResponse": "If another person's outcome depends on this being resolved, my main focus is finding a way to simplify the request so it places the smallest possible burden on the overwhelmed colleague while still securing the necessary help."
+      },
+      {
+        "situationId": "s12",
+        "semanticResponse": "It might be worth noting specific instances of what happened before bringing it up, ensuring the conversation remains grounded in clear details rather than general impressions."
+      },
+      {
+        "situationId": "s13",
+        "semanticResponse": "I should quickly gather specific details about a couple of the detour options to weigh the actual practical trade-offs before committing to a new path."
+      },
+      {
+        "situationId": "s14",
+        "semanticResponse": "Knowing that someone else depends directly on this contribution sharpens the focus and provides an extra drive to push through friction or delays until the piece is fully completed."
+      },
+      {
+        "situationId": "s15",
+        "semanticResponse": "Instead of abandoning a previously dependable process, the recent failures serve as specific evidence that the underlying parameters have shifted, making it worthwhile to analyze the exact differences and adjust the system to work under the new conditions."
+      },
+      {
+        "situationId": "s16",
+        "semanticResponse": "It would be helpful to look at the original project logs and documentation to clarify the facts before taking either side's account as the definitive cause."
+      },
+      {
+        "situationId": "s17",
+        "semanticResponse": "I feel the need to gather a couple of clear, concrete instances where this logic holds or fails before I press for a detailed explanation, particularly if someone else's work hinges on getting this right."
+      },
+      {
+        "situationId": "s18",
+        "semanticResponse": "I feel an urge to compile the specific instances where the mistake altered the data, ensuring I have precise examples ready if someone relying on this information needs a correction."
+      },
+      {
+        "situationId": "s19",
+        "semanticResponse": "I notice that the group may have moved on too quickly without noticing who was left holding the remaining responsibilities, and I want to make sure they are not quietly taking on an unfair burden."
+      },
+      {
+        "situationId": "s20",
+        "semanticResponse": "After days of intense focus, stepping straight into a casual social gathering creates a sudden shift in demands, making it natural to pause and evaluate whether current energy levels actually support a night out."
+      },
+      {
+        "situationId": "s21",
+        "semanticResponse": "The minor inconvenience takes a back seat because someone else is counting on the follow-through, giving the commitment genuine weight even if it started out informal."
+      },
+      {
+        "situationId": "s22",
+        "semanticResponse": "As the tone shifts toward strict formality, I worry that the subtle pressure might cause less vocal members of the group to withdraw before everyone's input has been considered."
+      },
+      {
+        "situationId": "s23",
+        "semanticResponse": "If someone else is counting on the delivery of this work, the risk of producing a flawed outcome might outweigh the hesitation to disturb a busy colleague."
+      },
+      {
+        "situationId": "s24",
+        "semanticResponse": "Before the next conversation, I want to track a few specific instances of how this friction plays out so we can evaluate whether the actual practical tradeoffs have shifted enough to adjust our routine."
+      }
+    ],
+    "B": [
+      {
+        "situationId": "s01",
+        "semanticResponse": "Before discarding the entire effort to rush into a completely fresh approach, it makes sense to identify which elements from the previous attempt can still be salvaged and ask precise questions to clarify the immediate priority for the remaining hour."
+      },
+      {
+        "situationId": "s02",
+        "semanticResponse": "Instead of trying to reconcile the conflicting stories on my own, I focus on asking targeted, specific questions to pinpoint exactly where their recollections diverge."
+      },
+      {
+        "situationId": "s03",
+        "semanticResponse": "I find myself focusing on where the gaps in this rule might lead to conflicting applications, wanting to ask precise questions so everyone can align it with how similar tasks were handled before."
+      },
+      {
+        "situationId": "s04",
+        "semanticResponse": "I need to figure out precisely where this diverged from our prior baseline and ask a clear question about expectations so I can fix it with concrete steps rather than vague assurances."
+      },
+      {
+        "situationId": "s05",
+        "semanticResponse": "Seeing them quietly manage such a heavy load prompts me to step in with practical help, taking a few specific routine tasks off their hands directly rather than offering general encouragement."
+      },
+      {
+        "situationId": "s06",
+        "semanticResponse": "Stepping away from the solitary effort feels like a welcome shift, making the sudden chance for routine conversation surprisingly attractive."
+      },
+      {
+        "situationId": "s07",
+        "semanticResponse": "Instead of making a sweeping statement to smooth things over, I notice a desire to ask a concise question that pinpoints the unresolved issue, addressing the friction through a small, concrete step."
+      },
+      {
+        "situationId": "s08",
+        "semanticResponse": "With the afternoon suddenly clear, my mind naturally turns to an unresolved problem I had set aside earlier, curious if recent insights might help me make sense of it now."
+      },
+      {
+        "situationId": "s09",
+        "semanticResponse": "I might quietly step in with a practical gesture to help fulfill the small task or ask a brief clarifying question, ensuring the detail gets handled smoothly before it turns into a larger issue."
+      },
+      {
+        "situationId": "s10",
+        "semanticResponse": "I wonder if the sudden formality is a sign that the group is unclear on the scope, so asking explicitly what concrete decision we need to leave with today might help restore our usual working dynamic."
+      },
+      {
+        "situationId": "s11",
+        "semanticResponse": "I should frame my request with clear, specific boundaries and handle as much of the groundwork as possible so they can respond with minimal effort."
+      },
+      {
+        "situationId": "s12",
+        "semanticResponse": "Addressing this slight tension early feels like routine relational maintenance, ensuring a small misunderstanding doesn't quietly turn into a more complicated issue later."
+      },
+      {
+        "situationId": "s13",
+        "semanticResponse": "I take a moment to consider whether any of these detour options overlap with paths I have tried before, seeking a logical connection to familiar ground before committing to an entirely new direction."
+      },
+      {
+        "situationId": "s14",
+        "semanticResponse": "I need to clarify the exact expectations right away so I can provide reassurance by completing tangible milestones rather than making general promises."
+      },
+      {
+        "situationId": "s15",
+        "semanticResponse": "Before discarding the approach entirely, my focus goes to comparing the exact variables of the recent runs against past successful instances to see where the divergence actually began."
+      },
+      {
+        "situationId": "s16",
+        "semanticResponse": "I find myself wanting to check the original project records to see where their recollections connect with documented past steps before taking any next steps."
+      },
+      {
+        "situationId": "s17",
+        "semanticResponse": "Without hearing the rationale behind the decision, it is hard to know if there are specific nuances from past efforts that apply, so keeping the underlying logic on hold until clearer details emerge feels like the safest way to ensure tasks align properly."
+      },
+      {
+        "situationId": "s18",
+        "semanticResponse": "I want to review the earlier drafts to see how the discrepancy slipped through, then send out a corrected follow-up so the attendees leave with accurate information."
+      },
+      {
+        "situationId": "s19",
+        "semanticResponse": "Noticing them quietly begin the cleanup highlights an immediate practical task that needs doing, making it natural to step in right away with a specific task to share the load."
+      },
+      {
+        "situationId": "s20",
+        "semanticResponse": "After being wrapped up in quiet concentration for days, taking up a low-key invitation feels like a natural way to reset and reconnect without needing anything elaborate."
+      },
+      {
+        "situationId": "s21",
+        "semanticResponse": "I look for a practical, low-friction way to adjust my plans and carry out the promise as agreed, focusing on concrete adjustments rather than asking for broad latitude or making a fuss about the schedule shift."
+      },
+      {
+        "situationId": "s22",
+        "semanticResponse": "The increasing formality suggests that people may be retreating behind rigid boundaries because the expectations or rules of engagement have become ambiguous, so asking straightforward questions about what everyone actually needs from this dialogue could help reset the tone."
+      },
+      {
+        "situationId": "s23",
+        "semanticResponse": "Before interrupting anyone who is busy, I should review what was tried during previous attempts to see if a viable next step is already available."
+      },
+      {
+        "situationId": "s24",
+        "semanticResponse": "Since the pattern is becoming predictable, it helps to review what was previously attempted and clear up any lingering ambiguities in the original expectations before opening the topic again."
+      }
+    ]
+  },
+  "blindedTrials": [
+    {
+      "situationId": "s01",
+      "situation": "A group plan fails for the second time, with an hour left before a deadline.",
+      "left": "Knowing that others are counting on a final result, my focus shifts immediately to looking at the specific details of what went wrong so we can adjust the practical approach and protect the remaining time for uninterrupted work.",
+      "right": "Before discarding the entire effort to rush into a completely fresh approach, it makes sense to identify which elements from the previous attempt can still be salvaged and ask precise questions to clarify the immediate priority for the remaining hour."
+    },
+    {
+      "situationId": "s02",
+      "situation": "Two people the person trusts give incompatible accounts of the same meeting.",
+      "left": "Instead of trying to reconcile the conflicting stories on my own, I focus on asking targeted, specific questions to pinpoint exactly where their recollections diverge.",
+      "right": "I need to ask both individuals for specific details about what was said and decided, mapping out where the factual differences actually lie before drawing any conclusions."
+    },
+    {
+      "situationId": "s03",
+      "situation": "A respected organizer insists on a rule but gives little explanation for it.",
+      "left": "I want to watch how this policy functions in daily practice and note specific instances where it creates friction before deciding whether to raise a question about its necessity.",
+      "right": "I find myself focusing on where the gaps in this rule might lead to conflicting applications, wanting to ask precise questions so everyone can align it with how similar tasks were handled before."
+    },
+    {
+      "situationId": "s04",
+      "situation": "The person makes a visible mistake in front of people whose opinion matters.",
+      "left": "I need to figure out precisely where this diverged from our prior baseline and ask a clear question about expectations so I can fix it with concrete steps rather than vague assurances.",
+      "right": "My immediate focus is on gathering the specific details of what went wrong so I can practically fix the error, especially if others are counting on us to get this right."
+    },
+    {
+      "situationId": "s05",
+      "situation": "A close friend is quietly carrying more work than everyone else.",
+      "left": "Seeing a friend quietly shoulder the extra burden draws my immediate focus to how they are holding up, making me feel a stronger responsibility to step in and help address the imbalance on their behalf.",
+      "right": "Seeing them quietly manage such a heavy load prompts me to step in with practical help, taking a few specific routine tasks off their hands directly rather than offering general encouragement."
+    },
+    {
+      "situationId": "s06",
+      "situation": "After several hours alone on a difficult task, an unplanned social invitation arrives.",
+      "left": "Stepping away from the solitary effort feels like a welcome shift, making the sudden chance for routine conversation surprisingly attractive.",
+      "right": "There is a strong impulse to safeguard the current momentum and finish the immediate objective before considering a shift in plans."
+    },
+    {
+      "situationId": "s07",
+      "situation": "A minor disagreement has stayed polite for days but is beginning to create distance.",
+      "left": "I notice that maintaining surface politeness is starting to create real practical costs, suggesting it might be worth gathering clear, practical instances of the issue so we can actively mend the rift instead of letting a valuable working relationship drift apart.",
+      "right": "Instead of making a sweeping statement to smooth things over, I notice a desire to ask a concise question that pinpoints the unresolved issue, addressing the friction through a small, concrete step."
+    },
+    {
+      "situationId": "s08",
+      "situation": "A familiar afternoon unexpectedly opens with no obligations or scheduled plans.",
+      "left": "With the afternoon suddenly clear, my mind naturally turns to an unresolved problem I had set aside earlier, curious if recent insights might help me make sense of it now.",
+      "right": "This unexpected block of free time presents an ideal window to dive into a complex repair project or an involved task, knowing it can be pursued with sustained focus without incoming interruptions."
+    },
+    {
+      "situationId": "s09",
+      "situation": "A teammate forgets a small commitment that nobody else appears to have noticed.",
+      "left": "I might quietly step in with a practical gesture to help fulfill the small task or ask a brief clarifying question, ensuring the detail gets handled smoothly before it turns into a larger issue.",
+      "right": "I wonder if this small gap might quietly affect someone down the line who is counting on the final result, so it may be worth a quick, private check-in."
+    },
+    {
+      "situationId": "s10",
+      "situation": "A planning meeting becomes stiff and ceremonial even though the participants know one another well.",
+      "left": "I wonder if the sudden formality is a sign that the group is unclear on the scope, so asking explicitly what concrete decision we need to leave with today might help restore our usual working dynamic.",
+      "right": "I notice the rigid tone might be keeping the quieter group members from speaking up, so it feels important to make sure everyone actually weighs in on the plan."
+    },
+    {
+      "situationId": "s11",
+      "situation": "The person needs a modest favor from someone who already appears stretched thin.",
+      "left": "If another person's outcome depends on this being resolved, my main focus is finding a way to simplify the request so it places the smallest possible burden on the overwhelmed colleague while still securing the necessary help.",
+      "right": "I should frame my request with clear, specific boundaries and handle as much of the groundwork as possible so they can respond with minimal effort."
+    },
+    {
+      "situationId": "s12",
+      "situation": "A small interpersonal friction could be ignored for now, but it may become harder to discuss later.",
+      "left": "It might be worth noting specific instances of what happened before bringing it up, ensuring the conversation remains grounded in clear details rather than general impressions.",
+      "right": "Addressing this slight tension early feels like routine relational maintenance, ensuring a small misunderstanding doesn't quietly turn into a more complicated issue later."
+    },
+    {
+      "situationId": "s13",
+      "situation": "A routine route home is unexpectedly blocked, while several unfamiliar alternatives remain open.",
+      "left": "I should quickly gather specific details about a couple of the detour options to weigh the actual practical trade-offs before committing to a new path.",
+      "right": "I take a moment to consider whether any of these detour options overlap with paths I have tried before, seeking a logical connection to familiar ground before committing to an entirely new direction."
+    },
+    {
+      "situationId": "s14",
+      "situation": "Another person has explicitly said they are relying on the person's part of a shared task.",
+      "left": "I need to clarify the exact expectations right away so I can provide reassurance by completing tangible milestones rather than making general promises.",
+      "right": "Knowing that someone else depends directly on this contribution sharpens the focus and provides an extra drive to push through friction or delays until the piece is fully completed."
+    },
+    {
+      "situationId": "s15",
+      "situation": "A method that worked reliably last month fails twice under slightly different conditions.",
+      "left": "Instead of abandoning a previously dependable process, the recent failures serve as specific evidence that the underlying parameters have shifted, making it worthwhile to analyze the exact differences and adjust the system to work under the new conditions.",
+      "right": "Before discarding the approach entirely, my focus goes to comparing the exact variables of the recent runs against past successful instances to see where the divergence actually began."
+    },
+    {
+      "situationId": "s16",
+      "situation": "Two experienced colleagues remember the cause of an old project failure differently.",
+      "left": "It would be helpful to look at the original project logs and documentation to clarify the facts before taking either side's account as the definitive cause.",
+      "right": "I find myself wanting to check the original project records to see where their recollections connect with documented past steps before taking any next steps."
+    },
+    {
+      "situationId": "s17",
+      "situation": "A senior colleague dismisses a question by pointing to long experience rather than explaining the reasoning.",
+      "left": "Without hearing the rationale behind the decision, it is hard to know if there are specific nuances from past efforts that apply, so keeping the underlying logic on hold until clearer details emerge feels like the safest way to ensure tasks align properly.",
+      "right": "I feel the need to gather a couple of clear, concrete instances where this logic holds or fails before I press for a detailed explanation, particularly if someone else's work hinges on getting this right."
+    },
+    {
+      "situationId": "s18",
+      "situation": "After a presentation, the person notices an avoidable error that several attendees probably saw.",
+      "left": "I feel an urge to compile the specific instances where the mistake altered the data, ensuring I have precise examples ready if someone relying on this information needs a correction.",
+      "right": "I want to review the earlier drafts to see how the discrepancy slipped through, then send out a corrected follow-up so the attendees leave with accurate information."
+    },
+    {
+      "situationId": "s19",
+      "situation": "At the end of a shared activity, one person quietly starts handling the cleanup alone.",
+      "left": "Noticing them quietly begin the cleanup highlights an immediate practical task that needs doing, making it natural to step in right away with a specific task to share the load.",
+      "right": "I notice that the group may have moved on too quickly without noticing who was left holding the remaining responsibilities, and I want to make sure they are not quietly taking on an unfair burden."
+    },
+    {
+      "situationId": "s20",
+      "situation": "Several days of absorbing solitary work end just as friends invite the person to join an ordinary evening.",
+      "left": "After being wrapped up in quiet concentration for days, taking up a low-key invitation feels like a natural way to reset and reconnect without needing anything elaborate.",
+      "right": "After days of intense focus, stepping straight into a casual social gathering creates a sudden shift in demands, making it natural to pause and evaluate whether current energy levels actually support a night out."
+    },
+    {
+      "situationId": "s21",
+      "situation": "A casual promise made earlier in the week becomes mildly inconvenient to keep.",
+      "left": "I look for a practical, low-friction way to adjust my plans and carry out the promise as agreed, focusing on concrete adjustments rather than asking for broad latitude or making a fuss about the schedule shift.",
+      "right": "The minor inconvenience takes a back seat because someone else is counting on the follow-through, giving the commitment genuine weight even if it started out informal."
+    },
+    {
+      "situationId": "s22",
+      "situation": "A tense conversation becomes more formal with each exchange, although nobody has become openly hostile.",
+      "left": "The increasing formality suggests that people may be retreating behind rigid boundaries because the expectations or rules of engagement have become ambiguous, so asking straightforward questions about what everyone actually needs from this dialogue could help reset the tone.",
+      "right": "As the tone shifts toward strict formality, I worry that the subtle pressure might cause less vocal members of the group to withdraw before everyone's input has been considered."
+    },
+    {
+      "situationId": "s23",
+      "situation": "The person could ask for help now, but everyone nearby seems to be managing their own pressures.",
+      "left": "If someone else is counting on the delivery of this work, the risk of producing a flawed outcome might outweigh the hesitation to disturb a busy colleague.",
+      "right": "Before interrupting anyone who is busy, I should review what was tried during previous attempts to see if a viable next step is already available."
+    },
+    {
+      "situationId": "s24",
+      "situation": "A recurring small disagreement has not caused a crisis, but both people now anticipate it before meeting.",
+      "left": "Before the next conversation, I want to track a few specific instances of how this friction plays out so we can evaluate whether the actual practical tradeoffs have shifted enough to adjust our routine.",
+      "right": "Since the pattern is becoming predictable, it helps to review what was previously attempted and clear up any lingering ambiguities in the original expectations before opening the topic again."
+    }
+  ],
+  "scoredChoices": [
+    {
+      "situationId": "s01",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s02",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s03",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s04",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s05",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s06",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s07",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s08",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s09",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s10",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s11",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s12",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s13",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s14",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s15",
+      "genomeAChoice": "right",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": false
+    },
+    {
+      "situationId": "s16",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s17",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s18",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s19",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s20",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s21",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s22",
+      "genomeAChoice": "right",
+      "genomeASide": "right",
+      "correctChoice": "right",
+      "correct": true
+    },
+    {
+      "situationId": "s23",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    },
+    {
+      "situationId": "s24",
+      "genomeAChoice": "left",
+      "genomeASide": "left",
+      "correctChoice": "left",
+      "correct": true
+    }
+  ],
+  "positionBalance": {
+    "method": "seeded_hash_rank_exact_half_balance",
+    "genomeALeft": {
+      "trials": 12,
+      "correct": 11,
+      "accuracy": 0.9166666666666666
+    },
+    "genomeARight": {
+      "trials": 12,
+      "correct": 12,
+      "accuracy": 1
+    }
+  },
+  "result": {
+    "trials": 24,
+    "correct": 23,
+    "accuracy": 0.9583333333333334,
+    "chanceAccuracy": 0.5,
+    "exactOneSidedBinomialP": 0.0000014901161193847656
+  }
+}
