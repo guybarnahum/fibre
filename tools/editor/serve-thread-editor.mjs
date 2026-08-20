@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -79,7 +80,10 @@ async function main() {
   process.once("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (
+  process.argv[1] !== undefined
+  && import.meta.url === pathToFileURL(realpathSync(resolve(process.argv[1]))).href
+) {
   main().catch((error) => {
     process.stderr.write(`${JSON.stringify({ event: "thread-editor-start-failed", errorName: error.constructor?.name ?? "Error", message: error.message })}\n`);
     process.exitCode = 1;
