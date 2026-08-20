@@ -52,7 +52,7 @@ function normalizeSyntheticLineageRelations(
     ) {
       conflict(
         ErrorType,
-        "Genesis parent-genome-source relation does not match a symbolic-genome source owner",
+        "Genesis parent-genome-source relation does not match the symbolic-genome source owner",
       );
     }
     if (relatedPartyIds.has(relation.relatedParty.partyId)) {
