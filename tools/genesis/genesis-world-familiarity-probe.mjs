@@ -8,8 +8,7 @@ import { normalizeGenesisWorldSpec } from "../services/world-kernel/src/genesis-
 import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
 
 export const WORLD_FAMILIARITY_VERSION = "pr39-slice-g1-world-familiarity-v1";
-export const WORLD_FAMILIARITY_SYSTEM_PROMPT = `You are a cold world-familiarity assessor.
-You have no Fibre, Genesis, experiment, identity, genome, personality, or future-outcome context.
+export const WORLD_FAMILIARITY_SYSTEM_PROMPT = `You are a cold setting-familiarity assessor.
 Assess only how much ordinary background knowledge a general language model is likely to have about the kind of everyday setting described.
 Do not infer personality, values, likely beliefs, future profession, formative significance, narrative arc, or what kind of person would emerge.
 Rate familiarity with ordinary household life, schooling, mobility, institutions, language context, everyday economy, and intellectual access.
