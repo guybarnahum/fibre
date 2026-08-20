@@ -1,0 +1,180 @@
+{
+  "protocolVersion": "pr39-slice-g2-cohort-genome-freeze-v2",
+  "status": "frozen_pre_control",
+  "frozenAt": "2026-08-20T20:18:00Z",
+  "supersedes": {
+    "path": "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v1.json",
+    "reason": "The v1 pre-control manifest overstated authoring blindness by claiming cohort World content was not visible to the protocol author. No G2 ceiling output existed. V2 preserves every already-frozen genome byte and lineage witness, records the visibility truthfully, and breaks authoring-time World/genome association through a content-independent within-origin derangement before any control output."
+  },
+  "preconditions": {
+    "g1Status": "COMPLETE_CLEAR",
+    "g1ResultRef": "docs/validation/m2-pr39-slice-g1-result.md",
+    "finalCohortLifeExists": false,
+    "g2CeilingOutputExistedBeforeThisFreeze": false
+  },
+  "authorshipBoundary": {
+    "method": "fresh_human_authored_atomic_text_loci_plus_deterministic_v1_crossover",
+    "worldContextAvailableToProtocolAuthorAtLocusAuthoring": true,
+    "worldContentUsedAsLocusGenerationOrSelectionInput": false,
+    "finalLifeOutputVisible": false,
+    "hDiagnosticOutputVisible": false,
+    "adultRoleOrBenchmarkTargetVisible": false,
+    "demographicOrGeographicShortcutIntoLoci": false,
+    "note": "The author knew the G1 Worlds existed and had seen their content. The loci themselves were authored as non-geographic conditional symbolic possibilities and were not derived from assigned World facts. Because visibility cannot be undone, V2 removes residual assignment discretion with a deterministic within-origin derangement before any G2 output."
+  },
+  "assignmentPolicy": {
+    "version": "pr39-g2-world-genome-assignment-v2",
+    "seed": "pr39-g2-world-genome-assignment-v2",
+    "originClassPreserved": true,
+    "algorithm": "Within each origin class, hash-rank frozen Worlds by sha256(canonicalJson({seed,kind:'world',digest:worldSpecDigest})) and frozen genomes by sha256(canonicalJson({seed,kind:'genome',digest:genomeDigest})); assign each ranked World the next ranked genome cyclically (offset +1).",
+    "cyclicOffset": 1,
+    "purpose": "Eliminate authoring-time World/genome pairing while preserving the G1-frozen 3 de_novo + 2 synthetic_lineage composition. The rule uses only frozen digests, origin class and a fixed seed; it does not inspect locus or World semantics.",
+    "mapping": [
+      { "cohortSlot": 1, "genomeSourceSlot": 4 },
+      { "cohortSlot": 2, "genomeSourceSlot": 5 },
+      { "cohortSlot": 3, "genomeSourceSlot": 1 },
+      { "cohortSlot": 4, "genomeSourceSlot": 3 },
+      { "cohortSlot": 5, "genomeSourceSlot": 2 }
+    ],
+    "mappingDigest": "sha256:0388246fe95037ca2191e10f9e94dbafc1efb239f5bb865bbf06da27c264b05e"
+  },
+  "policies": {
+    "symbolicGenome": { "id": "fibre_symbolic_genome", "version": "1" },
+    "recombination": { "id": "deterministic_textual_crossover", "version": "1" },
+    "mutation": { "id": "bounded_textual_locus_replacement", "version": "1", "usedReplacementCount": 0 },
+    "locusCount": 6
+  },
+  "worldBindings": [
+    {
+      "slot": 1,
+      "genomeSourceSlot": 4,
+      "threadId": "thr_pr39_g2_04",
+      "genesisId": "genesis_pr39_g2_04",
+      "originMode": "de_novo",
+      "worldSpecId": "world_slice_g1_01_can_tho",
+      "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-01-v2.json",
+      "worldSpecDigest": "sha256:6e88b0bd8aba69894ae5583603a841d139687d57cea9bfb8c05086e1be118c7d",
+      "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-04.json",
+      "genomeId": "genome_6480e89a07bbe2698d0f5caad95976aa7ff2ea63",
+      "genomeDigest": "sha256:57e45ea7d518a9fdc9c2e1c3594e5ce2f839a33e8f36d9db8d0476bc4d6e07b0"
+    },
+    {
+      "slot": 2,
+      "genomeSourceSlot": 5,
+      "threadId": "thr_pr39_g2_05",
+      "genesisId": "genesis_pr39_g2_05",
+      "originMode": "synthetic_lineage",
+      "worldSpecId": "world_slice_g1_02_lodz",
+      "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-02-v2.json",
+      "worldSpecDigest": "sha256:291aa0255fa9d70c4dc30f26c442606d4e03245bcb1b843a889ddc082f081a0a",
+      "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-05.json",
+      "genomeId": "genome_78ff3bedb98576e59c7f4608fd3793fdf33e4dcc",
+      "genomeDigest": "sha256:f8cb20995c54843d4c0bef9a171b830e79cad8a9f0819ab1b9e151fbadadcadb"
+    },
+    {
+      "slot": 3,
+      "genomeSourceSlot": 1,
+      "threadId": "thr_pr39_g2_01",
+      "genesisId": "genesis_pr39_g2_01",
+      "originMode": "de_novo",
+      "worldSpecId": "world_slice_g1_03_cusco",
+      "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-03-v2.json",
+      "worldSpecDigest": "sha256:bbf23626457d9f93ff2cf70c129c4d549f998a228bd67852450879b1e70f6290",
+      "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-01.json",
+      "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4",
+      "genomeDigest": "sha256:4ec9592b7e065bdde4e63ebb0c70b4c5f9752b43f6f5f87ec45961a373ff20ad"
+    },
+    {
+      "slot": 4,
+      "genomeSourceSlot": 3,
+      "threadId": "thr_pr39_g2_03",
+      "genesisId": "genesis_pr39_g2_03",
+      "originMode": "de_novo",
+      "worldSpecId": "world_slice_g1_04_accra",
+      "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-04-v2.json",
+      "worldSpecDigest": "sha256:02e52c82398b87cfcecee31651d81dbb223d00e2da8a7410c4553bd0514547db",
+      "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-03.json",
+      "genomeId": "genome_a920ffbc71cc00f8c869139e548f18ba642f05de",
+      "genomeDigest": "sha256:32248f3d909e102fc2865fa29522cdfea09585ca2d7ad9915014a842c1a483fc"
+    },
+    {
+      "slot": 5,
+      "genomeSourceSlot": 2,
+      "threadId": "thr_pr39_g2_02",
+      "genesisId": "genesis_pr39_g2_02",
+      "originMode": "synthetic_lineage",
+      "worldSpecId": "world_slice_g1_05_greater_sudbury",
+      "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-05-v2.json",
+      "worldSpecDigest": "sha256:a2ce5453912040c78561bafaceb21d1cded8f05f84aaf9bc10e831d4288098d0",
+      "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-02.json",
+      "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247",
+      "genomeDigest": "sha256:548357c6563e7b7a21f9377673be62f5441b16c070d7af01cf5adaa926bad73f"
+    }
+  ],
+  "syntheticLineages": [
+    {
+      "slot": 2,
+      "genomeSourceSlot": 5,
+      "childGenomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-05.json",
+      "parentGenomePaths": [
+        "artifacts/validation/m2-pr39/g/genomes/genome-g2-05-parent-a.json",
+        "artifacts/validation/m2-pr39/g/genomes/genome-g2-05-parent-b.json"
+      ],
+      "selectionSeed": "pr39-g2-slot5-lineage-v1",
+      "mutations": [],
+      "expectedParentContributionCounts": [3, 3],
+      "parentGenomeIds": [
+        "genome_488ddba197223e3d89ad0abc733a8f0895b5160a",
+        "genome_288f9886489e1de5e2ff44ea6a5581b85dc5384f"
+      ],
+      "parentGenomeDigests": [
+        "sha256:39736a04d5b4454cd5d3d137e6d90232653e3c8ead8251567ca19398e2040d3e",
+        "sha256:9e9fbfb2e38463144c4743a2d35e666c10e31400eab76a0ff6c52f768e0a08b6"
+      ]
+    },
+    {
+      "slot": 5,
+      "genomeSourceSlot": 2,
+      "childGenomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-02.json",
+      "parentGenomePaths": [
+        "artifacts/validation/m2-pr39/g/genomes/genome-g2-02-parent-a.json",
+        "artifacts/validation/m2-pr39/g/genomes/genome-g2-02-parent-b.json"
+      ],
+      "selectionSeed": "pr39-g2-slot2-lineage-v1",
+      "mutations": [],
+      "expectedParentContributionCounts": [3, 3],
+      "parentGenomeIds": [
+        "genome_612c1ef9784a499c81051eef81df9334a1d7a2af",
+        "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696"
+      ],
+      "parentGenomeDigests": [
+        "sha256:e650b92cb66fbc85ecf1b1c03b64b144643193932084646be8890a0ed7922bc7",
+        "sha256:2839902cedc39c4740a927165bc656a4ad5d75b8392cb99028f6a7f9847cadcd"
+      ]
+    }
+  ],
+  "control": {
+    "instrumentVersion": "genesis-genome-specificity-control-v3",
+    "instrumentPath": "tools/repro/pr39/genome-control/genesis-genome-positive-control.mjs",
+    "trialCountPerPair": 24,
+    "modelCallsPerPair": 72,
+    "generator": { "provider": "google", "model": "gemini-3.6-flash" },
+    "rater": { "provider": "openai", "model": "gpt-5.1-2025-11-13" },
+    "pairSchedulePolicy": "five_edge_cycle_each_assigned_genome_once_as_A_once_as_B",
+    "pairSchedule": [
+      { "pairId": "p01", "genomeASlot": 1, "genomeBSlot": 2, "seed": "pr39-g2-ceiling-p01-v1", "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p01-v1.json" },
+      { "pairId": "p02", "genomeASlot": 2, "genomeBSlot": 3, "seed": "pr39-g2-ceiling-p02-v1", "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p02-v1.json" },
+      { "pairId": "p03", "genomeASlot": 3, "genomeBSlot": 4, "seed": "pr39-g2-ceiling-p03-v1", "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p03-v1.json" },
+      { "pairId": "p04", "genomeASlot": 4, "genomeBSlot": 5, "seed": "pr39-g2-ceiling-p04-v1", "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p04-v1.json" },
+      { "pairId": "p05", "genomeASlot": 5, "genomeBSlot": 1, "seed": "pr39-g2-ceiling-p05-v1", "resultPath": "artifacts/validation/m2-pr39/g/results/g2-genome-ceiling-p05-v1.json" }
+    ],
+    "aggregateResultPath": "artifacts/validation/m2-pr39/g/results/g2-cohort-genome-specificity-ceiling-v1.json",
+    "predeclaredReading": {
+      "detectablePairCorrectAtLeast": 17,
+      "minimumDetectablePairs": 3,
+      "requireEveryGenomeIncidentToAtLeastOneDetectablePair": true,
+      "onFailure": "HOLD_G2_PRESERVE_RESULTS_NO_GENOME_REWRITE",
+      "note": "Per-pair signal bands are the already-frozen v3 instrument bands. Aggregate accuracy is descriptive only; the cohort ceiling is the five-pair vector plus coverage rule."
+    }
+  }
+}
