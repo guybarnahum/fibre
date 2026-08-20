@@ -102,7 +102,7 @@ exact chance tail            0.000003814697265625
 Gate-F downstream fertility  PASS
 ```
 
-The Gate-F closure record also seals the reviewer-derived memory-selectivity characterization and the scope limitations on this development evidence.
+The Gate-F closure record also seals the memory-selectivity characterization and the scope limitations on this development evidence. Stage 2 later corrected one arithmetic error in the hostile review's printed horizon-6 breakdown without changing the sealed artifact or Gate-F verdict.
 
 ## Stage 1 — Pass-C doctrine audit
 
@@ -146,9 +146,29 @@ Implementation:
 - `tools/genesis-memory-meaning-n2-characterization.mjs` adapts the sealed N2 artifact without rewriting it;
 - the Stage-2 regression uses both synthetic arithmetic and the sealed N2 artifact to prove the measurement operates at the intended resolution.
 
+The maintainer has run the new characterization against the sealed N2 artifact. Machine-derived baseline:
+
+```text
+observations                  18
+remembered                    18
+not remembered                 0
+durable meaning               18
+no durable meaning              0
+
+cited episodes total          27
+mean cited / memory             1.50
+mean citation share             0.19074074074074074
+
+horizon 6 mean share            0.2222222222222222
+horizon 8 mean share            0.16666666666666666
+horizon 10 mean share           0.18333333333333332
+```
+
+This exposed one arithmetic error in the prior hostile-review narrative: horizon 6 was printed there as `1.00` cited / `0.167` share; the sealed artifact gives `1.333...` cited / `0.222...` share. The aggregate review values (`1.50` cited and about `0.191` share) were correct. The Stage-2 machine-derived record is authoritative for the numerical breakdown; no N2 evidence or verdict changed.
+
 Stage 2 does not define a healthy citation-share target or a healthy durable-meaning rate. Those remain characterization evidence only.
 
-Local verification is required before Stage 2 becomes `COMPLETE`.
+Local full-suite/check verification is still required before Stage 2 becomes `COMPLETE`.
 
 ## Hard seam rules
 
@@ -169,7 +189,7 @@ Model-free code/test/doc work required to close the seam remains allowed.
 ```text
 [x] Pass-C semantics audited and contract-conformant
 [x] no_durable_meaning remains genuinely possible
-[~] citation-share selectivity diagnostic available — implementation landed; local verification pending
+[~] citation-share selectivity diagnostic available — implementation + N2 derivation landed; local full verification pending
 [ ] Slice-F duplicated semantic authority removed or equivalently sealed
 [ ] known Slice-F mutation gaps killed by tests
 [ ] long Thread-ID publication risk closed
