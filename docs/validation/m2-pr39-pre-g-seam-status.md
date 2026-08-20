@@ -238,7 +238,7 @@ The regression creates a mechanically complete synthetic historical ledger recor
 Local maintainer verification after the long-ID follow-up:
 
 ```text
-full tests                     581/581 pass
+full tests                     579/579 pass
 repository check               green
 ```
 
