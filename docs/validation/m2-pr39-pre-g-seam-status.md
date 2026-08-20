@@ -59,8 +59,8 @@ That verification baseline applies to the reviewed Gate-F head. Every seam stage
 | --- | --- | --- | --- |
 | 0 | Seal Gate F | **COMPLETE** | Gate-F verdict, evidence, negative runs, selectivity finding and carry-forwards are durably recorded |
 | 1 | Pass-C doctrine audit | **COMPLETE** | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal; local full verification green |
-| 2 | Memory/meaning instrumentation | **IMPLEMENTED / VERIFY** | citation share and meaning-rate characterization exist without becoming admission gates; local full verification green |
-| 3 | Slice-F canonical delegation | PENDING | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected |
+| 2 | Memory/meaning instrumentation | **COMPLETE** | citation share and meaning-rate characterization exist without becoming admission gates; local full verification green |
+| 3 | Slice-F canonical delegation | **IMPLEMENTED / VERIFY** | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected; local full verification green |
 | 4 | Older C/D carry-forwards | PENDING | long Thread-ID predicate budget and historical-memory read-policy drift are closed with regressions |
 | 5 | Test-value audit | PENDING | tests are inventoried by invariant; keep/consolidate/archive/delete decisions and coverage gaps are explicit |
 | 6 | Retired experiment/artifact hygiene | PENDING | current mechanism, retained scientific evidence and dead scaffolding are clearly separated without erasing failed evidence |
@@ -146,7 +146,7 @@ Implementation:
 - `tools/genesis-memory-meaning-n2-characterization.mjs` adapts the sealed N2 artifact without rewriting it;
 - the Stage-2 regression uses both synthetic arithmetic and the sealed N2 artifact to prove the measurement operates at the intended resolution.
 
-The maintainer has run the new characterization against the sealed N2 artifact. Machine-derived baseline:
+The maintainer ran the characterization against the sealed N2 artifact. Machine-derived baseline:
 
 ```text
 observations                  18
@@ -168,7 +168,26 @@ This exposed one arithmetic error in the prior hostile-review narrative: horizon
 
 Stage 2 does not define a healthy citation-share target or a healthy durable-meaning rate. Those remain characterization evidence only.
 
-Local full-suite/check verification is still required before Stage 2 becomes `COMPLETE`.
+The maintainer subsequently reported the Stage-2 full suite and repository check passed. Stage 2 is therefore **COMPLETE**.
+
+## Stage 3 — Slice-F canonical publication delegation
+
+Delegation record:
+
+[`m2-pr39-slice-f-canonical-publication-delegation.md`](m2-pr39-slice-f-canonical-publication-delegation.md)
+
+Implementation:
+
+- `genesis-origin-source-integrity.mjs` now exports pure authority-witness and canonical-fork-event assertions;
+- the existing store-backed Slice-F proof APIs delegate to those pure semantic assertions;
+- `genesis-store.mjs` continues to resolve authority records and replay source history transaction-locally during atomic birth publication;
+- after resolution, publication delegates source-party/status matching and exact fork-prefix matching to the same canonical Slice-F semantic functions;
+- publication no longer independently reimplements those three semantic comparisons;
+- a new publication integration regression makes wrong source party, wrong subject status and a noncanonical fork prefix load-bearing through `GenesisStore.publishBirth()` itself.
+
+Stage 3 does not reopen Gate F or change any accepted origin/source rule. It removes a future semantic-drift path while preserving the already-cleared transaction boundary.
+
+Local full verification is required before Stage 3 becomes `COMPLETE`.
 
 ## Hard seam rules
 
@@ -189,9 +208,9 @@ Model-free code/test/doc work required to close the seam remains allowed.
 ```text
 [x] Pass-C semantics audited and contract-conformant
 [x] no_durable_meaning remains genuinely possible
-[~] citation-share selectivity diagnostic available — implementation + N2 derivation landed; local full verification pending
-[ ] Slice-F duplicated semantic authority removed or equivalently sealed
-[ ] known Slice-F mutation gaps killed by tests
+[x] citation-share selectivity diagnostic available and locally verified
+[~] Slice-F duplicated semantic authority removed — implementation landed; local verification pending
+[~] known Slice-F mutation gaps killed by tests — regressions landed; local verification pending
 [ ] long Thread-ID publication risk closed
 [ ] historical-memory read-policy drift closed
 [ ] tests inventoried by protected invariant and coverage gaps
