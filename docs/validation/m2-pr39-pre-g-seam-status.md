@@ -58,7 +58,7 @@ That verification baseline applies to the reviewed Gate-F head. Every seam stage
 | Stage | Work | Status | Exit condition |
 | --- | --- | --- | --- |
 | 0 | Seal Gate F | **COMPLETE** | Gate-F verdict, evidence, negative runs, selectivity finding and carry-forwards are durably recorded |
-| 1 | Pass-C doctrine audit | PENDING | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal |
+| 1 | Pass-C doctrine audit | **IMPLEMENTED / VERIFY** | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal; local full verification green |
 | 2 | Memory/meaning instrumentation | PENDING | citation share and meaning-rate characterization exist without becoming admission gates |
 | 3 | Slice-F canonical delegation | PENDING | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected |
 | 4 | Older C/D carry-forwards | PENDING | long Thread-ID predicate budget and historical-memory read-policy drift are closed with regressions |
@@ -104,6 +104,25 @@ Gate-F downstream fertility  PASS
 
 The Gate-F closure record also seals the reviewer-derived memory-selectivity characterization and the scope limitations on this development evidence.
 
+## Stage 1 — Pass-C doctrine audit
+
+Audit record:
+
+[`m2-pr39-pass-c-meaning-formation-semantics-audit.md`](m2-pr39-pass-c-meaning-formation-semantics-audit.md)
+
+Finding:
+
+- the canonical compiler contract is already constitutive: Pass C creates what one remembered experience durably came to mean;
+- the Pass-C domain already makes `no_durable_meaning` first-class and keeps `revised`, `unchanged`, and `none` distinct for reinterpretation;
+- the burned N1/N2 development prompt is epistemically worded (`Decide whether this memory has durable meaning`) and must remain unchanged historical evidence;
+- there is no production Pass-C model runner under `services/` using that historical prompt;
+- canonical future-facing constitutive initial/reinterpretation prompts and frozen hashable schemas now live in `services/world-kernel/src/genesis-pass-c-prompts.mjs`;
+- a seam regression explicitly prevents the historical prompt from becoming the canonical future prompt.
+
+Stage 1 deliberately does **not** rerun N1/N2 or claim that their 37/37 durable-meaning outcomes were produced by the new prompt. Meaning-rate characterization belongs to Stage 2 and remains non-gating.
+
+Local verification is still required before Stage 1 becomes `COMPLETE`.
+
 ## Hard seam rules
 
 Until this ledger reaches `status: complete`:
@@ -121,8 +140,8 @@ Model-free code/test/doc work required to close the seam remains allowed.
 ## Seam exit checklist
 
 ```text
-[ ] Pass-C semantics audited and contract-conformant
-[ ] no_durable_meaning remains genuinely possible
+[~] Pass-C semantics audited and contract-conformant — implementation landed; local verification pending
+[~] no_durable_meaning remains genuinely possible — domain + regression landed; local verification pending
 [ ] citation-share selectivity diagnostic available
 [ ] Slice-F duplicated semantic authority removed or equivalently sealed
 [ ] known Slice-F mutation gaps killed by tests
