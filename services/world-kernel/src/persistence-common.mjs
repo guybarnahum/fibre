@@ -136,6 +136,20 @@ export function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+export function boundedThreadScopedId({ prefix, threadId, suffix }) {
+  assertNonEmpty("Thread-scoped ID prefix", prefix);
+  assertId("Thread-scoped ID threadId", threadId);
+  assertNonEmpty("Thread-scoped ID suffix", suffix);
+
+  const exact = `${prefix}_${threadId}_${suffix}`;
+  if (ID_PATTERN.test(exact)) return exact;
+
+  const compactThreadRef = `thread_${sha256(threadId).slice(0, 24)}`;
+  const compact = `${prefix}_${compactThreadRef}_${suffix}`;
+  assertId("bounded Thread-scoped ID", compact);
+  return compact;
+}
+
 export function threadStateHash(thread) {
   return `sha256:${sha256(canonicalJson(thread))}`;
 }
