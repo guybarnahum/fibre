@@ -188,9 +188,11 @@ Slice C keeps the genome entirely absent from Pass A.
 
 Slice D allows controlled Pass-B exposure and keeps Pass C unconditionally genome-blind.
 
-Pre-G Stage 8 implements the Slice-E/birth lineage boundary through the live publication transaction: a persisted child genome must belong to the exact child/Genesis; a synthetic-lineage genome's exact source-owner IDs must match the manifest and revision-1 #38 `biological_parent` / `parent_genome_source` relations. Publication failure leaves no live child or lineage. The frozen genome remains a pre-birth input and is not rewritten by birth.
+Pre-G Stage 8 now **completely closes** the Slice-E/birth lineage boundary through the live publication transaction: a persisted child genome must belong to the exact child/Genesis; a synthetic-lineage genome's exact source-owner IDs must match the manifest and the exact revision-1 #38 `biological_parent` / `parent_genome_source` relation set. Publication failure leaves no live child or lineage. The frozen genome remains a pre-birth input and is not rewritten by birth.
 
-Slice G freezes the actual cohort-genome specificity ceiling before life generation.
+The Stage-8 boundary was maintainer-verified at tested head `a956c86b1392636988ee4ffc67b8630460c63c6d`. Stage 9 additionally removed an incidental array-order dependency from the #38 relation candidates while preserving ordered manifest/genome source authority.
+
+Slice G now owns the actual cohort-genome specificity ceiling before life generation.
 
 Slice H compares achieved genome propagation against the Slice-G cohort-genome ceiling; `life_only_unexposed` remains the negative control. The Slice-B hand-authored score is retained as instrument history, not substituted for the cohort ceiling.
 
@@ -231,7 +233,7 @@ Fail the implementation if:
 [x] Slice-G external frozen-genome reuse surface
 [x] live Slice-B positive-control result recorded before interpreting genome propagation
 [ ] Slice-G cohort-genome ceiling frozen before cohort life generation
-[~] synthetic-ancestor source owners bound to admitted #38 lineage at birth — Stage-8 implementation landed; full local verification pending
+[x] synthetic-ancestor source owners bound to admitted #38 lineage at birth — Stage 8 COMPLETE; maintainer-verified at a956c86
 ```
 
 ## Boundary
