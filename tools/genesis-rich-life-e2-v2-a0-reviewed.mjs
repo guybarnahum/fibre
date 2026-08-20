@@ -3,13 +3,21 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
+import { assertPassAHistoryConsistency } from "../services/world-kernel/src/genesis-pass-a-consistency.mjs";
+import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
+import { buildRichLifePassAInput } from "../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
+import { buildE2A0Plan } from "./genesis-rich-life-e2-a0.mjs";
 import {
   E2_V2_A0_EVIDENCE_VERSION,
+  E2_V2_A0_SEEDS,
   buildE2V2A0Preflight,
   runE2V2A0Source,
 } from "./genesis-rich-life-e2-v2-a0.mjs";
-import { E2_V2_WORLD_AUTHORING_RECORD } from "./genesis-rich-life-e2-v2-world.mjs";
+import {
+  E2_V2_WORLD_AUTHORING_RECORD,
+  E2_V2_WORLD_FIXTURE,
+} from "./genesis-rich-life-e2-v2-world.mjs";
 
 const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
@@ -20,10 +28,53 @@ function readArg(argv, name, fallback = null) {
   return inline === undefined ? fallback : inline.slice(name.length + 1);
 }
 
+export function validateE2V2A0StaticInputs() {
+  const windows = [];
+  for (const seed of E2_V2_A0_SEEDS) {
+    const plan = buildE2A0Plan(E2_V2_WORLD_FIXTURE, seed);
+    for (const { developmentalWindow, offeredEntries } of plan) {
+      const input = buildRichLifePassAInput({
+        originMode: "de_novo",
+        syntheticLineageWitness: null,
+        worldSpec: E2_V2_WORLD_FIXTURE.worldSpec,
+        subject: E2_V2_WORLD_FIXTURE.subject,
+        developmentalWindow,
+        chronologyEndsAt: developmentalWindow.endAt,
+        initialRoster: E2_V2_WORLD_FIXTURE.initialRoster,
+        priorEpisodes: [],
+        previouslyIntroducedParticipants: [],
+        eventStructurePoolV2: GENESIS_EVENT_STRUCTURE_POOL_V2,
+        offeredEntries,
+      });
+      const consistent = assertPassAHistoryConsistency(input);
+      windows.push(Object.freeze({
+        seed,
+        windowId: developmentalWindow.windowId,
+        offeredStructureIds: Object.freeze(
+          consistent.offeredStructures.map(({ structureId }) => structureId).sort(),
+        ),
+        staticInputDigest: digest(consistent),
+      }));
+    }
+  }
+  return Object.freeze({
+    validationVersion: "pr39-slice-e2-v2-static-rich-input-preflight-v1",
+    modelCallsUsed: 0,
+    seedsValidated: E2_V2_A0_SEEDS.length,
+    windowsPerSeed: windows.length / E2_V2_A0_SEEDS.length,
+    validatedWindows: windows.length,
+    expectedWindows: E2_V2_A0_SEEDS.length * 10,
+    allFrozenWindowsValidated: windows.length === E2_V2_A0_SEEDS.length * 10,
+    windows: Object.freeze(windows),
+    witnessDigest: digest(windows),
+  });
+}
+
 export function decorateE2V2A0Preflight(preflight) {
   const reviewed = {
     ...structuredClone(preflight),
     worldAuthoringRecord: structuredClone(E2_V2_WORLD_AUTHORING_RECORD),
+    staticInputValidation: structuredClone(validateE2V2A0StaticInputs()),
   };
   return Object.freeze({
     ...reviewed,
@@ -76,7 +127,13 @@ async function main() {
   if (outputPath === null) throw new TypeError("E2-V2 burned source generation requires --out <file>");
   if (existsSync(outputPath)) throw new Error(`E2-V2 output already exists: ${outputPath}; this fresh world must not be overwritten or rerun`);
 
+  // Reviewed preflight includes a zero-model-call validation of every frozen
+  // seed/window Pass-A input. Any static world/offer incompatibility must fail here,
+  // before the provider adapter can be invoked and before the world can burn.
   const reviewedPreflight = decorateE2V2A0Preflight(buildE2V2A0Preflight());
+  if (!reviewedPreflight.staticInputValidation.allFrozenWindowsValidated) {
+    throw new TypeError("E2-V2 static rich-input preflight did not validate every frozen window");
+  }
   process.stderr.write(`E2-V2 A0 reviewed execution: START · evidence=${E2_V2_A0_EVIDENCE_VERSION} · reviewedPreflight=${reviewedPreflight.reviewedPreflightDigest}\n`);
   try {
     const result = decorateE2V2A0Artifact(await runE2V2A0Source({ provider, model, onProgress: progressPrinter }));
