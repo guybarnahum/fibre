@@ -1,0 +1,417 @@
+{
+  "protocolVersion": "pr39-slice-e2-n2-memory-formation-v1",
+  "evidenceVersion": "pr39-slice-e2-n2-v1",
+  "purpose": "Gate-F downstream fertility for corrected A0 under constitutive Pass-B memory formation",
+  "sources": {
+    "E2-V1": {
+      "file": "artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-v1-fresh-world-v1.json",
+      "fileSha256": "e6f59d1e62e7856914598b8f10424f778bef0ed6256ad771385af67f2e4cc720",
+      "canonicalArtifactDigest": "sha256:add857df4780c81ede3cbacbf8f7302146b1358b5cd23d9c1ed7f94dc7f5cad4",
+      "evidenceVersion": "pr39-slice-e2-v1-fresh-world-v1",
+      "protocolVersion": "pr39-slice-e2-v1-fresh-world-protocol-v1",
+      "generatedAt": "2026-08-19T22:47:19.375Z",
+      "sourceArm": "A0_corrected_coupled_chooser_realizer",
+      "worldId": "E2-V1",
+      "lifeCount": 3
+    },
+    "E2-V2": {
+      "file": "artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-v2-a0-v1.json",
+      "fileSha256": "77329efbbf85777e359393787fe05e41119a24a560adec8a49ed9902cc80d890",
+      "canonicalArtifactDigest": "sha256:cafd89e2d675c9c77f29e29c63638157801f8785c4340cd9989ed7966034a648",
+      "evidenceVersion": "pr39-slice-e2-v2-a0-fresh-world-v1",
+      "protocolVersion": "pr39-slice-e2-v2-a0-source-generation-v1",
+      "generatedAt": "2026-08-20T00:07:21.205Z",
+      "sourceArm": "A0_corrected_coupled_chooser_realizer",
+      "worldId": "E2-V2",
+      "lifeCount": 3
+    }
+  },
+  "horizons": [
+    6,
+    8,
+    10
+  ],
+  "trialCount": 18,
+  "memoryFormationFloor": 10,
+  "planningMemoryRate": 0.7,
+  "probabilityMeetMemoryFloorAtPlanningRate": 0.9404141160133612,
+  "scoring": {
+    "criterionA": "remembered >= 10/18",
+    "criterionB": "among remembered trials, exact one-sided binomial source-attribution p<=0.05",
+    "bothRequired": true,
+    "notRememberedLegal": true,
+    "notRememberedIncludedInAttributionDenominator": false,
+    "rawForcedChoiceReportedForCharacterizationOnly": true,
+    "thresholdTable": {
+      "10": {
+        "minimumCorrect": 9,
+        "exactChanceTail": 0.0107421875
+      },
+      "11": {
+        "minimumCorrect": 9,
+        "exactChanceTail": 0.03271484375
+      },
+      "12": {
+        "minimumCorrect": 10,
+        "exactChanceTail": 0.019287109375
+      },
+      "13": {
+        "minimumCorrect": 10,
+        "exactChanceTail": 0.046142578125
+      },
+      "14": {
+        "minimumCorrect": 11,
+        "exactChanceTail": 0.0286865234375
+      },
+      "15": {
+        "minimumCorrect": 12,
+        "exactChanceTail": 0.017578125
+      },
+      "16": {
+        "minimumCorrect": 12,
+        "exactChanceTail": 0.0384063720703125
+      },
+      "17": {
+        "minimumCorrect": 13,
+        "exactChanceTail": 0.0245208740234375
+      },
+      "18": {
+        "minimumCorrect": 13,
+        "exactChanceTail": 0.048126220703125
+      }
+    }
+  },
+  "assignment": {
+    "pairs": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "candidateOrderDomain": "E2-N2",
+    "sourceUsesPerLife": 3,
+    "truthLabels": {
+      "A": 9,
+      "B": 9
+    },
+    "candidateASides": {
+      "left": 9,
+      "right": 9
+    }
+  },
+  "cognition": {
+    "passBSemantics": "constitutive_memory_formation",
+    "passBBoundary": "life_only_unexposed",
+    "priorMemoriesEmptyIsNormal": true,
+    "passCMode": "initial",
+    "candidateIdentifierNeutralization": true,
+    "richStructureMetadataVisibleToPassB": false,
+    "genomeVisibleToPassB": false,
+    "historyVisibleToPassC": false,
+    "genomeVisibleToPassC": false,
+    "sourceArmLabelVisibleToCognition": false
+  },
+  "passB": {
+    "formProfile": "n2-pass-b-constitutive-bounded-output-v1",
+    "maxModelCharacters": 600,
+    "promptHash": "sha256:3a0603771fa2ef887b9a0f17e3559871262bc18b01910f8e19dab83c08b69615",
+    "responseSchemaHash": "sha256:37dcd381639118b2ca5960a263d094e59fcb5a6abf9260069b75aa24129b6eab",
+    "notRememberedResiduePolicy": "n1-not-remembered-residue-canonicalization-v1",
+    "residuePolicyFrozenBeforeFirstScore": true
+  },
+  "passC": {
+    "promptHash": "sha256:d1bdce6a77e22d308f6fc4f365e2a93447d3a6e7b7dc8070ac82c633184c47c6",
+    "responseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821"
+  },
+  "rater": {
+    "promptHash": "sha256:89705a432f9afc27048d6e649033e85ef5ffdeb779e836ca010f40d278070c72",
+    "responseSchemaHash": "sha256:47ba072132f3289c768f13a49caf6fb70e015ddb906f6909d5f6f5a5603c78bf"
+  },
+  "plan": [
+    {
+      "trialOrdinal": 1,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 2,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:8bf802336b36204ee6f7f03b5ea18fcf91e17eec5025e916c737bcd73d2967f9"
+    },
+    {
+      "trialOrdinal": 2,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 2,
+      "sourceSide": "right",
+      "candidateASide": "left",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:1b25de3650a7f52a60df87c2cd734acc29c3d0c69369fb56508e8b4e19b17cd8"
+    },
+    {
+      "trialOrdinal": 3,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 2,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:c246924015073a5e10a0d23f3a39d86839183b6c6d74cd4754978c8f3f2dff7f"
+    },
+    {
+      "trialOrdinal": 4,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "right",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:047f265c87bf787aa7fc8fb65f7935bc70fc4f4a7c78ee87a0a639f3e8223d23"
+    },
+    {
+      "trialOrdinal": 5,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 3,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:287c4a28f76486324bdf875cb90ab4c142498c615277d9a4bad51dde94559a00"
+    },
+    {
+      "trialOrdinal": 6,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "left",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:96169b74bfb8c16f2e84629c524da884a58a2ba9ea8e715452d0a1b6695da571"
+    },
+    {
+      "trialOrdinal": 7,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "leftRunOrdinal": 2,
+      "rightRunOrdinal": 3,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:44eabe31fdb130d4ac544143346cc69b59c79164a42d343c83f88f0218cf2d29"
+    },
+    {
+      "trialOrdinal": 8,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "leftRunOrdinal": 2,
+      "rightRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "right",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:3e7f4c1ad88a00d5a3c2baeb76e8c179211c2f52c7ab471a3401a0eae695917d"
+    },
+    {
+      "trialOrdinal": 9,
+      "worldId": "E2-V1",
+      "worldOrdinal": 1,
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "leftRunOrdinal": 2,
+      "rightRunOrdinal": 3,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:f9c15d11393ddef0c744e72bb12ea8f9f87dcb1d9c0db95af3d9a19190b1022b"
+    },
+    {
+      "trialOrdinal": 10,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 2,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:20870737d6d969a313be7a26c7b754da6a49030e85c09548219a79ec3858e988"
+    },
+    {
+      "trialOrdinal": 11,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 2,
+      "sourceSide": "right",
+      "candidateASide": "right",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:6d6864a46a0feb6ce64ad8e7d9a44a36965cac1afade6b45781316da8111115f"
+    },
+    {
+      "trialOrdinal": 12,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 1,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 2,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:c1375d040a9b04043ecbd670685b266eb3cdd4a1a3ea8221e23a5d71dbde682d"
+    },
+    {
+      "trialOrdinal": 13,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "left",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:61e25dd330dbd20d3964f465da49ef5868eb55d242440e77c96d4956ff70dcca"
+    },
+    {
+      "trialOrdinal": 14,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 3,
+      "sourceSide": "left",
+      "candidateASide": "left",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:405bc34926218f1efcc22a58e23e6550ce0e8004f7f6388afb725c5c57f595bf"
+    },
+    {
+      "trialOrdinal": 15,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 2,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "leftRunOrdinal": 1,
+      "rightRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "right",
+      "truthCandidate": "A",
+      "assignmentDigest": "sha256:d85ed815e45428155f1f98b0cdc5c4e74e15b8989e6a08623aed749affb01bc0"
+    },
+    {
+      "trialOrdinal": 16,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 1,
+      "horizon": 6,
+      "leftRunOrdinal": 2,
+      "rightRunOrdinal": 3,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:8068c6431c0d2eb7be91b9e3dbb63f477ca92ec0fc01cc405263b33fbd4ac0b7"
+    },
+    {
+      "trialOrdinal": 17,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 2,
+      "horizon": 8,
+      "leftRunOrdinal": 2,
+      "rightRunOrdinal": 3,
+      "sourceSide": "right",
+      "candidateASide": "left",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:96d69a06a62395a1b62bceec83ad43f69aee88fd6569234ae799b67298f10f40"
+    },
+    {
+      "trialOrdinal": 18,
+      "worldId": "E2-V2",
+      "worldOrdinal": 2,
+      "pairOrdinal": 3,
+      "repetitionOrdinal": 3,
+      "horizon": 10,
+      "leftRunOrdinal": 2,
+      "rightRunOrdinal": 3,
+      "sourceSide": "left",
+      "candidateASide": "right",
+      "truthCandidate": "B",
+      "assignmentDigest": "sha256:827d37fed2ee007d2f955680b4a75e10c861e03f4628b4dda8082803add9b624"
+    }
+  ],
+  "noRerunOnScore": true,
+  "admissionVerdict": null,
+  "preflightDigest": "sha256:55cbce4dbe38da3164820967287b5bbdd5ae5deb62f4061dbfebcbd95699a586",
+  "preExecutionReview": {
+    "protocolReview": "PROTOCOL_CLEAR_2026-08-19",
+    "foldedBeforeFirstE2V2ModelUse": true,
+    "criteriaChangedByReviewRecommendations": false,
+    "memoryRateCharacterization": {
+      "reportRememberedRate": true,
+      "lowExtreme": "criterion_A_failure_below_10_of_18",
+      "nearTotalRecallThreshold": 17,
+      "nearTotalRecallDenominator": 18,
+      "extremeInterpretation": "Either low recall or near-total recall is an instrument finding for examination; neither substitutes for or modifies the frozen gate criteria."
+    },
+    "pairedFramingComparison": {
+      "gateUse": false,
+      "oldArtifact": "artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-n1-a0-v1.json",
+      "oldArtifactSha256": "8b8497fe687dfcb5a728024b83ca65c0f5e88006c645b0fbf5d92524e1adb122",
+      "oldRemembered": 6,
+      "oldTrials": 9,
+      "scope": "same E2-V1 A0 lives, same horizons, old epistemic prompt versus new constitutive prompt"
+    },
+    "firstValidTestRationale": "N1-v2 used a generator family later retired after fresh-world falsification; N1-on-A0 used the shipping-generator candidate with a Pass-B prompt that contradicted the constitutive memory contract. N2 is the first pairing of corrected A0 with a contract-conformant Pass-B formation instrument."
+  },
+  "reviewedPreflightDigest": "sha256:714f0b6579ec670c58a5e26661604f28d0ab8673c375cd8361c9e65b05f7050f"
+}
