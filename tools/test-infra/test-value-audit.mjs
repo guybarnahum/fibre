@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DEFAULT_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const DEFAULT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
   { scope: "domain", directory: "packages/domain/test" },
   { scope: "world-kernel", directory: "services/world-kernel/test" },
@@ -53,41 +53,32 @@ const FAMILY_RULES = Object.freeze([
   ["thread", "thread-domain"],
 ]);
 
-function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
+function sha256(value) { return createHash("sha256").update(value).digest("hex"); }
+function normalizedPath(root, path) { return relative(root, path).split("\\").join("/"); }
 
-function normalizedPath(root, path) {
-  return relative(root, path).split("\\").join("/");
+function walkTests(directory, scope) {
+  const result = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) result.push(...walkTests(path, scope));
+    else if (entry.isFile() && entry.name.endsWith(".test.mjs")) result.push({ scope, path });
+  }
+  return result;
 }
 
 function testFiles(root = DEFAULT_ROOT) {
-  const result = [];
-  for (const { scope, directory } of TEST_SCOPES) {
-    const absoluteDirectory = join(root, directory);
-    for (const entry of readdirSync(absoluteDirectory, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith(".test.mjs")) continue;
-      result.push({ scope, path: join(absoluteDirectory, entry.name) });
-    }
-  }
-  return result.sort((left, right) => left.path.localeCompare(right.path));
+  return TEST_SCOPES.flatMap(({ scope, directory }) => walkTests(join(root, directory), scope))
+    .sort((left, right) => left.path.localeCompare(right.path));
 }
 
-// This audit intentionally avoids a JavaScript-parser dependency. It needs only a
-// conservative lexical distinction between executable source and code-shaped text in
-// comments/string fixtures. Strings and comments are blanked while newlines/positions
-// are preserved; template literals are treated as data in their entirety because Fibre's
-// test declarations/imports are not authored inside template interpolations.
 function lexicalView(source) {
   const masked = [...source];
   const strings = [];
-
-  function blank(start, end) {
+  const blank = (start, end) => {
     for (let index = start; index < end; index += 1) {
       if (masked[index] !== "\n" && masked[index] !== "\r") masked[index] = " ";
     }
-  }
-
+  };
   let index = 0;
   while (index < source.length) {
     if (source[index] === "/" && source[index + 1] === "/") {
@@ -105,48 +96,31 @@ function lexicalView(source) {
       blank(start, index);
       continue;
     }
-
     const quote = source[index];
     if (quote === "'" || quote === '"' || quote === "`") {
       const start = index;
       let interpolated = false;
       index += 1;
       while (index < source.length) {
-        if (source[index] === "\\") {
-          index = Math.min(source.length, index + 2);
-          continue;
-        }
-        if (quote === "`" && source[index] === "$" && source[index + 1] === "{") {
-          interpolated = true;
-        }
-        if (source[index] === quote) {
-          index += 1;
-          break;
-        }
+        if (source[index] === "\\") { index = Math.min(source.length, index + 2); continue; }
+        if (quote === "`" && source[index] === "$" && source[index + 1] === "{") interpolated = true;
+        if (source[index] === quote) { index += 1; break; }
         index += 1;
       }
       const end = index;
-      strings.push({
-        start,
-        end,
-        quote,
-        interpolated,
-        rawValue: source.slice(start + 1, Math.max(start + 1, end - 1)),
-      });
+      strings.push({ start, end, quote, interpolated, rawValue: source.slice(start + 1, Math.max(start + 1, end - 1)) });
       blank(start, end);
       continue;
     }
     index += 1;
   }
-
   return { masked: masked.join(""), strings };
 }
 
 function precedingStatement(masked, position) {
   const semicolon = masked.lastIndexOf(";", position - 1);
   const newline = masked.lastIndexOf("\n", position - 1);
-  const start = Math.max(semicolon, newline) + 1;
-  return masked.slice(start, position).trim();
+  return masked.slice(Math.max(semicolon, newline) + 1, position).trim();
 }
 
 function importedTestFilesFromView(view) {
@@ -154,9 +128,6 @@ function importedTestFilesFromView(view) {
   for (const token of view.strings) {
     if (!token.rawValue.endsWith(".test.mjs")) continue;
     const prefix = precedingStatement(view.masked, token.start);
-    // Recognize the JavaScript import keyword, not identifiers such as
-    // `importedTestFiles` that merely begin with the same letters. A side-effect
-    // import masks its quoted specifier, leaving exactly `import` as the prefix.
     if (!/^import(?:$|\s|\{|\*|["'])/.test(prefix)) continue;
     if (/^import\s*\(/.test(prefix)) continue;
     imports.add(token.rawValue);
@@ -186,26 +157,18 @@ function analyzeTestSource(source) {
     const title = firstLiteralArgument(view, match.index + match[0].length);
     if (title !== null) titles.push(title);
   }
-  return {
-    declaredTestCalls,
-    testTitles: titles,
-    importedTestFiles: importedTestFilesFromView(view),
-  };
+  return { declaredTestCalls, testTitles: titles, importedTestFiles: importedTestFilesFromView(view) };
 }
 
 function stripComments(source) {
   const { masked, strings } = lexicalView(source);
   if (strings.length === 0) return masked.trim();
-  // A string expression is executable source, so comment-only classification must not
-  // confuse "all lexical strings were masked" with "the file contained only comments".
   return `${masked}${strings.map((token) => token.rawValue).join("")}`.trim();
 }
 
 function familyFor(path) {
   const name = basename(path).toLowerCase();
-  for (const [needle, family] of FAMILY_RULES) {
-    if (name.includes(needle)) return family;
-  }
+  for (const [needle, family] of FAMILY_RULES) if (name.includes(needle)) return family;
   return path.startsWith("tools/") ? "experimental-or-repo-tooling" : "other";
 }
 
@@ -214,12 +177,10 @@ function summarizeBy(records, key) {
   for (const record of records) {
     const value = record[key];
     const current = groups.get(value) ?? { files: 0, declaredTestCalls: 0, bytes: 0 };
-    current.files += 1;
-    current.declaredTestCalls += record.declaredTestCalls;
-    current.bytes += record.bytes;
+    current.files += 1; current.declaredTestCalls += record.declaredTestCalls; current.bytes += record.bytes;
     groups.set(value, current);
   }
-  return Object.fromEntries([...groups.entries()].sort(([left], [right]) => left.localeCompare(right)));
+  return Object.fromEntries([...groups.entries()].sort(([a], [b]) => a.localeCompare(b)));
 }
 
 function duplicateGroups(records, selector) {
@@ -227,151 +188,80 @@ function duplicateGroups(records, selector) {
   for (const record of records) {
     const key = selector(record);
     const current = groups.get(key) ?? [];
-    current.push(record.path);
-    groups.set(key, current);
+    current.push(record.path); groups.set(key, current);
   }
-  return [...groups.entries()]
-    .filter(([, paths]) => paths.length > 1)
+  return [...groups.entries()].filter(([, paths]) => paths.length > 1)
     .map(([key, paths]) => ({ key, paths: [...paths].sort() }))
-    .sort((left, right) => left.key.localeCompare(right.key));
+    .sort((a, b) => a.key.localeCompare(b.key));
 }
 
 export function buildTestValueAudit(root = DEFAULT_ROOT) {
   const records = testFiles(root).map(({ scope, path }) => {
     const source = readFileSync(path, "utf8");
     const analysis = analyzeTestSource(source);
-    const stripped = stripComments(source);
+    const normalized = normalizedPath(root, path);
     return {
-      path: normalizedPath(root, path),
+      path: normalized,
       scope,
-      family: familyFor(normalizedPath(root, path)),
+      family: familyFor(normalized),
       bytes: Buffer.byteLength(source, "utf8"),
       sha256: sha256(source),
       declaredTestCalls: analysis.declaredTestCalls,
       testTitles: analysis.testTitles,
       importedTestFiles: analysis.importedTestFiles,
-      commentOnly: stripped.length === 0,
+      commentOnly: stripComments(source).length === 0,
       zeroDeclaredTests: analysis.declaredTestCalls === 0,
     };
   });
-
   const exactDuplicateBodies = duplicateGroups(records, (record) => record.sha256);
-  const titleRecords = records.flatMap((record) =>
-    record.testTitles.map((title) => ({ path: record.path, title })),
-  );
   const titleGroups = new Map();
-  for (const record of titleRecords) {
-    const current = titleGroups.get(record.title) ?? new Set();
-    current.add(record.path);
-    titleGroups.set(record.title, current);
+  for (const record of records) for (const title of record.testTitles) {
+    const paths = titleGroups.get(title) ?? new Set(); paths.add(record.path); titleGroups.set(title, paths);
   }
-  const duplicateTitles = [...titleGroups.entries()]
-    .filter(([, paths]) => paths.size > 1)
-    .map(([title, paths]) => ({ title, paths: [...paths].sort() }))
-    .sort((left, right) => left.title.localeCompare(right.title));
-
-  const testImportAliases = records
-    .filter((record) => record.importedTestFiles.length > 0)
-    .map((record) => ({
-      path: record.path,
-      importedTestFiles: record.importedTestFiles,
-      declaredTestCalls: record.declaredTestCalls,
-    }));
-  const zeroDeclaredTests = records
-    .filter((record) => record.zeroDeclaredTests)
-    .map((record) => record.path);
-  const commentOnlyTestFiles = records
-    .filter((record) => record.commentOnly)
-    .map((record) => record.path);
-
+  const duplicateTitles = [...titleGroups.entries()].filter(([, paths]) => paths.size > 1)
+    .map(([title, paths]) => ({ title, paths: [...paths].sort() })).sort((a, b) => a.title.localeCompare(b.title));
+  const testImportAliases = records.filter((record) => record.importedTestFiles.length > 0)
+    .map((record) => ({ path: record.path, importedTestFiles: record.importedTestFiles, declaredTestCalls: record.declaredTestCalls }));
+  const zeroDeclaredTests = records.filter((record) => record.zeroDeclaredTests).map((record) => record.path);
+  const commentOnlyTestFiles = records.filter((record) => record.commentOnly).map((record) => record.path);
   return {
-    version: "fibre-test-value-audit-v1",
-    totals: {
-      files: records.length,
-      declaredTestCalls: records.reduce((sum, record) => sum + record.declaredTestCalls, 0),
-      bytes: records.reduce((sum, record) => sum + record.bytes, 0),
-    },
+    version: "fibre-test-value-audit-v2",
+    totals: { files: records.length, declaredTestCalls: records.reduce((s, r) => s + r.declaredTestCalls, 0), bytes: records.reduce((s, r) => s + r.bytes, 0) },
     byScope: summarizeBy(records, "scope"),
     byFamily: summarizeBy(records, "family"),
     records,
-    hygiene: {
-      exactDuplicateBodies,
-      testImportAliases,
-      zeroDeclaredTests,
-      commentOnlyTestFiles,
-      duplicateTitles,
-    },
+    hygiene: { exactDuplicateBodies, testImportAliases, zeroDeclaredTests, commentOnlyTestFiles, duplicateTitles },
   };
 }
 
 function renderTable(summary) {
-  const lines = [
-    "| Scope | Files | Declared calls | Bytes |",
-    "| --- | ---: | ---: | ---: |",
-  ];
-  for (const [scope, values] of Object.entries(summary)) {
-    lines.push(`| ${scope} | ${values.files} | ${values.declaredTestCalls} | ${values.bytes} |`);
-  }
+  const lines = ["| Scope | Files | Declared calls | Bytes |", "| --- | ---: | ---: | ---: |"];
+  for (const [scope, values] of Object.entries(summary)) lines.push(`| ${scope} | ${values.files} | ${values.declaredTestCalls} | ${values.bytes} |`);
   return lines.join("\n");
 }
 
 function renderAudit(audit) {
   const lines = [
-    "# Fibre test-value audit",
-    "",
-    `Version: \`${audit.version}\``,
-    "",
-    "## Inventory",
-    "",
-    `- Test files loaded by the npm test globs: **${audit.totals.files}**`,
+    "# Fibre test-value audit", "", `Version: \`${audit.version}\``, "", "## Inventory", "",
+    `- Test files loaded by the recursive npm test scopes: **${audit.totals.files}**`,
     `- Static declared test calls: **${audit.totals.declaredTestCalls}**`,
     `- Test source bytes: **${audit.totals.bytes}**`,
-    "- Static declared calls are not the runtime Node test count; generated/table-driven tests can differ.",
-    "",
-    "### By scope",
-    "",
-    renderTable(audit.byScope),
-    "",
-    "### By invariant family",
-    "",
-    renderTable(audit.byFamily),
-    "",
-    "## Exact duplicate test-file bodies",
-    "",
+    "- Static declared calls are not the runtime Node test count; generated/table-driven tests can differ.", "",
+    "### By scope", "", renderTable(audit.byScope), "", "### By invariant family", "", renderTable(audit.byFamily), "",
+    "## Exact duplicate test-file bodies", "",
   ];
   if (audit.hygiene.exactDuplicateBodies.length === 0) lines.push("None detected.");
-  else {
-    for (const group of audit.hygiene.exactDuplicateBodies) {
-      lines.push(`- \`${group.paths.join("` = `")}\``);
-    }
-  }
+  else for (const group of audit.hygiene.exactDuplicateBodies) lines.push(`- \`${group.paths.join("` = `")}\``);
   lines.push("", "## Test files importing other test files", "");
   if (audit.hygiene.testImportAliases.length === 0) lines.push("None detected.");
-  else {
-    for (const record of audit.hygiene.testImportAliases) {
-      lines.push(`- \`${record.path}\` imports ${record.importedTestFiles.map((path) => `\`${path}\``).join(", ")}`);
-    }
-  }
+  else for (const record of audit.hygiene.testImportAliases) lines.push(`- \`${record.path}\` imports ${record.importedTestFiles.map((path) => `\`${path}\``).join(", ")}`);
   lines.push("", "## Zero-declaration test files", "");
   if (audit.hygiene.zeroDeclaredTests.length === 0) lines.push("None detected.");
-  else {
-    for (const path of audit.hygiene.zeroDeclaredTests) lines.push(`- \`${path}\``);
-  }
+  else for (const path of audit.hygiene.zeroDeclaredTests) lines.push(`- \`${path}\``);
   lines.push("", "## Duplicate test titles across files", "");
   if (audit.hygiene.duplicateTitles.length === 0) lines.push("None detected.");
-  else {
-    for (const record of audit.hygiene.duplicateTitles) {
-      lines.push(`- \`${record.title}\`: ${record.paths.map((path) => `\`${path}\``).join(", ")}`);
-    }
-  }
-  lines.push(
-    "",
-    "## Interpretation rule",
-    "",
-    "Exact duplicate bodies, test-import aliases, and comment-only `*.test.mjs` tombstones are mechanical cleanup candidates.",
-    "Duplicate titles are review signals only: domain, store, replay, API, transaction, hostile-mutation, and protocol tests may intentionally exercise the same named invariant at different load-bearing boundaries.",
-    "No semantic test should be removed solely to reduce the test count.",
-  );
+  else for (const record of audit.hygiene.duplicateTitles) lines.push(`- \`${record.title}\`: ${record.paths.map((path) => `\`${path}\``).join(", ")}`);
+  lines.push("", "## Interpretation rule", "", "Exact duplicate bodies, test-import aliases, and comment-only `*.test.mjs` tombstones are mechanical cleanup candidates.", "Duplicate titles are review signals only; distinct load-bearing boundaries may intentionally share language.", "No semantic test should be removed solely to reduce the test count.");
   return `${lines.join("\n")}\n`;
 }
 
@@ -393,17 +283,10 @@ function main(argv = process.argv.slice(2)) {
   if (args.json) writeFileSync(args.json, JSON.stringify(audit, null, 2));
   if (args.markdown) writeFileSync(args.markdown, renderAudit(audit));
   if (!args.json && !args.markdown) process.stdout.write(renderAudit(audit));
-
   const blockers = [];
-  for (const group of audit.hygiene.exactDuplicateBodies) {
-    blockers.push(`exact duplicate test bodies: ${group.paths.join(", ")}`);
-  }
-  for (const record of audit.hygiene.testImportAliases) {
-    blockers.push(`test import alias: ${record.path}`);
-  }
-  for (const path of audit.hygiene.commentOnlyTestFiles) {
-    blockers.push(`comment-only test tombstone: ${path}`);
-  }
+  for (const group of audit.hygiene.exactDuplicateBodies) blockers.push(`exact duplicate test bodies: ${group.paths.join(", ")}`);
+  for (const record of audit.hygiene.testImportAliases) blockers.push(`test import alias: ${record.path}`);
+  for (const path of audit.hygiene.commentOnlyTestFiles) blockers.push(`comment-only test tombstone: ${path}`);
   if (args.check && blockers.length > 0) {
     for (const blocker of blockers) process.stderr.write(`TEST-AUDIT: ${blocker}\n`);
     process.exitCode = 1;
