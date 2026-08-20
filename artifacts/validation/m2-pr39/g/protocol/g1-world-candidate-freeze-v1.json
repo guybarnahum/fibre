@@ -1,0 +1,114 @@
+{
+  "protocolVersion": "pr39-slice-g1-world-candidate-freeze-v1",
+  "status": "candidate_worlds_frozen_pending_familiarity",
+  "createdAt": "2026-08-20T18:16:00Z",
+  "precondition": {
+    "preGSeam": "complete",
+    "stage9": "clear",
+    "g0Ledger": "docs/validation/m2-pr39-slice-g-freeze-ledger.md",
+    "candidateAuthoringParentCommit": "416289774e24be0be1d931f0eb56179bb6b6246f"
+  },
+  "entryPolicy": {
+    "stage": "young_adult",
+    "ageAtEntry": 22,
+    "bornAt": "2004-08-20T00:00:00Z",
+    "chronologyEndsAt": "2026-08-20T00:00:00Z",
+    "policyRef": "pr39-slice-g-entry-age-v1",
+    "rule": "All five final cohort Threads use the same bornAt and chronology endpoint; life duration may not become an attribution shortcut."
+  },
+  "originAssignment": [
+    { "slot": 1, "worldSpecId": "world_slice_g1_01_river_delta", "originMode": "de_novo" },
+    { "slot": 2, "worldSpecId": "world_slice_g1_02_inland_rail", "originMode": "synthetic_lineage" },
+    { "slot": 3, "worldSpecId": "world_slice_g1_03_highland_region", "originMode": "de_novo" },
+    { "slot": 4, "worldSpecId": "world_slice_g1_04_tropical_coast", "originMode": "de_novo" },
+    { "slot": 5, "worldSpecId": "world_slice_g1_05_northern_lake", "originMode": "synthetic_lineage" }
+  ],
+  "candidateWorlds": [
+    {
+      "slot": 1,
+      "worldSpecId": "world_slice_g1_01_river_delta",
+      "path": "artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-01-candidate-v1.json",
+      "candidateDigest": "sha256:081018f61a360f7be3f34316ff486e08ebaa17112c96d80dc9ae87c1749588dd",
+      "finalPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-01.json"
+    },
+    {
+      "slot": 2,
+      "worldSpecId": "world_slice_g1_02_inland_rail",
+      "path": "artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-02-candidate-v1.json",
+      "candidateDigest": "sha256:deae0ca880e439d7c9886eca6f19bbb9626b30611b3f21363ada92b7bd742637",
+      "finalPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-02.json"
+    },
+    {
+      "slot": 3,
+      "worldSpecId": "world_slice_g1_03_highland_region",
+      "path": "artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-03-candidate-v1.json",
+      "candidateDigest": "sha256:118a2319aa81c27fe63ae52b18886c6f82f7b584fbe879ff962000f0cc9305d5",
+      "finalPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-03.json"
+    },
+    {
+      "slot": 4,
+      "worldSpecId": "world_slice_g1_04_tropical_coast",
+      "path": "artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-04-candidate-v1.json",
+      "candidateDigest": "sha256:043d0f7ea2ddbe4f4cebee0a3050ff8eb2925592fb6f207e869d455a2568d209",
+      "finalPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-04.json"
+    },
+    {
+      "slot": 5,
+      "worldSpecId": "world_slice_g1_05_northern_lake",
+      "path": "artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-05-candidate-v1.json",
+      "candidateDigest": "sha256:e5fd401648f42ab7443e3e9fc243e001e1bd1bb25995bef55262cf0bb16f15ec",
+      "finalPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-05.json"
+    }
+  ],
+  "freshnessWitness": {
+    "authoredAfterPreGSeam": true,
+    "cohortGenomeVisibilityAtAuthoring": false,
+    "cohortGenomesExistAtAuthoring": false,
+    "developmentWorldReuse": false,
+    "eventStructurePoolTuningUse": false,
+    "priorProviderGenerationUse": false,
+    "namedHumanBiographyTemplate": false,
+    "namedSourceWorkTemplate": false,
+    "futureRoleOrBenchmarkTemplate": false,
+    "note": "The five candidate WorldSpecs were authored as new structural settings for G1. Existing E/E2 worlds were consulted only for schema/mechanical shape, not copied or adapted for content."
+  },
+  "convergentPair": {
+    "worldSpecIds": [
+      "world_slice_g1_02_inland_rail",
+      "world_slice_g1_04_tropical_coast"
+    ],
+    "broadQuestion": "How to respond when formal procedures and observed everyday practice diverge.",
+    "constraint": "The broad question is protocol-only and must never be passed to Pass A, Pass B, Pass C, record repair, genome generation or cohort publication. The two worlds must remain attributable through different lived routes even if later meanings partially converge."
+  },
+  "familiarityPolicy": {
+    "version": "pr39-slice-g1-world-familiarity-v1",
+    "implementation": "tools/genesis/genesis-world-familiarity-probe.mjs",
+    "provider": "openai",
+    "model": "gpt-5.1-2025-11-13",
+    "calls": "one stateless call per candidate world",
+    "genesisContextVisible": false,
+    "worldIdentityVisible": false,
+    "scoreScale": { "minimum": 0, "maximum": 4 },
+    "coverageDomains": [
+      "household",
+      "schooling",
+      "mobility",
+      "institutions",
+      "languageContext",
+      "everydayEconomy",
+      "intellectualAccess"
+    ],
+    "materiallyUnderrepresentedRule": "densityScore <= 1 OR at least two coverage-domain scores <= 1",
+    "replacementRule": "A materially under-represented candidate is preserved as burned G1 candidate evidence and replaced by a newly authored candidate under a new manifest version before any final WorldSpec freeze. No replacement is allowed for aesthetics, personality, narrative quality or expected H performance.",
+    "allPassRule": "Only if all five candidates are not materially under-represented may the probe tool emit the five final WorldSpec files with non-null familiarityProbe witnesses."
+  },
+  "genomeBoundary": {
+    "cohortGenomeAuthored": false,
+    "cohortGenomeAssigned": false,
+    "cohortGenomeInspectionAllowedBeforeG1Final": false
+  },
+  "lifeGenerationBoundary": {
+    "finalCohortLifeGenerationAllowed": false,
+    "firstAllowedAfter": "Gate G CLEAR"
+  }
+}
