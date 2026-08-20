@@ -4,6 +4,7 @@
   "operationalMoveCommit": "36cd380812ef8af654501e4095bd3f7e36d566a4",
   "reproMoveCommit": "ed81805b9137cd211887ef1dbe142f281976b6b5",
   "suiteWiringCommit": "f7b3f08888c7ab9f42a6cc646f9bf23737229fe2",
+  "nestedPr39Commit": "d0bf173fa3d359f3532077a1f9eb5e45f2a96bad",
   "rule": "For every scientific file listed below, oldPath = oldPrefix + name and newPath = newPrefix + name. The Git blob SHA is intentionally identical before and after relocation.",
   "groups": [
     {
@@ -27,7 +28,7 @@
       "lifecycle": "repro",
       "association": "Milestone #39 symbolic-genome positive/control development evidence",
       "oldPrefix": "tools/",
-      "newPrefix": "tools/repro/pr39-genome/",
+      "newPrefix": "tools/repro/pr39/genome-control/",
       "files": [
         ["genesis-genome-control-cli.mjs", "9fd9ee47e75e89a23cae08ca59916ed30ff76daa"],
         ["genesis-genome-positive-control.mjs", "aef616748172951ad12a80e3ad233aab3169cc7b"],
@@ -39,7 +40,7 @@
       "lifecycle": "repro",
       "association": "Milestone #39 E2 A0/H6/A2/A2b/N1/N2/V1/V2 development and falsification lineage; includes failed and successful instruments",
       "oldPrefix": "tools/",
-      "newPrefix": "tools/repro/pr39-e2/",
+      "newPrefix": "tools/repro/pr39/e2/",
       "files": [
         ["genesis-rich-life-e2-a0-candidate-driver.mjs", "3b7d15b086948240160bc52ccf12eb6889295342"],
         ["genesis-rich-life-e2-a0-candidate-driver.test.mjs", "9d330a711cc32efb94856e70970782d74bf6c1b7"],

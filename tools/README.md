@@ -18,16 +18,19 @@ tools/
 │   └── causal/       current causal proof utilities
 ├── repro/
 │   ├── m1/           retained M1 proof/demo instruments
-│   ├── pr39-genome/  retained #39 genome-control instrument
-│   ├── pr39-e2/      retained #39 E2/A0/H6/A2/A2b/N1/N2/V1/V2 instruments
+│   ├── pr39/
+│   │   ├── genome-control/  retained #39 symbolic-genome control instrument
+│   │   └── e2/              retained #39 E2/A0/H6/A2/A2b/N1/N2/V1/V2 lineage
 │   ├── guardian/     retired Guardian/standing execution scaffolding
 │   └── standing/     retained standing evidence checks
 └── test-infra/       active/repro/all suite discovery and test-value auditing
 ```
 
+The #39 E2 files remain one evidence-family directory rather than being split into `a0/`, `n1/`, `n2/`, etc. Those instruments deliberately import one another as a frozen lineage; splitting their source would require a forest of aliases and make provenance harder to inspect. The filenames still expose the experimental sequence.
+
 ## Compatibility boundary links
 
-The category roots also contain a small number of Git symlinks such as `tools/services`, `tools/gates/services`, and `tools/repro/services`.
+The category roots also contain a small number of Git symlinks such as `tools/services`, `tools/gates/services`, `tools/repro/services`, and `tools/repro/pr39/services`.
 
 These are **relocation bridges**, not additional tool ownership trees. They exist because Stage 6 physically moved existing tools while deliberately preserving the bytes of retained scientific instruments. A historical file that originally imported `../services/...` can therefore keep the same source blob after relocation.
 
@@ -54,7 +57,7 @@ The path itself is not scientific authority. Protocol documents, frozen artifact
 ## What belongs where
 
 ### `repo/`
-Tools whose subject is the repository itself: validation, generated context, Markdown includes, git synchronization.
+Repository validation, generated context, Markdown includes and git synchronization.
 
 ### `inspect/`
 Read-only database/Thread/Genesis/genome/obligation inspection intended for humans or operators.
@@ -63,19 +66,19 @@ Read-only database/Thread/Genesis/genome/obligation inspection intended for huma
 Thread Editor serving and editor readability/model/server regressions.
 
 ### `model/` and `shared/`
-Provider/model smoke checks live under `model/`. Cross-cutting implementation helpers such as the provider-progress heartbeat live under `shared/` rather than being duplicated across Genesis and gate tooling.
+Provider/model smoke checks live under `model/`. Cross-cutting helpers such as provider progress live under `shared/`.
 
 ### `genesis/`
-Current non-evidentiary Genesis development tools and measurement-only characterization. This directory is not where burned E2 protocols live.
+Current non-evidentiary Genesis development tools and measurement-only characterization. Burned E2 protocols do not live here.
 
 ### `gates/`
-Current development or read-only inspection surfaces for established gate systems. A file here is not automatically authority to run a new standing cycle; the corresponding protocol still controls.
+Current development or read-only inspection surfaces for established gate systems. A path here is not authority to run a new standing cycle; the corresponding protocol still controls.
 
 ### `repro/`
-Historical scientific/proof instruments retained because Fibre preserves negative as well as positive evidence. A file under `repro/` may be executable, but it is not the current production mechanism and must not silently become one.
+Historical proof and experiment instruments retained because Fibre preserves negative as well as positive evidence. A file under `repro/` may be executable, but it is not the current production mechanism.
 
 ### `test-infra/`
-Repository mechanics for discovering the active/repro/all suites and auditing test value. These files are themselves active regressions.
+Repository mechanics for discovering active/repro/all suites and auditing test value. These files are active regressions.
 
 ## No evidence laundering
 

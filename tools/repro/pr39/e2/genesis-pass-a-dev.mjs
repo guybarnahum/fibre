@@ -1,1 +1,1 @@
-../../genesis/genesis-pass-a-dev.mjs
+../../../genesis/genesis-pass-a-dev.mjs

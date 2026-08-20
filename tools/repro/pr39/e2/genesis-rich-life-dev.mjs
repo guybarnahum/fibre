@@ -1,1 +1,1 @@
-../../genesis/genesis-rich-life-dev.mjs
+../../../genesis/genesis-rich-life-dev.mjs

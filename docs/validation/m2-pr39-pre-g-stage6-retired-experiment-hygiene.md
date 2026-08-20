@@ -15,8 +15,6 @@ Stage 5 established that the large suite was not broadly duplicated. The problem
 
 ## Physical organization
 
-The flat directory is replaced by explicit categories:
-
 ```text
 tools/
   repo/
@@ -26,9 +24,15 @@ tools/
   shared/
   genesis/
   gates/{guardian,history,causal}/
-  repro/{m1,pr39-genome,pr39-e2,guardian,standing}/
+  repro/
+    m1/
+    pr39/{genome-control,e2}/
+    guardian/
+    standing/
   test-infra/
 ```
+
+The #39 E2 source remains together under `repro/pr39/e2/`. N1/N2/V1/V2 deliberately form an import-linked historical instrument lineage; splitting them into phase directories would require dependency aliases that obscure rather than clarify provenance.
 
 No production/domain/service file moves in this stage.
 
@@ -42,25 +46,19 @@ The machine-readable record is:
 
 It records the pre-move commit, move commits, old/new prefixes and exact blob SHA for every retained M1, #39 genome-control, #39 E2, retired Guardian/standing and standing-archive file moved as scientific evidence.
 
-This matters because a path change is repository hygiene; it must not become an opportunity to rewrite an observed protocol after seeing its result.
+A path change is repository hygiene; it must not become an opportunity to rewrite an observed protocol after seeing its result.
 
 ## Compatibility links
 
-Many historical tools used `../services`, `../fixtures`, `../experiments` and similar repository-root relative imports while they lived directly under `tools/`.
+Historical tools used `../services`, `../fixtures`, `../experiments` and similar repository-root relative imports while they lived directly under `tools/`.
 
-To preserve the byte identity of retained instruments, Stage 6 adds narrow Git symlink bridges at category boundaries. Example:
-
-```text
-tools/repro/services -> ../../services
-```
-
-This allows a relocated historical file to keep the same source blob. The links are ignored by recursive test discovery because they are symlinks rather than directories.
+To preserve byte identity, Stage 6 adds narrow Git symlink bridges at category boundaries, including the nested `tools/repro/pr39/` boundary. Recursive test discovery ignores them because they are symlinks rather than directories.
 
 New tooling must not depend on new compatibility bridges. They are a relocation mechanism, not a new architecture layer.
 
 ## Active versus reproducibility tests
 
-`tools/test-infra/test-suite-lifecycle.mjs` recursively discovers the repository's test scopes and keeps an explicit path-level repro manifest.
+`tools/test-infra/test-suite-lifecycle.mjs` recursively discovers the repository test scopes and keeps an explicit path-level repro manifest.
 
 ```text
 npm test            active regression/operator suite
@@ -70,15 +68,11 @@ npm run test:all    complete retained test envelope
 
 A new test defaults to active unless explicitly classified as repro.
 
-The repro suite now includes the retired #39 E2/genome-control lineage plus individually classified M1 and retired standing/Guardian proof tests. Current History/Guardian read-only gate and development regressions remain active.
+The repro suite includes the retired #39 E2/genome-control lineage plus individually classified M1 and retired standing/Guardian proof tests. Current History/Guardian read-only gate and development regressions remain active.
 
 ## Test-value audit
 
-The Stage-5 audit moved to `tools/test-infra/` and now recursively walks tool subdirectories. Physical organization therefore cannot make a test disappear from the audit merely by nesting it.
-
-## npm/operator surface
-
-Package entry points now name the physical category paths. Current operator commands remain exposed. Historical one-off E2 execution aliases remain absent; the retained files can still be invoked directly when reproducing a documented experiment.
+The Stage-5 audit moved to `tools/test-infra/` and recursively walks tool subdirectories. Physical organization therefore cannot make a test disappear from the audit merely by nesting it.
 
 ## Evidence preserved
 
@@ -93,7 +87,7 @@ Stage 6 does not change the interpretation of any retained result:
 
 ## Verification required
 
-Before Stage 6 becomes COMPLETE, the maintainer must verify the reorganized tree locally:
+Before Stage 6 becomes COMPLETE, the maintainer must verify:
 
 ```bash
 node --disable-warning=ExperimentalWarning --test tools/test-infra/test-suite-lifecycle.test.mjs
@@ -105,7 +99,7 @@ npm run test:audit -- --check
 npm run check
 ```
 
-The test-case counts are not frozen. The required invariant is:
+Required invariant:
 
 ```text
 active ∩ repro = ∅

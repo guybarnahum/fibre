@@ -36,7 +36,7 @@ test("retired proof and experiment tests are explicit reproducibility evidence",
 test("new tests default active and the runner exposes only active, repro, or all", () => {
   assert.equal(testLifecycleForPath("tools/new-future-regression.test.mjs"), "active");
   assert.equal(
-    testLifecycleForPath("tools/repro/pr39-e2/genesis-rich-life-e2-n2.test.mjs"),
+    testLifecycleForPath("tools/repro/pr39/e2/genesis-rich-life-e2-n2.test.mjs"),
     "repro",
   );
   assert.equal(

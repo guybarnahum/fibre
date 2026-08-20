@@ -1,1 +1,1 @@
-../../model/model-api-smoke.mjs
+../../../model/model-api-smoke.mjs
