@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
+import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
 import {
   WORLD_FAMILIARITY_POLICY,
   WORLD_FAMILIARITY_SYSTEM_PROMPT,
   classifyWorldFamiliarity,
   projectWorldForFamiliarity,
+  runWorldFamiliarityProbe,
 } from "./genesis-world-familiarity-probe.mjs";
 
 const world = {
@@ -32,6 +37,24 @@ const world = {
   },
   createdAt: "2026-08-20T00:00:00Z",
 };
+
+const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
+
+function familiarityOutput() {
+  return {
+    densityScore: 4,
+    coverage: {
+      household: 4,
+      schooling: 4,
+      mobility: 4,
+      institutions: 4,
+      languageContext: 4,
+      everydayEconomy: 4,
+      intellectualAccess: 4,
+    },
+    comparisonNotes: "Broad ordinary-world coverage.",
+  };
+}
 
 test("G1 familiarity projection excludes experiment identity and authorship", () => {
   const projected = projectWorldForFamiliarity(world);
@@ -69,4 +92,84 @@ test("G1 familiarity HOLD rule is deterministic and predeclared", () => {
     true,
   );
   assert.equal(WORLD_FAMILIARITY_POLICY.thinCoverageDomainCountToHold, 2);
+});
+
+test("G1 familiarity reports per-world provider progress without changing result semantics", async () => {
+  const root = mkdtempSync(join(tmpdir(), "fibre-g1-familiarity-progress-"));
+  try {
+    const candidates = Array.from({ length: 5 }, (_, index) => {
+      const slot = index + 1;
+      const candidate = {
+        ...structuredClone(world),
+        worldSpecId: `world_test_g1_familiarity_${slot}`,
+        places: [{ placeId: `place_test_${slot}`, description: `Public neighborhood setting ${slot}.` }],
+      };
+      const path = join(root, `candidate-${slot}.json`);
+      const finalPath = join(root, `final-${slot}.json`);
+      writeFileSync(path, `${JSON.stringify(candidate, null, 2)}\n`, "utf8");
+      return {
+        slot,
+        worldSpecId: candidate.worldSpecId,
+        path,
+        candidateDigest: digest(candidate),
+        finalPath,
+      };
+    });
+
+    const manifestPath = join(root, "manifest.json");
+    const outPath = join(root, "result.json");
+    writeFileSync(
+      manifestPath,
+      `${JSON.stringify({
+        protocolVersion: "pr39-slice-g1-world-candidate-freeze-v1",
+        candidateWorlds: candidates,
+        familiarityPolicy: {
+          version: "pr39-slice-g1-world-familiarity-v1",
+          provider: "openai",
+          model: "test-model",
+        },
+      }, null, 2)}\n`,
+      "utf8",
+    );
+
+    const calls = [];
+    const adapter = {
+      async invoke(request) {
+        calls.push(request);
+        return {
+          output: familiarityOutput(),
+          provenance: { usage: null, transport: "test" },
+        };
+      },
+    };
+    const progress = [];
+
+    const result = await runWorldFamiliarityProbe({
+      provider: "openai",
+      model: "test-model",
+      manifestPath,
+      outPath,
+      adapter,
+      now: () => "2026-08-20T00:00:00Z",
+      progress: (phase, message) => progress.push({ phase, message }),
+    });
+
+    assert.equal(result.allAccepted, true);
+    assert.equal(result.results.length, 5);
+    assert.equal(result.finalWorlds.length, 5);
+    assert.equal(calls.length, 5);
+    assert.equal(progress.length, 10);
+    assert.deepEqual(
+      progress.map(({ phase }) => phase),
+      ["world 1/5", "world 1/5", "world 2/5", "world 2/5", "world 3/5", "world 3/5", "world 4/5", "world 4/5", "world 5/5", "world 5/5"],
+    );
+    assert.match(progress[0].message, /^Calling openai\/test-model for world_test_g1_familiarity_1$/);
+    assert.match(progress[1].message, /^accepted · density=4\/4$/);
+
+    const persisted = JSON.parse(readFileSync(outPath, "utf8"));
+    assert.equal(persisted.allAccepted, true);
+    assert.equal(persisted.results.length, 5);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
