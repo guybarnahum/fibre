@@ -14,6 +14,7 @@ import {
 import {
   GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,
+  genesisMeaningPartId,
   normalizeInitialPassCModelOutput,
   normalizePassCInput,
   normalizeReinterpretationPassCModelOutput,
@@ -78,6 +79,7 @@ test("no_durable_meaning remains a complete legal canonical Pass C outcome", () 
 
 test("reinterpretation keeps unchanged and none distinct legal non-revision outcomes", () => {
   const base = initialInput();
+  const memoryRef = base.targetMemory.memoryRef;
   const reinterpretation = normalizePassCInput({
     ...base,
     mode: "reinterpretation",
@@ -89,7 +91,7 @@ test("reinterpretation keeps unchanged and none distinct legal non-revision outc
     priorMeaning: {
       summary: "Quiet public places became associated with room to choose without explanation.",
       parts: [{
-        meaningPartId: "mpart_1064819a36060606f61318145745111319f006567bf340d4",
+        meaningPartId: genesisMeaningPartId({ memoryRef, ordinal: 1 }),
         meaning: "The remembered wait remained linked with privacy rather than loneliness.",
       }],
     },
