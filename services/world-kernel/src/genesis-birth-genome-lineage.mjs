@@ -32,10 +32,10 @@ function normalizeSyntheticLineageRelations(
   }
   const relations = candidates.map((candidate) => normalizeLifeRelation(candidate));
   const relationIds = new Set();
+  const relatedPartyIds = new Set();
+  const sourceOwnerIds = new Set(sourceOwners.map((owner) => owner.ownerId));
 
-  for (let index = 0; index < relations.length; index += 1) {
-    const relation = relations[index];
-    const expectedOwner = sourceOwners[index];
+  for (const relation of relations) {
     if (relationIds.has(relation.relationId)) {
       conflict(ErrorType, `duplicate Genesis life relation ${relation.relationId}`);
     }
@@ -48,13 +48,20 @@ function normalizeSyntheticLineageRelations(
     }
     if (
       relation.relatedParty.kind !== "synthetic_ancestor" ||
-      relation.relatedParty.partyId !== expectedOwner.ownerId
+      !sourceOwnerIds.has(relation.relatedParty.partyId)
     ) {
       conflict(
         ErrorType,
-        "Genesis parent-genome-source relation does not match the symbolic-genome source owner",
+        "Genesis parent-genome-source relation does not match a symbolic-genome source owner",
       );
     }
+    if (relatedPartyIds.has(relation.relatedParty.partyId)) {
+      conflict(
+        ErrorType,
+        `duplicate Genesis parent-genome-source relation for ${relation.relatedParty.partyId}`,
+      );
+    }
+    relatedPartyIds.add(relation.relatedParty.partyId);
     if (
       relation.relationKind !== "biological_parent" ||
       relation.geneticContributionRole !== "parent_genome_source"
