@@ -50,7 +50,11 @@ import {
   genesisOriginAuthorityDigest,
   normalizeGenesisOriginAuthority,
 } from "./genesis-origin-authority.mjs";
-import { normalizeGenesisOriginIntegrityFixture } from "./genesis-origin-source-integrity.mjs";
+import {
+  assertForkBoundaryAgainstCanonicalEvents,
+  assertGenesisOriginAuthorityWitness,
+  normalizeGenesisOriginIntegrityFixture,
+} from "./genesis-origin-source-integrity.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -225,19 +229,11 @@ function assertBirthOriginWitnessesInTransaction(database, manifest, originFixtu
       ? fixture.sourceBundle.consentAuthorityRef
       : fixture.sourceBundle.subjectStatusAttestationRef;
     assertExactReferenceList("manifest.sourceBundleRefs", manifest.sourceBundleRefs, [authorityRef]);
-    const resolved = originAuthorityInTransaction(database, authorityRef);
-    const expectedKind = fixture.originKind === "echo"
-      ? "living_source_consent"
-      : "subject_status_attestation";
-    if (resolved.record.authorityKind !== expectedKind) {
-      throw new GenesisConflictError(`${fixture.originKind} authority ${authorityRef} has the wrong authority kind`);
-    }
-    if (resolved.record.sourcePartyId !== fixture.sourceBundle.sourcePartyId) {
-      throw new GenesisConflictError(`${fixture.originKind} authority ${authorityRef} belongs to another source party`);
-    }
-    if (resolved.record.subjectStatus !== fixture.sourceBundle.subjectStatus) {
-      throw new GenesisConflictError(`${fixture.originKind} authority ${authorityRef} does not attest the fixture subject status`);
-    }
+    assertGenesisOriginAuthorityWitness({
+      originFixture: fixture,
+      resolvedAuthority: originAuthorityInTransaction(database, authorityRef),
+      ErrorType: GenesisConflictError,
+    });
     return fixture;
   }
 
@@ -250,24 +246,11 @@ function assertBirthOriginWitnessesInTransaction(database, manifest, originFixtu
       manifest.parentOrAncestorRefs,
       [fixture.fork.sourceThreadRef],
     );
-    const events = canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef);
-    const divergenceEvent = events.find((event) => event.sequence === fixture.fork.divergenceSequence);
-    if (divergenceEvent === undefined) {
-      throw new GenesisConflictError(
-        `fork source Thread has no event at divergence sequence ${fixture.fork.divergenceSequence}`,
-      );
-    }
-    if (divergenceEvent.eventId !== fixture.fork.divergenceEventRef) {
-      throw new GenesisConflictError("fork divergenceEventRef does not match canonical source chronology");
-    }
-    const canonicalPrefix = events
-      .filter((event) => event.sequence <= fixture.fork.divergenceSequence)
-      .map((event) => event.eventId);
-    assertExactReferenceList(
-      "originFixture.fork.inheritedHistoryEventRefs",
-      fixture.fork.inheritedHistoryEventRefs,
-      canonicalPrefix,
-    );
+    assertForkBoundaryAgainstCanonicalEvents({
+      originFixture: fixture,
+      canonicalEvents: canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef),
+      ErrorType: GenesisConflictError,
+    });
     return fixture;
   }
 
