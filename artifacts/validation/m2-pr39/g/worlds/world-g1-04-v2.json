@@ -1,0 +1,89 @@
+{
+  "worldSpecId": "world_slice_g1_04_accra",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_g1v2_04_home",
+      "description": "A compact family home on a busy residential-commercial street in Accra, with small businesses, food vendors and shared outdoor space nearby."
+    },
+    {
+      "placeId": "place_g1v2_04_school",
+      "description": "A Ghanaian public day school in Accra with ordinary classrooms, science facilities, a library or reading room, sports grounds and student clubs whose availability varies with staffing."
+    },
+    {
+      "placeId": "place_g1v2_04_trotro",
+      "description": "A busy trotro and shared-taxi junction linking residential districts with schools, markets, workplaces and other parts of Accra."
+    },
+    {
+      "placeId": "place_g1v2_04_market",
+      "description": "A major Accra market environment with food, fabric, electronics, household goods, repair services and many independent traders."
+    },
+    {
+      "placeId": "place_g1v2_04_community_center",
+      "description": "A neighborhood community setting used for tutoring, youth activities, public-health sessions, local meetings, performances or occasional skills workshops."
+    }
+  ],
+  "householdShape": "Two caregivers, the subject and two cousins share a household in Accra; one cousin is older and one is younger, and their parent works in another Ghanaian city for long periods.",
+  "familyRelations": [
+    "The cousins are treated as part of the daily household even though their parent remains involved from another city.",
+    "Several relatives live elsewhere in Greater Accra and are seen irregularly."
+  ],
+  "languages": [
+    "English",
+    "Twi"
+  ],
+  "materialCircumstances": "Household income is adequate for essentials but uneven across the year; school costs, transport, repairs, utilities and support for relatives require planning and tradeoffs.",
+  "mobilityPattern": "Daily movement relies on walking, trotros and shared taxis; occasional trips reach central markets, the coast, workplaces and relatives in other parts of Greater Accra or other Ghanaian cities.",
+  "schoolingOrCommunityContext": "School, market commerce, neighborhood religious and secular groups, community programs, local media and extended family expose the subject to people with different ages, occupations and viewpoints.",
+  "culturalContext": "Accra, Greater Accra Region, Ghana — A dense tropical coastal capital where extended households, schools, markets, trotros, shared taxis, local media and community institutions overlap. The household lives in Accra, Ghana during 2004–2026, amid rapid urban growth, English-language formal institutions, multilingual everyday life, trotro-based mobility, expanding mobile/digital services, coastal commerce and diverse religious/secular public life. These are concrete lived affordances, not personality or moral conclusions. Concrete cultural anchors: English is the formal language of schooling and many civic institutions, while Twi is common in household, market, media and everyday conversational contexts without being the only Ghanaian language present in the city. Trotro minibuses, shared taxis, walking and traffic congestion are ordinary parts of urban mobility. Open markets, street-level commerce, repair services and mobile-phone commerce are visible parts of household economic life. Christian, Muslim, traditional and secular practices are all publicly visible in Accra; the household is not assigned a faith by the WorldSpec. Coastal heat, seasonal rains and Harmattan conditions affect clothing, transport and public space at different times of year. Extended-family obligations and intercity ties are available social facts, but the WorldSpec does not prescribe how the subject values or responds to them.",
+  "availableInstitutions": [
+    "ghanaian_public_school",
+    "accra_market_network",
+    "trotro_network",
+    "shared_taxi",
+    "community_programs",
+    "public_health_service",
+    "local_media"
+  ],
+  "intellectualEnvironment": "School materials, Ghanaian and international radio/television, internet and mobile access, market knowledge, technical repair practice, public-health information, music and performance, religious/philosophical texts, family discussion and civic disagreement are available without a prescribed hierarchy.",
+  "affordedRoles": [
+    "caregiver",
+    "cousin",
+    "relative",
+    "peer",
+    "teacher",
+    "neighbor",
+    "librarian",
+    "mentor",
+    "vendor",
+    "technician"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_slice_g_world_authoring",
+    "sourcesConsulted": [
+      {
+        "kind": "intergovernmental",
+        "citation": "OECD, Transport systems in Ghana, describing walking/trotro access to markets, healthcare and primary schools in Accra: https://www.oecd.org/en/topics/sub-issues/cities-climate-and-development/transport-systems-in-ghana-towards-sustainable-accessible-and-inclusive-mobility.html",
+        "accessedAt": "2026-08-20T19:17:31Z"
+      },
+      {
+        "kind": "public_news_agency",
+        "citation": "Ghana News Agency, everyday trotro life in Accra: https://gna.org.gh/2025/07/one-hour-one-ride-trotro-life-in-accra/",
+        "accessedAt": "2026-08-20T19:17:31Z"
+      }
+    ],
+    "abstractionMethod": "G1-v2 specificity correction: the v1 generic tropical coastal-city structure was preserved as burned evidence, then re-authored as Accra, Ghana using transport and public-life sources. No cohort genome, target personality, required conclusion or H outcome was consulted.",
+    "relocationWitness": "The household mechanics could exist in another West African coastal city, but relocation would now change the World because Accra, Ghanaian English/Twi context, trotro mobility, market ecology and Greater Accra family geography are intentional factual inputs.",
+    "familiarityProbe": {
+      "probedAt": "2026-08-20T19:36:37.222Z",
+      "model": "openai/gpt-5.1-2025-11-13",
+      "densityScore": 4,
+      "comparisonNotes": "This setting is in a real-world, contemporary urban Ghanaian context (Accra, 2004–2026) with well-documented institutions: public day schools, trotro/shared-taxi transport, open markets, community programs, and mixed English–Twi language use. A general language model is likely to have solid background knowledge of Ghana as a lower-middle-income West African country, Accra as a dense coastal capital, and common features like trotros, open markets, uneven household income, and extended-family ties. However, detailed, fine-grained everyday practices (specific school routines, exact trotro junction dynamics, neighborhood-level community programming, and nuanced Twi–English code-switching) are less represented in typical training data than, say, North American or Western European urban life. So the model can reliably sketch plausible daily life, institutions, and economic patterns, but would still need to generalize or lightly fabricate some specifics rather than draw on deeply saturated cultural detail. Overall familiarity is good but not maximal, hence a 4 rather than 5 across categories."
+    },
+    "createdAt": "2026-08-20T19:17:31Z"
+  },
+  "createdAt": "2026-08-20T19:17:31Z"
+}
