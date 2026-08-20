@@ -1,0 +1,35 @@
+{
+  "header": {
+    "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247",
+    "owner": { "kind": "thread", "ownerId": "thr_pr39_g2_02" },
+    "genesisId": "genesis_pr39_g2_02",
+    "originKind": "recombined",
+    "inheritancePolicy": { "id": "fibre_symbolic_genome", "version": "1" },
+    "sourceEligibility": {
+      "basis": "symbolic_genome_sources_v1",
+      "sourceGenomeRefs": ["genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696"],
+      "sourceOwners": [
+        { "kind": "synthetic_ancestor", "ownerId": "ancestor_pr39_g2_02_a" },
+        { "kind": "synthetic_ancestor", "ownerId": "ancestor_pr39_g2_02_b" }
+      ]
+    },
+    "recombinationWitness": {
+      "policy": { "id": "deterministic_textual_crossover", "version": "1" },
+      "sourceGenomeRefs": ["genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696"],
+      "sourceGenomeDigests": ["sha256:e650b92cb66fbc85ecf1b1c03b64b144643193932084646be8890a0ed7922bc7", "sha256:2839902cedc39c4740a927165bc656a4ad5d75b8392cb99028f6a7f9847cadcd"],
+      "selectionSeed": "pr39-g2-slot2-lineage-v1",
+      "selectionDigest": "sha256:296c5224bb294101873b5a1e45c47dc617b507cdab6afc50461088cb3a6d2744"
+    },
+    "createdAt": "2026-08-20T20:00:00Z"
+  },
+  "loci": [
+    { "locusId": "gloc_d0622facba1fe7c456b2e93ac945308ad08ab928", "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247", "ordinal": 1, "value": "changes tactics quickly after an approach fails twice", "provenance": { "kind": "inherited", "sourceGenomeRef": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "sourceLocusRef": "gloc_d9c1a217054c0aa85848f31f9edf592c37bb70af", "mutationRef": null } },
+    { "locusId": "gloc_def08fd48314d1cdc5b97cf617a9d742ab95e47e", "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247", "ordinal": 2, "value": "looks for a concrete counterexample when a generalization feels too easy", "provenance": { "kind": "inherited", "sourceGenomeRef": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "sourceLocusRef": "gloc_9846365b47579a097ccd7327f2fdec1b07c6f1c3", "mutationRef": null } },
+    { "locusId": "gloc_7f5cfa75993acf0845a4d848808b5b69c538cb8e", "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247", "ordinal": 3, "value": "shows care by taking on practical burdens without making a display of it", "provenance": { "kind": "inherited", "sourceGenomeRef": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "sourceLocusRef": "gloc_1687c44cdfaaff1df903305b0b71fa39e02b538a", "mutationRef": null } },
+    { "locusId": "gloc_7567d11f8f284fa87d5ffd9e8306494c6e534e6a", "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247", "ordinal": 4, "value": "seeks conversation after long stretches of solitary concentration", "provenance": { "kind": "inherited", "sourceGenomeRef": "genome_612c1ef9784a499c81051eef81df9334a1d7a2af", "sourceLocusRef": "gloc_cf3afb12b52a8ed9faff84d34f6b186696887602", "mutationRef": null } },
+    { "locusId": "gloc_a28ebbd1732a57f30f85d48f173ed1f08f8f22d5", "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247", "ordinal": 5, "value": "tries a different route when routine has become automatic", "provenance": { "kind": "inherited", "sourceGenomeRef": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "sourceLocusRef": "gloc_82ff835b614dd5a952002972b1be68139b29e935", "mutationRef": null } },
+    { "locusId": "gloc_7592092c82021005ff956f473750d29a79a45de3", "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247", "ordinal": 6, "value": "becomes more persistent when someone else is depending on completion", "provenance": { "kind": "inherited", "sourceGenomeRef": "genome_812d4ced7592f46c5eb2c4b55bd235940ebee696", "sourceLocusRef": "gloc_06e83e9986694f12e75044ad2f029ee5273adf74", "mutationRef": null } }
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:548357c6563e7b7a21f9377673be62f5441b16c070d7af01cf5adaa926bad73f"
+}
