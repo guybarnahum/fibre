@@ -281,6 +281,24 @@ test("Stage 8 rejects a genome owned by another Thread and leaves no live child"
     assertNoPublishedChild(databasePath);
   }));
 
+test("Stage 8 rejects a genome from another Genesis and leaves no live child", () =>
+  withDatabase((databasePath) => {
+    const set = genomeSet({ genesisId: "gen_pre_g_stage8_other_genesis" });
+    recordGenomes(databasePath, set);
+    const genesis = setupGenesis(databasePath);
+    const thread = childThread();
+    assert.throws(
+      () => genesis.publishBirth({
+        manifest: manifest(set.child.header.genomeId),
+        thread,
+        lifeRelations: relations(thread),
+      }),
+      /belongs to another genesisId/,
+    );
+    genesis.close();
+    assertNoPublishedChild(databasePath);
+  }));
+
 test("Stage 8 rejects manifest or #38 relation source-owner substitution", () =>
   withDatabase((databasePath) => {
     const set = genomeSet();
