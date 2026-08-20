@@ -33,6 +33,7 @@ test("test-value audit distinguishes semantic tests from mechanical tombstones a
     `);
     put(root, "services/world-kernel/test/comment-only.test.mjs", `
       // Coverage moved to the canonical file.
+      // Old test("retired boundary", () => {}) is not executable evidence.
       /* This path is intentionally retired. */
     `);
     put(root, "services/world-kernel/test/canonical.test.mjs", `
@@ -61,10 +62,14 @@ test("test-value audit distinguishes semantic tests from mechanical tombstones a
       declaredTestCalls: 0,
     }]);
 
+    const commentOnly = audit.records.find((record) => record.path === "services/world-kernel/test/comment-only.test.mjs");
+    assert.equal(commentOnly.declaredTestCalls, 0);
+
     const dynamic = audit.records.find((record) => record.path === "tools/dynamic.test.mjs");
     assert.equal(dynamic.zeroDeclaredTests, false);
     assert.equal(dynamic.declaredTestCalls, 1);
     assert.equal(dynamic.commentOnly, false);
+    assert.equal(dynamic.family, "experimental-or-repo-tooling");
   }));
 
 test("test-value audit reports byte-identical test files without treating shared titles as proof of duplication", () =>
