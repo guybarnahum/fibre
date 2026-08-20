@@ -58,8 +58,8 @@ That verification baseline applies to the reviewed Gate-F head. Every seam stage
 | Stage | Work | Status | Exit condition |
 | --- | --- | --- | --- |
 | 0 | Seal Gate F | **COMPLETE** | Gate-F verdict, evidence, negative runs, selectivity finding and carry-forwards are durably recorded |
-| 1 | Pass-C doctrine audit | **IMPLEMENTED / VERIFY** | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal; local full verification green |
-| 2 | Memory/meaning instrumentation | PENDING | citation share and meaning-rate characterization exist without becoming admission gates |
+| 1 | Pass-C doctrine audit | **COMPLETE** | Pass-C contract/prompts/tests consistently express meaning formation; `no_durable_meaning` remains genuinely legal; local full verification green |
+| 2 | Memory/meaning instrumentation | **IMPLEMENTED / VERIFY** | citation share and meaning-rate characterization exist without becoming admission gates; local full verification green |
 | 3 | Slice-F canonical delegation | PENDING | publication uses one semantic authority for source/origin integrity and known mutation gaps are protected |
 | 4 | Older C/D carry-forwards | PENDING | long Thread-ID predicate budget and historical-memory read-policy drift are closed with regressions |
 | 5 | Test-value audit | PENDING | tests are inventoried by invariant; keep/consolidate/archive/delete decisions and coverage gaps are explicit |
@@ -114,14 +114,41 @@ Finding:
 
 - the canonical compiler contract is already constitutive: Pass C creates what one remembered experience durably came to mean;
 - the Pass-C domain already makes `no_durable_meaning` first-class and keeps `revised`, `unchanged`, and `none` distinct for reinterpretation;
-- the burned N1/N2 development prompt is epistemically worded (`Decide whether this memory has durable meaning`) and must remain unchanged historical evidence;
+- the burned N1/N2 development prompt is epistemically worded (`Decide whether this memory has durable meaning`) and remains unchanged historical evidence;
 - there is no production Pass-C model runner under `services/` using that historical prompt;
 - canonical future-facing constitutive initial/reinterpretation prompts and frozen hashable schemas now live in `services/world-kernel/src/genesis-pass-c-prompts.mjs`;
 - a seam regression explicitly prevents the historical prompt from becoming the canonical future prompt.
 
-Stage 1 deliberately does **not** rerun N1/N2 or claim that their 37/37 durable-meaning outcomes were produced by the new prompt. Meaning-rate characterization belongs to Stage 2 and remains non-gating.
+Stage 1 deliberately does **not** rerun N1/N2 or claim that their 37/37 durable-meaning outcomes were produced by the new prompt.
 
-Local verification is still required before Stage 1 becomes `COMPLETE`.
+Local maintainer verification after Stage 1:
+
+```text
+full tests                     573/573 pass
+repository/world-seed check    green
+```
+
+Stage 1 is therefore **COMPLETE**.
+
+## Stage 2 — memory/meaning characterization
+
+Characterization record:
+
+[`m2-pr39-memory-meaning-characterization.md`](m2-pr39-memory-meaning-characterization.md)
+
+Implementation:
+
+- `services/world-kernel/src/genesis-memory-meaning-characterization.mjs` defines one shared pure characterization over visible-history count, memory outcome, cited episode refs, and initial meaning outcome;
+- citation share is `citedEpisodeCount / visibleEpisodeCount` for remembered observations;
+- aggregate and by-visible-count reporting include cited-episode count and citation-share mean/min/max;
+- the funnel explicitly reports remembered/not-remembered and durable/no-durable meaning rates;
+- every result carries `admissionVerdict: null` and explicitly prohibits use as an admission gate or regeneration trigger;
+- `tools/genesis-memory-meaning-n2-characterization.mjs` adapts the sealed N2 artifact without rewriting it;
+- the Stage-2 regression uses both synthetic arithmetic and the sealed N2 artifact to prove the measurement operates at the intended resolution.
+
+Stage 2 does not define a healthy citation-share target or a healthy durable-meaning rate. Those remain characterization evidence only.
+
+Local verification is required before Stage 2 becomes `COMPLETE`.
 
 ## Hard seam rules
 
@@ -140,9 +167,9 @@ Model-free code/test/doc work required to close the seam remains allowed.
 ## Seam exit checklist
 
 ```text
-[~] Pass-C semantics audited and contract-conformant — implementation landed; local verification pending
-[~] no_durable_meaning remains genuinely possible — domain + regression landed; local verification pending
-[ ] citation-share selectivity diagnostic available
+[x] Pass-C semantics audited and contract-conformant
+[x] no_durable_meaning remains genuinely possible
+[~] citation-share selectivity diagnostic available — implementation landed; local verification pending
 [ ] Slice-F duplicated semantic authority removed or equivalently sealed
 [ ] known Slice-F mutation gaps killed by tests
 [ ] long Thread-ID publication risk closed
