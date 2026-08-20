@@ -51,7 +51,7 @@ artifacts/validation/m2-pr39/g/
 
 The storage meaning is fixed:
 
-- `worlds/` contains the five frozen final WorldSpec JSON records after G1; candidate pre-familiarity records may remain under `worlds/candidates/` as evidence;
+- `worlds/` contains final WorldSpec JSON records after the applicable G1 version clears; earlier candidates/finals remain preserved as historical evidence;
 - `genomes/` contains frozen cohort and synthetic-parent genome artifacts after G2;
 - `protocol/` contains machine-readable assignment/configuration/rater/verdict freezes as they become exact;
 - `cohort/` remains empty until Gate G is CLEAR, then may contain frozen exports/snapshots of the generated experimental Threads;
@@ -70,13 +70,13 @@ Frozen ordering:
 ```text
 1. author candidate WorldSpecs with no cohort-genome visibility
 2. run the predeclared cold familiarity handling on candidate worlds
-3. replace a materially under-represented candidate only under that predeclared familiarity rule
-4. freeze the five final WorldSpecs
+3. preserve/re-version any rejected or later-invalidated candidate/final world; never silently rewrite it
+4. freeze the five accepted final WorldSpecs
 5. only then create/freeze/assign cohort genomes and synthetic-parent genomes
 6. never backfill WorldSpec household/culture/geography facts from loci
 ```
 
-A final WorldSpec is burned for replacement once genomes have been seen. If a later defect is discovered, preserve the failed protocol/cohort and version a new experiment rather than silently rewriting G.
+A final WorldSpec is burned for replacement once genomes have been seen. Before genomes exist, a genuine authoring defect may be corrected only by preserving the prior artifacts and versioning new candidates/results. It may not be used as an opportunity to tune expected personality or H performance.
 
 ### Freshness
 
@@ -88,14 +88,14 @@ All five final WorldSpecs must be new to the final cohort:
 - not adapted by changing names on a burned development world;
 - no named source work, source character or human biography is used as the hidden template.
 
-World authorship may use factual structural knowledge, but source instances never enter Genesis cognition.
+World authorship may use factual structural and place-specific public knowledge, with source witnesses preserved. Source instances never enter Genesis cognition as biography templates.
 
-### World variation
+### World specificity and variation
 
 The five worlds must vary primarily in factual lived affordances:
 
 ```text
-era / geography
+era / concrete geography
 economy and material circumstances
 household/family shape
 language environment
@@ -105,11 +105,17 @@ intellectual environment
 origin mode
 ```
 
-They must not directly encode:
+Current final-cohort authoring is additionally governed by [`../architecture/world-context-specificity-v1.md`](../architecture/world-context-specificity-v1.md):
+
+> **A World must be particular enough to produce a particular past without writing a particular personality.**
+
+Each current candidate must name an actual locality and country, ground its places/institutions/mobility/language use there, preserve factual provenance, and carry multiple ordinary cultural/institutional anchors. Geography/culture may constrain available experiences but may not directly encode:
 
 ```text
 finished personality
 required moral/political conclusion
+religious or ethnic self-identification
+competence, dignity or willingness
 future profession or benchmark
 required formative event
 required adversity/trauma
@@ -120,14 +126,14 @@ adult behavior policy
 
 ### Convergent pair
 
-The convergent pair is frozen before cohort genomes exist:
+The convergent pair remains slots 2 and 4 across the G1 specificity correction. In the current v2 candidate set those are:
 
 ```text
-world_slice_g1_02_inland_rail
-world_slice_g1_04_tropical_coast
+world_slice_g1_02_lodz
+world_slice_g1_04_accra
 ```
 
-The predeclared broad question is:
+The predeclared broad question remains:
 
 > **How to respond when formal procedures and observed everyday practice diverge.**
 
@@ -137,26 +143,49 @@ H will judge whether the pair can converge while remaining attributable through 
 
 ## G1 — final WorldSpecs
 
-Status: **IN PROGRESS — candidate freeze complete; cold familiarity execution pending.**
+Status: **IN PROGRESS — v1 preserved/superseded; concrete v2 candidates frozen; v2 cold familiarity rerun pending.**
 
-Record: [`m2-pr39-slice-g1-world-candidate-freeze.md`](m2-pr39-slice-g1-world-candidate-freeze.md).
+Records:
 
-Machine-readable candidate/protocol authority:
+- historical v1: [`m2-pr39-slice-g1-world-candidate-freeze.md`](m2-pr39-slice-g1-world-candidate-freeze.md)
+- specificity correction: [`m2-pr39-slice-g1-geographic-specificity-correction.md`](m2-pr39-slice-g1-geographic-specificity-correction.md)
+
+### G1-v1 — preserved finding
+
+The first five generic city-archetype candidates were run through the predeclared familiarity screen and the maintainer reported all five accepted at `density=4/4`. Their candidates, final WorldSpecs, result and presentations remain frozen evidence.
+
+Human review then found a separate authoring defect: they were familiar but geographically/culturally interchangeable. The familiarity instrument was not intended to detect that property. G1-v1 is therefore preserved but superseded as the final cohort input.
+
+### G1-v2 — current candidate authority
+
+No G2 cohort genome had been authored or assigned when the defect was found. The corrected five candidates preserve the original age, origin composition, household/comparative structure and convergent-pair slots, but make the world context concrete:
 
 ```text
-artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v1.json
-artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-01-candidate-v1.json
-artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-02-candidate-v1.json
-artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-03-candidate-v1.json
-artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-04-candidate-v1.json
-artifacts/validation/m2-pr39/g/worlds/candidates/world-g1-05-candidate-v1.json
+slot 1  Cần Thơ, Vietnam                  de_novo
+slot 2  Łódź, Poland                      synthetic_lineage
+slot 3  Cusco, Peru                       de_novo
+slot 4  Accra, Ghana                      de_novo
+slot 5  Greater Sudbury, Ontario, Canada  synthetic_lineage
 ```
 
-The candidate manifest freezes exact candidate digests, freshness witness, 3/2 origin assignment, common age/chronology, convergent pair and the cold familiarity interpretation rule before the first familiarity output exists.
+Machine-readable current authority:
 
-The cold familiarity worker is pinned to `openai/gpt-5.1-2025-11-13`, one stateless call per candidate. The model-visible surface is an anonymized ordinary-setting projection and excludes experiment identity, WorldSpec/place IDs, authorship, genomes, personality/future targets, the convergent-pair hypothesis and downstream diagnostics.
+```text
+artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v2.json
 
-Predeclared material-under-representation HOLD:
+artifacts/validation/m2-pr39/g/worlds/candidates-v2/
+  world-g1-01-candidate-v2.json
+  world-g1-02-candidate-v2.json
+  world-g1-03-candidate-v2.json
+  world-g1-04-candidate-v2.json
+  world-g1-05-candidate-v2.json
+```
+
+The v2 manifest freezes exact candidate digests, factual source witnesses, unchanged 3/2 origin assignment, common age/chronology, unchanged convergent-pair hypothesis and the no-genome/no-life boundary before the v2 familiarity rerun.
+
+The cold familiarity **instrument and thresholds remain unchanged** from v1: `openai/gpt-5.1-2025-11-13`, one stateless call per candidate. Fibre/Genesis identity, experiment WorldSpec/place IDs, authorship, genomes, personality/future targets, convergent-pair hypothesis and downstream diagnostics remain outside the model-visible surface. Concrete locality/country and cultural facts are intentionally visible because the question is whether the model has enough ordinary-world coverage to instantiate those settings without fabricating basic structure.
+
+Predeclared material-under-representation HOLD remains:
 
 ```text
 densityScore <= 1
@@ -164,27 +193,40 @@ OR
 at least two coverage-domain scores <= 1
 ```
 
-If any candidate hits that rule, preserve it and its result as burned G1 evidence and version a newly authored replacement before final world freeze. Do not replace a world for aesthetics or expected H performance.
+If any v2 candidate hits that rule, preserve it and its result as burned evidence and version a newly authored replacement before final world freeze. Do not replace a world for aesthetics or expected H performance.
 
-If all five clear, the probe emits the five final WorldSpec JSON records under `artifacts/validation/m2-pr39/g/worlds/`, each with a non-null familiarity witness, and records their final digests in the result artifact.
+If all five clear, the probe emits:
+
+```text
+artifacts/validation/m2-pr39/g/worlds/world-g1-01-v2.json
+artifacts/validation/m2-pr39/g/worlds/world-g1-02-v2.json
+artifacts/validation/m2-pr39/g/worlds/world-g1-03-v2.json
+artifacts/validation/m2-pr39/g/worlds/world-g1-04-v2.json
+artifacts/validation/m2-pr39/g/worlds/world-g1-05-v2.json
+
+artifacts/validation/m2-pr39/g/results/g1-world-familiarity-v2.json
+```
 
 G1 exit requires:
 
 ```text
-five canonical final WorldSpec JSON records
+five canonical concrete final WorldSpec v2 JSON records
 one common exact entry age / chronology policy
 freshness witness for each world
 factual source/abstraction authorship witness
-cold familiarity probe policy + result for each candidate
-final world digests
+cold familiarity policy + v2 result for each candidate
+final v2 world digests
 convergent-pair designation
+no cohort genome existed before final v2 world freeze
+exact v2 artifacts preserved in Git
+new v2 per-World presentations derived only after accepted final v2 WorldSpecs exist
 ```
 
 No cohort genome may be authored or assigned before G1 is COMPLETE.
 
 ## G2 — cohort genomes and specificity ceiling
 
-Status: **PENDING; blocked on G1**.
+Status: **PENDING; blocked on G1-v2**.
 
 After the worlds are frozen genome-blind:
 
@@ -384,7 +426,8 @@ Before asking for CLEAR, the packet must make it possible to verify:
 9. all numerical thresholds/uncertainty rules predate H;
 10. repair/rejection rates will remain visible;
 11. no richness/personality tendency became an admission gate;
-12. no final-cohort life has yet been generated.
+12. no final-cohort life has yet been generated;
+13. current final worlds are concretely situated and not generic cultural archetypes.
 
 ## Current execution boundary
 
@@ -392,9 +435,10 @@ Before asking for CLEAR, the packet must make it possible to verify:
 Pre-G seam   COMPLETE
 Stage 9      CLEAR
 G0           FROZEN — protocol shell / sequencing / artifact home
-G1           IN PROGRESS — candidates + policy frozen; five cold familiarity calls next
-G2–G6        BLOCKED on G1
+G1-v1        PRESERVED — familiarity CLEAR; geographic specificity insufficient
+G1-v2        IN PROGRESS — concrete candidates frozen; five cold familiarity calls next
+G2–G6        BLOCKED on accepted/preserved G1-v2 finals
 H            FORBIDDEN until Gate G CLEAR
 ```
 
-Only the five cold familiarity calls frozen by G1 are currently authorized. No cohort genome generation/assignment and no final-cohort life-generation call is authorized yet.
+Only the five v2 cold familiarity calls frozen by `g1-world-candidate-freeze-v2.json` are currently authorized. No cohort genome generation/assignment and no final-cohort life-generation call is authorized yet.
