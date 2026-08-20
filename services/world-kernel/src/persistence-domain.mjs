@@ -15,6 +15,7 @@ import {
   assertNonEmpty,
   assertPlainObject,
   assertStringArray,
+  boundedThreadScopedId,
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
@@ -91,11 +92,21 @@ export function validateCommand(command) {
 }
 
 export function commandDigest(command) { return `sha256:${sha256(canonicalJson(command))}`; }
-export function eventIdForCommand(command, digest) { return `evt_${command.threadId}_${digest.slice(7, 31)}`; }
+export function eventIdForCommand(command, digest) {
+  return boundedThreadScopedId({
+    prefix: "evt",
+    threadId: command.threadId,
+    suffix: digest.slice(7, 31),
+  });
+}
 function seedEventId(thread) {
   const seedIdentity = structuredClone(thread);
   delete seedIdentity.provenance.lastEventId;
-  return `evt_${thread.threadId}_seed_${sha256(canonicalJson(seedIdentity)).slice(0, 24)}`;
+  return boundedThreadScopedId({
+    prefix: "evt",
+    threadId: thread.threadId,
+    suffix: `seed_${sha256(canonicalJson(seedIdentity)).slice(0, 24)}`,
+  });
 }
 export function normalizeSeedSnapshot(thread) {
   const normalized = structuredClone(thread);
