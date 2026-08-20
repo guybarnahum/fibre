@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as ts from "typescript";
 
 const DEFAULT_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
@@ -73,33 +74,55 @@ function testFiles(root = DEFAULT_ROOT) {
   return result.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function stripComments(source) {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|\s)\/\/.*$/gm, "$1")
-    .trim();
+function isTestCallee(expression) {
+  if (ts.isIdentifier(expression)) return expression.text === "test" || expression.text === "it";
+  if (!ts.isPropertyAccessExpression(expression)) return false;
+  if (!ts.isIdentifier(expression.expression)) return false;
+  if (!new Set(["test", "it"]).has(expression.expression.text)) return false;
+  return new Set(["only", "skip", "todo"]).has(expression.name.text);
 }
 
-function declaredTestCount(source) {
-  return [...source.matchAll(/\b(?:test|it)(?:\.(?:only|skip|todo))?\s*\(/g)].length;
-}
-
-function importedTestFiles(source) {
-  const imports = new Set();
-  for (const match of source.matchAll(/\bfrom\s+["']([^"']+\.test\.mjs)["']/g)) {
-    imports.add(match[1]);
-  }
-  for (const match of source.matchAll(/\bimport\s+["']([^"']+\.test\.mjs)["']/g)) {
-    imports.add(match[1]);
-  }
-  return [...imports].sort();
-}
-
-function testTitles(source) {
+function analyzeTestSource(source, path) {
+  const sourceFile = ts.createSourceFile(
+    path,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  let declaredTestCalls = 0;
   const titles = [];
-  const pattern = /\b(?:test|it)(?:\.(?:only|skip|todo))?\s*\(\s*(["'`])([^\n]*?)\1/g;
-  for (const match of source.matchAll(pattern)) titles.push(match[2]);
-  return titles;
+  const imports = new Set();
+
+  function visit(node) {
+    if (
+      ts.isImportDeclaration(node)
+      && ts.isStringLiteral(node.moduleSpecifier)
+      && node.moduleSpecifier.text.endsWith(".test.mjs")
+    ) {
+      imports.add(node.moduleSpecifier.text);
+    }
+
+    if (ts.isCallExpression(node) && isTestCallee(node.expression)) {
+      declaredTestCalls += 1;
+      const [firstArgument] = node.arguments;
+      if (
+        firstArgument !== undefined
+        && (ts.isStringLiteral(firstArgument) || ts.isNoSubstitutionTemplateLiteral(firstArgument))
+      ) {
+        titles.push(firstArgument.text);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+
+  return {
+    declaredTestCalls,
+    testTitles: titles,
+    importedTestFiles: [...imports].sort(),
+    commentOnly: sourceFile.statements.length === 0,
+  };
 }
 
 function familyFor(path) {
@@ -140,20 +163,18 @@ function duplicateGroups(records, selector) {
 export function buildTestValueAudit(root = DEFAULT_ROOT) {
   const records = testFiles(root).map(({ scope, path }) => {
     const source = readFileSync(path, "utf8");
-    const stripped = stripComments(source);
-    const declared = declaredTestCount(stripped);
-    const importedTests = importedTestFiles(stripped);
+    const analysis = analyzeTestSource(source, normalizedPath(root, path));
     return {
       path: normalizedPath(root, path),
       scope,
       family: familyFor(normalizedPath(root, path)),
       bytes: Buffer.byteLength(source, "utf8"),
       sha256: sha256(source),
-      declaredTestCalls: declared,
-      testTitles: testTitles(stripped),
-      importedTestFiles: importedTests,
-      commentOnly: stripped.length === 0,
-      zeroDeclaredTests: declared === 0,
+      declaredTestCalls: analysis.declaredTestCalls,
+      testTitles: analysis.testTitles,
+      importedTestFiles: analysis.importedTestFiles,
+      commentOnly: analysis.commentOnly,
+      zeroDeclaredTests: analysis.declaredTestCalls === 0,
     };
   });
 
@@ -181,7 +202,7 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
     runnerContract: {
       source: "package.json#scripts.test",
       scopes: TEST_SCOPES.map(({ scope, directory }) => ({ scope, glob: `${directory}/*.test.mjs` })),
-      note: "declaredTestCalls is a static source count, not the Node test runner's runtime test total.",
+      note: "declaredTestCalls is an AST-based static source count, not the Node test runner's runtime test total.",
     },
     totals: {
       files: records.length,
