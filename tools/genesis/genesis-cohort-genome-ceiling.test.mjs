@@ -20,19 +20,29 @@ function pairResult(pair, correct) {
   };
 }
 
-test("G2 frozen cohort packet verifies worlds, genomes, lineage replay, and pair balance", () => {
+test("G2 frozen cohort packet verifies worlds, genomes, assignment, lineage replay, and pair balance", () => {
   const verified = verifyG2GenomeFreeze();
 
-  assert.equal(verified.protocol.protocolVersion, "pr39-slice-g2-cohort-genome-freeze-v1");
+  assert.equal(verified.protocol.protocolVersion, "pr39-slice-g2-cohort-genome-freeze-v2");
   assert.equal(verified.protocol.status, "frozen_pre_control");
   assert.equal(verified.bindings.size, 5);
   assert.equal(verified.genomes.size, 5);
+  assert.deepEqual(
+    verified.protocol.assignmentPolicy.mapping,
+    [
+      { cohortSlot: 1, genomeSourceSlot: 4 },
+      { cohortSlot: 2, genomeSourceSlot: 5 },
+      { cohortSlot: 3, genomeSourceSlot: 1 },
+      { cohortSlot: 4, genomeSourceSlot: 3 },
+      { cohortSlot: 5, genomeSourceSlot: 2 },
+    ],
+  );
   assert.equal(verified.lineageEvidence.length, 2);
   assert.deepEqual(
-    verified.lineageEvidence.map(({ slot, contributionCounts }) => ({ slot, contributionCounts })),
+    verified.lineageEvidence.map(({ slot, genomeSourceSlot, contributionCounts }) => ({ slot, genomeSourceSlot, contributionCounts })),
     [
-      { slot: 2, contributionCounts: [3, 3] },
-      { slot: 5, contributionCounts: [3, 3] },
+      { slot: 2, genomeSourceSlot: 5, contributionCounts: [3, 3] },
+      { slot: 5, genomeSourceSlot: 2, contributionCounts: [3, 3] },
     ],
   );
   assert.match(verified.protocolDigest, /^sha256:[0-9a-f]{64}$/);
@@ -64,6 +74,7 @@ test("G2 ceiling CLEAR requires at least three detectable pairs covering every g
   assert.equal(result.detectablePairCount, 3);
   assert.equal(result.everyGenomeCoveredByDetectablePair, true);
   assert.deepEqual(result.coveredGenomeSlots, [1, 2, 3, 4, 5]);
+  assert.equal("exactOneSidedBinomialP" in result.aggregate, false);
 });
 
 test("G2 ceiling HOLDs when detectable-pair count is below the frozen minimum", () => {
