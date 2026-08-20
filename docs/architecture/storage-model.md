@@ -70,7 +70,7 @@ The Passport and `asOf` identity views are derived. Legacy flat identity remains
 
 #38 adds dedicated durable authorities for situated life, including lineage/family relationships, temporal place/culture formation and versioned embodiment/asset provenance. These records remain distinct from identity assertions even when identity claims cite them as evidence.
 
-A `parent_genome_source` is a specifically typed `biological_parent` relation whose related party is a live Thread or synthetic ancestor. That record is the durable #38 authority a synthetic-lineage birth must eventually bind to.
+A `parent_genome_source` is a specifically typed `biological_parent` relation whose related party is a live Thread or synthetic ancestor. That record is the durable #38 authority by which a synthetic-lineage birth states which source persons/ancestors contributed symbolic inherited origin.
 
 ### Autobiographical memory and meaning
 
@@ -109,13 +109,33 @@ symbolic_genome_mutations
 
 Those records preserve textual locus order, source provenance, deterministic recombination and explicit mutation witnesses. They are inherited origin authority, not developed character or a hidden numeric personality state.
 
-### Current Pre-G integration boundary
+### Pre-G genome/lineage publication binding
 
-The two stores share the same SQLite world but do not currently form one birth transaction. `GenesisStore.publishBirth()` atomically publishes the Thread seed, identity bootstrap, Pass-A life events, admitted autobiographical memories/visual obligations and Genesis manifest after source/origin checks. It currently treats `manifest.genomeRef` as a syntactically valid reference rather than resolving the corresponding persisted symbolic genome inside publication.
+The symbolic genome is intentionally persisted **before** live Thread publication as a frozen/provisional Genesis input. Birth does not copy or recreate it.
 
-Therefore the accepted symbolic-genome plan's remaining synthetic-lineage obligation is real and explicit: **before Slice G, birth must make the persisted genome/lineage relationship load-bearing**. For a synthetic-lineage child, publication must verify that the referenced genome belongs to the child and Genesis, and that its source owner IDs match admitted #38 `biological_parent` + `parent_genome_source` lineage evidence before the child becomes live.
+When `GenesisManifest.genomeRef` is present, `GenesisStore.publishBirth()` now verifies the referenced persisted bundle inside its existing transaction using the same transaction-level verifier as `SymbolicGenomeStore`:
 
-This is a Pre-G implementation gap, not permission to fold genome facts into Pass A. Pass A remains genome blind.
+```text
+genomeRef resolves and canonical/digest verification passes
+genome owner == child Thread
+genome genesisId == manifest genesisId
+recombined source owners/digests/replay remain exact
+```
+
+For `originMode=synthetic_lineage`, publication additionally requires the ordered manifest parent/ancestor refs to equal the symbolic-genome source-owner IDs and requires exactly matching revision-1 #38 relations:
+
+```text
+relationKind             biological_parent
+geneticContributionRole parent_genome_source
+relatedParty.kind        synthetic_ancestor
+provenance               genesis_created
+current at birth         yes
+source witness           birth seed event
+```
+
+Those relation revisions are appended through the same shared persistence primitive as `SituatedLifeStore`, including the #38 lineage-head and relation-revision evidence witness. Genesis therefore binds domains; it does not reimplement genome or relationship storage authority.
+
+Pass A remains genome blind. Publication-time provenance validation is not a childhood-history cognition input.
 
 ## Transaction boundaries
 
@@ -131,9 +151,11 @@ Representative atomic boundaries include:
 - freeze, including authorization consumption and accepted life changes;
 - Structured Obligation discharge;
 - interrupted compelled authority-withdrawal closure;
-- current Genesis birth publication across seed/identity/life-event/memory/visual/Genesis-provenance state.
+- Genesis live-birth publication across child projection, seed/history, identity bootstrap, #38 synthetic-lineage relations, admitted memory/visual obligations and final Genesis manifest.
 
-A mid-transaction failure must not leave half a life, half a discharge or half a birth. Genome/lineage binding remains the explicit Pre-G extension to the Genesis publication boundary rather than being falsely described as already atomic.
+The symbolic genome itself is a pre-existing immutable input to that birth transaction. If birth fails after lineage insertion, the live child, lineage records, memory and manifest roll back together while the pre-birth genome remains as inspectable provisional provenance.
+
+A mid-transaction failure must not leave half a life, half a discharge or half a live birth.
 
 ## Append-only and correction discipline
 
