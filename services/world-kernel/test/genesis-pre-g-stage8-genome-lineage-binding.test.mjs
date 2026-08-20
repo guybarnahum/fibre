@@ -12,6 +12,7 @@ import {
 import { SymbolicGenomeStore } from "../src/symbolic-genome-store.mjs";
 import { lifeRelationId } from "../src/situated-life-domain.mjs";
 import { openSituatedLifeInspectionStore } from "../src/situated-life-store.mjs";
+import { normalizeSeedSnapshot } from "../src/persistence-domain.mjs";
 import {
   GenesisStore,
 } from "../src/genesis-store.mjs";
@@ -96,7 +97,6 @@ function childThread() {
   thread.provenance = {
     createdAt: CREATED_AT,
     createdBy: "fibre.genesis",
-    lastEventId: "evt_pre_g_stage8_birth_seed",
   };
   return thread;
 }
@@ -169,6 +169,7 @@ function manifest(genomeRef, overrides = {}) {
 }
 
 function parentRelation(thread, ancestorId, displayName) {
+  const seedEventId = normalizeSeedSnapshot(thread).provenance.lastEventId;
   return {
     relationId: lifeRelationId({ child: thread.threadId, parent: ancestorId }),
     revision: 1,
@@ -180,7 +181,7 @@ function parentRelation(thread, ancestorId, displayName) {
     },
     relationKind: "biological_parent",
     geneticContributionRole: "parent_genome_source",
-    sourceReferences: [thread.provenance.lastEventId],
+    sourceReferences: [seedEventId],
     validFrom: null,
     validTo: null,
     visibility: "private",
@@ -222,6 +223,7 @@ test("Stage 8 atomically binds persisted child genome to admitted #38 synthetic-
     recordGenomes(databasePath, set);
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
+    const canonicalSeedEventId = normalizeSeedSnapshot(thread).provenance.lastEventId;
     const result = genesis.publishBirth({
       manifest: manifest(set.child.header.genomeId),
       thread,
@@ -241,6 +243,9 @@ test("Stage 8 atomically binds persisted child genome to admitted #38 synthetic-
       (relation) => relation.relationKind === "biological_parent" &&
         relation.geneticContributionRole === "parent_genome_source" &&
         relation.provenance === "genesis_created",
+    ), true);
+    assert.equal(current.every(
+      (relation) => relation.sourceReferences.includes(canonicalSeedEventId),
     ), true);
     situated.close();
   }));
