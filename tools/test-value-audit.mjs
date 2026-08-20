@@ -154,7 +154,9 @@ function importedTestFilesFromView(view) {
   for (const token of view.strings) {
     if (!token.rawValue.endsWith(".test.mjs")) continue;
     const prefix = precedingStatement(view.masked, token.start);
-    if (!prefix.startsWith("import")) continue;
+    // Recognize the JavaScript import keyword, not identifiers such as
+    // `importedTestFiles` that merely begin with the same letters.
+    if (!/^import(?:\s|\{|\*|["'])/.test(prefix)) continue;
     if (/^import\s*\(/.test(prefix)) continue;
     imports.add(token.rawValue);
   }
