@@ -23,6 +23,7 @@ import {
 import {
   assertAllSituatedReferencesResolve,
 } from "./situated-identity-grounding.mjs";
+import { appendLifeRelationRevisionInTransaction } from "./situated-life-persistence.mjs";
 
 export class SituatedLifeConflictError extends Error {}
 export class SituatedLifeNotFoundError extends Error {}
@@ -410,38 +411,7 @@ export class SituatedLifeStore {
             SELECT record_digest FROM life_relation_records
             WHERE relation_id=? AND revision=?
           `).get(record.relationId, previous.revision).record_digest;
-      const digest = situatedRecordDigest("life_relation", record, previousDigest);
-      this.#database.prepare(`
-        INSERT INTO life_relation_records(
-          relation_id,revision,thread_id,related_party_id,relation_kind,
-          genetic_contribution_role,visibility,provenance,recorded_at,
-          supersedes_revision,record_json,record_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.relationId,
-        record.revision,
-        record.threadId,
-        record.relatedParty.partyId,
-        record.relationKind,
-        record.geneticContributionRole,
-        record.visibility,
-        record.provenance,
-        record.recordedAt,
-        record.supersedesRevision ?? null,
-        canonicalJson(record),
-        digest,
-      );
-      this.#database.prepare(`
-        INSERT INTO situated_life_lineage_heads(
-          ledger_kind,lineage_id,revision,thread_id,head_digest,recorded_at
-        ) VALUES ('life_relation',?,?,?,?,?)
-      `).run(
-        record.relationId,
-        record.revision,
-        record.threadId,
-        digest,
-        record.recordedAt,
-      );
+      appendLifeRelationRevisionInTransaction(this.#database, record, { previousDigest });
       this.#database.exec("COMMIT");
       return record;
     } catch (error) {
