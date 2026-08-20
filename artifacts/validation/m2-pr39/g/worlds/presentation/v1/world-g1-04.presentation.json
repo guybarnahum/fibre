@@ -1,0 +1,29 @@
+{
+  "contractVersion": "world-presentation-v1",
+  "scope": "m2-pr39-slice-g1",
+  "authority": "derived_non_cognitive_presentation",
+  "derivationPolicy": "Derived only from the referenced WorldSpec factual fields. Presentation copy and visual metadata are for human-facing UI, editorial presentation and later asset generation. They are not Genesis cognition input, do not alter WorldSpec semantics, do not participate in WorldSpec digests, and may not infer personality, beliefs, profession, biography outcomes or required formative events.",
+  "worldSpecRef": "world_slice_g1_04_tropical_coast",
+  "displayName": "Tropical Coastal City",
+  "shortDescription": "A busy coastal city world of extended household ties, minibuses, open markets, schools, community programs and waterfront commerce.",
+  "longDescription": "This world follows daily life in a compact family home on a busy street in a tropical coastal city. Two caregivers, the subject and two cousins share the household while extended relatives remain scattered across the metropolitan area. Walking, minibuses and shared taxis connect school, a major open market, community programs, commercial districts and the waterfront. Essentials are covered, but uneven income, transport, school costs, repairs and obligations to relatives make planning and tradeoffs part of ordinary household life.",
+  "visualProfile": {
+    "overallCharacter": "Energetic tropical coastal urban life centered on neighborhood commerce, shared transport, extended households and community institutions.",
+    "geographyAndClimate": "Warm humid coastal climate with intense sun, rain and weather-driven street changes; the waterfront exists as one part of the city rather than a resort backdrop.",
+    "builtEnvironment": "Compact family homes, small businesses, public school buildings, open-market structures, community center spaces, dense commercial streets and waterfront infrastructure.",
+    "streetsAndPublicRealm": "Busy neighborhood streets, minibus/shared-taxi junctions, market lanes, shaded storefront edges, school grounds and community gathering areas.",
+    "interiors": "Compact shared household rooms, school classrooms/lab/library room, community-center multipurpose rooms, repair stalls and dense market interiors or covered sections.",
+    "materialsAndTextures": "Painted concrete and masonry, metal roofing or awnings where plausible, fabric market canopies, wood and metal stalls, road dust after dry periods, wet pavement after rain, plastic crates, tools and everyday goods.",
+    "lightAndAtmosphere": "Bright tropical daylight, humid haze, deep shade under roofs or awnings, dramatic rain light and warm evening street illumination; avoid glossy vacation imagery.",
+    "vegetationAndLandscape": "Tropical street trees and planted yards may appear alongside dense built areas; vegetation supports the climate setting but should not overwhelm the urban character.",
+    "mobilityAndVehicles": "Walking, minibuses and shared taxis dominate local movement, with ordinary commercial/service vehicles and traffic congestion visible where appropriate.",
+    "signageAndLanguage": "English and Twi may appear naturally in shop, school, transport, media or community signage; avoid invented political messaging or excessive language display for effect.",
+    "clothingAndEverydayObjects": "Contemporary everyday clothing across ages, school bags, market totes, phones, radios, household repair items, fabric, electronics, public-health materials and shared-transport fare/payment objects.",
+    "technologyAndInfrastructure": "Contemporary phones, local/international radio, market electronics, repair tools, school science/computer equipment, public-health infrastructure and everyday power/transport systems.",
+    "publicInstitutions": "Public school, major market, minibus network, community center, public-health service, library room and local media.",
+    "visualAnchors": ["compact family home opening onto a busy neighborhood street","minibus and shared-taxi junction","large open market mixing food, fabric, electronics and repair","community center during tutoring or public-health activity","coastal-city street life with the waterfront present but not dominant"],
+    "avoid": ["beach-resort or safari imagery","specific national monuments or flags","poverty spectacle","generic pan-African visual stereotypes","religious imagery used to imply personality","future profession or moral-conclusion cues"]
+  },
+  "assetShotIdeas": ["Hero: busy residential-commercial street with shared transport and market activity","Transit: minibus junction during an ordinary school/work travel period","Market: open-market lane mixing food, fabric, electronics and repair stalls","Community: multipurpose center during tutoring, health or meeting use","Home: compact extended-household living area with practical everyday objects"],
+  "assetRefs": []
+}
