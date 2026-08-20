@@ -1,27 +1,52 @@
 ---
 id: m2-pr39-slice-g1-world-candidate-freeze
-status: in_progress
+status: superseded
 last-reviewed: 2026-08-20
 canonical: false
 ---
 
-# Milestone #39 — Slice G1 world candidate freeze
+# Milestone #39 — Slice G1 world candidate freeze v1
 
-## Status
+## Historical status
 
-**G1 IN PROGRESS — five genome-blind candidate WorldSpecs are frozen; cold familiarity execution remains.**
+**SUPERSEDED after execution; preserved as G1-v1 evidence.**
 
-No cohort genome has been authored, assigned or inspected. No final-cohort life has been generated.
+The five genome-blind v1 candidates were frozen and then executed through the predeclared cold familiarity probe. The maintainer reported all five accepted at `density=4/4`, and the emitted v1 final WorldSpecs/result are preserved under `artifacts/validation/m2-pr39/g/`.
 
-## Frozen before familiarity output
+Subsequent human review found a separate defect: the worlds were familiar but too geographically/culturally interchangeable. They described city archetypes without making an actual country/locality and enough local cultural facts load-bearing WorldSpec context.
 
-The machine-readable authority is:
+That defect does **not** invalidate the v1 familiarity result; it is outside what that instrument measured. It does mean v1 cannot be the final G1 cohort input.
+
+Current correction:
+
+[`m2-pr39-slice-g1-geographic-specificity-correction.md`](m2-pr39-slice-g1-geographic-specificity-correction.md)
+
+Canonical current authoring rule:
+
+[`../architecture/world-context-specificity-v1.md`](../architecture/world-context-specificity-v1.md)
+
+## Preserved v1 authority
 
 ```text
 artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v1.json
+artifacts/validation/m2-pr39/g/results/g1-world-familiarity-v1.json
+
+artifacts/validation/m2-pr39/g/worlds/candidates/
+  world-g1-01-candidate-v1.json
+  world-g1-02-candidate-v1.json
+  world-g1-03-candidate-v1.json
+  world-g1-04-candidate-v1.json
+  world-g1-05-candidate-v1.json
+
+artifacts/validation/m2-pr39/g/worlds/
+  world-g1-01.json
+  world-g1-02.json
+  world-g1-03.json
+  world-g1-04.json
+  world-g1-05.json
 ```
 
-It freezes before the first familiarity call:
+The original protocol froze:
 
 ```text
 cohort size               5
@@ -30,42 +55,12 @@ common entry age          22
 common bornAt             2004-08-20T00:00:00Z
 common chronology end     2026-08-20T00:00:00Z
 origin composition        3 de_novo + 2 synthetic_lineage
-convergent pair           world 02 + world 04
+convergent pair           slots 02 + 04
 familiarity worker        openai/gpt-5.1-2025-11-13
 familiarity calls         one stateless call per candidate
 ```
 
-The five candidates are frozen under:
-
-```text
-artifacts/validation/m2-pr39/g/worlds/candidates/
-```
-
-They are fresh structural worlds rather than renamed E/E2 worlds. Existing E/E2 material was consulted only for the accepted WorldSpec schema/mechanical shape, not for setting or plot content.
-
-## Cold familiarity boundary
-
-The probe implementation is:
-
-```text
-tools/genesis/genesis-world-familiarity-probe.mjs
-```
-
-The model-visible surface contains only an anonymized ordinary-setting projection. It omits:
-
-```text
-worldSpecId
-placeId
-worldAuthorship
-Fibre / Genesis experiment identity
-genomes
-personality targets
-future roles
-convergent-pair hypothesis
-downstream diagnostics
-```
-
-The predeclared HOLD rule is:
+The cold familiarity HOLD rule was:
 
 ```text
 densityScore <= 1
@@ -73,52 +68,19 @@ OR
 at least two coverage-domain scores <= 1
 ```
 
-Coverage domains are household, schooling, mobility, institutions, language context, everyday economy and intellectual access.
+That measurement remains valid historical evidence for the v1 inputs.
 
-A materially under-represented candidate is preserved as burned G1 evidence and replaced under a new protocol version. It may not be replaced because its expected life looks less interesting, attributable or likely to pass H.
+## Why v1 is not silently edited
 
-If all five candidates clear the rule, the tool emits the five final WorldSpec JSON files under `artifacts/validation/m2-pr39/g/worlds/`, each carrying its non-null `worldAuthorship.familiarityProbe`, plus the exact result artifact and final digests.
+The v1 candidate/final WorldSpecs participated in a real model run. They therefore remain frozen artifacts even though later review found the missing specificity.
 
-## Required execution
+The correction uses new `candidates-v2/`, new final `*-v2.json` paths and a new result path. It preserves the original household/origin/comparative structure so the fix cannot opportunistically tune expected personalities or H performance.
 
-First pull the candidate/probe freeze and run the active regression envelope for the new tool:
-
-```bash
-git pull --ff-only
-npm test
-```
-
-Then execute the frozen five-call probe exactly once:
-
-```bash
-npm run genesis:world-familiarity -- \
-  --provider openai \
-  --model gpt-5.1-2025-11-13 \
-  --manifest artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v1.json \
-  --out artifacts/validation/m2-pr39/g/results/g1-world-familiarity-v1.json
-```
-
-The probe refuses to overwrite an existing result or final WorldSpec file.
-
-## Exit
-
-G1 becomes COMPLETE only when:
+## Current boundary
 
 ```text
-[ ] new active regression envelope green
-[ ] exactly five cold familiarity calls completed
-[ ] result artifact preserved
-[ ] no candidate triggered the predeclared under-representation HOLD
-[ ] five final WorldSpecs emitted with familiarity witnesses
-[ ] final WorldSpec digests recorded
-[ ] no cohort genome existed before final world freeze
-[ ] final artifacts committed with clean tree
-```
-
-Until those conditions hold:
-
-```text
-G2 genomes   BLOCKED
-G3-G6        BLOCKED
-H            FORBIDDEN
+G1-v1    PRESERVED / SUPERSEDED
+G1-v2    FROZEN CANDIDATES — familiarity rerun pending
+G2       BLOCKED
+H        FORBIDDEN until Gate G CLEAR
 ```
