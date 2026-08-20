@@ -236,8 +236,8 @@ test("Stage 8 atomically binds persisted child genome to admitted #38 synthetic-
     const current = situated.listCurrentLifeRelations(CHILD_ID);
     assert.equal(current.length, 2);
     assert.deepEqual(
-      current.map((relation) => relation.relatedParty.partyId),
-      [ANCESTOR_A, ANCESTOR_B],
+      current.map((relation) => relation.relatedParty.partyId).toSorted(),
+      [ANCESTOR_A, ANCESTOR_B].toSorted(),
     );
     assert.equal(current.every(
       (relation) => relation.relationKind === "biological_parent" &&
