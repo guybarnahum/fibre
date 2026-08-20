@@ -1,5 +1,5 @@
 import { readdirSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const DEFAULT_TEST_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -51,7 +51,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const domain = topLevelTests(root, "packages/domain/test");
   const worldKernel = topLevelTests(root, "services/world-kernel/test");
   const tools = topLevelTests(root, "tools");
-  const toolNames = new Set(tools.map((path) => path.slice(path.lastIndexOf("/") + 1)));
+  const toolNames = new Set(tools.map((path) => basename(path)));
   const missingReproTests = REPRO_TOOL_TEST_FILES.filter((name) => !toolNames.has(name));
   if (missingReproTests.length > 0) {
     throw new TypeError(
