@@ -1,8 +1,18 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import * as ts from "typescript";
+
+const require = createRequire(import.meta.url);
+const ts = require("typescript");
+if (
+  typeof ts?.createSourceFile !== "function"
+  || ts?.ScriptTarget?.Latest === undefined
+  || ts?.ScriptKind?.JS === undefined
+) {
+  throw new TypeError("test-value audit requires the TypeScript parser API");
+}
 
 const DEFAULT_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
@@ -121,8 +131,14 @@ function analyzeTestSource(source, path) {
     declaredTestCalls,
     testTitles: titles,
     importedTestFiles: [...imports].sort(),
-    commentOnly: sourceFile.statements.length === 0,
   };
+}
+
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|\s)\/\/.*$/gm, "$1")
+    .trim();
 }
 
 function familyFor(path) {
@@ -164,6 +180,7 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
   const records = testFiles(root).map(({ scope, path }) => {
     const source = readFileSync(path, "utf8");
     const analysis = analyzeTestSource(source, normalizedPath(root, path));
+    const stripped = stripComments(source);
     return {
       path: normalizedPath(root, path),
       scope,
@@ -173,7 +190,7 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
       declaredTestCalls: analysis.declaredTestCalls,
       testTitles: analysis.testTitles,
       importedTestFiles: analysis.importedTestFiles,
-      commentOnly: analysis.commentOnly,
+      commentOnly: stripped.length === 0,
       zeroDeclaredTests: analysis.declaredTestCalls === 0,
     };
   });
@@ -202,7 +219,7 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
     runnerContract: {
       source: "package.json#scripts.test",
       scopes: TEST_SCOPES.map(({ scope, directory }) => ({ scope, glob: `${directory}/*.test.mjs` })),
-      note: "declaredTestCalls is an AST-based static source count, not the Node test runner's runtime test total.",
+      note: "declaredTestCalls is a static source count, not the Node test runner's runtime test total.",
     },
     totals: {
       files: records.length,
