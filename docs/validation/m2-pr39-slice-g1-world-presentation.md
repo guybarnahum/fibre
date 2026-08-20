@@ -19,36 +19,35 @@ Concrete-world authoring rule: [`../architecture/world-context-specificity-v1.md
 
 ## Per-World artifact rule
 
-G1 uses one presentation artifact per World. A website or editor may aggregate them into a catalog at read time; the durable presentation artifact unit remains one World.
+G1 uses one canonical presentation artifact per accepted World. A website or editor may aggregate them into a catalog at read time; the durable presentation artifact unit remains one World.
 
-Each presentation includes:
-
-- exact `worldSpecRef`;
-- display name;
-- short website description;
-- longer human-readable description;
-- overall visual character;
-- geography/climate;
-- built environment;
-- street/public realm;
-- interiors;
-- materials/textures;
-- light/atmosphere;
-- vegetation/landscape;
-- mobility/vehicles;
-- signage/languages;
-- clothing/everyday objects;
-- technology/infrastructure;
-- public institutions;
-- repeated visual anchors;
-- explicit visual shortcuts/stereotypes to avoid;
-- several asset-shot ideas;
-- future stable asset references.
-
-## Current v1 presentation artifacts
+Current canonical presentations:
 
 ```text
 artifacts/validation/m2-pr39/g/worlds/presentation/
+  world-g1-01.presentation.json  Cần Thơ, Vietnam
+  world-g1-02.presentation.json  Łódź, Poland
+  world-g1-03.presentation.json  Cusco, Peru
+  world-g1-04.presentation.json  Accra, Ghana
+  world-g1-05.presentation.json  Greater Sudbury, Ontario, Canada
+```
+
+Each canonical record is bound to its accepted G1-v2 WorldSpec by:
+
+```text
+worldSpecRef
+sourceWorldSpecPath
+worldSpecDigest
+```
+
+The digest is the exact final digest recorded by `g1-world-familiarity-v2.json`, so presentation cannot silently drift to a different WorldSpec while retaining the same filename.
+
+## Preserved G1-v1 presentations
+
+The original generic presentation records participated in the G1-v1 authoring history and are preserved separately under:
+
+```text
+artifacts/validation/m2-pr39/g/worlds/presentation/v1/
   world-g1-01.presentation.json
   world-g1-02.presentation.json
   world-g1-03.presentation.json
@@ -56,35 +55,55 @@ artifacts/validation/m2-pr39/g/worlds/presentation/
   world-g1-05.presentation.json
 ```
 
-These five files remain bound to the preserved **G1-v1 generic WorldSpecs**:
+They remain bound to the superseded generic WorldSpecs and are historical presentation evidence only. They are not current website/catalog authority.
+
+## Rich visual surface
+
+Each accepted v2 presentation includes:
+
+- display name;
+- short website description;
+- longer human-readable description;
+- geography/climate;
+- built environment;
+- streets and public realm;
+- plausible household/institution interiors;
+- materials/textures;
+- light/atmosphere;
+- vegetation/landscape;
+- mobility/vehicles;
+- signage/language cues;
+- clothing/everyday objects;
+- technology/infrastructure;
+- public institutions;
+- repeated visual anchors;
+- explicit shortcuts/stereotypes to avoid;
+- asset-shot ideas;
+- future stable asset references.
+
+Because the G1 chronology spans **2004–2026**, the current records also include `visualProfile.temporalLayers`:
 
 ```text
-world_slice_g1_01_river_delta
-world_slice_g1_02_inland_rail
-world_slice_g1_03_highland_region
-world_slice_g1_04_tropical_coast
-world_slice_g1_05_northern_lake
+2004_2010
+2011_2018
+2019_2026
+continuities
 ```
 
-They must not be silently repointed to the G1-v2 concrete Worlds.
+This lets a later asset-generation system render a childhood, adolescent or young-adult scene with period-appropriate phones, digital access, transit/signage and urban change without inventing a different World.
 
-## G1-v2 presentation rule
-
-Human review found that G1-v1 was too geographically interchangeable. G1-v2 is now being corrected at the **WorldSpec** layer first, using Cần Thơ, Łódź, Cusco, Accra and Greater Sudbury as concrete settings.
-
-Do not use presentation prose to paper over missing WorldSpec facts.
-
-After the v2 familiarity rerun clears and the exact final `world-g1-0X-v2.json` files/digests are preserved, create a new per-World v2 presentation artifact for each accepted v2 World. Those records should derive architecture, signage, climate, transport, institutions and other visual anchors from the concrete WorldSpec and may then drive image/video/3D asset generation.
+Temporal presentation describes ordinary environmental change; it does not assert that the Thread experienced any particular event.
 
 ## Derivation rule
 
-A presentation is derived only from its referenced WorldSpec facts.
+A presentation is derived only from its referenced WorldSpec facts and bounded ordinary visual implications.
 
 It must not add or infer:
 
 ```text
 personality
 moral/political position
+religious or ethnic identity
 future profession
 adult behavior
 formative significance
@@ -92,9 +111,9 @@ required adversity
 benchmark behavior
 ```
 
-Visual elaboration may make authoritative environmental facts easier to render, but it may not invent a country, locality, landmark, institutional fact, national identity, source biography or personality-coded aesthetic absent from the WorldSpec.
+Visual elaboration may make authoritative environmental facts easier to render, but it may not fabricate a locality, landmark, institution, historical episode, source biography or personality-coded aesthetic absent from the WorldSpec.
 
-If the asset generator needs to guess the World's country or local culture, fix the WorldSpec first.
+If an asset generator needs to guess the World's country or cultural substrate, the WorldSpec is insufficient; presentation is not allowed to paper over that defect.
 
 ## Scientific boundary
 
@@ -112,13 +131,13 @@ outside H attribution evidence
 
 Presentation files may never be passed to Pass A, Pass B, Pass C, record repair, genome generation or any H rater.
 
-If product copy is later improved, that does not reopen a frozen WorldSpec. If a presentation conflicts with a WorldSpec, correct presentation; do not rewrite the frozen world to fit presentation.
+If product copy is later improved, that does not reopen a frozen WorldSpec. If presentation conflicts with the source WorldSpec, correct presentation; do not rewrite the frozen World to fit presentation.
 
 ## Asset-generation boundary
 
 The `visualProfile` is environmental grounding, not a provider-specific image prompt.
 
-Later asset generation may compile it into prompts for image/video/3D providers. Generated assets should preserve provenance and enter Fibre through stable object references rather than provider URLs embedded into world semantics.
+Later image/video/3D generation may compile the relevant World presentation plus the desired date/season/shot class into provider prompts. Generated assets should preserve provenance and enter Fibre through stable object references rather than provider URLs embedded into world semantics.
 
 Recommended initial asset family per World:
 
@@ -128,6 +147,19 @@ neighborhood/street/transit
 public institution
 home interior/exterior
 material/detail scene
+seasonal/environmental variant
+time-series/location continuity
 ```
 
-Asset generation remains presentation work. It must not alter the Thread's generated life or be used as evidence that the Thread actually experienced an event unless a separate authoritative life record says so.
+Asset generation remains presentation work. It must not alter the Thread's generated life or become evidence that the Thread experienced an event unless a separate authoritative life record says so.
+
+## G1 status
+
+The presentation follow-through is complete. See [`m2-pr39-slice-g1-result.md`](m2-pr39-slice-g1-result.md).
+
+```text
+G1-v1 presentations  PRESERVED under presentation/v1/
+G1-v2 presentations  CURRENT / bound to exact accepted WorldSpec digests
+G1                   COMPLETE / CLEAR
+G2                   NEXT
+```
