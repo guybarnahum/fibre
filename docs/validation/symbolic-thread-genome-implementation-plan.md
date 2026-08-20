@@ -1,7 +1,7 @@
 ---
 id: validation-symbolic-thread-genome-implementation-plan
 status: accepted
-last-reviewed: 2026-08-15
+last-reviewed: 2026-08-20
 canonical: true
 ---
 
@@ -68,9 +68,9 @@ The atomicity validator intentionally does **not** reject a vague but structural
 - Thread-owned source genomes must resolve to the declared live source Thread;
 - synthetic-ancestor-owned source genomes preserve the exact non-live ancestor ID without pretending it is a Thread;
 - the child recombination witness records both source genome IDs/digests and source owners;
-- Slice E/birth must bind synthetic-ancestor owner IDs to admitted #38 `biological_parent` / `parent_genome_source` lineage evidence before the child becomes live.
+- synthetic-lineage birth binds those source-owner IDs to admitted #38 `biological_parent` / `parent_genome_source` lineage evidence before the child becomes live.
 
-Arbitrary source-owner substitution must fail replay.
+Arbitrary source-owner substitution must fail replay/publication.
 
 ### Deterministic textual crossover
 
@@ -188,7 +188,7 @@ Slice C keeps the genome entirely absent from Pass A.
 
 Slice D allows controlled Pass-B exposure and keeps Pass C unconditionally genome-blind.
 
-Slice E closes the synthetic-ancestor lineage binding described above.
+Pre-G Stage 8 implements the Slice-E/birth lineage boundary through the live publication transaction: a persisted child genome must belong to the exact child/Genesis; a synthetic-lineage genome's exact source-owner IDs must match the manifest and revision-1 #38 `biological_parent` / `parent_genome_source` relations. Publication failure leaves no live child or lineage. The frozen genome remains a pre-birth input and is not rewritten by birth.
 
 Slice G freezes the actual cohort-genome specificity ceiling before life generation.
 
@@ -206,7 +206,8 @@ Fail the implementation if:
 - a synthetic ancestor is represented as a fake live parent Thread merely to satisfy genome storage;
 - inherited text changes without an explicit mutation witness;
 - current character overwrites the inherited genome;
-- restart cannot reconstruct exact locus provenance.
+- restart cannot reconstruct exact locus provenance;
+- a synthetic-lineage child can become live while its manifest, persisted genome and #38 parent-genome-source records disagree.
 
 ## Completion criteria
 
@@ -230,7 +231,7 @@ Fail the implementation if:
 [x] Slice-G external frozen-genome reuse surface
 [x] live Slice-B positive-control result recorded before interpreting genome propagation
 [ ] Slice-G cohort-genome ceiling frozen before cohort life generation
-[ ] synthetic-ancestor source owners bound to admitted #38 lineage at Slice E/birth
+[~] synthetic-ancestor source owners bound to admitted #38 lineage at birth — Stage-8 implementation landed; full local verification pending
 ```
 
 ## Boundary
