@@ -1,0 +1,62 @@
+{
+  "evidenceVersion": "pr39-slice-g2-five-pair-ceiling-interpretation-v1",
+  "status": "accepted_post_result_interpretation",
+  "sourceAggregateResult": "artifacts/validation/m2-pr39/g/results/g2-cohort-genome-specificity-ceiling-v1.json",
+  "sourceVerdict": "CLEAR",
+  "claim": "The frozen G2 result is a five-pair textual-distinguishability ceiling for the measured genome pairs. It is not a complete ten-pair matrix and does not by itself establish semantic specificity or propagation through life.",
+  "measuredPairs": [
+    { "pairId": "p01", "slots": [1, 2], "correct": 23, "trials": 24, "detectable": true, "band": "strong_ceiling_signal" },
+    { "pairId": "p02", "slots": [2, 3], "correct": 19, "trials": 24, "detectable": true, "band": "detectable_moderate_ceiling" },
+    { "pairId": "p03", "slots": [3, 4], "correct": 15, "trials": 24, "detectable": false, "band": "inconclusive_near_chance" },
+    { "pairId": "p04", "slots": [4, 5], "correct": 21, "trials": 24, "detectable": true, "band": "strong_ceiling_signal" },
+    { "pairId": "p05", "slots": [5, 1], "correct": 21, "trials": 24, "detectable": true, "band": "strong_ceiling_signal" }
+  ],
+  "unmeasuredPairs": [
+    [1, 3],
+    [1, 4],
+    [2, 4],
+    [2, 5],
+    [3, 5]
+  ],
+  "perGenomeEdgeProfile": [
+    { "slot": 1, "edges": [{ "pairId": "p01", "otherSlot": 2, "correct": 23, "detectable": true }, { "pairId": "p05", "otherSlot": 5, "correct": 21, "detectable": true }] },
+    { "slot": 2, "edges": [{ "pairId": "p01", "otherSlot": 1, "correct": 23, "detectable": true }, { "pairId": "p02", "otherSlot": 3, "correct": 19, "detectable": true }] },
+    { "slot": 3, "edges": [{ "pairId": "p02", "otherSlot": 2, "correct": 19, "detectable": true }, { "pairId": "p03", "otherSlot": 4, "correct": 15, "detectable": false }] },
+    { "slot": 4, "edges": [{ "pairId": "p03", "otherSlot": 3, "correct": 15, "detectable": false }, { "pairId": "p04", "otherSlot": 5, "correct": 21, "detectable": true }] },
+    { "slot": 5, "edges": [{ "pairId": "p04", "otherSlot": 4, "correct": 21, "detectable": true }, { "pairId": "p05", "otherSlot": 1, "correct": 21, "detectable": true }] }
+  ],
+  "pairConstraintsForH": [
+    {
+      "pairId": "p03",
+      "slots": [3, 4],
+      "constraint": "measured_low_inconclusive_ceiling",
+      "interpretation": "A null or weak H difference for Thread 3 versus Thread 4 is uninformative about failure of lived-history or genome propagation because the direct-visibility G2 ceiling for this pair was itself inconclusive at 15/24. Do not call either genome individually weak: slot 3 is detectable on p02 and slot 4 is strong on p04."
+    }
+  ],
+  "hUsePolicy": {
+    "version": "pr39-g2-five-pair-h-use-v1",
+    "decision": "restrict_genome_ceiling_inference_to_measured_pairs",
+    "rule": "H may use G2 as a genome-specificity ceiling only for p01-p05. Unmeasured pairs may be inspected descriptively but may not receive a G2-normalized genome-specificity interpretation unless a separately frozen complementary-cycle experiment is run first.",
+    "complementaryCycleRequiredBeforeG3": false,
+    "reason": "G2 already provides a valid screening ceiling with every genome observed on two measured edges. Running the complementary cycle is unnecessary unless H later requires ceiling-backed inference for an unmeasured pair."
+  },
+  "coverageInterpretation": {
+    "frozenRuleStillValid": true,
+    "observedCoverageWasNotIndependentEvidence": true,
+    "note": "With exactly one failing edge in a five-cycle, every vertex is automatically incident to at least one detectable edge. The per-genome edge profile is the more informative observed evidence that no single genome is inert as text."
+  },
+  "chanceReference": {
+    "assumption": "independent pair-detection events under a chance 0.5 rater",
+    "perPairDetectionProbabilityAt17Of24": 0.03195732831954956,
+    "probabilityAtLeastThreeOfFiveDetectable": 0.0003109259493442369,
+    "probabilityFrozenRuleClearIncludingCoverage": 0.00015800379734887487,
+    "interpretation": "Reference arithmetic only. It supports that the frozen rule is not permissive under the independent-edge chance model; it does not assert that empirical edge outcomes are independent."
+  },
+  "lexicalOverlapDiagnostic": {
+    "status": "pending_post_hoc_observational",
+    "tool": "tools/genesis/genesis-g2-lexical-overlap.mjs",
+    "resultPath": "artifacts/validation/m2-pr39/g/results/g2-lexical-overlap-v1.json",
+    "gating": false,
+    "purpose": "Bound how much blind-rater success tracks exact distinctive-token reuse. This cannot upgrade the ceiling from textual distinguishability to semantic specificity."
+  }
+}
