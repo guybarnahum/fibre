@@ -1,0 +1,22 @@
+{
+  "header": {
+    "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4",
+    "owner": { "kind": "thread", "ownerId": "thr_pr39_g2_01" },
+    "genesisId": "genesis_pr39_g2_01",
+    "originKind": "de_novo",
+    "inheritancePolicy": { "id": "fibre_symbolic_genome", "version": "1" },
+    "sourceEligibility": null,
+    "recombinationWitness": null,
+    "createdAt": "2026-08-20T20:00:00Z"
+  },
+  "loci": [
+    { "locusId": "gloc_2f5bdb36df8010b17e1ba83b1be71d42e1bd529e", "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4", "ordinal": 1, "value": "switches methods when repeated feedback shows the current approach is failing", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_4e73d4c7d64278603bf02999fb7c5cf48997c246", "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4", "ordinal": 2, "value": "notices contradictions between confident accounts before deciding which to trust", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_3fca0f81f52caeffae695e501173573b7632626d", "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4", "ordinal": 3, "value": "offers practical help before offering reassurance when another person is overloaded", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_253d5748df517527e5ca6b341bfc61e98c142bce", "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4", "ordinal": 4, "value": "prefers a small reversible experiment when uncertainty can be reduced by trying something", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_c1b9eaf0c69562168d20c623bf75e539b55c5372", "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4", "ordinal": 5, "value": "recovers from public mistakes by preparing more carefully for the next attempt", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } },
+    { "locusId": "gloc_7d9301cdf0c7ad6f57cc222329b00f16a457261a", "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4", "ordinal": 6, "value": "looks for a quiet interval after prolonged social activity", "provenance": { "kind": "de_novo", "sourceGenomeRef": null, "sourceLocusRef": null, "mutationRef": null } }
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:4ec9592b7e065bdde4e63ebb0c70b4c5f9752b43f6f5f87ec45961a373ff20ad"
+}
