@@ -4,6 +4,10 @@ import {
   assertPassAInputBoundary,
   validatePassAEpisode,
 } from "./genesis-pass-a-domain.mjs";
+import {
+  GENESIS_RICH_COUNTERPART_POLICY_VERSION,
+  richCounterpartMode,
+} from "./genesis-rich-participation-policy.mjs";
 
 const MILLIS_PER_MEAN_GREGORIAN_YEAR = 365.2425 * 24 * 60 * 60 * 1000;
 const AGE_TOLERANCE_YEARS = 0.06;
@@ -55,6 +59,44 @@ function assertStructureRoles(episode, input) {
   }
 }
 
+function usesRichAlternativeRolePolicy(input) {
+  return input.policyWitness.policyVersion
+    .split("+")
+    .includes(GENESIS_RICH_COUNTERPART_POLICY_VERSION);
+}
+
+function assertOfferedStructureAffordance(input, affordedRoles) {
+  const richAlternativeRoles = usesRichAlternativeRolePolicy(input);
+  for (const structure of input.offeredStructures) {
+    if (!richAlternativeRoles) {
+      for (const role of structure.participatingRoles) {
+        if (!affordedRoles.has(role)) {
+          throw new GenesisPassAValidationError(
+            "pass_a_structure_affordance",
+            `offered structure ${structure.structureId} requires role ${role}, which the WorldSpec does not afford`,
+          );
+        }
+      }
+      continue;
+    }
+
+    // EventStructurePool v2 participatingRoles are alternatives, not an all-of list.
+    // present_optional structures can be realized subject-only. Other rich structures
+    // require at least one alternative counterpart role to be world-afforded; the
+    // episode-level rich validator still owns whether a required/known counterpart is
+    // actually represented for a selected realization.
+    if (structure.participatingRoles.length === 0 || richCounterpartMode(structure.structureId) === "present_optional") {
+      continue;
+    }
+    if (!structure.participatingRoles.some((role) => affordedRoles.has(role))) {
+      throw new GenesisPassAValidationError(
+        "pass_a_structure_affordance",
+        `offered rich structure ${structure.structureId} has no WorldSpec-afforded alternative counterpart role (${structure.participatingRoles.join(", ")})`,
+      );
+    }
+  }
+}
+
 export function validateConsistentPassAEpisode(candidate, inputCandidate) {
   const input = assertPassAInputBoundary(inputCandidate);
   const episode = validatePassAEpisode(candidate, input);
@@ -65,7 +107,7 @@ export function validateConsistentPassAEpisode(candidate, inputCandidate) {
       { record: episode },
     );
   }
-  if (input.priorEpisodes.some(({ episodeId }) => episodeId === episode.episodeId)) {
+  if (input.priorEpisodes.some(({ episodeId }) => episode.episodeId === episodeId)) {
     throw new GenesisPassAValidationError(
       "pass_a_episode_identity",
       `episode ID ${episode.episodeId} already exists in candidate history`,
@@ -138,16 +180,7 @@ export function assertPassAHistoryConsistency(inputCandidate) {
     );
   }
 
-  for (const structure of input.offeredStructures) {
-    for (const role of structure.participatingRoles) {
-      if (!affordedRoles.has(role)) {
-        throw new GenesisPassAValidationError(
-          "pass_a_structure_affordance",
-          `offered structure ${structure.structureId} requires role ${role}, which the WorldSpec does not afford`,
-        );
-      }
-    }
-  }
+  assertOfferedStructureAffordance(input, affordedRoles);
 
   return input;
 }
