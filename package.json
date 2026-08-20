@@ -30,6 +30,7 @@
     "genesis:world-familiarity": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-world-familiarity-probe.mjs",
     "genesis:g2-genome-ceiling": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-cohort-genome-ceiling.mjs",
     "genesis:g2-lexical-overlap": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g2-lexical-overlap.mjs",
+    "genesis:g3-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g3-treatment-freeze.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-v4-counterfactual-dev.mjs",
     "guardian:whole-person": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/whole-person-benchmark-v4.mjs",
