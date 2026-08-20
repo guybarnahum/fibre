@@ -250,6 +250,41 @@ export function projectOriginSourceForThreadLife(candidate) {
   });
 }
 
+export function assertGenesisOriginAuthorityWitness({
+  originFixture,
+  resolvedAuthority,
+  ErrorType = TypeError,
+}) {
+  const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
+  if (!["echo", "homage"].includes(fixture.originKind)) {
+    throw new ErrorType("durable source authority resolution requires Echo or Homage origin");
+  }
+  const authorityRef = fixture.originKind === "echo"
+    ? fixture.sourceBundle.consentAuthorityRef
+    : fixture.sourceBundle.subjectStatusAttestationRef;
+  const expectedKind = fixture.originKind === "echo"
+    ? "living_source_consent"
+    : "subject_status_attestation";
+  if (resolvedAuthority?.record?.authorityKind !== expectedKind) {
+    throw new ErrorType(`${fixture.originKind} authority ${authorityRef} has the wrong authority kind`);
+  }
+  if (resolvedAuthority.record.sourcePartyId !== fixture.sourceBundle.sourcePartyId) {
+    throw new ErrorType(`${fixture.originKind} authority ${authorityRef} belongs to another source party`);
+  }
+  if (resolvedAuthority.record.subjectStatus !== fixture.sourceBundle.subjectStatus) {
+    throw new ErrorType(`${fixture.originKind} authority ${authorityRef} does not attest the fixture subject status`);
+  }
+  return Object.freeze({
+    fixtureId: fixture.fixtureId,
+    originKind: fixture.originKind,
+    authorityRef,
+    authorityKind: resolvedAuthority.record.authorityKind,
+    sourcePartyId: resolvedAuthority.record.sourcePartyId,
+    subjectStatus: resolvedAuthority.record.subjectStatus,
+    authorityRecordDigest: resolvedAuthority.recordDigest,
+  });
+}
+
 export function assertGenesisOriginAuthorityResolved({ originFixture, authorityStore }) {
   const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
   if (!["echo", "homage"].includes(fixture.originKind)) {
@@ -261,27 +296,9 @@ export function assertGenesisOriginAuthorityResolved({ originFixture, authorityS
   const authorityRef = fixture.originKind === "echo"
     ? fixture.sourceBundle.consentAuthorityRef
     : fixture.sourceBundle.subjectStatusAttestationRef;
-  const expectedKind = fixture.originKind === "echo"
-    ? "living_source_consent"
-    : "subject_status_attestation";
-  const resolved = authorityStore.getAuthority(authorityRef);
-  if (resolved.record.authorityKind !== expectedKind) {
-    throw new TypeError(`${fixture.originKind} authority ${authorityRef} has the wrong authority kind`);
-  }
-  if (resolved.record.sourcePartyId !== fixture.sourceBundle.sourcePartyId) {
-    throw new TypeError(`${fixture.originKind} authority ${authorityRef} belongs to another source party`);
-  }
-  if (resolved.record.subjectStatus !== fixture.sourceBundle.subjectStatus) {
-    throw new TypeError(`${fixture.originKind} authority ${authorityRef} does not attest the fixture subject status`);
-  }
-  return Object.freeze({
-    fixtureId: fixture.fixtureId,
-    originKind: fixture.originKind,
-    authorityRef,
-    authorityKind: resolved.record.authorityKind,
-    sourcePartyId: resolved.record.sourcePartyId,
-    subjectStatus: resolved.record.subjectStatus,
-    authorityRecordDigest: resolved.recordDigest,
+  return assertGenesisOriginAuthorityWitness({
+    originFixture: fixture,
+    resolvedAuthority: authorityStore.getAuthority(authorityRef),
   });
 }
 
@@ -343,22 +360,30 @@ export function assertSourceMaterialEncounteredByThread({
   });
 }
 
-export function assertForkBoundaryAgainstCanonicalHistory({ originFixture, historyStore }) {
+export function assertForkBoundaryAgainstCanonicalEvents({
+  originFixture,
+  canonicalEvents,
+  ErrorType = TypeError,
+}) {
   const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
-  if (fixture.originKind !== "fork") throw new TypeError("canonical fork-boundary proof requires fork origin");
-  const events = replayedEvents(historyStore, fixture.fork.sourceThreadRef);
-  const divergenceEvent = events.find((event) => event.sequence === fixture.fork.divergenceSequence);
+  if (fixture.originKind !== "fork") {
+    throw new ErrorType("canonical fork-boundary proof requires fork origin");
+  }
+  if (!Array.isArray(canonicalEvents)) {
+    throw new ErrorType("canonical fork-boundary proof requires canonical events");
+  }
+  const divergenceEvent = canonicalEvents.find((event) => event.sequence === fixture.fork.divergenceSequence);
   if (divergenceEvent === undefined) {
-    throw new TypeError(`fork source Thread has no event at divergence sequence ${fixture.fork.divergenceSequence}`);
+    throw new ErrorType(`fork source Thread has no event at divergence sequence ${fixture.fork.divergenceSequence}`);
   }
   if (divergenceEvent.eventId !== fixture.fork.divergenceEventRef) {
-    throw new TypeError("fork divergenceEventRef does not match canonical source chronology");
+    throw new ErrorType("fork divergenceEventRef does not match canonical source chronology");
   }
-  const canonicalPrefix = events
+  const canonicalPrefix = canonicalEvents
     .filter((event) => event.sequence <= fixture.fork.divergenceSequence)
     .map((event) => event.eventId);
   if (canonicalJson(canonicalPrefix) !== canonicalJson(fixture.fork.inheritedHistoryEventRefs)) {
-    throw new TypeError("fork inherited history is not the exact canonical source prefix through divergence");
+    throw new ErrorType("fork inherited history is not the exact canonical source prefix through divergence");
   }
   return Object.freeze({
     fixtureId: fixture.fixtureId,
@@ -367,5 +392,14 @@ export function assertForkBoundaryAgainstCanonicalHistory({ originFixture, histo
     divergenceSequence: divergenceEvent.sequence,
     inheritedHistoryEventRefs: Object.freeze([...canonicalPrefix]),
     canonicalPrefixDigest: `sha256:${sha256(canonicalJson(canonicalPrefix))}`,
+  });
+}
+
+export function assertForkBoundaryAgainstCanonicalHistory({ originFixture, historyStore }) {
+  const fixture = normalizeGenesisOriginIntegrityFixture(originFixture);
+  if (fixture.originKind !== "fork") throw new TypeError("canonical fork-boundary proof requires fork origin");
+  return assertForkBoundaryAgainstCanonicalEvents({
+    originFixture: fixture,
+    canonicalEvents: replayedEvents(historyStore, fixture.fork.sourceThreadRef),
   });
 }
