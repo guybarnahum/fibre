@@ -18,7 +18,7 @@ import {
   runGenomeSpecificityControl,
 } from "../repro/pr39/genome-control/genesis-genome-positive-control.mjs";
 
-export const G2_PROTOCOL_PATH = "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v1.json";
+export const G2_PROTOCOL_PATH = "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v2.json";
 
 function fail(message) {
   throw new Error(message);
@@ -34,6 +34,52 @@ function digest(value) {
 
 function orderedValues(bundle) {
   return [...bundle.loci].sort((a, b) => a.ordinal - b.ordinal).map((locus) => locus.value);
+}
+
+function assignmentRankKey({ seed, kind, digest: itemDigest }) {
+  return sha256(canonicalJson({ seed, kind, digest: itemDigest }));
+}
+
+function verifyAssignmentPolicy(protocol) {
+  const policy = protocol.assignmentPolicy;
+  if (policy?.version !== "pr39-g2-world-genome-assignment-v2") fail("G2 assignment policy version drift");
+  if (policy?.originClassPreserved !== true) fail("G2 assignment must preserve origin class");
+  if (policy?.cyclicOffset !== 1) fail("G2 assignment cyclic offset drift");
+  if (!Array.isArray(policy?.mapping) || policy.mapping.length !== 5) fail("G2 assignment mapping must contain five slots");
+  if (digest(policy.mapping) !== policy.mappingDigest) fail("G2 assignment mapping digest drift");
+
+  const bindingBySlot = new Map(protocol.worldBindings.map((binding) => [binding.slot, binding]));
+  for (const entry of policy.mapping) {
+    const binding = bindingBySlot.get(entry.cohortSlot);
+    if (binding === undefined || binding.genomeSourceSlot !== entry.genomeSourceSlot) {
+      fail(`G2 assignment mapping disagrees with binding slot ${entry.cohortSlot}`);
+    }
+  }
+
+  for (const originMode of ["de_novo", "synthetic_lineage"]) {
+    const group = protocol.worldBindings.filter((binding) => binding.originMode === originMode);
+    if (group.length === 0) fail(`G2 assignment origin class ${originMode} is empty`);
+    const worldRank = [...group].sort((a, b) => {
+      const ka = assignmentRankKey({ seed: policy.seed, kind: "world", digest: a.worldSpecDigest });
+      const kb = assignmentRankKey({ seed: policy.seed, kind: "world", digest: b.worldSpecDigest });
+      return ka.localeCompare(kb) || a.slot - b.slot;
+    });
+    const genomeRank = [...group].sort((a, b) => {
+      const ka = assignmentRankKey({ seed: policy.seed, kind: "genome", digest: a.genomeDigest });
+      const kb = assignmentRankKey({ seed: policy.seed, kind: "genome", digest: b.genomeDigest });
+      return ka.localeCompare(kb) || a.genomeSourceSlot - b.genomeSourceSlot;
+    });
+    for (let index = 0; index < worldRank.length; index += 1) {
+      const worldBinding = worldRank[index];
+      const expectedGenome = genomeRank[(index + policy.cyclicOffset) % genomeRank.length];
+      if (worldBinding.genomeSourceSlot !== expectedGenome.genomeSourceSlot) {
+        fail(`G2 deterministic assignment replay failed for cohort slot ${worldBinding.slot}`);
+      }
+      if (worldBinding.originMode !== expectedGenome.originMode) {
+        fail(`G2 deterministic assignment crossed origin class at cohort slot ${worldBinding.slot}`);
+      }
+    }
+  }
 }
 
 function verifyWorldBinding(binding) {
@@ -59,6 +105,8 @@ function verifyGenomeBinding(binding) {
   }
   if (bundle.header.genesisId !== binding.genesisId) fail(`G2 genome slot ${binding.slot} genesis drift`);
   if (bundle.loci.length !== 6) fail(`G2 genome slot ${binding.slot} must contain six loci`);
+  if (binding.originMode === "de_novo" && bundle.header.originKind !== "de_novo") fail(`G2 slot ${binding.slot} origin mismatch`);
+  if (binding.originMode === "synthetic_lineage" && bundle.header.originKind !== "recombined") fail(`G2 slot ${binding.slot} origin mismatch`);
   return bundle;
 }
 
@@ -99,16 +147,21 @@ function verifyPairSchedule(protocol) {
 
 export function verifyG2GenomeFreeze({ protocolPath = G2_PROTOCOL_PATH } = {}) {
   const protocol = readJson(protocolPath);
-  if (protocol.protocolVersion !== "pr39-slice-g2-cohort-genome-freeze-v1") fail("unexpected G2 protocol version");
+  if (protocol.protocolVersion !== "pr39-slice-g2-cohort-genome-freeze-v2") fail("unexpected G2 protocol version");
   if (protocol.status !== "frozen_pre_control") fail("G2 protocol must be frozen before control execution");
   if (protocol.preconditions?.g1Status !== "COMPLETE_CLEAR") fail("G2 requires G1 CLEAR");
-  if (protocol.preconditions?.cohortGenomeVisibilityDuringG1Authoring !== false) fail("G2 world/genome blindness witness missing");
   if (protocol.preconditions?.finalCohortLifeExists !== false) fail("G2 protocol cannot begin after final life exists");
+  if (protocol.preconditions?.g2CeilingOutputExistedBeforeThisFreeze !== false) fail("G2 v2 correction must predate ceiling output");
+  if (protocol.authorshipBoundary?.worldContextAvailableToProtocolAuthorAtLocusAuthoring !== true) fail("G2 v2 must preserve truthful World-context visibility witness");
+  if (protocol.authorshipBoundary?.worldContentUsedAsLocusGenerationOrSelectionInput !== false) fail("G2 loci may not be selected from World content");
   if (protocol.control?.instrumentVersion !== GENOME_CONTROL_VERSION) fail("G2 control instrument version drift");
   if (protocol.control?.trialCountPerPair !== CONTROL_SITUATIONS.length) fail("G2 control trial count drift");
   if (protocol.control?.modelCallsPerPair !== CONTROL_SITUATIONS.length * 3) fail("G2 control model-call count drift");
 
   if (!Array.isArray(protocol.worldBindings) || protocol.worldBindings.length !== 5) fail("G2 requires exactly five world/genome bindings");
+  if (new Set(protocol.worldBindings.map((binding) => binding.genomeSourceSlot)).size !== 5) fail("G2 assigned genome source slots must be unique");
+  verifyAssignmentPolicy(protocol);
+
   const bindings = new Map();
   const genomes = new Map();
   for (const binding of protocol.worldBindings) {
@@ -124,6 +177,9 @@ export function verifyG2GenomeFreeze({ protocolPath = G2_PROTOCOL_PATH } = {}) {
   for (const lineage of protocol.syntheticLineages) {
     const child = genomes.get(lineage.slot);
     if (child === undefined) fail(`G2 lineage slot ${lineage.slot} has no child genome`);
+    if (protocol.worldBindings.find((binding) => binding.slot === lineage.slot)?.genomeSourceSlot !== lineage.genomeSourceSlot) {
+      fail(`G2 lineage slot ${lineage.slot} source-slot drift`);
+    }
     const parents = lineage.parentGenomePaths.map((path, index) => verifyParentBundle(
       path,
       lineage.parentGenomeIds[index],
@@ -136,7 +192,7 @@ export function verifyG2GenomeFreeze({ protocolPath = G2_PROTOCOL_PATH } = {}) {
     if (canonicalJson(contributionCounts) !== canonicalJson(lineage.expectedParentContributionCounts)) {
       fail(`G2 lineage slot ${lineage.slot} parent contribution drift`);
     }
-    lineageEvidence.push({ slot: lineage.slot, contributionCounts, parentGenomeIds: sourceRefs });
+    lineageEvidence.push({ slot: lineage.slot, genomeSourceSlot: lineage.genomeSourceSlot, contributionCounts, parentGenomeIds: sourceRefs });
   }
 
   verifyPairSchedule(protocol);
@@ -301,8 +357,10 @@ export async function runG2GenomeCeiling({
     rater: structuredClone(protocol.control.rater),
     instrumentVersion: protocol.control.instrumentVersion,
     pairSchedulePolicy: protocol.control.pairSchedulePolicy,
+    assignmentPolicy: structuredClone(protocol.assignmentPolicy),
     worldGenomeBindings: protocol.worldBindings.map((binding) => ({
       slot: binding.slot,
+      genomeSourceSlot: binding.genomeSourceSlot,
       worldSpecId: binding.worldSpecId,
       worldSpecDigest: binding.worldSpecDigest,
       genomeId: binding.genomeId,
