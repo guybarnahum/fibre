@@ -55,6 +55,7 @@ import {
   assertGenesisOriginAuthorityWitness,
   normalizeGenesisOriginIntegrityFixture,
 } from "./genesis-origin-source-integrity.mjs";
+import { bindBirthGenomeAndLineageInTransaction } from "./genesis-birth-genome-lineage.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -505,9 +506,14 @@ export class GenesisStore {
       thread: threadCandidate,
       episodes: episodeCandidates = [],
       memories: memoryCandidates = [],
+      lifeRelations: lifeRelationCandidates = [],
       originFixture: originFixtureCandidate = null,
     },
-    { failAfterSeedForTest = false, failAfterFirstMemoryForTest = false } = {},
+    {
+      failAfterSeedForTest = false,
+      failAfterFirstMemoryForTest = false,
+      failAfterLineageForTest = false,
+    } = {},
   ) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot publish birth");
     const manifest = normalizeGenesisManifest(manifestCandidate);
@@ -672,6 +678,16 @@ export class GenesisStore {
           event.correlationId,
           provenanceJson,
         );
+      }
+
+      bindBirthGenomeAndLineageInTransaction(this.#database, {
+        manifest,
+        lifeRelationCandidates,
+        seedEventId,
+        ErrorType: GenesisConflictError,
+      });
+      if (failAfterLineageForTest) {
+        throw new GenesisConflictError("simulated Stage-8 lineage publication failure");
       }
 
       const memoryHeadById = new Map();
