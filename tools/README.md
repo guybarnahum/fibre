@@ -1,134 +1,90 @@
 # Fibre tools
 
-`tools/` is an implementation location, not one lifecycle class. Files here fall into distinct categories and should not be interpreted as equally current merely because they share a directory.
+`tools/` is organized by **operational role and evidence lifecycle**. Do not add new flat tool files at the directory root.
 
-## 1. Active repository and operator tooling
-
-Used during normal development or operation:
+## Layout
 
 ```text
-build-context-pack.mjs
-check-git-sync.mjs
-context-pack-lib.mjs
-markdown-includes-lib.mjs
-sync-markdown-includes.mjs
-validate-repo.mjs
-validate-world-seed.mjs
-
-test-value-audit.mjs
-test-suite-lifecycle.mjs
-run-test-suite.mjs
-
-inspect-world-database.mjs
-inspect-structured-obligations.mjs
-inspect-thread-identity.mjs
-inspect-genesis.mjs
-inspect-symbolic-genome.mjs
-
-serve-thread-editor.mjs
-thread-editor-server.mjs
+tools/
+├── repo/             repository validation, context packs, include sync, git checks
+├── inspect/          read-only human/operator inspection commands
+├── editor/           Thread Editor server and editor-specific regressions
+├── model/            model/provider smoke tooling
+├── shared/           helpers used by more than one tool family
+├── genesis/          current Genesis development and characterization tooling
+├── gates/
+│   ├── guardian/     current Guardian development/read-only gate tooling
+│   ├── history/      current history-causality development/read-only gate tooling
+│   └── causal/       current causal proof utilities
+├── repro/
+│   ├── m1/           retained M1 proof/demo instruments
+│   ├── pr39-genome/  retained #39 genome-control instrument
+│   ├── pr39-e2/      retained #39 E2/A0/H6/A2/A2b/N1/N2/V1/V2 instruments
+│   ├── guardian/     retired Guardian/standing execution scaffolding
+│   └── standing/     retained standing evidence checks
+└── test-infra/       active/repro/all suite discovery and test-value auditing
 ```
 
-These support repository integrity, inspection, the Thread editor, or the current test lifecycle.
+## Compatibility boundary links
 
-## 2. Active development utilities
+The category roots also contain a small number of Git symlinks such as `tools/services`, `tools/gates/services`, and `tools/repro/services`.
 
-Useful while developing current Fibre behavior but not themselves durable world authority:
+These are **relocation bridges**, not additional tool ownership trees. They exist because Stage 6 physically moved existing tools while deliberately preserving the bytes of retained scientific instruments. A historical file that originally imported `../services/...` can therefore keep the same source blob after relocation.
 
-```text
-model-api-smoke.mjs
-provider-progress.mjs
-genesis-pass-a-dev.mjs
-genesis-rich-life-dev.mjs
-semantic-guardian-dev-cli.mjs
-semantic-guardian-v4-counterfactual-dev.mjs
-history-bends-judgment-dev-cli.mjs
-```
+Rules:
 
-Their outputs are development evidence unless a separately frozen protocol says otherwise.
-
-## 3. Read-only evidence inspectors
-
-These inspect already sealed evidence; they do not create a new gate result:
-
-```text
-semantic-guardian-sealed-inspector.mjs
-history-bends-judgment-sealed-inspector.mjs
-```
-
-The corresponding `guardian:gate` and `history:gate` npm commands remain because they are useful read-only verification surfaces.
-
-## 4. Historical demos and proofs
-
-Milestone demonstrations/proofs remain available because they are useful regression and explanatory material, but their names already identify them as proof/demo surfaces rather than production services:
-
-```text
-m1-demo-editor.mjs
-m1-demo-world-kernel.mjs
-m1-expression-proof.mjs
-m1-mina-round-trip.mjs
-m1-reviewed-proof.mjs
-m2-causal-wire-live-proof.mjs
-```
-
-Do not infer current architecture solely from a historical proof runner.
-
-## 5. Retained #39 scientific reproducibility code
-
-The E2 development lineage is intentionally retained even where a mechanism failed or was superseded:
-
-```text
-genesis-genome-positive-control.mjs
-genesis-rich-life-e2-a0*.mjs
-genesis-rich-life-e2-h6-*.mjs
-genesis-rich-life-e2-a2*.mjs
-genesis-rich-life-e2-n1*.mjs
-genesis-rich-life-e2-n2*.mjs
-genesis-rich-life-e2-v1*.mjs
-genesis-rich-life-e2-v2*.mjs
-genesis-rich-life-e2-worlds.mjs
-```
-
-These files are **not the current Genesis mechanism**. They are executable records of hypotheses, preflights, burned runs, protocol corrections, negative results, and the Gate-F development evidence.
-
-They remain at their historical paths to avoid needless churn in sealed documentation and experiment references. Stage 6 separates their *execution lifecycle* rather than rewriting or relocating them.
-
-The exact reproducibility-test membership is authoritative in:
-
-```text
-tools/test-suite-lifecycle.mjs
-```
+- new tools must use their real repository-relative imports and must not depend on a new compatibility bridge;
+- compatibility links must never be traversed by test discovery;
+- retained experiment/proof files should remain byte-stable unless a new explicitly versioned instrument is created;
+- deleting a compatibility link requires first proving that every file using it has been intentionally migrated.
 
 ## Test lifecycle
 
-Normal development:
-
 ```bash
-npm test
+npm test            # active product/regression/operator suite
+npm run test:repro  # retained scientific/proof reproducibility suite
+npm run test:all    # complete retained test envelope
+npm run test:audit -- --check
 ```
 
-runs the **active regression suite**: domain, world-kernel, and active tool tests.
+`tools/test-infra/test-suite-lifecycle.mjs` owns the explicit repro path manifest. Any newly added test defaults to **active** unless deliberately classified as reproducibility evidence.
 
-Historical #39 experiment reproducibility:
+The path itself is not scientific authority. Protocol documents, frozen artifacts, hashes and gate records remain authoritative for what an experiment proved or failed to prove.
 
-```bash
-npm run test:repro
-```
+## What belongs where
 
-runs only the explicitly retained retired/frozen experiment tests.
+### `repo/`
+Tools whose subject is the repository itself: validation, generated context, Markdown includes, git synchronization.
 
-Complete repository test envelope:
+### `inspect/`
+Read-only database/Thread/Genesis/genome/obligation inspection intended for humans or operators.
 
-```bash
-npm run test:all
-```
+### `editor/`
+Thread Editor serving and editor readability/model/server regressions.
 
-runs active + reproducibility tests and is the successor to the pre-Stage-6 monolithic `npm test` behavior.
+### `model/` and `shared/`
+Provider/model smoke checks live under `model/`. Cross-cutting implementation helpers such as the provider-progress heartbeat live under `shared/` rather than being duplicated across Genesis and gate tooling.
 
-New tests default to **active**. A test moves to reproducibility only through an explicit entry in `REPRO_TOOL_TEST_FILES`; filename pattern matching does not silently exclude future regressions.
+### `genesis/`
+Current non-evidentiary Genesis development tools and measurement-only characterization. This directory is not where burned E2 protocols live.
 
-## Package-script policy
+### `gates/`
+Current development or read-only inspection surfaces for established gate systems. A file here is not automatically authority to run a new standing cycle; the corresponding protocol still controls.
 
-`package.json` should expose current operational/dev surfaces and a small number of lifecycle commands. Historical E2 one-off model runners are deliberately **not** given ordinary `genesis:*` npm aliases after Stage 6; their source remains executable directly when reproducing a sealed experiment.
+### `repro/`
+Historical scientific/proof instruments retained because Fibre preserves negative as well as positive evidence. A file under `repro/` may be executable, but it is not the current production mechanism and must not silently become one.
 
-This keeps the command surface from presenting superseded experiments as current Fibre architecture while preserving the evidence itself.
+### `test-infra/`
+Repository mechanics for discovering the active/repro/all suites and auditing test value. These files are themselves active regressions.
+
+## No evidence laundering
+
+Moving a file does not change what it means. In particular:
+
+- failed E2-V1 remains failed;
+- old N1 remains an instrument with the known memory-detection defect;
+- N1-on-A0 remains underpowered and non-dispositive;
+- N2 remains the corrected development instrument that closed Gate F;
+- no moved tool or test becomes production policy merely because it still executes.
+
+See `docs/validation/m2-pr39-pre-g-stage6-tool-relocation-manifest.json` for the blob-preserving scientific relocation record.
