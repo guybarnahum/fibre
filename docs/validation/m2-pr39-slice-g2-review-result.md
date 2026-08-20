@@ -39,11 +39,11 @@ For the five measured edges, the frozen cohort genomes are **textually distingui
 This is necessary for later genome-propagation interpretation. It does not establish that:
 
 - genome has affected history, memory, meaning, judgment or behavior;
-- the distinguishing signal is semantic rather than literal/surface-level;
+- the distinguishing signal is fully semantic rather than partly literal/surface-level;
 - an unmeasured genome pair has any usable ceiling;
 - 82.5% is a pooled inferential cohort specificity rate.
 
-The G2 claim should therefore no longer be written unqualified as “the cohort-genome specificity ceiling.” Use **five-pair genome specificity ceiling** or **five-pair textual-distinguishability ceiling**.
+The G2 claim must therefore be written as **five-pair genome specificity ceiling** or **five-pair textual-distinguishability ceiling**, not as an unqualified full-cohort pairwise ceiling.
 
 ## Five-pair scope
 
@@ -69,8 +69,6 @@ Instead:
 
 > H may use G2 as a genome-specificity ceiling only for the five measured pairs. Unmeasured pairs may be inspected descriptively but may not receive a G2-normalized genome-specificity inference unless a separately frozen complementary-cycle experiment is run first.
 
-This preserves the cheaper screening design and prevents specificity from being asserted across pairs where G2 has no evidence.
-
 ## p03 is a pair-specific warning, not a weak-genome finding
 
 ```text
@@ -80,11 +78,11 @@ p03  slots 3 vs 4  15/24  p = 0.153728...  inconclusive
 Do not call slots 3 or 4 individually weak:
 
 ```text
-slot 3  p02 = 19/24 detectable   p03 = 15/24 inconclusive
-slot 4  p03 = 15/24 inconclusive p04 = 21/24 strong
+slot 3  p02 = 19/24 detectable    p03 = 15/24 inconclusive
+slot 4  p03 = 15/24 inconclusive  p04 = 21/24 strong
 ```
 
-Each endpoint is distinguishable on its other measured edge. The observed weakness therefore belongs to the **3/4 combination**.
+Each endpoint is distinguishable on its other measured edge. The observed weakness belongs to the **3/4 combination**.
 
 H interpretation constraint:
 
@@ -96,13 +94,7 @@ Keep p03 exactly as observed. Do not rewrite either genome or repeat the same pa
 
 The frozen G2 rule requiring every genome to touch a detectable edge remains valid as a predeclared rule.
 
-But in this particular run exactly one edge failed. On a five-cycle, full vertex coverage is then automatic. Therefore:
-
-```text
-“genome coverage 1,2,3,4,5”
-```
-
-must not be presented as a second independent empirical success.
+But in this run exactly one edge failed. On a five-cycle, full vertex coverage is then automatic. Therefore `genome coverage 1,2,3,4,5` must not be presented as a second independent empirical success.
 
 The useful observed evidence is the per-genome edge profile:
 
@@ -128,8 +120,6 @@ P(frozen CLEAR rule incl coverage)  0.0001580038
 
 These values were independently recomputed after the result. They are **reference arithmetic only**; they are not a claim that empirical pair outcomes are independent.
 
-The useful conclusion is narrow: the frozen CLEAR rule was not permissive under the chance reference model.
-
 ## Cross-provider bound
 
 ```text
@@ -137,36 +127,44 @@ generator  google/gemini-3.6-flash
 rater      openai/gpt-5.1-2025-11-13
 ```
 
-The split removes the same-model self-recognition bound from the earlier Slice-B same-model run.
-
-Shared language/training priors remain a residual possible cue source. That bounds interpretation but does not invalidate the ceiling.
+The split removes the same-model self-recognition bound from the earlier Slice-B same-model run. Shared language/training priors remain a residual possible cue source.
 
 ## Lexical-overlap follow-up
 
-The hostile review correctly noted that the current instrument cannot distinguish semantic-route specificity from responsiveness to visible textual propositions.
-
-A no-model-call post-hoc diagnostic is therefore added:
+Preserved observational artifact:
 
 ```text
-tools/genesis/genesis-g2-lexical-overlap.mjs
-npm run genesis:g2-lexical-overlap
+artifacts/validation/m2-pr39/g/results/g2-lexical-overlap-v1.json
 ```
 
-It compares exact normalized tokens distinctive to Genome A versus Genome B with the two generated responses on each trial, then reports:
+Method: exact normalized tokens distinctive to one genome in each measured pair are compared with the generated responses. This is post-hoc, no-model-call, and non-gating.
 
-- literal-token classifier accuracy excluding ties;
-- exact-token cue margin per trial;
-- correlation between literal cue margin and blind-rater correctness;
-- binary non-tie association.
+Observed:
 
-This diagnostic is **observational and non-gating** because it was defined after G2 results were visible. It cannot upgrade G2 from textual distinguishability to semantic specificity. It can only bound how much of the observed ceiling appears explainable by exact lexical reuse.
+```text
+trials                              120
+non-tie literal trials               86
+ties                                 34
+literal classifier correct        62/86
+literal accuracy excluding ties    72.1%
+Pearson literal margin vs rater    0.0787
+non-tie phi                        0.1023
+```
+
+Interpretation:
+
+> Some exact lexical carry-through exists, but blind-rater success is only weakly associated with the exact-token signal measured by this diagnostic.
+
+This reduces the plausibility that the strong G2 result is explained mainly by exact distinctive-token copying. It does **not** prove semantic specificity because the diagnostic cannot detect paraphrase, syntax, style or other shared cues.
+
+The durable claim remains a five-pair **textual-distinguishability** ceiling.
 
 ## Resolution of hostile-review items
 
 ```text
 B1 required     RESOLVED — five-pair scope and H restriction recorded
 B2 required     RESOLVED — p03 pair-specific H constraint machine-recorded
-B3 recommended  IMPLEMENTED — lexical-overlap diagnostic; result pending local execution
+B3 recommended  COMPLETE — lexical diagnostic preserved; weak association with rater correctness
 B4 recommended  RESOLVED — per-genome edge profile replaces coverage-as-achievement framing
 ```
 
@@ -176,9 +174,7 @@ B4 recommended  RESOLVED — per-genome edge profile replaces coverage-as-achiev
 G1                 COMPLETE / CLEAR
 G2 raw result       COMPLETE / CLEAR
 G2 hostile review  CLEAR with bounded interpretation
-lexical check       PENDING observational execution; no model calls
-G3                 may begin after the cheap lexical result is preserved
-H                   still FORBIDDEN until full Gate G CLEAR
+G2 lexical check   COMPLETE / observational / non-gating
+G3                 AUTHORIZED
+H                   FORBIDDEN until full Gate G CLEAR
 ```
-
-The lexical check is deliberately completed before G3 for cleanliness, even though it is not a new G2 admission gate.
