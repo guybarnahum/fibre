@@ -227,7 +227,7 @@ test("Stage 8 atomically binds persisted child genome to admitted #38 synthetic-
     const result = genesis.publishBirth({
       manifest: manifest(set.child.header.genomeId),
       thread,
-      lifeRelations: relations(thread),
+      lifeRelations: [...relations(thread)].reverse(),
     });
     assert.equal(result.thread.threadId, CHILD_ID);
     genesis.close();
