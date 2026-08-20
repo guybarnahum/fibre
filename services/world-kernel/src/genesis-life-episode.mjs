@@ -4,6 +4,7 @@ import {
   assertExactKeys,
   assertId,
   assertPlainObject,
+  boundedThreadScopedId,
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
@@ -64,7 +65,11 @@ export function genesisLifeEpisodeEventId({ threadId, genesisId, episode: candid
   assertId("genesisId", genesisId);
   const episode = normalizeRichPassAEpisode(candidate, { enforceObservableForm: false });
   const digest = sha256(canonicalJson({ threadId, genesisId, episode }));
-  return `evt_${threadId}_life_${digest.slice(0, 24)}`;
+  return boundedThreadScopedId({
+    prefix: "evt",
+    threadId,
+    suffix: `life_${digest.slice(0, 24)}`,
+  });
 }
 
 function assertLifeEpisodeProvenance(event, episode) {
