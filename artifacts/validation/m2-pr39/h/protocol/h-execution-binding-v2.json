@@ -1,0 +1,126 @@
+{
+  "contractVersion": "pr39-slice-h-execution-binding-v1",
+  "executionAttemptVersion": "H-v2",
+  "status": "post_h1_operational_hold_compatibility_binding_pre_h2_life",
+  "supersedesAttempt": {
+    "attempt": "H-v1",
+    "status": "HOLD_FIRST_COHORT_ATTEMPT_FAILED_NO_REGENERATION",
+    "freezeCommit": "448bd669f742a566da289cc4117907f2d37e32e3",
+    "failureArtifact": "artifacts/validation/m2-pr39/h/cohort-v1/h-final-cohort-failure-v1.json",
+    "runnerPath": "tools/genesis/genesis-h-final-cohort.mjs",
+    "runnerBlobAtFailure": "b3f8dc0b382ea64431df866a80ab91804021431f",
+    "rerunAllowed": false
+  },
+  "authorityBoundary": {
+    "gateGClearWitnessPath": "artifacts/validation/m2-pr39/g/protocol/gate-g-clear-v1.json",
+    "g2ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v2.json",
+    "g3ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v2.json",
+    "g4BaseProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v1.json",
+    "g4AmendmentPath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v2.json",
+    "g6ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json",
+    "changesFrozenG1ThroughG6": false,
+    "addsScientificChoice": false,
+    "purpose": "Version only the OpenAI strict-JSON transport representation after H-v1 was rejected before Pass-B cognition. All canonical cognition prompts, schemas, local admission semantics and G1-G6 authorities remain unchanged."
+  },
+  "transportCompatibility": {
+    "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+    "scope": "OpenAI provider wire schema for the frozen Pass-B response only",
+    "canonicalPassBSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+    "projectedTransportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+    "omittedProviderConstraints": [
+      {"path": "$.properties.episodeRefs.uniqueItems", "keyword": "uniqueItems", "value": true},
+      {"path": "$.properties.rememberedContent.maxLength", "keyword": "maxLength", "value": 600},
+      {"path": "$.properties.uncertainty.maxItems", "keyword": "maxItems", "value": 8},
+      {"path": "$.properties.uncertainty.items.maxLength", "keyword": "maxLength", "value": 120}
+    ],
+    "localRevalidationRequired": true,
+    "localRevalidationFailure": "H2_OPERATIONAL_HOLD_NO_RERUN",
+    "canonicalSchemaChanged": false,
+    "canonicalSchemaHashChanged": false,
+    "promptChanged": false,
+    "modelChanged": false,
+    "providerChanged": false,
+    "treatmentChanged": false,
+    "rationale": "OpenAI Responses strict Structured Outputs accepts only a subset of JSON Schema. H-v1 proved uniqueItems is rejected at request validation. H-v2 may project provider-unsupported constraint keywords out of the wire schema only when the exact omitted constraints are mechanically enforced on the returned output before Fibre admission."
+  },
+  "oneShot": {
+    "wholeCandidateAttemptCap": 1,
+    "qualityDrivenRegeneration": false,
+    "refuseExecutionIfOutputRootExists": true,
+    "outputRoot": "artifacts/validation/m2-pr39/h/cohort-v2",
+    "databasePath": "artifacts/validation/m2-pr39/h/cohort-v2/world.sqlite",
+    "resultPath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-v2.json",
+    "failurePath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json"
+  },
+  "threadSeedProjection": {
+    "threadStatus": "frozen",
+    "identity": {
+      "name": "Fibre Thread",
+      "originOrientation": "original",
+      "selfDescription": "I am a Fibre Thread."
+    },
+    "legacyGenome": {
+      "textualTraits": {},
+      "runtimeBaselines": {}
+    },
+    "currentState": {
+      "needs": [],
+      "feelings": [],
+      "selfModel": "I am a Fibre Thread.",
+      "unresolvedIntentions": []
+    },
+    "accounts": {
+      "fibreCredits": 0,
+      "usdAvailable": 0,
+      "modelTokensAvailable": 0
+    },
+    "relationshipRefs": [],
+    "memoryRefs": [],
+    "createdBy": "fibre.genesis",
+    "uniformityRule": "All five seed projections are identical except threadId, provenance timestamps and the derived seed-event ID. No World, genome, origin-mode or generated-life content enters the compatibility seed."
+  },
+  "memoryPublicationProjection": {
+    "subjectOriginRule": "earliest cited Pass-A episode in admitted life chronology",
+    "slotRule": "pass_b_call_<two-digit-call-ordinal>",
+    "eventRefsRule": "all Pass-B cited episode refs mapped to deterministic Genesis life-event IDs and sorted by admitted life chronology",
+    "subjectPeriodRule": "earliest-to-latest occurredAt over cited Pass-A episodes",
+    "confidence": 0.5,
+    "salience": 0.5,
+    "accessibility": "accessible",
+    "retentionState": "fragmentary",
+    "visibility": "private",
+    "authorshipKind": "fibre_genesis_authored",
+    "authorshipEntityId": "fibre.genesis",
+    "initialSupportingEvidenceRefs": [],
+    "contradictingEvidenceRefs": [],
+    "recordedAtRule": "single cohort publication timestamp captured after generation and before first birth publication",
+    "notRememberedRule": "not_remembered creates no autobiographical-memory record"
+  },
+  "reinterpretationBinding": {
+    "targetEpisodeRule": "the immutable memory subject-origin Pass-A episode",
+    "structureFamilyAuthority": "none_frozen",
+    "targetStructureFamilyRef": null,
+    "triggerStructureFamilyRef": null,
+    "sharedPersonRule": "exact intersection of target-origin and trigger participant refs excluding the subject Thread",
+    "sharedRelationshipRefs": [],
+    "sharedIntellectualSourceRule": "exact equality of normalized intellectualEncounter.subjectRef",
+    "candidateScope": "every later admitted Pass-A episode for every initially durable memory; the frozen scheduler computes age/relation eligibility and then applies the per-Thread run cap",
+    "runOrder": "the frozen scheduler's stable order",
+    "sameMemoryMultipleRuns": "each scheduled call sees the latest currently durable meaning for that memory so append-only memory revisions remain linear; the frozen eligibility/run decision itself is not recomputed from prior model outcomes",
+    "revisedPersistence": "append a corrected memory revision with unchanged rememberedContent/eventRefs and the new durable meaning",
+    "unchangedOrNonePersistence": "preserve the run result in H evidence without inventing a memory revision whose durable state did not change"
+  },
+  "syntheticLineagePublication": {
+    "sourceGenomeOrder": "frozen child genome sourceEligibility source order",
+    "relationKind": "biological_parent",
+    "geneticContributionRole": "parent_genome_source",
+    "relatedPartyKind": "synthetic_ancestor",
+    "visibility": "private",
+    "status": "current",
+    "provenance": "genesis_created",
+    "validFromRule": "frozen Thread bornAt",
+    "validTo": null,
+    "sourceReferenceRule": "derived birth seed-event ID",
+    "displayNameRule": "exact synthetic ancestor owner ID"
+  }
+}
