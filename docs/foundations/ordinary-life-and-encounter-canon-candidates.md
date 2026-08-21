@@ -127,6 +127,26 @@ Consequences:
 
 This candidate is a concrete corollary of Principle 6.
 
+## Candidate 8 — Interpretive closure is always settled-for-now
+
+> **A Thread may stop actively questioning an experience without making its interpretation permanently final.**
+
+Experiences can remain cognitively unfinished after they occur. A Thread may privately reflect, talk with another Thread or human, research external sources, compare memories, or simply encounter more life before arriving at a current interpretation.
+
+When the Thread no longer has an active interpretive question, the state is **settled-for-now**. It is not a declaration of objective truth, permanent closure, or immunity from later evidence.
+
+Consequences:
+
+- interpretive incompleteness is legitimate persistent state rather than a defect;
+- reflection is episodic and bounded rather than a compulsory thought loop;
+- a Thread may seek help from people, books, tools, or the internet without making those sources authorities over autobiographical meaning;
+- settled-for-now experiences may later reopen when new evidence, consequences, relationships, or experiences materially change the interpretive basis;
+- prior interpretations remain part of Thread history when reopened rather than being silently rewritten;
+- Fibre must not reopen old experiences merely to simulate depth or personality;
+- a public `onMyMind` list is a disclosure-mediated projection of underlying Thread state, not a new authority.
+
+This candidate is developed in [`../concepts/unsettled-experience-and-reflection.md`](../concepts/unsettled-experience-and-reflection.md).
+
 ## Proposed canon landing if accepted
 
 The current recommendation is **not** to add a fourteenth numbered Principle.
@@ -135,7 +155,7 @@ If these candidates survive review, land them where their authority naturally be
 
 ### `docs/foundations/interpretive-personhood.md`
 
-Add a compact principle establishing that experience, memory, and meaning are separate constitutive stages and that meaning may emerge later through reflection or relationship.
+Add a compact principle establishing that experience, memory, and meaning are separate constitutive stages; meaning may emerge later through reflection or relationship; and interpretive closure remains corrigible rather than permanently final.
 
 ### `docs/concepts/development-and-memory.md`
 
@@ -145,15 +165,20 @@ Operationalize:
 history
   -> recent lived context
   -> selective autobiographical memory
+  -> optional unsettled interpretation
   -> optional durable meaning
-  -> later reinterpretation
+  -> settled-for-now / later reopening and reinterpretation
 ```
 
 State explicitly that human encounters receive no automatic retention or formative privilege.
 
+### `docs/concepts/unsettled-experience-and-reflection.md`
+
+If the concept survives hostile review, promote or merge its accepted semantics into the canonical development model. Preserve the distinctions among memory, unsettled interpretation, meaning, intention, obligation, emotion, and task state.
+
 ### `docs/architecture/thread-lifecycle.md`
 
-Establish that ordinary Thread life may contain time, place, plans, scheduled intentions, and plan changes independent of an external request. A human encounter enters that lifecycle rather than defining it.
+Establish that ordinary Thread life may contain time, place, plans, scheduled intentions, plan changes, and bounded reflective episodes independent of an external request. A human encounter enters that lifecycle rather than defining it.
 
 ### `docs/glossary.md`
 
@@ -161,6 +186,8 @@ After the concepts stabilize, define:
 
 - `Daily Plan`;
 - `Recent Lived Context`;
+- `Unsettled Experience` or the chosen equivalent;
+- `Settled-for-now`;
 - `Thread Presentation Packet`;
 - `Thread Encounter Snapshot`;
 - `Presentation reconstruction`.
@@ -176,8 +203,13 @@ Keep provider choice, media formats, the 72-hour initial policy, file layouts, a
 3. What process decides whether an ordinary post-Genesis event receives a memory-formation opportunity, without pre-labeling significance?
 4. When should later reflection be able to create a remembered meaning for an old memory that previously had none?
 5. How should conversations with others contribute to meaning while preventing another person from becoming authority over the Thread's autobiography?
-6. Which current-location details may a Thread authorize for public disclosure, and how should delay/coarsening work?
-7. When a live Thread authors or approves public narration, what durable authorization/provenance is required before the presentation can label it `thread_authored` rather than `fibre_projection`?
+6. Is `UnsettledExperience` a legitimate persistent authority or a derived projection over existing memory/state/intentions?
+7. What admits an experience onto an active interpretive agenda, and what prevents that agenda from becoming an engineered rumination loop?
+8. Is `settled_for_now` the correct and sufficient closure semantics for interpretation?
+9. When should new experience reopen a settled-for-now interpretation, and must the Thread consciously notice the contradiction before reopening occurs?
+10. Can an initially `not_remembered` event later become autobiographical memory, and what provenance would distinguish resurfacing, reconstruction, and second-hand account?
+11. Which current-location details may a Thread authorize for public disclosure, and how should delay/coarsening work?
+12. When a live Thread authors or approves public narration or `onMyMind` content, what durable authorization/provenance is required before presentation labels it Thread-authored rather than Fibre projection?
 
 ## Related plan
 
