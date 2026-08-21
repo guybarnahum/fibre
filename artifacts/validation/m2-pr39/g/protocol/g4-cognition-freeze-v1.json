@@ -1,0 +1,328 @@
+{
+  "protocolVersion": "pr39-slice-g4-cognition-freeze-v1",
+  "status": "frozen_pre_life_generation",
+  "frozenAt": "2026-08-20T23:59:30Z",
+  "preconditions": {
+    "g1Status": "COMPLETE_CLEAR",
+    "g2Status": "COMPLETE_CLEAR_FIVE_PAIR_CEILING",
+    "g3Status": "COMPLETE_CLEAR",
+    "g3ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v1.json",
+    "g3ProtocolDigest": "sha256:3d4885d4c8f717622e466e65e7869526193eccd611967609f7809dfb4b1068a6",
+    "finalCohortLifeExists": false
+  },
+  "commonRuntime": {
+    "provider": "openai",
+    "modelId": "gpt-5.1-2025-11-13",
+    "transport": "responses",
+    "structuredOutput": "json_schema_strict",
+    "temperature": 0,
+    "topP": 1,
+    "reasoningEffort": "none",
+    "maxOutputTokens": "auto",
+    "timeoutMs": 45000,
+    "operationalRetryLimit": 2,
+    "operationalRetryDelayMs": 2000,
+    "sameConfigurationAllThreads": true,
+    "sameConfigurationPassAThroughC": true
+  },
+  "cognition": {
+    "policyVersion": "pr39-g4-final-cohort-cognition-v1",
+    "passA": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:96d79b51f390c67a2706e73985531fceca3c3418115912001ce2dce38332263e",
+      "schemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "sampling": {
+        "temperature": 0,
+        "topP": 1,
+        "reasoningEffort": "none",
+        "maxOutputTokens": "auto"
+      },
+      "mechanism": "corrected_coupled_chooser_realizer_a0",
+      "selectedOpportunityLayer": false,
+      "genomeBlind": true,
+      "worldEmergentEpisodeLegal": true
+    },
+    "passB": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:e41e7ddb846cfa4c96bd12bc44fcdf2fca6dd8ea26148289a54f122386ca952d",
+      "schemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "sampling": {
+        "temperature": 0,
+        "topP": 1,
+        "reasoningEffort": "none",
+        "maxOutputTokens": "auto"
+      },
+      "promptVersion": "genesis-pass-b-memory-formation-prompt-v1",
+      "formProfile": "genesis-pass-b-bounded-memory-v1",
+      "maxRememberedContentModelCharacters": 600,
+      "genomeExposureOnlyByG3Schedule": true
+    },
+    "passC": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:f9cde5a680ed103abb094aa92c67445565fa65c29408838999358e125b1cc7c1",
+      "schemaHash": "sha256:2493c8fe9d61d13f7939cbcaf2fa6dfddc76a662c78bf50f3c30a8dd7d699681",
+      "sampling": {
+        "temperature": 0,
+        "topP": 1,
+        "reasoningEffort": "none",
+        "maxOutputTokens": "auto"
+      },
+      "composite": {
+        "initialPromptHash": "sha256:dbc3edb8e85b59838f7e7ea27f503416c78b5ae557738a8b4f1b8201331fc959",
+        "reinterpretationPromptHash": "sha256:a4937fb0ccacdb8e0a4f7569a51e8627dc0d3d1cd5495ce52594c06691d81363",
+        "initialResponseSchemaHash": "sha256:c74a1209c3046a10a814261b3b75b1f3fcca1fcaae39607d07089ebcfe24a821",
+        "reinterpretationResponseSchemaHash": "sha256:4e33f63f5f577c575bf8cada13410b29bb5b772132e730df0d54b63dbee07c6e"
+      },
+      "genomeBlind": true,
+      "oneMemoryScoped": true,
+      "reinterpretationMinimumYears": 5,
+      "reinterpretationRunCapPerThread": 3
+    },
+    "recordRepair": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:c5cf4ed896d2a65f26840afe0e0d87a4353b8d5fdc8bbcddc9748defaefa56da",
+      "schemaHash": "sha256:c63a22699f976babfc5cba57bd11284356505c505a5e73abdf5d73bcadad9965",
+      "sampling": {
+        "temperature": 0,
+        "topP": 1,
+        "reasoningEffort": "none",
+        "maxOutputTokens": "auto"
+      },
+      "passARepairPromptHash": "sha256:8ac06a9bd495a0412069487662baecf9f47d8d09d57c1b833f69657775955bfb",
+      "passARepairSchemaHash": "sha256:d9e4e8f3833dbe23924053d575c123b2fc0b8723768971d3a15f66f4b830bdcc",
+      "passARecordRetryPromptHash": "sha256:8709f11bfe97affd857ebc525d796cd3d5e578bffcd20d7e98bfd21ad924b8f8",
+      "passARecordRetrySchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "constraintVersion": "genesis-rich-pass-a-record-retry-constraint-v3",
+      "maxGeneratedVersionsPerPassARecord": 3,
+      "passBModelRepair": false,
+      "passCModelRepair": false
+    }
+  },
+  "eventStructurePool": {
+    "version": "genesis-event-structure-pool-v2",
+    "digest": "sha256:1437891b2cbe2d8082283619b3f9e38e6cbce3eb2a323e989e27ce1a1dd33733",
+    "structuresPerWindow": 9,
+    "minimumLowConsequenceFraction": 0.4,
+    "offerSamplingAlgorithm": "sha256_rank_low_floor_then_rest_v1",
+    "seedDomain": "pr39-g4-final-life-v1",
+    "seedDerivation": "`${seedDomain}:slot:${slot2}:structures:${windowId}`",
+    "worldEmergentAlternative": true,
+    "note": "The pool is the reviewed v2 childhood/adolescence affordance pool. No new young-adult structures are introduced at G4."
+  },
+  "historicalPlan": {
+    "episodesPerThread": 10,
+    "generatedSpan": {
+      "startAt": "2010-08-20T00:00:00.000Z",
+      "endAt": "2022-08-19T23:59:59.999Z",
+      "minAge": 6,
+      "maxAge": 17.999
+    },
+    "entry": {
+      "stage": "young_adult",
+      "ageAtEntry": 22,
+      "bornAt": "2004-08-20T00:00:00Z",
+      "chronologyEndsAt": "2026-08-20T00:00:00Z",
+      "policyRef": "pr39-slice-g-entry-age-v1"
+    },
+    "coverageBoundary": "The ten generated Pass-A episodes are a sparse childhood-through-adolescence history sample, not a claim that nothing occurred before age 6 or from age 18 to Fibre entry at 22.",
+    "stratification": "equal_time_and_age_ten_strata_v1",
+    "windows": [
+      { "ordinal": 1, "windowId": "g4_childhood_adolescence_01", "startAt": "2010-08-20T00:00:00.000Z", "endAt": "2011-11-01T07:11:59.999Z", "minAge": 6, "maxAge": 7.1999 },
+      { "ordinal": 2, "windowId": "g4_childhood_adolescence_02", "startAt": "2011-11-01T07:12:00.000Z", "endAt": "2013-01-12T14:23:59.999Z", "minAge": 7.1999, "maxAge": 8.3998 },
+      { "ordinal": 3, "windowId": "g4_childhood_adolescence_03", "startAt": "2013-01-12T14:24:00.000Z", "endAt": "2014-03-26T21:35:59.999Z", "minAge": 8.3998, "maxAge": 9.5997 },
+      { "ordinal": 4, "windowId": "g4_childhood_adolescence_04", "startAt": "2014-03-26T21:36:00.000Z", "endAt": "2015-06-08T04:47:59.999Z", "minAge": 9.5997, "maxAge": 10.7996 },
+      { "ordinal": 5, "windowId": "g4_childhood_adolescence_05", "startAt": "2015-06-08T04:48:00.000Z", "endAt": "2016-08-19T11:59:59.999Z", "minAge": 10.7996, "maxAge": 11.9995 },
+      { "ordinal": 6, "windowId": "g4_childhood_adolescence_06", "startAt": "2016-08-19T12:00:00.000Z", "endAt": "2017-10-31T19:11:59.999Z", "minAge": 11.9995, "maxAge": 13.1994 },
+      { "ordinal": 7, "windowId": "g4_childhood_adolescence_07", "startAt": "2017-10-31T19:12:00.000Z", "endAt": "2019-01-13T02:23:59.999Z", "minAge": 13.1994, "maxAge": 14.3993 },
+      { "ordinal": 8, "windowId": "g4_childhood_adolescence_08", "startAt": "2019-01-13T02:24:00.000Z", "endAt": "2020-03-26T09:35:59.999Z", "minAge": 14.3993, "maxAge": 15.5992 },
+      { "ordinal": 9, "windowId": "g4_childhood_adolescence_09", "startAt": "2020-03-26T09:36:00.000Z", "endAt": "2021-06-07T16:47:59.999Z", "minAge": 15.5992, "maxAge": 16.7991 },
+      { "ordinal": 10, "windowId": "g4_childhood_adolescence_10", "startAt": "2021-06-07T16:48:00.000Z", "endAt": "2022-08-19T23:59:59.999Z", "minAge": 16.7991, "maxAge": 17.999 }
+    ]
+  },
+  "passBTiming": {
+    "historyHorizons": [4, 5, 6, 7, 8, 10],
+    "rememberingAtRule": "endAt of the developmental window whose ordinal equals the history horizon",
+    "ageAtRememberingRule": "maxAge of that developmental window",
+    "chronologyEndsAtRule": "same as rememberingAt",
+    "visibleHistoryRule": "exactly the first horizon admitted Pass-A episodes",
+    "priorMemoriesRule": "only earlier admitted Pass-B remembered outcomes for the same Thread",
+    "assignmentAuthority": "g3-pass-b-treatment-freeze-v1"
+  },
+  "passCTiming": {
+    "initialFormationRule": "Immediately after an admitted remembered Pass-B outcome at the same rememberingAt/age/horizon; no Pass C call for not_remembered.",
+    "reinterpretationScheduler": "genesis-pass-c-policy-v1 deterministic eligible-opportunity scheduler",
+    "minimumYearsAfterPriorMeaning": 5,
+    "runCapPerThread": 3,
+    "relationPrecedence": ["same_structure_family", "same_person_or_relationship", "same_intellectual_source"]
+  },
+  "initialRosters": [
+    {
+      "slot": 1,
+      "worldSpecId": "world_slice_g1_01_can_tho",
+      "threadId": "thr_pr39_g2_04",
+      "participants": [
+        { "participantId": "thr_pr39_g2_04", "factualRoles": ["subject"], "relationshipFacts": ["This is the provisional Thread whose prior life is being generated."] },
+        { "participantId": "person_g4_s01_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Cần Thơ."] },
+        { "participantId": "person_g4_s01_sibling_1", "factualRoles": ["sibling"], "relationshipFacts": ["Lives in the subject household and is four years younger than the subject."] },
+        { "participantId": "person_g4_s01_grandparent_1", "factualRoles": ["grandparent"], "relationshipFacts": ["Lives in the subject household in Cần Thơ."] },
+        { "participantId": "person_g4_s01_relative_1", "factualRoles": ["relative"], "relationshipFacts": ["Lives elsewhere in Cần Thơ and sometimes provides childcare or transport."] }
+      ]
+    },
+    {
+      "slot": 2,
+      "worldSpecId": "world_slice_g1_02_lodz",
+      "threadId": "thr_pr39_g2_05",
+      "participants": [
+        { "participantId": "thr_pr39_g2_05", "factualRoles": ["subject"], "relationshipFacts": ["This is the provisional Thread whose prior life is being generated."] },
+        { "participantId": "person_g4_s02_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Łódź and works regular hours."] },
+        { "participantId": "person_g4_s02_caregiver_2", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Łódź and works rotating shifts."] },
+        { "participantId": "person_g4_s02_sibling_1", "factualRoles": ["sibling"], "relationshipFacts": ["Lives in the subject household and is three years older than the subject."] }
+      ]
+    },
+    {
+      "slot": 3,
+      "worldSpecId": "world_slice_g1_03_cusco",
+      "threadId": "thr_pr39_g2_01",
+      "participants": [
+        { "participantId": "thr_pr39_g2_01", "factualRoles": ["subject"], "relationshipFacts": ["This is the provisional Thread whose prior life is being generated."] },
+        { "participantId": "person_g4_s03_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Cusco."] },
+        { "participantId": "person_g4_s03_aunt_1", "factualRoles": ["aunt"], "relationshipFacts": ["Lives nearby in Cusco and regularly participates in meals, errands and family events."] },
+        { "participantId": "person_g4_s03_uncle_1", "factualRoles": ["uncle"], "relationshipFacts": ["Lives nearby in Cusco and regularly participates in meals, errands and family events."] },
+        { "participantId": "person_g4_s03_cousin_1", "factualRoles": ["cousin"], "relationshipFacts": ["Lives nearby in a separate household and is close in age to the subject."] },
+        { "participantId": "person_g4_s03_cousin_2", "factualRoles": ["cousin"], "relationshipFacts": ["Lives nearby in a separate household and is close in age to the subject."] }
+      ]
+    },
+    {
+      "slot": 4,
+      "worldSpecId": "world_slice_g1_04_accra",
+      "threadId": "thr_pr39_g2_03",
+      "participants": [
+        { "participantId": "thr_pr39_g2_03", "factualRoles": ["subject"], "relationshipFacts": ["This is the provisional Thread whose prior life is being generated."] },
+        { "participantId": "person_g4_s04_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Accra."] },
+        { "participantId": "person_g4_s04_caregiver_2", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Accra."] },
+        { "participantId": "person_g4_s04_cousin_1", "factualRoles": ["cousin"], "relationshipFacts": ["Lives in the subject household; this is the older of the two cousins."] },
+        { "participantId": "person_g4_s04_cousin_2", "factualRoles": ["cousin"], "relationshipFacts": ["Lives in the subject household; this is the younger of the two cousins."] }
+      ]
+    },
+    {
+      "slot": 5,
+      "worldSpecId": "world_slice_g1_05_greater_sudbury",
+      "threadId": "thr_pr39_g2_02",
+      "participants": [
+        { "participantId": "thr_pr39_g2_02", "factualRoles": ["subject"], "relationshipFacts": ["This is the provisional Thread whose prior life is being generated."] },
+        { "participantId": "person_g4_s05_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Greater Sudbury."] },
+        { "participantId": "person_g4_s05_step_caregiver_1", "factualRoles": ["step_caregiver"], "relationshipFacts": ["Lives in the subject household in Greater Sudbury."] },
+        { "participantId": "person_g4_s05_grandparent_1", "factualRoles": ["grandparent"], "relationshipFacts": ["Lives elsewhere in Greater Sudbury and is visited regularly."] }
+      ]
+    }
+  ],
+  "attemptAndRepairPolicy": {
+    "wholeCandidateAttemptCap": 1,
+    "passAMaxGeneratedVersionsPerRecord": 3,
+    "passAFormRepair": true,
+    "passARecordRetry": true,
+    "passBModelRepair": false,
+    "passCModelRepair": false,
+    "providerOperationalRetriesAreNotScientificRegeneration": true,
+    "onWholeCandidateFailure": "PRESERVE_FAILURE_HOLD_NO_NEW_SEED_NO_QUALITY_REGENERATION",
+    "qualityDrivenRegeneration": false
+  },
+  "admissionGates": {
+    "passARecord": [
+      "pass_a_output_schema",
+      "pass_a_observable_action_bounds",
+      "pass_a_interiority_form",
+      "pass_a_chronology",
+      "pass_a_place_ref",
+      "pass_a_participant_ref",
+      "pass_a_participant_introduction",
+      "pass_a_structure_ref",
+      "pass_a_structure_participation",
+      "pass_a_subject_participation",
+      "pass_a_episode_identity",
+      "pass_a_age_witness",
+      "pass_a_intellectual_encounter"
+    ],
+    "passB": ["strict_provider_schema", "genesis-pass-b-policy-v1-domain-normalization"],
+    "passC": ["strict_provider_schema", "genesis-pass-c-policy-v1-domain-normalization"],
+    "publication": ["publication-validator-set-witness", "origin-source-integrity", "genome-lineage-binding", "atomic-birth"]
+  },
+  "publicationValidatorSetWitness": {
+    "worldStoreSchemaVersion": 6,
+    "identityClaimDiscipline": { "id": "identity_atomic_material_proposition", "version": "1" },
+    "autobiographicalMemoryPolicy": { "id": "autobiographical_memory_epistemics", "version": "1" },
+    "situatedLifeContract": "situated-life-domain+grounding-guards:current",
+    "digest": "sha256:d5136d94531248a942289b0e4fb3b63c7ad2b96a3a143d6ca31761801ca794bd"
+  },
+  "manifestCognitionTemplate": {
+    "passA": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:96d79b51f390c67a2706e73985531fceca3c3418115912001ce2dce38332263e",
+      "schemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "sampling": { "temperature": 0, "topP": 1, "reasoningEffort": "none", "maxOutputTokens": "auto" }
+    },
+    "passB": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:e41e7ddb846cfa4c96bd12bc44fcdf2fca6dd8ea26148289a54f122386ca952d",
+      "schemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "sampling": { "temperature": 0, "topP": 1, "reasoningEffort": "none", "maxOutputTokens": "auto" }
+    },
+    "passC": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:f9cde5a680ed103abb094aa92c67445565fa65c29408838999358e125b1cc7c1",
+      "schemaHash": "sha256:2493c8fe9d61d13f7939cbcaf2fa6dfddc76a662c78bf50f3c30a8dd7d699681",
+      "sampling": { "temperature": 0, "topP": 1, "reasoningEffort": "none", "maxOutputTokens": "auto" }
+    },
+    "recordRepair": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "promptHash": "sha256:c5cf4ed896d2a65f26840afe0e0d87a4353b8d5fdc8bbcddc9748defaefa56da",
+      "schemaHash": "sha256:c63a22699f976babfc5cba57bd11284356505c505a5e73abdf5d73bcadad9965",
+      "sampling": { "temperature": 0, "topP": 1, "reasoningEffort": "none", "maxOutputTokens": "auto" }
+    },
+    "policyVersion": "pr39-g4-final-cohort-cognition-v1",
+    "eventStructurePoolDigest": "sha256:1437891b2cbe2d8082283619b3f9e38e6cbce3eb2a323e989e27ce1a1dd33733",
+    "publicationValidatorSetWitness": {
+      "worldStoreSchemaVersion": 6,
+      "identityClaimDiscipline": { "id": "identity_atomic_material_proposition", "version": "1" },
+      "autobiographicalMemoryPolicy": { "id": "autobiographical_memory_epistemics", "version": "1" },
+      "situatedLifeContract": "situated-life-domain+grounding-guards:current",
+      "digest": "sha256:d5136d94531248a942289b0e4fb3b63c7ad2b96a3a143d6ca31761801ca794bd"
+    }
+  },
+  "structuralAbsences": {
+    "passAGenome": true,
+    "passAFutureRoleOrBenchmark": true,
+    "passARememberedMeaning": true,
+    "passBFibreComputedMechanicalConditions": true,
+    "passBFibreAuthoredSemanticNeedConclusions": true,
+    "passCGenome": true,
+    "passCSiblingMemories": true,
+    "passCFibreComputedMechanicalConditions": true,
+    "passCFibreAuthoredSemanticNeedConclusions": true
+  },
+  "sourcePins": {
+    "genesisPassADomainGitBlob": "450f44a775744916cd93058242e9ea5a5260d11b",
+    "eventStructurePoolV2GitBlob": "4f3eded96e90743726fd9c4a78eae630064527bd",
+    "richPassARunnerGitBlob": "3446ad868eb38409c92fbb79e0646ecdf2771275",
+    "passBPromptsGitBlob": "abbaf9afd3d5fd3b0c46286a8a4ac8d499f633ad",
+    "passCPromptsGitBlob": "9cc31a4476313edfdc35610945d4cf62eb5b2e1d",
+    "passCDomainGitBlob": "83176513011c64ac162e9fa20f33a1207c5ce30d",
+    "passCReinterpretationGitBlob": "8b12f5d31f40d17afdfc98f324a9eb3ca42fb657",
+    "openAIAdapterGitBlob": "bc33aab031cfcecaad322fceacbd9d7f4cf6db07",
+    "genesisDomainGitBlob": "f9d71f5b82a731126216a057bf47007bfc4db4a0"
+  },
+  "executionBoundary": {
+    "g4MayGenerateLife": false,
+    "g5MayChangeCognitionOrHistoricalSchedule": false,
+    "g5MustConsumeThisProtocol": true,
+    "noFinalCohortLifeBeforeGateGClear": true
+  }
+}
