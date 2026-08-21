@@ -61,6 +61,7 @@ export async function executeAssetGenerationJob({
     const receipt = normalizeAssetGenerationReceipt({
       receiptVersion: ASSET_GENERATION_RECEIPT_VERSION,
       jobId: job.jobId,
+      job,
       status: "unavailable",
       assetKind: job.assetKind,
       role: job.role,
@@ -114,6 +115,7 @@ export async function executeAssetGenerationJob({
   const receipt = normalizeAssetGenerationReceipt({
     receiptVersion: ASSET_GENERATION_RECEIPT_VERSION,
     jobId: job.jobId,
+    job,
     status: "ready",
     assetKind: job.assetKind,
     role: job.role,
