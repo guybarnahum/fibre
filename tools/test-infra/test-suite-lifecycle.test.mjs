@@ -21,7 +21,10 @@ test("retired proof and experiment tests are explicit reproducibility evidence",
   for (const path of repro) assert.equal(active.has(path), false);
 
   for (const path of [
+    "packages/infra/test/cloudflare-v1.test.mjs",
     "services/asset-generator/test/asset-generation-service.test.mjs",
+    "services/asset-generator/test/credentialed-asset-generation.test.mjs",
+    "services/world-kernel/test/thread-presentation-asset-publisher.test.mjs",
     "tools/genesis/genesis-memory-meaning-characterization.test.mjs",
     "tools/genesis/genesis-pass-a-dev.test.mjs",
     "tools/genesis/genesis-pass-c-semantics-audit.test.mjs",
@@ -46,6 +49,10 @@ test("new tests default active and the runner exposes only active, repro, or all
   );
   assert.equal(
     testLifecycleForPath("services/asset-generator/test/asset-generation-service.test.mjs"),
+    "active",
+  );
+  assert.equal(
+    testLifecycleForPath("packages/infra/test/cloudflare-v1.test.mjs"),
     "active",
   );
 
