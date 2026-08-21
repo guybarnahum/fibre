@@ -13,5 +13,22 @@ Generated-asset provenance and prompt retention are governed by:
 - `docs/decisions/ADR-0014-generated-asset-provenance.md`
 - `docs/architecture/generated-asset-provenance-and-content-credentials-v1.md`
 - `docs/validation/thread-presentation-asset-provenance-state.md`
+- `docs/validation/thread-presentation-credentialed-asset-gate-result.md`
 
-The accepted direction is full immutable Fibre provenance plus a public-safe signed C2PA / Content Credential embedded in the final asset. The exact semantic brief and exact provider-facing request are retained in Fibre provenance; exact prompt text is embedded publicly only under explicit disclosure policy, while prompt digests are the default portable credential.
+## Execution paths
+
+The original v0.1 execution path remains as the validated asynchronous-generation foundation. It proves scheduling, provider replacement, immutable storage and receipts, but it is not sufficient for publication of generated public media once credentialed publication is enabled.
+
+The credentialed path adds:
+
+- `GenerationRecord` with the exact Fibre semantic brief and exact secret-stripped provider request witness;
+- separate digests for semantic brief, provider request and provider-returned bytes;
+- prompt disclosure policy (`digest_only` by default, `public_text` only with explicit authorization);
+- `ContentCredentialSigner` embed/verify boundary;
+- final asset hashing only after credential embedding;
+- immutable `StoredAssetReceipt` linking final bytes to the exact GenerationRecord;
+- a re-verification gate before Thread Presentation may emit `media.ready`.
+
+The current tests use a synthetic fixture credential format to prove Fibre's ordering and publication contract. They do **not** claim C2PA interoperability. A real C2PA adapter remains required before the first production generated-media vertical proof.
+
+The accepted direction remains full immutable Fibre provenance plus a public-safe signed C2PA / Content Credential embedded in the final asset. The exact semantic brief and exact provider-facing request are retained in Fibre provenance; exact prompt text is embedded publicly only under explicit disclosure policy, while prompt digests are the default portable credential.
