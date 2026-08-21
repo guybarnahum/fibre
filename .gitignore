@@ -19,6 +19,7 @@ artifacts/generated/*
 !artifacts/generated/.gitkeep
 
 .fibre/
+.wrangler/
 *.tsbuildinfo
 *.sqlite
 *.sqlite-shm
