@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { H_EXECUTION_BINDING_PATH } from "./genesis-h-final-cohort.mjs";
 import {
   H2_EXECUTION_BINDING_PATH,
   verifyH2CompatibilityBoundary,
@@ -9,6 +10,10 @@ import {
 
 const EXPECTED_CANONICAL = "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a";
 const EXPECTED_TRANSPORT = "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c";
+
+test("ordinary H runner remains bound to H-v1 by default", () => {
+  assert.equal(H_EXECUTION_BINDING_PATH, "artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v1.json");
+});
 
 test("H-v2 compatibility boundary preserves H-v1 HOLD and freezes a separate output root", () => {
   const result = verifyH2CompatibilityBoundary();
