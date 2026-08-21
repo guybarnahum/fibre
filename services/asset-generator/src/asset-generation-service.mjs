@@ -79,11 +79,20 @@ export async function executeAssetGenerationJob({
     return persistReceipt(objects, job, receipt);
   }
 
+  const referenceObjects = [];
+  for (const objectRef of job.referenceObjectRefs) {
+    const stored = await objects.get(objectRef);
+    if (stored === null) throw new TypeError(`reference object ${objectRef} does not exist`);
+    referenceObjects.push({ objectRef, ...stored });
+  }
+
   const generated = normalizeMediaGenerationResult(await checkedProvider.generate({
     assetKind: job.assetKind,
     role: job.role,
+    variant: job.variant,
     brief: job.brief,
     inputReferences: job.inputReferences,
+    referenceObjects,
     providerProfile: job.providerProfile,
     context: job.context,
   }), { expectedKind: job.assetKind });
@@ -94,10 +103,12 @@ export async function executeAssetGenerationJob({
     jobId: job.jobId,
     assetKind: job.assetKind,
     role: job.role,
+    variant: job.variant,
     provider: generated.provider,
     model: generated.model,
     generatedAt: generated.generatedAt,
     inputReferences: job.inputReferences,
+    referenceObjectRefs: job.referenceObjectRefs,
   });
 
   const receipt = normalizeAssetGenerationReceipt({
@@ -118,6 +129,7 @@ export async function executeAssetGenerationJob({
       model: generated.model,
       providerRequestId: generated.providerRequestId,
       generatedAt: generated.generatedAt,
+      configuration: generated.configuration,
     },
     inputReferences: job.inputReferences,
     context: job.context,
