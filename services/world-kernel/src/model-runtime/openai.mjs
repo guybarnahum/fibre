@@ -33,6 +33,10 @@ function digest(value) {
   return `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 }
 
+function canonicalDigest(value) {
+  return `sha256:${sha256(canonicalJson(value))}`;
+}
+
 function notify(observer, event) {
   if (typeof observer !== "function") return;
   try {
@@ -287,6 +291,7 @@ export function createOpenAIModelAdapter({
             providerRequestId,
             inputDigest: digest(input),
             promptHash: digest(systemPrompt),
+            promptCanonicalJsonHash: canonicalDigest(systemPrompt),
             responseSchemaHash: digest(responseSchema),
             modelOutput: structuredClone(output),
             usage,
@@ -317,6 +322,7 @@ export function createOpenAIModelAdapter({
             retryDelayMs: retrying ? retryDelayFor(normalized, retryDelayMs) : null,
             inputDigest: digest(input),
             promptHash: digest(systemPrompt),
+            promptCanonicalJsonHash: canonicalDigest(systemPrompt),
             responseSchemaHash: digest(responseSchema),
             failure,
           });
