@@ -70,8 +70,8 @@ export function normalizeAssetGenerationJob(value) {
   const name = "asset generation job";
   plain(name, value);
   exact(name, value, [
-    "jobVersion", "jobId", "assetKind", "role", "brief", "inputReferences",
-    "outputObjectRef", "receiptObjectRef", "requestedAt", "providerProfile", "context",
+    "jobVersion", "jobId", "assetKind", "role", "variant", "brief", "inputReferences",
+    "referenceObjectRefs", "outputObjectRef", "receiptObjectRef", "requestedAt", "providerProfile", "context",
   ]);
   if (value.jobVersion !== ASSET_GENERATION_JOB_VERSION) fail(`${name}.jobVersion is unsupported`);
   if (!ASSET_KINDS.includes(value.assetKind)) fail(`${name}.assetKind is unsupported`);
@@ -82,8 +82,10 @@ export function normalizeAssetGenerationJob(value) {
     jobId: nonEmpty(`${name}.jobId`, value.jobId),
     assetKind: value.assetKind,
     role: nonEmpty(`${name}.role`, value.role),
+    variant: nonEmpty(`${name}.variant`, value.variant),
     brief: normalizeAssetGenerationBrief(value.brief),
     inputReferences: stringArray(`${name}.inputReferences`, value.inputReferences, { required: true }),
+    referenceObjectRefs: stringArray(`${name}.referenceObjectRefs`, value.referenceObjectRefs),
     outputObjectRef: nonEmpty(`${name}.outputObjectRef`, value.outputObjectRef),
     receiptObjectRef: nonEmpty(`${name}.receiptObjectRef`, value.receiptObjectRef),
     requestedAt: timestamp(`${name}.requestedAt`, value.requestedAt),
@@ -111,13 +113,15 @@ export function normalizeMediaGenerationResult(value, { expectedKind } = {}) {
   plain(name, value);
   exact(name, value, [
     "assetKind", "bytes", "mediaType", "width", "height", "durationMs",
-    "provider", "model", "providerRequestId", "generatedAt",
+    "provider", "model", "providerRequestId", "generatedAt", "configuration",
   ]);
   if (!ASSET_KINDS.includes(value.assetKind)) fail(`${name}.assetKind is unsupported`);
   if (expectedKind && value.assetKind !== expectedKind) fail(`${name}.assetKind does not match job`);
   if (!(value.bytes instanceof Uint8Array) && !(value.bytes instanceof ArrayBuffer)) {
     fail(`${name}.bytes must be Uint8Array or ArrayBuffer`);
   }
+  plain(`${name}.configuration`, value.configuration);
+  jsonValue(`${name}.configuration`, value.configuration);
   return {
     assetKind: value.assetKind,
     bytes: value.bytes instanceof Uint8Array ? value.bytes.slice() : new Uint8Array(value.bytes.slice(0)),
@@ -129,6 +133,7 @@ export function normalizeMediaGenerationResult(value, { expectedKind } = {}) {
     model: nonEmpty(`${name}.model`, value.model),
     providerRequestId: nullableText(`${name}.providerRequestId`, value.providerRequestId),
     generatedAt: timestamp(`${name}.generatedAt`, value.generatedAt),
+    configuration: structuredClone(value.configuration),
   };
 }
 
@@ -157,11 +162,13 @@ export function normalizeAssetGenerationReceipt(value) {
     positiveIntegerOrNull(`${name}.height`, value.height);
     positiveIntegerOrNull(`${name}.durationMs`, value.durationMs);
     plain(`${name}.generation`, value.generation);
-    exact(`${name}.generation`, value.generation, ["provider", "model", "providerRequestId", "generatedAt"]);
+    exact(`${name}.generation`, value.generation, ["provider", "model", "providerRequestId", "generatedAt", "configuration"]);
     nonEmpty(`${name}.generation.provider`, value.generation.provider);
     nonEmpty(`${name}.generation.model`, value.generation.model);
     nullableText(`${name}.generation.providerRequestId`, value.generation.providerRequestId);
     timestamp(`${name}.generation.generatedAt`, value.generation.generatedAt);
+    plain(`${name}.generation.configuration`, value.generation.configuration);
+    jsonValue(`${name}.generation.configuration`, value.generation.configuration);
     if (value.unavailableReason !== null) fail(`${name}.unavailableReason must be null when ready`);
   } else {
     if (value.objectRef !== null || value.sha256 !== null || value.mediaType !== null) fail(`${name} unavailable output must not name an object`);
