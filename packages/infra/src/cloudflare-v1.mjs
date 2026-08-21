@@ -16,6 +16,7 @@ const DIGEST_META = "fibre-digest";
 const JSON_META = "fibre-metadata";
 const OBJECT_PREFIX = "fibre/objects/";
 const WORKFLOW_INPUT_PREFIX = "workflowinput";
+const WORKFLOW_STARTED_PREFIX = "workflowstarted";
 
 function assertR2Bucket(bucket) {
   if (!bucket || typeof bucket.put !== "function" || typeof bucket.get !== "function" || typeof bucket.head !== "function") {
@@ -147,6 +148,10 @@ function workflowWitnessRef(workflowName, instanceId) {
   return `${WORKFLOW_INPUT_PREFIX}:${workflowName}:${instanceId}`;
 }
 
+function workflowStartedRef(workflowName, instanceId) {
+  return `${WORKFLOW_STARTED_PREFIX}:${workflowName}:${instanceId}`;
+}
+
 function normalizeWorkflowStatus(status) {
   const value = status?.status;
   return typeof value === "string" && value.length > 0 ? value : "unknown";
@@ -154,8 +159,8 @@ function normalizeWorkflowStatus(status) {
 
 export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
   assertInfraPlainObject("workflowBindings", workflowBindings);
-  if (!objects || typeof objects.putImmutable !== "function" || typeof objects.get !== "function") {
-    throw new TypeError("Cloudflare workflow port requires the InfraDriver object port for durable input witnesses");
+  if (!objects || typeof objects.putImmutable !== "function" || typeof objects.get !== "function" || typeof objects.head !== "function") {
+    throw new TypeError("Cloudflare workflow port requires the InfraDriver object port for durable workflow witnesses");
   }
 
   function bindingFor(workflowName) {
@@ -174,6 +179,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
       const serialized = infraCanonicalJson(input);
       const inputDigest = await sha256Text(serialized);
       const witnessRef = workflowWitnessRef(workflowName, instanceId);
+      const startedRef = workflowStartedRef(workflowName, instanceId);
 
       let duplicate = false;
       try {
@@ -190,8 +196,9 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
         throw error;
       }
 
+      const started = await objects.head(startedRef);
       let instance;
-      if (duplicate) {
+      if (duplicate && started !== null) {
         try {
           instance = await binding.get(instanceId);
         } catch {
@@ -211,11 +218,19 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
         try { instance = await binding.get(instanceId); }
         catch { throw error; }
       }
+
+      const startedDigest = await sha256Text("started");
+      await objects.putImmutable(startedRef, "started", startedDigest, {
+        kind: "cloudflare_workflow_started",
+        workflowName,
+        instanceId,
+      });
+
       return {
         workflowName,
         instanceId,
         status: normalizeWorkflowStatus(await instance.status()),
-        duplicate: false,
+        duplicate,
       };
     },
 
@@ -236,7 +251,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
         const instance = await binding.get(instanceId);
         status = normalizeWorkflowStatus(await instance.status());
       } catch {
-        // Workflow operational retention may expire before Fibre's durable input witness.
+        // Workflow operational retention may expire before Fibre's durable witnesses.
       }
       return { workflowName, instanceId, status, input };
     },
@@ -254,7 +269,7 @@ export function createCloudflareInfraDriver({ objectBucket = null, workflowBindi
     driver.capabilities.push("objects");
   }
   if (Object.keys(workflowBindings).length > 0) {
-    if (!driver.objects) throw new TypeError("Cloudflare workflows require objectBucket for durable input witnesses");
+    if (!driver.objects) throw new TypeError("Cloudflare workflows require objectBucket for durable workflow witnesses");
     driver.workflows = createCloudflareWorkflowPort({ workflowBindings, objects: driver.objects });
     driver.capabilities.push("workflows");
   }
