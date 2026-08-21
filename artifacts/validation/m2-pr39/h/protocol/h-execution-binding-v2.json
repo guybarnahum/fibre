@@ -1,7 +1,8 @@
 {
   "contractVersion": "pr39-slice-h-execution-binding-v1",
   "executionAttemptVersion": "H-v2",
-  "status": "post_h1_operational_hold_compatibility_binding_pre_h2_life",
+  "status": "post_gate_g_implementation_binding_pre_final_life",
+  "attemptStatus": "post_h1_operational_hold_compatibility_binding_pre_h2_life",
   "supersedesAttempt": {
     "attempt": "H-v1",
     "status": "HOLD_FIRST_COHORT_ATTEMPT_FAILED_NO_REGENERATION",
