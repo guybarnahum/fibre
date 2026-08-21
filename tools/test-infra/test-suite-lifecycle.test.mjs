@@ -22,8 +22,10 @@ test("retired proof and experiment tests are explicit reproducibility evidence",
 
   for (const path of [
     "packages/infra/test/cloudflare-v1.test.mjs",
+    "packages/infra/test/cloudflare-presentation-ports.test.mjs",
     "services/asset-generator/test/asset-generation-service.test.mjs",
     "services/asset-generator/test/credentialed-asset-generation.test.mjs",
+    "services/presentation-cloudflare/test/presentation-read-api.test.mjs",
     "services/world-kernel/test/thread-presentation-asset-publisher.test.mjs",
     "tools/genesis/genesis-memory-meaning-characterization.test.mjs",
     "tools/genesis/genesis-pass-a-dev.test.mjs",
@@ -53,6 +55,10 @@ test("new tests default active and the runner exposes only active, repro, or all
   );
   assert.equal(
     testLifecycleForPath("packages/infra/test/cloudflare-v1.test.mjs"),
+    "active",
+  );
+  assert.equal(
+    testLifecycleForPath("services/presentation-cloudflare/test/presentation-read-api.test.mjs"),
     "active",
   );
 
