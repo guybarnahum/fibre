@@ -1,6 +1,9 @@
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
-import { ASSET_GENERATION_JOB_VERSION } from "../../asset-generator/src/asset-generation-domain.mjs";
+import {
+  ASSET_GENERATION_JOB_VERSION,
+  normalizeAssetGenerationReceipt,
+} from "../../asset-generator/src/asset-generation-domain.mjs";
 
 export const THREAD_PRESENTATION_ASSET_PLAN_VERSION = "thread-presentation-asset-plan-v0.1";
 
@@ -148,21 +151,24 @@ export function planThreadPresentationAssetGeneration({
   };
 }
 
-export function assetGenerationReceiptToPresentationEventInput(receipt, {
+export function assetGenerationReceiptToPresentationEventInput(rawReceipt, {
   channelId,
-  occurredAt = receipt.completedAt,
-  emittedAt = receipt.completedAt,
+  occurredAt,
+  emittedAt,
 }) {
+  const receipt = normalizeAssetGenerationReceipt(rawReceipt);
   if (receipt.context?.kind !== "thread_presentation_media") {
     throw new TypeError("asset generation receipt is not for Thread presentation media");
   }
+  const effectiveOccurredAt = occurredAt ?? receipt.completedAt;
+  const effectiveEmittedAt = emittedAt ?? receipt.completedAt;
   const common = {
     streamVersion: "thread-presentation-stream-v0.1",
     eventId: `presasset_${sha256(canonicalJson({ jobId: receipt.jobId, status: receipt.status }))}`,
     threadId: receipt.context.threadId,
     channelId,
-    occurredAt,
-    emittedAt,
+    occurredAt: effectiveOccurredAt,
+    emittedAt: effectiveEmittedAt,
     kind: receipt.status === "ready" ? "media.ready" : "media.unavailable",
     provenanceRef: receipt.context.provenanceRef,
     sourceReferences: receipt.inputReferences,
