@@ -29,6 +29,7 @@ test("Cần Thơ asset planner schedules only image slots grounded by presentati
   assert.equal(plan.deferred.length, 3);
   assert.deepEqual(new Set(plan.jobs.map((job) => job.role)), new Set(["place", "memory_reconstruction"]));
   plan.jobs.forEach((job) => assert.doesNotThrow(() => normalizeAssetGenerationJob(job)));
+  assert.equal(plan.jobs.every((job) => job.variant === "default" && job.referenceObjectRefs.length === 0), true);
   assert.equal(plan.deferred.some((item) => item.mediaId === "media_portrait_primary" && item.reason === "deferred_missing_embodiment_brief"), true);
   assert.equal(plan.deferred.some((item) => item.mediaId === "media_voice_primary" && item.reason === "deferred_non_image_asset"), true);
   assert.equal(plan.deferred.some((item) => item.mediaId === "media_life_film" && item.reason === "deferred_non_image_asset"), true);
@@ -67,9 +68,37 @@ test("same snapshot and provider profile produce deterministic job and object id
 });
 
 test("ready asset receipt becomes a legal media.ready presentation event without cloud-native locator leakage", () => {
+  const job = {
+    jobVersion: "asset-generation-job-v0.1",
+    jobId: "asset_job_1",
+    assetKind: "image",
+    role: "place",
+    variant: "default",
+    brief: {
+      description: "Generated place reconstruction.",
+      constraints: ["Not documentary evidence."],
+    },
+    inputReferences: ["presentation_1", "media_1", "source_1"],
+    referenceObjectRefs: [],
+    outputObjectRef: "asset_object_1",
+    receiptObjectRef: "asset_receipt_1",
+    requestedAt: "2026-08-21T20:10:11Z",
+    providerProfile: "presentation-image-default-v1",
+    context: {
+      kind: "thread_presentation_media",
+      threadId: "thr_1",
+      presentationId: "presentation_1",
+      mediaPacketId: "media_packet_1",
+      mediaId: "media_1",
+      provenanceRef: "prov_generated_reconstruction",
+      snapshotObjectRef: "snapshot_1",
+      snapshotDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    },
+  };
   const receipt = {
     receiptVersion: "asset-generation-receipt-v0.1",
     jobId: "asset_job_1",
+    job,
     status: "ready",
     assetKind: "image",
     role: "place",
@@ -85,18 +114,10 @@ test("ready asset receipt becomes a legal media.ready presentation event without
       model: "fixture-v1",
       providerRequestId: "req_1",
       generatedAt: "2026-08-21T20:11:59Z",
+      configuration: { size: "1024x1024" },
     },
-    inputReferences: ["presentation_1", "media_1", "source_1"],
-    context: {
-      kind: "thread_presentation_media",
-      threadId: "thr_1",
-      presentationId: "presentation_1",
-      mediaPacketId: "media_packet_1",
-      mediaId: "media_1",
-      provenanceRef: "prov_generated_reconstruction",
-      snapshotObjectRef: "snapshot_1",
-      snapshotDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    },
+    inputReferences: job.inputReferences,
+    context: job.context,
     unavailableReason: null,
   };
   const event = assetGenerationReceiptToPresentationEventInput(receipt, { channelId: "channel_thr_1" });
