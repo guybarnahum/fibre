@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-slice-g4-cognition-freeze
-status: frozen_pending_verification
+status: complete_clear
 last-reviewed: 2026-08-20
 canonical: false
 ---
@@ -9,7 +9,7 @@ canonical: false
 
 ## Status
 
-**G4 FROZEN — local regression + `genesis:g4-verify` are required before G5. No final-cohort life generation is authorized.**
+**G4 COMPLETE / CLEAR — the frozen cognition/runtime packet was locally verified before G5. No final-cohort life generation was authorized or performed.**
 
 Machine-readable authority:
 
@@ -21,6 +21,19 @@ Verifier:
 
 ```text
 tools/genesis/genesis-g4-cognition-freeze.mjs
+```
+
+Maintainer verification:
+
+```text
+active tests             572 / 572 green
+verifier                 G4 COGNITION FREEZE: VERIFIED
+model                    openai/gpt-5.1-2025-11-13
+historical episodes      10 x 5 Threads
+offer schedule entries   50
+offer schedule digest    sha256:b50b2495133570c88fbff43d104bae5cfeaf79fe8fb21c4abba40096920ed903
+G4 protocol digest       sha256:1a41d68aa0bf8c689c84843771cfce07ca0afa44a9b7093ad944f058a93c368d
+verified HEAD            b36e7d94e158146c7b5750f2a6698f1e5804932c
 ```
 
 G3 was maintainer-verified immediately before this freeze:
@@ -294,14 +307,26 @@ Those remain characterization or later blinded diagnostics.
 
 ## Verification
 
-Run:
+Maintainer execution:
 
 ```bash
 npm test
 npm run genesis:g4-verify
 ```
 
-The G4 verifier makes **zero model calls** and checks:
+Result:
+
+```text
+572 / 572 active tests green
+G4 COGNITION FREEZE: VERIFIED
+Model: openai/gpt-5.1-2025-11-13
+Historical episodes: 10 x 5 Threads
+Offer schedule entries: 50
+Offer schedule digest: sha256:b50b2495133570c88fbff43d104bae5cfeaf79fe8fb21c4abba40096920ed903
+G4 protocol digest: sha256:1a41d68aa0bf8c689c84843771cfce07ca0afa44a9b7093ad944f058a93c368d
+```
+
+The verifier makes **zero model calls** and checks:
 
 - exact G3 digest binding;
 - current A/B/C/repair hashes;
@@ -320,9 +345,10 @@ The G4 verifier makes **zero model calls** and checks:
 ```text
 G1        COMPLETE / CLEAR
 G2        COMPLETE / CLEAR — five-pair textual-distinguishability ceiling
-G3        COMPLETE / locally VERIFIED
-G4        FROZEN — local verification pending
-G5-G6     BLOCKED on prior G steps
+G3        COMPLETE / VERIFIED
+G4        COMPLETE / VERIFIED / CLEAR
+G5        NEXT — freeze independent raters and diagnostics
+G6        BLOCKED on G5
 H         FORBIDDEN until blocking Gate-G CLEAR
 ```
 
