@@ -15,7 +15,7 @@ test("ordinary H runner remains bound to H-v1 by default", () => {
   assert.equal(H_EXECUTION_BINDING_PATH, "artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v1.json");
 });
 
-test("H-v2 compatibility boundary preserves H-v1 HOLD and freezes a separate output root", () => {
+test("H-v2 compatibility boundary preserves H-v1 HOLD and reports the frozen H-v2 attempt root", () => {
   const result = verifyH2CompatibilityBoundary();
   assert.equal(result.status, "H2_COMPATIBILITY_BOUNDARY_VERIFIED");
   assert.equal(result.h1FreezeCommit, "448bd669f742a566da289cc4117907f2d37e32e3");
@@ -24,15 +24,18 @@ test("H-v2 compatibility boundary preserves H-v1 HOLD and freezes a separate out
   assert.equal(result.canonicalPassBSchemaHash, EXPECTED_CANONICAL);
   assert.equal(result.transportPassBSchemaHash, EXPECTED_TRANSPORT);
   assert.equal(result.outputRoot, "artifacts/validation/m2-pr39/h/cohort-v2");
+  assert.equal(result.outputRootExists, true, "the frozen H-v2 attempt root must remain present");
   assert.equal(result.removedConstraints.length, 4);
 });
 
-test("H-v2 zero-call preflight reuses the frozen G1-G6 plan and does not leak process overrides", async () => {
+test("H-v2 zero-call preflight reports the frozen attempt without weakening execution refusal", async () => {
   const priorBinding = process.env.FIBRE_H_EXECUTION_BINDING_PATH;
   const priorFetch = globalThis.fetch;
   const result = await verifyH2FinalCohortPreflight();
   assert.equal(result.status, "CLEAR_TO_EXECUTE_H");
   assert.equal(result.oneShot.outputRoot, "artifacts/validation/m2-pr39/h/cohort-v2");
+  assert.equal(result.outputRootExists, true);
+  assert.equal(result.h2Compatibility.outputRootExists, true);
   assert.equal(result.slots.length, 5);
   assert.deepEqual(result.slots[0].passBHorizons, [4, 5, 6, 7, 8, 10]);
   assert.deepEqual(result.slots[0].passBModes, ["life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome"]);
