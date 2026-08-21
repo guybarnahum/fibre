@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createGoogleModelAdapter } from "../src/model-runtime/google.mjs";
 import { createOpenAIModelAdapter } from "../src/model-runtime/openai.mjs";
+import { canonicalJson, sha256 } from "../src/persistence-common.mjs";
 
 const SCHEMA = {
   type: "object",
@@ -65,6 +66,24 @@ test("OpenAI defaults to provider automatic output limits", async () => {
   await invoke(adapter);
   assert.equal(adapter.configuration.maxOutputTokens, "auto");
   assert.equal(Object.hasOwn(requestBody, "max_output_tokens"), false);
+});
+
+test("OpenAI model events record both raw-text and canonical-JSON prompt digests", async () => {
+  const events = [];
+  const prompt = "Return one bounded decision.";
+  const adapter = createOpenAIModelAdapter({
+    environment: { OPENAI_API_KEY: "test-key" },
+    modelId: "gpt-test",
+    observer: (event) => events.push(event),
+    fetchImpl: async () => response(200, openAICompleted()),
+  });
+
+  await invoke(adapter);
+  const modelResponse = events.find((event) => event.type === "model_response");
+  assert.ok(modelResponse);
+  assert.equal(modelResponse.promptHash, `sha256:${sha256(prompt)}`);
+  assert.equal(modelResponse.promptCanonicalJsonHash, `sha256:${sha256(canonicalJson(prompt))}`);
+  assert.notEqual(modelResponse.promptHash, modelResponse.promptCanonicalJsonHash);
 });
 
 test("OpenAI retries a clearly transient 503 and then succeeds", async () => {
