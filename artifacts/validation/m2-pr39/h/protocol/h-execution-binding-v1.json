@@ -1,0 +1,95 @@
+{
+  "contractVersion": "pr39-slice-h-execution-binding-v1",
+  "status": "post_gate_g_implementation_binding_pre_final_life",
+  "authorityBoundary": {
+    "gateGClearWitnessPath": "artifacts/validation/m2-pr39/g/protocol/gate-g-clear-v1.json",
+    "g2ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v2.json",
+    "g3ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v2.json",
+    "g4BaseProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v1.json",
+    "g4AmendmentPath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v2.json",
+    "g6ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json",
+    "changesFrozenG1ThroughG6": false,
+    "addsScientificChoice": false,
+    "purpose": "Bind the already-frozen H cognition outputs to existing Thread, genome, lineage and autobiographical-memory publication contracts without per-Thread semantic discretion."
+  },
+  "oneShot": {
+    "wholeCandidateAttemptCap": 1,
+    "qualityDrivenRegeneration": false,
+    "refuseExecutionIfOutputRootExists": true,
+    "outputRoot": "artifacts/validation/m2-pr39/h/cohort-v1",
+    "databasePath": "artifacts/validation/m2-pr39/h/cohort-v1/world.sqlite",
+    "resultPath": "artifacts/validation/m2-pr39/h/cohort-v1/h-final-cohort-v1.json",
+    "failurePath": "artifacts/validation/m2-pr39/h/cohort-v1/h-final-cohort-failure-v1.json"
+  },
+  "threadSeedProjection": {
+    "threadStatus": "frozen",
+    "identity": {
+      "name": "Fibre Thread",
+      "originOrientation": "original",
+      "selfDescription": "I am a Fibre Thread."
+    },
+    "legacyGenome": {
+      "textualTraits": {},
+      "runtimeBaselines": {}
+    },
+    "currentState": {
+      "needs": [],
+      "feelings": [],
+      "selfModel": "I am a Fibre Thread.",
+      "unresolvedIntentions": []
+    },
+    "accounts": {
+      "fibreCredits": 0,
+      "usdAvailable": 0,
+      "modelTokensAvailable": 0
+    },
+    "relationshipRefs": [],
+    "memoryRefs": [],
+    "createdBy": "fibre.genesis",
+    "uniformityRule": "All five seed projections are identical except threadId, provenance timestamps and the derived seed-event ID. No World, genome, origin-mode or generated-life content enters the compatibility seed."
+  },
+  "memoryPublicationProjection": {
+    "subjectOriginRule": "earliest cited Pass-A episode in admitted life chronology",
+    "slotRule": "pass_b_call_<two-digit-call-ordinal>",
+    "eventRefsRule": "all Pass-B cited episode refs mapped to deterministic Genesis life-event IDs and sorted by admitted life chronology",
+    "subjectPeriodRule": "earliest-to-latest occurredAt over cited Pass-A episodes",
+    "confidence": 0.5,
+    "salience": 0.5,
+    "accessibility": "accessible",
+    "retentionState": "fragmentary",
+    "visibility": "private",
+    "authorshipKind": "fibre_genesis_authored",
+    "authorshipEntityId": "fibre.genesis",
+    "initialSupportingEvidenceRefs": [],
+    "contradictingEvidenceRefs": [],
+    "recordedAtRule": "single cohort publication timestamp captured after generation and before first birth publication",
+    "notRememberedRule": "not_remembered creates no autobiographical-memory record"
+  },
+  "reinterpretationBinding": {
+    "targetEpisodeRule": "the immutable memory subject-origin Pass-A episode",
+    "structureFamilyAuthority": "none_frozen",
+    "targetStructureFamilyRef": null,
+    "triggerStructureFamilyRef": null,
+    "sharedPersonRule": "exact intersection of target-origin and trigger participant refs excluding the subject Thread",
+    "sharedRelationshipRefs": [],
+    "sharedIntellectualSourceRule": "exact equality of normalized intellectualEncounter.subjectRef",
+    "candidateScope": "every later admitted Pass-A episode for every initially durable memory; the frozen scheduler computes age/relation eligibility and then applies the per-Thread run cap",
+    "runOrder": "the frozen scheduler's stable order",
+    "sameMemoryMultipleRuns": "each scheduled call sees the latest currently durable meaning for that memory so append-only memory revisions remain linear; the frozen eligibility/run decision itself is not recomputed from prior model outcomes",
+    "revisedPersistence": "append a corrected memory revision with unchanged rememberedContent/eventRefs and the new durable meaning",
+    "unchangedOrNonePersistence": "preserve the run result in H evidence without inventing a memory revision whose durable state did not change"
+  },
+  "syntheticLineagePublication": {
+    "sourceGenomeOrder": "frozen child genome sourceEligibility source order",
+    "relationKind": "biological_parent",
+    "geneticContributionRole": "parent_genome_source",
+    "relatedPartyKind": "synthetic_ancestor",
+    "visibility": "private",
+    "status": "current",
+    "provenance": "genesis_created",
+    "validFromRule": "frozen Thread bornAt",
+    "validTo": null,
+    "sourceReferenceRule": "derived birth seed-event ID",
+    "displayNameRule": "exact synthetic ancestor owner ID"
+  }
+}
