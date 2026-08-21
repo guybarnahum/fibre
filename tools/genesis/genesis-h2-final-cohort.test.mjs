@@ -28,7 +28,7 @@ test("H-v2 compatibility boundary preserves H-v1 HOLD and reports the frozen H-v
   assert.equal(result.removedConstraints.length, 4);
 });
 
-test("H-v2 zero-call preflight reports the frozen attempt without weakening execution refusal", async () => {
+test("H-v2 postmortem preflight reports the frozen attempt without weakening execution refusal", async () => {
   const priorBinding = process.env.FIBRE_H_EXECUTION_BINDING_PATH;
   const priorFetch = globalThis.fetch;
   const result = await verifyH2FinalCohortPreflight();
@@ -36,6 +36,7 @@ test("H-v2 zero-call preflight reports the frozen attempt without weakening exec
   assert.equal(result.oneShot.outputRoot, "artifacts/validation/m2-pr39/h/cohort-v2");
   assert.equal(result.outputRootExists, true);
   assert.equal(result.h2Compatibility.outputRootExists, true);
+  assert.equal(result.reviewedSourceCheckEnforced, false, "post-attempt inspection must not apply the obsolete Gate-G source-drift gate");
   assert.equal(result.slots.length, 5);
   assert.deepEqual(result.slots[0].passBHorizons, [4, 5, 6, 7, 8, 10]);
   assert.deepEqual(result.slots[0].passBModes, ["life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome"]);
