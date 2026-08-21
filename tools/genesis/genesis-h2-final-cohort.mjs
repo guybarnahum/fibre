@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -20,6 +20,7 @@ const H1_FREEZE_COMMIT = "448bd669f742a566da289cc4117907f2d37e32e3";
 const H1_RUNNER_BLOB = "b3f8dc0b382ea64431df866a80ab91804021431f";
 const EXPECTED_CANONICAL_PASS_B_SCHEMA = "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a";
 const EXPECTED_TRANSPORT_PASS_B_SCHEMA = "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c";
+const H2_TRANSPORT_EVIDENCE_FILENAME = "h2-transport-compatibility-v1.json";
 
 const absolute = (path) => resolve(ROOT, path);
 const readJson = (path) => JSON.parse(readFileSync(absolute(path), "utf8"));
@@ -89,8 +90,27 @@ export async function verifyH2FinalCohortPreflight() {
   return Object.freeze({ ...preflight, h2Compatibility: verifyH2CompatibilityBoundary() });
 }
 
+function writeH2TransportEvidence({ boundary, projectionEvents, runStatus, error = null }) {
+  const path = `${boundary.outputRoot}/${H2_TRANSPORT_EVIDENCE_FILENAME}`;
+  if (!existsSync(absolute(boundary.outputRoot))) return;
+  writeFileSync(absolute(path), `${JSON.stringify({
+    evidenceVersion: "pr39-h2-transport-compatibility-evidence-v1",
+    runStatus,
+    recordedAt: new Date().toISOString(),
+    h1FreezeCommit: boundary.h1FreezeCommit,
+    h1RunnerBlob: boundary.h1RunnerBlob,
+    canonicalPassBSchemaHash: boundary.canonicalPassBSchemaHash,
+    transportPassBSchemaHash: boundary.transportPassBSchemaHash,
+    removedConstraints: boundary.removedConstraints,
+    projectionEventCount: projectionEvents.length,
+    projectionEvents,
+    error: error === null ? null : { name: error?.name ?? "Error", message: error?.message ?? String(error) },
+  }, null, 2)}\n`, { flag: "wx" });
+}
+
 export async function runH2FinalCohort() {
   const projectionEvents = [];
+  const boundary = verifyH2CompatibilityBoundary();
   const runner = await loadVersionedHRunner();
   const rawFetch = globalThis.fetch;
   if (typeof rawFetch !== "function") fail("global fetch is unavailable");
@@ -100,7 +120,11 @@ export async function runH2FinalCohort() {
   });
   try {
     const result = await runner.runHFinalCohort();
+    writeH2TransportEvidence({ boundary, projectionEvents, runStatus: "H2_COHORT_GENERATION_COMPLETED" });
     return Object.freeze({ ...result, h2CompatibilityProjectionEvents: structuredClone(projectionEvents) });
+  } catch (error) {
+    writeH2TransportEvidence({ boundary, projectionEvents, runStatus: "H2_COHORT_GENERATION_FAILED", error });
+    throw error;
   } finally {
     globalThis.fetch = rawFetch;
   }
