@@ -2,6 +2,11 @@ import { assertInfraNonEmpty, assertInfraPlainObject } from "./internal.mjs";
 
 export const INFRA_DRIVER_VERSION = "infra-driver-v0.1";
 
+export class InfraSequenceConflictError extends Error {}
+export class InfraIdempotencyConflictError extends Error {}
+export class InfraImmutableObjectConflictError extends Error {}
+export class InfraWorkflowConflictError extends Error {}
+
 export const INFRA_CAPABILITIES = Object.freeze([
   "state",
   "streams",
@@ -23,6 +28,7 @@ const REQUIRED_METHODS = Object.freeze({
   objects: ["putImmutable", "get", "head"],
   catalog: ["upsert", "get", "remove"],
   realtime: ["publish"],
+  workflows: ["start", "get"],
 });
 
 export function assertInfraDriver(driver, { required = [] } = {}) {
