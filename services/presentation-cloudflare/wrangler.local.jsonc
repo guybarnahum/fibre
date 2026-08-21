@@ -1,0 +1,41 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-presentation-local",
+  "main": "./src/worker.mjs",
+  "compatibility_date": "2026-08-21",
+  "vars": {
+    "VIEWER_ORIGIN": "http://localhost:5173",
+    "P3_FIXTURE_MODE": "1"
+  },
+  "r2_buckets": [
+    {
+      "binding": "PRESENTATION_OBJECTS",
+      "bucket_name": "fibre-presentation-local"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "PRESENTATION_CATALOG",
+      "database_name": "fibre-presentation-local",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "preview_database_id": "fibre-presentation-local"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PRESENTATION_CHANNELS",
+        "class_name": "FibrePresentationChannelDurableObject"
+      }
+    ]
+  },
+  "exports": {
+    "FibrePresentationChannelDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}
