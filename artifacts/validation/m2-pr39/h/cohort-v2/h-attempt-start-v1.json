@@ -1,0 +1,202 @@
+{
+  "evidenceVersion": "pr39-slice-h-final-cohort-v1",
+  "status": "in_progress",
+  "attemptStartedAt": "2026-08-21T04:42:53.175Z",
+  "preflight": {
+    "status": "CLEAR_TO_EXECUTE_H",
+    "reviewedHead": "abcff37eacf82cd522e8276da20d33926b0cb754",
+    "gateGReviewRef": "docs/validation/m2-pr39-gate-g-review-result.md",
+    "gateGWitnessDigest": "sha256:536cc2614f78888ef166e624d1afb5694aa3cc8a041919112dde7d0b6b00f8d1",
+    "g2ProtocolDigest": "sha256:0c96faf2fe1a51479e612495a73e22e2371893ce37f8e6dff1acfa48739179fa",
+    "g3ProtocolDigest": "sha256:aef6eea69cf55cc60e730a3529fd0e7d090261cd6535b256df6cbd3734174fae",
+    "g4BaseProtocolDigest": "sha256:1a41d68aa0bf8c689c84843771cfce07ca0afa44a9b7093ad944f058a93c368d",
+    "g4AmendmentDigest": "sha256:50c2f5bcbb1a3470a685f75257fd004c516ca04a67a3b21b367dbf73e58ade20",
+    "g5ProtocolDigest": "sha256:4520357cab14bcdc883c6b3966401c98d17a1424e47f26e8c04002728d799ed5",
+    "g6ProtocolDigest": "sha256:1cfaa3148599236526d5495b14cc0ef2468d5488aa37be38b3fec9c49e21afcc",
+    "reviewedSourceCheckEnforced": true,
+    "scientificSourceChangesSinceReviewedHead": [],
+    "runtime": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "transport": "responses",
+      "structuredOutput": "json_schema_strict",
+      "temperature": 0,
+      "topP": 1,
+      "reasoningEffort": "none",
+      "maxOutputTokens": "auto",
+      "timeoutMs": 45000,
+      "operationalRetryLimit": 2,
+      "operationalRetryDelayMs": 2000,
+      "sameConfigurationAllThreads": true,
+      "sameConfigurationPassAThroughC": true
+    },
+    "eventStructurePoolDigest": "sha256:1437891b2cbe2d8082283619b3f9e38e6cbce3eb2a323e989e27ce1a1dd33733",
+    "oneShot": {
+      "wholeCandidateAttemptCap": 1,
+      "qualityDrivenRegeneration": false,
+      "refuseExecutionIfOutputRootExists": true,
+      "outputRoot": "artifacts/validation/m2-pr39/h/cohort-v2",
+      "databasePath": "artifacts/validation/m2-pr39/h/cohort-v2/world.sqlite",
+      "resultPath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-v2.json",
+      "failurePath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json"
+    },
+    "outputRootExists": false,
+    "slots": [
+      {
+        "slot": 1,
+        "threadId": "thr_pr39_g2_04",
+        "genesisId": "genesis_pr39_g2_04",
+        "originMode": "de_novo",
+        "worldSpecId": "world_slice_g1_01_can_tho",
+        "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-01-v2.json",
+        "worldSpecDigest": "sha256:6e88b0bd8aba69894ae5583603a841d139687d57cea9bfb8c05086e1be118c7d",
+        "genomeId": "genome_6480e89a07bbe2698d0f5caad95976aa7ff2ea63",
+        "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-04.json",
+        "genomeDigest": "sha256:57e45ea7d518a9fdc9c2e1c3594e5ce2f839a33e8f36d9db8d0476bc4d6e07b0",
+        "parentGenomeCount": 0,
+        "passAEpisodes": 10,
+        "passBHorizons": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          10
+        ],
+        "passBModes": [
+          "life_only",
+          "life_only",
+          "life_plus_genome",
+          "life_only",
+          "life_only",
+          "life_plus_genome"
+        ],
+        "rosterSize": 5
+      },
+      {
+        "slot": 2,
+        "threadId": "thr_pr39_g2_05",
+        "genesisId": "genesis_pr39_g2_05",
+        "originMode": "synthetic_lineage",
+        "worldSpecId": "world_slice_g1_02_lodz",
+        "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-02-v2.json",
+        "worldSpecDigest": "sha256:291aa0255fa9d70c4dc30f26c442606d4e03245bcb1b843a889ddc082f081a0a",
+        "genomeId": "genome_78ff3bedb98576e59c7f4608fd3793fdf33e4dcc",
+        "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-05.json",
+        "genomeDigest": "sha256:f8cb20995c54843d4c0bef9a171b830e79cad8a9f0819ab1b9e151fbadadcadb",
+        "parentGenomeCount": 2,
+        "passAEpisodes": 10,
+        "passBHorizons": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          10
+        ],
+        "passBModes": [
+          "life_only",
+          "life_only",
+          "life_plus_genome",
+          "life_only",
+          "life_only",
+          "life_plus_genome"
+        ],
+        "rosterSize": 4
+      },
+      {
+        "slot": 3,
+        "threadId": "thr_pr39_g2_01",
+        "genesisId": "genesis_pr39_g2_01",
+        "originMode": "de_novo",
+        "worldSpecId": "world_slice_g1_03_cusco",
+        "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-03-v2.json",
+        "worldSpecDigest": "sha256:bbf23626457d9f93ff2cf70c129c4d549f998a228bd67852450879b1e70f6290",
+        "genomeId": "genome_b74429231486bc34950cfa9d9abb0881807c74b4",
+        "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-01.json",
+        "genomeDigest": "sha256:4ec9592b7e065bdde4e63ebb0c70b4c5f9752b43f6f5f87ec45961a373ff20ad",
+        "parentGenomeCount": 0,
+        "passAEpisodes": 10,
+        "passBHorizons": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          10
+        ],
+        "passBModes": [
+          "life_only",
+          "life_only",
+          "life_plus_genome",
+          "life_only",
+          "life_only",
+          "life_plus_genome"
+        ],
+        "rosterSize": 6
+      },
+      {
+        "slot": 4,
+        "threadId": "thr_pr39_g2_03",
+        "genesisId": "genesis_pr39_g2_03",
+        "originMode": "de_novo",
+        "worldSpecId": "world_slice_g1_04_accra",
+        "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-04-v2.json",
+        "worldSpecDigest": "sha256:02e52c82398b87cfcecee31651d81dbb223d00e2da8a7410c4553bd0514547db",
+        "genomeId": "genome_a920ffbc71cc00f8c869139e548f18ba642f05de",
+        "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-03.json",
+        "genomeDigest": "sha256:32248f3d909e102fc2865fa29522cdfea09585ca2d7ad9915014a842c1a483fc",
+        "parentGenomeCount": 0,
+        "passAEpisodes": 10,
+        "passBHorizons": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          10
+        ],
+        "passBModes": [
+          "life_only",
+          "life_only",
+          "life_plus_genome",
+          "life_only",
+          "life_only",
+          "life_plus_genome"
+        ],
+        "rosterSize": 5
+      },
+      {
+        "slot": 5,
+        "threadId": "thr_pr39_g2_02",
+        "genesisId": "genesis_pr39_g2_02",
+        "originMode": "synthetic_lineage",
+        "worldSpecId": "world_slice_g1_05_greater_sudbury",
+        "worldSpecPath": "artifacts/validation/m2-pr39/g/worlds/world-g1-05-v2.json",
+        "worldSpecDigest": "sha256:a2ce5453912040c78561bafaceb21d1cded8f05f84aaf9bc10e831d4288098d0",
+        "genomeId": "genome_c70b58d8c5b127b546ed3610566ac0ca6913f247",
+        "genomePath": "artifacts/validation/m2-pr39/g/genomes/genome-g2-02.json",
+        "genomeDigest": "sha256:548357c6563e7b7a21f9377673be62f5441b16c070d7af01cf5adaa926bad73f",
+        "parentGenomeCount": 2,
+        "passAEpisodes": 10,
+        "passBHorizons": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          10
+        ],
+        "passBModes": [
+          "life_only",
+          "life_only",
+          "life_plus_genome",
+          "life_only",
+          "life_only",
+          "life_plus_genome"
+        ],
+        "rosterSize": 4
+      }
+    ]
+  }
+}

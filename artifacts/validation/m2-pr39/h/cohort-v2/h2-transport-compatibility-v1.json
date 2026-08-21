@@ -1,0 +1,524 @@
+{
+  "evidenceVersion": "pr39-h2-transport-compatibility-evidence-v1",
+  "runStatus": "H2_COHORT_GENERATION_FAILED",
+  "recordedAt": "2026-08-21T04:49:18.300Z",
+  "h1FreezeCommit": "448bd669f742a566da289cc4117907f2d37e32e3",
+  "h1RunnerBlob": "b3f8dc0b382ea64431df866a80ab91804021431f",
+  "canonicalPassBSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+  "transportPassBSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+  "removedConstraints": [
+    {
+      "path": "$.properties.episodeRefs.uniqueItems",
+      "keyword": "uniqueItems",
+      "value": true
+    },
+    {
+      "path": "$.properties.rememberedContent.maxLength",
+      "keyword": "maxLength",
+      "value": 600
+    },
+    {
+      "path": "$.properties.uncertainty.maxItems",
+      "keyword": "maxItems",
+      "value": 8
+    },
+    {
+      "path": "$.properties.uncertainty.items.maxLength",
+      "keyword": "maxLength",
+      "value": 120
+    }
+  ],
+  "projectionEventCount": 18,
+  "projectionEvents": [
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    },
+    {
+      "version": "pr39-h2-openai-pass-b-schema-compat-v1",
+      "canonicalSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "transportSchemaHash": "sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c",
+      "removedConstraints": [
+        {
+          "path": "$.properties.episodeRefs.uniqueItems",
+          "keyword": "uniqueItems",
+          "value": true
+        },
+        {
+          "path": "$.properties.rememberedContent.maxLength",
+          "keyword": "maxLength",
+          "value": 600
+        },
+        {
+          "path": "$.properties.uncertainty.maxItems",
+          "keyword": "maxItems",
+          "value": 8
+        },
+        {
+          "path": "$.properties.uncertainty.items.maxLength",
+          "keyword": "maxLength",
+          "value": 120
+        }
+      ]
+    }
+  ],
+  "error": {
+    "name": "GenesisPassAValidationError",
+    "message": "rich Pass-A record generation exhausted after 3 generated versions"
+  }
+}
