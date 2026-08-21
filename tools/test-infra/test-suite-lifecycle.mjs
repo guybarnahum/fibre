@@ -61,9 +61,10 @@ export function testLifecycleForPath(path, root = DEFAULT_TEST_ROOT) {
 
 export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const domain = walkTests(join(root, "packages/domain/test"));
+  const assetGenerator = walkTests(join(root, "services/asset-generator/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
-  const all = [...domain, ...worldKernel, ...tools].sort();
+  const all = [...domain, ...assetGenerator, ...worldKernel, ...tools].sort();
   const allRelative = new Set(all.map((path) => normalized(relative(root, path))));
   const missingReproTests = REPRO_TOOL_TEST_PATHS.filter((path) => !allRelative.has(path));
   if (missingReproTests.length > 0) {
