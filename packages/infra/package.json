@@ -1,0 +1,10 @@
+{
+  "name": "@fibre/infra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/infra-driver.mjs",
+    "./memory": "./src/memory-driver.mjs"
+  }
+}
