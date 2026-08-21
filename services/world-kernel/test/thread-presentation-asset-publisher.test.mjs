@@ -160,9 +160,23 @@ test("Thread presentation publishes media.ready only after stored credentialed a
   assert.equal(accepted.event.payload.digest, result.receipt.sha256);
   assert.equal(accepted.proof.verification.valid, true);
   assert.equal((await presentationServer.getHead("channel_thr_1")).sequence, 1);
+
+  const publicMedia = await infra.catalog.get(`media:${result.receipt.objectRef}`);
+  assert.deepEqual(publicMedia, {
+    kind: "public_presentation_media",
+    publiclyVisible: true,
+    threadId: "thr_1",
+    mediaId: "media_place_1",
+    objectRef: result.receipt.objectRef,
+    digest: result.receipt.sha256,
+    mediaType: "image/webp",
+    provenanceClass: "generated_reconstruction",
+    eventId: accepted.event.eventId,
+    eventSequence: 1,
+  });
 });
 
-test("invalid credential blocks media.ready before it reaches the presentation stream", async () => {
+test("invalid credential blocks media.ready and public-media catalog projection", async () => {
   const infra = createMemoryInfraDriver();
   const result = await generated(infra);
   const presentationServer = createThreadPresentationServer({ infra });
@@ -181,4 +195,5 @@ test("invalid credential blocks media.ready before it reaches the presentation s
     /content credential verification failed/,
   );
   assert.equal((await presentationServer.getHead("channel_thr_1")).sequence, 0);
+  assert.equal(await infra.catalog.get(`media:${result.receipt.objectRef}`), null);
 });
