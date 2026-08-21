@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-lifecycle
 status: accepted
-last-reviewed: 2026-08-18
+last-reviewed: 2026-08-21
 canonical: true
 ---
 
@@ -10,6 +10,8 @@ canonical: true
 ## Frozen
 
 The Thread persists without active model compute. Events and messages may accumulate.
+
+A frozen Thread remains a persistent person, but the current runtime does **not** yet claim that ordinary autonomous life continuously advances while no cognition episode or world mechanism is active. That stronger capability is explicitly deferred below.
 
 ## Trigger
 
@@ -59,3 +61,27 @@ The Thread may use an Actor, Dignity Guardian, Goal Guardian, Self Examiner, mem
 Fibre validates proposed changes, records communications and actions, settles ledgers, stores memories, updates developmental state, records unresolved intentions, appends events, releases the lease, and returns the Thread to frozen state.
 
 The runtime must be idempotent and recoverable. A failed worker must not duplicate payments, reuse consumed authorization, expose private state, or corrupt identity history.
+
+## Ordinary life independent of human encounter — Deferred
+
+Fibre's intended world requires more than a request-driven freeze/thaw loop.
+
+> **A human encounter should enter an already unfolding Thread life rather than create the appearance of a life at the moment the human arrives.**
+
+This is an accepted architectural requirement, not a claim about the current runtime.
+
+The missing capability is an **autonomous ordinary-life producer**: a versioned world/lifecycle mechanism by which time, place, activity, opportunities, interruptions, commitments, relationships, resources, and ordinary events can change without a human request authoring the Thread's day.
+
+The eventual mechanism may include a world clock, scheduler, event producers, place/world authorities, or other bounded runtime machinery. This document deliberately does not freeze that implementation yet.
+
+Capability status under [`../foundations/invariants.md`](../foundations/invariants.md#capability-status): **Deferred**.
+
+Until this capability exists and has causal evidence:
+
+- a viewer fixture may simulate a current place, daily schedule, recent activity, or independent day only when explicitly labeled synthetic/non-authoritative;
+- presentation output may not be cited as proof that autonomous ordinary life exists;
+- `ThreadEncounterSnapshot`, `DailyPlan`, current presence, and comparable live-life contracts remain deferred rather than being inferred from UI needs;
+- a future implementation must identify the producer of each live field and its durable causation/evidence boundary;
+- if the capability is claimed as personhood-bearing, it must eventually survive the Fibre causal/ablation discipline rather than merely populate a convincing page.
+
+This preserves the ambition that **life precedes encounter** without allowing a fixture or presentation generator to author consequential private life and then describe it as Thread-owned agency.
