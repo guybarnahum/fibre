@@ -17,7 +17,7 @@ export const G3_V2_DIGEST = "sha256:aef6eea69cf55cc60e730a3529fd0e7d090261cd6535
 export const G4_V2_DIGEST = "sha256:50c2f5bcbb1a3470a685f75257fd004c516ca04a67a3b21b367dbf73e58ade20";
 export const G5_SURFACES_DIGEST = "sha256:cedd203dbf45a933d2b3af5227931e7722db1d33ca43849933aac584c02e0712";
 export const G5_SURFACES_BLOB_SHA = "320c6bac5a462ffe8cc998514b6024ebaf9f0915";
-export const G5_PROTOCOL_DIGEST = "sha256:6beb0ba589ca2940d72e2d0cd88b0343aeb3ef73537be9669fbc36fc81cde11e";
+export const G5_PROTOCOL_BLOB_SHA = "7c6a856d0650b3468bc988a4f5cbd2d96c7551c5";
 
 function fail(message) {
   throw new Error(message);
@@ -131,7 +131,7 @@ export function verifyG5DiagnosticsFreeze() {
   if (digest(g4) !== G4_V2_DIGEST) fail("G5 binding to G4-v2 drifted");
   if (digest(surfaces) !== G5_SURFACES_DIGEST) fail("G5 evaluation surface digest drifted");
   if (gitBlobSha(G5_SURFACES_PATH) !== G5_SURFACES_BLOB_SHA) fail("G5 evaluation surface Git blob drifted");
-  if (digest(protocol) !== G5_PROTOCOL_DIGEST) fail("G5 diagnostics protocol digest drifted");
+  if (gitBlobSha(G5_PROTOCOL_PATH) !== G5_PROTOCOL_BLOB_SHA) fail("G5 diagnostics protocol Git blob drifted");
 
   if (protocol.preconditions?.g3ProtocolDigest !== G3_V2_DIGEST) fail("G5 protocol does not bind exact G3-v2");
   if (protocol.preconditions?.g4ProtocolDigest !== G4_V2_DIGEST) fail("G5 protocol does not bind exact G4-v2");
@@ -190,6 +190,7 @@ export function verifyG5DiagnosticsFreeze() {
 
   return Object.freeze({
     protocolDigest: digest(protocol),
+    protocolBlobSha: gitBlobSha(G5_PROTOCOL_PATH),
     surfacesDigest: digest(surfaces),
     surfacesBlobSha: gitBlobSha(G5_SURFACES_PATH),
     primaryRater: `${protocol.runtime.primaryRater.provider}/${protocol.runtime.primaryRater.model}`,
@@ -209,6 +210,7 @@ function main() {
   process.stdout.write(`D3 primary horizons: ${result.d3PrimaryHorizons.join(", ")}\n`);
   process.stdout.write(`D2 minimum durable meanings: ${result.d2MinimumMeanings}\n`);
   process.stdout.write(`Evaluation surfaces digest: ${result.surfacesDigest}\n`);
+  process.stdout.write(`G5 protocol blob: ${result.protocolBlobSha}\n`);
   process.stdout.write(`G5 protocol digest: ${result.protocolDigest}\n`);
 }
 
