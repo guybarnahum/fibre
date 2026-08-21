@@ -135,12 +135,13 @@ export function createMemoryInfraDriver() {
   };
 
   const realtime = {
-    async broadcast(channelId, value) {
+    async publish(channelId, value) {
       assertInfraId("channelId", channelId);
       assertInfraJsonValue("realtime value", value);
       for (const listener of listeners.get(channelId) ?? []) await listener(clone(value));
     },
-    async subscribe(channelId, listener) {
+    // Test/local extension. It is deliberately not required by the InfraDriver contract.
+    async listen(channelId, listener) {
       assertInfraId("channelId", channelId);
       if (typeof listener !== "function") throw new TypeError("realtime listener must be a function");
       const group = listeners.get(channelId) ?? new Set();
