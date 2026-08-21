@@ -141,7 +141,7 @@ export function normalizeAssetGenerationReceipt(value) {
   const name = "asset generation receipt";
   plain(name, value);
   exact(name, value, [
-    "receiptVersion", "jobId", "status", "assetKind", "role", "objectRef", "sha256",
+    "receiptVersion", "jobId", "job", "status", "assetKind", "role", "objectRef", "sha256",
     "mediaType", "width", "height", "durationMs", "completedAt", "generation",
     "inputReferences", "context", "unavailableReason",
   ]);
@@ -149,6 +149,10 @@ export function normalizeAssetGenerationReceipt(value) {
   if (!["ready", "unavailable"].includes(value.status)) fail(`${name}.status is unsupported`);
   if (!ASSET_KINDS.includes(value.assetKind)) fail(`${name}.assetKind is unsupported`);
   nonEmpty(`${name}.jobId`, value.jobId);
+  const job = normalizeAssetGenerationJob(value.job);
+  if (job.jobId !== value.jobId) fail(`${name}.job.jobId does not match receipt jobId`);
+  if (job.assetKind !== value.assetKind) fail(`${name}.job.assetKind does not match receipt assetKind`);
+  if (job.role !== value.role) fail(`${name}.job.role does not match receipt role`);
   nonEmpty(`${name}.role`, value.role);
   timestamp(`${name}.completedAt`, value.completedAt);
   stringArray(`${name}.inputReferences`, value.inputReferences, { required: true });
@@ -176,5 +180,5 @@ export function normalizeAssetGenerationReceipt(value) {
     if (value.generation !== null) fail(`${name}.generation must be null when unavailable`);
     nonEmpty(`${name}.unavailableReason`, value.unavailableReason);
   }
-  return structuredClone(value);
+  return { ...structuredClone(value), job };
 }
