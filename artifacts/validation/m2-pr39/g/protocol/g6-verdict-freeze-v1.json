@@ -1,0 +1,181 @@
+{
+  "protocolVersion": "pr39-slice-g6-verdict-freeze-v1",
+  "status": "frozen_pre_final_life_generation",
+  "preconditions": {
+    "g1Status": "COMPLETE_CLEAR",
+    "g2Status": "COMPLETE_CLEAR_FIVE_PAIR_TEXTUAL_CEILING",
+    "g3Status": "COMPLETE_CLEAR_V2",
+    "g4Status": "COMPLETE_CLEAR_V2",
+    "g5Status": "COMPLETE_CLEAR",
+    "g5ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g5-diagnostics-freeze-v1.json",
+    "g5ProtocolCanonicalDigest": "sha256:4520357cab14bcdc883c6b3966401c98d17a1424e47f26e8c04002728d799ed5",
+    "g5ProtocolGitBlobSha": "7c6a856d0650b3468bc988a4f5cbd2d96c7551c5",
+    "g5EvaluationSurfacesDigest": "sha256:cedd203dbf45a933d2b3af5227931e7722db1d33ca43849933aac584c02e0712",
+    "g5MaintainerVerifiedHead": "de864de22deb6c15ebbd5513eb5edf06aa8f4765",
+    "g5ActiveTests": {"pass": 578, "fail": 0},
+    "finalCohortLifeExists": false
+  },
+  "authorityBoundary": {
+    "g6MayGenerateFinalLife": false,
+    "g6MayChangeG1ThroughG5": false,
+    "g6MayFreezeVerdictOnly": true,
+    "verdictStatuses": ["CLEAR", "HOLD", "REDESIGN"],
+    "verdictPrecedence": ["REDESIGN", "HOLD", "CLEAR"],
+    "badOutcomeMayTriggerRegeneration": false,
+    "badOutcomeMayRewriteFrozenEvidence": false,
+    "hMayRunOnlyAfterBlockingGateGClear": true
+  },
+  "principle": "Bad scientific outcomes are HOLD evidence. REDESIGN is reserved for a materially invalid experiment or confirmed protocol-integrity failure.",
+  "redesignTriggers": {
+    "confirmedProtocolIntegrityViolations": [
+      "any final-cohort cognition generated before blocking Gate-G CLEAR",
+      "any frozen World, genome, World-genome assignment, treatment schedule, cognition prompt/schema/runtime, retry cap, publication rule, evaluation surface, rater, threshold, or verdict rule materially changed after its freeze without an explicit pre-life versioned amendment",
+      "any quality-driven regeneration or second whole-candidate attempt after the first mechanically integrity-valid cohort exists",
+      "whole-candidate attempt count greater than the frozen cap of one",
+      "content-dependent or outcome-dependent treatment assignment or genome-locus selection",
+      "confirmed genome or genome-derived treatment information present in Pass A, life_only_unexposed Pass B model input, or Pass C model input",
+      "confirmed rejected Pass-A or Pass-B semantic content exposed to a retry where the frozen retry contract forbids it",
+      "provider/model/rater substitution after any partial H output has been observed",
+      "diagnostic threshold, comparison, transformation, or candidate scope selected or changed after observing H output"
+    ],
+    "rule": "Any confirmed item above makes the current H experiment invalid for #39 closure. Preserve all evidence and return REDESIGN. Do not regenerate or reinterpret the same cohort into compliance."
+  },
+  "operationalHoldTriggers": [
+    "a final-cohort Thread cannot reach mechanical integrity within a frozen repair/retry cap",
+    "the Pass-B genome-copy mechanical gate fails again after its one allowed retry",
+    "a frozen generator, normalizer, or rater becomes unavailable after H begins and the frozen provider-failure rule forbids substitution",
+    "the complete first integrity-valid five-Thread cohort cannot be produced under the frozen one-attempt rule"
+  ],
+  "diagnosticVerdictRules": {
+    "D1_life_attribution": {
+      "blocking": true,
+      "primaryCondition": "normalized",
+      "clearRequirement": "at least 4 of 5 normalized Thread queries attributed to their correct history",
+      "holdRule": "0 to 3 of 5 normalized correct => HOLD",
+      "rawCondition": "descriptive shortcut-sensitivity only; never rescues or independently blocks"
+    },
+    "D2_sentiment_coupling": {
+      "blockingOnlyForStableVeryHighPositiveCoupling": true,
+      "minimumAnalyzability": {"durableMeaningRecords": 8, "threadsRepresented": 3},
+      "insufficientAnalyzability": "INCONCLUSIVE_NONBLOCKING_NO_REGENERATION_NO_MEANING_QUOTA",
+      "holdRule": "HOLD only when cohort Spearman rho is at least 0.75 AND every leave-one-Thread-out rho is at least 0.60",
+      "warningOnly": [
+        "0.60 <= rho < 0.75",
+        "rho >= 0.75 with leave-one-Thread-out minimum below 0.60",
+        "leave-one-Thread-out range crosses two or more G5 bands"
+      ],
+      "rationale": "This detects a stable mood-equals-meaning pattern without turning the number of meanings into an admission quota."
+    },
+    "D3_genome_propagation": {
+      "blocking": true,
+      "primaryOrdinals": [3, 6],
+      "primaryHorizons": [6, 10],
+      "g2DetectableCoreEdges": [[1,2],[2,3],[4,5],[5,1]],
+      "g2MeasuredLowNonblockingEdge": [3,4],
+      "coreEdgeDecision": "Use the exact G5 matched-vs-swapped rank-point decision at each fixed ordinal. Pair 3-4 is reported but never counted as a required success because G2 provided no detectable ceiling there.",
+      "directPropagationClearRequirement": {
+        "eachOrdinalMinimumCorrectCoreEdges": 3,
+        "atLeastOneOrdinalCorrectCoreEdges": 4,
+        "equivalentStatement": "Both fixed ordinals must be at least 3/4 on the four G2-detectable edges, and at least one ordinal must be 4/4."
+      },
+      "directPropagationHoldRule": "If the direct-propagation clear requirement is not met => HOLD; never regenerate or move treatment positions.",
+      "cleanNegativeControl": {
+        "ordinals": [1,2],
+        "holdSignal": "Use G5 NEGATIVE_CONTROL_FAILURE_SIGNAL exactly: either clean ordinal 5/5 OR both clean ordinals at least 4/5 => HOLD",
+        "confirmedMechanicalLeak": "If follow-up integrity audit confirms a forbidden genome path rather than only a statistical signal => REDESIGN"
+      },
+      "lifeOnlyExposed": {
+        "status": "descriptive_only_horizon_confounded",
+        "minimumCalls": 6,
+        "minimumThreads": 3,
+        "insufficientCell": "INCONCLUSIVE_NONBLOCKING_NO_REGENERATION",
+        "rule": "Never promote exposed-vs-unexposed between-stratum differences into causal evidence."
+      },
+      "chanceReferenceOnly": {
+        "oneOrdinalP_at_least_3_of_4_if_independent_fair_edges": 0.3125,
+        "oneOrdinalP_4_of_4_if_independent_fair_edges": 0.0625,
+        "twoOrdinalRuleReferenceIfIndependent": 0.03515625,
+        "note": "Reference arithmetic only. Shared genomes, model behavior, and repeated cohort membership mean independence is not asserted."
+      }
+    },
+    "D4_life_funnel": {
+      "blocking": false,
+      "rule": "Characterization only. No event, memory, meaning, ambivalence, forgetting, or funnel-ratio quota may block CLEAR by itself."
+    },
+    "D5_self_account_overreach": {
+      "blockingForStrongCohortWarning": true,
+      "holdRule": "4 or 5 Threads classified near_total_self_explanation => HOLD",
+      "warningOnly": "3 near-total Threads => report warning but do not block by itself",
+      "insufficientMaterialHistory": "NONBLOCKING_NO_HISTORY_QUOTA",
+      "rationale": "A cohort where nearly every Thread perfectly explains its own material history is suspiciously authored, while unresolved residue is allowed."
+    }
+  },
+  "repairAndSelectionInterpretation": {
+    "passARepairCounts": "report exactly; no numeric quality threshold and no CLEAR/HOLD rule based solely on count while within the frozen cap",
+    "passBGenomeCopyRetryCounts": "report exactly; a successful one-time mechanical retry is not itself a HOLD",
+    "repairExhaustion": "HOLD under operationalHoldTriggers",
+    "qualityRegeneration": "REDESIGN protocol violation",
+    "firstIntegrityValidCohort": "freeze immediately and evaluate exactly once"
+  },
+  "clearRule": {
+    "allMustHold": [
+      "blocking Gate-G review returned CLEAR on the complete frozen G1-G6 packet before any final-life cognition",
+      "no REDESIGN trigger occurred",
+      "no operational HOLD trigger occurred",
+      "D1 normalized correct count is at least 4 of 5",
+      "D3 direct-propagation four-edge core requirement is satisfied at ordinals 3 and 6",
+      "D3 clean negative controls do not emit NEGATIVE_CONTROL_FAILURE_SIGNAL",
+      "D2 does not meet the stable very-high positive-coupling HOLD rule",
+      "D5 has at most 3 near_total_self_explanation Threads"
+    ],
+    "allowedWithMandatoryDisclosure": [
+      "D2 insufficient analyzability",
+      "D2 moderate/high but not stably very-high positive coupling",
+      "G2 pair 3-4 D3 null or error",
+      "life_only_exposed cell below 6 calls or 3 Threads",
+      "D4 unusual funnel proportions",
+      "up to 3 near-total-self-explanation Threads",
+      "nonzero bounded mechanical repair/retry counts",
+      "secondary characterization warnings that do not prove protocol failure"
+    ],
+    "rule": "If every required condition holds, return CLEAR and publish every mandatory limitation/warning. CLEAR never upgrades #39 to causal or Whole-Person standing."
+  },
+  "holdRule": {
+    "rule": "If no REDESIGN trigger is confirmed but any blocking diagnostic or operational HOLD condition fails, return HOLD. Preserve the first cohort and every evaluation result. A later compiler revision requires a separately versioned cohort; it never replaces this one."
+  },
+  "redesignRule": {
+    "rule": "Return REDESIGN only for confirmed experiment-invalidating protocol/integrity failure. REDESIGN is not an escalation for merely having several bad scientific outcomes."
+  },
+  "gateG": {
+    "blocking": true,
+    "mustOccurBeforeFinalLife": true,
+    "reviewQuestion": "Has Fibre frozen a complete, internally consistent, non-adaptive G1-G6 protocol that can generate and judge the first final cohort without post-outcome discretion or hidden identity/genome leakage?",
+    "requiredProofs": [
+      "G1 accepted Worlds are concrete, final, digest-bound, and genome-independent at authoring/freeze time",
+      "G2 genomes, assignments, five-pair textual ceiling, and pair 3-4 limitation are preserved",
+      "G3 treatment schedule and fixed-ordinal primary comparison are immutable",
+      "G4 A/B/C cognition, rosters, historical schedule, retry caps, Pass-B genome-copy guard, durable entry justification, and publication witness are immutable",
+      "G5 normalizer/rater surfaces, randomization, D1-D5 transformations, minimum analyzability, and metric bands are immutable",
+      "G6 CLEAR/HOLD/REDESIGN logic predates final-life generation",
+      "no final-cohort life exists yet",
+      "no richness/personality outcome became an admission gate or regeneration trigger",
+      "repair/rejection counts will remain visible",
+      "H will freeze the first mechanically integrity-valid five-Thread cohort and will not regenerate for quality"
+    ],
+    "allowedReviewVerdicts": ["CLEAR", "HOLD", "REDESIGN"],
+    "onHoldOrRedesign": "Do not generate final lives. Version any bounded pre-life correction explicitly and rerun Gate G. Preserve all prior protocol evidence."
+  },
+  "g6Exit": {
+    "requires": [
+      "G5 exact verified digest/blob bound",
+      "verdict precedence mechanically verified",
+      "D1/D2/D3/D4/D5 blocking semantics mechanically verified",
+      "G2 pair 3-4 nonblocking constraint mechanically verified",
+      "negative-control HOLD vs confirmed-leak REDESIGN distinction mechanically verified",
+      "no final-cohort artifact exists",
+      "blocking Gate-G request packet frozen"
+    ],
+    "afterLocalVerification": "REQUEST_BLOCKING_GATE_G_REVIEW",
+    "hAuthorizedOnlyAfter": "BLOCKING_GATE_G_CLEAR"
+  }
+}
