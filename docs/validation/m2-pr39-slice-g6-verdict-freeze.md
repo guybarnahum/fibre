@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-slice-g6-verdict-freeze
-status: frozen_pending_verification
+status: complete
 last-reviewed: 2026-08-21
 canonical: false
 ---
@@ -15,10 +15,11 @@ Machine-readable authority:
 
 ```text
 artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json
-Git blob: 3f66b590eb357b97baa4bb7778a781e5ca82af32
+canonical digest  sha256:1cfaa3148599236526d5495b14cc0ef2468d5488aa37be38b3fec9c49e21afcc
+Git blob          3f66b590eb357b97baa4bb7778a781e5ca82af32
 ```
 
-The canonical JSON digest is computed by `npm run genesis:g6-verify` from those exact bytes and must be recorded after maintainer verification.
+Maintainer verification is recorded in [`m2-pr39-slice-g6-result.md`](m2-pr39-slice-g6-result.md): 582/582 active tests and `genesis:g6-verify` VERIFIED at local head `ba3154231d19d0251d1aea479fe701e5df0cef7f`.
 
 G6 binds the verified G5 protocol exactly:
 
@@ -169,9 +170,9 @@ The first mechanically integrity-valid five-Thread cohort must be frozen immedia
 
 ## Blocking Gate G
 
-G6 itself does not authorize H.
+G6 is COMPLETE but **does not authorize H**.
 
-After local G6 verification, Claude receives the complete G1–G6 packet and must return one of:
+Claude must now review the complete G1–G6 packet using [`m2-pr39-gate-g-review-request.md`](m2-pr39-gate-g-review-request.md) and return one of:
 
 ```text
 CLEAR
@@ -181,17 +182,6 @@ REDESIGN
 
 No final-life cognition may occur until Gate G is CLEAR.
 
-## Verification
-
-Run:
-
-```bash
-npm test
-npm run genesis:g6-verify
-```
-
-The verifier makes zero model calls. It verifies exact G5/G6 bytes, empty final-cohort boundary, verdict precedence, D1/D2/D3/D4/D5 thresholds, pair `(3,4)` nonblocking treatment, and Gate-G sequencing.
-
 ## Boundary
 
 ```text
@@ -200,7 +190,7 @@ G2       COMPLETE / CLEAR
 G3-v2    COMPLETE / CLEAR
 G4-v2    COMPLETE / CLEAR
 G5       COMPLETE / CLEAR
-G6       FROZEN — pending local verification
-Gate G   BLOCKED on G6 verification
-H        FORBIDDEN
+G6       COMPLETE / CLEAR
+Gate G   NEXT / BLOCKING REVIEW
+H        FORBIDDEN until Gate G CLEAR
 ```
