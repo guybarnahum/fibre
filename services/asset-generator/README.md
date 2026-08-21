@@ -7,3 +7,11 @@ The service schedules versioned generation jobs through `InfraDriver.workflows`,
 The service does **not** own Thread identity, history, memory, meaning, embodiment, presentation authority, or public disclosure. A caller such as Thread Presentation must supply an admissible generation brief and decide how a completed receipt affects its own projection.
 
 Generated media is presentation/reconstruction material unless another Fibre authority explicitly establishes a different status. It is never promoted to evidence merely because generation completed successfully.
+
+Generated-asset provenance and prompt retention are governed by:
+
+- `docs/decisions/ADR-0014-generated-asset-provenance.md`
+- `docs/architecture/generated-asset-provenance-and-content-credentials-v1.md`
+- `docs/validation/thread-presentation-asset-provenance-state.md`
+
+The accepted direction is full immutable Fibre provenance plus a public-safe signed C2PA / Content Credential embedded in the final asset. The exact semantic brief and exact provider-facing request are retained in Fibre provenance; exact prompt text is embedded publicly only under explicit disclosure policy, while prompt digests are the default portable credential.
