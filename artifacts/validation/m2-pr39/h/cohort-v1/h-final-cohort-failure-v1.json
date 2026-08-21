@@ -1,0 +1,600 @@
+{
+  "evidenceVersion": "pr39-slice-h-final-cohort-v1",
+  "status": "HOLD_FIRST_COHORT_ATTEMPT_FAILED_NO_REGENERATION",
+  "attemptStartedAt": "2026-08-21T03:49:00.593Z",
+  "failedAt": "2026-08-21T03:50:02.454Z",
+  "error": {
+    "name": "GuardianModelError",
+    "message": "OpenAI API request or model configuration is invalid (HTTP 400): Invalid schema for response_format 'fibre_structured_cognition': In context=('properties', 'episodeRefs'), 'uniqueItems' is not permitted.",
+    "stack": "GuardianModelError: OpenAI API request or model configuration is invalid (HTTP 400): Invalid schema for response_format 'fibre_structured_cognition': In context=('properties', 'episodeRefs'), 'uniqueItems' is not permitted.\n    at classifyHttpFailure (file:///Users/titan/github/fibre/services/world-kernel/src/model-runtime/openai.mjs:122:12)\n    at Object.invoke (file:///Users/titan/github/fibre/services/world-kernel/src/model-runtime/openai.mjs:248:35)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async Object.invoke (file:///Users/titan/github/fibre/tools/genesis/genesis-h-final-cohort.mjs:473:20)\n    at async invoke (file:///Users/titan/github/fibre/services/world-kernel/src/genesis-pass-b-admission.mjs:121:20)\n    at async generateAdmittedPassBMemory (file:///Users/titan/github/fibre/services/world-kernel/src/genesis-pass-b-admission.mjs:138:19)\n    at async generateThread (file:///Users/titan/github/fibre/tools/genesis/genesis-h-final-cohort.mjs:555:20)\n    at async runHFinalCohort (file:///Users/titan/github/fibre/tools/genesis/genesis-h-final-cohort.mjs:782:26)\n    at async main (file:///Users/titan/github/fibre/tools/genesis/genesis-h-final-cohort.mjs:866:18)",
+    "gate": null
+  },
+  "completedThreadGenerations": [],
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-01:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-01:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_2d1bff6a0641481189dcff0616a320ae",
+      "inputDigest": "sha256:315da68ff429aff940b40d94f5b435dc873cc4e2fec8bb8534008dc04ce30d6c",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0001",
+          "occurredAt": "2011-03-12T09:00:00Z",
+          "ageAtEvent": 6.6,
+          "placeRef": "place_g1v2_01_home",
+          "participantRefs": [
+            "thr_pr39_g2_04",
+            "person_g4_s01_caregiver_1",
+            "person_g4_s01_sibling_1"
+          ],
+          "observableAction": "On a humid Saturday morning in the apartment, the caregiver calls the subject over from the floor where the subject and the younger sibling have been lining up plastic animal toys. The caregiver points to a small plastic basin and a short clothesline strung across the balcony, then hands the subject a bundle of cloths and a plastic clip hanger. The caregiver demonstrates once by clipping a wet cloth to the line, then steps back and tells the subject to hang the rest while the caregiver returns to a basin of laundry. The subject carries the bundle to the balcony doorway, shakes out each damp cloth, and clips them one by one onto the hanger and the line, stretching on tiptoe for the higher spots. A couple of cloths slip off and fall to the balcony floor; the subject picks them up, re-clips them more carefully, and checks that they stay in place. The younger sibling stands in the doorway watching and occasionally pointing at a crooked cloth. When the last cloth is hanging, the subject calls out to the caregiver. The caregiver comes over, looks along the line of cloths, adjusts one corner, and nods before taking the empty basin back toward the bathroom.",
+          "structureRef": "ges_v2_small_help_request",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2651,
+        "outputTokens": 365,
+        "totalTokens": 3016
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-02:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-02:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_ba74d7b5bcdd49c6926b9071cf159b31",
+      "inputDigest": "sha256:32f327b859b50a46936f02aab245d8f7157ec5a3f3cdba2c1bdf426673484df1",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0002",
+          "occurredAt": "2012-02-05T10:00:00Z",
+          "ageAtEvent": 7.5,
+          "placeRef": "place_g1v2_01_home",
+          "participantRefs": [
+            "thr_pr39_g2_04",
+            "person_g4_s01_sibling_1",
+            "person_g4_s01_caregiver_1"
+          ],
+          "observableAction": "Late on a warm morning in the apartment, the subject and the younger sibling sit on the cool tile floor near the balcony door with a single plastic toy truck between them. The subject rolls the truck back and forth along an imaginary road marked by a line in the tile, making engine noises. The younger sibling reaches out, grabs the truck, and starts pushing it in circles, bumping it against the subject’s knee. The subject pulls the truck back and lines it up on the tile line again, saying a short phrase and nudging the sibling’s hand away. The sibling frowns, grabs for the truck more forcefully, and tries to steer it toward a plastic cup. The truck jerks between their hands, the cup tips over, and a few small blocks spill out and scatter. The subject tightens their grip and pulls the truck toward their own side of the floor, turning their shoulder to block the sibling. The sibling raises their voice and tugs harder on the back of the truck, the wheels scraping loudly on the tile. From the nearby kitchen area, the caregiver calls out, then steps into the room, wipes their hands on a towel, and looks down at the two children holding the same truck. The caregiver crouches, gently takes hold of the truck, and pauses until both children loosen their grip. The caregiver says a few firm words, then sets the truck down between them and points first to the subject, then to the sibling, miming a turn-taking motion with their hand. The subject picks up the truck, rolls it along the tile line for a short run, then stops and pushes it toward the sibling. The sibling takes it, drives it in a small circle near the spilled blocks, then pushes it back. The caregiver watches for a moment, nods once, and returns to the kitchen while the two children continue alternating short turns with the truck.",
+          "structureRef": "ges_v2_shared_object_disagreement",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 3009,
+        "outputTokens": 511,
+        "totalTokens": 3520
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-02:repair:1",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-02:repair:1",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_2ea2d9297d7849258b527ad6eb690072",
+      "inputDigest": "sha256:a84e79ac739fce29e518b3618611158d15bb034d32a063c17774c9255e9094be",
+      "promptHash": "sha256:68407bf839d5a6049956032ef23678c6687b21a5b68c0bd764087ea89e779c51",
+      "responseSchemaHash": "sha256:d9e4e8f3833dbe23924053d575c123b2fc0b8723768971d3a15f66f4b830bdcc",
+      "modelOutput": {
+        "observableAction": "Late on a warm morning in the apartment, the subject and younger sibling sit on the cool tile floor near the balcony door with a single plastic toy truck between them. The subject rolls the truck back and forth along a tile line, making engine noises, while the sibling grabs the truck and pushes it in circles, bumping it against the subject’s knee. The subject pulls the truck back, lines it up on the tile line again, says a short phrase, and nudges the sibling’s hand away. The sibling frowns, grabs more forcefully, and tries to steer the truck toward a plastic cup, causing the truck to jerk between their hands and tip the cup so a few small blocks spill out and scatter. The subject tightens their grip, pulls the truck toward their side, and turns a shoulder to block the sibling as the sibling raises their voice and tugs harder, the wheels scraping on the tile. From the nearby kitchen, the caregiver calls out, steps into the room, wipes their hands on a towel, and looks down at the two children holding the same truck. The caregiver crouches, gently takes hold of the truck, waits until both children loosen their grip, says a few firm words, then sets the truck down between them and points first to the subject, then to the sibling while miming a turn-taking motion. The subject picks up the truck, rolls it briefly along the tile line, then pushes it to the sibling, who drives it in a small circle near the spilled blocks and then pushes it back as the caregiver watches for a moment and returns to the kitchen."
+      },
+      "usage": {
+        "inputTokens": 658,
+        "outputTokens": 345,
+        "totalTokens": 1003
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-02:repair:2",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-02:repair:2",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_602d079823924861bfaf6241161bacb9",
+      "inputDigest": "sha256:1651820711ea061e93fe3a68e0ed5fac7ad858eb9cb0b1fce7eac4f9f6cf6d65",
+      "promptHash": "sha256:68407bf839d5a6049956032ef23678c6687b21a5b68c0bd764087ea89e779c51",
+      "responseSchemaHash": "sha256:d9e4e8f3833dbe23924053d575c123b2fc0b8723768971d3a15f66f4b830bdcc",
+      "modelOutput": {
+        "observableAction": "In the apartment near the balcony door, the subject and younger sibling struggle over a plastic toy truck until the caregiver intervenes, briefly holds the truck, and then guides them to take turns rolling it on the tile floor."
+      },
+      "usage": {
+        "inputTokens": 600,
+        "outputTokens": 67,
+        "totalTokens": 667
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-03:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-03:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_b70c4e286b1d4538b6ffa0a235adf55a",
+      "inputDigest": "sha256:fe7888b55c066841233e785f7586ff9c3e9a09e5866d63e02f51cecaaf08a9b0",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0003",
+          "occurredAt": "2013-06-10T08:30:00Z",
+          "ageAtEvent": 8.8,
+          "placeRef": "place_g1v2_01_school",
+          "participantRefs": [
+            "thr_pr39_g2_04",
+            "person_g4_s01_relative_1"
+          ],
+          "observableAction": "On a warm weekday morning at the neighborhood school gate, the nearby adult relative parks a motorbike among a row of others and walks the subject toward the entrance, carrying the subject’s small backpack by one strap. Near the gate, the relative stops, hands the backpack to the subject, and points toward the line of students forming in front of a classroom. The subject slips the backpack on, adjusts one shoulder strap, and looks over at the relative. The relative raises a hand in a brief wave and steps back toward the motorbike area. The subject joins the end of the line of children in similar uniforms, glances once more toward the gate where the relative is putting on a helmet, then faces forward as a teacher begins calling the class inside.",
+          "structureRef": null,
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 3141,
+        "outputTokens": 263,
+        "totalTokens": 3404
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-04:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-04:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_dd99acfc27bb4d399cb1da90dde0e4ea",
+      "inputDigest": "sha256:27ded08da85058422922d2a6bf4a5804ff17174cf8fc9d21cbd4ded4773997a3",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0004",
+          "occurredAt": "2015-03-15T09:00:00Z",
+          "ageAtEvent": 10.6,
+          "placeRef": "place_g1v2_01_market",
+          "participantRefs": [
+            "thr_pr39_g2_04",
+            "person_g4_s01_caregiver_1",
+            "person_g4_s01_sibling_1",
+            "person_g4_s01_relative_1"
+          ],
+          "observableAction": "On a late Sunday morning at the neighborhood market, the caregiver and nearby adult relative stand near a vegetable stall while the subject and younger sibling wait by the motorbike parking area. The caregiver pulls a folded 20,000₫ note from a pocket, calls the subject over, and points toward a nearby stall with a hand-lettered sign for bread. The caregiver says the name of the bread, holds up two fingers, and tells the subject to go buy it, adding a brief reminder to watch for motorbikes. The subject nods, takes the note, and walks alone along the crowded aisle, stepping around baskets of greens and passing a woman arranging fish on ice. Reaching the bread stall, the subject waits behind one customer, then steps up to the counter and asks the vendor for two loaves, holding up two fingers. The vendor picks up two small baguettes, slips them into a thin plastic bag, and names the price. The subject hands over the note, receives a few coins in change, and tucks them into a shorts pocket. Carrying the bag, the subject retraces the path past the fish and vegetable stalls, pauses at the edge of a stream of motorbikes rolling through the lane, then crosses back to the parking area. The caregiver looks over as the subject approaches, takes the bag, peeks inside to check the contents, and gives a short verbal acknowledgment before turning back to the relative to continue discussing what else to buy. The subject stays near the motorbike with the younger sibling, occasionally glancing toward the stalls while the adults finish their shopping.",
+          "structureRef": "ges_v2_mundane_errand_independence",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 3367,
+        "outputTokens": 466,
+        "totalTokens": 3833
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-04:repair:1",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-04:repair:1",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_994816716bb34c6e95188b8dc97071cb",
+      "inputDigest": "sha256:8b6ab8f0e79250e0e8b861c9615395030c074a43dd6be3f41ed8a60e63005cac",
+      "promptHash": "sha256:68407bf839d5a6049956032ef23678c6687b21a5b68c0bd764087ea89e779c51",
+      "responseSchemaHash": "sha256:d9e4e8f3833dbe23924053d575c123b2fc0b8723768971d3a15f66f4b830bdcc",
+      "modelOutput": {
+        "observableAction": "At a Sunday neighborhood market, the caregiver gives the subject a 20,000₫ note, points to a nearby bread stall, says the bread’s name, holds up two fingers, reminds the subject to watch for motorbikes, and sends the subject alone through the crowded aisle to buy two loaves; the subject waits in line, orders two loaves while holding up two fingers, pays, receives change, returns along the same path, pauses for passing motorbikes, crosses back to the parking area, hands the bag to the caregiver, and then remains near the motorbike with the younger sibling while the adults continue shopping."
+      },
+      "usage": {
+        "inputTokens": 600,
+        "outputTokens": 151,
+        "totalTokens": 751
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-05:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-05:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_5050baac31b34df29ef41249d4631392",
+      "inputDigest": "sha256:fcf4472293e4a2e1540c0af524b81484aea0b36611b31e99a1536feedca30dea",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0005",
+          "occurredAt": "2016-05-10T09:30:00Z",
+          "ageAtEvent": 11.7,
+          "placeRef": "place_g1v2_01_library",
+          "participantRefs": [
+            "thr_pr39_g2_04"
+          ],
+          "observableAction": "On a late morning at the Cần Thơ public library, the subject walks past a row of low shelves in the children’s section, scanning the spines of several thin Vietnamese books with colorful covers. The subject pauses, pulls out one book with a bright illustration of a river and boats on the front, flips it open to the middle, glances at a page, then slides it back into place. Moving a few steps along the shelf, the subject tilts their head to read another cluster of titles, reaches for a slightly thicker paperback that shows a cartoon boy holding a magnifying glass, and opens it near the beginning. After turning a couple of pages while standing in the aisle, the subject looks toward a nearby table with empty chairs, tucks the magnifying-glass book under one arm, and leaves the other books on the shelf untouched as they walk over to sit down with the chosen book in front of them.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "Vietnamese children’s paperback about a cartoon boy using a magnifying glass",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 3592,
+        "outputTokens": 337,
+        "totalTokens": 3929
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-06:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-06:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_0cc09f7a22c64ab8bf0ce17162e97697",
+      "inputDigest": "sha256:2bbb65a855e844247970827c63ff62b036c1e0f19be01a14e74a8679c9ebb92c",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0006",
+          "occurredAt": "2017-03-18T08:45:00Z",
+          "ageAtEvent": 12.6,
+          "placeRef": "place_g1v2_01_home",
+          "participantRefs": [
+            "thr_pr39_g2_04",
+            "person_g4_s01_sibling_1"
+          ],
+          "observableAction": "On a warm Saturday morning in the apartment’s main room, the subject sits on the floor near the balcony door with a small stack of thin comic books spread out in front of them. The younger sibling comes over from the television, drops to the floor beside the subject, and reaches toward a comic with a bright red cover showing a superhero. The subject places a hand lightly on that book, slides it back into the middle of the stack, and instead fans out three comics on the tile: one with animals on the cover, one with schoolchildren, and the red superhero comic. Pointing to each cover in turn, the subject briefly names or describes it, then taps the covers with an open palm and looks at the sibling. The sibling hesitates, glances between the animals and the superhero, and finally taps the superhero comic with one finger. The subject nods, gathers the other two comics into a small pile off to the side, and leaves the chosen superhero comic in front of the sibling. The sibling lies on their stomach and opens it, while the subject picks up one of the remaining comics and leans back against the wall to read. For a moment they both turn pages quietly, the stack of unused comics resting between them on the floor.",
+          "structureRef": "ges_v2_help_younger_person_choose",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 3845,
+        "outputTokens": 373,
+        "totalTokens": 4218
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-06:repair:1",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-06:repair:1",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_7c6079356e114f29a8a131b5e607c70a",
+      "inputDigest": "sha256:ec470a854464b7703a6e4bf67ec1d3de5bdeba3c6f93f4aa6bf838210ba2c7f3",
+      "promptHash": "sha256:68407bf839d5a6049956032ef23678c6687b21a5b68c0bd764087ea89e779c51",
+      "responseSchemaHash": "sha256:d9e4e8f3833dbe23924053d575c123b2fc0b8723768971d3a15f66f4b830bdcc",
+      "modelOutput": {
+        "observableAction": "On a warm Saturday morning in the apartment’s main room, the subject sits on the floor near the balcony door with a small stack of thin comic books, redirects the younger sibling’s initial reach for a bright red superhero comic by briefly presenting and naming three options, then allows the sibling to choose the superhero comic, after which they both lie or sit on the floor reading separate comics quietly with the remaining stack between them."
+      },
+      "usage": {
+        "inputTokens": 530,
+        "outputTokens": 106,
+        "totalTokens": 636
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-07:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-07:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_554c357121584b10b6a9d69fa254759e",
+      "inputDigest": "sha256:3aa221ce603f271a0f1fa02cee783fe0a160ff7f7766513a327f6a966f4ec9b4",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0007",
+          "occurredAt": "2018-06-02T03:30:00Z",
+          "ageAtEvent": 13.8,
+          "placeRef": "place_g1v2_01_library",
+          "participantRefs": [
+            "thr_pr39_g2_04"
+          ],
+          "observableAction": "On a humid Saturday morning in the Cần Thơ public library, the subject walks slowly along a row of shelves where both Vietnamese and English paperbacks are mixed together. The subject pauses at a section with several thin English books, tilts their head to read the spines, and pulls out two different titles, one with a photograph of planets on the cover and another with a drawing of a boy and a dog. Holding both, the subject flips briefly through the pages of the planets book, then closes it and tucks it back into the gap on the shelf. The subject then opens the boy-and-dog book near the beginning, turns a few pages while standing, and glances toward a nearby table where a couple of chairs are empty. After another moment looking at the open pages, the subject presses the book closed with one hand, carries it over to the table, sets it down, pulls out a chair, and sits, leaving the other books on the shelf untouched.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "English children’s paperback about a boy and a dog",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 4015,
+        "outputTokens": 343,
+        "totalTokens": 4358
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-08:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-08:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_66045cea359444a0b129eae54ef72097",
+      "inputDigest": "sha256:1e0bd8fc6f5ac1d01fd2b81630fa6f96d6b1bb6e14837e634ceeb37e58d25439",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0008",
+          "occurredAt": "2019-09-15T02:30:00Z",
+          "ageAtEvent": 15.1,
+          "placeRef": "place_g1v2_01_library",
+          "participantRefs": [
+            "thr_pr39_g2_04"
+          ],
+          "observableAction": "On a quiet Sunday morning at the Cần Thơ public library, the subject stands in front of a mixed shelf of Vietnamese paperbacks and a few thin English books. The subject runs a finger along several spines, pulls out a Vietnamese novel with a photograph of a city street on the cover, flips through a few pages, then slides it back. Next, the subject takes down a slim English booklet with a bright blue cover labeled “Science Experiments,” opens it near the middle, and scans a page with diagrams of bottles and candles before returning it to the shelf. The subject then reaches for a different Vietnamese paperback with an illustration of a river and a small boat, opens it to the first chapter, and reads for a short while while standing in the aisle. After glancing toward a nearby table with empty chairs, the subject closes the river book, tucks it under one arm, leaves the other books on the shelf, and walks over to the table to sit down and place the chosen book in front of them.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "Vietnamese river-themed paperback novel chosen from library shelf",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 4306,
+        "outputTokens": 352,
+        "totalTokens": 4658
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-09:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-09:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_b2a38a13754743e5ad51fa5331934709",
+      "inputDigest": "sha256:bad87c82e1135b9c720efcf1f9c86ab8d450cc9ef637a43e64a4b7cb9777ce4b",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0009",
+          "occurredAt": "2021-03-20T03:00:00Z",
+          "ageAtEvent": 16.6,
+          "placeRef": "place_g1v2_01_library",
+          "participantRefs": [
+            "thr_pr39_g2_04"
+          ],
+          "observableAction": "On a warm Saturday morning at the Cần Thơ public library, the subject stands in front of a shelf where several Vietnamese paperbacks and a few thin English books are arranged side by side. The subject pulls out a Vietnamese paperback with a photograph of a crowded city street on the cover, flips through a few pages, then returns it to the shelf. Next, the subject takes down a slim English booklet with a bright green cover labeled “Everyday English Dialogues,” opens it near the middle, looks over a page of short conversations, and slides it back into place. The subject then reaches for a different Vietnamese paperback with an illustration of a small boat on a wide river, opens it to the first pages, and reads while standing in the aisle for a short time. After glancing toward a nearby table with empty chairs, the subject closes the river book, tucks it under one arm, leaves the other books on the shelf, walks over to the table, pulls out a chair, sits down, and places the chosen book on the table in front of them.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "Vietnamese river-themed paperback novel selected from library shelf",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 4570,
+        "outputTokens": 361,
+        "totalTokens": 4931
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-10:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-a:episode-10:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_bca34f69d63446d2a2bad41a329e8a2a",
+      "inputDigest": "sha256:48a3fb7334b3ac6a9924079298b8b9b70ee06f3d9cdad5686be8b9b37b794d64",
+      "promptHash": "sha256:99bbad847a69eb4829ed53d249e5ca7f97aa27bd3a341a14f32bc2a7b08dc4e7",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_pr39_g2_04_0010",
+          "occurredAt": "2022-06-05T03:30:00Z",
+          "ageAtEvent": 17.8,
+          "placeRef": "place_g1v2_01_library",
+          "participantRefs": [
+            "thr_pr39_g2_04"
+          ],
+          "observableAction": "On a humid Sunday morning at the Cần Thơ public library, the subject stands in front of a mixed shelf of Vietnamese and a few English paperbacks. After sliding one thin Vietnamese novel partway out and then pushing it back, the subject pulls down a Vietnamese paperback whose cover shows a monk walking beside a river under the title printed in large letters. The subject opens the book near the beginning and reads a page where a short paragraph, set off in quotation marks, states that people suffer because they cling to things that always change. The subject’s eyes move slowly along the lines of that paragraph, then back to the start of the sentence, and they pause with one finger resting lightly under the quoted sentence. After a moment, the subject turns the page, glances over the next few lines, then closes the book halfway and looks toward a nearby table with empty chairs. The subject tucks the monk-and-river book under one arm, leaves the other books on the shelf, walks to the table, pulls out a chair, sits down, and places the book open to the same page in front of them.",
+          "structureRef": "ges_v2_religious_or_philosophical_text",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "religious_or_philosophical_text",
+            "subjectKind": "text",
+            "subjectLabel": "Vietnamese paperback of Buddhist-style reflections on suffering and change",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 4888,
+        "outputTokens": 382,
+        "totalTokens": 5270
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-b:call-01:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "operational_failure",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "pr39-h:slot-01:pass-b:call-01:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "retrying": false,
+      "retryDelayMs": null,
+      "inputDigest": "sha256:74c4eb027ed925dd170c486e507078de54fe93ac4957089b79caaa1a7d5df65e",
+      "promptHash": "sha256:0b0bf6f23ada757b58ffa287508fd0a63c0db375e005dbc61e7c9a40303f2d5a",
+      "responseSchemaHash": "sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a",
+      "failure": {
+        "code": "MODEL_REQUEST_CONFIGURATION_ERROR",
+        "message": "OpenAI API request or model configuration is invalid (HTTP 400): Invalid schema for response_format 'fibre_structured_cognition': In context=('properties', 'episodeRefs'), 'uniqueItems' is not permitted.",
+        "retryable": false,
+        "retryAfterMs": null,
+        "httpStatus": 400,
+        "providerErrorCode": "invalid_json_schema",
+        "providerErrorType": "invalid_request_error",
+        "actionHint": null,
+        "usage": null
+      }
+    }
+  ],
+  "qualityRegenerationAllowed": false,
+  "instruction": "Preserve this failure. Do not rerun H with a new seed, provider, model, treatment schedule or quality selection."
+}
