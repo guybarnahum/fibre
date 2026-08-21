@@ -1,4 +1,5 @@
 import { verifyCredentialedAssetForPublication } from "../../asset-generator/src/credentialed-asset-generation-service.mjs";
+import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "./thread-presentation-stream-domain.mjs";
 
@@ -12,6 +13,7 @@ export function createThreadPresentationAssetPublisher({
   presentationServer,
   now = () => new Date().toISOString(),
 }) {
+  requireInfraCapabilities(infra, "catalog");
   if (!presentationServer || typeof presentationServer.appendEvent !== "function") {
     throw new TypeError("presentationServer.appendEvent must be a function");
   }
@@ -66,6 +68,23 @@ export function createThreadPresentationAssetPublisher({
         },
       };
       const accepted = await presentationServer.appendEvent(eventInput, { expectedSequence });
+
+      // This is a public-serving projection, not publication authority. The verified
+      // event is admitted first; a failed catalog mirror can be retried without
+      // creating a second semantic event.
+      await infra.catalog.upsert(`media:${stored.objectRef}`, {
+        kind: "public_presentation_media",
+        publiclyVisible: true,
+        threadId: context.threadId,
+        mediaId: context.mediaId,
+        objectRef: stored.objectRef,
+        digest: stored.sha256,
+        mediaType: stored.mediaType,
+        provenanceClass: "generated_reconstruction",
+        eventId,
+        eventSequence: accepted.event.sequence,
+      });
+
       return { ...accepted, proof };
     },
   });
