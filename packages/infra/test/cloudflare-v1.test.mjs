@@ -37,9 +37,10 @@ function fakeR2Bucket() {
   };
 }
 
-function fakeWorkflowBinding() {
+function fakeWorkflowBinding({ failCreateOnce = false } = {}) {
   const instances = new Map();
   let creates = 0;
+  let shouldFail = failCreateOnce;
   function instance(id) {
     return {
       id,
@@ -50,6 +51,10 @@ function fakeWorkflowBinding() {
     get createCount() { return creates; },
     expire(id) { instances.delete(id); },
     async create({ id }) {
+      if (shouldFail) {
+        shouldFail = false;
+        throw new Error("transient create failure");
+      }
       if (instances.has(id)) throw new Error("instance already exists");
       creates += 1;
       const value = instance(id);
@@ -119,4 +124,25 @@ test("cloudflare-v1 workflow status preserves Fibre input witness after Cloudfla
   const duplicate = await infra.workflows.start("asset_generation_v1", "job_2", input);
   assert.equal(duplicate.duplicate, true);
   assert.equal(workflow.createCount, 1, "expired operational status must not silently re-run a durable Fibre job");
+});
+
+test("cloudflare-v1 workflow retry remains possible until a start marker is committed", async () => {
+  const bucket = fakeR2Bucket();
+  const workflow = fakeWorkflowBinding({ failCreateOnce: true });
+  const infra = createCloudflareInfraDriver({
+    objectBucket: bucket,
+    workflowBindings: { asset_generation_v1: workflow },
+  });
+  const input = { jobId: "job_retry", purpose: "fixture" };
+
+  await assert.rejects(
+    () => infra.workflows.start("asset_generation_v1", "job_retry", input),
+    /transient create failure/,
+  );
+  assert.equal(workflow.createCount, 0);
+
+  const retried = await infra.workflows.start("asset_generation_v1", "job_retry", input);
+  assert.equal(retried.duplicate, true, "the durable job identity already existed even though execution had not started");
+  assert.equal(retried.status, "queued");
+  assert.equal(workflow.createCount, 1);
 });
