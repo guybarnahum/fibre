@@ -67,7 +67,7 @@ import { verifyG5DiagnosticsFreeze } from "./genesis-g5-diagnostics-freeze.mjs";
 import { verifyG6VerdictFreeze } from "./genesis-g6-verdict-freeze.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
-export const H_EXECUTION_BINDING_PATH = "artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v1.json";
+export const H_EXECUTION_BINDING_PATH = process.env.FIBRE_H_EXECUTION_BINDING_PATH ?? "artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v1.json";
 const REVIEWED_HEAD = "abcff37eacf82cd522e8276da20d33926b0cb754";
 const EXPECTED_GATE_G_G6_DIGEST = "sha256:1cfaa3148599236526d5495b14cc0ef2468d5488aa37be38b3fec9c49e21afcc";
 const EXPECTED_G2_PROTOCOL_DIGEST = "sha256:0c96faf2fe1a51479e612495a73e22e2371893ce37f8e6dff1acfa48739179fa";
