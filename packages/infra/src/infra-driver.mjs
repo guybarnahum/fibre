@@ -22,7 +22,7 @@ const REQUIRED_METHODS = Object.freeze({
   streams: ["getHead", "append", "readAfter", "publishSnapshot", "getSnapshotPointer"],
   objects: ["putImmutable", "get", "head"],
   catalog: ["upsert", "get", "remove"],
-  realtime: ["broadcast", "subscribe"],
+  realtime: ["publish"],
 });
 
 export function assertInfraDriver(driver, { required = [] } = {}) {
