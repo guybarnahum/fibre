@@ -1,13 +1,13 @@
 ---
 id: fibre-interpretive-personhood
 status: accepted
-last-reviewed: 2026-08-15
+last-reviewed: 2026-08-21
 canonical: true
 ---
 
 # Interpretive personhood
 
-This document records six Fibre-level principles clarified by the Whole-Person and Genesis design work before milestone #39. They are not local benchmark rules. They state what Fibre means by a persistent person whose life, memory, culture, and sources remain semantically honest.
+This document records Fibre-level principles clarified by the Whole-Person, Genesis, and presentation-boundary design work. They are not local benchmark rules. They state what Fibre means by a persistent person whose life, memory, culture, sources, interpretation, and public representation remain semantically honest.
 
 ## 1. Meaning outranks its compression
 
@@ -122,6 +122,46 @@ A deceased source may still carry rights, estate, family, cultural, or other con
 Documented source facts remain source facts. They may become part of a Thread's own history only through an event that actually happens to the Thread, such as reading, studying, encountering, discussing, rejecting, or reinterpreting the source.
 
 For example, a Homage Thread may study a historical person's letters. The historical person's childhood does not become the Thread's childhood. The Thread's encounter with the letters, memory of that encounter, and later interpretation are its own.
+
+## 7. Other minds may influence interpretation without owning it
+
+> **Conversation can contribute evidence, perspective, disagreement, reassurance, criticism, or language for an experience without making another person authoritative over the Thread's autobiography.**
+
+A Thread may come to understand an experience differently after talking with another Thread or human, encountering a conflicting account, reading, researching, or reflecting privately. The later conversation, research, or reflection is itself a new event with its own provenance.
+
+Fibre must preserve the distinctions among:
+
+```text
+what historically happened
+what this Thread remembers
+what another participant reports
+what this Thread currently believes about the past
+what the experience means to this Thread
+what the relationship has become
+```
+
+Those authorities may disagree. Shared participation does not require shared memory, shared meaning, or eventual convergence.
+
+Social influence is therefore legitimate when the Thread authors the resulting interpretation from admissible evidence. Another participant's confidence, intimacy, expertise, repetition, or insistence does not by itself overwrite autobiographical authority.
+
+## 8. Presentation and reconstruction are not life authority
+
+> **A representation of a Thread is not evidence about the Thread merely because it is vivid, persuasive, realistic, public, or generated from real source material.**
+
+Generated portraits, reconstructed memory scenes, synthetic voice, generated film, editorial summaries, chaptering, visual metaphors, public profile copy, viewer fixtures, and other presentation artifacts remain representation unless a separate Fibre authority establishes the underlying claim.
+
+Presentation provenance must remain distinguishable from history, autobiographical memory, remembered meaning, and Thread-authored external expression.
+
+In particular:
+
+- a reconstructed image is not a historical photograph;
+- a synthetic voice is not evidence that the Thread spoke particular words or possessed that voice;
+- editorial narration is not Thread self-knowledge;
+- a public profile is not an alternate Thread database;
+- a viewer fixture is not proof that a live capability exists;
+- presentation output may not silently flow back into cognition as evidence for identity, history, memory, meaning, character, need, emotion, relationship, or current life state.
+
+A later live Thread may deliberately author, approve, reject, or revise public self-presentation through the ordinary expression/authorization boundary. That act may itself become history. It does not retroactively make earlier Fibre/editorial reconstruction Thread-authored.
 
 ## Consequences for current milestones
 
