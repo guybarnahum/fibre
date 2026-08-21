@@ -70,32 +70,40 @@ export function verifyH2CompatibilityBoundary() {
   });
 }
 
-async function loadVersionedHRunner(projectionEvents) {
+async function loadVersionedHRunner() {
   verifyH2CompatibilityBoundary();
+  const previous = process.env.FIBRE_H_EXECUTION_BINDING_PATH;
   process.env.FIBRE_H_EXECUTION_BINDING_PATH = H2_EXECUTION_BINDING_PATH;
+  try {
+    return await import(`./genesis-h-final-cohort.mjs?h2=${Date.now()}`);
+  } finally {
+    if (previous === undefined) delete process.env.FIBRE_H_EXECUTION_BINDING_PATH;
+    else process.env.FIBRE_H_EXECUTION_BINDING_PATH = previous;
+  }
+}
+
+export async function verifyH2FinalCohortPreflight() {
+  const runner = await loadVersionedHRunner();
+  const preflight = runner.verifyHFinalCohortPreflight();
+  if (preflight.oneShot.outputRoot !== "artifacts/validation/m2-pr39/h/cohort-v2") fail("versioned H runner did not load H-v2 binding");
+  return Object.freeze({ ...preflight, h2Compatibility: verifyH2CompatibilityBoundary() });
+}
+
+export async function runH2FinalCohort() {
+  const projectionEvents = [];
+  const runner = await loadVersionedHRunner();
   const rawFetch = globalThis.fetch;
   if (typeof rawFetch !== "function") fail("global fetch is unavailable");
   globalThis.fetch = createH2OpenAICompatibilityFetch({
     fetchImpl: rawFetch,
     onProjection: (event) => projectionEvents.push(structuredClone(event)),
   });
-  return import(`./genesis-h-final-cohort.mjs?h2=${Date.now()}`);
-}
-
-export async function verifyH2FinalCohortPreflight() {
-  const projectionEvents = [];
-  const runner = await loadVersionedHRunner(projectionEvents);
-  const preflight = runner.verifyHFinalCohortPreflight();
-  if (preflight.oneShot.outputRoot !== "artifacts/validation/m2-pr39/h/cohort-v2") fail("versioned H runner did not load H-v2 binding");
-  if (projectionEvents.length !== 0) fail("H-v2 zero-call preflight unexpectedly projected a provider schema");
-  return Object.freeze({ ...preflight, h2Compatibility: verifyH2CompatibilityBoundary() });
-}
-
-export async function runH2FinalCohort() {
-  const projectionEvents = [];
-  const runner = await loadVersionedHRunner(projectionEvents);
-  const result = await runner.runHFinalCohort();
-  return Object.freeze({ ...result, h2CompatibilityProjectionEvents: structuredClone(projectionEvents) });
+  try {
+    const result = await runner.runHFinalCohort();
+    return Object.freeze({ ...result, h2CompatibilityProjectionEvents: structuredClone(projectionEvents) });
+  } finally {
+    globalThis.fetch = rawFetch;
+  }
 }
 
 export async function runH2SchemaProbe({ environment = process.env, fetchImpl = globalThis.fetch } = {}) {
