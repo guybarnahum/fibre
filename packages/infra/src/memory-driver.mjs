@@ -1,4 +1,11 @@
-import { INFRA_DRIVER_VERSION, assertInfraDriver } from "./infra-driver.mjs";
+import {
+  INFRA_DRIVER_VERSION,
+  InfraIdempotencyConflictError,
+  InfraImmutableObjectConflictError,
+  InfraSequenceConflictError,
+  InfraWorkflowConflictError,
+  assertInfraDriver,
+} from "./infra-driver.mjs";
 import {
   assertInfraFiniteNumber,
   assertInfraId,
@@ -8,9 +15,12 @@ import {
   infraCanonicalJson,
 } from "./internal.mjs";
 
-export class InfraSequenceConflictError extends Error {}
-export class InfraIdempotencyConflictError extends Error {}
-export class InfraImmutableObjectConflictError extends Error {}
+export {
+  InfraIdempotencyConflictError,
+  InfraImmutableObjectConflictError,
+  InfraSequenceConflictError,
+  InfraWorkflowConflictError,
+} from "./infra-driver.mjs";
 
 function clone(value) { return structuredClone(value); }
 function cloneBytes(value) {
@@ -30,6 +40,7 @@ export function createMemoryInfraDriver() {
   const objects = new Map();
   const catalog = new Map();
   const listeners = new Map();
+  const workflowInstances = new Map();
 
   function channel(channelId) {
     assertInfraId("channelId", channelId);
@@ -154,13 +165,40 @@ export function createMemoryInfraDriver() {
     },
   };
 
+  const workflows = {
+    async start(workflowName, instanceId, input) {
+      assertInfraId("workflowName", workflowName);
+      assertInfraId("workflow instanceId", instanceId);
+      assertInfraJsonValue("workflow input", input);
+      const key = `${workflowName}:${instanceId}`;
+      const inputDigest = infraCanonicalJson(input);
+      const prior = workflowInstances.get(key);
+      if (prior) {
+        if (prior.inputDigest !== inputDigest) {
+          throw new InfraWorkflowConflictError(`workflow ${instanceId} already exists with different input`);
+        }
+        return { ...clone(prior.public), duplicate: true };
+      }
+      const publicValue = { workflowName, instanceId, status: "queued" };
+      workflowInstances.set(key, { inputDigest, input: clone(input), public: publicValue });
+      return { ...clone(publicValue), duplicate: false };
+    },
+    async get(workflowName, instanceId) {
+      assertInfraId("workflowName", workflowName);
+      assertInfraId("workflow instanceId", instanceId);
+      const prior = workflowInstances.get(`${workflowName}:${instanceId}`);
+      return prior ? { ...clone(prior.public), input: clone(prior.input) } : null;
+    },
+  };
+
   return assertInfraDriver({
     driverId: "memory-v1",
     driverVersion: INFRA_DRIVER_VERSION,
-    capabilities: ["streams", "objects", "catalog", "realtime"],
+    capabilities: ["streams", "objects", "catalog", "realtime", "workflows"],
     streams,
     objects: objectPort,
     catalog: catalogPort,
     realtime,
+    workflows,
   });
 }
