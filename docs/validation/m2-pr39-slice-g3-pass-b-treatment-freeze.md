@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-slice-g3-pass-b-treatment-freeze
-status: frozen_pending_verification
+status: complete_clear
 last-reviewed: 2026-08-20
 canonical: false
 ---
@@ -9,7 +9,7 @@ canonical: false
 
 ## Status
 
-**G3 FROZEN — static verification is required before G4. No final-cohort life generation is authorized.**
+**G3 COMPLETE / CLEAR — the frozen Pass-B treatment schedule and cell arithmetic were locally verified before G4. No final-cohort life generation was authorized or performed.**
 
 Machine-readable authority:
 
@@ -21,6 +21,19 @@ Verifier/assignment authority:
 
 ```text
 tools/genesis/genesis-g3-treatment-freeze.mjs
+```
+
+Maintainer verification:
+
+```text
+active tests      568 / 568 green
+verifier          G3 PASS-B TREATMENT FREEZE: VERIFIED
+eligible calls    30
+direct treatment  10/30 = 33.3%
+guaranteed clean  10
+conditional exposed opportunities  10
+protocol digest   sha256:3d4885d4c8f717622e466e65e7869526193eccd611967609f7809dfb4b1068a6
+verified HEAD     5415db4b2b0bc05454a9ae74d46f8ec94a851b6f
 ```
 
 ## Purpose
@@ -267,23 +280,24 @@ It proves:
 - `R=2` triggers the frozen exposed-cell HOLD;
 - treatment exposes all six frozen loci in ordinal order.
 
-Manual static command:
+Maintainer execution on the frozen packet:
 
-```bash
-npm run genesis:g3-verify
+```text
+npm test              568 / 568 green
+npm run genesis:g3-verify   VERIFIED
 ```
 
-It makes no model calls.
+No model call occurred during verification.
 
 ## Boundary
 
 ```text
 G1          COMPLETE / CLEAR
 G2          COMPLETE / CLEAR — bounded five-pair textual-distinguishability ceiling
-G3          FROZEN — pending npm test + genesis:g3-verify confirmation
-G4          BLOCKED until G3 verification is green
-G5-G6       BLOCKED
+G3          COMPLETE / CLEAR — locally verified at 5415db4b...
+G4          AUTHORIZED and must consume this exact treatment schedule
+G5-G6       BLOCKED on prior G steps
 H           FORBIDDEN until Gate G CLEAR
 ```
 
-G3 does not authorize final-life generation. G4 must consume this exact protocol and may not change the treatment schedule.
+G3 does not authorize final-life generation. G4 may freeze cognition and mechanical policy, but may not change the treatment schedule.
