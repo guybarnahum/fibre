@@ -98,10 +98,12 @@ export function planThreadPresentationAssetGeneration({
       snapshotObjectRef,
       ...asset.sourceReferences,
     ]);
+    const variant = "default";
     const seed = {
       threadId: presentation.manifest.threadId,
       presentationId: presentation.manifest.presentationId,
       mediaId: asset.mediaId,
+      variant,
       snapshotDigest,
       providerProfile,
       brief,
@@ -112,8 +114,10 @@ export function planThreadPresentationAssetGeneration({
       jobId,
       assetKind: asset.kind,
       role: asset.role,
+      variant,
       brief,
       inputReferences,
+      referenceObjectRefs: [],
       outputObjectRef: makeOutputObjectRef(jobId),
       receiptObjectRef: makeReceiptObjectRef(jobId),
       requestedAt,
