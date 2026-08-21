@@ -18,7 +18,7 @@
     "includes:check": "node tools/repo/sync-markdown-includes.mjs --check",
     "context-pack": "node tools/repo/build-context-pack.mjs",
     "check": "npm run includes:check && npm test && npm run context-pack && node tools/repo/validate-repo.mjs --generated",
-    "git-check": "npm run git-check && npm run check",
+    "git-check": "node tools/repo/check-git-sync.mjs",
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/editor/serve-thread-editor.mjs",
     "world-kernel": "node --disable-warning=ExperimentalWarning services/world-kernel/src/server.mjs",
