@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-gate-g-review-request
-status: frozen_pending_g6_verification
+status: ready_for_blocking_review
 last-reviewed: 2026-08-21
 canonical: false
 ---
@@ -34,6 +34,20 @@ S3  bounded limitation that may be carried explicitly into H
 observation  nonblocking
 ```
 
+## Verified pre-review boundary
+
+The maintainer verified G6 before this request became active:
+
+```text
+local verified head  ba3154231d19d0251d1aea479fe701e5df0cef7f
+active tests         582 / 582 pass
+G6 verifier          VERIFIED
+G6 canonical digest  sha256:1cfaa3148599236526d5495b14cc0ef2468d5488aa37be38b3fec9c49e21afcc
+G6 Git blob          3f66b590eb357b97baa4bb7778a781e5ca82af32
+```
+
+No model calls occur in the verifier. The repository has not authorized final-cohort cognition.
+
 ## Central question
 
 > **Has Fibre frozen a complete, internally consistent, non-adaptive G1–G6 protocol that can generate and judge the first final five-Thread cohort without post-outcome discretion, hidden quality selection, or forbidden genome/identity leakage?**
@@ -47,6 +61,7 @@ docs/validation/m2-pr39-slice-g2-review-result.md
 docs/validation/m2-pr39-slice-g3-pass-b-treatment-freeze.md
 docs/validation/m2-pr39-slice-g34-hostile-review-result.md
 docs/validation/m2-pr39-slice-g5-result.md
+docs/validation/m2-pr39-slice-g6-result.md
 docs/validation/m2-pr39-slice-g6-verdict-freeze.md
 
 artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v2.json
@@ -59,14 +74,6 @@ artifacts/validation/m2-pr39/g/protocol/g5-evaluation-surfaces-v1.json
 artifacts/validation/m2-pr39/g/protocol/g5-diagnostics-freeze-v1.json
 artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json
 ```
-
-G6 exact byte authority before local verification:
-
-```text
-Git blob 3f66b590eb357b97baa4bb7778a781e5ca82af32
-```
-
-The local G6 verifier will compute/report its canonical JSON digest without changing these bytes.
 
 Follow dependencies into executable Genesis and verifier code as needed.
 
@@ -126,13 +133,20 @@ D1–D5 surfaces, randomization, transformations, minimum analyzability and band
 
 ### G6
 
-`CLEAR | HOLD | REDESIGN` semantics are frozen before H.
+`CLEAR | HOLD | REDESIGN` semantics are frozen and maintainer-verified before H.
 
 Core rule:
 
 ```text
-bad cohort       HOLD and preserve
+bad cohort        HOLD and preserve
 broken experiment REDESIGN and preserve
+```
+
+Exact G6 authority:
+
+```text
+canonical digest  sha256:1cfaa3148599236526d5495b14cc0ef2468d5488aa37be38b3fec9c49e21afcc
+Git blob          3f66b590eb357b97baa4bb7778a781e5ca82af32
 ```
 
 ## Required attacks
