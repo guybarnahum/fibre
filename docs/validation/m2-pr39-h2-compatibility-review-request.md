@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-h2-compatibility-review-request
-status: pending_local_verification
+status: ready_for_blocking_review
 last-reviewed: 2026-08-21
 canonical: false
 ---
@@ -39,6 +39,7 @@ Review:
 
 ```text
 docs/validation/m2-pr39-slice-h-v1-hold-result.md
+docs/validation/m2-pr39-slice-h-v2-preflight-result.md
 artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v2.json
 tools/genesis/genesis-h2-openai-schema-compat.mjs
 tools/genesis/genesis-h2-openai-schema-compat.test.mjs
@@ -145,6 +146,24 @@ This makes exactly one non-life OpenAI request using the H-v2 Pass-B transport s
 It receives no World, genome, history, Thread identity or final-cohort input. Its only purpose is to verify provider acceptance of the projected strict schema before risking H-v2. It must not be used to tune prompts, cognition or output quality.
 
 The probe must not run until the local zero-call verification and this blocking amendment review are CLEAR.
+
+## Local zero-call verification
+
+Maintainer verification completed before this review request was promoted:
+
+```text
+active tests                 592/592
+H-v2 preflight               CLEAR
+provider calls               0
+verified HEAD                0a2ca4c440f2ad0fe09d89e6748c0aad46d24ab3
+H-v1 frozen HOLD commit      448bd669f742a566da289cc4117907f2d37e32e3
+canonical Pass-B schema      sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a
+OpenAI transport schema      sha256:9c5c75641d46306cac8df457fc4495e09b53db4a930b9f5fe3f8e75863d3556c
+H-v2 output root             artifacts/validation/m2-pr39/h/cohort-v2 [absent]
+runtime                      openai/gpt-5.1-2025-11-13
+```
+
+The authoritative local result is recorded in `docs/validation/m2-pr39-slice-h-v2-preflight-result.md`.
 
 ## Blocking questions
 
