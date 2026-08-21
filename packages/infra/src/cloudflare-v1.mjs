@@ -11,6 +11,11 @@ import {
   assertInfraPlainObject,
   infraCanonicalJson,
 } from "./internal.mjs";
+import {
+  createCloudflareCatalogPort,
+  createCloudflareRealtimePort,
+  createCloudflareStreamPort,
+} from "./cloudflare-presentation-ports.mjs";
 
 const DIGEST_META = "fibre-digest";
 const JSON_META = "fibre-metadata";
@@ -258,7 +263,12 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
   });
 }
 
-export function createCloudflareInfraDriver({ objectBucket = null, workflowBindings = {} } = {}) {
+export function createCloudflareInfraDriver({
+  objectBucket = null,
+  workflowBindings = {},
+  presentationChannels = null,
+  catalogDatabase = null,
+} = {}) {
   const driver = {
     driverId: "cloudflare-v1",
     driverVersion: INFRA_DRIVER_VERSION,
@@ -273,5 +283,20 @@ export function createCloudflareInfraDriver({ objectBucket = null, workflowBindi
     driver.workflows = createCloudflareWorkflowPort({ workflowBindings, objects: driver.objects });
     driver.capabilities.push("workflows");
   }
+  if (presentationChannels !== null) {
+    driver.streams = createCloudflareStreamPort(presentationChannels);
+    driver.realtime = createCloudflareRealtimePort(presentationChannels);
+    driver.capabilities.push("streams", "realtime");
+  }
+  if (catalogDatabase !== null) {
+    driver.catalog = createCloudflareCatalogPort(catalogDatabase);
+    driver.capabilities.push("catalog");
+  }
   return assertInfraDriver(driver);
 }
+
+export {
+  createCloudflareCatalogPort,
+  createCloudflareRealtimePort,
+  createCloudflareStreamPort,
+};
