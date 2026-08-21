@@ -3,12 +3,18 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  genesisRecordDigest,
+  normalizeGenesisWorldSpec,
+} from "../services/world-kernel/src/genesis-domain.mjs";
+import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
+import {
   buildHPassBInput,
   buildNeutralHThreadSeed,
   verifyHFinalCohortPreflight,
 } from "./genesis-h-final-cohort.mjs";
 
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
+const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
 function passBHistory(world, threadId, g4) {
   return g4.historicalPlan.windows.map((window, index) => ({
@@ -34,6 +40,15 @@ test("H zero-call preflight binds the reviewed five-slot frozen packet", () => {
   ]);
   assert.equal(result.oneShot.wholeCandidateAttemptCap, 1);
   assert.equal(result.oneShot.qualityDrivenRegeneration, false);
+});
+
+test("H uses the frozen G1/G2 plain canonical WorldSpec digest, not the Genesis storage record digest", () => {
+  const g2 = readJson("artifacts/validation/m2-pr39/g/protocol/g2-cohort-genome-freeze-v2.json");
+  for (const binding of g2.worldBindings) {
+    const world = normalizeGenesisWorldSpec(readJson(binding.worldSpecPath));
+    assert.equal(digest(world), binding.worldSpecDigest);
+    assert.notEqual(genesisRecordDigest("world_spec", world), binding.worldSpecDigest);
+  }
 });
 
 test("H publication seed is semantically uniform and does not duplicate the symbolic genome", () => {
