@@ -163,7 +163,7 @@ function modelRuntimeOptions(g4) {
 function verifyWorldBinding(binding) {
   const world = normalizeGenesisWorldSpec(readJson(binding.worldSpecPath));
   if (world.worldSpecId !== binding.worldSpecId) fail(`H slot ${binding.slot} WorldSpec ID drift`);
-  if (genesisRecordDigest("world_spec", world) !== binding.worldSpecDigest) fail(`H slot ${binding.slot} WorldSpec digest drift`);
+  if (digest(world) !== binding.worldSpecDigest) fail(`H slot ${binding.slot} WorldSpec digest drift`);
   const genome = readJson(binding.genomePath);
   const computedGenomeDigest = symbolicGenomeDigest({
     header: genome.header,
