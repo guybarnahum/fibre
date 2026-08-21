@@ -6,6 +6,8 @@ import {
   normalizeThreadPresentationEventInput,
 } from "./thread-presentation-stream-domain.mjs";
 
+export class PresentationSnapshotSequenceConflictError extends Error {}
+
 export function createThreadPresentationServer({ infra }) {
   requireInfraCapabilities(infra, "streams", "objects", "catalog", "realtime");
 
@@ -51,8 +53,9 @@ export function createThreadPresentationServer({ infra }) {
       const normalized = normalizeThreadPresentationBundle(bundle);
       const head = await infra.streams.getHead(channelId);
       if (expectedSequence !== undefined && head.sequence !== expectedSequence) {
-        // Let the stream driver remain the final concurrency authority too.
-        await infra.streams.publishSnapshot(channelId, { preflightOnly: true }, { expectedSequence });
+        throw new PresentationSnapshotSequenceConflictError(
+          `snapshot expected sequence ${expectedSequence}, current ${head.sequence}`,
+        );
       }
       const snapshot = {
         snapshotVersion,
@@ -95,7 +98,10 @@ export function createThreadPresentationServer({ infra }) {
       const stored = await infra.objects.get(pointer.objectRef);
       if (stored === null) throw new Error("snapshot pointer references a missing immutable object");
       if (stored.digest !== pointer.snapshotDigest) throw new Error("snapshot object digest does not match stream pointer");
-      return { pointer, snapshot: JSON.parse(typeof stored.bytes === "string" ? stored.bytes : new TextDecoder().decode(stored.bytes)) };
+      return {
+        pointer,
+        snapshot: JSON.parse(typeof stored.bytes === "string" ? stored.bytes : new TextDecoder().decode(stored.bytes)),
+      };
     },
   });
 }
