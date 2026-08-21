@@ -85,10 +85,11 @@ async function loadVersionedHRunner() {
 }
 
 export async function verifyH2FinalCohortPreflight() {
+  const boundary = verifyH2CompatibilityBoundary();
   const runner = await loadVersionedHRunner();
-  const preflight = runner.verifyHFinalCohortPreflight();
+  const preflight = runner.verifyHFinalCohortPreflight({ enforceReviewedSource: !boundary.outputRootExists });
   if (preflight.oneShot.outputRoot !== "artifacts/validation/m2-pr39/h/cohort-v2") fail("versioned H runner did not load H-v2 binding");
-  return Object.freeze({ ...preflight, h2Compatibility: verifyH2CompatibilityBoundary() });
+  return Object.freeze({ ...preflight, h2Compatibility: boundary });
 }
 
 function writeH2TransportEvidence({ boundary, projectionEvents, runStatus, error = null }) {
@@ -112,6 +113,7 @@ function writeH2TransportEvidence({ boundary, projectionEvents, runStatus, error
 export async function runH2FinalCohort() {
   const projectionEvents = [];
   const boundary = verifyH2CompatibilityBoundary();
+  if (boundary.outputRootExists) fail(`H-v2 output root already exists: ${boundary.outputRoot}; one-shot execution refuses overwrite or regeneration`);
   const runner = await loadVersionedHRunner();
   const rawFetch = globalThis.fetch;
   if (typeof rawFetch !== "function") fail("global fetch is unavailable");
@@ -169,6 +171,7 @@ function printPreflight(result) {
   process.stdout.write(`OpenAI transport schema: ${result.h2Compatibility.transportPassBSchemaHash}\n`);
   process.stdout.write(`Output root: ${result.h2Compatibility.outputRoot}${blocked ? " [EXISTS — ONE-SHOT REFUSES RERUN]" : " [absent]"}\n`);
   process.stdout.write(`Runtime: ${result.runtime.provider}/${result.runtime.modelId}\n`);
+  if (blocked) process.stdout.write("Reviewed-source drift check is not re-applied during post-attempt inspection; Gate-G(2) owns review of post-H source changes.\n");
   process.stdout.write("\nNo provider call was made.\n");
 }
 
