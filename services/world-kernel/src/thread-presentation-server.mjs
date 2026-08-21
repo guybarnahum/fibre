@@ -19,7 +19,7 @@ export function createThreadPresentationServer({ infra }) {
         expectedSequence,
       });
       const event = materializeThreadPresentationEvent(accepted.value, accepted.sequence);
-      if (!accepted.duplicate) await infra.realtime.broadcast(normalized.channelId, event);
+      if (!accepted.duplicate) await infra.realtime.publish(normalized.channelId, event);
       return { event, duplicate: accepted.duplicate };
     },
 
@@ -32,11 +32,6 @@ export function createThreadPresentationServer({ infra }) {
     async getHead(channelId) {
       assertId("channelId", channelId);
       return infra.streams.getHead(channelId);
-    },
-
-    async subscribe(channelId, listener) {
-      assertId("channelId", channelId);
-      return infra.realtime.subscribe(channelId, listener);
     },
 
     async publishSnapshot({
