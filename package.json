@@ -33,6 +33,7 @@
     "genesis:g3-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g3-treatment-freeze.mjs",
     "genesis:g4-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g4-cognition-freeze.mjs",
     "genesis:g34-amendments-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g34-review-amendments.mjs",
+    "genesis:g5-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g5-diagnostics-freeze.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-v4-counterfactual-dev.mjs",
     "guardian:whole-person": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/whole-person-benchmark-v4.mjs",
