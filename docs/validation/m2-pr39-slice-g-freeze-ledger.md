@@ -1,7 +1,7 @@
 ---
 id: m2-pr39-slice-g-freeze-ledger
-status: in_progress
-last-reviewed: 2026-08-20
+status: frozen_pending_gate_g
+last-reviewed: 2026-08-21
 canonical: false
 ---
 
@@ -9,32 +9,43 @@ canonical: false
 
 ## Purpose
 
-Slice G creates the **test before the people**.
+Slice G creates **the test before the people**.
 
-The Pre-G seam is COMPLETE and Stage 9 is CLEAR. This ledger existed before any final-cohort WorldSpec, genome assignment, familiarity result or life-generation call.
+> **No final-cohort life may be generated until the complete G1–G6 protocol is frozen and the blocking Gate-G review is CLEAR.**
 
-The governing rule is stronger than ordinary reproducibility:
+The complete pre-life packet is now frozen. No final-cohort cognition or life has been authorized.
 
-> **No final-cohort life may be generated until the complete G protocol is frozen and the blocking Gate-G review is CLEAR.**
+## Current boundary
 
-This is a freeze ledger, not a result-shopping document. Any field still marked `PENDING` must become exact before Gate G, and no value may be chosen by inspecting final-cohort life output because no such output is authorized yet.
+```text
+Pre-G seam   COMPLETE / CLEAR
+G0           COMPLETE — sequencing/artifact shell frozen
+G1           COMPLETE / CLEAR — concrete final Worlds
+G2           COMPLETE / CLEAR — actual cohort genomes + five-pair textual ceiling
+G3-v2        COMPLETE / CLEAR — Pass-B treatment + fixed-ordinal primary contrast
+G4-v2        COMPLETE / CLEAR — cognition/runtime/retries/publication
+G5           COMPLETE / CLEAR — blinded diagnostics/evaluation
+G6           COMPLETE / CLEAR — exact CLEAR/HOLD/REDESIGN rule
+Gate G       NEXT / BLOCKING HOSTILE REVIEW
+H            FORBIDDEN until Gate G CLEAR
+```
 
-## G0 — protocol shell frozen
+## G0 — protocol shell
 
-### Cohort size and origin composition
+Frozen cohort identity:
 
 ```text
 final Threads             5
 origin composition        3 de_novo + 2 synthetic_lineage
-entry stage               young_adult for all five
-entry age                 22 for all five
+entry stage               young_adult
+entry age                 22
 common bornAt             2004-08-20T00:00:00Z
-chronology end             2026-08-20T00:00:00Z
+chronology end            2026-08-20T00:00:00Z
 final life generation     forbidden before Gate G CLEAR
-quality regeneration      forbidden after first integrity-valid H cohort
+quality regeneration      forbidden
 ```
 
-### Repository artifact home
+Artifact home:
 
 ```text
 artifacts/validation/m2-pr39/g/
@@ -45,418 +56,257 @@ artifacts/validation/m2-pr39/g/
   results/
 ```
 
-Storage meaning:
+`cohort/` must remain empty until Gate G CLEAR.
 
-- `worlds/` contains frozen WorldSpec experiment inputs; superseded candidates/finals remain historical evidence;
-- `genomes/` contains frozen cohort and synthetic-parent genome artifacts after G2;
-- `protocol/` contains machine-readable assignment/configuration/rater/verdict freezes;
-- `cohort/` remains empty until Gate G CLEAR, then may contain frozen exports/snapshots of generated experimental Threads;
-- `results/` contains G/H machine-readable outputs and diagnostic evidence.
-
-These Git artifacts are experiment inputs/snapshots/evidence, not live World/Thread authority. Runtime semantic state still passes through Fibre's normal world/domain stores.
-
-Reusable examples remain `fixtures/`; human-readable protocols/reviews/verdicts remain `docs/validation/`. See [`../architecture/storage-model.md`](../architecture/storage-model.md) and [`../../artifacts/validation/README.md`](../../artifacts/validation/README.md).
-
-### World/genome separation
-
-Frozen ordering:
-
-```text
-1. author candidate WorldSpecs with no cohort-genome visibility
-2. run predeclared cold familiarity handling
-3. preserve/re-version rejected or later-invalidated worlds; never silently rewrite
-4. freeze five accepted final WorldSpecs
-5. only then create/freeze/assign cohort and synthetic-parent genomes
-6. never backfill WorldSpec household/culture/geography facts from loci
-```
-
-Before genomes exist, a genuine World-authoring defect may be corrected only by preserving the prior experiment and versioning new candidates/results. Once genomes have been seen, a final WorldSpec is burned for replacement. Neither path permits tuning for personality or expected H performance.
-
-### Freshness
-
-All accepted final WorldSpecs must be new to the final cohort:
-
-- not used in C, D, E or E2 development;
-- not used to tune EventStructurePool v2;
-- not used in a prior provider-generation experiment;
-- not renamed/adapted from a burned development world;
-- no named source work, character or human biography used as a hidden template.
-
-Factual structural/place-specific public knowledge is allowed with source witnesses. Source instances do not enter Genesis as biography templates.
-
-### World specificity and variation
-
-Worlds vary primarily in factual lived affordances:
-
-```text
-era / concrete geography
-economy and material circumstances
-household/family shape
-language environment
-mobility
-institutions/community
-intellectual environment
-origin mode
-```
-
-Current authoring is governed by [`../architecture/world-context-specificity-v1.md`](../architecture/world-context-specificity-v1.md):
-
-> **A World must be particular enough to produce a particular past without writing a particular personality.**
-
-Concrete geography/culture may constrain available experiences but may not directly encode:
-
-```text
-finished personality
-required moral/political conclusion
-religious or ethnic self-identification
-competence, dignity or willingness
-future profession or benchmark
-required formative event
-required adversity/trauma
-minimum book/person/place/intellectual quota
-maturity ladder
-adult behavior policy
-```
-
-### Convergent pair
-
-Frozen pair:
-
-```text
-world_slice_g1_02_lodz
-world_slice_g1_04_accra
-```
-
-Protocol-only broad question:
-
-> **How to respond when formal procedures and observed everyday practice diverge.**
-
-That question may not be passed to Pass A, Pass B, Pass C, record repair, genome generation or cohort publication. The Worlds only make partial convergence plausible through materially different routes; they do not prescribe a conclusion.
-
-## G1 — final WorldSpecs
+## G1 — concrete final Worlds
 
 Status: **COMPLETE / CLEAR.**
 
+Current final Worlds:
+
+```text
+1  Cần Thơ, Vietnam
+2  Łódź, Poland
+3  Cusco, Peru
+4  Accra, Ghana
+5  Greater Sudbury, Ontario, Canada
+```
+
+All five G1-v2 candidates passed the unchanged cold familiarity probe at `4/4`.
+
+Exact final digests:
+
+```text
+1  sha256:6e88b0bd8aba69894ae5583603a841d139687d57cea9bfb8c05086e1be118c7d
+2  sha256:291aa0255fa9d70c4dc30f26c442606d4e03245bcb1b843a889ddc082f081a0a
+3  sha256:bbf23626457d9f93ff2cf70c129c4d549f998a228bd67852450879b1e70f6290
+4  sha256:02e52c82398b87cfcecee31651d81dbb223d00e2da8a7410c4553bd0514547db
+5  sha256:a2ce5453912040c78561bafaceb21d1cded8f05f84aaf9bc10e831d4288098d0
+```
+
+The earlier generic G1-v1 set remains preserved as a real authoring-specificity finding rather than rewritten evidence.
+
 Closure: [`m2-pr39-slice-g1-result.md`](m2-pr39-slice-g1-result.md).
 
-Specificity correction: [`m2-pr39-slice-g1-geographic-specificity-correction.md`](m2-pr39-slice-g1-geographic-specificity-correction.md).
+## G2 — cohort genomes + specificity ceiling
 
-Historical v1 freeze: [`m2-pr39-slice-g1-world-candidate-freeze.md`](m2-pr39-slice-g1-world-candidate-freeze.md).
+Status: **COMPLETE / CLEAR, bounded to five measured pairs.**
 
-### G1-v1 — preserved finding
+Five actual cohort genomes and four synthetic-parent genomes are frozen. The two synthetic-lineage children use deterministic `3+3` recombination with zero mutations.
 
-The first five generic city-archetype Worlds all passed the predeclared cold familiarity screen at `density=4/4`, but human review found them too geographically/culturally interchangeable. The familiarity result remains valid for what it measured; the World-authoring specificity was insufficient.
+The original G2-v1 World-visibility overclaim is preserved. G2-v2 uses a deterministic content-independent within-origin World↔genome derangement without changing genome bytes.
 
-All v1 candidates, finals, result and generic presentations remain preserved as historical evidence. They were not rewritten.
-
-### G1-v2 — accepted current authority
-
-The defect was found before any G2 genome existed. The corrected genome-blind Worlds preserved the original cohort age/origin/comparative structure but made actual local context load-bearing:
+Measured cycle:
 
 ```text
-slot 1  Cần Thơ, Vietnam                  de_novo
-slot 2  Łódź, Poland                      synthetic_lineage
-slot 3  Cusco, Peru                       de_novo
-slot 4  Accra, Ghana                      de_novo
-slot 5  Greater Sudbury, Ontario, Canada  synthetic_lineage
+(1,2) (2,3) (3,4) (4,5) (5,1)
 ```
 
-Frozen candidate/protocol authority:
+Observed ceiling:
 
 ```text
-artifacts/validation/m2-pr39/g/protocol/g1-world-candidate-freeze-v2.json
-artifacts/validation/m2-pr39/g/worlds/candidates-v2/
+p01  23/24
+p02  19/24
+p03  15/24  inconclusive
+p04  21/24
+p05  21/24
 ```
 
-The unchanged cold familiarity instrument was run exactly once against v2 using `openai/gpt-5.1-2025-11-13` and the original predeclared HOLD rule:
+Four of five measured pairs were detectable. Pair `(3,4)` is a measured-low/inconclusive ceiling and may not become a required H success. The complementary five pairs have no ceiling.
+
+The post-hoc, non-gating lexical diagnostic found literal carry-through but only weak association with blind-rater correctness (`r≈0.079`, `phi≈0.102`). G2 therefore establishes **textual distinguishability in effect for the five measured pairs**, not semantic propagation or personhood.
+
+Review: [`m2-pr39-slice-g2-review-result.md`](m2-pr39-slice-g2-review-result.md).
+
+## G3-v2 — Pass-B treatment + analysis freeze
+
+Status: **COMPLETE / CLEAR.**
+
+Production remains:
 
 ```text
-densityScore <= 1
-OR
-at least two coverage-domain scores <= 1
+history horizon   4  5  6  7  8  10
+Pass-B mode       L  L  T  L  L  T
 ```
 
-Maintainer result:
+Across five Threads:
 
 ```text
-Cần Thơ          4/4
-Łódź             4/4
-Cusco            4/4
-Accra            4/4
-Greater Sudbury  4/4
+eligible calls       30
+direct treatment     10 / 30 = 33.3%
+whole-genome input   fixed; never relevance-selected
+guaranteed clean     first two calls per Thread
 ```
 
-Result artifact:
+G3-v1 production protocol remains preserved:
 
 ```text
-artifacts/validation/m2-pr39/g/results/g1-world-familiarity-v2.json
+sha256:3d4885d4c8f717622e466e65e7869526193eccd611967609f7809dfb4b1068a6
 ```
 
-Exact accepted finals and digests:
+Hostile-review amendment G3-v2 changes **analysis only**:
 
 ```text
-world-g1-01-v2.json  sha256:6e88b0bd8aba69894ae5583603a841d139687d57cea9bfb8c05086e1be118c7d
-world-g1-02-v2.json  sha256:291aa0255fa9d70c4dc30f26c442606d4e03245bcb1b843a889ddc082f081a0a
-world-g1-03-v2.json  sha256:bbf23626457d9f93ff2cf70c129c4d549f998a228bd67852450879b1e70f6290
-world-g1-04-v2.json  sha256:02e52c82398b87cfcecee31651d81dbb223d00e2da8a7410c4553bd0514547db
-world-g1-05-v2.json  sha256:a2ce5453912040c78561bafaceb21d1cded8f05f84aaf9bc10e831d4288098d0
+primary contrast   between_thread_at_fixed_call_ordinal
+ordinal 3          horizon 6
+ordinal 6          horizon 10
+between strata     horizon-confounded / descriptive only
 ```
 
-Exact generated bytes were preserved at:
+G3-v2 digest:
 
 ```text
-b7153417cfd083a0623c476c352675f775f616a2
-Freeze geographically specific G1 worlds
+sha256:aef6eea69cf55cc60e730a3529fd0e7d090261cd6535b256df6cbd3734174fae
 ```
 
-The maintainer reported `556/556` tests green immediately before the v2 familiarity execution. Later progress/presentation/documentation changes are newer and are not retroactively claimed as part of that tested code head.
+Verified with the G3/G4 amendment packet before final-life generation.
 
-### Presentation follow-through
+## G4-v2 — cognition/runtime freeze
 
-Current canonical per-World presentations:
+Status: **COMPLETE / CLEAR.**
+
+G4 freezes the actual Genesis production machinery:
 
 ```text
-artifacts/validation/m2-pr39/g/worlds/presentation/
-  world-g1-01.presentation.json
-  world-g1-02.presentation.json
-  world-g1-03.presentation.json
-  world-g1-04.presentation.json
-  world-g1-05.presentation.json
+provider/model        openai/gpt-5.1-2025-11-13
+sampling              temperature 0
+Pass A                genome blind; 10 sparse historical episodes
+Pass B                constitutive memory formation; not_remembered legal
+Pass C                genome blind; one-memory scoped
+whole-candidate cap   1
+quality regeneration  forbidden
 ```
 
-Each is derived only after the accepted v2 final exists, bound to its exact `worldSpecDigest`, and includes rich 2004–2026 temporal visual grounding for later asset generation. Presentation remains non-cognitive and outside G1 admission.
-
-Superseded generic presentations are preserved under `presentation/v1/`.
-
-G1 exit:
+G4-v1 digest:
 
 ```text
-[x] five concrete accepted final WorldSpec v2 records
-[x] common exact age / chronology policy
-[x] freshness + factual authorship/source witnesses
-[x] predeclared cold familiarity policy/result
-[x] exact final v2 digests
-[x] convergent pair
-[x] no cohort genome before final v2 freeze
-[x] exact generated v2 artifacts preserved in Git
-[x] current per-World presentations bound after final freeze
-[x] v1 finding preserved rather than rewritten
+sha256:1a41d68aa0bf8c689c84843771cfce07ca0afa44a9b7093ad944f058a93c368d
 ```
 
-## G2 — cohort genomes and specificity ceiling
+The hostile-review G4-v2 amendment adds two load-bearing boundaries without rewriting G4-v1:
 
-Status: **NEXT / AUTHORIZED TO BEGIN.**
+1. treatment memories are mechanically rejected if they reproduce a normalized contiguous four-token sequence from an exposed genome locus; exactly one anti-enrichment retry is permitted from the same frozen cognition input;
+2. durable entry justification explicitly states that the ten episodes are sparse sampling, not evidence that nothing happened before age 6 or between age 18 and Fibre entry at 22.
 
-G2 must now, in this order:
-
-1. create/freeze three de-novo Thread genomes;
-2. create/freeze synthetic parent genomes and two deterministically recombined child genomes for the synthetic-lineage members;
-3. preserve exact owner/source/mutation/recombination provenance;
-4. assign each final genome to exactly one already-frozen G1-v2 World;
-5. freeze the independent cohort-genome pair schedule before seeing any control output;
-6. run the existing trial-independent, position-balanced genome-discrimination instrument;
-7. preserve that cohort-genome result as H's specificity ceiling.
-
-Frozen G2 artifacts belong under:
+G4-v2 digest:
 
 ```text
-artifacts/validation/m2-pr39/g/genomes/
-artifacts/validation/m2-pr39/g/protocol/
-artifacts/validation/m2-pr39/g/results/
+sha256:50c2f5bcbb1a3470a685f75257fd004c516ca04a67a3b21b367dbf73e58ade20
 ```
 
-The Slice-B hand-authored genome-control result remains instrument history; it is **not** H's denominator.
+G3/G4 amendments were maintainer-verified with `573/573` active tests at `54f2dcfff35430c741d44cba5993d0be797a9edd`.
 
-A weak cohort-genome ceiling is a real pre-H finding. It may HOLD G. It may not trigger silent genome rewriting after results are seen.
+Review result: [`m2-pr39-slice-g34-hostile-review-result.md`](m2-pr39-slice-g34-hostile-review-result.md).
 
-No final-cohort life generation is authorized by G2.
+## G5 — diagnostics/evaluation freeze
 
-## G3 — Pass-B treatment assignment and cell arithmetic
+Status: **COMPLETE / CLEAR.**
 
-Status: **PENDING; blocked on G2 and final call-schedule arithmetic.**
-
-Freeze before H:
+G5 freezes how the future five-life cohort will be judged before it exists.
 
 ```text
-life_plus_genome proportion       exact value in 30–40% range
-exposure policy                   whole genome OR one fixed deterministic ordinal prefix
-assignment                        content-independent
-position stratification          exact deterministic rule if used
-assignment seed/digest            exact
-eligible Pass-B call count        exact expected count
-life_only_unexposed               expected + minimum analyzable count
-life_only_exposed                 expected + minimum analyzable count
-life_plus_genome                  expected + minimum analyzable count
+normalizer       openai/gpt-5.1-2025-11-13
+primary rater    google/gemini-3.6-flash
+randomization    deterministic sha256_rank_v1
 ```
 
-Assignment may depend on call ordinal/stable IDs and frozen seed. It may not depend on episode content, salience, meaning, world identity, genome text or observed outcome.
-
-If arithmetic predicts an inadequate clean-control cell, change the **pre-execution design** before freeze. Never repair a sparse cell after H.
-
-## G4 — cognition and mechanical-policy freeze
-
-Status: **PENDING.**
-
-Freeze exact values for:
+Exact authorities:
 
 ```text
-Pass-A provider/model
-Pass-B provider/model
-Pass-C provider/model
-record-repair provider/model
-prompt hashes
-schema hashes
-sampling configuration / seeds
-Genesis policy version
-EventStructurePool v2 digest
-EventStructurePool v2 developmental ranges / sampling policy
-entry policy
-record-form repair cap
-whole-candidate attempt cap
-admission gate list
-publication-validator-set witness
+G5 evaluation surfaces
+  sha256:cedd203dbf45a933d2b3af5227931e7722db1d33ca43849933aac584c02e0712
+  Git blob 320c6bac5a462ffe8cc998514b6024ebaf9f0915
+
+G5 diagnostics protocol
+  sha256:4520357cab14bcdc883c6b3966401c98d17a1424e47f26e8c04002728d799ed5
+  Git blob 7c6a856d0650b3468bc988a4f5cbd2d96c7551c5
 ```
 
-One common creative configuration is used across all five Threads.
+Primary surfaces:
 
-Hard split:
+- D1 normalized life attribution; raw is shortcut sensitivity only;
+- D2 separately blinded event/meaning valence + Spearman/leave-one-Thread-out stability;
+- D3 fixed-ordinal genome propagation at ordinals 3 and 6, bounded by the five measured G2 edges;
+- D4 mechanical life funnel, no quota;
+- D5 self-account overreach/residue, without rewarding perfect coherence.
+
+The first verifier failure (`577/578`) is preserved as a bookkeeping finding: the protocol bytes were unchanged and the handwritten canonical digest pin was wrong. The corrected verifier then passed `578/578` at `de864de22deb6c15ebbd5513eb5edf06aa8f4765` and established the digest above.
+
+Closure: [`m2-pr39-slice-g5-result.md`](m2-pr39-slice-g5-result.md).
+
+## G6 — verdict freeze
+
+Status: **COMPLETE / CLEAR.**
+
+G6 freezes `CLEAR | HOLD | REDESIGN` before any final life:
+
+> **A bad cohort is evidence. A broken experiment is a redesign.**
+
+Exact authority:
 
 ```text
-Pass A  genome blind
-Pass B  only frozen direct genome treatment may expose genome
-Pass C  genome blind + one-memory scoped
-A/B/C   no Fibre-computed mechanical-condition values
-A/B/C   no Fibre-authored semantic-need conclusions
+artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json
+canonical digest  sha256:1cfaa3148599236526d5495b14cc0ef2468d5488aa37be38b3fec9c49e21afcc
+Git blob          3f66b590eb357b97baa4bb7778a781e5ca82af32
 ```
 
-No measured quality tendency becomes an admission gate via repair/retry survivorship.
-
-## G5 — raters, diagnostics and interpretation freeze
-
-Status: **PENDING.**
-
-Independent raters must not see WorldSpecs, compiler prompts, build-time diagnostics or genomes except for the explicit genome-discrimination task.
-
-Freeze provider/model and trial/presentation randomization for every diagnostic.
-
-### D1 — life attribution
-
-Two blind conditions:
+Maintainer verification at `ba3154231d19d0251d1aea479fe701e5df0cef7f`:
 
 ```text
-raw         remove names/professions/source labels
-normalized  additionally neutralize prose style and obvious setting/world identifiers
+active tests          582 / 582
+G6 verifier           VERIFIED
+D1 CLEAR              >= 4/5 normalized
+D3 core CLEAR         both ordinals >=3/4; at least one 4/4
+D2 HOLD               rho >= .75 and every leave-one-Thread-out rho >= .60
+D5 HOLD               >=4/5 near-total-self-explanation Threads
 ```
 
-Attribution should depend on route, tension and residue rather than merely belief position. Freeze scoring, chance baseline, uncertainty and success/HOLD interpretation before H.
+A statistical D3 clean-control failure causes HOLD/investigation; only mechanically confirmed forbidden genome leakage escalates to REDESIGN.
 
-### D2 — sentiment coupling
+Closure: [`m2-pr39-slice-g6-result.md`](m2-pr39-slice-g6-result.md).
 
-Blindly rate historical-event sentiment and remembered-meaning valence separately. Freeze statistic and interpretation bands before H. Strong coupling is a warning, not an admission quota.
+## Blocking Gate G
 
-### D3 — genome propagation
+Status: **NEXT.**
 
-Primary strata:
+Review request:
+
+[`m2-pr39-gate-g-review-request.md`](m2-pr39-gate-g-review-request.md)
+
+Gate G must prove that the complete G1–G6 packet is non-adaptive, internally consistent, mechanically enforceable, and still predates every final-cohort life call.
+
+The hostile reviewer must return exactly one:
 
 ```text
-life_only_unexposed
-life_only_exposed
-life_plus_genome
+CLEAR
+HOLD
+REDESIGN
 ```
 
-Freeze numerical thresholds, uncertainty and minimum cell sizes before H.
+If Gate G is HOLD or REDESIGN, **do not generate final lives**. Preserve the packet, version any bounded pre-life correction explicitly, and request another Gate-G review.
 
-| H pattern | Reading |
-| --- | --- |
-| treatment above chance; clean unexposed at chance | intended direct propagation through attention |
-| exposed above clean control and plausibly between/near treatment | informative propagation through prior memory history |
-| all three at chance | genome inert even when visible; real result if G ceiling was strong |
-| clean unexposed reproducibly above chance | negative-control failure; HOLD and explain |
-| treatment and clean control near ceiling | over-determination or broken control |
+If Gate G is CLEAR, only then may H create the first five Threads. The first mechanically integrity-valid cohort is frozen immediately and cannot be regenerated for quality.
 
-### D4 — life funnel
+## Gate-G checklist
 
-Report per Thread:
+The blocking review must verify at least:
+
+1. G1 final Worlds are concrete, digest-bound, fresh, and authored before cohort-genome visibility;
+2. G2 actual genomes, assignments and five-pair ceiling are preserved, including the `(3,4)` limitation;
+3. G3 treatment schedule and fixed-ordinal primary comparison are immutable;
+4. G4 A/B/C cognition, rosters, event schedules, retry caps, Pass-B leakage guard, entry justification and publication witness are immutable;
+5. G5 normalizer/rater surfaces, transformations, randomization, minimum analyzability and bands are immutable;
+6. G6 verdict rules predate final-life generation;
+7. no richness/personality tendency is an admission gate or regeneration trigger;
+8. repair/rejection counts remain visible;
+9. no final-cohort cognition or life exists yet;
+10. no remaining post-outcome degree of freedom can alter provider, prompt, comparison, threshold, retry, regeneration, publication or interpretation.
+
+## Execution boundary
 
 ```text
-historical events                         N
-remembered                                n1
-durable meaning                           n2
-multi-part ambivalent meaning             n3
+AUTHORIZED NOW      blocking hostile Gate-G review only
+NOT AUTHORIZED      Pass-A/Pass-B/Pass-C final-cohort cognition
+NOT AUTHORIZED      final Thread publication
+NOT AUTHORIZED      H diagnostics
 ```
-
-Characterization only; not a quota.
-
-### D5 — self-account overreach
-
-Freeze a blinded method for asking whether durable history contains material the Thread's current remembered meanings cannot accommodate. Perfect self-explanation is not required and may itself be suspicious.
-
-### Secondary characterization
-
-Freeze reporting for:
-
-- structures offered vs instantiated;
-- structure-grounded vs world-emergent episodes;
-- event counts by developmental window;
-- caregiver/institution-mediated vs peer/interest/self-directed access where mechanically supported;
-- conversational/social availability and use;
-- world/place reach relative to WorldSpec affordances;
-- recurring vs new participants and relationship continuity;
-- motif/object repetition and narrative-inertia indicators;
-- intellectual/source encounter availability and instantiation;
-- reinterpretation eligible/run/skipped-by-cap;
-- revised/unchanged/none over run reinterpretations;
-- per-gate form-repair counts/rates;
-- repair exhaustion and candidate-attempt failure profile;
-- articulacy variance;
-- generator monoculture indicators.
-
-None becomes a hidden admission floor.
-
-## G6 — verdict rule and blocking review
-
-Status: **PENDING.**
-
-Before H, freeze one exact `CLEAR | HOLD | REDESIGN` rule including:
-
-- which primary diagnostic failures block closure;
-- which negative-control failures mandate HOLD;
-- what uncertainty counts as inconclusive;
-- how a weak cohort-genome ceiling is handled;
-- how high repair/retry pressure affects interpretation;
-- when a failure is bounded-correctable (`HOLD`) versus architectural (`REDESIGN`).
-
-Quality thresholds may fail. They may not trigger silent regeneration.
-
-Then request the blocking hostile Gate-G review against the complete frozen packet.
-
-## Gate-G packet must prove
-
-1. development and final Worlds are disjoint;
-2. final Worlds were authored/frozen without cohort-genome visibility;
-3. familiarity handling happened before final World freeze and life generation;
-4. current final Worlds are concretely situated rather than generic cultural archetypes;
-5. EventStructurePool v2 is frozen and developmentally non-flat;
-6. treatment/control arithmetic was checked in advance;
-7. genome exposure is whole/fixed deterministic, never relevance-selected;
-8. `life_only_unexposed` is a real sufficiently sized negative control;
-9. independent raters and diagnostic transformations are frozen;
-10. all numerical thresholds/uncertainty rules predate H;
-11. repair/rejection rates remain visible;
-12. no richness/personality tendency became an admission gate;
-13. no final-cohort life has yet been generated.
-
-## Current execution boundary
-
-```text
-Pre-G seam   COMPLETE
-Stage 9      CLEAR
-G0           FROZEN — protocol shell / sequencing / artifact home
-G1-v1        PRESERVED — familiarity CLEAR; geographic specificity insufficient
-G1-v2 / G1   COMPLETE / CLEAR — concrete finals, digests and presentations frozen
-G2           NEXT — cohort genomes + specificity ceiling
-G3-G6        BLOCKED on prior G steps
-H            FORBIDDEN until Gate G CLEAR
-```
-
-Only G2 genome/provenance/control-freeze work is currently authorized. No final-cohort life-generation call is authorized.
