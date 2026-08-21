@@ -52,11 +52,11 @@ test("presentation stream v0.1 refuses capability names whose Fibre producer is 
   assert.throws(() => normalizeThreadPresentationEventInput(candidate), /unsupported presentation event kind/);
 });
 
-test("PresentationServer durably appends before realtime observers receive an event", async () => {
+test("PresentationServer durably appends before realtime publication", async () => {
   const infra = createMemoryInfraDriver();
   const server = createThreadPresentationServer({ infra });
   const observed = [];
-  await server.subscribe("channel_presentation_test", async (event) => {
+  await infra.realtime.listen("channel_presentation_test", async (event) => {
     const replay = await server.readEvents({ channelId: event.channelId, after: 0 });
     observed.push({ event, replay });
   });
@@ -67,17 +67,17 @@ test("PresentationServer durably appends before realtime observers receive an ev
   assert.deepEqual(observed[0].replay[0], result.event);
 });
 
-test("duplicate event admission is idempotent and is not broadcast twice", async () => {
+test("duplicate event admission is idempotent and is not published twice", async () => {
   const infra = createMemoryInfraDriver();
   const server = createThreadPresentationServer({ infra });
-  let broadcasts = 0;
-  await server.subscribe("channel_presentation_test", async () => { broadcasts += 1; });
+  let publications = 0;
+  await infra.realtime.listen("channel_presentation_test", async () => { publications += 1; });
   const first = await server.appendEvent(messageEvent());
   const second = await server.appendEvent(messageEvent());
   assert.equal(first.duplicate, false);
   assert.equal(second.duplicate, true);
   assert.equal(second.event.sequence, 1);
-  assert.equal(broadcasts, 1);
+  assert.equal(publications, 1);
 });
 
 test("reusing an event id for different presentation content fails closed", async () => {
