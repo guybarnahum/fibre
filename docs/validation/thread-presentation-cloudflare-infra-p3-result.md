@@ -5,120 +5,141 @@ last-reviewed: 2026-08-21
 canonical: false
 ---
 
-# Thread presentation Cloudflare InfraDriver — P3 validation handoff
+# Thread presentation Cloudflare runtime profile — P3 validation handoff
 
 ## Status
 
 **NEEDS MAINTAINER VALIDATION.**
 
-This slice implements the first production-provider capabilities of the general Fibre `InfraDriver` for Cloudflare:
+This handoff supersedes the earlier narrower R2/Workflows-only state of this same document. The current branch now contains the full first Thread Presentation capability profile for the general `cloudflare-v1` `InfraDriver`, plus a read-only Worker boundary and a local Cần Thơ runtime fixture seam.
+
+## Current implementation
 
 ```text
-InfraDriver.objects    -> R2 binding
-InfraDriver.workflows  -> Cloudflare Workflows binding
+PresentationServer
+      |
+      v
+InfraDriver cloudflare-v1
+  streams    -> per-Thread SQLite-backed Durable Object RPC
+  realtime   -> same Durable Object, Hibernation WebSockets
+  objects    -> R2 binding
+  catalog    -> D1 binding
+  workflows  -> Cloudflare Workflows binding adapter
 ```
 
-It does **not** yet implement the full Thread Presentation Cloudflare profile (`streams`, `realtime`, `catalog`) and it does not yet prove a deployed Worker or real remote Cloudflare resources.
+### `objects`
 
-## Capability proved by this slice
+- conditional immutable R2 write;
+- digest + compact Fibre metadata;
+- exact duplicate accepted idempotently;
+- conflicting bytes/digest/metadata rejected;
+- provider R2 keys do not become Fibre object identity.
 
-The implementation is intended to prove that application services can use the same `InfraDriver` object/workflow contracts against Cloudflare-shaped bindings without importing Cloudflare products into Fibre domain/application semantics.
+### `workflows`
 
-### R2 object port
-
-Logical Fibre object references map privately to:
-
-```text
-fibre/objects/<objectRef>
-```
-
-The provider key is not exposed as Fibre semantic identity.
-
-`putImmutable()`:
-
-- uses an R2 conditional create (`etagDoesNotMatch: "*"`);
-- sends the caller's SHA-256 checksum to R2;
-- stores Fibre digest + canonical object metadata as R2 custom metadata;
-- on an existing key, accepts only byte-for-byte + digest + metadata equality as an idempotent duplicate;
-- otherwise raises `InfraImmutableObjectConflictError`.
-
-`get()` / `head()` recover Fibre digest and metadata rather than exposing R2-specific locators.
-
-### Workflow port
-
-Cloudflare Workflow instance IDs are operational provider identities. Fibre therefore persists its own durable witnesses through the object port:
+Fibre persists two durable object witnesses:
 
 ```text
 workflowinput:<workflowName>:<instanceId>
 workflowstarted:<workflowName>:<instanceId>
 ```
 
-The input witness establishes the exact Fibre job identity/input. Reusing the same workflow instance ID with a different input raises `InfraWorkflowConflictError` before the provider may execute a conflicting job.
+The input witness binds exact job identity/input. The started witness distinguishes reservation from a confirmed provider execution. A transient `Workflow.create()` failure before the started witness remains retryable; a confirmed workflow whose Cloudflare operational status later expires is not silently restarted.
 
-The separate started witness distinguishes:
+R2 and Cloudflare Workflow creation are not one atomic transaction. Generation effects therefore remain required to be deterministic/idempotent immutable writes keyed by Fibre job identity.
 
-```text
-input reserved
-  !=
-Cloudflare execution confirmed
-```
+### `streams`
 
-This matters because a transient `Workflow.create()` failure after input-witness persistence must remain retryable. A same-input retry may call `create()` while the input witness exists but no started witness exists.
-
-Once a start is confirmed, later loss/expiry of Cloudflare operational instance status returns `status: "unknown"`; it does not silently create another execution.
-
-## Cross-service atomicity boundary
-
-R2 object creation and Cloudflare Workflow creation are different provider operations and cannot be committed as one atomic transaction by this adapter.
-
-The driver therefore provides the strongest practical sequence available through these capabilities:
+A channel namespace uses `getByName(channelId)`, giving one Durable Object per presentation channel. The DO stores:
 
 ```text
-1. reserve exact input identity immutably
-2. check whether execution was previously confirmed
-3. create or recover Workflow instance
-4. persist immutable start-confirmed witness
+stream_meta
+stream_events
 ```
 
-A process failure after provider creation but before the start-confirmed witness remains a theoretical ambiguity window. On retry, the driver first attempts to recover the same provider instance by ID; if recovery succeeds it records the start witness rather than creating a second semantic job.
+with transactional SQLite sequence allocation, idempotency-key conflict detection, exact ordered replay, and snapshot-pointer updates bound to the current stream sequence.
 
-This is not permission for asset-generation effects to be non-idempotent. Generated outputs, GenerationRecords and StoredAssetReceipts remain deterministic/idempotent immutable writes keyed by Fibre job identity. A later provider implementation must preserve that discipline.
+### `realtime`
 
-## R2 metadata bound
-
-The v1 adapter stores the small Fibre object metadata envelope in R2 custom metadata for efficient `head()` behavior. Cloudflare currently places a finite size limit on R2 custom metadata. This is an infrastructure implementation bound, not a Fibre semantic-record bound.
-
-Application services must keep object-port metadata compact. Large semantic/provenance records belong in immutable object bytes and should be linked by Fibre object reference/digest rather than copied into R2 metadata.
-
-If a later application needs arbitrarily large object metadata, the Cloudflare driver may introduce a companion immutable metadata object without changing the `InfraDriver.objects` contract.
-
-## Current Cloudflare driver profile
-
-Implemented:
+`PresentationServer` still performs:
 
 ```text
-objects     R2-shaped binding adapter
-workflows   Cloudflare Workflows-shaped binding adapter
+durable append
+    -> materialize sequence
+    -> realtime publish
 ```
 
-Not yet implemented:
+The DO's realtime path only fans out an already sequenced value. It never allocates stream order.
+
+The WebSocket path uses Cloudflare's Hibernation API and supports replay from `?after=<cursor>`. Replay frames use a provider transport envelope:
 
 ```text
-streams      per-Thread ordered Durable Object + SQLite
-realtime     Durable Object WebSocket fanout/resume
-catalog      D1 query/discovery mirror
-queues       optional fan-out/backpressure
+{
+  type: "stream.event",
+  sequence,
+  value
+}
 ```
 
-The driver exports from:
+followed by `stream.ready`. The envelope is transport state, not a new Thread/presentation authority.
+
+### `catalog`
+
+D1 stores query/public-serving projections only. It does not allocate stream sequence and is not a hidden authority for Thread life, memory, meaning, relationships, or location.
+
+Schema:
 
 ```text
-@fibre/infra/cloudflare-v1
+packages/infra/cloudflare/d1/0001_fibre_catalog.sql
 ```
 
-## Targeted validation
+### public read API
 
-From the `fibre` repository:
+The Worker currently exposes read-only presentation routes:
+
+```text
+GET /healthz
+GET /api/threads/:threadId/snapshot
+GET /api/threads/:threadId/events?after=N
+WS  /api/threads/:threadId/stream?after=N
+GET /api/threads/:threadId/media/:objectRef
+```
+
+A channel is invisible unless its catalog projection explicitly says `publiclyVisible: true`.
+
+A Fibre object reference by itself never authorizes browser access to the underlying R2 object. Media serving additionally requires the `public_presentation_media` projection created after the credentialed publisher has verified and admitted `media.ready`.
+
+The catalog projection is an availability/disclosure index, not evidence that the generated media depicts historical truth.
+
+## P3 local fixture seam
+
+`services/presentation-cloudflare/wrangler.local.jsonc` is deliberately local-only. Wrangler local mode simulates R2, D1 and the SQLite Durable Object without production Cloudflare credentials/resources.
+
+When:
+
+```text
+P3_FIXTURE_MODE=1
+```
+
+the Worker exposes exactly one development write seam:
+
+```text
+POST /__p3/fixtures/can-tho
+```
+
+It accepts only:
+
+```text
+threadId        thr_pr39_g2_04
+lifecycle       genesis_candidate
+fixture         true
+```
+
+The seeder reads only the P2 presentation/media/provenance packets. It cannot birth/publish the candidate as a live Thread and does not read raw H-v2 Genesis output.
+
+## Node-level validation
+
+From `fibre`:
 
 ```bash
 git fetch origin
@@ -128,6 +149,8 @@ git pull --ff-only
 git status --short
 
 node --test packages/infra/test/cloudflare-v1.test.mjs
+node --test packages/infra/test/cloudflare-presentation-ports.test.mjs
+node --test services/presentation-cloudflare/test/presentation-read-api.test.mjs
 node --test services/asset-generator/test/credentialed-asset-generation.test.mjs
 node --test services/world-kernel/test/thread-presentation-asset-publisher.test.mjs
 node --test tools/test-infra/test-suite-lifecycle.test.mjs
@@ -139,70 +162,129 @@ npm test
 git diff --check agent/pr39-genesis-childhood-birth-v1...HEAD
 ```
 
-Expected new targeted results:
+Expected focused results:
 
 ```text
-packages/infra/test/cloudflare-v1.test.mjs                 4 pass / 0 fail
-services/asset-generator/test/credentialed-asset-generation.test.mjs
-                                                             5 pass / 0 fail
-services/world-kernel/test/thread-presentation-asset-publisher.test.mjs
-                                                             2 pass / 0 fail
+cloudflare-v1.test.mjs                         4 pass / 0 fail
+cloudflare-presentation-ports.test.mjs         4 pass / 0 fail
+presentation-read-api.test.mjs                 4 pass / 0 fail
+credentialed-asset-generation.test.mjs         5 pass / 0 fail
+thread-presentation-asset-publisher.test.mjs   2 pass / 0 fail
 ```
 
-The lifecycle test must prove the new `packages/infra/test/*.test.mjs` regressions are part of the normal active suite.
+The lifecycle test must show all of the new package/service tests are part of the normal active suite.
+
+## Wrangler local-runtime validation
+
+This second level is required because ordinary Node tests do not execute the actual `cloudflare:workers` Durable Object runtime.
+
+Use current Wrangler through `npx`; this does not add Cloudflare credentials to Fibre `.env`.
+
+### 1. Bundle/config check
+
+```bash
+npx wrangler@latest deploy --dry-run \
+  --config services/presentation-cloudflare/wrangler.local.jsonc
+```
+
+The local config uses an all-zero placeholder D1 UUID intentionally and must never be used for production deployment.
+
+### 2. Initialize local D1
+
+```bash
+npx wrangler@latest d1 execute fibre-presentation-local \
+  --config services/presentation-cloudflare/wrangler.local.jsonc \
+  --local \
+  --file packages/infra/cloudflare/d1/0001_fibre_catalog.sql
+```
+
+### 3. Run the Worker
+
+```bash
+npx wrangler@latest dev \
+  --config services/presentation-cloudflare/wrangler.local.jsonc \
+  --port 8787
+```
+
+Keep that terminal running.
+
+### 4. In another terminal, seed the frozen P2 packet
+
+```bash
+node tools/presentation/seed-p3-can-tho-cloudflare-local.mjs
+```
+
+Expected response includes:
+
+```text
+"ok": true
+"fixture": true
+"threadId": "thr_pr39_g2_04"
+"channelId": "presentation:thr_pr39_g2_04"
+```
+
+### 5. Probe HTTP + WebSocket
+
+```bash
+node tools/presentation/probe-p3-cloudflare-local.mjs
+```
+
+Expected result has:
+
+```text
+"ok": true
+"threadId": "thr_pr39_g2_04"
+"lifecycleStatus": "genesis_candidate"
+"fixture": true
+```
+
+and the WebSocket `stream.ready` cursor must equal the HTTP replay head.
 
 ## Negative properties pinned
 
-The Cloudflare driver tests require:
+This slice must demonstrate:
 
-- an immutable R2 logical object cannot be silently overwritten;
-- exact duplicate immutable writes are idempotent;
-- R2 provider keys remain private implementation details;
-- same workflow ID + different Fibre input fails closed;
-- same workflow ID + same Fibre input does not create a second confirmed execution;
-- an expired provider status does not silently restart a confirmed Fibre job;
-- a transient create failure before the start-confirmed witness remains retryable;
-- Fibre's durable workflow input remains recoverable even when provider operational status is gone.
+- exact duplicate immutable R2 writes are idempotent, conflicting writes fail;
+- same Workflow ID + different input fails closed;
+- transient pre-start Workflow failure remains retryable;
+- confirmed Workflow execution is not silently recreated after provider status retention expires;
+- ordered stream replay is exact;
+- idempotent stream retry wins before stale expected-sequence conflict;
+- realtime fanout does not allocate sequence;
+- D1 is a mirror rather than stream authority;
+- hidden/non-public channels return 404;
+- knowing an objectRef does not make media public;
+- an invalid Content Credential blocks both `media.ready` and the public-media catalog projection;
+- the local fixture remains an unpublished Genesis candidate.
 
-The adjacent provenance tests additionally require that generated public media cannot become `media.ready` without successful credential/provenance verification.
+## C2PA runtime boundary
 
-## Causal / scope posture
+The credentialed publication gate is implemented and validated with a synthetic signer format. This slice still does **not** claim real C2PA interoperability.
 
-This is infrastructure behavior, not personhood evidence. It makes async derived-media execution and storage portable and more reliable; it does not establish Thread life, embodiment, memory, meaning, agency or autonomous activity.
+As of 2026-08-21, Fibre keeps `ContentCredentialSigner` behind a portable adapter because the official Node C2PA SDK is native Node code while official non-browser Wasm/byte support for Cloudflare Workers is still evolving upstream.
 
-Generated media remains `generated_reconstruction` and cannot become Thread-life evidence through this driver.
+No private C2PA fork is accepted merely to close P3.
 
-## P3 relationship
+## P3 status after this validation
 
-After this slice validates, P3-D/E has:
+If both Node and Wrangler-local validation pass, the Cloudflare snapshot/replay/WebSocket infrastructure path is established.
 
-```text
-CLEAR / validated foundations
-  PresentationServer semantics
-  memory InfraDriver
-  async AssetGenerationService
-  credentialed asset provenance/publication gate
-  insidefibre snapshot viewer + reducer
-
-new Cloudflare provider implementation
-  objects + workflows
-```
-
-P3 still remains **open** until the remaining Cloudflare presentation profile and one real vertical path are demonstrated:
+P3 nevertheless remains open for one final vertical-media proof:
 
 ```text
-Cloudflare streams/realtime/catalog
-        +
-real deployed/local Worker bindings
-        +
 real image provider
-        +
+      +
 real C2PA-compatible ContentCredentialSigner
-        ->
+      +
+Cloudflare asset workflow execution
+      ->
 one eligible Cần Thơ place reconstruction
-        -> R2 final credentialed asset
-        -> media.ready
-        -> insidefibre render
+      -> GenerationRecord
+      -> embedded credential
+      -> final R2 object
+      -> StoredAssetReceipt
+      -> media.ready
+      -> insidefibre renders the generated asset
 ```
 
 Portrait generation remains deferred until an accepted embodiment reconstruction brief exists.
