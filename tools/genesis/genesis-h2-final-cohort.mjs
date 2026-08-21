@@ -46,7 +46,7 @@ export function verifyH2CompatibilityBoundary() {
   if (binding.executionAttemptVersion !== "H-v2") fail("unexpected H-v2 binding version");
   if (binding.supersedesAttempt?.freezeCommit !== H1_FREEZE_COMMIT || binding.supersedesAttempt?.rerunAllowed !== false) fail("H-v2 does not preserve H-v1 as an immutable HOLD");
   if (binding.oneShot?.outputRoot !== "artifacts/validation/m2-pr39/h/cohort-v2") fail("H-v2 output root drift");
-  if (existsSync(absolute(binding.oneShot.outputRoot))) fail("H-v2 output root already exists; one-shot execution is blocked");
+  const outputRootExists = existsSync(absolute(binding.oneShot.outputRoot));
 
   const projection = projectPassBResponseSchemaForOpenAI(GENESIS_PASS_B_RESPONSE_SCHEMA);
   if (projection.canonicalSchemaHash !== EXPECTED_CANONICAL_PASS_B_SCHEMA) fail("H-v2 canonical Pass-B schema drift");
@@ -68,6 +68,7 @@ export function verifyH2CompatibilityBoundary() {
     transportPassBSchemaHash: projection.transportSchemaHash,
     removedConstraints: projection.removedConstraints,
     outputRoot: binding.oneShot.outputRoot,
+    outputRootExists,
   });
 }
 
@@ -132,6 +133,7 @@ export async function runH2FinalCohort() {
 
 export async function runH2SchemaProbe({ environment = process.env, fetchImpl = globalThis.fetch } = {}) {
   const boundary = verifyH2CompatibilityBoundary();
+  if (boundary.outputRootExists) fail("H-v2 schema probe is pre-life only and is blocked after the H-v2 attempt root exists");
   const projections = [];
   const compatFetch = createH2OpenAICompatibilityFetch({ fetchImpl, onProjection: (event) => projections.push(structuredClone(event)) });
   const adapter = createOpenAIModelAdapter({
@@ -160,11 +162,12 @@ export async function runH2SchemaProbe({ environment = process.env, fetchImpl = 
 }
 
 function printPreflight(result) {
-  process.stdout.write("H-V2 FINAL COHORT PREFLIGHT: CLEAR\n\n");
+  const blocked = result.h2Compatibility.outputRootExists;
+  process.stdout.write(blocked ? "H-V2 FINAL COHORT PREFLIGHT: ATTEMPT FROZEN — EXECUTION BLOCKED\n\n" : "H-V2 FINAL COHORT PREFLIGHT: CLEAR\n\n");
   process.stdout.write(`H-v1 frozen HOLD: ${result.h2Compatibility.h1FreezeCommit}\n`);
   process.stdout.write(`Canonical Pass-B schema: ${result.h2Compatibility.canonicalPassBSchemaHash}\n`);
   process.stdout.write(`OpenAI transport schema: ${result.h2Compatibility.transportPassBSchemaHash}\n`);
-  process.stdout.write(`Output root: ${result.h2Compatibility.outputRoot} [absent]\n`);
+  process.stdout.write(`Output root: ${result.h2Compatibility.outputRoot}${blocked ? " [EXISTS — ONE-SHOT REFUSES RERUN]" : " [absent]"}\n`);
   process.stdout.write(`Runtime: ${result.runtime.provider}/${result.runtime.modelId}\n`);
   process.stdout.write("\nNo provider call was made.\n");
 }
