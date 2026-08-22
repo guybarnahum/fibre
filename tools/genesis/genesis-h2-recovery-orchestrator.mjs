@@ -80,6 +80,7 @@ const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const RECOVERY_BINDING_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-binding-v1.json";
 const H2_EXECUTION_BINDING_PATH = "artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v2.json";
 export const H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-authorization-v1.json";
+const H2_RECOVERY_EXECUTION_REVIEW_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-review-v1.json";
 const G3_V1_PATH = "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v1.json";
 const ATTEMPT_START_FILENAME = "h-recovery-attempt-start-v1.json";
 const RESULT_FILENAME = "h-recovery-result-v1.json";
@@ -141,7 +142,46 @@ function readExecutionAuthorization({ required = false } = {}) {
   return authorization;
 }
 
+export function disallowedRecoveryPostReviewPaths(paths) {
+  const allowed = new Set([
+    H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH,
+    H2_RECOVERY_EXECUTION_REVIEW_PATH,
+  ]);
+  return paths.filter((path) => !allowed.has(path));
+}
+
+function assertReviewedImplementationFreeze(authorization) {
+  const reviewedHead = authorization.reviewedImplementationHead;
+  if (typeof reviewedHead !== "string" || !/^[0-9a-f]{40}$/.test(reviewedHead)) {
+    fail("H-v2 recovery authorization lacks a valid reviewed implementation head");
+  }
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", reviewedHead, "HEAD"], {
+      cwd: ROOT,
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+  } catch {
+    fail("H-v2 recovery reviewed implementation head is not an ancestor of current HEAD");
+  }
+  const changed = execFileSync("git", ["diff", "--name-only", `${reviewedHead}..HEAD`], {
+    cwd: ROOT,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).split("\n").map((item) => item.trim()).filter(Boolean);
+  const disallowed = disallowedRecoveryPostReviewPaths(changed);
+  if (disallowed.length > 0) {
+    fail(`H-v2 recovery implementation drift after review: ${disallowed.join(", ")}`);
+  }
+  const review = readJson(H2_RECOVERY_EXECUTION_REVIEW_PATH);
+  if (review.status !== "CLEAR_FOR_EXECUTION_AUTHORIZATION" ||
+      review.finalReviewedImplementationHead !== reviewedHead) {
+    fail("H-v2 recovery execution review does not clear the authorized implementation head");
+  }
+  return changed;
+}
+
 function assertExecutionAuthorization(binding, authorization) {
+  assertReviewedImplementationFreeze(authorization);
   const orchestratorBlobSha = currentBlob("tools/genesis/genesis-h2-recovery-orchestrator.mjs");
   if (authorization.recoveryBindingDigest !== digest(binding) ||
       authorization.orchestratorVersion !== H2_RECOVERY_ORCHESTRATOR_VERSION ||
