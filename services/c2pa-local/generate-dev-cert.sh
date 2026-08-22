@@ -32,7 +32,13 @@ subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer
 EOF
 
-openssl ecparam -name prime256v1 -genkey -noout -out "$KEY"
+# c2pa-node's ES256 LocalSigner expects an unencrypted PKCS#8 private key
+# (PEM label "PRIVATE KEY"), not the SEC1 "EC PRIVATE KEY" emitted by
+# `openssl ecparam -genkey` on many macOS/OpenSSL installations.
+openssl genpkey \
+  -algorithm EC \
+  -pkeyopt ec_paramgen_curve:P-256 \
+  -out "$KEY"
 openssl req -new -x509 \
   -key "$KEY" \
   -out "$CERT" \
