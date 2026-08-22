@@ -15,7 +15,6 @@ import { passACognitionInputDigest } from "../../world-kernel/src/genesis-pass-a
 import {
   GENESIS_RICH_PASS_A_REPAIR_PROMPT,
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
-  GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
   GENESIS_RICH_PASS_A_REPAIR_TARGET_BYTES,
   GENESIS_RICH_PASS_A_SECOND_REPAIR_TARGET_BYTES,
   GENESIS_RICH_PASS_A_REPAIR_TARGET_WORDS,
@@ -24,6 +23,7 @@ import {
   richPassAPromptForPolicy,
 } from "../../world-kernel/src/genesis-rich-pass-a-runner.mjs";
 import {
+  GENESIS_RICH_PASS_A_RESPONSE_SCHEMA,
   assertRichRepairPreservesEpisodeFacts,
   validateRichPassAEpisode,
 } from "../../world-kernel/src/genesis-rich-life-episode.mjs";
