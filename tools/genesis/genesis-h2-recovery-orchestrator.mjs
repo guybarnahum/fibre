@@ -140,6 +140,20 @@ function readExecutionAuthorization({ required = false } = {}) {
   return authorization;
 }
 
+function assertExecutionAuthorization(binding, authorization) {
+  const orchestratorBlobSha = currentBlob("tools/genesis/genesis-h2-recovery-orchestrator.mjs");
+  if (authorization.recoveryBindingDigest !== digest(binding) ||
+      authorization.orchestratorVersion !== H2_RECOVERY_ORCHESTRATOR_VERSION ||
+      authorization.orchestratorBlobSha !== orchestratorBlobSha ||
+      authorization.firstProviderOperation !== "pr39-h:slot-04:pass-a:episode-03:record-retry:2" ||
+      authorization.scientificStanding !== "recovery_resilience_only" ||
+      authorization.mayReplaceH2Hold !== false ||
+      authorization.mayEnterFrozenG5G6 !== false) {
+    fail("H-v2 recovery execution authorization does not exactly bind the reviewed recovery boundary");
+  }
+  return authorization;
+}
+
 function readFrozenProtocols() {
   const executionBinding = readJson(H2_EXECUTION_BINDING_PATH);
   const g2 = readJson(executionBinding.authorityBoundary.g2ProtocolPath);
@@ -155,6 +169,7 @@ export function verifyH2RecoveryOrchestratorPreflight() {
   const plan = buildH2RecoveryExecutionPlan();
   const { executionBinding, g2, g3v2, g4v1 } = readFrozenProtocols();
   const executionAuthorization = readExecutionAuthorization();
+  if (executionAuthorization !== null) assertExecutionAuthorization(binding, executionAuthorization);
 
   if (binding.authorization?.providerCallsAuthorizedByThisFreeze !== false) {
     fail("recovery implementation review boundary unexpectedly authorizes provider calls");
@@ -335,6 +350,26 @@ function passAEntryFromEvidence({ window, seed, offeredEntries, evidence }) {
     repairs: structuredClone(evidence.repairs ?? evidence.continuationRepairs ?? []),
     recordRetries: structuredClone(evidence.recordRetries ?? evidence.continuationRetries ?? []),
     generationPolicyVersion: evidence.generationPolicyVersion ?? null,
+  };
+}
+
+export function recoveredHistoricalPassAEntry({ window, seed, offeredEntries, inputDigest, evidence }) {
+  if (window.ordinal !== evidence.ordinal) fail("preserved historical Pass-A ordinal drift");
+  return {
+    ordinal: window.ordinal,
+    developmentalWindow: structuredClone(window),
+    offerSeed: seed,
+    offeredStructureIds: offeredEntries.map((item) => item.structure.structureId),
+    inputDigest,
+    episode: structuredClone(evidence.episode),
+    episodeDigest: digest(evidence.episode),
+    calls: structuredClone(evidence.historicalCalls),
+    repairs: [],
+    recordRetries: [],
+    historicalCalls: structuredClone(evidence.historicalCalls),
+    recoveryCalls: [],
+    historicalRepairWitnesses: structuredClone(evidence.repairWitnesses),
+    preservedHistoricalSource: RECOVERY_BINDING_PATH,
   };
 }
 
@@ -696,7 +731,7 @@ async function generateRecoveredSlot4({ protocols, adapter, attemptStartedAt }) 
     : null;
   const episodes = recovery.acceptedEpisodes.map((episode) => structuredClone(episode));
   const passA = [];
-  const repairWitnesses = [];
+  const repairWitnesses = recovery.historicalRepairWitnesses.map((witness) => structuredClone(witness));
 
   for (const window of g4v1.historicalPlan.windows.filter((item) => item.ordinal <= 2)) {
     const { input, seed, offeredEntries } = buildPassAInput({
@@ -709,20 +744,15 @@ async function generateRecoveredSlot4({ protocols, adapter, attemptStartedAt }) 
       priorEpisodes: episodes.slice(0, window.ordinal - 1),
       window,
     });
-    const episode = episodes[window.ordinal - 1];
-    passA.push({
-      ordinal: window.ordinal,
-      developmentalWindow: structuredClone(window),
-      offerSeed: seed,
-      offeredStructureIds: offeredEntries.map((item) => item.structure.structureId),
+    const evidence = recovery.acceptedEpisodeEvidence.find((item) => item.ordinal === window.ordinal);
+    if (!evidence) fail(`recovery slot 4 lacks historical evidence for episode ${window.ordinal}`);
+    passA.push(recoveredHistoricalPassAEntry({
+      window,
+      seed,
+      offeredEntries,
       inputDigest: passACognitionInputDigest(projectRichLifePassAInputForCognition(input)),
-      episode: structuredClone(episode),
-      episodeDigest: digest(episode),
-      calls: [],
-      repairs: [],
-      recordRetries: [],
-      preservedHistoricalSource: RECOVERY_BINDING_PATH,
-    });
+      evidence,
+    }));
   }
 
   const window3 = g4v1.historicalPlan.windows.find((item) => item.ordinal === 3);
@@ -755,12 +785,22 @@ async function generateRecoveredSlot4({ protocols, adapter, attemptStartedAt }) 
     priorEpisodes: episodes.slice(0, 2),
     window: window3,
   });
-  passA.push(passAEntryFromEvidence({
+  const episode3Entry = passAEntryFromEvidence({
     window: window3,
     seed: seed3,
     offeredEntries: offered3,
     evidence: continuation,
-  }));
+  });
+  episode3Entry.historicalCalls = structuredClone(recovery.episode3.state.historicalCalls);
+  episode3Entry.recoveryCalls = structuredClone(continuation.continuationCalls);
+  episode3Entry.calls = [
+    ...structuredClone(recovery.episode3.state.historicalCalls),
+    ...structuredClone(continuation.continuationCalls),
+  ];
+  episode3Entry.historicalRepairWitnesses = recovery.historicalRepairWitnesses
+    .filter((witness) => witness.episodeOrdinal === 3)
+    .map((witness) => structuredClone(witness));
+  passA.push(episode3Entry);
 
   await generateProspectivePassA({
     binding,
@@ -804,8 +844,10 @@ async function generateRecoveredSlot4({ protocols, adapter, attemptStartedAt }) 
     passA,
     episodes,
     repairWitnesses,
+    historicalSuccessfulCalls: structuredClone(recovery.successfulHistoricalCalls),
     historicalContinuation: {
       sourceState: structuredClone(recovery.episode3.state),
+      historicalCalls: structuredClone(recovery.episode3.state.historicalCalls),
       finalBudgetState: structuredClone(continuation.budgetState),
       continuationCalls: structuredClone(continuation.continuationCalls),
     },
@@ -1035,6 +1077,51 @@ function persistGenomeBundle(store, bundle) {
   });
 }
 
+export function persistRecoveryRepairWitnesses(genesisStore, generation, publicationAt) {
+  let ordinal = 0;
+  for (const witness of generation.repairWitnesses ?? []) {
+    ordinal += 1;
+    genesisStore.recordGenerationAttempt({
+      attemptId: `gatt_${sha256(canonicalJson({ genesisId: generation.binding.genesisId, ordinal, witness: witness.kind, episodeOrdinal: witness.episodeOrdinal })).slice(0, 48)}`,
+      genesisId: generation.binding.genesisId,
+      provisionalThreadId: generation.binding.threadId,
+      candidateAttemptNumber: 1,
+      scope: "record_repair",
+      recordKind: "pass_a_life_episode",
+      failedPass: "A",
+      failedGate: witness.failedGate,
+      recordRepairOrdinal: ordinal,
+      rejectedContentDigest: witness.rejectedContentDigest,
+      rejectedContent: witness.rejectedContent ?? null,
+      inputDigest: witness.inputDigest,
+      outputDigest: witness.outputDigest,
+      recordedAt: witness.recordedAt ?? publicationAt,
+    });
+  }
+  for (const passB of generation.passB ?? []) {
+    if ((passB.calls ?? []).length <= 1) continue;
+    const rejected = passB.calls[0];
+    ordinal += 1;
+    genesisStore.recordGenerationAttempt({
+      attemptId: `gatt_${sha256(canonicalJson({ genesisId: generation.binding.genesisId, ordinal, kind: "pass_b_genome_copy_retry", callOrdinal: passB.callOrdinal })).slice(0, 48)}`,
+      genesisId: generation.binding.genesisId,
+      provisionalThreadId: generation.binding.threadId,
+      candidateAttemptNumber: 1,
+      scope: "record_repair",
+      recordKind: "pass_b_memory_formation",
+      failedPass: "B",
+      failedGate: "pass_b_genome_verbatim_ngram",
+      recordRepairOrdinal: ordinal,
+      rejectedContentDigest: rejected.outputDigest,
+      rejectedContent: null,
+      inputDigest: rejected.inputDigest,
+      outputDigest: rejected.outputDigest,
+      recordedAt: publicationAt,
+    });
+  }
+  return ordinal;
+}
+
 function publishRecoveredCohort({
   generations,
   protocols,
@@ -1052,6 +1139,7 @@ function publishRecoveredCohort({
       genesisStore.recordWorldSpec(generation.worldSpec);
       for (const parent of generation.parentGenomes ?? []) persistGenomeBundle(genomeStore, parent);
       persistGenomeBundle(genomeStore, generation.genome);
+      persistRecoveryRepairWitnesses(genesisStore, generation, publicationAt);
     }
 
     for (const generation of generations) {
@@ -1151,17 +1239,8 @@ export async function runAuthorizedH2Recovery() {
   if (binding.authorization?.providerCallsAuthorizedByThisFreeze !== false) {
     fail("frozen H-v2 recovery boundary must remain zero-call; execution authorization is separate");
   }
-  const authorization = readExecutionAuthorization({ required: true });
-  const orchestratorBlobSha = currentBlob("tools/genesis/genesis-h2-recovery-orchestrator.mjs");
-  if (authorization.recoveryBindingDigest !== digest(binding) ||
-      authorization.orchestratorVersion !== H2_RECOVERY_ORCHESTRATOR_VERSION ||
-      authorization.orchestratorBlobSha !== orchestratorBlobSha ||
-      authorization.firstProviderOperation !== "pr39-h:slot-04:pass-a:episode-03:record-retry:2" ||
-      authorization.scientificStanding !== "recovery_resilience_only" ||
-      authorization.mayReplaceH2Hold !== false ||
-      authorization.mayEnterFrozenG5G6 !== false) {
-    fail("H-v2 recovery execution authorization does not exactly bind the reviewed recovery boundary");
-  }
+  const authorization = assertExecutionAuthorization(binding, readExecutionAuthorization({ required: true }));
+  if (authorization === null) fail("recovery authorization unexpectedly absent");
 
   const { start, restarted } = loadOrCreateAttemptStart(binding);
   const root = binding.output.root;
@@ -1256,14 +1335,19 @@ export async function runAuthorizedH2Recovery() {
 }
 
 function printPreflight(result) {
-  process.stdout.write("H-V2 RECOVERY ORCHESTRATOR: IMPLEMENTED — EXECUTION STILL BLOCKED\n\n");
+  const authorized = result.providerCallsAuthorized === true;
+  process.stdout.write(authorized
+    ? "H-V2 RECOVERY ORCHESTRATOR: REVIEW AUTHORIZED — PREFLIGHT ZERO CALL\n\n"
+    : "H-V2 RECOVERY ORCHESTRATOR: IMPLEMENTED — EXECUTION STILL BLOCKED\n\n");
   process.stdout.write(`Version: ${result.orchestratorVersion}\n`);
   process.stdout.write(`First provider operation: ${result.firstProviderOperation.clientRequestId}\n`);
   process.stdout.write(`Stages: ${result.stageCount}\n`);
-  process.stdout.write(`Output root: ${result.outputRoot} [absent]\n`);
-  process.stdout.write(`Execution authorization: ${result.executionAuthorizationPath} [absent]\n`);
+  process.stdout.write(`Output root: ${result.outputRoot}${existsSync(absolute(result.outputRoot)) ? " [exists]" : " [absent]"}\n`);
+  process.stdout.write(`Execution authorization: ${result.executionAuthorizationPath}${authorized ? " [present and blob-bound]" : " [absent — execution blocked]"}\n`);
   process.stdout.write("Scientific standing: recovery/resilience only.\n");
-  process.stdout.write("\nNo provider call was made or authorized.\n");
+  process.stdout.write(authorized
+    ? "\nPreflight made zero provider calls. Provider execution is authorized only through the reviewed --execute path.\n"
+    : "\nNo provider call was made or authorized.\n");
 }
 
 async function main() {
