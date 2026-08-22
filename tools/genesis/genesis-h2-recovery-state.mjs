@@ -9,6 +9,7 @@ import {
 import { buildRichLifePassAInput } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import { passACognitionInputDigest } from "../../services/world-kernel/src/genesis-pass-a-cognition.mjs";
 import { projectRichLifePassAInputForCognition } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
+import { canonicalJson, sha256 } from "../../services/world-kernel/src/persistence-common.mjs";
 import {
   HISTORICAL_PASS_A_CONTINUATION_VERSION,
   inspectHistoricalPassAContinuation,
@@ -26,6 +27,8 @@ function readJson(path) {
 function fail(message) {
   throw new Error(message);
 }
+
+const digest = (value) => `sha256:${sha256(canonicalJson(value))}`;
 
 function modelResponse(failure, clientRequestId) {
   const matches = failure.modelEvents.filter((event) =>
@@ -118,23 +121,115 @@ function historicalCall(response, kind, ordinal = null) {
   });
 }
 
+function historicalState({ inputDigest, candidate, historicalCalls, generatedVersions, formRepairs, recordRetries }) {
+  return Object.freeze({
+    stateVersion: HISTORICAL_PASS_A_CONTINUATION_VERSION,
+    sourcePolicyVersion: "genesis-rich-pass-a-shared-version-budget-v1",
+    inputDigest,
+    generatedVersions,
+    formRepairs,
+    recordRetries,
+    candidate: structuredClone(candidate),
+    historicalCalls: Object.freeze(historicalCalls.map((item) => Object.freeze(structuredClone(item)))),
+  });
+}
+
+function historicalRepairWitness({
+  kind,
+  episodeOrdinal,
+  recordedAt,
+  operationOrdinal,
+  failedGate,
+  rejectedCandidate,
+  response,
+}) {
+  const rejectedContentDigest = digest(rejectedCandidate);
+  return Object.freeze({
+    kind,
+    episodeOrdinal,
+    recordedAt,
+    ...(kind === "pass_a_form_repair"
+      ? { repairOrdinal: operationOrdinal }
+      : { recordRetryOrdinal: operationOrdinal }),
+    failedGate,
+    rejectedContentDigest,
+    rejectedContent: structuredClone(rejectedCandidate),
+    inputDigest: response.inputDigest,
+    outputDigest: rejectedContentDigest,
+    historicalSource: H2_FAILURE_PATH,
+  });
+}
+
+function requireTransition({ input, state, nextKind, nextOrdinal, label }) {
+  const inspection = inspectHistoricalPassAContinuation({ input, state });
+  if (inspection.nextKind !== nextKind || inspection.nextOrdinal !== nextOrdinal) {
+    fail(`${label} recovery transition drift: expected ${nextKind} ${nextOrdinal}, got ${inspection.nextKind} ${inspection.nextOrdinal}`);
+  }
+  return inspection;
+}
+
 export function buildH2Slot4Episode3RecoveryState() {
   const failure = readJson(H2_FAILURE_PATH);
   const g2 = readJson(G2_PATH);
   const g4 = readJson(G4_PATH);
   const slot = 4;
   const base = "pr39-h:slot-04:pass-a";
+  const historicalRecordedAt = failure.attemptStartedAt ?? failure.failedAt;
+  if (typeof historicalRecordedAt !== "string" || historicalRecordedAt.trim() === "") {
+    fail("H-v2 failure lacks historical attempt time");
+  }
 
   const ep1Initial = modelResponse(failure, `${base}:episode-01:initial`);
   const input1 = buildInput({ g2, g4, slot, priorEpisodes: [], ordinal: 1 });
-  if (cognitionDigest(input1) !== ep1Initial.inputDigest) fail("slot 4 episode 1 cognition input digest drift");
+  const input1Digest = cognitionDigest(input1);
+  if (input1Digest !== ep1Initial.inputDigest) fail("slot 4 episode 1 cognition input digest drift");
   const episode1 = initialEpisode(ep1Initial);
+  const ep1Call = historicalCall(ep1Initial, "initial");
+  const ep1State = historicalState({
+    inputDigest: input1Digest,
+    candidate: episode1,
+    historicalCalls: [ep1Call],
+    generatedVersions: 1,
+    formRepairs: 0,
+    recordRetries: 0,
+  });
+  const ep1Inspection = inspectHistoricalPassAContinuation({ input: input1, state: ep1State });
+  if (ep1Inspection.nextKind !== "already_admitted") fail("slot 4 episode 1 historical admission drift");
 
   const ep2Initial = modelResponse(failure, `${base}:episode-02:initial`);
   const ep2Repair1 = modelResponse(failure, `${base}:episode-02:repair:1`);
   const input2 = buildInput({ g2, g4, slot, priorEpisodes: [episode1], ordinal: 2 });
-  if (cognitionDigest(input2) !== ep2Initial.inputDigest) fail("slot 4 episode 2 cognition input digest drift");
-  const episode2 = repairedEpisode(initialEpisode(ep2Initial), ep2Repair1);
+  const input2Digest = cognitionDigest(input2);
+  if (input2Digest !== ep2Initial.inputDigest) fail("slot 4 episode 2 cognition input digest drift");
+  const ep2InitialCandidate = initialEpisode(ep2Initial);
+  const ep2InitialCall = historicalCall(ep2Initial, "initial");
+  const ep2BeforeRepair = historicalState({
+    inputDigest: input2Digest,
+    candidate: ep2InitialCandidate,
+    historicalCalls: [ep2InitialCall],
+    generatedVersions: 1,
+    formRepairs: 0,
+    recordRetries: 0,
+  });
+  const ep2BeforeRepairInspection = requireTransition({
+    input: input2,
+    state: ep2BeforeRepair,
+    nextKind: "form_repair",
+    nextOrdinal: 1,
+    label: "slot 4 episode 2 initial",
+  });
+  const episode2 = repairedEpisode(ep2InitialCandidate, ep2Repair1);
+  const ep2Calls = [ep2InitialCall, historicalCall(ep2Repair1, "record_repair", 1)];
+  const ep2FinalState = historicalState({
+    inputDigest: input2Digest,
+    candidate: episode2,
+    historicalCalls: ep2Calls,
+    generatedVersions: 2,
+    formRepairs: 1,
+    recordRetries: 0,
+  });
+  const ep2FinalInspection = inspectHistoricalPassAContinuation({ input: input2, state: ep2FinalState });
+  if (ep2FinalInspection.nextKind !== "already_admitted") fail("slot 4 episode 2 repaired admission drift");
 
   const ep3Initial = modelResponse(failure, `${base}:episode-03:initial`);
   const ep3Repair1 = modelResponse(failure, `${base}:episode-03:repair:1`);
@@ -144,21 +239,52 @@ export function buildH2Slot4Episode3RecoveryState() {
   if (inputDigest !== ep3Initial.inputDigest) fail("slot 4 episode 3 cognition input digest drift");
 
   const initialCandidate = initialEpisode(ep3Initial);
-  const repairedCandidate = repairedEpisode(initialCandidate, ep3Repair1);
-  const retryCandidate = initialEpisode(ep3Retry1);
-  const state = Object.freeze({
-    stateVersion: HISTORICAL_PASS_A_CONTINUATION_VERSION,
-    sourcePolicyVersion: "genesis-rich-pass-a-shared-version-budget-v1",
+  const ep3InitialCall = historicalCall(ep3Initial, "initial");
+  const ep3BeforeRepair = historicalState({
     inputDigest,
-    generatedVersions: 3,
+    candidate: initialCandidate,
+    historicalCalls: [ep3InitialCall],
+    generatedVersions: 1,
+    formRepairs: 0,
+    recordRetries: 0,
+  });
+  const ep3BeforeRepairInspection = requireTransition({
+    input: input3,
+    state: ep3BeforeRepair,
+    nextKind: "form_repair",
+    nextOrdinal: 1,
+    label: "slot 4 episode 3 initial",
+  });
+
+  const repairedCandidate = repairedEpisode(initialCandidate, ep3Repair1);
+  const ep3RepairCall = historicalCall(ep3Repair1, "record_repair", 1);
+  const ep3BeforeRetry = historicalState({
+    inputDigest,
+    candidate: repairedCandidate,
+    historicalCalls: [ep3InitialCall, ep3RepairCall],
+    generatedVersions: 2,
     formRepairs: 1,
-    recordRetries: 1,
-    candidate: structuredClone(retryCandidate),
-    historicalCalls: Object.freeze([
-      historicalCall(ep3Initial, "initial"),
-      historicalCall(ep3Repair1, "record_repair", 1),
-      historicalCall(ep3Retry1, "record_retry", 1),
-    ]),
+    recordRetries: 0,
+  });
+  const ep3BeforeRetryInspection = requireTransition({
+    input: input3,
+    state: ep3BeforeRetry,
+    nextKind: "record_retry",
+    nextOrdinal: 1,
+    label: "slot 4 episode 3 after repair 1",
+  });
+
+  const retryCandidate = initialEpisode(ep3Retry1);
+  const ep3Calls = [ep3InitialCall, ep3RepairCall, historicalCall(ep3Retry1, "record_retry", 1)];
+  const state = Object.freeze({
+    ...historicalState({
+      inputDigest,
+      candidate: retryCandidate,
+      historicalCalls: ep3Calls,
+      generatedVersions: 3,
+      formRepairs: 1,
+      recordRetries: 1,
+    }),
     historicalCandidates: Object.freeze({
       initial: structuredClone(initialCandidate),
       afterRepair1: structuredClone(repairedCandidate),
@@ -167,11 +293,65 @@ export function buildH2Slot4Episode3RecoveryState() {
   });
   const inspection = inspectHistoricalPassAContinuation({ input: input3, state });
 
+  const historicalRepairWitnesses = Object.freeze([
+    historicalRepairWitness({
+      kind: "pass_a_form_repair",
+      episodeOrdinal: 2,
+      recordedAt: historicalRecordedAt,
+      operationOrdinal: 1,
+      failedGate: ep2BeforeRepairInspection.currentGate,
+      rejectedCandidate: ep2InitialCandidate,
+      response: ep2Repair1,
+    }),
+    historicalRepairWitness({
+      kind: "pass_a_form_repair",
+      episodeOrdinal: 3,
+      recordedAt: historicalRecordedAt,
+      operationOrdinal: 1,
+      failedGate: ep3BeforeRepairInspection.currentGate,
+      rejectedCandidate: initialCandidate,
+      response: ep3Repair1,
+    }),
+    historicalRepairWitness({
+      kind: "pass_a_record_retry",
+      episodeOrdinal: 3,
+      recordedAt: historicalRecordedAt,
+      operationOrdinal: 1,
+      failedGate: ep3BeforeRetryInspection.currentGate,
+      rejectedCandidate: repairedCandidate,
+      response: ep3Retry1,
+    }),
+  ]);
+
+  const acceptedEpisodeEvidence = Object.freeze([
+    Object.freeze({
+      ordinal: 1,
+      episode: structuredClone(episode1),
+      historicalCalls: Object.freeze([ep1Call]),
+      repairWitnesses: Object.freeze([]),
+    }),
+    Object.freeze({
+      ordinal: 2,
+      episode: structuredClone(episode2),
+      historicalCalls: Object.freeze(ep2Calls.map((item) => Object.freeze(structuredClone(item)))),
+      repairWitnesses: Object.freeze([historicalRepairWitnesses[0]]),
+    }),
+  ]);
+
+  const successfulHistoricalCalls = Object.freeze([
+    ...acceptedEpisodeEvidence.flatMap((item) => item.historicalCalls),
+    ...state.historicalCalls,
+  ].map((item) => Object.freeze(structuredClone(item))));
+  if (successfulHistoricalCalls.length !== 6) fail("slot 4 historical successful-call accounting drift");
+
   return Object.freeze({
     slot,
     threadId: g2.worldBindings.find((item) => item.slot === slot).threadId,
     genesisId: g2.worldBindings.find((item) => item.slot === slot).genesisId,
     acceptedEpisodes: Object.freeze([structuredClone(episode1), structuredClone(episode2)]),
+    acceptedEpisodeEvidence,
+    successfulHistoricalCalls,
+    historicalRepairWitnesses,
     episode3: Object.freeze({
       input: structuredClone(input3),
       state,
