@@ -1,6 +1,7 @@
 {
   "reviewVersion": "pr39-h-v2-recovery-execution-review-v1",
   "status": "CLEAR_FOR_EXECUTION_AUTHORIZATION",
+  "finalReviewedImplementationHead": "12c06df49aea5902d387718a9ea115eb87ab764a",
   "reviewScope": "Recovery execution machinery only: exact historical continuation, restart durability, recovered evidence provenance, publication replay, and execution authorization. This is not a Gate-H scientific verdict and does not change H-v2 HOLD standing.",
   "reviewedBaseline": {
     "implementationHeadBeforeReviewFixes": "88ab48c9137957d3fbfed51422569fdb9055db5d",
