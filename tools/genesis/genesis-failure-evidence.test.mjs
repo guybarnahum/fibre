@@ -3,8 +3,8 @@ import test from "node:test";
 
 import { serializeGenesisFailureEvidence } from "./genesis-failure-evidence.mjs";
 
-test("Genesis failure evidence preserves repair and retry provenance without mutating the error", () => {
-  const error = new Error("rich Pass-A record generation exhausted after 3 generated versions");
+test("Genesis failure evidence preserves repair, retry and budget provenance without mutating the error", () => {
+  const error = new Error("rich Pass-A record generation exhausted after 5 generated versions");
   error.name = "GenesisPassAValidationError";
   error.gate = "record_repair_exhausted";
   error.cause = Object.assign(new Error("structure participation failed"), { gate: "pass_a_structure_participation" });
@@ -14,6 +14,9 @@ test("Genesis failure evidence preserves repair and retry provenance without mut
   error.recordRetries = [{ recordRetryOrdinal: 1, failedGate: "pass_a_structure_participation" }];
   error.recordRetryEvidence = [{ recordRetryOrdinal: 1, rejectedEpisode: { episodeId: "epi_rejected_2" } }];
   error.record = { episodeId: "epi_terminal" };
+  error.generationPolicyVersion = "pr39-g4-pass-a-reliability-amendment-v3";
+  error.budgetExhaustion = { allowed: false, reason: "total_generated_version_budget_exhausted" };
+  error.budgetState = { generatedVersions: 5, formRepairs: 2, recordRetries: 2 };
 
   const result = serializeGenesisFailureEvidence(error);
 
@@ -23,7 +26,12 @@ test("Genesis failure evidence preserves repair and retry provenance without mut
   assert.equal(result.repairEvidence[0].rejectedEpisode.episodeId, "epi_rejected_1");
   assert.equal(result.recordRetryEvidence[0].rejectedEpisode.episodeId, "epi_rejected_2");
   assert.equal(result.record.episodeId, "epi_terminal");
+  assert.equal(result.generationPolicyVersion, "pr39-g4-pass-a-reliability-amendment-v3");
+  assert.equal(result.budgetExhaustion.reason, "total_generated_version_budget_exhausted");
+  assert.deepEqual(result.budgetState, { generatedVersions: 5, formRepairs: 2, recordRetries: 2 });
 
   result.calls[0].kind = "changed-copy";
+  result.budgetState.generatedVersions = 99;
   assert.equal(error.calls[0].kind, "initial");
+  assert.equal(error.budgetState.generatedVersions, 5);
 });
