@@ -1,4 +1,5 @@
-import { NonRetryableError, WorkflowEntrypoint } from "cloudflare:workers";
+import { WorkflowEntrypoint } from "cloudflare:workers";
+import { NonRetryableError } from "cloudflare:workflows";
 import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
 import { FibrePresentationChannelDurableObject } from "../../../packages/infra/src/cloudflare/presentation-channel-do.mjs";
 import { createAssetGenerationService } from "../../asset-generator/src/asset-generation-service.mjs";
