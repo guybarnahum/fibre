@@ -1,0 +1,78 @@
+{
+  "reviewVersion": "pr39-h-v2-recovery-execution-review-v1",
+  "status": "HOLD",
+  "reviewScope": "Recovery execution machinery only: exact historical continuation, restart durability, recovered evidence provenance, publication replay, and execution authorization. This is not a Gate-H scientific verdict and does not change H-v2 HOLD standing.",
+  "reviewedBaseline": {
+    "implementationHeadBeforeReviewFixes": "88ab48c9137957d3fbfed51422569fdb9055db5d",
+    "orchestratorPath": "tools/genesis/genesis-h2-recovery-orchestrator.mjs",
+    "recoveryStatePath": "tools/genesis/genesis-h2-recovery-state.mjs",
+    "recoveryBindingPath": "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-binding-v1.json",
+    "sourceFailurePath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json"
+  },
+  "claimUnderReview": "A reviewed recovery run can continue the failed H-v2 developmental attempt without regenerating completed development, without replaying successful historical provider calls, and without allowing the resulting world to replace the frozen H-v2 HOLD or enter G5/G6 evidence.",
+  "notClaimed": [
+    "The recovery world is a replacement #39 cohort.",
+    "The recovery world may enter frozen G5/G6 diagnostics.",
+    "The H-v2 HOLD is superseded.",
+    "Whole-Person causal standing advances.",
+    "Provider execution is authorized by this review artifact."
+  ],
+  "propertiesThatHold": [
+    "The frozen recovery binding remains a zero-provider-call boundary.",
+    "The exact first unfinished developmental operation is slot 4 episode 3 record retry #2.",
+    "Completed slot 1-3 generation artifacts are blob-bound and are not regenerated.",
+    "Slot 5 is demonstrated to have zero historical model attempts.",
+    "New successful model invocations are durably journaled and replayed by exact request witness on restart.",
+    "Publication uses the existing Genesis/#37/#38 authority and verifies Thread integrity after publication.",
+    "A separate execution-authorization witness is required; the historical recovery binding is not mutated to authorize calls."
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "status": "FIX_IN_PROGRESS",
+      "class": "Notarial",
+      "finding": "The reconstructed slot-4 generation artifact under-represented historical cognition provenance: preserved episodes 1-2 had empty call lists and episode 3 exposed only continuation calls although six successful source responses existed.",
+      "requiredResolution": "Carry all six frozen successful historical responses and the historical repair/retry witnesses explicitly into recovery state and the reconstructed generation evidence without treating them as new recovery calls.",
+      "currentResolution": "Recovery-state reconstruction now mechanically verifies the historical transitions and exposes acceptedEpisodeEvidence, successfulHistoricalCalls, and historicalRepairWitnesses. The orchestrator still needs to consume these fields in the recovered generation artifact."
+    },
+    {
+      "id": "R2",
+      "status": "OPEN",
+      "class": "Notarial",
+      "finding": "Recovered-world publication does not currently persist Genesis generation-attempt witnesses for Pass-A repairs/retries or Pass-B repair calls, although the original H runner did.",
+      "requiredResolution": "Persist generation-attempt witnesses idempotently for preserved and newly generated Threads before birth publication, including the recovered historical repair trail."
+    },
+    {
+      "id": "R3",
+      "status": "OPEN",
+      "class": "Notarial",
+      "finding": "Underlying historical-continuation and durable-invocation mechanisms are tested, but the full recovery orchestrator composition has not yet been exercised with a deterministic fake provider through restart/publication behavior.",
+      "requiredResolution": "Add a no-real-provider execution test or equivalent mechanically load-bearing composition test proving exact first-call behavior, durable replay after restart, slot ordering, and publication idempotence without creating a production authorization bypass."
+    },
+    {
+      "id": "R4",
+      "status": "OPEN",
+      "class": "Notarial",
+      "finding": "The future authorization witness must bind the final reviewed orchestrator blob after R1-R3 are closed; binding an earlier implementation would defeat the review boundary.",
+      "requiredResolution": "Create no execution authorization until all review fixes are committed and locally green, then bind the exact final orchestrator blob, recovery-binding digest, first provider operation, and non-evidentiary standing."
+    },
+    {
+      "id": "R5",
+      "status": "OPEN_MINOR",
+      "class": "Decorative",
+      "finding": "Orchestrator preflight output currently prints authorization as absent and says no provider call was authorized even after a future valid authorization witness exists.",
+      "requiredResolution": "Make preflight wording reflect authorization presence while continuing to state that preflight itself makes zero provider calls."
+    }
+  ],
+  "authorization": {
+    "providerExecutionAuthorized": false,
+    "authorizationWitnessMayBeCreated": false,
+    "clearCondition": "R1-R5 resolved, local active suite and validation green, zero-call preflight green, and final reviewed implementation blob frozen."
+  },
+  "scientificStanding": {
+    "isReplacementCohort": false,
+    "mayEnterFrozenG5G6": false,
+    "mayAdvanceWholePersonStanding": false,
+    "mayReplaceH2Hold": false
+  }
+}
