@@ -78,6 +78,7 @@ import { buildH2Slot4Episode3RecoveryState } from "./genesis-h2-recovery-state.m
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const RECOVERY_BINDING_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-binding-v1.json";
 const H2_EXECUTION_BINDING_PATH = "artifacts/validation/m2-pr39/h/protocol/h-execution-binding-v2.json";
+export const H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-authorization-v1.json";
 const G3_V1_PATH = "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v1.json";
 const ATTEMPT_START_FILENAME = "h-recovery-attempt-start-v1.json";
 const RESULT_FILENAME = "h-recovery-result-v1.json";
@@ -124,6 +125,21 @@ function readRecoveryBinding() {
   return binding;
 }
 
+function readExecutionAuthorization({ required = false } = {}) {
+  if (!existsSync(absolute(H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH))) {
+    if (required) {
+      fail(`H-v2 recovery provider execution remains blocked: reviewed authorization witness is absent (${H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH})`);
+    }
+    return null;
+  }
+  const authorization = readJson(H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH);
+  if (authorization.authorizationVersion !== "pr39-h-v2-recovery-execution-authorization-v1" ||
+      authorization.status !== "AUTHORIZED_FOR_RECOVERY_EXECUTION") {
+    fail("H-v2 recovery execution authorization version/status drift");
+  }
+  return authorization;
+}
+
 function readFrozenProtocols() {
   const executionBinding = readJson(H2_EXECUTION_BINDING_PATH);
   const g2 = readJson(executionBinding.authorityBoundary.g2ProtocolPath);
@@ -138,6 +154,7 @@ export function verifyH2RecoveryOrchestratorPreflight() {
   const binding = readRecoveryBinding();
   const plan = buildH2RecoveryExecutionPlan();
   const { executionBinding, g2, g3v2, g4v1 } = readFrozenProtocols();
+  const executionAuthorization = readExecutionAuthorization();
 
   if (binding.authorization?.providerCallsAuthorizedByThisFreeze !== false) {
     fail("recovery implementation review boundary unexpectedly authorizes provider calls");
@@ -159,11 +176,14 @@ export function verifyH2RecoveryOrchestratorPreflight() {
   }
 
   return Object.freeze({
-    status: "CLEAR_RECOVERY_ORCHESTRATOR_IMPLEMENTED_NOT_AUTHORIZED",
+    status: executionAuthorization === null
+      ? "CLEAR_RECOVERY_ORCHESTRATOR_IMPLEMENTED_NOT_AUTHORIZED"
+      : "CLEAR_RECOVERY_ORCHESTRATOR_REVIEW_AUTHORIZED",
     orchestratorVersion: H2_RECOVERY_ORCHESTRATOR_VERSION,
     recoveryVersion: binding.recoveryVersion,
     executionAttemptVersion: executionBinding.executionAttemptVersion,
-    providerCallsAuthorized: false,
+    providerCallsAuthorized: executionAuthorization !== null,
+    executionAuthorizationPath: H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH,
     firstProviderOperation: structuredClone(plan.firstProviderOperation),
     outputRoot: binding.output.root,
     stageCount: plan.stages.length,
@@ -1128,10 +1148,19 @@ function writeFailure(root, error) {
 
 export async function runAuthorizedH2Recovery() {
   const binding = readRecoveryBinding();
-  if (binding.authorization?.providerCallsAuthorizedByThisFreeze !== true) {
-    throw new Error(
-      "H-v2 recovery provider execution remains blocked: recovery binding has not authorized the reviewed continuation implementation",
-    );
+  if (binding.authorization?.providerCallsAuthorizedByThisFreeze !== false) {
+    fail("frozen H-v2 recovery boundary must remain zero-call; execution authorization is separate");
+  }
+  const authorization = readExecutionAuthorization({ required: true });
+  const orchestratorBlobSha = currentBlob("tools/genesis/genesis-h2-recovery-orchestrator.mjs");
+  if (authorization.recoveryBindingDigest !== digest(binding) ||
+      authorization.orchestratorVersion !== H2_RECOVERY_ORCHESTRATOR_VERSION ||
+      authorization.orchestratorBlobSha !== orchestratorBlobSha ||
+      authorization.firstProviderOperation !== "pr39-h:slot-04:pass-a:episode-03:record-retry:2" ||
+      authorization.scientificStanding !== "recovery_resilience_only" ||
+      authorization.mayReplaceH2Hold !== false ||
+      authorization.mayEnterFrozenG5G6 !== false) {
+    fail("H-v2 recovery execution authorization does not exactly bind the reviewed recovery boundary");
   }
 
   const { start, restarted } = loadOrCreateAttemptStart(binding);
@@ -1232,6 +1261,7 @@ function printPreflight(result) {
   process.stdout.write(`First provider operation: ${result.firstProviderOperation.clientRequestId}\n`);
   process.stdout.write(`Stages: ${result.stageCount}\n`);
   process.stdout.write(`Output root: ${result.outputRoot} [absent]\n`);
+  process.stdout.write(`Execution authorization: ${result.executionAuthorizationPath} [absent]\n`);
   process.stdout.write("Scientific standing: recovery/resilience only.\n");
   process.stdout.write("\nNo provider call was made or authorized.\n");
 }
