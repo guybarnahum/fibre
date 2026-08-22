@@ -10,6 +10,8 @@ import {
   GENESIS_RICH_PASS_A_PROMPT,
   richPassAGenerationDecision,
   richPassAPromptForPolicy,
+  richPassAPromptHash,
+  richPassARecordRetryPromptHash,
 } from "../src/genesis-rich-pass-a-runner.mjs";
 
 function decision({ generatedVersions, formRepairs, recordRetries, nextKind }) {
@@ -73,6 +75,8 @@ test("G4-v3 form target is prompt guidance only and legacy prompt remains byte-s
   const v3Retry = richPassAPromptForPolicy({ generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3, retry: true });
 
   assert.equal(legacy, GENESIS_RICH_PASS_A_PROMPT);
+  assert.equal(richPassAPromptHash(), "sha256:96d79b51f390c67a2706e73985531fceca3c3418115912001ce2dce38332263e");
+  assert.equal(richPassARecordRetryPromptHash(), "sha256:8709f11bfe97affd857ebc525d796cd3d5e578bffcd20d7e98bfd21ad924b8f8");
   assert.match(v3, /target observableAction at no more than 800 UTF-8 bytes and no more than 100 words/);
   assert.match(v3, /unchanged authoritative admission ceiling remains 1200 UTF-8 bytes/);
   assert.match(v3Retry, /target observableAction at no more than 800 UTF-8 bytes and no more than 100 words/);
