@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fibre-public-progress-v1",
+  "title": "Fibre public progress",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "canonical",
+    "asOf",
+    "title",
+    "headline",
+    "summary",
+    "statusDefinitions",
+    "population",
+    "capabilities",
+    "currentWork",
+    "truthRules"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "fibre-public-progress-v1" },
+    "canonical": { "const": true },
+    "asOf": { "type": "string", "format": "date" },
+    "title": { "type": "string", "minLength": 1 },
+    "headline": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "statusDefinitions": {
+      "type": "array",
+      "minItems": 5,
+      "items": { "$ref": "#/$defs/statusDefinition" }
+    },
+    "population": { "$ref": "#/$defs/population" },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/capability" }
+    },
+    "currentWork": { "$ref": "#/$defs/currentWork" },
+    "truthRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "status": {
+      "enum": ["achieved", "demonstrated", "in_progress", "not_yet", "preserved_failure"]
+    },
+    "statusDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "meaning"],
+      "properties": {
+        "id": { "$ref": "#/$defs/status" },
+        "label": { "type": "string", "minLength": 1 },
+        "meaning": { "type": "string", "minLength": 1 }
+      }
+    },
+    "populationItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "count", "status", "explanation"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "label": { "type": "string", "minLength": 1 },
+        "count": { "type": "integer", "minimum": 0 },
+        "status": { "$ref": "#/$defs/status" },
+        "explanation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "summary", "items", "importantNote"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/populationItem" }
+        },
+        "importantNote": { "type": "string", "minLength": 1 }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "group", "label", "status", "statement", "limitation", "evidence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "group": { "enum": ["foundations", "genesis", "development", "society"] },
+        "label": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/status" },
+        "statement": { "type": "string", "minLength": 1 },
+        "limitation": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "currentWork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["milestone", "plainEnglish", "currentStep", "nextSteps", "finalLifeCognitionAuthorized"],
+      "properties": {
+        "milestone": { "type": "string", "minLength": 1 },
+        "plainEnglish": { "type": "string", "minLength": 1 },
+        "currentStep": { "type": "string", "minLength": 1 },
+        "nextSteps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "finalLifeCognitionAuthorized": { "type": "boolean" }
+      }
+    }
+  }
+}
