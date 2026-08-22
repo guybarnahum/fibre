@@ -1,0 +1,91 @@
+{
+  "protocolVersion": "pr39-g4-v3-off-cohort-calibration-v1",
+  "status": "frozen_pre_execution",
+  "authority": {
+    "gateHReview": "docs/validation/m2-pr39-gate-h-review-result.md",
+    "g4v3AmendmentPath": "artifacts/validation/m2-pr39/g/protocol/g4-pass-a-reliability-amendment-v3.json",
+    "h2MechanicalForensicsPath": "artifacts/validation/m2-pr39/h/protocol/h2-mechanical-forensics-v1.json",
+    "cohortProviderCallsAuthorized": false,
+    "calibrationProviderCallsAuthorizedOnlyAfterImplementationVerification": true
+  },
+  "purpose": "Measure only whether the frozen G4-v3 mechanical Pass-A ladder is reliable enough to justify a one-shot 50-episode replacement cohort. This calibration is not life-quality, memory, meaning, genome-propagation or reinterpretation evaluation.",
+  "runtime": {
+    "provider": "openai",
+    "modelId": "gpt-5.1-2025-11-13",
+    "temperature": 0,
+    "topP": 1,
+    "reasoningEffort": "none",
+    "providerSubstitutionAllowed": false,
+    "modelSubstitutionAllowed": false
+  },
+  "sample": {
+    "trialCount": 225,
+    "seedDomain": "pr39-g4v3-off-cohort-calibration-v1",
+    "construction": {
+      "syntheticCalibrationWorldCount": 15,
+      "trialsPerCalibrationWorld": 15,
+      "worldsMustBeNonCohort": true,
+      "inputsMustBeDeterministicBeforeFirstProviderCall": true,
+      "providerGeneratedInputMaterialAllowed": false,
+      "useFrozenEventStructureInstrument": true,
+      "includeDeterministicRosterAndPriorHistoryVariants": true
+    }
+  },
+  "forbiddenInputMaterial": [
+    "any G1 World used by H-v1 or H-v2",
+    "any G2 genome used by H-v1 or H-v2",
+    "any replacement-cohort World or genome",
+    "any H-v2 accepted or rejected semantic episode text",
+    "any H-v2 rememberedContent or Pass-C meaning",
+    "any H-v2 Thread ID or Genesis ID",
+    "any replacement-cohort Thread ID or Genesis ID"
+  ],
+  "measurement": {
+    "recordMechanicalIntegrity": "Whether the complete Pass-A record is admitted within the frozen G4-v3 form-repair, record-retry and total generated-version budgets.",
+    "initialObservableActionCompliance": "Whether the initial generated observableAction is <=1200 UTF-8 bytes before any form repair.",
+    "formRepairCounts": true,
+    "recordRetryCounts": true,
+    "failedGateCensus": true,
+    "utf8ByteLengths": true,
+    "promptAndInputDigests": true,
+    "semanticQualityScoring": false,
+    "memoryOrMeaningGeneration": false,
+    "genomeExposure": false
+  },
+  "acceptance": {
+    "mechanicallyAdmittedRecordsRequired": 225,
+    "terminalMechanicalExhaustionsAllowed": 0,
+    "initialDraftsWithinAuthoritative1200ByteLimitRequired": 203,
+    "initialDraftComplianceFractionMinimum": 0.9,
+    "laplaceEpisodeSurvivalEstimator": "(mechanicallyAdmittedRecords + 1) / (trialCount + 2)",
+    "estimatedFiftyEpisodeCompletion": "laplaceEpisodeSurvivalEstimate ^ 50",
+    "estimatedFiftyEpisodeCompletionMinimum": 0.8,
+    "zeroExhaustionLaplaceEpisodeSurvival": 0.9955947136563876,
+    "zeroExhaustionEstimatedFiftyEpisodeCompletion": 0.8019164044061948,
+    "allMustHold": true
+  },
+  "operationalFailureHandling": {
+    "existingAdapterOperationalRetriesRemainInForce": true,
+    "providerOrNetworkFailureIsMechanicalCalibrationSuccess": false,
+    "providerOrNetworkFailureMayReplaceTrialWithDifferentInput": false,
+    "resumeRule": "A transport/billing/interruption failure may resume only the exact predetermined unfinished trial under the same frozen runtime and input digest. Completed trial outputs may not be discarded or replaced.",
+    "providerOrModelSubstitutionAllowed": false
+  },
+  "artifactBoundary": {
+    "root": "artifacts/validation/m2-pr39/g/calibration/g4-v3-off-cohort-v1",
+    "mustBeAbsentBeforeFirstCalibrationCall": true,
+    "preserveFailure": true,
+    "qualityRegenerationAllowed": false
+  },
+  "failureConsequence": {
+    "onAcceptanceFailure": "HOLD_G4_V3_PRE_LIFE_CALIBRATION",
+    "replacementCohortCognitionAuthorized": false,
+    "thresholdMayBeLoweredAfterResults": false,
+    "nextChangeRequiresExplicitPreLifeVersionedAmendment": true
+  },
+  "successConsequence": {
+    "replacementCohortCognitionAuthorized": false,
+    "nextStep": "FREEZE_FRESH_MATERIAL_AND_COMPLETE_GATE_G_2_PACKET"
+  },
+  "gateG2Requirement": "Calibration success is necessary but never sufficient. Only a later blocking Gate-G(2) CLEAR may authorize replacement-cohort cognition."
+}
