@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 1,
+  "trialId": "cal_g4v3_001",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:43b69401bc05c2b2e7bcf3123184ba278fb1dc3e94eb3d0b19a1b51d8b4320a0",
+  "cognitionInputDigest": "sha256:e0cf44934e8da5b8680511189387ce1864e9f14e22c9db0e818e0bb20d6b26a6",
+  "startedAt": "2026-08-22T06:06:42.148Z",
+  "completedAt": "2026-08-22T06:06:46.635Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 535,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:e0cf44934e8da5b8680511189387ce1864e9f14e22c9db0e818e0bb20d6b26a6",
+      "outputDigest": "sha256:da772c47461dd0d5982e497894dfbf71bf49065a90fdc2e6cdc8ba6979084f71",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_1841a864be0744d6a1984003fe1f8b43",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2157,
+          "outputTokens": 238,
+          "totalTokens": 2395
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:3ca075ee8e5fd74aaf755501b20520c778a0a801bac5642a48434ba9b925b3a9",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_001:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_001:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_1841a864be0744d6a1984003fe1f8b43",
+      "inputDigest": "sha256:e0cf44934e8da5b8680511189387ce1864e9f14e22c9db0e818e0bb20d6b26a6",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w01_v01_001",
+          "occurredAt": "2011-03-15T15:30:00.000Z",
+          "ageAtEvent": 6.6,
+          "placeRef": "place_cal_g4v3_01_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v01",
+            "person_cal_g4v3_w01_v01_caregiver"
+          ],
+          "observableAction": "In the late afternoon at the kitchen table, the young person sits with a simple worksheet, erasing and rewriting a few numbers while a pencil rolls toward the table’s edge. The caregiver passes behind them carrying folded laundry, pauses, and without asking, picks up the worksheet, quickly fills in the remaining empty spaces, and places it back in front of the child. The young person watches the caregiver’s hand move across the page, then looks down at the now-completed sheet while the caregiver walks away toward the hallway.",
+          "structureRef": "ges_v2_adult_finishes_task_unasked",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2157,
+        "outputTokens": 238,
+        "totalTokens": 2395
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2157,
+    "outputTokens": 238,
+    "totalTokens": 2395
+  },
+  "resultDigest": "sha256:094299c6fd97d0ced094b5fa1d3eabc571970726ef371860389e6fe953afe55f"
+}

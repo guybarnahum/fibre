@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 177,
+  "trialId": "cal_g4v3_177",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:9b8445593e42bec40d903d17575c2eb43a22266241edc3870ccc17ae9df524be",
+  "cognitionInputDigest": "sha256:4339bec0ef3c29d420458a0659bb275fc6bb97acf02ef4becf5b648a91be20bc",
+  "startedAt": "2026-08-22T06:15:28.515Z",
+  "completedAt": "2026-08-22T06:15:30.857Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 394,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:4339bec0ef3c29d420458a0659bb275fc6bb97acf02ef4becf5b648a91be20bc",
+      "outputDigest": "sha256:6214a7b80004c1548281ba152dadbf22894da9f45f23099a7721747178368402",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_c8e9267aa0484023bb8335c649db06d6",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2492,
+          "outputTokens": 211,
+          "totalTokens": 2703
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:dfe0aa0bd0fdc04f2d49a145f430e0119a7bc45cf169567904c86179a1291220",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_177:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_177:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_c8e9267aa0484023bb8335c649db06d6",
+      "inputDigest": "sha256:4339bec0ef3c29d420458a0659bb275fc6bb97acf02ef4becf5b648a91be20bc",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w12_v12_03",
+          "occurredAt": "2012-03-10T07:12:00.000Z",
+          "ageAtEvent": 7.554,
+          "placeRef": "place_cal_g4v3_12_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w12_v12",
+            "person_cal_g4v3_w12_v12_sibling"
+          ],
+          "observableAction": "On the living room floor, the young person and their sibling both reached for the same colored marker from a small shared box. The sibling pulled the marker toward their own paper, while the young person held onto it and said they needed it to finish a drawing. After a brief tug, they set the marker between them and agreed that the sibling would use it first for one shape, then pass it back.",
+          "structureRef": "ges_v2_shared_object_disagreement",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2492,
+        "outputTokens": 211,
+        "totalTokens": 2703
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2492,
+    "outputTokens": 211,
+    "totalTokens": 2703
+  },
+  "resultDigest": "sha256:e1ddb10ad1912e58f7967ee2bfc61a0dd8c285e95e3124c046b7faee4ec71e60"
+}

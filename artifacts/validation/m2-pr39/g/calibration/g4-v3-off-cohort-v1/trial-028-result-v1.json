@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 28,
+  "trialId": "cal_g4v3_028",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:9c32fb245a03b8a0316bd694c5045d7cfd78336d5d78a9904ddfb44ec1850968",
+  "cognitionInputDigest": "sha256:e7a738bbb2b4c616cea4ccd8767b5bc3d723c92dc74dbd8fd9a4768075860dcf",
+  "startedAt": "2026-08-22T06:08:23.807Z",
+  "completedAt": "2026-08-22T06:08:26.054Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 280,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:e7a738bbb2b4c616cea4ccd8767b5bc3d723c92dc74dbd8fd9a4768075860dcf",
+      "outputDigest": "sha256:3f2204c1ae8523adb220b7695ddb7cab43f73944a1591f356b80bc02736957a7",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_e91d49afcae24dd59ba92a6d8d3f3797",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2535,
+          "outputTokens": 219,
+          "totalTokens": 2754
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:db70607297cd0354f397e120f4f2740fe9aff4a69dd406092303c7422f9637e9",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_028:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_028:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_e91d49afcae24dd59ba92a6d8d3f3797",
+      "inputDigest": "sha256:e7a738bbb2b4c616cea4ccd8767b5bc3d723c92dc74dbd8fd9a4768075860dcf",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w02_v13_03",
+          "occurredAt": "2013-06-10T14:24:00.000Z",
+          "ageAtEvent": 8.8,
+          "placeRef": "place_cal_g4v3_02_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w02_v13",
+            "person_cal_g4v3_w02_v13_teacher"
+          ],
+          "observableAction": "In a classroom, the teacher poured water from a measuring cup into three different-shaped clear containers on the front table. After watching, the young person raised a hand and asked whether the amount of water had changed when the water looked higher in the tall thin container.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "conservation of liquid volume despite container shape",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2535,
+        "outputTokens": 219,
+        "totalTokens": 2754
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2535,
+    "outputTokens": 219,
+    "totalTokens": 2754
+  },
+  "resultDigest": "sha256:05c488bb87501e81617d7786fe39ccda8ea8efe381ec9663b312255627676b3c"
+}

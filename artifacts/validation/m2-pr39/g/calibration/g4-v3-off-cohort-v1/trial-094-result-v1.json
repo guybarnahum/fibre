@@ -1,0 +1,122 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 94,
+  "trialId": "cal_g4v3_094",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:71c9c0c7df7e574ce4c7569a3eea89ab1b663e9dbc563833ffbd82f3bbd44cab",
+  "cognitionInputDigest": "sha256:6aef5cec9323faac6c9aa4fb2b7c964cd6aed5715a8a808a6f13e3dc2b53a4d0",
+  "startedAt": "2026-08-22T06:11:30.497Z",
+  "completedAt": "2026-08-22T06:11:33.856Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 485,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:6aef5cec9323faac6c9aa4fb2b7c964cd6aed5715a8a808a6f13e3dc2b53a4d0",
+      "outputDigest": "sha256:11cf44126ea8fffe3537666ac925ac4e2ff6bf9af37e4d391c38f5f07e0f3d0c",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_bedbd93bb3764e7583140567cded586e",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2288,
+          "outputTokens": 325,
+          "totalTokens": 2613
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:0af44ed27c256a7ee6222d08b8d230d2a77b213d788eefddcb7401ca67340b0c",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_094:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_094:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_bedbd93bb3764e7583140567cded586e",
+      "inputDigest": "sha256:6aef5cec9323faac6c9aa4fb2b7c964cd6aed5715a8a808a6f13e3dc2b53a4d0",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w07_v04_001",
+          "occurredAt": "2014-09-15T15:30:00.000Z",
+          "ageAtEvent": 10.1,
+          "placeRef": "place_cal_g4v3_07_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w07_v04",
+            "person_cal_g4v3_w07_v04_caregiver",
+            "person_cal_g4v3_w07_v04_librarian"
+          ],
+          "observableAction": "In the small public reading room after school, the young person walks along a low shelf while their caregiver waits by a table. A librarian finishes checking in a stack of books, gestures toward a display of children’s non-fiction, and steps back. The young person scans the covers, picks up a thin book about planets, flips through a few pages with pictures of the solar system, then carries it to the desk and sets it down for checkout while the caregiver takes out a library card.",
+          "structureRef": "ges_v2_library_browse_with_adult",
+          "introducedParticipants": [
+            {
+              "provisionalPersonId": "person_cal_g4v3_w07_v04_librarian",
+              "roleRef": "librarian",
+              "introducedAt": "2014-09-15T15:30:00.000Z"
+            }
+          ],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "children’s introductory book about the solar system",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2288,
+        "outputTokens": 325,
+        "totalTokens": 2613
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2288,
+    "outputTokens": 325,
+    "totalTokens": 2613
+  },
+  "resultDigest": "sha256:fdc2ee2202aa93e9bbd9d525e11a8344ea887eb4311fcb2d9e6c21398786f577"
+}

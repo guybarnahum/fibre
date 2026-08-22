@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 165,
+  "trialId": "cal_g4v3_165",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:27b39131854869d5f863b87e143285263db5c8c15325f6340e7c14d1d413e300",
+  "cognitionInputDigest": "sha256:d5e2a3730e1571686793fb966fd5269eaa621f4bbeb75cd589e66e8e269513f3",
+  "startedAt": "2026-08-22T06:14:47.702Z",
+  "completedAt": "2026-08-22T06:14:50.287Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 226,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:d5e2a3730e1571686793fb966fd5269eaa621f4bbeb75cd589e66e8e269513f3",
+      "outputDigest": "sha256:7378b82b4ba1e691b23cb1326afa7724d4ef68541e6e2d96c8f5d61b281e3f5b",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_4a2a1ea99e4d4e53975a12223465f942",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2610,
+          "outputTokens": 210,
+          "totalTokens": 2820
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:9663f6957fd4bd3d859a8448eaa534c5fb91fa307b4978a0f66793c50949d2b4",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_165:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_165:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_4a2a1ea99e4d4e53975a12223465f942",
+      "inputDigest": "sha256:d5e2a3730e1571686793fb966fd5269eaa621f4bbeb75cd589e66e8e269513f3",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w11_v15_01",
+          "occurredAt": "2016-03-15T09:30:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_11_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w11_v15",
+            "person_cal_g4v3_w11_v15_librarian"
+          ],
+          "observableAction": "At a library shelf, the young person scanned several different books, pulled out two, compared their tables of contents at a nearby table, then returned one and carried the other to the desk where the librarian checked it out.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "nonfiction book about planets and the solar system",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2610,
+        "outputTokens": 210,
+        "totalTokens": 2820
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2610,
+    "outputTokens": 210,
+    "totalTokens": 2820
+  },
+  "resultDigest": "sha256:5bb6129b28cd3c75abd6ca4ab7a29ec600b6013181f406c247a3bc4a64f0378c"
+}

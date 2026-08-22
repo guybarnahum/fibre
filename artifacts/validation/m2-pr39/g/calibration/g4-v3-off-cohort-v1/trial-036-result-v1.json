@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 36,
+  "trialId": "cal_g4v3_036",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:fc7fe04ace8400bfedf0b8bc4bc1af60f3ed1a2ec6bb93a254b2cecf9462bf34",
+  "cognitionInputDigest": "sha256:51fdafa22f208832467be8506840fd017912d2ff5df6d2de4dadda8ac80a8634",
+  "startedAt": "2026-08-22T06:08:46.488Z",
+  "completedAt": "2026-08-22T06:08:49.032Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 396,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:51fdafa22f208832467be8506840fd017912d2ff5df6d2de4dadda8ac80a8634",
+      "outputDigest": "sha256:414cd7d9bc3a2bbde6e42948b9d3cb962b0b7160c8ca86c618327e0db0284fb3",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_af53fdc0c1be4c818a1dc6b4e1d65f3c",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2447,
+          "outputTokens": 249,
+          "totalTokens": 2696
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:f578bae6e994d07cdfd0f1ab781c7dd0c99e953668fc202ed9704f261a9501bf",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_036:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_036:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_af53fdc0c1be4c818a1dc6b4e1d65f3c",
+      "inputDigest": "sha256:51fdafa22f208832467be8506840fd017912d2ff5df6d2de4dadda8ac80a8634",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w03_v06_01",
+          "occurredAt": "2017-03-15T10:30:00.000Z",
+          "ageAtEvent": 12.57,
+          "placeRef": "place_cal_g4v3_03_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w03_v06",
+            "person_cal_g4v3_w03_v06_teacher"
+          ],
+          "observableAction": "In a science classroom, the teacher writes “darker colors absorb more heat” on the board and places two identical thermometers on the windowsill, one wrapped in black paper and one in white. The young person volunteers to read the starting temperatures aloud, notes them on a worksheet, and later walks back to the windowsill to read and record the changed temperatures for both thermometers.",
+          "structureRef": "ges_v2_scientific_claim_test",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "darker-colored surfaces absorb more heat from sunlight than lighter-colored surfaces",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2447,
+        "outputTokens": 249,
+        "totalTokens": 2696
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2447,
+    "outputTokens": 249,
+    "totalTokens": 2696
+  },
+  "resultDigest": "sha256:34e08579def4c2abfb9c74a148c05e3b0052d50756a14b28aae01960bf1c26de"
+}

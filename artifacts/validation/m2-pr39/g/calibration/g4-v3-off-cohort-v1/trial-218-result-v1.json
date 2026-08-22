@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 218,
+  "trialId": "cal_g4v3_218",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:6bf2b25ff0eaa46269a6f9394e701806df8b1f47b9d0e4101ab5a351117a6bd7",
+  "cognitionInputDigest": "sha256:95faf7c0d245adfcc41b86d9ee229a0b6ad369034c972fce0a1366bc47ebeced",
+  "startedAt": "2026-08-22T06:17:37.001Z",
+  "completedAt": "2026-08-22T06:17:39.941Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 397,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:95faf7c0d245adfcc41b86d9ee229a0b6ad369034c972fce0a1366bc47ebeced",
+      "outputDigest": "sha256:c20bb84621691104a6b08295a20caccc1c0d96b458e78670951e825bf2955183",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_e139f0dc19484d2889d150a4f067a8ec",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2550,
+          "outputTokens": 242,
+          "totalTokens": 2792
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:459d52b4d702e99e3f2e0a8d383040b390008b372ed330c1cb4644612aa06d1d",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_218:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_218:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_e139f0dc19484d2889d150a4f067a8ec",
+      "inputDigest": "sha256:95faf7c0d245adfcc41b86d9ee229a0b6ad369034c972fce0a1366bc47ebeced",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w15_v08_02",
+          "occurredAt": "2019-06-10T10:00:00.000Z",
+          "ageAtEvent": 14.8,
+          "placeRef": "place_cal_g4v3_15_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w15_v08",
+            "person_cal_g4v3_w15_v08_librarian"
+          ],
+          "observableAction": "In the public reading room, the young person stands before a shelf labeled “Science” and scans several book spines while the librarian works at the staffed desk nearby. After pulling out two different titles and briefly flipping through their tables of contents, the young person returns one to the shelf and carries the other book to a table, setting it down and opening to the first chapter.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "introductory popular-science book chosen from shelf",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2550,
+        "outputTokens": 242,
+        "totalTokens": 2792
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2550,
+    "outputTokens": 242,
+    "totalTokens": 2792
+  },
+  "resultDigest": "sha256:f2b8ed6fe16e62ac3dbc1c0ddd18b5693386e0540482f8aea24cab9d102c2126"
+}

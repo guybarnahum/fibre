@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 31,
+  "trialId": "cal_g4v3_031",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:97a41bb6343075b06039f0d46a81bd44af42d6b6a84789ef2112d4179ee31acb",
+  "cognitionInputDigest": "sha256:b20b80c7fe8d3c627f0fea10f17a4335067a904f4e5eec662216f06ffa55a7b4",
+  "startedAt": "2026-08-22T06:08:30.795Z",
+  "completedAt": "2026-08-22T06:08:33.630Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 430,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:b20b80c7fe8d3c627f0fea10f17a4335067a904f4e5eec662216f06ffa55a7b4",
+      "outputDigest": "sha256:2f7dfa4da44f8e2a268ff2bbddc7211d1ecf9359ee805162619c5b42d172d9e4",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_8464ccb8052c40e99ca7db5a6a613109",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2154,
+          "outputTokens": 215,
+          "totalTokens": 2369
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:927af79b43777b95a30b4e93a27e70151a85ddcef79363a3d0658fb98c07224b",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_031:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_031:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_8464ccb8052c40e99ca7db5a6a613109",
+      "inputDigest": "sha256:b20b80c7fe8d3c627f0fea10f17a4335067a904f4e5eec662216f06ffa55a7b4",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w03_v01_e01",
+          "occurredAt": "2011-03-15T10:00:00.000Z",
+          "ageAtEvent": 6.6,
+          "placeRef": "place_cal_g4v3_03_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w03_v01",
+            "person_cal_g4v3_w03_v01_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the young person spreads a math worksheet and begins writing answers in pencil. After watching from the counter, the caregiver walks over, pulls the worksheet closer, and quickly fills in the remaining problems without asking. The young person sits back with the pencil resting in their hand while the caregiver writes, then slides the finished sheet to the edge of the table and says it is ready for school.",
+          "structureRef": "ges_v2_adult_finishes_task_unasked",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2154,
+        "outputTokens": 215,
+        "totalTokens": 2369
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2154,
+    "outputTokens": 215,
+    "totalTokens": 2369
+  },
+  "resultDigest": "sha256:a1f5a3f78478b65b0828cd868932afd79593606867e9f0aafdf129c1cea1f80a"
+}

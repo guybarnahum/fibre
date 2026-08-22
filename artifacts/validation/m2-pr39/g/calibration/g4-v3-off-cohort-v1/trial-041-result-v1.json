@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 41,
+  "trialId": "cal_g4v3_041",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d5f226cf3b45ae712c764f9ed2db8d2d4f934107fc494b6235030787884467a4",
+  "cognitionInputDigest": "sha256:84a429ae5526b5f2cd6da897ff160b5ef7db3e5cfb7994f55658b986f673e46c",
+  "startedAt": "2026-08-22T06:09:00.050Z",
+  "completedAt": "2026-08-22T06:09:03.216Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 409,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:84a429ae5526b5f2cd6da897ff160b5ef7db3e5cfb7994f55658b986f673e46c",
+      "outputDigest": "sha256:6cf230e50f5a90dea97ceb5e2f9c557ac39de8b7713da59bacae4a0cc42ed73c",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_df0709238578419aa185c27164b036a9",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2447,
+          "outputTokens": 250,
+          "totalTokens": 2697
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:0db7168f1baab72184a39042c42c90189e159bbbc9fb4f989e8d267141ede824",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_041:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_041:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_df0709238578419aa185c27164b036a9",
+      "inputDigest": "sha256:84a429ae5526b5f2cd6da897ff160b5ef7db3e5cfb7994f55658b986f673e46c",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w03_v11_01",
+          "occurredAt": "2011-03-15T00:00:00.000Z",
+          "ageAtEvent": 6.57,
+          "placeRef": "place_cal_g4v3_03_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w03_v11",
+            "person_cal_g4v3_w03_v11_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the caregiver read aloud from a short storybook while the young person followed the pictures. When the caregiver read a line about a character walking to school at night, the young person raised a hand and asked, “Why is school open in the dark?” The caregiver stopped reading, looked at the page, and pointed to the window illustration before answering and then continued the story.",
+          "structureRef": "ges_v2_caregiver_reads_and_pauses",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "illustrated children’s storybook about walking to school",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2447,
+        "outputTokens": 250,
+        "totalTokens": 2697
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2447,
+    "outputTokens": 250,
+    "totalTokens": 2697
+  },
+  "resultDigest": "sha256:5f44d23f6ca8f0a709f8b1f69dad5a2526481000943368a2831f299d8d636b60"
+}

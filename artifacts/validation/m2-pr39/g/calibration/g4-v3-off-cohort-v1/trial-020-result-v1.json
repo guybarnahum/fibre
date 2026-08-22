@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 20,
+  "trialId": "cal_g4v3_020",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d1fba265bea8e37d5e5004d28f154291df22162f3b93f78a13792018a77e7699",
+  "cognitionInputDigest": "sha256:2878a7a5c5d3b3af593ab045a6fb775314b8a2c56f9b1798e40a2b708118f2eb",
+  "startedAt": "2026-08-22T06:07:56.380Z",
+  "completedAt": "2026-08-22T06:07:59.739Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 503,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:2878a7a5c5d3b3af593ab045a6fb775314b8a2c56f9b1798e40a2b708118f2eb",
+      "outputDigest": "sha256:e54dd40546dcfcaff1ee14a0aa6548a454899f5a8cc6e604f024d9c2c9fcfd25",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_ea65d009099e4744b9bf733453e49077",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2321,
+          "outputTokens": 264,
+          "totalTokens": 2585
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:937c2de2a0d968c4ec55165547ad5ed9caa44160432ae4085c3bd15578268eb6",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_020:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_020:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_ea65d009099e4744b9bf733453e49077",
+      "inputDigest": "sha256:2878a7a5c5d3b3af593ab045a6fb775314b8a2c56f9b1798e40a2b708118f2eb",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w02_v05_001",
+          "occurredAt": "2016-05-15T10:00:00.000Z",
+          "ageAtEvent": 11.7,
+          "placeRef": "place_cal_g4v3_02_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w02_v05",
+            "person_cal_g4v3_w02_v05_peer"
+          ],
+          "observableAction": "Late in the morning, the young person walks between the shelves at the public reading room, scanning the spines of several books on a middle shelf. They pull out two thin paperbacks, glance at the covers and tables of contents, then slide one back and carry the other to an empty table. A peer passes behind them, briefly looking at the chosen book’s cover before continuing toward another aisle. The young person sits down, opens the book near the beginning, and starts reading silently at the table.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "children’s nonfiction book about basic astronomy",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2321,
+        "outputTokens": 264,
+        "totalTokens": 2585
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2321,
+    "outputTokens": 264,
+    "totalTokens": 2585
+  },
+  "resultDigest": "sha256:259efd488b781ce9dc83e957f2f2f545c335e283112a9aa3bdc65cbbd4148828"
+}

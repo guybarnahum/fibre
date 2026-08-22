@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 110,
+  "trialId": "cal_g4v3_110",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d7915e20b32f277b5907714e831eed1f69b9924c64ac3e2fcdea0b8b16da5b5f",
+  "cognitionInputDigest": "sha256:d44d76552717a50a168ccbd35effd4692ee0eb1468660096bca89e97a25967b6",
+  "startedAt": "2026-08-22T06:12:14.210Z",
+  "completedAt": "2026-08-22T06:12:17.014Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 565,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:d44d76552717a50a168ccbd35effd4692ee0eb1468660096bca89e97a25967b6",
+      "outputDigest": "sha256:968cdafd62b2accc87ec8d67664243be00cbefb9eb8e9da52695ceadc134584c",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_1673512558a140ccac6856308ab96269",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2322,
+          "outputTokens": 237,
+          "totalTokens": 2559
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:58e102c6155df8a0da57bec94e7e2998e8d27b366810e67f409be36d9e33b4b9",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_110:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_110:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_1673512558a140ccac6856308ab96269",
+      "inputDigest": "sha256:d44d76552717a50a168ccbd35effd4692ee0eb1468660096bca89e97a25967b6",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w08_v05_001",
+          "occurredAt": "2016-05-10T15:30:00.000Z",
+          "ageAtEvent": 11.7,
+          "placeRef": "place_cal_g4v3_08_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w08_v05",
+            "person_cal_g4v3_w08_v05_peer"
+          ],
+          "observableAction": "After class, the young person and a peer stand near the classroom door arguing about a group project. The peer says they should copy an example from the textbook because “it’s faster and the teacher won’t care.” The young person replies that the teacher said to make their own version so they can “show their own thinking.” The peer answers that everyone else is reusing the example and that getting a good grade matters more than how original it is. The young person insists they should at least change the design and points to their notebook sketches.",
+          "structureRef": "ges_v2_argument_encounter",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2322,
+        "outputTokens": 237,
+        "totalTokens": 2559
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2322,
+    "outputTokens": 237,
+    "totalTokens": 2559
+  },
+  "resultDigest": "sha256:c143634a89e098056efc95a03dc01419fbb785619822e6e298f6b584c0416108"
+}

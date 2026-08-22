@@ -1,0 +1,110 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 100,
+  "trialId": "cal_g4v3_100",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:cea605583acb3ede557ef97053ed553aadf21d6bb257316aa6dbf3b18a8bf765",
+  "cognitionInputDigest": "sha256:09efb08089e3079554c9fb2c6f9fc183ac77568264a64a4d94f727ee02758621",
+  "startedAt": "2026-08-22T06:11:48.014Z",
+  "completedAt": "2026-08-22T06:11:50.674Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 433,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:09efb08089e3079554c9fb2c6f9fc183ac77568264a64a4d94f727ee02758621",
+      "outputDigest": "sha256:58b219ba46c03151a44c8ac120976599befe05bc4d7fe0c510581540208df35e",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_9c3f51d2cc0a46fdbe8177a6d4bef03b",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2352,
+          "outputTokens": 224,
+          "totalTokens": 2576
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:63a6964ebfbdde1858ebadcdfc5c5cf4c942e3d77021f55c850702e58c53f502",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_100:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_100:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_9c3f51d2cc0a46fdbe8177a6d4bef03b",
+      "inputDigest": "sha256:09efb08089e3079554c9fb2c6f9fc183ac77568264a64a4d94f727ee02758621",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w07_v10_02",
+          "occurredAt": "2022-03-15T17:10:00.000Z",
+          "ageAtEvent": 17.57,
+          "placeRef": "place_cal_g4v3_07_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w07_v10",
+            "person_cal_g4v3_w07_v10_caregiver",
+            "person_cal_g4v3_w07_v10_sibling"
+          ],
+          "observableAction": "In the kitchen near the household notice area, the caregiver spread two opened envelopes on the table and told the young person that, starting next term, they would need to choose between an after-school job and joining a weekly community workshop because the family could only cover transport for one. The sibling leaned on the counter listening while the caregiver pointed to a handwritten note on the notice board about bus costs.",
+          "structureRef": "ges_v2_family_decision_with_future_effect",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2352,
+        "outputTokens": 224,
+        "totalTokens": 2576
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2352,
+    "outputTokens": 224,
+    "totalTokens": 2576
+  },
+  "resultDigest": "sha256:17695dcf53c103307a7323a12893d10a0864e8b2389a78135ee90d6b3811f91a"
+}

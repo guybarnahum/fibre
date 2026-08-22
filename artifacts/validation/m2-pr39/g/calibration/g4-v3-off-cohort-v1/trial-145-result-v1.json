@@ -1,0 +1,110 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 145,
+  "trialId": "cal_g4v3_145",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:a7356d49ff0fec0b6f8e8625eac3f3c9bf3bec6117b0ccd11f5d12a7a9e2f9ea",
+  "cognitionInputDigest": "sha256:81011a26e6ddf609e548b6b512f1ca308192f26f771839776f68a990c25964b0",
+  "startedAt": "2026-08-22T06:13:49.429Z",
+  "completedAt": "2026-08-22T06:13:54.484Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 499,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:81011a26e6ddf609e548b6b512f1ca308192f26f771839776f68a990c25964b0",
+      "outputDigest": "sha256:375f77b20c64565320a1f63f998f19b671cde4d2326b8761c00c4fb2f608c81b",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_204a5f7e635b4273b82c4f7fca8dd1c6",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2352,
+          "outputTokens": 240,
+          "totalTokens": 2592
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:883c22876391688475c3020d7b9f56dafb249fd9c73f5742bf8220b4a38b7369",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_145:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_145:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_204a5f7e635b4273b82c4f7fca8dd1c6",
+      "inputDigest": "sha256:81011a26e6ddf609e548b6b512f1ca308192f26f771839776f68a990c25964b0",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w10_v10_02",
+          "occurredAt": "2022-05-10T15:30:00.000Z",
+          "ageAtEvent": 17.72,
+          "placeRef": "place_cal_g4v3_10_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w10_v10",
+            "person_cal_g4v3_w10_v10_caregiver",
+            "person_cal_g4v3_w10_v10_sibling"
+          ],
+          "observableAction": "At the kitchen table, the caregiver spread out a bus schedule printout and a school calendar while the young person and sibling sat across. The caregiver pointed to dates and explained that the household would stop paying for the young person’s weekend transit pass after the summer, but would keep paying for school-day trips. The caregiver slid the current pass toward the young person and said they could still choose how often to go out on weekends if they found another way to cover the fare.",
+          "structureRef": "ges_v2_family_decision_with_future_effect",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2352,
+        "outputTokens": 240,
+        "totalTokens": 2592
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2352,
+    "outputTokens": 240,
+    "totalTokens": 2592
+  },
+  "resultDigest": "sha256:dd5760947225dfd3dcbc0ab03079cc80f213f971ebf459c833b57b40147cbfd1"
+}

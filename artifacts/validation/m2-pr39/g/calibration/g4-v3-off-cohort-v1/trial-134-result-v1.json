@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 134,
+  "trialId": "cal_g4v3_134",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:e4ebcd4d0dcbe5cdd80cb93c2f2121fa2adb4fab9caee2ee6f440a2b97bf0521",
+  "cognitionInputDigest": "sha256:dfbf8ab4c74ab535ca8648db028db8a7635ad82efb072bce1e7f7a4efc414d63",
+  "startedAt": "2026-08-22T06:13:20.571Z",
+  "completedAt": "2026-08-22T06:13:22.814Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 293,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:dfbf8ab4c74ab535ca8648db028db8a7635ad82efb072bce1e7f7a4efc414d63",
+      "outputDigest": "sha256:e640ddcb736806e07553d14370f0d322450d64c2b92ff34c5d57e38a8a61aec1",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_ef021861f55742a5a84f67cee1f17785",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2566,
+          "outputTokens": 224,
+          "totalTokens": 2790
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:1d015215a52a4a9053f3741b46c383f74dd0e3680d81e1e467f0d05d2a0d7efb",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_134:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_134:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_ef021861f55742a5a84f67cee1f17785",
+      "inputDigest": "sha256:dfbf8ab4c74ab535ca8648db028db8a7635ad82efb072bce1e7f7a4efc414d63",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w09_v14_03",
+          "occurredAt": "2014-05-10T10:00:00.000Z",
+          "ageAtEvent": 9.72,
+          "placeRef": "place_cal_g4v3_09_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w09_v14",
+            "person_cal_g4v3_w09_v14_teacher"
+          ],
+          "observableAction": "In a classroom, the teacher poured colored water into a clear measuring cup and said the level would stay the same if the cup was not tilted. After watching, the young person raised a hand and asked the teacher what would happen if the cup was carried quickly across the room without spilling.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "liquid level in a container at rest",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2566,
+        "outputTokens": 224,
+        "totalTokens": 2790
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2566,
+    "outputTokens": 224,
+    "totalTokens": 2790
+  },
+  "resultDigest": "sha256:ff60246a3b2bcfe330ea2ed68d095561e84066a5da5a2013c49ae83ee65f2f7a"
+}

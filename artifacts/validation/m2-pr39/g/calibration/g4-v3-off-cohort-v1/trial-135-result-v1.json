@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 135,
+  "trialId": "cal_g4v3_135",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:af6bf93d666093982bbcb15a5f478148b5a13efb983313f3b5a10eb302702f25",
+  "cognitionInputDigest": "sha256:7ad4f4a4447c15f1339bc682653715bd3351381808ebf50b4394b44636961426",
+  "startedAt": "2026-08-22T06:13:22.816Z",
+  "completedAt": "2026-08-22T06:13:25.122Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 272,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:7ad4f4a4447c15f1339bc682653715bd3351381808ebf50b4394b44636961426",
+      "outputDigest": "sha256:a2bdcee81bbd03498255aa154f354980a2bc6211c3eb9f831f6a89361ea5376a",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_a7606d405afb4bea85148e6523c47920",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2613,
+          "outputTokens": 222,
+          "totalTokens": 2835
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:0773d99619ab262835d2ad91b210faae2244d4d2149ec8fe2428c579fd723187",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_135:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_135:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_a7606d405afb4bea85148e6523c47920",
+      "inputDigest": "sha256:7ad4f4a4447c15f1339bc682653715bd3351381808ebf50b4394b44636961426",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w09_v15_01",
+          "occurredAt": "2016-03-15T09:30:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_09_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w09_v15",
+            "person_cal_g4v3_w09_v15_teacher"
+          ],
+          "observableAction": "In a classroom, the teacher poured water into a glass until it overflowed to show that liquids take the shape of their container. After watching, the young person raised a hand and asked whether honey would spill over the edge the same way if the glass were tipped slowly.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "liquids taking the shape of their container",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2613,
+        "outputTokens": 222,
+        "totalTokens": 2835
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2613,
+    "outputTokens": 222,
+    "totalTokens": 2835
+  },
+  "resultDigest": "sha256:f75edb271cb88c1e59ac6b20797ab21bcfaf4e0c0f20172ad43b43d5f01e14f7"
+}

@@ -1,0 +1,114 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 4,
+  "trialId": "cal_g4v3_004",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d4c62df23cce1b3eb5d6a082d392897e4d4eea9bbd59cdfe51cc9806015d3b26",
+  "cognitionInputDigest": "sha256:c2e6fd5616854fc1f6f2a7b38d12b2404df51baaba42210798500ba2b0c34116",
+  "startedAt": "2026-08-22T06:06:53.215Z",
+  "completedAt": "2026-08-22T06:06:56.146Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 549,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:c2e6fd5616854fc1f6f2a7b38d12b2404df51baaba42210798500ba2b0c34116",
+      "outputDigest": "sha256:9358b2b646caf1a1f00a85fdfd8cb880db82eb648330ae8a8ecf731a96a598ba",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_c63cba0a3fe9429bb7ef27be104f4bf3",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2278,
+          "outputTokens": 264,
+          "totalTokens": 2542
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:ae7f7b1c64391b5facece9ffa74d56015c8fcd963eaf14e822050986142bfb3b",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_004:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_004:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_c63cba0a3fe9429bb7ef27be104f4bf3",
+      "inputDigest": "sha256:c2e6fd5616854fc1f6f2a7b38d12b2404df51baaba42210798500ba2b0c34116",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w01_v04_001",
+          "occurredAt": "2014-09-15T10:00:00.000Z",
+          "ageAtEvent": 10.1,
+          "placeRef": "place_cal_g4v3_01_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v04"
+          ],
+          "observableAction": "Late in the afternoon, the young person walks alone into the small public reading room, passes the front desk without stopping, and moves slowly along a shelf of children’s non-fiction. They tilt their head to read several spines, slide one thin paperback partway out, push it back, then pull out a slightly thicker book with a bright cover showing a diagram of the solar system. Holding it in both hands, they glance briefly at the neighboring titles, then turn away from the shelf and carry the chosen book toward an empty table near the window.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "introductory children’s book about the solar system",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2278,
+        "outputTokens": 264,
+        "totalTokens": 2542
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2278,
+    "outputTokens": 264,
+    "totalTokens": 2542
+  },
+  "resultDigest": "sha256:308ea927e89262fa63da7b97a9b074dde8e55ef68621899057180aeb19b9ee7b"
+}

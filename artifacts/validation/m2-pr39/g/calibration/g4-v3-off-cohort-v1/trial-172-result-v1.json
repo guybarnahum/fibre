@@ -1,0 +1,116 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 172,
+  "trialId": "cal_g4v3_172",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:dde84b2eb51a71559cf7afcaae1f9029eef72cbc34ccea16650a3bd0873321bc",
+  "cognitionInputDigest": "sha256:83128c3cf61a17447864973710590dee97d772c55de4abd4fa44557ad2825051",
+  "startedAt": "2026-08-22T06:15:11.450Z",
+  "completedAt": "2026-08-22T06:15:15.032Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 368,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:83128c3cf61a17447864973710590dee97d772c55de4abd4fa44557ad2825051",
+      "outputDigest": "sha256:4e038ec16dcb69f2ca85b5fe36fc5e3ebca86313d0a17a2616315935d1815606",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_0fcf2ad932424a7da31bde2f2b266e44",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2502,
+          "outputTokens": 252,
+          "totalTokens": 2754
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:24add620e94225358e6edfca224b1094347bdd51565f0b5b52c51b84af1e4cd9",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_172:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_172:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_0fcf2ad932424a7da31bde2f2b266e44",
+      "inputDigest": "sha256:83128c3cf61a17447864973710590dee97d772c55de4abd4fa44557ad2825051",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w12_v07_02",
+          "occurredAt": "2018-03-10T19:12:00.000Z",
+          "ageAtEvent": 13.555,
+          "placeRef": "place_cal_g4v3_12_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w12_v07",
+            "person_cal_g4v3_w12_v07_teacher",
+            "person_cal_g4v3_w12_v07_peer"
+          ],
+          "observableAction": "In a science classroom, the teacher writes “plants need light to grow” on the board and adds that they also need water and air. The young person suggests putting one plant in a cupboard and another on the windowsill to see the difference. The teacher nods and asks the class to help choose two similar potted plants from the windowsill and label them for the test.",
+          "structureRef": "ges_v2_scientific_claim_test",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "plants need light to grow",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2502,
+        "outputTokens": 252,
+        "totalTokens": 2754
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2502,
+    "outputTokens": 252,
+    "totalTokens": 2754
+  },
+  "resultDigest": "sha256:9c5d85305f52e8e8f76eb85228b039b4c96f56b4e040115828d9600e2f805d05"
+}

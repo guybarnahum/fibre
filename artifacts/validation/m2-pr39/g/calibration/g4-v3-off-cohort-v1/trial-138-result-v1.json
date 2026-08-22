@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 138,
+  "trialId": "cal_g4v3_138",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:246ef70109c9e80ee00a1e50d23503f6cdce4a8c3b42c3adee18170cebffe602",
+  "cognitionInputDigest": "sha256:10fe7d61821c49a2d05d2be3212beb6fd0bcec0d5295483fe75e98534e1f7abf",
+  "startedAt": "2026-08-22T06:13:29.747Z",
+  "completedAt": "2026-08-22T06:13:32.319Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 437,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:10fe7d61821c49a2d05d2be3212beb6fd0bcec0d5295483fe75e98534e1f7abf",
+      "outputDigest": "sha256:dc7e1915125664f75e456b435ae1e4dda7e3d88b38f26eb792930b3e8fe9bc2d",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_200980faf38e4bc1b233f46148202435",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2244,
+          "outputTokens": 260,
+          "totalTokens": 2504
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:0394c421b154ea2dedc38e93a5ab0502a769a5c7c5ca6bee0fffde686eb3ca53",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_138:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_138:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_200980faf38e4bc1b233f46148202435",
+      "inputDigest": "sha256:10fe7d61821c49a2d05d2be3212beb6fd0bcec0d5295483fe75e98534e1f7abf",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w10_v03_001",
+          "occurredAt": "2013-09-15T10:30:00.000Z",
+          "ageAtEvent": 9.1,
+          "placeRef": "place_cal_g4v3_10_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w10_v03",
+            "person_cal_g4v3_w10_v03_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the caregiver reads aloud from a children’s book about planets while the young person follows along, leaning on their elbows. When the caregiver reads that one planet has a day longer than its year, the young person interrupts, pointing at the page and asking, “How can a day be longer than a year?” The caregiver stops, looks at the picture of the planet, and begins to explain using the diagram in the book.",
+          "structureRef": "ges_v2_caregiver_reads_and_pauses",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "children’s book about planets and the solar system",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2244,
+        "outputTokens": 260,
+        "totalTokens": 2504
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2244,
+    "outputTokens": 260,
+    "totalTokens": 2504
+  },
+  "resultDigest": "sha256:2b51ba9a9459c69ab0e558ab97874e765546d0e03865df86cd440b0bffebc716"
+}

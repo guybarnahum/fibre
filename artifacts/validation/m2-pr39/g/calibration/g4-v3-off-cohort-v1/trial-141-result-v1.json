@@ -1,0 +1,116 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 141,
+  "trialId": "cal_g4v3_141",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:c280adb756ad3a16f17e66fa3e3d2b1831118e7cfa5a0b01da14c7c7c4381df4",
+  "cognitionInputDigest": "sha256:8be9024fc7ddecdaf1d8f282d6b6a655c7a257cb83e814b9ff284a39a7a616e8",
+  "startedAt": "2026-08-22T06:13:38.585Z",
+  "completedAt": "2026-08-22T06:13:41.013Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 347,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:8be9024fc7ddecdaf1d8f282d6b6a655c7a257cb83e814b9ff284a39a7a616e8",
+      "outputDigest": "sha256:ed856973c56bd3d2a5efb0e374625561d1c91939d9f750631e89349abbb0170a",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_3f420741acc742f2b937f33cd2327e1a",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2456,
+          "outputTokens": 249,
+          "totalTokens": 2705
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:df7baab85cb9ce3ca0bf25d1e13572cfd670c8de32f40526db3c5397632d8cea",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_141:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_141:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_3f420741acc742f2b937f33cd2327e1a",
+      "inputDigest": "sha256:8be9024fc7ddecdaf1d8f282d6b6a655c7a257cb83e814b9ff284a39a7a616e8",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w10_v06_02",
+          "occurredAt": "2017-03-15T10:30:00.000Z",
+          "ageAtEvent": 12.57,
+          "placeRef": "place_cal_g4v3_10_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w10_v06",
+            "person_cal_g4v3_w10_v06_teacher",
+            "person_cal_g4v3_w10_v06_peer"
+          ],
+          "observableAction": "During a science lesson, the teacher states that darker colors always absorb more heat than lighter ones. At recess, the young person and a peer place a dark notebook and a white notebook side by side in a sunny patch of the school yard, leave them for several minutes, then take turns touching each cover and briefly comparing how warm they feel.",
+          "structureRef": "ges_v2_scientific_claim_test",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "claim that darker colors absorb more heat than lighter colors",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2456,
+        "outputTokens": 249,
+        "totalTokens": 2705
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2456,
+    "outputTokens": 249,
+    "totalTokens": 2705
+  },
+  "resultDigest": "sha256:f4df28f9c1a4d8fc1eb547b98a30bd4047117185b35c859d6550b93843cc7dd6"
+}

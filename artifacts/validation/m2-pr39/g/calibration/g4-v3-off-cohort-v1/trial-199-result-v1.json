@@ -1,0 +1,209 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 199,
+  "trialId": "cal_g4v3_199",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d3e9567df525028538cf3ed5e30dc59a3fdb29c2f1a8dca90d467c29bfbf25da",
+  "cognitionInputDigest": "sha256:49d59a52f638301287403369292d3c7f52f75f0d01b5a9b2b517b42ea261a1f3",
+  "startedAt": "2026-08-22T06:16:33.780Z",
+  "completedAt": "2026-08-22T06:16:41.094Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 539,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 2,
+    "formRepairCount": 0,
+    "recordRetryCount": 1,
+    "failedGateSequence": [
+      "pass_a_participant_introduction"
+    ],
+    "failedGateCensus": {
+      "pass_a_participant_introduction": 1
+    }
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:49d59a52f638301287403369292d3c7f52f75f0d01b5a9b2b517b42ea261a1f3",
+      "outputDigest": "sha256:2851ed4ce39d7aa7fc3c99531ce23ff0383c0de709c8abc1041aa231f981cab0",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_b47d75ee8a0b4f7aa3c4f67c11a09b2a",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2280,
+          "outputTokens": 337,
+          "totalTokens": 2617
+        }
+      }
+    },
+    {
+      "kind": "record_retry",
+      "recordRetryOrdinal": 1,
+      "failedGate": "pass_a_participant_introduction",
+      "failedConstraint": null,
+      "inputDigest": "sha256:d9ff3ace7f9cafee14a85a6afd6f2519e7f965b9c58b2fa8be1eca5c16ded052",
+      "outputDigest": "sha256:17db30b2abd7ddc7a91e9dfbbf34345a4c4650797dec1ce61a1e907e4c790188",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_d5e654f1c8c743cb87635fd99003ac13",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2016,
+          "outputTokens": 219,
+          "totalTokens": 2235
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [
+    {
+      "recordRetryOrdinal": 1,
+      "failedGate": "pass_a_participant_introduction",
+      "failedConstraint": null,
+      "rejectedContentDigest": "sha256:887e5c47845342488f38a5ca9e5c645cdd57d4c6bc8c1c0ff8c0175bdd2a96fe",
+      "retryInputDigest": "sha256:d9ff3ace7f9cafee14a85a6afd6f2519e7f965b9c58b2fa8be1eca5c16ded052"
+    }
+  ],
+  "episodeDigest": "sha256:3eed178ede87a0d3658ced0107d5028b036040615ff367f3d55820021916015b",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_199:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_199:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_b47d75ee8a0b4f7aa3c4f67c11a09b2a",
+      "inputDigest": "sha256:49d59a52f638301287403369292d3c7f52f75f0d01b5a9b2b517b42ea261a1f3",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w14_v04_001",
+          "occurredAt": "2014-09-15T10:00:00.000Z",
+          "ageAtEvent": 10.1,
+          "placeRef": "place_cal_g4v3_14_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w14_v04",
+            "person_cal_g4v3_w14_v04_caregiver",
+            "person_cal_g4v3_w14_v04_peer"
+          ],
+          "observableAction": "Late in the morning, the young person walks between shelves in the public reading room with a caregiver nearby, scanning the spines of several children’s non-fiction books. The caregiver waits by the end of the aisle while the young person pulls out two different science books, flips through a few pages of each at a table, then returns one to the shelf and carries the other to the front desk, where a staff member checks it out. A peer from school passes by the table, briefly glances at the cover, and continues toward another shelf.",
+          "structureRef": "ges_v2_library_browse_with_adult",
+          "introducedParticipants": [
+            {
+              "provisionalPersonId": "person_cal_g4v3_w14_v04_librarian",
+              "roleRef": "librarian",
+              "introducedAt": "2014-09-15T10:00:00.000Z"
+            }
+          ],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "children’s introductory science book about space and planets",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2280,
+        "outputTokens": 337,
+        "totalTokens": 2617
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_199:record-retry:1",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_199:record-retry:1",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_d5e654f1c8c743cb87635fd99003ac13",
+      "inputDigest": "sha256:d9ff3ace7f9cafee14a85a6afd6f2519e7f965b9c58b2fa8be1eca5c16ded052",
+      "promptHash": "sha256:1973a82f254d089a43ce56a0c3a1a8e34bac328de4a0a4cb195f04cc3ceb9ac6",
+      "promptCanonicalJsonHash": "sha256:ee179189fec4bd5b97fd3cfd1e9020f481c5b4008c4fe0c3cbd2cb50609d3008",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w14_v04_01",
+          "occurredAt": "2014-11-10T15:30:00.000Z",
+          "ageAtEvent": 10.2,
+          "placeRef": "place_cal_g4v3_14_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w14_v04",
+            "person_cal_g4v3_w14_v04_caregiver",
+            "person_cal_g4v3_w14_v04_sibling"
+          ],
+          "observableAction": "At the kitchen table, the caregiver says they used to walk to school every day, while the sibling insists they always took the bus together. The young person frowns, points out the contradiction, and asks which story is actually true. The caregiver pauses, then explains they walked in earlier years and later switched to the bus, while the sibling only remembers the bus time.",
+          "structureRef": "ges_v2_family_fact_disagreement",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2016,
+        "outputTokens": 219,
+        "totalTokens": 2235
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 4296,
+    "outputTokens": 556,
+    "totalTokens": 4852
+  },
+  "resultDigest": "sha256:f2fab00e7695c9dc56c971ae5c2f0b1aea37ebb497e447b7ef84e8cc0a6e649a"
+}

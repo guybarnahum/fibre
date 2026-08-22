@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 34,
+  "trialId": "cal_g4v3_034",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:fb34edff0ebd087a608ad0ec29123862e3414a68381f9f729aba2d7259a8dfd2",
+  "cognitionInputDigest": "sha256:75a3dbce78f20147b60e13b571b7fdd199d2cd38e7db3de821b2845ceb5fac9d",
+  "startedAt": "2026-08-22T06:08:40.161Z",
+  "completedAt": "2026-08-22T06:08:43.775Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 436,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:75a3dbce78f20147b60e13b571b7fdd199d2cd38e7db3de821b2845ceb5fac9d",
+      "outputDigest": "sha256:610230d2a18d0664ad476767516b08296f5133dcf50bd5d96940912ef2906114",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_da69564cd4f049dda11f3f95640b4ffc",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2283,
+          "outputTokens": 224,
+          "totalTokens": 2507
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:f0345bacfc1caaf37bd5b017c607b74cdc6c2ecaf3652073f0f7e266598c796b",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_034:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_034:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_da69564cd4f049dda11f3f95640b4ffc",
+      "inputDigest": "sha256:75a3dbce78f20147b60e13b571b7fdd199d2cd38e7db3de821b2845ceb5fac9d",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w03_v04_001",
+          "occurredAt": "2014-09-15T10:00:00.000Z",
+          "ageAtEvent": 10.1,
+          "placeRef": "place_cal_g4v3_03_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w03_v04",
+            "person_cal_g4v3_w03_v04_peer"
+          ],
+          "observableAction": "During morning break in the school yard, the peer walks over to the young person, who is standing near the wall watching others. The peer bounces a worn basketball once, looks at the young person, and says, “Do you want to play with us? We need one more.” The peer tilts their head toward a half-formed group at the far side of the yard, where two other children are passing another ball back and forth and calling out simple rules.",
+          "structureRef": "ges_v2_peer_invitation",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2283,
+        "outputTokens": 224,
+        "totalTokens": 2507
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2283,
+    "outputTokens": 224,
+    "totalTokens": 2507
+  },
+  "resultDigest": "sha256:ad8c9e8da8703e2a1258b8e664c291a4de0911bcd04bef2f6bc4a8dec8ab8547"
+}

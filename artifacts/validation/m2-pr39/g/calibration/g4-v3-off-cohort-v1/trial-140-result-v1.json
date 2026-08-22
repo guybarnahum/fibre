@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 140,
+  "trialId": "cal_g4v3_140",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:f88e3b92a6d1d0633b9525e8a77565aa2650e19990a5d750a85f341b0f7d6643",
+  "cognitionInputDigest": "sha256:c95249319b1ded7fe647e3f05fd5c01e98e06699b2ba66b73d1e7cd29b3da5bc",
+  "startedAt": "2026-08-22T06:13:35.510Z",
+  "completedAt": "2026-08-22T06:13:38.583Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 397,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:c95249319b1ded7fe647e3f05fd5c01e98e06699b2ba66b73d1e7cd29b3da5bc",
+      "outputDigest": "sha256:24a635c221e2c653619bdcbf85561a40c9440917b9e77a9377ecb9d7d87073e6",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_4aef045e5ad74ee683a7a654088ffcbb",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2319,
+          "outputTokens": 258,
+          "totalTokens": 2577
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:2333dca7fb80a93ecc547d355e315d05f63eced1bf2228807bf0ca1e276ecce0",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_140:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_140:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_4aef045e5ad74ee683a7a654088ffcbb",
+      "inputDigest": "sha256:c95249319b1ded7fe647e3f05fd5c01e98e06699b2ba66b73d1e7cd29b3da5bc",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w10_v05_001",
+          "occurredAt": "2016-03-15T10:00:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_10_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w10_v05",
+            "person_cal_g4v3_w10_v05_teacher"
+          ],
+          "observableAction": "In a classroom at school, the young person stands at a table where the teacher has just shown how to connect a small battery, wires, and a bulb so it lights. After watching, the young person picks up a second bulb from the tray, clips it into the circuit in series, and asks the teacher, “Will it still light if I add another one like this?” while both look at the wires and bulbs on the desk.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "simple electric circuit with battery, wires, and bulb",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2319,
+        "outputTokens": 258,
+        "totalTokens": 2577
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2319,
+    "outputTokens": 258,
+    "totalTokens": 2577
+  },
+  "resultDigest": "sha256:975dca1886bb97a9c7210ab96525675f7607266f51b16e36e85d647533d2a83b"
+}

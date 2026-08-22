@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 168,
+  "trialId": "cal_g4v3_168",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:dcf8537e25e2d41e84770de3c0cc4e9c372a072efb56ad0965c90a1898118c4d",
+  "cognitionInputDigest": "sha256:6aa573eeb2e8b71b14b8c48988df34a577dced96e8bdc174a49ecc38be95c1b0",
+  "startedAt": "2026-08-22T06:14:57.434Z",
+  "completedAt": "2026-08-22T06:15:00.876Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 681,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:6aa573eeb2e8b71b14b8c48988df34a577dced96e8bdc174a49ecc38be95c1b0",
+      "outputDigest": "sha256:a428d7090b8d0175069c614e63509419d03f25f076f41b465a75db8dc34128b9",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_e50bbe80b3544ec1b5ee29902ad3cc5e",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2246,
+          "outputTokens": 305,
+          "totalTokens": 2551
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:fbc88590fa4728641f9d31fe808d2c2cadf457803edad65e2fdc4e39d69b0321",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_168:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_168:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_e50bbe80b3544ec1b5ee29902ad3cc5e",
+      "inputDigest": "sha256:6aa573eeb2e8b71b14b8c48988df34a577dced96e8bdc174a49ecc38be95c1b0",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w12_v03_001",
+          "occurredAt": "2013-06-05T10:15:00.000Z",
+          "ageAtEvent": 8.8,
+          "placeRef": "place_cal_g4v3_12_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w12_v03",
+            "person_cal_g4v3_w12_v03_caregiver"
+          ],
+          "observableAction": "At a quiet table in the small public reading room, the caregiver sets down three children’s books from the nearby shelf in front of the young person: one with a bright animal cover, one about space with a rocket on the front, and one thin book of short stories. The caregiver says they can pick one to borrow today. The young person flips through the animal book briefly, then the space book, tracing a finger along a picture of planets, and finally pushes the space book slightly forward toward the caregiver. The caregiver nods, takes the space book and the young person’s library card to the staffed desk, and completes the checkout while the young person waits beside them.",
+          "structureRef": "ges_v2_library_browse_with_adult",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "children’s introductory space book with rocket and planets",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2246,
+        "outputTokens": 305,
+        "totalTokens": 2551
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2246,
+    "outputTokens": 305,
+    "totalTokens": 2551
+  },
+  "resultDigest": "sha256:ff3334c2d93852975b2655daa41fbf373d3a9fc3a683f159f2882d25d97e756c"
+}

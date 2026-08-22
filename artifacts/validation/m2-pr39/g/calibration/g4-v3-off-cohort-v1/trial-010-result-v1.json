@@ -1,0 +1,110 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 10,
+  "trialId": "cal_g4v3_010",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:7126633a0946f0a711dda88f139f3ca381ca3db411e01d5a60110dc4b66086fe",
+  "cognitionInputDigest": "sha256:7ecc3761c03687410f8b41ffc337e993d4c3bce926672d41232ab6cd133a15c0",
+  "startedAt": "2026-08-22T06:07:16.218Z",
+  "completedAt": "2026-08-22T06:07:19.161Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 465,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:7ecc3761c03687410f8b41ffc337e993d4c3bce926672d41232ab6cd133a15c0",
+      "outputDigest": "sha256:43816328abb99628394d4533ede2c8a203d4f406e22697632e2d805180c391c2",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_cba8339eaf6d46e292cd1aba87961691",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2348,
+          "outputTokens": 231,
+          "totalTokens": 2579
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:011040b74a66f35705557fefd2ad48c04e23b59c882bdab51639185911f3973f",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_010:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_010:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_cba8339eaf6d46e292cd1aba87961691",
+      "inputDigest": "sha256:7ecc3761c03687410f8b41ffc337e993d4c3bce926672d41232ab6cd133a15c0",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w01_v10_02",
+          "occurredAt": "2022-03-15T15:30:00.000Z",
+          "ageAtEvent": 17.57,
+          "placeRef": "place_cal_g4v3_01_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v10",
+            "person_cal_g4v3_w01_v10_caregiver",
+            "person_cal_g4v3_w01_v10_sibling"
+          ],
+          "observableAction": "At the kitchen table, the caregiver unfolded a printed schedule and explained that they had enrolled the young person and sibling in a new after-school study program starting next month, pointing to the days it would replace their usual free afternoons. The sibling asked about still visiting a friend on Fridays, and the caregiver said they would need to shift those visits to weekends. The young person circled the new times on the household notice area calendar.",
+          "structureRef": "ges_v2_family_decision_with_future_effect",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2348,
+        "outputTokens": 231,
+        "totalTokens": 2579
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2348,
+    "outputTokens": 231,
+    "totalTokens": 2579
+  },
+  "resultDigest": "sha256:a8fd71fa5084c61b52a3ee5d603a02513ff00c63b02804ea8ef2387f567b2384"
+}

@@ -1,0 +1,116 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 80,
+  "trialId": "cal_g4v3_080",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:3f3858da6f6919b237e3ea915beaf64331f04e17459244938bf310ecd2d42b54",
+  "cognitionInputDigest": "sha256:4ad5718aed27eb5a68c41ff18263a836275744bd6865c637fce1f4ba524b6ef7",
+  "startedAt": "2026-08-22T06:10:49.956Z",
+  "completedAt": "2026-08-22T06:10:53.408Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 337,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:4ad5718aed27eb5a68c41ff18263a836275744bd6865c637fce1f4ba524b6ef7",
+      "outputDigest": "sha256:d4b78bd71a4f6819f7434c8a8c371f45d20050c0d382541d341c36958bfbd538",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_89cb1d853b46417e8cb10f7747711a44",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2323,
+          "outputTokens": 249,
+          "totalTokens": 2572
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:0cdb189bc6a2523e63a7cdd644c3f3bed6e46a8b304d6d5f8a1aabec7feb23e4",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_080:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_080:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_89cb1d853b46417e8cb10f7747711a44",
+      "inputDigest": "sha256:4ad5718aed27eb5a68c41ff18263a836275744bd6865c637fce1f4ba524b6ef7",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w06_v05_001",
+          "occurredAt": "2016-03-15T10:00:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_06_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w06_v05",
+            "person_cal_g4v3_w06_v05_peer",
+            "person_cal_g4v3_w06_v05_teacher"
+          ],
+          "observableAction": "In a classroom science lesson, the teacher pours vinegar onto baking soda in a tray, and foam rises over the sides. After watching, the young person raises a hand and asks if the same thing would happen with warm vinegar. The teacher pauses, repeats the question aloud, and says they can try it later with a second cup of warmed vinegar.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "acid–base reaction between vinegar and baking soda",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2323,
+        "outputTokens": 249,
+        "totalTokens": 2572
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2323,
+    "outputTokens": 249,
+    "totalTokens": 2572
+  },
+  "resultDigest": "sha256:f15b3bcf410804d80a289732c27e7974be750033aabd06f914a3fbed7733ca3f"
+}

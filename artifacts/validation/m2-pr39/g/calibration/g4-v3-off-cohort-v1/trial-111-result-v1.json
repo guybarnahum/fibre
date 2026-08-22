@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 111,
+  "trialId": "cal_g4v3_111",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:bdacc5181c7ae7e2e42357715f27695881190f2fb0c7c98262a96222e87e7907",
+  "cognitionInputDigest": "sha256:a9d7b662518de23f4105d84ce582b65bd30ea87e280f8554e594a3b8605cc3ee",
+  "startedAt": "2026-08-22T06:12:17.015Z",
+  "completedAt": "2026-08-22T06:12:19.569Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 252,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:a9d7b662518de23f4105d84ce582b65bd30ea87e280f8554e594a3b8605cc3ee",
+      "outputDigest": "sha256:c6e01f44149e96254bd6dd75d7645f6517678b308fc1a9f6d85194eed597a0fc",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_ac115c1bfabd4ffb9ab9173fa8b066ce",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2451,
+          "outputTokens": 217,
+          "totalTokens": 2668
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:48df7ee2d69a7c4ca6250e80cf5d5c4cfcc54eb31c706af96ad143c66fbc8fc2",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_111:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_111:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_ac115c1bfabd4ffb9ab9173fa8b066ce",
+      "inputDigest": "sha256:a9d7b662518de23f4105d84ce582b65bd30ea87e280f8554e594a3b8605cc3ee",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w08_v06_02",
+          "occurredAt": "2017-03-15T10:30:00.000Z",
+          "ageAtEvent": 12.57,
+          "placeRef": "place_cal_g4v3_08_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w08_v06",
+            "person_cal_g4v3_w08_v06_teacher"
+          ],
+          "observableAction": "In a classroom, the teacher wrote “heavier objects fall faster” on the board, then handed the young person two balls of different sizes and asked them to drop both from the same height over a clear floor space while the class watched what happened.",
+          "structureRef": "ges_v2_scientific_claim_test",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "comparison test of a claim about falling objects",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2451,
+        "outputTokens": 217,
+        "totalTokens": 2668
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2451,
+    "outputTokens": 217,
+    "totalTokens": 2668
+  },
+  "resultDigest": "sha256:c5d776aea6c73cc3b8191a3be066dc2d917eb87a2384e118c77931b3c1e1ecf1"
+}

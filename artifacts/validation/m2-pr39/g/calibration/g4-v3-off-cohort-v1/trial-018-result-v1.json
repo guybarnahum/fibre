@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 18,
+  "trialId": "cal_g4v3_018",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:dc2fe677f5e1c63bce93d1c580b1896a0bbe2dc1920f8bfa75a6d1794639d5bb",
+  "cognitionInputDigest": "sha256:0dea42425475bf46024d06b127e7a908d7fbcf2fbe5b6e86e4fe97447da1b5a0",
+  "startedAt": "2026-08-22T06:07:40.983Z",
+  "completedAt": "2026-08-22T06:07:53.849Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 431,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:0dea42425475bf46024d06b127e7a908d7fbcf2fbe5b6e86e4fe97447da1b5a0",
+      "outputDigest": "sha256:0397295579977826505b51d2246cd4000fbb92976362c4e9038c62d65508428a",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_82c7fcc7ec9d4ebea7251435c7ad13e4",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2251,
+          "outputTokens": 257,
+          "totalTokens": 2508
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:708d3601ec3a0d505a7f033ac3d83ff6963bd8b21e2496ce7779818f94158a26",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_018:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_018:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_82c7fcc7ec9d4ebea7251435c7ad13e4",
+      "inputDigest": "sha256:0dea42425475bf46024d06b127e7a908d7fbcf2fbe5b6e86e4fe97447da1b5a0",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w02_v03_001",
+          "occurredAt": "2013-06-10T10:00:00.000Z",
+          "ageAtEvent": 8.8,
+          "placeRef": "place_cal_g4v3_02_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w02_v03",
+            "person_cal_g4v3_w02_v03_caregiver"
+          ],
+          "observableAction": "In the public reading room, the caregiver walks with the young person along a low shelf, pulling out three thin books with different bright covers and laying them on a table. The caregiver says each title aloud, then steps back and waits. The young person picks up one book, flips through a few pages, glances at the other two, and finally slides the chosen book closer while the caregiver returns the remaining books to the shelf.",
+          "structureRef": "ges_v2_library_browse_with_adult",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "a thin illustrated children’s book chosen from several options",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2251,
+        "outputTokens": 257,
+        "totalTokens": 2508
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2251,
+    "outputTokens": 257,
+    "totalTokens": 2508
+  },
+  "resultDigest": "sha256:ed8da41a755fda431340210058bed76f859e11a5856f3ece39e851a7e5ab9427"
+}

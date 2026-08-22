@@ -1,0 +1,33 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-attempt-start-v1",
+  "startedAt": "2026-08-22T06:06:42.145Z",
+  "authority": {
+    "runnerVersion": "pr39-g4-v3-off-cohort-calibration-runner-v1",
+    "frozenCorpusCommit": "8344f0cd987c544d7647386e726a3f07579b5bfa",
+    "frozenCorpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+    "corpusPath": "artifacts/validation/m2-pr39/g/protocol/g4-v3-off-cohort-calibration-inputs-v1.json",
+    "calibrationProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g4-v3-off-cohort-calibration-freeze-v1.json",
+    "executionFreezePath": "artifacts/validation/m2-pr39/g/protocol/g4-v3-off-cohort-calibration-execution-freeze-v1.json",
+    "implementationWitnessPath": "artifacts/validation/m2-pr39/g/protocol/g4-v3-reliability-implementation-witness-v1.json",
+    "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+    "passAPromptHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+    "recordRetryPromptHash": "sha256:ee179189fec4bd5b97fd3cfd1e9020f481c5b4008c4fe0c3cbd2cb50609d3008",
+    "runtime": {
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "temperature": 0,
+      "topP": 1,
+      "reasoningEffort": "none",
+      "retryLimit": 2,
+      "retryDelayMs": 2000,
+      "trialCount": 225,
+      "executeMechanicalFailuresThroughFullFrozenSample": true,
+      "passBCallsAllowed": false,
+      "passCCallsAllowed": false,
+      "genomeExposureAllowed": false,
+      "semanticQualityScoringAllowed": false
+    }
+  },
+  "trialOrder": "ascending frozen trialOrdinal 1..225",
+  "providerCallsMadeBeforeArtifact": 0
+}

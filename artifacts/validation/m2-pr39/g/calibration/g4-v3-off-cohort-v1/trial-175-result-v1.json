@@ -1,0 +1,219 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 175,
+  "trialId": "cal_g4v3_175",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:dc9853a740c8dbf2e58070e72c18d8bbe1f20d0129287e5bd34fa40ac39d4eb6",
+  "cognitionInputDigest": "sha256:ee0e55e9f2b6eaa9f2e493b46054df926d86fa901461198d85bb29025dab57a0",
+  "startedAt": "2026-08-22T06:15:21.088Z",
+  "completedAt": "2026-08-22T06:15:25.743Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 399,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 2,
+    "formRepairCount": 0,
+    "recordRetryCount": 1,
+    "failedGateSequence": [
+      "pass_a_structure_participation"
+    ],
+    "failedGateCensus": {
+      "pass_a_structure_participation": 1
+    }
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:ee0e55e9f2b6eaa9f2e493b46054df926d86fa901461198d85bb29025dab57a0",
+      "outputDigest": "sha256:83dd2ae8c1cda0c279062f0d734635d0c13ac92c8df631566b97b88003ddff1c",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_7be4430a063240fcb232e6a0beb408ff",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2349,
+          "outputTokens": 200,
+          "totalTokens": 2549
+        }
+      }
+    },
+    {
+      "kind": "record_retry",
+      "recordRetryOrdinal": 1,
+      "failedGate": "pass_a_structure_participation",
+      "failedConstraint": null,
+      "inputDigest": "sha256:1e2e11dcdfc91c46662e7c84b3d2967778645d5355ea9f48206c696dd7b15b6d",
+      "outputDigest": "sha256:328583abd38ea1aa05fe7d348d201f1f6909ff6b4586b06bdd3fb348445420f3",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_c07c931c814e4e8bb7031383a61bf707",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2085,
+          "outputTokens": 353,
+          "totalTokens": 2438
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [
+    {
+      "recordRetryOrdinal": 1,
+      "failedGate": "pass_a_structure_participation",
+      "failedConstraint": null,
+      "rejectedContentDigest": "sha256:a9c94818364bf37722afaf87cc8edb65d40a6afd17cf1947323eae5d0d888782",
+      "retryInputDigest": "sha256:1e2e11dcdfc91c46662e7c84b3d2967778645d5355ea9f48206c696dd7b15b6d"
+    }
+  ],
+  "episodeDigest": "sha256:0140cf4d47108b9f1a97b63a3a2b3d0550487f83c0d366f7e657fa040fdf845f",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_175:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_175:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_7be4430a063240fcb232e6a0beb408ff",
+      "inputDigest": "sha256:ee0e55e9f2b6eaa9f2e493b46054df926d86fa901461198d85bb29025dab57a0",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w12_v10_02",
+          "occurredAt": "2021-10-15T16:48:00.000Z",
+          "ageAtEvent": 17.15,
+          "placeRef": "place_cal_g4v3_12_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w12_v10",
+            "person_cal_g4v3_w12_v10_sibling"
+          ],
+          "observableAction": "In a shared school work area after classes, the young person sat at a table with open notebooks while their sibling paced nearby, explaining two different reasons for wanting to switch an upcoming community workshop. The young person listened, asked what their sibling was most worried about, and then suggested writing both workshop options and dates on a scrap of paper to compare before deciding.",
+          "structureRef": "ges_v2_argument_encounter",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2349,
+        "outputTokens": 200,
+        "totalTokens": 2549
+      }
+    },
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_175:record-retry:1",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_175:record-retry:1",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_c07c931c814e4e8bb7031383a61bf707",
+      "inputDigest": "sha256:1e2e11dcdfc91c46662e7c84b3d2967778645d5355ea9f48206c696dd7b15b6d",
+      "promptHash": "sha256:1973a82f254d089a43ce56a0c3a1a8e34bac328de4a0a4cb195f04cc3ceb9ac6",
+      "promptCanonicalJsonHash": "sha256:ee179189fec4bd5b97fd3cfd1e9020f481c5b4008c4fe0c3cbd2cb50609d3008",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w12_v10_02",
+          "occurredAt": "2022-03-15T16:48:00.000Z",
+          "ageAtEvent": 17.57,
+          "placeRef": "place_cal_g4v3_12_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w12_v10",
+            "person_cal_g4v3_w12_v10_peer1",
+            "person_cal_g4v3_w12_v10_peer2",
+            "person_cal_g4v3_w12_v10_teacher1"
+          ],
+          "observableAction": "During a small-group class discussion, the young person calmly tells the teacher they disagree with the textbook’s claim, gives two reasons, and answers brief challenges from classmates.",
+          "structureRef": "ges_v2_public_disagreement",
+          "introducedParticipants": [
+            {
+              "provisionalPersonId": "person_cal_g4v3_w12_v10_peer1",
+              "roleRef": "peer",
+              "introducedAt": "2022-03-15T16:48:00.000Z"
+            },
+            {
+              "provisionalPersonId": "person_cal_g4v3_w12_v10_peer2",
+              "roleRef": "peer",
+              "introducedAt": "2022-03-15T16:48:00.000Z"
+            },
+            {
+              "provisionalPersonId": "person_cal_g4v3_w12_v10_teacher1",
+              "roleRef": "teacher",
+              "introducedAt": "2022-03-15T16:48:00.000Z"
+            }
+          ],
+          "intellectualEncounter": {
+            "kind": "argument",
+            "subjectKind": "idea",
+            "subjectLabel": "whether a single historical cause can adequately explain a complex social change",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2085,
+        "outputTokens": 353,
+        "totalTokens": 2438
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 4434,
+    "outputTokens": 553,
+    "totalTokens": 4987
+  },
+  "resultDigest": "sha256:96873b8c7065be7540d4f1af7e553f215f4b5d66cdb1cce3ac0992814fc04570"
+}

@@ -1,0 +1,110 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 198,
+  "trialId": "cal_g4v3_198",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:8d16a616370279c9eb39166c856c5cb2d8805a39cd4956f72cdc7cf40c15a2dd",
+  "cognitionInputDigest": "sha256:9296ddb74f64c9a876b1b59883315b75d77baf29e2aa9e57c2acaaa441472b33",
+  "startedAt": "2026-08-22T06:16:30.891Z",
+  "completedAt": "2026-08-22T06:16:33.776Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 597,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:9296ddb74f64c9a876b1b59883315b75d77baf29e2aa9e57c2acaaa441472b33",
+      "outputDigest": "sha256:3fa151dc2470950cbaa34a2d5c563600878b1f64ec038b4a91921ea530e72be9",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_d956a53261054d1496eb87ed4d4919a1",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2234,
+          "outputTokens": 263,
+          "totalTokens": 2497
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:3d4b7333e275a8bcd598e24fe57f948a83378138413995910ab133ca02091309",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_198:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_198:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_d956a53261054d1496eb87ed4d4919a1",
+      "inputDigest": "sha256:9296ddb74f64c9a876b1b59883315b75d77baf29e2aa9e57c2acaaa441472b33",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w14_v03_001",
+          "occurredAt": "2013-09-10T10:00:00.000Z",
+          "ageAtEvent": 9.1,
+          "placeRef": "place_cal_g4v3_14_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w14_v03",
+            "person_cal_g4v3_w14_v03_peer",
+            "person_cal_g4v3_w14_v03_sibling"
+          ],
+          "observableAction": "During a mid-morning break in the school yard, the subject and their sibling set up a simple kicking game using a worn rubber ball. The subject proposes that each player gets three kicks before switching. The peer joins and insists that whoever misses must give up their turn immediately. The sibling wants to keep the original three-kick rule. The three stand in a small circle near a painted line, talking back and forth, comparing what they did “last time” and suggesting small changes, until they agree to play with two kicks per turn and a restart if the ball rolls past the painted line.",
+          "structureRef": "ges_v2_play_rule_negotiation",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2234,
+        "outputTokens": 263,
+        "totalTokens": 2497
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2234,
+    "outputTokens": 263,
+    "totalTokens": 2497
+  },
+  "resultDigest": "sha256:8d948ef0ffe2997a36da321784d5ac428a28257a83aaea6e1ba97efce6497c62"
+}

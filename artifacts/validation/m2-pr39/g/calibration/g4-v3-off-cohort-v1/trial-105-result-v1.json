@@ -1,0 +1,110 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 105,
+  "trialId": "cal_g4v3_105",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:b15bcb31e5d4fe99df0dc2afabe2710afd1f7f38c80cf11dd2134c1d725b3a2b",
+  "cognitionInputDigest": "sha256:396d217aee534a318f8c3c33270f9dcdcb93e8a89560af77e1165fef97c11b6a",
+  "startedAt": "2026-08-22T06:12:00.215Z",
+  "completedAt": "2026-08-22T06:12:02.528Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 426,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:396d217aee534a318f8c3c33270f9dcdcb93e8a89560af77e1165fef97c11b6a",
+      "outputDigest": "sha256:4d077f0ee82fe5b3fa6caf0200862f9290353828a74fc3fb3dee1e49439ea1b8",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_61759e0c7c0847b19b5f6b3b47f493e5",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2623,
+          "outputTokens": 227,
+          "totalTokens": 2850
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:1109c88f67338573e23c7bd25712f6a56e9b557a287412c27d42b90c266a93a6",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_105:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_105:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_61759e0c7c0847b19b5f6b3b47f493e5",
+      "inputDigest": "sha256:396d217aee534a318f8c3c33270f9dcdcb93e8a89560af77e1165fef97c11b6a",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w07_v15_01",
+          "occurredAt": "2016-03-15T09:30:00.000Z",
+          "ageAtEvent": 11.57,
+          "placeRef": "place_cal_g4v3_07_market",
+          "participantRefs": [
+            "thr_cal_g4v3_w07_v15",
+            "person_cal_g4v3_w07_v15_caregiver",
+            "person_cal_g4v3_w07_v15_neighbor"
+          ],
+          "observableAction": "On a weekday morning at the neighborhood market, the caregiver walked the young person through buying bread and fruit, then stepped back near the entrance while the young person approached the counter alone, spoke briefly with the shopkeeper, paid with cash from a labeled envelope, collected the change and a small receipt, and carried the bag back outside to rejoin the caregiver and a neighbor who were waiting by the door.",
+          "structureRef": "ges_v2_mundane_errand_independence",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2623,
+        "outputTokens": 227,
+        "totalTokens": 2850
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2623,
+    "outputTokens": 227,
+    "totalTokens": 2850
+  },
+  "resultDigest": "sha256:accb4dfc7e8ccfb3099e0c3b46710544cb0806d90f050e567e955df231bdd17c"
+}

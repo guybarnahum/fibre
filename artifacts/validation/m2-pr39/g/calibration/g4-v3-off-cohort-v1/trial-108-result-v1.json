@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 108,
+  "trialId": "cal_g4v3_108",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:6aa747622205c3b44a1fb3d362d77ff0f483a5837e7fdadc76bf56a974a650e3",
+  "cognitionInputDigest": "sha256:dc2c9e3496f86c12fa0b748d5068609ffcc25454a12838f092f4f422da0e7724",
+  "startedAt": "2026-08-22T06:12:08.284Z",
+  "completedAt": "2026-08-22T06:12:10.720Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 435,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:dc2c9e3496f86c12fa0b748d5068609ffcc25454a12838f092f4f422da0e7724",
+      "outputDigest": "sha256:7abe7cde105b050272105ceac091e9624754dbbc012ceefc82031bc5cac4564e",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_1aa89aa793cf4a5ebb093a0a62327c5f",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2244,
+          "outputTokens": 218,
+          "totalTokens": 2462
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:3bccc19014473fe3b133c09c43c1eec8378c5a8f3de7f2ebfdcce4c99f5f4f22",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_108:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_108:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_1aa89aa793cf4a5ebb093a0a62327c5f",
+      "inputDigest": "sha256:dc2c9e3496f86c12fa0b748d5068609ffcc25454a12838f092f4f422da0e7724",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w08_v03_001",
+          "occurredAt": "2013-06-05T10:15:00.000Z",
+          "ageAtEvent": 8.8,
+          "placeRef": "place_cal_g4v3_08_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w08_v03",
+            "person_cal_g4v3_w08_v03_sibling"
+          ],
+          "observableAction": "In the shared room at home, the young person and their sibling both reach for a single pair of scissors on the table. The young person pulls a sheet of colored paper closer and says they need the scissors to cut out shapes for a school project. The sibling keeps a hand on the scissors and says they were using them to finish cutting a cardboard figure. They tug the scissors back and forth lightly, each insisting on using them first.",
+          "structureRef": "ges_v2_shared_object_disagreement",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2244,
+        "outputTokens": 218,
+        "totalTokens": 2462
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2244,
+    "outputTokens": 218,
+    "totalTokens": 2462
+  },
+  "resultDigest": "sha256:279879cf65a00a831375dde4a07f5e6c64a74168b79b5cccf19c3e859134ec55"
+}

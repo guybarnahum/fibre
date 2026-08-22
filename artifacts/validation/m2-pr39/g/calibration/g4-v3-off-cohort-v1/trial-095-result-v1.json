@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 95,
+  "trialId": "cal_g4v3_095",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:623b8d5bcbe59f575e76ea2e103063a4b1f452c02bb926f0ee2edcfdfdb9446d",
+  "cognitionInputDigest": "sha256:0e1ea5b52dab884fbe1e6c5b1764b1957ce61783759740a2c1cd9ddc4c99ce12",
+  "startedAt": "2026-08-22T06:11:33.857Z",
+  "completedAt": "2026-08-22T06:11:37.338Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 421,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:0e1ea5b52dab884fbe1e6c5b1764b1957ce61783759740a2c1cd9ddc4c99ce12",
+      "outputDigest": "sha256:efc62d96681873468e45ff90d4195c4675e609416f1bffc384a32ca27c98a8bc",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_bb6cd4a3fb6744db8d20435800abf3ee",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2322,
+          "outputTokens": 217,
+          "totalTokens": 2539
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:5cc13cd04503b1b167f4d6dbc615c968d584945d5ba62facf1650f87516a7b6e",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_095:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_095:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_bb6cd4a3fb6744db8d20435800abf3ee",
+      "inputDigest": "sha256:0e1ea5b52dab884fbe1e6c5b1764b1957ce61783759740a2c1cd9ddc4c99ce12",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w07_v05_001",
+          "occurredAt": "2016-03-15T10:00:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_07_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w07_v05",
+            "person_cal_g4v3_w07_v05_peer"
+          ],
+          "observableAction": "During a mid-morning break in the school yard, the peer walks over to the young person, points toward a group setting up a ball game, and says they are starting teams and asks if the young person wants to join and maybe help keep score if there are too many players. The young person looks over at the group, shifts their backpack on one shoulder, and gives a brief verbal reply while the peer waits, watching their face.",
+          "structureRef": "ges_v2_peer_invitation",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2322,
+        "outputTokens": 217,
+        "totalTokens": 2539
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2322,
+    "outputTokens": 217,
+    "totalTokens": 2539
+  },
+  "resultDigest": "sha256:31fa535bc0af8342827125b211ca0c716d65760f87c1389b961bf891109f680a"
+}

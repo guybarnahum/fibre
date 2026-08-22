@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 32,
+  "trialId": "cal_g4v3_032",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:a06a2d1c256c49a1561203e11b0a9af8b86a95bc5d6ab91bd718d7aa9ac5d476",
+  "cognitionInputDigest": "sha256:27cbbc3ec059f3eaee4766cb1a23e7f17904a18f5bc4f5f8409a2a3cc4a8370a",
+  "startedAt": "2026-08-22T06:08:33.631Z",
+  "completedAt": "2026-08-22T06:08:36.394Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 423,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:27cbbc3ec059f3eaee4766cb1a23e7f17904a18f5bc4f5f8409a2a3cc4a8370a",
+      "outputDigest": "sha256:fd60f9d147ad8a149dba90b5882ecefda0d5d260528eae87bd990b710b2bea35",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_b2d534a1e376468480fbc8e93a61e387",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2200,
+          "outputTokens": 260,
+          "totalTokens": 2460
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:ff711d4e456c3cdad22f4867b14d3ef6bef4b63e1bc752c6299c459d0bf88a73",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_032:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_032:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_b2d534a1e376468480fbc8e93a61e387",
+      "inputDigest": "sha256:27cbbc3ec059f3eaee4766cb1a23e7f17904a18f5bc4f5f8409a2a3cc4a8370a",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w03_v02_001",
+          "occurredAt": "2012-03-10T10:15:00.000Z",
+          "ageAtEvent": 7.6,
+          "placeRef": "place_cal_g4v3_03_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w03_v02",
+            "person_cal_g4v3_w03_v02_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the caregiver reads aloud from a picture book while the young person follows the illustrations. When the caregiver reads a line about a character sailing to the moon in a small boat, the young person interrupts, points at the picture of the boat in the sky, and asks how a boat could float up there without any water. The caregiver pauses, looks at the page, and begins to answer, tapping the drawing.",
+          "structureRef": "ges_v2_caregiver_reads_and_pauses",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "illustrated children’s story about a boat sailing to the moon",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2200,
+        "outputTokens": 260,
+        "totalTokens": 2460
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2200,
+    "outputTokens": 260,
+    "totalTokens": 2460
+  },
+  "resultDigest": "sha256:72e9f22968a307cc68ee9fa08aa1af3ffc86974621610f287a4be34ad9ce0bf5"
+}

@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 187,
+  "trialId": "cal_g4v3_187",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:1b5e6164f15cfc72065dbae3bd9159433bb56408619d72c6eb47dead19e1d4d0",
+  "cognitionInputDigest": "sha256:f7648433108de59a2b6b30d5a24a6eeabf6748e8da9a9a7fc0178184adf2be5e",
+  "startedAt": "2026-08-22T06:15:57.896Z",
+  "completedAt": "2026-08-22T06:16:00.530Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 411,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:f7648433108de59a2b6b30d5a24a6eeabf6748e8da9a9a7fc0178184adf2be5e",
+      "outputDigest": "sha256:b80fe2d82bf0525f8c252465e0fb5233f31a979e5990b739f7a07a886ece117e",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_c73bbb9cab4e419cb649d2cdc13ca831",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2498,
+          "outputTokens": 256,
+          "totalTokens": 2754
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:6a1247430958a4fbdeadb1b4c8eb84513a686e84b4c41e03a147a3018074aa64",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_187:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_187:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_c73bbb9cab4e419cb649d2cdc13ca831",
+      "inputDigest": "sha256:f7648433108de59a2b6b30d5a24a6eeabf6748e8da9a9a7fc0178184adf2be5e",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w13_v07_02",
+          "occurredAt": "2018-03-10T15:30:00.000Z",
+          "ageAtEvent": 13.55,
+          "placeRef": "place_cal_g4v3_13_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w13_v07",
+            "person_cal_g4v3_w13_v07_librarian"
+          ],
+          "observableAction": "At a side shelf in the public reading room, the young person picked up a slim philosophy book whose back cover claimed that people do not truly choose their actions. After reading a few pages while standing by the shelf, they frowned slightly, glanced back at the cover summary, and then carried the book to the staffed desk to check it out while the librarian scanned the barcode and stamped the due date slip.",
+          "structureRef": "ges_v2_text_conflicts_with_expectation",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "religious_or_philosophical_text",
+            "subjectKind": "text",
+            "subjectLabel": "introductory book arguing that free will is an illusion",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2498,
+        "outputTokens": 256,
+        "totalTokens": 2754
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2498,
+    "outputTokens": 256,
+    "totalTokens": 2754
+  },
+  "resultDigest": "sha256:f4a970a2ad52f491547b9a3e349c83832e7d98b340fa924ba726e0826b9b3b00"
+}

@@ -1,0 +1,116 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 90,
+  "trialId": "cal_g4v3_090",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:9648c2fcffd17d466dff3a8eeac2815aa50069746af4d35b47dd90b70c302556",
+  "cognitionInputDigest": "sha256:1314d6abce45238a22fa9a4ccd98c4a994c301d72e546d5ce5fccc8d318e2051",
+  "startedAt": "2026-08-22T06:11:17.014Z",
+  "completedAt": "2026-08-22T06:11:21.161Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 322,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:1314d6abce45238a22fa9a4ccd98c4a994c301d72e546d5ce5fccc8d318e2051",
+      "outputDigest": "sha256:edbe190174a69cc870035cd07bc45460f845737abfe138009c6d7a9543e033fe",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_4bcfd31de6144be5b1820d0287a9dd26",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2612,
+          "outputTokens": 255,
+          "totalTokens": 2867
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:8506289d094cef8f9addcf696e24e5c80b9d68ff3b74569f67955a5f7ff6e37b",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_090:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_090:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_4bcfd31de6144be5b1820d0287a9dd26",
+      "inputDigest": "sha256:1314d6abce45238a22fa9a4ccd98c4a994c301d72e546d5ce5fccc8d318e2051",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w06_v15_01",
+          "occurredAt": "2016-05-15T09:30:00.000Z",
+          "ageAtEvent": 11.7,
+          "placeRef": "place_cal_g4v3_06_market",
+          "participantRefs": [
+            "thr_cal_g4v3_w06_v15",
+            "person_cal_g4v3_w06_v15_caregiver",
+            "person_cal_g4v3_w06_v15_shopkeeper"
+          ],
+          "observableAction": "At the neighborhood market entrance, the caregiver handed the young person a short written list and some cash, then waited by the door while the young person walked to the produce section, selected the listed items, queued at the counter, paid the shopkeeper, and returned to the caregiver with a small bag and the change.",
+          "structureRef": "ges_v2_mundane_errand_independence",
+          "introducedParticipants": [
+            {
+              "provisionalPersonId": "person_cal_g4v3_w06_v15_shopkeeper",
+              "roleRef": "shopkeeper",
+              "introducedAt": "2016-05-15T09:30:00.000Z"
+            }
+          ],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2612,
+        "outputTokens": 255,
+        "totalTokens": 2867
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2612,
+    "outputTokens": 255,
+    "totalTokens": 2867
+  },
+  "resultDigest": "sha256:fcbba2ced84d3c9c8945e9f963bc28ae36dbf0133b44e5506964ea5853c7fb25"
+}

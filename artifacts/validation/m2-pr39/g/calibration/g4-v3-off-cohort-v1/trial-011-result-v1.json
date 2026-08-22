@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 11,
+  "trialId": "cal_g4v3_011",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d645b824f05040ecb8fad1a7338f431e0eb6a750f0e415f78dbd2b48477c50a3",
+  "cognitionInputDigest": "sha256:a2543ebd44c0bca3f29bee79986100c63167ef335422b3e0c770b70071399e81",
+  "startedAt": "2026-08-22T06:07:19.162Z",
+  "completedAt": "2026-08-22T06:07:22.329Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 363,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:a2543ebd44c0bca3f29bee79986100c63167ef335422b3e0c770b70071399e81",
+      "outputDigest": "sha256:c947e368960a5b497887f611a5f522ddd7ac5db3e63d73e3561447f75b1e20f4",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_61325887b4f24ced8eddd474ad528e3c",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2450,
+          "outputTokens": 242,
+          "totalTokens": 2692
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:84bcdfe555734131497f6add209bbf9ac1f6b782078a1bc8aba03f07de430a51",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_011:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_011:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_61325887b4f24ced8eddd474ad528e3c",
+      "inputDigest": "sha256:a2543ebd44c0bca3f29bee79986100c63167ef335422b3e0c770b70071399e81",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w01_v11_01",
+          "occurredAt": "2011-03-15T00:00:00.000Z",
+          "ageAtEvent": 6.57,
+          "placeRef": "place_cal_g4v3_01_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v11",
+            "person_cal_g4v3_w01_v11_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the caregiver opened a storybook and read aloud until reaching a picture of a crowded market. The young person pointed at a stall in the illustration and asked what the small hanging scale was for. The caregiver stopped reading, tapped the picture of the scale, and explained that people put fruit on it to see how heavy it is before buying.",
+          "structureRef": "ges_v2_caregiver_reads_and_pauses",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "illustrated children’s storybook with market scene",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2450,
+        "outputTokens": 242,
+        "totalTokens": 2692
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2450,
+    "outputTokens": 242,
+    "totalTokens": 2692
+  },
+  "resultDigest": "sha256:c8b0537b49226d1566a7db48f85c49e8a27fe0776878a34c5f73477614d60aef"
+}

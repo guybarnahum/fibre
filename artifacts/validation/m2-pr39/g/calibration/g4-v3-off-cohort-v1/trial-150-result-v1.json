@@ -1,0 +1,116 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 150,
+  "trialId": "cal_g4v3_150",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:27240f55e2544b159f6bced6048507d0ba8313af5c7c27033ebc36002f6a31d4",
+  "cognitionInputDigest": "sha256:6f9cfacaab8581be7f1a5ab19870de72b44c24c41bf5f01130d0dbbbb0ea1e5c",
+  "startedAt": "2026-08-22T06:14:02.340Z",
+  "completedAt": "2026-08-22T06:14:05.001Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 378,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:6f9cfacaab8581be7f1a5ab19870de72b44c24c41bf5f01130d0dbbbb0ea1e5c",
+      "outputDigest": "sha256:ecfc88d913aa78f4d3a19a067137f699195f3573bbb5cb4810617b8459de9ac0",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_b693a3bb02ed41c1b1d8c4d578998900",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2607,
+          "outputTokens": 254,
+          "totalTokens": 2861
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:4f8eb2372e6c7cfed2eb85857425a74a9ab78a3316c3189756bd7257b16112bf",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_150:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_150:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_b693a3bb02ed41c1b1d8c4d578998900",
+      "inputDigest": "sha256:6f9cfacaab8581be7f1a5ab19870de72b44c24c41bf5f01130d0dbbbb0ea1e5c",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w10_v15_01",
+          "occurredAt": "2016-03-15T09:30:00.000Z",
+          "ageAtEvent": 11.57,
+          "placeRef": "place_cal_g4v3_10_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w10_v15",
+            "person_cal_g4v3_w10_v15_peer",
+            "person_cal_g4v3_w10_v15_teacher"
+          ],
+          "observableAction": "In a classroom group, the teacher finished a short magnet demonstration with paper clips on the table. As the teacher turned to the board, the young person slid a paper clip under the table surface to see if it still moved toward the magnet and asked, “Does it work through the desk too?” The teacher paused and bent down to look, while a nearby peer watched the paper clip.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "magnetic attraction through different materials",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2607,
+        "outputTokens": 254,
+        "totalTokens": 2861
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2607,
+    "outputTokens": 254,
+    "totalTokens": 2861
+  },
+  "resultDigest": "sha256:3d8f3322cabeca301c5af3a7a36b7b111d5f8196bd08f84fc913393f3b534740"
+}

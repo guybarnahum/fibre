@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 6,
+  "trialId": "cal_g4v3_006",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:cce17ad950aa4c443ec0043cfe196ba12a30639e56dea25d3752579be03d2a76",
+  "cognitionInputDigest": "sha256:70f53b97696c77442b1b7f9c2daef2c31ba957c5cfa5aeb8223169198c8991c7",
+  "startedAt": "2026-08-22T06:06:58.716Z",
+  "completedAt": "2026-08-22T06:07:05.209Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 361,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:70f53b97696c77442b1b7f9c2daef2c31ba957c5cfa5aeb8223169198c8991c7",
+      "outputDigest": "sha256:dfdbd5b2ec9b691e7ddf371fb75c3694b091502d177c3d67b1cf3ced15777e7a",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_0345bd2ba16341fcbd31b9d9a7df2829",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2455,
+          "outputTokens": 237,
+          "totalTokens": 2692
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:77d453af37ec2efcb77156741c957bbd96e929631d23060e8e4832cf69afa0ad",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_006:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_006:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_0345bd2ba16341fcbd31b9d9a7df2829",
+      "inputDigest": "sha256:70f53b97696c77442b1b7f9c2daef2c31ba957c5cfa5aeb8223169198c8991c7",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w01_v06_02",
+          "occurredAt": "2017-03-15T15:30:00.000Z",
+          "ageAtEvent": 12.6,
+          "placeRef": "place_cal_g4v3_01_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v06",
+            "person_cal_g4v3_w01_v06_librarian"
+          ],
+          "observableAction": "After school, the young person walks between shelves in the public reading room, scans several book spines at eye level, pulls out two different paperback science books, flips through their tables of contents at a nearby table, then returns one to the shelf and carries the other to the front desk where the librarian checks it out and stamps the due date slip.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "introductory popular science book from the library shelf",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2455,
+        "outputTokens": 237,
+        "totalTokens": 2692
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2455,
+    "outputTokens": 237,
+    "totalTokens": 2692
+  },
+  "resultDigest": "sha256:fcf6e9c992034ab2328eea2d6ab219f8e344342fc165d85a0d5f491d6a1ecd75"
+}

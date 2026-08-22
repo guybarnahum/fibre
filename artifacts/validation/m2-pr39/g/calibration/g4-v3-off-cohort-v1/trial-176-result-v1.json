@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 176,
+  "trialId": "cal_g4v3_176",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:69f5adf9dcda63c3d5f613815582f52961fefb599b3b5c8011f45c7683ddc818",
+  "cognitionInputDigest": "sha256:4cbdcbc3db9d720f5dc277b894bf8861d1389fec672c4963953d469482d7ce9c",
+  "startedAt": "2026-08-22T06:15:25.745Z",
+  "completedAt": "2026-08-22T06:15:28.514Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 320,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:4cbdcbc3db9d720f5dc277b894bf8861d1389fec672c4963953d469482d7ce9c",
+      "outputDigest": "sha256:f25fa6ac7702ee9a96d9ecb1290f3b6d4de2310cbc5a70c7d92c82fe6fd9f56a",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_4779a9ae4bdc415eb446692a0934c175",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2447,
+          "outputTokens": 194,
+          "totalTokens": 2641
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:5d3da0938020d39e5793cae394ff54969ddd39a215daae8c544d270f33085448",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_176:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_176:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_4779a9ae4bdc415eb446692a0934c175",
+      "inputDigest": "sha256:4cbdcbc3db9d720f5dc277b894bf8861d1389fec672c4963953d469482d7ce9c",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w12_v11_0003",
+          "occurredAt": "2011-03-15T00:00:00.000Z",
+          "ageAtEvent": 6.57,
+          "placeRef": "place_cal_g4v3_12_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w12_v11",
+            "person_cal_g4v3_w12_v11_caregiver"
+          ],
+          "observableAction": "In the kitchen, the caregiver handed the young person a small stack of folded dish towels and pointed to an empty section of the storage shelf. The young person carried the towels over on tiptoe and slid them into place beside the labeled box they had stored there earlier, then called out to the caregiver to come look.",
+          "structureRef": "ges_v2_small_help_request",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2447,
+        "outputTokens": 194,
+        "totalTokens": 2641
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2447,
+    "outputTokens": 194,
+    "totalTokens": 2641
+  },
+  "resultDigest": "sha256:a5fb0932b681f4168dec800c75684b6450249474e390e27c1bc2ce4cae43d058"
+}

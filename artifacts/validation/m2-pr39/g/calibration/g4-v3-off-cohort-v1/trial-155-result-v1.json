@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 155,
+  "trialId": "cal_g4v3_155",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:338375bfb1d2d04ddcf2f2f8c7f2ef05a910a32c82e3bc48daf15b4096442cb2",
+  "cognitionInputDigest": "sha256:ac8526ba04f2d6181de39a2abd2ac0ce7d09e965476aae1e406b6ede20813877",
+  "startedAt": "2026-08-22T06:14:17.749Z",
+  "completedAt": "2026-08-22T06:14:20.145Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 345,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:ac8526ba04f2d6181de39a2abd2ac0ce7d09e965476aae1e406b6ede20813877",
+      "outputDigest": "sha256:9c227871b4e250c28cd50b38c68a0d651f7222b37b96af3b4903b2a8720ae40e",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_003816f5744a450f8c78855474edd5ac",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2324,
+          "outputTokens": 239,
+          "totalTokens": 2563
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:cab06d1cf800bb2a74d24896c7f8ff61f29c576bfbc79019bc85521903c02b12",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_155:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_155:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_003816f5744a450f8c78855474edd5ac",
+      "inputDigest": "sha256:ac8526ba04f2d6181de39a2abd2ac0ce7d09e965476aae1e406b6ede20813877",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w11_v05_001",
+          "occurredAt": "2016-03-15T15:30:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_11_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w11_v05",
+            "person_cal_g4v3_w11_v05_teacher"
+          ],
+          "observableAction": "In a science classroom, the teacher pours vinegar onto baking soda in a clear cup, and foam rises over the rim. As the fizzing slows, the young person raises a hand and asks whether the gas would still form if the same two powders were mixed dry. The teacher pauses at the front table, looks at the cup, and answers while pointing to the liquid.",
+          "structureRef": "ges_v2_question_after_demonstration",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "acid–base reaction producing gas",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2324,
+        "outputTokens": 239,
+        "totalTokens": 2563
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2324,
+    "outputTokens": 239,
+    "totalTokens": 2563
+  },
+  "resultDigest": "sha256:02f2857eede3415cf5ed7c44808d0e2cc583c7315573dcacb66bcd50056265e6"
+}

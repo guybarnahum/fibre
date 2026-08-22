@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 63,
+  "trialId": "cal_g4v3_063",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:2bbee6993b2b8d9d1726f7139c386a6c6b1730a2eb10764fd68b004592891608",
+  "cognitionInputDigest": "sha256:2951f38ce321d4bb9de2dbe314d06458e5dd5b723af909dda291e306e1c10897",
+  "startedAt": "2026-08-22T06:10:00.232Z",
+  "completedAt": "2026-08-22T06:10:03.781Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 415,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:2951f38ce321d4bb9de2dbe314d06458e5dd5b723af909dda291e306e1c10897",
+      "outputDigest": "sha256:bfc31faa0847e3902e782b20681be9d02cbe377b48a182ee81a02e6806ff9483",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_12dff33552eb4299984cc22bd4a23116",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2244,
+          "outputTokens": 256,
+          "totalTokens": 2500
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:1510b4d43325d10a9ffd8dd2cdc507784c0a9d33c2bd48af18a7a595d531de1d",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_063:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_063:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_12dff33552eb4299984cc22bd4a23116",
+      "inputDigest": "sha256:2951f38ce321d4bb9de2dbe314d06458e5dd5b723af909dda291e306e1c10897",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w05_v03_001",
+          "occurredAt": "2013-06-10T10:15:00.000Z",
+          "ageAtEvent": 8.8,
+          "placeRef": "place_cal_g4v3_05_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w05_v03",
+            "person_cal_g4v3_w05_v03_caregiver"
+          ],
+          "observableAction": "At a small table in the public reading room, the caregiver sets down three children’s books from the nearby shelf and says, “Pick one for us to borrow today.” The young person flips through each cover and a few pages, asks, “Can we take this one about planets?” and holds it up. The caregiver nods, takes the chosen book and the others, and walks with the young person to the staffed desk to check it out.",
+          "structureRef": "ges_v2_library_browse_with_adult",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "children’s book about planets",
+            "accessMode": "caregiver_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2244,
+        "outputTokens": 256,
+        "totalTokens": 2500
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2244,
+    "outputTokens": 256,
+    "totalTokens": 2500
+  },
+  "resultDigest": "sha256:2f55096d78b9cba80e4f366e824d3d3d29472939ce99ced853539a4fa5f49ec0"
+}

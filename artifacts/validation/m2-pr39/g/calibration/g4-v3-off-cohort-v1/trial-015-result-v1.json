@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 15,
+  "trialId": "cal_g4v3_015",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:ab58b43651d755ae406e07883c4854a406c7f94fa627228091313fc5a4d03abc",
+  "cognitionInputDigest": "sha256:872d0bda1584bdc8ce0b31146686d117fdd4e47c896bbf45b2cb01a6c83acf22",
+  "startedAt": "2026-08-22T06:07:29.852Z",
+  "completedAt": "2026-08-22T06:07:33.329Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 374,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:872d0bda1584bdc8ce0b31146686d117fdd4e47c896bbf45b2cb01a6c83acf22",
+      "outputDigest": "sha256:4cf8d08f1f4d4fa6b306cf6403e1c904826e210781f559c48d96bdf69febda86",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_e9c10746d1104288aa20de89b6469ee0",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2606,
+          "outputTokens": 242,
+          "totalTokens": 2848
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:222ebe15b2f0fe3de47658ad689735e2598480a0dd0c58e17a8d1ebec823c13b",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_015:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_015:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_e9c10746d1104288aa20de89b6469ee0",
+      "inputDigest": "sha256:872d0bda1584bdc8ce0b31146686d117fdd4e47c896bbf45b2cb01a6c83acf22",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w01_v15_03",
+          "occurredAt": "2016-03-15T09:30:00.000Z",
+          "ageAtEvent": 11.6,
+          "placeRef": "place_cal_g4v3_01_school",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v15",
+            "person_cal_g4v3_w01_v15_teacher"
+          ],
+          "observableAction": "In a classroom, the teacher writes “heavier objects fall faster” on the board and asks for predictions. The young person and classmates drop a thick textbook and a thin notebook from the same height over a clear floor. The young person crouches to watch as both hit the ground nearly together, then helps the teacher repeat the drop from a chair while the class watches.",
+          "structureRef": "ges_v2_scientific_claim_test",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "scientific_idea",
+            "subjectKind": "idea",
+            "subjectLabel": "comparison of falling speeds for heavier and lighter objects",
+            "accessMode": "institution_mediated",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2606,
+        "outputTokens": 242,
+        "totalTokens": 2848
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2606,
+    "outputTokens": 242,
+    "totalTokens": 2848
+  },
+  "resultDigest": "sha256:29ad9462839f569247c323ef8e554570e5ab60078f94b7573a0a5191a04c4ce1"
+}

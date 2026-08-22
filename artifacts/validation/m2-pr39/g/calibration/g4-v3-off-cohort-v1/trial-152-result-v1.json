@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 152,
+  "trialId": "cal_g4v3_152",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:2e50d0cb1c68434787d189df262acf83efd1858c7d39b4f22b401572d56b8bb1",
+  "cognitionInputDigest": "sha256:93f1efcbe9e00173e68f08164886f06336c9cc127715f8ab04fa24a8936b4292",
+  "startedAt": "2026-08-22T06:14:08.824Z",
+  "completedAt": "2026-08-22T06:14:11.888Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 531,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:93f1efcbe9e00173e68f08164886f06336c9cc127715f8ab04fa24a8936b4292",
+      "outputDigest": "sha256:525a5b79658dab5c30aca960d9a30ec80064ad563362009f7785de56abb0dbd5",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_770834da51344f899e13c4986275911b",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2213,
+          "outputTokens": 244,
+          "totalTokens": 2457
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:48b88c407ab45954d56ad94d09357fed0e51c11ac7df669e0eff011b3a247f40",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_152:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_152:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_770834da51344f899e13c4986275911b",
+      "inputDigest": "sha256:93f1efcbe9e00173e68f08164886f06336c9cc127715f8ab04fa24a8936b4292",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_thr_cal_g4v3_w11_v02_001",
+          "occurredAt": "2012-03-10T10:15:00.000Z",
+          "ageAtEvent": 7.6,
+          "placeRef": "place_cal_g4v3_11_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w11_v02",
+            "person_cal_g4v3_w11_v02_sibling"
+          ],
+          "observableAction": "In the shared room at home, the young person and their sibling both reach for a single tablet lying on the table. The young person opens a drawing app and starts sketching, while the sibling leans over and says they want to use it to watch a show. The sibling taps the screen to exit the app, and the young person pulls the tablet slightly toward themselves. They go back and forth, each holding one side of the tablet and stating what they want to do with it, until an adult voice calls from another room, asking what is going on.",
+          "structureRef": "ges_v2_shared_object_disagreement",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2213,
+        "outputTokens": 244,
+        "totalTokens": 2457
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2213,
+    "outputTokens": 244,
+    "totalTokens": 2457
+  },
+  "resultDigest": "sha256:e6b8125b4dca36ca85cf467e67a1165db2959caf776705a497b01f92b9322409"
+}

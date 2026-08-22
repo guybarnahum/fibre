@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 30,
+  "trialId": "cal_g4v3_030",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:ee6bd8df59ec9ad03c703b32bdc9016f3a038be816030bf55515bf9fbdad7be5",
+  "cognitionInputDigest": "sha256:9b5d70e150d3846d74923ef73c9c5863503c6d0f20d0f52e297b1df9267196e3",
+  "startedAt": "2026-08-22T06:08:28.572Z",
+  "completedAt": "2026-08-22T06:08:30.794Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 298,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:9b5d70e150d3846d74923ef73c9c5863503c6d0f20d0f52e297b1df9267196e3",
+      "outputDigest": "sha256:c2c40f961151226f585090233ca8a54f9467231c115ff24729708b541f861cfe",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_9d96506bc3e84cc0badb019faebd11c6",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2620,
+          "outputTokens": 223,
+          "totalTokens": 2843
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:cc94dd3b2a0c2c70cfbd79f04f4c5bea31c5a86be412ca24cd4e729129a75264",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_030:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_030:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_9d96506bc3e84cc0badb019faebd11c6",
+      "inputDigest": "sha256:9b5d70e150d3846d74923ef73c9c5863503c6d0f20d0f52e297b1df9267196e3",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w02_v15_01",
+          "occurredAt": "2016-03-15T04:48:00.000Z",
+          "ageAtEvent": 11.57,
+          "placeRef": "place_cal_g4v3_02_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w02_v15",
+            "person_cal_g4v3_w02_v15_librarian"
+          ],
+          "observableAction": "In the public reading room, the young person walked slowly along a shelf of science books, pulled out two different titles, compared their covers and tables of contents at a nearby table, then returned one to the shelf and carried the other to the desk, where the librarian scanned it for checkout.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "introductory science book on everyday experiments",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2620,
+        "outputTokens": 223,
+        "totalTokens": 2843
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2620,
+    "outputTokens": 223,
+    "totalTokens": 2843
+  },
+  "resultDigest": "sha256:eb88112800d8cf8ef1b71d5d78e842bd2187c1623e73da8d29f29efd0eb17887"
+}

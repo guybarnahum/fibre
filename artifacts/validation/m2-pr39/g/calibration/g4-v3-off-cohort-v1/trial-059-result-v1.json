@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 59,
+  "trialId": "cal_g4v3_059",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:6bb623922ce2a1b6affda3d194c77f501aceeb8cdc7bf7e84019eec28ce33bc6",
+  "cognitionInputDigest": "sha256:9f0ea4f9dd79ced86cdc3021be6f7ecc39754f110b88a9bddbf8449a71cd163f",
+  "startedAt": "2026-08-22T06:09:50.227Z",
+  "completedAt": "2026-08-22T06:09:52.450Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 273,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:9f0ea4f9dd79ced86cdc3021be6f7ecc39754f110b88a9bddbf8449a71cd163f",
+      "outputDigest": "sha256:5ef21c370a2416bbebdb80861db484b3296f980e5d5cfb567ab58f7ce31eeb1b",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_29cedbdb086e423b8777bbdb25f3e517",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2571,
+          "outputTokens": 220,
+          "totalTokens": 2791
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:f3dbb2eb0db3f01ed6ea0e8bc0e510f66c9632338df7137133bd8ab6e751c1b2",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_059:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_059:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_29cedbdb086e423b8777bbdb25f3e517",
+      "inputDigest": "sha256:9f0ea4f9dd79ced86cdc3021be6f7ecc39754f110b88a9bddbf8449a71cd163f",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w04_v14_03",
+          "occurredAt": "2014-04-10T21:36:00.000Z",
+          "ageAtEvent": 9.64,
+          "placeRef": "place_cal_g4v3_04_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w04_v14",
+            "person_cal_g4v3_w04_v14_librarian"
+          ],
+          "observableAction": "In the public reading room, the young person walked slowly along a low shelf, pulled out three different paperback books, glanced at each cover and a few inside pages, then returned two and carried the remaining one to a table without speaking to the librarian at the desk.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "a chosen paperback book from the children’s shelf",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2571,
+        "outputTokens": 220,
+        "totalTokens": 2791
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2571,
+    "outputTokens": 220,
+    "totalTokens": 2791
+  },
+  "resultDigest": "sha256:6d01daeda791630290aef0646eea22bc3ee1c2490dcffd2f336798933ca7f054"
+}

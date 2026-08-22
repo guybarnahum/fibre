@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 12,
+  "trialId": "cal_g4v3_012",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:ffb17fdd3e136b9ab66e709ce2fe460b2d29a37668abb227f6ddc56727b47d09",
+  "cognitionInputDigest": "sha256:8ace7717e03e162cdb00b02c9094ca621c8aea559187b323ac50defe9fbc1d1d",
+  "startedAt": "2026-08-22T06:07:22.330Z",
+  "completedAt": "2026-08-22T06:07:24.611Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 309,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:8ace7717e03e162cdb00b02c9094ca621c8aea559187b323ac50defe9fbc1d1d",
+      "outputDigest": "sha256:2e9dd42c634e4a4b899a5c619c577aea4c3c998d177c452f843be640796dc707",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_cffe6f204c2841de8173a2ba0b1932f7",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2501,
+          "outputTokens": 199,
+          "totalTokens": 2700
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:9a9a81e4ca3709d15bd71e92cece312495df61381800109146aa0231db7c3fe7",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_012:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_012:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_cffe6f204c2841de8173a2ba0b1932f7",
+      "inputDigest": "sha256:8ace7717e03e162cdb00b02c9094ca621c8aea559187b323ac50defe9fbc1d1d",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w01_v12_03",
+          "occurredAt": "2012-02-10T07:12:00.000Z",
+          "ageAtEvent": 7.48,
+          "placeRef": "place_cal_g4v3_01_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w01_v12",
+            "person_cal_g4v3_w01_v12_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the young person spread coins and a small notepad, lining the coins up in rows. The caregiver walked over, glanced at the rows, and silently swept the coins into two piles, writing a total on the notepad without asking anything. The young person watched, hands resting on the table edge.",
+          "structureRef": "ges_v2_adult_finishes_task_unasked",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2501,
+        "outputTokens": 199,
+        "totalTokens": 2700
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2501,
+    "outputTokens": 199,
+    "totalTokens": 2700
+  },
+  "resultDigest": "sha256:80b87f720bd8ef77475ab74d4850a46d5c57adce9d6f3cda84baf43694f764e5"
+}

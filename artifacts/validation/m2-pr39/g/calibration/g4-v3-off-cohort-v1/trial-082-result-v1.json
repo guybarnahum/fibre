@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 82,
+  "trialId": "cal_g4v3_082",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:a4b427ad5bfbbeb8be36401a02f91a20555315c2690225e7c2c0907488a7368d",
+  "cognitionInputDigest": "sha256:50140856fc5197c885ae7b9d288c2d16e4df9738a67305b144c0298c953fd97e",
+  "startedAt": "2026-08-22T06:10:55.926Z",
+  "completedAt": "2026-08-22T06:10:58.731Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 350,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:50140856fc5197c885ae7b9d288c2d16e4df9738a67305b144c0298c953fd97e",
+      "outputDigest": "sha256:356cd891c91a7031b2e1143892691801c81e0fcd9c95676d2907d212a78521aa",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_9476b89f16394c98af788ea278de4c15",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2501,
+          "outputTokens": 234,
+          "totalTokens": 2735
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:4644ad26ee1bf5f30992d34aa76f431866a060a30db86fa9d29851c3cc27076a",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_082:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_082:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_9476b89f16394c98af788ea278de4c15",
+      "inputDigest": "sha256:50140856fc5197c885ae7b9d288c2d16e4df9738a67305b144c0298c953fd97e",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w06_v07_02",
+          "occurredAt": "2018-03-10T15:30:00.000Z",
+          "ageAtEvent": 13.55,
+          "placeRef": "place_cal_g4v3_06_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w06_v07",
+            "person_cal_g4v3_w06_v07_librarian"
+          ],
+          "observableAction": "In the small public reading room, the young person walks slowly along a shelf labeled “Science & Technology,” scanning several book spines. After pausing to pull out two different titles and briefly flipping through their pages, they return one to the shelf and carry the other to a nearby table, setting it down and opening to the first chapter.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "introductory popular science book about space exploration",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2501,
+        "outputTokens": 234,
+        "totalTokens": 2735
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2501,
+    "outputTokens": 234,
+    "totalTokens": 2735
+  },
+  "resultDigest": "sha256:22c718241f57801fa48fe45c42fb97593917c53bbc12f34cfd3e82fcf5e9555f"
+}

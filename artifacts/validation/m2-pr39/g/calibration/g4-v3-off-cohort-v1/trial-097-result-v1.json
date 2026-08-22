@@ -1,0 +1,115 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 97,
+  "trialId": "cal_g4v3_097",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:197463329b4e024b7c2a566804c5798ac22ec01b0f062c6cb231ca7502dc717f",
+  "cognitionInputDigest": "sha256:1acc66bed43e875f21904f58f91fc34ea557cd60e0ef761e86de83b37bcd40d7",
+  "startedAt": "2026-08-22T06:11:40.147Z",
+  "completedAt": "2026-08-22T06:11:42.766Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 410,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:1acc66bed43e875f21904f58f91fc34ea557cd60e0ef761e86de83b37bcd40d7",
+      "outputDigest": "sha256:688d63edff1b4aa0ff50bd5c277e144afc07c220a8c739fd5985a7a3a59796e9",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_68c01c1ce0334250b2ea253ac619a458",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2503,
+          "outputTokens": 242,
+          "totalTokens": 2745
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:5c64d4323fc0ef2aaa97911130e82793e2ddf94ef4f07980f46eb3778b39789d",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_097:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_097:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_68c01c1ce0334250b2ea253ac619a458",
+      "inputDigest": "sha256:1acc66bed43e875f21904f58f91fc34ea557cd60e0ef761e86de83b37bcd40d7",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w07_v07_02",
+          "occurredAt": "2018-02-10T19:12:00.000Z",
+          "ageAtEvent": 13.48,
+          "placeRef": "place_cal_g4v3_07_library",
+          "participantRefs": [
+            "thr_cal_g4v3_w07_v07",
+            "person_cal_g4v3_w07_v07_librarian"
+          ],
+          "observableAction": "In the public reading room, the young person stands before a shelf labeled “Science” and scans several book spines while the librarian works at the staffed desk. After pulling out two different introductory astronomy books and briefly flipping through their tables of contents, the young person returns one to the shelf and carries the other to a table, setting it down and opening it to the first chapter.",
+          "structureRef": "ges_v2_choose_text_self_directed",
+          "introducedParticipants": [],
+          "intellectualEncounter": {
+            "kind": "book",
+            "subjectKind": "work",
+            "subjectLabel": "introductory astronomy book from library science shelf",
+            "accessMode": "self_directed",
+            "subjectPersonRef": null
+          }
+        }
+      },
+      "usage": {
+        "inputTokens": 2503,
+        "outputTokens": 242,
+        "totalTokens": 2745
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2503,
+    "outputTokens": 242,
+    "totalTokens": 2745
+  },
+  "resultDigest": "sha256:ff0cc8a59a443a714e6f286b2f8fbc226622a2ba046da2036a1a0eb3cef9f581"
+}

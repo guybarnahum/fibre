@@ -1,0 +1,109 @@
+{
+  "evidenceVersion": "pr39-g4-v3-calibration-trial-result-v1",
+  "status": "ADMITTED",
+  "trialOrdinal": 191,
+  "trialId": "cal_g4v3_191",
+  "corpusDigest": "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a",
+  "passAInputDigest": "sha256:d106603be7d2b5083b6d06988a134f7bb95e48c30a8ac67244abab7db0a9c7b3",
+  "cognitionInputDigest": "sha256:cedd49f2aafb9e93d5ab4c5749ec7e237aefd51e48b171e54fbdbf8801a671f5",
+  "startedAt": "2026-08-22T06:16:10.750Z",
+  "completedAt": "2026-08-22T06:16:12.958Z",
+  "generationPolicyVersion": "pr39-g4-pass-a-reliability-amendment-v3",
+  "mechanical": {
+    "admitted": true,
+    "terminalGate": null,
+    "initialDraft": {
+      "observableActionUtf8Bytes": 241,
+      "withinAuthoritative1200ByteLimit": true
+    },
+    "generatedVersionCount": 1,
+    "formRepairCount": 0,
+    "recordRetryCount": 0,
+    "failedGateSequence": [],
+    "failedGateCensus": {}
+  },
+  "calls": [
+    {
+      "kind": "initial",
+      "inputDigest": "sha256:cedd49f2aafb9e93d5ab4c5749ec7e237aefd51e48b171e54fbdbf8801a671f5",
+      "outputDigest": "sha256:6c28d21b858251234aa4c6d8a46616e8713b4b3321782d1731f68ad4a75f501c",
+      "provenance": {
+        "provider": "openai",
+        "transport": "responses",
+        "modelId": "gpt-5.1-2025-11-13",
+        "providerRequestId": "req_12feb0e015ff4a76879afe2a5f155c6e",
+        "configuration": {
+          "transport": "responses",
+          "endpoint": "https://api.openai.com/v1/responses",
+          "maxOutputTokens": "auto",
+          "temperature": 0,
+          "topP": 1,
+          "reasoningEffort": "none",
+          "retryLimit": 2,
+          "retryDelayMs": 2000,
+          "structuredOutput": "json_schema_strict"
+        },
+        "invocationAttempts": 1,
+        "operationalRetries": [],
+        "usage": {
+          "inputTokens": 2450,
+          "outputTokens": 180,
+          "totalTokens": 2630
+        }
+      }
+    }
+  ],
+  "repairs": [],
+  "recordRetries": [],
+  "episodeDigest": "sha256:b1c94cc60a0045ab97ab40567a93a13394ec239c3b6b6017247b3cbc306e2ff1",
+  "modelEvents": [
+    {
+      "type": "model_attempt",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_191:initial",
+      "attempt": 1,
+      "maximumAttempts": 3
+    },
+    {
+      "type": "model_response",
+      "provider": "openai",
+      "modelId": "gpt-5.1-2025-11-13",
+      "clientRequestId": "cal_g4v3_191:initial",
+      "attempt": 1,
+      "maximumAttempts": 3,
+      "providerRequestId": "req_12feb0e015ff4a76879afe2a5f155c6e",
+      "inputDigest": "sha256:cedd49f2aafb9e93d5ab4c5749ec7e237aefd51e48b171e54fbdbf8801a671f5",
+      "promptHash": "sha256:d98fe995271810290ba480e80aec7d97ed44f621889e0fb99e146c448f149110",
+      "promptCanonicalJsonHash": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+      "responseSchemaHash": "sha256:7fdc237fd4f73c97543b8e254b469e2514f8f4b011592a697aa6d20561f55288",
+      "modelOutput": {
+        "episode": {
+          "episodeId": "epi_cal_g4v3_w13_v11_01",
+          "occurredAt": "2011-03-15T00:00:00.000Z",
+          "ageAtEvent": 6.57,
+          "placeRef": "place_cal_g4v3_13_home",
+          "participantRefs": [
+            "thr_cal_g4v3_w13_v11",
+            "person_cal_g4v3_w13_v11_caregiver"
+          ],
+          "observableAction": "At the kitchen table, the caregiver opened the small labeled box from the storage shelf, took out a scattered set of crayons, and quietly sorted and sharpened them while the young person watched from a chair without being asked or consulted.",
+          "structureRef": "ges_v2_adult_finishes_task_unasked",
+          "introducedParticipants": [],
+          "intellectualEncounter": null
+        }
+      },
+      "usage": {
+        "inputTokens": 2450,
+        "outputTokens": 180,
+        "totalTokens": 2630
+      }
+    }
+  ],
+  "tokenUsage": {
+    "inputTokens": 2450,
+    "outputTokens": 180,
+    "totalTokens": 2630
+  },
+  "resultDigest": "sha256:db8ac33a88d1577cae94f7bdedd45eb50dc86cfca1def5c592f166768d650767"
+}
