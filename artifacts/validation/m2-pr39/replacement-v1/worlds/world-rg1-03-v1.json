@@ -1,0 +1,88 @@
+{
+  "worldSpecId": "world_pr39_rg1_03_recife",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_rg1_03_home",
+      "description": "A modest apartment or attached home in Recife's Casa Amarela area, near bus routes, small shops, service businesses and streets that become difficult during intense rain."
+    },
+    {
+      "placeId": "place_rg1_03_school",
+      "description": "A Recife municipal public school with regular classrooms, meals, digital-learning access that changes over time and school activities embedded in the municipal education network."
+    },
+    {
+      "placeId": "place_rg1_03_transit",
+      "description": "A bus corridor connecting the neighborhood to other parts of Recife, with walking at each end and travel times shaped by traffic and heavy rain."
+    },
+    {
+      "placeId": "place_rg1_03_market",
+      "description": "A public market or feira setting with produce, prepared food, household goods, small stalls and regular neighborhood commerce."
+    },
+    {
+      "placeId": "place_rg1_03_learning",
+      "description": "A library, community learning or digital-access setting where books, computers, classes or cultural activities are available at different times."
+    }
+  ],
+  "householdShape": "One caregiver, the subject and two siblings share the home; another adult relative lives nearby and regularly helps with school pickup, meals or errands.",
+  "familyRelations": [
+    "One sibling is older and one is younger than the subject.",
+    "The nearby relative participates in routine support without sharing the household."
+  ],
+  "languages": [
+    "Brazilian Portuguese",
+    "English"
+  ],
+  "materialCircumstances": "Food and housing are usually secure but income variability makes transport, devices and extracurricular costs consequential; repair, sharing and public services are routine household strategies.",
+  "mobilityPattern": "Most daily travel is on foot and by bus, with occasional rides from relatives or app-based transport later in the chronology; congestion and heavy rainfall can alter routes and schedules.",
+  "schoolingOrCommunityContext": "Municipal schooling, neighborhood commerce, public markets, community learning programs, sports or cultural activities and public transport create repeated contact across family, peer and adult settings.",
+  "culturalContext": "Recife, Pernambuco, Brazil — The household lives in Recife during 2004–2026. Brazilian Portuguese is the ordinary language of home, school, commerce and civic life; English is encountered mainly through school, music, media, tourism-facing contexts and the internet. Recife is a large Atlantic coastal city with rivers and canals, dense neighborhoods and significant dependence on bus travel; intense rain can disrupt streets and routines. Public markets and feiras, neighborhood commerce, football and other sports, music and cultural events are ordinary available settings without assigning interests to the subject. Catholic, evangelical, Afro-Brazilian, Spiritist and secular practices are visible in the wider city without assigning household religion. Municipal education and digital-learning initiatives, universities, public culture and Recife's technology sector expand possible intellectual access over the chronology without prescribing occupation or social identity.",
+  "availableInstitutions": [
+    "recife_municipal_school",
+    "city_bus_network",
+    "public_market",
+    "community_learning_program",
+    "public_health_service",
+    "sports_or_cultural_program"
+  ],
+  "intellectualEnvironment": "Portuguese-language school curricula, books and news, television and music, community programs, public digital education, universities, internet access, market knowledge, religious and secular viewpoints and ordinary disagreement are available unevenly.",
+  "affordedRoles": [
+    "caregiver",
+    "sibling",
+    "relative",
+    "peer",
+    "teacher",
+    "vendor",
+    "coach",
+    "health_worker",
+    "neighbor",
+    "mentor"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_replacement_world_authoring",
+    "sourcesConsulted": [
+      {
+        "kind": "international_public",
+        "citation": "UNESCO Institute for Lifelong Learning profile of Recife, including municipal education, digital-learning and city context: https://www.uil.unesco.org/en/learning-cities/recife",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      },
+      {
+        "kind": "municipal",
+        "citation": "Recife municipal administrative structure describing urban transport, school transport, public markets and neighborhood commerce responsibilities: https://www2.recife.pe.gov.br/sites/default/files/estrutura_sepul_atualizada.pdf",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      }
+    ],
+    "abstractionMethod": "PR #39 replacement G1 authoring: a concrete ordinary-life setting was abstracted from public civic, education, transport, library or cultural sources before any replacement-cohort genome, Thread identity, Genesis identity, treatment assignment, generated life, diagnostic outcome or expected personality existed. Facts constrain affordances only; they do not prescribe character, values, politics, religion, competence, profession or narrative significance.",
+    "relocationWitness": "The household pattern could be recreated in another Brazilian coastal city, but the World would materially change because Recife's municipal education programs, bus dependence, canal-and-rain constraints, Pernambuco public culture and market infrastructure are deliberate inputs.",
+    "familiarityProbe": {
+      "probedAt": "2026-08-22T21:54:04.886Z",
+      "model": "openai/gpt-5.1-2025-11-13",
+      "densityScore": 4,
+      "comparisonNotes": "This setting is in a large, well-documented Brazilian city (Recife) over a contemporary time frame (2004–2026), with ordinary urban conditions: modest apartment living, municipal public school, bus-based mobility, public markets, community learning spaces, and common Brazilian religious and cultural diversity. A general language model is likely to have substantial background knowledge about Brazilian urban life, public schooling, bus systems, feiras, and digital-access initiatives, even if not hyper-local to Casa Amarela. Household structure (single caregiver, siblings, nearby relative) and economic conditions (generally secure food/housing but variable income, reliance on repair/sharing/public services) are also common and well within typical training data. Portuguese as the main language with some English via media and schooling is standard for Brazil, and the listed institutions (municipal school, city bus network, public health, sports/cultural programs) are all familiar types. The only areas where the model might need to interpolate are very specific municipal program details or hyper-local infrastructure, but the everyday structure is broadly covered and does not require fabrication of basic patterns."
+    },
+    "createdAt": "2026-08-22T21:42:00Z"
+  },
+  "createdAt": "2026-08-22T21:42:00Z"
+}

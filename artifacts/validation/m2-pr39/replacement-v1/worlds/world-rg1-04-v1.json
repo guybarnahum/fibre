@@ -1,0 +1,94 @@
+{
+  "worldSpecId": "world_pr39_rg1_04_fes",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_rg1_04_home",
+      "description": "A family apartment in the newer urban fabric of Fès, within walking or taxi distance of neighborhood shops and with regular family reasons to enter older central districts."
+    },
+    {
+      "placeId": "place_rg1_04_school",
+      "description": "A Moroccan public school in Fès with Arabic-medium and French-language academic exposure varying by subject and school stage, plus ordinary extracurricular opportunities."
+    },
+    {
+      "placeId": "place_rg1_04_medina",
+      "description": "A part of the Fès medina used for family visits, shopping or errands, with narrow pedestrian lanes, craft workshops, food sellers and dense commercial activity."
+    },
+    {
+      "placeId": "place_rg1_04_learning",
+      "description": "A library, digital training centre or community learning setting in Fès offering study, language, technology or vocational access at different ages."
+    },
+    {
+      "placeId": "place_rg1_04_station",
+      "description": "The Fès rail-station and nearby transport setting used occasionally for intercity family travel, with local taxis, buses or walking connecting onward."
+    }
+  ],
+  "householdShape": "Two caregivers, the subject and a grandparent share the apartment; two cousins live in another neighborhood and are regular participants in family visits and errands.",
+  "familyRelations": [
+    "The grandparent lives in the household.",
+    "The cousins are close in age to the subject but do not share the home."
+  ],
+  "languages": [
+    "Moroccan Arabic",
+    "Modern Standard Arabic",
+    "French"
+  ],
+  "materialCircumstances": "The household has stable basic housing and food but tracks discretionary spending; public services, shared taxis or buses, walking and occasional rail travel are more routine than private-car ownership.",
+  "mobilityPattern": "Walking, city buses or shared/grand taxis handle ordinary trips, while the medina requires substantial movement on foot; occasional train journeys connect Fès with other Moroccan cities.",
+  "schoolingOrCommunityContext": "Public schooling, family networks, neighborhood commerce, medina markets and workshops, community learning, religious and secular institutions and rail-connected regional travel create overlapping social environments.",
+  "culturalContext": "Fès, Morocco — The household lives in Fès during 2004–2026. Moroccan Arabic is ordinary in home and street life; Modern Standard Arabic is prominent in formal schooling and public text, while French is encountered in education, administration, media and some commerce. The city combines newer residential districts with the UNESCO-listed historic medina, whose narrow lanes support dense pedestrian commerce and craft work. Markets, cafés, hammams, mosques, workshops and modern civic institutions coexist, while the World does not assign religious observance to the household. Fès has longstanding educational and intellectual institutions and, more recently, municipal lifelong-learning and digital-skills initiatives. Rail connections support occasional intercity movement. Family visits, Ramadan and Eid schedules, school calendars and public cultural events may alter routines without implying the subject's beliefs, temperament or future role.",
+  "availableInstitutions": [
+    "moroccan_public_school",
+    "community_learning_centre",
+    "digital_training_centre",
+    "public_market",
+    "city_bus_or_taxi",
+    "oncf_rail"
+  ],
+  "intellectualEnvironment": "Arabic and French school materials, family and neighborhood conversation, books, digital training, craft knowledge, religious and secular scholarship, television, internet access, vocational programs and university presence create multiple uneven routes to information and disagreement.",
+  "affordedRoles": [
+    "caregiver",
+    "grandparent",
+    "cousin",
+    "peer",
+    "teacher",
+    "vendor",
+    "craft_worker",
+    "trainer",
+    "neighbor",
+    "mentor"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_replacement_world_authoring",
+    "sourcesConsulted": [
+      {
+        "kind": "international_public",
+        "citation": "UNESCO Institute for Lifelong Learning profile of Fès, including city scale, education goals and digital training/lifelong-learning initiatives: https://www.uil.unesco.org/en/learning-cities/fes",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      },
+      {
+        "kind": "national_tourism",
+        "citation": "Moroccan National Tourist Office description of Fès and its medina, craft activity and cultural institutions: https://visitmorocco.com/en/travel/fez/medina",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      },
+      {
+        "kind": "national_rail",
+        "citation": "ONCF passenger site showing Fès within Morocco's intercity rail network: https://www.oncf.ma/en/Home",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      }
+    ],
+    "abstractionMethod": "PR #39 replacement G1 authoring: a concrete ordinary-life setting was abstracted from public civic, education, transport, library or cultural sources before any replacement-cohort genome, Thread identity, Genesis identity, treatment assignment, generated life, diagnostic outcome or expected personality existed. Facts constrain affordances only; they do not prescribe character, values, politics, religion, competence, profession or narrative significance.",
+    "relocationWitness": "A similar household could be placed in another Moroccan city, but that would change the World because Fès's combination of newer districts, pedestrian medina, craft economy, specific learning institutions and rail-connected regional role is deliberately factual.",
+    "familiarityProbe": {
+      "probedAt": "2026-08-22T21:54:08.988Z",
+      "model": "openai/gpt-5.1-2025-11-13",
+      "densityScore": 4,
+      "comparisonNotes": "This setting is moderately familiar for a general language model. Urban life in a major Moroccan city like Fès, with a mix of newer districts and a historic medina, public schooling, shared taxis/buses, and rail travel, aligns well with widely documented real-world patterns. Household structure (multi-generational apartment, nearby cousins), public services, and modest but stable material circumstances are all common and well-covered in general training data. The multilingual environment (Moroccan Arabic at home, MSA in formal contexts, French in education/administration) is also well-documented, though fine-grained code-switching norms and local slang would require some guessing. Everyday economy (markets, craft workshops, small vendors, tracking discretionary spending) and institutional landscape (public schools, community/digital learning centers, ONCF rail, medina commerce) are broadly known, but specific neighborhood-level routines, exact school practices, and detailed community-program operations are less standardized and would need some fabrication. Intellectual access via TV, internet, religious and secular scholarship, and vocational programs is typical for an urban Moroccan context and reasonably well-covered, though the exact mix and quality of access over 2004–2026 would involve some extrapolation. Overall, the model can rely on substantial real-world background knowledge, with only moderate gaps in local specificity and temporal evolution of services and infrastructure."
+    },
+    "createdAt": "2026-08-22T21:42:00Z"
+  },
+  "createdAt": "2026-08-22T21:42:00Z"
+}

@@ -1,0 +1,94 @@
+{
+  "header": {
+    "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+    "owner": {
+      "kind": "synthetic_ancestor",
+      "ownerId": "ancestor_pr39_rg2_05_b"
+    },
+    "genesisId": "genesis_pr39_rg2_05_parent_b",
+    "originKind": "de_novo",
+    "inheritancePolicy": {
+      "id": "fibre_symbolic_genome",
+      "version": "1"
+    },
+    "sourceEligibility": null,
+    "recombinationWitness": null,
+    "createdAt": "2026-08-22T22:00:00Z"
+  },
+  "loci": [
+    {
+      "locusId": "gloc_74309bef81754b8f41f04bff6bcc1e78537e8c33",
+      "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+      "ordinal": 1,
+      "value": "asks for an example when an abstract rule remains ambiguous",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_81c873040311d9e698e2e07f69dcad70ff123185",
+      "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+      "ordinal": 2,
+      "value": "keeps useful routines stable until there is evidence that a change improves them",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_733c85189ef4ca5dd2e6716819cdbcb9edc6c9a9",
+      "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+      "ordinal": 3,
+      "value": "responds to an unfamiliar person with reserved courtesy before deciding how much to engage",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_b17131bd36b56beceedb9bff8a59dff7e79c6cb5",
+      "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+      "ordinal": 4,
+      "value": "accepts short-term inconvenience when it preserves more options later",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_9e99506ce16af3384ab1211101ad752027cb013a",
+      "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+      "ordinal": 5,
+      "value": "uses a failed attempt as information about the next trial rather than as a verdict on ability",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_c6cf8d9faf115a53d8853a4d47bea223d3fb0dfe",
+      "genomeId": "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130",
+      "ordinal": 6,
+      "value": "seeks conversation after long periods of working alone",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    }
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:20b48f7fe6fe8e723d7d08a9106d1899baca8aa5084b008803a7bd63a68f02c4"
+}

@@ -1,0 +1,94 @@
+{
+  "header": {
+    "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+    "owner": {
+      "kind": "thread",
+      "ownerId": "thr_pr39_rg2_03"
+    },
+    "genesisId": "genesis_pr39_rg2_03",
+    "originKind": "de_novo",
+    "inheritancePolicy": {
+      "id": "fibre_symbolic_genome",
+      "version": "1"
+    },
+    "sourceEligibility": null,
+    "recombinationWitness": null,
+    "createdAt": "2026-08-22T22:00:00Z"
+  },
+  "loci": [
+    {
+      "locusId": "gloc_52a347f5e122c72c02d8f2dc11f9bd926d765d93",
+      "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+      "ordinal": 1,
+      "value": "when instructions conflict, asks which constraint has priority before proceeding",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_0daf4f20b32987ec4951984166ee06212a57a3f1",
+      "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+      "ordinal": 2,
+      "value": "forms tentative explanations from observed patterns and revises them when a counterexample appears",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_9a5114a3e72285f246c62d08f4d43ac611772e68",
+      "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+      "ordinal": 3,
+      "value": "responds to another person's frustration by first making room for them to explain the problem",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_9606aa3fc02866b9e70b3af2a0522dd9d590c92d",
+      "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+      "ordinal": 4,
+      "value": "chooses a familiar method under time pressure unless a clear failure signal appears",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_a235d1863a164ecfa146a55b628d113a1546d059",
+      "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+      "ordinal": 5,
+      "value": "recovers from an unsuccessful attempt by comparing what changed between tries",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    },
+    {
+      "locusId": "gloc_a1eaefa463ae69442606d86cfa095ad37aad7417",
+      "genomeId": "genome_11a284ce67e2f8175ed2e1fecad5b6e2111ccd20",
+      "ordinal": 6,
+      "value": "often turns idle time into making, sorting, or investigating something at hand",
+      "provenance": {
+        "kind": "de_novo",
+        "sourceGenomeRef": null,
+        "sourceLocusRef": null,
+        "mutationRef": null
+      }
+    }
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:6176a7cb45c05d940d21870b6d1742e829afef3c0f2a59ad427bd0dc449cc5f5"
+}
