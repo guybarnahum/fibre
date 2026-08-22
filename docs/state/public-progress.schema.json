@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "fibre-public-progress-v2",
+  "$id": "fibre-public-progress",
   "title": "Fibre public progress",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion",
+    "contract",
     "canonical",
     "asOf",
     "title",
@@ -19,7 +19,7 @@
   ],
   "properties": {
     "$schema": { "type": "string", "minLength": 1 },
-    "schemaVersion": { "const": "fibre-public-progress-v2" },
+    "contract": { "const": "fibre-public-progress" },
     "canonical": { "const": true },
     "asOf": { "type": "string", "format": "date" },
     "title": { "type": "string", "minLength": 1 },
