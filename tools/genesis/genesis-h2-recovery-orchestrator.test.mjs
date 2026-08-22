@@ -5,6 +5,7 @@ import { buildH2Slot4Episode3RecoveryState } from "./genesis-h2-recovery-state.m
 import {
   H2_RECOVERY_EXECUTION_AUTHORIZATION_PATH,
   H2_RECOVERY_ORCHESTRATOR_VERSION,
+  disallowedRecoveryPostReviewPaths,
   persistRecoveryRepairWitnesses,
   recoveredHistoricalPassAEntry,
   runAuthorizedH2Recovery,
@@ -26,6 +27,28 @@ test("H-v2 recovery orchestrator is fully wired but remains provider-blocked bef
   assert.equal(preflight.scientificStanding.isReplacementCohort, false);
   assert.equal(preflight.scientificStanding.mayEnterFrozenG5G6, false);
   assert.equal(preflight.scientificStanding.mayReplaceH2Hold, false);
+});
+
+test("H-v2 recovery authorization permits only review and authorization witness changes after the reviewed implementation head", () => {
+  assert.deepEqual(
+    disallowedRecoveryPostReviewPaths([
+      "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-review-v1.json",
+      "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-authorization-v1.json",
+    ]),
+    [],
+  );
+  assert.deepEqual(
+    disallowedRecoveryPostReviewPaths([
+      "tools/genesis/genesis-h2-recovery-sequencer.mjs",
+      "services/birth-center/src/runtime.mjs",
+      "docs/README.md",
+    ]),
+    [
+      "tools/genesis/genesis-h2-recovery-sequencer.mjs",
+      "services/birth-center/src/runtime.mjs",
+      "docs/README.md",
+    ],
+  );
 });
 
 test("H-v2 recovered Pass-A entries carry the frozen historical cognition provenance", () => {
