@@ -29,6 +29,11 @@ For behavior, identity, communication, or request-processing work, also read:
 - `docs/architecture/request-participation.md`
 - the relevant file under `docs/concepts/`
 
+For public progress, milestone summaries, website status, or claims about what Fibre can do, also read:
+
+- `docs/state/public-progress.md`
+- `docs/state/public-progress.json`
+
 ## Non-negotiable invariants
 
 - A Thread is a persistent person, not a temporary task role.
@@ -129,6 +134,26 @@ Inert, Context-only, Exogenous, and Notarial states can be intentional milestone
 ### Capability status
 
 Do not use “out of scope for this milestone” to erase a capability from the long-term design. Classify every capability the change deliberately excludes as **deferred**, **experimental**, **rejected**, or a **permanent constraint**, as defined in [`docs/foundations/invariants.md`](docs/foundations/invariants.md#capability-status). Only a permanent constraint requires a concept decision and an ADR; reversible local engineering choices do not.
+
+## Public progress language
+
+`docs/state/public-progress.json` is the canonical machine-readable statement of what Fibre has and has not achieved. `docs/state/public-progress.md` is its human-readable companion. Public renderers such as `insidefibre.com` consume this truth; they do not independently upgrade claims.
+
+Every public progress claim must have two layers:
+
+1. **Simple English first.** Write for a teenager with no Fibre background. Avoid unexplained milestone, gate, schema, runtime, and implementation jargon.
+2. **More accurate description second.** State the precise Fibre mechanism, validation boundary, and the strongest important limitation.
+
+Rules:
+
+- Simplification may remove jargon, but it may not remove uncertainty or make a claim stronger.
+- Every positive capability claim states an important limitation in both layers.
+- Prefer simple public labels such as **Done**, **Shown working**, **Working on it**, **Not yet**, and **Experiment failed — kept as evidence**; keep the stable internal status IDs for machines and precise reporting.
+- Never use “living Thread” as a synonym for generated artifact. Distinguish candidate, generated, atomically published, and validated state.
+- Never say a Thread “has parents” without distinguishing live Thread parents, household caregivers, and synthetic genetic ancestors.
+- Failed experiments remain visible. Do not rewrite a failed bounded run into progress language that implies success.
+- When a milestone boundary materially changes what Fibre can truthfully claim, update `public-progress.json` and its Markdown companion as part of recording that boundary.
+- The public-progress contract is currently one evolving canonical contract. Do not create compatibility versions until a real external consumer requires a frozen historical shape.
 
 ## Decision process
 
