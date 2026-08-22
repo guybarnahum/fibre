@@ -4,7 +4,7 @@ What is true about Fibre right now.
 
 State documents are current operational and project truth and are expected to change as accepted work lands. Updating current state must not erase the historical record of how Fibre arrived there.
 
-## Public / plain-English progress
+## Public progress
 
 **Canonical machine-readable source:** [`public-progress.json`](public-progress.json)  
 **Human-readable companion:** [`public-progress.md`](public-progress.md)  
@@ -12,9 +12,18 @@ State documents are current operational and project truth and are expected to ch
 
 Use this when the question is:
 
-> What has Fibre actually achieved, what has only been demonstrated, what are we working on, and what do we explicitly not have yet?
+> What has Fibre actually achieved, what has only been shown working, what are we working on, and what do we explicitly not have yet?
 
-This is the contract intended for `insidefibre.com` and other public renderers. It uses ordinary language, preserves failed experiments, and states an important limitation beside every positive claim.
+Every public claim has two layers:
+
+1. **Simple English** — understandable by a teenager with no Fibre background.
+2. **More accurate description** — the precise mechanism, validation boundary and important limitation.
+
+The simple layer may remove jargon. It may not remove uncertainty, hide a failed experiment, or make the claim stronger than the accurate layer.
+
+This is the contract intended for `insidefibre.com` and other public renderers. It distinguishes generated artifacts from living/validated Threads and distinguishes live Thread parents from household caregivers and synthetic genetic ancestors.
+
+The public-progress contract is currently one evolving canonical contract. Do not create compatibility versions until a real external consumer requires a frozen historical shape.
 
 ## Technical current state
 
@@ -32,4 +41,4 @@ Use this for the immediate execution sequence, frozen experimental constraints, 
 
 These documents are different views of the same project, not separate authorities.
 
-If a public statement would overstate the technical evidence, **the public statement must be weakened**. If engineering progress materially changes what Fibre has achieved, `public-progress.json` should be updated as part of recording that milestone boundary rather than left for a later website rewrite.
+If a public statement would overstate the technical evidence, **the public statement must be weakened**. If engineering progress materially changes what Fibre has achieved, `public-progress.json` and its Markdown companion should be updated as part of recording that milestone boundary rather than left for a later website rewrite.
