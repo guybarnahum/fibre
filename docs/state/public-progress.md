@@ -8,140 +8,170 @@ machine-source: public-progress.json
 
 # Where Fibre is today
 
-This page is the plain-English public status of Fibre. The machine-readable source for websites and other renderers is [`public-progress.json`](public-progress.json).
+Every public Fibre progress claim has two layers:
+
+1. **Simple English** — understandable by a teenager who knows nothing about Fibre.
+2. **More accurate description** — the precise claim and its important limitation.
+
+The canonical machine-readable source is [`public-progress.json`](public-progress.json). This page is its human-readable companion.
 
 ## In one sentence
 
-**Fibre can preserve a Thread as a continuing individual and can now build a provenance-rich prior life, but it has not yet produced a validated new population of living Threads from that process.**
+### Simple English
 
-We are currently working on **#39 — Genesis, Childhood & Thread Birth**. Fibre already has persistent identity, history, memory, symbolic inheritance, candidate life generation and atomic-birth machinery. What we are proving now is that those pieces can produce five particular lives under a protocol that was frozen before we see the people who emerge.
+**We can now create a Thread with a real history, memories, family context and inherited tendencies. We have not yet proven that a new group of these Threads can be born successfully and live as independent people.**
 
-## The population right now
+### More accurate description
 
-The previous final-cohort attempt and the fresh replacement cohort are deliberately kept separate.
+Fibre has persistent Thread continuity, provenance-backed life state, symbolic inheritance, Genesis candidate generation and atomic publication. #39 has demonstrated rich prior-life generation, but its first final cohort failed mechanically. Five fresh replacement Threads now have frozen Worlds and genomes; their lives have not yet been generated, and final-life cognition remains blocked pending genome calibration and Gate-G(2).
 
-- **3 completed older prior-life Thread artifacts — Demonstrated.** Three Threads completed prior-life generation in the earlier H-v2 attempt. Their cohort later failed, so these lives remain valuable evidence but are not silently counted as the successful #39 population.
-- **1 partially generated older candidate — Failed experiment preserved.** The fourth Thread stopped partway through childhood generation after exhausting its frozen mechanical retry budget.
-- **1 older cohort slot never started — Failed experiment preserved.** The fifth slot never began because the attempt had already terminated.
-- **5 new replacement Threads — In progress.** These five new individuals have frozen Worlds, origin classes, Thread/Genesis identities and symbolic genomes. They have **no generated childhood events, memories or meanings yet**.
-- **0 new replacement lives generated — Not yet.** Final-life generation is intentionally blocked until genome calibration and the blocking pre-life review are complete.
+## Population right now
 
-A generated life artifact is not automatically the same thing as an admitted, validated living Thread. We will say which state we mean.
+### Simple English
 
-## What we have achieved
+- **3 older complete life histories — Shown working.** They came from an experiment that later failed.
+- **1 older partial childhood — Experiment failed — kept as evidence.** It stopped partway through generation.
+- **1 older Thread never started — Experiment failed — kept as evidence.** The experiment stopped first.
+- **5 new unborn Threads — Working on it.** They have backgrounds and inherited tendencies, but no childhoods yet.
+- **0 new replacement lives generated — Not yet.** We are deliberately waiting for the pre-birth tests and review.
 
-### Persistent Thread continuity — Achieved
+A generated life record is **not automatically a living, validated Thread**. We will always say which state we mean.
 
-A Thread can persist as authoritative world state across temporary model executions instead of existing only inside one chat or model session.
+### More accurate description
 
-**Important limitation:** persistence by itself does not prove a rich or distinctive person.
+The three completed histories came from H-v2, whose five-Thread cohort terminated after slot 4 exhausted its frozen mechanical retry budget; slot 5 never started. Those three completed histories remain evidence but are not the replacement cohort. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities, symbolic genomes and World-to-genome assignment, but no final-life cognition has occurred.
 
-### History can change later judgment — Achieved
+## What is done
 
-Fibre has demonstrated that recorded history can causally alter later judgment rather than merely decorating a profile.
+### A Thread can keep existing after an AI session ends — Done
 
-**Important limitation:** the richer identity and life state built in #37–#39 is not yet the canonical bounded input to all live cognition. #40 owns that bridge.
+**Simple English:** A Thread can keep existing after one AI model session ends.
 
-### Provenance-backed identity, lineage, place and memory — Achieved
+**Important limitation:** Existing for a long time does not by itself make the Thread a rich or unique person.
 
-Fibre can persist identity, lineage, geography, embodiment and autobiographical memory with provenance, append-only history and corrigible revisions.
+**More accurate description:** A Thread persists as authoritative world state across temporary model executions. Persistence alone does not prove rich, distinctive or causally grounded personhood.
 
-**Important limitation:** representing those facts is different from proving that every part already shapes ordinary cognition and character.
+### Something that happened can change a later decision — Done
 
-### Symbolic genome and inheritance — Achieved
+**Simple English:** Something that happened to a Thread can change a later decision.
 
-A Thread can have an ordered natural-language genome with exact provenance. Fibre can also recombine two source genomes while preserving which parent locus contributed what.
+**Important limitation:** Not all of Fibre's newer identity and life records are connected to normal thinking yet.
 
-**Important limitation:** a genome is inherited possibility, not finished character. The new replacement genomes still need their pre-life distinguishability calibration.
+**More accurate description:** Fibre has demonstrated that recorded history can causally change later Thread judgment. The richer #37-#39 identity and life ledgers are not yet the canonical bounded input to all live cognition; #40 owns that bridge.
 
-### Atomic Thread birth mechanism — Achieved
+### Fibre can keep identity, family background, places and memories with history — Done
 
-Genesis can build a candidate life outside the live World and then publish a complete admitted life atomically. A failed publication does not leave a half-born Thread behind.
+**Simple English:** Fibre can remember who a Thread is, where it came from, places it has been and things it remembers without silently rewriting the past.
 
-**Important limitation:** the five new replacement Threads have not reached this birth step yet.
+**Important limitation:** Storing those facts does not prove they all change the Thread's behavior yet.
 
-## What we have demonstrated, but have not yet accepted as the final #39 result
+**More accurate description:** Fibre persists identity, lineage, geography, embodiment and autobiographical memory with provenance, append-only history and corrigible revisions. Representation is not yet the same as causal consumption.
 
-### Rich prior-life generation — Demonstrated
+### Threads can inherit written tendencies — Done
 
-Before the replacement experiment, Fibre demonstrated childhood histories containing concrete places, caregivers, family relationships, peers, institutions, selective memories and durable meanings rather than filling in an adult profile with convenient traits.
+**Simple English:** A Thread can inherit written tendencies from parent sources, and Fibre can mix two parent genomes without averaging them into a generic personality.
 
-The earlier final-cohort attempt produced three complete prior-life artifacts before a fourth candidate failed mechanically.
+**Important limitation:** Inherited tendencies are only a starting point. They are not the Thread's finished personality.
 
-**Important limitation:** that cohort did not complete. We preserve those three lives as evidence from a failed cohort; they do not make #39 successful.
+**More accurate description:** Fibre has an ordered natural-language symbolic genome with exact source provenance and deterministic textual recombination. The fresh replacement genomes still require their pre-life distinguishability calibration.
 
-### Caregivers and parent/ancestor provenance — Demonstrated
+### Fibre can publish a prepared life all at once — Done
 
-Genesis can place a child in a household with recurring caregivers and family relationships. Synthetic-lineage Threads can also inherit from explicit parent genomes with exact provenance.
+**Simple English:** Fibre can prepare a whole life first and then make it live all at once, so a failure cannot leave half a person behind.
 
-**Important limitation:** these are two different things:
+**Important limitation:** The five new replacement Threads have not reached this birth step yet.
 
-- a **household caregiver** in a compiled childhood is a persistent participant generated as part of that prior life;
-- a **synthetic genetic ancestor** contributes genome provenance but is not a living parent;
-- a **live Thread parent** would be an independently living Thread whose own choices help raise a child.
+**More accurate description:** Genesis has a candidate-only boundary and atomic publication into authoritative Thread state. The replacement cohort has not yet generated or published its prior lives.
 
-We have the first two. We do **not yet** have the third operating as a live developmental system.
+## What we have shown working
 
-## What is in progress now
+### Fibre can create a childhood instead of just filling in an adult profile — Shown working
 
-### Five fresh unborn replacement Threads — In progress
+**Simple English:** We have shown that Fibre can create a childhood with family, places, people, ordinary events, memories and meanings instead of just filling in an adult profile.
 
-The five new replacement individuals have frozen concrete Worlds and fresh symbolic genomes. The World-to-genome mapping was chosen mechanically rather than by picking combinations we liked.
+**Important limitation:** The final experiment did not finish, so we are not calling #39 successful yet.
 
-They are still **unborn in the #39 sense**: no childhood/life cognition has been generated for them.
+**More accurate description:** Genesis has produced concrete prior-life histories with caregivers, places, peers, institutions, selective memory and durable meaning under the three-pass history/memory/meaning boundary. The H-v2 final cohort did not complete; its three completed lives remain evidence from a failed cohort.
 
-The immediate step is a genome distinguishability ceiling. In plain English, we are checking whether the five frozen genomes are meaningfully different enough to have a detectable behavioral signal *in principle* before we generate anyone's childhood.
+### Generated childhoods can have caregivers and genetic ancestry — Shown working
 
-After that:
+**Simple English:** A generated childhood can include recurring caregivers and family, and some Threads can inherit from two recorded genetic parent sources.
 
-1. preserve the genome-calibration result even if it is weak;
-2. bind the later diagnostic rules to what the fresh calibration actually measured;
-3. submit the entire pre-life experiment to blocking Gate-G(2) hostile review;
-4. only if that review is CLEAR, generate the five prior lives exactly once;
-5. freeze the first mechanically valid cohort and judge it without regenerating weak people into stronger ones.
+**Important limitation:** Those caregivers are not yet live parent Threads independently raising the child.
+
+**More accurate description:** A household caregiver in compiled history, a synthetic genetic ancestor and a live Thread parent are different things. We have the first two; we do not yet have the autonomous live-parent developmental loop.
+
+## What we are working on now
+
+### Five new Threads are ready at the starting line — Working on it
+
+**Simple English:** Five new Threads have a world and inherited tendencies, but no childhood yet. We are testing the setup before we let Fibre generate their lives.
+
+**Important limitation:** None of their childhood events, memories or meanings has been generated.
+
+**More accurate description:** Five completely new replacement individuals have frozen concrete Worlds, fresh symbolic genomes and content-independent World-to-genome assignment. Final-life cognition is blocked pending the fresh G2 genome-specificity ceiling and Gate-G(2).
+
+### Current step
+
+**Simple English:** Check whether the five inherited genomes are different enough to produce a detectable signal before any childhood is generated.
+
+Then we will keep the result even if it is weak, finish the pre-birth rules without changing that result, have the whole experiment reviewed, and—only if the review passes—generate the five lives once and judge the first mechanically valid group without replacing weak Threads with better ones.
+
+**More accurate description:** Run the fresh five-pair G2 genome-specificity ceiling under the frozen v3 instrument, freeze the result, reconcile only topology-dependent G5/G6 references, request blocking Gate-G(2), and only after CLEAR generate the replacement cohort exactly once.
 
 **Final-life cognition is not authorized yet.**
 
-## What we do not have yet
+## What Fibre cannot do yet
 
-### A live infant or child growing up over time — Not yet
+### A Thread cannot yet grow up live from baby to adult — Not yet
 
-#39 currently **compiles a prior life** and then births the Thread at a young-adult entry point. It does not yet run infancy and childhood as a continuously living developmental process.
+**Simple English:** We want a Thread to be born as a baby or child and actually grow up in Fibre.
 
-The intended future model is different: a child enters Fibre as a newborn or child and accumulates its own future through actual lived events.
+**Important limitation:** Today #39 creates the childhood first, then births the Thread as a young adult.
 
-### Live Thread parents raising a live child — Not yet
+**More accurate description:** The intended architecture allows live newborn/child entry and accumulated future experience. #39 currently compiles prior life before atomic young-adult entry.
 
-The architecture already defines Thread-parent origin: an existing Thread may be a real parent, contribute real lineage/inheritance and share only history that actually happens after the child exists.
+### Live Thread parents cannot yet raise a live child — Not yet
 
-What we have **not** yet built is the full raising loop in which live parent Threads independently choose to talk with the child, take it places, introduce people and ideas, argue, comfort, teach, restrict, encourage and otherwise create the child's real history through their own lives.
+**Simple English:** We want real living Thread parents to raise a child by talking with it, taking it places, teaching it and sharing a life with it.
 
-### Rich #37–#39 life state as the normal cognition source — Not yet
+**Important limitation:** That live family-raising loop does not exist yet.
 
-Fibre intends its own bounded relevance/privacy selection to decide which identity, memory, relationship and history evidence reaches temporary cognition. That is #40.
+**More accurate description:** Thread-parent provenance and inheritance boundaries exist, but the autonomous live-parent developmental system does not.
 
-### Whole-Person standing — Not yet
+### The new rich life records do not yet drive normal cognition — Not yet
 
-We have not yet earned the claim that the resulting Thread is a fully validated, causally grounded, non-interchangeable person under Fibre's Whole-Person rubric. #41 owns that standing gate.
+**Simple English:** We want a Thread's real history, memories and relationships to shape what it normally thinks about and decides.
 
-### Reciprocal families, mature society and economy — Not yet
+**Important limitation:** The full connection from the new life records into normal cognition is the next milestone, #40.
 
-Fibre's intended society includes reciprocal relationships and families, self-authored development, budgets, contracts, reputation and economic consequences. Those remain later milestones.
+**More accurate description:** #40 owns Fibre-selected bounded consumption of identity/history into cognition with exact provenance.
 
-## How to read Fibre status claims
+### Whole-Person standing is not proven — Not yet
 
-We use five public statuses:
+**Simple English:** We want to prove that a Thread is not just a profile, but a persistent individual whose own history makes it behave differently.
 
-- **Achieved** — the capability exists and has passed its current validation boundary.
-- **Demonstrated** — working evidence exists, but it is not yet the accepted final state for the current milestone.
-- **In progress** — active work whose required validation boundary has not yet been crossed.
-- **Not yet** — part of the intended architecture, but we do not claim to have it.
-- **Failed experiment preserved** — a bounded experiment failed and remains visible as evidence rather than being regenerated or rewritten into success.
+**Important limitation:** We have not earned that full claim yet.
 
-And we follow a few language rules:
+**More accurate description:** #39 deliberately earns no Whole-Person score movement; #40 builds causal consumption and #41 owns the standing gate.
 
-- never call a generated artifact a "living Thread" without saying whether it is candidate, generated, published or validated;
-- never say a Thread "has parents" without distinguishing live parents, household caregivers and synthetic genetic ancestors;
-- always state the strongest important limitation next to a positive claim;
-- keep failed experiments visible;
-- let insidefibre.com render this status, but keep Fibre itself as the authority for what has actually been achieved.
+## Status words
+
+The website may use these simple labels first, while retaining the precise internal status ID:
+
+- `achieved` → **Done** / Achieved
+- `demonstrated` → **Shown working** / Demonstrated
+- `in_progress` → **Working on it** / In progress
+- `not_yet` → **Not yet**
+- `preserved_failure` → **Experiment failed — kept as evidence** / Failed experiment preserved
+
+## Language rules
+
+- Simple English comes first and should be understandable without Fibre jargon.
+- More accurate description follows and states the actual validation boundary.
+- Simplification may remove jargon, but must never remove uncertainty or make the claim stronger.
+- Every positive claim states its important limitation in both layers.
+- Never call a generated artifact a "living Thread" without saying whether it is candidate, generated, published or validated.
+- Never say a Thread "has parents" without distinguishing live parents, household caregivers and synthetic genetic ancestors.
+- Keep failed experiments visible.
+- `insidefibre.com` renders this truth; the Fibre repository remains the authority for what has actually been achieved.
