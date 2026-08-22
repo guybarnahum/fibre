@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**We can now create a Thread with a real history, memories, family context and inherited tendencies. We have not yet proven that a new group of these Threads can be born successfully and live as independent people.**
+**We can now prepare a new Thread with a background, inherited tendencies, and the machinery for a real history and memories. Five new Threads have passed their pre-birth genome test, but we have not generated their childhoods yet.**
 
 ### More accurate description
 
-Fibre has persistent Thread continuity, provenance-backed life state, symbolic inheritance, Genesis candidate generation and atomic publication. #39 has demonstrated rich prior-life generation, but its first final cohort failed mechanically. Five fresh replacement Threads now have frozen Worlds and genomes; their lives have not yet been generated, and final-life cognition remains blocked pending genome calibration and Gate-G(2).
+Fibre has persistent Thread continuity, provenance-backed life state, symbolic inheritance, Genesis candidate generation and atomic publication. #39 has demonstrated rich prior-life generation, but its first final cohort failed mechanically. Five fresh replacement Threads now have frozen Worlds and genomes. All five measured genome pairs passed the fresh pre-life distinguishability ceiling. Their lives have not yet been generated, and final-life cognition remains blocked pending Gate-G(2).
 
 ## Population right now
 
@@ -32,14 +32,14 @@ Fibre has persistent Thread continuity, provenance-backed life state, symbolic i
 - **3 older complete life histories — Shown working.** They came from an experiment that later failed.
 - **1 older partial childhood — Experiment failed — kept as evidence.** It stopped partway through generation.
 - **1 older Thread never started — Experiment failed — kept as evidence.** The experiment stopped first.
-- **5 new unborn Threads — Working on it.** They have backgrounds and inherited tendencies, but no childhoods yet.
-- **0 new replacement lives generated — Not yet.** We are deliberately waiting for the pre-birth tests and review.
+- **5 new unborn Threads — Working on it.** They have backgrounds and inherited tendencies, and those inherited differences passed the pre-birth test, but they still have no childhoods.
+- **0 new replacement lives generated — Not yet.** We are deliberately waiting for the final pre-birth rule verification and review.
 
 A generated life record is **not automatically a living, validated Thread**. We will always say which state we mean.
 
 ### More accurate description
 
-The three completed histories came from H-v2, whose five-Thread cohort terminated after slot 4 exhausted its frozen mechanical retry budget; slot 5 never started. Those three completed histories remain evidence but are not the replacement cohort. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities, symbolic genomes and World-to-genome assignment, but no final-life cognition has occurred.
+The three completed histories came from H-v2, whose five-Thread cohort terminated after slot 4 exhausted its frozen mechanical retry budget; slot 5 never started. Those three completed histories remain evidence but are not the replacement cohort. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities, symbolic genomes and World-to-genome assignment. Their fresh G2 ceiling is CLEAR on all five measured edges. No final-life cognition has occurred.
 
 ## What is done
 
@@ -73,7 +73,15 @@ The three completed histories came from H-v2, whose five-Thread cohort terminate
 
 **Important limitation:** Inherited tendencies are only a starting point. They are not the Thread's finished personality.
 
-**More accurate description:** Fibre has an ordered natural-language symbolic genome with exact source provenance and deterministic textual recombination. The fresh replacement genomes still require their pre-life distinguishability calibration.
+**More accurate description:** Fibre has an ordered natural-language symbolic genome with exact source provenance and deterministic textual recombination. Passing the fresh pre-life genome ceiling does not prove that childhood or adult character will express those inherited differences.
+
+### The five unborn Threads start with measurably different inherited tendencies — Done
+
+**Simple English:** The five unborn Threads start with inherited tendencies that our pre-birth test can tell apart.
+
+**Important limitation:** This only shows their starting genomes are meaningfully different. It does not prove their childhoods or adult personalities will become different.
+
+**More accurate description:** The frozen replacement G2 ceiling returned CLEAR on all five measured cycle pairs: **22/24, 24/24, 24/24, 22/24 and 23/24**. All five pairs are detectable and every genome is covered. This is a direct semantic ceiling/instrument check before life generation, not Genesis personhood or later genome-propagation evidence.
 
 ### Fibre can publish a prepared life all at once — Done
 
@@ -105,19 +113,19 @@ The three completed histories came from H-v2, whose five-Thread cohort terminate
 
 ### Five new Threads are ready at the starting line — Working on it
 
-**Simple English:** Five new Threads have a world and inherited tendencies, but no childhood yet. We are testing the setup before we let Fibre generate their lives.
+**Simple English:** Five new Threads have a world and inherited tendencies, and those inherited differences passed the pre-birth test, but none has a childhood yet.
 
-**Important limitation:** None of their childhood events, memories or meanings has been generated.
+**Important limitation:** None of their childhood events, memories or meanings has been generated. We are intentionally waiting for the final pre-birth rules and review.
 
-**More accurate description:** Five completely new replacement individuals have frozen concrete Worlds, fresh symbolic genomes and content-independent World-to-genome assignment. Final-life cognition is blocked pending the fresh G2 genome-specificity ceiling and Gate-G(2).
+**More accurate description:** Five completely new replacement individuals have frozen concrete Worlds, fresh symbolic genomes, content-independent World-to-genome assignment and a CLEAR fresh G2 five-pair ceiling. Final-life cognition is blocked pending verification of the explicit G5/G6 topology reconciliation and Gate-G(2) CLEAR.
 
 ### Current step
 
-**Simple English:** Check whether the five inherited genomes are different enough to produce a detectable signal before any childhood is generated.
+**Simple English:** Make sure the final judging rules correctly use all five inherited differences that passed the test, then have the whole experiment reviewed before generating any childhood.
 
-Then we will keep the result even if it is weak, finish the pre-birth rules without changing that result, have the whole experiment reviewed, and—only if the review passes—generate the five lives once and judge the first mechanically valid group without replacing weak Threads with better ones.
+If the review passes, Fibre will generate the five lives once, keep the first mechanically valid group, and judge it without replacing weak Threads with better ones.
 
-**More accurate description:** Run the fresh five-pair G2 genome-specificity ceiling under the frozen v3 instrument, freeze the result, reconcile only topology-dependent G5/G6 references, request blocking Gate-G(2), and only after CLEAR generate the replacement cohort exactly once.
+**More accurate description:** The old cohort's G6 rule excluded pair 3-4 because that old G2 pair was not detectable. The fresh replacement pair 3-4 scored 24/24, so the old exemption cannot apply. The explicit pre-life reconciliation preserves G5's existing five-edge measurement and all non-topology G5/G6 authority, while making the replacement D3 core all five measured edges. The translated blocking rule requires both primary ordinals to be at least 4/5 and at least one ordinal to be 5/5. After zero-call verification, the complete packet goes to blocking Gate-G(2).
 
 **Final-life cognition is not authorized yet.**
 
