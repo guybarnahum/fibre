@@ -1,0 +1,39 @@
+{
+  "evidenceVersion": "pr39-g4-v3-durable-development-verification-v1",
+  "status": "CLEAR",
+  "verifiedAt": "2026-08-22T15:47:23Z",
+  "verifiedHead": "f9725429129b4404b6b65c027b912546f7ec6dc4",
+  "calibrationClearFreezeCommit": "3b401dfb93adc916ed7f3e5e46cade6f36fedbab",
+  "durabilityDoctrine": "docs/architecture/genesis-durable-development-v1.md",
+  "durabilityImplementation": "services/world-kernel/src/model-runtime/durable-invocation-journal.mjs",
+  "verification": {
+    "tests": {
+      "total": 670,
+      "passed": 670,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "repositoryValidation": "passed",
+    "worldSeedValidation": "passed",
+    "providerCallsMade": 0
+  },
+  "assertions": {
+    "successfulInvocationIsDurablyCommitted": true,
+    "committedInvocationReplaysWithoutProviderCall": true,
+    "requestWitnessDriftIsRejected": true,
+    "failedProviderInvocationIsNotCommitted": true,
+    "journalCorruptionIsRejected": true,
+    "passARestartResumesAtFirstUnfinishedInvocation": true,
+    "restartDoesNotResetG4V3RepairRetryBudget": true,
+    "acceptedPastIsNotRegenerated": true
+  },
+  "scientificBoundary": {
+    "g4V3CalibrationResultModified": false,
+    "promptsModified": false,
+    "schemasModified": false,
+    "g4V3BudgetsModified": false,
+    "providerOrModelModified": false
+  }
+}
