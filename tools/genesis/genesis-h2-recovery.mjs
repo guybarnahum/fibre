@@ -7,7 +7,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { BIRTH_CENTER_RUNTIME_VERSION } from "../../services/birth-center/src/runtime.mjs";
 import { DURABLE_MODEL_INVOCATION_JOURNAL_VERSION } from "../../services/world-kernel/src/model-runtime/durable-invocation-journal.mjs";
-import { GENESIS_PASS_A_RELIABILITY_V3_VERSION } from "../../services/world-kernel/src/genesis-pass-a-reliability-v3.mjs";
+import {
+  GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+  GENESIS_PASS_A_RELIABILITY_V3_VERSION,
+} from "../../services/world-kernel/src/genesis-pass-a-reliability-v3.mjs";
+import { buildH2Slot4Episode3RecoveryState } from "./genesis-h2-recovery-state.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const BINDING_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-binding-v1.json";
@@ -104,6 +108,48 @@ function verifyUnstartedSlot(binding, failure) {
   return Object.freeze({ slot: unstarted.slot, threadId: unstarted.threadId, observedModelAttempts: attempts.length });
 }
 
+function verifyExactResumePoint(binding, partialSlot) {
+  const recovery = buildH2Slot4Episode3RecoveryState();
+  if (recovery.slot !== partialSlot.slot || recovery.threadId !== partialSlot.threadId) {
+    fail("H-v2 exact recovery state identity drift");
+  }
+  if (recovery.acceptedEpisodes.length !== partialSlot.acceptedEpisodeCountBeforeFailure) {
+    fail("H-v2 exact recovery state accepted-episode count drift");
+  }
+  const inspection = recovery.episode3.inspection;
+  if (inspection.currentGate !== "pass_a_structure_participation") {
+    fail(`H-v2 recovery expected final historical gate pass_a_structure_participation, got ${inspection.currentGate}`);
+  }
+  if (inspection.nextKind !== "record_retry" || inspection.nextOrdinal !== 2 || inspection.budgetDecision?.allowed !== true) {
+    fail("H-v2 recovery does not resume at the expected second record retry");
+  }
+  const budget = inspection.budgetState;
+  if (budget.generatedVersions !== 3 || budget.formRepairs !== 1 || budget.recordRetries !== 1) {
+    fail("H-v2 recovery historical G4-v3 budget mapping drift");
+  }
+  if (GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxTotalGeneratedVersionsPerRecord !== 5 ||
+      GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxFormRepairsPerRecord !== 2 ||
+      GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxRecordRetriesPerRecord !== 2) {
+    fail("G4-v3 budget constants drift during H-v2 recovery");
+  }
+  return Object.freeze({
+    slot: recovery.slot,
+    threadId: recovery.threadId,
+    episodeOrdinal: 3,
+    inputDigest: recovery.episode3.state.inputDigest,
+    currentGate: inspection.currentGate,
+    nextKind: inspection.nextKind,
+    nextOrdinal: inspection.nextOrdinal,
+    budgetState: inspection.budgetState,
+    budgetLimits: Object.freeze({
+      generatedVersions: GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxTotalGeneratedVersionsPerRecord,
+      formRepairs: GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxFormRepairsPerRecord,
+      recordRetries: GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxRecordRetriesPerRecord,
+    }),
+    acceptedEpisodeIds: Object.freeze(recovery.acceptedEpisodes.map((episode) => episode.episodeId)),
+  });
+}
+
 export function verifyH2RecoveryPreflight() {
   const binding = readJson(BINDING_PATH);
   if (binding.recoveryVersion !== "pr39-h-v2-recovery-continuation-v1") fail("unexpected H-v2 recovery binding version");
@@ -123,6 +169,7 @@ export function verifyH2RecoveryPreflight() {
   const completedThreads = verifyCompletedThreadArtifacts(binding, failure);
   const partialSlot = verifyPartialSlot(binding, failure);
   const unstartedSlot = verifyUnstartedSlot(binding, failure);
+  const exactResumePoint = verifyExactResumePoint(binding, partialSlot);
 
   const calibration = readJson(CALIBRATION_RESULT_PATH);
   if (calibration.status !== "CLEAR_MECHANICAL_CALIBRATION" || calibration.evaluation?.allPassed !== true) {
@@ -143,7 +190,7 @@ export function verifyH2RecoveryPreflight() {
   }
 
   return Object.freeze({
-    status: "CLEAR_RECOVERY_SOURCE_ACCOUNTING_ONLY",
+    status: "CLEAR_RECOVERY_RESUME_POINT_ZERO_CALL",
     recoveryVersion: binding.recoveryVersion,
     sourceAttempt: Object.freeze({
       status: failure.status,
@@ -154,6 +201,7 @@ export function verifyH2RecoveryPreflight() {
     completedThreads: Object.freeze(completedThreads),
     partialSlot,
     unstartedSlot,
+    exactResumePoint,
     recoveryMachinery: Object.freeze({
       birthCenterRuntimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
       durableInvocationJournalVersion: DURABLE_MODEL_INVOCATION_JOURNAL_VERSION,
@@ -177,9 +225,12 @@ export function parseH2RecoveryMode(argv = process.argv.slice(2)) {
 }
 
 function printPreflight(result) {
-  process.stdout.write("H-V2 RECOVERY PREFLIGHT: CLEAR SOURCE ACCOUNTING\n\n");
+  process.stdout.write("H-V2 RECOVERY PREFLIGHT: CLEAR EXACT RESUME POINT\n\n");
   process.stdout.write(`Completed Thread generations preserved: ${result.completedThreads.length}\n`);
   process.stdout.write(`Partial slot ${result.partialSlot.slot}: ${result.partialSlot.acceptedEpisodeCountBeforeFailure} accepted episodes; ${result.partialSlot.replayableSuccessfulResponses} successful model responses preserved\n`);
+  process.stdout.write(`Resume: slot ${result.exactResumePoint.slot} episode ${result.exactResumePoint.episodeOrdinal} ${result.exactResumePoint.nextKind.replace("_", " ")} #${result.exactResumePoint.nextOrdinal}\n`);
+  process.stdout.write(`Historical failure gate: ${result.exactResumePoint.currentGate}\n`);
+  process.stdout.write(`Consumed budget: versions ${result.exactResumePoint.budgetState.generatedVersions}/${result.exactResumePoint.budgetLimits.generatedVersions}; form ${result.exactResumePoint.budgetState.formRepairs}/${result.exactResumePoint.budgetLimits.formRepairs}; record ${result.exactResumePoint.budgetState.recordRetries}/${result.exactResumePoint.budgetLimits.recordRetries}\n`);
   process.stdout.write(`Unstarted slot ${result.unstartedSlot.slot}: ${result.unstartedSlot.observedModelAttempts} model attempts\n`);
   process.stdout.write(`Recovery machinery: ${result.recoveryMachinery.birthCenterRuntimeVersion} + ${result.recoveryMachinery.generationPolicyVersion}\n`);
   process.stdout.write(`Output root: ${result.outputRoot} [absent]\n`);
