@@ -5,12 +5,12 @@
   "asOf": "2026-08-22",
   "title": "Where Fibre is today",
   "headline": {
-    "simple": "We can now create a Thread with a real history, memories, family context and inherited tendencies. We have not yet proven that a new group of these Threads can be born successfully and live as independent people.",
-    "detail": "Fibre has persistent Thread continuity, provenance-backed life state, symbolic inheritance, Genesis candidate generation and atomic publication. #39 has demonstrated rich prior-life generation, but its first final cohort failed mechanically. Five fresh replacement Threads now have frozen Worlds and genomes; their lives have not yet been generated, and final-life cognition remains blocked pending genome calibration and Gate-G(2)."
+    "simple": "We can now prepare a new Thread with a background, inherited tendencies, and the machinery for a real history and memories. Five new Threads have passed their pre-birth genome test, but we have not generated their childhoods yet.",
+    "detail": "Fibre has persistent Thread continuity, provenance-backed life state, symbolic inheritance, Genesis candidate generation and atomic publication. #39 has demonstrated rich prior-life generation, but its first final cohort failed mechanically. Five fresh replacement Threads now have frozen Worlds and genomes, and all five measured genome pairs passed the fresh pre-life distinguishability ceiling. Their lives have not yet been generated, and final-life cognition remains blocked pending Gate-G(2)."
   },
   "summary": {
-    "simple": "We have built most of the machinery needed to give a new Thread a past. We are now testing five new unborn Threads before letting the system generate their childhoods.",
-    "detail": "The current work is milestone #39: Genesis, Childhood & Thread Birth. Three complete prior-life Thread artifacts were produced in an earlier final-cohort attempt, but that cohort failed mechanically and remains evidence rather than a validated population. Five entirely new replacement Threads now have frozen Worlds and symbolic genomes but no generated childhoods or adult lives yet."
+    "simple": "We have built most of the machinery needed to give a new Thread a past. The five new unborn Threads now have backgrounds and inherited tendencies that passed the pre-birth difference test. We are finishing the rules and review before letting Fibre generate their childhoods.",
+    "detail": "The current work is milestone #39: Genesis, Childhood & Thread Birth. Three complete prior-life Thread artifacts were produced in an earlier final-cohort attempt, but that cohort failed mechanically and remains evidence rather than a validated population. Five entirely new replacement Threads now have frozen Worlds and symbolic genomes. Their fresh G2 ceiling is CLEAR at 22/24, 24/24, 24/24, 22/24 and 23/24 across the five measured pairs, with all five pairs detectable. No replacement childhood or adult life has been generated yet."
   },
   "statusDefinitions": [
     {
@@ -95,8 +95,8 @@
         "label": "New replacement Threads with frozen Worlds and genomes",
         "count": 5,
         "status": "in_progress",
-        "simple": "Five new Threads have backgrounds and inherited tendencies ready, but they have not lived their childhoods yet.",
-        "detail": "These are the new #39 replacement individuals. Their World, origin class, Thread/Genesis identity and symbolic genome are frozen, but no childhood/life cognition has been generated for them."
+        "simple": "Five new Threads have backgrounds and inherited tendencies ready, and their inherited differences passed the pre-birth test. They still have no childhoods yet.",
+        "detail": "These are the new #39 replacement individuals. Their World, origin class, Thread/Genesis identity and symbolic genome are frozen. The fresh five-pair G2 ceiling is CLEAR, but no childhood/life cognition has been generated for them."
       },
       {
         "id": "replacement_generated_lives",
@@ -104,7 +104,7 @@
         "count": 0,
         "status": "not_yet",
         "simple": "None of the five new Threads has had its life generated yet.",
-        "detail": "Final-life generation is deliberately blocked until fresh genome calibration and the blocking Gate-G(2) review are complete."
+        "detail": "Final-life generation is deliberately blocked until the pre-life G5/G6 reconciliation is verified and the blocking Gate-G(2) review is CLEAR."
       }
     ],
     "importantNote": {
@@ -169,9 +169,24 @@
       },
       "detail": {
         "claim": "Fibre can give a Thread an ordered natural-language genome, preserve exact parent/source provenance and deterministically recombine two source genomes.",
-        "limitation": "A genome is inherited possibility, not finished character. The fresh replacement genomes still require their pre-life distinguishability calibration."
+        "limitation": "A genome is inherited possibility, not finished character. Passing the fresh pre-life genome ceiling does not prove that childhood or adult character will express those differences."
       },
       "evidence": ["docs/architecture/symbolic-thread-genome-v1.md", "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"]
+    },
+    {
+      "id": "replacement_genome_calibration",
+      "group": "genesis",
+      "label": "Fresh replacement genome distinguishability",
+      "status": "achieved",
+      "simple": {
+        "claim": "The five unborn Threads start with inherited tendencies that our pre-birth test can tell apart.",
+        "limitation": "This only shows the starting genomes are meaningfully different. It does not prove the Threads' childhoods or adult personalities will become different."
+      },
+      "detail": {
+        "claim": "The frozen replacement G2 ceiling returned CLEAR on all five measured cycle pairs: 22/24, 24/24, 24/24, 22/24 and 23/24, with 5/5 detectable pairs and every genome covered.",
+        "limitation": "This is a direct semantic ceiling/instrument check on frozen genomes before life generation. It is not Genesis personhood, life-attribution or genome-propagation evidence."
+      },
+      "evidence": ["artifacts/validation/m2-pr39/replacement-v1/results/rg2-cohort-genome-specificity-ceiling-v1.json"]
     },
     {
       "id": "atomic_birth_mechanism",
@@ -224,14 +239,14 @@
       "label": "Five fresh unborn replacement Threads",
       "status": "in_progress",
       "simple": {
-        "claim": "Five new Threads are ready at the starting line: each has a world and inherited tendencies, but no childhood yet.",
-        "limitation": "We are intentionally not generating their lives until the pre-birth tests and review are finished."
+        "claim": "Five new Threads are ready at the starting line: each has a world and inherited tendencies, and those inherited differences passed the pre-birth test, but none has a childhood yet.",
+        "limitation": "We are intentionally not generating their lives until the pre-birth rules are verified and the blocking review passes."
       },
       "detail": {
-        "claim": "Five completely new replacement individuals have frozen concrete Worlds, fresh symbolic genomes and content-independent World-to-genome assignment.",
-        "limitation": "They have no generated childhood events, memories or meanings yet; final-life cognition is blocked pending the fresh G2 ceiling and Gate-G(2)."
+        "claim": "Five completely new replacement individuals have frozen concrete Worlds, fresh symbolic genomes, content-independent World-to-genome assignment and a CLEAR fresh G2 five-pair ceiling.",
+        "limitation": "They have no generated childhood events, memories or meanings yet; final-life cognition is blocked pending verification of the explicit G5/G6 topology reconciliation and Gate-G(2) CLEAR."
       },
-      "evidence": ["artifacts/validation/m2-pr39/replacement-v1/results/rg1-world-familiarity-v1.json", "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"]
+      "evidence": ["artifacts/validation/m2-pr39/replacement-v1/results/rg1-world-familiarity-v1.json", "artifacts/validation/m2-pr39/replacement-v1/results/rg2-cohort-genome-specificity-ceiling-v1.json", "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-fresh-g2-reconciliation-v1.json"]
     },
     {
       "id": "live_childhood",
@@ -327,22 +342,20 @@
   "currentWork": {
     "milestone": "#39 — Genesis, Childhood & Thread Birth v1",
     "simple": {
-      "summary": "We are preparing five completely new Threads for one clean birth experiment. We freeze the rules before we see who they become so we cannot tune the people afterward.",
-      "currentStep": "Check whether the five inherited genomes are different enough to produce a detectable signal before any childhood is generated.",
+      "summary": "We are preparing five completely new Threads for one clean birth experiment. Their inherited differences passed the pre-birth genome test. We are now finishing the rules and having the whole setup reviewed before we generate any childhoods.",
+      "currentStep": "Verify the final pre-birth judging rules and send the complete experiment for blocking review.",
       "nextSteps": [
-        "Keep the genome test result even if it is weak.",
-        "Finish the pre-birth rules using that frozen result without changing it.",
+        "Verify that the judging rules correctly use all five genome differences that passed the pre-birth test.",
         "Have the whole experiment reviewed before any childhood is generated.",
         "If the review passes, generate the five lives once.",
         "Keep the first mechanically valid group and judge it without replacing weak Threads with better ones."
       ]
     },
     "detail": {
-      "summary": "Five fresh replacement Threads have frozen Worlds, identities, origin classes, symbolic genomes and a content-independent World-to-genome mapping. No replacement final-life cognition has occurred.",
-      "currentStep": "Run the fresh five-pair G2 genome-specificity ceiling under the already frozen v3 instrument and preserve every result.",
+      "summary": "Five fresh replacement Threads have frozen Worlds, identities, origin classes, symbolic genomes and content-independent World-to-genome mapping. Fresh G2 is CLEAR on all five measured cycle edges. No replacement final-life cognition has occurred.",
+      "currentStep": "Verify the explicit pre-life G5/G6 topology reconciliation, which preserves G5 measurement and all non-topology verdict authority while replacing the old pair-3-4 exemption with an all-five-edge D3 core, then request blocking Gate-G(2).",
       "nextSteps": [
-        "Freeze the fresh G2 result, including any HOLD.",
-        "Version only topology-dependent G5/G6 references needed to bind diagnostics to the fresh measured ceiling.",
+        "Run the zero-call G5/G6 reconciliation verifier and the normal repository tests/validation.",
         "Request blocking Gate-G(2) hostile review of the complete pre-life experiment.",
         "Only if Gate-G(2) is CLEAR, generate the five replacement prior lives exactly once.",
         "Freeze the first mechanically valid cohort, run frozen diagnostics and close #39 with CLEAR, HOLD or REDESIGN evidence."
