@@ -8,13 +8,16 @@ It is **not** a production trust service and must not become a Thread or present
 
 ## Setup
 
-From the repository root:
+The current `@contentauth/c2pa-node` package requires Node.js 22.22 or later. From the repository root:
 
 ```bash
+node --version
 sh services/c2pa-local/generate-dev-cert.sh
-npm install --prefix services/c2pa-local
+npm install --prefix services/c2pa-local --no-package-lock
 npm start --prefix services/c2pa-local
 ```
+
+The certificate helper is intentionally one-shot and refuses to overwrite an existing development key. If `.fibre/p3-c2pa/` already contains the local proof credentials, skip the helper command.
 
 The helper creates a short-lived self-signed ES256 development certificate under ignored `.fibre/p3-c2pa/` with the document-signing/C2PA EKU. Verification for this local proof checks the embedded C2PA structure/signature but deliberately does not treat the development certificate as a production trust credential.
 
