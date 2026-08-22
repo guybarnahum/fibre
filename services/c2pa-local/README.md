@@ -8,7 +8,7 @@ It is **not** a production trust service and must not become a Thread or present
 
 ## Setup
 
-The current `@contentauth/c2pa-node` package requires Node.js 22.22 or later. From the repository root:
+The published `@contentauth/c2pa-node` package requires Node.js 22 or later. From the repository root:
 
 ```bash
 node --version
