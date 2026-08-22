@@ -47,6 +47,11 @@ async function readJson(req) {
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
+function decodeAssertionData(value) {
+  if (typeof value !== "string") return value;
+  try { return JSON.parse(value); }
+  catch { return value; }
+}
 function findAssertion(value, seen = new Set()) {
   if (value === null || typeof value !== "object") return null;
   if (seen.has(value)) return null;
@@ -58,11 +63,11 @@ function findAssertion(value, seen = new Set()) {
     }
     return null;
   }
-  if (value.label === ASSERTION_LABEL && value.data !== undefined) return value.data;
+  if (value.label === ASSERTION_LABEL && value.data !== undefined) return decodeAssertionData(value.data);
   if (Object.hasOwn(value, ASSERTION_LABEL)) {
     const candidate = value[ASSERTION_LABEL];
-    if (candidate?.data !== undefined) return candidate.data;
-    return candidate;
+    if (candidate?.data !== undefined) return decodeAssertionData(candidate.data);
+    return decodeAssertionData(candidate);
   }
   for (const item of Object.values(value)) {
     const found = findAssertion(item, seen);
@@ -83,9 +88,12 @@ async function inspect(bytes, mediaType) {
       },
     },
   );
-  const store = reader.json();
+  const storeText = reader.json();
+  const store = typeof storeText === "string" ? JSON.parse(storeText) : storeText;
   const assertion = findAssertion(store);
-  if (assertion === null) throw new Error(`missing ${ASSERTION_LABEL} assertion`);
+  if (assertion === null || typeof assertion !== "object" || Array.isArray(assertion)) {
+    throw new Error(`missing or invalid ${ASSERTION_LABEL} assertion`);
+  }
   return {
     assertion,
     manifestDigest: sha256(canonicalJson(store)),
@@ -120,7 +128,7 @@ async function embed(body) {
   builder.setIntent({
     create: "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
   });
-  builder.addAssertion(ASSERTION_LABEL, body.assertion, "Json");
+  builder.addAssertion(ASSERTION_LABEL, JSON.stringify(body.assertion), "Json");
   const output = { buffer: null };
   builder.sign(signer, { buffer: bytes, mimeType: body.mediaType }, output);
   if (!Buffer.isBuffer(output.buffer)) throw new Error("C2PA SDK did not produce an output buffer");
