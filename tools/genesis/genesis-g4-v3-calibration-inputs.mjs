@@ -199,7 +199,14 @@ function corpusCore({ calibrationFreeze, implementationWitness, g2, g4 }) {
     for (let variantOrdinal = 1; variantOrdinal <= TRIALS_PER_WORLD; variantOrdinal += 1) {
       const trialOrdinal = (worldOrdinal - 1) * TRIALS_PER_WORLD + variantOrdinal;
       const subjectId = `thr_cal_g4v3_w${pad(worldOrdinal)}_v${pad(variantOrdinal)}`;
-      const window = structuredClone(windows[(variantOrdinal - 1) % windows.length]);
+      const inheritedWindow = windows[(variantOrdinal - 1) % windows.length];
+      const window = {
+        windowId: inheritedWindow.windowId,
+        startAt: inheritedWindow.startAt,
+        endAt: inheritedWindow.endAt,
+        minAge: inheritedWindow.minAge,
+        maxAge: inheritedWindow.maxAge,
+      };
       const initialRoster = makeRoster(worldOrdinal, variantOrdinal, subjectId);
       const priorEpisodes = makePriorEpisodes({ worldOrdinal, variantOrdinal, subjectId, window, world });
       const offerSeed = `${calibrationFreeze.sample.seedDomain}:world:${pad(worldOrdinal)}:trial:${pad(variantOrdinal)}`;
@@ -232,7 +239,7 @@ function corpusCore({ calibrationFreeze, implementationWitness, g2, g4 }) {
         subjectId,
         priorEpisodeCount: priorEpisodes.length,
         initialRosterCount: initialRoster.length,
-        developmentalWindowOrdinal: window.ordinal,
+        developmentalWindowOrdinal: inheritedWindow.ordinal,
         offerSeed,
         offeredStructureIds: offeredEntries.map((entry) => entry.structure.structureId),
         passAInputDigest: digest(passAInput),
