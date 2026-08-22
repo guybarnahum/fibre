@@ -33,6 +33,7 @@
     "genesis:g3-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g3-treatment-freeze.mjs",
     "genesis:g4-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g4-cognition-freeze.mjs",
     "genesis:g4-v3-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g4-v3-reliability-verify.mjs",
+    "genesis:g4-v3-calibrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-g4-v3-calibration-runner.mjs",
     "genesis:g34-amendments-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g34-review-amendments.mjs",
     "genesis:g5-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g5-diagnostics-freeze.mjs",
     "genesis:g6-verify": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-g6-verdict-freeze.mjs",
