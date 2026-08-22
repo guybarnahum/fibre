@@ -4,6 +4,10 @@ import {
   GenesisPassAValidationError,
 } from "./genesis-pass-a-domain.mjs";
 import {
+  GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+  GENESIS_PASS_A_RELIABILITY_V3_VERSION,
+} from "./genesis-pass-a-reliability-v3.mjs";
+import {
   assertPassAHistoryConsistency,
   validateConsistentPassAEpisode,
 } from "./genesis-pass-a-consistency.mjs";
@@ -77,6 +81,58 @@ If selectedOpportunity.selectionKind=offered_structure, the replacement episode.
 If selectedOpportunity.selectionKind=world_emergent, the replacement episode.structureRef must be null.
 Do not substitute another opportunity merely because the prior record failed mechanically.`;
 
+const LEGACY_GENERATION_POLICY = Object.freeze({
+  version: "genesis-rich-pass-a-shared-version-budget-v1",
+  maxTotalGeneratedVersionsPerRecord: GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord,
+});
+
+const G4_V3_FORM_TARGET = `G4-v3 mechanical form control: target observableAction at no more than ${GENESIS_PASS_A_RELIABILITY_POLICY_V3.initialDraftTargetUtf8Bytes} UTF-8 bytes and no more than ${GENESIS_PASS_A_RELIABILITY_POLICY_V3.initialDraftTargetWords} words. This is generation guidance only; the unchanged authoritative admission ceiling remains ${GENESIS_PASS_A_RELIABILITY_POLICY_V3.authoritativeObservableActionMaxUtf8Bytes} UTF-8 bytes.`;
+
+function normalizeGenerationPolicy(candidate) {
+  if (candidate === null || candidate === undefined) return LEGACY_GENERATION_POLICY;
+  if (candidate?.version !== GENESIS_PASS_A_RELIABILITY_V3_VERSION) {
+    throw new TypeError(`unsupported rich Pass-A generation policy ${candidate?.version ?? "unknown"}`);
+  }
+  for (const [key, value] of Object.entries(GENESIS_PASS_A_RELIABILITY_POLICY_V3)) {
+    if (candidate[key] !== value) throw new TypeError(`G4-v3 generation policy field ${key} drift`);
+  }
+  return GENESIS_PASS_A_RELIABILITY_POLICY_V3;
+}
+
+export function richPassAPromptForPolicy({ generationPolicy = null, selectedOpportunity = false, retry = false } = {}) {
+  const policy = normalizeGenerationPolicy(generationPolicy);
+  const base = retry
+    ? selectedOpportunity ? GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT : GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT
+    : selectedOpportunity ? GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_PROMPT : GENESIS_RICH_PASS_A_PROMPT;
+  return policy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION ? `${base}\n\n${G4_V3_FORM_TARGET}` : base;
+}
+
+export function richPassAGenerationDecision({
+  generationPolicy = null,
+  generatedVersions,
+  formRepairs,
+  recordRetries,
+  nextKind,
+}) {
+  const policy = normalizeGenerationPolicy(generationPolicy);
+  for (const [name, value] of Object.entries({ generatedVersions, formRepairs, recordRetries })) {
+    if (!Number.isInteger(value) || value < 0) throw new TypeError(`${name} must be a non-negative integer`);
+  }
+  if (!["form_repair", "record_retry"].includes(nextKind)) throw new TypeError("nextKind is invalid");
+  if (generatedVersions >= policy.maxTotalGeneratedVersionsPerRecord) {
+    return Object.freeze({ allowed: false, reason: "total_generated_version_budget_exhausted", policyVersion: policy.version });
+  }
+  if (policy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION) {
+    if (nextKind === "form_repair" && formRepairs >= policy.maxFormRepairsPerRecord) {
+      return Object.freeze({ allowed: false, reason: "form_repair_budget_exhausted", policyVersion: policy.version });
+    }
+    if (nextKind === "record_retry" && recordRetries >= policy.maxRecordRetriesPerRecord) {
+      return Object.freeze({ allowed: false, reason: "record_retry_budget_exhausted", policyVersion: policy.version });
+    }
+  }
+  return Object.freeze({ allowed: true, reason: null, policyVersion: policy.version });
+}
+
 const RECORD_RETRYABLE_GATES = Object.freeze(new Set([
   "pass_a_output_schema",
   "pass_a_chronology",
@@ -146,11 +202,6 @@ function validateConsistentRichEpisode(candidate, input) {
     throw error;
   }
 
-  // validateRichPassAEpisode already validates the real v2 structureRef, its
-  // developmental range and the rich counterpart policy. Re-run the legacy
-  // consistency validator with structureRef suppressed so we reuse chronology,
-  // age, subject-participation and duplicate-ID guards without applying Gate-C
-  // all-roles semantics to v2.
   const consistencyEpisode = stripEncounter(rich);
   consistencyEpisode.structureRef = null;
   validateConsistentPassAEpisode(consistencyEpisode, input);
@@ -269,7 +320,7 @@ function applyRepairObservableAction(rejectedEpisode, output) {
   };
 }
 
-function exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions) {
+function exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions, generationPolicy, budgetExhaustion) {
   const exhausted = new GenesisPassAValidationError(
     "record_repair_exhausted",
     `rich Pass-A record generation exhausted after ${generatedVersions} generated versions`,
@@ -281,6 +332,13 @@ function exhaustRecord(error, candidate, calls, repairs, recordRetries, generate
   exhausted.repairEvidence = structuredClone(repairs);
   exhausted.recordRetries = recordRetries.map(({ rejectedEpisode, ...retry }) => retry);
   exhausted.recordRetryEvidence = structuredClone(recordRetries);
+  exhausted.generationPolicyVersion = generationPolicy.version;
+  exhausted.budgetExhaustion = structuredClone(budgetExhaustion);
+  exhausted.budgetState = Object.freeze({
+    generatedVersions,
+    formRepairs: repairs.length,
+    recordRetries: recordRetries.length,
+  });
   return exhausted;
 }
 
@@ -291,6 +349,10 @@ export function richPassARecordRetryPromptHash() { return digest(GENESIS_RICH_PA
 export function richPassASelectedOpportunityRetryPromptHash() { return digest(GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT); }
 export function richPassASchemaHash() { return digest(GENESIS_RICH_PASS_A_RESPONSE_SCHEMA); }
 export function richPassARepairSchemaHash() { return digest(GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA); }
+export function richPassAV3PromptHash() { return digest(richPassAPromptForPolicy({ generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3 })); }
+export function richPassAV3SelectedOpportunityPromptHash() { return digest(richPassAPromptForPolicy({ generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3, selectedOpportunity: true })); }
+export function richPassAV3RecordRetryPromptHash() { return digest(richPassAPromptForPolicy({ generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3, retry: true })); }
+export function richPassAV3SelectedOpportunityRetryPromptHash() { return digest(richPassAPromptForPolicy({ generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3, selectedOpportunity: true, retry: true })); }
 
 export async function generateRichPassAEpisode({
   adapter,
@@ -300,20 +362,23 @@ export async function generateRichPassAEpisode({
   selectedOpportunity = null,
   onRecordRepair = null,
   onRecordRetry = null,
+  generationPolicy = null,
 }) {
   if (adapter === null || typeof adapter?.invoke !== "function") throw new TypeError("rich Pass-A adapter must expose invoke()");
   if (repairAdapter === null || typeof repairAdapter?.invoke !== "function") throw new TypeError("rich Pass-A repair adapter must expose invoke()");
   if (typeof clientRequestId !== "string" || clientRequestId.trim() === "") throw new TypeError("rich Pass-A clientRequestId is required");
 
+  const normalizedGenerationPolicy = normalizeGenerationPolicy(generationPolicy);
   const consistentInput = assertPassAHistoryConsistency(input);
   const normalizedSelectedOpportunity = normalizeSelectedOpportunity(selectedOpportunity, consistentInput);
   const cognitionInput = projectRichLifePassAInputForCognition(consistentInput);
   const initialInput = normalizedSelectedOpportunity === null
     ? cognitionInput
     : Object.freeze({ passAInput: cognitionInput, selectedOpportunity: normalizedSelectedOpportunity });
-  const initialPrompt = normalizedSelectedOpportunity === null
-    ? GENESIS_RICH_PASS_A_PROMPT
-    : GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_PROMPT;
+  const initialPrompt = richPassAPromptForPolicy({
+    generationPolicy: normalizedGenerationPolicy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION ? normalizedGenerationPolicy : null,
+    selectedOpportunity: normalizedSelectedOpportunity !== null,
+  });
   const inputDigest = normalizedSelectedOpportunity === null
     ? passACognitionInputDigest(cognitionInput)
     : digest(initialInput);
@@ -355,11 +420,21 @@ export async function generateRichPassAEpisode({
         calls,
         repairs: repairs.map(({ rejectedEpisode, ...repair }) => repair),
         recordRetries: recordRetries.map(({ rejectedEpisode, ...retry }) => retry),
+        ...(normalizedGenerationPolicy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION
+          ? { generationPolicyVersion: normalizedGenerationPolicy.version }
+          : {}),
       };
     } catch (error) {
       if (formRepairable(error)) {
-        if (generatedVersions >= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord) {
-          throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions);
+        const budget = richPassAGenerationDecision({
+          generationPolicy: normalizedGenerationPolicy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION ? normalizedGenerationPolicy : null,
+          generatedVersions,
+          formRepairs: repairs.length,
+          recordRetries: recordRetries.length,
+          nextKind: "form_repair",
+        });
+        if (!budget.allowed) {
+          throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions, normalizedGenerationPolicy, budget);
         }
 
         const rejectedEpisode = structuredClone(candidate);
@@ -417,8 +492,15 @@ export async function generateRichPassAEpisode({
       }
 
       if (recordRetryable(error)) {
-        if (generatedVersions >= GENESIS_PASS_A_POLICY.maxGeneratedVersionsPerRecord) {
-          throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions);
+        const budget = richPassAGenerationDecision({
+          generationPolicy: normalizedGenerationPolicy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION ? normalizedGenerationPolicy : null,
+          generatedVersions,
+          formRepairs: repairs.length,
+          recordRetries: recordRetries.length,
+          nextKind: "record_retry",
+        });
+        if (!budget.allowed) {
+          throw exhaustRecord(error, candidate, calls, repairs, recordRetries, generatedVersions, normalizedGenerationPolicy, budget);
         }
 
         const rejectedEpisode = structuredClone(error.record ?? candidate ?? {});
@@ -439,9 +521,11 @@ export async function generateRichPassAEpisode({
             failedGate: error.gate,
             ...(failedConstraint === null ? {} : { failedConstraint }),
           };
-        const retryPrompt = normalizedSelectedOpportunity === null
-          ? GENESIS_RICH_PASS_A_RECORD_RETRY_PROMPT
-          : GENESIS_RICH_PASS_A_SELECTED_OPPORTUNITY_RETRY_PROMPT;
+        const retryPrompt = richPassAPromptForPolicy({
+          generationPolicy: normalizedGenerationPolicy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION ? normalizedGenerationPolicy : null,
+          selectedOpportunity: normalizedSelectedOpportunity !== null,
+          retry: true,
+        });
         const retryRecord = {
           recordRetryOrdinal,
           failedGate: error.gate,
@@ -494,6 +578,10 @@ export async function generateRichPassAEpisode({
         error.repairEvidence = structuredClone(repairs);
         error.recordRetries = recordRetries.map(({ rejectedEpisode, ...retry }) => retry);
         error.recordRetryEvidence = structuredClone(recordRetries);
+        if (normalizedGenerationPolicy.version === GENESIS_PASS_A_RELIABILITY_V3_VERSION) {
+          error.generationPolicyVersion = normalizedGenerationPolicy.version;
+          error.budgetState = Object.freeze({ generatedVersions, formRepairs: repairs.length, recordRetries: recordRetries.length });
+        }
       }
       throw error;
     }
