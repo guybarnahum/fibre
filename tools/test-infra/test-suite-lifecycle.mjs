@@ -63,10 +63,11 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const domain = walkTests(join(root, "packages/domain/test"));
   const infra = walkTests(join(root, "packages/infra/test"));
   const assetGenerator = walkTests(join(root, "services/asset-generator/test"));
+  const birthCenter = walkTests(join(root, "services/birth-center/test"));
   const presentationCloudflare = walkTests(join(root, "services/presentation-cloudflare/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
-  const all = [...domain, ...infra, ...assetGenerator, ...presentationCloudflare, ...worldKernel, ...tools].sort();
+  const all = [...domain, ...infra, ...assetGenerator, ...birthCenter, ...presentationCloudflare, ...worldKernel, ...tools].sort();
   const allRelative = new Set(all.map((path) => normalized(relative(root, path))));
   const missingReproTests = REPRO_TOOL_TEST_PATHS.filter((path) => !allRelative.has(path));
   if (missingReproTests.length > 0) {
