@@ -15,6 +15,7 @@ import { buildH2Slot4Episode3RecoveryState } from "./genesis-h2-recovery-state.m
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const BINDING_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-binding-v1.json";
+const TERMINAL_OUTCOME_PATH = "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-outcome-v1.json";
 const CALIBRATION_RESULT_PATH = "artifacts/validation/m2-pr39/g/calibration/g4-v3-off-cohort-v1/calibration-result-v1.json";
 const DURABILITY_WITNESS_PATH = "artifacts/validation/m2-pr39/g/protocol/g4-v3-durable-development-verification-v1.json";
 
@@ -150,6 +151,42 @@ function verifyExactResumePoint(binding, partialSlot) {
   });
 }
 
+function verifyTerminalOutcome(binding) {
+  if (!existsSync(absolute(TERMINAL_OUTCOME_PATH))) return null;
+  const outcome = readJson(TERMINAL_OUTCOME_PATH);
+  if (outcome.outcomeVersion !== "pr39-h-v2-recovery-execution-outcome-v1" ||
+      outcome.status !== "HOLD_RECOVERY_RECORD_RETRY_EXHAUSTED") {
+    fail("H-v2 recovery terminal outcome version/status drift");
+  }
+  if (outcome.authority?.recoveryBindingPath !== BINDING_PATH ||
+      outcome.authority?.generationPolicyVersion !== GENESIS_PASS_A_RELIABILITY_V3_VERSION) {
+    fail("H-v2 recovery terminal outcome authority drift");
+  }
+  if (outcome.execution?.firstAndOnlyNewProviderOperationObserved !== "pr39-h:slot-04:pass-a:episode-03:record-retry:2" ||
+      outcome.execution?.successfulProviderResultDurablyJournaled !== true ||
+      outcome.execution?.slot4Episode3Admitted !== false ||
+      outcome.execution?.slot5Started !== false ||
+      outcome.execution?.worldPublished !== false) {
+    fail("H-v2 recovery terminal execution witness drift");
+  }
+  if (outcome.terminalMechanicalFailure?.outerGate !== "record_repair_exhausted" ||
+      outcome.terminalMechanicalFailure?.causeGate !== "pass_a_structure_participation" ||
+      outcome.terminalMechanicalFailure?.budgetState?.generatedVersions !== 4 ||
+      outcome.terminalMechanicalFailure?.budgetState?.formRepairs !== 1 ||
+      outcome.terminalMechanicalFailure?.budgetState?.recordRetries !== 2 ||
+      outcome.terminalMechanicalFailure?.budgetExhaustion?.reason !== "record_retry_budget_exhausted") {
+    fail("H-v2 recovery terminal mechanical witness drift");
+  }
+  if (outcome.recoveryStanding?.terminalRecoveryHold !== true ||
+      outcome.recoveryStanding?.isReplacementCohort !== false ||
+      outcome.recoveryStanding?.mayEnterFrozenG5G6 !== false ||
+      outcome.interpretation?.retry3Authorized !== false ||
+      outcome.interpretation?.qualityRegenerationAuthorized !== false) {
+    fail("H-v2 recovery terminal standing drift");
+  }
+  return Object.freeze(structuredClone(outcome));
+}
+
 export function verifyH2RecoveryPreflight() {
   const binding = readJson(BINDING_PATH);
   if (binding.recoveryVersion !== "pr39-h-v2-recovery-continuation-v1") fail("unexpected H-v2 recovery binding version");
@@ -185,8 +222,39 @@ export function verifyH2RecoveryPreflight() {
   if (binding.recoveryMachinery.durabilityVerifiedHead !== durability.verifiedHead) fail("durability verified-head drift");
 
   const outputRootExists = existsSync(absolute(binding.output.root));
+  const terminalOutcome = verifyTerminalOutcome(binding);
+  if (terminalOutcome !== null) {
+    return Object.freeze({
+      status: terminalOutcome.status,
+      recoveryVersion: binding.recoveryVersion,
+      sourceAttempt: Object.freeze({
+        status: failure.status,
+        failureGate: failure.error.gate,
+        failurePath: binding.sourceAttempt.failurePath,
+        failureBlobSha: binding.sourceAttempt.failureBlobSha,
+      }),
+      completedThreads: Object.freeze(completedThreads),
+      partialSlot,
+      unstartedSlot,
+      preExecutionResumePoint: exactResumePoint,
+      recoveryMachinery: Object.freeze({
+        birthCenterRuntimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
+        durableInvocationJournalVersion: DURABLE_MODEL_INVOCATION_JOURNAL_VERSION,
+        generationPolicyVersion: GENESIS_PASS_A_RELIABILITY_V3_VERSION,
+        calibrationStatus: calibration.status,
+        durabilityStatus: durability.status,
+      }),
+      outputRoot: binding.output.root,
+      outputRootExists,
+      terminalOutcome,
+      scientificStanding: Object.freeze({ ...binding.scientificStanding }),
+      providerCallsAuthorized: false,
+      furtherExecutionAuthorized: false,
+    });
+  }
+
   if (binding.output.mustBeAbsentBeforeExecution && outputRootExists) {
-    fail(`H-v2 recovery output root already exists: ${binding.output.root}`);
+    fail(`H-v2 recovery output root already exists without a terminal outcome witness: ${binding.output.root}`);
   }
 
   return Object.freeze({
@@ -211,20 +279,39 @@ export function verifyH2RecoveryPreflight() {
     }),
     outputRoot: binding.output.root,
     outputRootExists,
+    terminalOutcome: null,
     scientificStanding: Object.freeze({ ...binding.scientificStanding }),
     providerCallsAuthorized: false,
+    furtherExecutionAuthorized: false,
   });
 }
 
 export function parseH2RecoveryMode(argv = process.argv.slice(2)) {
   if (argv.length === 0 || (argv.length === 1 && argv[0] === "--preflight")) return "preflight";
   if (argv.length === 1 && argv[0] === "--execute") {
-    throw new Error("H-v2 recovery execution is not yet reviewed/authorized; preflight only");
+    throw new Error("H-v2 recovery execution is closed; use preflight to inspect the terminal recovery HOLD");
   }
   throw new Error("usage: genesis-h2-recovery.mjs [--preflight]");
 }
 
 function printPreflight(result) {
+  if (result.status === "HOLD_RECOVERY_RECORD_RETRY_EXHAUSTED") {
+    const terminal = result.terminalOutcome;
+    const budget = terminal.terminalMechanicalFailure.budgetState;
+    process.stdout.write("H-V2 RECOVERY PREFLIGHT: TERMINAL HOLD — EXECUTION CLOSED\n\n");
+    process.stdout.write(`Completed Thread generations preserved: ${result.completedThreads.length}\n`);
+    process.stdout.write(`Partial slot ${result.partialSlot.slot}: ${result.partialSlot.acceptedEpisodeCountBeforeFailure} accepted episodes preserved\n`);
+    process.stdout.write(`Consumed recovery operation: ${terminal.execution.firstAndOnlyNewProviderOperationObserved}\n`);
+    process.stdout.write(`Terminal gate: ${terminal.terminalMechanicalFailure.outerGate} <- ${terminal.terminalMechanicalFailure.causeGate}\n`);
+    process.stdout.write(`Budget at stop: versions ${budget.generatedVersions}/${GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxTotalGeneratedVersionsPerRecord}; form ${budget.formRepairs}/${GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxFormRepairsPerRecord}; record ${budget.recordRetries}/${GENESIS_PASS_A_RELIABILITY_POLICY_V3.maxRecordRetriesPerRecord}\n`);
+    process.stdout.write(`Slot ${result.unstartedSlot.slot} remained unstarted: ${result.unstartedSlot.observedModelAttempts} historical model attempts\n`);
+    process.stdout.write(`Output root: ${result.outputRoot}${result.outputRootExists ? " [present locally; preserve]" : " [not present in this checkout]"}\n`);
+    process.stdout.write("Scientific standing: recovery/resilience only; not the #39 replacement cohort.\n");
+    process.stdout.write("Next #39 action: fresh replacement material + Gate-G(2).\n");
+    process.stdout.write("\nPreflight made zero provider calls. No further recovery provider call is authorized.\n");
+    return;
+  }
+
   process.stdout.write("H-V2 RECOVERY PREFLIGHT: CLEAR EXACT RESUME POINT\n\n");
   process.stdout.write(`Completed Thread generations preserved: ${result.completedThreads.length}\n`);
   process.stdout.write(`Partial slot ${result.partialSlot.slot}: ${result.partialSlot.acceptedEpisodeCountBeforeFailure} accepted episodes; ${result.partialSlot.replayableSuccessfulResponses} successful model responses preserved\n`);
