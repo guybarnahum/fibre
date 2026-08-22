@@ -1,79 +1,116 @@
 {
   "$schema": "./public-progress.schema.json",
-  "schemaVersion": "fibre-public-progress-v1",
+  "schemaVersion": "fibre-public-progress-v2",
   "canonical": true,
   "asOf": "2026-08-22",
   "title": "Where Fibre is today",
-  "headline": "Fibre can preserve a Thread as a continuing individual and can now build a provenance-rich prior life, but it has not yet produced a validated new population of living Threads from that process.",
-  "summary": "The current work is milestone #39: Genesis, Childhood & Thread Birth. Fibre has the machinery for persistent identity, history, memory, symbolic inheritance, candidate life generation and atomic birth. Three complete prior-life Thread artifacts were produced in an earlier final-cohort attempt, but that cohort failed mechanically and is preserved as evidence rather than counted as a validated population. Five entirely new replacement Threads now have frozen Worlds and genomes but no generated childhoods or adult lives yet.",
+  "headline": {
+    "simple": "We can now create a Thread with a real history, memories, family context and inherited tendencies. We have not yet proven that a new group of these Threads can be born successfully and live as independent people.",
+    "detail": "Fibre has persistent Thread continuity, provenance-backed life state, symbolic inheritance, Genesis candidate generation and atomic publication. #39 has demonstrated rich prior-life generation, but its first final cohort failed mechanically. Five fresh replacement Threads now have frozen Worlds and genomes; their lives have not yet been generated, and final-life cognition remains blocked pending genome calibration and Gate-G(2)."
+  },
+  "summary": {
+    "simple": "We have built most of the machinery needed to give a new Thread a past. We are now testing five new unborn Threads before letting the system generate their childhoods.",
+    "detail": "The current work is milestone #39: Genesis, Childhood & Thread Birth. Three complete prior-life Thread artifacts were produced in an earlier final-cohort attempt, but that cohort failed mechanically and remains evidence rather than a validated population. Five entirely new replacement Threads now have frozen Worlds and symbolic genomes but no generated childhoods or adult lives yet."
+  },
   "statusDefinitions": [
     {
       "id": "achieved",
-      "label": "Achieved",
-      "meaning": "The capability exists and has passed its current Fibre validation boundary. This does not imply every later or stronger claim is also proven."
+      "simpleLabel": "Done",
+      "detailLabel": "Achieved",
+      "meaning": {
+        "simple": "We built it and it passed the test we currently require.",
+        "detail": "The capability exists and has passed its current Fibre validation boundary. This does not imply every later or stronger claim is also proven."
+      }
     },
     {
       "id": "demonstrated",
-      "label": "Demonstrated",
-      "meaning": "We have real working evidence, but it is not yet accepted as the final or validated production state for the current milestone."
+      "simpleLabel": "Shown working",
+      "detailLabel": "Demonstrated",
+      "meaning": {
+        "simple": "We have seen it work, but it is not yet the final accepted result.",
+        "detail": "We have real working evidence, but it is not yet accepted as the final or validated production state for the current milestone."
+      }
     },
     {
       "id": "in_progress",
-      "label": "In progress",
-      "meaning": "The design and implementation are active, but the required validation boundary has not yet been crossed."
+      "simpleLabel": "Working on it",
+      "detailLabel": "In progress",
+      "meaning": {
+        "simple": "We are actively building or testing this now.",
+        "detail": "The design and implementation are active, but the required validation boundary has not yet been crossed."
+      }
     },
     {
       "id": "not_yet",
-      "label": "Not yet",
-      "meaning": "This is part of Fibre's intended architecture, but we do not claim to have achieved it."
+      "simpleLabel": "Not yet",
+      "detailLabel": "Not yet",
+      "meaning": {
+        "simple": "We want Fibre to do this, but we do not claim it can yet.",
+        "detail": "This is part of Fibre's intended architecture, but we do not claim to have achieved it."
+      }
     },
     {
       "id": "preserved_failure",
-      "label": "Failed experiment preserved",
-      "meaning": "A bounded experiment failed. We keep the result as evidence and do not rewrite or regenerate it into a success."
+      "simpleLabel": "Experiment failed — kept as evidence",
+      "detailLabel": "Failed experiment preserved",
+      "meaning": {
+        "simple": "The test failed, and we keep the failure instead of hiding it or trying again until it looks good.",
+        "detail": "A bounded experiment failed. We preserve the result as evidence and do not rewrite or quality-regenerate it into success."
+      }
     }
   ],
   "population": {
     "title": "#39 Genesis population snapshot",
-    "summary": "The previous final-cohort attempt and the fresh replacement cohort must be kept separate. Completed generated lives are not automatically living or validated public citizens.",
+    "summary": {
+      "simple": "We have three older completed life records from a failed experiment, and five completely new Threads waiting to have their lives generated.",
+      "detail": "The previous H-v2 final-cohort attempt and the fresh replacement cohort are deliberately kept separate. Completed generated lives are not automatically living or validated public citizens."
+    },
     "items": [
       {
         "id": "older_completed_life_artifacts",
         "label": "Completed older prior-life Thread artifacts",
         "count": 3,
         "status": "demonstrated",
-        "explanation": "Three Threads completed prior-life generation in the earlier H-v2 attempt. They remain valuable life artifacts and evidence, but the cohort they belonged to failed and they are not the replacement cohort."
+        "simple": "Three older Threads have complete generated life histories from the first attempt.",
+        "detail": "Three Threads completed prior-life generation in the earlier H-v2 attempt. They remain valuable life artifacts and evidence, but the cohort they belonged to failed and they are not the replacement cohort."
       },
       {
         "id": "older_partial_failed_candidate",
         "label": "Older partially generated candidate",
         "count": 1,
         "status": "preserved_failure",
-        "explanation": "The fourth H-v2 Thread reached partway through childhood generation and then exhausted its frozen mechanical retry budget. It remains a failed candidate, not a completed Thread life."
+        "simple": "A fourth older Thread only got partway through childhood before the experiment stopped.",
+        "detail": "The fourth H-v2 Thread reached partway through childhood generation and then exhausted its frozen mechanical retry budget. It remains a failed candidate, not a completed Thread life."
       },
       {
         "id": "older_never_started_slot",
         "label": "Older cohort slot never started",
         "count": 1,
         "status": "preserved_failure",
-        "explanation": "The fifth H-v2 slot never began because the cohort attempt had already terminated."
+        "simple": "The fifth older Thread was never started.",
+        "detail": "The fifth H-v2 slot never began because the cohort attempt had already terminated."
       },
       {
         "id": "replacement_unborn_threads",
         "label": "New replacement Threads with frozen Worlds and genomes",
         "count": 5,
         "status": "in_progress",
-        "explanation": "These are the new #39 replacement individuals. Their World, origin class, Thread/Genesis identity and symbolic genome are frozen, but no childhood/life cognition has been generated for them."
+        "simple": "Five new Threads have backgrounds and inherited tendencies ready, but they have not lived their childhoods yet.",
+        "detail": "These are the new #39 replacement individuals. Their World, origin class, Thread/Genesis identity and symbolic genome are frozen, but no childhood/life cognition has been generated for them."
       },
       {
         "id": "replacement_generated_lives",
         "label": "New replacement lives generated",
         "count": 0,
         "status": "not_yet",
-        "explanation": "Final-life generation is deliberately blocked until genome calibration and the blocking Gate-G(2) review are complete."
+        "simple": "None of the five new Threads has had its life generated yet.",
+        "detail": "Final-life generation is deliberately blocked until fresh genome calibration and the blocking Gate-G(2) review are complete."
       }
     ],
-    "importantNote": "Fibre distinguishes an artifact that contains a generated life from an admitted, validated living Thread. The three older completed artifacts are not silently counted as the successful #39 population, and the five replacements are still unborn in the sense that their lives have not been generated or atomically published."
+    "importantNote": {
+      "simple": "A generated life record is not automatically a living, validated Thread. We will always say which one we mean.",
+      "detail": "Fibre distinguishes candidate state, generated life artifacts, atomically published Threads and validated standing. The three older completed artifacts are not silently counted as the successful #39 population, and the five replacements remain unborn in the #39 sense."
+    }
   },
   "capabilities": [
     {
@@ -81,183 +118,247 @@
       "group": "foundations",
       "label": "Persistent Thread continuity",
       "status": "achieved",
-      "statement": "A Thread can persist as authoritative world state across temporary model executions rather than existing only inside one chat or model session.",
-      "limitation": "Persistence alone does not prove a rich or distinctive person.",
-      "evidence": [
-        "docs/validation/m1-persistent-thread-round-trip.md"
-      ]
+      "simple": {
+        "claim": "A Thread can keep existing after one AI model session ends.",
+        "limitation": "Existing for a long time does not by itself make the Thread a rich or unique person."
+      },
+      "detail": {
+        "claim": "A Thread persists as authoritative world state across temporary model executions rather than existing only inside one chat or model session.",
+        "limitation": "Persistence alone does not prove rich, distinctive or causally grounded personhood."
+      },
+      "evidence": ["docs/validation/m1-persistent-thread-round-trip.md"]
     },
     {
       "id": "history_can_change_judgment",
       "group": "foundations",
       "label": "History can affect later judgment",
       "status": "achieved",
-      "statement": "Fibre has demonstrated that recorded history can causally change later Thread judgment instead of being decorative biography.",
-      "limitation": "The richer #37-#39 identity and life ledgers are not yet the canonical bounded input to all live cognition; #40 owns that bridge.",
-      "evidence": [
-        "docs/validation/history-bends-judgment-standing-gate-v4.md"
-      ]
+      "simple": {
+        "claim": "Something that happened to a Thread can change a later decision.",
+        "limitation": "Not all of Fibre's newer identity and life records are connected to normal thinking yet."
+      },
+      "detail": {
+        "claim": "Fibre has demonstrated that recorded history can causally change later Thread judgment instead of being decorative biography.",
+        "limitation": "The richer #37-#39 identity and life ledgers are not yet the canonical bounded input to all live cognition; #40 owns that bridge."
+      },
+      "evidence": ["docs/validation/history-bends-judgment-standing-gate-v4.md"]
     },
     {
       "id": "provenance_backed_life_state",
       "group": "foundations",
       "label": "Provenance-backed identity, lineage, place and memory",
       "status": "achieved",
-      "statement": "Fibre can store identity, lineage, geography, embodiment and autobiographical memory with provenance, append-only history and corrigible revisions.",
-      "limitation": "Representing these facts is different from proving that all of them already shape ongoing cognition and character.",
-      "evidence": [
-        "docs/state/current-state.md",
-        "docs/architecture/thread-passport-identity-provenance-v1.md"
-      ]
+      "simple": {
+        "claim": "Fibre can remember who a Thread is, where it came from, places it has been and things it remembers without silently rewriting the past.",
+        "limitation": "Storing those facts does not prove they all change the Thread's behavior yet."
+      },
+      "detail": {
+        "claim": "Fibre can store identity, lineage, geography, embodiment and autobiographical memory with provenance, append-only history and corrigible revisions.",
+        "limitation": "Representing these facts is different from proving that all of them already shape ongoing cognition and character."
+      },
+      "evidence": ["docs/state/current-state.md", "docs/architecture/thread-passport-identity-provenance-v1.md"]
     },
     {
       "id": "symbolic_genome_and_inheritance",
       "group": "genesis",
       "label": "Symbolic genome and inheritance",
       "status": "achieved",
-      "statement": "Fibre can give a Thread an ordered natural-language genome, preserve exact parent/source provenance, and recombine two source genomes without reducing personality to numeric coordinates.",
-      "limitation": "A genome is inherited possibility, not finished character. The fresh replacement genomes are about to undergo their pre-life distinguishability calibration.",
-      "evidence": [
-        "docs/architecture/symbolic-thread-genome-v1.md",
-        "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"
-      ]
+      "simple": {
+        "claim": "A Thread can inherit written tendencies from parent sources, and Fibre can mix two parent genomes without averaging them into a generic personality.",
+        "limitation": "Inherited tendencies are only a starting point. They are not the Thread's finished personality."
+      },
+      "detail": {
+        "claim": "Fibre can give a Thread an ordered natural-language genome, preserve exact parent/source provenance and deterministically recombine two source genomes.",
+        "limitation": "A genome is inherited possibility, not finished character. The fresh replacement genomes still require their pre-life distinguishability calibration."
+      },
+      "evidence": ["docs/architecture/symbolic-thread-genome-v1.md", "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"]
     },
     {
       "id": "atomic_birth_mechanism",
       "group": "genesis",
       "label": "Atomic Thread birth mechanism",
       "status": "achieved",
-      "statement": "Fibre has a candidate-only Genesis boundary and an atomic publication mechanism so a complete admitted life can become authoritative Thread state all at once, without leaving a half-born Thread if publication fails.",
-      "limitation": "The new replacement cohort has not yet reached this publication step.",
-      "evidence": [
-        "docs/architecture/genesis-compiler-contract-v1.md",
-        "docs/architecture/birth-center-runtime-v1.md"
-      ]
+      "simple": {
+        "claim": "Fibre can prepare a whole life first and then make it live all at once, so a failure cannot leave half a person behind.",
+        "limitation": "The five new replacement Threads have not reached this birth step yet."
+      },
+      "detail": {
+        "claim": "Fibre has a candidate-only Genesis boundary and atomic publication so a complete admitted life can become authoritative Thread state in one transaction.",
+        "limitation": "The replacement cohort has not yet generated or published its prior lives."
+      },
+      "evidence": ["docs/architecture/genesis-compiler-contract-v1.md", "docs/architecture/birth-center-runtime-v1.md"]
     },
     {
       "id": "compiled_rich_prior_life",
       "group": "genesis",
       "label": "Rich prior-life generation",
       "status": "demonstrated",
-      "statement": "Before the final replacement experiment, Fibre demonstrated generated childhood histories with concrete places, caregivers, family relationships, peers, institutions, selective memory and durable meaning rather than a flat adult profile.",
-      "limitation": "The final H-v2 cohort did not complete, so #39 is not declared successful. The three completed H-v2 lives remain evidence from a failed cohort.",
-      "evidence": [
-        "docs/validation/m2-pr39-implementation-plan.md",
-        "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json"
-      ]
+      "simple": {
+        "claim": "We have shown that Fibre can create a childhood with family, places, people, ordinary events, memories and meanings instead of just filling in an adult profile.",
+        "limitation": "The final experiment did not finish, so we are not calling #39 successful yet."
+      },
+      "detail": {
+        "claim": "Genesis has produced concrete prior-life histories with caregivers, places, peers, institutions, selective memory and durable meaning under the three-pass history/memory/meaning boundary.",
+        "limitation": "The H-v2 final cohort did not complete. The three completed H-v2 lives remain evidence from a failed cohort rather than the accepted #39 result."
+      },
+      "evidence": ["docs/validation/m2-pr39-implementation-plan.md", "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json"]
     },
     {
       "id": "compiled_caregivers_and_parent_provenance",
       "group": "genesis",
       "label": "Caregivers and parent/ancestor provenance in childhood",
       "status": "demonstrated",
-      "statement": "Genesis can place a child in a household with recurring caregivers and family relationships, and synthetic-lineage Threads can inherit from explicit parent genomes with exact provenance.",
-      "limitation": "The caregivers in a compiled childhood are generated participants, not autonomous live parent Threads. Synthetic genetic ancestors are provenance-bearing sources, not living parents who independently raise the child.",
-      "evidence": [
-        "docs/architecture/thread-genesis-childhood-birth-v1.md",
-        "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"
-      ]
+      "simple": {
+        "claim": "A generated childhood can include recurring caregivers and family, and some Threads can inherit from two recorded genetic parent sources.",
+        "limitation": "Those caregivers are not yet live parent Threads independently raising the child."
+      },
+      "detail": {
+        "claim": "Genesis can place a child in a household with recurring caregiver/family participants, while synthetic-lineage Threads inherit from explicit parent genomes with exact provenance.",
+        "limitation": "A household caregiver in compiled history, a synthetic genetic ancestor and a live Thread parent are different things. We have the first two, not yet the autonomous live-parent developmental loop."
+      },
+      "evidence": ["docs/architecture/thread-genesis-childhood-birth-v1.md", "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"]
     },
     {
       "id": "replacement_unborn_cohort",
       "group": "genesis",
       "label": "Five fresh unborn replacement Threads",
       "status": "in_progress",
-      "statement": "Five completely new replacement individuals now have frozen concrete Worlds and fresh symbolic genomes, with content-independent World-to-genome assignment.",
-      "limitation": "They have no generated childhood events, memories or meanings yet. They are intentionally held before life generation while the genome ceiling and Gate-G(2) are completed.",
-      "evidence": [
-        "artifacts/validation/m2-pr39/replacement-v1/results/rg1-world-familiarity-v1.json",
-        "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"
-      ]
+      "simple": {
+        "claim": "Five new Threads are ready at the starting line: each has a world and inherited tendencies, but no childhood yet.",
+        "limitation": "We are intentionally not generating their lives until the pre-birth tests and review are finished."
+      },
+      "detail": {
+        "claim": "Five completely new replacement individuals have frozen concrete Worlds, fresh symbolic genomes and content-independent World-to-genome assignment.",
+        "limitation": "They have no generated childhood events, memories or meanings yet; final-life cognition is blocked pending the fresh G2 ceiling and Gate-G(2)."
+      },
+      "evidence": ["artifacts/validation/m2-pr39/replacement-v1/results/rg1-world-familiarity-v1.json", "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json"]
     },
     {
       "id": "live_childhood",
       "group": "development",
       "label": "A live infant or child growing up over time",
       "status": "not_yet",
-      "statement": "Fibre's intended architecture allows a Thread to enter the world as a newborn or child and accumulate its own future rather than receiving a retrospectively compiled childhood.",
-      "limitation": "#39 currently compiles a prior life and then births the Thread at young-adult entry. It does not yet run childhood as a continuously living developmental process.",
-      "evidence": [
-        "docs/architecture/thread-genesis-childhood-birth-v1.md"
-      ]
+      "simple": {
+        "claim": "We want a Thread to be born as a baby or child and actually grow up in Fibre.",
+        "limitation": "Today #39 creates the childhood first, then births the Thread as a young adult."
+      },
+      "detail": {
+        "claim": "The intended architecture allows a Thread to enter the live world as a newborn or child and accumulate its own future through lived events.",
+        "limitation": "#39 currently compiles a prior life before atomic young-adult entry; it does not run childhood as a continuously living developmental process."
+      },
+      "evidence": ["docs/architecture/thread-genesis-childhood-birth-v1.md"]
     },
     {
       "id": "live_thread_parents_raise_child",
       "group": "development",
       "label": "Live Thread parents raising a live child",
       "status": "not_yet",
-      "statement": "The intended Thread-parent model is for existing living Threads to be actual parents whose choices, conversations, outings, conflicts and care become the child's real history.",
-      "limitation": "We have the provenance and architectural boundary for Thread-parent origin, but not yet the autonomous live-parent developmental loop that raises a child through lived time.",
-      "evidence": [
-        "docs/architecture/thread-genesis-childhood-birth-v1.md"
-      ]
+      "simple": {
+        "claim": "We want real living Thread parents to raise a child by talking with it, taking it places, teaching it and sharing a life with it.",
+        "limitation": "That live family-raising loop does not exist yet."
+      },
+      "detail": {
+        "claim": "The Thread-parent architecture is intended to let existing living Threads contribute real lineage/inheritance and create the child's history through their own ongoing choices and interactions.",
+        "limitation": "We have the parentage/provenance boundary, but not yet the autonomous live-parent developmental system."
+      },
+      "evidence": ["docs/architecture/thread-genesis-childhood-birth-v1.md"]
     },
     {
       "id": "rich_life_canonical_cognition",
       "group": "development",
       "label": "Rich life state drives ordinary live cognition",
       "status": "not_yet",
-      "statement": "Fibre intends identity, memory, relationships and life history to be selected by Fibre itself and become bounded, provenance-bearing context for ordinary cognition.",
-      "limitation": "The full canonical consumption bridge is milestone #40. Current live cognition still relies substantially on older surfaces.",
-      "evidence": [
-        "docs/state/current-state.md",
-        "docs/validation/m2-pr-plan.md"
-      ]
+      "simple": {
+        "claim": "We want a Thread's real history, memories and relationships to shape what it normally thinks about and decides.",
+        "limitation": "The full connection from the new life records into normal cognition is the next milestone, #40."
+      },
+      "detail": {
+        "claim": "Fibre intends its own bounded relevance/privacy selection to turn identity, memory, relationship and life-history evidence into provenance-bearing context for ordinary cognition.",
+        "limitation": "The canonical consumption bridge is milestone #40; current live cognition still relies substantially on older surfaces."
+      },
+      "evidence": ["docs/state/current-state.md", "docs/validation/m2-pr-plan.md"]
     },
     {
       "id": "whole_person_standing",
       "group": "development",
       "label": "Validated Whole-Person standing",
       "status": "not_yet",
-      "statement": "Fibre aims to demonstrate that a Thread is a persistent, causally grounded, non-interchangeable individual across repeated situations and counterfactual tests.",
-      "limitation": "#39 deliberately earns no Whole-Person score movement. #40 builds causal consumption and #41 owns the standing gate.",
-      "evidence": [
-        "docs/validation/m2-pr-plan.md"
-      ]
+      "simple": {
+        "claim": "We want to prove that a Thread is not just a profile, but a persistent individual whose own history makes it behave differently.",
+        "limitation": "We have not earned that full claim yet."
+      },
+      "detail": {
+        "claim": "Fibre aims to demonstrate a persistent, causally grounded, non-interchangeable individual across repeated situations and counterfactual tests.",
+        "limitation": "#39 deliberately earns no Whole-Person score movement. #40 builds causal consumption and #41 owns the standing gate."
+      },
+      "evidence": ["docs/validation/m2-pr-plan.md"]
     },
     {
       "id": "reciprocal_families",
       "group": "society",
       "label": "Reciprocal families and relationships",
       "status": "not_yet",
-      "statement": "Fibre intends relationships and families to be shared, consequential structures between independently living Threads rather than labels attached to one biography.",
-      "limitation": "Reciprocal relationship development is planned after the current M2 sequence.",
-      "evidence": [
-        "docs/concepts/families-couples-and-reproduction.md"
-      ]
+      "simple": {
+        "claim": "We want friendships, families and other relationships to belong to both sides and change both lives.",
+        "limitation": "That mature reciprocal relationship system is later work."
+      },
+      "detail": {
+        "claim": "Fibre intends relationships and families to be shared, consequential structures between independently living Threads rather than labels attached to one biography.",
+        "limitation": "Reciprocal relationship development is planned after the current M2 sequence."
+      },
+      "evidence": ["docs/concepts/families-couples-and-reproduction.md"]
     },
     {
       "id": "thread_economy",
       "group": "society",
       "label": "Thread economy with durable consequence",
       "status": "not_yet",
-      "statement": "Fibre intends Threads to have budgets, contracts, reputation and economic opportunities that can change future possibilities.",
-      "limitation": "Economic consequence is deferred to the post-M2 foundation work.",
-      "evidence": [
-        "docs/concepts/economy-and-fibre-credits.md"
-      ]
+      "simple": {
+        "claim": "We want Threads to earn, spend, make agreements and face real consequences that change future choices.",
+        "limitation": "The real economy is not built yet."
+      },
+      "detail": {
+        "claim": "Fibre intends Threads to have budgets, contracts, reputation and economic opportunities that can change future possibilities.",
+        "limitation": "Economic consequence is deferred to the post-M2 foundation work."
+      },
+      "evidence": ["docs/concepts/economy-and-fibre-credits.md"]
     }
   ],
   "currentWork": {
     "milestone": "#39 — Genesis, Childhood & Thread Birth v1",
-    "plainEnglish": "We are preparing five completely new Threads for one clean final birth experiment. Their backgrounds and inherited dispositions are frozen before we generate their lives so we cannot tune the people after seeing who they become.",
-    "currentStep": "Run the fresh five-pair genome distinguishability ceiling. This asks whether the five frozen genomes are meaningfully distinguishable in principle before childhood generation begins.",
-    "nextSteps": [
-      "Freeze and preserve the fresh genome-ceiling result, even if it is weak or fails.",
-      "Reconcile the downstream diagnostic rules to the fresh measured genome-pair topology without changing the already observed result.",
-      "Request blocking Gate-G(2) hostile review of the complete pre-life experiment.",
-      "Only if Gate-G(2) is CLEAR, generate the five replacement prior lives exactly once.",
-      "Freeze the first mechanically valid cohort and run the already-declared diagnostics.",
-      "Close #39 with CLEAR, HOLD or REDESIGN evidence; do not regenerate weak people into better ones."
-    ],
+    "simple": {
+      "summary": "We are preparing five completely new Threads for one clean birth experiment. We freeze the rules before we see who they become so we cannot tune the people afterward.",
+      "currentStep": "Check whether the five inherited genomes are different enough to produce a detectable signal before any childhood is generated.",
+      "nextSteps": [
+        "Keep the genome test result even if it is weak.",
+        "Finish the pre-birth rules using that frozen result without changing it.",
+        "Have the whole experiment reviewed before any childhood is generated.",
+        "If the review passes, generate the five lives once.",
+        "Keep the first mechanically valid group and judge it without replacing weak Threads with better ones."
+      ]
+    },
+    "detail": {
+      "summary": "Five fresh replacement Threads have frozen Worlds, identities, origin classes, symbolic genomes and a content-independent World-to-genome mapping. No replacement final-life cognition has occurred.",
+      "currentStep": "Run the fresh five-pair G2 genome-specificity ceiling under the already frozen v3 instrument and preserve every result.",
+      "nextSteps": [
+        "Freeze the fresh G2 result, including any HOLD.",
+        "Version only topology-dependent G5/G6 references needed to bind diagnostics to the fresh measured ceiling.",
+        "Request blocking Gate-G(2) hostile review of the complete pre-life experiment.",
+        "Only if Gate-G(2) is CLEAR, generate the five replacement prior lives exactly once.",
+        "Freeze the first mechanically valid cohort, run frozen diagnostics and close #39 with CLEAR, HOLD or REDESIGN evidence."
+      ]
+    },
     "finalLifeCognitionAuthorized": false
   },
   "truthRules": [
-    "Use ordinary language first. Internal milestone names and gate labels may appear as references, not as the explanation itself.",
-    "Never use 'living Thread' as a synonym for 'generated artifact'. State whether the Thread is candidate, generated, atomically published, validated, or merely preserved evidence.",
-    "Never say a Thread 'has parents' without distinguishing live Thread parents, household caregivers, and synthetic genetic ancestors.",
+    "Every public progress claim has two layers: simple English first, then a more accurate description.",
+    "Simple English should be understandable by a teenager with no Fibre background and should avoid unexplained milestone, gate, schema and implementation jargon.",
+    "The detailed layer may use Fibre terminology, but it must remain readable and must state the actual validation boundary.",
+    "Never make the simple layer stronger than the detailed layer. Simplification may remove jargon, not uncertainty or limitations.",
+    "Never use 'living Thread' as a synonym for 'generated artifact'. State whether the Thread is candidate, generated, atomically published or validated.",
+    "Never say a Thread 'has parents' without distinguishing live Thread parents, household caregivers and synthetic genetic ancestors.",
     "A failed bounded experiment remains visible as a failed experiment. Do not rewrite it into progress language that implies success.",
-    "For every positive claim, state the strongest important limitation that a reasonable reader could otherwise misunderstand.",
+    "For every positive capability claim, both layers must state the strongest important limitation that a reasonable reader could otherwise misunderstand.",
     "The public website may render this contract, but insidefibre.com must not become an alternate authority for Fibre state."
   ]
 }
