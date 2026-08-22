@@ -6,9 +6,9 @@ import {
   verifyH2RecoveryPreflight,
 } from "./genesis-h2-recovery.mjs";
 
-test("H-v2 recovery preflight accounts for preserved completed, partial and unstarted development", () => {
+test("H-v2 recovery preflight accounts for preserved development and pins the exact zero-call resume point", () => {
   const result = verifyH2RecoveryPreflight();
-  assert.equal(result.status, "CLEAR_RECOVERY_SOURCE_ACCOUNTING_ONLY");
+  assert.equal(result.status, "CLEAR_RECOVERY_RESUME_POINT_ZERO_CALL");
   assert.equal(result.completedThreads.length, 3);
   assert.deepEqual(result.completedThreads.map((item) => item.slot), [1, 2, 3]);
   assert.equal(result.partialSlot.slot, 4);
