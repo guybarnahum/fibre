@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { buildH2Slot4Episode3RecoveryState } from "./genesis-h2-recovery-state.mjs";
 import {
+  H2_RECOVERY_TERMINAL_ORCHESTRATOR_STATUS,
   disallowedRecoveryPostReviewPaths,
   persistRecoveryRepairWitnesses,
   recoveredHistoricalPassAEntry,
@@ -10,11 +11,25 @@ import {
   verifyH2RecoveryOrchestratorPreflight,
 } from "./genesis-h2-recovery-orchestrator.mjs";
 
-test("H-v2 recovery orchestrator preflight refuses to rebuild an execution path after terminal recovery HOLD", () => {
-  assert.throws(
-    () => verifyH2RecoveryOrchestratorPreflight(),
-    /requires a clear zero-call resume preflight/,
+test("H-v2 recovery orchestrator reports the terminal recovery HOLD without rebuilding an execution plan", () => {
+  const preflight = verifyH2RecoveryOrchestratorPreflight();
+  assert.equal(preflight.status, H2_RECOVERY_TERMINAL_ORCHESTRATOR_STATUS);
+  assert.equal(preflight.providerCallsAuthorized, false);
+  assert.equal(preflight.furtherExecutionAuthorized, false);
+  assert.equal(
+    preflight.consumedProviderOperation,
+    "pr39-h:slot-04:pass-a:episode-03:record-retry:2",
   );
+  assert.equal(preflight.terminalFailure.outerGate, "record_repair_exhausted");
+  assert.equal(preflight.terminalFailure.causeGate, "pass_a_structure_participation");
+  assert.deepEqual(preflight.terminalFailure.budgetState, {
+    generatedVersions: 4,
+    formRepairs: 1,
+    recordRetries: 2,
+  });
+  assert.equal(preflight.requiredGate, "Gate-G(2)");
+  assert.equal(preflight.scientificStanding.isReplacementCohort, false);
+  assert.equal(preflight.scientificStanding.mayEnterFrozenG5G6, false);
 });
 
 test("H-v2 recovery authorization permits only review and authorization witness changes after the reviewed implementation head", () => {
@@ -125,9 +140,9 @@ test("H-v2 recovery persists Pass-A and Pass-B repair attempts using the existin
   assert.equal(recorded[2].recordedAt, "2026-08-22T20:00:00.000Z");
 });
 
-test("consumed H-v2 recovery authorization cannot be reused after terminal outcome recording", async () => {
+test("H-v2 recovery orchestrator cannot execute after the terminal recovery outcome", async () => {
   await assert.rejects(
     () => runAuthorizedH2Recovery(),
-    /implementation drift after review/,
+    /closed by terminal recovery outcome; no further provider call is authorized/,
   );
 });
