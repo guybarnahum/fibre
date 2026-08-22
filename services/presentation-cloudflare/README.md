@@ -11,13 +11,14 @@ PresentationServer
       |
       v
 InfraDriver cloudflare-v1
-  streams   -> per-Thread SQLite Durable Object
-  realtime  -> Durable Object WebSocket Hibernation
-  objects   -> R2
-  catalog   -> D1
+  streams    -> per-Thread SQLite Durable Object
+  realtime   -> Durable Object WebSocket Hibernation
+  objects    -> R2
+  catalog    -> D1
+  workflows  -> Cloudflare Workflows
 ```
 
-The public API is currently read-only:
+The public API is read-only:
 
 ```text
 GET /healthz
@@ -33,28 +34,68 @@ There is no generic R2/object browser endpoint.
 
 ## Local P3 fixture mode
 
-`wrangler.local.jsonc` sets:
+`wrangler.local.jsonc` enables only the frozen P2 Cần Thơ candidate and configures:
 
 ```text
 P3_FIXTURE_MODE=1
 VIEWER_ORIGIN=http://localhost:5173
+C2PA_SIGNER_URL=http://127.0.0.1:8790
 ```
 
-This enables exactly one development-only write seam:
+Development-only fixture seams:
 
 ```text
 POST /__p3/fixtures/can-tho
+POST /__p3/fixtures/can-tho/generate-market
+GET  /__p3/workflows/:jobId
 ```
 
-It accepts only the frozen P2 `thr_pr39_g2_04` `genesis_candidate` fixture bundle. It does not accept arbitrary Threads and is absent when fixture mode is disabled.
+The seed route accepts only `thr_pr39_g2_04` with `lifecycleStatus=genesis_candidate` and `fixture=true`. The media route plans exactly the existing `media_place_market` placeholder from the current presentation snapshot. These routes are absent when fixture mode is disabled.
 
-### Start a local runtime
+## Final P3 generated-media proof
 
-From the repository root, install/use current Wrangler without adding Cloudflare credentials to Fibre `.env`:
+The final proof uses one real market reconstruction rather than fanning out all eleven eligible still-image jobs:
+
+```text
+Cần Thơ presentation snapshot
+        -> ThreadPresentationAssetPlanner
+        -> AssetGenerationService
+        -> InfraDriver.workflows
+        -> Cloudflare Workflow
+        -> witnessed OpenAI GPT Image 2 request
+        -> raw image bytes
+        -> immutable GenerationRecord in R2
+        -> C2PA Content Credential embed/verify
+        -> final credentialed image in R2
+        -> immutable StoredAssetReceipt
+        -> credential re-verification
+        -> media.ready at presentation sequence 1
+        -> D1 public-media projection
+        -> HTTP/WebSocket viewer consumption
+```
+
+The provider adapter pins `gpt-image-2-2026-04-21` and records the exact provider-facing request after removing the API secret. The public C2PA assertion uses `digest_only` prompt disclosure.
+
+Because the official browser/WASM C2PA package does not yet expose the byte-oriented verification API needed by Cloudflare Workers, this local P3 proof uses `services/c2pa-local` as an isolated Node sidecar running the official `@contentauth/c2pa-node` SDK. It is an adapter implementation, not Fibre authority and not a production trust service.
+
+### 1. Start the local C2PA service
+
+The C2PA Node package requires Node.js 22.22 or later:
 
 ```bash
-npx wrangler@latest --version
+node --version
+sh services/c2pa-local/generate-dev-cert.sh   # once; skip if .fibre/p3-c2pa already exists
+npm install --prefix services/c2pa-local --no-package-lock
+npm start --prefix services/c2pa-local
+```
 
+Leave it running on `127.0.0.1:8790`.
+
+### 2. Initialize and start the Cloudflare runtime
+
+Fibre's normal root `.env` supplies `OPENAI_API_KEY`; no Cloudflare infrastructure keys are needed for local mode.
+
+```bash
 npx wrangler@latest d1 execute fibre-presentation-local \
   --config services/presentation-cloudflare/wrangler.local.jsonc \
   --local \
@@ -62,51 +103,69 @@ npx wrangler@latest d1 execute fibre-presentation-local \
 
 npx wrangler@latest dev \
   --config services/presentation-cloudflare/wrangler.local.jsonc \
+  --env-file .env \
   --port 8787
 ```
 
-Wrangler local mode simulates the configured D1, R2, and Durable Object resources on the developer machine. No production R2 bucket or D1 database is touched.
+Wrangler locally simulates D1, R2, Durable Objects, and Workflows. No production Cloudflare resources are touched.
+
+### 3. Seed and run the one-image proof
 
 In another terminal:
 
 ```bash
 node tools/presentation/seed-p3-can-tho-cloudflare-local.mjs
-
-curl -s http://127.0.0.1:8787/healthz
-curl -s http://127.0.0.1:8787/api/threads/thr_pr39_g2_04/snapshot
-curl -s 'http://127.0.0.1:8787/api/threads/thr_pr39_g2_04/events?after=0'
+node tools/presentation/prove-p3-generated-media-local.mjs
 ```
 
-The seed CLI reads only:
+The proof waits for the asynchronous Workflow, requires the first semantic presentation event to be `media.ready` sequence `1`, downloads the image only through the guarded public-media endpoint, re-verifies its C2PA assertion, and saves a local copy under ignored `artifacts/generated/`.
+
+The successful result must show:
 
 ```text
-artifacts/validation/thread-presentation/p2/can-tho/presentation.json
-artifacts/validation/thread-presentation/p2/can-tho/media.json
-artifacts/validation/thread-presentation/p2/can-tho/provenance.json
+lifecycleStatus  genesis_candidate
+fixture          true
+eventSequence    1
+c2pa.valid        true
+provenanceClass  generated_reconstruction
+provider         openai
+model            gpt-image-2-2026-04-21
+promptDisclosure digest_only
 ```
 
-It does not read raw H-v2 Genesis output and cannot publish/birth the candidate as a live Thread.
+Exact prompt text must not appear in the public C2PA assertion.
+
+### 4. Run the actual insidefibre viewer
+
+From the `insidefibre.com` P3 branch:
+
+```bash
+VITE_FIBRE_PRESENTATION_URL=http://127.0.0.1:8787 npm run dev
+```
+
+Open `/meet/fixture/can-tho`. The market slot should render the generated image from the `media.ready` overlay while the underlying snapshot media packet remains unchanged and the page remains explicitly labeled as an unpublished candidate fixture.
 
 ## Production resource configuration
 
 `wrangler.local.jsonc` is intentionally local-only. Its all-zero D1 identifier must never be deployed as production configuration.
 
-A production/staging config will be created only after the Cloudflare resources are provisioned. Expected bindings are:
+A production/staging config will be created only after resources and production signing trust are provisioned. Expected bindings are:
 
 ```text
 PRESENTATION_CHANNELS   Durable Object namespace
 PRESENTATION_OBJECTS    private R2 bucket
 PRESENTATION_CATALOG    D1 database
-ASSET_GENERATION        Cloudflare Workflow binding (when the real asset workflow lands)
+ASSET_GENERATION        Cloudflare Workflow binding
 ```
 
 Production deployment credentials belong to Wrangler authentication / CI secrets, not Fibre application `.env`.
 
-## Current limits
+## Current limits after P3
 
 - no browser write/message API yet;
-- no real image provider yet;
-- no real C2PA-compatible signer adapter yet;
-- no Cloudflare Workflow class wired into this Worker yet;
+- only one generated asset is required for the P3 proof; bulk generation belongs to later media work;
+- local C2PA sidecar certificate is not a production trust credential;
+- Cloudflare-native byte-oriented C2PA verification remains deferred until an upstream-supported Worker API exists;
 - no production/staging resource IDs yet;
-- local fixture mode is validation scaffolding only.
+- local fixture mode is validation scaffolding only;
+- generated media remains presentation reconstruction and cannot become Thread history, memory, meaning, or embodiment evidence through this path.
