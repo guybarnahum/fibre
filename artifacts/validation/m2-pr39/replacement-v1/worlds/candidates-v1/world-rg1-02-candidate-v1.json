@@ -1,0 +1,36 @@
+{
+  "worldSpecId": "world_pr39_rg1_02_kaohsiung",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {"placeId":"place_rg1_02_home","description":"An apartment in Kaohsiung's Sanmin District near convenience stores, small restaurants, scooter parking and a mix of residential and commercial streets."},
+    {"placeId":"place_rg1_02_school","description":"A Kaohsiung public school with regular classrooms, science and arts instruction, sports space and school activities overseen within the city's education system."},
+    {"placeId":"place_rg1_02_transit","description":"A Kaohsiung transit corridor where city buses connect with MRT or light-rail services and where walking, bicycles and scooters are also common for short trips."},
+    {"placeId":"place_rg1_02_library","description":"A public library branch or study space in Kaohsiung with Chinese-language collections, youth resources, public computers and community programming."},
+    {"placeId":"place_rg1_02_market","description":"A neighborhood market and nearby food streets used for groceries, prepared food, household purchases and routine encounters with vendors and neighbors."}
+  ],
+  "householdShape": "Two caregivers, the subject and a younger cousin share an apartment; the cousin's parent works elsewhere in the region and remains involved but is not resident full time.",
+  "familyRelations": ["The younger cousin is two years younger than the subject.","The cousin's nonresident parent participates in visits and decisions without being part of daily household routines."],
+  "languages": ["Mandarin Chinese","Taiwanese Hokkien","English"],
+  "materialCircumstances": "Essentials are stable, with ordinary constraints on discretionary spending; the household uses a scooter when available but also relies on walking, buses and rail transit.",
+  "mobilityPattern": "Walking, buses, MRT or light rail and occasional scooter trips form the daily mobility mix; heat, heavy rain and typhoon disruptions can change school, work and travel routines.",
+  "schoolingOrCommunityContext": "Public schooling, libraries, neighborhood markets, transit, sports facilities, temples and other community institutions, and dense commercial streets create recurring peer and adult contact outside the household.",
+  "culturalContext": "Kaohsiung, Taiwan — The household lives in Kaohsiung during 2004–2026. Mandarin is the primary language of public schooling and most formal civic settings; Taiwanese Hokkien is also heard in family, neighborhood and market life, while English appears through school, media and international-facing activity. Buses, MRT, light rail, scooters, bicycles and walking provide overlapping mobility choices. Hot humid weather, seasonal heavy rain and typhoons can interrupt routines. Convenience stores, markets, food streets and mixed residential-commercial blocks are ordinary parts of city life. Buddhist, Taoist, Christian, folk-religious and secular practices are publicly visible without assigning the household a belief. Kaohsiung's port-city economy, universities, museums, libraries and changing waterfront and transit infrastructure provide access to technical, cultural and civic settings without determining future occupation or identity.",
+  "availableInstitutions": ["kaohsiung_public_school","kaohsiung_public_library","kaohsiung_city_bus","kaohsiung_mrt","kaohsiung_light_rail","community_health_service"],
+  "intellectualEnvironment": "School curricula, public libraries, Chinese-language books and media, public internet, family and market conversations, museums, universities, technical education, translated material and online English-language sources become available in different degrees over time.",
+  "affordedRoles": ["caregiver","cousin","peer","teacher","librarian","neighbor","vendor","coach","transit_worker","mentor"],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_replacement_world_authoring",
+    "sourcesConsulted": [
+      {"kind":"municipal_transport","citation":"Kaohsiung City Government Transportation Bureau public-transport service, including city bus, MRT supervision and accessible transport: https://www.tbkc.gov.tw/Service/PublicTransport","accessedAt":"2026-08-22T21:42:00Z"},
+      {"kind":"municipal_education","citation":"Kaohsiung City Government Education Bureau English introduction describing responsibility for K-12 and social education institutions: https://www.kh.edu.tw/english/introduction","accessedAt":"2026-08-22T21:42:00Z"}
+    ],
+    "abstractionMethod": "PR #39 replacement G1 authoring: a concrete ordinary-life setting was abstracted from public civic, education, transport, library or cultural sources before any replacement-cohort genome, Thread identity, Genesis identity, treatment assignment, generated life, diagnostic outcome or expected personality existed. Facts constrain affordances only; they do not prescribe character, values, politics, religion, competence, profession or narrative significance.",
+    "relocationWitness": "A comparable household could exist elsewhere in Taiwan, but moving it would change the World because Kaohsiung's bus/MRT/light-rail mix, port-city institutions, hot coastal climate and specific municipal education context are deliberate constraints.",
+    "familiarityProbe": null,
+    "createdAt": "2026-08-22T21:42:00Z"
+  },
+  "createdAt": "2026-08-22T21:42:00Z"
+}
