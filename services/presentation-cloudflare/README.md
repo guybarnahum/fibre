@@ -80,7 +80,7 @@ Because the official browser/WASM C2PA package does not yet expose the byte-orie
 
 ### 1. Start the local C2PA service
 
-The C2PA Node package requires Node.js 22.22 or later:
+The published C2PA Node package requires Node.js 22 or later:
 
 ```bash
 node --version
