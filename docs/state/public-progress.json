@@ -1,6 +1,6 @@
 {
   "$schema": "./public-progress.schema.json",
-  "schemaVersion": "fibre-public-progress-v2",
+  "contract": "fibre-public-progress",
   "canonical": true,
   "asOf": "2026-08-22",
   "title": "Where Fibre is today",
