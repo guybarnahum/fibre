@@ -1,0 +1,40 @@
+{
+  "evidenceVersion": "pr39-g4-v3-reliability-implementation-witness-v1",
+  "status": "CLEAR",
+  "verifiedAtMaintainerHead": "37c966675dd2d8b28aeeec47aaf31794c46f3543",
+  "branch": "agent/pr39-genesis-childhood-birth-v1",
+  "verification": {
+    "tests": {
+      "total": 654,
+      "passed": 654,
+      "failed": 0
+    },
+    "repositoryValidation": "passed",
+    "worldSeedValidation": "passed",
+    "implementationVerifier": "CLEAR",
+    "providerCallsMade": 0
+  },
+  "policy": {
+    "version": "pr39-g4-pass-a-reliability-amendment-v3",
+    "frozenPolicyPath": "artifacts/validation/m2-pr39/g/protocol/g4-pass-a-reliability-amendment-v3.json",
+    "initialGeneratedVersions": 1,
+    "maxFormRepairsPerRecord": 2,
+    "maxRecordRetriesPerRecord": 2,
+    "maxTotalGeneratedVersionsPerRecord": 5,
+    "authoritativeObservableActionMaxUtf8Bytes": 1200,
+    "initialDraftTargetUtf8Bytes": 800,
+    "initialDraftTargetWords": 100
+  },
+  "promptHashes": {
+    "legacyPassA": "sha256:96d79b51f390c67a2706e73985531fceca3c3418115912001ce2dce38332263e",
+    "legacyRecordRetry": "sha256:8709f11bfe97affd857ebc525d796cd3d5e578bffcd20d7e98bfd21ad924b8f8",
+    "g4v3PassA": "sha256:dbf454d80c0557bd983bcbf6969e09cea576b54fe1afd06d293111106e231ee0",
+    "g4v3RecordRetry": "sha256:ee179189fec4bd5b97fd3cfd1e9020f481c5b4008c4fe0c3cbd2cb50609d3008"
+  },
+  "historicalIsolation": {
+    "legacyDefaultBehaviorPreserved": true,
+    "h2PolicyRetroactivelyChanged": false,
+    "g4v3RequiresExplicitPolicySelection": true
+  },
+  "nextAuthority": "FREEZE_DETERMINISTIC_OFF_COHORT_CALIBRATION_INPUTS_BEFORE_ANY_CALIBRATION_PROVIDER_CALL"
+}
