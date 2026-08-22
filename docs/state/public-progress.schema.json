@@ -18,6 +18,7 @@
     "truthRules"
   ],
   "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
     "schemaVersion": { "const": "fibre-public-progress-v1" },
     "canonical": { "const": true },
     "asOf": { "type": "string", "format": "date" },
