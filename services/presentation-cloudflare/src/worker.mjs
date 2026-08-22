@@ -1,4 +1,4 @@
-import { WorkflowEntrypoint } from "cloudflare:workers";
+import { NonRetryableError, WorkflowEntrypoint } from "cloudflare:workers";
 import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
 import { FibrePresentationChannelDurableObject } from "../../../packages/infra/src/cloudflare/presentation-channel-do.mjs";
 import { createAssetGenerationService } from "../../asset-generator/src/asset-generation-service.mjs";
@@ -39,26 +39,33 @@ export class P3AssetGenerationWorkflow extends WorkflowEntrypoint {
     const job = event.payload;
     const generated = await step.do(
       "generate credentialed reconstruction",
-      {
-        retries: { limit: 2, delay: "5 seconds", backoff: "exponential" },
-        timeout: "10 minutes",
-      },
+      { timeout: "10 minutes" },
       async () => {
-        const infra = createInfra(this.env, { includeWorkflows: false });
-        const provider = createOpenAIImageProvider({ apiKey: this.env.OPENAI_API_KEY });
-        const credentialSigner = createCredentialSigner(this.env);
-        const result = await executeCredentialedAssetGenerationJob({
-          infra,
-          provider,
-          credentialSigner,
-          job,
-        });
-        return {
-          receipt: result.receipt,
-          receiptDigest: result.receiptDigest,
-          generationRecordDigest: result.generationRecordDigest,
-          finalAssetDigest: result.finalAssetDigest,
-        };
+        try {
+          const infra = createInfra(this.env, { includeWorkflows: false });
+          const provider = createOpenAIImageProvider({ apiKey: this.env.OPENAI_API_KEY });
+          const credentialSigner = createCredentialSigner(this.env);
+          const result = await executeCredentialedAssetGenerationJob({
+            infra,
+            provider,
+            credentialSigner,
+            job,
+          });
+          return {
+            receipt: result.receipt,
+            receiptDigest: result.receiptDigest,
+            generationRecordDigest: result.generationRecordDigest,
+            finalAssetDigest: result.finalAssetDigest,
+          };
+        } catch (error) {
+          // P3 deliberately treats the provider+credential+final-store step as at-most-once
+          // for a Fibre job identity. Re-running a nondeterministic image provider under the
+          // same immutable outputObjectRef could make a second attempt conflict with side
+          // effects from the first. Production retryable generation needs an explicit
+          // attempt/staging identity rather than implicit step retries.
+          const message = error instanceof Error ? error.message : String(error);
+          throw new NonRetryableError(message, "P3AssetGenerationAttemptFailed");
+        }
       },
     );
 
