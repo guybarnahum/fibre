@@ -24,5 +24,8 @@ export function serializeGenesisFailureEvidence(error) {
     recordRetries: cloneOrNull(error?.recordRetries),
     recordRetryEvidence: cloneOrNull(error?.recordRetryEvidence),
     record: cloneOrNull(error?.record),
+    generationPolicyVersion: error?.generationPolicyVersion ?? null,
+    budgetExhaustion: cloneOrNull(error?.budgetExhaustion),
+    budgetState: cloneOrNull(error?.budgetState),
   });
 }
