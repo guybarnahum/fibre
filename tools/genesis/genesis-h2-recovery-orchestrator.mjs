@@ -73,6 +73,7 @@ import {
   buildHPassBInput,
 } from "./genesis-h-final-cohort.mjs";
 import { buildH2RecoveryExecutionPlan } from "./genesis-h2-recovery-plan.mjs";
+import { executeH2RecoverySequence } from "./genesis-h2-recovery-sequencer.mjs";
 import { buildH2Slot4Episode3RecoveryState } from "./genesis-h2-recovery-state.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
@@ -1279,30 +1280,35 @@ export async function runAuthorizedH2Recovery() {
   const adapter = birthCenter.durableAdapter(baseAdapter);
 
   try {
-    const preserved = start.plan.stages[0].slots.map(verifyPreservedGenerationArtifact);
-    const slot4 = await generateRecoveredSlot4({
-      protocols,
-      adapter,
-      attemptStartedAt: start.attemptStartedAt,
+    const sequence = await executeH2RecoverySequence({
+      plan: start.plan,
+      loadPreserved: async (slots) => slots.map(verifyPreservedGenerationArtifact),
+      recoverSlot4: async () => generateRecoveredSlot4({
+        protocols,
+        adapter,
+        attemptStartedAt: start.attemptStartedAt,
+      }),
+      persistSlot4: async (slot4) => {
+        writeJsonOnceOrVerify(generationPath(root, 4), slot4);
+      },
+      generateSlot5: async () => generateFreshSlot5({
+        protocols,
+        adapter,
+        attemptStartedAt: start.attemptStartedAt,
+      }),
+      persistSlot5: async (slot5) => {
+        writeJsonOnceOrVerify(generationPath(root, 5), slot5);
+      },
+      publishCohort: async (generations) => publishRecoveredCohort({
+        generations,
+        protocols,
+        databasePath: `${root}/world.sqlite`,
+        attemptStartedAt: start.attemptStartedAt,
+        publicationAt: start.publicationAt,
+      }),
     });
-    writeJsonOnceOrVerify(generationPath(root, 4), slot4);
-
-    const slot5 = await generateFreshSlot5({
-      protocols,
-      adapter,
-      attemptStartedAt: start.attemptStartedAt,
-    });
-    writeJsonOnceOrVerify(generationPath(root, 5), slot5);
-
-    const generations = [...preserved, slot4, slot5];
+    const publications = sequence.publications;
     const databasePath = `${root}/world.sqlite`;
-    const publications = publishRecoveredCohort({
-      generations,
-      protocols,
-      databasePath,
-      attemptStartedAt: start.attemptStartedAt,
-      publicationAt: start.publicationAt,
-    });
 
     const result = {
       evidenceVersion: H2_RECOVERY_ORCHESTRATOR_VERSION,
