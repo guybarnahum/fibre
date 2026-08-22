@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -23,11 +23,11 @@ function tempJournal(t) {
   return createFileModelInvocationJournal(root);
 }
 
-function fakeAdapter(invoke) {
+function fakeAdapter(invoke, configuration = BASE_CONFIGURATION) {
   return Object.freeze({
     provider: "openai",
     modelId: "gpt-5.1-2025-11-13",
-    configuration: BASE_CONFIGURATION,
+    configuration,
     invoke,
   });
 }
@@ -107,7 +107,7 @@ test("durable adapter commits a successful invocation and replays it after resta
   assert.deepEqual(replayed, observed);
 });
 
-test("durable adapter refuses to reuse a client request id when prompt/input/schema/configuration drift", async (t) => {
+test("durable adapter fails closed when a committed client request id drifts in prompt, input, schema, or runtime configuration", async (t) => {
   const journal = tempJournal(t);
   const adapter = createDurableModelAdapter({
     baseAdapter: fakeAdapter(async () => successfulResult()),
@@ -115,14 +115,25 @@ test("durable adapter refuses to reuse a client request id when prompt/input/sch
   });
   await adapter.invoke(simpleArgs());
 
+  await assert.rejects(adapter.invoke(simpleArgs({ input: { value: 2 } })), DurableInvocationConflictError);
+  await assert.rejects(adapter.invoke(simpleArgs({ systemPrompt: "changed prompt" })), DurableInvocationConflictError);
   await assert.rejects(
-    adapter.invoke(simpleArgs({ input: { value: 2 } })),
+    adapter.invoke(simpleArgs({
+      responseSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["answer", "other"],
+        properties: { answer: { type: "string" }, other: { type: "string" } },
+      },
+    })),
     DurableInvocationConflictError,
   );
-  await assert.rejects(
-    adapter.invoke(simpleArgs({ systemPrompt: "changed prompt" })),
-    DurableInvocationConflictError,
-  );
+
+  const changedRuntime = createDurableModelAdapter({
+    baseAdapter: fakeAdapter(async () => successfulResult(), { transport: "test", temperature: 0.5 }),
+    journal,
+  });
+  await assert.rejects(changedRuntime.invoke(simpleArgs()), DurableInvocationConflictError);
 });
 
 test("failed provider invocation is not committed and the exact operation can be attempted later", async (t) => {
@@ -158,7 +169,7 @@ test("journal corruption is detected rather than regenerated over", async (t) =>
   });
   await adapter.invoke(simpleArgs());
 
-  const files = (await import("node:fs")).readdirSync(journal.rootPath);
+  const files = readdirSync(journal.rootPath);
   assert.equal(files.length, 1);
   const path = join(journal.rootPath, files[0]);
   const record = JSON.parse(readFileSync(path, "utf8"));
@@ -236,4 +247,67 @@ test("Pass-A restart replays the committed initial output and calls the provider
   assert.equal(providerCallsAfterCommit, 0);
   assert.equal(replayedEpisode.episodeDigest, result.episodeDigest);
   assert.deepEqual(replayedEpisode.episode, resumedEpisode.episode);
+});
+
+test("Pass-A restart does not replenish an exhausted G4-v3 record-retry budget", async (t) => {
+  const { trial, result, responses } = calibrationTrial175();
+  const journal = tempJournal(t);
+  const badInitial = resultFromCalibrationResponse(result, responses, `${trial.trialId}:initial`);
+  const expectedIds = [
+    `${trial.trialId}:initial`,
+    `${trial.trialId}:record-retry:1`,
+    `${trial.trialId}:record-retry:2`,
+  ];
+  const firstProviderCalls = [];
+  const exhausting = createDurableModelAdapter({
+    baseAdapter: fakeAdapter(async ({ clientRequestId }) => {
+      firstProviderCalls.push(clientRequestId);
+      return structuredClone(badInitial);
+    }),
+    journal,
+  });
+
+  let firstError = null;
+  try {
+    await generateRichPassAEpisode({
+      adapter: exhausting,
+      repairAdapter: exhausting,
+      input: trial.passAInput,
+      clientRequestId: trial.trialId,
+      generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+    });
+  } catch (error) {
+    firstError = error;
+  }
+  assert.ok(firstError);
+  assert.equal(firstError.gate, "record_repair_exhausted");
+  assert.equal(firstError.budgetExhaustion.reason, "record_retry_budget_exhausted");
+  assert.deepEqual(firstError.budgetState, { generatedVersions: 3, formRepairs: 0, recordRetries: 2 });
+  assert.deepEqual(firstProviderCalls, expectedIds);
+
+  let restartProviderCalls = 0;
+  const restarted = createDurableModelAdapter({
+    baseAdapter: fakeAdapter(async () => {
+      restartProviderCalls += 1;
+      throw new Error("restart must replay exhausted versions, not call provider");
+    }),
+    journal,
+  });
+  let restartedError = null;
+  try {
+    await generateRichPassAEpisode({
+      adapter: restarted,
+      repairAdapter: restarted,
+      input: trial.passAInput,
+      clientRequestId: trial.trialId,
+      generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+    });
+  } catch (error) {
+    restartedError = error;
+  }
+  assert.equal(restartProviderCalls, 0);
+  assert.ok(restartedError);
+  assert.equal(restartedError.gate, "record_repair_exhausted");
+  assert.equal(restartedError.budgetExhaustion.reason, "record_retry_budget_exhausted");
+  assert.deepEqual(restartedError.budgetState, firstError.budgetState);
 });
