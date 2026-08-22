@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 
 import { discoverTestSuites } from "./test-suite-lifecycle.mjs";
 
+const TTY_REPORTER = fileURLToPath(new URL("./fibre-tty-reporter.mjs", import.meta.url));
+
 export function parseTestSuiteArgs(argv) {
   const [suite = "active", ...rest] = argv;
   if (!new Set(["active", "repro", "all"]).has(suite)) {
@@ -11,10 +13,20 @@ export function parseTestSuiteArgs(argv) {
   return { suite, nodeTestArgs: rest };
 }
 
-export function testSuiteCommand(argv = process.argv.slice(2)) {
+function hasExplicitReporter(nodeTestArgs) {
+  return nodeTestArgs.some((arg) => arg === "--test-reporter" || arg.startsWith("--test-reporter="));
+}
+
+export function testSuiteCommand(
+  argv = process.argv.slice(2),
+  { isTTY = process.stdout.isTTY === true } = {},
+) {
   const { suite, nodeTestArgs } = parseTestSuiteArgs(argv);
   const suites = discoverTestSuites();
   const files = suites[suite];
+  const reporterArgs = isTTY && !hasExplicitReporter(nodeTestArgs)
+    ? [`--test-reporter=${TTY_REPORTER}`]
+    : [];
   return {
     suite,
     files,
@@ -22,6 +34,7 @@ export function testSuiteCommand(argv = process.argv.slice(2)) {
       process.execPath,
       "--disable-warning=ExperimentalWarning",
       "--test",
+      ...reporterArgs,
       ...nodeTestArgs,
       ...files,
     ],
