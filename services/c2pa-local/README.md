@@ -19,6 +19,8 @@ npm start --prefix services/c2pa-local
 
 The certificate helper is intentionally one-shot and refuses to overwrite an existing development key. If `.fibre/p3-c2pa/` already contains the local proof credentials, skip the helper command.
 
+The helper now generates the ES256 private key directly as unencrypted PKCS#8 PEM (`PRIVATE KEY`), which is the format required by `@contentauth/c2pa-node`'s `LocalSigner`. For compatibility with credentials created by an older helper, the sidecar also accepts SEC1 EC PEM (`EC PRIVATE KEY`) and normalizes it to PKCS#8 in memory before constructing the C2PA signer. Existing local proof credentials therefore do not need to be regenerated solely for this format change.
+
 The helper creates a short-lived self-signed ES256 development certificate under ignored `.fibre/p3-c2pa/` with the document-signing/C2PA EKU. Verification for this local proof checks the embedded C2PA structure/signature but deliberately does not treat the development certificate as a production trust credential.
 
 The service listens only on `127.0.0.1:8790` by default and exposes:
