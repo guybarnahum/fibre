@@ -1,6 +1,6 @@
 ---
 id: m2-pr39-gate-g2-review-request
-status: ready_after_local_verification
+status: ready_for_external_review
 last-reviewed: 2026-08-22
 canonical: false
 ---
@@ -23,27 +23,43 @@ Review the actual repository evidence, not this summary alone.
 
 ## Review boundary
 
-Scientific/reconciliation candidate head before this request document:
-
-```text
-8758b6d691f570912f36b68b22742692b678e04e
-```
-
 Fresh G2 evidence was frozen by the maintainer at:
 
 ```text
-bfe89c8
+bfe89c8ac21a1ba151169b1a789320b87ffc0b7a
 ```
 
-Maintainer verification of the post-G2 reconciliation head is **pending** at request-authoring time. Before this request is sent for final external judgment, the maintainer must report:
+The complete post-G2 reconciliation candidate was locally verified at:
+
+```text
+ab14524f900a821f9b40d55eb45d86d84435d17b
+```
+
+Maintainer verification at that exact candidate head:
 
 ```text
 node --disable-warning=ExperimentalWarning tools/genesis/genesis-replacement-g56-reconciliation-verify.mjs --verify
+  CLEAR — ZERO CALL
+  fresh G2 scores: 22, 24, 24, 22, 23
+  all five measured cycle edges detectable
+  replacement D3 rule: both ordinals >=4/5; at least one 5/5
+  all non-topology G5/G6 authority unchanged
+  final-life cognition NOT AUTHORIZED
+
 npm test
+  699 tests · 699 passed · 0 failed
+
 npm run validate
+  Repository validation passed.
+  World seed validation passed.
+
+git status --short
+  ?? artifacts/validation/m2-pr39/h/recovery-v1/
 ```
 
-all green. Do not infer that verification from this request.
+The sole untracked path is the previously preserved local H-v2 recovery evidence directory. It is not replacement material and must remain outside the replacement cohort.
+
+This review-request update records the already completed verification; it does not modify the scientific/reconciliation candidate.
 
 ## Question to answer
 
