@@ -1,16 +1,31 @@
 {
   "reviewVersion": "pr39-h-v2-recovery-execution-review-v1",
-  "status": "HOLD_FINAL_AUTHORIZATION_BINDING_LOCAL_VERIFICATION_REQUIRED",
+  "status": "CLEAR_FOR_EXECUTION_AUTHORIZATION",
   "reviewScope": "Recovery execution machinery only: exact historical continuation, restart durability, recovered evidence provenance, publication replay, and execution authorization. This is not a Gate-H scientific verdict and does not change H-v2 HOLD standing.",
   "reviewedBaseline": {
     "implementationHeadBeforeReviewFixes": "88ab48c9137957d3fbfed51422569fdb9055db5d",
-    "implementationCodeHeadPreviouslyVerified": "510cee529423f872442089cd238be1b45b011f76",
-    "candidateFinalReviewedImplementationHead": "12c06df49aea5902d387718a9ea115eb87ab764a",
+    "implementationCodePreviouslyVerified": "238053a965345673327bf3b1cadd07e4244a7d58",
+    "finalReviewedImplementationHead": "12c06df49aea5902d387718a9ea115eb87ab764a",
+    "localVerificationHead": "b612c3acc5cbd3dbf33ec7815ed999e4420aa3eb",
+    "localVerification": {
+      "activeTestsPassed": 687,
+      "activeTestsFailed": 0,
+      "repositoryValidation": "passed",
+      "worldSeedValidation": "passed",
+      "recoveryPreflight": "CLEAR_EXACT_RESUME_POINT",
+      "orchestratorPreflight": "IMPLEMENTED_EXECUTION_BLOCKED_AS_EXPECTED",
+      "postReviewDiffPaths": [
+        "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-execution-review-v1.json"
+      ]
+    },
     "orchestratorPath": "tools/genesis/genesis-h2-recovery-orchestrator.mjs",
+    "orchestratorBlobSha": "b44ea8e27f1f4618665fd6310647eaafb4196e14",
     "recoveryStatePath": "tools/genesis/genesis-h2-recovery-state.mjs",
     "sequencerPath": "tools/genesis/genesis-h2-recovery-sequencer.mjs",
     "recoveryBindingPath": "artifacts/validation/m2-pr39/h/recovery/h-v2-recovery-binding-v1.json",
-    "sourceFailurePath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json"
+    "recoveryBindingDigest": "sha256:1512ed46494283efd094433ad48e99294f09a8be22723e8d6a0abeb5cd708ba7",
+    "sourceFailurePath": "artifacts/validation/m2-pr39/h/cohort-v2/h-final-cohort-failure-v2.json",
+    "sourceFailureBlobSha": "ee40cc5f6919fa9439b05ee8d37c94b08fc8444b"
   },
   "claimUnderReview": "A reviewed recovery run can continue the failed H-v2 developmental attempt without regenerating completed development, without replaying successful historical provider calls, and without allowing the resulting world to replace the frozen H-v2 HOLD or enter G5/G6 evidence.",
   "notClaimed": [
@@ -18,65 +33,62 @@
     "The recovery world may enter frozen G5/G6 diagnostics.",
     "The H-v2 HOLD is superseded.",
     "Whole-Person causal standing advances.",
-    "Provider execution is authorized by this review artifact."
+    "This review artifact itself authorizes provider execution."
   ],
   "propertiesThatHold": [
     "The frozen recovery binding remains a zero-provider-call boundary.",
     "The exact first unfinished developmental operation is slot 4 episode 3 record retry #2.",
     "Completed slot 1-3 generation artifacts are blob-bound and are not regenerated.",
     "Slot 5 is demonstrated to have zero historical model attempts.",
+    "All six successful historical slot-4 responses and their repair/retry transitions remain explicit provenance.",
     "New successful model invocations are durably journaled and replayed by exact request witness on restart.",
+    "Recovery publication persists existing Genesis generation-attempt witnesses before birth and remains idempotent.",
+    "The production recovery path uses the mechanically tested sequencer for reuse, continuation, slot ordering, persistence and publication.",
+    "Authorization binds a reviewed implementation commit and runtime rejects every later repository diff outside the review and authorization witness paths.",
     "Publication uses the existing Genesis/#37/#38 authority and verifies Thread integrity after publication.",
-    "A separate execution-authorization witness is required; the historical recovery binding is not mutated to authorize calls.",
-    "Authorization must bind a reviewed implementation commit and runtime rejects any later repository diff outside the review and authorization witness paths."
+    "A separate execution-authorization witness is required; the historical recovery binding is never mutated to authorize calls."
   ],
   "findings": [
     {
       "id": "R1",
-      "status": "RESOLVED_LOCAL_GREEN_238053A",
+      "status": "RESOLVED",
       "class": "Notarial",
-      "finding": "The reconstructed slot-4 generation artifact under-represented historical cognition provenance: preserved episodes 1-2 had empty call lists and episode 3 exposed only continuation calls although six successful source responses existed.",
-      "requiredResolution": "Carry all six frozen successful historical responses and the historical repair/retry witnesses explicitly into recovery state and the reconstructed generation evidence without treating them as new recovery calls.",
-      "currentResolution": "Recovery state verifies all six successful historical responses and three historical repair/retry witnesses. The production orchestrator carries those calls into the preserved Pass-A entries, separates historical and recovery calls for episode 3, initializes the recovered repair-witness trail from the frozen source, and records historicalSuccessfulCalls explicitly. The user locally verified the active suite and validation green at 238053a965345673327bf3b1cadd07e4244a7d58."
+      "resolution": "Recovery state and generation evidence preserve all six successful historical responses, distinguish historical from recovery calls, and carry the historical repair/retry witnesses explicitly."
     },
     {
       "id": "R2",
-      "status": "RESOLVED_LOCAL_GREEN_238053A",
+      "status": "RESOLVED",
       "class": "Notarial",
-      "finding": "Recovered-world publication did not persist Genesis generation-attempt witnesses for Pass-A repairs/retries or Pass-B repair calls, although the original H runner did.",
-      "requiredResolution": "Persist generation-attempt witnesses idempotently for preserved and newly generated Threads before birth publication, including the recovered historical repair trail.",
-      "currentResolution": "Recovery publication uses the existing GenesisStore.recordGenerationAttempt authority with the same deterministic attempt-id and Pass-A/Pass-B rules as the original H runner, before birth publication for every preserved or recovered generation. The user locally verified the active suite and validation green at 238053a965345673327bf3b1cadd07e4244a7d58."
+      "resolution": "Recovery publication records Pass-A and Pass-B mechanical repair attempts through GenesisStore.recordGenerationAttempt using deterministic idempotent identities before birth publication."
     },
     {
       "id": "R3",
-      "status": "RESOLVED_LOCAL_GREEN_238053A",
+      "status": "RESOLVED",
       "class": "Notarial",
-      "finding": "Underlying historical-continuation and durable-invocation mechanisms were tested, but the full recovery orchestrator composition had not been exercised with a deterministic fake provider through restart/publication behavior.",
-      "requiredResolution": "Add a no-real-provider execution test or equivalent mechanically load-bearing composition test proving exact first-call behavior, durable replay after restart, slot ordering, and publication idempotence without creating a production authorization bypass.",
-      "currentResolution": "The production orchestrator delegates its high-level sequence to genesis-h2-recovery-sequencer.mjs. Its deterministic test uses the real Birth Center durable adapter, commits the exact first recovery request, simulates a crash, proves restart replay without a second provider invocation, proves slot 5 cannot precede completed/persisted slot 4, and proves publication replay is idempotent on a subsequent full pass. The user locally verified the active suite and validation green at 238053a965345673327bf3b1cadd07e4244a7d58."
+      "resolution": "The production orchestrator uses the tested recovery sequencer; the deterministic composition test uses the real Birth Center durable adapter, simulates crash/restart, proves exact replay without a second provider call, enforces slot ordering, and proves publication replay."
     },
     {
       "id": "R4",
-      "status": "HARDENED_PENDING_LOCAL_GREEN_AT_CANDIDATE_HEAD",
+      "status": "RESOLVED",
       "class": "Notarial",
-      "finding": "Binding only the top-level orchestrator blob would not detect a later change in a delegated execution dependency such as the recovery sequencer.",
-      "requiredResolution": "The authorization witness must bind the final reviewed implementation head. Runtime authorization must require that head to be an ancestor of current HEAD and reject every post-review changed path except the execution-review and execution-authorization witness files. The top-level orchestrator blob and recovery-binding digest remain independently bound as defense in depth.",
-      "currentResolution": "The orchestrator now enforces a reviewedImplementationHead freeze using git merge-base and git diff, with only the review and authorization witness paths allowed after that head. A focused test pins the allowed-path boundary. Candidate final reviewed implementation head is 12c06df49aea5902d387718a9ea115eb87ab764a; no authorization witness may be created until that candidate is locally green."
+      "resolution": "The final reviewed implementation is frozen at 12c06df49aea5902d387718a9ea115eb87ab764a. Runtime authorization requires that commit to remain an ancestor and rejects every later changed path except this review artifact and the separate authorization witness; the top-level orchestrator blob and recovery-binding digest are also independently bound."
     },
     {
       "id": "R5",
-      "status": "RESOLVED_LOCAL_GREEN_238053A",
+      "status": "RESOLVED",
       "class": "Decorative",
-      "finding": "Orchestrator preflight output previously printed authorization as absent and said no provider call was authorized even after a future valid authorization witness existed.",
-      "requiredResolution": "Make preflight wording reflect authorization presence while continuing to state that preflight itself makes zero provider calls.",
-      "currentResolution": "Preflight validates any present authorization against the current committed orchestrator blob and recovery binding, reports absent versus present-and-blob-bound accurately, and distinguishes zero-call preflight from authorization of the reviewed --execute path. The user locally verified this behavior at 238053a965345673327bf3b1cadd07e4244a7d58."
+      "resolution": "Preflight distinguishes absent versus present reviewed authorization while remaining zero-provider-call."
     }
   ],
   "authorization": {
-    "providerExecutionAuthorized": false,
-    "authorizationWitnessMayBeCreated": false,
-    "candidateReviewedImplementationHead": "12c06df49aea5902d387718a9ea115eb87ab764a",
-    "clearCondition": "Local active suite and validation green at candidate final reviewed implementation head 12c06df49aea5902d387718a9ea115eb87ab764a, zero-call recovery/orchestrator preflights green, then promote review status to CLEAR_FOR_EXECUTION_AUTHORIZATION and create the separate witness bound to that exact head, orchestrator blob, recovery-binding digest, first provider operation, and non-evidentiary standing."
+    "providerExecutionAuthorizedByThisReviewArtifact": false,
+    "authorizationWitnessMayBeCreated": true,
+    "finalReviewedImplementationHead": "12c06df49aea5902d387718a9ea115eb87ab764a",
+    "requiredFirstProviderOperation": "pr39-h:slot-04:pass-a:episode-03:record-retry:2",
+    "requiredScientificStanding": "recovery_resilience_only",
+    "mayReplaceH2Hold": false,
+    "mayEnterFrozenG5G6": false,
+    "instruction": "Create one separate execution-authorization witness bound to this exact reviewed implementation boundary. Run zero-call preflight again after that witness is committed and before executing provider cognition."
   },
   "scientificStanding": {
     "isReplacementCohort": false,
