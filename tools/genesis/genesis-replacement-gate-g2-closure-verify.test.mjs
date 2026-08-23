@@ -9,7 +9,9 @@ test("Gate-G(2) HOLD closure verifies B1-B5+C1 without authorizing life", () => 
   assert.equal(result.b1CompleteExecutionPacket, true);
   assert.equal(result.c1InheritedAuthorityBound, true);
   assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
+  assert.equal(result.inheritedAuthority.coreBlobSha, "81d89fb17eca549106bd51ea0aba2d8329bacb80");
   assert.equal(result.inheritedAuthority.hPassBHelperBlobSha, "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1");
+  assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyPostGenerationScanRequired, true);
   assert.equal(result.b2ExplicitG4V3, true);
   assert.equal(result.b3FiveEdgeClearRuleClosed, true);
   assert.equal(result.b4AuthoringComparabilityDisclosed, true);
