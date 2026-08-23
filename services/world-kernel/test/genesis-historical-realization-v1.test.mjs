@@ -103,7 +103,7 @@ test("historical realization schema exposes no historical-skeleton fields to mod
   }
   assert.throws(
     () => normalizeHistoricalRealizationModelOutput({ ...modelOutput, occurredAt: envelope().occurredAt }),
-    /exact keys|unexpected|keys/i,
+    /not allowed|exact keys|unexpected|keys/i,
   );
 });
 
