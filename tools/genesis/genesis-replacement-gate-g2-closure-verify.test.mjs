@@ -11,7 +11,10 @@ test("Gate-G(2) HOLD closure verifies B1-B5 without authorizing life", () => {
   assert.equal(result.b3FiveEdgeClearRuleClosed, true);
   assert.equal(result.b4AuthoringComparabilityDisclosed, true);
   assert.equal(result.b5AssignmentDisclosureCorrected, true);
-  assert.equal(result.passBUncertaintyGenomeCopyGuard, true);
+  assert.equal(result.rosterGrounding, true);
+  assert.equal(result.historicalG4V2PassBPreserved, true);
+  assert.equal(result.passBUncertaintyGenomeCopyGuard, false);
+  assert.equal(result.passBUncertaintyGenomeCopyGapDisclosed, true);
   assert.equal(result.processRestartDurableAdapterBound, true);
   assert.deepEqual(result.fixedPointSlots, [2, 4, 5]);
   assert.deepEqual(result.effectiveD3, {
