@@ -247,12 +247,21 @@ function normalizeRememberedContent(value) {
   return value;
 }
 
+export function assertUniquePassBEpisodeRefs(episodeRefs) {
+  if (!Array.isArray(episodeRefs)) throw new TypeError("Pass-B model output.episodeRefs must be an array");
+  if (new Set(episodeRefs).size !== episodeRefs.length) {
+    throw new TypeError("Pass-B model output.episodeRefs must contain unique references");
+  }
+  return episodeRefs;
+}
+
 export function normalizePassBModelOutput(candidate, inputCandidate) {
   const input = normalizePassBInput(inputCandidate);
   assertPlainObject("Pass-B model output", candidate);
   assertExactKeys("Pass-B model output", candidate, ["outcome", "episodeRefs", "rememberedContent", "uncertainty"]);
   if (!["remembered", "not_remembered"].includes(candidate.outcome)) throw new TypeError("Pass-B model output outcome is invalid");
   assertStringArray("Pass-B model output.episodeRefs", candidate.episodeRefs);
+  assertUniquePassBEpisodeRefs(candidate.episodeRefs);
   const uncertainty = normalizeCurrentUncertainty(candidate.uncertainty, "Pass-B model output.uncertainty");
   const historyRefs = new Set(input.history.map((episode) => episode.episodeId));
   for (const ref of candidate.episodeRefs) if (!historyRefs.has(ref)) throw new TypeError(`Pass-B model output episodeRef ${ref} is not visible history`);
