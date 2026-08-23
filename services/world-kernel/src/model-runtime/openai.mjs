@@ -24,6 +24,12 @@ const DEFAULTS = Object.freeze({
   retryDelayMs: 2_000,
 });
 
+const OPENAI_PROJECTED_SCHEMA_KEYWORDS = Object.freeze(new Set([
+  "uniqueItems",
+  "minLength",
+  "maxLength",
+]));
+
 function apiKey(environment) {
   const value = environment.OPENAI_API_KEY ?? environment.FIBRE_GUARDIAN_OPENAI_API_KEY;
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
@@ -40,16 +46,65 @@ function canonicalDigest(value) {
 // OpenAI Structured Outputs supports a strict subset of JSON Schema. Keep Fibre's
 // canonical schema intact for hashing, durable invocation identity and local
 // admission, and project only provider-unsupported surface syntax at transport.
-// `uniqueItems` is deliberately enforced by Fibre after the model response.
+// Every projected constraint is re-enforced locally against the canonical schema.
 export function projectOpenAIStructuredOutputSchema(value) {
   if (Array.isArray(value)) return value.map(projectOpenAIStructuredOutputSchema);
   if (value === null || typeof value !== "object") return value;
   const result = {};
   for (const [key, item] of Object.entries(value)) {
-    if (key === "uniqueItems") continue;
+    if (OPENAI_PROJECTED_SCHEMA_KEYWORDS.has(key)) continue;
     result[key] = projectOpenAIStructuredOutputSchema(item);
   }
   return result;
+}
+
+function canonicalItemKey(value) {
+  return canonicalJson(value);
+}
+
+function schemaConstraintError(path, constraint, message) {
+  return new GuardianModelError(`OpenAI model output violates Fibre canonical response schema at ${path}: ${message}`, {
+    code: "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR",
+    retryable: false,
+    providerErrorCode: constraint,
+  });
+}
+
+export function assertOpenAIProjectedSchemaConstraints(value, schema, path = "$") {
+  if (schema === null || typeof schema !== "object" || Array.isArray(schema)) return value;
+  if (value === null) return value;
+
+  if (typeof value === "string") {
+    const length = [...value].length;
+    if (Number.isSafeInteger(schema.minLength) && length < schema.minLength) {
+      throw schemaConstraintError(path, "minLength", `string length ${length} is below minLength ${schema.minLength}`);
+    }
+    if (Number.isSafeInteger(schema.maxLength) && length > schema.maxLength) {
+      throw schemaConstraintError(path, "maxLength", `string length ${length} exceeds maxLength ${schema.maxLength}`);
+    }
+  }
+
+  if (Array.isArray(value)) {
+    if (schema.uniqueItems === true) {
+      const keys = value.map(canonicalItemKey);
+      if (new Set(keys).size !== keys.length) {
+        throw schemaConstraintError(path, "uniqueItems", "array contains duplicate items");
+      }
+    }
+    if (schema.items !== undefined) {
+      value.forEach((item, index) => assertOpenAIProjectedSchemaConstraints(item, schema.items, `${path}[${index}]`));
+    }
+    return value;
+  }
+
+  if (typeof value === "object" && schema.properties !== null && typeof schema.properties === "object") {
+    for (const [key, propertySchema] of Object.entries(schema.properties)) {
+      if (Object.hasOwn(value, key)) {
+        assertOpenAIProjectedSchemaConstraints(value[key], propertySchema, `${path}.${key}`);
+      }
+    }
+  }
+  return value;
 }
 
 function notify(observer, event) {
@@ -288,6 +343,7 @@ export function createOpenAIModelAdapter({
           }
 
           const output = parseOutput(extractOutputText(body));
+          assertOpenAIProjectedSchemaConstraints(output, responseSchema);
           const providerRequestId = response.headers?.get?.("x-request-id") ?? body?.id ?? null;
           const usage = usageFromBody(body);
           const provenance = {
