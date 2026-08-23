@@ -71,7 +71,7 @@
         {"participantId": "person_rg4_s02_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Kaohsiung."]},
         {"participantId": "person_rg4_s02_caregiver_2", "factualRoles": ["caregiver"], "relationshipFacts": ["Lives in the subject household in Kaohsiung."]},
         {"participantId": "person_rg4_s02_cousin_1", "factualRoles": ["cousin"], "relationshipFacts": ["Lives in the subject household and is two years younger than the subject."]},
-        {"participantId": "person_rg4_s02_relative_1", "factualRoles": ["relative"], "relationshipFacts": ["Is the cousin's nonresident parent, works elsewhere in the region and remains involved through visits and decisions."]}
+        {"participantId": "person_rg4_s02_cousin_caregiver_1", "factualRoles": ["caregiver"], "relationshipFacts": ["Is the younger cousin's nonresident parent and caregiver, works elsewhere in the region and remains involved through visits and decisions."]}
       ]
     },
     {
