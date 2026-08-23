@@ -9,7 +9,7 @@ import {
 import { projectPassAInputForCognition } from "./genesis-pass-a-cognition.mjs";
 import { buildPassAInputWithEventStructurePoolV2 } from "./genesis-event-structure-pool-v2.mjs";
 import {
-  GENESIS_RICH_COUNTERPART_POLICY_HISTORICAL_VERSION,
+  GENESIS_RICH_COUNTERPART_POLICY_VERSION,
   richCounterpartMode,
 } from "./genesis-rich-participation-policy.mjs";
 import {
@@ -99,8 +99,6 @@ export function buildRichLifePassAInput({
   // The mode/genome witness is validated policy-side and intentionally discarded before
   // constructing Pass A. The same Pass-A builder is therefore used for de_novo and
   // synthetic_lineage; inherited material cannot become a childhood-event authoring path.
-  // Historical H/calibration inputs remain bound to the reviewed v1 counterpart-policy
-  // witness even though replacement-v2 adds namespace-disjoint v3 structure semantics.
   assertRichLifeCompilerMode({ originMode, syntheticLineageWitness });
   const input = buildPassAInputWithEventStructurePoolV2({
     ...passAInputArgs,
@@ -112,7 +110,7 @@ export function buildRichLifePassAInput({
     ...input,
     policyWitness: {
       ...input.policyWitness,
-      policyVersion: `${input.policyWitness.policyVersion}+${GENESIS_RICH_COUNTERPART_POLICY_HISTORICAL_VERSION}`,
+      policyVersion: `${input.policyWitness.policyVersion}+${GENESIS_RICH_COUNTERPART_POLICY_VERSION}`,
     },
   };
 }
