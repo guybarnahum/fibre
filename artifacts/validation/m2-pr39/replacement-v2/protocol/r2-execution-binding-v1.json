@@ -1,7 +1,7 @@
 {
   "contractVersion": "pr39-replacement-r2-execution-binding-v1",
   "status": "FROZEN_R2_PRE_REVIEW_NO_COGNITION",
-  "reviewCandidateHead": "b632e45f6e086f7353de7643cb299954f5a35be0",
+  "reviewCandidateHead": "a02fcc939f1dbbe7f6db99263db9dbbbe840ae84",
   "purpose": "Bind the R1-cleared historical envelope substrate to the current flattened R2 Pass-A/B/C, durable candidate runner, continuity persistence, provider-schema projection, and untunable diagnostic authority before any replacement-v2 cognition is authorized.",
   "r1Authority": {
     "implementationCandidate": "ef9a1bf399280dc3f33a73490f91d3e63c3198d0",
@@ -22,7 +22,7 @@
     {"path":"services/world-kernel/src/genesis-pass-b-admission.mjs","gitBlobSha":"b6400e98ce83f809f0e06f95f3d5ab79eebbbb2d"},
     {"path":"services/world-kernel/src/genesis-pass-b-prompts.mjs","gitBlobSha":"abbaf9afd3d5fd3b0c46286a8a4ac8d499f633ad"},
     {"path":"services/world-kernel/src/genesis-replacement-pass-b-input.mjs","gitBlobSha":"95c95dc5d7734d9d045c1cf288bd712657840916"},
-    {"path":"services/world-kernel/src/genesis-replacement-pass-b.mjs","gitBlobSha":"fc25b80e064ebad06442f2cace50b062e01b198f"},
+    {"path":"services/world-kernel/src/genesis-replacement-pass-b.mjs","gitBlobSha":"52ad9e49d39efc8faf6794b7b07bb5eeda03fdfe"},
     {"path":"services/world-kernel/src/genesis-replacement-pass-c.mjs","gitBlobSha":"ae2e6b97c5745e41dd29865f8c37d719a43f8d37"},
     {"path":"services/world-kernel/src/genesis-replacement-diagnostic-authority.mjs","gitBlobSha":"05cbd393e82064894d749499890b60a14f815cc8"},
     {"path":"services/world-kernel/src/genesis-life-continuity-v1.mjs","gitBlobSha":"9f9ae6eb5e84e938e5f46c964a76cbb870f7e18f"},
