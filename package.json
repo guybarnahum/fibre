@@ -45,6 +45,7 @@
     "genesis:replacement-preflight": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-replacement-final-cohort.mjs --preflight",
     "genesis:replacement-generate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-replacement-final-cohort.mjs",
     "genesis:replacement-recovery-preflight": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-replacement-mechanical-recovery-preflight.mjs --preflight",
+    "genesis:replacement-v2-redesign-preflight": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-replacement-v2-redesign-preflight.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-dev-cli.mjs",
     "guardian:dev:counterfactual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-v4-counterfactual-dev.mjs",
     "guardian:whole-person": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/whole-person-benchmark-v4.mjs",
