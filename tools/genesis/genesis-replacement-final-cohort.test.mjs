@@ -16,6 +16,9 @@ test("replacement final-cohort packet is complete, authority-bound and blocked b
   const result = verifyReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false });
   assert.equal(authority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
   assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
+  assert.equal(result.inheritedAuthority.coreBlobSha, "81d89fb17eca549106bd51ea0aba2d8329bacb80");
+  assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyPostGenerationScanRequired, true);
+  assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyConfirmedLeakDisposition, "REDESIGN_AFFECTED_INFERENCE_NO_REGENERATION");
   assert.equal(result.status, "CLEAR_PACKET_GATE_G2_HOLD");
   assert.equal(result.executionAuthorized, false);
   assert.equal(result.gateStatus, "MISSING_GATE_G2_CLEAR_WITNESS");
@@ -35,10 +38,12 @@ test("replacement final-cohort packet is complete, authority-bound and blocked b
   assert.equal(result.durability.hostCrashFsyncDurabilityClaimed, false);
 });
 
-test("replacement execution binding hard-pins the authorized runner, output and G4-v3 selection", () => {
+test("replacement execution binding hard-pins the authorized runner, preserved core and G4-v3 selection", () => {
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
   assert.equal(binding.runner.path, "tools/genesis/genesis-replacement-final-cohort.mjs");
   assert.equal(REPLACEMENT_CORE_PATH, "tools/genesis/genesis-replacement-final-cohort-core.mjs");
+  assert.equal(binding.runner.corePath, REPLACEMENT_CORE_PATH);
+  assert.equal(binding.runner.coreGitBlobSha, "81d89fb17eca549106bd51ea0aba2d8329bacb80");
   assert.equal(binding.runner.bindingPathHardcoded, true);
   assert.equal(binding.runner.bindingEnvOverrideAllowed, false);
   assert.equal(binding.runner.providerOrModelCliOverrideAllowed, false);
@@ -47,6 +52,10 @@ test("replacement execution binding hard-pins the authorized runner, output and 
   assert.equal(binding.generationPolicy.mustBePassedExplicitlyAtPassACallSite, true);
   assert.equal(binding.generationPolicy.legacySharedThreeVersionDefaultAllowed, false);
   assert.equal(binding.oneShot.outputRoot, "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1");
+  assert.equal(binding.publication.atomicPerThreadWorldKernelPublication, true);
+  assert.equal(binding.publication.cohortLevelAtomicPublication, false);
+  assert.equal(typeof binding.authorityBoundary.passBGenomeCopyReviewNotePath, "string");
+  assert.equal(typeof binding.authorityBoundary.residualGateG2DisclosurePath, "string");
 });
 
 test("authorized replacement entrypoint binds inherited authority while byte-preserved core passes G4-v3", () => {
@@ -58,6 +67,7 @@ test("authorized replacement entrypoint binds inherited authority while byte-pre
   assert.match(entrypoint, /verifyG4V3ReliabilityImplementation/);
   assert.match(entrypoint, /verifyG5DiagnosticsFreeze/);
   assert.match(entrypoint, /verifyG6VerdictFreeze/);
+  assert.match(entrypoint, /findVerbatimGenomeNgram/);
   assert.match(entrypoint, /"tools\/genesis"/);
   assert.match(entrypoint, /"artifacts\/validation\/m2-pr39\/g\/protocol"/);
   assert.doesNotMatch(entrypoint, /FIBRE_H_EXECUTION_BINDING_PATH/);
