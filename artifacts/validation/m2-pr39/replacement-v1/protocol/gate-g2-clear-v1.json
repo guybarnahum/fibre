@@ -1,0 +1,36 @@
+{
+  "witnessVersion": "pr39-replacement-gate-g2-clear-v1",
+  "status": "CLEAR",
+  "reviewRound": 4,
+  "reviewedHead": "ac92bab3711bb2fc8b4980c6173d6262ba3dfcf7",
+  "reviewedExecutionCandidate": "a8815064d5c8ac292d4cce41d41f94042c22b653",
+  "reviewRequestPath": "docs/validation/m2-pr39-gate-g2-review-request-round4.md",
+  "verifiedBoundary": {
+    "executionBindingPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/replacement-execution-binding-v1.json",
+    "executionBindingDigest": "sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17",
+    "wrapperGitBlobSha": "5b67674e36b43766f416e0a1aab9a0b8e41dbc36",
+    "coreGitBlobSha": "a8acd1b1dd47ef427397056cee2958cea7ae0b7c",
+    "inheritedAuthorityStatus": "CLEAR_INHERITED_AUTHORITY_BOUND"
+  },
+  "authorization": {
+    "replacementFinalLifeGenerationAuthorized": true,
+    "wholeCandidateAttemptCap": 1,
+    "qualityDrivenRegenerationAuthorized": false,
+    "providerOrModelChangeAuthorized": false,
+    "worldGenomeAssignmentOrTreatmentChangeAuthorized": false
+  },
+  "reviewEvidence": {
+    "verdict": "CLEAR",
+    "providerCallsMadeByReview": 0,
+    "c1Closed": true,
+    "c2ClosedAtGenerationFunctionBoundary": true,
+    "round3ImportBypassReproducedAndRefused": true,
+    "fiveReplacementThreadsStillPreLifeAtReview": true
+  },
+  "obligations": {
+    "postGenerationPreDiagnosticUncertaintyGenomeCopyScanRequired": true,
+    "publicationPhaseFailureIsTerminalHold": true,
+    "replacementG5G6DiagnosticsMustBind": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-closure-amendment-v2.json"
+  },
+  "recordedAt": "2026-08-23T07:05:15Z"
+}
