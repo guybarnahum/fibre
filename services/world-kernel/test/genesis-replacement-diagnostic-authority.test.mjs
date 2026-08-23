@@ -36,6 +36,6 @@ test("replacement-v2 diagnostic authority refuses the R1 N1 threshold mutation",
 
 test("replacement-v2 diagnostic authority refuses a self-contradictory threshold statement", () => {
   const contradictory = reconciliation();
-  contradictory.effectiveReplacementV2D3.statement = "Three of five is enough.";
+  contradictory.effectiveReplacementV2D3.clearRequirement.statement = "Three of five is enough.";
   assert.throws(() => assertReplacementV2DiagnosticAuthority(contradictory), /statement drift/u);
 });
