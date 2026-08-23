@@ -72,5 +72,5 @@ test("public population snapshot distinguishes old evidence from unborn replacem
   assert.equal(byId.get("older_never_started_slot")?.count, 1);
   assert.equal(byId.get("replacement_unborn_threads")?.count, 5);
   assert.equal(byId.get("replacement_generated_lives")?.count, 0);
-  assert.equal(progress.currentWork.finalLifeCognitionAuthorized, false);
+  assert.equal(progress.currentWork.finalLifeCognitionAuthorized, true);
 });
