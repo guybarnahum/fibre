@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-22
+last-reviewed: 2026-08-23
 canonical: true
 ---
 
@@ -9,38 +9,36 @@ canonical: true
 
 For the plain-English public view of what Fibre has and has not achieved, use [`public-progress.md`](public-progress.md) and the canonical machine-readable [`public-progress.json`](public-progress.json). This file is the engineering execution view.
 
-1. **Gate-G(2) remains HOLD after round 3.** Round 3 at `2d1d06ffd3289289b2689f49fb0f06c69c18227d` again found no REDESIGN trigger. C1 is accepted closed; the sole blocker was C2: the import-only generation core still exposed an exported preflight/run path whose local preflight did not invoke inherited-authority verification. Canonical result: `docs/validation/m2-pr39-gate-g2-review-result-round3.md`.
+1. **Gate-G(2) is CLEAR.** Round 4 at reviewed head `ac92bab3711bb2fc8b4980c6173d6262ba3dfcf7` closed C2 at the generation-function boundary and found no remaining blocking pre-life integrity defect or REDESIGN trigger. Canonical result: `docs/validation/m2-pr39-gate-g2-review-result-round4.md`.
 
-2. **C2 is now locally closed at exact candidate `a8815064d5c8ac292d4cce41d41f94042c22b653`.** One shared `genesis-replacement-inherited-authority.mjs` owns all inherited checks; both the operator wrapper and the core's exported preflight call it. Direct core CLI remains refused. The shared gate pins wrapper blob `5b67674e36b43766f416e0a1aab9a0b8e41dbc36` and core blob `a8acd1b1dd47ef427397056cee2958cea7ae0b7c`.
+2. **The bound CLEAR witness is committed.** `artifacts/validation/m2-pr39/replacement-v1/protocol/gate-g2-clear-v1.json` was committed alone in the reviewed protocol path at `ef70eedd3b4a0c02b1f4be6a97ae36d0f8afa9a2`. It binds reviewed head `ac92bab...`, execution binding digest `sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17`, and authorizes exactly one replacement final-life attempt.
 
-3. **Local verification is green.** `npm run genesis:replacement-gate-g2-closure` reports `CLEAR B1-B5+C1+C2 — ZERO CALL`; wrapper preflight reports `CLEAR_PACKET_GATE_G2_HOLD` with inherited authority clear and output root absent; `npm test` is `705/705`; repository/world validation pass; only `artifacts/validation/m2-pr39/h/recovery-v1/` remains untracked. Final-life cognition remains unauthorized.
+3. **The next scientific action is the one authorized replacement generation attempt.** Pull the witness/docs, run `npm run genesis:replacement-preflight`, and require `CLEAR_TO_EXECUTE_REPLACEMENT`, `Gate-G(2): CLEAR`, `Final-life cognition: AUTHORIZED`, inherited authority clear, and output root absent. Only then run `npm run genesis:replacement-generate` once.
 
-4. **The failed `node --input-type=module -e` smoke probe is not a C2 failure.** It dies in inherited `genesis-g3-treatment-freeze.mjs` because that CLI guard assumes `process.argv[1]` exists, which is false under `node -e`. The repository test suite directly imports the replacement core from a normal module and its imported-core preflight test passed. Do not modify the frozen G3 verifier for this harness quirk; round 4 must use a real scratch `.mjs` importer.
+4. **Do not change execution/scientific authority before the attempt.** Do not take the round-4 nonblocking authority-module blob-pin hardening yet. Any edit under `tools/genesis`, relevant services, inherited `g/protocol`, or replacement protocol other than the already committed witness would violate the post-CLEAR drift boundary and require re-review.
 
-5. **Do not touch consumed scientific evidence.** The five replacement Worlds, source/child genomes, World↔genome mapping, fresh G2 result, G3 treatment positions, accepted D3 threshold structure, provider/model and cognition prompts remain frozen. No final-life outcome exists to adapt to.
+5. **No quality regeneration.** The first mechanically valid five-Thread cohort is evidence even if weak, boring, stereotyped or disappointing. A terminal result or failure ends the one-shot attempt. Do not rerun a failed terminal attempt, swap provider/model, rewrite a World/genome, rerandomize assignment, move treatment positions, or change thresholds.
 
-6. **Fresh replacement G2 remains CLEAR, frozen and non-rerunnable.** Scores are `22/24, 24/24, 24/24, 22/24, 23/24`; all five measured cycle edges are detectable and every genome is covered. This is pre-life genome/instrument evidence only. Scores are not directly comparable to the old cohort because the replacement loci use a more consistently aligned per-ordinal authoring design.
+6. **Fresh replacement G2 remains CLEAR and frozen.** Scores are `22/24, 24/24, 24/24, 22/24, 23/24`; all five measured cycle edges are detectable. This is pre-life genome/instrument evidence only and is not directly comparable numerically to the old cohort because the replacement authoring template differs.
 
-7. **B2 remains closed: replacement Pass A explicitly selects G4-v3.** Effective policy is one initial version, up to two independent form repairs, up to two independent referential retries, hard total five generated versions. The historical H runner retains its legacy behavior only for reproducibility.
+7. **G4-v3 remains the explicit Pass-A reliability policy.** One initial version, up to two independent form repairs, up to two independent referential retries, hard total five generated versions. Legacy shared-three behavior remains historical-only.
 
-8. **B3 remains closed: replacement D3 has five blocking edges and no pair-3-4 escape hatch.** Both primary ordinals must be at least `4/5`; at least one must be `5/5`. Null/error/tie/unanalyzable measured edges are `not_correct`. The shared authority gate requires the exact replacement carve-out-retirement content.
+8. **Replacement D3 remains five-edge and blocking.** Both primary ordinals must be at least `4/5`; at least one must be `5/5`. Null/error/tie/unanalyzable measured edges are `not_correct`; the old pair-3-4 carve-out is retired.
 
-9. **B4/B5 remain disclosure-only closures.** The aligned genome-authoring design/non-comparability is explicit; genomes are unchanged. The deterministic mapping remains `1<-3 2<-2 3<-1 4<-4 5<-5` with fixed points `[2,4,5]`; no rerandomization is allowed.
+9. **The optional Pass-B `uncertainty[*]` generation-time hardening remains NOT APPLIED.** Historical G4-v2 Pass-B authority stays exact. After generation and before diagnostics, run the bound read-only four-token scan over genome-exposed `uncertainty[*]`. A confirmed leak invalidates the affected inference and cannot trigger regeneration.
 
-10. **The optional Pass-B `uncertainty[*]` generation-time hardening remains NOT APPLIED.** Historical G4-v2 Pass-B authority remains exact. Instead, the packet requires a read-only post-generation, pre-diagnostic four-token scan. A confirmed leak invalidates the affected inference and cannot trigger regeneration.
+10. **Publication is atomic per Thread, not cohort-atomic.** All five generation bundles must complete before publication begins. A publication-phase failure may leave already-published Threads plus terminal HOLD and still does not authorize replay.
 
-11. **Publication semantics are explicit.** All five generation bundles must complete before publication begins. `publishBirth()` is atomic per Thread, but publication is not cohort-atomic. A publication-phase failure can leave already-published Threads plus terminal HOLD; it does not authorize replay/replacement.
+11. **Durability claim remains process-restart replay only.** Birth Center can replay committed invocation identities without resetting budgets. Do not claim host-crash/power-loss fsync durability.
 
-12. **Post-CLEAR drift protection covers the authority surface.** The shared authority module watches `services/world-kernel/src`, `services/birth-center/src`, all `tools/genesis`, inherited `artifacts/validation/m2-pr39/g/protocol`, and replacement protocol. A future `reviewedHead` must be a real strict ancestor.
+12. **Before the one-shot attempt starts, the five replacement Threads are still unborn in #39.** They have frozen Worlds, identities, genomes, assignment, treatment and authorization material, but zero replacement childhood episodes, memories, meanings and published lives.
 
-13. **Replacement execution claims process-restart replay only.** Birth Center journal replay can reuse committed invocation identities without resetting budgets. Do not claim host-crash/power-loss fsync durability. Terminal result/failure ends the one-shot attempt.
+13. **After the attempt, freeze whatever happened before interpreting it.** Preserve result/failure artifacts exactly. Do not inspect quality and then regenerate. First run the required `uncertainty[*]` scan; only afterward proceed to replacement G5/G6 diagnostics.
 
-14. **Five replacement Threads remain unborn in the #39 sense.** They have frozen Worlds, identities, genomes, assignment and pre-life execution material, but zero replacement childhood episodes, memories, meanings and published lives. Final-life cognition remains unauthorized.
+14. **The replacement diagnostic runner must bind `rg5-g6-closure-amendment-v2.json`.** It must use the fresh five-edge authority, not the original G6 pair-3-4 exemption. This runner is still to be implemented after the one-shot cohort is frozen.
 
-15. **The only next action is round 4.** Use `docs/validation/m2-pr39-gate-g2-review-request-round4.md`. The reviewer must reproduce round 3 with a real scratch `.mjs`, fabricated CLEAR witness and mutated inherited authority, and prove both wrapper and imported core preflight/run refuse before any provider call.
+15. **A successful generation attempt still does not finish #39 by itself.** It creates the replacement cohort evidence. G5/G6 diagnostics and the later Gate-H judgment remain required before claiming #39 scientific success.
 
-16. **A future Gate-G(2) CLEAR would authorize exactly one replacement final-life attempt—nothing more.** It would not establish #39 success, Whole-Person standing or causal standing. Weak but mechanically valid lives remain evidence and cannot trigger quality regeneration.
+16. **#40 may proceed architecturally in parallel; #41 remains blocked.** #40 owns canonical bounded consumption of rich identity/history into cognition. #41 owns Whole-Person standing. #39 itself earns no Whole-Person score movement.
 
-17. **#40 may proceed architecturally in parallel; #41 remains blocked.** #40 owns canonical bounded consumption of rich identity/history into cognition. #41 owns Whole-Person standing. #39 deliberately does not move the Whole-Person score; current checkpoint remains 15/26.
-
-18. **Keep public progress synchronized.** Simple English should now say: the five unborn Threads passed their inherited-difference test; the third pre-birth review found an import-path bypass; that bypass is now locally fixed and tested; a fourth independent review still blocks childhood generation.
+17. **Keep public progress synchronized.** Simple English should now say: the five unborn Threads passed the pre-birth review and Fibre is authorized to generate their childhoods once; the childhoods have not been generated yet, and whatever the one attempt produces must be kept and evaluated rather than retried for quality.
