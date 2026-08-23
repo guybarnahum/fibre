@@ -15,8 +15,10 @@ function digestBundle(bundle) {
   return `sha256:${sha256(canonicalJson(bundle))}`;
 }
 
-function exactUniqueStrings(values, name, ErrorType) {
-  if (!Array.isArray(values) || values.length === 0) fail(ErrorType, `${name} must be a non-empty array`);
+function uniqueStrings(values, name, ErrorType, { nonEmpty = true } = {}) {
+  if (!Array.isArray(values) || (nonEmpty && values.length === 0)) {
+    fail(ErrorType, `${name} must be ${nonEmpty ? "a non-empty" : "an"} array`);
+  }
   if (values.some((value) => typeof value !== "string" || value.trim() === "")) fail(ErrorType, `${name} must contain non-empty text`);
   if (new Set(values).size !== values.length) fail(ErrorType, `${name} must be unique`);
   return values;
@@ -51,19 +53,31 @@ export function normalizeGenesisLifeContinuityForPublication(
     assertId("Genesis life continuity participantId", person.participantId);
     if (personIds.has(person.participantId)) fail(ErrorType, `duplicate Genesis life continuity person ${person.participantId}`);
     personIds.add(person.participantId);
-    exactUniqueStrings(person.roleRefs, `Genesis life continuity ${person.participantId} roleRefs`, ErrorType);
+    uniqueStrings(person.roleRefs, `Genesis life continuity ${person.participantId} roleRefs`, ErrorType);
     for (const roleRef of person.roleRefs) {
       if (!affordedRoles.has(roleRef)) fail(ErrorType, `Genesis life continuity ${person.participantId} roleRef ${roleRef} is not afforded by WorldSpec`);
     }
     if (!Array.isArray(person.relationshipFacts)) fail(ErrorType, `Genesis life continuity ${person.participantId} relationshipFacts must be an array`);
-    const refs = exactUniqueStrings(person.episodeRefs, `Genesis life continuity ${person.participantId} episodeRefs`, ErrorType);
+    const refs = uniqueStrings(
+      person.episodeRefs,
+      `Genesis life continuity ${person.participantId} episodeRefs`,
+      ErrorType,
+      { nonEmpty: person.origin === "pass_a_introduction" },
+    );
     for (const episodeRef of refs) {
       const episode = episodeById.get(episodeRef);
       if (!episode) fail(ErrorType, `Genesis life continuity ${person.participantId} cites unknown episode ${episodeRef}`);
       if (!episode.participantRefs.includes(person.participantId)) fail(ErrorType, `Genesis life continuity ${person.participantId} cites an episode where it does not participate`);
     }
-    const actualTimes = refs.map((ref) => episodeById.get(ref).occurredAt).sort((a, b) => Date.parse(a) - Date.parse(b));
-    if (person.firstObservedAt !== actualTimes[0] || person.lastObservedAt !== actualTimes.at(-1)) fail(ErrorType, `Genesis life continuity ${person.participantId} observation bounds drift`);
+
+    if (refs.length === 0) {
+      if (person.origin !== "initial_roster") fail(ErrorType, `Genesis life continuity introduced participant ${person.participantId} has no episode evidence`);
+      if (person.firstObservedAt !== null || person.lastObservedAt !== null) fail(ErrorType, `Genesis life continuity unobserved initial participant ${person.participantId} has observation timestamps`);
+    } else {
+      const actualTimes = refs.map((ref) => episodeById.get(ref).occurredAt).sort((a, b) => Date.parse(a) - Date.parse(b));
+      if (person.firstObservedAt !== actualTimes[0] || person.lastObservedAt !== actualTimes.at(-1)) fail(ErrorType, `Genesis life continuity ${person.participantId} observation bounds drift`);
+    }
+
     if (person.origin === "pass_a_introduction") {
       if (typeof person.introducedAt !== "string") fail(ErrorType, `Genesis life continuity ${person.participantId} introducedAt is required`);
       if (Date.parse(person.firstObservedAt) < Date.parse(person.introducedAt)) fail(ErrorType, `Genesis life continuity ${person.participantId} predates its introduction`);
@@ -86,7 +100,7 @@ export function normalizeGenesisLifeContinuityForPublication(
     const worldPlace = worldPlaces.get(place.placeId);
     if (!worldPlace) fail(ErrorType, `Genesis life continuity place ${place.placeId} is not in WorldSpec`);
     if (place.description !== worldPlace.description) fail(ErrorType, `Genesis life continuity place ${place.placeId} description drift`);
-    const refs = exactUniqueStrings(place.episodeRefs, `Genesis life continuity ${place.placeId} episodeRefs`, ErrorType);
+    const refs = uniqueStrings(place.episodeRefs, `Genesis life continuity ${place.placeId} episodeRefs`, ErrorType);
     const episodes = refs.map((ref) => {
       const episode = episodeById.get(ref);
       if (!episode) fail(ErrorType, `Genesis life continuity place ${place.placeId} cites unknown episode ${ref}`);
