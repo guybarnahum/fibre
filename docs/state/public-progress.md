@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Five new Threads passed the pre-birth checks, but their first childhood-generation attempt stopped on a software-format problem before the first memory was generated. We kept the failed attempt and are reviewing a mechanical continuation rather than starting over.**
+**The first approved replacement-childhood attempt exposed a deeper design problem: the history generator kept collapsing onto the same kind of home scene. We kept that failed attempt as evidence and are rebuilding the history compiler before generating again.**
 
 ### More accurate description
 
-Five fresh replacement Threads retain their frozen Worlds, genomes and CLEAR pre-life distinguishability evidence. Gate-G(2) round 4 legitimately authorized one replacement final-life attempt. That attempt started at `2026-08-23T07:14:24.267Z`, durably completed ten slot-1 Pass-A history calls, and then terminated before the first Pass-B model response because OpenAI rejected `episodeRefs.uniqueItems` in the frozen Pass-B response schema. There is no completed replacement Thread generation or publication. The attempt is preserved as a terminal mechanical HOLD; same-attempt recovery is under review and is not authorized yet.
+Five fresh replacement Threads retain their frozen Worlds, genomes and CLEAR pre-life genome-distinguishability evidence. Replacement-v1 attempt 1 durably completed ten slot-1 Pass-A history calls and then terminated before its first Pass-B model response on an OpenAI schema rejection. Inspection of the preserved Pass-A output exposed protocol-level chooser/realizer collapse, local-time incoherence, social-world under-expansion, sparse-sample frequency ambiguity and missing durable social/geographic continuity. Same-attempt recovery is retired. Replacement-v2 R1 is a zero-call redesign substrate; no final-life cognition is authorized.
 
 ## Population right now
 
@@ -32,14 +32,14 @@ Five fresh replacement Threads retain their frozen Worlds, genomes and CLEAR pre
 - **3 older complete life histories — Shown working.** They came from an experiment that later failed.
 - **1 older partial childhood — Experiment failed — kept as evidence.** It stopped partway through generation.
 - **1 older Thread never started — Experiment failed — kept as evidence.** The experiment stopped first.
-- **5 new unborn Threads — Working on it.** Their backgrounds and inherited tendencies remain frozen. The first approved replacement attempt stopped mechanically after ten history calls for the first Thread.
-- **0 completed replacement lives — Not yet.** No replacement Thread has a completed generation bundle or publication.
+- **5 new unborn Threads — Working on it.** Their frozen backgrounds and inherited tendencies remain, but the first replacement history experiment exposed a design flaw and was stopped.
+- **0 completed replacement lives — Not yet.** Ten history records from the failed replacement-v1 attempt are evidence, not a completed life.
 
-A few durable model responses are **not automatically a completed or living Thread**. We always state which state we mean.
+A few generated history records are **not automatically a completed or living Thread**. We keep those states separate.
 
 ### More accurate description
 
-The three completed histories came from failed H-v2 and remain evidence, not the replacement population. Replacement attempt 1 is separately preserved: exactly ten slot-1 Pass-A provider responses were durably committed, the first Pass-B request received no model response, and there are zero completed replacement generation bundles and zero publications. The original one-shot authorization is consumed; further cognition requires a separately reviewed same-attempt mechanical recovery.
+The three completed histories came from failed H-v2 and remain evidence, not the replacement population. Replacement-v1 attempt 1 is separately preserved as a REDESIGN witness: ten slot-1 Pass-A calls were durably committed, zero Pass-B responses completed, and no replacement Thread generation bundle or publication exists. Those ten episodes are burned experimental output and cannot become replacement-v2 life material.
 
 ## What is done
 
@@ -47,7 +47,7 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **Simple English:** A Thread can keep existing after one AI model session ends.
 
-**Important limitation:** Persistence alone does not make it a rich or unique person.
+**Important limitation:** Persistence alone does not make the Thread a rich or unique person.
 
 **More accurate description:** A Thread persists as authoritative world state across temporary model executions. Rich, causally grounded personhood requires stronger evidence.
 
@@ -59,21 +59,21 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **More accurate description:** Fibre has demonstrated causal history-to-judgment effects. #40 owns the canonical bounded bridge from the newer #37-#39 identity/life records into ordinary cognition.
 
-### Identity and memory have provenance — Done
+### Identity, lineage, place and memory have provenance — Done
 
 **Simple English:** Fibre can keep who a Thread is, where it came from and what it remembers without silently rewriting the past.
 
-**Important limitation:** Storing facts is not the same as proving that every fact changes behavior.
+**Important limitation:** Storing facts is not the same as proving every fact changes behavior.
 
-**More accurate description:** Identity, lineage, place, embodiment and autobiographical memory can be represented with provenance, append-only history and corrigible revisions.
+**More accurate description:** Identity, lineage, geography, embodiment and autobiographical memory can be represented with provenance and corrigible history.
 
 ### Threads can inherit written tendencies — Done
 
-**Simple English:** A Thread can inherit written tendencies, including a mix of two parent genome sources.
+**Simple English:** A Thread can inherit written tendencies, including a deterministic mix of two parent genome sources.
 
 **Important limitation:** Inherited tendencies are a starting point, not a finished personality.
 
-**More accurate description:** Fibre has an ordered natural-language symbolic genome with exact provenance and deterministic textual recombination.
+**More accurate description:** Fibre has an ordered natural-language symbolic genome with exact source provenance and deterministic textual recombination.
 
 ### The five unborn Threads have distinguishable starting genomes — Done
 
@@ -81,61 +81,73 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **Important limitation:** That does not prove their childhoods or adult personalities will become different.
 
-**More accurate description:** Fresh G2 returned **22/24, 24/24, 24/24, 22/24 and 23/24**, with all five measured pairs detectable. This is genome/instrument evidence only. The replacement authoring template differs from the old cohort, so the numerical scores are not directly comparable across cohorts.
-
-### The replacement pre-birth execution gate cleared attempt 1 — Done
-
-**Simple English:** The hostile pre-birth review approved one carefully bound childhood-generation attempt.
-
-**Important limitation:** That approval was consumed when attempt 1 ran and failed mechanically; it is not permission to run again.
-
-**More accurate description:** Gate-G(2) round 4 closed C2 at the generation-function boundary and the committed witness authorized one attempt under the reviewed execution binding. Attempt 1 was legitimately started and is now a preserved terminal HOLD. Any recovery requires separate authority.
+**More accurate description:** Fresh G2 returned **22/24, 24/24, 24/24, 22/24 and 23/24**, with all five measured pairs detectable. This remains genome/instrument evidence only.
 
 ### A prepared Thread can be published atomically — Done
 
 **Simple English:** Fibre can keep a prepared Thread non-live until its life is ready, then publish that Thread all at once.
 
-**Important limitation:** The five replacements have not reached birth, and the whole five-Thread cohort is not one atomic transaction.
+**Important limitation:** The five replacements have not reached birth, and the whole cohort is not one atomic transaction.
 
-**More accurate description:** `publishBirth()` is atomic per Thread. No replacement publication occurred in attempt 1. Publication across five Threads remains non-cohort-atomic.
+**More accurate description:** `publishBirth()` is atomic per Thread. Replacement-v2 must additionally prove that the social and geographic context generated during life compilation survives that birth boundary structurally.
 
-## What we have shown working
+## What the failed replacement attempt taught us
 
-### Fibre can create a childhood, not just an adult profile — Shown working
+### The history model was choosing too much — Experiment failed — kept as evidence
 
-**Simple English:** We have generated childhoods with family, places, ordinary events, memories and meanings.
+**Simple English:** The first new childhood got stuck at home with the same family patterns because the AI was choosing the place, time and kind of event itself.
 
-**Important limitation:** The final #39 replacement cohort has not completed.
+**More accurate description:** Replacement-v1 supplied nine EventStructure affordances per window but left `selectedOpportunity=null`; a temperature-0 model chose the event, place, exact time and realization while repeatedly seeing its own prior episodes. The resulting history showed severe mode collapse.
 
-**More accurate description:** Genesis has produced concrete prior lives under the three-pass history/memory/meaning boundary. The H-v2 cohort failed, and the replacement attempt has also not yet produced a completed cohort.
+### The generated social world did not expand enough — Experiment failed — kept as evidence
 
-### Generated childhoods can have caregivers and genetic ancestry — Shown working
+**Simple English:** The world had schools, peers, teachers, libraries and other people, but the generated childhood stayed almost entirely with the original household.
 
-**Simple English:** A generated childhood can have recurring caregivers, and some Threads can inherit from two recorded genome sources.
+**More accurate description:** Introducing a new participant carried more schema obligations than reusing an initial-roster caregiver/sibling. The redesign therefore requires several preselected opportunities whose counterpart role cannot be satisfied by the household roster.
 
-**Important limitation:** Those caregivers are not live Thread parents independently raising a child.
+### Local time and durable continuity were incomplete — Experiment failed — kept as evidence
 
-**More accurate description:** Compiled household caregivers, synthetic genetic ancestors and live Thread parents are distinct. We have the first two; the autonomous live-parent developmental loop does not exist yet.
+**Simple English:** Some scene descriptions disagreed with the actual local time, and people or places from childhood could have become weak or opaque references after birth.
+
+**More accurate description:** WorldSpecs lacked explicit IANA local-time authority, and the replacement-v1 publication path did not guarantee that initial-roster relationship facts, introduced social roles and meaningful place presence survive birth as structured durable context.
 
 ## What we are working on now
 
-### Preserve attempt 1 and prove a same-attempt mechanical recovery — Working on it
+### Replacement-v2 history compiler redesign — Working on it
 
-**Simple English:** The first approved run stopped because the API rejected a response-format rule. We are keeping everything that already happened and checking whether the same run can continue safely instead of starting over.
+**Simple English:** Fibre will choose the basic historical circumstances first—where, when and what kind of situation—then the AI will describe what concretely happened inside those circumstances.
 
-**Important limitation:** Recovery is not authorized yet, and we cannot regenerate the ten history calls to get a nicer result.
+**Important limitation:** This redesign is not yet cleared to generate another childhood.
 
-**More accurate description:** The local failed-attempt root contains exactly ten durable slot-1 Pass-A invocation records, the attempt-start witness and terminal failure. There is no Pass-B commit, completed generation bundle, publication or final result. `replacement-mechanical-recovery-v1.json` binds exact SHA-256s for those twelve files and requires the previously rejected slot-1 Pass-B call-01 to be the first new provider operation if recovery is later cleared.
+**More accurate description:** `genesis-historical-envelope-v1` deterministically selects an exact local civil time, one World place and an offered-structure/world-emergent opportunity before cognition. Coverage bounds limit pathological repetition of place, structure, weekday and daypart while requiring multiple externally social opportunities. Selection is genome-blind and cannot read prior generated episode content.
+
+### History now covers the years immediately before Fibre entry — Working on it
+
+**Simple English:** The next compiled history will no longer stop around age 18 and then jump straight to a 22-year-old Thread.
+
+**Important limitation:** These are still sparse sampled episodes, not a claim that Fibre records every day of a life.
+
+**More accurate description:** Replacement-v2 preregisters fourteen windows from age 6 through age 21.9999. EventStructurePool v3 preserves the reviewed v2 childhood affordances and adds portable age-17-to-22 situations rather than stretching childhood structures beyond their original range.
+
+### Sparse history will not masquerade as frequency evidence — Working on it
+
+**Simple English:** Seeing the same kind of event twice in our small sample will not mean Fibre tells the Thread that this dominated their whole childhood.
+
+**More accurate description:** Pass B must receive an explicit sparse-history notice: the visible episodes are coverage-oriented samples, repetition does not prove whole-life frequency, and absence does not prove non-occurrence.
+
+### Childhood people and places must survive birth — Working on it
+
+**Simple English:** If someone was the Thread's caregiver, sibling, peer or teacher in its history, Fibre should not forget what that person was when the Thread is born.
+
+**More accurate description:** `genesis-life-continuity-v1` derives a neutral continuity bundle from the factual roster and admitted episodes. R2 must persist an appropriate situated-life representation atomically with birth so every participant has role authority and every meaningful place has evidence-backed continuity.
 
 ### Current step
 
-**Simple English:** Check the saved failure and the software-format fix without making any AI calls. Then get another independent review before continuing.
+**Simple English:** Run the new redesign checks without making any AI calls. If they pass, independently attack the redesign before writing a new generation runner.
 
-**More accurate description:** Run `npm run genesis:replacement-recovery-preflight`. It must report `CLEAR_RESUME_POINT_REVIEW_REQUIRED`, ten durable Pass-A commits, zero Pass-B commits, the exact first uncommitted Pass-B request, unchanged canonical Pass-B schema hash, durable-adapter configuration compatibility and `Recovery cognition: NOT AUTHORIZED`. Then run the full tests and repository validation. Only a subsequent recovery CLEAR may authorize another provider call.
+**More accurate description:** Run `npm run genesis:replacement-v2-redesign-preflight`, then the full test suite and repository validation. The preflight must build deterministic plans for all five frozen Worlds and still report replacement-v2 cognition **NOT AUTHORIZED**. Only after an R1 hostile-review CLEAR may R2 wire a new runner and publication path.
 
-The OpenAI transport now projects provider-unsupported schema constraints while Fibre retains and re-enforces the canonical schema locally. The optional generation-time `uncertainty[*]` genome-copy hardening remains **not applied**; if the cohort eventually completes, the required read-only scan still runs before diagnostics.
-
-**Final-life cognition is not currently authorized. Attempt 1 is consumed; recovery requires a new CLEAR.**
+**Final-life cognition is not authorized. Replacement-v1 attempt 1 is consumed; replacement-v2 has made no provider call.**
 
 ## What Fibre cannot do yet
 
@@ -143,7 +155,7 @@ The OpenAI transport now projects provider-unsupported schema constraints while 
 
 **Simple English:** We want a Thread to be born as a child and actually grow up in Fibre.
 
-**More accurate description:** #39 currently compiles a prior life before young-adult entry; live childhood is later Development architecture.
+**More accurate description:** #39 compiles a prior life before entry; live childhood is later Development architecture.
 
 ### Live Thread parents cannot yet raise a live child — Not yet
 
