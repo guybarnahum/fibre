@@ -13,12 +13,35 @@ import {
 
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
 
+function assertReplacementRosterGrounding(g2, g4) {
+  const bindingBySlot = new Map(g2.worldBindings.map((item) => [item.slot, item]));
+  for (const roster of g4.initialRosters) {
+    const binding = bindingBySlot.get(roster.slot);
+    assert.ok(binding, `replacement roster slot ${roster.slot} lacks G2 binding`);
+    assert.equal(roster.worldSpecId, binding.worldSpecId, `replacement roster slot ${roster.slot} World drift`);
+    assert.equal(roster.threadId, binding.threadId, `replacement roster slot ${roster.slot} Thread drift`);
+    const world = readJson(binding.worldSpecPath);
+    const afforded = new Set(world.affordedRoles);
+    const ids = roster.participants.map((item) => item.participantId);
+    assert.equal(new Set(ids).size, ids.length, `replacement roster slot ${roster.slot} duplicate participant`);
+    const subject = roster.participants.find((item) => item.participantId === roster.threadId);
+    assert.deepEqual(subject?.factualRoles, ["subject"], `replacement roster slot ${roster.slot} subject role drift`);
+    for (const person of roster.participants) {
+      assert.equal(Array.isArray(person.factualRoles) && person.factualRoles.length > 0, true, `replacement roster slot ${roster.slot} participant lacks role`);
+      assert.equal(Array.isArray(person.relationshipFacts) && person.relationshipFacts.length > 0, true, `replacement roster slot ${roster.slot} participant lacks relationship fact`);
+      if (person.participantId === roster.threadId) continue;
+      for (const role of person.factualRoles) assert.equal(afforded.has(role), true, `replacement roster slot ${roster.slot} unafforded role ${role}`);
+    }
+  }
+}
+
 export function verifyReplacementGateG2Closure() {
   const preflight = verifyReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false });
   assert.equal(preflight.executionAuthorized, false, "Gate-G(2) HOLD closure verification must run before final-life authorization");
   assert.equal(preflight.gateStatus, "MISSING_GATE_G2_CLEAR_WITNESS", "a pre-existing Gate-G(2) CLEAR witness would invalidate this closure-check phase");
 
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
+  const g2 = readJson(binding.authorityBoundary.g2ProtocolPath);
   const g3 = readJson(binding.authorityBoundary.g3TreatmentInstancePath);
   const g4 = readJson(binding.authorityBoundary.g4CognitionExecutionBindingPath);
   const disclosure = readJson(binding.authorityBoundary.g2DisclosureAmendmentPath);
@@ -32,6 +55,7 @@ export function verifyReplacementGateG2Closure() {
   assert.equal(g3.replacementAssignment.eligiblePassBCallCount, 30);
   assert.equal(g4.protocolVersion, "pr39-replacement-g4-cognition-execution-binding-v1");
   assert.equal(g4.initialRosters.length, 5);
+  assertReplacementRosterGrounding(g2, g4);
   assert.equal(binding.runner.path, "tools/genesis/genesis-replacement-final-cohort.mjs");
   assert.equal(binding.oneShot.outputRoot, "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1");
   assert.equal(binding.oneShot.wholeCandidateAttemptCap, 1);
@@ -97,6 +121,7 @@ export function verifyReplacementGateG2Closure() {
     b3FiveEdgeClearRuleClosed: true,
     b4AuthoringComparabilityDisclosed: true,
     b5AssignmentDisclosureCorrected: true,
+    rosterGrounding: true,
     passBUncertaintyGenomeCopyGuard: true,
     processRestartDurableAdapterBound: true,
     hardcodedBindingPath: REPLACEMENT_EXECUTION_BINDING_PATH,
@@ -116,6 +141,7 @@ function print(result) {
   process.stdout.write("B3 five-edge CLEAR rule + null/error/tie closure: yes\n");
   process.stdout.write("B4 aligned genome-authoring design/non-comparability disclosed: yes\n");
   process.stdout.write(`B5 mapping described without derangement claim; fixed points: ${result.fixedPointSlots.join(",")}\n`);
+  process.stdout.write("Replacement roster roles grounded to frozen Worlds: yes\n");
   process.stdout.write("Pass-B uncertainty genome-copy guard: yes\n");
   process.stdout.write("Replacement durable adapter: process-restart scope only\n");
   process.stdout.write(`D3: both >=${result.effectiveD3.eachOrdinalMinimumCorrectCoreEdges}/5; at least one ${result.effectiveD3.atLeastOneOrdinalCorrectCoreEdges}/5\n`);
