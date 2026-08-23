@@ -1,0 +1,39 @@
+{
+  "disclosureVersion": "pr39-replacement-g4-residual-gate-g2-disclosures-v1",
+  "replacementAttemptVersion": "pr39-replacement-cohort-v1",
+  "status": "frozen_pre_second_gate_g2_pre_final_life",
+  "purpose": "Record nonblocking limitations from the first Gate-G(2) review that are important for interpretation but are not being changed after the first H attempt because doing so would alter scientific model inputs or overstate current durability.",
+  "passASemanticBlindness": {
+    "mechanicalProtection": "strict structural input allowlists and forbidden-key recursion",
+    "semanticParaphraseDetection": false,
+    "statement": "Free-text World fields cannot be mechanically proven free of every semantic paraphrase of a genome disposition. Replacement protection is procedural and provenance-based: G1 content predates G2 material, geographic names are excluded from loci, Pass A has no genome field, and World-to-genome assignment is content-independent.",
+    "redesignTriggerIfConfirmedLeakLater": true
+  },
+  "passBPriorMemoryLabels": {
+    "formationModeVisibleInPriorMemoryContext": true,
+    "assignmentRefMayRevealPriorCallOrdinal": true,
+    "lifeOnlyUnexposedLabelConstantByConstruction": true,
+    "lifeOnlyExposedStratum": "descriptive_only_horizon_confounded",
+    "changeMadeForReplacement": false,
+    "whyNotChanged": "Removing or renaming already-frozen Pass-B context fields now would alter scientific model input after the first H attempt rather than merely close an execution ambiguity. Any conditional-propagation reading must disclose that later Pass-B calls may see prior formation-mode/call metadata. Pass C remains arm-blind structurally."
+  },
+  "durabilityScope": {
+    "replacementUsesDurableAdapter": true,
+    "supportedClaim": "process-restart replay of already committed provider invocations under the same request witness",
+    "hostCrashOrPowerLossFsyncGuarantee": false,
+    "statement": "The file journal does not fsync the record and containing directory. Fibre therefore does not claim power-loss durability for this #39 replacement attempt."
+  },
+  "recoveryCoreBypass": {
+    "finding": "The historical recovery core contains a direct executable --execute entry path below wrapper-level terminal-HOLD checks.",
+    "replacementExecutionUsesRecoveryCore": false,
+    "currentReplacementBlocker": false,
+    "futureHardeningRequired": true,
+    "statement": "This is historical recovery-surface technical debt, not authority for another recovery call and not part of the replacement runner. The recorded recovery terminal HOLD remains binding."
+  },
+  "authorizationBoundary": {
+    "authorizesProviderCalls": false,
+    "authorizesReplacementLife": false,
+    "changesWorldsGenomesAssignmentTreatmentOrThreshold": false,
+    "blockingGate": "Gate-G(2)"
+  }
+}
