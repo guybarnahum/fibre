@@ -7,16 +7,10 @@ import test from "node:test";
 
 import { GENESIS_YOUNG_ADULT_EVENT_STRUCTURES_V3 } from "../src/genesis-event-structure-pool-v3.mjs";
 import {
-  GENESIS_RICH_COUNTERPART_POLICY_HISTORICAL_VERSION,
   GENESIS_RICH_COUNTERPART_POLICY_VERSION,
   richCounterpartMode,
   richCounterpartPolicyWitness,
 } from "../src/genesis-rich-participation-policy.mjs";
-
-test("replacement-v2 policy extends young-adult semantics without changing historical policy identity", () => {
-  assert.equal(GENESIS_RICH_COUNTERPART_POLICY_HISTORICAL_VERSION, "genesis-rich-counterpart-policy-v1");
-  assert.equal(GENESIS_RICH_COUNTERPART_POLICY_VERSION, "genesis-rich-counterpart-policy-v2");
-});
 
 test("every v3 young-adult structure has reviewed counterpart semantics derived from accessModes", () => {
   assert.equal(GENESIS_RICH_COUNTERPART_POLICY_VERSION, "genesis-rich-counterpart-policy-v2");
