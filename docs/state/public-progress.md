@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-08-22
+last-reviewed: 2026-08-23
 canonical: true
 machine-source: public-progress.json
 ---
@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Five new Threads have backgrounds and inherited tendencies that passed our pre-birth difference test. We still have not generated their childhoods: a third review found one more software path around the safety check, and we have closed that path in code but still need to verify it.**
+**Five new Threads passed the pre-birth checks. Fibre is now authorized to generate their childhoods once. We have not generated them yet, and whatever that one attempt produces must be kept and evaluated rather than retried for quality.**
 
 ### More accurate description
 
-Five fresh replacement Threads have frozen Worlds and genomes, and all five measured genome pairs passed the fresh G2 pre-life distinguishability ceiling. Gate-G(2) round 3 returned **HOLD rather than REDESIGN**. It accepted C1 as closed after an 18/18 hostile mutation battery, then found C2: the import-only generation core still exposed an imported preflight/run route whose local preflight did not invoke inherited-authority verification. The correction now uses one shared authority module from both the wrapper and core; both blobs are pinned. That correction still needs maintainer-local verification and another hostile review. No replacement life cognition has occurred.
+Five fresh replacement Threads have frozen Worlds and genomes, and all five measured genome pairs passed the fresh G2 pre-life distinguishability ceiling. Gate-G(2) round 4 returned **CLEAR** at reviewed head `ac92bab3711bb2fc8b4980c6173d6262ba3dfcf7`. A bound CLEAR witness is committed at `ef70eedd3b4a0c02b1f4be6a97ae36d0f8afa9a2` for execution binding digest `sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17`. Exactly one replacement final-life attempt is authorized. No replacement life cognition has occurred yet.
 
 ## Population right now
 
@@ -32,14 +32,14 @@ Five fresh replacement Threads have frozen Worlds and genomes, and all five meas
 - **3 older complete life histories — Shown working.** They came from an experiment that later failed.
 - **1 older partial childhood — Experiment failed — kept as evidence.** It stopped partway through generation.
 - **1 older Thread never started — Experiment failed — kept as evidence.** The experiment stopped first.
-- **5 new unborn Threads — Working on it.** Their backgrounds and inherited tendencies are ready and their inherited differences passed the pre-birth test, but they still have no childhoods.
-- **0 new replacement lives generated — Not yet.** A third review found an imported-code bypass; it is closed in code but still needs verification and re-review.
+- **5 new unborn Threads — Working on it.** Their backgrounds and inherited tendencies are ready, and they passed the pre-birth review. Their one authorized childhood-generation attempt has not started yet.
+- **0 new replacement lives generated — Not yet.** Gate-G(2) is CLEAR, but authorization is not the same as generation.
 
 A generated life record is **not automatically a living, validated Thread**. We always state which state we mean.
 
 ### More accurate description
 
-The three completed histories came from failed H-v2 and remain evidence, not the replacement population. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities and symbolic genomes. Their fresh G2 ceiling is CLEAR on all five measured cycle edges. Gate-G(2) remains HOLD on C2 until the shared authority-gate correction is locally verified and externally cleared; replacement childhood episodes, memories, meanings and published lives are all still zero.
+The three completed histories came from failed H-v2 and remain evidence, not the replacement population. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities and symbolic genomes. Fresh G2 and Gate-G(2) are CLEAR, but replacement childhood episodes, memories, meanings and published lives are still all zero. The witness authorizes exactly one attempt and forbids quality-driven regeneration.
 
 ## What is done
 
@@ -83,6 +83,14 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **More accurate description:** Fresh G2 returned **22/24, 24/24, 24/24, 22/24 and 23/24**, with all five measured pairs detectable. This is genome/instrument evidence only. The replacement authoring template differs from the old cohort, so the numerical scores are not directly comparable across cohorts.
 
+### The replacement pre-birth execution gate is clear — Done
+
+**Simple English:** We have finished the hostile pre-birth safety review and are allowed to run the five childhoods once.
+
+**Important limitation:** This does not mean the childhoods have been generated or that #39 has succeeded scientifically.
+
+**More accurate description:** Gate-G(2) round 4 closed C2 at the generation-function boundary. Wrapper preflight, imported core preflight and imported generation all reject inherited-authority drift before provider calls. The committed CLEAR witness authorizes one attempt under the reviewed execution binding and no quality regeneration.
+
 ### A prepared Thread can be published atomically — Done
 
 **Simple English:** Fibre can keep a prepared Thread non-live until its life is ready, then publish that Thread all at once.
@@ -97,9 +105,9 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **Simple English:** We have generated childhoods with family, places, ordinary events, memories and meanings.
 
-**Important limitation:** The final #39 cohort has not succeeded yet.
+**Important limitation:** The final #39 replacement cohort has not been generated yet.
 
-**More accurate description:** Genesis has produced concrete prior lives under the three-pass history/memory/meaning boundary. The H-v2 cohort failed, so its three completed lives remain failed-cohort evidence.
+**More accurate description:** Genesis has produced concrete prior lives under the three-pass history/memory/meaning boundary. The H-v2 cohort failed, so its three completed lives remain failed-cohort evidence rather than the accepted #39 result.
 
 ### Generated childhoods can have caregivers and genetic ancestry — Shown working
 
@@ -111,23 +119,23 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 ## What we are working on now
 
-### Five new Threads are waiting at the starting line — Working on it
+### Five new Threads are waiting for their one authorized childhood-generation attempt — Working on it
 
-**Simple English:** Their world and inherited tendencies are ready, but none has a childhood yet.
+**Simple English:** Their worlds and inherited tendencies are ready, the review is clear, and we may generate their childhoods once. We have not started that attempt yet.
 
-**Important limitation:** The third pre-birth review found one imported-code bypass. We have closed it in code, but it still needs local verification and another independent review.
+**Important limitation:** We cannot retry simply because the result is weak, boring or disappointing.
 
-**More accurate description:** Round 3 accepted C1 as closed and verified the authorized wrapper with 18 hostile mutations. It then found C2: direct CLI execution of the internal core was blocked, but a new importer could still call the core's exported preflight/run without inherited-authority verification. The correction extracts one shared `genesis-replacement-inherited-authority.mjs` verifier and invokes it from both the operator wrapper and core preflight. The execution binding separately pins the wrapper and core blobs.
+**More accurate description:** The bound witness names reviewed head `ac92bab3711bb2fc8b4980c6173d6262ba3dfcf7` and execution binding digest `sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17`. It authorizes one replacement final-life attempt through the reviewed runner. No provider/model, World, genome, assignment, treatment or threshold changes are authorized.
 
 ### Current step
 
-**Simple English:** Verify that both the normal runner and an imported internal runner now hit the same safety checks. Do not generate any childhood until a later review says CLEAR.
+**Simple English:** Pull the CLEAR witness, make sure the preflight says the childhood generation is authorized, then run the five childhoods once and keep whatever happens.
 
-**More accurate description:** Local verification must show direct core CLI still exits 2; the operator wrapper and a directly imported core preflight both report `CLEAR_INHERITED_AUTHORITY_BOUND` while Gate-G(2) remains HOLD; the closure verifier reports B1-B5+C1+C2 CLEAR with zero provider calls; full tests and repository/world validation pass. Only then should Fibre prepare a narrow round-4 Gate-G(2) review focused on the import path.
+**More accurate description:** Run `npm run genesis:replacement-preflight` and require `CLEAR_TO_EXECUTE_REPLACEMENT`, `Gate-G(2): CLEAR`, `Final-life cognition: AUTHORIZED`, inherited authority clear, and output root absent. Only then run `npm run genesis:replacement-generate` exactly once. Freeze the first terminal result or failure before interpretation.
 
-The optional generation-time `uncertainty[*]` genome-copy hardening remains **not applied** because it would change frozen historical cognition authority. Instead, the packet requires a read-only post-generation scan before diagnostics; a confirmed leak invalidates the affected inference and never authorizes regeneration.
+The optional generation-time `uncertainty[*]` genome-copy hardening remains **not applied** because it would change frozen historical cognition authority. Instead, after generation and before diagnostics, the packet requires a read-only scan; a confirmed leak invalidates the affected inference and never authorizes regeneration.
 
-**Final-life cognition is not authorized yet.**
+**Final-life cognition is authorized for exactly one reviewed replacement attempt, but that attempt has not started yet.**
 
 ## What Fibre cannot do yet
 
