@@ -1,3 +1,8 @@
+// fibre-test-lifecycle: milestone
+// fibre-test-scope: pr39
+// fibre-test-purpose: preserve-calibration-decision-semantics-without-requiring-obsolete-corpus-reconstruction
+// fibre-test-disposition: remove-or-consolidate-after-pr39
+
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -9,7 +14,6 @@ import {
   G4_V3_CALIBRATION_MODEL_ID,
   G4_V3_CALIBRATION_RUNNER_POLICY,
   G4_V3_CALIBRATION_TRIAL_COUNT,
-  calibrationPreflight,
   evaluateCalibrationResults,
   initialDraftMechanicalMetric,
 } from "./genesis-g4-v3-calibration-runner.mjs";
@@ -36,7 +40,7 @@ function fullSample({ admittedCount = 225, initialWithin1200Count = 225 } = {}) 
   }));
 }
 
-test("G4-v3 calibration runner is pinned to the frozen corpus and runtime", () => {
+test("G4-v3 calibration evidence remains pinned to the executed corpus and runtime", () => {
   assert.equal(G4_V3_CALIBRATION_CORPUS_FREEZE_COMMIT, "8344f0cd987c544d7647386e726a3f07579b5bfa");
   assert.equal(G4_V3_CALIBRATION_CORPUS_DIGEST, "sha256:098ee9e838d3027aa02cfc97bcc83f028919f993e8f0285d6f1e1a9d9e94b59a");
   assert.equal(G4_V3_CALIBRATION_MODEL_ID, "gpt-5.1-2025-11-13");
@@ -97,16 +101,4 @@ test("initial-draft metric measures UTF-8 bytes from the exact initial response 
   const metric = initialDraftMechanicalMetric(events, "cal_g4v3_001");
   assert.equal(metric.observableActionUtf8Bytes, 4);
   assert.equal(metric.withinAuthoritative1200ByteLimit, true);
-});
-
-test("zero-call calibration preflight reconstructs the exact frozen 225-input corpus", () => {
-  const { corpus, state } = calibrationPreflight();
-  assert.equal(corpus.corpusDigest, G4_V3_CALIBRATION_CORPUS_DIGEST);
-  assert.equal(corpus.trials.length, G4_V3_CALIBRATION_TRIAL_COUNT);
-  assert.ok([
-    "READY_FIRST_EXECUTION",
-    "READY_EXACT_RESUME",
-    "PARTIAL_TRIAL_INTERRUPTION_REVIEW_REQUIRED",
-    "FINAL_RESULT_EXISTS_EXECUTION_BLOCKED",
-  ].includes(state.status));
 });
