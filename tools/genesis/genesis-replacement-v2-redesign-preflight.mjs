@@ -15,9 +15,14 @@ import {
   GENESIS_SPARSE_HISTORY_NOTICE,
   buildHistoricalEnvelopePlan,
 } from "../../services/world-kernel/src/genesis-historical-envelope-v1.mjs";
+import {
+  GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
+  GENESIS_HISTORICAL_REALIZATION_VERSION,
+} from "../../services/world-kernel/src/genesis-historical-realization-v1.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const PROTOCOL_PATH = "artifacts/validation/m2-pr39/replacement-v2/protocol/redesign-v1.json";
+const PLACE_AFFORDANCE_PATH = "artifacts/validation/m2-pr39/replacement-v2/protocol/place-affordance-bindings-v1.json";
 const G2_PATH = "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json";
 const G4_BINDING_PATH = "artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-cognition-execution-binding-v1.json";
 const RECOVERY_CLEAR_PATH = "artifacts/validation/m2-pr39/replacement-v1/protocol/gate-g2-mechanical-recovery-clear-v1.json";
@@ -28,6 +33,16 @@ function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")
 function digest(value) { return `sha256:${sha256(canonicalJson(value))}`; }
 function fail(message) { throw new Error(message); }
 function pad(value) { return String(value).padStart(2, "0"); }
+
+function assertSkeletonFreeRealizationSchema() {
+  const properties = Object.keys(GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA.properties).sort();
+  const expected = ["additionalIntroductions", "additionalParticipantRefs", "intellectualEncounter", "observableAction"];
+  if (canonicalJson(properties) !== canonicalJson(expected)) fail("replacement-v2 historical realization schema surface drift");
+  for (const forbidden of ["episodeId", "occurredAt", "ageAtEvent", "placeRef", "structureRef", "introducedAt"]) {
+    if (Object.hasOwn(GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA.properties, forbidden)) fail(`replacement-v2 model output regains forbidden skeleton field ${forbidden}`);
+  }
+  return digest({ version: GENESIS_HISTORICAL_REALIZATION_VERSION, schema: GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA });
+}
 
 export function verifyReplacementV2RedesignPreflight() {
   const protocol = readJson(PROTOCOL_PATH);
@@ -44,6 +59,16 @@ export function verifyReplacementV2RedesignPreflight() {
   if (protocol.startingMaterial.freshOutputRoot === protocol.attempt1Standing.attemptRoot) fail("replacement-v2 output root reuses failed attempt root");
   if (existsSync(absolute(protocol.startingMaterial.freshOutputRoot))) fail("replacement-v2 final-life output root already exists");
 
+  const placeAffordanceProtocol = readJson(PLACE_AFFORDANCE_PATH);
+  if (placeAffordanceProtocol.version !== "pr39-replacement-v2-place-affordance-bindings-v1" || placeAffordanceProtocol.status !== "frozen_pre_cognition") {
+    fail("replacement-v2 place-affordance binding version/status drift");
+  }
+  if (placeAffordanceProtocol.authoringBoundary.genomeVisible !== false || placeAffordanceProtocol.authoringBoundary.replacementV1EpisodeContentUsed !== false || placeAffordanceProtocol.authorization.providerCallsAuthorized !== false) {
+    fail("replacement-v2 place-affordance authorship boundary drift");
+  }
+  const placeBindingsByWorld = new Map(placeAffordanceProtocol.worlds.map((item) => [item.worldSpecId, item.places]));
+  if (placeBindingsByWorld.size !== 5) fail("replacement-v2 place-affordance World count drift");
+
   const g2 = readJson(G2_PATH);
   if (digest(g2) !== EXPECTED_G2_DIGEST) fail("replacement-v1 frozen G2 protocol drift");
   const g4Binding = readJson(G4_BINDING_PATH);
@@ -55,8 +80,11 @@ export function verifyReplacementV2RedesignPreflight() {
   if (canonicalJson(protocol.passB.historyHorizons) !== canonicalJson([4, 6, 8, 10, 12, 14])) fail("replacement-v2 Pass-B horizons drift");
   if (canonicalJson(protocol.passB.formationModes) !== canonicalJson(["life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome"])) fail("replacement-v2 Pass-B treatment pattern drift");
   if (protocol.passB.sparseHistoryNotice !== GENESIS_SPARSE_HISTORY_NOTICE || protocol.passB.frequencyInferenceFromSampleProhibited !== true) fail("replacement-v2 sparse-history semantics drift");
+  if (protocol.historicalEnvelope.modelChoosesPlace !== false || protocol.historicalEnvelope.modelChoosesOccurredAt !== false || protocol.historicalEnvelope.modelChoosesEventStructure !== false) fail("replacement-v2 historical skeleton ownership drift");
 
   const poolDigest = eventStructurePoolV3Digest(GENESIS_EVENT_STRUCTURE_POOL_V3);
+  const realizationSchemaDigest = assertSkeletonFreeRealizationSchema();
+  const placeAffordanceDigest = digest(placeAffordanceProtocol);
   const plans = [];
   for (const binding of protocol.worldBindings) {
     const prior = g2BySlot.get(binding.slot);
@@ -67,6 +95,8 @@ export function verifyReplacementV2RedesignPreflight() {
     if (!roster || roster.threadId !== binding.threadId || roster.worldSpecId !== binding.worldSpecId) fail(`replacement-v2 slot ${binding.slot} roster binding drift`);
     const worldSpec = readJson(binding.worldSpecPath);
     if (worldSpec.worldSpecId !== binding.worldSpecId) fail(`replacement-v2 slot ${binding.slot} WorldSpec ID drift`);
+    const placeAffordances = placeBindingsByWorld.get(binding.worldSpecId);
+    if (!placeAffordances) fail(`replacement-v2 slot ${binding.slot} lacks place-affordance binding`);
     const offersByWindow = new Map();
     for (const window of windows) {
       const seed = `${protocol.startingMaterial.freshEventOfferSeedDomain}:slot:${pad(binding.slot)}:structures:${window.windowId}`;
@@ -79,11 +109,13 @@ export function verifyReplacementV2RedesignPreflight() {
       windows,
       offersByWindow,
       initialRoster: roster.participants,
+      placeAffordances,
       timeZone: binding.timeZone,
       seedDomain: `${protocol.startingMaterial.freshHistoricalEnvelopeSeedDomain}:slot:${pad(binding.slot)}`,
     });
     if (plan.statistics.distinctPlaces < Math.min(GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumDistinctPlaces, worldSpec.places.length)) fail(`replacement-v2 slot ${binding.slot} place coverage drift`);
     if (plan.statistics.externalCounterpartOpportunityCount < GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalCounterpartOpportunities) fail(`replacement-v2 slot ${binding.slot} social expansion coverage drift`);
+    if (plan.statistics.generatedExternalPersonCount < GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalRoleVariety) fail(`replacement-v2 slot ${binding.slot} external person binding drift`);
     plans.push({
       slot: binding.slot,
       threadId: binding.threadId,
@@ -101,7 +133,9 @@ export function verifyReplacementV2RedesignPreflight() {
   return Object.freeze({
     status: "CLEAR_R1_SUBSTRATE_PRE_REVIEW_ZERO_CALL",
     protocolDigest: digest(protocol),
+    placeAffordanceDigest,
     eventStructurePoolV3Digest: poolDigest,
+    realizationSchemaDigest,
     attempt1RecoveryRetired: true,
     attempt1HistoryReusable: false,
     replacementV2OutputRootAbsent: true,
@@ -114,7 +148,9 @@ export function verifyReplacementV2RedesignPreflight() {
 function print(result) {
   console.log("PR39 REPLACEMENT-V2 REDESIGN R1 PREFLIGHT: CLEAR_R1_SUBSTRATE_PRE_REVIEW_ZERO_CALL");
   console.log(`Protocol: ${result.protocolDigest}`);
+  console.log(`Place affordances: ${result.placeAffordanceDigest}`);
   console.log(`EventStructurePool v3: ${result.eventStructurePoolV3Digest}`);
+  console.log(`Skeleton-free realization schema: ${result.realizationSchemaDigest}`);
   console.log("Attempt 1 same-attempt recovery: RETIRED");
   console.log("Attempt 1 generated history reusable: false");
   for (const plan of result.plans) {
@@ -122,7 +158,7 @@ function print(result) {
     console.log(`${plan.slot}. ${plan.threadId} · ${plan.worldSpecId} · ${plan.timeZone}`);
     console.log(`   envelope=${plan.envelopeDigest}`);
     console.log(`   places=${s.distinctPlaces} distinct / max ${s.maxPlaceUse}; structures=${s.distinctStructures} distinct / max ${s.maxStructureUse}; world-emergent=${s.worldEmergentCount}`);
-    console.log(`   external-opportunities=${s.externalCounterpartOpportunityCount}; external-role-variety=${s.externalRoleVariety}; weekday-max=${s.maxWeekdayUse}; daypart-max=${s.maxDaypartUse}`);
+    console.log(`   external-opportunities=${s.externalCounterpartOpportunityCount}; external-role-variety=${s.externalRoleVariety}; generated-external-people=${s.generatedExternalPersonCount}; weekday-max=${s.maxWeekdayUse}; daypart-max=${s.maxDaypartUse}`);
     console.log(`   local first=${plan.localRange.first}; local last=${plan.localRange.last}`);
   }
   console.log("Replacement-v2 cognition: NOT AUTHORIZED");
