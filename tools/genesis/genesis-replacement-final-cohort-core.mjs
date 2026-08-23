@@ -60,6 +60,7 @@ import { SymbolicGenomeStore } from "../services/world-kernel/src/symbolic-genom
 import { symbolicGenomeDigest } from "../services/world-kernel/src/symbolic-genome-domain.mjs";
 import { canonicalJson, sha256 } from "../services/world-kernel/src/persistence-common.mjs";
 import { buildHPassBInput, buildNeutralHThreadSeed } from "./genesis-h-final-cohort.mjs";
+import { verifyReplacementInheritedAuthorityBinding } from "./genesis-replacement-inherited-authority.mjs";
 import { createProviderProgressHeartbeat } from "./provider-progress.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
@@ -232,6 +233,7 @@ function readGateWitness(binding) {
 }
 
 export function verifyReplacementFinalCohortPreflight({ requireGateClear = false, enforceReviewedSource = true } = {}) {
+  const inheritedAuthority = verifyReplacementInheritedAuthorityBinding();
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
   if (binding.contractVersion !== "pr39-replacement-final-cohort-execution-binding-v1" || binding.status !== "frozen_pre_gate_g2_clear_pre_final_life") {
     fail("unexpected replacement execution binding version/status");
@@ -342,6 +344,7 @@ export function verifyReplacementFinalCohortPreflight({ requireGateClear = false
     reviewedSourceChanges,
     slots,
     effective,
+    inheritedAuthority,
   });
 }
 
