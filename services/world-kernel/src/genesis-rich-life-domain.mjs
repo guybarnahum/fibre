@@ -7,7 +7,16 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { projectPassAInputForCognition } from "./genesis-pass-a-cognition.mjs";
-import { buildPassAInputWithEventStructurePoolV2 } from "./genesis-event-structure-pool-v2.mjs";
+import {
+  assertPassAInputBoundary,
+  buildPassAInput,
+  normalizeEventStructure,
+} from "./genesis-pass-a-domain.mjs";
+import {
+  GENESIS_EVENT_STRUCTURE_POOL_V3,
+  eventStructurePoolV3Digest,
+  normalizeEventStructurePoolV3,
+} from "./genesis-event-structure-pool-v3.mjs";
 import {
   GENESIS_RICH_COUNTERPART_POLICY_VERSION,
   richCounterpartMode,
@@ -27,6 +36,7 @@ export {
 } from "./genesis-rich-life-episode.mjs";
 
 export const GENESIS_RICH_LIFE_MODES = Object.freeze(["de_novo", "synthetic_lineage"]);
+export const GENESIS_RICH_PASS_A_POLICY_VERSION = "genesis-pass-a-policy-v1+event-structure-pool-v3";
 
 function normalizeLineageWitness(candidate) {
   assertPlainObject("syntheticLineageWitness", candidate);
@@ -59,18 +69,17 @@ export function syntheticLineageWitnessFromRecombinedGenome(bundle) {
   if (bundle.genomeDigest !== actualDigest) throw new TypeError("synthetic lineage genome digest does not match its symbolic genome content");
   const sourceOwners = header.sourceEligibility.sourceOwners;
   if (sourceOwners.some((owner) => owner.kind !== "synthetic_ancestor")) {
-    throw new TypeError("Slice E synthetic_lineage requires synthetic-ancestor source genomes");
+    throw new TypeError("synthetic_lineage requires synthetic-ancestor source genomes");
   }
-  const witness = {
+  return Object.freeze(normalizeLineageWitness({
     genomeRef: header.genomeId,
     parentOrAncestorRefs: sourceOwners.map((owner) => owner.ownerId),
     recombinationWitnessRef: `recomb_${sha256(canonicalJson(header.recombinationWitness)).slice(0, 40)}`,
-  };
-  return Object.freeze(normalizeLineageWitness(witness));
+  }));
 }
 
 export function assertRichLifeCompilerMode({ originMode, syntheticLineageWitness = null }) {
-  if (!GENESIS_RICH_LIFE_MODES.includes(originMode)) throw new TypeError("Slice E rich-life compiler supports only de_novo or synthetic_lineage");
+  if (!GENESIS_RICH_LIFE_MODES.includes(originMode)) throw new TypeError("rich-life compiler supports only de_novo or synthetic_lineage");
   if (originMode === "de_novo") {
     if (syntheticLineageWitness !== null) throw new TypeError("de_novo rich-life compilation cannot carry a lineage witness into Pass A");
     return Object.freeze({ originMode, syntheticLineageWitness: null });
@@ -79,40 +88,72 @@ export function assertRichLifeCompilerMode({ originMode, syntheticLineageWitness
   return Object.freeze({ originMode, syntheticLineageWitness: normalizeLineageWitness(syntheticLineageWitness) });
 }
 
-function stableOfferOrder(entries) {
-  if (!Array.isArray(entries)) throw new TypeError("offeredEntries must be an array");
-  return [...entries].sort((left, right) =>
-    left.structure.structureId.localeCompare(right.structure.structureId));
-}
-
 function baseHistoryEpisode(episode) {
   const projected = structuredClone(episode);
   delete projected.intellectualEncounter;
   return projected;
 }
 
+function coversDevelopmentalWindow(structure, developmentalWindow) {
+  return structure.developmentalRange.minAge <= developmentalWindow.minAge
+    && structure.developmentalRange.maxAge >= developmentalWindow.maxAge;
+}
+
+function currentOfferedStructures(offeredEntries, developmentalWindow) {
+  if (!Array.isArray(offeredEntries)) throw new TypeError("offeredEntries must be a current EventStructure entry array");
+  const currentPool = normalizeEventStructurePoolV3(GENESIS_EVENT_STRUCTURE_POOL_V3);
+  const byId = new Map(currentPool.map((entry) => [entry.structure.structureId, entry]));
+  const offered = offeredEntries.map((entry, index) => {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry) || entry.structure === undefined) {
+      throw new TypeError(`offeredEntries[${index}] is not a current EventStructure entry`);
+    }
+    const structure = normalizeEventStructure(entry.structure);
+    const authoritative = byId.get(structure.structureId);
+    if (authoritative === undefined || canonicalJson(authoritative.structure) !== canonicalJson(structure)) {
+      throw new TypeError(`offered structure ${structure.structureId} is not the current reviewed EventStructure`);
+    }
+    if (!coversDevelopmentalWindow(structure, developmentalWindow)) {
+      throw new TypeError(`offered rich structure ${structure.structureId} does not cover the entire developmental window`);
+    }
+    return structure;
+  });
+  offered.sort((left, right) => left.structureId.localeCompare(right.structureId));
+  return offered;
+}
+
 export function buildRichLifePassAInput({
   originMode,
   syntheticLineageWitness = null,
-  ...passAInputArgs
+  worldSpec,
+  subject,
+  developmentalWindow,
+  chronologyEndsAt,
+  initialRoster,
+  priorEpisodes = [],
+  previouslyIntroducedParticipants = [],
+  offeredEntries,
 }) {
-  // The mode/genome witness is validated policy-side and intentionally discarded before
-  // constructing Pass A. The same Pass-A builder is therefore used for de_novo and
-  // synthetic_lineage; inherited material cannot become a childhood-event authoring path.
+  // Inheritance is validated policy-side and intentionally discarded before Pass A.
+  // There is one current rich-life compiler: the current reviewed EventStructure pool.
   assertRichLifeCompilerMode({ originMode, syntheticLineageWitness });
-  const input = buildPassAInputWithEventStructurePoolV2({
-    ...passAInputArgs,
-    priorEpisodes: (passAInputArgs.priorEpisodes ?? []).map(baseHistoryEpisode),
-    // Stable ID order prevents pool authoring order from becoming an accidental prompt signal.
-    offeredEntries: stableOfferOrder(passAInputArgs.offeredEntries),
+  const currentPool = normalizeEventStructurePoolV3(GENESIS_EVENT_STRUCTURE_POOL_V3);
+  const input = buildPassAInput({
+    worldSpec,
+    subject,
+    developmentalWindow,
+    chronologyEndsAt,
+    initialRoster,
+    priorEpisodes: priorEpisodes.map(baseHistoryEpisode),
+    previouslyIntroducedParticipants,
+    eventStructurePool: currentPool.map((item) => item.structure),
+    offeredStructures: currentOfferedStructures(offeredEntries, developmentalWindow),
   });
-  return {
-    ...input,
-    policyWitness: {
-      ...input.policyWitness,
-      policyVersion: `${input.policyWitness.policyVersion}+${GENESIS_RICH_COUNTERPART_POLICY_VERSION}`,
-    },
+  input.policyWitness = {
+    ...input.policyWitness,
+    policyVersion: `${GENESIS_RICH_PASS_A_POLICY_VERSION}+${GENESIS_RICH_COUNTERPART_POLICY_VERSION}`,
+    eventStructurePoolDigest: eventStructurePoolV3Digest(currentPool),
   };
+  return assertPassAInputBoundary(input);
 }
 
 export function projectRichLifePassAInputForCognition(candidate) {
