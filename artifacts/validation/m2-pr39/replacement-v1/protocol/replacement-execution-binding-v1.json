@@ -26,8 +26,8 @@
   "runner": {
     "path": "tools/genesis/genesis-replacement-final-cohort.mjs",
     "corePath": "tools/genesis/genesis-replacement-final-cohort-core.mjs",
-    "coreGitBlobSha": "d64436483661339d6a7b1b353d78cdab7ce5e423",
-    "coreRole": "Round-2 generation implementation with only its direct CLI entry disabled. It is import-only; all authorized execution must enter through tools/genesis/genesis-replacement-final-cohort.mjs so inherited authority is verified before generation.",
+    "coreGitBlobSha": "a8acd1b1dd47ef427397056cee2958cea7ae0b7c",
+    "coreRole": "Import-only generation implementation. The shared inherited-authority gate is invoked by the authorized wrapper and by the core's own exported preflight, so direct imports cannot authorize or generate under drift.",
     "bindingPathHardcoded": true,
     "bindingEnvOverrideAllowed": false,
     "providerOrModelCliOverrideAllowed": false,
