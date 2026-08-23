@@ -115,12 +115,14 @@ export async function generateReplacementHistoricalEpisode({
   let generatedVersions = 0;
   let formRepairs = 0;
   let recordRetries = 0;
-  let realization = null;
+  let rawRealization = null;
+  let pendingError = null;
 
-  const invokeRealization = async ({ prompt, kind }) => {
+  const invokeRealization = async ({ prompt, kind, failedGate = null }) => {
+    const modelInput = failedGate === null ? cognitionInput : { ...cognitionInput, failedGate };
     const result = await adapter.invoke({
       systemPrompt: prompt,
-      input: kind === "initial" ? cognitionInput : { ...cognitionInput, failedGate: kind.replace(/^record-retry-\d+:/u, "") },
+      input: modelInput,
       responseSchema: GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
       clientRequestId: `${clientRequestId}:${kind}`,
     });
@@ -128,17 +130,24 @@ export async function generateReplacementHistoricalEpisode({
     calls.push(Object.freeze({
       kind,
       generatedVersion: generatedVersions,
-      inputDigest: digest(cognitionInput),
+      inputDigest: digest(modelInput),
       promptHash: digest(prompt),
       outputDigest: digest(result.output),
       provenance: structuredClone(result.provenance ?? null),
     }));
-    return normalizeHistoricalRealizationModelOutput(result.output);
+    return result.output;
   };
 
-  realization = await invokeRealization({ prompt: GENESIS_REPLACEMENT_PASS_A_PROMPT, kind: "initial" });
+  rawRealization = await invokeRealization({ prompt: GENESIS_REPLACEMENT_PASS_A_PROMPT, kind: "initial" });
   while (true) {
+    let realization = null;
     try {
+      if (pendingError !== null) {
+        const error = pendingError;
+        pendingError = null;
+        throw error;
+      }
+      realization = normalizeHistoricalRealizationModelOutput(rawRealization);
       const episode = materializeHistoricalEnvelopeEpisode({ modelOutput: realization, envelope, passAInput });
       return Object.freeze({
         episode,
@@ -146,16 +155,17 @@ export async function generateReplacementHistoricalEpisode({
         budgetState: Object.freeze({ generatedVersions, formRepairs, recordRetries }),
       });
     } catch (error) {
-      if (isFormRepairable(error)) {
+      if (isFormRepairable(error) && realization !== null) {
         budgetOrThrow({ generatedVersions, formRepairs, recordRetries, nextKind: "form_repair", cause: error, calls });
         const repairOrdinal = formRepairs + 1;
+        const repairInput = {
+          rejectedObservableAction: realization.observableAction,
+          failedGate: error.gate,
+          repairOrdinal,
+        };
         const result = await repairAdapter.invoke({
           systemPrompt: GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
-          input: {
-            rejectedObservableAction: realization.observableAction,
-            failedGate: error.gate,
-            repairOrdinal,
-          },
+          input: repairInput,
           responseSchema: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
           clientRequestId: `${clientRequestId}:form-repair-${repairOrdinal}`,
         });
@@ -164,26 +174,27 @@ export async function generateReplacementHistoricalEpisode({
         calls.push(Object.freeze({
           kind: `form-repair-${repairOrdinal}`,
           generatedVersion: generatedVersions,
-          inputDigest: digest({ rejectedObservableAction: realization.observableAction, failedGate: error.gate, repairOrdinal }),
+          inputDigest: digest(repairInput),
           promptHash: digest(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT),
           outputDigest: digest(result.output),
           provenance: structuredClone(result.provenance ?? null),
         }));
         if (result.output === null || typeof result.output !== "object" || Object.keys(result.output).length !== 1 || typeof result.output.observableAction !== "string") {
-          // A malformed repair consumes its generated version and immediately becomes a record retry.
-          error = new GenesisPassAValidationError("pass_a_output_schema", "replacement Pass-A form repair must return only observableAction");
+          pendingError = new GenesisPassAValidationError("pass_a_output_schema", "replacement Pass-A form repair must return only observableAction");
         } else {
-          realization = Object.freeze({ ...realization, observableAction: result.output.observableAction });
-          continue;
+          rawRealization = Object.freeze({ ...realization, observableAction: result.output.observableAction });
         }
+        continue;
       }
 
       budgetOrThrow({ generatedVersions, formRepairs, recordRetries, nextKind: "record_retry", cause: error, calls });
       const recordRetryOrdinal = recordRetries + 1;
       recordRetries += 1;
-      realization = await invokeRealization({
+      const gate = failureGate(error);
+      rawRealization = await invokeRealization({
         prompt: GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
-        kind: `record-retry-${recordRetryOrdinal}:${failureGate(error)}`,
+        kind: `record-retry-${recordRetryOrdinal}`,
+        failedGate: gate,
       });
     }
   }
