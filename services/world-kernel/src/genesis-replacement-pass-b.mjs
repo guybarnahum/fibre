@@ -28,7 +28,11 @@ export const GENESIS_REPLACEMENT_PASS_B_GENOME_COPY_RETRY_PROMPT = `${GENESIS_RE
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 
-export function assertReplacementPassBSchedule({ horizons, formationModes, historyLength = 14 } = {}) {
+export function assertReplacementPassBSchedule({
+  horizons = GENESIS_REPLACEMENT_PASS_B_HORIZONS,
+  formationModes = GENESIS_REPLACEMENT_PASS_B_FORMATION_MODES,
+  historyLength = 14,
+} = {}) {
   if (canonicalJson(horizons) !== canonicalJson(GENESIS_REPLACEMENT_PASS_B_HORIZONS)) {
     throw new TypeError("replacement Pass-B history horizons drift");
   }
