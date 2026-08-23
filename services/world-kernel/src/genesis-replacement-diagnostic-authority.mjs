@@ -4,7 +4,7 @@ export const REPLACEMENT_V2_D3_PRIMARY_ORDINALS = Object.freeze([3, 6]);
 export const REPLACEMENT_V2_D3_PRIMARY_HORIZONS = Object.freeze([8, 14]);
 export const REPLACEMENT_V2_D3_EACH_ORDINAL_MINIMUM_CORRECT_CORE_EDGES = 4;
 export const REPLACEMENT_V2_D3_AT_LEAST_ONE_ORDINAL_CORRECT_CORE_EDGES = 5;
-export const REPLACEMENT_V2_D3_THRESHOLD_STATEMENT = "Both treated ordinals must score at least 4/5 measured core edges correct, and at least one treated ordinal must score 5/5 measured core edges correct.";
+export const REPLACEMENT_V2_D3_THRESHOLD_STATEMENT = "Both treated primary ordinals must be at least 4/5 correct on the five measured core edges, and at least one treated primary ordinal must be 5/5.";
 
 function fail(message) {
   throw new Error(message);
@@ -41,7 +41,7 @@ export function assertReplacementV2DiagnosticAuthority(reconciliation) {
   if (requirement.atLeastOneOrdinalCorrectCoreEdges !== REPLACEMENT_V2_D3_AT_LEAST_ONE_ORDINAL_CORRECT_CORE_EDGES) {
     fail("replacement-v2 D3 one-ordinal perfect threshold drift");
   }
-  if (d3.statement !== REPLACEMENT_V2_D3_THRESHOLD_STATEMENT) {
+  if (requirement.statement !== REPLACEMENT_V2_D3_THRESHOLD_STATEMENT) {
     fail("replacement-v2 D3 threshold statement drift");
   }
   const authority = Object.freeze({
