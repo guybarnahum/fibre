@@ -3,14 +3,19 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  REPLACEMENT_CORE_PATH,
   REPLACEMENT_EXECUTION_BINDING_PATH,
   verifyReplacementFinalCohortPreflight,
+  verifyReplacementInheritedAuthorityBinding,
 } from "./genesis-replacement-final-cohort.mjs";
 
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
 
-test("replacement final-cohort packet is complete but remains blocked before Gate-G(2) CLEAR", () => {
+test("replacement final-cohort packet is complete, authority-bound and blocked before Gate-G(2) CLEAR", () => {
+  const authority = verifyReplacementInheritedAuthorityBinding();
   const result = verifyReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false });
+  assert.equal(authority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
+  assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
   assert.equal(result.status, "CLEAR_PACKET_GATE_G2_HOLD");
   assert.equal(result.executionAuthorized, false);
   assert.equal(result.gateStatus, "MISSING_GATE_G2_CLEAR_WITNESS");
@@ -30,9 +35,10 @@ test("replacement final-cohort packet is complete but remains blocked before Gat
   assert.equal(result.durability.hostCrashFsyncDurabilityClaimed, false);
 });
 
-test("replacement execution binding hard-pins the runner, output and G4-v3 selection", () => {
+test("replacement execution binding hard-pins the authorized runner, output and G4-v3 selection", () => {
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
   assert.equal(binding.runner.path, "tools/genesis/genesis-replacement-final-cohort.mjs");
+  assert.equal(REPLACEMENT_CORE_PATH, "tools/genesis/genesis-replacement-final-cohort-core.mjs");
   assert.equal(binding.runner.bindingPathHardcoded, true);
   assert.equal(binding.runner.bindingEnvOverrideAllowed, false);
   assert.equal(binding.runner.providerOrModelCliOverrideAllowed, false);
@@ -43,10 +49,19 @@ test("replacement execution binding hard-pins the runner, output and G4-v3 selec
   assert.equal(binding.oneShot.outputRoot, "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1");
 });
 
-test("replacement runner source explicitly passes G4-v3 and has no binding env override", () => {
-  const source = readFileSync(new URL("./genesis-replacement-final-cohort.mjs", import.meta.url), "utf8");
-  assert.match(source, /generationPolicy:\s*GENESIS_PASS_A_RELIABILITY_POLICY_V3/);
-  assert.match(source, /REPLACEMENT_EXECUTION_BINDING_PATH = "artifacts\/validation\/m2-pr39\/replacement-v1\/protocol\/replacement-execution-binding-v1\.json"/);
-  assert.doesNotMatch(source, /FIBRE_H_EXECUTION_BINDING_PATH/);
-  assert.doesNotMatch(source, /process\.env/);
+test("authorized replacement entrypoint binds inherited authority while byte-preserved core passes G4-v3", () => {
+  const entrypoint = readFileSync(new URL("./genesis-replacement-final-cohort.mjs", import.meta.url), "utf8");
+  const core = readFileSync(new URL("./genesis-replacement-final-cohort-core.mjs", import.meta.url), "utf8");
+  assert.match(entrypoint, /verifyReplacementInheritedAuthorityBinding\(\)/);
+  assert.match(entrypoint, /verifyG4CognitionFreeze/);
+  assert.match(entrypoint, /verifyG34ReviewAmendments/);
+  assert.match(entrypoint, /verifyG4V3ReliabilityImplementation/);
+  assert.match(entrypoint, /verifyG5DiagnosticsFreeze/);
+  assert.match(entrypoint, /verifyG6VerdictFreeze/);
+  assert.match(entrypoint, /"tools\/genesis"/);
+  assert.match(entrypoint, /"artifacts\/validation\/m2-pr39\/g\/protocol"/);
+  assert.doesNotMatch(entrypoint, /FIBRE_H_EXECUTION_BINDING_PATH/);
+  assert.doesNotMatch(entrypoint, /process\.env/);
+  assert.match(core, /generationPolicy:\s*GENESIS_PASS_A_RELIABILITY_POLICY_V3/);
+  assert.match(core, /REPLACEMENT_EXECUTION_BINDING_PATH = "artifacts\/validation\/m2-pr39\/replacement-v1\/protocol\/replacement-execution-binding-v1\.json"/);
 });
