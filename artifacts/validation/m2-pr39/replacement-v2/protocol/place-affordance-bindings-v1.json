@@ -26,9 +26,9 @@
       "places": [
         {"placeRef":"place_rg1_02_home","placeKind":"home","ordinaryCounterpartRoles":["caregiver","cousin","peer","neighbor"]},
         {"placeRef":"place_rg1_02_school","placeKind":"school","ordinaryCounterpartRoles":["peer","teacher","coach","mentor"]},
-        {"placeRef":"place_rg1_02_transit","placeKind":"transit","ordinaryCounterpartRoles":["peer","neighbor","caregiver","cousin"]},
+        {"placeRef":"place_rg1_02_transit","placeKind":"transit","ordinaryCounterpartRoles":["peer","neighbor","caregiver","cousin","transit_worker"]},
         {"placeRef":"place_rg1_02_library","placeKind":"library_or_learning","ordinaryCounterpartRoles":["peer","librarian","teacher","mentor","caregiver"]},
-        {"placeRef":"place_rg1_02_market","placeKind":"market_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","shopkeeper","caregiver","cousin"]}
+        {"placeRef":"place_rg1_02_market","placeKind":"market_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","vendor","caregiver","cousin"]}
       ]
     },
     {
@@ -37,17 +37,17 @@
         {"placeRef":"place_rg1_03_home","placeKind":"home","ordinaryCounterpartRoles":["caregiver","sibling","relative","peer","neighbor"]},
         {"placeRef":"place_rg1_03_school","placeKind":"school","ordinaryCounterpartRoles":["peer","teacher","coach","mentor"]},
         {"placeRef":"place_rg1_03_transit","placeKind":"transit","ordinaryCounterpartRoles":["peer","neighbor","caregiver","sibling","relative"]},
-        {"placeRef":"place_rg1_03_market","placeKind":"market_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","shopkeeper","caregiver","sibling","relative"]},
-        {"placeRef":"place_rg1_03_learning","placeKind":"library_or_learning","ordinaryCounterpartRoles":["peer","librarian","teacher","mentor","caregiver"]}
+        {"placeRef":"place_rg1_03_market","placeKind":"market_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","vendor","caregiver","sibling","relative"]},
+        {"placeRef":"place_rg1_03_learning","placeKind":"library_or_learning","ordinaryCounterpartRoles":["peer","teacher","mentor","coach","caregiver"]}
       ]
     },
     {
       "worldSpecId": "world_pr39_rg1_04_fes",
       "places": [
         {"placeRef":"place_rg1_04_home","placeKind":"home","ordinaryCounterpartRoles":["caregiver","grandparent","cousin","peer","neighbor"]},
-        {"placeRef":"place_rg1_04_school","placeKind":"school","ordinaryCounterpartRoles":["peer","teacher","coach","mentor"]},
-        {"placeRef":"place_rg1_04_medina","placeKind":"market_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","shopkeeper","caregiver","grandparent","cousin"]},
-        {"placeRef":"place_rg1_04_learning","placeKind":"library_or_learning","ordinaryCounterpartRoles":["peer","librarian","teacher","mentor","caregiver"]},
+        {"placeRef":"place_rg1_04_school","placeKind":"school","ordinaryCounterpartRoles":["peer","teacher","mentor"]},
+        {"placeRef":"place_rg1_04_medina","placeKind":"market_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","vendor","craft_worker","caregiver","grandparent","cousin"]},
+        {"placeRef":"place_rg1_04_learning","placeKind":"library_or_learning","ordinaryCounterpartRoles":["peer","trainer","teacher","mentor","caregiver"]},
         {"placeRef":"place_rg1_04_station","placeKind":"transit","ordinaryCounterpartRoles":["peer","neighbor","caregiver","grandparent","cousin"]}
       ]
     },
@@ -56,9 +56,9 @@
       "places": [
         {"placeRef":"place_rg1_05_home","placeKind":"home","ordinaryCounterpartRoles":["caregiver","sibling","peer","neighbor"]},
         {"placeRef":"place_rg1_05_school","placeKind":"school","ordinaryCounterpartRoles":["peer","teacher","coach","mentor"]},
-        {"placeRef":"place_rg1_05_bus","placeKind":"transit","ordinaryCounterpartRoles":["peer","neighbor","caregiver","sibling"]},
+        {"placeRef":"place_rg1_05_bus","placeKind":"transit","ordinaryCounterpartRoles":["peer","neighbor","caregiver","sibling","bus_driver"]},
         {"placeRef":"place_rg1_05_library","placeKind":"library_or_learning","ordinaryCounterpartRoles":["peer","librarian","teacher","mentor","caregiver"]},
-        {"placeRef":"place_rg1_05_waterfront","placeKind":"public_civic_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","shopkeeper","teacher","mentor","caregiver","sibling"]}
+        {"placeRef":"place_rg1_05_waterfront","placeKind":"public_civic_or_commerce","ordinaryCounterpartRoles":["peer","neighbor","museum_worker","teacher","mentor","caregiver","sibling"]}
       ]
     }
   ],
