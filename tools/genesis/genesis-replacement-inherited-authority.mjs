@@ -14,7 +14,7 @@ import { verifyG6VerdictFreeze } from "./genesis-g6-verdict-freeze.mjs";
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const REPLACEMENT_EXECUTION_BINDING_PATH = "artifacts/validation/m2-pr39/replacement-v1/protocol/replacement-execution-binding-v1.json";
 export const REPLACEMENT_CORE_PATH = "tools/genesis/genesis-replacement-final-cohort-core.mjs";
-const EXPECTED_REPLACEMENT_CORE_BLOB_SHA = "PENDING_CORE_REPIN";
+const EXPECTED_REPLACEMENT_CORE_BLOB_SHA = "a8acd1b1dd47ef427397056cee2958cea7ae0b7c";
 const G4_RELIABILITY_WITNESS_PATH = "artifacts/validation/m2-pr39/g/protocol/g4-v3-reliability-implementation-witness-v1.json";
 const EXPECTED_H_PASS_B_HELPER_BLOB_SHA = "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1";
 const REQUIRED_PAIR34_BLOCKING_DISCLOSURES = Object.freeze([
