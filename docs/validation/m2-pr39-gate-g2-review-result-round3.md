@@ -35,103 +35,111 @@ The reviewer independently verified that the commits after that candidate were d
 
 ### C1 — executable inherited-authority binding: CLOSED
 
-The reviewer verified that the authorized `genesis-replacement-final-cohort.mjs --preflight` makes all twelve inherited authorities load-bearing before any provider call, including:
+The reviewer verified that the authorized `genesis-replacement-final-cohort.mjs --preflight` makes all twelve inherited authorities load-bearing before any provider call, including G3 production/analysis, G4-v1/v2/v3, G5/G6, consumed G4 runtime/history fields, the inherited Pass-B helper blob, exact pair-3-4 retirement semantics, residual `uncertainty[*]` scan obligation, generation-core path/blob and post-CLEAR drift boundary.
 
-- G3 production and analysis freezes;
-- G4-v1 base freeze;
-- G4-v2 entry amendment;
-- G4-v3 amendment and live prompt hashes;
-- G5 diagnostics freeze;
-- G6 verdict freeze;
-- actual G4 provider/model/sampling/history fields consumed by generation;
-- inherited Pass-B input helper source blob;
-- exact pair-3-4 carve-out retirement strings;
-- residual `uncertainty[*]` post-generation scan obligation;
-- generation-core path/blob;
-- post-CLEAR drift boundary.
-
-The reviewer ran an 18-case hostile mutation battery against the authorized preflight. All 18 mutations refused nonzero before any provider call, including mutations to G3, G4, G4-v3, G5, G6, pinned helper/core blobs, pair-3-4 retirement text and the residual uncertainty-scan obligation.
+An 18-case hostile mutation battery refused all 18 mutations nonzero before provider calls, including under a fabricated CLEAR witness.
 
 ### Gate witness semantics: CLOSED
 
-The reviewer verified that future `reviewedHead` handling is strict and satisfiable:
-
-- current HEAD is rejected as a vacuous baseline;
-- bogus commit is rejected;
-- non-ancestor commit is rejected;
-- a real strict ancestor with docs-only drift can authorize once a proper CLEAR witness is committed as a descendant.
+Future `reviewedHead` handling is strict and satisfiable: current HEAD, bogus commits and non-ancestors are rejected; a real strict ancestor with docs-only drift can authorize after a proper CLEAR witness is committed as a descendant.
 
 ### Direct core CLI: CLOSED
 
-Direct execution of `genesis-replacement-final-cohort-core.mjs` with no args, `--preflight` or `--help` refuses with exit 2. The core is import-only.
+Direct execution of `genesis-replacement-final-cohort-core.mjs` refuses with exit 2. The core is import-only.
 
 ### Scientific invariants: unchanged
 
-The reviewer again verified no change to replacement Worlds, genomes, synthetic parents, World↔genome assignment, G2 results, G3 schedule, provider/model, prompts/schemas or five-edge D3 thresholds. The five replacement Threads remained pre-life/unborn and the output root remained absent.
+No replacement World, genome, synthetic parent, World↔genome assignment, G2 result, G3 schedule, provider/model, prompt/schema or five-edge D3 threshold changed. The five replacement Threads remained pre-life/unborn and the output root remained absent.
 
 ## Blocking finding C2 — imported core generation bypass
 
-At the reviewed head, the core still exported:
+At the reviewed head, the core still exported `verifyReplacementFinalCohortPreflight` and `runReplacementFinalCohort`, but its local preflight did not invoke `verifyReplacementInheritedAuthorityBinding()`.
 
-```text
-verifyReplacementFinalCohortPreflight
-runReplacementFinalCohort
-```
+The reviewer demonstrated the bypass without provider calls: with a fabricated CLEAR witness and mutated G4-v1 model ID, the wrapper refused while a scratch importer calling the core preflight returned authorization under the mutated model.
 
-The core-local preflight checked the Gate-G(2) witness and replacement packet but did **not** invoke `verifyReplacementInheritedAuthorityBinding()`.
-
-The reviewer demonstrated the bypass without making a provider call: with a fabricated CLEAR witness and a mutated G4-v1 model ID, the operator wrapper correctly refused with `G4-v1 frozen protocol digest drift`, while a scratch importer calling the core preflight returned:
-
-```text
-executionAuthorized: true
-runtime.modelId: gpt-4o-mini-2024-07-18
-inheritedAuthority checked: false
-```
-
-That meant a future importer could call the core generation function under drift even though no existing repository module did so.
-
-This is an **execution-reachability enforcement gap**, not scientific contamination.
+This was an **execution-reachability enforcement gap**, not scientific contamination.
 
 ## Required C2 correction
 
-The review prescribed the smallest non-adaptive fix:
+The prescribed minimal fix was:
 
-1. Extract `verifyReplacementInheritedAuthorityBinding` into a module with no dependency on the wrapper or core.
-2. Invoke that shared verifier from the core's own exported preflight/run path as well as the operator wrapper.
-3. Re-pin the resulting core blob.
-4. Re-run zero-call closure/preflight, full tests and the hostile mutation/import battery.
+1. extract `verifyReplacementInheritedAuthorityBinding` into a dependency with no wrapper/core dependency;
+2. invoke that shared verifier from the core's own exported preflight/run path as well as the operator wrapper;
+3. re-pin the resulting core blob;
+4. re-run zero-call closure/preflight, full tests and the hostile import/mutation battery.
 
-No World, genome, assignment, treatment schedule, threshold, provider/model, prompt/schema, generated life or observed outcome may change.
+No scientific or model-visible input may change.
 
-## Correction implemented after the HOLD — awaiting local verification
+## C2 correction implemented and locally verified
 
-The C2 correction has been implemented without changing scientific/model-visible input:
+The correction is now implemented as:
 
 ```text
 tools/genesis/genesis-replacement-inherited-authority.mjs
-  owns the single shared inherited-authority verifier
+  owns the single inherited-authority verifier
 
 tools/genesis/genesis-replacement-final-cohort.mjs
   operator wrapper calls the shared verifier
 
 tools/genesis/genesis-replacement-final-cohort-core.mjs
-  exported core preflight now calls the same shared verifier before packet/gate authorization
+  exported core preflight calls the same shared verifier before packet/gate authorization
 ```
 
-The core changed by only three added lines relative to the reviewed head: one import, one verifier call at preflight entry, and the resulting `inheritedAuthority` witness in the returned preflight object. Generation logic and model-visible inputs are otherwise unchanged.
+The core changed by only three added lines relative to the round-3 reviewed head: one import, one authority-verifier call at preflight entry, and the resulting `inheritedAuthority` witness in the returned preflight object. Generation logic and model-visible inputs are otherwise unchanged.
 
-Current re-pins:
+Current pins:
 
 ```text
 wrapper blob: 5b67674e36b43766f416e0a1aab9a0b8e41dbc36
 core blob:    a8acd1b1dd47ef427397056cee2958cea7ae0b7c
 ```
 
-The shared authority module now pins both the wrapper and core blobs, taking the round-3 nonblocking wrapper-pin hardening as well.
+The shared authority module pins both wrapper and core blobs. Closure tooling reports C2 separately, and the test suite directly imports the core preflight and requires the same inherited-authority result.
 
-Closure tooling now reports C2 separately and tests directly import the core preflight to require the same inherited-authority result.
+Exact locally verified C2 candidate:
 
-This correction is **not yet maintainer-verified locally**. Gate-G(2) therefore remains HOLD and no round-4 review request should be created until the exact correction head passes zero-call checks, full tests and repository validation.
+```text
+a8815064d5c8ac292d4cce41d41f94042c22b653
+```
+
+Maintainer verification at that candidate:
+
+```text
+node tools/genesis/genesis-replacement-final-cohort-core.mjs --preflight
+  refused as import-only
+  exit 2
+
+npm run genesis:replacement-gate-g2-closure
+  CLEAR B1-B5+C1+C2 — ZERO CALL
+  C1 inherited authority bound: yes
+  C2 core import path invokes same inherited-authority gate: yes
+  wrapper blob 5b67674e36b43766f416e0a1aab9a0b8e41dbc36
+  core blob a8acd1b1dd47ef427397056cee2958cea7ae0b7c
+  final-life cognition NOT AUTHORIZED
+
+npm run genesis:replacement-preflight
+  CLEAR_PACKET_GATE_G2_HOLD
+  execution binding digest sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17
+  inherited authority CLEAR_INHERITED_AUTHORITY_BOUND — ZERO CALL
+  Gate-G(2) MISSING_GATE_G2_CLEAR_WITNESS
+  output root absent
+
+npm test
+  705/705 passed
+
+npm run validate
+  repository validation passed
+  world seed validation passed
+
+git status --short
+  ?? artifacts/validation/m2-pr39/h/recovery-v1/
+```
+
+### Note on the failed ad-hoc `node -e` import probe
+
+An additional maintainer smoke command using `node --input-type=module -e` failed before reaching the replacement core because the inherited `genesis-g3-treatment-freeze.mjs` CLI guard evaluates `pathToFileURL(process.argv[1])` and `process.argv[1]` is undefined under `node -e`.
+
+This is a harness incompatibility, not evidence against C2. The repository test suite directly imports `genesis-replacement-final-cohort-core.mjs` from a normal module and calls its exported preflight; that test passed in the 705/705 run. Round 4 must use a real scratch `.mjs` importer, matching the round-3 attack shape, rather than `node -e`. Do not modify the inherited G3 verifier merely to accommodate this ad-hoc harness.
 
 ## Nonblocking findings retained
 
@@ -156,4 +164,4 @@ replacement assignment rerandomization: forbidden
 final-life cognition authorized: false
 ```
 
-After local green, request a short fourth blocking Gate-G(2) review focused only on the imported-core path and shared authority module. A future CLEAR would authorize exactly one replacement final-life attempt and nothing stronger.
+The next action is a **fourth, narrow blocking Gate-G(2) review** against exact candidate `a8815064d5c8ac292d4cce41d41f94042c22b653`. The reviewer should reproduce the round-3 import bypass using a real scratch module, a fabricated CLEAR witness and a mutated inherited authority, and verify that both wrapper and imported core now refuse before any provider call.
