@@ -1,7 +1,6 @@
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 
 export const GENESIS_RICH_COUNTERPART_POLICY_VERSION = "genesis-rich-counterpart-policy-v2";
-export const GENESIS_RICH_COUNTERPART_POLICY_HISTORICAL_VERSION = "genesis-rich-counterpart-policy-v1";
 
 export const GENESIS_RICH_COUNTERPART_MODES = Object.freeze([
   "present_required",
