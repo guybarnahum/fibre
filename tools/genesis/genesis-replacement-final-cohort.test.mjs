@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   REPLACEMENT_CORE_PATH,
@@ -10,13 +12,14 @@ import {
 } from "./genesis-replacement-final-cohort.mjs";
 
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
+const IMPORT_ONLY_CORE_BLOB = "d64436483661339d6a7b1b353d78cdab7ce5e423";
 
 test("replacement final-cohort packet is complete, authority-bound and blocked before Gate-G(2) CLEAR", () => {
   const authority = verifyReplacementInheritedAuthorityBinding();
   const result = verifyReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false });
   assert.equal(authority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
   assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
-  assert.equal(result.inheritedAuthority.coreBlobSha, "81d89fb17eca549106bd51ea0aba2d8329bacb80");
+  assert.equal(result.inheritedAuthority.coreBlobSha, IMPORT_ONLY_CORE_BLOB);
   assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyPostGenerationScanRequired, true);
   assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyConfirmedLeakDisposition, "REDESIGN_AFFECTED_INFERENCE_NO_REGENERATION");
   assert.equal(result.status, "CLEAR_PACKET_GATE_G2_HOLD");
@@ -38,12 +41,12 @@ test("replacement final-cohort packet is complete, authority-bound and blocked b
   assert.equal(result.durability.hostCrashFsyncDurabilityClaimed, false);
 });
 
-test("replacement execution binding hard-pins the authorized runner, preserved core and G4-v3 selection", () => {
+test("replacement execution binding hard-pins the authorized runner, import-only core and G4-v3 selection", () => {
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
   assert.equal(binding.runner.path, "tools/genesis/genesis-replacement-final-cohort.mjs");
   assert.equal(REPLACEMENT_CORE_PATH, "tools/genesis/genesis-replacement-final-cohort-core.mjs");
   assert.equal(binding.runner.corePath, REPLACEMENT_CORE_PATH);
-  assert.equal(binding.runner.coreGitBlobSha, "81d89fb17eca549106bd51ea0aba2d8329bacb80");
+  assert.equal(binding.runner.coreGitBlobSha, IMPORT_ONLY_CORE_BLOB);
   assert.equal(binding.runner.bindingPathHardcoded, true);
   assert.equal(binding.runner.bindingEnvOverrideAllowed, false);
   assert.equal(binding.runner.providerOrModelCliOverrideAllowed, false);
@@ -58,7 +61,7 @@ test("replacement execution binding hard-pins the authorized runner, preserved c
   assert.equal(typeof binding.authorityBoundary.residualGateG2DisclosurePath, "string");
 });
 
-test("authorized replacement entrypoint binds inherited authority while byte-preserved core passes G4-v3", () => {
+test("authorized replacement entrypoint binds inherited authority while import-only core retains G4-v3 generation logic", () => {
   const entrypoint = readFileSync(new URL("./genesis-replacement-final-cohort.mjs", import.meta.url), "utf8");
   const core = readFileSync(new URL("./genesis-replacement-final-cohort-core.mjs", import.meta.url), "utf8");
   assert.match(entrypoint, /verifyReplacementInheritedAuthorityBinding\(\)/);
@@ -74,4 +77,13 @@ test("authorized replacement entrypoint binds inherited authority while byte-pre
   assert.doesNotMatch(entrypoint, /process\.env/);
   assert.match(core, /generationPolicy:\s*GENESIS_PASS_A_RELIABILITY_POLICY_V3/);
   assert.match(core, /REPLACEMENT_EXECUTION_BINDING_PATH = "artifacts\/validation\/m2-pr39\/replacement-v1\/protocol\/replacement-execution-binding-v1\.json"/);
+  assert.match(core, /is import-only; use tools\/genesis\/genesis-replacement-final-cohort\.mjs/);
+});
+
+test("replacement generation core cannot be executed directly", () => {
+  const corePath = fileURLToPath(new URL("./genesis-replacement-final-cohort-core.mjs", import.meta.url));
+  const result = spawnSync(process.execPath, [corePath, "--preflight"], { encoding: "utf8" });
+  assert.equal(result.status, 2);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /is import-only/);
 });
