@@ -200,18 +200,21 @@ test("Genesis birth publishes participant/place continuity through canonical sit
     assert.equal(database.prepare(
       "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name='genesis_life_continuity'",
     ).get(), undefined);
+    const seedEventId = database.prepare(
+      "SELECT event_id FROM thread_events WHERE thread_id=? AND event_type='THREAD_SEEDED'",
+    ).get(birth.thread.threadId).event_id;
 
     const relations = parseRows(database, "life_relation_records");
     const caregiver = relations.find((record) => record.relatedParty.partyId === "person_situated_caregiver");
     assert.deepEqual(caregiver.factualRoleRefs, ["caregiver"]);
     assert.deepEqual(caregiver.relationshipFacts, ["Lives in the subject household and handles ordinary caregiver responsibilities."]);
-    assert.deepEqual(caregiver.sourceReferences, [birth.thread.provenance.lastEventId]);
+    assert.deepEqual(caregiver.sourceReferences, [seedEventId]);
 
     const sibling = relations.find((record) => record.relatedParty.partyId === "person_situated_sibling");
     assert.equal(sibling.relationKind, "sibling");
     assert.deepEqual(sibling.factualRoleRefs, ["sibling"]);
     assert.deepEqual(sibling.relationshipFacts, ["Lives in the subject household and is older than the subject."]);
-    assert.deepEqual(sibling.sourceReferences, [birth.thread.provenance.lastEventId]);
+    assert.deepEqual(sibling.sourceReferences, [seedEventId]);
 
     const peer = relations.find((record) => record.relatedParty.partyId === "person_situated_peer");
     assert.equal(peer.relationKind, "social_contact");
