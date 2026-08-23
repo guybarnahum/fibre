@@ -18,6 +18,8 @@
     "g6ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json",
     "replacementG56ReconciliationPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-fresh-g2-reconciliation-v1.json",
     "replacementG56ClosureAmendmentPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-closure-amendment-v2.json",
+    "passBGenomeCopyReviewNotePath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-pass-b-genome-copy-closure-amendment-v1.json",
+    "residualGateG2DisclosurePath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-residual-gate-g2-disclosures-v1.json",
     "gateHResetAuthorityPath": "docs/validation/m2-pr39-gate-h-review-result.md",
     "firstGateG2HoldResultPath": "docs/validation/m2-pr39-gate-g2-review-result.md"
   },
