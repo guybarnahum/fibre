@@ -1,8 +1,8 @@
 {
   "disclosureVersion": "pr39-replacement-g4-residual-gate-g2-disclosures-v1",
   "replacementAttemptVersion": "pr39-replacement-cohort-v1",
-  "status": "frozen_pre_second_gate_g2_pre_final_life",
-  "purpose": "Record nonblocking limitations from the first Gate-G(2) review that are important for interpretation but are not being changed because doing so would alter frozen scientific or historical authority rather than merely close a blocking execution ambiguity.",
+  "status": "frozen_pre_third_gate_g2_pre_final_life",
+  "purpose": "Record nonblocking limitations from Gate-G(2) review that are important for interpretation but are not being changed because doing so would alter frozen scientific or historical authority rather than merely close a blocking execution ambiguity.",
   "passASemanticBlindness": {
     "mechanicalProtection": "strict structural input allowlists and forbidden-key recursion",
     "semanticParaphraseDetection": false,
@@ -21,9 +21,18 @@
     "rememberedContentScannedByFrozenG4V2Gate": true,
     "uncertaintyItemsScannedByFrozenG4V2Gate": false,
     "changeMadeForReplacement": false,
-    "whyNotChanged": "The first closure implementation changed the shared G4-v2 Pass-B admission source and retry prompt, which violated the exact frozen source/hash authority used by historical H-v2 verification. That optional N2 hardening was retracted. The replacement therefore inherits the frozen rememberedContent-only four-token verbatim-copy gate for this experiment; uncertainty text remains a disclosed nonblocking leakage surface for later protocol work.",
-    "futureHardeningRequired": true,
-    "confirmedLeakWouldInvalidateAffectedInference": true
+    "whyNotChanged": "The first closure implementation changed the shared G4-v2 Pass-B admission source and retry prompt, which violated the exact frozen source/hash authority used by historical H-v2 verification. That optional N2 hardening was retracted. The replacement therefore inherits the frozen rememberedContent-only four-token verbatim-copy gate for this experiment; uncertainty text remains a disclosed nonblocking leakage surface.",
+    "postGenerationPreDiagnosticScan": {
+      "required": true,
+      "timing": "after the one replacement generation attempt is frozen and before any G5/G6 replacement diagnostic inference",
+      "algorithmAuthority": "services/world-kernel/src/genesis-pass-b-admission.mjs#findVerbatimGenomeNgram",
+      "scope": "scan every uncertainty[*] string produced by every genome-exposed Pass-B call against that Thread's assigned frozen genome loci using the existing four-token normalization and matching rule",
+      "readOnly": true,
+      "mayRegenerateOrRepairLife": false,
+      "onConfirmedLeak": "REDESIGN_AFFECTED_INFERENCE_NO_REGENERATION",
+      "confirmedLeakWouldInvalidateAffectedInference": true
+    },
+    "futureGenerationTimeHardeningMayRequireNewProtocol": true
   },
   "durabilityScope": {
     "replacementUsesDurableAdapter": true,
