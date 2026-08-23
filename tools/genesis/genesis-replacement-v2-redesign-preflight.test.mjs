@@ -1,18 +1,32 @@
+// fibre-test-lifecycle: milestone
+// fibre-test-scope: pr39
+// fibre-test-purpose: replacement-v2-r1-hold-correction-binding
+// fibre-test-disposition: remove-or-consolidate-after-pr39
+
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { verifyReplacementV2RedesignPreflight } from "./genesis-replacement-v2-redesign-preflight.mjs";
 
-test("replacement-v2 R1 preflight builds five deterministic envelope plans without authorizing cognition", () => {
+test("replacement-v2 R1 corrected preflight binds five deterministic envelope plans without authorizing cognition", () => {
   const result = verifyReplacementV2RedesignPreflight();
-  assert.equal(result.status, "CLEAR_R1_SUBSTRATE_PRE_REVIEW_ZERO_CALL");
+  assert.equal(result.status, "CLEAR_R1_HOLD_CORRECTION_PRE_REVIEW_ZERO_CALL");
   assert.equal(result.plans.length, 5);
   assert.equal(result.attempt1RecoveryRetired, true);
   assert.equal(result.attempt1HistoryReusable, false);
   assert.equal(result.replacementV2OutputRootAbsent, true);
   assert.equal(result.providerCallsAuthorized, false);
   assert.equal(result.finalLifeCognitionAuthorized, false);
+  for (const digest of [
+    result.protocolDigest,
+    result.placeAffordanceDigest,
+    result.inheritedEventStructurePoolV2Digest,
+    result.eventStructurePoolV3Digest,
+    result.counterpartPolicyDigest,
+    result.realizationSchemaDigest,
+    result.diagnosticReconciliationDigest,
+  ]) assert.match(digest, /^sha256:[0-9a-f]{64}$/);
   for (const plan of result.plans) {
     assert.equal(plan.statistics.episodeCount, 14);
     assert.equal(plan.statistics.distinctPlaces >= 4, true);
@@ -27,12 +41,17 @@ test("replacement-v2 R1 preflight builds five deterministic envelope plans witho
   }
 });
 
-test("replacement-v2 R1 has no execution runner or provider-call authorization", () => {
-  const protocol = JSON.parse(readFileSync(new URL("../../artifacts/validation/m2-pr39/replacement-v2/protocol/redesign-v1.json", import.meta.url), "utf8"));
+test("replacement-v2 R1 corrected protocol has no execution authorization and binds D3 translation", () => {
+  const protocol = JSON.parse(readFileSync(new URL("../../artifacts/validation/m2-pr39/replacement-v2/protocol/redesign-v2.json", import.meta.url), "utf8"));
   assert.equal(protocol.authorization.providerCallsAuthorized, false);
   assert.equal(protocol.authorization.finalLifeCognitionAuthorized, false);
   assert.equal(protocol.authorization.replacementV2ExecutionAuthorized, false);
-  assert.equal(protocol.authorization.noGenerationCommandMayBeAddedUntilR1Green, true);
+  assert.equal(protocol.authorization.noGenerationCommandMayBeAddedUntilR1Clear, true);
   assert.equal(protocol.attempt1Standing.sameAttemptRecoveryRetired, true);
   assert.equal(protocol.attempt1Standing.generatedPassAHistoryMayBeReused, false);
+  assert.deepEqual(protocol.passB.formationModes, ["life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome"]);
+  assert.deepEqual(protocol.passB.historyHorizons, [4, 6, 8, 10, 12, 14]);
+  assert.deepEqual(protocol.diagnosticReconciliation.primaryOrdinals, [3, 6]);
+  assert.deepEqual(protocol.diagnosticReconciliation.primaryHorizons, [8, 14]);
+  assert.equal(protocol.diagnosticReconciliation.d3ThresholdChanged, false);
 });
