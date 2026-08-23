@@ -250,7 +250,7 @@ function assertBirthOriginWitnessesInTransaction(database, manifest, originFixtu
     );
     assertForkBoundaryAgainstCanonicalEvents({
       originFixture: fixture,
-      canonicalEvents: canonicalThreadEventsInTransaction(this.#database, fixture.fork.sourceThreadRef),
+      canonicalEvents: canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef),
       ErrorType: GenesisConflictError,
     });
     return fixture;
