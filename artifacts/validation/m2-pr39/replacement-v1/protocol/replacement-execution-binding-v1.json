@@ -1,0 +1,104 @@
+{
+  "contractVersion": "pr39-replacement-final-cohort-execution-binding-v1",
+  "replacementAttemptVersion": "pr39-replacement-cohort-v1",
+  "status": "frozen_pre_gate_g2_clear_pre_final_life",
+  "purpose": "Freeze the only replacement final-cohort execution surface before Gate-G(2) re-review. This binding does not authorize execution; it gives the gate a complete one-shot attempt to inspect.",
+  "authorityBoundary": {
+    "gateG2ClearWitnessPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/gate-g2-clear-v1.json",
+    "g2ProtocolPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json",
+    "g2ProtocolDigest": "sha256:7d8f7fbf481e7a4bd404c0757fbc7c40418cd142b9b8f2a3da294820692e2f91",
+    "g2ResultPath": "artifacts/validation/m2-pr39/replacement-v1/results/rg2-cohort-genome-specificity-ceiling-v1.json",
+    "g2DisclosureAmendmentPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-authoring-assignment-disclosure-amendment-v1.json",
+    "g3TreatmentInstancePath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg3-pass-b-treatment-instance-v1.json",
+    "g4CognitionExecutionBindingPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-cognition-execution-binding-v1.json",
+    "g4BaseProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v1.json",
+    "g4EntryAmendmentPath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v2.json",
+    "g4PassAReliabilityAmendmentPath": "artifacts/validation/m2-pr39/g/protocol/g4-pass-a-reliability-amendment-v3.json",
+    "g5ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g5-diagnostics-freeze-v1.json",
+    "g6ProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g6-verdict-freeze-v1.json",
+    "replacementG56ReconciliationPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-fresh-g2-reconciliation-v1.json",
+    "replacementG56ClosureAmendmentPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-closure-amendment-v2.json",
+    "gateHResetAuthorityPath": "docs/validation/m2-pr39-gate-h-review-result.md",
+    "firstGateG2HoldResultPath": "docs/validation/m2-pr39-gate-g2-review-result.md"
+  },
+  "runner": {
+    "path": "tools/genesis/genesis-replacement-final-cohort.mjs",
+    "bindingPathHardcoded": true,
+    "bindingEnvOverrideAllowed": false,
+    "providerOrModelCliOverrideAllowed": false,
+    "seedCliOverrideAllowed": false,
+    "outputPathCliOverrideAllowed": false,
+    "generationPolicyCliOverrideAllowed": false
+  },
+  "oneShot": {
+    "wholeCandidateAttemptCap": 1,
+    "qualityDrivenRegeneration": false,
+    "refuseExecutionIfOutputRootExists": true,
+    "refuseExecutionIfResultOrFailureExists": true,
+    "outputRoot": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1",
+    "databasePath": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1/world.sqlite",
+    "resultPath": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1/replacement-final-cohort-v1.json",
+    "failurePath": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1/replacement-final-cohort-failure-v1.json",
+    "modelEventsPath": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1/replacement-model-events-v1.json",
+    "birthCenterStateRoot": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1/birth-center-state"
+  },
+  "durability": {
+    "runtime": "fibre-birth-center-runtime-v1",
+    "replacementRunnerMustUseDurableAdapter": true,
+    "guaranteedScope": "process_restart_replay_of_committed_invocations",
+    "hostCrashFsyncDurabilityClaimed": false,
+    "note": "The current file journal has process-restart evidence but does not fsync the record file and containing directory. The replacement therefore claims process-restart replay, not power-loss durability."
+  },
+  "generationPolicy": {
+    "version": "pr39-g4-pass-a-reliability-amendment-v3",
+    "mustBePassedExplicitlyAtPassACallSite": true,
+    "maxFormRepairsPerRecord": 2,
+    "maxRecordRetriesPerRecord": 2,
+    "maxTotalGeneratedVersionsPerRecord": 5,
+    "legacySharedThreeVersionDefaultAllowed": false
+  },
+  "seedBinding": {
+    "eventStructureOfferSeedDomain": "pr39-replacement-g4-final-life-v1",
+    "modelClientRequestDomain": "pr39-replacement-final-life-v1",
+    "passBTreatmentInstanceSeed": "pr39-replacement-g3-pass-b-treatment-v1",
+    "threadSeedProjectionUniformAcrossFive": true,
+    "noH2SeedReuse": true
+  },
+  "threadSeedProjection": {
+    "threadStatus": "frozen",
+    "identity": {
+      "name": "Fibre Thread",
+      "originOrientation": "original",
+      "selfDescription": "I am a Fibre Thread."
+    },
+    "legacyGenome": {"textualTraits": {}, "runtimeBaselines": {}},
+    "currentState": {"needs": [], "feelings": [], "selfModel": "I am a Fibre Thread.", "unresolvedIntentions": []},
+    "accounts": {"fibreCredits": 0, "usdAvailable": 0, "modelTokensAvailable": 0},
+    "relationshipRefs": [],
+    "memoryRefs": [],
+    "createdBy": "fibre.genesis",
+    "uniformityRule": "All five seed projections are identical except threadId, provenance timestamps and derived seed-event ID. No World, genome, origin mode or generated-life content enters the compatibility seed."
+  },
+  "publication": {
+    "candidateOnlyUntilAllFiveMechanicallyGenerated": true,
+    "publishBirthOnlyAfterFiveGenerationBundlesComplete": true,
+    "atomicPerThreadWorldKernelPublication": true,
+    "qualityMayBlockPublication": false,
+    "mechanicalIntegrityMayBlockPublication": true,
+    "firstMechanicallyValidFiveThreadCohortMustFreeze": true
+  },
+  "failureSemantics": {
+    "passAChangedFactsRepairFailure": "HOLD",
+    "passAReliabilityBudgetExhaustion": "HOLD",
+    "passBGenomeCopyRetryExhaustion": "HOLD",
+    "providerFailureAfterExecutionStarts": "HOLD_NO_PROVIDER_SWAP",
+    "existingOutputRootResultOrFailure": "REFUSE_EXECUTION_NO_RERUN",
+    "failureArtifactWriteMustNotReplaceOriginalGenerationError": true
+  },
+  "authorization": {
+    "gateG2ClearWitnessCurrentlyExists": false,
+    "finalLifeCognitionAuthorized": false,
+    "thisBindingAuthorizesProviderCalls": false,
+    "firstAllowedExecutionAfter": "recorded Gate-G(2) CLEAR witness bound to the reviewed replacement packet and runner"
+  }
+}
