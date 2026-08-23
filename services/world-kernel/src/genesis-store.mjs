@@ -56,6 +56,7 @@ import {
   normalizeGenesisOriginIntegrityFixture,
 } from "./genesis-origin-source-integrity.mjs";
 import { bindBirthGenomeAndLineageInTransaction } from "./genesis-birth-genome-lineage.mjs";
+import { publishGenesisSituatedContinuityInTransaction } from "./genesis-birth-situated-continuity.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -249,7 +250,7 @@ function assertBirthOriginWitnessesInTransaction(database, manifest, originFixtu
     );
     assertForkBoundaryAgainstCanonicalEvents({
       originFixture: fixture,
-      canonicalEvents: canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef),
+      canonicalEvents: canonicalThreadEventsInTransaction(this.#database, fixture.fork.sourceThreadRef),
       ErrorType: GenesisConflictError,
     });
     return fixture;
@@ -507,12 +508,15 @@ export class GenesisStore {
       episodes: episodeCandidates = [],
       memories: memoryCandidates = [],
       lifeRelations: lifeRelationCandidates = [],
+      initialRoster: initialRosterCandidate = null,
+      lifeContinuity: lifeContinuityCandidate = null,
       originFixture: originFixtureCandidate = null,
     },
     {
       failAfterSeedForTest = false,
       failAfterFirstMemoryForTest = false,
       failAfterLineageForTest = false,
+      failAfterSituatedContinuityForTest = false,
     } = {},
   ) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot publish birth");
@@ -524,8 +528,15 @@ export class GenesisStore {
     const seedSnapshot = normalizeSeedSnapshot(threadCandidate);
     const normalizedEpisodes = normalizeBirthEpisodes(episodeCandidates, manifest);
     if (manifest.threadId !== seedSnapshot.threadId) throw new GenesisConflictError("manifest/thread identity mismatch");
+    const hasSituatedContinuity = initialRosterCandidate !== null || lifeContinuityCandidate !== null;
+    if (hasSituatedContinuity && (initialRosterCandidate === null || lifeContinuityCandidate === null)) {
+      throw new GenesisConflictError("Genesis situated continuity requires both initialRoster and lifeContinuity");
+    }
+    if (hasSituatedContinuity && normalizedEpisodes.length === 0) {
+      throw new GenesisConflictError("Genesis situated continuity requires admitted life episodes");
+    }
 
-    this.getWorldSpec(manifest.worldSpecRef);
+    const { record: worldSpecRecord } = this.getWorldSpec(manifest.worldSpecRef);
     assertCurrentPublicationValidators(manifest);
     if (this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(seedSnapshot.threadId) !== undefined) {
       throw new ThreadAlreadyExistsError(`Thread ${seedSnapshot.threadId} already exists`);
@@ -680,6 +691,22 @@ export class GenesisStore {
         );
       }
 
+      let situatedContinuity = null;
+      if (hasSituatedContinuity) {
+        situatedContinuity = publishGenesisSituatedContinuityInTransaction(this.#database, {
+          manifest,
+          worldSpec: worldSpecRecord,
+          initialRoster: initialRosterCandidate,
+          episodes: normalizedEpisodes.map(({ episode }) => episode),
+          lifeContinuity: lifeContinuityCandidate,
+          seedEventId,
+          ErrorType: GenesisConflictError,
+        });
+        if (failAfterSituatedContinuityForTest) {
+          throw new GenesisConflictError("simulated situated-continuity publication failure");
+        }
+      }
+
       bindBirthGenomeAndLineageInTransaction(this.#database, {
         manifest,
         lifeRelationCandidates,
@@ -717,6 +744,7 @@ export class GenesisStore {
         thread: structuredClone(publishedThread),
         manifest: structuredClone(manifest),
         manifestDigest,
+        situatedContinuity: situatedContinuity === null ? null : structuredClone(situatedContinuity),
       };
     } catch (error) {
       safeRollback(this.#database);
