@@ -42,10 +42,22 @@ export function createGenesisTables(database) {
       asserted_at TEXT NOT NULL
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS genesis_life_continuity (
+      thread_id TEXT PRIMARY KEY,
+      world_spec_id TEXT NOT NULL,
+      record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      recorded_at TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (world_spec_id) REFERENCES genesis_world_specs(world_spec_id)
+    ) STRICT;
+
     CREATE INDEX IF NOT EXISTS idx_genesis_attempts_genesis
       ON genesis_generation_attempts(genesis_id, candidate_attempt_number, recorded_at, attempt_id);
     CREATE INDEX IF NOT EXISTS idx_genesis_origin_authority_source
       ON genesis_origin_authorities(source_party_id, authority_kind, asserted_at, authority_ref);
+    CREATE INDEX IF NOT EXISTS idx_genesis_life_continuity_world
+      ON genesis_life_continuity(world_spec_id, thread_id);
 
     CREATE TRIGGER IF NOT EXISTS genesis_world_specs_no_update
       BEFORE UPDATE ON genesis_world_specs
@@ -71,5 +83,11 @@ export function createGenesisTables(database) {
     CREATE TRIGGER IF NOT EXISTS genesis_origin_authorities_no_delete
       BEFORE DELETE ON genesis_origin_authorities
       BEGIN SELECT RAISE(ABORT,'genesis_origin_authorities is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_life_continuity_no_update
+      BEFORE UPDATE ON genesis_life_continuity
+      BEGIN SELECT RAISE(ABORT,'genesis_life_continuity is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_life_continuity_no_delete
+      BEFORE DELETE ON genesis_life_continuity
+      BEGIN SELECT RAISE(ABORT,'genesis_life_continuity is immutable'); END;
   `);
 }
