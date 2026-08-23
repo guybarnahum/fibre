@@ -122,6 +122,29 @@ function chooseInstant(window, { timeZone, seed, weekdayCounts, daypartCounts })
   }
   fail(`could not choose bounded local civil time for ${window.windowId}`);
 }
+
+function normalizePlaceAffordances(worldSpec, candidates) {
+  if (!Array.isArray(candidates) || candidates.length !== worldSpec.places.length) fail(`place-affordance count drift for ${worldSpec.worldSpecId}`);
+  const placeIds = new Set(worldSpec.places.map((place) => place.placeId));
+  const affordedRoles = new Set(worldSpec.affordedRoles ?? []);
+  const seen = new Set();
+  return candidates.map((candidate) => {
+    if (!candidate || typeof candidate.placeRef !== "string" || !placeIds.has(candidate.placeRef)) fail(`place-affordance ${candidate?.placeRef ?? "unknown"} is not in ${worldSpec.worldSpecId}`);
+    if (seen.has(candidate.placeRef)) fail(`duplicate place-affordance ${candidate.placeRef}`);
+    seen.add(candidate.placeRef);
+    if (typeof candidate.placeKind !== "string" || candidate.placeKind.trim() === "") fail(`place-affordance ${candidate.placeRef} lacks placeKind`);
+    if (!Array.isArray(candidate.ordinaryCounterpartRoles)) fail(`place-affordance ${candidate.placeRef} roles must be an array`);
+    for (const role of candidate.ordinaryCounterpartRoles) {
+      if (!affordedRoles.has(role)) fail(`place-affordance ${candidate.placeRef} uses role ${role} not afforded by ${worldSpec.worldSpecId}`);
+    }
+    return Object.freeze({
+      placeRef: candidate.placeRef,
+      placeKind: candidate.placeKind,
+      ordinaryCounterpartRoles: Object.freeze([...new Set(candidate.ordinaryCounterpartRoles)]),
+    });
+  });
+}
+
 function structureCandidate(entry, { initialRoles, affordedRoles }) {
   const structure = entry.structure;
   const mode = richCounterpartMode(structure.structureId);
@@ -155,14 +178,34 @@ function chooseStructure(windowPlan, {
     externalCounterpartRequired: selected.externalOnly,
   };
 }
-function choosePlace(worldSpec, ordinal, {
-  seed, placeCounts, coverageOrdinals, previouslySelectedPlace,
+function bindCounterpart({ subjectId, counterpartRole, counterpartMode, initialRoster, generatedPersonByRole, seed }) {
+  if (counterpartRole === null) return null;
+  const existing = initialRoster.filter((participant) => (participant.factualRoles ?? []).includes(counterpartRole));
+  if (existing.length > 0) {
+    const participant = ranked(`${seed}:existing-counterpart`, existing, (item) => item.participantId)[0];
+    return Object.freeze({ participantId: participant.participantId, roleRef: counterpartRole, origin: "initial_roster", introducedHere: false });
+  }
+  if (counterpartMode === "known_required") fail(`known-required role ${counterpartRole} has no initial-roster participant`);
+  const already = generatedPersonByRole.get(counterpartRole);
+  if (already !== undefined) return Object.freeze({ ...already, introducedHere: false });
+  const participantId = `person_env_${hash({ subjectId, counterpartRole, version: GENESIS_HISTORICAL_ENVELOPE_VERSION }).slice(0, 32)}`;
+  const created = Object.freeze({ participantId, roleRef: counterpartRole, origin: "historical_envelope", introducedHere: true });
+  generatedPersonByRole.set(counterpartRole, Object.freeze({ ...created, introducedHere: false }));
+  return created;
+}
+function choosePlace(worldSpec, placeAffordances, {
+  seed, placeCounts, counterpartRole, previouslySelectedPlace,
 }) {
   const minimumDistinct = Math.min(GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumDistinctPlaces, worldSpec.places.length);
   const seen = new Set([...placeCounts.entries()].filter(([, value]) => value > 0).map(([key]) => key));
-  const needsCoverage = coverageOrdinals.has(ordinal) && seen.size < minimumDistinct;
-  let candidates = worldSpec.places.filter((place) => count(placeCounts, place.placeId) < GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerPlace);
-  if (needsCoverage) {
+  const byId = new Map(placeAffordances.map((item) => [item.placeRef, item]));
+  let candidates = worldSpec.places.filter((place) => {
+    if (count(placeCounts, place.placeId) >= GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerPlace) return false;
+    if (counterpartRole === null) return true;
+    return byId.get(place.placeId)?.ordinaryCounterpartRoles.includes(counterpartRole) === true;
+  });
+  if (candidates.length === 0) fail(`historical envelope has no place compatible with counterpart role ${counterpartRole ?? "none"}`);
+  if (seen.size < minimumDistinct) {
     const unseen = candidates.filter((place) => !seen.has(place.placeId));
     if (unseen.length > 0) candidates = unseen;
   }
@@ -170,10 +213,9 @@ function choosePlace(worldSpec, ordinal, {
     const nonRepeat = candidates.filter((place) => place.placeId !== previouslySelectedPlace);
     if (nonRepeat.length > 0) candidates = nonRepeat;
   }
-  if (candidates.length === 0) fail("historical envelope exhausted place repetition cap");
   const selected = ranked(`${seed}:place`, candidates, (place) => place.placeId)[0];
   increment(placeCounts, selected.placeId);
-  return selected;
+  return Object.freeze({ place: selected, affordance: byId.get(selected.placeId) });
 }
 
 export function buildHistoricalEnvelopePlan({
@@ -182,6 +224,7 @@ export function buildHistoricalEnvelopePlan({
   windows,
   offersByWindow,
   initialRoster,
+  placeAffordances,
   timeZone,
   seedDomain,
 }) {
@@ -190,6 +233,7 @@ export function buildHistoricalEnvelopePlan({
   if (!Array.isArray(windows) || windows.length < 10) fail("historical envelope requires at least ten windows");
   if (!(offersByWindow instanceof Map)) fail("historical envelope offersByWindow must be a Map");
   if (!Array.isArray(initialRoster) || initialRoster.length === 0) fail("historical envelope initialRoster is required");
+  const normalizedPlaceAffordances = normalizePlaceAffordances(worldSpec, placeAffordances);
   validateTimeZone(timeZone);
   if (typeof seedDomain !== "string" || seedDomain.trim() === "") fail("historical envelope seedDomain is required");
 
@@ -200,11 +244,12 @@ export function buildHistoricalEnvelopePlan({
   });
   const initialRoles = initialRoleSet(initialRoster);
   const affordedRoles = new Set(worldSpec.affordedRoles ?? []);
+  const placeRoleSet = new Set(normalizedPlaceAffordances.flatMap((item) => item.ordinaryCounterpartRoles));
   const externalCapable = plans.filter(({ offeredEntries }) => offeredEntries
     .map((entry) => structureCandidate(entry, { initialRoles, affordedRoles }))
-    .some((candidate) => candidate?.externalOnly === true));
+    .some((candidate) => candidate?.externalOnly === true && candidate.roles.some((role) => placeRoleSet.has(role))));
   if (externalCapable.length < GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalCounterpartOpportunities) {
-    fail(`only ${externalCapable.length} windows can force an external counterpart`);
+    fail(`only ${externalCapable.length} windows can force a place-compatible external counterpart`);
   }
   const externalOrdinals = new Set(ranked(`${seedDomain}:external-coverage`, externalCapable, (item) => item.window.ordinal)
     .slice(0, GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalCounterpartOpportunities)
@@ -214,27 +259,37 @@ export function buildHistoricalEnvelopePlan({
   const worldEmergentOrdinals = new Set(ranked(`${seedDomain}:world-emergent`, worldEmergentEligible, (item) => item.window.ordinal)
     .slice(0, GENESIS_HISTORICAL_ENVELOPE_POLICY.worldEmergentEpisodes)
     .map((item) => item.window.ordinal));
-  const minimumDistinct = Math.min(GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumDistinctPlaces, worldSpec.places.length);
-  const coverageOrdinals = new Set(ranked(`${seedDomain}:place-coverage`, plans, (item) => item.window.ordinal)
-    .slice(0, minimumDistinct)
-    .map((item) => item.window.ordinal));
 
   const placeCounts = new Map();
   const structureCounts = new Map();
   const weekdayCounts = new Map();
   const daypartCounts = new Map();
+  const generatedPersonByRole = new Map();
   let previousPlace = null;
   const envelopes = [];
   for (const plan of plans) {
     const seed = `${seedDomain}:thread:${subject.provisionalThreadId}:window:${plan.window.windowId}`;
-    const place = choosePlace(worldSpec, plan.window.ordinal, { seed, placeCounts, coverageOrdinals, previouslySelectedPlace: previousPlace });
-    previousPlace = place.placeId;
-    const time = chooseInstant(plan.window, { timeZone, seed, weekdayCounts, daypartCounts });
-    const occurredAt = new Date(time.instantMs).toISOString();
-    const local = time.local;
     const opportunity = worldEmergentOrdinals.has(plan.window.ordinal)
       ? { selectionKind: "world_emergent", structureRef: null, counterpartMode: null, counterpartRole: null, externalCounterpartRequired: false }
       : chooseStructure(plan, { seed, structureCounts, requireExternal: externalOrdinals.has(plan.window.ordinal), initialRoles, affordedRoles });
+    const counterpart = bindCounterpart({
+      subjectId: subject.provisionalThreadId,
+      counterpartRole: opportunity.counterpartRole,
+      counterpartMode: opportunity.counterpartMode,
+      initialRoster,
+      generatedPersonByRole,
+      seed,
+    });
+    const placeSelection = choosePlace(worldSpec, normalizedPlaceAffordances, {
+      seed,
+      placeCounts,
+      counterpartRole: counterpart?.roleRef ?? null,
+      previouslySelectedPlace: previousPlace,
+    });
+    previousPlace = placeSelection.place.placeId;
+    const time = chooseInstant(plan.window, { timeZone, seed, weekdayCounts, daypartCounts });
+    const occurredAt = new Date(time.instantMs).toISOString();
+    const local = time.local;
     envelopes.push(Object.freeze({
       envelopeVersion: GENESIS_HISTORICAL_ENVELOPE_VERSION,
       ordinal: plan.window.ordinal,
@@ -246,17 +301,19 @@ export function buildHistoricalEnvelopePlan({
       localTime: localTimeLabel(local),
       localWeekday: local.weekday,
       daypart: time.daypart.id,
-      placeRef: place.placeId,
+      placeRef: placeSelection.place.placeId,
+      placeKind: placeSelection.affordance.placeKind,
       selectionKind: opportunity.selectionKind,
       structureRef: opportunity.structureRef,
       counterpartMode: opportunity.counterpartMode,
-      counterpartRole: opportunity.counterpartRole,
+      counterpart: counterpart === null ? null : structuredClone(counterpart),
       externalCounterpartRequired: opportunity.externalCounterpartRequired,
     }));
   }
 
   const distinctPlaces = new Set(envelopes.map((item) => item.placeRef));
-  const externalRoles = new Set(envelopes.filter((item) => item.externalCounterpartRequired && item.counterpartRole !== null).map((item) => item.counterpartRole));
+  const generatedCounterparts = envelopes.filter((item) => item.counterpart?.origin === "historical_envelope");
+  const externalRoles = new Set(generatedCounterparts.map((item) => item.counterpart.roleRef));
   const statistics = Object.freeze({
     episodeCount: envelopes.length,
     distinctPlaces: distinctPlaces.size,
@@ -264,11 +321,13 @@ export function buildHistoricalEnvelopePlan({
     distinctStructures: new Set(envelopes.map((item) => item.structureRef).filter(Boolean)).size,
     maxStructureUse: structureCounts.size === 0 ? 0 : Math.max(...structureCounts.values()),
     worldEmergentCount: envelopes.filter((item) => item.selectionKind === "world_emergent").length,
-    externalCounterpartOpportunityCount: envelopes.filter((item) => item.externalCounterpartRequired).length,
+    externalCounterpartOpportunityCount: generatedCounterparts.length,
     externalRoleVariety: externalRoles.size,
+    generatedExternalPersonCount: new Set(generatedCounterparts.map((item) => item.counterpart.participantId)).size,
     maxWeekdayUse: Math.max(...weekdayCounts.values()),
     maxDaypartUse: Math.max(...daypartCounts.values()),
   });
+  const minimumDistinct = Math.min(GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumDistinctPlaces, worldSpec.places.length);
   if (statistics.distinctPlaces < minimumDistinct) fail("historical envelope place coverage below policy");
   if (statistics.maxPlaceUse > GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerPlace) fail("historical envelope place repetition exceeds policy");
   if (statistics.maxStructureUse > GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerStructure) fail("historical envelope structure repetition exceeds policy");
@@ -294,7 +353,7 @@ export function buildHistoricalEnvelopePlan({
 export function constrainPassAContextToHistoricalEnvelope({ worldSpec, envelope }) {
   const place = worldSpec.places.find((item) => item.placeId === envelope.placeRef);
   if (!place) fail(`historical envelope place ${envelope.placeRef} is not in WorldSpec`);
-  const localAuthority = `For this episode only, the frozen local civil-time authority is ${envelope.localWeekday} ${envelope.localDate} at ${envelope.localTime} in IANA zone ${envelope.timeZone}. Do not state a conflicting weekday or daypart.`;
+  const localAuthority = `For this episode only, the frozen local civil-time authority is ${envelope.localWeekday} ${envelope.localDate} at ${envelope.localTime} in IANA zone ${envelope.timeZone}. The frozen place is ${place.description} Do not narrate a conflicting weekday, daypart, or location.`;
   const constrainedWorldSpec = structuredClone({
     ...worldSpec,
     places: [structuredClone(place)],
@@ -341,6 +400,13 @@ export function assertHistoricalEnvelopeRealized(episode, envelope) {
   if (episode.placeRef !== envelope.placeRef) fail(`episode ${episode.episodeId} changed frozen historical-envelope place`);
   const expectedStructure = envelope.selectionKind === "world_emergent" ? null : envelope.structureRef;
   if (episode.structureRef !== expectedStructure) fail(`episode ${episode.episodeId} changed frozen historical-envelope structure`);
+  if (envelope.counterpart !== null && !episode.participantRefs.includes(envelope.counterpart.participantId)) fail(`episode ${episode.episodeId} omitted frozen historical-envelope counterpart`);
+  if (envelope.counterpart?.introducedHere === true) {
+    const introduction = episode.introducedParticipants.find((item) => item.provisionalPersonId === envelope.counterpart.participantId);
+    if (!introduction || introduction.roleRef !== envelope.counterpart.roleRef || introduction.introducedAt !== envelope.occurredAt) {
+      fail(`episode ${episode.episodeId} did not materialize frozen historical-envelope counterpart introduction`);
+    }
+  }
   const weekdays = mentionedWeekdays(episode.observableAction);
   if (weekdays.some((weekday) => weekday !== envelope.localWeekday)) fail(`episode ${episode.episodeId} narrates a weekday inconsistent with local civil time`);
   const allowed = allowedNarrativeDayparts(envelope.daypart);
