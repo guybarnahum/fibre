@@ -28,6 +28,7 @@ export const LIFE_RELATION_KINDS = Object.freeze([
   "sponsor",
   "echo_source",
   "source_person",
+  "social_contact",
 ]);
 
 export const GENETIC_CONTRIBUTION_ROLES = Object.freeze([
@@ -71,6 +72,17 @@ function normalizeReferences(name, value) {
   if (value.length === 0) throw new TypeError(`${name} must not be empty`);
   if (new Set(value).size !== value.length) throw new TypeError(`${name} must be unique`);
   value.forEach((item, index) => assertId(`${name}[${index}]`, item));
+  return [...value];
+}
+
+function normalizeOptionalStringFacts(name, value, { required = false } = {}) {
+  if (value === undefined) {
+    if (required) throw new TypeError(`${name} is required`);
+    return undefined;
+  }
+  assertStringArray(name, value);
+  if (required && value.length === 0) throw new TypeError(`${name} must not be empty`);
+  if (new Set(value).size !== value.length) throw new TypeError(`${name} must be unique`);
   return [...value];
 }
 
@@ -145,6 +157,8 @@ export function normalizeLifeRelation(value) {
     "relatedParty",
     "relationKind",
     "geneticContributionRole",
+    "factualRoleRefs",
+    "relationshipFacts",
     "sourceReferences",
     "validFrom",
     "validTo",
@@ -172,6 +186,18 @@ export function normalizeLifeRelation(value) {
       throw new TypeError("parent_genome_source requires a live Thread or synthetic ancestor parent");
     }
   }
+  const factualRoleRefs = normalizeOptionalStringFacts(
+    "life relation.factualRoleRefs",
+    value.factualRoleRefs,
+    { required: value.relationKind === "social_contact" },
+  );
+  const relationshipFacts = normalizeOptionalStringFacts(
+    "life relation.relationshipFacts",
+    value.relationshipFacts,
+  );
+  if (value.relationKind === "social_contact" && value.geneticContributionRole !== "none") {
+    throw new TypeError("social_contact relation cannot carry a genetic contribution role");
+  }
   const sourceReferences = normalizeReferences("life relation.sourceReferences", value.sourceReferences);
   const validFrom = normalizeOptionalTimestamp("life relation.validFrom", value.validFrom);
   const validTo = normalizeOptionalTimestamp("life relation.validTo", value.validTo);
@@ -189,6 +215,8 @@ export function normalizeLifeRelation(value) {
     relatedParty,
     relationKind: value.relationKind,
     geneticContributionRole: value.geneticContributionRole,
+    ...(factualRoleRefs === undefined ? {} : { factualRoleRefs }),
+    ...(relationshipFacts === undefined ? {} : { relationshipFacts }),
     sourceReferences,
     validFrom,
     validTo,
