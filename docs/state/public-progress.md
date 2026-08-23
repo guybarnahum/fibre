@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Five new Threads have backgrounds and inherited tendencies that passed our pre-birth difference test. We still have not generated their childhoods: two pre-birth reviews stopped us first, and the second found one remaining execution-check gap that we are fixing now.**
+**Five new Threads have backgrounds and inherited tendencies that passed our pre-birth difference test. We still have not generated their childhoods: the last execution-check gap is fixed and passed our local tests, but a third independent review must approve it first.**
 
 ### More accurate description
 
-Five fresh replacement Threads have frozen Worlds and genomes, and all five measured genome pairs passed the fresh G2 pre-life distinguishability ceiling. The second blocking Gate-G(2) review again returned **HOLD rather than REDESIGN**. It accepted B2-B5 as closed and left one blocker, C1: the executable replacement preflight did not bind every inherited G3/G4/G5/G6 authority that the attempt consumes. The C1 correction changes checking/enforcement only and still needs local verification before a third review. No replacement life cognition has occurred.
+Five fresh replacement Threads have frozen Worlds and genomes, and all five measured genome pairs passed the fresh G2 pre-life distinguishability ceiling. The second blocking Gate-G(2) review again returned **HOLD rather than REDESIGN**, leaving only C1: executable inherited-authority binding. C1 is now locally closed at exact candidate `6b6a2f8e0292193cf0db9f30ea0a1528f233dad2`: the authorized preflight binds inherited G3/G4/G4-v3/G5/G6 authority, the internal generation core is import-only, direct core execution is refused, both zero-call checks are green, and `704/704` tests plus repository/world validation pass. Gate-G(2) remains HOLD pending round 3. No replacement life cognition has occurred.
 
 ## Population right now
 
@@ -33,13 +33,13 @@ Five fresh replacement Threads have frozen Worlds and genomes, and all five meas
 - **1 older partial childhood — Experiment failed — kept as evidence.** It stopped partway through generation.
 - **1 older Thread never started — Experiment failed — kept as evidence.** The experiment stopped first.
 - **5 new unborn Threads — Working on it.** Their backgrounds and inherited tendencies are ready and their inherited differences passed the pre-birth test, but they still have no childhoods.
-- **0 new replacement lives generated — Not yet.** Two reviews have deliberately stopped us before generation.
+- **0 new replacement lives generated — Not yet.** The remaining execution check passed locally, but a third review still blocks generation.
 
 A generated life record is **not automatically a living, validated Thread**. We always state which state we mean.
 
 ### More accurate description
 
-The three completed histories came from failed H-v2 and remain evidence, not the replacement population. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities and symbolic genomes. Their fresh G2 ceiling is CLEAR on all five measured cycle edges. Gate-G(2) remains HOLD; replacement childhood episodes, memories, meanings and published lives are all still zero.
+The three completed histories came from failed H-v2 and remain evidence, not the replacement population. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities and symbolic genomes. Their fresh G2 ceiling is CLEAR on all five measured cycle edges. C1 is locally closed, but Gate-G(2) remains HOLD until the third hostile review returns CLEAR; replacement childhood episodes, memories, meanings and published lives are all still zero.
 
 ## What is done
 
@@ -115,15 +115,15 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **Simple English:** Their world and inherited tendencies are ready, but none has a childhood yet.
 
-**Important limitation:** The second pre-birth review found one remaining execution-check gap, so generation is still blocked.
+**Important limitation:** The remaining execution check passed locally, but a third independent pre-birth review still blocks generation.
 
-**More accurate description:** Round 2 accepted the replacement science, the five-edge G5/G6 reconciliation and B2-B5 closure. C1 found that the authorized execution path did not verify every inherited protocol/runtime file it consumes, even though a separate closure verifier did. The correction preserves the reviewed generation implementation byte-for-byte and adds the missing authority checks at the authorized entrypoint.
+**More accurate description:** Round 2 accepted the replacement science, the five-edge G5/G6 reconciliation and B2-B5 closure. C1 found that the authorized execution path did not verify every inherited protocol/runtime authority it consumes. The corrected authorized preflight now performs those checks, pins the inherited Pass-B helper source and generation-core blob, and refuses direct execution of the internal core.
 
 ### Current step
 
-**Simple English:** Make sure the new execution check really works. If it does, ask the hostile reviewer again before generating any childhood.
+**Simple English:** Have the hostile reviewer try to break or bypass the corrected execution check. Do not generate any childhood until that review says CLEAR.
 
-**More accurate description:** Local verification must show the authorized preflight binds G3 production/analysis, G4 base/entry/runtime/history, G4-v3 prompt authority, G5/G6 freezes and the inherited Pass-B input helper; watches inherited protocol/tool drift; keeps the five-edge carve-out closed; makes zero provider calls; and still reports final-life cognition unauthorized. Only then do we prepare a third Gate-G(2) review request.
+**More accurate description:** Round 3 is defined in `docs/validation/m2-pr39-gate-g2-review-request-round3.md`. The reviewer should mutate inherited G3/G4/G4-v3/G5/G6 authority, alter pinned helper/core blobs, attempt direct or alternate execution paths, and attack future `reviewedHead` / post-CLEAR drift semantics. The same operator-facing preflight must refuse before any provider call. Commits after exact locally verified candidate `6b6a2f8e0292193cf0db9f30ea0a1528f233dad2` are documentation/review-state only.
 
 The optional generation-time `uncertainty[*]` genome-copy hardening remains **not applied** because it would change frozen historical cognition authority. Instead, the packet requires a read-only post-generation scan before diagnostics; a confirmed leak invalidates the affected inference and never authorizes regeneration.
 
