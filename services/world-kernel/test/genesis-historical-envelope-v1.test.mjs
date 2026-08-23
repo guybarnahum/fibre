@@ -81,6 +81,16 @@ function offersByWindow() {
   return map;
 }
 
+function placeAffordances() {
+  return [
+    { placeRef: "place_test_1", placeKind: "home", ordinaryCounterpartRoles: ["caregiver", "sibling", "peer", "neighbor"] },
+    { placeRef: "place_test_2", placeKind: "school", ordinaryCounterpartRoles: ["peer", "teacher", "mentor"] },
+    { placeRef: "place_test_3", placeKind: "library", ordinaryCounterpartRoles: ["peer", "librarian", "teacher", "mentor"] },
+    { placeRef: "place_test_4", placeKind: "public", ordinaryCounterpartRoles: ["peer", "neighbor"] },
+    { placeRef: "place_test_5", placeKind: "mixed", ordinaryCounterpartRoles: ["caregiver", "sibling", "peer", "teacher", "librarian", "mentor", "neighbor"] },
+  ];
+}
+
 function args() {
   return {
     subject: { provisionalThreadId: "thr_test_envelope", bornAt: "2000-01-01T00:00:00.000Z" },
@@ -92,6 +102,7 @@ function args() {
       { participantId: "person_test_caregiver", factualRoles: ["caregiver"], relationshipFacts: [] },
       { participantId: "person_test_sibling", factualRoles: ["sibling"], relationshipFacts: [] },
     ],
+    placeAffordances: placeAffordances(),
     timeZone: "America/New_York",
     seedDomain: "test-envelope-seed-v1",
   };
@@ -108,10 +119,30 @@ test("historical envelope is deterministic and satisfies bounded coverage", () =
   assert.equal(first.statistics.worldEmergentCount, GENESIS_HISTORICAL_ENVELOPE_POLICY.worldEmergentEpisodes);
   assert.equal(first.statistics.externalCounterpartOpportunityCount >= GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalCounterpartOpportunities, true);
   assert.equal(first.statistics.externalRoleVariety >= GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalRoleVariety, true);
+  assert.equal(first.statistics.generatedExternalPersonCount >= 2, true);
   assert.equal(first.statistics.maxWeekdayUse <= GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerWeekday, true);
   assert.equal(first.statistics.maxDaypartUse <= GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerDaypart, true);
   assert.match(first.sparseHistoryNotice, /not a frequency sample/i);
   assert.equal(GENESIS_SPARSE_HISTORY_NOTICE, first.sparseHistoryNotice);
+});
+
+test("historical envelope binds counterpart identity and only introduces it once per external role", () => {
+  const plan = buildHistoricalEnvelopePlan(args());
+  const external = plan.envelopes.filter((item) => item.counterpart?.origin === "historical_envelope");
+  assert.equal(external.length >= 5, true);
+  const byRole = new Map();
+  for (const item of external) {
+    const prior = byRole.get(item.counterpart.roleRef);
+    if (prior === undefined) {
+      assert.equal(item.counterpart.introducedHere, true);
+      byRole.set(item.counterpart.roleRef, item.counterpart.participantId);
+    } else {
+      assert.equal(item.counterpart.participantId, prior);
+      assert.equal(item.counterpart.introducedHere, false);
+    }
+    const place = placeAffordances().find((candidate) => candidate.placeRef === item.placeRef);
+    assert.equal(place.ordinaryCounterpartRoles.includes(item.counterpart.roleRef), true);
+  }
 });
 
 test("historical envelope constrains Pass A to one exact place and instant", () => {
@@ -131,22 +162,26 @@ test("historical envelope constrains Pass A to one exact place and instant", () 
   assert.match(constrained.worldSpec.culturalContext, new RegExp(envelope.localWeekday));
 });
 
-test("historical envelope rejects model narration that contradicts local civil time", () => {
+test("historical envelope rejects structural or local-civil-time drift", () => {
   const plan = buildHistoricalEnvelopePlan(args());
-  const envelope = plan.envelopes.find((item) => item.selectionKind === "offered_structure");
+  const envelope = plan.envelopes.find((item) => item.selectionKind === "offered_structure" && item.counterpart !== null);
+  const introductions = envelope.counterpart.introducedHere
+    ? [{ provisionalPersonId: envelope.counterpart.participantId, roleRef: envelope.counterpart.roleRef, introducedAt: envelope.occurredAt }]
+    : [];
   const base = {
     episodeId: "episode_test_1",
     occurredAt: envelope.occurredAt,
     ageAtEvent: envelope.ageAtEvent,
     placeRef: envelope.placeRef,
-    participantRefs: ["thr_test_envelope"],
-    observableAction: "The subject sorted two books on the table.",
+    participantRefs: ["thr_test_envelope", envelope.counterpart.participantId],
+    observableAction: "The subject and counterpart sorted two books on the table.",
     structureRef: envelope.structureRef,
-    introducedParticipants: [],
+    introducedParticipants: introductions,
   };
   assert.equal(assertHistoricalEnvelopeRealized(base, envelope), base);
   const wrongWeekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].find((item) => item !== envelope.localWeekday);
-  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `On ${wrongWeekday}, the subject sorted two books.` }, envelope), /weekday inconsistent/i);
+  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `On ${wrongWeekday}, they sorted two books.` }, envelope), /weekday inconsistent/i);
   const wrongDaypart = envelope.daypart.includes("morning") ? "afternoon" : "morning";
-  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `In the ${wrongDaypart}, the subject sorted two books.` }, envelope), /daypart inconsistent/i);
+  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `In the ${wrongDaypart}, they sorted two books.` }, envelope), /daypart inconsistent/i);
+  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, participantRefs: ["thr_test_envelope"] }, envelope), /omitted frozen.*counterpart/i);
 });
