@@ -1,0 +1,91 @@
+{
+  "contractVersion": "pr39-replacement-r2-execution-binding-v1",
+  "status": "FROZEN_R2_PRE_REVIEW_NO_COGNITION",
+  "reviewCandidateHead": "b632e45f6e086f7353de7643cb299954f5a35be0",
+  "purpose": "Bind the R1-cleared historical envelope substrate to the current flattened R2 Pass-A/B/C, durable candidate runner, continuity persistence, provider-schema projection, and untunable diagnostic authority before any replacement-v2 cognition is authorized.",
+  "r1Authority": {
+    "implementationCandidate": "ef9a1bf399280dc3f33a73490f91d3e63c3198d0",
+    "hostileRereviewVerdict": "CLEAR",
+    "coverageBoundsRetuned": false
+  },
+  "sourceBlobs": [
+    {"path":"package.json","gitBlobSha":"99ca6c8092ff411f42281265672180be8d28441c"},
+    {"path":"services/birth-center/src/runtime.mjs","gitBlobSha":"24072af268dac1f8d3bb1caaaa5796e27e49a8ca"},
+    {"path":"services/world-kernel/src/persistence-common.mjs","gitBlobSha":"6139f41fc537e7b2561b75a704ade785c27dae09"},
+    {"path":"services/world-kernel/src/genesis-event-structure-pool-v3.mjs","gitBlobSha":"c3b3dae4782e3f20bf8951c1e3d5aff3b4917dda"},
+    {"path":"services/world-kernel/src/genesis-historical-envelope-v1.mjs","gitBlobSha":"6a4adbf09b7d5df5a61fe0c61650941873ad37d0"},
+    {"path":"services/world-kernel/src/genesis-historical-realization-v1.mjs","gitBlobSha":"636519b5daebb4776c429d01b9f0009ade59d3ae"},
+    {"path":"services/world-kernel/src/genesis-rich-participation-policy.mjs","gitBlobSha":"5ed5c0c7e47deaaf7cebb6ce7b2ee5cde02f16ff"},
+    {"path":"services/world-kernel/src/genesis-rich-life-domain.mjs","gitBlobSha":"809620cf59cc2a38c3cbbb22fd62f806d06fa80d"},
+    {"path":"services/world-kernel/src/genesis-replacement-pass-a.mjs","gitBlobSha":"db0baa92f41a215e6d8457d8127ade69fe2f69f0"},
+    {"path":"services/world-kernel/src/genesis-pass-b-domain.mjs","gitBlobSha":"b9219f0cb25e4c9f3fd5e9da94c7186275bd0dd4"},
+    {"path":"services/world-kernel/src/genesis-pass-b-admission.mjs","gitBlobSha":"b6400e98ce83f809f0e06f95f3d5ab79eebbbb2d"},
+    {"path":"services/world-kernel/src/genesis-pass-b-prompts.mjs","gitBlobSha":"abbaf9afd3d5fd3b0c46286a8a4ac8d499f633ad"},
+    {"path":"services/world-kernel/src/genesis-replacement-pass-b-input.mjs","gitBlobSha":"95c95dc5d7734d9d045c1cf288bd712657840916"},
+    {"path":"services/world-kernel/src/genesis-replacement-pass-b.mjs","gitBlobSha":"fc25b80e064ebad06442f2cace50b062e01b198f"},
+    {"path":"services/world-kernel/src/genesis-replacement-pass-c.mjs","gitBlobSha":"ae2e6b97c5745e41dd29865f8c37d719a43f8d37"},
+    {"path":"services/world-kernel/src/genesis-replacement-diagnostic-authority.mjs","gitBlobSha":"05cbd393e82064894d749499890b60a14f815cc8"},
+    {"path":"services/world-kernel/src/genesis-life-continuity-v1.mjs","gitBlobSha":"9f9ae6eb5e84e938e5f46c964a76cbb870f7e18f"},
+    {"path":"services/world-kernel/src/genesis-life-continuity-persistence.mjs","gitBlobSha":"443f3774cfe54a95ad8c1d3ca79c082de0c2ba15"},
+    {"path":"services/world-kernel/src/genesis-schema.mjs","gitBlobSha":"a70b361496dc71cff4fc7f6d905a6a3a4a55e4d5"},
+    {"path":"services/world-kernel/src/genesis-store.mjs","gitBlobSha":"9a8e78be590342ba8a8b01c77124ab37760c52b1"},
+    {"path":"services/world-kernel/src/model-runtime/openai.mjs","gitBlobSha":"9a95fe8feb93781b88acd590a1b9c77045d778bb"},
+    {"path":"services/world-kernel/src/model-runtime/durable-invocation-journal.mjs","gitBlobSha":"339d19430e96ada26964b827a937b94d0a3c57fb"},
+    {"path":"tools/genesis/genesis-replacement-v2-plan.mjs","gitBlobSha":"2c33fdc1372b4ecdbff6a9f5e56dc33fb4b0a55a"},
+    {"path":"tools/genesis/genesis-replacement-candidate.mjs","gitBlobSha":"6faaa2ae5568a60769341f31c888b12e6612110b"},
+    {"path":"tools/genesis/genesis-replacement-runner.mjs","gitBlobSha":"6b1b82dbd70fdef73592db49ed138464fbf8839a"},
+    {"path":"tools/genesis/genesis-replacement-execution-authority.mjs","gitBlobSha":"49b542eb4cdffa2938732029f03f90dc2e993ae5"},
+    {"path":"tools/genesis/genesis-replacement-r2-preflight.mjs","gitBlobSha":"8b234f6681e77e27cec525468e1fe189ea6db03e"},
+    {"path":"artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-cognition-execution-binding-v1.json","gitBlobSha":"31b6d8616818ec45258c2b415f56a6fffccfd562"}
+  ],
+  "authorityArtifacts": [
+    {"path":"artifacts/validation/m2-pr39/replacement-v2/protocol/redesign-v2.json","digest":"sha256:f2d335de557210c9f4c8e5b1e1419366dc8a45bef35c4c8a07af51c0cde6f71f"},
+    {"path":"artifacts/validation/m2-pr39/replacement-v2/protocol/place-affordance-bindings-v1.json","digest":"sha256:750f3c591456f8fa2a630c5b09e51e6487afd7ecc3729d0782920544a92c622d"},
+    {"path":"artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json","digest":"sha256:7d8f7fbf481e7a4bd404c0757fbc7c40418cd142b9b8f2a3da294820692e2f91"},
+    {"path":"artifacts/validation/m2-pr39/replacement-v2/protocol/g5-g6-horizon-reconciliation-v1.json","digest":"sha256:4ebeecc5bf03aff11db7ed39f38f303141ead6bc091ad470002f3366b5e51927"}
+  ],
+  "reviewedEnvelopeDigests": [
+    "sha256:7ae30e399e6fac72733a43695d6aa8115243067b385710814c0d707b40667110",
+    "sha256:3a642987f93d308497e84002f5c2aa5b166928c04300d963e31e059567b4e319",
+    "sha256:8ce61436aef530df6e940fe246db86f7d03485746bb33d7a3a93b467df797e0e",
+    "sha256:473ac1dc4680739a39ae6975a47e656ecf7a6dca2bf4987176a249f5db58ad46",
+    "sha256:3d3e2c74b1063aa53ff8e3c72f916f6bece5963b33a8bcf0f46b1230b512a1c7"
+  ],
+  "runtime": {
+    "provider": "openai",
+    "modelId": "gpt-5.1-2025-11-13",
+    "temperature": 0,
+    "topP": 1,
+    "reasoningEffort": "none",
+    "maxOutputTokens": "auto",
+    "timeoutMs": 45000,
+    "operationalRetryLimit": 2,
+    "operationalRetryDelayMs": 2000,
+    "providerOrModelSubstitutionAuthorized": false
+  },
+  "diagnosticAuthority": {
+    "reconciliationPath": "artifacts/validation/m2-pr39/replacement-v2/protocol/g5-g6-horizon-reconciliation-v1.json",
+    "authorityDigest": "sha256:5064c665ad7276836eecbc40958074ce4c50d90d7482d9b5d6392ca7061d2fc3",
+    "primaryOrdinals": [3,6],
+    "primaryHorizons": [8,14],
+    "eachOrdinalMinimumCorrectCoreEdges": 4,
+    "atLeastOneOrdinalCorrectCoreEdges": 5
+  },
+  "oneShot": {
+    "wholeCandidateAttemptCap": 1,
+    "qualityDrivenRegeneration": false,
+    "processRestartMayReplayDurablyCommittedCalls": true,
+    "terminalGenerationFailureClosesAttempt": true,
+    "providerSubstitutionAuthorized": false,
+    "modelSubstitutionAuthorized": false
+  },
+  "outputRoot": "artifacts/validation/m2-pr39/replacement-v2/final-cohort-v1",
+  "clearWitnessPath": "artifacts/validation/m2-pr39/replacement-v2/protocol/r2-execution-clear-v1.json",
+  "authorization": {
+    "providerCallsAuthorized": false,
+    "candidateGenerationAuthorized": false,
+    "diagnosticsAuthorized": false,
+    "publicationAuthorized": false,
+    "nextGate": "R2_HOSTILE_EXECUTION_REVIEW"
+  }
+}
