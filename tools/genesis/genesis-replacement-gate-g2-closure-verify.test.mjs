@@ -3,10 +3,13 @@ import test from "node:test";
 
 import { verifyReplacementGateG2Closure } from "./genesis-replacement-gate-g2-closure-verify.mjs";
 
-test("Gate-G(2) HOLD closure verifies B1-B5 without authorizing life", () => {
+test("Gate-G(2) HOLD closure verifies B1-B5+C1 without authorizing life", () => {
   const result = verifyReplacementGateG2Closure();
-  assert.equal(result.status, "CLEAR_B1_B5_ZERO_CALL");
+  assert.equal(result.status, "CLEAR_B1_B5_C1_ZERO_CALL");
   assert.equal(result.b1CompleteExecutionPacket, true);
+  assert.equal(result.c1InheritedAuthorityBound, true);
+  assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
+  assert.equal(result.inheritedAuthority.hPassBHelperBlobSha, "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1");
   assert.equal(result.b2ExplicitG4V3, true);
   assert.equal(result.b3FiveEdgeClearRuleClosed, true);
   assert.equal(result.b4AuthoringComparabilityDisclosed, true);
