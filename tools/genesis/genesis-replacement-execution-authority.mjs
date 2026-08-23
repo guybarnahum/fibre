@@ -10,6 +10,11 @@ import { buildReplacementV2ExecutionPlans } from "./genesis-replacement-v2-plan.
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const REPLACEMENT_R2_EXECUTION_BINDING_PATH = "artifacts/validation/m2-pr39/replacement-v2/protocol/r2-execution-binding-v1.json";
 export const REPLACEMENT_R2_CLEAR_WITNESS_PATH = "artifacts/validation/m2-pr39/replacement-v2/protocol/r2-execution-clear-v1.json";
+const EXECUTION_SOURCE_ROOTS = Object.freeze([
+  "services/world-kernel/src",
+  "services/birth-center/src",
+  "tools/genesis",
+]);
 
 function absolute(path) { return resolve(ROOT, path); }
 function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")); }
@@ -25,6 +30,19 @@ function gitBlobSha(path) {
     }).trim();
   } catch (error) {
     fail(`R2 authority cannot resolve reviewed source ${path}: ${error.stderr?.toString?.().trim() || error.message}`);
+  }
+}
+
+function changedExecutionSourcePaths(reviewedHead) {
+  try {
+    const output = execFileSync("git", ["diff", "--name-only", reviewedHead, "HEAD", "--", ...EXECUTION_SOURCE_ROOTS], {
+      cwd: ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return output.split(/\r?\n/u).map((item) => item.trim()).filter(Boolean);
+  } catch (error) {
+    fail(`R2 authority cannot compare reviewed execution source at ${reviewedHead}: ${error.stderr?.toString?.().trim() || error.message}`);
   }
 }
 
@@ -79,9 +97,7 @@ function verifyClearWitness(binding, bindingDigest, requireClear) {
 }
 
 export function verifyReplacementR2ExecutionAuthority({ requireClear = false } = {}) {
-  if (!existsSync(absolute(REPLACEMENT_R2_EXECUTION_BINDING_PATH))) {
-    fail("R2 execution binding is absent");
-  }
+  if (!existsSync(absolute(REPLACEMENT_R2_EXECUTION_BINDING_PATH))) fail("R2 execution binding is absent");
   const binding = readJson(REPLACEMENT_R2_EXECUTION_BINDING_PATH);
   if (binding.contractVersion !== "pr39-replacement-r2-execution-binding-v1") fail("R2 execution binding version drift");
   if (binding.status !== "FROZEN_R2_PRE_REVIEW_NO_COGNITION") fail("R2 execution binding status drift");
@@ -93,13 +109,13 @@ export function verifyReplacementR2ExecutionAuthority({ requireClear = false } =
   }
   if (binding.clearWitnessPath !== REPLACEMENT_R2_CLEAR_WITNESS_PATH) fail("R2 CLEAR witness path drift");
 
+  const changedSourcePaths = changedExecutionSourcePaths(binding.reviewCandidateHead);
+  if (changedSourcePaths.length !== 0) fail(`R2 execution source changed after review candidate: ${changedSourcePaths.join(", ")}`);
   const sourcePaths = verifySourceBlobs(binding);
   const artifactDigests = verifyArtifactDigests(binding);
   const plans = buildReplacementV2ExecutionPlans();
   const actualEnvelopeDigests = plans.slots.map((slot) => slot.envelopePlan.digest);
-  if (canonicalJson(actualEnvelopeDigests) !== canonicalJson(binding.reviewedEnvelopeDigests)) {
-    fail("R2 reviewed envelope digest set drift");
-  }
+  if (canonicalJson(actualEnvelopeDigests) !== canonicalJson(binding.reviewedEnvelopeDigests)) fail("R2 reviewed envelope digest set drift");
 
   const diagnosticReconciliation = readJson(binding.diagnosticAuthority.reconciliationPath);
   const diagnostic = assertReplacementV2DiagnosticAuthority(diagnosticReconciliation);
@@ -113,6 +129,7 @@ export function verifyReplacementR2ExecutionAuthority({ requireClear = false } =
     clearWitnessStatus: clear.status,
     bindingDigest,
     reviewCandidateHead: binding.reviewCandidateHead,
+    changedSourcePaths: Object.freeze(changedSourcePaths),
     sourcePaths: Object.freeze(sourcePaths),
     artifactDigests: Object.freeze(artifactDigests),
     reviewedEnvelopeDigests: Object.freeze(actualEnvelopeDigests),
