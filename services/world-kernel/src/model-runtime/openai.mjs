@@ -37,6 +37,21 @@ function canonicalDigest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
 }
 
+// OpenAI Structured Outputs supports a strict subset of JSON Schema. Keep Fibre's
+// canonical schema intact for hashing, durable invocation identity and local
+// admission, and project only provider-unsupported surface syntax at transport.
+// `uniqueItems` is deliberately enforced by Fibre after the model response.
+export function projectOpenAIStructuredOutputSchema(value) {
+  if (Array.isArray(value)) return value.map(projectOpenAIStructuredOutputSchema);
+  if (value === null || typeof value !== "object") return value;
+  const result = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (key === "uniqueItems") continue;
+    result[key] = projectOpenAIStructuredOutputSchema(item);
+  }
+  return result;
+}
+
 function notify(observer, event) {
   if (typeof observer !== "function") return;
   try {
@@ -171,6 +186,9 @@ export function createOpenAIModelAdapter({
   if (typeof fetchImpl !== "function") throw new TypeError("OpenAI model fetchImpl must be a function");
 
   const endpoint = "https://api.openai.com/v1/responses";
+  // Do not add the provider-schema projection to this object: the durable journal
+  // hashes configuration, and the projection is transport compatibility rather
+  // than a cognition/runtime selection change.
   const configuration = Object.freeze({
     transport: "responses",
     endpoint,
@@ -195,6 +213,7 @@ export function createOpenAIModelAdapter({
       assertId("model clientRequestId", clientRequestId);
       if (terminalFailure !== null) throw terminalFailure;
 
+      const providerResponseSchema = projectOpenAIStructuredOutputSchema(responseSchema);
       const maximumAttempts = retryLimit + 1;
       const operationalRetries = [];
       for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
@@ -230,7 +249,7 @@ export function createOpenAIModelAdapter({
                     type: "json_schema",
                     name: "fibre_structured_cognition",
                     strict: true,
-                    schema: responseSchema,
+                    schema: providerResponseSchema,
                   },
                 },
               }),
