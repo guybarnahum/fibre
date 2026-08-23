@@ -6,12 +6,14 @@ import { pathToFileURL } from "node:url";
 
 import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../services/world-kernel/src/genesis-pass-a-reliability-v3.mjs";
 import { canonicalJson } from "../services/world-kernel/src/persistence-common.mjs";
+import { verifyG34ReviewAmendments } from "./genesis-g34-review-amendments.mjs";
 import {
   REPLACEMENT_EXECUTION_BINDING_PATH,
   verifyReplacementFinalCohortPreflight,
 } from "./genesis-replacement-final-cohort.mjs";
 
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
+const FROZEN_G4_V2_PASS_B_ADMISSION_BLOB = "b6400e98ce83f809f0e06f95f3d5ab79eebbbb2d";
 
 function assertReplacementRosterGrounding(g2, g4) {
   const bindingBySlot = new Map(g2.worldBindings.map((item) => [item.slot, item]));
@@ -46,7 +48,9 @@ export function verifyReplacementGateG2Closure() {
   const g4 = readJson(binding.authorityBoundary.g4CognitionExecutionBindingPath);
   const disclosure = readJson(binding.authorityBoundary.g2DisclosureAmendmentPath);
   const closure = readJson(binding.authorityBoundary.replacementG56ClosureAmendmentPath);
-  const passBClosure = readJson("artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-pass-b-genome-copy-closure-amendment-v1.json");
+  const passBReviewNote = readJson("artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-pass-b-genome-copy-closure-amendment-v1.json");
+  const residual = readJson("artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-residual-gate-g2-disclosures-v1.json");
+  const g34 = verifyG34ReviewAmendments();
   const runner = readFileSync(new URL("./genesis-replacement-final-cohort.mjs", import.meta.url), "utf8");
 
   // B1: a complete, frozen replacement execution surface exists.
@@ -100,8 +104,16 @@ export function verifyReplacementGateG2Closure() {
   assert.equal(closure.assignmentDisclosure.derangementClaimRetired, true);
   assert.deepEqual(closure.assignmentDisclosure.fixedPointSlots, [2, 4, 5]);
 
-  // N2/N4/N5 hardening chosen for this replacement packet.
-  assert.deepEqual(passBClosure.change.replacementScannedFields, ["rememberedContent", "uncertainty[*]"]);
+  // Preserve historical G4-v2 exactly. Optional N2 uncertainty hardening is disclosed, not applied.
+  assert.equal(g34.passBAdmissionBlobSha, FROZEN_G4_V2_PASS_B_ADMISSION_BLOB);
+  assert.equal(passBReviewNote.status, "not_applied_preserved_review_note");
+  assert.equal(passBReviewNote.frozenAuthority.sharedAdmissionGitBlobSha, FROZEN_G4_V2_PASS_B_ADMISSION_BLOB);
+  assert.deepEqual(passBReviewNote.frozenAuthority.scannedFields, ["rememberedContent"]);
+  assert.equal(passBReviewNote.consideredChange.appliedToReplacement, false);
+  assert.equal(residual.passBUncertaintyGenomeCopyCoverage.uncertaintyItemsScannedByFrozenG4V2Gate, false);
+  assert.equal(residual.passBUncertaintyGenomeCopyCoverage.changeMadeForReplacement, false);
+
+  // N4/N5 hardening chosen for this replacement packet.
   assert.equal(binding.durability.replacementRunnerMustUseDurableAdapter, true);
   assert.equal(binding.durability.guaranteedScope, "process_restart_replay_of_committed_invocations");
   assert.equal(binding.durability.hostCrashFsyncDurabilityClaimed, false);
@@ -122,7 +134,9 @@ export function verifyReplacementGateG2Closure() {
     b4AuthoringComparabilityDisclosed: true,
     b5AssignmentDisclosureCorrected: true,
     rosterGrounding: true,
-    passBUncertaintyGenomeCopyGuard: true,
+    historicalG4V2PassBPreserved: true,
+    passBUncertaintyGenomeCopyGuard: false,
+    passBUncertaintyGenomeCopyGapDisclosed: true,
     processRestartDurableAdapterBound: true,
     hardcodedBindingPath: REPLACEMENT_EXECUTION_BINDING_PATH,
     treatmentModes: g3.inheritedAuthority.directModes,
@@ -142,7 +156,8 @@ function print(result) {
   process.stdout.write("B4 aligned genome-authoring design/non-comparability disclosed: yes\n");
   process.stdout.write(`B5 mapping described without derangement claim; fixed points: ${result.fixedPointSlots.join(",")}\n`);
   process.stdout.write("Replacement roster roles grounded to frozen Worlds: yes\n");
-  process.stdout.write("Pass-B uncertainty genome-copy guard: yes\n");
+  process.stdout.write("Historical G4-v2 Pass-B admission source/hash: preserved exactly\n");
+  process.stdout.write("Pass-B uncertainty genome-copy hardening: not applied; residual gap disclosed\n");
   process.stdout.write("Replacement durable adapter: process-restart scope only\n");
   process.stdout.write(`D3: both >=${result.effectiveD3.eachOrdinalMinimumCorrectCoreEdges}/5; at least one ${result.effectiveD3.atLeastOneOrdinalCorrectCoreEdges}/5\n`);
   process.stdout.write("Final-life cognition: NOT AUTHORIZED\n\n");
