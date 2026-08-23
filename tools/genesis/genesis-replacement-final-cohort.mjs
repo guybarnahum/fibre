@@ -21,6 +21,7 @@ import {
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const REPLACEMENT_EXECUTION_BINDING_PATH = CORE_EXECUTION_BINDING_PATH;
 export const REPLACEMENT_CORE_PATH = "tools/genesis/genesis-replacement-final-cohort-core.mjs";
+const EXPECTED_REPLACEMENT_CORE_BLOB_SHA = "81d89fb17eca549106bd51ea0aba2d8329bacb80";
 const G4_RELIABILITY_WITNESS_PATH = "artifacts/validation/m2-pr39/g/protocol/g4-v3-reliability-implementation-witness-v1.json";
 const EXPECTED_H_PASS_B_HELPER_BLOB_SHA = "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1";
 const REQUIRED_PAIR34_BLOCKING_DISCLOSURES = Object.freeze([
@@ -117,7 +118,13 @@ function assertPostClearDriftBoundary(binding) {
 export function verifyReplacementInheritedAuthorityBinding() {
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
   if (binding.runner.path !== "tools/genesis/genesis-replacement-final-cohort.mjs") fail("replacement authorized runner path drift");
+  if (binding.runner.corePath !== REPLACEMENT_CORE_PATH) fail("replacement generation core path drift");
+  const coreBlobSha = gitBlobSha(REPLACEMENT_CORE_PATH);
+  if (coreBlobSha !== EXPECTED_REPLACEMENT_CORE_BLOB_SHA || coreBlobSha !== binding.runner.coreGitBlobSha) fail("replacement generation core blob drift");
   if (binding.runner.bindingPathHardcoded !== true || binding.runner.bindingEnvOverrideAllowed !== false) fail("replacement runner binding discipline drift");
+  if (binding.publication.atomicPerThreadWorldKernelPublication !== true || binding.publication.cohortLevelAtomicPublication !== false || typeof binding.publication.cohortAtomicityDisclosure !== "string") {
+    fail("replacement publication atomicity disclosure drift");
+  }
 
   const g34 = verifyG34ReviewAmendments();
   const g4Verification = verifyG4CognitionFreeze({ protocolPath: binding.authorityBoundary.g4BaseProtocolPath });
@@ -163,6 +170,7 @@ export function verifyReplacementInheritedAuthorityBinding() {
   const reviewedSourceChanges = assertPostClearDriftBoundary(binding);
   return Object.freeze({
     status: "CLEAR_INHERITED_AUTHORITY_BOUND",
+    coreBlobSha,
     g3ProductionDigest: digest(g3Production),
     g3AnalysisDigest: digest(g3Analysis),
     g4BaseDigest: g4Verification.protocolDigest,
@@ -192,6 +200,7 @@ function printPreflight(result) {
   process.stdout.write(`PR39 REPLACEMENT FINAL COHORT PREFLIGHT: ${result.status}\n\n`);
   process.stdout.write(`Execution binding digest: ${result.executionBindingDigest}\n`);
   process.stdout.write(`Inherited authority: ${result.inheritedAuthority.status} — ZERO CALL\n`);
+  process.stdout.write(`Generation core blob: ${result.inheritedAuthority.coreBlobSha}\n`);
   process.stdout.write(`G3 production: ${result.inheritedAuthority.g3ProductionDigest}\n`);
   process.stdout.write(`G3 analysis: ${result.inheritedAuthority.g3AnalysisDigest}\n`);
   process.stdout.write(`G4 base: ${result.inheritedAuthority.g4BaseDigest}\n`);
