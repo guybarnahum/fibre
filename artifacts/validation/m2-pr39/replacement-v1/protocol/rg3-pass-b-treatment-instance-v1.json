@@ -1,0 +1,98 @@
+{
+  "protocolVersion": "pr39-replacement-g3-pass-b-treatment-instance-v1",
+  "replacementAttemptVersion": "pr39-replacement-cohort-v1",
+  "status": "frozen_pre_final_life_generation",
+  "purpose": "Instantiate the inherited fixed Pass-B treatment schedule for the five fresh replacement Threads before any replacement childhood, memory, meaning, or publication exists.",
+  "preconditions": {
+    "replacementG2ProtocolPath": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg2-cohort-genome-freeze-v1.json",
+    "replacementG2ProtocolDigest": "sha256:7d8f7fbf481e7a4bd404c0757fbc7c40418cd142b9b8f2a3da294820692e2f91",
+    "replacementG2ResultPath": "artifacts/validation/m2-pr39/replacement-v1/results/rg2-cohort-genome-specificity-ceiling-v1.json",
+    "replacementG2Verdict": "CLEAR",
+    "replacementLifeExists": false,
+    "finalLifeCognitionAuthorized": false
+  },
+  "inheritedAuthority": {
+    "productionProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v1.json",
+    "productionProtocolDigest": "sha256:3d4885d4c8f717622e466e65e7869526193eccd611967609f7809dfb4b1068a6",
+    "analysisProtocolPath": "artifacts/validation/m2-pr39/g/protocol/g3-pass-b-treatment-freeze-v2.json",
+    "analysisProtocolDigest": "sha256:aef6eea69cf55cc60e730a3529fd0e7d090261cd6535b256df6cbd3734174fae",
+    "callScheduleChanged": false,
+    "historyEpisodeHorizons": [4, 5, 6, 7, 8, 10],
+    "directModes": ["life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome"],
+    "cleanControlOrdinals": [1, 2],
+    "treatmentOrdinals": [3, 6],
+    "conditionalPropagationOrdinals": [4, 5],
+    "genomeExposure": "whole_six_locus_genome",
+    "primaryContrast": "between_thread_at_fixed_call_ordinal",
+    "primaryContrastOrdinals": [3, 6],
+    "primaryContrastHorizons": [6, 10],
+    "betweenStratumContrastStatus": "horizon_confounded_descriptive_only",
+    "withinThreadTreatmentVsControlCausalClaimAllowed": false
+  },
+  "replacementAssignment": {
+    "version": "pr39-replacement-g3-pass-b-treatment-assignment-v1",
+    "seed": "pr39-replacement-g3-pass-b-treatment-v1",
+    "unit": "eligible_pass_b_call",
+    "contentIndependent": true,
+    "positionStratified": true,
+    "threadCount": 5,
+    "callsPerThread": 6,
+    "eligiblePassBCallCount": 30,
+    "lifePlusGenomeCallCount": 10,
+    "assignmentRule": "Every replacement Thread receives the same frozen ordinal schedule L L T L L T at horizons 4,5,6,7,8,10. The fresh seed namespaces this replacement instance; it does not select treatment positions or inspect World, genome, life, memory, meaning, G2 score or provider output.",
+    "slots": [
+      {"slot": 1, "threadId": "thr_pr39_rg2_03", "calls": [
+        {"ordinal": 1, "horizon": 4, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:01:call:01"},
+        {"ordinal": 2, "horizon": 5, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:01:call:02"},
+        {"ordinal": 3, "horizon": 6, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:01:call:03"},
+        {"ordinal": 4, "horizon": 7, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:01:call:04"},
+        {"ordinal": 5, "horizon": 8, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:01:call:05"},
+        {"ordinal": 6, "horizon": 10, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:01:call:06"}
+      ]},
+      {"slot": 2, "threadId": "thr_pr39_rg2_02", "calls": [
+        {"ordinal": 1, "horizon": 4, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:02:call:01"},
+        {"ordinal": 2, "horizon": 5, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:02:call:02"},
+        {"ordinal": 3, "horizon": 6, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:02:call:03"},
+        {"ordinal": 4, "horizon": 7, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:02:call:04"},
+        {"ordinal": 5, "horizon": 8, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:02:call:05"},
+        {"ordinal": 6, "horizon": 10, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:02:call:06"}
+      ]},
+      {"slot": 3, "threadId": "thr_pr39_rg2_01", "calls": [
+        {"ordinal": 1, "horizon": 4, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:03:call:01"},
+        {"ordinal": 2, "horizon": 5, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:03:call:02"},
+        {"ordinal": 3, "horizon": 6, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:03:call:03"},
+        {"ordinal": 4, "horizon": 7, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:03:call:04"},
+        {"ordinal": 5, "horizon": 8, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:03:call:05"},
+        {"ordinal": 6, "horizon": 10, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:03:call:06"}
+      ]},
+      {"slot": 4, "threadId": "thr_pr39_rg2_04", "calls": [
+        {"ordinal": 1, "horizon": 4, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:04:call:01"},
+        {"ordinal": 2, "horizon": 5, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:04:call:02"},
+        {"ordinal": 3, "horizon": 6, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:04:call:03"},
+        {"ordinal": 4, "horizon": 7, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:04:call:04"},
+        {"ordinal": 5, "horizon": 8, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:04:call:05"},
+        {"ordinal": 6, "horizon": 10, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:04:call:06"}
+      ]},
+      {"slot": 5, "threadId": "thr_pr39_rg2_05", "calls": [
+        {"ordinal": 1, "horizon": 4, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:05:call:01"},
+        {"ordinal": 2, "horizon": 5, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:05:call:02"},
+        {"ordinal": 3, "horizon": 6, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:05:call:03"},
+        {"ordinal": 4, "horizon": 7, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:05:call:04"},
+        {"ordinal": 5, "horizon": 8, "formationMode": "life_only", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:05:call:05"},
+        {"ordinal": 6, "horizon": 10, "formationMode": "life_plus_genome", "callSeed": "pr39-replacement-g3-pass-b-treatment-v1:slot:05:call:06"}
+      ]}
+    ]
+  },
+  "replacementG2Reconciliation": {
+    "path": "artifacts/validation/m2-pr39/replacement-v1/protocol/rg5-g6-fresh-g2-reconciliation-v1.json",
+    "note": "The inherited G3-v2 text contains the retired original-cohort pair-3-4 ceiling sentence. For the replacement cohort, pair eligibility is governed by the explicit fresh-G2 reconciliation and its Gate-G(2) closure amendment; the treatment positions and analysis contrast themselves are unchanged."
+  },
+  "authorizationBoundary": {
+    "thisProtocolMayGenerateLife": false,
+    "treatmentPositionsMayChangeAfterThisFreeze": false,
+    "providerOutputMayChangeAssignment": false,
+    "qualityOutcomeMayChangeAssignment": false,
+    "finalLifeCognitionAuthorized": false,
+    "blockingGate": "Gate-G(2)"
+  }
+}
