@@ -56,6 +56,10 @@ import {
   normalizeGenesisOriginIntegrityFixture,
 } from "./genesis-origin-source-integrity.mjs";
 import { bindBirthGenomeAndLineageInTransaction } from "./genesis-birth-genome-lineage.mjs";
+import {
+  appendGenesisLifeContinuityInTransaction,
+  decodeGenesisLifeContinuityRow,
+} from "./genesis-life-continuity-persistence.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -64,6 +68,7 @@ const GENESIS_TABLES = Object.freeze([
   "genesis_world_specs",
   "genesis_manifests",
   "genesis_generation_attempts",
+  "genesis_life_continuity",
 ]);
 
 const SOURCE_DERIVED_ORIGIN_MODES = Object.freeze([
@@ -500,6 +505,16 @@ export class GenesisStore {
     }
   }
 
+  publishReplacementBirth(candidate, options = {}) {
+    if (candidate?.lifeContinuity === null || candidate?.lifeContinuity === undefined) {
+      throw new GenesisConflictError("replacement Genesis birth requires lifeContinuity");
+    }
+    if (!Array.isArray(candidate?.episodes) || candidate.episodes.length === 0) {
+      throw new GenesisConflictError("replacement Genesis birth requires admitted life episodes");
+    }
+    return this.publishBirth(candidate, options);
+  }
+
   publishBirth(
     {
       manifest: manifestCandidate,
@@ -507,12 +522,14 @@ export class GenesisStore {
       episodes: episodeCandidates = [],
       memories: memoryCandidates = [],
       lifeRelations: lifeRelationCandidates = [],
+      lifeContinuity: lifeContinuityCandidate = null,
       originFixture: originFixtureCandidate = null,
     },
     {
       failAfterSeedForTest = false,
       failAfterFirstMemoryForTest = false,
       failAfterLineageForTest = false,
+      failAfterContinuityForTest = false,
     } = {},
   ) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot publish birth");
@@ -525,7 +542,7 @@ export class GenesisStore {
     const normalizedEpisodes = normalizeBirthEpisodes(episodeCandidates, manifest);
     if (manifest.threadId !== seedSnapshot.threadId) throw new GenesisConflictError("manifest/thread identity mismatch");
 
-    this.getWorldSpec(manifest.worldSpecRef);
+    const worldSpecRecord = this.getWorldSpec(manifest.worldSpecRef).record;
     assertCurrentPublicationValidators(manifest);
     if (this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(seedSnapshot.threadId) !== undefined) {
       throw new ThreadAlreadyExistsError(`Thread ${seedSnapshot.threadId} already exists`);
@@ -680,6 +697,24 @@ export class GenesisStore {
         );
       }
 
+      let publishedLifeContinuity = null;
+      if (lifeContinuityCandidate !== null && lifeContinuityCandidate !== undefined) {
+        publishedLifeContinuity = appendGenesisLifeContinuityInTransaction(
+          this.#database,
+          lifeContinuityCandidate,
+          {
+            threadId: seedSnapshot.threadId,
+            worldSpec: worldSpecRecord,
+            lifeEpisodes: normalizedEpisodes.map(({ episode }) => episode),
+            recordedAt: publishedAt,
+            ErrorType: GenesisConflictError,
+          },
+        );
+        if (failAfterContinuityForTest) {
+          throw new GenesisConflictError("simulated R2 life-continuity publication failure");
+        }
+      }
+
       bindBirthGenomeAndLineageInTransaction(this.#database, {
         manifest,
         lifeRelationCandidates,
@@ -717,11 +752,41 @@ export class GenesisStore {
         thread: structuredClone(publishedThread),
         manifest: structuredClone(manifest),
         manifestDigest,
+        lifeContinuity: publishedLifeContinuity === null ? null : structuredClone(publishedLifeContinuity),
       };
     } catch (error) {
       safeRollback(this.#database);
       throw translateStorageError(error);
     }
+  }
+
+  getLifeContinuity(threadId, { required = true } = {}) {
+    assertId("threadId", threadId);
+    if (!tableExists(this.#database, "genesis_life_continuity")) {
+      if (!required) return null;
+      throw new GenesisNotFoundError("Genesis life continuity storage is not present in this world");
+    }
+    const row = this.#database.prepare(
+      "SELECT thread_id,world_spec_id,record_json,record_digest,recorded_at FROM genesis_life_continuity WHERE thread_id=?",
+    ).get(threadId);
+    if (row === undefined) {
+      if (!required) return null;
+      throw new GenesisNotFoundError(`Genesis life continuity for ${threadId} was not found`);
+    }
+    const record = decodeGenesisLifeContinuityRow(row);
+    if (record.threadId !== row.thread_id) throw new IntegrityError("Genesis life continuity Thread column mismatch");
+    const manifestRow = this.#database.prepare(
+      "SELECT world_spec_id FROM genesis_manifests WHERE thread_id=? AND publication_status='published'",
+    ).get(threadId);
+    if (manifestRow !== undefined && manifestRow.world_spec_id !== row.world_spec_id) {
+      throw new IntegrityError("Genesis life continuity WorldSpec column mismatch");
+    }
+    return {
+      record,
+      recordDigest: row.record_digest,
+      worldSpecId: row.world_spec_id,
+      recordedAt: row.recorded_at,
+    };
   }
 
   getManifest(genesisId, { required = true } = {}) {
@@ -747,12 +812,13 @@ export class GenesisStore {
 
   inspectGenesis(genesisId) {
     if (!genesisSchemaPresent(this.#database)) {
-      return { genesisId, manifest: null, worldSpec: null, attempts: [], threadPublished: false };
+      return { genesisId, manifest: null, worldSpec: null, lifeContinuity: null, attempts: [], threadPublished: false };
     }
     const manifestRecord = this.getManifest(genesisId, { required: false });
     const attempts = this.listGenerationAttempts(genesisId);
-    if (manifestRecord === null) return { genesisId, manifest: null, worldSpec: null, attempts, threadPublished: false };
+    if (manifestRecord === null) return { genesisId, manifest: null, worldSpec: null, lifeContinuity: null, attempts, threadPublished: false };
     const worldSpec = this.getWorldSpec(manifestRecord.manifest.worldSpecRef);
+    const lifeContinuity = this.getLifeContinuity(manifestRecord.manifest.threadId, { required: false });
     const threadPublished = this.#database.prepare(
       "SELECT 1 AS present FROM threads WHERE thread_id=?",
     ).get(manifestRecord.manifest.threadId) !== undefined;
@@ -760,6 +826,7 @@ export class GenesisStore {
       genesisId,
       manifest: manifestRecord,
       worldSpec,
+      lifeContinuity,
       attempts,
       threadPublished,
     };
