@@ -284,7 +284,11 @@ export function verifyReplacementFinalCohortPreflight({ requireGateClear = false
   const closure = readJson(binding.authorityBoundary.replacementG56ClosureAmendmentPath);
   validateG56Closure(g2Result, closure);
   const passBClosure = readJson("artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-pass-b-genome-copy-closure-amendment-v1.json");
-  if (canonicalJson(passBClosure.change.replacementScannedFields) !== canonicalJson(["rememberedContent", "uncertainty[*]"])) fail("replacement Pass-B genome-copy closure drift");
+  if (passBClosure.status !== "not_applied_preserved_review_note") fail("replacement Pass-B N2 standing drift");
+  if (canonicalJson(passBClosure.frozenAuthority.scannedFields) !== canonicalJson(["rememberedContent"])) fail("historical G4-v2 Pass-B scanned-field authority drift");
+  if (passBClosure.consideredChange.appliedToReplacement !== false || passBClosure.currentReplacementStanding.uncertaintyGenomeCopyGapDisclosed !== true) {
+    fail("replacement Pass-B N2 retraction/disclosure drift");
+  }
 
   const effective = {
     g3: effectiveG3(g3, inheritedG3),
@@ -961,7 +965,7 @@ async function main() {
   process.stdout.write(`Database: ${result.databasePath}\n`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((error) => {
     process.stderr.write(`${error.stack ?? error.message}\n`);
     process.exitCode = 1;
