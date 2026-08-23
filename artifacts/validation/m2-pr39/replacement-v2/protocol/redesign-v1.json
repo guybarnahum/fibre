@@ -1,0 +1,118 @@
+{
+  "protocolVersion": "pr39-replacement-v2-redesign-v1",
+  "status": "FROZEN_PRE_IMPLEMENTATION_REVIEW_NO_COGNITION_AUTHORIZED",
+  "createdAt": "2026-08-23T16:20:00Z",
+  "reason": "Replacement-v1 attempt 1 exposed a protocol-level Pass-A history-construction defect: unconstrained temperature-0 chooser/realizer collapse, local-time incoherence, social-world under-expansion, sparse-sample frequency ambiguity, and missing durable social/geographic continuity at birth.",
+  "attempt1Standing": {
+    "attemptRoot": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1",
+    "attemptStartedAt": "2026-08-23T07:14:24.267Z",
+    "terminalFailureStatus": "HOLD_FIRST_REPLACEMENT_COHORT_ATTEMPT_FAILED_NO_REGENERATION",
+    "mechanicalFailureRecord": "docs/validation/m2-pr39-replacement-attempt1-mechanical-failure.md",
+    "mechanicalRecoveryFreeze": "artifacts/validation/m2-pr39/replacement-v1/protocol/replacement-mechanical-recovery-v1.json",
+    "sameAttemptRecoveryRetired": true,
+    "durablePassACommits": 10,
+    "durablePassBCommits": 0,
+    "publishedReplacementThreads": 0,
+    "generatedPassAHistoryMayBeReused": false,
+    "generatedPassAHistoryMayInformLifeSpecificTuning": false,
+    "classification": "PRESERVED_REDESIGN_WITNESS"
+  },
+  "startingMaterial": {
+    "reuseFrozenReplacementV1Worlds": true,
+    "reuseFrozenReplacementV1Genomes": true,
+    "reuseFrozenWorldGenomeAssignment": true,
+    "rationale": "The redesign changes the generic history compiler and durable-life publication boundary. No replacement-v1 Pass-B response, genome-conditioned memory, meaning, diagnostic, publication, or live Thread exists. Genome values and World/genome pairing are not changed in response to the observed slot-1 history.",
+    "freshFinalLifeGenerationRequired": true,
+    "freshEventOfferSeedDomain": "pr39-replacement-v2-envelope-offers-v1",
+    "freshHistoricalEnvelopeSeedDomain": "pr39-replacement-v2-historical-envelope-v1",
+    "freshModelRequestDomain": "pr39-replacement-v2-final-life-v1",
+    "freshOutputRoot": "artifacts/validation/m2-pr39/replacement-v2/final-cohort-v1"
+  },
+  "worldBindings": [
+    {"slot":1,"threadId":"thr_pr39_rg2_03","worldSpecId":"world_pr39_rg1_01_tbilisi","worldSpecPath":"artifacts/validation/m2-pr39/replacement-v1/worlds/world-rg1-01-v1.json","timeZone":"Asia/Tbilisi"},
+    {"slot":2,"threadId":"thr_pr39_rg2_02","worldSpecId":"world_pr39_rg1_02_kaohsiung","worldSpecPath":"artifacts/validation/m2-pr39/replacement-v1/worlds/world-rg1-02-v1.json","timeZone":"Asia/Taipei"},
+    {"slot":3,"threadId":"thr_pr39_rg2_01","worldSpecId":"world_pr39_rg1_03_recife","worldSpecPath":"artifacts/validation/m2-pr39/replacement-v1/worlds/world-rg1-03-v1.json","timeZone":"America/Recife"},
+    {"slot":4,"threadId":"thr_pr39_rg2_04","worldSpecId":"world_pr39_rg1_04_fes","worldSpecPath":"artifacts/validation/m2-pr39/replacement-v1/worlds/world-rg1-04-v1.json","timeZone":"Africa/Casablanca"},
+    {"slot":5,"threadId":"thr_pr39_rg2_05","worldSpecId":"world_pr39_rg1_05_hobart","worldSpecPath":"artifacts/validation/m2-pr39/replacement-v1/worlds/world-rg1-05-v1.json","timeZone":"Australia/Hobart"}
+  ],
+  "historicalPlan": {
+    "entryStage": "young_adult",
+    "entryAge": 22,
+    "bornAt": "2004-08-20T00:00:00Z",
+    "chronologyEndsAt": "2026-08-20T00:00:00Z",
+    "episodeCount": 14,
+    "generatedSpan": {"startAt":"2010-08-20T00:00:00.000Z","endAt":"2026-08-19T23:59:59.999Z","minAge":6,"maxAge":21.9999},
+    "coverageBoundary": "Fourteen Pass-A episodes are a sparse coverage-oriented sample across childhood, adolescence and pre-entry young adulthood. They are not a frequency sample and do not imply that omitted event types or people were absent from the life.",
+    "windows": [
+      {"ordinal":1,"windowId":"rv2_life_01","startAt":"2010-08-20T00:00:00.000Z","endAt":"2011-10-11T10:17:08.570Z","minAge":6,"maxAge":7.1428},
+      {"ordinal":2,"windowId":"rv2_life_02","startAt":"2011-10-11T10:17:08.571Z","endAt":"2012-12-01T20:34:17.141Z","minAge":7.1429,"maxAge":8.2856},
+      {"ordinal":3,"windowId":"rv2_life_03","startAt":"2012-12-01T20:34:17.142Z","endAt":"2014-01-23T06:51:25.713Z","minAge":8.2857,"maxAge":9.4285},
+      {"ordinal":4,"windowId":"rv2_life_04","startAt":"2014-01-23T06:51:25.714Z","endAt":"2015-03-16T17:08:34.284Z","minAge":9.4286,"maxAge":10.5713},
+      {"ordinal":5,"windowId":"rv2_life_05","startAt":"2015-03-16T17:08:34.285Z","endAt":"2016-05-07T03:25:42.855Z","minAge":10.5714,"maxAge":11.7142},
+      {"ordinal":6,"windowId":"rv2_life_06","startAt":"2016-05-07T03:25:42.856Z","endAt":"2017-06-28T13:42:51.427Z","minAge":11.7143,"maxAge":12.857},
+      {"ordinal":7,"windowId":"rv2_life_07","startAt":"2017-06-28T13:42:51.428Z","endAt":"2018-08-19T23:59:59.998Z","minAge":12.8571,"maxAge":13.9999},
+      {"ordinal":8,"windowId":"rv2_life_08","startAt":"2018-08-19T23:59:59.999Z","endAt":"2019-10-11T10:17:08.569Z","minAge":14,"maxAge":15.1428},
+      {"ordinal":9,"windowId":"rv2_life_09","startAt":"2019-10-11T10:17:08.570Z","endAt":"2020-12-01T20:34:17.141Z","minAge":15.1429,"maxAge":16.2856},
+      {"ordinal":10,"windowId":"rv2_life_10","startAt":"2020-12-01T20:34:17.142Z","endAt":"2022-01-23T06:51:25.712Z","minAge":16.2857,"maxAge":17.4285},
+      {"ordinal":11,"windowId":"rv2_life_11","startAt":"2022-01-23T06:51:25.713Z","endAt":"2023-03-16T17:08:34.283Z","minAge":17.4286,"maxAge":18.5713},
+      {"ordinal":12,"windowId":"rv2_life_12","startAt":"2023-03-16T17:08:34.284Z","endAt":"2024-05-07T03:25:42.855Z","minAge":18.5714,"maxAge":19.7142},
+      {"ordinal":13,"windowId":"rv2_life_13","startAt":"2024-05-07T03:25:42.856Z","endAt":"2025-06-28T13:42:51.426Z","minAge":19.7143,"maxAge":20.857},
+      {"ordinal":14,"windowId":"rv2_life_14","startAt":"2025-06-28T13:42:51.427Z","endAt":"2026-08-19T23:59:59.999Z","minAge":20.8571,"maxAge":21.9999}
+    ]
+  },
+  "historicalEnvelope": {
+    "implementation": "services/world-kernel/src/genesis-historical-envelope-v1.mjs",
+    "version": "genesis-historical-envelope-v1",
+    "selectionIsPreCognition": true,
+    "selectionMayReadGenome": false,
+    "selectionMayReadPriorGeneratedEpisodeContent": false,
+    "modelChoosesPlace": false,
+    "modelChoosesOccurredAt": false,
+    "modelChoosesEventStructure": false,
+    "worldEmergentSelectionIsPreCognition": true,
+    "minimumDistinctPlaces": 4,
+    "maxEpisodesPerPlace": 4,
+    "maxEpisodesPerStructure": 2,
+    "maxEpisodesPerWeekday": 3,
+    "maxEpisodesPerDaypart": 4,
+    "worldEmergentEpisodes": 2,
+    "minimumExternalCounterpartOpportunities": 5,
+    "minimumExternalRoleVariety": 2,
+    "localCivilTimeUsesIanaZone": true,
+    "localTimeNarrationMustNotContradictEnvelope": true,
+    "placeAndInstantAreEnforcedByConstrainedPassAInput": true,
+    "structureIsEnforcedBySelectedOpportunity": true
+  },
+  "passB": {
+    "formationModes": ["life_only","life_only","life_plus_genome","life_only","life_only","life_plus_genome"],
+    "historyHorizons": [4,6,8,10,12,14],
+    "sparseHistoryNoticeRequired": true,
+    "sparseHistoryNotice": "The visible life history is a sparse coverage-oriented sample of concrete episodes, not a frequency sample of the whole life. Repetition in the sample is not evidence that an event type dominated the life, and absence from the sample is not evidence that something never happened.",
+    "frequencyInferenceFromSampleProhibited": true,
+    "genomeTreatmentPatternChanged": false,
+    "genomeExposureSurfaceChanged": false
+  },
+  "durableContinuity": {
+    "birthMustPreserveInitialRosterRelationshipRoles": true,
+    "birthMustPreserveIntroducedParticipantRoles": true,
+    "birthMustPreserveResidenceAndMeaningfulPlaceHistory": true,
+    "participantIdsMayNotBecomeOpaqueAtBirth": true,
+    "situatedLifeRecordsMustBeGroundedInPublishedLifeEvents": true,
+    "publicationMustRemainAtomicPerThread": true,
+    "relationshipVocabularyExtensionRequiredBeforeExecution": true,
+    "placeEpisodePublicationIntegrationRequiredBeforeExecution": true
+  },
+  "providerCompatibility": {
+    "openAIStructuredSchemaProjectionMayContinue": true,
+    "canonicalFibreSchemasMustRemainAuthoritative": true,
+    "projectedConstraintsMustBeReenforcedLocally": true,
+    "providerOrModelChangeAuthorized": false
+  },
+  "authorization": {
+    "providerCallsAuthorized": false,
+    "finalLifeCognitionAuthorized": false,
+    "replacementV2ExecutionAuthorized": false,
+    "nextGate": "R1_ZERO_CALL_SUBSTRATE_AND_HOSTILE_REVIEW",
+    "noGenerationCommandMayBeAddedUntilR1Green": true
+  }
+}
