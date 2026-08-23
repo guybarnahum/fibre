@@ -70,6 +70,7 @@ function assertSkeletonFreeRealizationSchema() {
 
 function assertHistoricalEnvelopeBinding(protocol) {
   const expectedScalars = {
+    implementation: "services/world-kernel/src/genesis-historical-envelope-v1.mjs",
     version: "genesis-historical-envelope-v1",
     selectionIsPreCognition: true,
     selectionMayReadGenome: false,
