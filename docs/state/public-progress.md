@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Five new Threads passed the pre-birth checks. Fibre is now authorized to generate their childhoods once. We have not generated them yet, and whatever that one attempt produces must be kept and evaluated rather than retried for quality.**
+**Five new Threads passed the pre-birth checks, but their first childhood-generation attempt stopped on a software-format problem before the first memory was generated. We kept the failed attempt and are reviewing a mechanical continuation rather than starting over.**
 
 ### More accurate description
 
-Five fresh replacement Threads have frozen Worlds and genomes, and all five measured genome pairs passed the fresh G2 pre-life distinguishability ceiling. Gate-G(2) round 4 returned **CLEAR** at reviewed head `ac92bab3711bb2fc8b4980c6173d6262ba3dfcf7`. A bound CLEAR witness is committed at `ef70eedd3b4a0c02b1f4be6a97ae36d0f8afa9a2` for execution binding digest `sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17`. Exactly one replacement final-life attempt is authorized. No replacement life cognition has occurred yet.
+Five fresh replacement Threads retain their frozen Worlds, genomes and CLEAR pre-life distinguishability evidence. Gate-G(2) round 4 legitimately authorized one replacement final-life attempt. That attempt started at `2026-08-23T07:14:24.267Z`, durably completed ten slot-1 Pass-A history calls, and then terminated before the first Pass-B model response because OpenAI rejected `episodeRefs.uniqueItems` in the frozen Pass-B response schema. There is no completed replacement Thread generation or publication. The attempt is preserved as a terminal mechanical HOLD; same-attempt recovery is under review and is not authorized yet.
 
 ## Population right now
 
@@ -32,14 +32,14 @@ Five fresh replacement Threads have frozen Worlds and genomes, and all five meas
 - **3 older complete life histories — Shown working.** They came from an experiment that later failed.
 - **1 older partial childhood — Experiment failed — kept as evidence.** It stopped partway through generation.
 - **1 older Thread never started — Experiment failed — kept as evidence.** The experiment stopped first.
-- **5 new unborn Threads — Working on it.** Their backgrounds and inherited tendencies are ready, and they passed the pre-birth review. Their one authorized childhood-generation attempt has not started yet.
-- **0 new replacement lives generated — Not yet.** Gate-G(2) is CLEAR, but authorization is not the same as generation.
+- **5 new unborn Threads — Working on it.** Their backgrounds and inherited tendencies remain frozen. The first approved replacement attempt stopped mechanically after ten history calls for the first Thread.
+- **0 completed replacement lives — Not yet.** No replacement Thread has a completed generation bundle or publication.
 
-A generated life record is **not automatically a living, validated Thread**. We always state which state we mean.
+A few durable model responses are **not automatically a completed or living Thread**. We always state which state we mean.
 
 ### More accurate description
 
-The three completed histories came from failed H-v2 and remain evidence, not the replacement population. The five replacement individuals have frozen Worlds, origin classes, Thread/Genesis identities and symbolic genomes. Fresh G2 and Gate-G(2) are CLEAR, but replacement childhood episodes, memories, meanings and published lives are still all zero. The witness authorizes exactly one attempt and forbids quality-driven regeneration.
+The three completed histories came from failed H-v2 and remain evidence, not the replacement population. Replacement attempt 1 is separately preserved: exactly ten slot-1 Pass-A provider responses were durably committed, the first Pass-B request received no model response, and there are zero completed replacement generation bundles and zero publications. The original one-shot authorization is consumed; further cognition requires a separately reviewed same-attempt mechanical recovery.
 
 ## What is done
 
@@ -83,13 +83,13 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **More accurate description:** Fresh G2 returned **22/24, 24/24, 24/24, 22/24 and 23/24**, with all five measured pairs detectable. This is genome/instrument evidence only. The replacement authoring template differs from the old cohort, so the numerical scores are not directly comparable across cohorts.
 
-### The replacement pre-birth execution gate is clear — Done
+### The replacement pre-birth execution gate cleared attempt 1 — Done
 
-**Simple English:** We have finished the hostile pre-birth safety review and are allowed to run the five childhoods once.
+**Simple English:** The hostile pre-birth review approved one carefully bound childhood-generation attempt.
 
-**Important limitation:** This does not mean the childhoods have been generated or that #39 has succeeded scientifically.
+**Important limitation:** That approval was consumed when attempt 1 ran and failed mechanically; it is not permission to run again.
 
-**More accurate description:** Gate-G(2) round 4 closed C2 at the generation-function boundary. Wrapper preflight, imported core preflight and imported generation all reject inherited-authority drift before provider calls. The committed CLEAR witness authorizes one attempt under the reviewed execution binding and no quality regeneration.
+**More accurate description:** Gate-G(2) round 4 closed C2 at the generation-function boundary and the committed witness authorized one attempt under the reviewed execution binding. Attempt 1 was legitimately started and is now a preserved terminal HOLD. Any recovery requires separate authority.
 
 ### A prepared Thread can be published atomically — Done
 
@@ -97,7 +97,7 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **Important limitation:** The five replacements have not reached birth, and the whole five-Thread cohort is not one atomic transaction.
 
-**More accurate description:** `publishBirth()` is atomic per Thread. All five generation bundles must complete before publication begins, but publication across the five Threads is not cohort-atomic; a publication-phase failure can leave already-published Threads plus terminal HOLD.
+**More accurate description:** `publishBirth()` is atomic per Thread. No replacement publication occurred in attempt 1. Publication across five Threads remains non-cohort-atomic.
 
 ## What we have shown working
 
@@ -105,9 +105,9 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 **Simple English:** We have generated childhoods with family, places, ordinary events, memories and meanings.
 
-**Important limitation:** The final #39 replacement cohort has not been generated yet.
+**Important limitation:** The final #39 replacement cohort has not completed.
 
-**More accurate description:** Genesis has produced concrete prior lives under the three-pass history/memory/meaning boundary. The H-v2 cohort failed, so its three completed lives remain failed-cohort evidence rather than the accepted #39 result.
+**More accurate description:** Genesis has produced concrete prior lives under the three-pass history/memory/meaning boundary. The H-v2 cohort failed, and the replacement attempt has also not yet produced a completed cohort.
 
 ### Generated childhoods can have caregivers and genetic ancestry — Shown working
 
@@ -119,23 +119,23 @@ The three completed histories came from failed H-v2 and remain evidence, not the
 
 ## What we are working on now
 
-### Five new Threads are waiting for their one authorized childhood-generation attempt — Working on it
+### Preserve attempt 1 and prove a same-attempt mechanical recovery — Working on it
 
-**Simple English:** Their worlds and inherited tendencies are ready, the review is clear, and we may generate their childhoods once. We have not started that attempt yet.
+**Simple English:** The first approved run stopped because the API rejected a response-format rule. We are keeping everything that already happened and checking whether the same run can continue safely instead of starting over.
 
-**Important limitation:** We cannot retry simply because the result is weak, boring or disappointing.
+**Important limitation:** Recovery is not authorized yet, and we cannot regenerate the ten history calls to get a nicer result.
 
-**More accurate description:** The bound witness names reviewed head `ac92bab3711bb2fc8b4980c6173d6262ba3dfcf7` and execution binding digest `sha256:67e4346bcfbad6e1b701b093a800b7694f589522b5ff58a3c06d91f1d9bd3a17`. It authorizes one replacement final-life attempt through the reviewed runner. No provider/model, World, genome, assignment, treatment or threshold changes are authorized.
+**More accurate description:** The local failed-attempt root contains exactly ten durable slot-1 Pass-A invocation records, the attempt-start witness and terminal failure. There is no Pass-B commit, completed generation bundle, publication or final result. `replacement-mechanical-recovery-v1.json` binds exact SHA-256s for those twelve files and requires the previously rejected slot-1 Pass-B call-01 to be the first new provider operation if recovery is later cleared.
 
 ### Current step
 
-**Simple English:** Pull the CLEAR witness, make sure the preflight says the childhood generation is authorized, then run the five childhoods once and keep whatever happens.
+**Simple English:** Check the saved failure and the software-format fix without making any AI calls. Then get another independent review before continuing.
 
-**More accurate description:** Run `npm run genesis:replacement-preflight` and require `CLEAR_TO_EXECUTE_REPLACEMENT`, `Gate-G(2): CLEAR`, `Final-life cognition: AUTHORIZED`, inherited authority clear, and output root absent. Only then run `npm run genesis:replacement-generate` exactly once. Freeze the first terminal result or failure before interpretation.
+**More accurate description:** Run `npm run genesis:replacement-recovery-preflight`. It must report `CLEAR_RESUME_POINT_REVIEW_REQUIRED`, ten durable Pass-A commits, zero Pass-B commits, the exact first uncommitted Pass-B request, unchanged canonical Pass-B schema hash, durable-adapter configuration compatibility and `Recovery cognition: NOT AUTHORIZED`. Then run the full tests and repository validation. Only a subsequent recovery CLEAR may authorize another provider call.
 
-The optional generation-time `uncertainty[*]` genome-copy hardening remains **not applied** because it would change frozen historical cognition authority. Instead, after generation and before diagnostics, the packet requires a read-only scan; a confirmed leak invalidates the affected inference and never authorizes regeneration.
+The OpenAI transport now projects provider-unsupported schema constraints while Fibre retains and re-enforces the canonical schema locally. The optional generation-time `uncertainty[*]` genome-copy hardening remains **not applied**; if the cohort eventually completes, the required read-only scan still runs before diagnostics.
 
-**Final-life cognition is authorized for exactly one reviewed replacement attempt, but that attempt has not started yet.**
+**Final-life cognition is not currently authorized. Attempt 1 is consumed; recovery requires a new CLEAR.**
 
 ## What Fibre cannot do yet
 
