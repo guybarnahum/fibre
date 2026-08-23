@@ -11,7 +11,7 @@ export const GENESIS_PASS_B_MAX_GENERATED_VERSIONS_PER_CALL = 2;
 
 export const GENESIS_PASS_B_GENOME_COPY_RETRY_PROMPT = `${GENESIS_PASS_B_PROMPT}
 
-The previous generated record was rejected only by Fibre's mechanical genome-copy boundary. You do not receive the rejected record. Generate a fresh memory-formation record from the same supplied cognition input. If outcome=remembered, rememberedContent must describe only remembered lived experience and must not repeat a four-or-more-token sequence from any genomeExposure locus. genomeExposure may affect attention or retention, but its wording is never autobiographical evidence. not_remembered remains fully legal. Do not make the replacement richer, more meaningful, more distinctive, or more coherent because a retry occurred.`;
+The previous generated record was rejected only by Fibre's mechanical genome-copy boundary. You do not receive the rejected record. Generate a fresh memory-formation record from the same supplied cognition input. If outcome=remembered, rememberedContent and every uncertainty item must describe only remembered lived experience and must not repeat a four-or-more-token sequence from any genomeExposure locus. genomeExposure may affect attention or retention, but its wording is never autobiographical evidence. not_remembered remains fully legal. Do not make the replacement richer, more meaningful, more distinctive, or more coherent because a retry occurred.`;
 
 export class GenesisPassBAdmissionError extends TypeError {
   constructor(gate, message, details = {}) {
@@ -76,6 +76,18 @@ export function findVerbatimGenomeNgram({
   return null;
 }
 
+function findPassBGenomeCopy(output, loci) {
+  const fields = [
+    { field: "rememberedContent", value: output.rememberedContent },
+    ...output.uncertainty.map((value, index) => ({ field: `uncertainty[${index}]`, value })),
+  ];
+  for (const item of fields) {
+    const match = findVerbatimGenomeNgram({ rememberedContent: item.value, loci });
+    if (match !== null) return Object.freeze({ field: item.field, ...match });
+  }
+  return null;
+}
+
 export function assertPassBGenomeCopyBoundary(outputCandidate, inputCandidate) {
   const input = normalizePassBInput(inputCandidate);
   const output = normalizePassBModelOutput(outputCandidate, input);
@@ -83,14 +95,11 @@ export function assertPassBGenomeCopyBoundary(outputCandidate, inputCandidate) {
     return output;
   }
 
-  const match = findVerbatimGenomeNgram({
-    rememberedContent: output.rememberedContent,
-    loci: input.genomeExposure.loci,
-  });
+  const match = findPassBGenomeCopy(output, input.genomeExposure.loci);
   if (match !== null) {
     throw new GenesisPassBAdmissionError(
       GENESIS_PASS_B_GENOME_COPY_GATE,
-      `Pass-B rememberedContent repeats a forbidden ${match.minimumTokens}-token sequence from exposed genome locus ${match.locusId}`,
+      `Pass-B ${match.field} repeats a forbidden ${match.minimumTokens}-token sequence from exposed genome locus ${match.locusId}`,
       match,
     );
   }
