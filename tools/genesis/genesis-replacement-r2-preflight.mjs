@@ -10,6 +10,7 @@ import {
 } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import { buildReplacementPassACognitionInput } from "../../services/world-kernel/src/genesis-replacement-pass-a.mjs";
 import { assertReplacementPassBSchedule } from "../../services/world-kernel/src/genesis-replacement-pass-b.mjs";
+import { LIFE_RELATION_KINDS } from "../../services/world-kernel/src/situated-life-domain.mjs";
 import { verifyReplacementV2RedesignPreflight } from "./genesis-replacement-v2-redesign-preflight.mjs";
 import { verifyReplacementR2ExecutionAuthority } from "./genesis-replacement-execution-authority.mjs";
 
@@ -21,6 +22,25 @@ function assertNoGenerationCommand() {
   const pkg = JSON.parse(readFileSync(absolute("package.json"), "utf8"));
   const forbidden = Object.keys(pkg.scripts ?? {}).filter((name) => /^genesis:replacement.*(?:run|generate|execute)/u.test(name));
   if (forbidden.length !== 0) fail(`R2 pre-review package exposes generation command(s): ${forbidden.join(", ")}`);
+}
+
+function assertCanonicalSituatedLifeBoundary() {
+  const genesisSchema = readFileSync(absolute("services/world-kernel/src/genesis-schema.mjs"), "utf8");
+  if (/genesis_life_continuity/u.test(genesisSchema)) {
+    fail("R2 continuity created a parallel Genesis-owned situated-life table");
+  }
+  if (!LIFE_RELATION_KINDS.includes("social_contact")) {
+    fail("R2 canonical situated-life authority lacks ordinary social-contact representation");
+  }
+  const birthSource = readFileSync(absolute("services/world-kernel/src/genesis-store.mjs"), "utf8");
+  if (!birthSource.includes("publishGenesisSituatedContinuityInTransaction")) {
+    fail("R2 birth is not wired to canonical situated-life continuity publication");
+  }
+  return Object.freeze({
+    genesisParallelContinuityTable: false,
+    socialContactRelationKind: true,
+    atomicBirthUsesCanonicalSituatedLife: true,
+  });
 }
 
 function assertCurrentRichBuilder(authority) {
@@ -46,6 +66,9 @@ function assertCurrentRichBuilder(authority) {
     });
     if (!/event-structure-pool-v3/u.test(input.policyWitness.policyVersion)) {
       fail(`R2 slot ${slot.slot} rich-life compiler is not on the current EventStructure pool`);
+    }
+    if (Object.hasOwn(input.developmentalWindow, "ordinal")) {
+      fail(`R2 slot ${slot.slot} compiler-only window ordinal leaked into Pass-A input`);
     }
     if (envelope.structureRef !== null && !input.offeredStructures.some((item) => item.structureId === envelope.structureRef)) {
       fail(`R2 slot ${slot.slot} reviewed envelope structure is absent from current Pass-A offers`);
@@ -73,6 +96,7 @@ export function verifyReplacementR2Preflight() {
   if (existsSync(absolute(authority.outputRoot))) fail("R2 candidate output root already exists before reviewed execution");
   assertNoGenerationCommand();
   assertReplacementPassBSchedule({ historyLength: 14 });
+  const situatedLifeBoundary = assertCanonicalSituatedLifeBoundary();
   const richBuilderWitnesses = assertCurrentRichBuilder(authority);
   return Object.freeze({
     status: "CLEAR_R2_IMPLEMENTATION_PRE_REVIEW_ZERO_CALL",
@@ -82,6 +106,7 @@ export function verifyReplacementR2Preflight() {
     sourcePaths: authority.sourcePaths,
     reviewedEnvelopeDigests: authority.reviewedEnvelopeDigests,
     diagnosticAuthority: authority.diagnosticAuthority,
+    situatedLifeBoundary,
     richBuilderWitnesses: Object.freeze(richBuilderWitnesses),
     providerCallsAuthorized: false,
     candidateGenerationAuthorized: false,
@@ -97,6 +122,7 @@ function print(result) {
   console.log(`R2 hostile-review witness: ${result.clearWitnessStatus}`);
   console.log(`Reviewed source paths: ${result.sourcePaths.length}`);
   console.log(`D3 authority: ${result.diagnosticAuthority.eachOrdinalMinimumCorrectCoreEdges}/5 minimum at both treated ordinals; one ${result.diagnosticAuthority.atLeastOneOrdinalCorrectCoreEdges}/5 required`);
+  console.log(`Situated life: canonical=${result.situatedLifeBoundary.atomicBirthUsesCanonicalSituatedLife}; parallel-genesis-table=${result.situatedLifeBoundary.genesisParallelContinuityTable}`);
   result.reviewedEnvelopeDigests.forEach((value, index) => console.log(`${index + 1}. envelope=${value}`));
   for (const item of result.richBuilderWitnesses) {
     console.log(`slot ${item.slot} current-rich-builder=${item.currentPoolPolicyVersion} offers=${item.offeredStructureCount} last-structure=${item.envelopeStructureRef ?? "world_emergent"}`);
