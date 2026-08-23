@@ -103,6 +103,26 @@ function assertG4BindingMatchesBase(g4Binding, g4Base) {
   }
 }
 
+function assertResidualIntegrityObligations(binding) {
+  const passBReviewNote = readJson(binding.authorityBoundary.passBGenomeCopyReviewNotePath);
+  if (passBReviewNote.status !== "not_applied_preserved_review_note") fail("replacement Pass-B review-note standing drift");
+  if (canonicalJson(passBReviewNote.frozenAuthority.scannedFields) !== canonicalJson(["rememberedContent"])) fail("replacement historical Pass-B scan authority drift");
+  if (passBReviewNote.consideredChange.appliedToReplacement !== false) fail("replacement uncertainty hardening was silently applied");
+
+  const residual = readJson(binding.authorityBoundary.residualGateG2DisclosurePath);
+  const scan = residual.passBUncertaintyGenomeCopyCoverage?.postGenerationPreDiagnosticScan;
+  if (scan?.required !== true || scan.readOnly !== true || scan.mayRegenerateOrRepairLife !== false) fail("replacement uncertainty post-generation scan obligation drift");
+  if (scan.onConfirmedLeak !== "REDESIGN_AFFECTED_INFERENCE_NO_REGENERATION" || scan.confirmedLeakWouldInvalidateAffectedInference !== true) {
+    fail("replacement uncertainty confirmed-leak consequence drift");
+  }
+  if (typeof scan.algorithmAuthority !== "string" || !scan.algorithmAuthority.includes("findVerbatimGenomeNgram")) fail("replacement uncertainty scan algorithm authority drift");
+  return Object.freeze({
+    passBGenerationTimeScannedFields: Object.freeze([...passBReviewNote.frozenAuthority.scannedFields]),
+    uncertaintyPostGenerationScanRequired: true,
+    uncertaintyConfirmedLeakDisposition: scan.onConfirmedLeak,
+  });
+}
+
 function assertPostClearDriftBoundary(binding) {
   const gatePath = binding.authorityBoundary.gateG2ClearWitnessPath;
   if (!existsSync(absolute(gatePath))) return [];
@@ -167,6 +187,7 @@ export function verifyReplacementInheritedAuthorityBinding() {
     if (!forbiddenAsDisclosureOnly.includes(required)) fail(`replacement G6 carve-out closure missing: ${required}`);
   }
 
+  const residualIntegrity = assertResidualIntegrityObligations(binding);
   const reviewedSourceChanges = assertPostClearDriftBoundary(binding);
   return Object.freeze({
     status: "CLEAR_INHERITED_AUTHORITY_BOUND",
@@ -180,6 +201,7 @@ export function verifyReplacementInheritedAuthorityBinding() {
     g4v3PolicyVersion: g4v3.policyVersion,
     g4v3PromptHash: g4v3.v3PromptHash,
     hPassBHelperBlobSha: hHelperBlobSha,
+    residualIntegrity,
     reviewedSourceChanges,
     providerCallsMade: 0,
   });
@@ -208,6 +230,7 @@ function printPreflight(result) {
   process.stdout.write(`G5: ${result.inheritedAuthority.g5Digest}\n`);
   process.stdout.write(`G6: ${result.inheritedAuthority.g6Digest}\n`);
   process.stdout.write(`Pass-B input helper blob: ${result.inheritedAuthority.hPassBHelperBlobSha}\n`);
+  process.stdout.write(`Post-generation uncertainty scan required: ${result.inheritedAuthority.residualIntegrity.uncertaintyPostGenerationScanRequired}\n`);
   process.stdout.write(`Gate-G(2): ${result.gateStatus}\n`);
   process.stdout.write(`Final-life cognition: ${result.executionAuthorized ? "AUTHORIZED" : "NOT AUTHORIZED"}\n`);
   process.stdout.write(`Generation policy: ${result.generationPolicyVersion} · form=${result.generationPolicy.maxFormRepairsPerRecord} · record=${result.generationPolicy.maxRecordRetriesPerRecord} · total=${result.generationPolicy.maxTotalGeneratedVersionsPerRecord}\n`);
@@ -224,7 +247,7 @@ function printPreflight(result) {
 }
 
 function usage() {
-  process.stdout.write("Usage: node tools/genesis/genesis-replacement-final-cohort.mjs --preflight\n       node tools/genesis/genesis-replacement-final-cohort.mjs\n\nThe authorized replacement entrypoint binds inherited G3/G4/G5/G6 and G4-v3 authority before delegating to the byte-preserved generation core. --preflight makes zero provider calls and writes nothing. Execution remains blocked until a bound Gate-G(2) CLEAR witness exists.\n");
+  process.stdout.write("Usage: node tools/genesis/genesis-replacement-final-cohort.mjs --preflight\n       node tools/genesis/genesis-replacement-final-cohort.mjs\n\nThe authorized replacement entrypoint binds inherited G3/G4/G5/G6, G4-v3 and residual integrity obligations before delegating to the byte-preserved generation core. --preflight makes zero provider calls and writes nothing. Execution remains blocked until a bound Gate-G(2) CLEAR witness exists.\n");
 }
 
 async function main() {
