@@ -28,6 +28,7 @@ const OPENAI_PROJECTED_SCHEMA_KEYWORDS = Object.freeze(new Set([
   "uniqueItems",
   "minLength",
   "maxLength",
+  "maxItems",
 ]));
 
 function apiKey(environment) {
@@ -45,8 +46,8 @@ function canonicalDigest(value) {
 
 // OpenAI Structured Outputs supports a strict subset of JSON Schema. Keep Fibre's
 // canonical schema intact for hashing, durable invocation identity and local
-// admission, and project only provider-unsupported surface syntax at transport.
-// Every projected constraint is re-enforced locally against the canonical schema.
+// admission, and project provider-risk surface syntax at transport. Every
+// projected constraint is re-enforced locally against the canonical schema.
 export function projectOpenAIStructuredOutputSchema(value) {
   if (Array.isArray(value)) return value.map(projectOpenAIStructuredOutputSchema);
   if (value === null || typeof value !== "object") return value;
@@ -85,6 +86,12 @@ export function assertOpenAIProjectedSchemaConstraints(value, schema, path = "$"
   }
 
   if (Array.isArray(value)) {
+    if (Number.isSafeInteger(schema.minItems) && value.length < schema.minItems) {
+      throw schemaConstraintError(path, "minItems", `array length ${value.length} is below minItems ${schema.minItems}`);
+    }
+    if (Number.isSafeInteger(schema.maxItems) && value.length > schema.maxItems) {
+      throw schemaConstraintError(path, "maxItems", `array length ${value.length} exceeds maxItems ${schema.maxItems}`);
+    }
     if (schema.uniqueItems === true) {
       const keys = value.map(canonicalItemKey);
       if (new Set(keys).size !== keys.length) {
