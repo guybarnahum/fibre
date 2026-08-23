@@ -26,8 +26,8 @@
   "runner": {
     "path": "tools/genesis/genesis-replacement-final-cohort.mjs",
     "corePath": "tools/genesis/genesis-replacement-final-cohort-core.mjs",
-    "coreGitBlobSha": "81d89fb17eca549106bd51ea0aba2d8329bacb80",
-    "coreRole": "Byte-preserved generation implementation reviewed in round 2; the authorized entrypoint verifies inherited authority before delegating to this core.",
+    "coreGitBlobSha": "d64436483661339d6a7b1b353d78cdab7ce5e423",
+    "coreRole": "Round-2 generation implementation with only its direct CLI entry disabled. It is import-only; all authorized execution must enter through tools/genesis/genesis-replacement-final-cohort.mjs so inherited authority is verified before generation.",
     "bindingPathHardcoded": true,
     "bindingEnvOverrideAllowed": false,
     "providerOrModelCliOverrideAllowed": false,
