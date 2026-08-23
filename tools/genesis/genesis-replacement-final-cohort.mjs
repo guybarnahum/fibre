@@ -21,7 +21,7 @@ import {
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const REPLACEMENT_EXECUTION_BINDING_PATH = CORE_EXECUTION_BINDING_PATH;
 export const REPLACEMENT_CORE_PATH = "tools/genesis/genesis-replacement-final-cohort-core.mjs";
-const EXPECTED_REPLACEMENT_CORE_BLOB_SHA = "81d89fb17eca549106bd51ea0aba2d8329bacb80";
+const EXPECTED_REPLACEMENT_CORE_BLOB_SHA = "d64436483661339d6a7b1b353d78cdab7ce5e423";
 const G4_RELIABILITY_WITNESS_PATH = "artifacts/validation/m2-pr39/g/protocol/g4-v3-reliability-implementation-witness-v1.json";
 const EXPECTED_H_PASS_B_HELPER_BLOB_SHA = "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1";
 const REQUIRED_PAIR34_BLOCKING_DISCLOSURES = Object.freeze([
@@ -247,7 +247,7 @@ function printPreflight(result) {
 }
 
 function usage() {
-  process.stdout.write("Usage: node tools/genesis/genesis-replacement-final-cohort.mjs --preflight\n       node tools/genesis/genesis-replacement-final-cohort.mjs\n\nThe authorized replacement entrypoint binds inherited G3/G4/G5/G6, G4-v3 and residual integrity obligations before delegating to the byte-preserved generation core. --preflight makes zero provider calls and writes nothing. Execution remains blocked until a bound Gate-G(2) CLEAR witness exists.\n");
+  process.stdout.write("Usage: node tools/genesis/genesis-replacement-final-cohort.mjs --preflight\n       node tools/genesis/genesis-replacement-final-cohort.mjs\n\nThe authorized replacement entrypoint binds inherited G3/G4/G5/G6, G4-v3 and residual integrity obligations before delegating to the import-only generation core. --preflight makes zero provider calls and writes nothing. Execution remains blocked until a bound Gate-G(2) CLEAR witness exists.\n");
 }
 
 async function main() {
