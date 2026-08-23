@@ -25,6 +25,7 @@
   },
   "runner": {
     "path": "tools/genesis/genesis-replacement-final-cohort.mjs",
+    "wrapperGitBlobSha": "5b67674e36b43766f416e0a1aab9a0b8e41dbc36",
     "corePath": "tools/genesis/genesis-replacement-final-cohort-core.mjs",
     "coreGitBlobSha": "a8acd1b1dd47ef427397056cee2958cea7ae0b7c",
     "coreRole": "Import-only generation implementation. The shared inherited-authority gate is invoked by the authorized wrapper and by the core's own exported preflight, so direct imports cannot authorize or generate under drift.",
