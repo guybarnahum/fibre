@@ -94,6 +94,17 @@ function baseHistoryEpisode(episode) {
   return projected;
 }
 
+function projectDevelopmentalWindow(candidate) {
+  assertPlainObject("developmentalWindow", candidate);
+  return {
+    windowId: candidate.windowId,
+    startAt: candidate.startAt,
+    endAt: candidate.endAt,
+    minAge: candidate.minAge,
+    maxAge: candidate.maxAge,
+  };
+}
+
 function coversDevelopmentalWindow(structure, developmentalWindow) {
   return structure.developmentalRange.minAge <= developmentalWindow.minAge
     && structure.developmentalRange.maxAge >= developmentalWindow.maxAge;
@@ -137,16 +148,19 @@ export function buildRichLifePassAInput({
   // There is one current rich-life compiler: the current reviewed EventStructure pool.
   assertRichLifeCompilerMode({ originMode, syntheticLineageWitness });
   const currentPool = normalizeEventStructurePoolV3(GENESIS_EVENT_STRUCTURE_POOL_V3);
+  // Protocol windows may carry compiler-only metadata such as ordinal. Project the
+  // exact Pass-A window surface here so that metadata can never become cognition.
+  const passAWindow = projectDevelopmentalWindow(developmentalWindow);
   const input = buildPassAInput({
     worldSpec,
     subject,
-    developmentalWindow,
+    developmentalWindow: passAWindow,
     chronologyEndsAt,
     initialRoster,
     priorEpisodes: priorEpisodes.map(baseHistoryEpisode),
     previouslyIntroducedParticipants,
     eventStructurePool: currentPool.map((item) => item.structure),
-    offeredStructures: currentOfferedStructures(offeredEntries, developmentalWindow),
+    offeredStructures: currentOfferedStructures(offeredEntries, passAWindow),
   });
   input.policyWitness = {
     ...input.policyWitness,
