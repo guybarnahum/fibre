@@ -13,7 +13,9 @@ import { verifyG6VerdictFreeze } from "./genesis-g6-verdict-freeze.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const REPLACEMENT_EXECUTION_BINDING_PATH = "artifacts/validation/m2-pr39/replacement-v1/protocol/replacement-execution-binding-v1.json";
+export const REPLACEMENT_WRAPPER_PATH = "tools/genesis/genesis-replacement-final-cohort.mjs";
 export const REPLACEMENT_CORE_PATH = "tools/genesis/genesis-replacement-final-cohort-core.mjs";
+const EXPECTED_REPLACEMENT_WRAPPER_BLOB_SHA = "5b67674e36b43766f416e0a1aab9a0b8e41dbc36";
 const EXPECTED_REPLACEMENT_CORE_BLOB_SHA = "a8acd1b1dd47ef427397056cee2958cea7ae0b7c";
 const G4_RELIABILITY_WITNESS_PATH = "artifacts/validation/m2-pr39/g/protocol/g4-v3-reliability-implementation-witness-v1.json";
 const EXPECTED_H_PASS_B_HELPER_BLOB_SHA = "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1";
@@ -130,7 +132,9 @@ function assertPostClearDriftBoundary(binding) {
 
 export function verifyReplacementInheritedAuthorityBinding() {
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
-  if (binding.runner.path !== "tools/genesis/genesis-replacement-final-cohort.mjs") fail("replacement authorized runner path drift");
+  if (binding.runner.path !== REPLACEMENT_WRAPPER_PATH) fail("replacement authorized runner path drift");
+  const wrapperBlobSha = gitBlobSha(REPLACEMENT_WRAPPER_PATH);
+  if (wrapperBlobSha !== EXPECTED_REPLACEMENT_WRAPPER_BLOB_SHA || wrapperBlobSha !== binding.runner.wrapperGitBlobSha) fail("replacement authorized wrapper blob drift");
   if (binding.runner.corePath !== REPLACEMENT_CORE_PATH) fail("replacement generation core path drift");
   const coreBlobSha = gitBlobSha(REPLACEMENT_CORE_PATH);
   if (coreBlobSha !== EXPECTED_REPLACEMENT_CORE_BLOB_SHA || coreBlobSha !== binding.runner.coreGitBlobSha) fail("replacement generation core blob drift");
@@ -184,6 +188,7 @@ export function verifyReplacementInheritedAuthorityBinding() {
   const reviewedSourceChanges = assertPostClearDriftBoundary(binding);
   return Object.freeze({
     status: "CLEAR_INHERITED_AUTHORITY_BOUND",
+    wrapperBlobSha,
     coreBlobSha,
     g3ProductionDigest: digest(g3Production),
     g3AnalysisDigest: digest(g3Analysis),
