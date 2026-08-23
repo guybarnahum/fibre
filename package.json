@@ -14,7 +14,7 @@
     "test:all": "npm run build && node tools/test-infra/run-test-suite.mjs all",
     "test:audit": "node tools/test-infra/test-value-audit.mjs",
     "validate": "node tools/repo/validate-repo.mjs && node --disable-warning=ExperimentalWarning tools/repo/validate-world-seed.mjs",
-    "includes:sync": "node tools/repo/sync-markdown-includes.mjs --check",
+    "includes:sync": "node tools/repo/sync-markdown-includes.mjs",
     "includes:check": "node tools/repo/sync-markdown-includes.mjs --check",
     "context-pack": "node tools/repo/build-context-pack.mjs",
     "check": "npm run includes:check && npm test && npm run context-pack && node tools/repo/validate-repo.mjs --generated",
