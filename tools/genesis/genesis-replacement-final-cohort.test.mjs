@@ -15,46 +15,24 @@ import { verifyReplacementFinalCohortPreflight as verifyCoreReplacementFinalCoho
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
 const AUTHORIZED_WRAPPER_BLOB = "5b67674e36b43766f416e0a1aab9a0b8e41dbc36";
 const IMPORT_ONLY_CORE_BLOB = "a8acd1b1dd47ef427397056cee2958cea7ae0b7c";
+const REDESIGN_DRIFT = /replacement execution authority changed after Gate-G\(2\)/;
 
-test("replacement final-cohort packet is complete, authority-bound and blocked before Gate-G(2) CLEAR", () => {
-  const authority = verifyReplacementInheritedAuthorityBinding();
-  const result = verifyReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false });
-  assert.equal(authority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
-  assert.equal(authority.wrapperBlobSha, AUTHORIZED_WRAPPER_BLOB);
-  assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
-  assert.equal(result.inheritedAuthority.wrapperBlobSha, AUTHORIZED_WRAPPER_BLOB);
-  assert.equal(result.inheritedAuthority.coreBlobSha, IMPORT_ONLY_CORE_BLOB);
-  assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyPostGenerationScanRequired, true);
-  assert.equal(result.inheritedAuthority.residualIntegrity.uncertaintyConfirmedLeakDisposition, "REDESIGN_AFFECTED_INFERENCE_NO_REGENERATION");
-  assert.equal(result.status, "CLEAR_PACKET_GATE_G2_HOLD");
-  assert.equal(result.executionAuthorized, false);
-  assert.equal(result.gateStatus, "MISSING_GATE_G2_CLEAR_WITNESS");
-  assert.equal(result.slots.length, 5);
-  assert.deepEqual(result.slots.map((slot) => slot.passAEpisodes), [10, 10, 10, 10, 10]);
-  assert.deepEqual(result.slots[0].passBHorizons, [4, 5, 6, 7, 8, 10]);
-  assert.deepEqual(result.slots[0].passBModes, [
-    "life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome",
-  ]);
-  assert.equal(result.generationPolicyVersion, "pr39-g4-pass-a-reliability-amendment-v3");
-  assert.equal(result.generationPolicy.maxFormRepairsPerRecord, 2);
-  assert.equal(result.generationPolicy.maxRecordRetriesPerRecord, 2);
-  assert.equal(result.generationPolicy.maxTotalGeneratedVersionsPerRecord, 5);
-  assert.equal(result.oneShot.wholeCandidateAttemptCap, 1);
-  assert.equal(result.oneShot.qualityDrivenRegeneration, false);
-  assert.equal(result.durability.guaranteedScope, "process_restart_replay_of_committed_invocations");
-  assert.equal(result.durability.hostCrashFsyncDurabilityClaimed, false);
+test("replacement-v1 Gate-G(2) authority fails closed after replacement-v2 redesign begins", () => {
+  assert.throws(() => verifyReplacementInheritedAuthorityBinding(), REDESIGN_DRIFT);
+  assert.throws(
+    () => verifyReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false }),
+    REDESIGN_DRIFT,
+  );
 });
 
-test("directly imported replacement core preflight runs the same inherited-authority gate", () => {
-  const result = verifyCoreReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false });
-  assert.equal(result.inheritedAuthority.status, "CLEAR_INHERITED_AUTHORITY_BOUND");
-  assert.equal(result.inheritedAuthority.wrapperBlobSha, AUTHORIZED_WRAPPER_BLOB);
-  assert.equal(result.inheritedAuthority.coreBlobSha, IMPORT_ONLY_CORE_BLOB);
-  assert.equal(result.executionAuthorized, false);
-  assert.equal(result.gateStatus, "MISSING_GATE_G2_CLEAR_WITNESS");
+test("directly imported replacement-v1 core also fails closed after replacement-v2 redesign begins", () => {
+  assert.throws(
+    () => verifyCoreReplacementFinalCohortPreflight({ requireGateClear: false, enforceReviewedSource: false }),
+    REDESIGN_DRIFT,
+  );
 });
 
-test("replacement execution binding hard-pins the authorized runner, import-only core and G4-v3 selection", () => {
+test("replacement-v1 execution binding remains frozen as historical evidence", () => {
   const binding = readJson(REPLACEMENT_EXECUTION_BINDING_PATH);
   assert.equal(binding.runner.path, "tools/genesis/genesis-replacement-final-cohort.mjs");
   assert.equal(binding.runner.wrapperGitBlobSha, AUTHORIZED_WRAPPER_BLOB);
@@ -75,7 +53,7 @@ test("replacement execution binding hard-pins the authorized runner, import-only
   assert.equal(typeof binding.authorityBoundary.residualGateG2DisclosurePath, "string");
 });
 
-test("shared authority module gates both wrapper and core while core retains G4-v3 generation logic", () => {
+test("historical shared authority topology remains auditable after redesign invalidates execution", () => {
   const entrypoint = readFileSync(new URL("./genesis-replacement-final-cohort.mjs", import.meta.url), "utf8");
   const authority = readFileSync(new URL("./genesis-replacement-inherited-authority.mjs", import.meta.url), "utf8");
   const core = readFileSync(new URL("./genesis-replacement-final-cohort-core.mjs", import.meta.url), "utf8");
@@ -98,7 +76,7 @@ test("shared authority module gates both wrapper and core while core retains G4-
   assert.match(core, /is import-only; use tools\/genesis\/genesis-replacement-final-cohort\.mjs/);
 });
 
-test("replacement generation core cannot be executed directly", () => {
+test("replacement-v1 generation core remains non-executable directly", () => {
   const corePath = fileURLToPath(new URL("./genesis-replacement-final-cohort-core.mjs", import.meta.url));
   const result = spawnSync(process.execPath, [corePath, "--preflight"], { encoding: "utf8" });
   assert.equal(result.status, 2);
