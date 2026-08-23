@@ -1,7 +1,7 @@
 {
   "protocolVersion": "pr39-replacement-v2-redesign-v1",
   "status": "FROZEN_PRE_IMPLEMENTATION_REVIEW_NO_COGNITION_AUTHORIZED",
-  "createdAt": "2026-08-23T16:20:00Z",
+  "createdAt": "2026-08-23T16:10:00Z",
   "reason": "Replacement-v1 attempt 1 exposed a protocol-level Pass-A history-construction defect: unconstrained temperature-0 chooser/realizer collapse, local-time incoherence, social-world under-expansion, sparse-sample frequency ambiguity, and missing durable social/geographic continuity at birth.",
   "attempt1Standing": {
     "attemptRoot": "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1",
