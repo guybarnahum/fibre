@@ -966,8 +966,6 @@ async function main() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  main().catch((error) => {
-    process.stderr.write(`${error.stack ?? error.message}\n`);
-    process.exitCode = 1;
-  });
+  process.stderr.write("genesis-replacement-final-cohort-core.mjs is import-only; use tools/genesis/genesis-replacement-final-cohort.mjs\n");
+  process.exitCode = 2;
 }
