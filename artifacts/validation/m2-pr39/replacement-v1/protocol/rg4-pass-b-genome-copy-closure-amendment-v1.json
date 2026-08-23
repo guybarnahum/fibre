@@ -1,0 +1,43 @@
+{
+  "amendmentVersion": "pr39-replacement-pass-b-genome-copy-closure-v1",
+  "replacementAttemptVersion": "pr39-replacement-cohort-v1",
+  "status": "frozen_pre_final_life_generation",
+  "purpose": "Close the Gate-G(2) N2 guard-coverage gap before replacement life: the already-authorized four-token verbatim-genome boundary now applies to both rememberedContent and uncertainty on genome-exposed remembered Pass-B outputs before either field can reach Pass C.",
+  "sourceAuthority": {
+    "g4BasePath": "artifacts/validation/m2-pr39/g/protocol/g4-cognition-freeze-v1.json",
+    "originalGate": "pass_b_genome_verbatim_ngram",
+    "minimumTokens": 4,
+    "maxGeneratedVersionsPerCall": 2,
+    "retryCount": 1,
+    "notRememberedRemainsLegal": true
+  },
+  "change": {
+    "oldScannedFields": ["rememberedContent"],
+    "replacementScannedFields": ["rememberedContent", "uncertainty[*]"],
+    "sameGate": true,
+    "sameMinimumTokenWidth": true,
+    "sameOneMechanicalRetry": true,
+    "sameRetryBlindness": true,
+    "sameAdmissionSemanticsOtherThanCoverage": true,
+    "reason": "uncertainty is free text authored on a genome-exposed Pass-B call and is forwarded into Pass C; leaving it unscanned would permit verbatim genome wording to cross the otherwise frozen Pass-C genome-blind boundary."
+  },
+  "selectionDiscipline": {
+    "qualityDriven": false,
+    "semanticRichnessDriven": false,
+    "memoryQuotaChanged": false,
+    "meaningQuotaChanged": false,
+    "treatmentChanged": false,
+    "providerOrModelChanged": false,
+    "onSecondGenomeCopyFailure": "HOLD_PRESERVE_FIRST_ATTEMPT_NO_REGENERATION"
+  },
+  "historicalBoundary": {
+    "hV2RerunAuthorized": false,
+    "changesHistoricalHV2Evidence": false,
+    "appliesToReplacementExecution": true
+  },
+  "authorizationBoundary": {
+    "authorizesProviderCalls": false,
+    "authorizesFinalLife": false,
+    "blockingGate": "Gate-G(2)"
+  }
+}
