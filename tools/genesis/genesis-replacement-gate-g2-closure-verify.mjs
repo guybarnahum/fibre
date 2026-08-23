@@ -16,6 +16,8 @@ import {
 
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
 const FROZEN_G4_V2_PASS_B_ADMISSION_BLOB = "b6400e98ce83f809f0e06f95f3d5ab79eebbbb2d";
+const AUTHORIZED_WRAPPER_BLOB = "5b67674e36b43766f416e0a1aab9a0b8e41dbc36";
+const IMPORT_ONLY_CORE_BLOB = "a8acd1b1dd47ef427397056cee2958cea7ae0b7c";
 
 function assertReplacementRosterGrounding(g2, g4) {
   const bindingBySlot = new Map(g2.worldBindings.map((item) => [item.slot, item]));
@@ -57,9 +59,10 @@ export function verifyReplacementGateG2Closure() {
   const residual = readJson("artifacts/validation/m2-pr39/replacement-v1/protocol/rg4-residual-gate-g2-disclosures-v1.json");
   const g34 = verifyG34ReviewAmendments();
   const runner = readFileSync(new URL("./genesis-replacement-final-cohort.mjs", import.meta.url), "utf8");
+  const authoritySource = readFileSync(new URL("./genesis-replacement-inherited-authority.mjs", import.meta.url), "utf8");
   const core = readFileSync(new URL("./genesis-replacement-final-cohort-core.mjs", import.meta.url), "utf8");
 
-  // B1/C1: the complete replacement execution surface exists and binds inherited authority at the authorized entrypoint.
+  // B1/C1/C2: the complete execution surface binds one shared authority gate from wrapper and core import paths.
   assert.equal(g3.protocolVersion, "pr39-replacement-g3-pass-b-treatment-instance-v1");
   assert.equal(g3.replacementAssignment.slots.length, 5);
   assert.equal(g3.replacementAssignment.eligiblePassBCallCount, 30);
@@ -67,21 +70,26 @@ export function verifyReplacementGateG2Closure() {
   assert.equal(g4.initialRosters.length, 5);
   assertReplacementRosterGrounding(g2, g4);
   assert.equal(binding.runner.path, "tools/genesis/genesis-replacement-final-cohort.mjs");
+  assert.equal(binding.runner.wrapperGitBlobSha, AUTHORIZED_WRAPPER_BLOB);
   assert.equal(REPLACEMENT_CORE_PATH, "tools/genesis/genesis-replacement-final-cohort-core.mjs");
+  assert.equal(binding.runner.coreGitBlobSha, IMPORT_ONLY_CORE_BLOB);
   assert.equal(binding.oneShot.outputRoot, "artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1");
   assert.equal(binding.oneShot.wholeCandidateAttemptCap, 1);
   assert.equal(binding.oneShot.qualityDrivenRegeneration, false);
   assert.equal(typeof binding.seedBinding.eventStructureOfferSeedDomain, "string");
   assert.equal(typeof binding.seedBinding.modelClientRequestDomain, "string");
+  assert.equal(inheritedAuthority.wrapperBlobSha, AUTHORIZED_WRAPPER_BLOB);
+  assert.equal(inheritedAuthority.coreBlobSha, IMPORT_ONLY_CORE_BLOB);
   assert.equal(inheritedAuthority.hPassBHelperBlobSha, "0bca252aa20e3af375ad977fc3e2fd22dc76d9f1");
   assert.match(runner, /verifyReplacementInheritedAuthorityBinding\(\)/);
-  assert.match(runner, /verifyG4CognitionFreeze/);
-  assert.match(runner, /verifyG34ReviewAmendments/);
-  assert.match(runner, /verifyG4V3ReliabilityImplementation/);
-  assert.match(runner, /verifyG5DiagnosticsFreeze/);
-  assert.match(runner, /verifyG6VerdictFreeze/);
+  assert.match(core, /verifyReplacementInheritedAuthorityBinding\(\)/);
+  assert.match(authoritySource, /verifyG4CognitionFreeze/);
+  assert.match(authoritySource, /verifyG34ReviewAmendments/);
+  assert.match(authoritySource, /verifyG4V3ReliabilityImplementation/);
+  assert.match(authoritySource, /verifyG5DiagnosticsFreeze/);
+  assert.match(authoritySource, /verifyG6VerdictFreeze/);
 
-  // B2: G4-v3 is explicit in the byte-preserved generation core; legacy remains forbidden here.
+  // B2: G4-v3 is explicit in the generation core; legacy remains forbidden here.
   assert.equal(binding.generationPolicy.version, GENESIS_PASS_A_RELIABILITY_POLICY_V3.version);
   assert.equal(g4.passAReliabilityPolicy.version, GENESIS_PASS_A_RELIABILITY_POLICY_V3.version);
   assert.equal(binding.generationPolicy.legacySharedThreeVersionDefaultAllowed, false);
@@ -132,16 +140,19 @@ export function verifyReplacementGateG2Closure() {
   assert.equal(residual.passBUncertaintyGenomeCopyCoverage.uncertaintyItemsScannedByFrozenG4V2Gate, false);
   assert.equal(residual.passBUncertaintyGenomeCopyCoverage.changeMadeForReplacement, false);
 
-  // One-shot/durability/review binding hardening.
+  // One-shot/durability/review binding hardening lives in the shared authority module.
   assert.equal(binding.durability.replacementRunnerMustUseDurableAdapter, true);
   assert.equal(binding.durability.guaranteedScope, "process_restart_replay_of_committed_invocations");
   assert.equal(binding.durability.hostCrashFsyncDurabilityClaimed, false);
   assert.equal(binding.runner.bindingPathHardcoded, true);
   assert.equal(binding.runner.bindingEnvOverrideAllowed, false);
   assert.doesNotMatch(runner, /process\.env/);
-  assert.match(runner, /"tools\/genesis"/);
-  assert.match(runner, /"artifacts\/validation\/m2-pr39\/g\/protocol"/);
-  assert.match(runner, /merge-base/);
+  assert.doesNotMatch(core, /process\.env/);
+  assert.match(authoritySource, /"tools\/genesis"/);
+  assert.match(authoritySource, /"artifacts\/validation\/m2-pr39\/g\/protocol"/);
+  assert.match(authoritySource, /merge-base/);
+  assert.match(authoritySource, /replacement authorized wrapper blob drift/);
+  assert.match(authoritySource, /replacement generation core blob drift/);
 
   // The stricter structural translation is disclosed rather than hidden.
   assert.equal(closure.thresholdDisclosure.oldFourEdgeIndependentReference, 0.03515625);
@@ -149,9 +160,10 @@ export function verifyReplacementGateG2Closure() {
   assert.equal(closure.thresholdDisclosure.adaptiveDirection, "stricter_not_pass_shopping");
 
   return Object.freeze({
-    status: "CLEAR_B1_B5_C1_ZERO_CALL",
+    status: "CLEAR_B1_B5_C1_C2_ZERO_CALL",
     b1CompleteExecutionPacket: true,
     c1InheritedAuthorityBound: true,
+    c2CoreImportAuthorityBound: true,
     b2ExplicitG4V3: true,
     b3FiveEdgeClearRuleClosed: true,
     b4AuthoringComparabilityDisclosed: true,
@@ -173,9 +185,10 @@ export function verifyReplacementGateG2Closure() {
 }
 
 function print(result) {
-  process.stdout.write("PR39 REPLACEMENT GATE-G(2) HOLD CLOSURE: CLEAR B1-B5+C1 — ZERO CALL\n\n");
+  process.stdout.write("PR39 REPLACEMENT GATE-G(2) HOLD CLOSURE: CLEAR B1-B5+C1+C2 — ZERO CALL\n\n");
   process.stdout.write("B1 complete replacement execution packet: yes\n");
   process.stdout.write("C1 inherited G3/G4/G5/G6/G4-v3 authority bound at executable preflight: yes\n");
+  process.stdout.write("C2 core import path invokes the same inherited-authority gate: yes\n");
   process.stdout.write("B2 G4-v3 explicit at replacement Pass-A call site: yes\n");
   process.stdout.write("B3 five-edge CLEAR rule + null/error/tie closure: yes\n");
   process.stdout.write("B4 aligned genome-authoring design/non-comparability disclosed: yes\n");
@@ -183,6 +196,8 @@ function print(result) {
   process.stdout.write("Replacement roster roles grounded to frozen Worlds: yes\n");
   process.stdout.write("Historical G4-v2 Pass-B admission source/hash: preserved exactly\n");
   process.stdout.write("Pass-B uncertainty genome-copy hardening: not applied; residual gap disclosed\n");
+  process.stdout.write(`Authorized wrapper blob: ${result.inheritedAuthority.wrapperBlobSha}\n`);
+  process.stdout.write(`Generation core blob: ${result.inheritedAuthority.coreBlobSha}\n`);
   process.stdout.write(`Pass-B input helper blob: ${result.inheritedAuthority.hPassBHelperBlobSha}\n`);
   process.stdout.write("Post-CLEAR drift scope: services + all tools/genesis + inherited g/protocol + replacement protocol\n");
   process.stdout.write("Replacement durable adapter: process-restart scope only\n");
