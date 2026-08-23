@@ -1,3 +1,7 @@
+// fibre-test-lifecycle: regression
+// fibre-test-scope: pr39
+// fibre-test-purpose: prevent-structured-output-provider-schema-regression
+
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -21,7 +25,7 @@ function response(status, body) {
   };
 }
 
-test("OpenAI transport projects only unsupported canonical constraints without mutating Pass-B schema", async () => {
+test("OpenAI transport projects provider-risk constraints without mutating Pass-B canonical schema", async () => {
   const frozenHash = passBResponseSchemaHash();
   const canonicalBefore = structuredClone(GENESIS_PASS_B_RESPONSE_SCHEMA);
   const projected = projectOpenAIStructuredOutputSchema(GENESIS_PASS_B_RESPONSE_SCHEMA);
@@ -33,7 +37,7 @@ test("OpenAI transport projects only unsupported canonical constraints without m
   assert.equal(Object.hasOwn(projected.properties.episodeRefs, "uniqueItems"), false);
   assert.equal(Object.hasOwn(projected.properties.rememberedContent, "maxLength"), false);
   assert.equal(Object.hasOwn(projected.properties.uncertainty.items, "maxLength"), false);
-  assert.equal(projected.properties.uncertainty.maxItems, 8);
+  assert.equal(Object.hasOwn(projected.properties.uncertainty, "maxItems"), false);
   assert.deepEqual(GENESIS_PASS_B_RESPONSE_SCHEMA, canonicalBefore);
   assert.equal(passBResponseSchemaHash(), frozenHash);
 
@@ -69,11 +73,11 @@ test("OpenAI transport projects only unsupported canonical constraints without m
   assert.equal(Object.hasOwn(sent.properties.episodeRefs, "uniqueItems"), false);
   assert.equal(Object.hasOwn(sent.properties.rememberedContent, "maxLength"), false);
   assert.equal(Object.hasOwn(sent.properties.uncertainty.items, "maxLength"), false);
-  assert.equal(sent.properties.uncertainty.maxItems, 8);
+  assert.equal(Object.hasOwn(sent.properties.uncertainty, "maxItems"), false);
   assert.equal(passBResponseSchemaHash(), frozenHash, "transport projection must not change Fibre canonical schema identity");
 });
 
-test("OpenAI adapter re-enforces projected uniqueItems and string-length constraints locally", () => {
+test("OpenAI adapter re-enforces projected uniqueness, length and maxItems constraints locally", () => {
   assert.throws(
     () => assertOpenAIProjectedSchemaConstraints({
       outcome: "remembered",
@@ -102,6 +106,16 @@ test("OpenAI adapter re-enforces projected uniqueItems and string-length constra
       uncertainty: ["x".repeat(121)],
     }, GENESIS_PASS_B_RESPONSE_SCHEMA),
     (error) => error?.code === "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR" && error?.providerErrorCode === "maxLength",
+  );
+
+  assert.throws(
+    () => assertOpenAIProjectedSchemaConstraints({
+      outcome: "remembered",
+      episodeRefs: ["ep_1"],
+      rememberedContent: "A remembered event.",
+      uncertainty: Array.from({ length: 9 }, (_, index) => `uncertainty_${index}`),
+    }, GENESIS_PASS_B_RESPONSE_SCHEMA),
+    (error) => error?.code === "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR" && error?.providerErrorCode === "maxItems",
   );
 });
 
