@@ -19,6 +19,10 @@ import {
   syntheticLineageWitnessFromRecombinedGenome,
 } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
+  GENESIS_REPLACEMENT_PASS_A_PROMPT,
+  GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
+} from "../../services/world-kernel/src/genesis-replacement-pass-a.mjs";
+import {
   richPassAGenerationDecision,
 } from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
 import {
@@ -64,8 +68,11 @@ const recordFallback = richPassAGenerationDecision({
   nextKind: "record_retry",
 });
 assert.equal(recordFallback.allowed, true, "record retry must remain available after two failed form repairs");
+assert.match(GENESIS_REPLACEMENT_PASS_A_PROMPT, /Avoid naming the weekday, daypart, clock time, or location label/iu);
+assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /retryOrdinal/iu);
+assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /fresh alternative realization/iu);
 
-// Exercise the real boundary that blocked the last development run. When the
+// Exercise the real boundary that blocked an earlier development run. When the
 // model redundantly returns the exact frozen counterpart introduction, Fibre
 // should normalize it rather than burn a retry. Conflicting roles still fail in
 // the domain implementation.
@@ -110,6 +117,7 @@ assert.equal(
 
 console.log("\nPR39 DEVELOPMENT CHECK: READY");
 console.log("5 Threads · 70 planned life episodes · deterministic place/time/event skeletons");
-console.log("Pass A can use 2 local form repairs and then 2 fresh retries, capped at 5 generated versions");
+console.log("Pass A can use 2 local form repairs and then 2 mechanically distinct fresh retries, capped at 5 generated versions");
+console.log("Pass A avoids unnecessary daypart/location narration that can conflict with Fibre-owned history");
 console.log("Redundant model re-declaration of the frozen counterpart is normalized without a retry");
 console.log("This check makes zero provider calls and grants no publication authority");
