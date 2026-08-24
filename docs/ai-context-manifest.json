@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 29,
+  "version": 30,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -91,7 +91,8 @@
       ],
       "sources": [
         "CHANGELOG.md",
-        "docs/state/pre-pr39-whole-person-understanding.md",
+        "docs/history/origins/original-architecture.md",
+        "docs/history/milestones/pre-pr39-whole-person-understanding.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/whole-person-prefreeze-characterization.md",
         "docs/validation/m2-pr39-slice-b-genome-control-result.md",

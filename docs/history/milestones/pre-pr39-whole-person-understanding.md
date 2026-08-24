@@ -1,19 +1,19 @@
 ---
 id: fibre-pre-pr39-whole-person-understanding
-status: accepted
+status: historical
 last-reviewed: 2026-08-14
-canonical: true
+canonical: false
 ---
 
 # Pre-#39 Whole-Person understanding
 
 This checkpoint records the accepted Fibre understanding immediately before milestone **#39 — Genesis, Childhood & Thread Birth v1** begins.
 
-It is a state/decision checkpoint, not a new milestone, standing gate, or score movement.
+It is a historical state/decision checkpoint, not a current state document, new milestone, standing gate, or score movement.
 
-Canonical decision: [`ADR-0012`](../decisions/ADR-0012-semantic-meaning-over-derived-categories.md).
-Detailed development evidence: [`whole-person-prefreeze-characterization.md`](../validation/whole-person-prefreeze-characterization.md).
-#39 quality constraints: [`m2-pr39-genesis-quality-constraints.md`](../validation/m2-pr39-genesis-quality-constraints.md).
+Canonical decision at the boundary: [`ADR-0012`](../../decisions/ADR-0012-semantic-meaning-over-derived-categories.md).
+Detailed development evidence: [`whole-person-prefreeze-characterization.md`](../../validation/whole-person-prefreeze-characterization.md).
+#39 quality constraints: [`m2-pr39-genesis-quality-constraints.md`](../../validation/m2-pr39-genesis-quality-constraints.md).
 
 ## What changed in our understanding
 
@@ -178,7 +178,7 @@ Do not add Pass 4, tune the scenario, or use it as #39 acceptance evidence.
 
 Its purpose was to discover architectural constraints. It succeeded at that purpose, including by producing failed diagnostics that changed the design.
 
-## Next sequence
+## Next sequence at this checkpoint
 
 ```text
 NOW   #39 Genesis, Childhood & Thread Birth v1
@@ -186,6 +186,6 @@ THEN  #40 Identity Projection & Causal Consumption
 FINAL #41 M2 Standing Gate / M2 closure
 ```
 
-#39 should now build the life substrate needed for a genuine held-out test rather than continuing to optimize the old development benchmark.
+#39 was to build the life substrate needed for a genuine held-out test rather than continuing to optimize the old development benchmark.
 
-No M2 score movement is awarded by this checkpoint.
+No M2 score movement was awarded by this checkpoint.
