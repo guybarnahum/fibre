@@ -142,9 +142,11 @@ export function createSituatedLifeTables(database) {
           SELECT 1
           FROM json_each(NEW.assertion_json,'$.sourceReferences') refs
           JOIN thread_events events
-            ON events.event_id=refs.value AND events.thread_id=NEW.thread_id
+            ON events.event_id=refs.value
+           AND events.thread_id=NEW.thread_id
+           AND events.event_type='THREAD_LIFE_EPISODE_RECORDED'
         )
-      BEGIN SELECT RAISE(ABORT,'cultural/language formation requires a resolved Thread-event witness'); END;
+      BEGIN SELECT RAISE(ABORT,'cultural/language formation requires a resolved lived Thread-event witness'); END;
 
     CREATE TRIGGER IF NOT EXISTS identity_lineage_revision_witness_guard
       BEFORE INSERT ON identity_assertion_records
