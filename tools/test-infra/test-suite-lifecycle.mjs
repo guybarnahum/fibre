@@ -27,6 +27,10 @@ export const REPRO_TOOL_TEST_PATHS = Object.freeze([
   "tools/repro/pr39/e2/genesis-rich-life-e2-worlds.test.mjs",
   "tools/repro/guardian/semantic-guardian-v4-standing-gate-v4.test.mjs",
   "tools/repro/standing/standing-evidence-archive.test.mjs",
+  // This test proves the historical R2 pre-CLEAR authority boundary. Once #39
+  // development moves past that reviewed source/witness state, it is evidence,
+  // not an invariant that should block the active development suite.
+  "tools/genesis/genesis-replacement-r2-preflight.test.mjs",
 ]);
 
 const REPRO_PATH_SET = new Set(REPRO_TOOL_TEST_PATHS);
