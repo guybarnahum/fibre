@@ -1,0 +1,70 @@
+{
+  "fixtureVersion": "model-runtime-real-provider-replay-v1",
+  "purpose": "Recorded real provider Pass-A retry completion retained only to exercise durable invocation replay with a realistic nested result. This is not PR39 scientific evidence.",
+  "recordedProviderResult": {
+    "output": {
+      "episode": {
+        "episodeId": "epi_cal_g4v3_w12_v10_02",
+        "occurredAt": "2022-03-15T16:48:00.000Z",
+        "ageAtEvent": 17.57,
+        "placeRef": "place_cal_g4v3_12_school",
+        "participantRefs": [
+          "thr_cal_g4v3_w12_v10",
+          "person_cal_g4v3_w12_v10_peer1",
+          "person_cal_g4v3_w12_v10_peer2",
+          "person_cal_g4v3_w12_v10_teacher1"
+        ],
+        "observableAction": "During a small-group class discussion, the young person calmly tells the teacher they disagree with the textbook’s claim, gives two reasons, and answers brief challenges from classmates.",
+        "structureRef": "ges_v2_public_disagreement",
+        "introducedParticipants": [
+          {
+            "provisionalPersonId": "person_cal_g4v3_w12_v10_peer1",
+            "roleRef": "peer",
+            "introducedAt": "2022-03-15T16:48:00.000Z"
+          },
+          {
+            "provisionalPersonId": "person_cal_g4v3_w12_v10_peer2",
+            "roleRef": "peer",
+            "introducedAt": "2022-03-15T16:48:00.000Z"
+          },
+          {
+            "provisionalPersonId": "person_cal_g4v3_w12_v10_teacher1",
+            "roleRef": "teacher",
+            "introducedAt": "2022-03-15T16:48:00.000Z"
+          }
+        ],
+        "intellectualEncounter": {
+          "kind": "argument",
+          "subjectKind": "idea",
+          "subjectLabel": "whether a single historical cause can adequately explain a complex social change",
+          "accessMode": "institution_mediated",
+          "subjectPersonRef": null
+        }
+      }
+    },
+    "provenance": {
+      "provider": "openai",
+      "transport": "responses",
+      "modelId": "gpt-5.1-2025-11-13",
+      "providerRequestId": "req_c07c931c814e4e8bb7031383a61bf707",
+      "configuration": {
+        "transport": "responses",
+        "endpoint": "https://api.openai.com/v1/responses",
+        "maxOutputTokens": "auto",
+        "temperature": 0,
+        "topP": 1,
+        "reasoningEffort": "none",
+        "retryLimit": 2,
+        "retryDelayMs": 2000,
+        "structuredOutput": "json_schema_strict"
+      },
+      "invocationAttempts": 1,
+      "operationalRetries": [],
+      "usage": {
+        "inputTokens": 2085,
+        "outputTokens": 353,
+        "totalTokens": 2438
+      }
+    }
+  }
+}
