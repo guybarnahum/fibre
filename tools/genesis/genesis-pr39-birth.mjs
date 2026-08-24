@@ -16,7 +16,9 @@ import {
   GENESIS_PASS_B_RESPONSE_SCHEMA,
 } from "../../services/world-kernel/src/genesis-pass-b-prompts.mjs";
 import {
+  GENESIS_PASS_C_INITIAL_PROMPT,
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
+  GENESIS_PASS_C_REINTERPRETATION_PROMPT,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
 } from "../../services/world-kernel/src/genesis-pass-c-prompts.mjs";
 import {
@@ -28,10 +30,6 @@ import {
   GENESIS_REPLACEMENT_PASS_B_GENOME_COPY_RETRY_PROMPT,
   GENESIS_REPLACEMENT_PASS_B_PROMPT,
 } from "../../services/world-kernel/src/genesis-replacement-pass-b.mjs";
-import {
-  GENESIS_REPLACEMENT_PASS_C_INITIAL_PROMPT,
-  GENESIS_REPLACEMENT_PASS_C_REINTERPRETATION_PROMPT,
-} from "../../services/world-kernel/src/genesis-replacement-pass-c.mjs";
 import {
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
 } from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
@@ -103,8 +101,8 @@ function currentCognition(run, plans) {
     },
     passBSchemaMaterial: GENESIS_PASS_B_RESPONSE_SCHEMA,
     passCPromptMaterial: {
-      initial: GENESIS_REPLACEMENT_PASS_C_INITIAL_PROMPT,
-      reinterpretation: GENESIS_REPLACEMENT_PASS_C_REINTERPRETATION_PROMPT,
+      initial: GENESIS_PASS_C_INITIAL_PROMPT,
+      reinterpretation: GENESIS_PASS_C_REINTERPRETATION_PROMPT,
     },
     passCSchemaMaterial: {
       initial: GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
