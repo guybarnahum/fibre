@@ -6,10 +6,10 @@ import {
 } from "./persistence-common.mjs";
 import { ParticipationAuthorizationRejectedError } from "./runtime-domain.mjs";
 
-// Historical M1 runtime behavior is retained as an explicit implementation so
-// pre-M2 Development work can add an episode-forming Actor without rewriting
-// the closed M1 round trip or its evidence expectations.
-export function m1DeterministicActorOutput(context) {
+// Fibre's deterministic runtime Actor is deliberately bounded: it plans against
+// the authorized execution context and proposes life changes without directly
+// mutating authoritative world state.
+export function deterministicActorOutput(context) {
   assertPlainObject("execution context", context);
   assertId("execution context threadId", context.threadId);
   assertId("execution context requestId", context.requestId);
