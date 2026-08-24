@@ -33,12 +33,15 @@ export const GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT = `${GENESIS_REPLACEMENT_PA
 export const GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT = `You are Fibre Genesis observable-action form repair.
 You receive only the rejected observableAction and the failed mechanical form gate. Return only a replacement observableAction.
 Preserve the externally stated event facts already present in the sentence; do not invent, reverse, upgrade, interpret, or add participants, places, causes, meanings, lessons, or future implications.
+If failedGate=pass_a_local_civil_time_narration, remove explicit weekday, daypart, or clock-time wording rather than replacing it with another time label; Fibre owns the exact local civil time.
 Use one plain concise sentence. Target no more than 600 UTF-8 bytes and 80 words on the first repair; no more than 300 UTF-8 bytes and 40 words on the second. The authoritative ceiling remains 1200 UTF-8 bytes.`;
 
 const FORM_REPAIRABLE_GATES = new Set([
   "pass_a_interiority_form",
   "pass_a_observable_action_bounds",
 ]);
+const LOCAL_CIVIL_TIME_FORM_REPAIR_GATE = "pass_a_local_civil_time_narration";
+const LOCAL_CIVIL_TIME_NARRATION_FAILURE = /narrates a (?:weekday|daypart) inconsistent with local civil time/iu;
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 
 function frozenEnvelopeForCognition(envelope) {
@@ -72,11 +75,19 @@ export function buildReplacementPassACognitionInput({ passAInput, envelope }) {
   return cognition;
 }
 
-function isFormRepairable(error) {
-  return error instanceof GenesisPassAValidationError && FORM_REPAIRABLE_GATES.has(error.gate);
+function formRepairGate(error) {
+  if (error instanceof GenesisPassAValidationError && FORM_REPAIRABLE_GATES.has(error.gate)) {
+    return error.gate;
+  }
+  if (error instanceof TypeError && LOCAL_CIVIL_TIME_NARRATION_FAILURE.test(error.message)) {
+    return LOCAL_CIVIL_TIME_FORM_REPAIR_GATE;
+  }
+  return null;
 }
 
 function failureGate(error) {
+  const repairGate = formRepairGate(error);
+  if (repairGate !== null) return repairGate;
   if (error instanceof GenesisPassAValidationError) return error.gate;
   return "historical_realization_record_validity";
 }
@@ -153,7 +164,8 @@ export async function generateReplacementHistoricalEpisode({
         budgetState: Object.freeze({ generatedVersions, formRepairs, recordRetries }),
       });
     } catch (error) {
-      if (isFormRepairable(error) && realization !== null) {
+      const repairGate = formRepairGate(error);
+      if (repairGate !== null && realization !== null) {
         const formDecision = richPassAGenerationDecision({
           generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
           generatedVersions,
@@ -165,7 +177,7 @@ export async function generateReplacementHistoricalEpisode({
           const repairOrdinal = formRepairs + 1;
           const repairInput = {
             rejectedObservableAction: realization.observableAction,
-            failedGate: error.gate,
+            failedGate: repairGate,
             repairOrdinal,
           };
           const result = await repairAdapter.invoke({
