@@ -27,9 +27,10 @@ export const REPRO_TOOL_TEST_PATHS = Object.freeze([
   "tools/repro/pr39/e2/genesis-rich-life-e2-worlds.test.mjs",
   "tools/repro/guardian/semantic-guardian-v4-standing-gate-v4.test.mjs",
   "tools/repro/standing/standing-evidence-archive.test.mjs",
-  // This test proves the historical R2 pre-CLEAR authority boundary. Once #39
-  // development moves past that reviewed source/witness state, it is evidence,
-  // not an invariant that should block the active development suite.
+  // Historical #39 review-state assertions belong to reproducibility, not the
+  // active compiler contract. They intentionally describe states we have moved
+  // beyond (no output root, no CLEAR witness, no execution authority).
+  "tools/genesis/genesis-replacement-v2-redesign-preflight.test.mjs",
   "tools/genesis/genesis-replacement-r2-preflight.test.mjs",
 ]);
 
