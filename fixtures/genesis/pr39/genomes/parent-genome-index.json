@@ -1,0 +1,9 @@
+{
+  "version": "pr39-parent-genome-index-v1",
+  "genomes": {
+    "genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea": "fixtures/genesis/pr39/genomes/parents/thread-02-parent-a.json",
+    "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e": "fixtures/genesis/pr39/genomes/parents/thread-02-parent-b.json",
+    "genome_3dd2b07345095270a6610ba64aee3a8dfc1cc7a5": "fixtures/genesis/pr39/genomes/parents/thread-05-parent-a.json",
+    "genome_b7cebdea0c0d7633bc97f598b58c1307fd812130": "fixtures/genesis/pr39/genomes/parents/thread-05-parent-b.json"
+  }
+}
