@@ -13,8 +13,8 @@ import {
 import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../src/genesis-pass-a-reliability-v3.mjs";
 import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
 
-const CALIBRATION_CORPUS = "artifacts/validation/m2-pr39/g/protocol/g4-v3-off-cohort-calibration-inputs-v1.json";
-const TRIAL_175_RESULT = "artifacts/validation/m2-pr39/g/calibration/g4-v3-off-cohort-v1/trial-175-result-v1.json";
+const CALIBRATION_CORPUS = "fixtures/model-runtime/pass-a-restart-v1.json";
+const TRIAL_175_RESULT = "fixtures/model-runtime/pass-a-restart-recorded-result-v1.json";
 const BASE_CONFIGURATION = Object.freeze({ transport: "test", temperature: 0 });
 
 function tempJournal(t) {
@@ -62,7 +62,7 @@ function successfulResult(answer = "alpha") {
 function calibrationTrial175() {
   const corpus = JSON.parse(readFileSync(resolve(CALIBRATION_CORPUS), "utf8"));
   const trial = corpus.trials.find((candidate) => candidate.trialOrdinal === 175);
-  assert.ok(trial, "frozen calibration trial 175 must exist");
+  assert.ok(trial, "retained restart trial 175 must exist");
   const result = JSON.parse(readFileSync(resolve(TRIAL_175_RESULT), "utf8"));
   const responses = result.modelEvents.filter((event) => event.type === "model_response");
   assert.equal(responses.length, 2);
@@ -71,7 +71,7 @@ function calibrationTrial175() {
 
 function resultFromCalibrationResponse(result, responses, clientRequestId) {
   const response = responses.find((event) => event.clientRequestId === clientRequestId);
-  assert.ok(response, `missing frozen response ${clientRequestId}`);
+  assert.ok(response, `missing retained response ${clientRequestId}`);
   const callIndex = clientRequestId.endsWith(":initial") ? 0 : 1;
   return {
     output: structuredClone(response.modelOutput),
