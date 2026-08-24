@@ -223,102 +223,91 @@ function assertBirthOriginWitnessesInTransaction(database, manifest, originFixtu
     return fixture;
   }
 
-  if (fixture.originKind === "echo" || fixture.originKind === "homage") {
-    if (manifest.parentOrAncestorRefs.length !== 0) {
-      throw new GenesisConflictError(`${fixture.originKind} birth cannot publish parentOrAncestorRefs`);
-    }
-    const authorityRef = fixture.originKind === "echo"
-      ? fixture.sourceBundle.consentAuthorityRef
-      : fixture.sourceBundle.subjectStatusAttestationRef;
-    assertExactReferenceList("manifest.sourceBundleRefs", manifest.sourceBundleRefs, [authorityRef]);
-    assertGenesisOriginAuthorityWitness({
-      originFixture: fixture,
-      resolvedAuthority: originAuthorityInTransaction(database, authorityRef),
-      ErrorType: GenesisConflictError,
-    });
-    return fixture;
-  }
-
   if (fixture.originKind === "fork") {
+    if (manifest.parentOrAncestorRefs.length !== 1 || manifest.parentOrAncestorRefs[0] !== fixture.fork.sourceThreadRef) {
+      throw new GenesisConflictError("fork manifest must bind exactly the verified source Thread");
+    }
     if (manifest.sourceBundleRefs.length !== 0) {
       throw new GenesisConflictError("fork birth cannot publish sourceBundleRefs");
     }
-    assertExactReferenceList(
-      "manifest.parentOrAncestorRefs",
-      manifest.parentOrAncestorRefs,
-      [fixture.fork.sourceThreadRef],
-    );
-    assertForkBoundaryAgainstCanonicalEvents({
-      originFixture: fixture,
-      canonicalEvents: canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef),
-      ErrorType: GenesisConflictError,
-    });
+    const sourceEvents = canonicalThreadEventsInTransaction(database, fixture.fork.sourceThreadRef);
+    assertForkBoundaryAgainstCanonicalEvents(fixture, sourceEvents, GenesisConflictError);
     return fixture;
   }
 
-  throw new GenesisConflictError(`unsupported source-derived origin mode ${manifest.originMode}`);
-}
-
-function normalizeBirthEpisodes(candidates, manifest) {
-  if (!Array.isArray(candidates)) throw new TypeError("publishBirth episodes must be an array");
-  const normalized = candidates.map((candidate) => normalizePublishedGenesisEpisode(candidate));
-  const episodeIds = new Set();
-  let previousOccurredAt = null;
-  for (const { episode } of normalized) {
-    if (episodeIds.has(episode.episodeId)) {
-      throw new GenesisConflictError(`duplicate published Genesis episode ${episode.episodeId}`);
-    }
-    episodeIds.add(episode.episodeId);
-    if (Date.parse(episode.occurredAt) > Date.parse(manifest.entry.chronologyEndsAt)) {
-      throw new GenesisConflictError(`Genesis episode ${episode.episodeId} exceeds chronologyEndsAt`);
-    }
-    if (previousOccurredAt !== null && Date.parse(episode.occurredAt) <= Date.parse(previousOccurredAt)) {
-      throw new GenesisConflictError("published Genesis episodes must advance lived chronology");
-    }
-    previousOccurredAt = episode.occurredAt;
+  if (manifest.parentOrAncestorRefs.length !== 0) {
+    throw new GenesisConflictError(`${fixture.originKind} birth cannot publish parentOrAncestorRefs`);
   }
-  return normalized;
+  assertExactReferenceList(
+    "manifest.sourceBundleRefs",
+    manifest.sourceBundleRefs,
+    fixture.sourceBundleRefs,
+  );
+  if (fixture.originKind === "homage" && fixture.livingSubject === true) {
+    throw new GenesisConflictError("homage birth cannot identify a living human subject");
+  }
+  if (fixture.originKind === "echo") {
+    const authorityRef = fixture.consentAuthority?.authorityRef;
+    if (typeof authorityRef !== "string" || authorityRef.length === 0) {
+      throw new GenesisConflictError("echo birth requires a consent-authority reference");
+    }
+    const { record: authority, recordDigest } = originAuthorityInTransaction(database, authorityRef);
+    assertGenesisOriginAuthorityWitness({
+      fixture,
+      authority,
+      authorityDigest: recordDigest,
+      ErrorType: GenesisConflictError,
+    });
+  }
+  return fixture;
 }
 
-function normalizeBirthMemories(candidates, { manifest, threadId, lifeEventIds }) {
-  if (!Array.isArray(candidates)) throw new TypeError("publishBirth memories must be an array");
-  const normalized = candidates.map((candidate) => normalizeAutobiographicalMemory(candidate));
-  const revisionKeys = new Set();
+function normalizeBirthEpisodes(episodeCandidates, manifest) {
+  if (!Array.isArray(episodeCandidates)) throw new TypeError("episodes must be an array");
+  return episodeCandidates.map((candidate) => normalizePublishedGenesisEpisode({
+    ...candidate,
+    threadId: manifest.threadId,
+    genesisId: manifest.genesisId,
+    worldSpecRef: manifest.worldSpecRef,
+  }));
+}
+
+function normalizeBirthMemories(memoryCandidates, { manifest, threadId, lifeEventIds }) {
+  if (!Array.isArray(memoryCandidates)) throw new TypeError("memories must be an array");
+  const normalized = memoryCandidates.map((candidate) => normalizeAutobiographicalMemory(candidate));
+  const seenRevisions = new Set();
+  const maxRevisionByMemory = new Map();
   for (const record of normalized) {
-    if (record.recordFormat !== AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) {
-      throw new GenesisConflictError("Genesis birth may publish only explicit autobiographical_memory_v2 records");
+    if (record.formatVersion !== AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) {
+      throw new GenesisConflictError("Genesis birth accepts autobiographical memory format v2 only");
     }
-    if (record.threadId !== threadId) throw new GenesisConflictError("Genesis memory belongs to another Thread");
-    if (record.authorship.kind !== "fibre_genesis_authored") {
-      throw new GenesisConflictError("Genesis birth memory must use fibre_genesis_authored authorship");
+    if (record.threadId !== threadId) throw new GenesisConflictError("memory/thread identity mismatch");
+    const key = `${record.memoryId}:${record.revision}`;
+    if (seenRevisions.has(key)) throw new GenesisConflictError(`duplicate memory revision ${key}`);
+    seenRevisions.add(key);
+    const expectedRevision = (maxRevisionByMemory.get(record.memoryId) ?? 0) + 1;
+    if (record.revision !== expectedRevision) {
+      throw new GenesisConflictError(`memory ${record.memoryId} revisions must start at 1 and remain contiguous`);
     }
-    if (record.recordedAt !== manifest.publication.publishedAt) {
-      throw new GenesisConflictError("Genesis memory recordedAt must equal birth publication time");
+    maxRevisionByMemory.set(record.memoryId, record.revision);
+    if (!lifeEventIds.has(record.subject.originEventRef)) {
+      throw new GenesisConflictError(`memory ${record.memoryId} origin must cite an admitted life event`);
     }
-    if (Date.parse(record.asOf) > Date.parse(manifest.entry.chronologyEndsAt)) {
-      throw new GenesisConflictError(`Genesis memory ${record.memoryId} asOf exceeds chronologyEndsAt`);
-    }
-    for (const ref of record.eventRefs) {
-      if (!lifeEventIds.has(ref)) {
-        throw new GenesisConflictError(
-          `Genesis memory ${record.memoryId} subject event ${ref} is not an admitted Pass-A life event`,
-        );
+    for (const eventRef of record.eventRefs) {
+      if (!lifeEventIds.has(eventRef)) {
+        throw new GenesisConflictError(`memory ${record.memoryId} cites event outside this Genesis life`);
       }
     }
-    const revisionKey = `${record.memoryId}:${record.revision}`;
-    if (revisionKeys.has(revisionKey)) throw new GenesisConflictError(`duplicate Genesis memory revision ${revisionKey}`);
-    revisionKeys.add(revisionKey);
+    const expectedCreatedBy = `genesis:${manifest.genesisId}`;
+    if (record.createdBy !== expectedCreatedBy) {
+      throw new GenesisConflictError(`memory ${record.memoryId} createdBy must be ${expectedCreatedBy}`);
+    }
   }
-
-  normalized.sort((left, right) =>
-    left.memoryId.localeCompare(right.memoryId) || left.revision - right.revision);
   const previousByMemory = new Map();
   for (const record of normalized) {
     const previous = previousByMemory.get(record.memoryId) ?? null;
-    if (previous === null) {
-      if (record.revision !== 1) throw new GenesisConflictError(`Genesis memory ${record.memoryId} must begin at revision 1`);
-    } else {
-      assertAutobiographicalMemoryRevisionCompatibility(previous, record, GenesisConflictError);
+    if (previous !== null) {
+      assertAutobiographicalMemoryRevisionCompatibility(record, previous, GenesisConflictError);
     }
     previousByMemory.set(record.memoryId, record);
   }
@@ -326,57 +315,58 @@ function normalizeBirthMemories(candidates, { manifest, threadId, lifeEventIds }
 }
 
 export class GenesisStore {
-  #database;
+  #databasePath;
   #readOnly;
+  #database;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor({ databasePath, readOnly = false } = {}) {
+    this.#databasePath = normalizeDatabasePath(databasePath);
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    migrateDatabase(this.#databasePath);
+    const probe = new DatabaseSync(this.#databasePath, { readOnly: this.#readOnly });
     try {
-      if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
-        migrateDatabase(this.#database);
-        this.#database.exec("BEGIN IMMEDIATE");
-        createGenesisTables(this.#database);
-        this.#database.exec("COMMIT");
+      if (!genesisSchemaPresent(probe)) {
+        if (this.#readOnly) {
+          throw new GenesisNotFoundError("Genesis storage is not present in this world");
+        }
+        createGenesisTables(probe);
       }
-    } catch (error) {
-      safeRollback(this.#database);
-      this.#database.close();
-      throw error;
+    } finally {
+      probe.close();
     }
+    this.#database = new DatabaseSync(this.#databasePath, { readOnly: this.#readOnly });
   }
 
   close() { this.#database.close(); }
-
-  queryOnly() {
-    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
-  }
 
   recordWorldSpec(candidate) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot write");
     const record = normalizeGenesisWorldSpec(candidate);
     const digest = genesisRecordDigest("world_spec", record);
-    const existing = this.#database.prepare(
-      "SELECT record_json,record_digest FROM genesis_world_specs WHERE world_spec_id=?",
-    ).get(record.worldSpecId);
-    if (existing !== undefined) {
-      if (existing.record_json !== canonicalJson(record) || existing.record_digest !== digest) {
-        throw new GenesisConflictError(`WorldSpec ${record.worldSpecId} already exists with different content`);
-      }
-      return { record: structuredClone(record), recordDigest: digest, idempotent: true };
-    }
     try {
       this.#database.exec("BEGIN IMMEDIATE");
+      const existing = this.#database.prepare(
+        "SELECT record_json,record_digest FROM genesis_world_specs WHERE world_spec_id=?",
+      ).get(record.worldSpecId);
+      if (existing !== undefined) {
+        if (existing.record_digest !== digest || existing.record_json !== canonicalJson(record)) {
+          throw new GenesisConflictError(`WorldSpec ${record.worldSpecId} already exists with different immutable content`);
+        }
+        this.#database.exec("COMMIT");
+        return { record: structuredClone(record), recordDigest: digest, idempotent: true };
+      }
       this.#database.prepare(`
-        INSERT INTO genesis_world_specs(world_spec_id,record_json,record_digest,created_at)
-        VALUES (?,?,?,?)
-      `).run(record.worldSpecId, canonicalJson(record), digest, record.createdAt);
+        INSERT INTO genesis_world_specs(
+          world_spec_id,authored_by,source_material_ref,created_at,record_json,record_digest
+        ) VALUES (?,?,?,?,?,?)
+      `).run(
+        record.worldSpecId,
+        record.authorship.authoredBy,
+        record.authorship.sourceMaterialRef,
+        record.createdAt,
+        canonicalJson(record),
+        digest,
+      );
       this.#database.exec("COMMIT");
     } catch (error) {
       safeRollback(this.#database);
@@ -385,19 +375,12 @@ export class GenesisStore {
     return { record: structuredClone(record), recordDigest: digest, idempotent: false };
   }
 
-  getWorldSpec(worldSpecId, { required = true } = {}) {
+  getWorldSpec(worldSpecId) {
     assertId("worldSpecId", worldSpecId);
-    if (!tableExists(this.#database, "genesis_world_specs")) {
-      if (!required) return null;
-      throw new GenesisNotFoundError("Genesis WorldSpec storage is not present in this world");
-    }
     const row = this.#database.prepare(
       "SELECT record_json,record_digest FROM genesis_world_specs WHERE world_spec_id=?",
     ).get(worldSpecId);
-    if (row === undefined) {
-      if (!required) return null;
-      throw new GenesisNotFoundError(`WorldSpec ${worldSpecId} was not found`);
-    }
+    if (row === undefined) throw new GenesisNotFoundError(`WorldSpec ${worldSpecId} was not found`);
     const record = normalizeGenesisWorldSpec(parseRecord(`WorldSpec ${worldSpecId}`, row.record_json));
     const digest = genesisRecordDigest("world_spec", record);
     if (digest !== row.record_digest || canonicalJson(record) !== row.record_json) {
@@ -410,21 +393,22 @@ export class GenesisStore {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot write");
     const record = normalizeGenerationAttempt(candidate);
     const digest = genesisRecordDigest("generation_attempt", record);
-    const existing = this.#database.prepare(
-      "SELECT record_json,record_digest FROM genesis_generation_attempts WHERE attempt_id=?",
-    ).get(record.attemptId);
-    if (existing !== undefined) {
-      if (existing.record_json !== canonicalJson(record) || existing.record_digest !== digest) {
-        throw new GenesisConflictError(`generation attempt ${record.attemptId} already exists with different content`);
-      }
-      return { record: structuredClone(record), recordDigest: digest, idempotent: true };
-    }
     try {
       this.#database.exec("BEGIN IMMEDIATE");
+      const existing = this.#database.prepare(
+        "SELECT record_json,record_digest FROM genesis_generation_attempts WHERE attempt_id=?",
+      ).get(record.attemptId);
+      if (existing !== undefined) {
+        if (existing.record_digest !== digest || existing.record_json !== canonicalJson(record)) {
+          throw new GenesisConflictError(`generation attempt ${record.attemptId} already exists with different immutable content`);
+        }
+        this.#database.exec("COMMIT");
+        return { record: structuredClone(record), recordDigest: digest, idempotent: true };
+      }
       this.#database.prepare(`
         INSERT INTO genesis_generation_attempts(
-          attempt_id,genesis_id,provisional_thread_id,candidate_attempt_number,
-          scope,failed_pass,failed_gate,record_json,record_digest,recorded_at
+          attempt_id,genesis_id,provisional_thread_id,candidate_attempt_number,scope,
+          failed_pass,failed_gate,record_json,record_digest,recorded_at
         ) VALUES (?,?,?,?,?,?,?,?,?,?)
       `).run(
         record.attemptId,
@@ -528,11 +512,12 @@ export class GenesisStore {
     const seedSnapshot = normalizeSeedSnapshot(threadCandidate);
     const normalizedEpisodes = normalizeBirthEpisodes(episodeCandidates, manifest);
     if (manifest.threadId !== seedSnapshot.threadId) throw new GenesisConflictError("manifest/thread identity mismatch");
-    const hasSituatedContinuity = initialRosterCandidate !== null || lifeContinuityCandidate !== null;
-    if (hasSituatedContinuity && (initialRosterCandidate === null || lifeContinuityCandidate === null)) {
-      throw new GenesisConflictError("Genesis situated continuity requires both initialRoster and lifeContinuity");
+    const hasPriorLife = normalizedEpisodes.length > 0;
+    const hasSituatedContinuity = initialRosterCandidate !== null && lifeContinuityCandidate !== null;
+    if (hasPriorLife && !hasSituatedContinuity) {
+      throw new GenesisConflictError("Genesis prior-life birth requires both initialRoster and lifeContinuity");
     }
-    if (hasSituatedContinuity && normalizedEpisodes.length === 0) {
+    if (!hasPriorLife && (initialRosterCandidate !== null || lifeContinuityCandidate !== null)) {
       throw new GenesisConflictError("Genesis situated continuity requires admitted life episodes");
     }
 
@@ -765,31 +750,40 @@ export class GenesisStore {
       if (!required) return null;
       throw new GenesisNotFoundError(`Genesis manifest ${genesisId} was not found`);
     }
-    const manifest = normalizeGenesisManifest(parseRecord(`Genesis manifest ${genesisId}`, row.record_json));
-    const digest = genesisRecordDigest("manifest", manifest);
-    if (digest !== row.record_digest || canonicalJson(manifest) !== row.record_json) {
+    const record = normalizeGenesisManifest(parseRecord(`Genesis manifest ${genesisId}`, row.record_json));
+    const digest = genesisRecordDigest("manifest", record);
+    if (digest !== row.record_digest || canonicalJson(record) !== row.record_json) {
       throw new IntegrityError(`Genesis manifest ${genesisId} failed canonical/digest verification`);
     }
-    return { manifest, manifestDigest: digest };
+    return { record, recordDigest: digest };
   }
 
-  inspectGenesis(genesisId) {
-    if (!genesisSchemaPresent(this.#database)) {
-      return { genesisId, manifest: null, worldSpec: null, attempts: [], threadPublished: false };
+  listManifests({ threadId = null, publicationStatus = null } = {}) {
+    const clauses = [];
+    const params = [];
+    if (threadId !== null) {
+      assertId("threadId", threadId);
+      clauses.push("thread_id=?");
+      params.push(threadId);
     }
-    const manifestRecord = this.getManifest(genesisId, { required: false });
-    const attempts = this.listGenerationAttempts(genesisId);
-    if (manifestRecord === null) return { genesisId, manifest: null, worldSpec: null, attempts, threadPublished: false };
-    const worldSpec = this.getWorldSpec(manifestRecord.manifest.worldSpecRef);
-    const threadPublished = this.#database.prepare(
-      "SELECT 1 AS present FROM threads WHERE thread_id=?",
-    ).get(manifestRecord.manifest.threadId) !== undefined;
-    return {
-      genesisId,
-      manifest: manifestRecord,
-      worldSpec,
-      attempts,
-      threadPublished,
-    };
+    if (publicationStatus !== null) {
+      if (!["provisional", "published", "failed"].includes(publicationStatus)) {
+        throw new TypeError("publicationStatus must be provisional, published, or failed");
+      }
+      clauses.push("publication_status=?");
+      params.push(publicationStatus);
+    }
+    const where = clauses.length === 0 ? "" : ` WHERE ${clauses.join(" AND ")}`;
+    return this.#database.prepare(`
+      SELECT record_json,record_digest FROM genesis_manifests${where}
+      ORDER BY created_at,genesis_id
+    `).all(...params).map((row) => {
+      const record = normalizeGenesisManifest(parseRecord("Genesis manifest", row.record_json));
+      const digest = genesisRecordDigest("manifest", record);
+      if (digest !== row.record_digest || canonicalJson(record) !== row.record_json) {
+        throw new IntegrityError(`Genesis manifest ${record.genesisId} failed canonical/digest verification`);
+      }
+      return { record, recordDigest: digest };
+    });
   }
 }
