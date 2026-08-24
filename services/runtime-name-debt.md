@@ -2,14 +2,21 @@
 
 This register explains development-chronology names that still exist in active `services/*/src` code. Their presence is temporary debt, not a naming pattern to copy.
 
-The desired end state is semantic capability names. Rename/remove each group behind its existing tests; if a name turns out to represent a true compatibility boundary, document that boundary and keep the version in contract data where possible.
+The desired end state is semantic capability names. Version identifiers belong in serialized contracts, policy/evidence IDs, migrations, or historical artifacts when compatibility/chronology is genuinely the subject; active runtime filenames should describe enduring responsibility.
 
-## Version-labelled implementations
+## Remaining non-Genesis cleanup
 
-These names record implementation evolution rather than a currently justified public compatibility boundary:
+Two current runtime modules still carry implementation-version filenames:
 
 - `world-kernel/src/dignity-guardian-v4.mjs`
-- `world-kernel/src/embodiment-store-personhood-v2.mjs`
+- `world-kernel/src/identity-domain-registry-v2.mjs`
+
+Neither represents a selectable production compatibility dialect. They remain here only because each has a broad direct-import surface spanning current runtime code and retained historical proof tooling. Rename them in narrow mechanical commits behind the existing tests; preserve their versioned policy/evidence values where those values are real witnesses.
+
+## Genesis naming debt — explicitly deferred until the birth seam is stable
+
+The remaining Genesis filenames encode implementation chronology (`Pass A/B/C`, slice labels, or implementation versions) rather than enduring module responsibility:
+
 - `world-kernel/src/genesis-event-structure-pool-v1.mjs`
 - `world-kernel/src/genesis-event-structure-pool-v2.mjs`
 - `world-kernel/src/genesis-event-structure-pool-v3.mjs`
@@ -17,15 +24,6 @@ These names record implementation evolution rather than a currently justified pu
 - `world-kernel/src/genesis-historical-realization-v1.mjs`
 - `world-kernel/src/genesis-life-continuity-v1.mjs`
 - `world-kernel/src/genesis-pass-a-reliability-v3.mjs`
-- `world-kernel/src/identity-domain-registry-v2.mjs`
-- `world-kernel/src/identity-schema-v2-repair.mjs`
-
-Disposition: collapse the surviving behavior into a canonical semantic module or delete superseded implementations. Do not add a next numbered file.
-
-## Genesis pass-labelled implementations
-
-These encode construction chronology (`Pass A/B/C`) rather than the responsibility of the module:
-
 - `world-kernel/src/genesis-life-pass-a.mjs`
 - `world-kernel/src/genesis-life-pass-b-input.mjs`
 - `world-kernel/src/genesis-life-pass-b.mjs`
@@ -43,21 +41,24 @@ These encode construction chronology (`Pass A/B/C`) rather than the responsibili
 - `world-kernel/src/genesis-pass-c-prompts.mjs`
 - `world-kernel/src/genesis-pass-c-reinterpretation.mjs`
 - `world-kernel/src/genesis-rich-pass-a-runner.mjs`
-
-Disposition: after the Genesis closing seam is stable, rename by enduring responsibility such as historical realization, memory formation, meaning formation, admission, consistency, or orchestration. Preserve A/B/C only in historical evidence when useful.
-
-## Slice/milestone-labelled implementations
-
 - `world-kernel/src/genesis-slice-d-characterization.mjs`
 - `world-kernel/src/genesis-slice-e-characterization.mjs`
-- `world-kernel/src/m1-deterministic-actor.mjs`
 
-Disposition: move experiment/characterization-only machinery to the appropriate gate/repro surface; if code is truly runtime, rename it for its enduring capability.
+Disposition: do not rename this graph while the #39 birth/publication seam is still being closed. Once the seam is stable, rename by enduring responsibility such as historical realization, memory formation, autobiographical meaning formation, admission, consistency, or orchestration. Move characterization-only machinery out of runtime. Preserve A/B/C, slice, and policy-version labels in historical evidence where useful.
 
-`identity-causal-influence.mjs` is the first retired item from this group: its durable identity-to-Guardian counterfactual proof is runtime-relevant, so the implementation and active regression now use the semantic capability name rather than the milestone that introduced it.
+## Retired debt
+
+The following live runtime names have already been currentized:
+
+- `m2-identity-causal-wire.mjs` -> `identity-causal-influence.mjs`
+- `m1-deterministic-actor.mjs` -> `deterministic-actor.mjs`
+- `embodiment-store-personhood-v2.mjs` -> `embodiment-persistence-store.mjs`
+- `identity-schema-v2-repair.mjs` -> `identity-schema-compatibility.mjs`
+
+These changes intentionally preserved serialized versions, evidence IDs, and policy witnesses where version identity remains meaningful.
 
 ## What is not debt
 
-Serialized values such as `thread-presentation-packet-v0.1`, `asset-generation-job-v0.1`, or a persistent workflow key can legitimately carry a version because they identify data/protocol compatibility. Their containing source files should still have semantic names.
+Serialized values such as `thread-presentation-packet-v0.1`, `asset-generation-job-v0.1`, a policy version, or a persistent workflow key can legitimately carry a version because they identify data/protocol compatibility or exact evidence.
 
 Versioned filenames in migrations, historical fixtures, frozen gates, validation evidence, or vendor interoperability adapters are also acceptable when the version is the subject of the artifact rather than development residue.
