@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 31,
+  "version": 32,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -22,6 +22,7 @@
         "docs/state/public-progress.json",
         "docs/state/current-priorities.md",
         "docs/state/future-capability-map.md",
+        "docs/state/pr39-closing-plan.md",
         "docs/validation/thread-differential-gate.md",
         "docs/validation/experiment-lifecycle.md",
         "docs/validation/test-lifecycle-best-practice.md",
@@ -47,6 +48,7 @@
         "docs/decisions/ADR-0011-memory-photo-obligation.md",
         "docs/decisions/ADR-0012-semantic-meaning-over-derived-categories.md",
         "docs/decisions/ADR-0013-source-identity-consent-boundary.md",
+        "docs/decisions/ADR-0015-fibre-centric-development.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/concepts/thread.md",
         "docs/concepts/identity-and-genome.md",
@@ -59,9 +61,7 @@
       "title": "Request processing",
       "description": "Context for private appraisal, authorization, interest-mediated disclosure, response behavior, affect, and relationship consequences.",
       "output": "artifacts/generated/fibre-request-processing-context.md",
-      "includes": [
-        "core"
-      ],
+      "includes": ["core"],
       "sources": [
         "docs/concepts/emotions-and-needs.md",
         "docs/concepts/dual-adversarial-cognition.md",
@@ -81,37 +81,18 @@
     },
     "full": {
       "title": "Full",
-      "description": "Broad Fibre concept, architecture, governance, use-case, milestone and validation context, including intentionally retained evidence that still serves a current scientific, replay, compatibility, or audit purpose.",
+      "description": "Broad current Fibre concept, architecture, governance and validation context plus selected history and accepted sealed standing that still has explanatory or audit value.",
       "output": "artifacts/generated/fibre-full-context.md",
-      "aliases": [
-        "artifacts/generated/fibre-context-pack.md"
-      ],
-      "includes": [
-        "request-processing"
-      ],
+      "aliases": ["artifacts/generated/fibre-context-pack.md"],
+      "includes": ["request-processing"],
       "sources": [
         "CHANGELOG.md",
         "docs/history/origins/original-architecture.md",
         "docs/history/milestones/pre-pr39-whole-person-understanding.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/whole-person-prefreeze-characterization.md",
-        "docs/validation/m2-pr39-slice-b-genome-control-result.md",
-        "docs/validation/semantic-guardian-v3-freeze.md",
-        "docs/validation/semantic-guardian-v3-cycle-v2.md",
-        "docs/validation/semantic-guardian-v4-development.md",
-        "docs/validation/semantic-guardian-v4-standing-gate-v1.md",
-        "docs/validation/semantic-guardian-v4-standing-gate-v2.md",
-        "docs/validation/semantic-guardian-v4-standing-gate-v3.md",
         "docs/validation/semantic-guardian-v4-standing-gate-v4.md",
-        "docs/validation/history-bends-judgment-standing-gate-v1.md",
-        "docs/validation/history-bends-judgment-standing-gate-v2.md",
-        "docs/validation/history-bends-judgment-standing-gate-v3.md",
         "docs/validation/history-bends-judgment-standing-gate-v4.md",
-        "docs/validation/history-bends-judgment-candidate-1.md",
-        "docs/validation/history-bends-judgment-candidate-2.md",
-        "docs/validation/history-bends-judgment-candidate-3.md",
-        "docs/validation/history-bends-judgment-candidate-4.md",
-        "docs/validation/history-bends-judgment-plan.md",
         "docs/architecture/genesis-origin-source-integrity-v1.md",
         "docs/architecture/world-context-specificity-v1.md",
         "docs/architecture/world-presentation-v1.md",
@@ -159,11 +140,7 @@
   "coverage": {
     "acceptedCanonicalDocuments": {
       "directory": "docs",
-      "profiles": [
-        "core",
-        "request-processing",
-        "full"
-      ]
+      "profiles": ["core", "request-processing", "full"]
     }
   }
 }

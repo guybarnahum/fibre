@@ -6,17 +6,17 @@ Use this index to load only the context needed for a task.
 
 [`ai-context-manifest.json`](ai-context-manifest.json) is the canonical machine-readable source for AI context selection. Run `npm run context-pack` to generate bounded packs under `artifacts/generated/`.
 
-The profiles intentionally follow evidence lifecycle:
+The profiles intentionally follow repository/evidence lifecycle:
 
 - `core` — current Fibre doctrine, current state, active M2/#39 authority and current personhood/causal discipline;
 - `request-processing` — current private appraisal, authorization, disclosure, affect and response behavior, built on `core`;
-- `full` — broad cross-cutting context **plus** sealed/failed historical experiments, older bridge material, use cases and long-form validation history.
+- `full` — broad current cross-cutting context plus selected origin/milestone history and accepted sealed standing that still has explanatory or audit value.
 
-A sealed or failed document leaving `core` is **not deleted or deprecated**. It remains available in `full` when its historical evidence matters. This prevents a minimum working context from confusing an old candidate/protocol with current authority while preserving Fibre's falsification history.
+Ordinary candidate reports, superseded gate packets and development-review chronology are not kept in AI context merely because they once mattered. Git history is the default archive. Selected explanatory history belongs under `history/`; exceptional exact-byte accepted evidence belongs under `../artifacts/validation/`.
 
 Generated packs are non-canonical and must not be edited directly. Each includes its source list, repository revision, manifest version and content digest. Use the smallest profile sufficient for the task.
 
-The manifest requires every accepted canonical Markdown document under `docs/` to appear in at least one profile. Repository validation enforces this rule. Context publication also rejects textual path traversal, symlinked sources and symlinked output paths.
+The manifest requires accepted canonical Markdown documents under `docs/` to be covered by a profile. Repository validation enforces the context contract. Context publication also rejects textual path traversal, symlinked sources and symlinked output paths.
 
 Canonical Markdown fragments may additionally declare named `fibre:region` blocks. Human-facing documents needing an exact in-place copy use generated `fibre:include` blocks synchronized by `npm run includes:sync`. AI context profiles consume the canonical source file directly, not the rendered include copy.
 
@@ -31,8 +31,8 @@ Start with:
 5. `foundations/rich-life.md`
 6. `state/current-state.md`
 7. `state/current-priorities.md`
-8. `validation/m2-pr-plan.md`
-9. `validation/m2-pr39-implementation-plan.md`
+8. `state/pr39-closing-plan.md` for active #39 work
+9. `validation/m2-pr-plan.md`
 10. the relevant concept and architecture documents for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant local README/contract.
@@ -42,38 +42,37 @@ For implementation agents, also read repository-root `AGENTS.md` and the relevan
 The active sequence is:
 
 ```text
-#38 life representation/corrigibility     complete
-#39 Genesis / particular prior life       active
+#38 life representation/corrigibility      complete
+#39 Genesis / particular prior life        active — closing
 #40 identity projection/causal consumption next
-#41 M2 standing/closure                    after #40
+#41 M2 standing/closure                     after #40
 ```
 
 Load these for #39 work:
 
+- `state/pr39-closing-plan.md`
 - `validation/m2-pr-plan.md`
 - `validation/m2-pr39-implementation-plan.md`
-- `validation/m2-pr39-pre-g-seam-status.md` when working specifically on the cleanup seam
 - `validation/m2-pr39-developmental-needs-childhood-review-resolution.md`
 - `validation/m2-pr39-genesis-quality-constraints.md`
 - `validation/symbolic-thread-genome-implementation-plan.md`
-- `validation/m2-pr39-slice-ef-gate-f-result.md` for the current E+F blocking-gate posture
 - `architecture/thread-genesis-childhood-birth-v1.md`
 - `architecture/genesis-compiler-contract-v1.md`
+- `architecture/genesis-durable-development-v1.md`
+- `architecture/birth-center-runtime-v1.md`
 - `architecture/symbolic-thread-genome-v1.md`
 - `architecture/genesis-memory-meaning-integration-v1.md`
 - `architecture/genesis-rich-life-intellectual-formation-v1.md`
 - `foundations/rich-life.md`
 - `foundations/interpretive-personhood.md`
 
-The #39 three-pass distinction is:
+The #39 epistemic distinction is:
 
 ```text
-Pass A  history
-Pass B  memory
-Pass C  durable meaning
+history != memory != meaning
 ```
 
-with history != memory != meaning, Pass A/Pass C genome blind, and all three Genesis passes blind to Fibre-computed semantic-need conclusions and mechanical-condition values.
+Historical realization and meaning formation are genome blind. Permitted genome exposure is limited to the intended memory-formation treatment, and Fibre-owned mechanical/semantic conclusions are not smuggled into cognition as evidence.
 
 ## Identity, interiority, dignity and development
 
@@ -127,18 +126,13 @@ with history != memory != meaning, Pass A/Pass C genome blind, and all three Gen
 - `concepts/institutions-and-governance.md`
 - `validation/prototype-roadmap.md`
 
-## Historical/sealed evidence
+## Historical and sealed evidence
 
-Use `full` when the task requires the falsification history behind current doctrine. Examples include:
+Use `full` when the task requires the historical rationale behind current doctrine. The profile intentionally includes selected origin/milestone records and the accepted Semantic Guardian / History-bends standing documents. Exact sealed evidence bytes are retained under `artifacts/validation/` and inspected through read-only tools.
 
-- failed Semantic Guardian standing v1-v3 and accepted v4;
-- History-bends-judgment candidate/gate lineage;
-- the pre-M2 bridge history;
-- pre-#39 Whole-Person characterization;
-- #39 symbolic-genome control evidence;
-- retained Genesis E1/E2/A0/H6/A2/A2b/N1/N2/V1/V2 records under validation/artifacts.
+For development chronology that is not selected history, use Git history rather than loading superseded candidate/gate packets into ordinary AI context.
 
-Historical evidence may explain why current rules exist. It does not override the current state, current milestone plan, current compiler contract or a later accepted decision.
+Historical evidence may explain why current rules exist. It does not override current state, an active milestone plan, a current architecture contract or a later accepted decision.
 
 ## Challenge a proposal
 
@@ -151,7 +145,7 @@ At minimum load:
 - `validation/thread-differential-gate.md`
 - `validation/drift-scorecard.md`
 - `validation/m2-pr-plan.md`
-- the active milestone contract/implementation plan
+- the active milestone contract/closing plan
 - relevant ADRs
 
 For Fibre, an ordinary “adversarial review” means a **vision-effectiveness review** unless explicitly scoped as security/red-team work: try to falsify whether personhood-bearing state is becoming causal and load-bearing rather than merely stored, prompted or displayed.

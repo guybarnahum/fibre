@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-23
+last-reviewed: 2026-08-24
 canonical: true
 ---
 
@@ -11,67 +11,69 @@ This is the engineering execution view. For public/plain-English status, use [`p
 
 The current #39 exit checklist is [`pr39-closing-plan.md`](pr39-closing-plan.md). Development method is governed by [`../decisions/ADR-0015-fibre-centric-development.md`](../decisions/ADR-0015-fibre-centric-development.md).
 
-## PR #39 goal
-
-### Simple English
+## #39 goal
 
 **Give five new Threads rich, particular childhoods and young-adult histories, let them form memories and meanings from those lives, then birth them with those people, places, memories, lineage and history intact.**
 
-### More accurate description
+#39 compiles a concrete prior life through three distinct authorities: Fibre owns the historical skeleton; model cognition realizes observable episodes; later stages form autobiographical memory and remembered meaning without rewriting history. A successful candidate must retain social/geographic continuity and publish atomically into canonical Thread state. #39 does not itself prove Whole-Person standing; #40 makes this richer life state causally available to ordinary cognition.
 
-#39 compiles a sparse but concrete prior life through three authorities: Fibre owns the historical skeleton; model cognition realizes observable episodes; later passes form autobiographical memory and remembered meaning without rewriting history. A successful candidate must retain social/geographic continuity and publish atomically into canonical Thread state. #39 does not itself prove Whole-Person standing; #40 makes this richer life state causally available to normal cognition.
+## Current position
 
-## Where we are now
+1. **The development compiler works end to end before publication.** Current development material can produce fourteen prior-life episodes through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings.
 
-1. **Genesis can complete an actual prior life.** The latest development Thread completed fourteen episodes through age 21, five places, seven people in episode history, six memories and six current meanings with no publication. It was materially better than the previous run: less thematic collapse and more Thread-owned first-person meaning.
+2. **Historical authority is Fibre-owned.** Developmental window, civil time, authoritative place, EventStructure/world-emergent status, required counterpart, chronology and admission are deterministic Fibre facts. The model realizes contingent observable content inside those constraints.
 
-2. **The historical authority boundary is stable enough to currentize.** Fibre deterministically owns developmental window, exact civil time, authoritative place, EventStructure/world-emergent status, required counterpart, chronology and admission. The model realizes the observable event rather than choosing those facts.
+3. **History, memory and meaning remain separate.** Historical realization writes observable life; memory formation may remember or decline to remember; meaning formation may form, revise or decline durable meaning. History is not retrospectively rewritten by either later stage.
 
-3. **History, memory and meaning remain separate.** Pass A writes observable life; Pass B forms or declines autobiographical memories; Pass C forms or revises remembered meaning. Pass A and Pass C remain genome blind. Genome exposure is limited to the intended Pass-B treatment calls.
+4. **Genome exposure is bounded.** Historical realization and meaning formation remain genome blind. Permitted genome content reaches only the intended memory-formation treatment calls; assignment/analysis labels remain outside cognition.
 
-4. **Current sampling now distinguishes authority from creativity.** Creative Pass A/B/C and fresh record retries use temperature `0.3`; mechanical observable-action form repair uses temperature `0`. Fibre reproducibility comes from deterministic owned facts, provenance and durable replay rather than requiring identical prose.
+5. **Development fixtures are burned for closure.** Tbilisi, Kaohsiung, Recife, Fès and Hobart have influenced compiler development and remain explicitly milestone-specific fixtures. The final closure cohort must use five fresh Worlds.
 
-5. **The five familiar Worlds are now explicitly development material.** Tbilisi, Kaohsiung, Recife, Fès and Hobart have influenced compiler development and are therefore burned for the final #39 closure cohort. They now live under `fixtures/genesis/pr39/`, alongside the current child genomes and one current development-cohort fixture.
+6. **Old freeze choreography is retired.** Current development no longer obtains execution authority from R1/R2/G/H review packets. Git history preserves those experiments and reviews; current tests protect enduring Fibre semantics.
 
-6. **Normal development no longer depends on old validation protocols.** `tools/genesis/genesis-life-plan.mjs` derives current plans directly from current fixtures and the current EventStructure/envelope compiler. The two supported commands no longer read R1/R2/G4 authority packets to decide what Fibre is allowed to develop.
+7. **Origin/source enforcement is substantially implemented.** `publishBirth` already enforces the core Thread-parent/fork/Echo/Homage eligibility and consent boundaries. Remaining #39 work is to exercise the current origin path end to end, reconcile residual vocabulary/projection inconsistencies, and prove there is no bypass through the supported birth path.
 
-7. **The cleanup has started deleting review-state archaeology from `HEAD`.** Old G4/H/R2/redesign tests whose only purpose was to bind obsolete frozen states have been removed, not merely skipped. The corresponding dormant helper layer will be removed after the currentized path passes the active suite, so cleanup itself does not become a large uncontrolled break.
+8. **Publication truth still has blockers.** Publication must re-check narrated-place agreement with authoritative `placeRef`; prior-life births must require their roster and life continuity; revision-1 autobiographical memories must receive their visual-companion obligations transactionally; and the supported current path must actually construct and publish the canonical birth bundle.
 
-8. **The original #39 plan was re-audited before closure.** Its semantic requirements remain authoritative even though the freeze-heavy G/H process is retired. The current 19-item closure mapping is recorded in `pr39-closing-plan.md`.
+9. **Hydration equality must become a direct proof.** Add one current comparator covering admitted history, relations, places, lineage, memories, meanings and visual-companion obligations after atomic birth.
 
-9. **The audit found a real Slice-F gap.** `GENESIS_ORIGIN_MODES` names Thread-parent, Echo, Homage and fork, and ADR-0013 defines source rights, but current production Genesis still needs explicit enforcement/fixtures for living-human Echo consent, Homage deceased/fictional eligibility, relabel-bypass refusal, Thread-parent/fork provenance, and the rule that source biography never becomes Thread autobiography.
+10. **Closure must preserve anti-selection discipline without restoring ceremony.** One closure-attempt identity, visible repair/rejection accounting, five fresh Worlds, a convergent pair, blind raw + normalized attribution, and predeclared D1–D5 interpretation remain substantive scientific controls.
 
-10. **Two birth/closure details still require implementation or direct verification.** Before final birth, admission must enforce `observableAction` narrative consistency with authoritative `placeRef`, and the actual birth bundle must demonstrate that every admitted autobiographical memory receives the #38 photo-completion obligation.
+11. **The final cohort is generated once.** Bounded form repair/record retry remains allowed; disappointing whole lives are not silently resampled for quality.
 
-11. **The old G5/G6/H diagnostic freeze stack will become one current closing diagnostic/replay path.** It must preserve the substantive D1–D5 questions—attribution/separability, sentiment coupling, genome propagation, memory funnel and self-account overreach—without turning them into pass-forcing gates or another frozen protocol hierarchy.
+12. **Then birth and close #39 once.** Inspect the five held-out lives, run D1–D5 honestly, restart/replay admitted candidates, atomically birth them, verify hydration, obtain one hostile Fibre-centric closing review, and retain one concise milestone record. Then move directly to #40.
 
-12. **The final cohort must genuinely be fresh.** After currentization, source integrity, publication admission and the current diagnostic/replay path are stable, author five new Worlds and current genomes once. Generate each life once apart from bounded mechanical recovery. Do not resample whole lives for quality.
-
-13. **Then birth and close #39 once.** Inspect the five held-out lives, run D1–D5 honestly, restart/replay the admitted candidates, atomically birth them, verify hydration, request one hostile Fibre-centric closing review, and retain one concise milestone record. Then move directly to #40.
-
-## Immediate next sequence
+## Immediate sequence
 
 ```text
-currentization cleanup
-  -> active suite green
-  -> implement Slice-F origin/source integrity
-  -> close place/prose + photo birth obligations
-  -> replace old diagnostics with one current close/replay tool
-  -> five fresh held-out Worlds
+finish repository cleanup
+  -> full local green check
+  -> Claude pre-main integration review
+  -> merge clean integration trunk to main if CLEAR
+  -> continue #39 from fresh main
+
+#39 continuation
+  -> close publication truth/current birth path
+  -> prove origin/source path end to end
+  -> consolidate current close/replay diagnostics
+  -> author five fresh held-out Worlds
+  -> predeclare D1-D5 interpretation
   -> one-pass five-Thread cohort
-  -> atomic birth
+  -> atomic birth + hydration equality
   -> one hostile closing review
-  -> #39 complete
+  -> concise docs/history/milestones/pr39.md
   -> #40
 ```
 
-Do **not** generate the final five-Thread cohort before the pre-cohort implementation blockers above are closed. The current five fixtures remain useful for development and regression only.
+Do **not** generate the final five-Thread cohort before the pre-cohort implementation blockers in [`pr39-closing-plan.md`](pr39-closing-plan.md) are closed.
 
 ## Repository/development rules
 
-- `HEAD` describes current Fibre; Git history preserves archaeology.
+- `HEAD` describes current Fibre; Git history preserves ordinary development archaeology.
 - One current implementation per live behavior unless real persisted-data compatibility requires otherwise.
+- Current architecture filenames are semantic; real wire/schema versions live in contract data when compatibility requires them.
 - Current inputs are fixtures/configuration, not validation evidence.
+- Exceptional exact-byte accepted evidence belongs in `artifacts/validation/`; ordinary test output does not belong in Git.
 - Disposable generated development state lives under `.fibre/`.
 - Active tests protect enduring Fibre semantics, not old review-state hashes.
 - Review occurs when it can challenge an architectural claim or milestone closure, not before every development iteration.
