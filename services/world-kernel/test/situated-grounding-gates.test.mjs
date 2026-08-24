@@ -42,7 +42,7 @@ test("situated-life writer requires a persisted evidence reference", () => withD
   situated.close();
 }));
 
-test("direct IdentityStore still requires a real lived-event witness", () => withDb((db) => {
+test("direct IdentityStore requires a real lived-event witness", () => withDb((db) => {
   const world = openWorldStore(db);
   world.seedThread(structuredClone(fixture));
   world.close();
@@ -55,6 +55,26 @@ test("direct IdentityStore still requires a real lived-event witness", () => wit
     eventReferences: ["evt_missing_reference"],
     recordedAt: "2026-08-13T16:02:00Z",
   });
-  assert.throws(() => identity.recordAssertion(candidate), /resolved Thread-event witness/i);
+  assert.throws(() => identity.recordAssertion(candidate), /unresolved evidence reference|lived Thread-event witness/i);
+  identity.close();
+}));
+
+test("THREAD_SEEDED bookkeeping cannot establish lived cultural formation", () => withDb((db) => {
+  const world = openWorldStore(db);
+  world.seedThread(structuredClone(fixture));
+  const seedEvent = world.listEvents(fixture.threadId).find((event) => event.eventType === "THREAD_SEEDED");
+  assert.ok(seedEvent, "fixture seed event must exist");
+  world.close();
+
+  const identity = openIdentityStore(db);
+  const candidate = livedCulturalFormationClaim({
+    threadId: fixture.threadId,
+    kind: "cultural_practice",
+    claimPredicate: { subject: "self", predicate: "participated_in_ritual", object: "Seollal" },
+    meaning: "Mina participated in Seollal observances during childhood.",
+    eventReferences: [seedEvent.eventId],
+    recordedAt: "2026-08-13T16:03:00Z",
+  });
+  assert.throws(() => identity.recordAssertion(candidate), /unresolved evidence reference|lived Thread-event witness/i);
   identity.close();
 }));
