@@ -10,8 +10,7 @@ import {
   threadPresentationPacketDigest,
 } from "../src/thread-presentation-domain.mjs";
 
-const fixtureRoot = new URL("../../../artifacts/validation/thread-presentation/p2/can-tho/", import.meta.url);
-const sourceArtifactUrl = new URL("../../../artifacts/validation/m2-pr39/h/cohort-v2/thread-slot-01-generation-v1.json", import.meta.url);
+const fixtureRoot = new URL("../../../fixtures/thread-presentation/can-tho/", import.meta.url);
 
 function load(name) {
   return JSON.parse(readFileSync(new URL(name, fixtureRoot), "utf8"));
@@ -40,19 +39,13 @@ test("P2 Can Tho golden fixture validates as an unpublished candidate presentati
   assert.equal(normalized.media.assets.length, 14);
 });
 
-test("P2 fixture source identities remain grounded in the frozen H-v2 artifact", () => {
-  const sourceText = readFileSync(sourceArtifactUrl, "utf8");
-  const normalized = bundle();
-  for (const id of [
-    normalized.presentation.manifest.threadId,
-    "genesis_pr39_g2_04",
-    "world_slice_g1_01_can_tho",
-    "genome_6480e89a07bbe2698d0f5caad95976aa7ff2ea63",
-    ...normalized.presentation.life.timeline.map((item) => item.eventRef),
-    ...normalized.presentation.memories.map((item) => item.memoryRef),
-  ]) {
-    assert.ok(sourceText.includes(id), `frozen source artifact must contain ${id}`);
-  }
+test("P2 Can Tho fixture is self-contained presentation material, not retained Genesis evidence", () => {
+  const manifest = load("fixture-manifest.json");
+  assert.equal(manifest.source.kind, "historical_fixture_derivation");
+  assert.equal(Object.hasOwn(manifest.source, "path"), false);
+  assert.equal(Object.hasOwn(manifest.source, "blobSha"), false);
+  assert.ok(manifest.scientificIsolation.some((line) => /never published or born/.test(line)));
+  assert.ok(manifest.scientificIsolation.some((line) => /not #39 quality evidence/.test(line)));
 });
 
 test("P2 preserves historical excess instead of turning every event into memory", () => {
@@ -109,11 +102,10 @@ test("P2 contains no synthetic live encounter ontology", () => {
   }
 });
 
-test("P2 fixture manifest pins scientific isolation and source artifact", () => {
+test("P2 fixture manifest pins scientific isolation without retaining development archaeology", () => {
   const manifest = load("fixture-manifest.json");
   assert.equal(manifest.threadId, "thr_pr39_g2_04");
-  assert.equal(manifest.source.path, "artifacts/validation/m2-pr39/h/cohort-v2/thread-slot-01-generation-v1.json");
-  assert.equal(manifest.source.blobSha, "143113b62e053adfa21d25ff675ebdc6ad0e0c65");
+  assert.match(manifest.source.note, /superseded development artifact is intentionally not retained/iu);
   assert.ok(manifest.scientificIsolation.some((line) => /never published or born/.test(line)));
   assert.ok(manifest.scientificIsolation.some((line) => /not #39 quality evidence/.test(line)));
 });
