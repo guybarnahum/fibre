@@ -181,39 +181,29 @@ Do not silently repoint a presentation that participated in a frozen experiment.
 
 The current presentation's `worldSpecRef` and `worldSpecDigest` must resolve to the same factual World.
 
-## Slice G
+## Current development fixtures
 
-The accepted #39 G1-v2 WorldSpecs live under:
+WorldPresentation is a reusable product/runtime concept, not a Slice-G
+artifact convention.
 
-```text
-artifacts/validation/m2-pr39/g/worlds/
-  world-g1-01-v2.json
-  world-g1-02-v2.json
-  world-g1-03-v2.json
-  world-g1-04-v2.json
-  world-g1-05-v2.json
-```
+The current comprehensive golden presentation fixture is self-contained under:
 
-Their current companion presentations live one file per World under:
+    fixtures/thread-presentation/can-tho/
 
-```text
-artifacts/validation/m2-pr39/g/worlds/presentation/
-  world-g1-01.presentation.json
-  world-g1-02.presentation.json
-  world-g1-03.presentation.json
-  world-g1-04.presentation.json
-  world-g1-05.presentation.json
-```
+Current #39 development WorldSpecs live under:
 
-Each current file is bound to the exact accepted v2 WorldSpec digest and includes 2004–2026 temporal visual grounding.
+    fixtures/genesis/pr39/worlds/
 
-The superseded generic G1-v1 presentations are preserved under:
+Historical G/H cohort directories are preserved by Git history rather than
+kept as active architecture.
 
-```text
-artifacts/validation/m2-pr39/g/worlds/presentation/v1/
-```
+Presentation must never be fed back into Genesis cognition. Improving display
+copy, visual grounding or media planning may not alter authoritative WorldSpec
+facts, rescue a weak generated life, or become identity/character evidence.
 
-Presentation must never be fed back into the Genesis cohort-generation path. Adding or improving presentation does not alter the G1 WorldSpec freeze, familiarity result or world digest and may not be used to rescue/regenerate a weak Thread.
+When presentation participates in a current exact-byte compatibility claim,
+retain only the smallest stable fixture or persisted record needed by that
+claim.
 
 ## Future production persistence
 

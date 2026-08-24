@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const endpoint = process.argv[2] ?? "http://127.0.0.1:8787/__p3/fixtures/can-tho";
-const base = new URL("../../artifacts/validation/thread-presentation/p2/can-tho/", import.meta.url);
+const base = new URL("../../fixtures/thread-presentation/can-tho/", import.meta.url);
 
 const bundle = {
   presentation: JSON.parse(await readFile(new URL("presentation.json", base), "utf8")),

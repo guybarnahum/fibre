@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 27,
+  "version": 28,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -30,7 +30,6 @@
         "docs/validation/thread-conditions-experiment-plan.md",
         "docs/validation/m2-pr39-genesis-quality-constraints.md",
         "docs/validation/symbolic-thread-genome-implementation-plan.md",
-        "docs/validation/m2-pr39-slice-ef-gate-f-result.md",
         "docs/architecture/m2-identity-embodiment-contract.md",
         "docs/architecture/m2-character-formation-model.md",
         "docs/architecture/m2-interior-exterior-situated-identity.md",
@@ -59,7 +58,9 @@
       "title": "Request processing",
       "description": "Context for private appraisal, authorization, interest-mediated disclosure, response behavior, affect, and relationship consequences.",
       "output": "artifacts/generated/fibre-request-processing-context.md",
-      "includes": ["core"],
+      "includes": [
+        "core"
+      ],
       "sources": [
         "docs/concepts/emotions-and-needs.md",
         "docs/concepts/dual-adversarial-cognition.md",
@@ -79,10 +80,14 @@
     },
     "full": {
       "title": "Full",
-      "description": "Broad Fibre concept, architecture, governance, use-case, milestone and validation context, including sealed/failed historical evidence retained for falsification history.",
+      "description": "Broad Fibre concept, architecture, governance, use-case, milestone and validation context, including intentionally retained evidence that still serves a current scientific, replay, compatibility, or audit purpose.",
       "output": "artifacts/generated/fibre-full-context.md",
-      "aliases": ["artifacts/generated/fibre-context-pack.md"],
-      "includes": ["request-processing"],
+      "aliases": [
+        "artifacts/generated/fibre-context-pack.md"
+      ],
+      "includes": [
+        "request-processing"
+      ],
       "sources": [
         "CHANGELOG.md",
         "docs/state/pre-pr39-whole-person-understanding.md",
@@ -152,7 +157,11 @@
   "coverage": {
     "acceptedCanonicalDocuments": {
       "directory": "docs",
-      "profiles": ["core", "request-processing", "full"]
+      "profiles": [
+        "core",
+        "request-processing",
+        "full"
+      ]
     }
   }
 }

@@ -28,7 +28,7 @@ threadId       thr_pr39_g2_04
 genesisId      genesis_pr39_g2_04
 worldSpecId    world_slice_g1_01_can_tho
 genomeId       genome_6480e89a07bbe2698d0f5caad95976aa7ff2ea63
-source         artifacts/validation/m2-pr39/h/cohort-v2/thread-slot-01-generation-v1.json
+source         historical Git source; extracted fixture is now self-contained
 source blob    143113b62e053adfa21d25ff675ebdc6ad0e0c65
 ```
 
@@ -44,7 +44,7 @@ and may not be used as #39 quality evidence or to tune any replacement cohort, r
 ## Golden bundle
 
 ```text
-artifacts/validation/thread-presentation/p2/can-tho/
+fixtures/thread-presentation/can-tho/
   presentation.json
   media.json
   provenance.json
@@ -97,7 +97,7 @@ Those remain deferred to the live-encounter track.
 
 P2 uses the canonical Fibre helper `autobiographicalMeaningId(memoryRef)` for the six presentation meaning references rather than inventing arbitrary presentation identities.
 
-Two memories have later reinterpretation evidence in the frozen source. P2 projects the **latest current meaning** for those stable meaning identities and cites the later triggering episodes.
+Two memories retain later reinterpretation evidence in the extracted fixture provenance. P2 projects the **latest current meaning** for those stable meaning identities and cites the later triggering episodes.
 
 ### v0.1 limitation discovered
 
@@ -124,13 +124,13 @@ Every media entry has `generation: null` and no resolved locator/hash. Media pro
 `services/world-kernel/test/thread-presentation-can-tho-fixture.test.mjs` is an active test and verifies:
 
 1. the bundle normalizes as an explicit unpublished candidate fixture;
-2. candidate/thread/world/genome/event/memory identities occur in the frozen H-v2 source artifact;
+2. candidate/thread/world/genome/event/memory identities remain internally consistent in the self-contained fixture;
 3. historical excess is preserved rather than promoting every event to memory;
 4. meaning references use canonical stable Fibre meaning identity;
 5. memory and meaning retain separate provenance classes;
 6. all media remains placeholder/pending reconstruction;
 7. no synthetic live-encounter ontology enters the packet;
-8. the fixture manifest pins scientific isolation and the exact source artifact;
+8. the fixture manifest preserves scientific isolation and historical source metadata without depending on the removed artifact tree;
 9. the normalized presentation/media/provenance packet digests remain stable.
 
 The implementation agent also normalized the generated three-packet bundle against the P1 domain contract in an isolated Node harness. Result:

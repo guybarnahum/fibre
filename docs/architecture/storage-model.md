@@ -171,66 +171,39 @@ Human/operator inspection uses bounded read-only surfaces. Database inspectors o
 
 Current inspection families include world/replay, identity, Structured Obligations, Genesis and symbolic genome. The Thread Editor remains a human-facing application over validated APIs, not a raw database mutation surface.
 
-## Development, experimentation and validation storage
+## Development and validation storage
 
-During development Fibre deliberately keeps some synthetic Worlds and Threads in Git, but their location and meaning depend on **why they exist**.
+During active development, repository storage follows the current capability,
+not the chronology of how Fibre discovered it.
 
-```text
-fixtures/
-  reusable synthetic examples for tests and development
+    fixtures/
+      reusable synthetic Worlds, Threads, genomes and deterministic inputs
 
-artifacts/validation/
-  frozen machine-readable experiment inputs, outputs and evidence
+    .fibre/
+      disposable generation runs, candidates, diagnostics and dev databases
 
-docs/validation/
-  human-readable protocols, reviews, interpretation and verdicts
+    docs/validation/
+      current validation plans and concise accepted milestone outcomes
 
-world storage
-  authoritative living Worlds and Threads
-```
+    artifacts/validation/
+      exceptional exact-byte evidence retained only for a continuing reason
 
-The governing distinction is:
+    world storage
+      authoritative living Worlds and Threads
 
-> **Fixtures are reusable synthetic examples. Validation artifacts are frozen experiments. Live Worlds and Threads belong in world storage.**
+Git history records failed and superseded development states. The checked-out
+repository should normally contain one current implementation and the smallest
+evidence needed to prove its durable invariants.
 
-### Reusable fixtures
+For #39, reusable development inputs live under fixtures/genesis/pr39/.
+Generated development lives and local births live under ignored .fibre/
+storage.
 
-`fixtures/` contains deliberately constructed examples such as synthetic Threads, Worlds, genomes and deterministic test inputs. Fixtures may evolve with implementation changes when their purpose is to exercise current behavior.
+The current closure protocol belongs in the milestone plan and current tools,
+not in a reconstructed G/H freeze hierarchy.
 
-A fixture does not become historical scientific evidence merely because a test imports it.
-
-### Frozen validation artifacts
-
-Machine-readable values that become part of a specific experiment belong under `artifacts/validation/<milestone>/<experiment>/`.
-
-A useful layout is:
-
-```text
-protocol/
-worlds/
-genomes/
-cohort/
-results/
-```
-
-The exact directory shape may vary by experiment, but an artifact that has already participated in a run must not be silently rewritten to make a later result cleaner. Preserve failed/burned inputs and outputs; use a new version/path when the protocol changes.
-
-A WorldSpec or Thread JSON committed under `artifacts/validation/` is an experimental input, snapshot or evidence export. It is **not** the live authority and does not redefine a Thread as a file. During execution the same semantic state must pass through normal Fibre store/domain admission and persistence contracts.
-
-For milestone #39 Slice G, the frozen experiment home is:
-
-```text
-artifacts/validation/m2-pr39/g/
-  protocol/
-  worlds/
-  genomes/
-  cohort/
-  results/
-```
-
-Git history is part of the witness: final genome-blind WorldSpecs must predate cohort genomes/assignment; the complete protocol and Gate-G CLEAR must predate first final-cohort life generation.
-
-See [`../../artifacts/validation/README.md`](../../artifacts/validation/README.md) for the practical repository convention.
+> Fixtures exercise current behavior. Local runs support development. Exact
+> historical artifacts remain only when a current claim truly needs them.
 
 ## Production object storage boundary
 
@@ -242,10 +215,10 @@ Domain records should prefer stable Fibre object IDs over vendor-specific `r2://
 
 A useful architectural shorthand is:
 
-> **Transactional storage owns the life. Object storage owns the objects. Git owns the laws, fixtures and frozen evidence.**
+> **Transactional storage owns the life. Object storage owns the objects. Git owns the laws, current fixtures and intentionally retained evidence.**
 
 ## Repository/world separation
 
 Live Thread data is not committed to Git. The repository may contain schemas/migrations, synthetic fixtures, deterministic examples, redacted/frozen experiment artifacts, retained proof/repro instruments and human-readable validation reports.
 
-The database/object-store world contains the living Threads. Git contains the laws, machinery and retained scientific evidence used to build and audit that world.
+The database/object-store world contains the living Threads. Git contains the laws, current machinery, fixtures and the limited scientific evidence still needed to build and audit that world.
