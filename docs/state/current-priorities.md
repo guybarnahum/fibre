@@ -21,7 +21,7 @@ For the plain-English public view of what Fibre has and has not achieved, use [`
 
 6. **Corrected R2 execution candidate is `ad7044d57ef6360295d6e26bca4338684eb394d3`.** The correction changes execution machinery and milestone regressions only. Worlds, genomes, assignment, historical envelopes, coverage bounds, provider/model/runtime, and D3 threshold are unchanged.
 
-7. **Corrected R2 binding is re-frozen but not yet locally verified.** Binding head `a0441bd3d56c789b0a50e9e3377229ab9165d7e0`; canonical binding digest `sha256:2482f9a9e7d83d23ff3bf7241c6bea83feff02c6c3f50c6726e2d479962e6159`. R2 CLEAR witness remains absent. Re-binding is not cognition authority.
+7. **Corrected R2 binding is re-frozen and locally verified green.** Binding head `a0441bd3d56c789b0a50e9e3377229ab9165d7e0`; canonical binding digest `sha256:2482f9a9e7d83d23ff3bf7241c6bea83feff02c6c3f50c6726e2d479962e6159`. Maintainer verification at docs head `ccc8d15e22bc38b5ea545084ab6bdab292b83995` reproduced 715/715 tests, repository + World-seed validation, `CLEAR_R2_IMPLEMENTATION_PRE_REVIEW_ZERO_CALL`, all five frozen envelope digests, missing CLEAR witness, cognition/publication unauthorized, zero provider calls and no replacement-v2 life artifacts. Re-binding and local green are still not cognition authority.
 
 8. **No model/provider call before corrected hostile R2 CLEAR.** The runner verifies R2 authority with `requireClear:true` and now also checks the durable one-shot boundary before adapter construction. A future CLEAR witness must match the corrected reviewed candidate head and binding digest and may authorize only provider calls + one candidate-generation attempt; it must keep publication unauthorized.
 
@@ -55,9 +55,9 @@ For the plain-English public view of what Fibre has and has not achieved, use [`
 
 23. **Residual R2 review findings remain disclosed.** Review items N1, N4, N5, N7, N8, N9, N10 and N11 remain visible in `docs/validation/m2-pr39-replacement-v2-r2-review-result.md`. They are not silently promoted to stronger guarantees and must be attacked again in the corrected R2 re-review.
 
-24. **Next action: locally verify the re-frozen corrected boundary at `a0441bd3...`.** Run `npm test`, `npm run validate`, `npm run genesis:replacement-r2-preflight`, confirm the binding digest `sha256:2482f9a9...e6159`, confirm the CLEAR witness and one-shot guard are absent, and confirm no replacement-v2 life output exists. No provider calls.
+24. **Current action: corrected hostile R2 re-review.** Use `docs/validation/m2-pr39-replacement-v2-r2-rereview-request.md`. The narrow re-review attacks B1-B4 plus N2/N3/N6 closure first, then asks whether any disclosed residual becomes load-bearing. It must make zero provider/model calls, create no CLEAR witness and create no replacement-v2 life artifacts.
 
-25. **If local verification is green, request corrected hostile R2 re-review.** Re-review B1-B4 plus N2/N3/N6 closure and the residual assumptions with zero provider calls. Only a corrected `VERDICT: CLEAR` may authorize creation of a digest-bound CLEAR witness and then one fresh candidate-generation attempt. Publication remains a later, separate authority.
+25. **Only a corrected `VERDICT: CLEAR` moves R2 forward.** If CLEAR, record a digest-bound witness for execution candidate `ad7044d57...` and binding digest `sha256:2482f9a9...e6159` before exposing any generation command. That witness may authorize one fresh candidate-generation attempt only. Publication remains a later, separate authority. HOLD means correct narrowly and re-review again; REDESIGN means return to protocol architecture without outcome-driven tuning.
 
 26. **Experience-presentation seeds remain a separate architecture item.** Preferred rule: derive domain-separated presentation seeds from the canonical Experience or Memory identity/digest; presentation may control how authoritative evidence is rendered but never what occurred or what the experience means.
 
