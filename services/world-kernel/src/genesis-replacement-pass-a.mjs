@@ -26,7 +26,7 @@ Describe what happened, not what it meant. Do not write significance, lessons, p
 The envelope's local weekday/daypart/place are factual authority. Do not narrate a conflicting weekday, daypart, or location.
 Keep observableAction concise; the unchanged authoritative maximum is 1200 UTF-8 bytes, with an initial target of 800 bytes / 100 words.`;
 
-export const GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT = `${GENESIS_REPLACEMENT_PASS_A_PROMPT}\n\nThe previous realization failed a mechanical record-validity gate and has been discarded. You do not receive the rejected realization. Generate a fresh realization from the exact same frozen context. failedGate is a mechanical contract signal only, not a quality signal. Do not make the replacement richer, more meaningful, more diverse, or more consequential because a retry occurred.`;
+export const GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT = `${GENESIS_REPLACEMENT_PASS_A_PROMPT}\n\nThe previous realization failed a mechanical admission gate and has been discarded. This may happen after local form repair has already been exhausted. You do not receive the rejected realization. Generate a fresh realization from the exact same frozen context. failedGate is a mechanical contract signal only, not a quality signal. Do not make the replacement richer, more meaningful, more diverse, or more consequential because a retry occurred.`;
 
 export const GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT = `You are Fibre Genesis observable-action form repair.
 You receive only the rejected observableAction and the failed mechanical form gate. Return only a replacement observableAction.
@@ -150,37 +150,50 @@ export async function generateReplacementHistoricalEpisode({
       });
     } catch (error) {
       if (isFormRepairable(error) && realization !== null) {
-        budgetOrThrow({ generatedVersions, formRepairs, recordRetries, nextKind: "form_repair", cause: error, calls });
-        const repairOrdinal = formRepairs + 1;
-        const repairInput = {
-          rejectedObservableAction: realization.observableAction,
-          failedGate: error.gate,
-          repairOrdinal,
-        };
-        const result = await repairAdapter.invoke({
-          systemPrompt: GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
-          input: repairInput,
-          responseSchema: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
-          clientRequestId: `${clientRequestId}:form-repair-${repairOrdinal}`,
+        const formDecision = richPassAGenerationDecision({
+          generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+          generatedVersions,
+          formRepairs,
+          recordRetries,
+          nextKind: "form_repair",
         });
-        generatedVersions += 1;
-        formRepairs += 1;
-        calls.push(Object.freeze({
-          kind: `form-repair-${repairOrdinal}`,
-          generatedVersion: generatedVersions,
-          inputDigest: digest(repairInput),
-          promptHash: digest(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT),
-          outputDigest: digest(result.output),
-          provenance: structuredClone(result.provenance ?? null),
-        }));
-        if (result.output !== null && typeof result.output === "object" && Object.keys(result.output).length === 1 && typeof result.output.observableAction === "string") {
-          rawRealization = Object.freeze({ ...realization, observableAction: result.output.observableAction });
+        if (formDecision.allowed) {
+          const repairOrdinal = formRepairs + 1;
+          const repairInput = {
+            rejectedObservableAction: realization.observableAction,
+            failedGate: error.gate,
+            repairOrdinal,
+          };
+          const result = await repairAdapter.invoke({
+            systemPrompt: GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
+            input: repairInput,
+            responseSchema: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
+            clientRequestId: `${clientRequestId}:form-repair-${repairOrdinal}`,
+          });
+          generatedVersions += 1;
+          formRepairs += 1;
+          calls.push(Object.freeze({
+            kind: `form-repair-${repairOrdinal}`,
+            generatedVersion: generatedVersions,
+            inputDigest: digest(repairInput),
+            promptHash: digest(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT),
+            outputDigest: digest(result.output),
+            provenance: structuredClone(result.provenance ?? null),
+          }));
+          if (result.output !== null && typeof result.output === "object" && Object.keys(result.output).length === 1 && typeof result.output.observableAction === "string") {
+            rawRealization = Object.freeze({ ...realization, observableAction: result.output.observableAction });
+          }
+          // A malformed form-repair body remains a form-repair failure. Leave the
+          // rejected realization in place so the next loop consumes the next form
+          // repair allowance rather than silently debiting record retry early.
+          continue;
         }
-        // A malformed form-repair body remains a form-repair failure. Leave the
-        // rejected realization in place so the next loop consumes the next form
-        // repair allowance rather than silently debiting the independent record
-        // retry budget.
-        continue;
+        if (formDecision.reason !== "form_repair_budget_exhausted") {
+          budgetOrThrow({ generatedVersions, formRepairs, recordRetries, nextKind: "form_repair", cause: error, calls });
+        }
+        // Local rewriting has had its two chances. The independent record-retry
+        // budget now gets a fresh realization from the same Fibre-owned skeleton.
+        // This is recovery from a mechanical gate, never quality regeneration.
       }
 
       budgetOrThrow({ generatedVersions, formRepairs, recordRetries, nextKind: "record_retry", cause: error, calls });
