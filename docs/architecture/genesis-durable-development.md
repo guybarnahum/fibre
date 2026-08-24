@@ -1,11 +1,11 @@
 ---
-id: genesis-durable-development-v1
+id: genesis-durable-development
 status: accepted
-last-reviewed: 2026-08-22
+last-reviewed: 2026-08-24
 canonical: true
 ---
 
-# Durable Genesis development v1
+# Durable Genesis development
 
 ## Principle
 
@@ -13,23 +13,19 @@ canonical: true
 
 Genesis may be interrupted by a provider timeout, quota or authentication outage, process crash, host restart, network failure, or another execution-layer failure. Those failures are machinery events. They are not grounds to erase accepted development, regenerate accepted history, substitute a new life candidate, or kill an otherwise valid developing Thread.
 
-The operational rule is:
-
 > **Commit development as it becomes valid. On machinery failure, resume from the last committed developmental state. Never regenerate accepted history.**
 
 ## Two durability boundaries
 
-Genesis has two distinct checkpoint boundaries.
+### Developmental-record boundary
 
-### 1. Developmental-record boundary
-
-Once a Pass-A episode or another Genesis record is admitted, that accepted record is fixed input to later development. A restart may revalidate or reconstruct the same state from durable evidence, but it may not ask a model to generate a replacement for an already admitted record.
+Once a historical episode or another Genesis record is admitted, that accepted record is fixed input to later development. A restart may revalidate or reconstruct the same state from durable evidence, but it may not ask a model to generate a replacement for an already admitted record.
 
 Publication remains atomic. Before publication, these records are provisional Genesis development rather than live Thread history; durability does not give provisional material Whole-Person standing. After publication, ordinary Fibre history/memory/meaning invariants apply and Genesis cannot rewrite the past.
 
-### 2. Model-invocation boundary
+### Model-invocation boundary
 
-Every successful model invocation used by Genesis should be durably journaled before downstream generation logic is allowed to depend on it. The journal binds the successful output and provenance to the exact request witness:
+Every successful model invocation used by Genesis should be durably journaled before downstream generation logic depends on it. The journal binds the successful output and provenance to the exact request witness:
 
 - client request ID;
 - provider and model;
@@ -40,10 +36,10 @@ Every successful model invocation used by Genesis should be durably journaled be
 
 On restart, the same Genesis computation may begin again from its deterministic record boundary. When it reaches a journaled invocation, Fibre replays the committed result locally instead of making another provider call. The first invocation with no committed successful result is the next operation allowed to reach the provider.
 
-This permits exact recovery inside a record without changing the already-calibrated Pass-A state machine. For example:
+This permits exact recovery inside a record without changing the semantic generation state machine:
 
 ```text
-Pass-A episode 7
+historical episode
   initial model response     COMMITTED
   validation                 referential failure
   retry request              provider/process interruption
@@ -53,7 +49,7 @@ restart
   validation                 same referential failure
   retry request              first unfinished provider operation
   retry response             COMMITTED
-  episode 7                  ADMITTED
+  episode                    ADMITTED
 ```
 
 ## What may be retried
@@ -62,29 +58,31 @@ A provider operation that has no durable successful-result witness may be attemp
 
 A committed successful invocation may not be regenerated. If its client request ID is presented with different prompt, input, schema, model, provider, or runtime configuration, that is an integrity conflict rather than a cache miss.
 
-A mechanical validation failure is not an operational interruption. Form-repair and referential-retry budgets remain governed by the frozen generation policy. Restarting a process does not replenish those budgets because replay reconstructs the same committed generated versions before reaching the next unfinished operation.
+A mechanical validation failure is not an operational interruption. Form-repair and referential-retry budgets remain governed by the current generation policy. Restarting a process does not replenish those budgets because replay reconstructs the same committed generated versions before reaching the next unfinished operation.
 
 ## Provenance and negative evidence
 
 The invocation journal is execution evidence, not semantic evidence. Mechanical/substrate behavior may never support identity, memory, meaning, personality, or character claims.
 
-Rejected candidates, failed gates, repair/retry witnesses, provider provenance, and operational failures remain preserved. Durability must not turn a failed attempt into a cleaner retrospective narrative.
+Rejected candidates, failed gates, repair/retry witnesses, provider provenance and operational failures remain preserved where they are part of the current developmental record. Durability must not turn a failed attempt into a cleaner retrospective narrative.
+
+Ordinary retired experiment/review chronology belongs in Git history rather than in current runtime authority.
 
 ## Efficiency
 
 A restart should spend no provider calls reproducing already committed model work. Replaying local journal records and deterministic validators is cheap relative to regenerating cognition and prevents a late failure from multiplying model cost.
 
-A long Genesis can therefore recover by replaying its committed execution evidence until it reaches the exact unfinished operation. The implementation may later add coarser snapshots for CPU efficiency, but snapshots are an optimization; the append-only durable evidence remains authority.
+A long Genesis can therefore recover by replaying committed execution evidence until it reaches the exact unfinished operation. The implementation may later add coarser snapshots for CPU efficiency, but snapshots are an optimization; durable invocation evidence remains the execution witness.
 
 ## #39 boundary
 
-The G4-v3 off-cohort calibration was completed and frozen before this durability layer was introduced. Its CLEAR result remains evidence about the unchanged G4-v3 mechanical generation policy; it is not rerun or replaced by the durability work.
+The active #39 closing plan uses durable recovery as ordinary execution resilience, not as a reviewed-head authorization mechanism. Current development is driven by current fixtures and current code under ADR-0015.
 
-For the replacement cohort, Gate-G(2) must separately verify that durability is execution-layer-only and that:
+Before #39 closes, the current path must prove that:
 
-- frozen G4-v3 cognition prompts, schemas, budgets, and mechanical admission remain unchanged;
-- accepted developmental records cannot trigger a duplicate provider generation;
-- committed mid-record outputs are replayed exactly after restart;
+- accepted developmental records cannot trigger duplicate provider generation;
+- committed mid-record outputs replay exactly after restart;
 - request drift fails closed;
-- mechanical budget exhaustion is not reset by restart; and
-- fresh replacement-cohort cognition remains unauthorized until Gate-G(2) CLEAR.
+- mechanical budget exhaustion is not reset by restart;
+- recovery does not manufacture semantic evidence or standing; and
+- admitted candidates can cross the current atomic birth boundary and hydrate identically in canonical Thread state.
