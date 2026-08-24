@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
   expectedContextPacks,
@@ -8,6 +8,7 @@ import {
   validateContextManifest,
 } from "./context-pack-lib.mjs";
 import { expectedMarkdownIncludeProjections } from "./markdown-includes-lib.mjs";
+import { trackedSymlinkPaths, validateTrackedSymlinks } from "./repository-links.mjs";
 import { RUNTIME_NAME_DEBT_PATHS, validateRuntimeNames } from "./runtime-name-policy.mjs";
 
 const required = [
@@ -47,6 +48,16 @@ try {
   }
 } catch (error) {
   report(`Unable to verify tracked .fibre/ paths: ${error.message}`);
+}
+
+try {
+  const indexText = execFileSync("git", ["ls-files", "-s"], { encoding: "utf8" });
+  const symlinks = trackedSymlinkPaths(indexText);
+  for (const error of validateTrackedSymlinks(symlinks, { lstat: lstatSync, realpath: realpathSync })) {
+    report(error);
+  }
+} catch (error) {
+  report(`Unable to verify tracked symlink integrity: ${error.message}`);
 }
 
 function walk(dir) {
