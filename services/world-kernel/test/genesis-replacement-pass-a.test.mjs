@@ -262,11 +262,11 @@ test("replacement Pass-A persistent form failure can consume the full five-versi
   );
 });
 
-test("replacement Pass-A record retry cannot substitute a different frozen structure", async () => {
+test("replacement Pass-A record retry preserves the frozen structure", async () => {
   const outputs = [
     {
       ...validRealization(),
-      observableAction: "The subject and peer work at home on Sunday afternoon.",
+      additionalParticipantRefs: ["person_not_grounded"],
     },
     validRealization(),
   ];
@@ -284,7 +284,7 @@ test("replacement Pass-A record retry cannot substitute a different frozen struc
     clientRequestId: "r2-pass-a-record-retry",
   });
   assert.equal(requests.length, 2);
-  assert.equal(result.episode.localWeekday, undefined);
+  assert.match(requests[1].clientRequestId, /record-retry-1$/u);
   assert.equal(result.episode.structureRef, envelope().structureRef);
   assert.deepEqual(result.budgetState, { generatedVersions: 2, formRepairs: 0, recordRetries: 1 });
 });
