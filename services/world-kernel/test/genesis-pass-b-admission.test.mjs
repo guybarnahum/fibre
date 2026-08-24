@@ -7,8 +7,8 @@ import {
   assertPassBGenomeCopyBoundary,
   findVerbatimGenomeNgram,
   generateAdmittedPassBMemory,
-} from "./genesis-pass-b-admission.mjs";
-import { GENESIS_PASS_B_INPUT_VERSION, GENESIS_PASS_B_POLICY } from "./genesis-pass-b-domain.mjs";
+} from "../src/genesis-pass-b-admission.mjs";
+import { GENESIS_PASS_B_INPUT_VERSION, GENESIS_PASS_B_POLICY } from "../src/genesis-pass-b-domain.mjs";
 
 function treatmentInput() {
   return {

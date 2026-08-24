@@ -35,7 +35,13 @@ Use this for architecture, milestone posture, persistence surfaces, causal stand
 
 [`current-priorities.md`](current-priorities.md)
 
-Use this for the immediate execution sequence, frozen experimental constraints, blockers and rules for what maintainers may or may not do next.
+Use this for the immediate execution sequence, current experimental constraints, blockers and rules for what maintainers may or may not do next.
+
+## Future capability map
+
+[`future-capability-map.md`](future-capability-map.md)
+
+Use this to preserve promising future product, service and capability boundaries without keeping empty implementation directories in the repository. A listed capability is design intent, not current architecture; recreate the implementation namespace only when real code, operations or an accepted authority boundary needs it.
 
 ## Rule
 
