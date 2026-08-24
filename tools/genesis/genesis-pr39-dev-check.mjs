@@ -19,10 +19,10 @@ import {
   syntheticLineageWitnessFromRecombinedGenome,
 } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
-  GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
-  GENESIS_REPLACEMENT_PASS_A_PROMPT,
-  GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
-} from "../../services/world-kernel/src/genesis-replacement-pass-a.mjs";
+  GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
+  GENESIS_LIFE_PASS_A_PROMPT,
+  GENESIS_LIFE_PASS_A_RETRY_PROMPT,
+} from "../../services/world-kernel/src/genesis-life-pass-a.mjs";
 import {
   richPassAGenerationDecision,
 } from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
@@ -69,11 +69,11 @@ const recordFallback = richPassAGenerationDecision({
   nextKind: "record_retry",
 });
 assert.equal(recordFallback.allowed, true, "record retry must remain available after two failed form repairs");
-assert.match(GENESIS_REPLACEMENT_PASS_A_PROMPT, /Avoid naming the weekday, daypart, clock time, or location label/iu);
-assert.match(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT, /pass_a_local_civil_time_narration/iu);
-assert.match(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT, /remove explicit weekday, daypart, or clock-time wording/iu);
-assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /retryOrdinal/iu);
-assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /fresh alternative realization/iu);
+assert.match(GENESIS_LIFE_PASS_A_PROMPT, /Avoid naming the weekday, daypart, clock time, or location label/iu);
+assert.match(GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT, /pass_a_local_civil_time_narration/iu);
+assert.match(GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT, /remove explicit weekday, daypart, or clock-time wording/iu);
+assert.match(GENESIS_LIFE_PASS_A_RETRY_PROMPT, /retryOrdinal/iu);
+assert.match(GENESIS_LIFE_PASS_A_RETRY_PROMPT, /fresh alternative realization/iu);
 
 const socialSlot = plans.slots.find((slot) => slot.envelopePlan.envelopes.some((item) => item.counterpart?.introducedHere === true));
 assert.ok(socialSlot, "development cohort must contain an introduced counterpart window");
