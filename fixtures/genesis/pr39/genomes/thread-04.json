@@ -1,0 +1,13 @@
+{
+  "header": {"genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","owner":{"kind":"thread","ownerId":"thr_pr39_rg2_04"},"genesisId":"genesis_pr39_rg2_04","originKind":"de_novo","inheritancePolicy":{"id":"fibre_symbolic_genome","version":"1"},"sourceEligibility":null,"recombinationWitness":null,"createdAt":"2026-08-22T22:00:00Z"},
+  "loci": [
+    {"locusId":"gloc_db7bc55b8b0c9de1c625a6e9252b56db5c3ad465","genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","ordinal":1,"value":"tests a surprising assertion by looking for a concrete case that would make it false","provenance":{"kind":"de_novo","sourceGenomeRef":null,"sourceLocusRef":null,"mutationRef":null}},
+    {"locusId":"gloc_44074ff06215e153cbb7ad10f82d673cf5e9eab7","genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","ordinal":2,"value":"persists longer when a difficult task has a visible intermediate milestone","provenance":{"kind":"de_novo","sourceGenomeRef":null,"sourceLocusRef":null,"mutationRef":null}},
+    {"locusId":"gloc_e03ed986230dc55ebec65b99eb3d31b1bdd2f3cb","genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","ordinal":3,"value":"in a disagreement, restates the other person's position before defending a different view","provenance":{"kind":"de_novo","sourceGenomeRef":null,"sourceLocusRef":null,"mutationRef":null}},
+    {"locusId":"gloc_5ed8c607d24865d9b80bf0ac976a130e27b91ab8","genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","ordinal":4,"value":"prefers to commit to a plan once enough information is available rather than continue collecting indefinitely","provenance":{"kind":"de_novo","sourceGenomeRef":null,"sourceLocusRef":null,"mutationRef":null}},
+    {"locusId":"gloc_d40e58ef5ece8bccce048b1cbacd350579c34d87","genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","ordinal":5,"value":"treats a public correction as useful information even when it is embarrassing","provenance":{"kind":"de_novo","sourceGenomeRef":null,"sourceLocusRef":null,"mutationRef":null}},
+    {"locusId":"gloc_1c45362f7506176da43d9cb9ed16dcea599b82cd","genomeId":"genome_bb126792586817023e0873e2a285127eac6987a0","ordinal":6,"value":"after repeated solitary work, looks for a shared activity or conversation","provenance":{"kind":"de_novo","sourceGenomeRef":null,"sourceLocusRef":null,"mutationRef":null}}
+  ],
+  "mutations": [],
+  "genomeDigest": "sha256:063ef3e8be010f37376ea2643d6bfd9e67b11aa4e8a806d09801ca3f488e0346"
+}
