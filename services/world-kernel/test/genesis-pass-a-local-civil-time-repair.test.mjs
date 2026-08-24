@@ -7,6 +7,15 @@ import {
 } from "../src/genesis-replacement-pass-a.mjs";
 
 function passAInput() {
+  const offeredStructures = Array.from({ length: 8 }, (_, index) => ({
+    structureId: `ges_local_time_${index + 1}`,
+    abstractSituation: index === 0
+      ? "a peer and the subject handle one concrete shared task"
+      : `ordinary local-time test situation ${index + 1}`,
+    participatingRoles: index === 0 ? ["peer"] : [],
+    developmentalRange: { minAge: 10, maxAge: 12 },
+    consequenceClass: "low",
+  }));
   return {
     inputVersion: "genesis-pass-a-input-v1",
     subject: {
@@ -45,13 +54,7 @@ function passAInput() {
     ],
     priorEpisodes: [],
     previouslyIntroducedParticipants: [],
-    offeredStructures: [{
-      structureId: "ges_local_time_peer_task",
-      abstractSituation: "a peer and the subject handle one concrete shared task",
-      participatingRoles: ["peer"],
-      developmentalRange: { minAge: 10, maxAge: 12 },
-      consequenceClass: "low",
-    }],
+    offeredStructures,
     policyWitness: {
       policyVersion: "genesis-pass-a-policy-v1+genesis-rich-counterpart-policy-v2",
       eventStructurePoolDigest: `sha256:${"1".repeat(64)}`,
@@ -75,7 +78,7 @@ function envelope() {
     placeRef: "place_local_time_school",
     placeKind: "school",
     selectionKind: "offered_structure",
-    structureRef: "ges_local_time_peer_task",
+    structureRef: "ges_local_time_1",
     counterpartMode: "present_required",
     counterpart: {
       participantId: "person_local_time_peer",
