@@ -25,12 +25,12 @@ import {
 import {
   richPassAGenerationDecision,
 } from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
-import {
-  buildReplacementV2ExecutionPlans,
-} from "./genesis-replacement-v2-plan.mjs";
+import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 
-const plans = buildReplacementV2ExecutionPlans();
+const plans = buildGenesisDevelopmentPlans();
 assert.equal(plans.slots.length, 5, "PR39 must have five development Threads");
+assert.equal(plans.sampling.creativeTemperature, 0.3, "creative Genesis temperature must be 0.3 in current development policy");
+assert.equal(plans.sampling.mechanicalRepairTemperature, 0, "mechanical repair must remain temperature 0");
 
 let totalEpisodes = 0;
 for (const slot of plans.slots) {
@@ -72,10 +72,6 @@ assert.match(GENESIS_REPLACEMENT_PASS_A_PROMPT, /Avoid naming the weekday, daypa
 assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /retryOrdinal/iu);
 assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /fresh alternative realization/iu);
 
-// Exercise the real boundary that blocked an earlier development run. When the
-// model redundantly returns the exact frozen counterpart introduction, Fibre
-// should normalize it rather than burn a retry. Conflicting roles still fail in
-// the domain implementation.
 const socialSlot = plans.slots.find((slot) => slot.envelopePlan.envelopes.some((item) => item.counterpart?.introducedHere === true));
 assert.ok(socialSlot, "development cohort must contain an introduced counterpart window");
 const envelopeIndex = socialSlot.envelopePlan.envelopes.findIndex((item) => item.counterpart?.introducedHere === true);
@@ -116,8 +112,10 @@ assert.equal(
 );
 
 console.log("\nPR39 DEVELOPMENT CHECK: READY");
-console.log("5 Threads · 70 planned life episodes · deterministic place/time/event skeletons");
+console.log("5 development Threads · 70 planned life episodes · deterministic place/time/event skeletons");
+console.log("Creative A/B/C + record retries: temperature 0.3 · mechanical form repair: temperature 0");
 console.log("Pass A can use 2 local form repairs and then 2 mechanically distinct fresh retries, capped at 5 generated versions");
 console.log("Pass A avoids unnecessary daypart/location narration that can conflict with Fibre-owned history");
 console.log("Redundant model re-declaration of the frozen counterpart is normalized without a retry");
+console.log("Development Worlds are burned for the final PR39 closure cohort");
 console.log("This check makes zero provider calls and grants no publication authority");
