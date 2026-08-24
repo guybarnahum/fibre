@@ -13,8 +13,8 @@ import {
 import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../src/genesis-pass-a-reliability-v3.mjs";
 import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
 
-const CALIBRATION_CORPUS = "fixtures/model-runtime/pass-a-restart-v1.json";
-const TRIAL_175_RESULT = "fixtures/model-runtime/pass-a-restart-recorded-result-v1.json";
+const CALIBRATION_CORPUS = "fixtures/birth-center/recovery/pass-a-restart-v1.json";
+const TRIAL_175_RESULT = "fixtures/birth-center/recovery/pass-a-restart-recorded-result-v1.json";
 const BASE_CONFIGURATION = Object.freeze({ transport: "test", temperature: 0 });
 
 function tempJournal(t) {
