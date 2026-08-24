@@ -10,7 +10,7 @@ import {
   EmbodimentConflictError,
   EmbodimentNotFoundError,
   EmbodimentStore as IntegrityEmbodimentStore,
-} from "./embodiment-store-personhood-v2.mjs";
+} from "./embodiment-persistence-store.mjs";
 
 export { EmbodimentConflictError, EmbodimentNotFoundError };
 
