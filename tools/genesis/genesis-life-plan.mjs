@@ -13,6 +13,7 @@ import { symbolicGenomeDigest } from "../../services/world-kernel/src/symbolic-g
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const PR39_DEVELOPMENT_COHORT_PATH = "fixtures/genesis/pr39/development-cohort-v1.json";
+export const PR39_PARENT_GENOME_INDEX_PATH = "fixtures/genesis/pr39/genomes/parent-genome-index.json";
 
 function absolute(path) { return resolve(ROOT, path); }
 function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")); }
@@ -26,20 +27,44 @@ function loadWorld(slot) {
   return worldSpec;
 }
 
-function loadGenome(slot) {
-  const genome = readJson(slot.genomePath);
+function verifyGenomeBundle(bundle, label) {
   const computed = symbolicGenomeDigest({
-    header: genome.header,
-    loci: genome.loci,
-    mutations: genome.mutations ?? [],
+    header: bundle.header,
+    loci: bundle.loci,
+    mutations: bundle.mutations ?? [],
   });
-  if (computed !== slot.genomeDigest || genome.genomeDigest !== slot.genomeDigest) {
-    fail(`PR39 slot ${slot.slot} genome digest drift`);
-  }
+  if (computed !== bundle.genomeDigest) fail(`${label} genome digest drift`);
+  return bundle;
+}
+
+function loadGenome(slot) {
+  const genome = verifyGenomeBundle(readJson(slot.genomePath), `PR39 slot ${slot.slot}`);
+  if (genome.genomeDigest !== slot.genomeDigest) fail(`PR39 slot ${slot.slot} genome binding drift`);
   if (genome.header.owner?.ownerId !== slot.threadId || genome.header.genesisId !== slot.genesisId) {
     fail(`PR39 slot ${slot.slot} genome identity drift`);
   }
   return genome;
+}
+
+function loadParentGenomes(genome) {
+  if (genome.header.originKind !== "recombined") return [];
+  const index = readJson(PR39_PARENT_GENOME_INDEX_PATH);
+  if (index.version !== "pr39-parent-genome-index-v1") fail("unexpected PR39 parent-genome index version");
+  const refs = genome.header.sourceEligibility?.sourceGenomeRefs ?? [];
+  const witnessRefs = genome.header.recombinationWitness?.sourceGenomeRefs ?? [];
+  const witnessDigests = genome.header.recombinationWitness?.sourceGenomeDigests ?? [];
+  if (canonicalJson(refs) !== canonicalJson(witnessRefs) || refs.length !== witnessDigests.length) {
+    fail(`PR39 genome ${genome.header.genomeId} parent witness drift`);
+  }
+  return refs.map((genomeId, ordinal) => {
+    const path = index.genomes?.[genomeId];
+    if (typeof path !== "string") fail(`PR39 parent genome ${genomeId} has no current fixture`);
+    const parent = verifyGenomeBundle(readJson(path), `PR39 parent ${genomeId}`);
+    if (parent.header.genomeId !== genomeId || parent.genomeDigest !== witnessDigests[ordinal]) {
+      fail(`PR39 parent genome ${genomeId} does not match child recombination witness`);
+    }
+    return Object.freeze({ path, bundle: parent });
+  });
 }
 
 export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_COHORT_PATH } = {}) {
@@ -54,6 +79,7 @@ export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_CO
   const slots = fixture.slots.map((slot) => {
     const worldSpec = loadWorld(slot);
     const genome = loadGenome(slot);
+    const parentGenomes = loadParentGenomes(genome);
     const offersByWindow = new Map();
     for (const window of windows) {
       const seed = `${fixture.generation.eventOfferSeedDomain}:slot:${pad(slot.slot)}:structures:${window.windowId}`;
@@ -90,6 +116,7 @@ export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_CO
       genome,
       genomePath: slot.genomePath,
       genomeDigest: slot.genomeDigest,
+      parentGenomes: Object.freeze(parentGenomes),
       roster,
       windows: structuredClone(windows),
       offersByWindow,
