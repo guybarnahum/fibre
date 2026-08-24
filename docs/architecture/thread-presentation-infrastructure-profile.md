@@ -1,17 +1,17 @@
 ---
 id: architecture-thread-presentation-infrastructure-profile-v0-1
 status: proposed
-last-reviewed: 2026-08-21
+last-reviewed: 2026-08-24
 canonical: false
 ---
 
-# Thread presentation infrastructure profile v0.1
+# Thread presentation infrastructure profile
 
 ## Purpose
 
 Define the infrastructure **capability profile** required by `PresentationServer`.
 
-This document no longer defines a presentation-specific infrastructure driver. Fibre now has one provider-neutral [`InfraDriver`](infrastructure-driver-v0.1.md) abstraction for backend services.
+This document does not define a presentation-specific infrastructure driver. Fibre has one provider-neutral [`InfraDriver`](infrastructure-driver.md) abstraction for backend services.
 
 The dependency direction is:
 
@@ -82,7 +82,7 @@ publishSnapshot(streamId, snapshotPointer, expectedSequence?)
 getSnapshotPointer(streamId)
 ```
 
-The exact executable API belongs to the general `InfraDriver` implementation work and may evolve while P3 is built.
+The exact executable API belongs to the general `InfraDriver` implementation work and may evolve while the presentation stack is built.
 
 Required invariants:
 
@@ -100,8 +100,6 @@ The presentation cursor names a public presentation-stream position, not authori
 ## Realtime delivery
 
 Realtime delivery is not event authority.
-
-The invariant is:
 
 > A realtime transport may only publish a presentation event after the ordered-stream capability has durably admitted it.
 
@@ -125,9 +123,9 @@ It is not the per-Thread ordering authority and may lag a stream head where expl
 
 The catalog contains only presentation-safe/indexable projection fields. It must not become a shadow database of private Thread state.
 
-## Cloudflare v1 mapping
+## Cloudflare mapping
 
-The first production `InfraDriver` maps this profile approximately as follows:
+The first production `InfraDriver` mapping is identified by the real adapter compatibility key `cloudflare-v1`:
 
 | Presentation requirement | `cloudflare-v1` mechanism |
 | --- | --- |
@@ -141,7 +139,7 @@ The first production `InfraDriver` maps this profile approximately as follows:
 
 Cloudflare Durable Object IDs, D1 row IDs, R2 keys, deployment names and socket IDs remain driver-private operational details.
 
-See [`thread-presentation-cloudflare-stream-v0.1.md`](thread-presentation-cloudflare-stream-v0.1.md) for the concrete first-provider topology.
+See [`thread-presentation-cloudflare-stream.md`](thread-presentation-cloudflare-stream.md) for the concrete first-provider topology.
 
 ## Conformance tests
 
@@ -171,18 +169,6 @@ The presentation profile adds application-specific tests on top of the general `
 - whether a location is exact, coarse or hidden.
 
 `PresentationServer` receives/constructs an authorized projection and uses infrastructure only to store, order and deliver it.
-
-## P3 rule
-
-P3 should build:
-
-```text
-P3-A  generic snapshot viewer + reducer
-P3-B  provider-neutral PresentationServer protocol
-P3-C  minimum executable InfraDriver ports + local/in-memory conformance driver
-P3-D  cloudflare-v1 implementation of the presentation profile
-P3-E  Cần Thơ snapshot + deterministic stream through the same server interface
-```
 
 The application construction shape is:
 
