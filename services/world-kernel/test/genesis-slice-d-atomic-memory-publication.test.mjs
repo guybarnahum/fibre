@@ -20,6 +20,7 @@ import {
   openAutobiographicalMemoryInspectionStore,
   openAutobiographicalMemoryStore,
 } from "../src/autobiographical-memory-store.mjs";
+import { publishMinimalGenesisPriorLifeFixture } from "./support/genesis-prior-life-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -213,7 +214,7 @@ function publish(databasePath, {
   const memoryRecords = memories ?? [memoryFor(thread, genesisId, lifeEpisode)];
   const genesis = new GenesisStore(databasePath);
   genesis.recordWorldSpec(worldSpec(worldSpecId));
-  const result = genesis.publishBirth({
+  const result = publishMinimalGenesisPriorLifeFixture(genesis, {
     manifest: manifest(thread, 1 + memoryRecords.length, { worldSpecId, genesisId }),
     thread,
     episodes: [lifeEpisode],
@@ -310,7 +311,7 @@ test("Genesis refuses to redefine the Pass-B recollection during a meaning revis
     const genesis = new GenesisStore(databasePath);
     genesis.recordWorldSpec(worldSpec("world_slice_d_rewrite_001"));
     assert.throws(
-      () => genesis.publishBirth({
+      () => publishMinimalGenesisPriorLifeFixture(genesis, {
         manifest: manifest(thread, 3, {
           worldSpecId: "world_slice_d_rewrite_001",
           genesisId,
@@ -344,7 +345,7 @@ test("Genesis memory subject must be an admitted Pass-A life event, never THREAD
     const genesis = new GenesisStore(databasePath);
     genesis.recordWorldSpec(worldSpec("world_slice_d_seed_memory_001"));
     assert.throws(
-      () => genesis.publishBirth({
+      () => publishMinimalGenesisPriorLifeFixture(genesis, {
         manifest: manifest(thread, 2, {
           worldSpecId: "world_slice_d_seed_memory_001",
           genesisId,
@@ -368,7 +369,7 @@ test("failure after the first memory append rolls back Thread, events, memory, a
     const genesis = new GenesisStore(databasePath);
     genesis.recordWorldSpec(worldSpec("world_slice_d_atomic_rollback"));
     assert.throws(
-      () => genesis.publishBirth({
+      () => publishMinimalGenesisPriorLifeFixture(genesis, {
         manifest: manifest(thread, 2, {
           worldSpecId: "world_slice_d_atomic_rollback",
           genesisId,

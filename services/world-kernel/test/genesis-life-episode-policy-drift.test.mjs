@@ -13,6 +13,7 @@ import { normalizePassAEpisode } from "../src/genesis-pass-a-domain.mjs";
 import { GenesisStore } from "../src/genesis-store.mjs";
 import { canonicalJson, threadStateHash } from "../src/persistence-common.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { publishMinimalGenesisPriorLifeFixture } from "./support/genesis-prior-life-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -131,7 +132,7 @@ function publish(databasePath) {
     },
     createdAt: "2026-08-18T20:00:30Z",
   };
-  genesis.publishBirth({ manifest, thread, episodes: [publishedEpisode] });
+  publishMinimalGenesisPriorLifeFixture(genesis, { manifest, thread, episodes: [publishedEpisode] });
   genesis.close();
   return { threadId: thread.threadId, genesisId: manifest.genesisId };
 }

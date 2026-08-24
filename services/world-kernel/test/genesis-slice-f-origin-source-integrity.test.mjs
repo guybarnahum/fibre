@@ -16,6 +16,7 @@ import { GenesisOriginAuthorityStore } from "../src/genesis-origin-authority-sto
 import { GenesisStore } from "../src/genesis-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { publishMinimalGenesisPriorLifeFixture } from "./support/genesis-prior-life-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -205,7 +206,7 @@ function publishEpisodes(databasePath, threadId, episodes) {
   const genesis = new GenesisStore(databasePath);
   if (genesis.getWorldSpec("world_slice_f_001", { required: false }) === null) genesis.recordWorldSpec(worldSpec());
   const thread = genesisThread(threadId);
-  genesis.publishBirth({ manifest: manifest(thread, episodes.length), thread, episodes });
+  publishMinimalGenesisPriorLifeFixture(genesis, { manifest: manifest(thread, episodes.length), thread, episodes });
   genesis.close();
 }
 

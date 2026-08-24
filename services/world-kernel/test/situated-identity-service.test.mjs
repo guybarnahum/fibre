@@ -11,6 +11,7 @@ import { IDENTITY_DOMAIN_REGISTRY_VERSION } from "../src/identity-domain-registr
 import { lifeRelationId, placeEpisodeId } from "../src/situated-life-domain.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
 import { SituatedIdentityService } from "../src/situated-identity-service.mjs";
+import { publishMinimalGenesisPriorLifeFixture } from "./support/genesis-prior-life-fixture.mjs";
 
 const fixture = JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"));
 const sha = (char) => `sha256:${char.repeat(64)}`;
@@ -109,7 +110,7 @@ function publishLivedThread(databasePath) {
 
   const genesis = new GenesisStore(databasePath);
   genesis.recordWorldSpec(worldSpec);
-  genesis.publishBirth({ manifest, thread, episodes });
+  publishMinimalGenesisPriorLifeFixture(genesis, { manifest, thread, episodes });
   genesis.close();
 
   const world = openWorldStore(databasePath);

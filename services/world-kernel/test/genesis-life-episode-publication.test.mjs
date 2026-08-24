@@ -17,6 +17,7 @@ import {
   AutobiographicalMemoryConflictError,
   openAutobiographicalMemoryStore,
 } from "../src/autobiographical-memory-store.mjs";
+import { publishMinimalGenesisPriorLifeFixture } from "./support/genesis-prior-life-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -184,7 +185,7 @@ function publish(databasePath, { threadId = "thr_genesis_life_001", worldSpecId 
   const genesis = new GenesisStore(databasePath);
   genesis.recordWorldSpec(worldSpec(worldSpecId));
   const thread = genesisThread(threadId);
-  const result = genesis.publishBirth({
+  const result = publishMinimalGenesisPriorLifeFixture(genesis, {
     manifest: manifest(thread, publishedEpisodes, { worldSpecId, genesisId }),
     thread,
     episodes: publishedEpisodes,

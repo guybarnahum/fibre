@@ -26,6 +26,7 @@ import { MAX_CLAIM_PREDICATE_BYTES } from "../src/identity-claim-discipline.mjs"
 import { legacySeedIdentityAssertions } from "../src/identity-provenance-domain.mjs";
 import { canonicalJson, threadStateHash } from "../src/persistence-common.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { publishMinimalGenesisPriorLifeFixture } from "./support/genesis-prior-life-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -297,7 +298,7 @@ test("Genesis publication supports the full Thread-ID contract without exceeding
     const episodes = longBirthEpisodes();
     const genesis = new GenesisStore(databasePath);
     genesis.recordWorldSpec(worldSpec());
-    const published = genesis.publishBirth({
+    const published = publishMinimalGenesisPriorLifeFixture(genesis, {
       manifest: manifest(thread, episodes),
       thread,
       episodes,
