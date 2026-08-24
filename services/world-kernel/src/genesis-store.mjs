@@ -532,6 +532,9 @@ export class GenesisStore {
     if (hasSituatedContinuity && (initialRosterCandidate === null || lifeContinuityCandidate === null)) {
       throw new GenesisConflictError("Genesis situated continuity requires both initialRoster and lifeContinuity");
     }
+    if (normalizedEpisodes.length > 0 && !hasSituatedContinuity) {
+      throw new GenesisConflictError("Genesis prior-life birth requires initialRoster and lifeContinuity");
+    }
     if (hasSituatedContinuity && normalizedEpisodes.length === 0) {
       throw new GenesisConflictError("Genesis situated continuity requires admitted life episodes");
     }
