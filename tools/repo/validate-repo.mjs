@@ -8,6 +8,7 @@ import {
   validateContextManifest,
 } from "./context-pack-lib.mjs";
 import { expectedMarkdownIncludeProjections } from "./markdown-includes-lib.mjs";
+import { RUNTIME_NAME_DEBT_PATHS, validateRuntimeNames } from "./runtime-name-policy.mjs";
 
 const required = [
   "README.md", "AGENTS.md", "CLAUDE.md",
@@ -70,6 +71,20 @@ function parseFrontMatter(text) {
       return key ? [[key, value]] : [];
     }),
   );
+}
+
+const serviceFiles = walk("services").map((path) => path.replaceAll("\\", "/"));
+for (const error of validateRuntimeNames(serviceFiles)) report(error);
+
+if (!existsSync("services/runtime-name-debt.md")) {
+  report("Missing services/runtime-name-debt.md runtime naming debt register");
+} else {
+  const runtimeNameDebtText = readFileSync("services/runtime-name-debt.md", "utf8");
+  for (const path of RUNTIME_NAME_DEBT_PATHS) {
+    if (!runtimeNameDebtText.includes(`\`${path.replace(/^services\//u, "")}\``)) {
+      report(`Runtime naming debt is not justified in services/runtime-name-debt.md: ${path}`);
+    }
+  }
 }
 
 for (const file of walk("docs")) {
