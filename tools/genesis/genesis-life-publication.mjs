@@ -230,7 +230,7 @@ function assertCandidateMatchesPlan(candidate, slotPlan) {
   if (candidate.threadId !== slotPlan.threadId || candidate.genesisId !== slotPlan.genesisId) fail("candidate identity does not match current Genesis plan");
   if (candidate.originMode !== slotPlan.originMode) fail("candidate origin mode does not match current Genesis plan");
   if (candidate.worldSpecDigest !== slotPlan.worldSpecDigest || candidate.genomeDigest !== slotPlan.genomeDigest) fail("candidate World/genome binding does not match current Genesis plan");
-  if (canonicalJson(candidate.lifeContinuity) !== canonicalJson(slotPlan === null ? null : candidate.lifeContinuity)) fail("unreachable continuity guard");
+  if (candidate.envelopePlanDigest !== slotPlan.envelopePlan.digest) fail("candidate historical envelope plan does not match current Genesis plan");
   assertGenesisCandidatePlaceConsistency({ candidate, slotPlan, ErrorType: Error });
 }
 
