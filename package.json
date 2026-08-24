@@ -26,6 +26,8 @@
     "demo:m1": "node --disable-warning=ExperimentalWarning tools/repro/m1/m1-reviewed-proof.mjs",
     "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/repro/m1/m1-demo-editor.mjs",
     "model:smoke": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-api-smoke.mjs",
+    "genesis:pr39-check": "npm test && npm run validate && node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-dev-check.mjs",
+    "genesis:pr39-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-dev.mjs",
     "genesis:pass-a-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pass-a-dev.mjs",
     "genesis:rich-life-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-rich-life-dev.mjs",
     "genesis:world-familiarity": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-world-familiarity-probe.mjs",
