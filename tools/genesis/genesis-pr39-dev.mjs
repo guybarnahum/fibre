@@ -15,10 +15,8 @@ import { fileURLToPath } from "node:url";
 
 import { createBirthCenterRuntime } from "../../services/birth-center/src/runtime.mjs";
 import { createOpenAIModelAdapter } from "../../services/world-kernel/src/model-runtime/openai.mjs";
+import { generateGenesisLifeCandidate } from "./genesis-life-candidate.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
-import {
-  generateReplacementThreadCandidate,
-} from "./genesis-replacement-candidate.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const DEFAULT_MODEL = "gpt-5.1-2025-11-13";
@@ -189,7 +187,7 @@ for (const slotPlan of selected) {
     console.log(`Thread ${slotPlan.slot}: using completed development candidate`);
   } else {
     console.log(`Thread ${slotPlan.slot}: generating 14 life episodes, then memories and meanings`);
-    candidate = await generateReplacementThreadCandidate({
+    candidate = await generateGenesisLifeCandidate({
       slotPlan,
       adapter,
       repairAdapter,
