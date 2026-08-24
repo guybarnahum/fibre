@@ -70,7 +70,6 @@ export async function generateReplacementPassBMemory({ adapter, input, clientReq
       kind,
       generatedVersion,
       inputDigest: digest(normalizedInput),
-      cognitionInputDigest: digest(cognitionInput),
       promptHash: digest(prompt),
       outputDigest: digest(result.output),
       provenance: structuredClone(result.provenance ?? null),
