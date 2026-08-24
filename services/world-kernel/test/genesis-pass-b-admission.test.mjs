@@ -88,12 +88,18 @@ test("Pass-B genome-copy guard finds normalized four-token overlap", () => {
   assert.equal(match?.normalizedNgram, "notice the mismatch before");
 });
 
-test("Pass-B treatment memory rejects verbatim four-token genome text", () => {
+test("Pass-B treatment memory rejects verbatim genome text and preserves assignment provenance", () => {
+  const input = treatmentInput();
   assert.throws(
-    () => assertPassBGenomeCopyBoundary(leakingOutput, treatmentInput()),
+    () => assertPassBGenomeCopyBoundary(leakingOutput, input),
     (error) => error instanceof GenesisPassBAdmissionError && error.gate === GENESIS_PASS_B_GENOME_COPY_GATE,
   );
-  assert.deepEqual(assertPassBGenomeCopyBoundary(safeOutput, treatmentInput()), safeOutput);
+  assert.deepEqual(assertPassBGenomeCopyBoundary(safeOutput, input), {
+    ...safeOutput,
+    formationMode: input.assignment.formationMode,
+    priorTreatmentMemoryExposure: input.assignment.priorTreatmentMemoryExposure,
+    analysisStratum: input.assignment.analysisStratum,
+  });
 });
 
 test("Pass-B mechanical genome-copy retry withholds rejected content and is bounded to one retry", async () => {
@@ -113,6 +119,9 @@ test("Pass-B mechanical genome-copy retry withholds rejected content and is boun
   });
 
   assert.equal(result.output.rememberedContent, safeOutput.rememberedContent);
+  assert.equal(result.output.formationMode, "life_plus_genome");
+  assert.equal(result.output.priorTreatmentMemoryExposure, false);
+  assert.equal(result.output.analysisStratum, "life_plus_genome");
   assert.equal(result.calls.length, 2);
   assert.equal(requests.length, 2);
   assert.match(requests[1].clientRequestId, /mechanical-genome-copy-retry-1$/);
