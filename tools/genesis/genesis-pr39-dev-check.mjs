@@ -19,6 +19,7 @@ import {
   syntheticLineageWitnessFromRecombinedGenome,
 } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
+  GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
   GENESIS_REPLACEMENT_PASS_A_PROMPT,
   GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
 } from "../../services/world-kernel/src/genesis-replacement-pass-a.mjs";
@@ -69,6 +70,8 @@ const recordFallback = richPassAGenerationDecision({
 });
 assert.equal(recordFallback.allowed, true, "record retry must remain available after two failed form repairs");
 assert.match(GENESIS_REPLACEMENT_PASS_A_PROMPT, /Avoid naming the weekday, daypart, clock time, or location label/iu);
+assert.match(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT, /pass_a_local_civil_time_narration/iu);
+assert.match(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT, /remove explicit weekday, daypart, or clock-time wording/iu);
 assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /retryOrdinal/iu);
 assert.match(GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT, /fresh alternative realization/iu);
 
@@ -115,7 +118,7 @@ console.log("\nPR39 DEVELOPMENT CHECK: READY");
 console.log("5 development Threads · 70 planned life episodes · deterministic place/time/event skeletons");
 console.log("Creative A/B/C + record retries: temperature 0.3 · mechanical form repair: temperature 0");
 console.log("Pass A can use 2 local form repairs and then 2 mechanically distinct fresh retries, capped at 5 generated versions");
-console.log("Pass A avoids unnecessary daypart/location narration that can conflict with Fibre-owned history");
+console.log("Pass A avoids unnecessary civil-time narration and repairs conflicting weekday/daypart wording locally before a fresh retry");
 console.log("Redundant model re-declaration of the frozen counterpart is normalized without a retry");
 console.log("Development Worlds are burned for the final PR39 closure cohort");
 console.log("This check makes zero provider calls and grants no publication authority");
