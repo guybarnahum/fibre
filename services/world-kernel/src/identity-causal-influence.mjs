@@ -7,8 +7,8 @@ import {
 } from "./persistence-common.mjs";
 import { semanticDignityGuardianV4 } from "./dignity-guardian-v4.mjs";
 
-export const M2_IDENTITY_CAUSAL_WIRE_POLICY = Object.freeze({
-  id: "m2_identity_causal_wire_preflight",
+export const IDENTITY_CAUSAL_INFLUENCE_POLICY = Object.freeze({
+  id: "identity_causal_influence_preflight",
   version: "1",
   selection: "latest_current_candidate_causal",
 });
@@ -20,16 +20,16 @@ function digest(value) {
 }
 
 function assertIdentityView(identityView, threadId) {
-  assertPlainObject("M2 causal-wire identity view", identityView);
-  assertId("M2 causal-wire identity view.threadId", identityView.threadId);
+  assertPlainObject("identity causal-influence view", identityView);
+  assertId("identity causal-influence view.threadId", identityView.threadId);
   if (identityView.threadId !== threadId) {
-    throw new TypeError("M2 causal-wire identity view belongs to a different Thread");
+    throw new TypeError("identity causal-influence view belongs to a different Thread");
   }
   if (!SHA256.test(identityView.viewDigest)) {
-    throw new TypeError("M2 causal-wire identity view digest is invalid");
+    throw new TypeError("identity causal-influence view digest is invalid");
   }
   if (!Array.isArray(identityView.assertions)) {
-    throw new TypeError("M2 causal-wire identity view assertions must be an array");
+    throw new TypeError("identity causal-influence view assertions must be an array");
   }
 }
 
@@ -43,29 +43,29 @@ function selectPreflightAssertion(identityView) {
       left.recordedAt.localeCompare(right.recordedAt) ||
       left.assertionId.localeCompare(right.assertionId));
   if (candidates.length === 0) {
-    throw new TypeError("M2 causal-wire preflight requires a current candidate_causal assertion");
+    throw new TypeError("identity causal-influence preflight requires a current candidate_causal assertion");
   }
   return candidates.at(-1);
 }
 
 function evidenceKey(assertion) {
   const digestHex = assertion.assertionDigest.slice("sha256:".length);
-  return `m2_identity_${assertion.claimId}_${assertion.assertionId}_${digestHex}`;
+  return `identity_assertion_${assertion.claimId}_${assertion.assertionId}_${digestHex}`;
 }
 
 function projectAssertion(assertion, identityView) {
   for (const key of [
     "assertionId", "claimId", "domain", "kind", "meaning", "assertionDigest",
-  ]) assertNonEmpty(`M2 causal-wire assertion.${key}`, assertion[key]);
+  ]) assertNonEmpty(`identity causal-influence assertion.${key}`, assertion[key]);
   if (!SHA256.test(assertion.assertionDigest)) {
-    throw new TypeError("M2 causal-wire assertion digest is invalid");
+    throw new TypeError("identity causal-influence assertion digest is invalid");
   }
   if (!Number.isSafeInteger(assertion.revision) || assertion.revision < 1) {
-    throw new TypeError("M2 causal-wire assertion revision is invalid");
+    throw new TypeError("identity causal-influence assertion revision is invalid");
   }
   const traitKey = evidenceKey(assertion);
   const projection = {
-    policy: { ...M2_IDENTITY_CAUSAL_WIRE_POLICY },
+    policy: { ...IDENTITY_CAUSAL_INFLUENCE_POLICY },
     threadId: assertion.threadId,
     identityViewDigest: identityView.viewDigest,
     assertionId: assertion.assertionId,
@@ -87,18 +87,18 @@ function projectAssertion(assertion, identityView) {
   };
 }
 
-export function prepareM2IdentityCausalWirePreflight(capsule, identityView) {
-  assertPlainObject("M2 causal-wire capsule", capsule);
-  assertId("M2 causal-wire capsule.threadId", capsule.threadId);
-  assertPlainObject("M2 causal-wire capsule.semanticTraits", capsule.semanticTraits);
+export function prepareIdentityCausalInfluence(capsule, identityView) {
+  assertPlainObject("identity causal-influence capsule", capsule);
+  assertId("identity causal-influence capsule.threadId", capsule.threadId);
+  assertPlainObject("identity causal-influence capsule.semanticTraits", capsule.semanticTraits);
   if (capsule.causalContext?.selectionAuthority !== "fibre") {
-    throw new TypeError("M2 causal-wire requires Fibre-owned context selection");
+    throw new TypeError("identity causal-influence preflight requires Fibre-owned context selection");
   }
   assertIdentityView(identityView, capsule.threadId);
 
   const projection = projectAssertion(selectPreflightAssertion(identityView), identityView);
   if (Object.hasOwn(capsule.semanticTraits, projection.traitKey)) {
-    throw new TypeError("M2 causal-wire evidence key collides with existing semantic traits");
+    throw new TypeError("identity causal-influence evidence key collides with existing semantic traits");
   }
 
   const baseCapsule = structuredClone(capsule);
@@ -134,7 +134,7 @@ function finish(prepared, withAssertion, withoutAssertion) {
   const withRefs = new Set(withAssertion.output.evidenceRefs);
   const withoutRefs = new Set(withoutAssertion.output.evidenceRefs);
   return {
-    policy: { ...M2_IDENTITY_CAUSAL_WIRE_POLICY },
+    policy: { ...IDENTITY_CAUSAL_INFLUENCE_POLICY },
     projection: structuredClone(prepared.projection),
     baseCapsuleDigest: prepared.baseCapsuleDigest,
     withAssertion,
@@ -154,14 +154,14 @@ function finish(prepared, withAssertion, withoutAssertion) {
   };
 }
 
-export function runM2IdentityCausalWirePreflight({
+export function runIdentityCausalInfluence({
   capsule,
   identityView,
   modelAdapter,
-  clientRequestId = "m2-causal-wire-preflight",
+  clientRequestId = "identity-causal-influence",
 }) {
-  assertId("M2 causal-wire clientRequestId", clientRequestId);
-  const prepared = prepareM2IdentityCausalWirePreflight(capsule, identityView);
+  assertId("identity causal-influence clientRequestId", clientRequestId);
+  const prepared = prepareIdentityCausalInfluence(capsule, identityView);
   const withResult = semanticDignityGuardianV4(
     prepared.withAssertion,
     modelAdapter,

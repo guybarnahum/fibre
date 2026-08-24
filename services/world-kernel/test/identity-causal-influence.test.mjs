@@ -12,7 +12,7 @@ import {
 import { IDENTITY_ATOMIC_CLAIM_POLICY } from "../src/identity-claim-discipline.mjs";
 import { identityDomainV2Definition } from "../src/identity-domain-registry-v2.mjs";
 import { openIdentityInspectionStore, openIdentityStore } from "../src/identity-store.mjs";
-import { runM2IdentityCausalWirePreflight } from "../src/m2-identity-causal-wire.mjs";
+import { runIdentityCausalInfluence } from "../src/identity-causal-influence.mjs";
 
 const fixture = JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json", import.meta.url),
@@ -20,7 +20,7 @@ const fixture = JSON.parse(readFileSync(
 ));
 
 async function withDatabase(run) {
-  const directory = mkdtempSync(join(tmpdir(), "fibre-m2-causal-wire-"));
+  const directory = mkdtempSync(join(tmpdir(), "fibre-identity-causal-influence-"));
   const databasePath = join(directory, "world.sqlite");
   try { return await run(databasePath); }
   finally { rmSync(directory, { recursive: true, force: true }); }
@@ -77,7 +77,7 @@ function capsule() {
   return {
     threadId: fixture.threadId,
     snapshotVersion: 1,
-    requestId: "req_m2_causal_wire_album_repair",
+    requestId: "req_identity_causal_influence_album_repair",
     requestFingerprint: `sha256:${"a".repeat(64)}`,
     identity: `${fixture.identity.name}: ${fixture.identity.selfDescription}`,
     selfModel: fixture.currentState.selfModel,
@@ -141,11 +141,11 @@ function highFitOutput(identityRef) {
   };
 }
 
-test("one #37 claim crosses the Guardian boundary and exact claim ablation removes the effect", () => withDatabase(async (databasePath) => {
+test("an admitted identity claim crosses the Guardian boundary and exact-claim ablation removes the effect", () => withDatabase(async (databasePath) => {
   seed(databasePath);
   const stored = recordCandidateAssertion(databasePath);
 
-  // Reopen read-only so the proof consumes durable #37 state rather than the write object.
+  // Reopen read-only so the proof consumes durable identity state rather than the write object.
   const inspector = openIdentityInspectionStore(databasePath);
   const identityView = inspector.getCurrentIdentityView(fixture.threadId);
   inspector.close();
@@ -157,19 +157,19 @@ test("one #37 claim crosses the Guardian boundary and exact claim ablation remov
   const calls = [];
   const adapter = {
     provider: "preflight_fake",
-    modelId: "deterministic-causal-wire",
+    modelId: "deterministic-identity-causal-influence",
     invoke({ input, responseSchema, clientRequestId }) {
       calls.push(structuredClone({ input, responseSchema, clientRequestId }));
       const identityEvidence = input.evidence.find((item) =>
         item.ref.includes(selected.assertionId) && item.ref.includes(selected.assertionDigest.slice("sha256:".length)));
       return {
         output: identityEvidence === undefined ? lowFitOutput() : highFitOutput(identityEvidence.ref),
-        provenance: { provider: "preflight_fake", modelId: "deterministic-causal-wire" },
+        provenance: { provider: "preflight_fake", modelId: "deterministic-identity-causal-influence" },
       };
     },
   };
 
-  const result = await runM2IdentityCausalWirePreflight({
+  const result = await runIdentityCausalInfluence({
     capsule: capsule(),
     identityView,
     modelAdapter: adapter,
@@ -212,7 +212,7 @@ test("one #37 claim crosses the Guardian boundary and exact claim ablation remov
     calls[0].responseSchema.properties.factors.properties.individualizedAdvantage.properties.evidenceRefs.items.enum
       .includes(result.projection.modelEvidenceRef),
     true,
-    "the real Guardian v4 evidence schema admits the projected claim ref",
+    "the Guardian evidence schema admits the projected claim ref",
   );
 
   const integrity = openIdentityInspectionStore(databasePath);

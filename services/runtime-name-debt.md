@@ -51,9 +51,10 @@ Disposition: after the Genesis closing seam is stable, rename by enduring respon
 - `world-kernel/src/genesis-slice-d-characterization.mjs`
 - `world-kernel/src/genesis-slice-e-characterization.mjs`
 - `world-kernel/src/m1-deterministic-actor.mjs`
-- `world-kernel/src/m2-identity-causal-wire.mjs`
 
 Disposition: move experiment/characterization-only machinery to the appropriate gate/repro surface; if code is truly runtime, rename it for its enduring capability.
+
+`identity-causal-influence.mjs` is the first retired item from this group: its durable identity-to-Guardian counterfactual proof is runtime-relevant, so the implementation and active regression now use the semantic capability name rather than the milestone that introduced it.
 
 ## What is not debt
 

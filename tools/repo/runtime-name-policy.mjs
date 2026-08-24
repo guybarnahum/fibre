@@ -30,7 +30,6 @@ export const RUNTIME_NAME_DEBT_PATHS = Object.freeze([
   "services/world-kernel/src/genesis-slice-d-characterization.mjs",
   "services/world-kernel/src/genesis-slice-e-characterization.mjs",
   "services/world-kernel/src/m1-deterministic-actor.mjs",
-  "services/world-kernel/src/m2-identity-causal-wire.mjs",
 ]);
 
 const RUNTIME_NAME_RULES = Object.freeze([
