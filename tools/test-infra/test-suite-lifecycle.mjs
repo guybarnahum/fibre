@@ -4,29 +4,12 @@ import { fileURLToPath } from "node:url";
 
 export const DEFAULT_TEST_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
-// Reproducibility tests are explicit path-level evidence. Any new test that is not
-// deliberately listed here remains ACTIVE by default.
+// Repro tests are explicit current replay demonstrations that are intentionally
+// kept outside the active suite. Historical experiment chronology belongs in
+// Git history, not in this manifest.
 export const REPRO_TOOL_TEST_PATHS = Object.freeze([
   "tools/repro/m1/m1-demo-editor.test.mjs",
   "tools/repro/m1/m1-reviewed-proof.test.mjs",
-  "tools/repro/pr39/genome-control/genesis-genome-positive-control.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-a0-candidate-driver.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-a0.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-a2.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-a2b-driver.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-a2b.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-h6-participation.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-h6-probe.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-n1-a0.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-n1-driver.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-n1.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-n2.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-protocol-clear-amendments.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-v1.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-v2-affordance-preflight.test.mjs",
-  "tools/repro/pr39/e2/genesis-rich-life-e2-worlds.test.mjs",
-  "tools/repro/guardian/semantic-guardian-v4-standing-gate-v4.test.mjs",
-  "tools/repro/standing/standing-evidence-archive.test.mjs",
 ]);
 
 const REPRO_PATH_SET = new Set(REPRO_TOOL_TEST_PATHS);
