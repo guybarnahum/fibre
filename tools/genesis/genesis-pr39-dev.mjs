@@ -60,6 +60,23 @@ function parseArgs(argv) {
   return { all, slot, run, model: model.trim() };
 }
 
+function progressLabel(clientRequestId) {
+  const slot = clientRequestId.match(/:slot-(\d+):/u)?.[1] ?? "?";
+  const passA = clientRequestId.match(/:pass-a:episode-(\d+):(initial|form-repair-(\d+)|record-retry-(\d+))$/u);
+  if (passA) {
+    const episode = Number(passA[1]);
+    if (passA[2] === "initial") return `Thread ${Number(slot)} · history ${pad(episode)}/14 · realize episode`;
+    if (passA[3]) return `Thread ${Number(slot)} · history ${pad(episode)}/14 · form repair ${passA[3]}/2`;
+    return `Thread ${Number(slot)} · history ${pad(episode)}/14 · fresh record retry ${passA[4]}/2`;
+  }
+  const passB = clientRequestId.match(/:pass-b:call-(\d+)$/u);
+  if (passB) return `Thread ${Number(slot)} · memory formation ${Number(passB[1])}/6`;
+  const passCInitial = clientRequestId.match(/:pass-c:initial-(\d+)$/u);
+  if (passCInitial) return `Thread ${Number(slot)} · meaning formation for memory call ${Number(passCInitial[1])}/6`;
+  if (/:pass-c:reinterpret:/u.test(clientRequestId)) return `Thread ${Number(slot)} · later memory reinterpretation`;
+  return clientRequestId;
+}
+
 function summarizeCandidate(candidate) {
   const places = new Set(candidate.episodes.map((episode) => episode.placeRef));
   const participants = new Set(candidate.episodes.flatMap((episode) => episode.participantRefs ?? []));
@@ -112,10 +129,10 @@ let replayed = 0;
 const observer = (event) => {
   if (event.type === "durable_model_commit") {
     committed += 1;
-    process.stdout.write("·");
+    console.log(`   ✓ new durable result · ${progressLabel(event.clientRequestId)}`);
   } else if (event.type === "durable_model_replay") {
     replayed += 1;
-    process.stdout.write("↻");
+    console.log(`   ↻ replayed durable result · ${progressLabel(event.clientRequestId)}`);
   }
 };
 
@@ -125,7 +142,16 @@ const baseAdapter = createOpenAIModelAdapter({
   observer,
 });
 const birthCenter = createBirthCenterRuntime({ stateRoot: absolute(`${outputRoot}/runtime`) });
-const adapter = birthCenter.durableAdapter(baseAdapter, { observer });
+const durableAdapter = birthCenter.durableAdapter(baseAdapter, { observer });
+const adapter = Object.freeze({
+  provider: durableAdapter.provider,
+  modelId: durableAdapter.modelId,
+  configuration: structuredClone(durableAdapter.configuration),
+  async invoke(args) {
+    console.log(`→ ${progressLabel(args.clientRequestId)}`);
+    return durableAdapter.invoke(args);
+  },
+});
 
 console.log("PR39 RICH CHILDHOOD DEVELOPMENT RUN");
 console.log(`run: ${runLabel}`);
@@ -133,15 +159,16 @@ console.log(`code: ${head}`);
 console.log(`model: ${options.model}`);
 console.log(`slots: ${selected.map((item) => item.slot).join(", ")}`);
 console.log("publication: disabled");
-console.log("progress: · new durable call, ↻ replayed durable call\n");
+console.log("progress: → starting call · ✓ new durable result · ↻ replayed durable result\n");
 
 for (const slotPlan of selected) {
   const candidatePath = `${outputRoot}/slot-${pad(slotPlan.slot)}-candidate-v1.json`;
   let candidate;
   if (existsSync(absolute(candidatePath))) {
     candidate = readJson(candidatePath);
-    console.log(`slot ${slotPlan.slot}: using completed development candidate`);
+    console.log(`Thread ${slotPlan.slot}: using completed development candidate`);
   } else {
+    console.log(`Thread ${slotPlan.slot}: generating 14 life episodes, then memories and meanings`);
     candidate = await generateReplacementThreadCandidate({
       slotPlan,
       adapter,
@@ -149,7 +176,7 @@ for (const slotPlan of selected) {
       attemptStartedAt: manifest.startedAt,
     });
     writeJson(candidatePath, candidate);
-    console.log(`\nslot ${slotPlan.slot}: candidate completed → ${candidatePath}`);
+    console.log(`Thread ${slotPlan.slot}: candidate completed → ${candidatePath}`);
   }
   summarizeCandidate(candidate);
 }
