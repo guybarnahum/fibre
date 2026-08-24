@@ -4,8 +4,11 @@ import test from "node:test";
 import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../src/genesis-event-structure-pool-v2.mjs";
 import { buildRichLifePassAInput } from "../src/genesis-rich-life-domain.mjs";
 import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
-import { E2_A0_DEFAULT_SEEDS, buildE2A0Plan } from "../../../tools/genesis-rich-life-e2-a0.mjs";
-import { E2_DIAGNOSTIC_WORLDS } from "../../../tools/genesis-rich-life-e2-worlds.mjs";
+import {
+  RICH_LIFE_TEST_SEEDS,
+  RICH_LIFE_TEST_WORLD_FIXTURE,
+  buildRichLifeTestPlan,
+} from "./support/rich-life-fixture.mjs";
 
 const YEAR_MS = 365.2425 * 24 * 60 * 60 * 1000;
 
@@ -14,11 +17,11 @@ function ageAt(bornAt, occurredAt) {
 }
 
 test("record-local structural rejection regenerates only that episode without exposing the rejected scene", async () => {
-  const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
-  const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[0]);
+  const worldFixture = RICH_LIFE_TEST_WORLD_FIXTURE;
+  const plan = buildRichLifeTestPlan({ worldFixture, seed: RICH_LIFE_TEST_SEEDS[0] });
   const item = plan.find(({ offeredEntries }) =>
     offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_peer_joke_or_reference_missed"));
-  assert.ok(item, "frozen E2-D1 schedule must expose peer_joke_or_reference_missed");
+  assert.ok(item, "deterministic rich-life schedule must expose peer_joke_or_reference_missed");
 
   const input = buildRichLifePassAInput({
     originMode: "de_novo",

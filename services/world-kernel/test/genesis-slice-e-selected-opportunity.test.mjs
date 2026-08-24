@@ -4,8 +4,11 @@ import test from "node:test";
 import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../src/genesis-event-structure-pool-v2.mjs";
 import { buildRichLifePassAInput } from "../src/genesis-rich-life-domain.mjs";
 import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
-import { E2_A0_DEFAULT_SEEDS, buildE2A0Plan } from "../../../tools/genesis-rich-life-e2-a0.mjs";
-import { E2_DIAGNOSTIC_WORLDS } from "../../../tools/genesis-rich-life-e2-worlds.mjs";
+import {
+  RICH_LIFE_TEST_SEEDS,
+  RICH_LIFE_TEST_WORLD_FIXTURE,
+  buildRichLifeTestPlan,
+} from "./support/rich-life-fixture.mjs";
 
 const YEAR_MS = 365.2425 * 24 * 60 * 60 * 1000;
 
@@ -14,13 +17,13 @@ function ageAt(bornAt, occurredAt) {
 }
 
 function selectedPeerFixture() {
-  const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
-  const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[0]);
+  const worldFixture = RICH_LIFE_TEST_WORLD_FIXTURE;
+  const plan = buildRichLifeTestPlan({ worldFixture, seed: RICH_LIFE_TEST_SEEDS[0] });
   const item = plan.find(({ offeredEntries }) => {
     const ids = new Set(offeredEntries.map(({ structure }) => structure.structureId));
     return ids.has("ges_v2_peer_joke_or_reference_missed") && ids.has("ges_v2_adult_finishes_task_unasked");
   });
-  assert.ok(item, "frozen E2-D1 schedule must expose both peer-joke and easier caregiver alternatives");
+  assert.ok(item, "deterministic rich-life schedule must expose both peer-joke and easier caregiver alternatives");
 
   const input = buildRichLifePassAInput({
     originMode: "de_novo",
@@ -108,7 +111,7 @@ test("selected peer opportunity cannot escape to an easier offered structure and
   assert.equal(JSON.stringify(calls[1].input).includes(easierButWrong.observableAction), false);
 });
 
-test("A2 form repair preserves an invalid encounter until authoritative validation classifies it for record retry", async () => {
+test("form repair preserves an invalid encounter until authoritative validation classifies it for record retry", async () => {
   const { worldFixture, input, selectedOpportunity, occurredAt } = selectedPeerFixture();
   const peerId = "person_e2_a2_retry_peer";
   const overlongAction = "A peer repeats a playground phrase while the subject asks what it means near the school yard. ".repeat(20);
@@ -187,10 +190,10 @@ test("A2 form repair preserves an invalid encounter until authoritative validati
 });
 
 test("selected present-required retry exposes the validator participantRefs representation contract", async () => {
-  const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
-  const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[1]);
+  const worldFixture = RICH_LIFE_TEST_WORLD_FIXTURE;
+  const plan = buildRichLifeTestPlan({ worldFixture, seed: RICH_LIFE_TEST_SEEDS[1] });
   const item = plan.find(({ offeredEntries }) => offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_drawing_or_making_seen"));
-  assert.ok(item, "frozen E2-D1 schedule must offer drawing_or_making_seen");
+  assert.ok(item, "deterministic rich-life schedule must offer drawing_or_making_seen");
   const input = buildRichLifePassAInput({
     originMode: "de_novo",
     worldSpec: worldFixture.worldSpec,

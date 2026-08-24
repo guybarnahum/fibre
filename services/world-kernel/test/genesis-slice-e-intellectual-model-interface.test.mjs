@@ -4,8 +4,11 @@ import test from "node:test";
 import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../src/genesis-event-structure-pool-v2.mjs";
 import { buildRichLifePassAInput } from "../src/genesis-rich-life-domain.mjs";
 import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
-import { E2_A0_DEFAULT_SEEDS, buildE2A0Plan } from "../../../tools/genesis-rich-life-e2-a0.mjs";
-import { E2_DIAGNOSTIC_WORLDS } from "../../../tools/genesis-rich-life-e2-worlds.mjs";
+import {
+  RICH_LIFE_TEST_SEEDS,
+  RICH_LIFE_TEST_WORLD_FIXTURE,
+  buildRichLifeTestPlan,
+} from "./support/rich-life-fixture.mjs";
 
 const YEAR_MS = 365.2425 * 24 * 60 * 60 * 1000;
 
@@ -14,8 +17,8 @@ function ageAt(bornAt, occurredAt) {
 }
 
 test("model-facing subjectPersonRef maps to canonical participantRef and intellectual retry exposes only the fixed gate rule", async () => {
-  const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
-  const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[0]);
+  const worldFixture = RICH_LIFE_TEST_WORLD_FIXTURE;
+  const plan = buildRichLifeTestPlan({ worldFixture, seed: RICH_LIFE_TEST_SEEDS[0] });
   const item = plan[7];
   const input = buildRichLifePassAInput({
     originMode: "de_novo",

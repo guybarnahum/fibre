@@ -8,20 +8,15 @@ const EXECUTABLE_WRAPPERS = Object.freeze([
 ]);
 
 const RELOCATION_ALIASES = Object.freeze([
-  "../genesis-rich-life-e2-a0.mjs",
-  "../genesis-rich-life-e2-worlds.mjs",
   "../genesis-rich-life-dev.mjs",
   "../inspect-structured-obligations.mjs",
   "../editor/m1-reviewed-proof.mjs",
   "../inspect/m1-reviewed-proof.mjs",
-  "../genesis/genesis-rich-life-e2-n1.mjs",
-  "../repro/guardian/semantic-guardian-v4-dev-proof.mjs",
-  "../repro/guardian/semantic-guardian-v4-counterfactual-dev.mjs",
   "../repro/m1/serve-thread-editor.mjs",
   "../repro/m1/inspect-world-database.mjs",
 ]);
 
-test("Stage 6 relocation compatibility edges resolve and remain importable", async () => {
+test("retained relocation compatibility edges resolve and remain importable", async () => {
   for (const relativePath of EXECUTABLE_WRAPPERS) {
     const url = new URL(relativePath, import.meta.url);
     const path = fileURLToPath(url);

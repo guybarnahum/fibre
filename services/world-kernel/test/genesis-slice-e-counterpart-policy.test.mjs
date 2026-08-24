@@ -9,10 +9,10 @@ import {
 } from "../src/genesis-rich-participation-policy.mjs";
 import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../src/genesis-event-structure-pool-v2.mjs";
 import {
-  E2_A0_DEFAULT_SEEDS,
-  buildE2A0Plan,
-} from "../../../tools/genesis-rich-life-e2-a0.mjs";
-import { E2_DIAGNOSTIC_WORLDS } from "../../../tools/genesis-rich-life-e2-worlds.mjs";
+  RICH_LIFE_TEST_SEEDS,
+  RICH_LIFE_TEST_WORLD_FIXTURE,
+  buildRichLifeTestPlan,
+} from "./support/rich-life-fixture.mjs";
 
 function participationInput(structureId, participatingRoles, knownRoles = ["subject"]) {
   return {
@@ -61,11 +61,11 @@ test("rich counterpart modes make self-directed affordances truthful without wea
     participationInput("ges_v2_mentor_absence_or_unavailability", ["mentor", "teacher"]),
   ), /without a previously known counterpart/);
 
-  const worldFixture = E2_DIAGNOSTIC_WORLDS[0];
-  const plan = buildE2A0Plan(worldFixture, E2_A0_DEFAULT_SEEDS[0]);
+  const worldFixture = RICH_LIFE_TEST_WORLD_FIXTURE;
+  const plan = buildRichLifeTestPlan({ worldFixture, seed: RICH_LIFE_TEST_SEEDS[0] });
   const chooseTextWindow = plan.find(({ offeredEntries }) =>
     offeredEntries.some(({ structure }) => structure.structureId === "ges_v2_choose_text_self_directed"));
-  assert.ok(chooseTextWindow, "frozen E2-D1 A0 schedule must expose choose_text_self_directed");
+  assert.ok(chooseTextWindow, "deterministic rich-life schedule must expose choose_text_self_directed");
   const input = buildRichLifePassAInput({
     originMode: "de_novo",
     worldSpec: worldFixture.worldSpec,
