@@ -182,11 +182,13 @@ These do not authorize stronger claims. The corrected hostile re-review should a
 
 ## Required local verification before re-review
 
-No corrected R2 CLEAR should be requested until a maintainer checkout at the re-frozen binding head reproduces the zero-call boundary:
+No corrected R2 CLEAR should be requested until a maintainer checkout of the current branch reproduces the zero-call boundary and verifies the execution/binding/docs seams explicitly:
 
 ```bash
 git pull --ff-only
 git rev-parse HEAD
+git diff --name-status ad7044d57ef6360295d6e26bca4338684eb394d3..a0441bd3d56c789b0a50e9e3377229ab9165d7e0
+git diff --name-status a0441bd3d56c789b0a50e9e3377229ab9165d7e0..HEAD
 npm test
 npm run validate
 npm run genesis:replacement-r2-preflight
@@ -196,7 +198,10 @@ git status --short
 Expected scientific posture, not yet claimed here:
 
 ```text
-HEAD                         a0441bd3d56c789b0a50e9e3377229ab9165d7e0
+execution candidate          ad7044d57ef6360295d6e26bca4338684eb394d3
+binding commit               a0441bd3d56c789b0a50e9e3377229ab9165d7e0
+candidate..binding           binding artifact only
+binding..HEAD                documentation only
 R2 preflight                 CLEAR_R2_IMPLEMENTATION_PRE_REVIEW_ZERO_CALL
 binding digest               sha256:2482f9a9e7d83d23ff3bf7241c6bea83feff02c6c3f50c6726e2d479962e6159
 R2 CLEAR witness             absent
