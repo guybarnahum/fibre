@@ -56,13 +56,13 @@ Load these for #39 work:
 - `validation/m2-pr39-developmental-needs-childhood-review-resolution.md`
 - `validation/m2-pr39-genesis-quality-constraints.md`
 - `validation/symbolic-thread-genome-implementation-plan.md`
-- `architecture/thread-genesis-childhood-birth-v1.md`
-- `architecture/genesis-compiler-contract-v1.md`
-- `architecture/genesis-durable-development-v1.md`
-- `architecture/birth-center-runtime-v1.md`
-- `architecture/symbolic-thread-genome-v1.md`
-- `architecture/genesis-memory-meaning-integration-v1.md`
-- `architecture/genesis-rich-life-intellectual-formation-v1.md`
+- `architecture/thread-genesis-childhood-birth.md`
+- `architecture/genesis-compiler-contract.md`
+- `architecture/genesis-durable-development.md`
+- `architecture/birth-center-runtime.md`
+- `architecture/symbolic-thread-genome.md`
+- `architecture/genesis-memory-meaning-integration.md`
+- `architecture/genesis-rich-life-intellectual-formation.md`
 - `foundations/rich-life.md`
 - `foundations/interpretive-personhood.md`
 
@@ -80,7 +80,7 @@ Historical realization and meaning formation are genome blind. Permitted genome 
 - `architecture/character-formation-model.md`
 - `architecture/interior-exterior-situated-identity.md`
 - `architecture/developmental-continuity-and-past-selves.md`
-- `architecture/thread-passport-identity-provenance-v1.md`
+- `architecture/thread-passport-identity-provenance.md`
 - `decisions/ADR-0011-memory-photo-obligation.md`
 - `decisions/ADR-0012-semantic-meaning-over-derived-categories.md`
 - `decisions/ADR-0013-source-identity-consent-boundary.md`
@@ -103,6 +103,18 @@ Historical realization and meaning formation are genome blind. Permitted genome 
 - `architecture/request-participation.md`
 - `architecture/storage-model.md`
 - `architecture/prompt-synthesis.md`
+- `architecture/infrastructure-driver.md`
+
+## Presentation and derived assets
+
+- `architecture/thread-presentation-contract.md`
+- `architecture/thread-presentation-infrastructure-profile.md`
+- `architecture/thread-presentation-cloudflare-stream.md`
+- `architecture/world-presentation.md`
+- `architecture/asset-generation-service.md`
+- `architecture/generated-asset-provenance-and-content-credentials.md`
+
+Presentation and generated media are derived surfaces. They do not become hidden identity, history, memory, meaning or embodiment authority.
 
 ## Request, consent and response behavior
 
