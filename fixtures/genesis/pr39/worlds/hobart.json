@@ -1,0 +1,33 @@
+{
+  "worldSpecId": "world_pr39_rg1_05_hobart",
+  "timeFrame": {"startAt": "2004-08-20T00:00:00Z", "endAt": "2026-08-20T00:00:00Z"},
+  "places": [
+    {"placeId": "place_rg1_05_home", "description": "A rented house or unit in Hobart's northern suburbs, near a local shopping strip and bus stops, with hills and changing weather affecting some walking and cycling trips."},
+    {"placeId": "place_rg1_05_school", "description": "A Tasmanian government school in the Hobart area with classrooms, library access, sports facilities and extracurricular activities that vary by year."},
+    {"placeId": "place_rg1_05_bus", "description": "A Hobart bus corridor used for school, city-centre, shopping and appointment trips, with walking needed to reach stops and transfers for some destinations."},
+    {"placeId": "place_rg1_05_library", "description": "Hobart Library, a public library with books, study space, public computers and Wi-Fi, youth activities, research help and community learning programs."},
+    {"placeId": "place_rg1_05_waterfront", "description": "A city-centre and waterfront area reached occasionally for errands, public events, museums, markets or visits, with bus, walking and later ferry options in the wider transport mix."}
+  ],
+  "householdShape": "One caregiver, the subject and a younger sibling share the home; a second caregiver lives elsewhere in southern Tasmania and has scheduled visits rather than daily household presence.",
+  "familyRelations": ["The younger sibling is five years younger than the subject.", "The nonresident caregiver remains part of family life through scheduled visits and some school-holiday time."],
+  "languages": ["English"],
+  "materialCircumstances": "Housing, food and school needs are generally stable, while rent, transport and extracurricular costs constrain choices; the household has intermittent access to a car but cannot assume it for every trip.",
+  "mobilityPattern": "Walking and buses are routine for independent travel, with car trips when available and some cycling where routes and weather permit; later public ferry services add another occasional option around Greater Hobart.",
+  "schoolingOrCommunityContext": "Government schooling, public libraries, sports clubs, neighborhood services, museums, community programs, buses and outdoor public spaces create recurring contact with peers and adults beyond the household.",
+  "culturalContext": "Hobart, Tasmania, Australia — The household lives in the Hobart area during 2004–2026. English is the ordinary language of home, school and civic life. Hobart is a small state capital where buses, cars, walking and cycling coexist, with ferry transport becoming part of the broader public-transport discussion and network later in the chronology. Hills, cool weather and rapid weather changes can affect daily movement. Public libraries provide computers, Wi-Fi, study space and youth or adult learning programs. The city combines suburban neighborhoods with a compact centre, waterfront, markets, museums and university access. Tasmanian Aboriginal history and continuing Palawa presence are part of public civic and educational context, without assigning ancestry or identity to the household. Christian, other religious and secular institutions are visible without assigning belief. Regional travel may involve other parts of southern Tasmania, but remoteness from mainland Australia makes some travel costly or infrequent.",
+  "availableInstitutions": ["tasmanian_government_school", "hobart_library", "metropolitan_bus_service", "community_sports_club", "museum_or_gallery", "community_health_service"],
+  "intellectualEnvironment": "School curricula, public-library collections, local and national news, public computers and internet, museums, university presence, environmental and maritime material, community groups and ordinary family or civic disagreement are available unevenly.",
+  "affordedRoles": ["caregiver", "sibling", "peer", "teacher", "librarian", "coach", "neighbor", "museum_worker", "bus_driver", "mentor"],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_replacement_world_authoring",
+    "sourcesConsulted": [
+      {"kind": "municipal", "citation": "City of Hobart transport-options page describing bus, walking, cycling, car and ferry as city travel modes: https://www.hobartcity.com.au/Services/Parking-and-transport/Transport-options", "accessedAt": "2026-08-22T21:42:00Z"},
+      {"kind": "state_library", "citation": "Libraries Tasmania Hobart Library page describing public computers, Wi-Fi, study space, youth activities and learning support: https://libraries.tas.gov.au/locations/hobart-library/", "accessedAt": "2026-08-22T21:42:00Z"}
+    ],
+    "abstractionMethod": "PR #39 replacement G1 authoring: a concrete ordinary-life setting was abstracted from public civic, education, transport, library or cultural sources before any replacement-cohort genome, Thread identity, Genesis identity, treatment assignment, generated life, diagnostic outcome or expected personality existed. Facts constrain affordances only; they do not prescribe character, values, politics, religion, competence, profession or narrative significance.",
+    "relocationWitness": "The household structure could exist elsewhere in Australia, but moving it would change the World because Hobart's small-capital scale, bus network, hills, waterfront, Tasmanian public institutions, island geography and specific library access are deliberate constraints.",
+    "familiarityProbe": {"probedAt": "2026-08-22T21:54:12.742Z", "model": "openai/gpt-5.1-2025-11-13", "densityScore": 4, "comparisonNotes": "This setting is a contemporary, English-speaking, lower-to-middle income household in an Australian state capital, with government schooling, public transport, libraries, and common civic institutions. While Hobart- and Tasmania-specific details (geography, weather patterns, exact transport options, local institutions) are somewhat niche, they are still well-documented and structurally similar to other small Anglophone cities. A general language model will have strong generic templates for rented housing, separated caregivers, public schools, bus-based mobility, and public libraries, and can map these onto Hobart with moderate reliability. It may need to interpolate or guess finer-grained local practices (exact bus routes, school policies, library programs, ferry rollout timeline, specific community clubs), but the everyday structure is very familiar and well within ordinary-world coverage rather than requiring invention from scratch."},
+    "createdAt": "2026-08-22T21:42:00Z"
+  },
+  "createdAt": "2026-08-22T21:42:00Z"
+}
