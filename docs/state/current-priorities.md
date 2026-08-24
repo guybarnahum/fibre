@@ -7,60 +7,50 @@ canonical: true
 
 # Current priorities
 
-For the plain-English public view of what Fibre has and has not achieved, use [`public-progress.md`](public-progress.md) and the canonical machine-readable [`public-progress.json`](public-progress.json). This file is the engineering execution view.
+This is the engineering execution view. For public/plain-English status, use [`public-progress.md`](public-progress.md) and [`public-progress.json`](public-progress.json).
 
-1. **Replacement-v1 attempt 1 is a preserved REDESIGN witness, not a resumable experiment.** It legitimately started under Gate-G(2) round-4 CLEAR, durably committed ten slot-1 Pass-A calls, then terminated before the first Pass-B model response. The ten generated Pass-A outputs are burned experimental evidence and may not be reused in replacement-v2.
+## PR #39 goal
 
-2. **Same-attempt mechanical recovery and undeployed legacy execution stacks are retired.** Preserve the local failed-attempt evidence under `artifacts/validation/m2-pr39/replacement-v1/final-cohort-v1/` and the older `artifacts/validation/m2-pr39/h/recovery-v1/` exactly as evidence. Do not restore retired H2/replacement-v1 runtimes merely for byte-level backward compatibility.
+### Simple English
 
-3. **Replacement-v2 R1 is CLOSED/CLEAR.** Corrected implementation candidate `ef9a1bf399280dc3f33a73490f91d3e63c3198d0`; reviewed head `6fd360b7290e1256b2e63248c872a67ffafda190`; canonical result `docs/validation/m2-pr39-replacement-v2-r1-rereview-result.md`. The hostile re-review found B1-B8 closed without retuning coverage bounds or changing Worlds/genomes/assignment.
+**Give five new Threads rich, particular childhoods and young-adult histories, let them form memories and meanings from those lives, then birth them with those people, places, memories, lineage and history intact.**
 
-4. **Replacement-v2 R2 hostile review returned HOLD, not REDESIGN.** Reviewed execution candidate `2d58d4d21b11f0e506d86315728a314de5832a04`; reviewed head `c5f545fed02db16439d02b8edc19f643ecfda607`; reviewed binding digest `sha256:d16f6d4651ede59b442cb83939f7c3e13b3354432c0a1a4cb8a2fe1ba42c3149`. Canonical result: `docs/validation/m2-pr39-replacement-v2-r2-review-result.md`.
+### More accurate description
 
-5. **The R2 HOLD was local and correctable without changing the experiment.** B1-B4 exposed working-tree source attestation, self-referential sparse-history authority, self-referential Pass-B schedule binding, and a missing load-bearing Pass-A place constraint. The correction also closed review items N2/N3 and promoted N6 because compiler-position leakage, retry-budget mischarging, and a deletable one-shot boundary can change the truth of the generated cohort.
+#39 compiles a sparse but concrete prior life through three authorities: Fibre owns the historical skeleton; model cognition realizes observable episodes; later passes form autobiographical memory and remembered meaning without rewriting history. A successful candidate must retain social/geographic continuity and publish atomically into canonical Thread state. #39 does not itself prove Whole-Person standing; #40 makes this richer life state causally available to normal cognition.
 
-6. **Corrected R2 execution candidate is `ad7044d57ef6360295d6e26bca4338684eb394d3`.** The correction changes execution machinery and milestone regressions only. Worlds, genomes, assignment, historical envelopes, coverage bounds, provider/model/runtime, and D3 threshold are unchanged.
+## Where we are now
 
-7. **Corrected R2 binding is re-frozen and locally verified green.** Binding head `a0441bd3d56c789b0a50e9e3377229ab9165d7e0`; canonical binding digest `sha256:2482f9a9e7d83d23ff3bf7241c6bea83feff02c6c3f50c6726e2d479962e6159`. Maintainer verification reproduced 715/715 tests, repository + World-seed validation, `CLEAR_R2_IMPLEMENTATION_PRE_REVIEW_ZERO_CALL`, all five frozen envelope digests, missing CLEAR witness, cognition/publication unauthorized, zero provider calls and no replacement-v2 life artifacts.
+1. **The historical skeleton is in good shape.** Fibre deterministically chooses fourteen windows through age 21.9999, exact local time, one World place, EventStructure/world-emergent situation and required counterpart before the model writes the episode. This removed the old chooser/realizer collapse that made childhoods repetitive and interchangeable.
 
-8. **Corrected hostile R2 re-review is CLOSED/CLEAR.** Claude independently verified the candidate/binding/docs seams at reviewed head `e6d3bf0ace5d5549d222a768618a5f427497a7bc`, reproduced the binding digest and 715/715 boundary, and verified corrected claims C1-C7 closed with no residual promoted to blocker. Canonical result: `docs/validation/m2-pr39-replacement-v2-r2-rereview-result.md`.
+2. **The life generator now has real social and geographic material to work with.** The five frozen Worlds, genomes and rosters remain useful starting material. The envelope compiler spans multiple places and externally social situations rather than letting the model repeatedly retreat to the easiest household scene.
 
-9. **Pass A has one current compiler and one situated episode.** Development code remains flattened on EventStructurePool-v3. Protocol/compiler `ordinal` is absent from both the developmental-window projection and the frozen cognition envelope. Candidate construction uses `constrainPassAContextToHistoricalEnvelope()` so the model sees exactly the frozen place and instant that Fibre will later stamp and publish. Pass A remains genome-blind.
+3. **History, memory and meaning remain separate.** Pass A writes observable life; Pass B decides what is remembered from sparse history; Pass C forms or revises remembered meaning. Pass A and Pass C are genome-blind; genome treatment is limited to the preregistered Pass-B calls.
 
-10. **Historical skeleton remains Fibre-owned.** The model realizes only the four allowed realization fields; Fibre stamps episode identity, occurrence time, age, place, structure selection, required counterpart identity and introduction timing from the reviewed deterministic envelope.
+4. **People and places have a path through birth.** Genesis derives factual life continuity from the roster and admitted episodes, and birth maps it into canonical `LifeRelation` and `PlaceEpisode` records in the same transaction as the Thread, history, genome lineage, memories and manifest. There is no parallel Genesis biography database.
 
-11. **Pass-A reliability remains the preregistered independent budget.** One initial generated version, up to two form repairs, up to two record retries, maximum five generated versions. A malformed form-repair body remains on the form-repair budget rather than silently consuming a record retry; retry input digests still identify the actual request.
+5. **The first replacement-v2 generation attempt exposed a development bug, not a childhood-design failure.** The run stopped in slot 1 Pass A after the initial realization plus two form repairs. The policy allowed two independent fresh record retries as well, but the loop terminated before using them. No Thread candidate was completed or published.
 
-12. **Sparse-history Pass B is mechanically tied to the frozen protocol.** Horizons remain `[4,6,8,10,12,14]`; modes remain `L L T L L T`; treated ordinals remain 3 and 6. The executing notice aliases the canonical `GENESIS_SPARSE_HISTORY_NOTICE`, and R2 authority compares the code horizons/modes against `redesign-v2.json` and diagnostic authority. Genome exposure remains legal only in treated Pass-B calls.
+6. **That retry bug is now corrected in development code.** After two unsuccessful local form repairs, Pass A falls back to a fresh realization from the exact same Fibre-owned skeleton. The total remains capped at five generated versions: one initial version, at most two form repairs and at most two fresh record retries. This is mechanical recovery, not quality-driven regeneration. New milestone tests cover both successful fallback and full five-version exhaustion. Local verification is still required before claiming it green.
 
-13. **Pass C remains memory-scoped and genome-blind.** Initial remembered meaning and scheduled reinterpretation may alter remembered meaning only; they may not rewrite admitted life history or Memory evidence.
+7. **Development is no longer blocked on frozen-attempt ceremony.** Frozen evidence remains useful at milestone boundaries, but ordinary #39 development now uses `.fibre/genesis/pr39-dev/` and is intentionally disposable/iterable. The reviewed failed attempts remain preserved; they are not the primary development workflow.
 
-14. **The D3 diagnostic threshold remains mechanically closed.** The reconciliation artifact binds primary ordinals 3/6, primary horizons 8/14, both treated ordinals at least 4/5 correct core edges and at least one 5/5. A 3/4 mutation or contradictory statement must fail closed.
+8. **There is now one short development check.** `npm run genesis:pr39-check` runs the normal test/validation boundary plus a #39 readiness check over all five plans and seventy historical envelopes. It makes no provider calls.
 
-15. **Canonical situated-life authority owns durable continuity.** The temporary `genesis_life_continuity` table remains removed. Genesis maps the neutral continuity derivation into canonical `life_relation_records` and `place_episode_records` inside the birth transaction. There is no second Genesis-owned biography/place/relation store.
+9. **There is now one short rich-childhood runner.** `npm run genesis:pr39-dev` generates one Thread by default using the current compiler, durable model-call replay and no publication path. It prints the fourteen life episodes plus formed memories and current meanings so we can judge the actual life rather than only the machinery. `npm run genesis:pr39-dev -- --all` is for the five-Thread cohort only after one Thread looks convincing.
 
-16. **Situated social facts are factual, not meaning.** Ordinary non-kin/mentor/vendor/etc. continuity may use generic `social_contact` relations with `factualRoleRefs` plus frozen `relationshipFacts`; sibling and other stronger canonical relation kinds may be used when justified. Initial-roster facts cite the canonical seed event; introduced people and places cite admitted historical life-event witnesses.
+10. **The next judgment is qualitative and architectural, not evidentiary.** For the first development Thread, inspect whether the life is specific, non-interchangeable, socially populated, geographically coherent and capable of producing distinctive memories/meaning. If it is generic, repetitive or contradictory, improve the compiler/prompts/data model and run another development iteration. Do not freeze a final cohort until the life itself is worth freezing.
 
-17. **Atomic birth includes situated life.** Thread, seed/life events, canonical situated-life rows, symbolic-genome lineage relations, autobiographical memories and Genesis manifest commit or roll back together. Situated continuity itself does not increment Thread version.
+11. **One publication obligation remains explicit.** Open-ended `observableAction` prose can still invent a location even though cognition sees only the authoritative place. Before birth, candidate admission must compare episode prose with its `placeRef` for locational consistency. This belongs in the publication/admission path, not in the current development loop.
 
-18. **Candidate generation is separate from publication.** The R2 runner produces/fixes candidate evidence only and does not publish Threads. A completed candidate must still pass the replacement-effective G5/G6 diagnostics/admission boundary before any birth publication can occur.
+12. **After one rich Thread works, advance to birth—not another review maze.** Then run all five, inspect cross-Thread differentiation and genome effects, fix only genuine #39 defects, and exercise the existing atomic birth path. Freeze milestone evidence after we have a cohort that materially advances Fibre.
 
-19. **Durable invocation replay remains part of R2.** A process restart may replay a durably committed model response without another provider call; restart must never reset scientific retry budgets, create a second candidate attempt, overwrite committed output, or become quality-driven regeneration.
+## Evidence and prior reviews
 
-20. **The one-shot rule is claimed outside the candidate output root.** One whole candidate attempt; no quality-driven regeneration; terminal generation failure closes the attempt; no provider/model substitution. The runner writes a durable attempt guard beside `final-cohort-v1/` before starting the attempt. Deleting the candidate root after that claim is refusal, not permission to create another first attempt.
+The R1/R2 review chain, failed replacement-v1 output and the consumed replacement-v2 one-shot attempt remain preserved under `docs/validation/` and `artifacts/validation/m2-pr39/`. They explain why the current compiler has its present boundaries. They are supporting evidence, not the roadmap.
 
-21. **Starting-material reuse remains narrow.** The five byte-unchanged Worlds/genomes, assignment and fresh G2 results are reusable only as pre-life starting material. Replacement-v2 may not read/reuse replacement-v1 generated life, H-v2 generated life, failed recovery content, old candidate memories or meanings.
+## What comes after #39
 
-22. **Development code stays flattened.** Frozen artifacts may retain version labels because they identify evidence. Parallel executable versions require a real persisted-data/API/migration boundary; no deployed Fibre population currently creates such a legacy requirement.
-
-23. **Residual R2 findings remain disclosed, not erased by CLEAR.** N1/N4/N5/N7/N8/N9/N10/N11 carry forward together with N12-N18 from the corrected re-review. N13 is load-bearing only at the later publication boundary: before canonical situated-life publication, each admitted `observableAction` must be checked against its own `placeRef` for locational consistency. The CLEAR witness records that obligation explicitly.
-
-24. **Digest-bound R2 CLEAR authority is now recorded.** Witness `artifacts/validation/m2-pr39/replacement-v2/protocol/r2-execution-clear-v1.json`, commit `bbab28c32f65355a8784707f5a165ffe021528b4`, binds candidate `ad7044d57...` and binding digest `sha256:2482f9a9...e6159`. It authorizes provider calls + exactly one candidate-generation attempt only. Diagnostics, publication, second attempt, quality regeneration, provider/model substitution and Whole-Person standing remain unauthorized.
-
-25. **Current action: zero-call verify the real CLEAR witness, then spend the one candidate attempt.** Use the existing `verifyReplacementR2ExecutionAuthority({requireClear:true})` directly and require `CLEAR_TO_GENERATE_REPLACEMENT_CANDIDATE` with the exact binding digest before constructing any provider client. Do **not** use `genesis:replacement-r2-preflight` after the witness is present; that command is intentionally the pre-CLEAR preflight and is expected to reject a genuine CLEAR. Do not edit execution source or `package.json` to add a command after review. Once authority verifies, invoke the already-reviewed runner directly. That invocation is the one authorized candidate-generation attempt.
-
-26. **Publication remains a later, separate authority.** Candidate completion does not authorize birth. G5/G6 diagnostics/admission must be evaluated later under their own authority, including the N13 `observableAction` ↔ `placeRef` consistency obligation, before any Thread or situated-life publication.
-
-27. **Experience-presentation seeds remain a separate architecture item.** Preferred rule: derive domain-separated presentation seeds from the canonical Experience or Memory identity/digest; presentation may control how authoritative evidence is rendered but never what occurred or what the experience means.
-
-28. **#40 may proceed architecturally in parallel; #41 remains blocked.** #40 owns canonical bounded consumption of rich identity/history into cognition. #41 owns Whole-Person standing. #39 itself earns no Whole-Person score movement.
+- **#40:** canonical bounded consumption of identity/history/memory/relationships into ordinary cognition.
+- **#41:** Whole-Person standing.
+- Live childhood, live Thread parents raising children, reciprocal families and economy remain later development work.
