@@ -2,7 +2,7 @@ const LOCATIVE_CUES = Object.freeze([
   { kinds: ["home"], pattern: /\b(?:at|inside|outside|in) (?:the |their |his |her )?(?:home|house|apartment|flat|kitchen|bedroom|living room)\b/iu },
   {
     kinds: ["school"],
-    pattern: /(?:\b(?:at|inside|outside|in) (?:the )?(?:school|classroom|schoolyard)\b|\bon (?:the )?campus\b)/iu,
+    pattern: /(?:\b(?:at|inside|outside|in) (?:(?:the|a) )?(?:school|classroom|schoolyard)\b|\bon (?:the )?campus\b)/iu,
   },
   { kinds: ["transit"], pattern: /\b(?:at|inside|outside|in|on) (?:the |a )?(?:bus|tram|train|station|bus stop|tram stop|platform)\b/iu },
   { kinds: ["library_or_learning"], pattern: /\b(?:at|inside|outside|in) (?:the |a )?(?:library|reading room|study room|learning center|learning centre)\b/iu },
