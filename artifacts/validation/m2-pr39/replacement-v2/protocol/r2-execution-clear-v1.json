@@ -1,0 +1,101 @@
+{
+  "contractVersion": "pr39-replacement-r2-execution-clear-v1",
+  "status": "CLEAR",
+  "verdict": "CLEAR",
+  "recordedAt": "2026-08-24T01:36:28Z",
+  "reviewedBranch": "agent/pr39-genesis-childhood-birth-v1",
+  "reviewedHead": "e6d3bf0ace5d5549d222a768618a5f427497a7bc",
+  "reviewedCandidateHead": "ad7044d57ef6360295d6e26bca4338684eb394d3",
+  "reviewedBindingCommit": "a0441bd3d56c789b0a50e9e3377229ab9165d7e0",
+  "reviewedBindingDigest": "sha256:2482f9a9e7d83d23ff3bf7241c6bea83feff02c6c3f50c6726e2d479962e6159",
+  "review": {
+    "kind": "corrected_r2_hostile_execution_rereview",
+    "meaningOfHostile": "Adversarial review against Fibre's vision and the scientific/person-history truth of PR39, not a cybersecurity penetration exercise.",
+    "correctedClaims": ["C1", "C2", "C3", "C4", "C5", "C6", "C7"],
+    "allCorrectedClaimsClosed": true,
+    "residualPromotedToBlocker": false,
+    "providerModelCallsMadeByReview": 0,
+    "replacementV2LifeArtifactsCreatedByReview": 0,
+    "tests": {"passed": 715, "failed": 0},
+    "repositoryValidationPassed": true,
+    "worldSeedValidationPassed": true
+  },
+  "authorization": {
+    "providerCallsAuthorized": true,
+    "candidateGenerationAuthorized": true,
+    "diagnosticsAuthorized": false,
+    "publicationAuthorized": false,
+    "secondAttemptAuthorized": false,
+    "qualityDrivenRegenerationAuthorized": false,
+    "wholePersonAuthorityAuthorized": false
+  },
+  "executionScope": {
+    "candidateSlots": 5,
+    "wholeCandidateAttemptCap": 1,
+    "provider": "openai",
+    "modelId": "gpt-5.1-2025-11-13",
+    "temperature": 0,
+    "topP": 1,
+    "reasoningEffort": "none",
+    "maxOutputTokens": "auto",
+    "timeoutMs": 45000,
+    "operationalRetryLimit": 2,
+    "operationalRetryDelayMs": 2000,
+    "providerSubstitutionAuthorized": false,
+    "modelSubstitutionAuthorized": false
+  },
+  "inheritedFrozenAuthority": {
+    "worldCount": 5,
+    "genomeCount": 5,
+    "worldGenomeAssignmentChanged": false,
+    "historicalWindowCount": 14,
+    "coverageBoundsChanged": false,
+    "reviewedEnvelopeDigests": [
+      "sha256:7ae30e399e6fac72733a43695d6aa8115243067b385710814c0d707b40667110",
+      "sha256:3a642987f93d308497e84002f5c2aa5b166928c04300d963e31e059567b4e319",
+      "sha256:8ce61436aef530df6e940fe246db86f7d03485746bb33d7a3a93b467df797e0e",
+      "sha256:473ac1dc4680739a39ae6975a47e656ecf7a6dca2bf4987176a249f5db58ad46",
+      "sha256:3d3e2c74b1063aa53ff8e3c72f916f6bece5963b33a8bcf0f46b1230b512a1c7"
+    ],
+    "passBHorizons": [4, 6, 8, 10, 12, 14],
+    "passBFormationModes": ["life_only", "life_only", "life_plus_genome", "life_only", "life_only", "life_plus_genome"],
+    "treatedOrdinals": [3, 6],
+    "primaryHorizons": [8, 14],
+    "d3EachOrdinalMinimumCorrectCoreEdges": 4,
+    "d3AtLeastOneOrdinalCorrectCoreEdges": 5
+  },
+  "sourceAttestation": {
+    "workingTreeBlobMethod": "git hash-object",
+    "driftComparedFromReviewedCandidateToWorkingTree": true,
+    "executionRoots": [
+      "services/world-kernel/src",
+      "services/birth-center/src",
+      "tools/genesis"
+    ],
+    "enumeratedSourceBlobPaths": 35,
+    "observedExecutingClosureModules": 42,
+    "observedUnenumeratedClosureModules": 18,
+    "unenumeratedCoverage": "root-wide working-tree drift only",
+    "n12Disclosure": "A deliberately set Git assume-unchanged bit can cause git diff to misreport an unenumerated closure module. The hostile rereview classified this as explicit Git tampering rather than an implementation blocker; no ordinary dirty-worktree path reproduces the prior B1 defect."
+  },
+  "oneShotAuthority": {
+    "guardOutsideCandidateOutputRoot": true,
+    "guardCheckedBeforeAdapterConstruction": true,
+    "deletingCandidateOutputRootCannotResetAttempt": true,
+    "terminalGenerationFailureClosesAttempt": true,
+    "processRestartMayReplayDurablyCommittedCalls": true,
+    "n14Disclosure": "A crash after durable guard creation but before the start witness can permanently consume the one-shot attempt without generating cognition; recovery requires a new human-reviewed authority transition, not automatic regeneration."
+  },
+  "publicationGateObligations": [
+    {
+      "id": "r2_n13_observable_action_place_consistency",
+      "requiredBeforePublication": true,
+      "statement": "Before any generated episode is published as canonical situated life, its admitted observableAction must be checked against its own placeRef for locational consistency. Pass-A cognition is structurally constrained to one frozen World place, but open-ended prose can still invent a conflicting location; publication must not assume this check was already performed."
+    }
+  ],
+  "residualDisclosures": [
+    "N1", "N4", "N5", "N7", "N8", "N9", "N10", "N11",
+    "N12", "N13", "N14", "N15", "N16", "N17", "N18"
+  ],
+  "scientificStanding": "This CLEAR authorizes exactly one fresh replacement-v2 candidate-generation attempt under the reviewed binding. It does not authorize diagnostics, publication, a second attempt, quality-driven regeneration, provider/model substitution, or Whole-Person standing."
+}
