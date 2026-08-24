@@ -97,6 +97,13 @@ function validRealization() {
   };
 }
 
+function interiorRealization() {
+  return {
+    ...validRealization(),
+    observableAction: "The subject and peer learned that careful labeling matters while comparing two classroom boxes.",
+  };
+}
+
 test("replacement Pass-A cognition is genome-blind and the model sees the frozen envelope as context, not writable output", () => {
   const cognition = buildReplacementPassACognitionInput({ passAInput: passAInput(), envelope: envelope() });
   assert.equal(JSON.stringify(cognition).toLowerCase().includes("genome"), false);
@@ -135,13 +142,7 @@ test("replacement Pass-A form repair changes only observableAction and preserves
   const adapter = {
     invoke: async (request) => {
       requests.push(request);
-      return {
-        output: {
-          ...validRealization(),
-          observableAction: "The subject and peer learned that careful labeling matters while comparing two classroom boxes.",
-        },
-        provenance: { provider: "fixture" },
-      };
+      return { output: interiorRealization(), provenance: { provider: "fixture" } };
     },
   };
   const repairAdapter = {
@@ -168,13 +169,7 @@ test("replacement Pass-A form repair changes only observableAction and preserves
 
 test("malformed form-repair output consumes the form-repair budget rather than the record-retry budget", async () => {
   const adapter = {
-    invoke: async () => ({
-      output: {
-        ...validRealization(),
-        observableAction: "The subject and peer learned that careful labeling matters while comparing two classroom boxes.",
-      },
-      provenance: { provider: "fixture" },
-    }),
+    invoke: async () => ({ output: interiorRealization(), provenance: { provider: "fixture" } }),
   };
   let repairCalls = 0;
   const repairAdapter = {
@@ -198,6 +193,73 @@ test("malformed form-repair output consumes the form-repair budget rather than t
   });
   assert.equal(repairCalls, 2);
   assert.deepEqual(result.budgetState, { generatedVersions: 3, formRepairs: 2, recordRetries: 0 });
+});
+
+test("replacement Pass-A falls back to a fresh record retry after form repairs are exhausted", async () => {
+  const generationRequests = [];
+  const adapter = {
+    invoke: async (request) => {
+      generationRequests.push(request);
+      return {
+        output: generationRequests.length === 1 ? interiorRealization() : validRealization(),
+        provenance: { provider: "fixture" },
+      };
+    },
+  };
+  const repairRequests = [];
+  const repairAdapter = {
+    invoke: async (request) => {
+      repairRequests.push(request);
+      return {
+        output: { observableAction: interiorRealization().observableAction },
+        provenance: { provider: "fixture-repair" },
+      };
+    },
+  };
+  const result = await generateReplacementHistoricalEpisode({
+    adapter,
+    repairAdapter,
+    passAInput: passAInput(),
+    envelope: envelope(),
+    clientRequestId: "r2-pass-a-form-to-record-retry",
+  });
+  assert.equal(repairRequests.length, 2);
+  assert.equal(generationRequests.length, 2);
+  assert.match(generationRequests[1].clientRequestId, /record-retry-1$/u);
+  assert.deepEqual(result.budgetState, { generatedVersions: 4, formRepairs: 2, recordRetries: 1 });
+});
+
+test("replacement Pass-A persistent form failure can consume the full five-version policy before refusing", async () => {
+  const adapter = {
+    invoke: async () => ({ output: interiorRealization(), provenance: { provider: "fixture" } }),
+  };
+  const repairAdapter = {
+    invoke: async () => ({
+      output: { observableAction: interiorRealization().observableAction },
+      provenance: { provider: "fixture-repair" },
+    }),
+  };
+  await assert.rejects(
+    generateReplacementHistoricalEpisode({
+      adapter,
+      repairAdapter,
+      passAInput: passAInput(),
+      envelope: envelope(),
+      clientRequestId: "r2-pass-a-full-budget",
+    }),
+    (error) => {
+      assert.equal(error.gate, "record_repair_exhausted");
+      assert.equal(error.budgetDecision.reason, "total_generated_version_budget_exhausted");
+      assert.deepEqual(error.calls.map((call) => call.kind), [
+        "initial",
+        "form-repair-1",
+        "form-repair-2",
+        "record-retry-1",
+        "record-retry-2",
+      ]);
+      return true;
+    },
+  );
 });
 
 test("replacement Pass-A record retry cannot substitute a different frozen structure", async () => {
