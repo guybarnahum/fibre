@@ -29,7 +29,9 @@ export const REPRO_TOOL_TEST_PATHS = Object.freeze([
   "tools/repro/standing/standing-evidence-archive.test.mjs",
   // Historical #39 review-state assertions belong to reproducibility, not the
   // active compiler contract. They intentionally describe states we have moved
-  // beyond (no output root, no CLEAR witness, no execution authority).
+  // beyond or bind hashes of prompts/protocols that normal development changes.
+  "tools/genesis/genesis-g4-cognition-freeze.test.mjs",
+  "tools/genesis/genesis-h-final-cohort.test.mjs",
   "tools/genesis/genesis-replacement-v2-redesign-preflight.test.mjs",
   "tools/genesis/genesis-replacement-r2-preflight.test.mjs",
 ]);
