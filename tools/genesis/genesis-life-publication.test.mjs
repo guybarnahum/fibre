@@ -179,3 +179,23 @@ test("publication place gate refuses explicit prose location that contradicts pl
     envelope: { placeRef: "place_library", placeKind: "library_or_learning" },
   }), true);
 });
+
+test("publication place gate does not confuse referenced institutions with narrated location", () => {
+  assert.equal(assertGenesisEpisodePlaceConsistency({
+    episode: {
+      episodeId: "ep_place_reference_001",
+      placeRef: "place_library",
+      observableAction: "At a shared computer table in the library, the caregiver opens a browser window on the school's website while the child watches.",
+    },
+    envelope: { placeRef: "place_library", placeKind: "library_or_learning" },
+  }), true);
+
+  assert.throws(() => assertGenesisEpisodePlaceConsistency({
+    episode: {
+      episodeId: "ep_place_campus_conflict_001",
+      placeRef: "place_library",
+      observableAction: "On campus, the child crosses a courtyard and enters the classroom building.",
+    },
+    envelope: { placeRef: "place_library", placeKind: "library_or_learning" },
+  }), /incompatible with authoritative placeRef/u);
+});
