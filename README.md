@@ -71,18 +71,18 @@ See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise
 
 ## Repository map
 
-- `docs/` — canonical vision, foundations, concepts, architecture, decisions, current state and validation.
+- `docs/` — canonical vision, foundations, concepts, architecture, decisions, current state, validation, and selected history/origin material.
 - `apps/thread-editor/` — human-facing Thread Editor prototype.
 - `packages/domain/` — portable Fibre domain types and freeze/thaw logic.
 - `services/` — world-kernel and other implementation boundaries.
 - `schemas/` — machine-readable schemas.
-- `fixtures/` — synthetic test Threads/world states only.
+- `fixtures/` — reusable synthetic test inputs organized by the kind of Fibre object or workflow they represent.
 - `scenarios/` — executable canonical use-case populations.
 - `experiments/` — current falsifiable research experiments.
-- `artifacts/` — generated/redacted/frozen human-visible evidence and reports.
+- `artifacts/validation/` — exceptional retained exact-byte scientific, replay, interoperability, or audit evidence; disposable local output belongs under `.fibre/`.
 - `tools/` — operational tooling organized by lifecycle; see [`tools/README.md`](tools/README.md).
 - `tools/repro/` — retained historical proof/experiment instruments; executable does not mean current production authority.
-- `source-material/` — historical source documents; not automatically canonical.
+- `docs/history/` — selected historical explanation and formative origin material; Git history remains the default archive for routine superseded work.
 
 ## Test and evidence lifecycle
 
