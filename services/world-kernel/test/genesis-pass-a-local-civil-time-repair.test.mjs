@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
-  generateReplacementHistoricalEpisode,
-} from "../src/genesis-replacement-pass-a.mjs";
+  GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
+  generateGenesisHistoricalEpisode,
+} from "../src/genesis-life-pass-a.mjs";
 
 function passAInput() {
   const offeredStructures = Array.from({ length: 8 }, (_, index) => ({
@@ -115,7 +115,7 @@ test("Pass A repairs conflicting daypart narration locally instead of spending a
     invoke: async (request) => {
       repairCalls += 1;
       assert.equal(request.input.failedGate, "pass_a_local_civil_time_narration");
-      assert.match(GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT, /remove explicit weekday, daypart, or clock-time wording/iu);
+      assert.match(GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT, /remove explicit weekday, daypart, or clock-time wording/iu);
       return {
         output: { observableAction: "The subject and peer compare two labels on a classroom materials box." },
         provenance: { provider: "fixture-repair" },
@@ -123,7 +123,7 @@ test("Pass A repairs conflicting daypart narration locally instead of spending a
     },
   };
 
-  const result = await generateReplacementHistoricalEpisode({
+  const result = await generateGenesisHistoricalEpisode({
     adapter,
     repairAdapter,
     passAInput: passAInput(),
@@ -165,7 +165,7 @@ test("Pass A may use both local repairs for repeated civil-time narration before
     },
   };
 
-  const result = await generateReplacementHistoricalEpisode({
+  const result = await generateGenesisHistoricalEpisode({
     adapter,
     repairAdapter,
     passAInput: passAInput(),
