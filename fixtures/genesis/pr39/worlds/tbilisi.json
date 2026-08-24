@@ -1,0 +1,88 @@
+{
+  "worldSpecId": "world_pr39_rg1_01_tbilisi",
+  "timeFrame": {
+    "startAt": "2004-08-20T00:00:00Z",
+    "endAt": "2026-08-20T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_rg1_01_home",
+      "description": "A mid-rise apartment building in Tbilisi's Saburtalo district on a residential street connected to shops, courtyards, pharmacies and bus routes."
+    },
+    {
+      "placeId": "place_rg1_01_school",
+      "description": "A Georgian public school in Tbilisi with ordinary classrooms, a yard or gym space, subject teachers and extracurricular activities whose availability varies by year."
+    },
+    {
+      "placeId": "place_rg1_01_transit",
+      "description": "Tbilisi bus and metro connections linking Saburtalo with central districts, with walking between stops and hilly streets affecting some routes."
+    },
+    {
+      "placeId": "place_rg1_01_library",
+      "description": "A municipal library setting in Tbilisi with Georgian-language collections, study tables, public cultural programming and some translated or foreign-language material."
+    },
+    {
+      "placeId": "place_rg1_01_market",
+      "description": "A neighborhood commercial area with groceries, bakeries, small repair businesses, pharmacies, cafés and produce sellers used for routine household errands."
+    }
+  ],
+  "householdShape": "One caregiver, the subject and an older sibling share an apartment; a grandparent lives elsewhere in Tbilisi and is part of regular meals, errands and family logistics.",
+  "familyRelations": [
+    "The older sibling is three years older than the subject.",
+    "The grandparent lives separately and is visited regularly but is not part of the household."
+  ],
+  "languages": [
+    "Georgian",
+    "English"
+  ],
+  "materialCircumstances": "Housing and food are generally stable but household spending is budget-conscious; public transport and walking are routine, while private-car access is intermittent rather than assumed.",
+  "mobilityPattern": "Daily trips combine walking, city buses and metro service; family visits, appointments and larger purchases create occasional travel across Tbilisi, with hills, traffic and weather changing trip time.",
+  "schoolingOrCommunityContext": "Georgian public schooling, municipal services, neighborhood commerce, libraries, sports or arts programs and city transit create repeated contact with peers and adults outside the home.",
+  "culturalContext": "Tbilisi, Georgia — The household lives in Tbilisi during 2004–2026. Georgian is the ordinary school and civic language; English becomes increasingly available through school, media and the internet. Bus and metro travel, walking, apartment courtyards, neighborhood shops and municipal services are ordinary urban infrastructure. The city includes older and newer building stock, steep or hilly streets in some districts, and dense central areas connected to outer residential districts. Georgian Orthodox churches are publicly visible alongside secular institutions and other religious communities, without assigning the household a religion. Libraries, arts programs, sports facilities, universities, cafés, markets and digital services make multiple intellectual and social settings available. Public holidays, family gatherings and changing urban development affect schedules and access without implying the subject's beliefs or values.",
+  "availableInstitutions": [
+    "georgian_public_school",
+    "tbilisi_municipal_library",
+    "tbilisi_bus_network",
+    "tbilisi_metro",
+    "municipal_sports_or_arts_program",
+    "neighborhood_health_service"
+  ],
+  "intellectualEnvironment": "School curricula, municipal libraries, Georgian and translated books, television and news, internet access, family conversations, university presence, arts programming, repair knowledge and ordinary disagreement are available unevenly across the chronology.",
+  "affordedRoles": [
+    "caregiver",
+    "grandparent",
+    "sibling",
+    "peer",
+    "teacher",
+    "librarian",
+    "neighbor",
+    "shopkeeper",
+    "coach",
+    "mentor"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_replacement_world_authoring",
+    "sourcesConsulted": [
+      {
+        "kind": "municipal",
+        "citation": "Tbilisi municipal portal listing city transport, education/sport/youth, culture, library and district services: https://saburtalo.tbilisi.gov.ge/dev-page/portal-table",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      },
+      {
+        "kind": "transport_operator",
+        "citation": "Tbilisi Transport Company mobile service page describing metro/bus journey planning and real-time bus information: https://ttc.com.ge/en/mobile-application",
+        "accessedAt": "2026-08-22T21:42:00Z"
+      }
+    ],
+    "abstractionMethod": "PR #39 replacement G1 authoring: a concrete ordinary-life setting was abstracted from public civic, education, transport, library or cultural sources before any replacement-cohort genome, Thread identity, Genesis identity, treatment assignment, generated life, diagnostic outcome or expected personality existed. Facts constrain affordances only; they do not prescribe character, values, politics, religion, competence, profession or narrative significance.",
+    "relocationWitness": "The household mechanics could be rebuilt in another large Georgian city, but doing so would change the World because Tbilisi's Saburtalo setting, metro-and-bus network, municipal institutions, hills and capital-city cultural infrastructure are deliberate factual constraints rather than scenery.",
+    "familiarityProbe": {
+      "probedAt": "2026-08-22T21:53:57.842Z",
+      "model": "openai/gpt-5.1-2025-11-13",
+      "densityScore": 4,
+      "comparisonNotes": "This is a contemporary urban setting in a real-world capital city (Tbilisi, Georgia) with standard institutions: public school, municipal library, bus/metro, neighborhood commerce, and typical apartment living. A general language model is likely to have solid background knowledge of urban post-Soviet/Georgian life at a structural level (apartment blocks, public transit, public schooling, libraries, small shops, budget-conscious households), though it may be weaker on fine-grained local details (exact transit routes, specific school practices, or library policies). Georgian as the main language with growing English exposure, and the presence of Orthodox churches alongside secular institutions, are all well within ordinary-world patterns the model can generalize from. Everyday economy (budgeting, errands, mixed walking/transit mobility) and intellectual access (school curricula, libraries, internet, media) are also standard. Overall, the model can rely on real-world knowledge rather than inventing basic structures, but may still need to approximate some specifically Georgian institutional or cultural nuances."
+    },
+    "createdAt": "2026-08-22T21:42:00Z"
+  },
+  "createdAt": "2026-08-22T21:42:00Z"
+}
