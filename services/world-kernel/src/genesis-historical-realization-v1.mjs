@@ -110,15 +110,28 @@ export function materializeHistoricalEnvelopeEpisode({
       });
     }
   }
-  const additionalIntroductions = output.additionalIntroductions.map((item) => ({
-    provisionalPersonId: item.provisionalPersonId,
-    roleRef: item.roleRef,
-    introducedAt: envelope.occurredAt,
-  }));
-  const autoIds = new Set(autoIntroductions.map((item) => item.provisionalPersonId));
-  if (additionalIntroductions.some((item) => autoIds.has(item.provisionalPersonId))) {
-    fail("historical realization cannot re-declare the frozen envelope counterpart as an additional introduction");
+
+  // The frozen envelope already owns a required counterpart. Models sometimes
+  // repeat that exact introduction in the writable realization fields. Treat an
+  // exact person+role repetition as redundant syntax rather than as a failed
+  // historical fact. A conflicting role for the same frozen person still fails.
+  const autoById = new Map(autoIntroductions.map((item) => [item.provisionalPersonId, item]));
+  const additionalIntroductions = [];
+  for (const item of output.additionalIntroductions) {
+    const frozen = autoById.get(item.provisionalPersonId);
+    if (frozen) {
+      if (frozen.roleRef !== item.roleRef) {
+        fail("historical realization cannot re-declare the frozen envelope counterpart with a different role");
+      }
+      continue;
+    }
+    additionalIntroductions.push({
+      provisionalPersonId: item.provisionalPersonId,
+      roleRef: item.roleRef,
+      introducedAt: envelope.occurredAt,
+    });
   }
+
   const participantRefs = unique([
     ...autoParticipants,
     ...output.additionalParticipantRefs,
