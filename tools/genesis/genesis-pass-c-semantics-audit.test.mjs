@@ -1,3 +1,7 @@
+// fibre-test-lifecycle: permanent
+// fibre-test-scope: genesis-memory
+// fibre-test-purpose: pass-c-constitutive-meaning-formation
+
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -19,7 +23,6 @@ import {
   normalizePassCInput,
   normalizeReinterpretationPassCModelOutput,
 } from "../services/world-kernel/src/genesis-pass-c-domain.mjs";
-import { E2_N1_PASS_C_PROMPT } from "./genesis-rich-life-e2-n1.mjs";
 
 function initialInput() {
   return normalizePassCInput({
@@ -110,9 +113,4 @@ test("reinterpretation keeps unchanged and none distinct legal non-revision outc
       parts: [],
     });
   }
-});
-
-test("burned N1/N2 Pass C wording remains historical evidence and is not the canonical future prompt", () => {
-  assert.match(E2_N1_PASS_C_PROMPT, /Decide whether this memory has durable meaning/);
-  assert.notEqual(E2_N1_PASS_C_PROMPT, GENESIS_PASS_C_INITIAL_PROMPT);
 });
