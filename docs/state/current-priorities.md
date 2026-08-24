@@ -23,31 +23,37 @@ This is the engineering execution view. For public/plain-English status, use [`p
 
 1. **The historical skeleton is in good shape.** Fibre deterministically chooses fourteen windows through age 21.9999, exact local time, one World place, EventStructure/world-emergent situation and required counterpart before the model writes the episode. This removed the old chooser/realizer collapse that made childhoods repetitive and interchangeable.
 
-2. **The life generator now has real social and geographic material to work with.** The five frozen Worlds, genomes and rosters remain useful starting material. The envelope compiler spans multiple places and externally social situations rather than letting the model repeatedly retreat to the easiest household scene.
+2. **The life generator has real social and geographic material to work with.** The five Worlds, genomes and rosters remain the current starting material. The envelope compiler spans multiple places and externally social situations rather than letting the model repeatedly retreat to the easiest household scene.
 
-3. **History, memory and meaning remain separate.** Pass A writes observable life; Pass B decides what is remembered from sparse history; Pass C forms or revises remembered meaning. Pass A and Pass C are genome-blind; genome treatment is limited to the preregistered Pass-B calls.
+3. **History, memory and meaning remain separate.** Pass A writes observable life; Pass B decides what is remembered from sparse history; Pass C forms or revises remembered meaning. Pass A and Pass C are genome-blind; genome treatment is limited to the intended Pass-B calls.
 
 4. **People and places have a path through birth.** Genesis derives factual life continuity from the roster and admitted episodes, and birth maps it into canonical `LifeRelation` and `PlaceEpisode` records in the same transaction as the Thread, history, genome lineage, memories and manifest. There is no parallel Genesis biography database.
 
-5. **The first replacement-v2 generation attempt exposed a development bug, not a childhood-design failure.** The run stopped in slot 1 Pass A after the initial realization plus two form repairs. The policy allowed two independent fresh record retries as well, but the loop terminated before using them. No Thread candidate was completed or published.
+5. **The latest development run exposed a contract-ergonomics bug, not a life-design failure.** A generated episode correctly received a required frozen counterpart, then redundantly returned that same person in `additionalIntroductions`. Fibre rejected the duplicate and burned two fresh record retries on the same avoidable shape. No Thread candidate completed or published.
 
-6. **That retry bug is now corrected in development code.** After two unsuccessful local form repairs, Pass A falls back to a fresh realization from the exact same Fibre-owned skeleton. The total remains capped at five generated versions: one initial version, at most two form repairs and at most two fresh record retries. This is mechanical recovery, not quality-driven regeneration. New milestone tests cover both successful fallback and full five-version exhaustion. Local verification is still required before claiming it green.
+6. **The current boundary now normalizes that redundant syntax.** If the model repeats the exact frozen counterpart with the same role, Fibre drops the duplicate and keeps the Fibre-owned introduction once. A conflicting role for the same frozen person still fails. The #39 development check exercises this exact case with zero provider calls.
 
-7. **Development is no longer blocked on frozen-attempt ceremony.** Frozen evidence remains useful at milestone boundaries, but ordinary #39 development now uses `.fibre/genesis/pr39-dev/` and is intentionally disposable/iterable. The reviewed failed attempts remain preserved; they are not the primary development workflow.
+7. **Pass-A recovery now uses the whole intended mechanical budget.** After two unsuccessful local form repairs, Pass A may request a fresh realization from the exact same Fibre-owned skeleton. The total remains capped at five generated versions: one initial version, at most two form repairs and at most two fresh record retries. Recovery may repair mechanical admissibility; it must not choose a better life.
 
-8. **There is now one short development check.** `npm run genesis:pr39-check` runs the normal test/validation boundary plus a #39 readiness check over all five plans and seventy historical envelopes. It makes no provider calls.
+8. **Development uses two commands.** `npm run genesis:pr39-check` is the zero-provider readiness boundary plus the normal active test/validation suite. `npm run genesis:pr39-dev` generates one current Thread life and prints its fourteen episodes, memories and current meanings. Use `--all` only after one Thread is convincing.
 
-9. **There is now one short rich-childhood runner.** `npm run genesis:pr39-dev` generates one Thread by default using the current compiler, durable model-call replay and no publication path. It prints the fourteen life episodes plus formed memories and current meanings so we can judge the actual life rather than only the machinery. `npm run genesis:pr39-dev -- --all` is for the five-Thread cohort only after one Thread looks convincing.
+9. **Development output is disposable.** Iterative candidates and durable call journals live under ignored `.fibre/genesis/pr39-dev/`. They are debugging/development state, not repository history and not publication authority.
 
-10. **The next judgment is qualitative and architectural, not evidentiary.** For the first development Thread, inspect whether the life is specific, non-interchangeable, socially populated, geographically coherent and capable of producing distinctive memories/meaning. If it is generic, repetitive or contradictory, improve the compiler/prompts/data model and run another development iteration. Do not freeze a final cohort until the life itself is worth freezing.
+10. **The next judgment is about the life.** Inspect whether the first Thread is specific, non-interchangeable, socially populated, geographically coherent and capable of producing distinctive memories and meanings. If it is generic, repetitive or contradictory, improve the current compiler and run another development iteration.
 
-11. **One publication obligation remains explicit.** Open-ended `observableAction` prose can still invent a location even though cognition sees only the authoritative place. Before birth, candidate admission must compare episode prose with its `placeRef` for locational consistency. This belongs in the publication/admission path, not in the current development loop.
+11. **After one rich Thread works, run all five and move toward birth.** Inspect cross-Thread differentiation and genome effects, fix genuine #39 defects, then exercise the existing atomic birth path. Freeze one final milestone result only after Fibre has a cohort worth retaining.
 
-12. **After one rich Thread works, advance to birth—not another review maze.** Then run all five, inspect cross-Thread differentiation and genome effects, fix only genuine #39 defects, and exercise the existing atomic birth path. Freeze milestone evidence after we have a cohort that materially advances Fibre.
+## Repository hygiene during #39
 
-## Evidence and prior reviews
+Fibre is an active system, not a historical development museum.
 
-The R1/R2 review chain, failed replacement-v1 output and the consumed replacement-v2 one-shot attempt remain preserved under `docs/validation/` and `artifacts/validation/m2-pr39/`. They explain why the current compiler has its present boundaries. They are supporting evidence, not the roadmap.
+- **Active invariants stay active.** Tests that protect current Thread/history/memory/birth semantics remain in the normal suite.
+- **Review-state assertions do not block development.** Tests whose only purpose is to prove an old R1/R2 state belong to reproducibility/archive, not the active suite.
+- **Old milestone commands are not the product CLI.** The top-level Genesis command surface now points at `genesis:pr39-check` and `genesis:pr39-dev`; prior gate/freeze commands remain only where still needed to understand or migrate current code.
+- **Legacy executable versions should disappear unless data compatibility requires them.** Version labels may remain in persisted records or final evidence, but Fibre should have one current implementation for each live behavior.
+- **Frozen evidence is secondary.** During development, retain only what helps diagnose a current defect. At milestone close, keep one concise final validation record plus any genuinely unique failure that changed architecture; remove redundant intermediate protocol/review artifacts and dead runners.
+
+A cleanup slice should follow the first successful rich-life development run: identify which `replacement-v1`, R1/R2 authority/preflight, and old G2-G6 files are no longer imported by current Genesis or needed for persisted-data compatibility, then delete them rather than indefinitely maintaining them.
 
 ## What comes after #39
 
