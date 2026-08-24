@@ -16,6 +16,17 @@ const LOCATIVE_CUES = Object.freeze([
 
 function fail(ErrorType, message) { throw new ErrorType(message); }
 
+function sceneSettingClause(observableAction) {
+  // B7 protects the authoritative physical scene, not every place mentioned in
+  // dialogue, memory, destination, web content, or explanation later in the
+  // episode. Genesis prose normally establishes the scene in its opening clause.
+  // Inspect that clause only so "On a bus ..., they say a classmate ignored them
+  // at school" remains a transit episode while "At the beach, ..." cannot publish
+  // against a library placeRef.
+  const firstClause = observableAction.split(/[,;.!?]/u, 1)[0].trim();
+  return firstClause.slice(0, 240);
+}
+
 export function assertGenesisEpisodePlaceConsistency({ episode, envelope, ErrorType = TypeError } = {}) {
   if (!episode || typeof episode.observableAction !== "string") fail(ErrorType, "Genesis place consistency requires episode observableAction");
   if (!envelope || typeof envelope.placeRef !== "string" || typeof envelope.placeKind !== "string") {
@@ -24,12 +35,13 @@ export function assertGenesisEpisodePlaceConsistency({ episode, envelope, ErrorT
   if (episode.placeRef !== envelope.placeRef) {
     fail(ErrorType, `episode ${episode.episodeId} placeRef does not match its authoritative historical envelope`);
   }
+  const sceneSetting = sceneSettingClause(episode.observableAction);
   for (const cue of LOCATIVE_CUES) {
-    if (!cue.pattern.test(episode.observableAction)) continue;
+    if (!cue.pattern.test(sceneSetting)) continue;
     if (!cue.kinds.includes(envelope.placeKind)) {
       fail(
         ErrorType,
-        `episode ${episode.episodeId} observableAction narrates an explicit place incompatible with authoritative placeRef ${episode.placeRef} (${envelope.placeKind})`,
+        `episode ${episode.episodeId} observableAction narrates an explicit scene setting incompatible with authoritative placeRef ${episode.placeRef} (${envelope.placeKind})`,
       );
     }
   }
