@@ -124,11 +124,13 @@ test("replacement Pass-B schedule is exactly 4/6/8/10/12/14 with treatment at or
   }), /horizons drift/u);
 });
 
-test("replacement Pass-B initial call always carries exact sparse-history authority", async () => {
+test("replacement Pass-B live invocation hides experimental-arm metadata from cognition", async () => {
   const prompts = [];
+  const cognitionInputs = [];
   const adapter = {
-    invoke: async ({ systemPrompt }) => {
+    invoke: async ({ systemPrompt, input }) => {
       prompts.push(systemPrompt);
+      cognitionInputs.push(input);
       return {
         output: {
           outcome: "remembered",
@@ -149,6 +151,39 @@ test("replacement Pass-B initial call always carries exact sparse-history author
   assert.equal(prompts.length, 1);
   assert.ok(prompts[0].includes(GENESIS_REPLACEMENT_SPARSE_HISTORY_NOTICE));
   assert.match(prompts[0], /do not infer frequency, dominance, rarity, or non-occurrence/iu);
+  assert.equal(cognitionInputs.length, 1);
+  assert.equal(Object.hasOwn(cognitionInputs[0], "assignment"), false);
+  assert.deepEqual(cognitionInputs[0].policyWitness, { policyVersion: GENESIS_PASS_B_POLICY.version });
+  assert.equal(Object.hasOwn(cognitionInputs[0].policyWitness, "assignmentRef"), false);
+  assert.equal(Object.hasOwn(cognitionInputs[0].policyWitness, "genomeExposurePolicyRef"), false);
+});
+
+test("replacement Pass-B treatment exposes genome content but not treatment labels", async () => {
+  const cognitionInputs = [];
+  const adapter = {
+    invoke: async ({ input }) => {
+      cognitionInputs.push(input);
+      return {
+        output: {
+          outcome: "remembered",
+          episodeRefs: ["ep_library_001"],
+          rememberedContent: "I remember returning the books and choosing another from the shelf.",
+          uncertainty: [],
+        },
+        provenance: { provider: "fixture" },
+      };
+    },
+  };
+  await generateReplacementPassBMemory({
+    adapter,
+    input: treatmentInput(),
+    clientRequestId: "r2-pass-b-treatment-projection",
+  });
+  assert.equal(cognitionInputs.length, 1);
+  assert.equal(Object.hasOwn(cognitionInputs[0], "assignment"), false);
+  assert.ok(cognitionInputs[0].genomeExposure);
+  assert.equal(cognitionInputs[0].genomeExposure.loci.length, 2);
+  assert.deepEqual(cognitionInputs[0].policyWitness, { policyVersion: GENESIS_PASS_B_POLICY.version });
 });
 
 test("replacement Pass-B genome-copy retry preserves sparse-history authority on both generated versions", async () => {
