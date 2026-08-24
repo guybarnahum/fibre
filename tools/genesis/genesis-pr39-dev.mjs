@@ -15,9 +15,7 @@ import { fileURLToPath } from "node:url";
 
 import { createBirthCenterRuntime } from "../../services/birth-center/src/runtime.mjs";
 import { createOpenAIModelAdapter } from "../../services/world-kernel/src/model-runtime/openai.mjs";
-import {
-  buildReplacementV2ExecutionPlans,
-} from "./genesis-replacement-v2-plan.mjs";
+import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 import {
   generateReplacementThreadCandidate,
 } from "./genesis-replacement-candidate.mjs";
@@ -66,10 +64,10 @@ function progressLabel(clientRequestId) {
   if (passA) {
     const episode = Number(passA[1]);
     if (passA[2] === "initial") return `Thread ${Number(slot)} · history ${pad(episode)}/14 · realize episode`;
-    if (passA[3]) return `Thread ${Number(slot)} · history ${pad(episode)}/14 · form repair ${passA[3]}/2`;
+    if (passA[3]) return `Thread ${Number(slot)} · history ${pad(episode)}/14 · mechanical form repair ${passA[3]}/2`;
     return `Thread ${Number(slot)} · history ${pad(episode)}/14 · fresh record retry ${passA[4]}/2`;
   }
-  const passB = clientRequestId.match(/:pass-b:call-(\d+)$/u);
+  const passB = clientRequestId.match(/:pass-b:call-(\d+)(?::initial)?$/u);
   if (passB) return `Thread ${Number(slot)} · memory formation ${Number(passB[1])}/6`;
   const passCInitial = clientRequestId.match(/:pass-c:initial-(\d+)$/u);
   if (passCInitial) return `Thread ${Number(slot)} · meaning formation for memory call ${Number(passCInitial[1])}/6`;
@@ -102,7 +100,7 @@ const head = gitHead();
 const runLabel = options.run ?? head.slice(0, 12);
 const outputRoot = `.fibre/genesis/pr39-dev/${runLabel}`;
 const manifestPath = `${outputRoot}/run-v1.json`;
-const plans = buildReplacementV2ExecutionPlans();
+const plans = buildGenesisDevelopmentPlans();
 const selected = options.all ? plans.slots : [plans.slots[options.slot - 1]];
 
 let manifest;
@@ -112,11 +110,13 @@ if (existsSync(absolute(manifestPath))) {
   if (manifest.modelId !== options.model) fail(`development run ${runLabel} belongs to model ${manifest.modelId}; choose a new --run label`);
 } else {
   manifest = {
-    version: "pr39-rich-childhood-development-run-v1",
+    version: "pr39-rich-childhood-development-run-v2",
     status: "DEVELOPMENT_ONLY_NOT_PUBLICATION_AUTHORITY",
     runLabel,
     codeHead: head,
     modelId: options.model,
+    creativeTemperature: plans.sampling.creativeTemperature,
+    mechanicalRepairTemperature: plans.sampling.mechanicalRepairTemperature,
     startedAt: new Date().toISOString(),
     slots: selected.map((item) => item.slot),
     publicationAuthorized: false,
@@ -136,28 +136,48 @@ const observer = (event) => {
   }
 };
 
-const baseAdapter = createOpenAIModelAdapter({
+const creativeBaseAdapter = createOpenAIModelAdapter({
   environment: process.env,
   modelId: options.model,
   observer,
+  temperature: plans.sampling.creativeTemperature,
+  topP: plans.sampling.topP,
+  reasoningEffort: plans.sampling.reasoningEffort,
+});
+const repairBaseAdapter = createOpenAIModelAdapter({
+  environment: process.env,
+  modelId: options.model,
+  observer,
+  temperature: plans.sampling.mechanicalRepairTemperature,
+  topP: plans.sampling.topP,
+  reasoningEffort: plans.sampling.reasoningEffort,
 });
 const birthCenter = createBirthCenterRuntime({ stateRoot: absolute(`${outputRoot}/runtime`) });
-const durableAdapter = birthCenter.durableAdapter(baseAdapter, { observer });
-const adapter = Object.freeze({
-  provider: durableAdapter.provider,
-  modelId: durableAdapter.modelId,
-  configuration: structuredClone(durableAdapter.configuration),
-  async invoke(args) {
-    console.log(`→ ${progressLabel(args.clientRequestId)}`);
-    return durableAdapter.invoke(args);
-  },
-});
+
+function visibleAdapter(baseAdapter) {
+  const durable = birthCenter.durableAdapter(baseAdapter, { observer });
+  return Object.freeze({
+    provider: durable.provider,
+    modelId: durable.modelId,
+    configuration: structuredClone(durable.configuration),
+    async invoke(args) {
+      console.log(`→ ${progressLabel(args.clientRequestId)}`);
+      return durable.invoke(args);
+    },
+  });
+}
+
+const adapter = visibleAdapter(creativeBaseAdapter);
+const repairAdapter = visibleAdapter(repairBaseAdapter);
 
 console.log("PR39 RICH CHILDHOOD DEVELOPMENT RUN");
 console.log(`run: ${runLabel}`);
 console.log(`code: ${head}`);
 console.log(`model: ${options.model}`);
+console.log(`creative temperature: ${plans.sampling.creativeTemperature}`);
+console.log(`mechanical repair temperature: ${plans.sampling.mechanicalRepairTemperature}`);
 console.log(`slots: ${selected.map((item) => item.slot).join(", ")}`);
+console.log("cohort: development fixtures (burned for final PR39 closure cohort)");
 console.log("publication: disabled");
 console.log("progress: → starting call · ✓ new durable result · ↻ replayed durable result\n");
 
@@ -172,7 +192,7 @@ for (const slotPlan of selected) {
     candidate = await generateReplacementThreadCandidate({
       slotPlan,
       adapter,
-      repairAdapter: adapter,
+      repairAdapter,
       attemptStartedAt: manifest.startedAt,
     });
     writeJson(candidatePath, candidate);
@@ -183,4 +203,4 @@ for (const slotPlan of selected) {
 
 console.log(`\nmodel calls this process: ${committed} new · ${replayed} replayed`);
 console.log(`development output: ${outputRoot}`);
-console.log("No Thread was published. Review the life first; use --all only when one Thread looks convincing.");
+console.log("No Thread was published. These Worlds are development material; do not use --all as the final PR39 closure cohort.");
