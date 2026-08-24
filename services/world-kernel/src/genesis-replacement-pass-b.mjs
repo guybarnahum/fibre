@@ -1,6 +1,7 @@
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { GENESIS_SPARSE_HISTORY_NOTICE } from "./genesis-historical-envelope-v1.mjs";
 import { normalizePassBInput } from "./genesis-pass-b-domain.mjs";
+import { projectPassBInputForCognition } from "./genesis-pass-b-cognition.mjs";
 import {
   GENESIS_PASS_B_GENOME_COPY_GATE,
   GenesisPassBAdmissionError,
@@ -52,6 +53,7 @@ export async function generateReplacementPassBMemory({ adapter, input, clientReq
   if (adapter === null || typeof adapter?.invoke !== "function") throw new TypeError("replacement Pass-B adapter must expose invoke()");
   if (typeof clientRequestId !== "string" || clientRequestId.trim() === "") throw new TypeError("replacement Pass-B clientRequestId is required");
   const normalizedInput = normalizePassBInput(input);
+  const cognitionInput = projectPassBInputForCognition(normalizedInput);
   const calls = [];
 
   const invoke = async ({ prompt, kind, generatedVersion }) => {
@@ -60,7 +62,7 @@ export async function generateReplacementPassBMemory({ adapter, input, clientReq
     }
     const result = await adapter.invoke({
       systemPrompt: prompt,
-      input: normalizedInput,
+      input: cognitionInput,
       responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA,
       clientRequestId: `${clientRequestId}:${kind}`,
     });
@@ -68,6 +70,7 @@ export async function generateReplacementPassBMemory({ adapter, input, clientReq
       kind,
       generatedVersion,
       inputDigest: digest(normalizedInput),
+      cognitionInputDigest: digest(cognitionInput),
       promptHash: digest(prompt),
       outputDigest: digest(result.output),
       provenance: structuredClone(result.provenance ?? null),
