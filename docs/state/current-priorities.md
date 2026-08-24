@@ -7,7 +7,7 @@ canonical: true
 
 # Current priorities
 
-This is the engineering execution view. For public/plain-English status, use [`public-progress.md`](public-progress.md) and [`public-progress.json`](public-progress.json`).
+This is the engineering execution view. For public/plain-English status, use [`public-progress.md`](public-progress.md) and [`public-progress.json`](public-progress.json).
 
 ## PR #39 goal
 
