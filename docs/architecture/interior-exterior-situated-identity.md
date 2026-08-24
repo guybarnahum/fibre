@@ -1,11 +1,11 @@
 ---
-id: architecture-m2-interior-exterior-situated-identity
+id: architecture-interior-exterior-situated-identity
 status: proposed
 last-reviewed: 2026-08-12
 canonical: true
 ---
 
-# M2 Interior, Exterior & Situated Identity Contract
+# Interior, Exterior & Situated Identity Contract
 
 ## Purpose
 
@@ -13,9 +13,9 @@ This contract defines how a persistent Fibre person is **experienced socially** 
 
 It complements:
 
-- `m2-identity-embodiment-contract.md` — what makes up a Thread's durable life;
-- `m2-character-formation-model.md` — how that life becomes characteristic judgment;
-- `m2-developmental-continuity-past-selves.md` — how the same person changes across time without rewriting earlier selves;
+- `identity-embodiment-contract.md` — what makes up a Thread's durable life;
+- `character-formation-model.md` — how that life becomes characteristic judgment;
+- `developmental-continuity-and-past-selves.md` — how the same person changes across time without rewriting earlier selves;
 - `interiority-and-expression.md` and ADR-0010 — the private/interior versus outward-expression boundary.
 
 The central claim is:

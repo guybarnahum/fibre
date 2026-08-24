@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 30,
+  "version": 31,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -31,10 +31,10 @@
         "docs/validation/thread-conditions-experiment-plan.md",
         "docs/validation/m2-pr39-genesis-quality-constraints.md",
         "docs/validation/symbolic-thread-genome-implementation-plan.md",
-        "docs/architecture/m2-identity-embodiment-contract.md",
-        "docs/architecture/m2-character-formation-model.md",
-        "docs/architecture/m2-interior-exterior-situated-identity.md",
-        "docs/architecture/m2-developmental-continuity-past-selves.md",
+        "docs/architecture/identity-embodiment-contract.md",
+        "docs/architecture/character-formation-model.md",
+        "docs/architecture/interior-exterior-situated-identity.md",
+        "docs/architecture/developmental-continuity-and-past-selves.md",
         "docs/architecture/thread-passport-identity-provenance-v1.md",
         "docs/architecture/thread-genesis-childhood-birth-v1.md",
         "docs/architecture/genesis-compiler-contract-v1.md",

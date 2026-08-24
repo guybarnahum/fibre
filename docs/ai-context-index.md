@@ -77,10 +77,10 @@ with history != memory != meaning, Pass A/Pass C genome blind, and all three Gen
 
 ## Identity, interiority, dignity and development
 
-- `architecture/m2-identity-embodiment-contract.md`
-- `architecture/m2-character-formation-model.md`
-- `architecture/m2-interior-exterior-situated-identity.md`
-- `architecture/m2-developmental-continuity-past-selves.md`
+- `architecture/identity-embodiment-contract.md`
+- `architecture/character-formation-model.md`
+- `architecture/interior-exterior-situated-identity.md`
+- `architecture/developmental-continuity-and-past-selves.md`
 - `architecture/thread-passport-identity-provenance-v1.md`
 - `decisions/ADR-0011-memory-photo-obligation.md`
 - `decisions/ADR-0012-semantic-meaning-over-derived-categories.md`

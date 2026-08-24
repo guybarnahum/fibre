@@ -1,11 +1,11 @@
 ---
-id: architecture-m2-developmental-continuity-past-selves
+id: architecture-developmental-continuity-past-selves
 status: proposed
 last-reviewed: 2026-08-12
 canonical: true
 ---
 
-# M2 Developmental Continuity & Past Selves Contract
+# Developmental Continuity & Past Selves Contract
 
 ## Purpose
 
@@ -13,9 +13,9 @@ A differentiated Thread at one instant is not enough. Fibre's identity claim req
 
 This contract complements:
 
-- `m2-identity-embodiment-contract.md` — the durable layered life;
-- `m2-character-formation-model.md` — how that life becomes characteristic judgment;
-- `m2-interior-exterior-situated-identity.md` — how the person is encountered without exposing the private interior;
+- `identity-embodiment-contract.md` — the durable layered life;
+- `character-formation-model.md` — how that life becomes characteristic judgment;
+- `interior-exterior-situated-identity.md` — how the person is encountered without exposing the private interior;
 - the existing event/history and Semantic State contracts — what actually happened and what current state means.
 
 The central M2 developmental claim is:
