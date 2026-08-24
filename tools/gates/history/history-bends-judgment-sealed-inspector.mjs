@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const HISTORY_STANDING_V4_EVIDENCE = resolve(
-  "artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json",
+  "artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json",
 );
 
 const EXPECTED_GATE = "history_bends_judgment_standing_gate_v4";

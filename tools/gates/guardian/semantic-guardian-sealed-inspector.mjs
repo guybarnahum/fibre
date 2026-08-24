@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const SEMANTIC_GUARDIAN_V4_EVIDENCE = resolve(
-  "artifacts/test-results/semantic_guardian_v4_standing_gate_v4.evidence.json",
+  "artifacts/validation/semantic_guardian_v4_standing_gate_v4.evidence.json",
 );
 
 const EXPECTED_GATE = "semantic_guardian_v4_standing_gate_v4";
