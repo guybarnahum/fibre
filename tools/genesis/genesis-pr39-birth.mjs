@@ -22,14 +22,14 @@ import {
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
 } from "../../services/world-kernel/src/genesis-pass-c-prompts.mjs";
 import {
-  GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
-  GENESIS_REPLACEMENT_PASS_A_PROMPT,
-  GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
-} from "../../services/world-kernel/src/genesis-replacement-pass-a.mjs";
+  GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
+  GENESIS_LIFE_PASS_A_PROMPT,
+  GENESIS_LIFE_PASS_A_RETRY_PROMPT,
+} from "../../services/world-kernel/src/genesis-life-pass-a.mjs";
 import {
-  GENESIS_REPLACEMENT_PASS_B_GENOME_COPY_RETRY_PROMPT,
-  GENESIS_REPLACEMENT_PASS_B_PROMPT,
-} from "../../services/world-kernel/src/genesis-replacement-pass-b.mjs";
+  GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT,
+  GENESIS_LIFE_PASS_B_PROMPT,
+} from "../../services/world-kernel/src/genesis-life-pass-b.mjs";
 import {
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
 } from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
@@ -91,13 +91,13 @@ function currentCognition(run, plans) {
     creativeAdapter: creative,
     repairAdapter: repair,
     passAPromptMaterial: {
-      initial: GENESIS_REPLACEMENT_PASS_A_PROMPT,
-      recordRetry: GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
+      initial: GENESIS_LIFE_PASS_A_PROMPT,
+      recordRetry: GENESIS_LIFE_PASS_A_RETRY_PROMPT,
     },
     passASchemaMaterial: GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
     passBPromptMaterial: {
-      initial: GENESIS_REPLACEMENT_PASS_B_PROMPT,
-      genomeCopyRetry: GENESIS_REPLACEMENT_PASS_B_GENOME_COPY_RETRY_PROMPT,
+      initial: GENESIS_LIFE_PASS_B_PROMPT,
+      genomeCopyRetry: GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT,
     },
     passBSchemaMaterial: GENESIS_PASS_B_RESPONSE_SCHEMA,
     passCPromptMaterial: {
@@ -108,7 +108,7 @@ function currentCognition(run, plans) {
       initial: GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
       reinterpretation: GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
     },
-    repairPromptMaterial: GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT,
+    repairPromptMaterial: GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
     repairSchemaMaterial: GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
   });
 }
