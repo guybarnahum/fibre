@@ -1,5 +1,4 @@
 import { IntegrityError } from "./persistence-common.mjs";
-import { THREAD_LIFE_EPISODE_RECORDED } from "./genesis-life-episode.mjs";
 import { lifeRelationRevisionRef, placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 
 function tableExists(database, table) {
@@ -10,8 +9,8 @@ function tableExists(database, table) {
 
 function hasThreadEvent(database, threadId, reference) {
   return database.prepare(
-    "SELECT 1 AS present FROM thread_events WHERE thread_id=? AND event_id=? AND event_type=?",
-  ).get(threadId, reference, THREAD_LIFE_EPISODE_RECORDED) !== undefined;
+    "SELECT 1 AS present FROM thread_events WHERE thread_id=? AND event_id=?",
+  ).get(threadId, reference) !== undefined;
 }
 
 function hasRelationRevision(database, threadId, reference) {
