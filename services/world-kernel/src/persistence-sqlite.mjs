@@ -20,7 +20,7 @@ import {
   createIdentityTables,
 } from "./identity-schema.mjs";
 import { createIdentityGroundingGuards } from "./identity-grounding-guard.mjs";
-import { repairIdentityAssertionRegistryV2Schema } from "./identity-schema-v2-repair.mjs";
+import { repairIdentityAssertionRegistryV2Schema } from "./identity-schema-compatibility.mjs";
 import { createSituatedLifeTables } from "./situated-life-schema.mjs";
 import { ensureSituatedLifeDigestColumns } from "./situated-life-integrity.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";

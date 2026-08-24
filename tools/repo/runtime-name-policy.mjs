@@ -8,7 +8,6 @@ export const RUNTIME_NAME_DEBT_PATHS = Object.freeze([
   "services/world-kernel/src/genesis-life-continuity-v1.mjs",
   "services/world-kernel/src/genesis-pass-a-reliability-v3.mjs",
   "services/world-kernel/src/identity-domain-registry-v2.mjs",
-  "services/world-kernel/src/identity-schema-v2-repair.mjs",
   "services/world-kernel/src/genesis-life-pass-a.mjs",
   "services/world-kernel/src/genesis-life-pass-b-input.mjs",
   "services/world-kernel/src/genesis-life-pass-b.mjs",
