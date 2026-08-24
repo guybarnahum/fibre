@@ -25,10 +25,10 @@ additionalParticipantRefs may name only participants already grounded by the sup
 Describe what happened, not what it meant. Do not write significance, lessons, personality, remembered meaning, future policy, desired adult character, or frequency claims about the sparse life sample.
 Treat priorEpisodes as continuity and anti-repetition context. Preserve believable recurring people, places, interests and obligations when the frozen situation calls for them, but do not repeatedly default to the same subject matter merely because it is available. When several ordinary instantiations fit equally well, prefer an underused domain afforded by this World and place rather than another schoolwork, math, study, or same-hobby scene. Ordinary life may include household tasks, friendship, errands, culture, leisure, work or responsibility, making or repair, sport, art, community life, travel, conflict, institutions and chance encounters when actually afforded. Do not invent a domain solely for diversity.
 For a world-emergent episode, use the frozen place and ordinary World affordances to add concrete lived texture rather than another instance of the recent dominant theme.
-The envelope's local weekday/daypart/place are factual authority. Do not narrate a conflicting weekday, daypart, or location.
+The envelope's local weekday/daypart/place are factual authority. Do not narrate a conflicting weekday, daypart, or location. Avoid naming the weekday, daypart, clock time, or location label in observableAction unless the action itself requires it; Fibre already owns those facts.
 Keep observableAction concise; the unchanged authoritative maximum is 1200 UTF-8 bytes, with an initial target of 800 bytes / 100 words.`;
 
-export const GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT = `${GENESIS_REPLACEMENT_PASS_A_PROMPT}\n\nThe previous realization failed a mechanical admission gate and has been discarded. This may happen after local form repair has already been exhausted. You do not receive the rejected realization. Generate a fresh realization from the exact same frozen context. failedGate is a mechanical contract signal only, not a quality signal. Do not make the replacement richer, more meaningful, more diverse, or more consequential because a retry occurred.`;
+export const GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT = `${GENESIS_REPLACEMENT_PASS_A_PROMPT}\n\nThe previous realization failed a mechanical admission gate and has been discarded. This may happen after local form repair has already been exhausted. You do not receive the rejected realization. Generate a fresh alternative realization from the exact same frozen context. failedGate and retryOrdinal are mechanical recovery signals only, not quality signals. Preserve every frozen fact, but do not repeat the deterministic wording/action pattern of the prior failed attempt. Do not make the replacement richer, more meaningful, more diverse, or more consequential because a retry occurred.`;
 
 export const GENESIS_REPLACEMENT_PASS_A_FORM_REPAIR_PROMPT = `You are Fibre Genesis observable-action form repair.
 You receive only the rejected observableAction and the failed mechanical form gate. Return only a replacement observableAction.
@@ -119,8 +119,10 @@ export async function generateReplacementHistoricalEpisode({
   let recordRetries = 0;
   let rawRealization = null;
 
-  const invokeRealization = async ({ prompt, kind, failedGate = null }) => {
-    const modelInput = failedGate === null ? cognitionInput : { ...cognitionInput, failedGate };
+  const invokeRealization = async ({ prompt, kind, failedGate = null, retryOrdinal = null }) => {
+    const modelInput = failedGate === null
+      ? cognitionInput
+      : { ...cognitionInput, failedGate, retryOrdinal };
     const result = await adapter.invoke({
       systemPrompt: prompt,
       input: modelInput,
@@ -206,6 +208,7 @@ export async function generateReplacementHistoricalEpisode({
         prompt: GENESIS_REPLACEMENT_PASS_A_RETRY_PROMPT,
         kind: `record-retry-${recordRetryOrdinal}`,
         failedGate: gate,
+        retryOrdinal: recordRetryOrdinal,
       });
     }
   }
