@@ -11,134 +11,148 @@ canonical: true
 
 ### Simple English
 
-**Finish #39 by proving Fibre can create five genuinely different young Threads with particular prior lives, memories and meanings, then birth them intact into the live world.**
+**Finish #39 by proving Fibre can create five particular young Threads with genuinely different prior lives, memories and meanings, then birth those lives intact into the live world.**
 
 ### More accurate description
 
-#39 closes when Fibre can compile a provenance-bearing prior life from World constraints, symbolic inheritance and developmental affordances; keep historical fact separate from autobiographical memory and remembered meaning; preserve people, place, lineage and chronology; and atomically publish the admitted life into the existing canonical Thread domains without writing future #40 conclusions backward into Genesis.
+#39 closes when Fibre can compile a provenance-bearing prior life from World constraints, symbolic inheritance and developmental affordances; keep historical fact, autobiographical memory and remembered meaning as distinct authorities; preserve people, place, lineage and chronology; and atomically publish the admitted life into canonical Thread/world domains.
 
-#39 does not claim Whole-Person standing. #40 owns bounded causal consumption of the resulting identity/history/memory state. #41 owns M2 standing.
+#39 does not claim causal Whole-Person individuality. #40 owns bounded causal consumption of this richer state. #41 owns M2 standing.
 
-## What remains authoritative from the original #39 plan
+## Development method
 
-The original slice plan correctly identified the semantic risks. This closing plan preserves those requirements while retiring the freeze-heavy development process that accumulated around them.
+Follow ADR-0015. The old R1/R2/G/H freeze choreography is retired.
 
-In particular, the final cohort must be fresh with respect to compiler tuning, whole-life quality may not be silently optimized by repeated regeneration, and diagnostics must remain capable of showing an uninteresting or weak result.
+- Current code and current fixtures drive development.
+- Generated development runs live under ignored `.fibre/` state.
+- Active tests protect Fibre invariants, not old prompt/config hashes.
+- Git history is the development archive.
+- Fresh material, predeclaration and blind evaluation remain when they protect a scientific claim rather than ceremony.
+- A weak generated result is evidence about Genesis; it is not permission to silently resample a whole life.
 
-The current five Tbilisi / Kaohsiung / Recife / Fès / Hobart Worlds are **development fixtures**. They have influenced compiler changes and are therefore burned for the final closure cohort.
-
-## What process is retired
-
-Normal #39 development no longer requires:
-
-- R1/R2 execution authorization chains;
-- frozen prompt/config hash packets before ordinary iteration;
-- G2/G3/G4/G5/G6/H gate choreography;
-- one-shot guards as development authority;
-- old-review-state tests in the active suite;
-- parallel replacement/recovery implementations retained for archaeology.
-
-Current development uses current fixtures, current code, active semantic tests and disposable `.fibre/` runs. Git history retains prior experiments.
-
-The final closure still receives one adversarial Fibre-centric review and one concise milestone record.
+The current Tbilisi / Kaohsiung / Recife / Fès / Hobart Worlds are development fixtures. They have influenced compiler tuning and are burned for the final closure cohort.
 
 ## Current sampling policy
 
-Fibre owns deterministic historical facts and model cognition supplies contingent realization:
+Fibre owns the deterministic historical skeleton. Model cognition supplies contingent realization.
 
-- historical windows / exact time / place / EventStructure / counterpart: deterministic Fibre policy;
-- Pass A realization: temperature `0.3`;
-- Pass B memory formation: temperature `0.3`;
-- Pass C meaning and reinterpretation: temperature `0.3`;
-- fresh record retry from the same historical skeleton: temperature `0.3`;
-- mechanical observable-action form repair: temperature `0`.
+- time / place / EventStructure / counterpart / chronology: deterministic Fibre policy
+- Pass A realization: temperature `0.3`
+- Pass B memory formation: temperature `0.3`
+- Pass C meaning / reinterpretation: temperature `0.3`
+- fresh record retry from the same historical skeleton: temperature `0.3`
+- mechanical form repair: temperature `0`
 
 The goal is reproducible authority and provenance, not byte-identical prose.
 
-## Closure map
+## Current status after hostile closing-plan review
 
-The original completion gate is mapped below to current work. `DONE` means the mechanism exists and is covered by current code/tests. `FINAL` means the mechanism exists but the claim still needs the fresh closure cohort. `TODO` is a real implementation gap and blocks #39 closure.
+The currentized development path was green at 707/707 active tests before the fixes below. The hostile review found real Fibre gaps without finding a reason to restore the old freeze process.
 
-| # | Original semantic obligation | Status | Current closing requirement |
-|---|---|---|---|
-| 1 | exact symbolic-genome lineage/provenance | **DONE / FINAL** | Current de-novo and recombined genomes retain stable loci and exact source provenance; final cohort must inspect lineage end-to-end through birth. |
-| 2 | Pass A creates history without genome/future-answer leakage | **DONE / FINAL** | Current Pass A is genome blind and Fibre freezes the historical skeleton; final cohort confirms no screenplay/foreshadowing collapse. |
-| 3 | EventStructures have real developmental applicability | **DONE** | Current pool v3 has developmental ranges and portable affordance witnesses. Literal old `v2` freeze wording is retired. |
-| 4 | history != memory != meaning | **DONE / FINAL** | Separate Pass A/B/C authorities exist; final birth verifies all three survive without authority collapse. |
-| 5 | Pass-B clean/treatment/prior-treatment strata | **DONE / FINAL** | Six-call schedule remains `[life_only, life_only, life_plus_genome, life_only, life_only, life_plus_genome]`; final diagnostics report it. |
-| 6 | Pass C is genome blind and one-memory scoped | **DONE / FINAL** | Current cognition boundary enforces this; final cohort checks outputs for leakage/overreach. |
-| 7 | visible memory funnel | **DONE / FINAL** | Remembered/not-remembered outcomes and horizons exist; final D4 reports actual funnel rather than forcing a target. |
-| 8 | reinterpretation is a later revision, not history rewrite | **DONE / FINAL** | Scheduled reinterpretation is separate and supersedes meaning only when revised; final cohort reports any opportunities/runs. |
-| 9 | rich, particular, non-interchangeable lives | **FINAL** | Development now completes coherent lives; fresh cohort must demonstrate breadth and differentiation without quality resampling. |
-| 10 | intellectual formation is particular, not generic schooling filler | **FINAL** | Current pool/prompt can produce varied intellectual episodes; held-out cohort is the real test. |
-| 11 | Thread-parent / Echo / Homage / fork source integrity | **TODO** | Add explicit current origin/source eligibility and deterministic fixtures/tests for all four modes. |
-| 12 | living-human Echo requires documented consent | **TODO** | Enforce ADR-0013 in production Genesis, not docs only. |
-| 13 | Homage only for deceased or fictional source | **TODO** | Enforce explicit subject-status attestation and reject relabeling bypass. |
-| 14 | source biography never becomes Thread autobiography | **TODO** | Production source boundary must keep source facts as source evidence; only events actually lived by the Thread become its history. |
-| 15 | final cohort is fresh from compiler tuning | **FINAL** | Author five new closure Worlds after compiler stabilization; current five dev Worlds may not be reused as held-out evidence. |
-| 16 | D1–D5 diagnostics remain honest measurements | **FINAL** | Replace old freeze scripts with one current closure diagnostic/report over the fresh cohort: attribution/separability, sentiment coupling, genome propagation, funnel, self-account overreach. |
-| 17 | no pass-forcing / diagnostic floor honesty | **FINAL** | Do not regenerate lives to improve scores. Weak diagnostic results remain reportable closure evidence and may trigger a genuine redesign decision. |
-| 18 | restart/replay preserves admitted life/provenance | **DONE / FINAL** | Durable invocation journal exists; add one current full-candidate restart/replay assertion for the closure path. |
-| 19 | atomic birth preserves history, people, places, lineage, memories and photo obligations | **DONE / TODO / FINAL** | Atomic birth machinery exists. Before final birth add/verify narrative `observableAction` ↔ authoritative `placeRef` consistency and confirm every admitted autobiographical memory receives the #38 photo-completion obligation. Then birth the fresh cohort and inspect hydration. |
+### Implemented and substantially sound
 
-## Work before the final cohort
+- deterministic fourteen-window prior-life skeleton through age 21.9999
+- current EventStructure developmental policy and World-constrained realization
+- Pass A history separated from Pass B memory and Pass C remembered meaning
+- symbolic genomes with exact de-novo / recombined lineage provenance
+- Pass A and Pass C structural cognition projections that keep genome material out
+- bounded form repair / record retry
+- recurring-person and place continuity derivation
+- transactional Genesis publication machinery
+- origin/source eligibility enforcement for Thread-parent / fork / Echo / Homage inside `publishBirth`
+- living-source Echo consent authority and living-subject Homage refusal
+- source-mode structural exclusivity that prevents simple Echo/Homage relabeling
+- durable model-call replay
 
-Only four implementation areas remain before it is scientifically useful to create held-out Worlds:
+### Fixed in the current cleanup slice; awaiting the normal green check
 
-1. **Finish repository currentization.** Current Genesis must depend on normal fixtures/configuration and one current implementation, not old R/G/H protocol stacks.
-2. **Close origin/source integrity.** Implement and test Thread-parent, Echo, Homage and fork eligibility/provenance, including ADR-0013 consent/status rules and source-life separation.
-3. **Close publication admission details.** Enforce `observableAction` prose consistency with authoritative `placeRef`; verify the memory-photo obligation on the actual birth bundle.
-4. **Create one current closure diagnostic/replay path.** It should calculate/report the original D1–D5 questions and exact restart/replay without recreating the old freeze pipeline.
+1. **Pass-B experimental-arm leakage.** The live Pass-B invocation now uses `projectPassBInputForCognition`. The model may receive the permitted genome exposure on treated calls, but it no longer receives `assignment`, `analysisStratum`, `assignmentRef`, or `genomeExposurePolicyRef`. Full assignment data remains in the candidate record for later analysis.
+2. **Lived-witness event relevance.** Cultural/language formation now requires a `THREAD_LIFE_EPISODE_RECORDED` witness; `THREAD_SEEDED` bookkeeping cannot establish lived formation. Both the JS resolver and SQLite trigger enforce the event kind.
+3. **Dead execution freeze.** `genesis-replacement-execution-authority.mjs` is removed. Current development is no longer blocked by a stale reviewed-head source hash.
 
-Do not author the five fresh closure Worlds until these are stable. Once they are used for final generation, they are evidence rather than development material.
+## Remaining blockers before final-cohort generation
 
-## Fresh closure cohort
+### A. Publication truth and current birth path
 
-After the four items above are green:
+1. **Narrated place must agree with authoritative place.** `observableAction` may not narrate a location incompatible with canonical `placeRef`; enforce this again at publication, not only during generation.
+2. **Current Genesis must be able to birth.** The supported current path must build the canonical birth bundle and call `publishBirth`; the legacy H runner may not remain the only executable caller.
+3. **A prior-life birth must include its people and places.** When historical episodes are present, `initialRoster` and derived `lifeContinuity` are required rather than optional.
+4. **Memory-photo parity is transactional.** Every revision-1 autobiographical memory published at birth must have its #38 visual-companion obligation before commit.
+5. **Candidate → hydrated Thread equality.** Provide one current born-life inspection/comparator covering history, relations, places, lineage, memories, meanings and visual-companion obligations. This is distinct from durable model-call replay.
 
-1. Human-author five new factual Worlds without viewing final genomes/lives.
-2. Construct/assign five current symbolic genomes by a mechanical rule independent of World semantics; include both de-novo and inherited lineage cases.
-3. Build deterministic historical plans with current EventStructure policy.
-4. Generate each Thread **once** under the current compiler, apart from bounded mechanical record repair/retry.
-5. Do not regenerate a whole life because it is generic, fails a diagnostic, or looks aesthetically weak.
-6. Inspect all five actual lives in plain English for particularity, social continuity, geographic coherence, young-adult breadth, memory selection and Thread-owned meaning.
-7. Run the current D1–D5 diagnostic report and record honest outcomes.
-8. Restart/replay and verify exact admitted candidate/provenance identity.
-9. Atomically birth the five admitted Threads; verify hydration contains the expected history, relations, places, lineage, memories, meanings and photo obligations.
+### B. Preserve the original anti-interchangeability experiment
 
-A weak held-out cohort is not repaired by secretly sampling another cohort. It means the closing review decides whether #39 is good enough or requires redesign.
+6. **One-pass closure attempt.** Add a lightweight `--closure` claim that refuses a second closure-cohort generation. Development runs remain freely repeatable.
+7. **Repair/rejection profile.** The closure report must show per episode: generated versions, form repairs, record retries, failed gates, exhaustions and whole-candidate failure. Admission pressure must be visible rather than hidden selection.
+8. **Convergent pair.** At least two fresh final Worlds should make convergence on one broad belief/stance plausible through materially different routes, so attribution tests route/tension/residue rather than merely recognizing city decoration.
+9. **Blind raw + normalized attribution.** D1 retains both raw and setting/style-normalized conditions, judged by raters who have not seen Worlds, genomes, compiler prompts or build diagnostics.
+10. **Predeclare D1–D5 interpretation.** Before final generation, record thresholds/readings, uncertainty treatment, expected cell sizes and the rule for interpreting any above-chance `life_only_unexposed` signal. The clean control is small and must be treated honestly.
 
-## Final adversarial review
+## Source-integrity status
 
-One hostile review should attack the actual #39 closing claim, not cyber security or procedural completeness.
+The hostile audit found that the core Slice-F gate is further along than previously recorded. Thread-parent / fork / Echo / Homage eligibility and key ADR-0013 consent/status rules are enforced inside `publishBirth`; these are not open foundational blockers.
 
-The reviewer should answer:
+Before #39 closes, exercise the current origin path end-to-end enough to prove those guards are reachable and retained. Residual cleanup should also reconcile or document the older `identity.originOrientation` vocabulary and ensure source-biography projection helpers are used where source material enters generated life. These are implementation-quality issues unless they create an actual bypass of the canonical Genesis birth path.
 
-- Did simplification remove any real authority/personhood/scientific safeguard from the original plan?
-- Can the fresh cohort still reveal that Genesis produces generic or over-authored people?
-- Is genome influence confined to permitted memory-formation treatment rather than writing personality backward into history/meaning?
-- Are origin/source rights and biography boundaries enforceable rather than aspirational?
-- Can a Thread be born without parallel Genesis biography authorities or partial publication?
-- Are memories, meanings, relations and places genuinely Thread/world records after birth?
-- Is anything being claimed in #39 that actually belongs to #40 or #41?
+## Retention pass — preserve semantics, delete archaeology
 
-Verdict: `CLEAR` or `HOLD`, with blockers tied to the #39 Fibre claim.
+Before deleting old G/replacement tools, transfer the few unique enduring checks they still carry:
 
-## Retained milestone record
+- memory/meaning characterization is observational and never a regeneration/admission verdict; legal `not_remembered` and no-meaning outcomes remain legal
+- Pass C is constitutive rather than detective
+- an EventStructure must fit the whole developmental window in which it is offered
+- symbolic genome text must not encode its assigned World's geography; make this a general relocatability/separability test
 
-After `CLEAR`, retain one concise `docs/history/milestones/pr39.md` containing:
+Relocate any live active-test inputs from `artifacts/validation/` into ordinary fixtures before deleting their old artifact trees.
 
-- the capability #39 added;
-- final architecture/data-flow summary;
-- five-Thread cohort summary and D1–D5 results;
-- source-integrity and atomic-birth results;
-- important limitations/deferred items;
-- final implementation SHA.
+Do not delete the legacy H runner until the current path can birth. After that, remove the superseded G/R/H runners and `replacement` executable stack, then rename the surviving current Genesis modules around what they do rather than how they evolved.
 
-Do not retain every intermediate generated cohort, frozen packet or review-state executable in current `HEAD`.
+Keep the methodological lessons, not their freeze machinery: thresholds/negative controls are declared before outcomes are read; disappointing outcomes do not change the rule; external raters receive projections that strip Fibre-internal identity/condition labels.
+
+## Final-cohort plan — written before generation
+
+Once the publication blockers and retention transfers above are green, write one short pre-generation plan containing only substantive controls:
+
+1. five fresh factual Worlds, authored without seeing their final genomes; include the convergent pair
+2. a content-independent mechanical genome-assignment rule with both de-novo and inherited cases
+3. expected Pass-B stratum counts
+4. predeclared D1–D5 readings, thresholds and uncertainty treatment
+5. raw + normalized blind-attribution protocol and rater independence
+6. one closure-attempt identity
+
+This document is the scientific precommitment. It is not an execution-authorization chain.
+
+## Final run
+
+1. Author the five fresh Worlds and inspect them for factual affordances and conclusion-smuggling.
+2. Assign genomes mechanically.
+3. Generate each Thread once, apart from bounded record repair/retry.
+4. Inspect all five actual lives in plain English for particularity, continuity, breadth and Thread-owned meaning.
+5. Emit the repair/rejection profile.
+6. Run D1–D5, including normalized blind attribution, and report weak results honestly.
+7. Restart/replay the admitted candidates.
+8. Atomically birth all five.
+9. Hydrate/inspect canonical state and compare it with each admitted candidate/birth bundle.
+10. Perform one hostile review of the actual born cohort.
+
+A disappointing cohort is not repaired by silently sampling another cohort. It triggers an explicit judgment about whether Genesis needs redesign.
+
+## Retained closeout
+
+After a CLEAR closing review, retain one concise `docs/history/milestones/pr39.md` with:
+
+- what #39 made possible
+- final architecture/data-flow summary
+- five-Thread cohort summary
+- D1–D5 and repair-profile results
+- source-integrity and atomic-birth result
+- important limitations / deferred work
+- final implementation SHA
+
+Do not retain intermediate frozen packets, failed cohorts or obsolete review-state executables in current `HEAD`.
 
 ## Exit to #40
 
-#39 is complete when the five fresh lives have been admitted and born intact and the hostile closing review finds no #39 blocker.
+#39 is complete only when five fresh admitted lives have been born intact into canonical world state and the closing review finds no #39 blocker.
 
-Then move directly to #40: Fibre-owned bounded projection of the new identity/history/memory/relationship state into ordinary cognition, with exact evidence provenance and causal counterfactual tests.
+Then move directly to #40: bounded Fibre-owned projection of identity/history/memory/relationship state into ordinary cognition with exact provenance and causal counterfactual tests.
