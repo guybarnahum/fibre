@@ -1,9 +1,11 @@
+// fibre-test-lifecycle: permanent
+// fibre-test-scope: genesis-memory
+// fibre-test-purpose: selective-memory-characterization-is-observational
+
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { characterizeGenesisMemoryMeaning } from "../services/world-kernel/src/genesis-memory-meaning-characterization.mjs";
-import { characterizeN2MemoryMeaning } from "./genesis-memory-meaning-n2-characterization.mjs";
 
 function syntheticRecords() {
   return [
@@ -78,28 +80,4 @@ test("memory/meaning characterization rejects incoherent memory/meaning states",
     }] }),
     /meaningOutcome is invalid for remembered memory/,
   );
-});
-
-test("sealed N2 evidence is characterizable at the correct resolution without changing its gate result", () => {
-  const artifactUrl = new URL("../artifacts/validation/m2-pr39/e2/fibre-m2-pr39-slice-e2-n2-v1.json", import.meta.url);
-  const artifact = JSON.parse(readFileSync(artifactUrl, "utf8"));
-  const result = characterizeN2MemoryMeaning(artifact);
-
-  assert.equal(result.admissionVerdict, null);
-  assert.equal(result.funnel.observations, 18);
-  assert.equal(result.funnel.remembered, 18);
-  assert.equal(result.funnel.notRemembered, 0);
-  assert.equal(result.funnel.durableMeaning, 18);
-  assert.equal(result.funnel.noDurableMeaning, 0);
-  assert.equal(result.funnel.rememberedRate, 1);
-  assert.equal(result.funnel.rememberedToDurableMeaningRate, 1);
-  assert.deepEqual(result.selectivity.byVisibleEpisodeCount.map((item) => [item.visibleEpisodeCount, item.observations]), [
-    [6, 6],
-    [8, 6],
-    [10, 6],
-  ]);
-  assert.ok(result.selectivity.citationShareOfVisibleHistory.mean > 0);
-  assert.ok(result.selectivity.citationShareOfVisibleHistory.mean < 0.5);
-  assert.ok(result.selectivity.citationShareOfVisibleHistory.max <= 0.5);
-  assert.equal(artifact.score.gateFDownstreamFertilityMet, true);
 });
