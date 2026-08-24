@@ -14,6 +14,9 @@ import {
 } from "../../services/world-kernel/src/autobiographical-memory-domain.mjs";
 import { genesisLifeEpisodeEventId } from "../../services/world-kernel/src/genesis-life-episode.mjs";
 import {
+  constrainPassAContextToHistoricalEnvelope,
+} from "../../services/world-kernel/src/genesis-historical-envelope-v1.mjs";
+import {
   buildRichLifePassAInput,
   syntheticLineageWitnessFromRecombinedGenome,
 } from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
@@ -172,13 +175,21 @@ export async function generateReplacementThreadCandidate({
     if (!Array.isArray(offeredEntries) || offeredEntries.length < 8) {
       fail(`replacement slot ${slotPlan.slot} window ${window.windowId} lacks current EventStructure offers`);
     }
+    // The deterministic envelope, not the model, owns the episode's place and
+    // instant. Narrow the cognition world to that one place and instant so the
+    // admitted prose cannot acquire a different situated history than the
+    // canonical placeRef Fibre will later publish.
+    const constrainedContext = constrainPassAContextToHistoricalEnvelope({
+      worldSpec: slotPlan.worldSpec,
+      envelope,
+    });
     const input = buildRichLifePassAInput({
       originMode: slotPlan.originMode,
       syntheticLineageWitness: lineageWitness,
-      worldSpec: slotPlan.worldSpec,
+      worldSpec: constrainedContext.worldSpec,
       subject,
-      developmentalWindow: window,
-      chronologyEndsAt: envelope.occurredAt,
+      developmentalWindow: constrainedContext.developmentalWindow,
+      chronologyEndsAt: constrainedContext.chronologyEndsAt,
       initialRoster: slotPlan.roster.participants,
       priorEpisodes: episodes,
       previouslyIntroducedParticipants: uniqueIntroductions(episodes),

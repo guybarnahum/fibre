@@ -1,4 +1,5 @@
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
+import { GENESIS_SPARSE_HISTORY_NOTICE } from "./genesis-historical-envelope-v1.mjs";
 import { normalizePassBInput } from "./genesis-pass-b-domain.mjs";
 import {
   GENESIS_PASS_B_GENOME_COPY_GATE,
@@ -10,7 +11,9 @@ import {
   GENESIS_PASS_B_RESPONSE_SCHEMA,
 } from "./genesis-pass-b-prompts.mjs";
 
-export const GENESIS_REPLACEMENT_SPARSE_HISTORY_NOTICE = "The visible life history is a sparse coverage-oriented sample of concrete episodes, not a frequency sample of the whole life. Repetition in the sample is not evidence that an event type dominated the life, and absence from the sample is not evidence that something never happened.";
+// One canonical sparse-history meaning is shared by envelope protocol and the
+// actual Pass-B cognition prompt. A replacement runtime must not redefine it.
+export const GENESIS_REPLACEMENT_SPARSE_HISTORY_NOTICE = GENESIS_SPARSE_HISTORY_NOTICE;
 
 export const GENESIS_REPLACEMENT_PASS_B_HORIZONS = Object.freeze([4, 6, 8, 10, 12, 14]);
 export const GENESIS_REPLACEMENT_PASS_B_FORMATION_MODES = Object.freeze([

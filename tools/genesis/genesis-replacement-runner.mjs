@@ -12,6 +12,7 @@ import {
 import { verifyReplacementR2ExecutionAuthority } from "./genesis-replacement-execution-authority.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
+const ATTEMPT_GUARD_FILE = "replacement-r2-attempt-guard-v1.json";
 const ATTEMPT_START_FILE = "replacement-attempt-start-v1.json";
 const RESULT_FILE = "replacement-candidate-cohort-v1.json";
 const FAILURE_FILE = "replacement-candidate-failure-v1.json";
@@ -25,6 +26,14 @@ function writeJsonExclusive(path, value) {
   const target = absolute(path);
   mkdirSync(resolve(target, ".."), { recursive: true });
   writeFileSync(target, `${JSON.stringify(value, null, 2)}\n`, { flag: "wx" });
+}
+
+export function replacementAttemptGuardPath(outputRoot) {
+  if (typeof outputRoot !== "string" || outputRoot.trim() === "") throw new TypeError("replacement outputRoot is required");
+  const normalized = outputRoot.replace(/\/+$/u, "");
+  const splitAt = normalized.lastIndexOf("/");
+  if (splitAt <= 0) throw new TypeError("replacement outputRoot must have a parent directory");
+  return `${normalized.slice(0, splitAt)}/${ATTEMPT_GUARD_FILE}`;
 }
 
 function candidatePath(outputRoot, slot) {
@@ -58,10 +67,58 @@ function modelRuntimeOptions(runtime) {
   };
 }
 
-function startOrResumeAttempt({ outputRoot, authority, now }) {
-  const startPath = `${outputRoot}/${ATTEMPT_START_FILE}`;
-  const resultPath = `${outputRoot}/${RESULT_FILE}`;
-  const failurePath = `${outputRoot}/${FAILURE_FILE}`;
+function attemptPaths(outputRoot) {
+  return Object.freeze({
+    guardPath: replacementAttemptGuardPath(outputRoot),
+    startPath: `${outputRoot}/${ATTEMPT_START_FILE}`,
+    resultPath: `${outputRoot}/${RESULT_FILE}`,
+    failurePath: `${outputRoot}/${FAILURE_FILE}`,
+  });
+}
+
+function verifyAttemptGuard(guard, { authority, outputRoot }) {
+  if (guard?.version !== "pr39-replacement-r2-attempt-guard-v1"
+    || guard.status !== "ONE_SHOT_ATTEMPT_CLAIMED"
+    || guard.bindingDigest !== authority.bindingDigest
+    || guard.reviewCandidateHead !== authority.reviewCandidateHead
+    || guard.outputRoot !== outputRoot
+    || guard.wholeCandidateAttemptCap !== 1
+    || guard.qualityDrivenRegeneration !== false
+    || guard.publicationAuthorized !== false
+    || typeof guard.attemptStartedAt !== "string"
+    || !Number.isFinite(Date.parse(guard.attemptStartedAt))) {
+    fail("replacement R2 durable one-shot attempt guard drift");
+  }
+  return guard;
+}
+
+function inspectAttemptBoundary({ outputRoot, authority }) {
+  const paths = attemptPaths(outputRoot);
+  const rootExists = existsSync(absolute(outputRoot));
+  const guardExists = existsSync(absolute(paths.guardPath));
+  if (!guardExists) {
+    if (rootExists) {
+      fail("replacement R2 output root pre-exists without a durable one-shot attempt guard");
+    }
+    return Object.freeze({ ...paths, fresh: true, guard: null });
+  }
+
+  const guard = verifyAttemptGuard(readJson(paths.guardPath), { authority, outputRoot });
+  if (!rootExists || !existsSync(absolute(paths.startPath))) {
+    fail("replacement R2 one-shot attempt was already claimed but its output-root start witness is missing");
+  }
+  const start = readJson(paths.startPath);
+  if (start.bindingDigest !== authority.bindingDigest
+    || start.reviewCandidateHead !== authority.reviewCandidateHead
+    || start.attemptStartedAt !== guard.attemptStartedAt) {
+    fail("replacement R2 one-shot guard/start witness mismatch");
+  }
+  return Object.freeze({ ...paths, fresh: false, guard });
+}
+
+function startOrResumeAttempt({ outputRoot, authority, now, inspectedBoundary }) {
+  const boundary = inspectedBoundary ?? inspectAttemptBoundary({ outputRoot, authority });
+  const { guardPath, startPath, resultPath, failurePath } = boundary;
   if (existsSync(absolute(failurePath))) {
     fail("replacement R2 one-shot attempt is closed by a terminal failure; no regeneration is authorized");
   }
@@ -70,17 +127,29 @@ function startOrResumeAttempt({ outputRoot, authority, now }) {
     if (result.bindingDigest !== authority.bindingDigest || result.status !== "CANDIDATE_COHORT_COMPLETE_PENDING_DIAGNOSTICS") {
       fail("replacement R2 completed result does not match current execution authority");
     }
-    return Object.freeze({ completedResult: result, attemptStartedAt: result.attemptStartedAt, startPath, resultPath, failurePath });
+    return Object.freeze({ completedResult: result, attemptStartedAt: result.attemptStartedAt, guardPath, startPath, resultPath, failurePath });
   }
-  if (existsSync(absolute(startPath))) {
+  if (!boundary.fresh) {
     const start = readJson(startPath);
-    if (start.bindingDigest !== authority.bindingDigest || start.reviewCandidateHead !== authority.reviewCandidateHead) {
-      fail("replacement R2 in-progress attempt authority drift");
-    }
-    return Object.freeze({ completedResult: null, attemptStartedAt: start.attemptStartedAt, startPath, resultPath, failurePath });
+    return Object.freeze({ completedResult: null, attemptStartedAt: start.attemptStartedAt, guardPath, startPath, resultPath, failurePath });
   }
+
   const attemptStartedAt = now();
   if (typeof attemptStartedAt !== "string" || !Number.isFinite(Date.parse(attemptStartedAt))) throw new TypeError("replacement runner clock must return an ISO timestamp");
+  // Claim the scientific attempt outside the deletable output root first. If the
+  // process dies after this write, the attempt stays claimed and cannot become a
+  // new first attempt by deleting/recreating final-cohort-v1.
+  writeJsonExclusive(guardPath, {
+    version: "pr39-replacement-r2-attempt-guard-v1",
+    status: "ONE_SHOT_ATTEMPT_CLAIMED",
+    attemptStartedAt,
+    bindingDigest: authority.bindingDigest,
+    reviewCandidateHead: authority.reviewCandidateHead,
+    outputRoot,
+    wholeCandidateAttemptCap: 1,
+    qualityDrivenRegeneration: false,
+    publicationAuthorized: false,
+  });
   mkdirSync(absolute(outputRoot), { recursive: true });
   writeJsonExclusive(startPath, {
     version: "pr39-replacement-r2-attempt-start-v1",
@@ -92,7 +161,7 @@ function startOrResumeAttempt({ outputRoot, authority, now }) {
     qualityDrivenRegeneration: false,
     publicationAuthorized: false,
   });
-  return Object.freeze({ completedResult: null, attemptStartedAt, startPath, resultPath, failurePath });
+  return Object.freeze({ completedResult: null, attemptStartedAt, guardPath, startPath, resultPath, failurePath });
 }
 
 function failureRecord({ error, authority, attemptStartedAt, completedSlots, now }) {
@@ -122,15 +191,17 @@ export async function runReplacementCandidateAttempt({
   now = () => new Date().toISOString(),
   observer = null,
 } = {}) {
-  // Critical ordering: hostile-review authority is checked before the adapter factory
-  // is called, so pre-review code cannot even construct a provider client.
+  // Critical ordering: hostile-review authority and the durable one-shot boundary
+  // are both checked before adapter construction, so neither a missing CLEAR nor
+  // a consumed/deleted attempt can construct a provider client.
   const authority = verifyReplacementR2ExecutionAuthority({ requireClear: true });
   if (typeof adapterFactory !== "function") throw new TypeError("replacement runner adapterFactory must be a function");
+  const outputRoot = authority.outputRoot;
+  const inspectedBoundary = inspectAttemptBoundary({ outputRoot, authority });
   const runtimeOptions = modelRuntimeOptions(authority.runtime);
   const baseAdapter = adapterFactory({ environment, observer, ...runtimeOptions });
 
-  const outputRoot = authority.outputRoot;
-  const attempt = startOrResumeAttempt({ outputRoot, authority, now });
+  const attempt = startOrResumeAttempt({ outputRoot, authority, now, inspectedBoundary });
   if (attempt.completedResult !== null) return Object.freeze(structuredClone(attempt.completedResult));
 
   const birthCenter = createBirthCenterRuntime({ stateRoot: absolute(`${outputRoot}/runtime`) });

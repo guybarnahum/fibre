@@ -16,8 +16,21 @@ test("R2 preflight binds current rich-life compilation while keeping cognition a
   assert.equal(result.candidateGenerationAuthorized, false);
   assert.equal(result.publicationAuthorized, false);
   assert.equal(result.outputRootAbsent, true);
+  assert.equal(result.attemptGuardAbsent, true);
+  assert.deepEqual(result.passBProtocolWitness.historyHorizons, [4, 6, 8, 10, 12, 14]);
+  assert.deepEqual(result.passBProtocolWitness.formationModes, [
+    "life_only",
+    "life_only",
+    "life_plus_genome",
+    "life_only",
+    "life_only",
+    "life_plus_genome",
+  ]);
+  assert.deepEqual(result.passBProtocolWitness.treatedOrdinals, [3, 6]);
+  assert.deepEqual(result.passBProtocolWitness.primaryHorizons, [8, 14]);
   assert.equal(result.richBuilderWitnesses.length, 5);
   assert.equal(result.richBuilderWitnesses.every((item) => /event-structure-pool-v3/u.test(item.currentPoolPolicyVersion)), true);
+  assert.equal(result.richBuilderWitnesses.every((item) => item.constrainedWorldPlaceCount === 1), true);
 });
 
 test("candidate runner refuses before the provider adapter factory can be constructed", async () => {

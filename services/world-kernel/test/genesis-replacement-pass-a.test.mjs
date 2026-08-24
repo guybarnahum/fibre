@@ -100,6 +100,8 @@ function validRealization() {
 test("replacement Pass-A cognition is genome-blind and the model sees the frozen envelope as context, not writable output", () => {
   const cognition = buildReplacementPassACognitionInput({ passAInput: passAInput(), envelope: envelope() });
   assert.equal(JSON.stringify(cognition).toLowerCase().includes("genome"), false);
+  assert.equal(Object.hasOwn(cognition.frozenEnvelope, "ordinal"), false);
+  assert.equal(cognition.frozenEnvelope.placeRef, envelope().placeRef);
   assert.equal(cognition.frozenEnvelope.structureRef, envelope().structureRef);
   assert.equal(cognition.frozenEnvelope.counterpart.roleRef, "peer");
   assert.match(GENESIS_REPLACEMENT_PASS_A_PROMPT, /not choosing those facts/iu);
@@ -162,6 +164,40 @@ test("replacement Pass-A form repair changes only observableAction and preserves
   assert.equal(result.episode.occurredAt, envelope().occurredAt);
   assert.equal(result.episode.placeRef, envelope().placeRef);
   assert.deepEqual(result.budgetState, { generatedVersions: 2, formRepairs: 1, recordRetries: 0 });
+});
+
+test("malformed form-repair output consumes the form-repair budget rather than the record-retry budget", async () => {
+  const adapter = {
+    invoke: async () => ({
+      output: {
+        ...validRealization(),
+        observableAction: "The subject and peer learned that careful labeling matters while comparing two classroom boxes.",
+      },
+      provenance: { provider: "fixture" },
+    }),
+  };
+  let repairCalls = 0;
+  const repairAdapter = {
+    invoke: async () => {
+      repairCalls += 1;
+      if (repairCalls === 1) {
+        return { output: validRealization(), provenance: { provider: "fixture-malformed-repair" } };
+      }
+      return {
+        output: { observableAction: "The subject and peer compare two classroom box labels and replace one mismatched label." },
+        provenance: { provider: "fixture-repair" },
+      };
+    },
+  };
+  const result = await generateReplacementHistoricalEpisode({
+    adapter,
+    repairAdapter,
+    passAInput: passAInput(),
+    envelope: envelope(),
+    clientRequestId: "r2-pass-a-malformed-form-repair",
+  });
+  assert.equal(repairCalls, 2);
+  assert.deepEqual(result.budgetState, { generatedVersions: 3, formRepairs: 2, recordRetries: 0 });
 });
 
 test("replacement Pass-A record retry cannot substitute a different frozen structure", async () => {

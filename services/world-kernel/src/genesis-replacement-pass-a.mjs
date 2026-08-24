@@ -41,13 +41,13 @@ const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : c
 
 function frozenEnvelopeForCognition(envelope) {
   return Object.freeze({
-    ordinal: envelope.ordinal,
     windowId: envelope.windowId,
     localDate: envelope.localDate,
     localTime: envelope.localTime,
     localWeekday: envelope.localWeekday,
     daypart: envelope.daypart,
     timeZone: envelope.timeZone,
+    placeRef: envelope.placeRef,
     placeKind: envelope.placeKind,
     selectionKind: envelope.selectionKind,
     structureRef: envelope.structureRef,
@@ -116,7 +116,6 @@ export async function generateReplacementHistoricalEpisode({
   let formRepairs = 0;
   let recordRetries = 0;
   let rawRealization = null;
-  let pendingError = null;
 
   const invokeRealization = async ({ prompt, kind, failedGate = null }) => {
     const modelInput = failedGate === null ? cognitionInput : { ...cognitionInput, failedGate };
@@ -142,11 +141,6 @@ export async function generateReplacementHistoricalEpisode({
   while (true) {
     let realization = null;
     try {
-      if (pendingError !== null) {
-        const error = pendingError;
-        pendingError = null;
-        throw error;
-      }
       realization = normalizeHistoricalRealizationModelOutput(rawRealization);
       const episode = materializeHistoricalEnvelopeEpisode({ modelOutput: realization, envelope, passAInput });
       return Object.freeze({
@@ -179,11 +173,13 @@ export async function generateReplacementHistoricalEpisode({
           outputDigest: digest(result.output),
           provenance: structuredClone(result.provenance ?? null),
         }));
-        if (result.output === null || typeof result.output !== "object" || Object.keys(result.output).length !== 1 || typeof result.output.observableAction !== "string") {
-          pendingError = new GenesisPassAValidationError("pass_a_output_schema", "replacement Pass-A form repair must return only observableAction");
-        } else {
+        if (result.output !== null && typeof result.output === "object" && Object.keys(result.output).length === 1 && typeof result.output.observableAction === "string") {
           rawRealization = Object.freeze({ ...realization, observableAction: result.output.observableAction });
         }
+        // A malformed form-repair body remains a form-repair failure. Leave the
+        // rejected realization in place so the next loop consumes the next form
+        // repair allowance rather than silently debiting the independent record
+        // retry budget.
         continue;
       }
 

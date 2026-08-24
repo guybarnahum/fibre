@@ -23,19 +23,22 @@ function fail(message) { throw new Error(message); }
 
 function gitBlobSha(path) {
   try {
-    return execFileSync("git", ["rev-parse", `HEAD:${path}`], {
+    return execFileSync("git", ["hash-object", "--", path], {
       cwd: ROOT,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();
   } catch (error) {
-    fail(`R2 authority cannot resolve reviewed source ${path}: ${error.stderr?.toString?.().trim() || error.message}`);
+    fail(`R2 authority cannot hash executable working-tree source ${path}: ${error.stderr?.toString?.().trim() || error.message}`);
   }
 }
 
 function changedExecutionSourcePaths(reviewedHead) {
   try {
-    const output = execFileSync("git", ["diff", "--name-only", reviewedHead, "HEAD", "--", ...EXECUTION_SOURCE_ROOTS], {
+    // Compare the reviewed candidate directly with the bytes that would execute,
+    // including staged and unstaged tracked changes. Commit-to-commit comparison
+    // is insufficient for a scientific execution witness.
+    const output = execFileSync("git", ["diff", "--name-only", reviewedHead, "--", ...EXECUTION_SOURCE_ROOTS], {
       cwd: ROOT,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
