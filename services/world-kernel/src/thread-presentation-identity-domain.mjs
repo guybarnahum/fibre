@@ -20,6 +20,7 @@ export const THREAD_VISUAL_IDENTITY_PROJECTION_VERSION = "thread-visual-identity
 export const FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION = "fibre-identity-card-credential-v0.1";
 export const FIBRE_IDENTITY_CARD_STATUSES = Object.freeze(["active", "replaced", "expired", "revoked"]);
 export const FIBRE_IDENTITY_CARD_DATE_KINDS = Object.freeze(["birth_date", "entry_date"]);
+export const FIBRE_IDENTITY_CARD_VISIBILITIES = Object.freeze(["public", "restricted", "private"]);
 
 const FIN_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const FIN_PATTERN = new RegExp(`^[${FIN_ALPHABET}]{4}-[${FIN_ALPHABET}]{2}-[${FIN_ALPHABET}]{4}$`);
@@ -149,7 +150,7 @@ export function normalizeFibreIdentityCard(value) {
   assertPlainObject(name, value);
   assertExactKeys(name, value, [
     "credentialVersion", "credentialId", "cardSerial", "revision", "supersedesCredentialId",
-    "registrationId", "displayName", "dateField", "issuedAt", "expiresAt", "status",
+    "registrationId", "displayName", "dateField", "issuedAt", "expiresAt", "status", "visibility",
     "officialPhotoMediaRef", "machineReadableCredentialRef", "sourceReferences", "provenanceRef",
   ]);
   if (value.credentialVersion !== FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION) {
@@ -175,6 +176,7 @@ export function normalizeFibreIdentityCard(value) {
     if (Date.parse(expiresAt) <= Date.parse(value.issuedAt)) throw new TypeError(`${name}.expiresAt must follow issuedAt`);
   }
   assertEnum(`${name}.status`, value.status, FIBRE_IDENTITY_CARD_STATUSES);
+  assertEnum(`${name}.visibility`, value.visibility, FIBRE_IDENTITY_CARD_VISIBILITIES);
   assertId(`${name}.officialPhotoMediaRef`, value.officialPhotoMediaRef);
   const machineReadableCredentialRef = nullableRef(`${name}.machineReadableCredentialRef`, value.machineReadableCredentialRef);
   assertId(`${name}.provenanceRef`, value.provenanceRef);
@@ -190,6 +192,7 @@ export function normalizeFibreIdentityCard(value) {
     issuedAt: value.issuedAt,
     expiresAt,
     status: value.status,
+    visibility: value.visibility,
     officialPhotoMediaRef: value.officialPhotoMediaRef,
     machineReadableCredentialRef,
     sourceReferences: stringRefs(`${name}.sourceReferences`, value.sourceReferences, { required: true }),
@@ -219,6 +222,7 @@ export function fibreIdentityCardDisplayData(presentation) {
     issuedAt: identityCard.issuedAt,
     expiresAt: identityCard.expiresAt,
     status: identityCard.status,
+    visibility: identityCard.visibility,
     officialPhotoMediaRef: identityCard.officialPhotoMediaRef,
     machineReadableCredentialRef: identityCard.machineReadableCredentialRef,
   });
