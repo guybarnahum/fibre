@@ -1,7 +1,7 @@
 ---
 id: validation-history-bends-judgment-standing-gate-v4
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -13,11 +13,9 @@ canonical: true
 
 The first real-provider cycle was run locally on 2026-08-09 against frozen `history_bends_judgment_candidate_4` using `openai/gpt-5.1-2025-11-13`. The cycle is permanently sealed and must not be rerun or tuned.
 
-The exact authoritative bundle is committed at:
+The exact machine-readable evidence bundle was committed with the accepted checkpoint. Under ADR-0016 it is no longer retained in HEAD; Git history preserves the exact bytes and retired executable source. This canonical record preserves the accepted result, scope, and material witnesses in current documentation.
 
-`artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`
-
-The bundle—not this prose transcription—is the machine-readable authority for the model outputs, factor evidence refs, provider request/digest data, retry history, normalizations, frozen boundary, persisted memory, restart witness, and counterfactual result.
+The historical bundle—not this prose transcription—was the machine-readable authority for the model outputs, factor evidence refs, provider request/digest data, retry history, normalizations, frozen boundary, persisted memory, restart witness, and counterfactual result.
 
 ## Held-out scenario
 
@@ -75,7 +73,7 @@ Behavioral failures: 0
 Differential failures: 0
 ```
 
-The bundle also records one retrying `MODEL_TIMEOUT` operational attempt on the no-history call before its successful second provider attempt. The failed attempt and successful retry carry the identical input digest `sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a`, so retry did not resample a changed input. The final `Provider failures: 0` bucket means no terminal provider failure prevented an authoritative judgment; transient operational attempts remain separately retained in the evidence journal.
+The bundle also records one retrying `MODEL_TIMEOUT` operational attempt on the no-history call before its successful second provider attempt. The failed attempt and successful retry carry the identical input digest `sha256:4e72e6a6c707b7ec50f023bc7dc2a4041831ab1a85a64f0ea5eb8ce82b7af47a`, so retry did not resample a changed input. The final `Provider failures: 0` bucket means no terminal provider failure prevented an authoritative judgment; transient operational attempts remain separately retained in the historical evidence journal.
 
 The two conditions intentionally have different `responseSchemaHash` values (`sha256:f4fcf2c1a6685b757f031e2b3cf41dd673a5d04059c35de68db1f740e6d0e033` with history; `sha256:dc99abdfa6a7ff83ec07608fe0186866598f55ba0d751dd322b838d94f9ccc84` without history). The response schema is generated per cognition capsule from its eligible evidence-reference enum, so withholding the one memory evidence item deterministically changes that enum and therefore the schema hash; it is a mechanical consequence of the declared intervention, not a second semantic variable.
 
@@ -121,9 +119,7 @@ No other dimension moves from this gate.
 
 ## Sealed command and archive posture
 
-The provider-executable v4 proof/runner used for the authoritative cycle is retired from the active tree after sealing. Exact source remains in Git history; the committed evidence bundle and this canonical record remain in the working tree.
-
-`npm run history:gate` is now a read-only inspector over the committed v4 bundle. It contains no model/provider runtime dependency and cannot execute or rerun a standing cycle.
+The provider-executable v4 proof/runner and the later read-only sealed-evidence inspector are retired from the active tree. Exact source and exact committed evidence remain recoverable from Git history; this canonical standing record remains in HEAD.
 
 `npm run history:dev` remains the repeatable, non-evidentiary provider-backed development path.
 
