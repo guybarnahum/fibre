@@ -49,15 +49,27 @@ function cognition() {
 
 function fixtureCandidate(slotPlan) {
   const envelope = slotPlan.envelopePlan.envelopes[0];
+  const participantRefs = [slotPlan.threadId];
+  const introducedParticipants = [];
+  if (envelope.counterpart !== null) {
+    participantRefs.push(envelope.counterpart.participantId);
+    if (envelope.counterpart.introducedHere === true) {
+      introducedParticipants.push({
+        provisionalPersonId: envelope.counterpart.participantId,
+        roleRef: envelope.counterpart.roleRef,
+        introducedAt: envelope.occurredAt,
+      });
+    }
+  }
   const episode = {
     episodeId: "ep_current_birth_fixture_001",
     occurredAt: envelope.occurredAt,
     ageAtEvent: envelope.ageAtEvent,
     placeRef: envelope.placeRef,
-    participantRefs: [slotPlan.threadId],
+    participantRefs,
     observableAction: "The child compares two handwritten notes and places one beside the other before copying a corrected line.",
     structureRef: envelope.structureRef,
-    introducedParticipants: [],
+    introducedParticipants,
   };
   const eventId = genesisLifeEpisodeEventId({
     threadId: slotPlan.threadId,
