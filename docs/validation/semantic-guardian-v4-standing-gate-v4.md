@@ -38,7 +38,7 @@ Neither command contains or reaches a provider/model execution path.
 The authoritative bundle is committed at:
 
 ```text
-artifacts/test-results/semantic_guardian_v4_standing_gate_v4.evidence.json
+artifacts/validation/semantic_guardian_v4_standing_gate_v4.evidence.json
 ```
 
 The completed sealed run reported:
@@ -105,7 +105,7 @@ Economic consequence          stays 0
 
 That checkpoint moved from **11/26 to 14/26 under rubric v2**. Historical M1 remains frozen at 11/26.
 
-Non-interchangeability remains at 1 rather than 2 because the current standing proof establishes attributable semantic divergence but does not yet close the rubric's stronger repeated-condition stability/history-grounded standard.
+Non-interchangeability remains at 1 rather than 2 because the current standing proof establishes attributable semantic divergence but does not yet close the rubric's stronger repeated-identical-condition stability/history-grounded standard.
 
 Social and relationship memory receives 1 because Semantic Relationship State v0 is durable targeted state and the accepted requester-specific trust counterfactual demonstrates a narrow causal change in appraisal. The broader reciprocal relationship subsystem remains deferred.
 

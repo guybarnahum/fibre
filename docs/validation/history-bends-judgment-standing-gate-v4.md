@@ -15,7 +15,7 @@ The first real-provider cycle was run locally on 2026-08-09 against frozen `hist
 
 The exact authoritative bundle is committed at:
 
-`artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`
+`artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`
 
 The bundle—not this prose transcription—is the machine-readable authority for the model outputs, factor evidence refs, provider request/digest data, retry history, normalizations, frozen boundary, persisted memory, restart witness, and counterfactual result.
 
