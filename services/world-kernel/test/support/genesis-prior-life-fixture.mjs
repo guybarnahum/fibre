@@ -2,6 +2,7 @@
 // Migrates narrow pre-B8 Genesis fixtures without weakening production birth authority.
 
 import { deriveGenesisLifeContinuity } from "../../src/genesis-life-continuity-v1.mjs";
+import { attachTestCivilRegistration } from "./civil-registration-fixture.mjs";
 
 function externalPeopleIn(episodes, threadId) {
   const participantRefs = episodes.flatMap((episode) => episode.participantRefs ?? [])
@@ -40,9 +41,9 @@ export function publishMinimalGenesisPriorLifeFixture(genesis, birth, options = 
     episodes,
   });
 
-  return genesis.publishBirth({
+  return genesis.publishBirth(attachTestCivilRegistration({
     ...birth,
     initialRoster,
     lifeContinuity,
-  }, options);
+  }), options);
 }
