@@ -28,6 +28,7 @@ const REQUIRED_METHODS = Object.freeze({
   objects: ["putImmutable", "get", "head"],
   catalog: ["upsert", "get", "remove"],
   realtime: ["publish"],
+  queues: ["send"],
   workflows: ["start", "get"],
 });
 

@@ -1,4 +1,7 @@
+import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+
 export const ASSET_GENERATION_COMPLETION_VERSION = "asset-generation-completion-v0.1";
+export const ASSET_GENERATION_COMPLETION_QUEUE = "asset_generation_completions";
 
 const SHA256_DIGEST = /^sha256:[0-9a-f]{64}$/;
 
@@ -62,4 +65,16 @@ export function createAssetGenerationCompletion({
     receiptObjectRef,
     receiptDigest,
   });
+}
+
+export async function publishAssetGenerationCompletion({
+  infra,
+  completion,
+  queueName = ASSET_GENERATION_COMPLETION_QUEUE,
+}) {
+  requireInfraCapabilities(infra, "queues");
+  nonEmpty("queueName", queueName);
+  const normalized = normalizeAssetGenerationCompletion(completion);
+  await infra.queues.send(queueName, normalized);
+  return normalized;
 }

@@ -4,22 +4,14 @@ import { NonRetryableError } from "cloudflare:workflows";
 import { createAssetGenerationCompletion } from "../asset-generation-completion.mjs";
 import { createCloudflareAssetGenerationRuntime } from "./asset-generation-runtime.mjs";
 
-function completionQueue(env) {
-  const queue = env?.ASSET_COMPLETIONS;
-  if (!queue || typeof queue.send !== "function") {
-    throw new TypeError("ASSET_COMPLETIONS queue binding is required");
-  }
-  return queue;
-}
-
 export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
+    const runtime = createCloudflareAssetGenerationRuntime(this.env);
     const generated = await step.do(
       "generate credentialed asset",
       { timeout: "10 minutes" },
       async () => {
         try {
-          const runtime = createCloudflareAssetGenerationRuntime(this.env);
           return await runtime.execute(event.payload);
         } catch (error) {
           // Provider generation is nondeterministic while the final Fibre object identity is
@@ -38,10 +30,10 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
     });
 
     await step.do("signal asset generation completion", async () => {
-      // Queue delivery is a separate durable step. Its default retry policy is safe:
-      // the message is a deterministic pointer to already-immutable output, and the
-      // Presentation consumer is idempotent under at-least-once delivery.
-      await completionQueue(this.env).send(completion);
+      // Completion publication uses the provider-neutral InfraDriver queues port.
+      // This Cloudflare Workflow knows nothing about the eventual queue backend
+      // beyond the deployment adapter assembled by createCloudflareAssetGenerationRuntime().
+      await runtime.publishCompletion(completion);
       return completion;
     });
 

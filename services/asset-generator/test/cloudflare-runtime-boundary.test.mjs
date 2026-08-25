@@ -17,19 +17,22 @@ async function json(url) {
   return JSON.parse(await text(url));
 }
 
-test("Cloudflare asset execution runtime is generation-only and completion signal is semantically inert", async () => {
+test("Cloudflare asset execution runtime is generation-only and completion transport stays behind InfraDriver", async () => {
   const runtime = await text(runtimeUrl);
   const worker = await text(workerUrl);
 
   assert.match(runtime, /executeCredentialedAssetGenerationJob/);
   assert.match(runtime, /ASSET_OBJECTS/);
+  assert.match(runtime, /withCloudflareQueueBindings/);
+  assert.match(runtime, /publishAssetGenerationCompletion/);
   assert.doesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/);
   assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /AssetGenerationAttemptFailed/);
   assert.match(worker, /createAssetGenerationCompletion/);
-  assert.match(worker, /ASSET_COMPLETIONS/);
+  assert.match(worker, /publishCompletion/);
   assert.match(worker, /signal asset generation completion/);
+  assert.doesNotMatch(worker, /ASSET_COMPLETIONS|\.send\(/);
 });
 
 test("presentation owns the standalone Workflow consumer and queue completion publication boundary", async () => {
