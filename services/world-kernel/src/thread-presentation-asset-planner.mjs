@@ -1,9 +1,10 @@
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
+import { threadVisualIdentityProjectionDigest } from "./thread-presentation-identity-domain.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   ASSET_GENERATION_JOB_VERSION,
   normalizeAssetGenerationReceipt,
-} from "../../asset-generator/src/asset-generation-domain.mjs";
+} from "#services/asset-generator/src/index.mjs";
 
 export const THREAD_PRESENTATION_ASSET_PLAN_VERSION = "thread-presentation-asset-plan-v0.1";
 
@@ -58,6 +59,38 @@ function memoryBrief(memory) {
   };
 }
 
+function officialPhotoAwkwardness(visualIdentityDigest) {
+  const options = [
+    "Expression is carefully neutral, with the slight stiffness of trying not to smile.",
+    "Expression is a little too serious for the occasion, but natural and dignified.",
+    "Expression is mildly surprised by the shutter timing while remaining neutral and composed.",
+    "Expression is politely neutral with a faint caught-at-the-wrong-instant quality.",
+  ];
+  return options[Number.parseInt(visualIdentityDigest.at(-1), 16) % options.length];
+}
+
+function officialIdPhotoBrief(visualIdentity) {
+  const identityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
+  return {
+    description: [
+      "Generated official identity photograph derived only from an authorized Thread visual-identity projection.",
+      `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
+      `Authorized rendering continuity: ${visualIdentity.renderDescription}`,
+      officialPhotoAwkwardness(identityDigest),
+    ].join(" "),
+    constraints: [
+      "Preserve the supplied authorized visual identity; do not invent or materially redesign the person's canonical face or body.",
+      "Use front-facing or almost front-facing head-and-shoulders administrative ID-photo framing.",
+      "Use a plain neutral background, even boring administrative lighting, ordinary focus, and minimal styling.",
+      "No cinematic depth of field, glamour treatment, dramatic pose, fashion-editorial styling, or flattering beauty retouching.",
+      "The mild ID-photo awkwardness must remain subtle, affectionate, natural, and dignity-preserving.",
+      "Do not make the subject cartoonish, grotesque, humiliated, distressed, intoxicated, incompetent, or visibly degraded.",
+      "Do not add text, numbers, cards, badges, QR codes, signatures, watermarks, borders, or document graphics to the image itself.",
+      "This generated photograph is derived presentation media, not embodiment, identity, historical, or autobiographical evidence.",
+    ],
+  };
+}
+
 export function planThreadPresentationAssetGeneration({
   bundle,
   snapshotObjectRef,
@@ -79,7 +112,41 @@ export function planThreadPresentationAssetGeneration({
     }
 
     let brief = null;
-    if (asset.role === "place") {
+    let referenceObjectRefs = [];
+    let extraInputReferences = [];
+    let stableOfficialDemand = null;
+
+    if (asset.role === "official_id_photo") {
+      if (asset.status === "pending") {
+        deferred.push({ mediaId: asset.mediaId, reason: "generation_pending" });
+        continue;
+      }
+      const visualIdentity = presentation.visualIdentity ?? null;
+      if (visualIdentity === null) {
+        deferred.push({ mediaId: asset.mediaId, reason: "deferred_missing_embodiment" });
+        continue;
+      }
+      const visualIdentityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
+      brief = officialIdPhotoBrief(visualIdentity);
+      referenceObjectRefs = visualIdentity.referenceObjectRefs;
+      extraInputReferences = [
+        visualIdentity.embodimentId,
+        ...visualIdentity.sourceReferences,
+        ...visualIdentity.permissionReferences,
+      ];
+      stableOfficialDemand = {
+        visualIdentityDigest,
+        seed: {
+          threadId: presentation.manifest.threadId,
+          mediaId: asset.mediaId,
+          role: asset.role,
+          variant: "default",
+          visualIdentityDigest,
+          providerProfile,
+          brief,
+        },
+      };
+    } else if (asset.role === "place") {
       const place = presentation.places.find((item) => item.mediaRefs.includes(asset.mediaId));
       if (place) brief = placeBrief(place);
     } else if (asset.role === "memory_reconstruction") {
@@ -95,14 +162,17 @@ export function planThreadPresentationAssetGeneration({
       continue;
     }
 
-    const inputReferences = unique([
-      presentation.manifest.presentationId,
-      media.mediaPacketId,
-      snapshotObjectRef,
-      ...asset.sourceReferences,
-    ]);
     const variant = "default";
-    const seed = {
+    const inputReferences = stableOfficialDemand
+      ? unique([...asset.sourceReferences, ...extraInputReferences])
+      : unique([
+          presentation.manifest.presentationId,
+          media.mediaPacketId,
+          snapshotObjectRef,
+          ...asset.sourceReferences,
+          ...extraInputReferences,
+        ]);
+    const seed = stableOfficialDemand?.seed ?? {
       threadId: presentation.manifest.threadId,
       presentationId: presentation.manifest.presentationId,
       mediaId: asset.mediaId,
@@ -112,6 +182,25 @@ export function planThreadPresentationAssetGeneration({
       brief,
     };
     const jobId = makeJobId(seed);
+    const context = stableOfficialDemand
+      ? {
+          kind: "thread_presentation_media",
+          threadId: presentation.manifest.threadId,
+          mediaId: asset.mediaId,
+          role: asset.role,
+          provenanceRef: asset.provenanceRef,
+          visualIdentityDigest: stableOfficialDemand.visualIdentityDigest,
+        }
+      : {
+          kind: "thread_presentation_media",
+          threadId: presentation.manifest.threadId,
+          presentationId: presentation.manifest.presentationId,
+          mediaPacketId: media.mediaPacketId,
+          mediaId: asset.mediaId,
+          provenanceRef: asset.provenanceRef,
+          snapshotObjectRef,
+          snapshotDigest,
+        };
     jobs.push({
       jobVersion: ASSET_GENERATION_JOB_VERSION,
       jobId,
@@ -120,21 +209,12 @@ export function planThreadPresentationAssetGeneration({
       variant,
       brief,
       inputReferences,
-      referenceObjectRefs: [],
+      referenceObjectRefs,
       outputObjectRef: makeOutputObjectRef(jobId),
       receiptObjectRef: makeReceiptObjectRef(jobId),
       requestedAt,
       providerProfile,
-      context: {
-        kind: "thread_presentation_media",
-        threadId: presentation.manifest.threadId,
-        presentationId: presentation.manifest.presentationId,
-        mediaPacketId: media.mediaPacketId,
-        mediaId: asset.mediaId,
-        provenanceRef: asset.provenanceRef,
-        snapshotObjectRef,
-        snapshotDigest,
-      },
+      context,
     });
   }
 

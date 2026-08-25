@@ -11,7 +11,10 @@ export {
   PRESENTATION_PROVENANCE_KINDS,
   PRESENTATION_PROVENANCE_VERSION,
   THREAD_MEDIA_PACKET_VERSION,
+  THREAD_PRESENTATION_PACKET_CURRENT_VERSION,
+  THREAD_PRESENTATION_PACKET_LEGACY_VERSION,
   THREAD_PRESENTATION_PACKET_VERSION,
+  THREAD_PRESENTATION_PACKET_VERSIONS,
   normalizePresentationProvenance,
   normalizeThreadMediaPacket,
   normalizeThreadPresentationBundle,
@@ -20,3 +23,17 @@ export {
   threadMediaPacketDigest,
   threadPresentationPacketDigest,
 } from "../../world-kernel/src/thread-presentation-domain.mjs";
+
+export {
+  FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION,
+  FIBRE_IDENTITY_CARD_DATE_KINDS,
+  FIBRE_IDENTITY_CARD_STATUSES,
+  FIBRE_IDENTITY_CARD_VISIBILITIES,
+  THREAD_VISUAL_IDENTITY_PROJECTION_VERSION,
+  assertFibreIdentityNumberFormat,
+  fibreIdentityCardDisplayData,
+  normalizeFibreIdentityCard,
+  normalizePresentationCivilIdentity,
+  normalizeThreadVisualIdentityProjection,
+  threadVisualIdentityProjectionDigest,
+} from "../../world-kernel/src/thread-presentation-identity-domain.mjs";

@@ -42,6 +42,11 @@ async function requirePublicChannel(infra, threadId) {
   return { channelId, record };
 }
 
+function publicIdentityCredentialAllowed(snapshot) {
+  const card = snapshot?.presentation?.identityCard ?? null;
+  return card === null || card.visibility === "public";
+}
+
 function route(pathname) {
   const snapshot = pathname.match(/^\/api\/threads\/([^/]+)\/snapshot$/);
   if (snapshot) return { kind: "snapshot", threadId: decodeURIComponent(snapshot[1]) };
@@ -91,7 +96,7 @@ export function createPresentationReadApi({
 
         if (matched.kind === "snapshot") {
           const result = await presentationServer.getSnapshot(channelId);
-          if (result === null || result.pointer.threadId !== matched.threadId) {
+          if (result === null || result.pointer.threadId !== matched.threadId || !publicIdentityCredentialAllowed(result.snapshot)) {
             return json({ error: "not_found" }, { status: 404, headers: cors });
           }
           return json(result, {
@@ -135,6 +140,23 @@ export function createPresentationReadApi({
           || media.objectRef !== matched.objectRef) {
           return json({ error: "not_found" }, { status: 404, headers: cors });
         }
+
+        // Do not trust the serving catalog alone for civil-identity media. The
+        // immutable current presentation snapshot carries the credential visibility
+        // and official-photo mediaRef. Flipping publiclyVisible in D1 cannot bypass it.
+        const current = await presentationServer.getSnapshot(channelId);
+        if (current === null || current.pointer.threadId !== matched.threadId) {
+          return json({ error: "not_found" }, { status: 404, headers: cors });
+        }
+        const card = current.snapshot.presentation?.identityCard ?? null;
+        if (card !== null && card.officialPhotoMediaRef === media.mediaId && card.visibility !== "public") {
+          return json({ error: "not_found" }, { status: 404, headers: cors });
+        }
+        if (media.role === "official_id_photo"
+          && (card === null || card.officialPhotoMediaRef !== media.mediaId || card.visibility !== "public")) {
+          return json({ error: "not_found" }, { status: 404, headers: cors });
+        }
+
         const stored = await infra.objects.get(matched.objectRef);
         if (stored === null || stored.digest !== media.digest) {
           return json({ error: "media_integrity_failure" }, { status: 503, headers: cors });

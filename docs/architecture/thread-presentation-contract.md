@@ -1,37 +1,37 @@
 ---
 id: architecture-thread-presentation-contract-v0-1
 status: proposed
-last-reviewed: 2026-08-21
+last-reviewed: 2026-08-25
 canonical: false
 ---
 
-# Thread Presentation Contract v0.1
+# Thread Presentation Contract
 
 ## Purpose
 
-This contract defines the first portable Fibre-owned projection for presenting a Thread or explicitly unpublished Genesis candidate to a human-facing consumer such as `insidefibre.com`.
+This contract defines Fibre-owned portable projections for presenting a Thread or explicitly unpublished Genesis candidate to a human-facing consumer such as `insidefibre.com`.
 
 It is **presentation infrastructure**, not a new Thread persistence authority.
 
-The contract deliberately contains no live-encounter ontology. In particular, v0.1 does not define `ThreadEncounterSnapshot`, `DailyPlan`, `RecentLivedContext`, `UnsettledExperience`, `OpenInterpretiveQuestion`, or `onMyMind`.
-
-The governing distinction is:
+The governing distinction remains:
 
 ```text
-Fibre authoritative life state
+Fibre authoritative life / civil / embodiment state
         ↓
-versioned presentation projection
+versioned authorized presentation projection
         ↓
 consumer rendering
 ```
 
-The consumer may render the projection. The consumer does not become an alternate Thread database.
+The consumer may render the projection. It does not become an alternate Thread, Civil Registry, embodiment, history, memory or meaning database.
+
+The contract deliberately contains no live-encounter ontology. In particular it does not define `ThreadEncounterSnapshot`, `DailyPlan`, `RecentLivedContext`, `UnsettledExperience`, `OpenInterpretiveQuestion`, or `onMyMind`.
 
 ## Implemented surfaces
 
-The implementation is `services/world-kernel/src/thread-presentation-domain.mjs`.
+The stable external seam is `services/thread-presentation/src/index.mjs`. Packet normalization is currently physically implemented under World Kernel but external consumers must not import that private implementation directly.
 
-P1 defines exactly three surfaces:
+Thread Presentation defines three packet surfaces:
 
 ```text
 ThreadPresentationPacket
@@ -39,17 +39,18 @@ ThreadMediaPacket
 PresentationProvenance
 ```
 
-The implementation uses strict exact-key normalization and cross-packet reference validation rather than persistence tables. Canonical SHA-256 digests can be produced for each normalized packet.
+The implementation uses strict exact-key normalization and cross-packet reference validation rather than creating a second persistence authority. Canonical SHA-256 digests can be produced for each normalized packet.
 
-## ThreadPresentationPacket
+## ThreadPresentationPacket compatibility
 
-Version:
+Supported versions:
 
 ```text
-thread-presentation-packet-v0.1
+thread-presentation-packet-v0.1   legacy/current golden-fixture compatibility
+thread-presentation-packet-v0.2   current identity-credential presentation contract
 ```
 
-Top-level shape:
+The v0.1 top-level shape remains:
 
 ```text
 schemaVersion
@@ -63,6 +64,16 @@ life.timeline[]
 memories[]
 meanings[]
 ```
+
+V0.2 preserves all of those fields and adds three nullable blocks:
+
+```text
+civilIdentity
+visualIdentity
+identityCard
+```
+
+Existing v0.1 packets are not silently rewritten or upgraded.
 
 ### Manifest
 
@@ -87,7 +98,7 @@ lifecycleStatus: genesis_candidate
 fixture: true
 ```
 
-The validator rejects laundering an unpublished candidate into an apparently live/non-fixture presentation.
+The validator rejects laundering an unpublished candidate into an apparently live/non-fixture presentation. V0.2 additionally rejects live civil identity or an identity card on a `genesis_candidate` presentation.
 
 ### Subject
 
@@ -105,75 +116,75 @@ provenanceRef
 
 There is deliberately **no presentation-level `pronouns` primitive**. The exact-key validator rejects one. This does not claim that gendered self-description can never exist in Fibre; it prevents a public presentation schema from turning pronouns into an automatically inferred identity primitive.
 
-The subject block is bound to a required provenance entry. P1 keeps source references centralized in that provenance record rather than duplicating a second source list on the subject itself.
+### Introduction, origins, places, relationships and timeline
 
-### Introduction
+These are presentation views over already-authorized sources. Every displayed claim carries provenance and, where applicable, source/media references. Places and relationships do not establish competing persistence authorities.
 
-The introduction is presentation text and carries:
+### Memory and remembered meaning
+
+Memory remains a separate presentation surface with remembered content, uncertainty, formation time and source linkage. A memory must resolve to `thread_memory` provenance.
+
+Remembered meaning remains separate again and must resolve to `thread_meaning` provenance.
+
+The accepted authority separation is unchanged:
 
 ```text
-headline
-summary
+history != autobiographical memory != remembered meaning
+```
+
+### V0.2 civil identity
+
+`civilIdentity` is a **read-only projection** of the Civil Registry record:
+
+```text
+fibreIdentityNumber
+registrationId
+registeredAt
+birthEventRef
+worldRef
+issuer
 sourceReferences[]
 provenanceRef
-mediaRefs[]
 ```
 
-An introduction may be Thread expression, Fibre projection, editorial presentation, or explicitly fixture material. It may not silently become autobiographical memory or remembered meaning.
+It must use `authoritative_fact` provenance and `issuer = fibre_civil_registry`.
 
-### Origins, places, relationships and timeline
+Thread Presentation may validate FIN display syntax (`XXXX-XX-XXXX`) but does not implement FIN generation, checksum calculation, allocation, uniqueness, collision handling, lookup authority, or registration persistence.
 
-These are public/curated views over already existing or future authoritative sources.
+### V0.2 authorized visual identity
 
-Every displayed item carries:
+`visualIdentity` is a bounded presentation projection of already-admitted portrait embodiment:
 
 ```text
+projectionVersion
+authority = authorized_embodiment_projection
+embodimentId
+embodimentRevision
+specificationDigest
+subjectDescription
+renderDescription
 sourceReferences[]
+permissionReferences[]
+referenceObjectRefs[]
 provenanceRef
-mediaRefs[]
 ```
 
-Timeline entries additionally preserve event identity and occurrence time. Places and relationships are presentation views and do not establish competing place/relationship persistence authorities.
+It must use `fibre_projection` provenance. It is not embodiment authority. The upstream projection boundary is responsible for rights/visibility admission before these fields are exposed.
 
-### Memory
+### V0.2 Fibre Identity Card
 
-A memory item preserves a separate presentation surface for:
+`identityCard` is a replaceable credential presentation record. It is specified in detail by [`fibre-identity-card.md`](fibre-identity-card.md).
 
-```text
-memoryRef
-rememberedContent
-uncertainty[]
-formedAt
-sourceReferences[]
-meaningRefs[]
-provenanceRef
-mediaRefs[]
-```
+Important invariants:
 
-A memory item must resolve to `thread_memory` provenance. Historical/factual provenance may not masquerade as autobiographical retention.
-
-### Remembered meaning
-
-A meaning item preserves:
-
-```text
-meaningRef
-summary
-formedAt
-memoryRefs[]
-sourceReferences[]
-supersedesMeaningRef?
-provenanceRef
-mediaRefs[]
-```
-
-A meaning item must resolve to `thread_meaning` provenance. Fibre/editorial summaries cannot masquerade as Thread-authored remembered meaning.
-
-This keeps the accepted authority separation:
-
-```text
-history != memory != remembered meaning
-```
+- card credential ID/serial/revision are distinct from FIN;
+- the card contains no independently writable FIN field;
+- card rendering resolves FIN through `civilIdentity`;
+- card registration ID must match the civil registration;
+- card name/birth-date display fields may not drift from the authorized subject projection;
+- reissue may replace credential ID, serial and revision without changing FIN or civil registration;
+- visibility is `public | restricted | private` and defaults closed (`private`) when omitted at the compatibility boundary;
+- `officialPhotoMediaRef` must resolve to an image media item whose role is `official_id_photo`.
 
 ## ThreadMediaPacket
 
@@ -205,13 +216,17 @@ provenanceRef
 generation?
 ```
 
-The validator allows a fully useful presentation bundle whose media remains entirely placeholder/pending.
+Roles are semantic presentation roles and remain extensible without creating another media protocol. V0.2 identity credentials use:
 
-A generated asset carries replaceable provider/model generation provenance. Any asset with a generation record is required to use `generated_reconstruction` provenance. It cannot be presented under `authoritative_fact` provenance.
+```text
+official_id_photo
+```
 
-Video may reference an image poster. The poster must resolve to an image asset.
+An official ID photo must be an image using `generated_reconstruction` provenance. It is derived presentation media and cannot become identity, embodiment, history, memory or meaning evidence.
 
-Transport/storage location remains replaceable; `locator` is opaque to this domain contract.
+A generated asset with a generation record is always required to use `generated_reconstruction` provenance. It cannot be presented under `authoritative_fact` provenance.
+
+Transport/storage location remains replaceable; `locator` and served `objectRef` identities are Fibre-level opaque references, not cloud-storage URLs.
 
 ## PresentationProvenance
 
@@ -221,7 +236,7 @@ Version:
 presentation-provenance-v0.1
 ```
 
-P1 recognizes these presentation authority classes:
+Recognized presentation authority classes remain:
 
 ```text
 authoritative_fact
@@ -235,31 +250,64 @@ generated_reconstruction
 fixture
 ```
 
-`thread_expression` is deliberately separate from generic Thread-authored private state. Audience-directed expression is governed by interest mediation and is not authoritative evidence of the private interior.
-
-`belief` is reserved for the deferred epistemic-access work identified in P0. P1 does not create a `belief_about_own_past` authority; the enum preserves a compatible presentation path once that authority exists.
-
-Every provenance entry carries one or more durable source references. Cross-packet validation requires presentation-item source references to be covered by the referenced provenance entry.
+`thread_expression` remains separate from generic Thread-authored private state. `belief` remains reserved for the accepted epistemic-access direction. Every provenance entry carries durable source references; cross-packet validation requires displayed claim references to be covered by the referenced provenance entry.
 
 ## Bundle integrity
 
-`normalizeThreadPresentationBundle()` validates all three packets together.
+`normalizeThreadPresentationBundle()` validates all packets together.
 
-It requires:
+Common requirements include:
 
 - one `threadId` across all packets;
 - manifest references to the exact media and provenance packet IDs;
-- every `provenanceRef` to resolve;
-- every presentation `mediaRef` to resolve;
-- generated media to use `generated_reconstruction` provenance;
-- subject and timeline place references to resolve within the presentation place view;
-- memory-to-meaning and meaning-to-memory references to resolve;
-- superseded meaning references to resolve;
-- video poster references to resolve to image media.
+- every `provenanceRef` and presentation `mediaRef` resolves;
+- generated media uses `generated_reconstruction` provenance;
+- subject/timeline place references resolve;
+- memory/meaning references resolve without collapsing authority;
+- video poster references resolve to image media.
+
+V0.2 additionally requires:
+
+- civil identity uses factual provenance and the Fibre Civil Registry issuer;
+- card registration/name/birth-date display cannot drift from its admitted source projections;
+- card credential identity is distinct from FIN;
+- the official-photo media reference resolves to `official_id_photo` image media;
+- `official_id_photo` remains generated reconstruction;
+- Genesis candidates cannot acquire live FIN/card identity through presentation.
+
+## Presentation asset demand
+
+Thread Presentation owns semantic asset demand. The generic Asset Generator never scans Fibre state to decide that a Thread needs an ID photo.
+
+For `official_id_photo`:
+
+```text
+placeholder + admitted visualIdentity
+    -> deterministic generation job
+
+placeholder + no admitted visualIdentity
+    -> deferred_missing_embodiment
+
+pending
+    -> generation_pending; no duplicate job
+
+ready / unavailable
+    -> no new job
+```
+
+The deterministic generation input binds to the authorized visual-identity projection rather than card issue/revision or unrelated presentation snapshot changes. Card reissue therefore does not regenerate the official photo when embodiment is unchanged.
+
+The image-generation brief receives only bounded authorized visual material. FIN, card serial, history, memory, meaning and hidden Thread state do not enter the image prompt.
+
+## Public delivery
+
+The public presentation API remains read-only and cloud-provider-neutral. Clients resolve generated media only through the Fibre media endpoint; they do not receive R2/S3/provider-native object keys.
+
+Identity credentials add a defense-in-depth rule: immutable card visibility governs public identity-card/photo access. A `private` or `restricted` card cannot become publicly readable merely because a mutable catalog row is accidentally marked public. The read path also checks the immutable `officialPhotoMediaRef`, so mislabeling the media role in the catalog does not bypass the card boundary.
 
 ## Explicit negative boundary
 
-The exact-key validator intentionally rejects these top-level additions to `ThreadPresentationPacket v0.1`:
+The exact-key validator still rejects live-encounter ontology such as:
 
 ```text
 encounter
@@ -268,56 +316,33 @@ recentLivedContext
 onMyMind
 ```
 
-The live encounter track remains `Deferred` under the P0 reconciliation. A website-only synthetic scenario may exist outside the Fibre packet for visual development, but such a scenario does not define Fibre ontology.
+Identity-card work also does **not** introduce:
 
-## Scientific isolation for H-v2 fixtures
+- FIN issuance/checksum/registry authority;
+- birth publication changes;
+- embodiment authority;
+- generated-media evidence;
+- browser cloud-storage access;
+- synchronous media generation as a birth requirement.
 
-The three completed H-v2 candidates may be used as presentation fixtures only.
+## Scientific and causal status
 
-For such a packet:
+Thread Presentation remains **Stored-only / presentation-only** for personhood-evidence purposes.
 
-- candidate Genesis history/memory/meaning may be projected from already frozen artifacts;
-- lifecycle must remain `genesis_candidate`;
-- `fixture` must remain `true`;
-- no post-Genesis life may be invented into the Fibre packet;
-- presentation work may not tune Genesis, cohort selection, retries, genomes, worlds or #39 thresholds;
-- generated images/voice/video remain presentation reconstruction, not H-v2 evidence.
+Presentation can preserve/render civil identity and authorized embodiment projections, but neither the packet nor the identity card changes cognition, judgment, relationships, resources, permissions or future possibility. Generated official photography remains representation.
 
-## Causal-status declaration
+Existing H-v2 candidate fixtures remain presentation engineering input only and cannot receive live civil identity through this contract or become #39 scientific evidence.
 
-All three P1 surfaces are currently **Stored-only / presentation-only projection infrastructure** for personhood-evidence purposes.
+## Tests
 
-They can preserve and render existing Fibre authority, but the packets themselves do not change Thread cognition, judgment, relationships, resources, authorization or future possibility.
+The active suite covers the legacy packet boundary plus v0.2 identity credentials, including:
 
-P1 therefore makes no claim of functional individuality or interiority.
-
-The relevant causal work remains in #40/#41 and in the deferred live-encounter track.
-
-## Acceptance tests
-
-`services/world-kernel/test/thread-presentation-domain.test.mjs` covers at least:
-
-1. unnamed Unicode Genesis candidate + `birthDate` + placeholder media validates;
-2. `pronouns` is rejected as a presentation primitive;
-3. encounter/day/recent/on-my-mind fields are rejected from v0.1;
-4. `genesis_candidate` cannot be presented as a non-fixture;
-5. memory cannot use factual provenance;
-6. remembered meaning cannot use Fibre-projection provenance;
-7. generated media cannot use factual provenance;
-8. displayed source references must be covered by provenance;
-9. cross-packet Thread identity and references are bound.
-
-The test is automatically part of the active test suite because Fibre's test lifecycle discovers every `services/world-kernel/test/*.test.mjs` not explicitly classified as reproducibility-only.
-
-## P1 exit
-
-P1 is implementation-complete when the maintainer confirms:
-
-```bash
-node --test services/world-kernel/test/thread-presentation-domain.test.mjs
-npm run includes:check
-npm run validate
-npm test
-```
-
-P2 may then build the comprehensive Cần Thơ golden packet against this contract.
+- FIN is consumed but no minting API exists;
+- reissue preserves civil FIN while changing card credential identity;
+- candidate presentations cannot acquire live civil identity;
+- official ID photo is generated-reconstruction image media;
+- visual authority is required before ID-photo demand is scheduled;
+- pending demand is not duplicated;
+- image briefs are administrative rather than glamour portraits and bound mild awkwardness safely;
+- card reissue/snapshot changes do not change an unchanged embodiment's generation workflow input;
+- private card/photo access fails closed against public catalog mistakes.
