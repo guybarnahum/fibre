@@ -209,14 +209,23 @@ export function normalizeGenesisCognition(candidate) {
 function normalizePublication(candidate) {
   assertPlainObject("publication", candidate);
   if (candidate.status === "published") {
-    assertExactKeys("publication", candidate, ["status", "publishedAt", "resultingThreadVersion", "civilRegistration"]);
+    const hasRegistration = Object.hasOwn(candidate, "civilRegistration");
+    assertExactKeys(
+      "publication",
+      candidate,
+      hasRegistration
+        ? ["status", "publishedAt", "resultingThreadVersion", "civilRegistration"]
+        : ["status", "publishedAt", "resultingThreadVersion"],
+    );
     assertIsoTimestamp("publication.publishedAt", candidate.publishedAt);
     assertFiniteNumber("publication.resultingThreadVersion", candidate.resultingThreadVersion, { integer: true, minimum: 1 });
     return {
       status: candidate.status,
       publishedAt: candidate.publishedAt,
       resultingThreadVersion: candidate.resultingThreadVersion,
-      civilRegistration: normalizeFibreCivilRegistration(candidate.civilRegistration),
+      ...(hasRegistration
+        ? { civilRegistration: normalizeFibreCivilRegistration(candidate.civilRegistration) }
+        : {}),
     };
   }
   if (candidate.status === "failed") {
@@ -253,7 +262,7 @@ export function normalizeGenesisManifest(candidate) {
   if (candidate.genomeRef !== null) assertId("manifest.genomeRef", candidate.genomeRef);
   normalizeGenesisCognition(candidate.cognition);
   const publication = normalizePublication(candidate.publication);
-  if (publication.status === "published") {
+  if (publication.status === "published" && publication.civilRegistration !== undefined) {
     const registration = publication.civilRegistration;
     if (registration.threadId !== candidate.threadId) {
       throw new TypeError("published Genesis registration belongs to another Thread");
