@@ -1,5 +1,5 @@
 import { normalizeFibreCivilRegistration } from "#packages/domain/src/fibre-civil-identity.mjs";
-import { normalizePresentationCivilIdentity } from "../../world-kernel/src/thread-presentation-identity-domain.mjs";
+import { normalizePresentationCivilIdentity } from "#services/world-kernel/src/thread-presentation-identity-domain.mjs";
 
 function assertRegistryReader(civilRegistry) {
   if (civilRegistry === null || typeof civilRegistry !== "object") {
