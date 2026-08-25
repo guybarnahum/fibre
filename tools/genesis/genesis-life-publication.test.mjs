@@ -14,6 +14,10 @@ import {
 } from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { eventStructurePoolV3Digest } from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
+import {
+  genesisHistoricalEnvelopePlanDigest,
+  genesisHistoricalEnvelopeStatistics,
+} from "#services/world-kernel/src/genesis-historical-envelope-authority.mjs";
 import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
 import { genesisLifeEpisodeEventId } from "#services/world-kernel/src/genesis-life-episode.mjs";
 import { assertGenesisEpisodePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
@@ -128,6 +132,22 @@ function fixtureCandidate(slotPlan) {
   return core;
 }
 
+function singleEnvelopePlan(plan) {
+  const envelopes = [plan.envelopes[0]];
+  return {
+    ...plan,
+    envelopes,
+    statistics: genesisHistoricalEnvelopeStatistics(envelopes),
+    digest: genesisHistoricalEnvelopePlanDigest({
+      threadId: plan.threadId,
+      worldSpecId: plan.worldSpecId,
+      timeZone: plan.timeZone,
+      seedDomain: plan.seedDomain,
+      envelopes,
+    }),
+  };
+}
+
 test("current Genesis candidate births atomically and hydrates to the admitted life", () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-current-genesis-birth-"));
   const databasePath = join(directory, "world.sqlite");
@@ -136,10 +156,7 @@ test("current Genesis candidate births atomically and hydrates to the admitted l
     const base = development.slots[0];
     const slotPlan = {
       ...base,
-      envelopePlan: {
-        ...base.envelopePlan,
-        envelopes: [base.envelopePlan.envelopes[0]],
-      },
+      envelopePlan: singleEnvelopePlan(base.envelopePlan),
     };
     const candidate = fixtureCandidate(slotPlan);
     const result = publishHydrateAndCompareGenesisLife({
