@@ -14,6 +14,7 @@ import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
 import { deriveGenesisLifeContinuity } from "../src/genesis-life-continuity-v1.mjs";
 import { genesisLifeEpisodeEventId } from "../src/genesis-life-episode.mjs";
 import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
+import { buildTestHistoricalEnvelopePlan } from "./support/historical-envelope-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -177,6 +178,11 @@ function publicationCandidate() {
       initialRoster: roster,
       episodes: lifeEpisodes,
     }),
+    historicalEnvelopePlan: buildTestHistoricalEnvelopePlan({
+      threadId: seedThread.threadId,
+      worldSpec: world,
+      episodes: lifeEpisodes,
+    }),
   };
   return { world, birth: attachTestCivilRegistration(birth) };
 }
@@ -193,6 +199,7 @@ test("Genesis birth publishes participant/place continuity through canonical sit
     genesis.recordWorldSpec(world);
     const result = genesis.publishBirth(birth);
     assert.ok(result.situatedContinuity);
+    assert.equal(result.historicalEnvelopePlan.digest, birth.historicalEnvelopePlan.digest);
     genesis.close();
 
     const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -249,6 +256,7 @@ test("situated continuity is inside the atomic Genesis birth transaction", () =>
       ["thread_events", "thread_id", birth.thread.threadId],
       ["life_relation_records", "thread_id", birth.thread.threadId],
       ["place_episode_records", "thread_id", birth.thread.threadId],
+      ["genesis_historical_envelope_plans", "genesis_id", birth.manifest.genesisId],
       ["genesis_manifests", "genesis_id", birth.manifest.genesisId],
       ["fibre_civil_registrations", "thread_id", birth.thread.threadId],
     ]) {
