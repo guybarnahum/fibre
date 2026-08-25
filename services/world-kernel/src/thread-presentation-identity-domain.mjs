@@ -176,7 +176,8 @@ export function normalizeFibreIdentityCard(value) {
     if (Date.parse(expiresAt) <= Date.parse(value.issuedAt)) throw new TypeError(`${name}.expiresAt must follow issuedAt`);
   }
   assertEnum(`${name}.status`, value.status, FIBRE_IDENTITY_CARD_STATUSES);
-  assertEnum(`${name}.visibility`, value.visibility, FIBRE_IDENTITY_CARD_VISIBILITIES);
+  const visibility = value.visibility ?? "private";
+  assertEnum(`${name}.visibility`, visibility, FIBRE_IDENTITY_CARD_VISIBILITIES);
   assertId(`${name}.officialPhotoMediaRef`, value.officialPhotoMediaRef);
   const machineReadableCredentialRef = nullableRef(`${name}.machineReadableCredentialRef`, value.machineReadableCredentialRef);
   assertId(`${name}.provenanceRef`, value.provenanceRef);
@@ -192,7 +193,7 @@ export function normalizeFibreIdentityCard(value) {
     issuedAt: value.issuedAt,
     expiresAt,
     status: value.status,
-    visibility: value.visibility,
+    visibility,
     officialPhotoMediaRef: value.officialPhotoMediaRef,
     machineReadableCredentialRef,
     sourceReferences: stringRefs(`${name}.sourceReferences`, value.sourceReferences, { required: true }),
