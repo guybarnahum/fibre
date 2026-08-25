@@ -57,6 +57,10 @@ import {
 } from "./genesis-origin-source-integrity.mjs";
 import { bindBirthGenomeAndLineageInTransaction } from "./genesis-birth-genome-lineage.mjs";
 import { publishGenesisSituatedContinuityInTransaction } from "./genesis-birth-situated-continuity.mjs";
+import {
+  assertGenesisHistoricalEnvelopePublication,
+  normalizeGenesisHistoricalEnvelopePlan,
+} from "./genesis-historical-envelope-authority.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -64,6 +68,7 @@ export class GenesisNotFoundError extends Error {}
 const GENESIS_TABLES = Object.freeze([
   "genesis_world_specs",
   "genesis_manifests",
+  "genesis_historical_envelope_plans",
   "genesis_generation_attempts",
 ]);
 
@@ -482,6 +487,23 @@ export class GenesisStore {
     return digest;
   }
 
+  #insertHistoricalEnvelopePlan(manifest, plan) {
+    const recordDigest = genesisRecordDigest("historical_envelope_plan", plan);
+    this.#database.prepare(`
+      INSERT INTO genesis_historical_envelope_plans(
+        genesis_id,thread_id,world_spec_id,plan_digest,record_json,record_digest
+      ) VALUES (?,?,?,?,?,?)
+    `).run(
+      manifest.genesisId,
+      manifest.threadId,
+      manifest.worldSpecRef,
+      plan.digest,
+      canonicalJson(plan),
+      recordDigest,
+    );
+    return recordDigest;
+  }
+
   recordFailedManifest(candidate) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot write");
     const manifest = normalizeGenesisManifest(candidate);
@@ -510,6 +532,7 @@ export class GenesisStore {
       lifeRelations: lifeRelationCandidates = [],
       initialRoster: initialRosterCandidate = null,
       lifeContinuity: lifeContinuityCandidate = null,
+      historicalEnvelopePlan: historicalEnvelopePlanCandidate = null,
       originFixture: originFixtureCandidate = null,
     },
     {
@@ -537,6 +560,21 @@ export class GenesisStore {
     }
     if (hasSituatedContinuity && normalizedEpisodes.length === 0) {
       throw new GenesisConflictError("Genesis situated continuity requires admitted life episodes");
+    }
+
+    let historicalEnvelopePlan = null;
+    if (normalizedEpisodes.length > 0) {
+      if (historicalEnvelopePlanCandidate === null || historicalEnvelopePlanCandidate === undefined) {
+        throw new GenesisConflictError("Genesis prior-life birth requires its authoritative historicalEnvelopePlan");
+      }
+      historicalEnvelopePlan = assertGenesisHistoricalEnvelopePublication({
+        manifest,
+        episodes: normalizedEpisodes.map(({ episode }) => episode),
+        historicalEnvelopePlan: historicalEnvelopePlanCandidate,
+        ErrorType: GenesisConflictError,
+      });
+    } else if (historicalEnvelopePlanCandidate !== null && historicalEnvelopePlanCandidate !== undefined) {
+      throw new GenesisConflictError("Genesis birth without prior-life episodes cannot publish a historicalEnvelopePlan");
     }
 
     const { record: worldSpecRecord } = this.getWorldSpec(manifest.worldSpecRef);
@@ -741,18 +779,52 @@ export class GenesisStore {
       if (publishedThread.version !== derivedFirstLiveVersion) {
         throw new IntegrityError("derived Genesis Thread version disagrees with complete birth event chain");
       }
+      let historicalEnvelopeRecordDigest = null;
+      if (historicalEnvelopePlan !== null) {
+        historicalEnvelopeRecordDigest = this.#insertHistoricalEnvelopePlan(manifest, historicalEnvelopePlan);
+      }
       const manifestDigest = this.#insertManifest(manifest);
       this.#database.exec("COMMIT");
       return {
         thread: structuredClone(publishedThread),
         manifest: structuredClone(manifest),
         manifestDigest,
+        historicalEnvelopePlan: historicalEnvelopePlan === null ? null : structuredClone(historicalEnvelopePlan),
+        historicalEnvelopeRecordDigest,
         situatedContinuity: situatedContinuity === null ? null : structuredClone(situatedContinuity),
       };
     } catch (error) {
       safeRollback(this.#database);
       throw translateStorageError(error);
     }
+  }
+
+  getHistoricalEnvelopePlan(genesisId, { required = true } = {}) {
+    assertId("genesisId", genesisId);
+    if (!tableExists(this.#database, "genesis_historical_envelope_plans")) {
+      if (!required) return null;
+      throw new GenesisNotFoundError("Genesis historical-envelope storage is not present in this world");
+    }
+    const row = this.#database.prepare(
+      "SELECT plan_digest,record_json,record_digest FROM genesis_historical_envelope_plans WHERE genesis_id=?",
+    ).get(genesisId);
+    if (row === undefined) {
+      if (!required) return null;
+      throw new GenesisNotFoundError(`Genesis historical-envelope plan ${genesisId} was not found`);
+    }
+    const plan = normalizeGenesisHistoricalEnvelopePlan(
+      parseRecord(`Genesis historical-envelope plan ${genesisId}`, row.record_json),
+      IntegrityError,
+    );
+    const recordDigest = genesisRecordDigest("historical_envelope_plan", plan);
+    if (
+      row.plan_digest !== plan.digest ||
+      row.record_digest !== recordDigest ||
+      row.record_json !== canonicalJson(plan)
+    ) {
+      throw new IntegrityError(`Genesis historical-envelope plan ${genesisId} failed canonical/digest verification`);
+    }
+    return { plan, planDigest: plan.digest, recordDigest };
   }
 
   getManifest(genesisId, { required = true } = {}) {
@@ -778,11 +850,21 @@ export class GenesisStore {
 
   inspectGenesis(genesisId) {
     if (!genesisSchemaPresent(this.#database)) {
-      return { genesisId, manifest: null, worldSpec: null, attempts: [], threadPublished: false };
+      return {
+        genesisId,
+        manifest: null,
+        worldSpec: null,
+        historicalEnvelopePlan: null,
+        attempts: [],
+        threadPublished: false,
+      };
     }
     const manifestRecord = this.getManifest(genesisId, { required: false });
     const attempts = this.listGenerationAttempts(genesisId);
-    if (manifestRecord === null) return { genesisId, manifest: null, worldSpec: null, attempts, threadPublished: false };
+    const historicalEnvelopePlan = this.getHistoricalEnvelopePlan(genesisId, { required: false });
+    if (manifestRecord === null) {
+      return { genesisId, manifest: null, worldSpec: null, historicalEnvelopePlan, attempts, threadPublished: false };
+    }
     const worldSpec = this.getWorldSpec(manifestRecord.manifest.worldSpecRef);
     const threadPublished = this.#database.prepare(
       "SELECT 1 AS present FROM threads WHERE thread_id=?",
@@ -791,6 +873,7 @@ export class GenesisStore {
       genesisId,
       manifest: manifestRecord,
       worldSpec,
+      historicalEnvelopePlan,
       attempts,
       threadPublished,
     };
