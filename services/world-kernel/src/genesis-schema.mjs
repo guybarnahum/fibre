@@ -60,6 +60,33 @@ export function createGenesisTables(database) {
     CREATE INDEX IF NOT EXISTS idx_genesis_origin_authority_source
       ON genesis_origin_authorities(source_party_id, authority_kind, asserted_at, authority_ref);
 
+    DROP TRIGGER IF EXISTS genesis_manifests_require_historical_envelope;
+    CREATE TRIGGER genesis_manifests_require_historical_envelope
+      BEFORE INSERT ON genesis_manifests
+      WHEN NEW.publication_status='published'
+      BEGIN
+        SELECT CASE WHEN (
+          EXISTS (
+            SELECT 1 FROM thread_events
+            WHERE thread_id=NEW.thread_id AND event_type='THREAD_LIFE_EPISODE_RECORDED'
+          ) AND NOT EXISTS (
+            SELECT 1 FROM genesis_historical_envelope_plans
+            WHERE genesis_id=NEW.genesis_id
+              AND thread_id=NEW.thread_id
+              AND world_spec_id=NEW.world_spec_id
+          )
+        ) THEN RAISE(ABORT,'published Genesis prior life lacks historical-envelope authority') END;
+        SELECT CASE WHEN EXISTS (
+          SELECT 1 FROM genesis_historical_envelope_plans
+          WHERE genesis_id=NEW.genesis_id
+            AND thread_id=NEW.thread_id
+            AND world_spec_id=NEW.world_spec_id
+            AND json_array_length(record_json,'$.envelopes') <>
+              (SELECT COUNT(*) FROM thread_events
+               WHERE thread_id=NEW.thread_id AND event_type='THREAD_LIFE_EPISODE_RECORDED')
+        ) THEN RAISE(ABORT,'published Genesis historical-envelope episode count mismatch') END;
+      END;
+
     DROP TRIGGER IF EXISTS genesis_manifests_publish_fin_registration;
     CREATE TRIGGER genesis_manifests_publish_fin_registration
       AFTER INSERT ON genesis_manifests
