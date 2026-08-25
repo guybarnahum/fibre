@@ -33,4 +33,37 @@ The current tests use a synthetic fixture credential format to prove Fibre's ord
 
 The accepted direction remains full immutable Fibre provenance plus a public-safe signed C2PA / Content Credential embedded in the final asset. The exact semantic brief and exact provider-facing request are retained in Fibre provenance; exact prompt text is embedded publicly only under explicit disclosure policy, while prompt digests are the default portable credential.
 
+## Cloudflare execution adapter
+
+`src/cloudflare/` is the deployment-specific adapter for running the generic Asset Generator on Cloudflare. It is deliberately below the provider-neutral `src/index.mjs` consumer seam.
+
+The Cloudflare Worker exports `AssetGenerationWorkflow`. That Workflow owns only generation execution:
+
+```text
+AssetGenerationJob
+    -> AssetGenerationWorkflow
+    -> OpenAI image provider
+    -> GenerationRecord
+    -> Content Credential embed/verify
+    -> immutable final asset
+    -> StoredAssetReceipt
+```
+
+It does **not** import Thread Presentation, World Kernel presentation publishers, or any code that can emit `media.ready`. Successful Workflow completion means that a durable credentialed receipt exists; it does not mean any calling domain has accepted or published that asset.
+
+`wrangler.local.jsonc` owns the local generation bindings:
+
+```text
+ASSET_OBJECTS     R2 object capability
+ASSET_GENERATION  Cloudflare Workflow definition
+OPENAI_API_KEY    provider secret
+C2PA_SIGNER_URL   local credential adapter configuration
+```
+
+The local R2 bucket name is intentionally shared with the presentation adapter so both services exercise the same `InfraDriver.objects` namespace. The semantic boundary remains the immutable Fibre object/receipt contract, not a storage URL or bucket key.
+
+The Workflow currently treats the nondeterministic provider + credential + final immutable store operation as at-most-once for a semantic job identity. Cloudflare step retries remain disabled for that operation until Fibre has an explicit attempt/staging identity that can retry without risking different bytes under one immutable final object identity.
+
+For local multi-Worker development, run Presentation as the primary Worker and this Worker as the second config in the same Wrangler dev session. The Presentation Workflow binding uses Cloudflare's cross-script `script_name` binding rather than defining the Workflow class itself.
+
 The version identifiers carried by generation jobs, receipts, providers, and persistent workflow keys are compatibility data. They do not justify version-labelled runtime filenames.
