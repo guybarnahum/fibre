@@ -1,7 +1,7 @@
 ---
 id: validation-semantic-guardian-v4-standing-gate-v4
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-09
 canonical: true
 ---
 
@@ -23,11 +23,23 @@ max output tokens      auto
 
 The held-out v4 set was authored only after candidate 4 was frozen and is mechanically disjoint from the declared development set, counterfactual-development set, and sealed standing gates v1-v3.
 
-## Sealed result and archive posture
+## Sealed result and inspection
 
-The provider-backed standing cycle is permanently sealed. Its provider-executable runner and later read-only sealed-evidence inspector are retired from the active command surface.
+The provider-backed standing cycle is permanently sealed. The active command is now **read-only inspection** of committed evidence:
 
-The exact machine-readable evidence bundle was committed with the accepted checkpoint. Under ADR-0016 it is no longer retained in HEAD; Git history preserves the exact bytes and retired executable source. This canonical record preserves the accepted result, scope, and material witnesses in current documentation.
+```bash
+npm run guardian:gate -- --summary
+# equivalent:
+npm run guardian:gate:v4 -- --summary
+```
+
+Neither command contains or reaches a provider/model execution path.
+
+The authoritative bundle is committed at:
+
+```text
+artifacts/validation/semantic_guardian_v4_standing_gate_v4.evidence.json
+```
 
 The completed sealed run reported:
 
@@ -45,7 +57,7 @@ Behavioral failures:            0
 Differential failures:          0
 ```
 
-The historical JSON bundle was the detailed per-judgment authority for the cycle, including exact outputs, prompt/schema hashes, provider/model configuration, failure buckets, and standing metadata.
+The committed JSON bundle is the detailed per-judgment authority for the cycle, including exact outputs, prompt/schema hashes, provider/model configuration, failure buckets, and standing metadata.
 
 ## What the gate establishes
 
@@ -93,7 +105,7 @@ Economic consequence          stays 0
 
 That checkpoint moved from **11/26 to 14/26 under rubric v2**. Historical M1 remains frozen at 11/26.
 
-Non-interchangeability remains at 1 rather than 2 because the current standing proof establishes attributable semantic divergence but does not yet close the rubric's stronger repeated-condition stability/history-grounded standard.
+Non-interchangeability remains at 1 rather than 2 because the current standing proof establishes attributable semantic divergence but does not yet close the rubric's stronger repeated-identical-condition stability/history-grounded standard.
 
 Social and relationship memory receives 1 because Semantic Relationship State v0 is durable targeted state and the accepted requester-specific trust counterfactual demonstrates a narrow causal change in appraisal. The broader reciprocal relationship subsystem remains deferred.
 
@@ -101,4 +113,4 @@ Social and relationship memory receives 1 because Semantic Relationship State v0
 
 The standing semantic gate is **GREEN** and remains frozen evidence. PR #34, **History bends judgment**, subsequently earned Development `0 -> 1` through its own sealed v4 gate, moving the live checkpoint to **15/26**.
 
-The next bridge milestone is **#35 Structured Obligation v1**. Do not tune or rerun Semantic Guardian standing gates to support later work; use the Development commands for repeatable diagnostics and this canonical standing record plus Git history for audit.
+The next bridge milestone is **#35 Structured Obligation v1**. Do not tune or rerun Semantic Guardian standing gates to support later work; use the Development commands for repeatable diagnostics and the committed standing bundle for audit.
