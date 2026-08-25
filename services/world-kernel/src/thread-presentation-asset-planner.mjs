@@ -1,4 +1,5 @@
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
+import { threadVisualIdentityProjectionDigest } from "./thread-presentation-identity-domain.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   normalizeAssetGenerationReceipt,
@@ -49,6 +50,38 @@ function memoryBrief(memory) {
   };
 }
 
+function officialPhotoAwkwardness(visualIdentityDigest) {
+  const options = [
+    "Expression is carefully neutral, with the slight stiffness of trying not to smile.",
+    "Expression is a little too serious for the occasion, but natural and dignified.",
+    "Expression is mildly surprised by the shutter timing while remaining neutral and composed.",
+    "Expression is politely neutral with a faint caught-at-the-wrong-instant quality.",
+  ];
+  return options[Number.parseInt(visualIdentityDigest.at(-1), 16) % options.length];
+}
+
+function officialIdPhotoBrief(visualIdentity) {
+  const identityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
+  return {
+    description: [
+      "Generated official identity photograph derived only from an authorized Thread visual-identity projection.",
+      `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
+      `Authorized rendering continuity: ${visualIdentity.renderDescription}`,
+      officialPhotoAwkwardness(identityDigest),
+    ].join(" "),
+    constraints: [
+      "Preserve the supplied authorized visual identity; do not invent or materially redesign the person's canonical face or body.",
+      "Use front-facing or almost front-facing head-and-shoulders administrative ID-photo framing.",
+      "Use a plain neutral background, even boring administrative lighting, ordinary focus, and minimal styling.",
+      "No cinematic depth of field, glamour treatment, dramatic pose, fashion-editorial styling, or flattering beauty retouching.",
+      "The mild ID-photo awkwardness must remain subtle, affectionate, natural, and dignity-preserving.",
+      "Do not make the subject cartoonish, grotesque, humiliated, distressed, intoxicated, incompetent, or visibly degraded.",
+      "Do not add text, numbers, cards, badges, QR codes, signatures, watermarks, borders, or document graphics to the image itself.",
+      "This generated photograph is derived presentation media, not embodiment, identity, historical, or autobiographical evidence.",
+    ],
+  };
+}
+
 function baseAssetSource(asset) {
   return {
     mediaId: asset.mediaId,
@@ -74,8 +107,37 @@ export function planThreadPresentationAssetSlots({
     let semanticSource = baseAssetSource(asset);
     let brief = null;
     let deferredReason = null;
+    let referenceObjectRefs = [];
+    let extraInputReferences = [];
+    let stableContext = null;
 
-    if (asset.role === "place") {
+    if (asset.role === "official_id_photo") {
+      const visualIdentity = presentation.visualIdentity ?? null;
+      if (visualIdentity === null) {
+        deferredReason = "deferred_missing_embodiment";
+      } else {
+        const visualIdentityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
+        semanticSource = {
+          asset: baseAssetSource(asset),
+          visualIdentityDigest,
+        };
+        brief = officialIdPhotoBrief(visualIdentity);
+        referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
+        extraInputReferences = [
+          visualIdentity.embodimentId,
+          ...visualIdentity.sourceReferences,
+          ...visualIdentity.permissionReferences,
+        ];
+        stableContext = {
+          kind: "thread_presentation_media",
+          threadId: presentation.manifest.threadId,
+          mediaId: asset.mediaId,
+          role: asset.role,
+          provenanceRef: asset.provenanceRef,
+          visualIdentityDigest,
+        };
+      }
+    } else if (asset.role === "place") {
       const place = presentation.places.find((item) => item.mediaRefs.includes(asset.mediaId));
       if (place) {
         entityKind = "place";
@@ -92,8 +154,6 @@ export function planThreadPresentationAssetSlots({
         brief = memoryBrief(memory);
       }
     } else if (asset.role === "primary_portrait") {
-      // The current presentation contract has no authorized embodiment/visual-identity
-      // projection. A plausible face is not a substitute for that authority.
       deferredReason = "deferred_missing_embodiment_brief";
     }
 
@@ -109,6 +169,32 @@ export function planThreadPresentationAssetSlots({
       deferredReason = "deferred_missing_generation_brief";
     } else status = "missing";
 
+    const inputReferences = stableContext === null
+      ? unique([
+          presentation.manifest.presentationId,
+          media.mediaPacketId,
+          snapshotObjectRef,
+          ...asset.sourceReferences,
+          ...(semanticSource.place?.sourceReferences ?? []),
+          ...(semanticSource.memory?.sourceReferences ?? []),
+          ...extraInputReferences,
+        ])
+      : unique([
+          ...asset.sourceReferences,
+          ...extraInputReferences,
+        ]);
+
+    const context = stableContext ?? {
+      kind: "thread_presentation_media",
+      threadId: presentation.manifest.threadId,
+      presentationId: presentation.manifest.presentationId,
+      mediaPacketId: media.mediaPacketId,
+      mediaId: asset.mediaId,
+      provenanceRef: asset.provenanceRef,
+      snapshotObjectRef,
+      snapshotDigest,
+    };
+
     slots.push({
       slotKey: `thread:${presentation.manifest.threadId}:media:${asset.mediaId}`,
       entityKind,
@@ -119,28 +205,12 @@ export function planThreadPresentationAssetSlots({
       variant: "default",
       status,
       brief: status === "missing" ? brief : null,
-      inputReferences: unique([
-        presentation.manifest.presentationId,
-        media.mediaPacketId,
-        snapshotObjectRef,
-        ...asset.sourceReferences,
-        ...(semanticSource.place?.sourceReferences ?? []),
-        ...(semanticSource.memory?.sourceReferences ?? []),
-      ]),
-      referenceObjectRefs: [],
+      inputReferences,
+      referenceObjectRefs,
       sourceDigest: presentationAssetSourceDigest(semanticSource),
       provenanceRef: asset.provenanceRef,
       deferredReason: status === "deferred" ? deferredReason : null,
-      context: {
-        kind: "thread_presentation_media",
-        threadId: presentation.manifest.threadId,
-        presentationId: presentation.manifest.presentationId,
-        mediaPacketId: media.mediaPacketId,
-        mediaId: asset.mediaId,
-        provenanceRef: asset.provenanceRef,
-        snapshotObjectRef,
-        snapshotDigest,
-      },
+      context,
     });
   }
 

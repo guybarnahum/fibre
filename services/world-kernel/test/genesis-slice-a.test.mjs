@@ -14,6 +14,7 @@ import {
   genesisRecordDigest,
   publicationValidatorSetWitness,
 } from "../src/genesis-domain.mjs";
+import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -140,6 +141,10 @@ function failedAttempt(overrides = {}) {
   };
 }
 
+function registeredBirth(thread, manifest = publishedManifest(thread)) {
+  return attachTestCivilRegistration({ manifest, thread });
+}
+
 test("Slice A WorldSpec is immutable, factual-shaped, and rejects extra personality fields", () =>
   withDatabase((databasePath) => {
     const store = new GenesisStore(databasePath);
@@ -172,7 +177,7 @@ test("atomic birth publishes the existing Thread authority and final manifest wi
     const genesis = new GenesisStore(databasePath);
     genesis.recordWorldSpec(worldSpec());
     const thread = genesisThread();
-    const result = genesis.publishBirth({ manifest: publishedManifest(thread), thread });
+    const result = genesis.publishBirth(registeredBirth(thread));
     assert.equal(result.thread.version, thread.version);
     assert.equal(result.manifest.publication.resultingThreadVersion, thread.version);
 
@@ -187,6 +192,7 @@ test("atomic birth publishes the existing Thread authority and final manifest wi
     const inspection = genesis.inspectGenesis(result.manifest.genesisId);
     assert.equal(inspection.threadPublished, true);
     assert.equal(inspection.worldSpec.record.worldSpecId, "world_slice_a_001");
+    assert.equal(inspection.historicalEnvelopePlan, null);
     assert.equal(inspection.manifest.manifest.publication.resultingThreadVersion, thread.version);
     genesis.close();
   }));
@@ -198,7 +204,7 @@ test("simulated failure after Thread seed rolls back the entire birth", () =>
     const thread = genesisThread();
     assert.throws(
       () => genesis.publishBirth(
-        { manifest: publishedManifest(thread), thread },
+        registeredBirth(thread),
         { failAfterSeedForTest: true },
       ),
       /simulated Slice-A publication failure/,
@@ -229,7 +235,7 @@ test("birth is pinned to the current publication-validator witness", () =>
     };
     manifest.cognition.publicationValidatorSetWitness.digest = sha("9");
     assert.throws(
-      () => genesis.publishBirth({ manifest, thread }),
+      () => genesis.publishBirth(registeredBirth(thread, manifest)),
       /validator witness does not match/,
     );
     genesis.close();
@@ -242,7 +248,7 @@ test("live #37 identity validation fails inside birth and leaves no half-born Th
     const thread = genesisThread();
     thread.identity.selfDescription = "I am careful; I am also impatient with vague promises.";
     assert.throws(
-      () => genesis.publishBirth({ manifest: publishedManifest(thread), thread }),
+      () => genesis.publishBirth(registeredBirth(thread)),
       /material proposition|bundle|assertion/i,
     );
     const world = openWorldStore(databasePath);
@@ -260,6 +266,7 @@ test("Genesis support tables do not create parallel biography, memory, relation,
     ).all().map(({ name }) => name);
     assert.deepEqual(tables, [
       "genesis_generation_attempts",
+      "genesis_historical_envelope_plans",
       "genesis_manifests",
       "genesis_origin_authorities",
       "genesis_world_specs",

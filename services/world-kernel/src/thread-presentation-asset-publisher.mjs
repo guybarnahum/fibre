@@ -1,5 +1,5 @@
 import { verifyCredentialedAssetForPublication } from "#services/asset-generator/src/index.mjs";
-import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "./thread-presentation-stream-domain.mjs";
 
@@ -14,8 +14,8 @@ export function createThreadPresentationAssetPublisher({
   now = () => new Date().toISOString(),
 }) {
   requireInfraCapabilities(infra, "catalog");
-  if (!presentationServer || typeof presentationServer.appendEvent !== "function") {
-    throw new TypeError("presentationServer.appendEvent must be a function");
+  if (!presentationServer || typeof presentationServer.appendEvent !== "function" || typeof presentationServer.getSnapshot !== "function") {
+    throw new TypeError("presentationServer must provide appendEvent and getSnapshot");
   }
 
   return Object.freeze({
@@ -38,6 +38,26 @@ export function createThreadPresentationAssetPublisher({
       })) {
         assertId(name, value);
       }
+
+      let identityCredentialMedia = false;
+      let publiclyVisible = true;
+      if (stored.role === "official_id_photo") {
+        const current = await presentationServer.getSnapshot(channelId);
+        if (current === null || current.pointer.threadId !== context.threadId) {
+          throw new TypeError("official ID photo requires the current matching Thread presentation snapshot");
+        }
+        const slot = current.snapshot.media.assets.find((asset) => asset.mediaId === context.mediaId);
+        const card = current.snapshot.presentation.identityCard ?? null;
+        if (!slot || slot.role !== "official_id_photo" || slot.kind !== "image") {
+          throw new TypeError("official ID photo receipt does not match the current media slot");
+        }
+        if (card === null || card.officialPhotoMediaRef !== context.mediaId) {
+          throw new TypeError("official ID photo receipt is not referenced by the current identity card");
+        }
+        identityCredentialMedia = true;
+        publiclyVisible = card.visibility === "public";
+      }
+
       const emittedAt = now();
       if (Date.parse(emittedAt) < Date.parse(stored.completedAt)) {
         throw new TypeError("presentation asset event cannot be emitted before asset completion");
@@ -69,14 +89,16 @@ export function createThreadPresentationAssetPublisher({
       };
       const accepted = await presentationServer.appendEvent(eventInput, { expectedSequence });
 
-      // This is a public-serving projection, not publication authority. The verified
-      // event is admitted first; a failed catalog mirror can be retried without
-      // creating a second semantic event.
+      // This is a serving projection, not publication authority. Identity-credential
+      // media defaults closed and becomes public only when the immutable current
+      // presentation card explicitly authorizes public visibility.
       await infra.catalog.upsert(`media:${stored.objectRef}`, {
         kind: "public_presentation_media",
-        publiclyVisible: true,
+        publiclyVisible,
+        identityCredentialMedia,
         threadId: context.threadId,
         mediaId: context.mediaId,
+        role: stored.role,
         objectRef: stored.objectRef,
         digest: stored.sha256,
         mediaType: stored.mediaType,

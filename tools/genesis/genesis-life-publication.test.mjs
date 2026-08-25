@@ -14,6 +14,10 @@ import {
 } from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { eventStructurePoolV3Digest } from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
+import {
+  genesisHistoricalEnvelopePlanDigest,
+  genesisHistoricalEnvelopeStatistics,
+} from "#services/world-kernel/src/genesis-historical-envelope-authority.mjs";
 import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
 import { genesisLifeEpisodeEventId } from "#services/world-kernel/src/genesis-life-episode.mjs";
 import { assertGenesisEpisodePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
@@ -45,15 +49,27 @@ function cognition() {
 
 function fixtureCandidate(slotPlan) {
   const envelope = slotPlan.envelopePlan.envelopes[0];
+  const participantRefs = [slotPlan.threadId];
+  const introducedParticipants = [];
+  if (envelope.counterpart !== null) {
+    participantRefs.push(envelope.counterpart.participantId);
+    if (envelope.counterpart.introducedHere === true) {
+      introducedParticipants.push({
+        provisionalPersonId: envelope.counterpart.participantId,
+        roleRef: envelope.counterpart.roleRef,
+        introducedAt: envelope.occurredAt,
+      });
+    }
+  }
   const episode = {
     episodeId: "ep_current_birth_fixture_001",
     occurredAt: envelope.occurredAt,
     ageAtEvent: envelope.ageAtEvent,
     placeRef: envelope.placeRef,
-    participantRefs: [slotPlan.threadId],
+    participantRefs,
     observableAction: "The child compares two handwritten notes and places one beside the other before copying a corrected line.",
-    structureRef: envelope.structureRef,
-    introducedParticipants: [],
+    structureRef: envelope.selectionKind === "world_emergent" ? null : envelope.structureRef,
+    introducedParticipants,
   };
   const eventId = genesisLifeEpisodeEventId({
     threadId: slotPlan.threadId,
@@ -128,6 +144,22 @@ function fixtureCandidate(slotPlan) {
   return core;
 }
 
+function singleEnvelopePlan(plan) {
+  const envelopes = [plan.envelopes[0]];
+  return {
+    ...plan,
+    envelopes,
+    statistics: genesisHistoricalEnvelopeStatistics(envelopes),
+    digest: genesisHistoricalEnvelopePlanDigest({
+      threadId: plan.threadId,
+      worldSpecId: plan.worldSpecId,
+      timeZone: plan.timeZone,
+      seedDomain: plan.seedDomain,
+      envelopes,
+    }),
+  };
+}
+
 test("current Genesis candidate births atomically and hydrates to the admitted life", () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-current-genesis-birth-"));
   const databasePath = join(directory, "world.sqlite");
@@ -136,10 +168,7 @@ test("current Genesis candidate births atomically and hydrates to the admitted l
     const base = development.slots[0];
     const slotPlan = {
       ...base,
-      envelopePlan: {
-        ...base.envelopePlan,
-        envelopes: [base.envelopePlan.envelopes[0]],
-      },
+      envelopePlan: singleEnvelopePlan(base.envelopePlan),
     };
     const candidate = fixtureCandidate(slotPlan);
     const result = publishHydrateAndCompareGenesisLife({

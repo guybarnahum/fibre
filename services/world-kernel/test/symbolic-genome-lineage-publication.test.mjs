@@ -17,6 +17,7 @@ import {
   GenesisStore,
 } from "../src/genesis-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
+import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -203,6 +204,10 @@ function setupGenesis(databasePath) {
   return genesis;
 }
 
+function registered(birth) {
+  return attachTestCivilRegistration(birth);
+}
+
 function assertNoPublishedChild(databasePath) {
   const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
   assert.equal(Number(database.prepare(
@@ -224,11 +229,11 @@ test("Stage 8 atomically binds persisted child genome to admitted #38 synthetic-
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
     const canonicalSeedEventId = normalizeSeedSnapshot(thread).provenance.lastEventId;
-    const result = genesis.publishBirth({
+    const result = genesis.publishBirth(registered({
       manifest: manifest(set.child.header.genomeId),
       thread,
       lifeRelations: [...relations(thread)].reverse(),
-    });
+    }));
     assert.equal(result.thread.threadId, CHILD_ID);
     genesis.close();
 
@@ -257,11 +262,11 @@ test("Stage 8 rejects a manifest genomeRef that does not resolve and leaves no l
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(set.child.header.genomeId),
         thread,
         lifeRelations: relations(thread),
-      }),
+      })),
       /symbolic genome .* was not found/,
     );
     genesis.close();
@@ -275,11 +280,11 @@ test("Stage 8 rejects a genome owned by another Thread and leaves no live child"
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(set.child.header.genomeId),
         thread,
         lifeRelations: relations(thread),
-      }),
+      })),
       /does not belong to the child Thread/,
     );
     genesis.close();
@@ -293,11 +298,11 @@ test("Stage 8 rejects a genome from another Genesis and leaves no live child", (
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(set.child.header.genomeId),
         thread,
         lifeRelations: relations(thread),
-      }),
+      })),
       /belongs to another genesisId/,
     );
     genesis.close();
@@ -311,13 +316,13 @@ test("Stage 8 rejects manifest or #38 relation source-owner substitution", () =>
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(set.child.header.genomeId, {
           parentOrAncestorRefs: [ANCESTOR_B, ANCESTOR_A],
         }),
         thread,
         lifeRelations: relations(thread),
-      }),
+      })),
       /parentOrAncestorRefs do not exactly match/,
     );
     assertNoPublishedChild(databasePath);
@@ -325,11 +330,11 @@ test("Stage 8 rejects manifest or #38 relation source-owner substitution", () =>
     const forgedRelations = relations(thread);
     forgedRelations[0].relatedParty.partyId = "ancestor.pre_g.stage8.substitute";
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(set.child.header.genomeId),
         thread,
         lifeRelations: forgedRelations,
-      }),
+      })),
       /does not match the symbolic-genome source owner/,
     );
     genesis.close();
@@ -343,22 +348,22 @@ test("Stage 8 requires both parent-genome-source relations and rolls them back w
     const genesis = setupGenesis(databasePath);
     const thread = childThread();
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(set.child.header.genomeId),
         thread,
         lifeRelations: relations(thread).slice(0, 1),
-      }),
+      })),
       /requires exactly 2 parent-genome-source life relations/,
     );
     assertNoPublishedChild(databasePath);
 
     assert.throws(
       () => genesis.publishBirth(
-        {
+        registered({
           manifest: manifest(set.child.header.genomeId),
           thread,
           lifeRelations: relations(thread),
-        },
+        }),
         { failAfterLineageForTest: true },
       ),
       /simulated Stage-8 lineage publication failure/,

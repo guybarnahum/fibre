@@ -5,7 +5,9 @@ import test from "node:test";
 import {
   PRESENTATION_PROVENANCE_VERSION,
   THREAD_MEDIA_PACKET_VERSION,
+  THREAD_PRESENTATION_PACKET_LEGACY_VERSION,
   THREAD_PRESENTATION_PACKET_VERSION,
+  THREAD_PRESENTATION_PACKET_VERSIONS,
   normalizeThreadPresentationBundle,
   presentationProvenanceDigest,
   threadMediaPacketDigest,
@@ -26,10 +28,12 @@ function bundle() {
   });
 }
 
-test("Thread Presentation public seam validates a complete Fibre presentation bundle", () => {
+test("Thread Presentation public seam validates the legacy golden bundle alongside the current packet version", () => {
   const normalized = bundle();
 
-  assert.equal(normalized.presentation.schemaVersion, THREAD_PRESENTATION_PACKET_VERSION);
+  assert.equal(normalized.presentation.schemaVersion, THREAD_PRESENTATION_PACKET_LEGACY_VERSION);
+  assert.equal(THREAD_PRESENTATION_PACKET_VERSIONS.includes(normalized.presentation.schemaVersion), true);
+  assert.equal(THREAD_PRESENTATION_PACKET_VERSION, "thread-presentation-packet-v0.2");
   assert.equal(normalized.media.schemaVersion, THREAD_MEDIA_PACKET_VERSION);
   assert.equal(normalized.provenance.schemaVersion, PRESENTATION_PROVENANCE_VERSION);
   assert.equal(normalized.presentation.manifest.threadId, normalized.media.threadId);

@@ -8,6 +8,7 @@ import { GenesisOriginAuthorityStore } from "../src/genesis-origin-authority-sto
 import { GenesisStore } from "../src/genesis-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -159,6 +160,10 @@ function authority({ authorityRef, authorityKind, sourcePartyId, subjectStatus }
   };
 }
 
+function registered(birth) {
+  return attachTestCivilRegistration(birth);
+}
+
 test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin witnesses", () =>
   withDatabase((databasePath) => {
     const genesis = new GenesisStore(databasePath);
@@ -170,11 +175,11 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
       sourceBundleRefs: ["consent_jane_doe"],
     });
     assert.throws(
-      () => genesis.publishBirth({ manifest: echoManifest, thread: echo }),
+      () => genesis.publishBirth(registered({ manifest: echoManifest, thread: echo })),
       /requires a verified originFixture/,
     );
     assert.throws(
-      () => genesis.publishBirth({ manifest: echoManifest, thread: echo, originFixture: echoFixture(echo.threadId) }),
+      () => genesis.publishBirth(registered({ manifest: echoManifest, thread: echo, originFixture: echoFixture(echo.threadId) })),
       /origin authority consent_jane_doe was not found/,
     );
 
@@ -193,11 +198,11 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
     }));
     authorities.close();
 
-    const publishedEcho = genesis.publishBirth({
+    const publishedEcho = genesis.publishBirth(registered({
       manifest: echoManifest,
       thread: echo,
       originFixture: echoFixture(echo.threadId),
-    });
+    }));
     assert.equal(publishedEcho.manifest.originMode, "echo");
     assert.deepEqual(publishedEcho.manifest.sourceBundleRefs, ["consent_jane_doe"]);
 
@@ -206,11 +211,11 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
       originMode: "homage",
       sourceBundleRefs: ["attestation_homage_deceased"],
     });
-    const publishedHomage = genesis.publishBirth({
+    const publishedHomage = genesis.publishBirth(registered({
       manifest: homageManifest,
       thread: homage,
       originFixture: homageFixture(homage.threadId),
-    });
+    }));
     assert.equal(publishedHomage.manifest.originMode, "homage");
 
     const world = openWorldStore(databasePath);
@@ -235,14 +240,14 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
         retrospectiveSharedHistoryRefs: [],
       },
     };
-    const publishedChild = genesis.publishBirth({
+    const publishedChild = genesis.publishBirth(registered({
       manifest: manifest(child, {
         originMode: "thread_parent",
         parentOrAncestorRefs: [parent.threadId],
       }),
       thread: child,
       originFixture: parentFixture,
-    });
+    }));
     assert.equal(publishedChild.manifest.originMode, "thread_parent");
 
     const fork = thread("thr_publish_fork");
@@ -260,19 +265,19 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
         postForkImportedEventRefs: [],
       },
     };
-    const publishedFork = genesis.publishBirth({
+    const publishedFork = genesis.publishBirth(registered({
       manifest: manifest(fork, {
         originMode: "fork",
         parentOrAncestorRefs: [forkSource.threadId],
       }),
       thread: fork,
       originFixture: forkFixture,
-    });
+    }));
     assert.equal(publishedFork.manifest.originMode, "fork");
 
     const bogusFork = thread("thr_publish_bogus_fork");
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(bogusFork, {
           originMode: "fork",
           parentOrAncestorRefs: ["thr_does_not_exist"],
@@ -287,20 +292,20 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
             sourceThreadRef: "thr_does_not_exist",
           },
         },
-      }),
+      })),
       /origin source Thread thr_does_not_exist has no canonical history/,
     );
 
     const wrongRefs = thread("thr_publish_wrong_echo_refs");
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(wrongRefs, {
           originMode: "echo",
           sourceBundleRefs: ["public_jane_doe"],
         }),
         thread: wrongRefs,
         originFixture: echoFixture(wrongRefs.threadId),
-      }),
+      })),
       /sourceBundleRefs does not exactly match/,
     );
 

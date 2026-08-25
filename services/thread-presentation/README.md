@@ -14,10 +14,34 @@ import { normalizeThreadPresentationBundle } from "./services/thread-presentatio
 
 The packet normalizers and digests currently delegate to the implementation in `world-kernel` because that is where the authoritative projection rules already run. That is an implementation detail. New consumers must not import `world-kernel/src/thread-presentation-*.mjs` directly; keeping the service entry point stable lets the implementation move here later without changing consumers such as a Thread Presentation webapp.
 
-The `*-v0.1` values in packet constants are serialized compatibility identifiers. They justify versioning the wire data, not versioning runtime filenames.
+Serialized packet/version constants are compatibility identifiers. They justify versioning wire data, not milestone/version runtime filenames.
+
+## Civil Registry projection
+
+Thread Presentation consumes Fibre civil identity through the existing Civil Registry read authority; it does not mint or persist FINs.
+
+The public seam exports:
+
+```js
+readPresentationCivilIdentity({ civilRegistry, threadId, provenanceRef })
+civilRegistrationToPresentationCivilIdentity(registration, { provenanceRef })
+```
+
+`civilRegistry` is expected to implement the real registry reader contract:
+
+```js
+getCivilRegistrationByThreadId(threadId, { required: false })
+```
+
+The returned record is first validated by the canonical `normalizeFibreCivilRegistration()` domain function. That preserves Civil Registry authority for FIN checksum policy, deterministic registration identity, registry version/policy, and registration digest. Only then is a bounded `presentation.civilIdentity` projection emitted.
+
+An unregistered Thread returns `null`. Presentation never synthesizes a FIN. A returned registration whose `threadId` differs from the requested Thread is rejected.
+
+The public projection intentionally does not copy registry implementation fields such as `registrationDigest` or `finPolicyRef`; those remain validation/authority metadata in the Civil Registry record rather than becoming a second registry representation.
 
 ## Related services
 
+- [`../birth-center/`](../birth-center/) owns Civil Registry issuance at birth; the immutable registry is read through World Kernel's `CivilRegistryStore`.
 - [`../asset-generator/`](../asset-generator/) executes generated-media briefs and records immutable generation provenance.
 - [`../presentation-cloudflare/`](../presentation-cloudflare/) is the current Cloudflare delivery/read-model adapter.
 - [`../c2pa-local/`](../c2pa-local/) supplies local provenance/Content Credential support.

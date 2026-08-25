@@ -1,0 +1,85 @@
+{
+  "worldSpecId": "world_pr39_final_03_malmo",
+  "timeFrame": {
+    "startAt": "2004-08-25T00:00:00Z",
+    "endAt": "2026-08-25T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_pr39_final_03_home",
+      "description": "A family apartment in a Malmö residential neighborhood with local shops, schools, cycle routes and public transport within ordinary urban reach."
+    },
+    {
+      "placeId": "place_pr39_final_03_school",
+      "description": "A municipal school setting in Malmö with classrooms, teachers, peer groups, indoor and outdoor activity space and access to ordinary school support."
+    },
+    {
+      "placeId": "place_pr39_final_03_transit_cycle",
+      "description": "An urban mobility setting where walking, cycling and public transport are ordinary options, with routes connecting residential neighborhoods to schools, libraries and central areas."
+    },
+    {
+      "placeId": "place_pr39_final_03_library",
+      "description": "A Malmö public-library setting with books, computers or Wi-Fi, study space, language practice and public activities for different ages."
+    },
+    {
+      "placeId": "place_pr39_final_03_commerce_community",
+      "description": "A neighborhood commercial and community area with groceries, cafés, small services, public space and recurring everyday encounters."
+    }
+  ],
+  "householdShape": "Two caregivers, the subject and an older sibling share an apartment; a family friend lives nearby and is part of occasional meals, pickups and practical help.",
+  "familyRelations": [
+    "The older sibling is five years older than the subject.",
+    "The nearby family friend is not a relative and has no parental authority but is a recurring trusted adult in household logistics."
+  ],
+  "languages": [
+    "Swedish",
+    "English"
+  ],
+  "materialCircumstances": "Housing, food and schooling are generally stable; the household budgets ordinary expenses and uses walking, cycling and public transport for many trips rather than treating a private car as necessary for daily access.",
+  "mobilityPattern": "Walking, cycling and public transport connect home, school, libraries, recreation and central Malmö. Weather, road works, cycling confidence and changing age can alter which mode is practical for a particular trip.",
+  "schoolingOrCommunityContext": "Municipal schools, a distributed public-library network, community and youth activities, sports or cultural programs, cycling and public transport create repeated contact with peers and adults across neighborhood and city settings.",
+  "culturalContext": "Malmö, Sweden — The household lives in Malmö during 2004–2026. Swedish is the ordinary school and civic language, with English widely encountered through school, media and the internet. Malmö's public libraries, schools, cycle infrastructure, public transport, neighborhood centers and youth activities provide multiple ordinary settings. The city is socially and linguistically diverse, but that fact does not assign the household an ethnicity, migration history, political view or stance toward diversity. Libraries can support reading, study, homework, language practice and public activities; cycling and transit are practical mobility options rather than moral signals. These facts constrain opportunity without prescribing character or values.",
+  "availableInstitutions": [
+    "malmo_municipal_school",
+    "malmo_public_library",
+    "malmo_public_transport",
+    "municipal_cycle_network",
+    "community_youth_activity",
+    "neighborhood_health_service",
+    "municipal_sports_or_cultural_program"
+  ],
+  "intellectualEnvironment": "School curricula, municipal libraries, Swedish and translated books, multilingual public material, television and news, internet access, family conversation, cultural programs, makers or hobby activities and ordinary disagreement are available unevenly across the chronology.",
+  "affordedRoles": [
+    "caregiver",
+    "sibling",
+    "family_friend",
+    "peer",
+    "teacher",
+    "librarian",
+    "neighbor",
+    "shopkeeper",
+    "coach",
+    "youth_activity_leader",
+    "transit_worker"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_final_world_authoring",
+    "sourcesConsulted": [
+      {
+        "kind": "municipal_library",
+        "citation": "Malmö stad, Welcome to the libraries: https://malmo.se/Uppleva-och-gora/Biblioteken/Om-biblioteken-i-Malmo/Welcome-to-the-libraries.html",
+        "accessedAt": "2026-08-25T20:00:00Z"
+      },
+      {
+        "kind": "municipal_mobility",
+        "citation": "Malmö stad, Stadsbiblioteket travel information noting cycle access and city bike facilities: https://malmo.se/Uppleva-och-gora/Biblioteken/Vara-bibliotek/Stadsbiblioteket/Besok-Stadsbiblioteket/Hitta-hit.html",
+        "accessedAt": "2026-08-25T20:00:00Z"
+      }
+    ],
+    "abstractionMethod": "PR #39 final-cohort World authoring. Ordinary factual Malmö household, school, library, neighborhood, cycling and public-transport affordances were fixed before any final-cohort genome assignment or generated life was examined. Sources constrain possible circumstances only; they do not prescribe character, values, beliefs, profession, narrative significance or a desired diagnostic result.",
+    "relocationWitness": "The household could be reconstructed in another Swedish city, but Malmö's specific municipal library network, neighborhood scale and walking/cycling/transit context are deliberate factual constraints; replacing the city would require re-authoring rather than relabeling.",
+    "familiarityProbe": null,
+    "createdAt": "2026-08-25T20:00:00Z"
+  },
+  "createdAt": "2026-08-25T20:00:00Z"
+}

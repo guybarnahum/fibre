@@ -2,13 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
-import { ASSET_GENERATION_JOB_VERSION } from "#services/asset-generator/src/asset-generation-domain.mjs";
 import {
+  ASSET_GENERATION_JOB_VERSION,
   CONTENT_CREDENTIAL_SIGNER_VERSION,
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
+  executeCredentialedAssetGenerationJob,
   normalizeEmbeddedAssetProvenance,
-} from "#services/asset-generator/src/asset-provenance-domain.mjs";
-import { executeCredentialedAssetGenerationJob } from "#services/asset-generator/src/credentialed-asset-generation-service.mjs";
+} from "#services/asset-generator/src/index.mjs";
 import { createThreadPresentationServer } from "../src/thread-presentation-server.mjs";
 import { createThreadPresentationAssetPublisher } from "../src/thread-presentation-asset-publisher.mjs";
 
@@ -103,39 +103,36 @@ function provider() {
   };
 }
 
-function job() {
+function job({ role = "place", mediaId = "media_place_1", suffix = "1" } = {}) {
   return {
     jobVersion: ASSET_GENERATION_JOB_VERSION,
-    jobId: "asset_job_publisher_1",
+    jobId: `asset_job_publisher_${suffix}`,
     assetKind: "image",
-    role: "place",
+    role,
     variant: "default",
-    brief: { description: "A generated reconstruction of a market.", constraints: ["Not documentary evidence."] },
-    inputReferences: ["presentation_1", "place_1"],
+    brief: { description: `A generated reconstruction for ${role}.`, constraints: ["Not documentary evidence."] },
+    inputReferences: ["presentation_1", "source_1"],
     referenceObjectRefs: [],
-    outputObjectRef: "asset_publisher_1",
-    receiptObjectRef: "asset_publisher_receipt_1",
+    outputObjectRef: `asset_publisher_${suffix}`,
+    receiptObjectRef: `asset_publisher_receipt_${suffix}`,
     requestedAt: "2026-08-21T21:19:59Z",
     providerProfile: "presentation-image-default-v1",
     context: {
       kind: "thread_presentation_media",
       threadId: "thr_1",
-      presentationId: "presentation_1",
-      mediaPacketId: "media_packet_1",
-      mediaId: "media_place_1",
+      mediaId,
+      role,
       provenanceRef: "prov_generated_reconstruction",
-      snapshotObjectRef: "snapshot_1",
-      snapshotDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     },
   };
 }
 
-async function generated(infra) {
+async function generated(infra, generationJob = job()) {
   return executeCredentialedAssetGenerationJob({
     infra,
     provider: provider(),
     credentialSigner: signer(),
-    job: job(),
+    job: generationJob,
     now: () => "2026-08-21T21:20:03Z",
   });
 }
@@ -165,8 +162,10 @@ test("Thread presentation publishes media.ready only after stored credentialed a
   assert.deepEqual(publicMedia, {
     kind: "public_presentation_media",
     publiclyVisible: true,
+    identityCredentialMedia: false,
     threadId: "thr_1",
     mediaId: "media_place_1",
+    role: "place",
     objectRef: result.receipt.objectRef,
     digest: result.receipt.sha256,
     mediaType: "image/webp",
@@ -174,6 +173,49 @@ test("Thread presentation publishes media.ready only after stored credentialed a
     eventId: accepted.event.eventId,
     eventSequence: 1,
   });
+});
+
+test("private official ID photo can become media.ready without becoming public media", async () => {
+  const infra = createMemoryInfraDriver();
+  const generationJob = job({ role: "official_id_photo", mediaId: "media_official_id_photo", suffix: "official" });
+  const result = await generated(infra, generationJob);
+  const acceptedEvents = [];
+  const presentationServer = {
+    async getSnapshot() {
+      return {
+        pointer: { threadId: "thr_1" },
+        snapshot: {
+          presentation: {
+            identityCard: { officialPhotoMediaRef: "media_official_id_photo", visibility: "private" },
+          },
+          media: {
+            assets: [{ mediaId: "media_official_id_photo", role: "official_id_photo", kind: "image" }],
+          },
+        },
+      };
+    },
+    async appendEvent(event) {
+      const accepted = { ...event, sequence: 1 };
+      acceptedEvents.push(accepted);
+      return { event: accepted, duplicate: false };
+    },
+  };
+  const publisher = createThreadPresentationAssetPublisher({
+    infra,
+    credentialSigner: signer(),
+    presentationServer,
+    now: () => "2026-08-21T21:20:04Z",
+  });
+  const accepted = await publisher.publishReady({
+    receipt: result.receipt,
+    channelId: "channel_thr_1",
+  });
+  assert.equal(accepted.event.kind, "media.ready");
+  assert.equal(acceptedEvents.length, 1);
+  const catalog = await infra.catalog.get(`media:${result.receipt.objectRef}`);
+  assert.equal(catalog.publiclyVisible, false);
+  assert.equal(catalog.identityCredentialMedia, true);
+  assert.equal(catalog.role, "official_id_photo");
 });
 
 test("invalid credential blocks media.ready and public-media catalog projection", async () => {

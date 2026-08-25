@@ -8,6 +8,7 @@ import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
 import { GenesisOriginAuthorityStore } from "../src/genesis-origin-authority-store.mjs";
 import { GenesisStore } from "../src/genesis-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -174,6 +175,10 @@ function updateSelfModelCommand(source) {
   };
 }
 
+function registered(birth) {
+  return attachTestCivilRegistration(birth);
+}
+
 test("publishBirth delegates Echo source-party matching to canonical Slice-F authority", () =>
   withDatabase((databasePath) => {
     const genesis = new GenesisStore(databasePath);
@@ -189,11 +194,11 @@ test("publishBirth delegates Echo source-party matching to canonical Slice-F aut
 
     const echo = thread("thr_f_delegation_wrong_party");
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(echo, { originMode: "echo", sourceBundleRefs: ["consent_jane_doe"] }),
         thread: echo,
         originFixture: echoFixture(echo.threadId),
-      }),
+      })),
       /belongs to another source party/,
     );
     genesis.close();
@@ -214,14 +219,14 @@ test("publishBirth delegates Homage subject-status matching to canonical Slice-F
 
     const homage = thread("thr_f_delegation_wrong_status");
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(homage, {
           originMode: "homage",
           sourceBundleRefs: ["attestation_homage_subject"],
         }),
         thread: homage,
         originFixture: homageFixture(homage.threadId),
-      }),
+      })),
       /does not attest the fixture subject status/,
     );
     genesis.close();
@@ -257,14 +262,14 @@ test("publishBirth delegates exact fork-prefix matching to canonical Slice-F bou
     };
 
     assert.throws(
-      () => genesis.publishBirth({
+      () => genesis.publishBirth(registered({
         manifest: manifest(fork, {
           originMode: "fork",
           parentOrAncestorRefs: [source.threadId],
         }),
         thread: fork,
         originFixture: forkFixture,
-      }),
+      })),
       /fork inherited history is not the exact canonical source prefix through divergence/,
     );
     genesis.close();

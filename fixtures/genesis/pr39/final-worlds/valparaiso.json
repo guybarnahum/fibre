@@ -1,0 +1,86 @@
+{
+  "worldSpecId": "world_pr39_final_04_valparaiso",
+  "timeFrame": {
+    "startAt": "2004-08-25T00:00:00Z",
+    "endAt": "2026-08-25T00:00:00Z"
+  },
+  "places": [
+    {
+      "placeId": "place_pr39_final_04_home",
+      "description": "A family home on one of Valparaíso's inhabited hills, connected to neighborhood shops and steeper routes between hillside and lower-city destinations."
+    },
+    {
+      "placeId": "place_pr39_final_04_school",
+      "description": "An ordinary school setting in Valparaíso with classrooms, teachers, peer groups, school activities and journeys that may cross sloped streets or different parts of the city."
+    },
+    {
+      "placeId": "place_pr39_final_04_hillside_transit",
+      "description": "A hillside urban-mobility setting where walking, buses and, when operating on the relevant route and date, Valparaíso ascensores can connect hill and lower-city areas."
+    },
+    {
+      "placeId": "place_pr39_final_04_library_learning",
+      "description": "A public library, cultural center or study setting with reading material, public programming and space for schoolwork or community activities."
+    },
+    {
+      "placeId": "place_pr39_final_04_port_commerce",
+      "description": "A lower-city commercial area shaped by ordinary shops, services, markets, plazas and the visible presence of Valparaíso's port-city infrastructure."
+    }
+  ],
+  "householdShape": "One caregiver, the subject and two siblings share a home; an aunt lives in another part of Valparaíso and regularly helps with meals, school logistics or errands.",
+  "familyRelations": [
+    "One sibling is three years older than the subject and the other is six years younger.",
+    "The aunt lives separately and is a recurring practical support rather than a member of the household."
+  ],
+  "languages": [
+    "Spanish",
+    "English"
+  ],
+  "materialCircumstances": "Housing and food are generally stable but household spending is careful; walking and public transport are routine, and topography can turn short map distances into longer or more effortful everyday trips.",
+  "mobilityPattern": "Walking on sloped streets and stairs, buses and other public transport are ordinary. Historic ascensores are part of the city's transport heritage and may be usable only when the specific line is operating; their existence is not treated as universal availability in every year or route.",
+  "schoolingOrCommunityContext": "Schools, neighborhood commerce, libraries or cultural centers, public spaces, hillside transport, sports or arts activities and port-city institutions create repeated contact with peers and adults beyond the household.",
+  "culturalContext": "Valparaíso, Chile — The household lives in Valparaíso during 2004–2026. Spanish is the ordinary school and civic language, with English encountered unevenly through school, tourism, media and the internet. Steep hills, stairs, winding streets and the relationship between cerros and the lower city materially shape mobility. Historic ascensores and trolleybuses are real parts of the city's transport and heritage landscape, but service availability can vary and is not guaranteed for any specific episode without chronology support. The port, plazas, markets, libraries or cultural spaces, street art, schools, sports, music and digital media provide varied possible settings. These facts constrain lived circumstances but do not assign political views, artistic identity, civic pride or any desired personality.",
+  "availableInstitutions": [
+    "valparaiso_school",
+    "public_library_or_cultural_center",
+    "municipal_or_regional_ascensor",
+    "valparaiso_public_transport",
+    "neighborhood_health_service",
+    "community_sports_or_arts_program",
+    "port_city_public_space"
+  ],
+  "intellectualEnvironment": "School curricula, Spanish-language books and newspapers, public libraries or cultural programming, television and radio, internet access, family conversation, visible maritime and urban infrastructure, arts activity and ordinary disagreement are available unevenly across the chronology.",
+  "affordedRoles": [
+    "caregiver",
+    "sibling",
+    "aunt",
+    "peer",
+    "teacher",
+    "librarian",
+    "neighbor",
+    "vendor",
+    "coach",
+    "transit_worker",
+    "port_worker",
+    "cultural_program_worker"
+  ],
+  "worldAuthorship": {
+    "authorId": "fibre_pr39_final_world_authoring",
+    "sourcesConsulted": [
+      {
+        "kind": "municipal_heritage",
+        "citation": "Ilustre Municipalidad de Valparaíso, Patrimonio, including ascensores and trolleybuses as traditional transport infrastructure: https://municipalidaddevalparaiso.cl/patrimonio/",
+        "accessedAt": "2026-08-25T20:00:00Z"
+      },
+      {
+        "kind": "municipal_transport_heritage",
+        "citation": "Ilustre Municipalidad de Valparaíso, municipal coordination on ascensor recovery and maintenance: https://municipalidaddevalparaiso.cl/alcaldesa-se-reune-con-ascenval-para-coordinar-plan-de-recuperacion-de-ascensores/",
+        "accessedAt": "2026-08-25T20:00:00Z"
+      }
+    ],
+    "abstractionMethod": "PR #39 final-cohort World authoring. Ordinary factual Valparaíso household, school, hillside mobility, commerce, public-space and learning affordances were fixed before any final-cohort genome assignment or generated life was examined. Transport availability remains chronology-sensitive. Sources constrain possible circumstances only; they do not prescribe character, values, beliefs, profession, narrative significance or a desired diagnostic result.",
+    "relocationWitness": "The household could be rebuilt elsewhere in Chile only by changing meaningful constraints: Valparaíso's steep cerro-to-plan mobility, historic ascensores, trolleybuses and port-city urban form are deliberate factual affordances rather than a city-name wrapper.",
+    "familiarityProbe": null,
+    "createdAt": "2026-08-25T20:00:00Z"
+  },
+  "createdAt": "2026-08-25T20:00:00Z"
+}

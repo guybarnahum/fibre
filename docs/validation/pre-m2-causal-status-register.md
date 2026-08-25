@@ -59,7 +59,7 @@ Request fingerprint: sha256:7d57002e7740d87607bcd6dba441009a059fa3af4fddc173337e
 Causal memory: mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0
 ```
 
-The committed evidence bundle is `artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`. It records the exact model rationales, factor evidence refs, normalizations, provider request/digest data, one retrying `MODEL_TIMEOUT`, persisted memory, restart integrity witness, and counterfactual memory witnesses.
+The committed evidence bundle is `artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`. It records the exact model rationales, factor evidence refs, normalizations, provider request/digest data, one retrying `MODEL_TIMEOUT`, persisted memory, restart integrity witness, and counterfactual memory witnesses.
 
 History standing cycles v1-v3 remain failed/sealed and their exact evidence bundles are also committed.
 
