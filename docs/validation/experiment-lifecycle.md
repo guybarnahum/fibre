@@ -1,7 +1,7 @@
 ---
 id: validation-experiment-lifecycle
 status: accepted
-last-reviewed: 2026-08-09
+last-reviewed: 2026-08-24
 canonical: true
 ---
 
@@ -18,9 +18,9 @@ Development cycle
   -> preflight
   -> first real provider attempt
   -> seal PASS or FAIL
-  -> commit authoritative evidence
+  -> commit authoritative evidence when continuing audit value justifies it
   -> record diagnosis and lesson
-  -> archive provider-executable cycle
+  -> retire provider-executable cycle
 ```
 
 `Development cycle` here is an **experiment evidence class**. It is distinct from both the vision-integrity rubric dimension named **Development** and any roadmap milestone that may also use that word.
@@ -45,7 +45,7 @@ A standing gate is fresh held-out evidence. The first real provider attempt cons
 
 Sealed evidence is immutable in meaning. Later repository changes may improve non-semantic tooling such as summaries or progress indication, but they must not rewrite the authoritative outcome or silently turn a failed cycle into a pass.
 
-Every sealed standing cycle must commit its exact machine-readable evidence bundle when the bundle contains no secret material. The bundle is the machine authority; the validation document is the human-readable interpretation.
+When exact bytes retain continuing scientific, replay, interoperability or audit value, keep the machine-readable bundle under `artifacts/validation/`. The human-readable validation document interprets the result; Git history remains the archive for retired executables and intermediate cycles.
 
 A sealed result may retain a read-only inspection command. That command must fail closed if authoritative evidence is unavailable and must never contain or reach a provider/model execution path.
 
@@ -54,27 +54,26 @@ A sealed result may retain a read-only inspection command. That command must fai
 Keep active only what is useful for current engineering:
 
 - the latest accepted/frozen candidate needed to understand the accepted boundary;
-- the accepted standing scenario when useful for auditability;
-- the committed sealed evidence bundle;
+- the accepted standing result when useful for auditability;
+- exceptional retained exact-byte evidence with a continuing purpose;
 - reusable Development-cycle harnesses that remain useful;
 - generalized invariant/evidence-consistency tests learned from prior failures;
 - shared experiment infrastructure such as provider progress and evidence helpers;
 - optionally, a read-only sealed-result inspector that cannot call a provider.
 
-After a standing cycle is sealed, its provider-executable proof/runner should normally be removed from the active command surface and active tree. Exact historical source remains recoverable from the preserved repository history.
+After a standing cycle is sealed, its provider-executable proof/runner should normally be removed from the active command surface and active tree. Exact historical source remains recoverable from preserved repository history.
 
 Do not keep every historical gate provider-executable merely because it once existed.
 
 ## What is preserved forever
 
-For every sealed standing cycle, preserve enough canonical evidence to reconstruct and audit the claim:
+For every accepted standing claim, preserve enough canonical information to reconstruct and audit the claim:
 
-- exact machine-readable evidence bundle;
 - experiment and candidate IDs;
 - PASS / FAIL status;
 - failure classification when applicable;
 - provider and model ID;
-- exact model outputs/rationales and normalization record when applicable;
+- exact model outputs/rationales and normalization record when continuing audit value requires them;
 - factor/evidence refs used by the evaluator when applicable;
 - request/scenario fingerprints and causal witness IDs when applicable;
 - frozen prompt/schema/source hashes or source commit SHA;
@@ -84,7 +83,7 @@ For every sealed standing cycle, preserve enough canonical evidence to reconstru
 - postmortem and methodological lesson;
 - immutable repository history containing the exact retired executable source.
 
-The per-cycle documents under `docs/validation/` are the human-readable authority. The committed evidence bundles under `artifacts/test-results/` are the machine-readable authority. Repository history is the exact executable archive.
+Human-readable accepted standing records remain under `docs/validation/`. Exceptional exact-byte evidence retained in HEAD belongs under `artifacts/validation/`. Repository history is the exact executable archive.
 
 ### Archive-preservation rule for squash merges
 
@@ -103,12 +102,13 @@ The correct transformation is:
 
 ```text
 failed executable cycle
-  -> sealed committed evidence bundle
-  -> canonical postmortem
+  -> canonical postmortem / retained lesson
   -> generalized lesson/invariant
   -> retired scenario/material
   -> executable source retained by reachable repository history
 ```
+
+Retain exact machine evidence in HEAD only when it still serves a named scientific, replay, interoperability or audit purpose.
 
 This prevents three forms of drift:
 
@@ -136,31 +136,13 @@ Progress reporting is experiment/CLI infrastructure. It must not change Thread c
 
 ## History bends judgment archive
 
-Canonical records:
+The accepted current record is [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standing-gate-v4.md). It records Candidate 4 as PASSED / SEALED: a Fibre-owned durable episode record survived restart and causally moved the same later request from `refuse/low` to `accept/high` under exact one-memory withholding.
 
-| Cycle | Candidate | Result | Lesson |
-|---|---|---|---|
-| `history_bends_judgment_standing_gate_v1` | Candidate 1 | FAILED / SEALED | Request B leaked the intended individuality/non-interchangeability conclusion. |
-| `history_bends_judgment_standing_gate_v2` | Candidate 2 | FAILED / SEALED | The causal differential worked, but the evaluator overprescribed the repair verb. |
-| `history_bends_judgment_standing_gate_v3` | Candidate 3 | FAILED / SEALED | Baseline Thread identity/self-model independently established the high-fit target. |
-| `history_bends_judgment_standing_gate_v4` | Candidate 4 | PASSED / SEALED | A Fibre-owned durable episode record survived restart and causally moved the same later request from `refuse/low` to `accept/high` under exact one-memory withholding. |
+Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
 
-Authoritative human-readable details remain in:
+The retained exact machine evidence is:
 
-- `history-bends-judgment-standing-gate-v1.md`
-- `history-bends-judgment-standing-gate-v2.md`
-- `history-bends-judgment-standing-gate-v3.md`
-- `history-bends-judgment-standing-gate-v4.md`
-- `history-bends-judgment-candidate-4.md`
-
-Exact machine evidence is committed as:
-
-- `artifacts/test-results/history_bends_judgment_standing_gate_v1.evidence.json`
-- `artifacts/test-results/history_bends_judgment_standing_gate_v2.evidence.json`
-- `artifacts/test-results/history_bends_judgment_standing_gate_v3.evidence.json`
-- `artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`
-
-Candidate 4 also records the retired standing IDs, diagnoses, fingerprints, and material that may not be reused.
+- `artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`
 
 The provider-capable History standing proof/runner/template stack is no longer active after sealing. `npm run history:gate` imports only the read-only sealed-evidence inspector and cannot reach model/provider execution. `npm run history:dev` is the repeatable provider-backed Development-cycle command and uses the shared provider heartbeat.
 
@@ -168,23 +150,13 @@ The v4 Development credit is deliberately limited: Episode A's setup appraisal w
 
 ## Semantic Guardian / dignity reasoning archive
 
-Canonical records:
+The accepted current record is [`semantic-guardian-v4-standing-gate-v4.md`](semantic-guardian-v4-standing-gate-v4.md). Candidate 4 PASSED / SEALED with fresh held-out semantic identity/state differentials and earned the accepted standing credit.
 
-| Cycle | Candidate | Result | Lesson |
-|---|---|---|---|
-| `semantic_guardian_v4_standing_gate_v1` | Candidate 1 | FAILED / SEALED | Standing-gate specification defects. |
-| `semantic_guardian_v4_standing_gate_v2` | Candidate 2 | FAILED / SEALED | Ambiguous semantic-state factor-direction assertion. |
-| `semantic_guardian_v4_standing_gate_v3` | Candidate 3 | FAILED / SEALED | Counterfactual baseline defect plus an artificial runtime output ceiling. |
-| `semantic_guardian_v4_standing_gate_v4` | Candidate 4 | PASSED / SEALED | Fresh held-out semantic identity/state differentials passed and earned standing credit. |
+Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
 
-Exact machine evidence is committed as:
+The retained exact machine evidence is:
 
-- `artifacts/test-results/semantic_guardian_v4_standing_gate_v1.evidence.json`
-- `artifacts/test-results/semantic_guardian_v4_standing_gate_v2.evidence.json`
-- `artifacts/test-results/semantic_guardian_v4_standing_gate_v3.evidence.json`
-- `artifacts/test-results/semantic_guardian_v4_standing_gate_v4.evidence.json`
-
-Authoritative details remain in the corresponding `semantic-guardian-v4-standing-gate-v1.md` through `-v4.md` documents and in Candidate 4's frozen boundary, which records prior standing diagnoses.
+- `artifacts/validation/semantic_guardian_v4_standing_gate_v4.evidence.json`
 
 Retired Candidate 1-3 standing executables are not active product/test APIs and may be recovered from reachable repository history when forensic reproduction is needed.
 

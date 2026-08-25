@@ -7,7 +7,7 @@ canonical: false
 
 # #39 developmental-needs / childhood review — resolution
 
-This document records the disposition of [`m2-pr39-developmental-needs-childhood-review.md`](m2-pr39-developmental-needs-childhood-review.md), originally captured at commit `9092eab3f82dabe66cc193e63a92f790bb1222fd`.
+This document records the disposition of the original developmental-needs / childhood review, which is now retained only in Git history at commit `9092eab3f82dabe66cc193e63a92f790bb1222fd`.
 
 The original proposal remains historical review material. It is **not** rewritten as though Fibre had always held the corrected view.
 

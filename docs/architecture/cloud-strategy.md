@@ -60,7 +60,7 @@ Do not model portability by renaming one provider's products into generic nouns.
 
 Provider-native identifiers, URLs, partition keys, resource IDs, deployment IDs and connection IDs remain driver-private operational metadata. Stable Fibre IDs and semantic records remain provider-neutral.
 
-See [`infrastructure-driver-v0.1.md`](infrastructure-driver-v0.1.md).
+See [`infrastructure-driver.md`](infrastructure-driver.md).
 
 ## Domain stores remain semantic authorities
 
@@ -143,8 +143,8 @@ Queues / Workflows when needed
 
 See:
 
-- [`thread-presentation-cloudflare-stream-v0.1.md`](thread-presentation-cloudflare-stream-v0.1.md) for the first Cloudflare topology;
-- [`thread-presentation-infrastructure-driver-v0.1.md`](thread-presentation-infrastructure-driver-v0.1.md) for the presentation capability profile over `InfraDriver`.
+- [`thread-presentation-cloudflare-stream.md`](thread-presentation-cloudflare-stream.md) for the first Cloudflare topology;
+- [`thread-presentation-infrastructure-profile.md`](thread-presentation-infrastructure-profile.md) for the presentation capability profile over `InfraDriver`.
 
 ## Adoption strategy
 

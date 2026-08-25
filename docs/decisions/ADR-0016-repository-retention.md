@@ -1,10 +1,10 @@
 ---
-id: adr-0014
+id: adr-0016
 status: accepted
 date: 2026-08-23
 ---
 
-# ADR-0014: The repository represents current Fibre, not development archaeology
+# ADR-0016: The repository represents current Fibre, not development archaeology
 
 ## Context
 

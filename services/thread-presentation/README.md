@@ -2,7 +2,7 @@
 
 This directory is the capability-level home for Fibre machinery that turns already-authorized Thread and World truth into durable human-facing presentation.
 
-Thread Presentation is **non-cognitive**. It must not invent, reinterpret, or privately reason about a Thread, and it must not become a second authority for identity, memory, history, meaning, relationships, or world state. The canonical presentation contract is defined by [`../../docs/architecture/world-presentation-v1.md`](../../docs/architecture/world-presentation-v1.md).
+Thread Presentation is **non-cognitive**. It must not invent, reinterpret, or privately reason about a Thread, and it must not become a second authority for identity, memory, history, meaning, relationships, or world state. The canonical presentation contract is defined by [`../../docs/architecture/world-presentation.md`](../../docs/architecture/world-presentation.md).
 
 ## Public consumer seam
 

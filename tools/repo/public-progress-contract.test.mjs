@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const progress = JSON.parse(readFileSync(new URL("../../docs/state/public-progress.json", import.meta.url), "utf8"));
-const schema = JSON.parse(readFileSync(new URL("../../docs/state/public-progress.schema.json", import.meta.url), "utf8"));
-const markdown = readFileSync(new URL("../../docs/state/public-progress.md", import.meta.url), "utf8");
+const repoRoot = new URL("../../", import.meta.url);
+const progress = JSON.parse(readFileSync(new URL("docs/state/public-progress.json", repoRoot), "utf8"));
+const schema = JSON.parse(readFileSync(new URL("docs/state/public-progress.schema.json", repoRoot), "utf8"));
+const markdown = readFileSync(new URL("docs/state/public-progress.md", repoRoot), "utf8");
+const packageJson = JSON.parse(readFileSync(new URL("package.json", repoRoot), "utf8"));
 
 const STATUS_IDS = ["achieved", "demonstrated", "in_progress", "not_yet", "preserved_failure"];
 const STATUS_SET = new Set(STATUS_IDS);
@@ -18,6 +20,13 @@ function assertTwoLevelClaim(value, label) {
   assert.equal(nonEmpty(value?.simple?.limitation), true, `${label} simple limitation is required`);
   assert.equal(nonEmpty(value?.detail?.claim), true, `${label} detailed claim is required`);
   assert.equal(nonEmpty(value?.detail?.limitation), true, `${label} detailed limitation is required`);
+}
+
+function stringsIn(value) {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(stringsIn);
+  if (value && typeof value === "object") return Object.values(value).flatMap(stringsIn);
+  return [];
 }
 
 test("public progress exposes one flattened canonical render contract", () => {
@@ -47,6 +56,29 @@ test("public capability cards always carry simple and accurate claims with limit
   }
 });
 
+test("public progress evidence paths resolve in the repository", () => {
+  for (const capability of progress.capabilities) {
+    for (const evidencePath of capability.evidence) {
+      assert.equal(
+        existsSync(new URL(evidencePath, repoRoot)),
+        true,
+        `${capability.id} cites missing evidence path ${evidencePath}`,
+      );
+    }
+  }
+});
+
+test("public progress advertises only existing npm scripts", () => {
+  const scripts = packageJson.scripts ?? {};
+  const advertised = new Set();
+  for (const text of stringsIn(progress)) {
+    for (const match of text.matchAll(/npm run\s+([a-zA-Z0-9:_-]+)/g)) advertised.add(match[1]);
+  }
+  for (const script of advertised) {
+    assert.equal(Object.hasOwn(scripts, script), true, `public progress advertises missing npm script ${script}`);
+  }
+});
+
 test("simple progress labels remain plain while precise status ids stay stable", () => {
   const labels = new Map(progress.statusDefinitions.map((item) => [item.id, item.simpleLabel]));
   assert.equal(labels.get("achieved"), "Done");
@@ -56,7 +88,7 @@ test("simple progress labels remain plain while precise status ids stay stable",
   assert.equal(labels.get("preserved_failure"), "Experiment failed — kept as evidence");
 });
 
-test("public population snapshot distinguishes old evidence from unborn replacements", () => {
+test("public population snapshot distinguishes historical evidence, burned development fixtures and the unrun final cohort", () => {
   const ids = new Set();
   for (const item of progress.population.items) {
     assert.equal(ids.has(item.id), false, `duplicate population id ${item.id}`);
@@ -70,7 +102,7 @@ test("public population snapshot distinguishes old evidence from unborn replacem
   assert.equal(byId.get("older_completed_life_artifacts")?.count, 3);
   assert.equal(byId.get("older_partial_failed_candidate")?.count, 1);
   assert.equal(byId.get("older_never_started_slot")?.count, 1);
-  assert.equal(byId.get("replacement_unborn_threads")?.count, 5);
-  assert.equal(byId.get("replacement_generated_lives")?.count, 0);
+  assert.equal(byId.get("burned_development_worlds")?.count, 5);
+  assert.equal(byId.get("final_held_out_lives")?.count, 0);
   assert.equal(progress.currentWork.finalLifeCognitionAuthorized, false);
 });

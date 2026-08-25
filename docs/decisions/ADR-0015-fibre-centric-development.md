@@ -12,7 +12,7 @@ Fibre is experimental software whose difficult questions are semantic and archit
 
 During #39, development drifted into a slower pattern where every iteration accumulated frozen packets, prompt hashes, one-shot authorization witnesses, preflight states, review-state tests and parallel replacement implementations. Those artifacts helped answer some specific questions, but they began to compete with the actual development goal: making Genesis produce rich lives and birth rich Threads.
 
-Git already preserves the path by which the repository evolved. ADR-0014 therefore established that current `HEAD` should describe current Fibre rather than retain development archaeology.
+Git already preserves the path by which the repository evolved. ADR-0016 therefore established that current `HEAD` should describe current Fibre rather than retain development archaeology.
 
 This ADR defines the complementary development method.
 
@@ -105,9 +105,9 @@ Do not substitute gate names, hash status or artifact counts for either descript
 - Fresh held-out cohorts and adversarial closing review remain legitimate when they protect scientific validity.
 - Milestone evidence becomes a compact consequence of completed work rather than the organizing principle of the work itself.
 
-## Relationship to ADR-0014
+## Relationship to ADR-0016
 
-ADR-0014 governs **what the repository retains**. This ADR governs **how Fibre is developed**.
+ADR-0016 governs **what the repository retains**. This ADR governs **how Fibre is developed**.
 
 Together:
 

@@ -7,6 +7,7 @@ import {
   resolveProfileSources,
   validateContextManifest,
 } from "./context-pack-lib.mjs";
+import { validateDocumentIntegrity } from "./document-integrity.mjs";
 import { expectedMarkdownIncludeProjections } from "./markdown-includes-lib.mjs";
 import { trackedSymlinkPaths, validateTrackedSymlinks } from "./repository-links.mjs";
 import { RUNTIME_NAME_DEBT_PATHS, validateRuntimeNames } from "./runtime-name-policy.mjs";
@@ -58,6 +59,12 @@ try {
   }
 } catch (error) {
   report(`Unable to verify tracked symlink integrity: ${error.message}`);
+}
+
+try {
+  for (const error of validateDocumentIntegrity()) report(error);
+} catch (error) {
+  report(`Unable to verify document integrity: ${error.message}`);
 }
 
 function walk(dir) {

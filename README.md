@@ -54,7 +54,7 @@ The exact list below is generated from the canonical region in [`docs/foundation
 
 The pre-M2/M2 substrate through **#38** is also complete: Semantic Guardian standing, history-bends-judgment evidence, Structured Obligations, the M2 identity contract, claim-level Passport/provenance, lineage/geography/culture, embodiment and autobiographical-memory epistemics.
 
-**Milestone #39 — Genesis, Childhood & Thread Birth v1 — is active.** Gate C, Gate D and the combined E+F Gate F are CLEAR. The branch is currently in the **post-F, pre-G cleanup seam**. No final Slice-G cohort has been generated.
+**Milestone #39 — Genesis, Childhood & Thread Birth — is ACTIVE — CLOSING.** The current development path can compile a materially particular prior life through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings, and the current birth path can publish and hydrate-compare an admitted life. Tbilisi, Kaohsiung, Recife, Fès and Hobart are burned development fixtures; the final fresh five-World closure cohort has not been generated.
 
 The current M2 sequence is:
 
@@ -67,7 +67,7 @@ The current M2 sequence is:
 
 The Whole-Person checkpoint remains **15/26 under rubric v2**. #39 deliberately earns no causal-standing credit merely by producing rich prior lives.
 
-See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise current posture and [`docs/validation/m2-pr39-pre-g-seam-status.md`](docs/validation/m2-pr39-pre-g-seam-status.md) for the active cleanup boundary.
+See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise current posture and [`docs/state/pr39-closing-plan.md`](docs/state/pr39-closing-plan.md) for the active #39 exit boundary.
 
 ## Repository map
 
