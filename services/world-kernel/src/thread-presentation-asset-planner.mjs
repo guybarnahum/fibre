@@ -66,8 +66,7 @@ function officialPhotoAwkwardness(visualIdentityDigest) {
     "Expression is mildly surprised by the shutter timing while remaining neutral and composed.",
     "Expression is politely neutral with a faint caught-at-the-wrong-instant quality.",
   ];
-  const tail = visualIdentityDigest.at(-1);
-  return options[Number.parseInt(tail, 16) % options.length];
+  return options[Number.parseInt(visualIdentityDigest.at(-1), 16) % options.length];
 }
 
 function officialIdPhotoBrief(visualIdentity) {
@@ -115,7 +114,7 @@ export function planThreadPresentationAssetGeneration({
     let brief = null;
     let referenceObjectRefs = [];
     let extraInputReferences = [];
-    let identitySeed = null;
+    let stableOfficialDemand = null;
 
     if (asset.role === "official_id_photo") {
       if (asset.status === "pending") {
@@ -135,14 +134,17 @@ export function planThreadPresentationAssetGeneration({
         ...visualIdentity.sourceReferences,
         ...visualIdentity.permissionReferences,
       ];
-      identitySeed = {
-        threadId: presentation.manifest.threadId,
-        mediaId: asset.mediaId,
-        role: asset.role,
-        variant: "default",
+      stableOfficialDemand = {
         visualIdentityDigest,
-        providerProfile,
-        brief,
+        seed: {
+          threadId: presentation.manifest.threadId,
+          mediaId: asset.mediaId,
+          role: asset.role,
+          variant: "default",
+          visualIdentityDigest,
+          providerProfile,
+          brief,
+        },
       };
     } else if (asset.role === "place") {
       const place = presentation.places.find((item) => item.mediaRefs.includes(asset.mediaId));
@@ -160,15 +162,17 @@ export function planThreadPresentationAssetGeneration({
       continue;
     }
 
-    const inputReferences = unique([
-      presentation.manifest.presentationId,
-      media.mediaPacketId,
-      snapshotObjectRef,
-      ...asset.sourceReferences,
-      ...extraInputReferences,
-    ]);
     const variant = "default";
-    const seed = identitySeed ?? {
+    const inputReferences = stableOfficialDemand
+      ? unique([...asset.sourceReferences, ...extraInputReferences])
+      : unique([
+          presentation.manifest.presentationId,
+          media.mediaPacketId,
+          snapshotObjectRef,
+          ...asset.sourceReferences,
+          ...extraInputReferences,
+        ]);
+    const seed = stableOfficialDemand?.seed ?? {
       threadId: presentation.manifest.threadId,
       presentationId: presentation.manifest.presentationId,
       mediaId: asset.mediaId,
@@ -178,6 +182,25 @@ export function planThreadPresentationAssetGeneration({
       brief,
     };
     const jobId = makeJobId(seed);
+    const context = stableOfficialDemand
+      ? {
+          kind: "thread_presentation_media",
+          threadId: presentation.manifest.threadId,
+          mediaId: asset.mediaId,
+          role: asset.role,
+          provenanceRef: asset.provenanceRef,
+          visualIdentityDigest: stableOfficialDemand.visualIdentityDigest,
+        }
+      : {
+          kind: "thread_presentation_media",
+          threadId: presentation.manifest.threadId,
+          presentationId: presentation.manifest.presentationId,
+          mediaPacketId: media.mediaPacketId,
+          mediaId: asset.mediaId,
+          provenanceRef: asset.provenanceRef,
+          snapshotObjectRef,
+          snapshotDigest,
+        };
     jobs.push({
       jobVersion: ASSET_GENERATION_JOB_VERSION,
       jobId,
@@ -191,20 +214,7 @@ export function planThreadPresentationAssetGeneration({
       receiptObjectRef: makeReceiptObjectRef(jobId),
       requestedAt,
       providerProfile,
-      context: {
-        kind: "thread_presentation_media",
-        threadId: presentation.manifest.threadId,
-        presentationId: presentation.manifest.presentationId,
-        mediaPacketId: media.mediaPacketId,
-        mediaId: asset.mediaId,
-        role: asset.role,
-        provenanceRef: asset.provenanceRef,
-        snapshotObjectRef,
-        snapshotDigest,
-        ...(asset.role === "official_id_photo" ? {
-          visualIdentityDigest: threadVisualIdentityProjectionDigest(presentation.visualIdentity),
-        } : {}),
-      },
+      context,
     });
   }
 
