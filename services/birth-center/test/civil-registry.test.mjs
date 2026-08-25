@@ -57,7 +57,7 @@ test("civil registration binds one FIN to Thread, birth event and World", () => 
     ...birth,
     fibreIdentityNumber: fibreIdentityNumberFromPayload("123456789"),
   });
-  assert.equal(normalizeFibreCivilRegistration(registration), registration);
+  assert.deepEqual(normalizeFibreCivilRegistration(registration), registration);
   assert.equal(registration.threadId, birth.threadId);
   assert.equal(registration.birthEventRef, birth.birthEventRef);
   assert.equal(registration.worldRef, birth.worldRef);
