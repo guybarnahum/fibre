@@ -13,6 +13,7 @@ export const FIBRE_CIVIL_REGISTRY_ISSUER = "fibre_civil_registry";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const FIN_PATTERN = new RegExp(`^[${FIBRE_IDENTITY_NUMBER_ALPHABET}]{4}-[${FIBRE_IDENTITY_NUMBER_ALPHABET}]{2}-[${FIBRE_IDENTITY_NUMBER_ALPHABET}]{4}$`);
+const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 const INDEX = new Map([...FIBRE_IDENTITY_NUMBER_ALPHABET].map((character, index) => [character, index]));
 
 function fail(message) { throw new TypeError(message); }
@@ -37,9 +38,13 @@ function timestamp(name, value) {
   if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) fail(`${name} must be an ISO timestamp`);
   return value;
 }
-function digestHex(value) {
-  return createHash("sha256").update(value, "utf8").digest("hex");
+function canonicalize(value) {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(canonicalize);
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
 }
+function canonicalJson(value) { return JSON.stringify(canonicalize(value)); }
+function digestHex(value) { return createHash("sha256").update(value, "utf8").digest("hex"); }
 
 export function fibreIdentityNumberCheckCharacter(payload) {
   if (typeof payload !== "string" || payload.length !== FIBRE_IDENTITY_NUMBER_POLICY.payloadLength) {
@@ -99,6 +104,35 @@ export function fibreCivilRegistrationId({ threadId, fibreIdentityNumber }) {
   return `civreg_${digestHex(material)}`;
 }
 
+function registrationCore({
+  registrationVersion,
+  registrationId,
+  threadId,
+  fibreIdentityNumber,
+  registeredAt,
+  birthEventRef,
+  worldRef,
+  issuer,
+  finPolicyRef,
+}) {
+  return {
+    registrationVersion,
+    registrationId,
+    threadId,
+    fibreIdentityNumber,
+    registeredAt,
+    birthEventRef,
+    worldRef,
+    issuer,
+    finPolicyRef,
+  };
+}
+
+export function fibreCivilRegistrationDigest(candidate) {
+  const core = registrationCore(candidate);
+  return `sha256:${digestHex(canonicalJson({ kind: "fibre_civil_registration", record: core }))}`;
+}
+
 export function normalizeFibreCivilRegistration(value) {
   const name = "Fibre civil registration";
   plain(name, value);
@@ -112,6 +146,7 @@ export function normalizeFibreCivilRegistration(value) {
     "worldRef",
     "issuer",
     "finPolicyRef",
+    "registrationDigest",
   ]);
   if (value.registrationVersion !== FIBRE_CIVIL_REGISTRATION_VERSION) fail(`${name}.registrationVersion is unsupported`);
   id(`${name}.registrationId`, value.registrationId);
@@ -127,6 +162,11 @@ export function normalizeFibreCivilRegistration(value) {
     fibreIdentityNumber: value.fibreIdentityNumber,
   });
   if (value.registrationId !== expectedId) fail(`${name}.registrationId does not match Thread/FIN identity`);
+  if (typeof value.registrationDigest !== "string" || !DIGEST_PATTERN.test(value.registrationDigest)) {
+    fail(`${name}.registrationDigest is invalid`);
+  }
+  const expectedDigest = fibreCivilRegistrationDigest(value);
+  if (value.registrationDigest !== expectedDigest) fail(`${name}.registrationDigest does not match registration content`);
   return Object.freeze(structuredClone(value));
 }
 
@@ -138,7 +178,7 @@ export function buildFibreCivilRegistration({
   worldRef,
 }) {
   const normalizedFin = normalizeFibreIdentityNumber(fibreIdentityNumber);
-  return normalizeFibreCivilRegistration({
+  const core = {
     registrationVersion: FIBRE_CIVIL_REGISTRATION_VERSION,
     registrationId: fibreCivilRegistrationId({ threadId, fibreIdentityNumber: normalizedFin }),
     threadId,
@@ -148,5 +188,9 @@ export function buildFibreCivilRegistration({
     worldRef,
     issuer: FIBRE_CIVIL_REGISTRY_ISSUER,
     finPolicyRef: FIBRE_IDENTITY_NUMBER_POLICY.policyRef,
+  };
+  return normalizeFibreCivilRegistration({
+    ...core,
+    registrationDigest: fibreCivilRegistrationDigest(core),
   });
 }
