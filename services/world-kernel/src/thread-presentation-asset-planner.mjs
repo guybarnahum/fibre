@@ -1,25 +1,16 @@
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
-  ASSET_GENERATION_JOB_VERSION,
   normalizeAssetGenerationReceipt,
-} from "../../asset-generator/src/asset-generation-domain.mjs";
+} from "#services/asset-generator/src/index.mjs";
+import {
+  presentationAssetSourceDigest,
+  reconcilePresentationAssets,
+} from "./presentation-asset-demand.mjs";
 
 export const THREAD_PRESENTATION_ASSET_PLAN_VERSION = "thread-presentation-asset-plan-v0.1";
 
 function unique(values) { return [...new Set(values)]; }
-
-function makeJobId(seed) {
-  return `assetjob_${sha256(canonicalJson(seed))}`;
-}
-
-function makeOutputObjectRef(jobId) {
-  return `asset_${sha256(canonicalJson({ jobId }))}`;
-}
-
-function makeReceiptObjectRef(jobId) {
-  return `assetreceipt_${sha256(canonicalJson({ jobId }))}`;
-}
 
 function placeBrief(place) {
   return {
@@ -58,73 +49,88 @@ function memoryBrief(memory) {
   };
 }
 
-export function planThreadPresentationAssetGeneration({
+function baseAssetSource(asset) {
+  return {
+    mediaId: asset.mediaId,
+    kind: asset.kind,
+    role: asset.role,
+    sourceReferences: asset.sourceReferences,
+    provenanceRef: asset.provenanceRef,
+  };
+}
+
+export function planThreadPresentationAssetSlots({
   bundle,
   snapshotObjectRef,
   snapshotDigest,
-  requestedAt,
-  providerProfile = "presentation-image-default-v1",
 }) {
   const normalized = normalizeThreadPresentationBundle(bundle);
   const { presentation, media } = normalized;
-  const jobs = [];
-  const deferred = [];
+  const slots = [];
 
   for (const asset of media.assets) {
-    if (asset.status === "ready" || asset.status === "unavailable") continue;
-
-    if (asset.kind !== "image") {
-      deferred.push({ mediaId: asset.mediaId, reason: "deferred_non_image_asset" });
-      continue;
-    }
-
+    let entityKind = "thread";
+    let entityRef = presentation.manifest.threadId;
+    let semanticSource = baseAssetSource(asset);
     let brief = null;
+    let deferredReason = null;
+
     if (asset.role === "place") {
       const place = presentation.places.find((item) => item.mediaRefs.includes(asset.mediaId));
-      if (place) brief = placeBrief(place);
+      if (place) {
+        entityKind = "place";
+        entityRef = place.placeRef;
+        semanticSource = { asset: baseAssetSource(asset), place };
+        brief = placeBrief(place);
+      }
     } else if (asset.role === "memory_reconstruction") {
       const memory = presentation.memories.find((item) => item.mediaRefs.includes(asset.mediaId));
-      if (memory) brief = memoryBrief(memory);
+      if (memory) {
+        entityKind = "memory";
+        entityRef = memory.memoryRef;
+        semanticSource = { asset: baseAssetSource(asset), memory };
+        brief = memoryBrief(memory);
+      }
     } else if (asset.role === "primary_portrait") {
-      deferred.push({ mediaId: asset.mediaId, reason: "deferred_missing_embodiment_brief" });
-      continue;
+      // The current presentation contract has no authorized embodiment/visual-identity
+      // projection. A plausible face is not a substitute for that authority.
+      deferredReason = "deferred_missing_embodiment_brief";
     }
 
-    if (brief === null) {
-      deferred.push({ mediaId: asset.mediaId, reason: "deferred_missing_generation_brief" });
-      continue;
-    }
+    let status;
+    if (asset.status === "ready") status = "ready";
+    else if (asset.status === "unavailable") status = "unavailable";
+    else if (asset.kind !== "image") {
+      status = "deferred";
+      deferredReason = "deferred_non_image_asset";
+    } else if (deferredReason !== null) status = "deferred";
+    else if (brief === null) {
+      status = "deferred";
+      deferredReason = "deferred_missing_generation_brief";
+    } else status = "missing";
 
-    const inputReferences = unique([
-      presentation.manifest.presentationId,
-      media.mediaPacketId,
-      snapshotObjectRef,
-      ...asset.sourceReferences,
-    ]);
-    const variant = "default";
-    const seed = {
-      threadId: presentation.manifest.threadId,
-      presentationId: presentation.manifest.presentationId,
+    slots.push({
+      slotKey: `thread:${presentation.manifest.threadId}:media:${asset.mediaId}`,
+      entityKind,
+      entityRef,
       mediaId: asset.mediaId,
-      variant,
-      snapshotDigest,
-      providerProfile,
-      brief,
-    };
-    const jobId = makeJobId(seed);
-    jobs.push({
-      jobVersion: ASSET_GENERATION_JOB_VERSION,
-      jobId,
       assetKind: asset.kind,
       role: asset.role,
-      variant,
-      brief,
-      inputReferences,
+      variant: "default",
+      status,
+      brief: status === "missing" ? brief : null,
+      inputReferences: unique([
+        presentation.manifest.presentationId,
+        media.mediaPacketId,
+        snapshotObjectRef,
+        ...asset.sourceReferences,
+        ...(semanticSource.place?.sourceReferences ?? []),
+        ...(semanticSource.memory?.sourceReferences ?? []),
+      ]),
       referenceObjectRefs: [],
-      outputObjectRef: makeOutputObjectRef(jobId),
-      receiptObjectRef: makeReceiptObjectRef(jobId),
-      requestedAt,
-      providerProfile,
+      sourceDigest: presentationAssetSourceDigest(semanticSource),
+      provenanceRef: asset.provenanceRef,
+      deferredReason: status === "deferred" ? deferredReason : null,
       context: {
         kind: "thread_presentation_media",
         threadId: presentation.manifest.threadId,
@@ -138,16 +144,51 @@ export function planThreadPresentationAssetGeneration({
     });
   }
 
-  return {
-    planVersion: THREAD_PRESENTATION_ASSET_PLAN_VERSION,
+  return Object.freeze({
     threadId: presentation.manifest.threadId,
     presentationId: presentation.manifest.presentationId,
     snapshotObjectRef,
     snapshotDigest,
+    slots: Object.freeze(slots),
+  });
+}
+
+export function planThreadPresentationAssetGeneration({
+  bundle,
+  snapshotObjectRef,
+  snapshotDigest,
+  requestedAt,
+  providerProfile = "presentation-image-default-v1",
+  existingDemands = [],
+  regenerationKey = null,
+}) {
+  const slotPlan = planThreadPresentationAssetSlots({
+    bundle,
+    snapshotObjectRef,
+    snapshotDigest,
+  });
+  const reconciliation = reconcilePresentationAssets({
+    slots: slotPlan.slots,
+    existingDemands,
     requestedAt,
     providerProfile,
-    jobs,
-    deferred,
+    regenerationKey,
+  });
+
+  return {
+    planVersion: THREAD_PRESENTATION_ASSET_PLAN_VERSION,
+    threadId: slotPlan.threadId,
+    presentationId: slotPlan.presentationId,
+    snapshotObjectRef,
+    snapshotDigest,
+    requestedAt,
+    providerProfile,
+    jobs: reconciliation.jobs,
+    deferred: reconciliation.deferredSlots.map((slot) => ({
+      mediaId: slot.mediaId,
+      reason: slot.deferredReason,
+    })),
+    reconciliation,
   };
 }
 
