@@ -258,6 +258,7 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     lifeRelations: Object.freeze(lifeRelations),
     initialRoster: structuredClone(slotPlan.roster.participants),
     lifeContinuity: structuredClone(candidate.lifeContinuity),
+    historicalEnvelopePlan: structuredClone(slotPlan.envelopePlan),
     originFixture: null,
   });
 }
@@ -323,6 +324,7 @@ export function hydrateGenesisLife({ databasePath, candidate, slotPlan, birth } 
     return Object.freeze({
       thread: world.getThread(candidate.threadId),
       manifest: genesis.getManifest(candidate.genesisId).manifest,
+      historicalEnvelopePlan: genesis.getHistoricalEnvelopePlan(candidate.genesisId).plan,
       civilRegistration: registry.getCivilRegistrationByThreadId(candidate.threadId, { required: false }),
       episodes: episodeEvents.map((event) => ({ ...structuredClone(event.payload), occurredAt: event.occurredAt })),
       lifeRelations: situated.listCurrentLifeRelations(candidate.threadId),
@@ -356,6 +358,12 @@ function sortedJson(values, key) {
 
 export function assertHydratedGenesisMatchesCandidate({ candidate, slotPlan, birth, hydrated } = {}) {
   if (canonicalJson(hydrated.manifest) !== canonicalJson(birth.manifest)) fail("hydrated Genesis manifest differs from admitted birth manifest");
+  if (canonicalJson(hydrated.historicalEnvelopePlan) !== canonicalJson(birth.historicalEnvelopePlan)) {
+    fail("hydrated historical-envelope authority differs from admitted birth plan");
+  }
+  if (canonicalJson(hydrated.historicalEnvelopePlan) !== canonicalJson(slotPlan.envelopePlan)) {
+    fail("hydrated historical-envelope authority differs from current Genesis plan");
+  }
   if (canonicalJson(hydrated.episodes) !== canonicalJson(candidate.episodes)) fail("hydrated Thread history differs from admitted candidate episodes");
   if (canonicalJson(hydrated.genome) !== canonicalJson(slotPlan.genome)) fail("hydrated symbolic genome differs from admitted child genome");
 
