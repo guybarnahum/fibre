@@ -25,6 +25,7 @@ const REPO_PATH_PREFIXES = [
 ];
 
 const FILE_SUFFIX = /\.(?:md|json|jsonc|mjs|js|ts|tsx|jsx|sql|yaml|yml|html|css|sh)$/u;
+const RETIRED_TEST_ARTIFACT_FILE = /\bartifacts\/test-results\/[A-Za-z0-9._/-]+\.(?:md|json|jsonc|mjs|js|ts|tsx|jsx|sql|yaml|yml|html|css|sh)\b/gu;
 
 function normalize(path) {
   return path.replaceAll("\\", "/");
@@ -113,6 +114,10 @@ export function backtickedRepoPaths(text) {
   return paths;
 }
 
+export function retiredTestArtifactPaths(text) {
+  return [...new Set([...text.matchAll(RETIRED_TEST_ARTIFACT_FILE)].map((match) => match[0]))];
+}
+
 function trackedMarkdown(root) {
   return execFileSync("git", ["ls-files", "--", "*.md"], { cwd: root, encoding: "utf8" })
     .split(/\r?\n/u)
@@ -145,6 +150,12 @@ export function validateDocumentIntegrity({ root = process.cwd(), markdownPaths 
     for (const target of markdownLinkTargets(text)) {
       if (!existsSync(resolveDocumentPath(documentPath, target, root))) {
         errors.push(`Broken Markdown link in ${documentPath}: ${target}`);
+      }
+    }
+
+    if (!documentPath.startsWith("docs/history/")) {
+      for (const target of retiredTestArtifactPaths(text)) {
+        errors.push(`Retired test artifact path referenced in ${documentPath}: ${target}`);
       }
     }
 
