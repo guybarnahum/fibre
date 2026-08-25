@@ -22,6 +22,16 @@ export function createGenesisTables(database) {
       FOREIGN KEY (world_spec_id) REFERENCES genesis_world_specs(world_spec_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS genesis_historical_envelope_plans (
+      genesis_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL UNIQUE,
+      world_spec_id TEXT NOT NULL,
+      plan_digest TEXT NOT NULL UNIQUE CHECK (plan_digest LIKE 'sha256:%'),
+      record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      FOREIGN KEY (world_spec_id) REFERENCES genesis_world_specs(world_spec_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS genesis_generation_attempts (
       attempt_id TEXT PRIMARY KEY,
       genesis_id TEXT NOT NULL,
@@ -50,7 +60,8 @@ export function createGenesisTables(database) {
     CREATE INDEX IF NOT EXISTS idx_genesis_origin_authority_source
       ON genesis_origin_authorities(source_party_id, authority_kind, asserted_at, authority_ref);
 
-    CREATE TRIGGER IF NOT EXISTS genesis_manifests_publish_fin_registration
+    DROP TRIGGER IF EXISTS genesis_manifests_publish_fin_registration;
+    CREATE TRIGGER genesis_manifests_publish_fin_registration
       AFTER INSERT ON genesis_manifests
       WHEN NEW.publication_status='published'
       BEGIN
@@ -103,6 +114,12 @@ export function createGenesisTables(database) {
     CREATE TRIGGER IF NOT EXISTS genesis_manifests_no_delete
       BEFORE DELETE ON genesis_manifests
       BEGIN SELECT RAISE(ABORT,'genesis_manifests is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_historical_envelope_plans_no_update
+      BEFORE UPDATE ON genesis_historical_envelope_plans
+      BEGIN SELECT RAISE(ABORT,'genesis_historical_envelope_plans is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_historical_envelope_plans_no_delete
+      BEFORE DELETE ON genesis_historical_envelope_plans
+      BEGIN SELECT RAISE(ABORT,'genesis_historical_envelope_plans is immutable'); END;
     CREATE TRIGGER IF NOT EXISTS genesis_generation_attempts_no_update
       BEFORE UPDATE ON genesis_generation_attempts
       BEGIN SELECT RAISE(ABORT,'genesis_generation_attempts is append-only'); END;
