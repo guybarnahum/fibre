@@ -14,7 +14,7 @@ import {
 import {
   IDENTITY_DOMAIN_REGISTRY_V2,
   IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
-} from "./identity-domain-registry-v2.mjs";
+} from "./identity-domain-registry-definition.mjs";
 import {
   identityAssertionDigest,
   identityAssertionId,

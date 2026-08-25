@@ -15,9 +15,9 @@ export {
   IDENTITY_DOMAIN_REGISTRY_V2_DIGEST as IDENTITY_DOMAIN_REGISTRY_DIGEST,
   IDENTITY_DOMAIN_REGISTRY_V2_VERSION as IDENTITY_DOMAIN_REGISTRY_VERSION,
   identityDomainV2Definition as identityDomainDefinition,
-} from "./identity-domain-registry-v2.mjs";
+} from "./identity-domain-registry-definition.mjs";
 
-import { IDENTITY_DOMAIN_REGISTRY_V2 } from "./identity-domain-registry-v2.mjs";
+import { IDENTITY_DOMAIN_REGISTRY_V2 } from "./identity-domain-registry-definition.mjs";
 
 export function listIdentityDomainDefinitions() {
   return Object.entries(IDENTITY_DOMAIN_REGISTRY_V2).map(([domainId, definition]) => ({

@@ -21,7 +21,7 @@ import {
 import {
   IDENTITY_DOMAIN_REGISTRY_V2_VERSION,
   identityDomainV2Definition,
-} from "./identity-domain-registry-v2.mjs";
+} from "./identity-domain-registry-definition.mjs";
 import {
   IDENTITY_ATOMIC_CLAIM_POLICY,
   MAX_CLAIM_PREDICATE_BYTES,

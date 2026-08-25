@@ -6,12 +6,11 @@ The desired end state is semantic capability names. Version identifiers belong i
 
 ## Remaining non-Genesis cleanup
 
-Two current runtime modules still carry implementation-version filenames:
+One current runtime module still carries an implementation-version filename:
 
 - `world-kernel/src/dignity-guardian-v4.mjs`
-- `world-kernel/src/identity-domain-registry-v2.mjs`
 
-Neither represents a selectable production compatibility dialect. They remain here only because each has a broad direct-import surface spanning current runtime code and retained historical proof tooling. Rename them in narrow mechanical commits behind the existing tests; preserve their versioned policy/evidence values where those values are real witnesses.
+It does not represent a selectable production compatibility dialect. It remains here only because it has a broad direct-import surface spanning current runtime code and retained historical proof tooling. Rename it in a narrow mechanical commit behind the existing tests; preserve its versioned policy/evidence values where those values are real witnesses.
 
 ## Genesis naming debt — explicitly deferred until the birth seam is stable
 
@@ -54,6 +53,7 @@ The following live runtime names have already been currentized:
 - `m1-deterministic-actor.mjs` -> `deterministic-actor.mjs`
 - `embodiment-store-personhood-v2.mjs` -> `embodiment-persistence-store.mjs`
 - `identity-schema-v2-repair.mjs` -> `identity-schema-compatibility.mjs`
+- `identity-domain-registry-v2.mjs` -> `identity-domain-registry-definition.mjs`
 
 These changes intentionally preserved serialized versions, evidence IDs, and policy witnesses where version identity remains meaningful.
 

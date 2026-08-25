@@ -1,6 +1,6 @@
 import { assertId, assertStringArray } from "./persistence-common.mjs";
 import { IDENTITY_ATOMIC_CLAIM_POLICY } from "./identity-claim-discipline.mjs";
-import { identityDomainV2Definition } from "./identity-domain-registry-v2.mjs";
+import { identityDomainV2Definition } from "./identity-domain-registry-definition.mjs";
 import { identityAssertionId, identityClaimId } from "./identity-provenance-domain.mjs";
 import { lifeRelationRevisionRef, placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import { normalizeLifeRelation, normalizePlaceEpisode } from "./situated-life-domain.mjs";
