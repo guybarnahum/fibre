@@ -7,13 +7,8 @@ import {
 import {
   IntegrityError,
   canonicalJson,
-  sha256,
 } from "./persistence-common.mjs";
 import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
-
-function registrationDigest(record) {
-  return `sha256:${sha256(canonicalJson({ kind: "fibre_thread_registration", record }))}`;
-}
 
 function tableExists(database) {
   return database.prepare(
@@ -26,8 +21,7 @@ function parseStored(row, label) {
   try { parsed = JSON.parse(row.record_json); }
   catch (error) { throw new IntegrityError(`${label} JSON is invalid: ${error.message}`); }
   const record = normalizeFibreCivilRegistration(parsed);
-  const digest = registrationDigest(record);
-  if (row.record_json !== canonicalJson(record) || row.record_digest !== digest) {
+  if (row.record_json !== canonicalJson(record) || row.record_digest !== record.registrationDigest) {
     throw new IntegrityError(`${label} failed canonical/digest verification`);
   }
   return record;
@@ -97,7 +91,6 @@ export function persistCivilRegistrationInTransaction(database, candidate, {
     throw new ErrorType(`FIN ${record.fibreIdentityNumber} is already assigned to Thread ${byFin.thread_id}`);
   }
 
-  const digest = registrationDigest(record);
   database.prepare(`
     INSERT INTO fibre_civil_registrations(
       registration_id,thread_id,fibre_identity_number,birth_event_ref,world_ref,
@@ -113,9 +106,9 @@ export function persistCivilRegistrationInTransaction(database, candidate, {
     record.issuer,
     record.finPolicyRef,
     canonicalJson(record),
-    digest,
+    record.registrationDigest,
   );
-  return { record, recordDigest: digest, idempotent: false };
+  return { record, recordDigest: record.registrationDigest, idempotent: false };
 }
 
 export class CivilRegistryStore {
