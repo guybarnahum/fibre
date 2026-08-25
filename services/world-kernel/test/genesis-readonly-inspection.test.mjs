@@ -31,6 +31,7 @@ test("read-only Genesis inspection is empty rather than mutating or failing on a
       manifest: null,
       worldSpec: null,
       attempts: [],
+      historicalEnvelopePlan: null,
       threadPublished: false,
     });
     assert.equal(inspector.getManifest("gen_none", { required: false }), null);
