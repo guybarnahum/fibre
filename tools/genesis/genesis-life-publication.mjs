@@ -1,9 +1,11 @@
+import { createCivilRegistryService } from "#services/birth-center/src/civil-registry.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
   normalizeAutobiographicalMemory,
 } from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
+import { CivilRegistryStore } from "#services/world-kernel/src/civil-registry-store.mjs";
 import {
   normalizeGenesisManifest,
   publicationValidatorSetWitness,
@@ -270,12 +272,36 @@ function persistCurrentGenomeBundle(databasePath, slotPlan) {
   }
 }
 
+function attachCivilRegistration(databasePath, birth) {
+  const authority = new CivilRegistryStore(databasePath);
+  try {
+    const registry = createCivilRegistryService({ authority });
+    const registration = registry.prepareBirthRegistration({
+      threadId: birth.manifest.threadId,
+      birthEventRef: normalizeSeedSnapshot(birth.thread).provenance.lastEventId,
+      worldRef: birth.manifest.worldSpecRef,
+      registeredAt: birth.manifest.publication.publishedAt,
+    });
+    const manifest = normalizeGenesisManifest({
+      ...birth.manifest,
+      publication: {
+        ...birth.manifest.publication,
+        civilRegistration: registration,
+      },
+    });
+    return Object.freeze({ ...birth, manifest });
+  } finally {
+    authority.close();
+  }
+}
+
 export function publishGenesisLifeCandidate({ databasePath, candidate, slotPlan, cognition, publicationAt } = {}) {
-  const birth = buildGenesisBirthBundle({ candidate, slotPlan, cognition, publicationAt });
+  const candidateBirth = buildGenesisBirthBundle({ candidate, slotPlan, cognition, publicationAt });
   persistCurrentGenomeBundle(databasePath, slotPlan);
   const genesis = new GenesisStore(databasePath);
   try {
     genesis.recordWorldSpec(slotPlan.worldSpec);
+    const birth = attachCivilRegistration(databasePath, candidateBirth);
     const publication = genesis.publishBirth(birth);
     return { birth, publication };
   } finally {
@@ -290,12 +316,14 @@ export function hydrateGenesisLife({ databasePath, candidate, slotPlan, birth } 
   const memory = openAutobiographicalMemoryInspectionStore(databasePath);
   const identity = openIdentityInspectionStore(databasePath);
   const genomes = new SymbolicGenomeStore(databasePath, { readOnly: true });
+  const registry = new CivilRegistryStore(databasePath);
   try {
     const events = world.listEvents(candidate.threadId);
     const episodeEvents = events.filter((event) => event.eventType === "THREAD_LIFE_EPISODE_RECORDED");
     return Object.freeze({
       thread: world.getThread(candidate.threadId),
       manifest: genesis.getManifest(candidate.genesisId).manifest,
+      civilRegistration: registry.getCivilRegistrationByThreadId(candidate.threadId, { required: false }),
       episodes: episodeEvents.map((event) => ({ ...structuredClone(event.payload), occurredAt: event.occurredAt })),
       lifeRelations: situated.listCurrentLifeRelations(candidate.threadId),
       placeEpisodes: situated.listCurrentPlaceEpisodes(candidate.threadId),
@@ -312,6 +340,7 @@ export function hydrateGenesisLife({ databasePath, candidate, slotPlan, birth } 
       }),
     });
   } finally {
+    registry.close();
     genomes.close();
     identity.close();
     memory.close();
@@ -329,6 +358,11 @@ export function assertHydratedGenesisMatchesCandidate({ candidate, slotPlan, bir
   if (canonicalJson(hydrated.manifest) !== canonicalJson(birth.manifest)) fail("hydrated Genesis manifest differs from admitted birth manifest");
   if (canonicalJson(hydrated.episodes) !== canonicalJson(candidate.episodes)) fail("hydrated Thread history differs from admitted candidate episodes");
   if (canonicalJson(hydrated.genome) !== canonicalJson(slotPlan.genome)) fail("hydrated symbolic genome differs from admitted child genome");
+
+  const expectedRegistration = birth.manifest.publication.civilRegistration ?? null;
+  if (canonicalJson(hydrated.civilRegistration) !== canonicalJson(expectedRegistration)) {
+    fail("hydrated Fibre civil registration differs from admitted birth registration");
+  }
 
   if (sortedJson(hydrated.lifeRelations, (item) => item.relationId) !== sortedJson([
     ...hydrated.expectedSituated.lifeRelations,
