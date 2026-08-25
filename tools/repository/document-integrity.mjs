@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
+import { CONTEXT_MANIFEST_PATH } from "./context-pack-lib.mjs";
+
 const CURRENT_AUTHORITY_ROOTS = [
   "README.md",
   "AGENTS.md",
@@ -120,10 +122,38 @@ function trackedMarkdown(root) {
     .filter(Boolean);
 }
 
+function declaredGeneratedArtifactPaths(root, errors) {
+  const manifestPath = resolve(root, CONTEXT_MANIFEST_PATH);
+  if (!existsSync(manifestPath)) return new Set();
+
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch (error) {
+    errors.push(`Invalid ${CONTEXT_MANIFEST_PATH}: ${error.message}`);
+    return new Set();
+  }
+
+  const declared = new Set();
+  for (const profile of Object.values(manifest.profiles ?? {})) {
+    if (!profile || typeof profile !== "object") continue;
+    const aliases = Array.isArray(profile.aliases) ? profile.aliases : [];
+    for (const raw of [profile.output, ...aliases]) {
+      if (typeof raw !== "string") continue;
+      const target = normalize(raw.trim());
+      if (!target.startsWith("artifacts/generated/") || target.includes("../")) continue;
+      if (!FILE_SUFFIX.test(target)) continue;
+      declared.add(target);
+    }
+  }
+  return declared;
+}
+
 export function validateDocumentIntegrity({ root = process.cwd(), markdownPaths = null } = {}) {
   const errors = [];
   const paths = markdownPaths ?? trackedMarkdown(root);
   const canonicalIds = new Map();
+  const generatedArtifacts = declaredGeneratedArtifactPaths(root, errors);
 
   for (const documentPath of paths) {
     const absolute = resolve(root, documentPath);
@@ -143,14 +173,14 @@ export function validateDocumentIntegrity({ root = process.cwd(), markdownPaths 
     }
 
     for (const target of markdownLinkTargets(text)) {
-      if (!existsSync(resolveDocumentPath(documentPath, target, root))) {
+      if (!existsSync(resolveDocumentPath(documentPath, target, root)) && !generatedArtifacts.has(normalize(target))) {
         errors.push(`Broken Markdown link in ${documentPath}: ${target}`);
       }
     }
 
     if (shouldCheckBackticks(documentPath, metadata)) {
       for (const target of backtickedRepoPaths(text)) {
-        if (!existsSync(resolve(root, target))) {
+        if (!existsSync(resolve(root, target)) && !generatedArtifacts.has(normalize(target))) {
           errors.push(`Missing documented repository path in ${documentPath}: ${target}`);
         }
       }
