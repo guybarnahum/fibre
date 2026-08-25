@@ -1,26 +1,26 @@
 import { readFileSync } from "node:fs";
 
-import { requestFingerprint } from "../services/world-kernel/src/private-participation.mjs";
+import { requestFingerprint } from "../../../services/world-kernel/src/private-participation.mjs";
 import {
   DIGNITY_GUARDIAN_V4_POLICY,
   DIGNITY_GUARDIAN_V4_PROMPT_HASH,
   DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH,
   semanticDignityGuardianV4,
-} from "../services/world-kernel/src/dignity-guardian-v4.mjs";
+} from "../../../services/world-kernel/src/dignity-guardian-evaluation.mjs";
 import {
   GuardianModelError,
   createOpenAIResponsesGuardianAdapter,
-} from "../services/world-kernel/src/guardian-model-adapter.mjs";
+} from "../../../services/world-kernel/src/guardian-model-adapter.mjs";
 import { SEMANTIC_GUARDIAN_V4_DEVELOPMENT_SET as SET } from "../experiments/semantic-guardian-v4/development-set.mjs";
 
 const minaFixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
 const danielFixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/daniel.thread.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../../fixtures/threads/daniel.thread.json", import.meta.url), "utf8"),
 );
 const amaraFixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/amara.thread.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../../fixtures/threads/amara.thread.json", import.meta.url), "utf8"),
 );
 
 function apiKey(environment) {

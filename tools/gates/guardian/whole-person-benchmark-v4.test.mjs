@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   buildDignityGuardianV4ModelInput,
   buildDignityGuardianV4ResponseSchema,
-} from "../services/world-kernel/src/dignity-guardian-v4.mjs";
+} from "../../../services/world-kernel/src/dignity-guardian-evaluation.mjs";
 import {
   WHOLE_PERSON_BENCHMARK_V4,
   buildWholePersonPass1Cases,

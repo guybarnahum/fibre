@@ -9,25 +9,25 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
-import { openRuntimeStore } from "../services/world-kernel/src/runtime-store.mjs";
-import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
-import { openLifecycleHardeningStore } from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
-import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
-import { openCausalContextStore } from "../services/world-kernel/src/causal-context-store.mjs";
-import { openSemanticStateStore } from "../services/world-kernel/src/semantic-state-store.mjs";
-import { openGuardianCognitionStore } from "../services/world-kernel/src/guardian-cognition-store.mjs";
-import { PreM2CausalWorldKernelService } from "../services/world-kernel/src/causal-service.mjs";
-import { selectCausalContext } from "../services/world-kernel/src/causal-context.mjs";
-import { deterministicActorOutput } from "../services/world-kernel/src/runtime-domain.mjs";
-import { requestFingerprint } from "../services/world-kernel/src/private-participation.mjs";
-import { semanticDignityGuardianV4 } from "../services/world-kernel/src/dignity-guardian-v4.mjs";
-import { createModelRuntime } from "../services/world-kernel/src/model-runtime/model-runtime.mjs";
+import { openWorldStore } from "../../../services/world-kernel/src/persistence.mjs";
+import { openRuntimeStore } from "../../../services/world-kernel/src/runtime-store.mjs";
+import { openFreezeStore } from "../../../services/world-kernel/src/freeze-store.mjs";
+import { openLifecycleHardeningStore } from "../../../services/world-kernel/src/lifecycle-hardening-store.mjs";
+import { openExpressionStore } from "../../../services/world-kernel/src/expression-store.mjs";
+import { openCausalContextStore } from "../../../services/world-kernel/src/causal-context-store.mjs";
+import { openSemanticStateStore } from "../../../services/world-kernel/src/semantic-state-store.mjs";
+import { openGuardianCognitionStore } from "../../../services/world-kernel/src/guardian-cognition-store.mjs";
+import { PreM2CausalWorldKernelService } from "../../../services/world-kernel/src/causal-service.mjs";
+import { selectCausalContext } from "../../../services/world-kernel/src/causal-context.mjs";
+import { deterministicActorOutput } from "../../../services/world-kernel/src/runtime-domain.mjs";
+import { requestFingerprint } from "../../../services/world-kernel/src/private-participation.mjs";
+import { semanticDignityGuardianV4 } from "../../../services/world-kernel/src/dignity-guardian-evaluation.mjs";
+import { createModelRuntime } from "../../../services/world-kernel/src/model-runtime/model-runtime.mjs";
 import {
   createScriptedGuardianModelAdapter,
   grounded,
   unresolved,
-} from "../services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
+} from "../../../services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
 
 export const HISTORY_BENDS_JUDGMENT_DEVELOPMENT = Object.freeze({
   id: "history_bends_judgment_development_v3",
@@ -37,7 +37,7 @@ export const HISTORY_BENDS_JUDGMENT_DEVELOPMENT = Object.freeze({
 
 const REASONING_BLOCK = "dignity_guardian";
 const minaFixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
 
 export const HISTORY_EPISODE_REQUEST = Object.freeze({

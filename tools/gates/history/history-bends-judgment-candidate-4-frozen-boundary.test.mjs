@@ -8,15 +8,15 @@ import { SEMANTIC_GUARDIAN_V4_FROZEN_BOUNDARY_CANDIDATE_4 } from
 import {
   CAUSAL_CONTEXT_POLICY,
   MEMORY_RESOLUTION_POLICY,
-} from "../services/world-kernel/src/causal-context.mjs";
-import { EPISODE_EVIDENCE_POLICY } from "../services/world-kernel/src/episode-evidence.mjs";
+} from "../../../services/world-kernel/src/causal-context.mjs";
+import { EPISODE_EVIDENCE_POLICY } from "../../../services/world-kernel/src/episode-evidence.mjs";
 import {
   DIGNITY_GUARDIAN_V4_POLICY,
   DIGNITY_GUARDIAN_V4_PROMPT_HASH,
   DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION,
   DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH,
   DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_VERSION,
-} from "../services/world-kernel/src/dignity-guardian-v4.mjs";
+} from "../../../services/world-kernel/src/dignity-guardian-evaluation.mjs";
 
 const CANDIDATE_4 = HISTORY_BENDS_JUDGMENT_FROZEN_BOUNDARY_CANDIDATE_4;
 

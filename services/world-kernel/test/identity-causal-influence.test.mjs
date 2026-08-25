@@ -10,7 +10,7 @@ import {
   identityClaimId,
 } from "../src/identity-provenance-domain.mjs";
 import { IDENTITY_ATOMIC_CLAIM_POLICY } from "../src/identity-claim-discipline.mjs";
-import { identityDomainV2Definition } from "../src/identity-domain-registry-v2.mjs";
+import { identityDomainV2Definition } from "../src/identity-domain-registry-definition.mjs";
 import { openIdentityInspectionStore, openIdentityStore } from "../src/identity-store.mjs";
 import { runIdentityCausalInfluence } from "../src/identity-causal-influence.mjs";
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { identityAssertionDigest } from "../src/identity-provenance-domain.mjs";
-import { IDENTITY_DOMAIN_REGISTRY_V2_VERSION } from "../src/identity-domain-registry-v2.mjs";
+import { IDENTITY_DOMAIN_REGISTRY_V2_VERSION } from "../src/identity-domain-registry-definition.mjs";
 import { livedCulturalFormationClaim } from "../src/lived-cultural-formation-authoring.mjs";
 import {
   lifeRelationId,
