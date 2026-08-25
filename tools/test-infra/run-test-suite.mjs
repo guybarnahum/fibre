@@ -7,8 +7,8 @@ const TTY_REPORTER = fileURLToPath(new URL("./fibre-tty-reporter.mjs", import.me
 
 export function parseTestSuiteArgs(argv) {
   const [suite = "active", ...rest] = argv;
-  if (!new Set(["active", "repro", "all"]).has(suite)) {
-    throw new TypeError("test suite must be active, repro, or all");
+  if (!new Set(["active", "replay", "all"]).has(suite)) {
+    throw new TypeError("test suite must be active, replay, or all");
   }
   return { suite, nodeTestArgs: rest };
 }

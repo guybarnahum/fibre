@@ -219,6 +219,6 @@ A useful architectural shorthand is:
 
 ## Repository/world separation
 
-Live Thread data is not committed to Git. The repository may contain schemas/migrations, synthetic fixtures, deterministic examples, redacted/frozen experiment artifacts, retained proof/repro instruments and human-readable validation reports.
+Live Thread data is not committed to Git. The repository may contain schemas/migrations, synthetic fixtures, deterministic examples, redacted/frozen experiment artifacts, retained proof/replay instruments and human-readable validation reports.
 
 The database/object-store world contains the living Threads. Git contains the laws, current machinery, fixtures and the limited scientific evidence still needed to build and audit that world.

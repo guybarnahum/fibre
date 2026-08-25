@@ -6,7 +6,7 @@ import {
   parseHistoryDevelopmentArgs,
   runHistoryDevelopment,
 } from "./history-bends-judgment-dev.mjs";
-import { createProviderProgressHeartbeat } from "./provider-progress.mjs";
+import { createProviderProgressHeartbeat } from "#tools/shared/provider-progress.mjs";
 
 function progressPrinter(phase, message) {
   process.stderr.write(`history:dev · ${phase} · ${message}\n`);

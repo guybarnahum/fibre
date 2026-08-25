@@ -1,1 +1,0 @@
-genesis/genesis-rich-life-dev.mjs

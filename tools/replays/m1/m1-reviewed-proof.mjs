@@ -7,17 +7,18 @@ import { pathToFileURL } from "node:url";
 
 import { runM1MinaRoundTrip } from "./m1-mina-round-trip.mjs";
 import { runWithM1ExpressionProof } from "./m1-expression-proof.mjs";
-import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
-import { openRuntimeStore } from "../services/world-kernel/src/runtime-store.mjs";
-import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
-import { openLifecycleHardeningStore } from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
-import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
-import { M1LifecycleWorldKernelService } from "../services/world-kernel/src/lifecycle-hardening-service.mjs";
-import { AuthorizationConsumedError } from "../services/world-kernel/src/freeze-domain.mjs";
-import { ParticipationAuthorizationRejectedError } from "../services/world-kernel/src/runtime-domain.mjs";
+import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { openRuntimeStore } from "#services/world-kernel/src/runtime-store.mjs";
+import { openFreezeStore } from "#services/world-kernel/src/freeze-store.mjs";
+import { openLifecycleHardeningStore } from "#services/world-kernel/src/lifecycle-hardening-store.mjs";
+import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
+import { M1LifecycleWorldKernelService } from "#services/world-kernel/src/lifecycle-hardening-service.mjs";
+import { AuthorizationConsumedError } from "#services/world-kernel/src/freeze-domain.mjs";
+import { ParticipationAuthorizationRejectedError } from "#services/world-kernel/src/runtime-domain.mjs";
+import { repoFile } from "#repo-root";
 
 const fixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
 );
 const OBLIGATION = fixture.currentState.unresolvedIntentions[0];
 const EXPRESSION_REQUESTS = {

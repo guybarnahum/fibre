@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { createModelRuntime } from "../../../services/world-kernel/src/model-runtime/model-runtime.mjs";
+import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
 import { SEMANTIC_GUARDIAN_V4_DEVELOPMENT_SET as SET } from "../experiments/semantic-guardian-v4/development-set.mjs";
 import {
   blockedV4DevelopmentReport,

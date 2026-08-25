@@ -5,9 +5,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
-import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
-import { runM1ReviewedProof } from "./m1-reviewed-proof.mjs";
+import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { repoFile } from "#repo-root";
+import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
+import { runM1ReviewedProof } from "#tools/replays/m1/m1-reviewed-proof.mjs";
 import {
   formatWorldDatabaseSummary,
   inspectWorldDatabase,
@@ -16,7 +17,7 @@ import {
 } from "./inspect-world-database.mjs";
 
 const fixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
 );
 
 function seededDatabase() {

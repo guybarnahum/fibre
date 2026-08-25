@@ -13,7 +13,7 @@ import {
   SLICE_E_DEV_SUBJECT,
   SLICE_E_DEV_WORLD,
   buildSliceEDevelopmentPlan,
-} from "../../../tools/genesis-rich-life-dev.mjs";
+} from "#tools/genesis/genesis-rich-life-dev.mjs";
 
 function firstWindowInput() {
   const item = buildSliceEDevelopmentPlan({

@@ -14,7 +14,7 @@ import {
   passCInitialResponseSchemaHash,
   passCReinterpretationPromptHash,
   passCReinterpretationResponseSchemaHash,
-} from "../services/world-kernel/src/genesis-pass-c-prompts.mjs";
+} from "#services/world-kernel/src/genesis-pass-c-prompts.mjs";
 import {
   GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,
@@ -22,7 +22,7 @@ import {
   normalizeInitialPassCModelOutput,
   normalizePassCInput,
   normalizeReinterpretationPassCModelOutput,
-} from "../services/world-kernel/src/genesis-pass-c-domain.mjs";
+} from "#services/world-kernel/src/genesis-pass-c-domain.mjs";
 
 function initialInput() {
   return normalizePassCInput({

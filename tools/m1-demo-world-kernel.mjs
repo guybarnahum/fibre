@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { startM1DemoWorldKernel } from "./repro/m1/m1-demo-world-kernel.mjs";
+import { startM1DemoWorldKernel } from "#tools/replays/m1/m1-demo-world-kernel.mjs";
 
 export { startM1DemoWorldKernel };
 

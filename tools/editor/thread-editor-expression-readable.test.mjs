@@ -6,10 +6,11 @@ import test from "node:test";
 import {
   expressionSummary,
   inspectionCounts,
-} from "../apps/thread-editor/editor-model.js";
-import { explainExpression } from "../apps/thread-editor/expression-readable.js";
-import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
-import { runM1ReviewedProof } from "./m1-reviewed-proof.mjs";
+} from "#apps/thread-editor/editor-model.js";
+import { explainExpression } from "#apps/thread-editor/expression-readable.js";
+import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
+import { runM1ReviewedProof } from "#tools/replays/m1/m1-reviewed-proof.mjs";
+import { repoFile } from "#repo-root";
 
 function selection({
   desiredAction = "accept",
@@ -271,11 +272,11 @@ test("Thread-authored expression text remains data, never HTML", () => {
   );
 
   const readableSource = readFileSync(
-    new URL("../apps/thread-editor/expression-readable.js", import.meta.url),
+    repoFile("apps/thread-editor/expression-readable.js"),
     "utf8",
   );
   const appSource = readFileSync(
-    new URL("../apps/thread-editor/app.js", import.meta.url),
+    repoFile("apps/thread-editor/app.js"),
     "utf8",
   );
   assert.doesNotMatch(readableSource, /innerHTML|insertAdjacentHTML|document\.createElement/);

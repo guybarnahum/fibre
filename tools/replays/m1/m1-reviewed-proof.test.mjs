@@ -8,7 +8,7 @@ import {
   readActiveRuntimeCounts,
   runM1ReviewedProof,
 } from "./m1-reviewed-proof.mjs";
-import { inspectWorldDatabase } from "./inspect-world-database.mjs";
+import { inspectWorldDatabase } from "#tools/inspect/inspect-world-database.mjs";
 
 test("Mina completes the reviewed persistent round trip with live-path guard evidence", async () => {
   const report = await runM1ReviewedProof({ keepDatabase: true });

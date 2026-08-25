@@ -6,10 +6,10 @@ import { pathToFileURL } from "node:url";
 import { runM1ReviewedProof } from "./m1-reviewed-proof.mjs";
 import {
   startWorldKernelFromEnvironment,
-} from "../services/world-kernel/src/server.mjs";
+} from "#services/world-kernel/src/server.mjs";
 import {
   startThreadEditorFromEnvironment,
-} from "./serve-thread-editor.mjs";
+} from "#tools/editor/serve-thread-editor.mjs";
 
 function localToken() {
   return randomBytes(32).toString("hex");

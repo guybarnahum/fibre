@@ -6,13 +6,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { lifecycleOutcome } from "../apps/thread-editor/editor-model.js";
+import { lifecycleOutcome } from "#apps/thread-editor/editor-model.js";
+import { repoFile } from "#repo-root";
 
 const fixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
 );
 const kernelProcessPath = fileURLToPath(new URL("./m1-demo-world-kernel.mjs", import.meta.url));
-const editorProcessPath = fileURLToPath(new URL("./serve-thread-editor.mjs", import.meta.url));
+const editorProcessPath = fileURLToPath(repoFile("tools/editor/serve-thread-editor.mjs"));
 const OBLIGATION = fixture.currentState.unresolvedIntentions[0];
 
 function token(label) {

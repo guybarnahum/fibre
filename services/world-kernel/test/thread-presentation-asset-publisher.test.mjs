@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "../../../packages/infra/src/memory-driver.mjs";
-import { ASSET_GENERATION_JOB_VERSION } from "../../asset-generator/src/asset-generation-domain.mjs";
+import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { ASSET_GENERATION_JOB_VERSION } from "#services/asset-generator/src/asset-generation-domain.mjs";
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
   normalizeEmbeddedAssetProvenance,
-} from "../../asset-generator/src/asset-provenance-domain.mjs";
-import { executeCredentialedAssetGenerationJob } from "../../asset-generator/src/credentialed-asset-generation-service.mjs";
+} from "#services/asset-generator/src/asset-provenance-domain.mjs";
+import { executeCredentialedAssetGenerationJob } from "#services/asset-generator/src/credentialed-asset-generation-service.mjs";
 import { createThreadPresentationServer } from "../src/thread-presentation-server.mjs";
 import { createThreadPresentationAssetPublisher } from "../src/thread-presentation-asset-publisher.mjs";
 

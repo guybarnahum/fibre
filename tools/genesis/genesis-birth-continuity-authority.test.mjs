@@ -8,17 +8,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { deriveGenesisLifeContinuity } from "../../services/world-kernel/src/genesis-life-continuity-v1.mjs";
-import { GenesisStore } from "../../services/world-kernel/src/genesis-store.mjs";
+import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
+import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import {
   GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
-} from "../../services/world-kernel/src/genesis-historical-realization-v1.mjs";
-import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "../../services/world-kernel/src/genesis-pass-b-prompts.mjs";
+} from "#services/world-kernel/src/genesis-historical-realization-v1.mjs";
+import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-pass-b-prompts.mjs";
 import {
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
-} from "../../services/world-kernel/src/genesis-pass-c-prompts.mjs";
-import { GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA } from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
+} from "#services/world-kernel/src/genesis-pass-c-prompts.mjs";
+import { GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 import { buildGenesisBirthBundle, buildGenesisPublicationCognition } from "./genesis-life-publication.mjs";
 

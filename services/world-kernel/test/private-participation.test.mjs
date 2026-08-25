@@ -117,7 +117,7 @@ function seededService(databasePath) {
 }
 
 test("kernel request fingerprint matches the portable domain binding", async () => {
-  const domain = await import("../../../packages/domain/dist/index.js");
+  const domain = await import("#packages/domain/dist/index.js");
   const base = activationRequest();
   assert.equal(requestFingerprint(base), domain.requestFingerprint(base));
   const selection = {

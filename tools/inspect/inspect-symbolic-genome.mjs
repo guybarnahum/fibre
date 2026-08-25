@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { SymbolicGenomeStore } from "../services/world-kernel/src/symbolic-genome-store.mjs";
+import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 
 const [databasePath, genomeId] = process.argv.slice(2);
 if (!databasePath || !genomeId) {

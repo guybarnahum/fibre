@@ -6,7 +6,7 @@ import {
   lifecycleOutcome,
   requestSummary,
   runtimeSummary,
-} from "../apps/thread-editor/editor-model.js";
+} from "#apps/thread-editor/editor-model.js";
 
 test("inspection counts remain derived from the loaded API payload", () => {
   assert.deepEqual(inspectionCounts({

@@ -4,24 +4,24 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { createGoogleModelAdapter } from "../services/world-kernel/src/model-runtime/google.mjs";
-import { createOpenAIModelAdapter } from "../services/world-kernel/src/model-runtime/openai.mjs";
+import { createGoogleModelAdapter } from "#services/world-kernel/src/model-runtime/google.mjs";
+import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
 import {
   buildPassAInput,
   passAFunnelMetrics,
   sampleEventStructures,
-} from "../services/world-kernel/src/genesis-pass-a-domain.mjs";
+} from "#services/world-kernel/src/genesis-pass-a-domain.mjs";
 import {
   GENESIS_EVENT_STRUCTURE_POOL_V1,
   GENESIS_EVENT_STRUCTURE_POOL_V1_DIGEST,
-} from "../services/world-kernel/src/genesis-event-structure-pool-v1.mjs";
+} from "#services/world-kernel/src/genesis-event-structure-pool-v1.mjs";
 import {
   generatePassAEpisode,
   passAPromptHash,
   passARepairPromptHash,
   passASchemaHash,
   summarizePassARepairProfile,
-} from "../services/world-kernel/src/genesis-pass-a-runner.mjs";
+} from "#services/world-kernel/src/genesis-pass-a-runner.mjs";
 
 const DEFAULT_EPISODES = 8;
 const DEFAULT_SEED = "slice-c-dev-burned-001";

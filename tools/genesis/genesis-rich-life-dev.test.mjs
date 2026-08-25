@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "../services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
-import { buildRichLifePassAInput } from "../services/world-kernel/src/genesis-rich-life-domain.mjs";
+import { GENESIS_EVENT_STRUCTURE_POOL_V2 } from "#services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
+import { buildRichLifePassAInput } from "#services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
   SLICE_E_DEV_ROSTER,
   SLICE_E_DEV_SPAN,

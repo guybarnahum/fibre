@@ -2,7 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { openStructuredObligationInspectionStore } from "../services/world-kernel/src/structured-obligation-inspection-store.mjs";
+import { openStructuredObligationInspectionStore } from "#services/world-kernel/src/structured-obligation-inspection-store.mjs";
 
 export function inspectStructuredObligations(databasePath, { threadId = null } = {}) {
   const absolutePath = resolve(databasePath);

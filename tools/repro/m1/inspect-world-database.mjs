@@ -1,1 +1,0 @@
-../../inspect/inspect-world-database.mjs

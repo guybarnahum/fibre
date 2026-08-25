@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-import { createGoogleModelAdapter } from "../services/world-kernel/src/model-runtime/google.mjs";
-import { createOpenAIModelAdapter } from "../services/world-kernel/src/model-runtime/openai.mjs";
+import { createGoogleModelAdapter } from "#services/world-kernel/src/model-runtime/google.mjs";
+import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
 
 export const MODEL_SMOKE_TOKEN = "fibre-model-smoke-v1";
 

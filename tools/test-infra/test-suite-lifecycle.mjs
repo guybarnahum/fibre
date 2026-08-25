@@ -4,15 +4,15 @@ import { fileURLToPath } from "node:url";
 
 export const DEFAULT_TEST_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
-// Repro tests are explicit current replay demonstrations that are intentionally
+// Replay tests are explicit current replay demonstrations that are intentionally
 // kept outside the active suite. Historical experiment chronology belongs in
 // Git history, not in this manifest.
-export const REPRO_TOOL_TEST_PATHS = Object.freeze([
-  "tools/repro/m1/m1-demo-editor.test.mjs",
-  "tools/repro/m1/m1-reviewed-proof.test.mjs",
+export const REPLAY_TOOL_TEST_PATHS = Object.freeze([
+  "tools/replays/m1/m1-demo-editor.test.mjs",
+  "tools/replays/m1/m1-reviewed-proof.test.mjs",
 ]);
 
-const REPRO_PATH_SET = new Set(REPRO_TOOL_TEST_PATHS);
+const REPLAY_PATH_SET = new Set(REPLAY_TOOL_TEST_PATHS);
 
 function normalized(path) {
   return path.split("\\").join("/");
@@ -39,7 +39,7 @@ function relativePathForLifecycle(path, root = DEFAULT_TEST_ROOT) {
 
 export function testLifecycleForPath(path, root = DEFAULT_TEST_ROOT) {
   const relativePath = relativePathForLifecycle(path, root);
-  return REPRO_PATH_SET.has(relativePath) ? "repro" : "active";
+  return REPLAY_PATH_SET.has(relativePath) ? "replay" : "active";
 }
 
 export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
@@ -62,20 +62,20 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
     ...tools,
   ].sort();
   const allRelative = new Set(all.map((path) => normalized(relative(root, path))));
-  const missingReproTests = REPRO_TOOL_TEST_PATHS.filter((path) => !allRelative.has(path));
-  if (missingReproTests.length > 0) {
-    throw new TypeError(`repro test manifest names missing files: ${missingReproTests.join(", ")}`);
+  const missingReplayTests = REPLAY_TOOL_TEST_PATHS.filter((path) => !allRelative.has(path));
+  if (missingReplayTests.length > 0) {
+    throw new TypeError(`replay test manifest names missing files: ${missingReplayTests.join(", ")}`);
   }
 
-  const repro = all.filter((path) => testLifecycleForPath(path, root) === "repro");
+  const replay = all.filter((path) => testLifecycleForPath(path, root) === "replay");
   const active = all.filter((path) => testLifecycleForPath(path, root) === "active");
   return Object.freeze({
     active: Object.freeze(active),
-    repro: Object.freeze(repro),
+    replay: Object.freeze(replay),
     all: Object.freeze(all),
     counts: Object.freeze({
       activeFiles: active.length,
-      reproFiles: repro.length,
+      replayFiles: replay.length,
       allFiles: all.length,
     }),
   });

@@ -1,19 +1,19 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
-import { openRuntimeStore } from "../services/world-kernel/src/runtime-store.mjs";
-import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
-import { openLifecycleHardeningStore } from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
-import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
-import { M1ExpressionWorldKernelService } from "../services/world-kernel/src/expression-service.mjs";
-import { createExpressionWorldKernelHttpServer } from "../services/world-kernel/src/expression-http-server.mjs";
+import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { openRuntimeStore } from "#services/world-kernel/src/runtime-store.mjs";
+import { openFreezeStore } from "#services/world-kernel/src/freeze-store.mjs";
+import { openLifecycleHardeningStore } from "#services/world-kernel/src/lifecycle-hardening-store.mjs";
+import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
+import { M1ExpressionWorldKernelService } from "#services/world-kernel/src/expression-service.mjs";
+import { createExpressionWorldKernelHttpServer } from "#services/world-kernel/src/expression-http-server.mjs";
 import {
   assertLoopbackBindHost,
   closeWorldKernelHttpServer,
   listenWorldKernelHttpServer,
-} from "../services/world-kernel/src/http-server.mjs";
-import { deterministicActorOutput } from "../services/world-kernel/src/runtime-domain.mjs";
+} from "#services/world-kernel/src/http-server.mjs";
+import { deterministicActorOutput } from "#services/world-kernel/src/runtime-domain.mjs";
 
 function parsePort(value) {
   const port = Number(value);

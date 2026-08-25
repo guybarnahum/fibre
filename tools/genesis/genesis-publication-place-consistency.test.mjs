@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { assertGenesisEpisodePlaceConsistency } from "../../services/world-kernel/src/genesis-publication-place-consistency.mjs";
+import { assertGenesisEpisodePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
 
 test("publication place gate distinguishes current scene from a reported place", () => {
   assert.equal(assertGenesisEpisodePlaceConsistency({

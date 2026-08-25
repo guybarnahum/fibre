@@ -12,13 +12,13 @@ import { DatabaseSync } from "node:sqlite";
 import {
   WORLD_STORE_SCHEMA_VERSION,
   openWorldStore,
-} from "../services/world-kernel/src/persistence.mjs";
-import { openRuntimeStore } from "../services/world-kernel/src/runtime-store.mjs";
-import { openFreezeStore } from "../services/world-kernel/src/freeze-store.mjs";
+} from "#services/world-kernel/src/persistence.mjs";
+import { openRuntimeStore } from "#services/world-kernel/src/runtime-store.mjs";
+import { openFreezeStore } from "#services/world-kernel/src/freeze-store.mjs";
 import {
   openLifecycleHardeningStore,
-} from "../services/world-kernel/src/lifecycle-hardening-store.mjs";
-import { openExpressionStore } from "../services/world-kernel/src/expression-store.mjs";
+} from "#services/world-kernel/src/lifecycle-hardening-store.mjs";
+import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
 
 const EXPECTED_TABLES = [
   "threads",

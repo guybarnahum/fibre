@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { assertInfraDriver } from "../../../packages/infra/src/infra-driver.mjs";
+import { assertInfraDriver } from "#packages/infra/src/infra-driver.mjs";
 import {
   createMemoryInfraDriver,
   InfraIdempotencyConflictError,
   InfraImmutableObjectConflictError,
   InfraSequenceConflictError,
-} from "../../../packages/infra/src/memory-driver.mjs";
+} from "#packages/infra/src/memory-driver.mjs";
 import { createThreadPresentationServer } from "../src/thread-presentation-server.mjs";
 import { normalizeThreadPresentationEventInput } from "../src/thread-presentation-stream-domain.mjs";
 

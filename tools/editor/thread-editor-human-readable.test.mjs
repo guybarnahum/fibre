@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { repoFile } from "#repo-root";
+
 import {
   explainIntegrity,
   explainInspection,
@@ -12,7 +14,7 @@ import {
   humanizeLabel,
   integrityBadgeModel,
   integrityVerdict,
-} from "../apps/thread-editor/human-readable.js";
+} from "#apps/thread-editor/human-readable.js";
 
 test("technical field names and values become readable", () => {
   assert.equal(humanizeLabel("goalGuardianAudit"), "Goal Guardian Audit");
@@ -237,7 +239,7 @@ test("Thread-authored markup remains text-only at the DOM boundary", () => {
   assert.match(explanation.title, /<script>/);
   assert.match(explanation.summary, /<\/dd>/);
 
-  const appSource = readFileSync(new URL("../apps/thread-editor/app.js", import.meta.url), "utf8");
+  const appSource = readFileSync(repoFile("apps/thread-editor/app.js"), "utf8");
   assert.doesNotMatch(appSource, /innerHTML|insertAdjacentHTML/);
   assert.match(appSource, /textContent = explanation\.title/);
   assert.match(appSource, /textContent = explanation\.summary/);

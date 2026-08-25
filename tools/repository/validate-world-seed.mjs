@@ -3,10 +3,11 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { openWorldStore } from "../services/world-kernel/src/persistence.mjs";
+import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { repoFile } from "#repo-root";
 
 const fixture = JSON.parse(
-  readFileSync(new URL("../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
 );
 const directory = mkdtempSync(join(tmpdir(), "fibre-validate-world-seed-"));
 const databasePath = join(directory, "world.sqlite");

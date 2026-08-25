@@ -4,8 +4,8 @@ import {
   buildDignityGuardianV4ModelInput,
   buildDignityGuardianV4ResponseSchema,
   semanticDignityGuardianV4,
-} from "../../../services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import { guardianModelAdapterFromEnvironment } from "../../../services/world-kernel/src/guardian-model-adapter.mjs";
+} from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
+import { guardianModelAdapterFromEnvironment } from "#services/world-kernel/src/guardian-model-adapter.mjs";
 import {
   WHOLE_PERSON_BENCHMARK_V4,
   buildWholePersonPass1Cases,

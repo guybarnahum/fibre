@@ -7,25 +7,25 @@ import assert from "node:assert/strict";
 
 import {
   GENESIS_PASS_A_RELIABILITY_POLICY_V3,
-} from "../../services/world-kernel/src/genesis-pass-a-reliability-v3.mjs";
+} from "#services/world-kernel/src/genesis-pass-a-reliability-v3.mjs";
 import {
   constrainPassAContextToHistoricalEnvelope,
-} from "../../services/world-kernel/src/genesis-historical-envelope-v1.mjs";
+} from "#services/world-kernel/src/genesis-historical-envelope-v1.mjs";
 import {
   materializeHistoricalEnvelopeEpisode,
-} from "../../services/world-kernel/src/genesis-historical-realization-v1.mjs";
+} from "#services/world-kernel/src/genesis-historical-realization-v1.mjs";
 import {
   buildRichLifePassAInput,
   syntheticLineageWitnessFromRecombinedGenome,
-} from "../../services/world-kernel/src/genesis-rich-life-domain.mjs";
+} from "#services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
   GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
   GENESIS_LIFE_PASS_A_PROMPT,
   GENESIS_LIFE_PASS_A_RETRY_PROMPT,
-} from "../../services/world-kernel/src/genesis-life-pass-a.mjs";
+} from "#services/world-kernel/src/genesis-life-pass-a.mjs";
 import {
   richPassAGenerationDecision,
-} from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
+} from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 
 const plans = buildGenesisDevelopmentPlans();

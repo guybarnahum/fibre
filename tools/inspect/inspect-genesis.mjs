@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { GenesisStore } from "../services/world-kernel/src/genesis-store.mjs";
+import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 
 const [databasePath, genesisId] = process.argv.slice(2);
 if (!databasePath || !genesisId) {

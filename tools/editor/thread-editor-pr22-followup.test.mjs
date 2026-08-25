@@ -10,7 +10,7 @@ import {
 import {
   lifecycleOutcome,
   loadRuntimeInspection,
-} from "../apps/thread-editor/editor-model.js";
+} from "#apps/thread-editor/editor-model.js";
 
 const ACCESS_TOKEN = "editor-access-token-123456";
 const PRIVATE_TOKEN = "editor-private-token-123456";

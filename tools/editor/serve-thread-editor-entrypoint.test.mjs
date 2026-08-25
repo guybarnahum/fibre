@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { repoFile } from "#repo-root";
 
 const relocatedEditorPath = fileURLToPath(
-  new URL("../repro/m1/serve-thread-editor.mjs", import.meta.url),
+  repoFile("tools/editor/serve-thread-editor.mjs"),
 );
 
 async function waitForEvent(child, expectedEvent, stderr, timeoutMs = 10_000) {

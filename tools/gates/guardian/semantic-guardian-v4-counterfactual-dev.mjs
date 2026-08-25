@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-import { requestFingerprint } from "../../../services/world-kernel/src/private-participation.mjs";
-import { semanticDignityGuardianV4 } from "../../../services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import { createModelRuntime } from "../../../services/world-kernel/src/model-runtime/model-runtime.mjs";
+import { requestFingerprint } from "#services/world-kernel/src/private-participation.mjs";
+import { semanticDignityGuardianV4 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
+import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
 import { SEMANTIC_GUARDIAN_V4_COUNTERFACTUAL_DEVELOPMENT as SET } from "../experiments/semantic-guardian-v4/counterfactual-development.mjs";
 
 const REASONING_BLOCK = "dignity_guardian";

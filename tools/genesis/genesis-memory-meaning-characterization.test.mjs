@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { characterizeGenesisMemoryMeaning } from "../services/world-kernel/src/genesis-memory-meaning-characterization.mjs";
+import { characterizeGenesisMemoryMeaning } from "#services/world-kernel/src/genesis-memory-meaning-characterization.mjs";
 
 function syntheticRecords() {
   return [

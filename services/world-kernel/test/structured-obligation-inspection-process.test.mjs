@@ -15,7 +15,7 @@ import { requestFingerprint } from "../src/private-participation.mjs";
 import {
   structuredObligationDischargeDigest,
 } from "../src/structured-obligation-discharge.mjs";
-import { inspectStructuredObligations } from "../../../tools/inspect-structured-obligations.mjs";
+import { inspectStructuredObligations } from "#tools/inspect/inspect-structured-obligations.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),

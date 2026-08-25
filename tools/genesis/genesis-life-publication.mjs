@@ -2,24 +2,24 @@ import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
   normalizeAutobiographicalMemory,
-} from "../../services/world-kernel/src/autobiographical-memory-domain.mjs";
-import { openAutobiographicalMemoryInspectionStore } from "../../services/world-kernel/src/autobiographical-memory-store.mjs";
+} from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
+import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import {
   normalizeGenesisManifest,
   publicationValidatorSetWitness,
-} from "../../services/world-kernel/src/genesis-domain.mjs";
-import { deriveGenesisSituatedContinuityRecords } from "../../services/world-kernel/src/genesis-birth-situated-continuity.mjs";
-import { GenesisStore } from "../../services/world-kernel/src/genesis-store.mjs";
-import { eventStructurePoolV3Digest } from "../../services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
-import { genesisLifeEpisodeEventId } from "../../services/world-kernel/src/genesis-life-episode.mjs";
-import { assertGenesisCandidatePlaceConsistency } from "../../services/world-kernel/src/genesis-publication-place-consistency.mjs";
-import { openIdentityInspectionStore } from "../../services/world-kernel/src/identity-store.mjs";
-import { normalizeSeedSnapshot, validateThreadSnapshot } from "../../services/world-kernel/src/persistence-domain.mjs";
-import { openWorldStore } from "../../services/world-kernel/src/persistence.mjs";
-import { canonicalJson, sha256 } from "../../services/world-kernel/src/persistence-common.mjs";
-import { lifeRelationId, normalizeLifeRelation } from "../../services/world-kernel/src/situated-life-domain.mjs";
-import { openSituatedLifeInspectionStore } from "../../services/world-kernel/src/situated-life-store.mjs";
-import { SymbolicGenomeStore } from "../../services/world-kernel/src/symbolic-genome-store.mjs";
+} from "#services/world-kernel/src/genesis-domain.mjs";
+import { deriveGenesisSituatedContinuityRecords } from "#services/world-kernel/src/genesis-birth-situated-continuity.mjs";
+import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
+import { eventStructurePoolV3Digest } from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
+import { genesisLifeEpisodeEventId } from "#services/world-kernel/src/genesis-life-episode.mjs";
+import { assertGenesisCandidatePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
+import { openIdentityInspectionStore } from "#services/world-kernel/src/identity-store.mjs";
+import { normalizeSeedSnapshot, validateThreadSnapshot } from "#services/world-kernel/src/persistence-domain.mjs";
+import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
+import { lifeRelationId, normalizeLifeRelation } from "#services/world-kernel/src/situated-life-domain.mjs";
+import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
+import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 const fail = (message) => { throw new Error(message); };

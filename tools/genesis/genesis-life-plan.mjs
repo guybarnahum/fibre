@@ -2,14 +2,14 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { normalizeGenesisWorldSpec } from "../../services/world-kernel/src/genesis-domain.mjs";
+import { normalizeGenesisWorldSpec } from "#services/world-kernel/src/genesis-domain.mjs";
 import {
   GENESIS_EVENT_STRUCTURE_POOL_V3,
   sampleEventStructuresV3,
-} from "../../services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
-import { buildHistoricalEnvelopePlan } from "../../services/world-kernel/src/genesis-historical-envelope-v1.mjs";
-import { canonicalJson, sha256 } from "../../services/world-kernel/src/persistence-common.mjs";
-import { symbolicGenomeDigest } from "../../services/world-kernel/src/symbolic-genome-domain.mjs";
+} from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
+import { buildHistoricalEnvelopePlan } from "#services/world-kernel/src/genesis-historical-envelope-v1.mjs";
+import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
+import { symbolicGenomeDigest } from "#services/world-kernel/src/symbolic-genome-domain.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const PR39_DEVELOPMENT_COHORT_PATH = "fixtures/genesis/pr39/development-cohort-v1.json";

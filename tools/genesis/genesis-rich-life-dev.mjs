@@ -4,28 +4,28 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { createGoogleModelAdapter } from "../services/world-kernel/src/model-runtime/google.mjs";
-import { createOpenAIModelAdapter } from "../services/world-kernel/src/model-runtime/openai.mjs";
+import { createGoogleModelAdapter } from "#services/world-kernel/src/model-runtime/google.mjs";
+import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
 import {
   GENESIS_EVENT_STRUCTURE_POOL_V2,
   eventStructurePoolV2Digest,
   sampleEventStructuresV2,
-} from "../services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
+} from "#services/world-kernel/src/genesis-event-structure-pool-v2.mjs";
 import {
   buildRichLifePassAInput,
   syntheticLineageWitnessFromRecombinedGenome,
-} from "../services/world-kernel/src/genesis-rich-life-domain.mjs";
+} from "#services/world-kernel/src/genesis-rich-life-domain.mjs";
 import {
   generateRichPassAEpisode,
   richPassAPromptHash,
   richPassARepairPromptHash,
   richPassASchemaHash,
-} from "../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
-import { characterizeSliceERichLife } from "../services/world-kernel/src/genesis-slice-e-characterization.mjs";
+} from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
+import { characterizeSliceERichLife } from "#services/world-kernel/src/genesis-slice-e-characterization.mjs";
 import {
   buildRecombinedSymbolicGenome,
   buildSyntheticAncestorSymbolicGenome,
-} from "../services/world-kernel/src/symbolic-genome-domain.mjs";
+} from "#services/world-kernel/src/symbolic-genome-domain.mjs";
 
 const DEFAULT_EPISODES = 10;
 const DEFAULT_SEED = "slice-e-dev-burned-001";

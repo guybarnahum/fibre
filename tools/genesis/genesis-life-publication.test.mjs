@@ -11,12 +11,12 @@ import test from "node:test";
 import {
   autobiographicalMeaningPartId,
   autobiographicalMemoryId,
-} from "../../services/world-kernel/src/autobiographical-memory-domain.mjs";
-import { publicationValidatorSetWitness } from "../../services/world-kernel/src/genesis-domain.mjs";
-import { eventStructurePoolV3Digest } from "../../services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
-import { deriveGenesisLifeContinuity } from "../../services/world-kernel/src/genesis-life-continuity-v1.mjs";
-import { genesisLifeEpisodeEventId } from "../../services/world-kernel/src/genesis-life-episode.mjs";
-import { assertGenesisEpisodePlaceConsistency } from "../../services/world-kernel/src/genesis-publication-place-consistency.mjs";
+} from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
+import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
+import { eventStructurePoolV3Digest } from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
+import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
+import { genesisLifeEpisodeEventId } from "#services/world-kernel/src/genesis-life-episode.mjs";
+import { assertGenesisEpisodePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 import {
   publishHydrateAndCompareGenesisLife,

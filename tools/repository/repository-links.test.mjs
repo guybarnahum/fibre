@@ -7,10 +7,10 @@ test("trackedSymlinkPaths extracts only Git mode 120000 entries", () => {
   const indexText = [
     "100644 aaaaa 0\tREADME.md",
     "120000 bbbbb 0\ttools/services",
-    "120000 ccccc 0\ttools/repro/apps",
+    "120000 ccccc 0\ttools/replays/apps",
     "",
   ].join("\n");
-  assert.deepEqual(trackedSymlinkPaths(indexText), ["tools/services", "tools/repro/apps"]);
+  assert.deepEqual(trackedSymlinkPaths(indexText), ["tools/services", "tools/replays/apps"]);
 });
 
 test("validateTrackedSymlinks rejects dangling and non-symlink working-tree edges", () => {

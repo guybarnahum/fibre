@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  REPRO_TOOL_TEST_PATHS,
+  REPLAY_TOOL_TEST_PATHS,
   discoverTestSuites,
   relativeTestPaths,
   testLifecycleForPath,
@@ -11,14 +11,14 @@ import { parseTestSuiteArgs, testSuiteCommand } from "./run-test-suite.mjs";
 
 test("retired proof and experiment tests are explicit reproducibility evidence", () => {
   const suites = discoverTestSuites();
-  const repro = relativeTestPaths(suites.repro);
+  const replay = relativeTestPaths(suites.replay);
   const active = new Set(relativeTestPaths(suites.active));
   const all = relativeTestPaths(suites.all);
 
-  assert.deepEqual(repro, [...REPRO_TOOL_TEST_PATHS].sort());
-  assert.equal(suites.counts.allFiles, suites.counts.activeFiles + suites.counts.reproFiles);
+  assert.deepEqual(replay, [...REPLAY_TOOL_TEST_PATHS].sort());
+  assert.equal(suites.counts.allFiles, suites.counts.activeFiles + suites.counts.replayFiles);
   assert.equal(all.length, new Set(all).size);
-  for (const path of repro) assert.equal(active.has(path), false);
+  for (const path of replay) assert.equal(active.has(path), false);
 
   for (const path of [
     "packages/infra/test/cloudflare-v1.test.mjs",
@@ -40,11 +40,11 @@ test("retired proof and experiment tests are explicit reproducibility evidence",
   }
 });
 
-test("new tests default active and the runner exposes only active, repro, or all", () => {
+test("new tests default active and the runner exposes only active, replay, or all", () => {
   assert.equal(testLifecycleForPath("tools/new-future-regression.test.mjs"), "active");
   assert.equal(
-    testLifecycleForPath("tools/repro/m1/m1-demo-editor.test.mjs"),
-    "repro",
+    testLifecycleForPath("tools/replays/m1/m1-demo-editor.test.mjs"),
+    "replay",
   );
   assert.equal(
     testLifecycleForPath("services/world-kernel/test/genesis-rich-life.test.mjs"),
@@ -68,16 +68,16 @@ test("new tests default active and the runner exposes only active, repro, or all
   );
 
   assert.deepEqual(parseTestSuiteArgs([]), { suite: "active", nodeTestArgs: [] });
-  assert.deepEqual(parseTestSuiteArgs(["repro", "--test-name-pattern=protocol"]), {
-    suite: "repro",
+  assert.deepEqual(parseTestSuiteArgs(["replay", "--test-name-pattern=protocol"]), {
+    suite: "replay",
     nodeTestArgs: ["--test-name-pattern=protocol"],
   });
-  assert.throws(() => parseTestSuiteArgs(["retired"]), /active, repro, or all/);
+  assert.throws(() => parseTestSuiteArgs(["retired"]), /active, replay, or all/);
 
   const active = testSuiteCommand(["active"]);
-  const repro = testSuiteCommand(["repro"]);
+  const replay = testSuiteCommand(["replay"]);
   const all = testSuiteCommand(["all"]);
   assert.equal(active.command.includes("--test"), true);
-  assert.equal(active.files.length + repro.files.length, all.files.length);
-  for (const path of repro.files) assert.equal(active.files.includes(path), false);
+  assert.equal(active.files.length + replay.files.length, all.files.length);
+  for (const path of replay.files) assert.equal(active.files.includes(path), false);
 });

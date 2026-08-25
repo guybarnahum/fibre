@@ -81,7 +81,7 @@ See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise
 - `experiments/` — current falsifiable research experiments.
 - `artifacts/validation/` — exceptional retained exact-byte scientific, replay, interoperability, or audit evidence; disposable local output belongs under `.fibre/`.
 - `tools/` — operational tooling organized by lifecycle; see [`tools/README.md`](tools/README.md).
-- `tools/repro/` — retained historical proof/experiment instruments; executable does not mean current production authority.
+- `tools/replays/` — retained historical proof/experiment instruments; executable does not mean current production authority.
 - `docs/history/` — selected historical explanation and formative origin material; Git history remains the default archive for routine superseded work.
 
 ## Test and evidence lifecycle
@@ -90,7 +90,7 @@ Stage 6 separates everyday regression from retained scientific reproducibility:
 
 ```bash
 npm test            # active product/regression/operator suite
-npm run test:repro  # retained proof/experiment reproducibility suite
+npm run test:replay  # retained proof/experiment reproducibility suite
 npm run test:all    # complete retained test envelope
 npm run test:audit -- --check
 ```
@@ -133,7 +133,7 @@ Generated packs include repository revision, source list and content digest. The
 ```bash
 npm run build
 npm test
-npm run test:repro
+npm run test:replay
 npm run test:all
 npm run test:audit -- --check
 npm run validate

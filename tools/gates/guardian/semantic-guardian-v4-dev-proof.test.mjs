@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { GuardianModelError } from "../services/world-kernel/src/guardian-model-adapter.mjs";
+import { GuardianModelError } from "#services/world-kernel/src/guardian-model-adapter.mjs";
 import {
   buildSemanticGuardianV4DevelopmentCases,
   runSemanticGuardianV4DevelopmentProof,

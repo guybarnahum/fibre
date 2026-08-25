@@ -2,7 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { openIdentityInspectionStore } from "../services/world-kernel/src/identity-store.mjs";
+import { openIdentityInspectionStore } from "#services/world-kernel/src/identity-store.mjs";
 
 export function inspectThreadIdentity(databasePath, { threadId = null } = {}) {
   const absolutePath = resolve(databasePath);

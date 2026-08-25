@@ -11,28 +11,28 @@ import { fileURLToPath } from "node:url";
 
 import {
   GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
-} from "../../services/world-kernel/src/genesis-historical-realization-v1.mjs";
+} from "#services/world-kernel/src/genesis-historical-realization-v1.mjs";
 import {
   GENESIS_PASS_B_RESPONSE_SCHEMA,
-} from "../../services/world-kernel/src/genesis-pass-b-prompts.mjs";
+} from "#services/world-kernel/src/genesis-pass-b-prompts.mjs";
 import {
   GENESIS_PASS_C_INITIAL_PROMPT,
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
   GENESIS_PASS_C_REINTERPRETATION_PROMPT,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
-} from "../../services/world-kernel/src/genesis-pass-c-prompts.mjs";
+} from "#services/world-kernel/src/genesis-pass-c-prompts.mjs";
 import {
   GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
   GENESIS_LIFE_PASS_A_PROMPT,
   GENESIS_LIFE_PASS_A_RETRY_PROMPT,
-} from "../../services/world-kernel/src/genesis-life-pass-a.mjs";
+} from "#services/world-kernel/src/genesis-life-pass-a.mjs";
 import {
   GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT,
   GENESIS_LIFE_PASS_B_PROMPT,
-} from "../../services/world-kernel/src/genesis-life-pass-b.mjs";
+} from "#services/world-kernel/src/genesis-life-pass-b.mjs";
 import {
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
-} from "../../services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
+} from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 import {
   assertHydratedGenesisMatchesCandidate,

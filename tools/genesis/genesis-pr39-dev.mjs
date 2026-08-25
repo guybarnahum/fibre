@@ -13,8 +13,8 @@ import {
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createBirthCenterRuntime } from "../../services/birth-center/src/runtime.mjs";
-import { createOpenAIModelAdapter } from "../../services/world-kernel/src/model-runtime/openai.mjs";
+import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
+import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
 import { generateGenesisLifeCandidate } from "./genesis-life-candidate.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 

@@ -11,7 +11,9 @@ import { extname, isAbsolute, join, normalize, relative, resolve, sep } from "no
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 
-const DEFAULT_ROOT = fileURLToPath(new URL("../apps/thread-editor/", import.meta.url));
+import { repoFile } from "#repo-root";
+
+const DEFAULT_ROOT = fileURLToPath(repoFile("apps/thread-editor/"));
 const DEFAULT_MAX_BODY_BYTES = 64 * 1024;
 const DEFAULT_MAX_UPSTREAM_BYTES = 2 * 1024 * 1024;
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { normalizeAssetGenerationJob } from "../../asset-generator/src/asset-generation-domain.mjs";
+import { normalizeAssetGenerationJob } from "#services/asset-generator/src/asset-generation-domain.mjs";
 import { normalizeThreadPresentationEventInput } from "../src/thread-presentation-stream-domain.mjs";
 import {
   assetGenerationReceiptToPresentationEventInput,
