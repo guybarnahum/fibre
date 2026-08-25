@@ -13,9 +13,7 @@ Generated media is presentation/reconstruction material unless another Fibre aut
 Generated-asset provenance and prompt retention are governed by:
 
 - `docs/decisions/ADR-0014-generated-asset-provenance.md`
-- `docs/architecture/generated-asset-provenance-and-content-credentials-v1.md`
-- `docs/validation/thread-presentation-asset-provenance-state.md`
-- `docs/validation/thread-presentation-credentialed-asset-gate-result.md`
+- `docs/architecture/generated-asset-provenance-and-content-credentials.md`
 
 ## Execution paths
 

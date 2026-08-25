@@ -27,7 +27,7 @@ Current concrete machinery remains in the working services that already own it:
 - `services/asset-generator/` — generated presentation assets;
 - `services/c2pa-local/` — local provenance/C2PA support;
 - `fixtures/thread-presentation/` — reusable presentation fixtures;
-- `docs/architecture/world-presentation-v1.md` — accepted presentation authority and non-cognitive boundary.
+- `docs/architecture/world-presentation.md` — accepted presentation authority and non-cognitive boundary.
 
 Provider-neutral Thread-presentation orchestration and shared interfaces may move into the capability home as that machinery becomes real. Do not create a second presentation authority merely to populate the directory.
 
