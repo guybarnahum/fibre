@@ -13,6 +13,7 @@ import { GenesisStore } from "../src/genesis-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
 import { deriveGenesisLifeContinuity } from "../src/genesis-life-continuity-v1.mjs";
 import { genesisLifeEpisodeEventId } from "../src/genesis-life-episode.mjs";
+import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -165,21 +166,19 @@ function publicationCandidate() {
   const lifeEpisodes = episodes();
   const world = worldSpec();
   const roster = initialRoster();
-  return {
-    world,
-    birth: {
-      manifest: manifest(seedThread, lifeEpisodes),
-      thread: seedThread,
-      episodes: lifeEpisodes,
+  const birth = {
+    manifest: manifest(seedThread, lifeEpisodes),
+    thread: seedThread,
+    episodes: lifeEpisodes,
+    initialRoster: roster,
+    lifeContinuity: deriveGenesisLifeContinuity({
+      threadId: seedThread.threadId,
+      worldSpec: world,
       initialRoster: roster,
-      lifeContinuity: deriveGenesisLifeContinuity({
-        threadId: seedThread.threadId,
-        worldSpec: world,
-        initialRoster: roster,
-        episodes: lifeEpisodes,
-      }),
-    },
+      episodes: lifeEpisodes,
+    }),
   };
+  return { world, birth: attachTestCivilRegistration(birth) };
 }
 
 function parseRows(database, table) {
@@ -251,6 +250,7 @@ test("situated continuity is inside the atomic Genesis birth transaction", () =>
       ["life_relation_records", "thread_id", birth.thread.threadId],
       ["place_episode_records", "thread_id", birth.thread.threadId],
       ["genesis_manifests", "genesis_id", birth.manifest.genesisId],
+      ["fibre_civil_registrations", "thread_id", birth.thread.threadId],
     ]) {
       assert.equal(database.prepare(`SELECT count(*) AS n FROM ${table} WHERE ${column}=?`).get(value).n, 0);
     }
