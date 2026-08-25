@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-asset-generator-local",
+  "main": "./src/cloudflare/worker.mjs",
+  "compatibility_date": "2026-08-25",
+  "vars": {
+    "C2PA_SIGNER_URL": "http://127.0.0.1:8790"
+  },
+  "secrets": {
+    "required": ["OPENAI_API_KEY"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "ASSET_OBJECTS",
+      "bucket_name": "fibre-presentation-local"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "fibre-asset-generation-local",
+      "binding": "ASSET_GENERATION",
+      "class_name": "AssetGenerationWorkflow"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

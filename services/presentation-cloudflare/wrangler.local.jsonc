@@ -8,9 +8,6 @@
     "P3_FIXTURE_MODE": "1",
     "C2PA_SIGNER_URL": "http://127.0.0.1:8790"
   },
-  "secrets": {
-    "required": ["OPENAI_API_KEY"]
-  },
   "r2_buckets": [
     {
       "binding": "PRESENTATION_OBJECTS",
@@ -35,9 +32,10 @@
   },
   "workflows": [
     {
-      "name": "fibre-p3-asset-generation-local",
+      "name": "fibre-asset-generation-local",
       "binding": "ASSET_GENERATION",
-      "class_name": "P3AssetGenerationWorkflow"
+      "class_name": "AssetGenerationWorkflow",
+      "script_name": "fibre-asset-generator-local"
     }
   ],
   "exports": {

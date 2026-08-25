@@ -1,11 +1,10 @@
-import { WorkflowEntrypoint } from "cloudflare:workers";
-import { NonRetryableError } from "cloudflare:workflows";
 import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
 import { FibrePresentationChannelDurableObject } from "../../../packages/infra/src/cloudflare/presentation-channel-do.mjs";
-import { createAssetGenerationService } from "../../asset-generator/src/asset-generation-service.mjs";
-import { executeCredentialedAssetGenerationJob } from "../../asset-generator/src/credentialed-asset-generation-service.mjs";
+import {
+  createAssetGenerationService,
+  normalizeStoredAssetReceipt,
+} from "../../asset-generator/src/index.mjs";
 import { createHttpContentCredentialSigner } from "../../asset-generator/src/http-content-credential-signer.mjs";
-import { createOpenAIImageProvider } from "../../asset-generator/src/providers/openai-image-provider.mjs";
 import { planThreadPresentationAssetGeneration } from "../../world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "../../world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationServer } from "../../world-kernel/src/thread-presentation-server.mjs";
@@ -35,76 +34,6 @@ function createCredentialSigner(env) {
   });
 }
 
-export class P3AssetGenerationWorkflow extends WorkflowEntrypoint {
-  async run(event, step) {
-    const job = event.payload;
-    const generated = await step.do(
-      "generate credentialed reconstruction",
-      { timeout: "10 minutes" },
-      async () => {
-        try {
-          const infra = createInfra(this.env, { includeWorkflows: false });
-          const provider = createOpenAIImageProvider({ apiKey: this.env.OPENAI_API_KEY });
-          const credentialSigner = createCredentialSigner(this.env);
-          const result = await executeCredentialedAssetGenerationJob({
-            infra,
-            provider,
-            credentialSigner,
-            job,
-          });
-          return {
-            receipt: result.receipt,
-            receiptDigest: result.receiptDigest,
-            generationRecordDigest: result.generationRecordDigest,
-            finalAssetDigest: result.finalAssetDigest,
-          };
-        } catch (error) {
-          // P3 deliberately treats the provider+credential+final-store step as at-most-once
-          // for a Fibre job identity. Re-running a nondeterministic image provider under the
-          // same immutable outputObjectRef could make a second attempt conflict with side
-          // effects from the first. Production retryable generation needs an explicit
-          // attempt/staging identity rather than implicit step retries.
-          const message = error instanceof Error ? error.message : String(error);
-          throw new NonRetryableError(message, "P3AssetGenerationAttemptFailed");
-        }
-      },
-    );
-
-    return step.do(
-      "publish verified media ready",
-      {
-        retries: { limit: 3, delay: "2 seconds", backoff: "exponential" },
-        timeout: "2 minutes",
-      },
-      async () => {
-        const infra = createInfra(this.env, { includeWorkflows: false });
-        const presentationServer = createThreadPresentationServer({ infra });
-        const publisher = createThreadPresentationAssetPublisher({
-          infra,
-          credentialSigner: createCredentialSigner(this.env),
-          presentationServer,
-        });
-        const channelId = channelIdForThread(generated.receipt.context.threadId);
-        const accepted = await publisher.publishReady({
-          receipt: generated.receipt,
-          channelId,
-        });
-        return {
-          ok: true,
-          jobId: generated.receipt.jobId,
-          threadId: generated.receipt.context.threadId,
-          mediaId: generated.receipt.context.mediaId,
-          objectRef: generated.receipt.objectRef,
-          finalAssetDigest: generated.receipt.sha256,
-          generationRecordDigest: generated.receipt.generationRecordDigest,
-          eventId: accepted.event.eventId,
-          eventSequence: accepted.event.sequence,
-        };
-      },
-    );
-  }
-}
-
 async function p3MarketJob(presentationServer) {
   const channelId = channelIdForThread(P3_CAN_THO_THREAD_ID);
   const current = await presentationServer.getSnapshot(channelId);
@@ -123,6 +52,19 @@ async function p3MarketJob(presentationServer) {
   const job = plan.jobs.find((candidate) => candidate.context.mediaId === P3_MARKET_MEDIA_ID);
   if (!job) throw new Error("P3 market media slot is not eligible for generation");
   return job;
+}
+
+async function loadP3Receipt(infra, job) {
+  const stored = await infra.objects.get(job.receiptObjectRef);
+  if (stored === null) return null;
+  let parsed;
+  try { parsed = JSON.parse(new TextDecoder().decode(stored.bytes)); }
+  catch { throw new Error("P3 stored asset receipt is invalid JSON"); }
+  const receipt = normalizeStoredAssetReceipt(parsed);
+  if (receipt.jobId !== job.jobId || receipt.objectRef !== job.outputObjectRef) {
+    throw new Error("P3 stored asset receipt does not match the planned job");
+  }
+  return receipt;
 }
 
 async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
@@ -164,9 +106,6 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
 
   if (url.pathname === "/__p3/fixtures/can-tho/generate-market" && request.method === "POST") {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
-    if (typeof env.OPENAI_API_KEY !== "string" || env.OPENAI_API_KEY.length === 0) {
-      return Response.json({ error: "openai_api_key_missing" }, { status: 503 });
-    }
     const job = await p3MarketJob(presentationServer);
     const service = createAssetGenerationService({ infra });
     const scheduled = await service.request(job);
@@ -178,6 +117,32 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
       jobId: job.jobId,
       objectRef: job.outputObjectRef,
       workflow: scheduled.instance,
+    });
+  }
+
+  if (url.pathname === "/__p3/fixtures/can-tho/publish-market" && request.method === "POST") {
+    const job = await p3MarketJob(presentationServer);
+    const receipt = await loadP3Receipt(infra, job);
+    if (receipt === null) return Response.json({ error: "asset_receipt_not_ready" }, { status: 409 });
+
+    const publisher = createThreadPresentationAssetPublisher({
+      infra,
+      credentialSigner: createCredentialSigner(env),
+      presentationServer,
+    });
+    const channelId = channelIdForThread(P3_CAN_THO_THREAD_ID);
+    const accepted = await publisher.publishReady({ receipt, channelId });
+    return Response.json({
+      ok: true,
+      fixture: true,
+      threadId: P3_CAN_THO_THREAD_ID,
+      mediaId: P3_MARKET_MEDIA_ID,
+      jobId: receipt.jobId,
+      objectRef: receipt.objectRef,
+      finalAssetDigest: receipt.sha256,
+      generationRecordDigest: receipt.generationRecordDigest,
+      eventId: accepted.event.eventId,
+      eventSequence: accepted.event.sequence,
     });
   }
 
