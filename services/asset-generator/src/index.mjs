@@ -6,4 +6,7 @@ export {
   createAssetGenerationService,
   executeAssetGenerationJob,
 } from "./asset-generation-service.mjs";
-export { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation-service.mjs";
+export {
+  executeCredentialedAssetGenerationJob,
+  verifyCredentialedAssetForPublication,
+} from "./credentialed-asset-generation-service.mjs";
