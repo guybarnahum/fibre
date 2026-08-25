@@ -37,3 +37,8 @@ export {
   normalizeThreadVisualIdentityProjection,
   threadVisualIdentityProjectionDigest,
 } from "../../world-kernel/src/thread-presentation-identity-domain.mjs";
+
+export {
+  civilRegistrationToPresentationCivilIdentity,
+  readPresentationCivilIdentity,
+} from "./civil-identity-projection.mjs";
