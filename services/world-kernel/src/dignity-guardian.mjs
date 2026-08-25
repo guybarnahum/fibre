@@ -13,7 +13,7 @@ import {
   validateDignityGuardianV4Output,
   derivePrivateAssessmentFromV4Output,
   semanticDignityGuardianV4,
-} from "./dignity-guardian-v4.mjs";
+} from "./dignity-guardian-evaluation.mjs";
 
 // One current Guardian in the active code path. Historical v2/v3/v4 evidence
 // remains immutable in committed validation artifacts and Git history; active

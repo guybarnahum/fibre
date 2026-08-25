@@ -1,5 +1,4 @@
 export const RUNTIME_NAME_DEBT_PATHS = Object.freeze([
-  "services/world-kernel/src/dignity-guardian-v4.mjs",
   "services/world-kernel/src/genesis-event-structure-pool-v1.mjs",
   "services/world-kernel/src/genesis-event-structure-pool-v2.mjs",
   "services/world-kernel/src/genesis-event-structure-pool-v3.mjs",

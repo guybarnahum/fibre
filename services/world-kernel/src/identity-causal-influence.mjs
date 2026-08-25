@@ -5,7 +5,7 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { semanticDignityGuardianV4 } from "./dignity-guardian-v4.mjs";
+import { semanticDignityGuardianV4 } from "./dignity-guardian-evaluation.mjs";
 
 export const IDENTITY_CAUSAL_INFLUENCE_POLICY = Object.freeze({
   id: "identity_causal_influence_preflight",

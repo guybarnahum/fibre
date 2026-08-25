@@ -7,7 +7,7 @@ import {
   buildDignityGuardianV4ResponseSchema,
   derivePrivateAssessmentFromV4Output,
   validateDignityGuardianV4Output,
-} from "../src/dignity-guardian-v4.mjs";
+} from "../src/dignity-guardian-evaluation.mjs";
 
 function capsule({ semanticState = [], feelings = [], knownAlternatives = [] } = {}) {
   return {
