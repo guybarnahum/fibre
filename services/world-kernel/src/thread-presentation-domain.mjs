@@ -8,8 +8,18 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
+import {
+  THREAD_PRESENTATION_PACKET_CURRENT_VERSION,
+  THREAD_PRESENTATION_PACKET_LEGACY_VERSION,
+  THREAD_PRESENTATION_PACKET_VERSIONS,
+  fibreIdentityCardDisplayData,
+  normalizeFibreIdentityCard,
+  normalizePresentationCivilIdentity,
+  normalizeThreadVisualIdentityProjection,
+} from "./thread-presentation-identity-domain.mjs";
 
-export const THREAD_PRESENTATION_PACKET_VERSION = "thread-presentation-packet-v0.1";
+export const THREAD_PRESENTATION_PACKET_VERSION = THREAD_PRESENTATION_PACKET_CURRENT_VERSION;
+export { THREAD_PRESENTATION_PACKET_CURRENT_VERSION, THREAD_PRESENTATION_PACKET_LEGACY_VERSION, THREAD_PRESENTATION_PACKET_VERSIONS };
 export const THREAD_MEDIA_PACKET_VERSION = "thread-media-packet-v0.1";
 export const PRESENTATION_PROVENANCE_VERSION = "presentation-provenance-v0.1";
 
@@ -244,11 +254,16 @@ function normalizeMeaning(value, index) {
 
 export function normalizeThreadPresentationPacket(value) {
   assertPlainObject("presentation", value);
+  if (!THREAD_PRESENTATION_PACKET_VERSIONS.includes(value.schemaVersion)) {
+    throw new TypeError("presentation.schemaVersion is invalid");
+  }
+  const identityFields = value.schemaVersion === THREAD_PRESENTATION_PACKET_CURRENT_VERSION
+    ? ["civilIdentity", "visualIdentity", "identityCard"]
+    : [];
   assertExactKeys("presentation", value, [
     "schemaVersion", "manifest", "subject", "introduction", "origins", "places",
-    "relationships", "life", "memories", "meanings",
+    "relationships", "life", "memories", "meanings", ...identityFields,
   ]);
-  if (value.schemaVersion !== THREAD_PRESENTATION_PACKET_VERSION) throw new TypeError("presentation.schemaVersion is invalid");
 
   assertPlainObject("presentation.manifest", value.manifest);
   assertExactKeys("presentation.manifest", value.manifest, [
@@ -285,8 +300,8 @@ export function normalizeThreadPresentationPacket(value) {
   unique("presentation.memories", memories, "memoryRef");
   unique("presentation.meanings", meanings, "meaningRef");
 
-  return {
-    schemaVersion: THREAD_PRESENTATION_PACKET_VERSION,
+  const result = {
+    schemaVersion: value.schemaVersion,
     manifest: { ...value.manifest },
     subject,
     introduction: normalizeIntroduction(value.introduction),
@@ -297,6 +312,16 @@ export function normalizeThreadPresentationPacket(value) {
     memories,
     meanings,
   };
+  if (value.schemaVersion === THREAD_PRESENTATION_PACKET_CURRENT_VERSION) {
+    result.civilIdentity = normalizePresentationCivilIdentity(value.civilIdentity);
+    result.visualIdentity = normalizeThreadVisualIdentityProjection(value.visualIdentity);
+    result.identityCard = normalizeFibreIdentityCard(value.identityCard);
+    if (value.manifest.lifecycleStatus === "genesis_candidate"
+      && (result.civilIdentity !== null || result.identityCard !== null)) {
+      throw new TypeError("genesis_candidate presentation cannot carry live civil identity or an identity card");
+    }
+  }
+  return result;
 }
 
 function normalizeGeneration(value, name) {
@@ -428,6 +453,13 @@ export function normalizePresentationProvenance(value) {
 }
 
 function claims(presentation) {
+  const identityClaims = presentation.schemaVersion === THREAD_PRESENTATION_PACKET_CURRENT_VERSION
+    ? [
+        ...(presentation.civilIdentity === null ? [] : [{ path: "civilIdentity", value: presentation.civilIdentity, allowed: ["authoritative_fact"] }]),
+        ...(presentation.visualIdentity === null ? [] : [{ path: "visualIdentity", value: presentation.visualIdentity, allowed: ["fibre_projection"] }]),
+        ...(presentation.identityCard === null ? [] : [{ path: "identityCard", value: presentation.identityCard, allowed: ["fibre_projection"] }]),
+      ]
+    : [];
   return [
     { path: "subject", value: presentation.subject, allowed: ["authoritative_fact", "fibre_projection", "fixture"] },
     { path: "introduction", value: presentation.introduction, allowed: ["thread_expression", "fibre_projection", "editorial", "fixture"] },
@@ -437,6 +469,7 @@ function claims(presentation) {
     ...presentation.life.timeline.map((value, i) => ({ path: `life.timeline[${i}]`, value, allowed: ["authoritative_fact", "fibre_projection", "fixture"] })),
     ...presentation.memories.map((value, i) => ({ path: `memories[${i}]`, value, allowed: ["thread_memory"] })),
     ...presentation.meanings.map((value, i) => ({ path: `meanings[${i}]`, value, allowed: ["thread_meaning"] })),
+    ...identityClaims,
   ];
 }
 
@@ -508,12 +541,40 @@ export function normalizeThreadPresentationBundle({ presentation, media, provena
     if (asset.generation !== null && provenanceEntry.kind !== "generated_reconstruction") {
       throw new TypeError(`media.assets[${index}] generated media must use generated_reconstruction provenance`);
     }
+    if (asset.role === "official_id_photo") {
+      if (asset.kind !== "image" || provenanceEntry.kind !== "generated_reconstruction") {
+        throw new TypeError(`media.assets[${index}] official_id_photo must be derived generated image presentation media`);
+      }
+      if (p.schemaVersion !== THREAD_PRESENTATION_PACKET_CURRENT_VERSION || p.identityCard === null || p.civilIdentity === null) {
+        throw new TypeError(`media.assets[${index}] official_id_photo requires civil identity and identity-card presentation data`);
+      }
+    }
     if (asset.posterRef !== null) {
       const poster = mediaById.get(asset.posterRef);
       if (!poster) throw new TypeError(`media.assets[${index}].posterRef must resolve`);
       if (poster.kind !== "image") throw new TypeError(`media.assets[${index}].posterRef must reference an image`);
     }
   });
+
+  if (p.schemaVersion === THREAD_PRESENTATION_PACKET_CURRENT_VERSION) {
+    if (p.civilIdentity !== null && p.civilIdentity.issuer !== "fibre_civil_registry") {
+      throw new TypeError("presentation.civilIdentity issuer must be fibre_civil_registry");
+    }
+    if (p.identityCard !== null) {
+      if (p.civilIdentity === null) throw new TypeError("identity card requires civil identity");
+      fibreIdentityCardDisplayData(p);
+      if (p.identityCard.displayName !== p.subject.displayName) {
+        throw new TypeError("identity card displayName must match the current presented subject name");
+      }
+      if (p.identityCard.dateField?.kind === "birth_date" && p.identityCard.dateField.value !== p.subject.birthDate) {
+        throw new TypeError("identity card birth date must match the current presented subject birth date");
+      }
+      const photo = mediaById.get(p.identityCard.officialPhotoMediaRef);
+      if (!photo || photo.kind !== "image" || photo.role !== "official_id_photo") {
+        throw new TypeError("identity card officialPhotoMediaRef must resolve to official_id_photo image media");
+      }
+    }
+  }
 
   return { presentation: p, media: m, provenance: v };
 }
