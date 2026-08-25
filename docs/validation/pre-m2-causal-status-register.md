@@ -1,7 +1,7 @@
 ---
 id: validation-pre-m2-causal-status-register
 status: accepted
-last-reviewed: 2026-08-18
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -59,9 +59,9 @@ Request fingerprint: sha256:7d57002e7740d87607bcd6dba441009a059fa3af4fddc173337e
 Causal memory: mem_b88e7e64a7e3f64bfe0752249eeb1fb750d2e2e5b5d8a209c6b51812c60b7ca0
 ```
 
-The committed evidence bundle is `artifacts/test-results/history_bends_judgment_standing_gate_v4.evidence.json`. It records the exact model rationales, factor evidence refs, normalizations, provider request/digest data, one retrying `MODEL_TIMEOUT`, persisted memory, restart integrity witness, and counterfactual memory witnesses.
+The exact machine-readable evidence bundle was committed with the accepted checkpoint and remains recoverable from Git history rather than retained as a live HEAD artifact. It records the exact model rationales, factor evidence refs, normalizations, provider request/digest data, one retrying `MODEL_TIMEOUT`, persisted memory, restart integrity witness, and counterfactual memory witnesses.
 
-History standing cycles v1-v3 remain failed/sealed and their exact evidence bundles are also committed.
+History standing cycles v1-v3 remain failed/sealed historical evidence in Git history rather than current-tree evidence bundles.
 
 ## Scope of the Development credit
 
@@ -124,7 +124,7 @@ A standing cycle seals on the first real provider attempt. Missing credentials o
 
 After a sealed cycle failure, fixes or evaluation changes require a new frozen boundary and new held-out set. A successful sealed cycle is immutable standing evidence and must not be tuned against afterward.
 
-After sealing, provider-executable standing runners are retired from the active command surface. Exact committed evidence bundles plus canonical postmortems are the human/audit authority; Git history preserves retired executable source. Read-only inspectors may expose sealed results but may not contain a provider/model execution path.
+After sealing, provider-executable standing runners are retired from the active command surface. Canonical standing documents preserve accepted current claims; Git history is the default archive for exact committed evidence and retired source. A read-only inspector belongs in HEAD only when retained HEAD evidence gives it a continuing purpose; an inspector must not outlive the artifact it exists to inspect.
 
 ## Current score consequence
 
