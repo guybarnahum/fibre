@@ -1,11 +1,20 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
+import { createAssetGenerationCompletion } from "../asset-generation-completion.mjs";
 import { createCloudflareAssetGenerationRuntime } from "./asset-generation-runtime.mjs";
+
+function completionQueue(env) {
+  const queue = env?.ASSET_COMPLETIONS;
+  if (!queue || typeof queue.send !== "function") {
+    throw new TypeError("ASSET_COMPLETIONS queue binding is required");
+  }
+  return queue;
+}
 
 export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
-    return step.do(
+    const generated = await step.do(
       "generate credentialed asset",
       { timeout: "10 minutes" },
       async () => {
@@ -21,5 +30,21 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
         }
       },
     );
+
+    const completion = createAssetGenerationCompletion({
+      jobId: generated.receipt.jobId,
+      receiptObjectRef: generated.receiptObjectRef,
+      receiptDigest: generated.receiptDigest,
+    });
+
+    await step.do("signal asset generation completion", async () => {
+      // Queue delivery is a separate durable step. Its default retry policy is safe:
+      // the message is a deterministic pointer to already-immutable output, and the
+      // Presentation consumer is idempotent under at-least-once delivery.
+      await completionQueue(this.env).send(completion);
+      return completion;
+    });
+
+    return generated;
   }
 }

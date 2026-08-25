@@ -22,6 +22,14 @@
       "class_name": "AssetGenerationWorkflow"
     }
   ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "ASSET_COMPLETIONS",
+        "queue": "fibre-asset-completions-local"
+      }
+    ]
+  },
   "observability": {
     "enabled": true
   }

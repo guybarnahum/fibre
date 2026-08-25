@@ -19,6 +19,12 @@ InfraDriver cloudflare-v1
                     |
                     v
               Asset Generator Worker
+                    |
+                    v
+              completion Queue
+                    |
+                    v
+              Presentation queue consumer
 ```
 
 The public API is read-only:
@@ -50,13 +56,12 @@ Development-only fixture seams:
 ```text
 POST /__p3/fixtures/can-tho
 POST /__p3/fixtures/can-tho/generate-market
-POST /__p3/fixtures/can-tho/publish-market
 GET  /__p3/workflows/:jobId
 ```
 
-The seed route accepts only `thr_pr39_g2_04` with `lifecycleStatus=genesis_candidate` and `fixture=true`. The generation route plans exactly the existing `media_place_market` placeholder from the current presentation snapshot and schedules the standalone Asset Generator Workflow. The publication route is a temporary fixture-only handoff: it loads the immutable `StoredAssetReceipt`, re-verifies the credentialed asset, and only then lets Presentation admit `media.ready`. These routes are absent when fixture mode is disabled.
+The seed route accepts only `thr_pr39_g2_04` with `lifecycleStatus=genesis_candidate` and `fixture=true`. The generation route intentionally reconciles only the existing `media_place_market` slot so the local proof makes one real provider call rather than fanning out every eligible image. It persists that one presentation demand, dispatches the standalone Asset Generator Workflow, and returns its deterministic demand/job identities.
 
-The manual publication seam exists only to keep the P3 vertical proof runnable while the production completion/reconciliation trigger is being built. It is not the intended production completion mechanism.
+There is no manual publication route anymore. After generation stores the immutable receipt, the Asset Generator Workflow emits the minimal provider-neutral completion message to the local Queue. The Presentation queue consumer resolves the current durable demand, verifies receipt digest + GenerationRecord + final asset + Content Credential, and only then lets Thread Presentation admit `media.ready`.
 
 ## Generated-media boundary proof
 
@@ -65,6 +70,8 @@ The current proof still uses one real market reconstruction rather than fanning 
 ```text
 Cần Thơ presentation snapshot
         -> ThreadPresentationAssetPlanner
+        -> PresentationAssetDemandService
+        -> durable current demand
         -> AssetGenerationService
         -> InfraDriver.workflows
         -> cross-script Asset Generator Workflow
@@ -74,17 +81,16 @@ Cần Thơ presentation snapshot
         -> C2PA Content Credential embed/verify
         -> final credentialed image in R2
         -> immutable StoredAssetReceipt
-        -> Workflow completes without presentation authority
-        -> fixture-only Presentation publish handoff
-        -> credential re-verification
+        -> minimal AssetGenerationCompletion
+        -> Cloudflare Queue (at-least-once)
+        -> Presentation completion consumer
+        -> exact demand/job binding + credential re-verification
         -> media.ready at presentation sequence 1
         -> D1 public-media projection
         -> HTTP/WebSocket viewer consumption
 ```
 
 The provider adapter pins `gpt-image-2-2026-04-21` and records the exact provider-facing request after removing the API secret. The public C2PA assertion uses `digest_only` prompt disclosure.
-
-Because the official browser/WASM C2PA package does not yet expose the byte-oriented verification API needed by Cloudflare Workers, this local proof uses `services/c2pa-local` as an isolated Node sidecar running the official `@contentauth/c2pa-node` SDK. It is an adapter implementation, not Fibre authority and not a production trust service.
 
 ### 1. Start the local C2PA service
 
@@ -116,7 +122,7 @@ npx wrangler@latest dev \
   --port 8787
 ```
 
-The first config is the HTTP-facing Presentation Worker. The second is the standalone Asset Generator Worker that owns the Workflow class. Cloudflare's `script_name` Workflow binding connects them without a public internal HTTP hop. Wrangler locally simulates D1, R2, Durable Objects, and Workflows; no production Cloudflare resources are touched.
+The first config is the HTTP-facing Presentation Worker and the Queue consumer. The second is the standalone Asset Generator Worker that owns the Workflow class and Queue producer. Cloudflare's `script_name` Workflow binding connects the scheduling path without a public internal HTTP hop, while the local Queue carries completion after immutable generation output exists. Wrangler locally simulates D1, R2, Durable Objects, Workflows and Queues; no production Cloudflare resources are touched.
 
 ### 3. Seed and run the one-image proof
 
@@ -127,14 +133,14 @@ node tools/presentation/seed-p3-can-tho-cloudflare-local.mjs
 node tools/presentation/prove-p3-generated-media-local.mjs
 ```
 
-The proof waits for the standalone Workflow to complete, explicitly invokes the temporary Presentation-owned fixture handoff, requires the first semantic presentation event to be `media.ready` sequence `1`, downloads the image only through the guarded public-media endpoint, re-verifies its C2PA assertion, and saves a local copy under ignored `artifacts/generated/`.
+The proof starts the one market demand, waits for the standalone Workflow and automatic completion path, requires the first semantic presentation event to be `media.ready` sequence `1`, downloads the image only through the guarded public-media endpoint, re-verifies its C2PA assertion, and saves a local copy under ignored `artifacts/generated/`.
 
 The successful result must show:
 
 ```text
 lifecycleStatus          genesis_candidate
 fixture                  true
-presentationPublication  manual_fixture_handoff
+presentationPublication  queue_completion_handoff
 eventSequence            1
 c2pa.valid                true
 provenanceClass          generated_reconstruction
@@ -166,13 +172,16 @@ PRESENTATION_CHANNELS   Durable Object namespace
 PRESENTATION_OBJECTS    private R2/object capability
 PRESENTATION_CATALOG    D1 database
 ASSET_GENERATION        cross-script Cloudflare Workflow binding
+asset completion Queue  consumer binding/configuration
 ```
 
-The corresponding Asset Generator deployment owns its provider secret, generation Workflow definition, credential-embedding configuration, and object capability. Production deployment credentials belong to Wrangler authentication / CI secrets, not Fibre application `.env`.
+The corresponding Asset Generator deployment owns its provider secret, generation Workflow definition, completion Queue producer, credential-embedding configuration, and object capability. Production deployment credentials belong to Wrangler authentication / CI secrets, not Fibre application `.env`.
 
 ## Current limits
 
-- production completion/reconciliation between Workflow completion and Presentation publication is still deferred; the local fixture uses an explicit manual handoff;
+- generic `/api/assets/:objectRef` resolution and audience authorization are still deferred; the current Thread-specific route remains the public serving seam;
+- the completion Queue currently publishes `media.ready` only for the credentialed successful receipt path; terminal credentialed `media.unavailable` semantics remain deferred;
+- D1 catalog demand projection has no compare-and-set, so independent concurrent production presentation writers require a transactional/single-writer demand boundary before race-free current-demand publication is claimed;
 - no browser write/message API yet;
 - only one generated asset is required for the current vertical proof; bulk generation belongs to later media work;
 - local C2PA sidecar certificate is not a production trust credential;

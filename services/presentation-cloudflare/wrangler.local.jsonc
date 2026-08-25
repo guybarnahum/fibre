@@ -38,6 +38,17 @@
       "script_name": "fibre-asset-generator-local"
     }
   ],
+  "queues": {
+    "consumers": [
+      {
+        "queue": "fibre-asset-completions-local",
+        "max_batch_size": 10,
+        "max_batch_timeout": 1,
+        "max_retries": 10,
+        "dead_letter_queue": "fibre-asset-completions-local-dlq"
+      }
+    ]
+  },
   "exports": {
     "FibrePresentationChannelDurableObject": {
       "type": "durable-object",

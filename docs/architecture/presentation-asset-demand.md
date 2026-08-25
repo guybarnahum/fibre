@@ -95,7 +95,7 @@ Workflow dispatch occurs before the mutable projection advances.
 
 If Workflow start succeeds and projection persistence fails, retrying reconciliation is safe: the same semantic identity produces the same `jobId` and exact job input, and the Workflow port deduplicates the durable input witness.
 
-If a retained pending demand has no Workflow witness, reconciliation repairs it by replaying the exact retained job.
+If a retained pending demand has no durable Workflow witness, reconciliation repairs it by replaying the exact retained job.
 
 Operational Workflow state remains separate from semantic media state. A Workflow being `queued`, `running`, `errored`, `unknown`, or complete does not by itself author `media.ready` or `media.unavailable`.
 
@@ -120,13 +120,60 @@ reconcileCurrent(channelId)
 
 WorldPresentation and Experience presentation do not yet have independent production write endpoints in the repository. Their planners already produce the same normalized slot contract; their eventual admission authorities must call the same demand service only with the current admitted presentation revision. This commit does not invent placeholder HTTP authorities for them.
 
+## Durable completion handoff
+
+A successful credentialed generation Workflow now emits a small provider-neutral `AssetGenerationCompletion` message **after** the immutable `StoredAssetReceipt` exists:
+
+```text
+Asset Generator Workflow
+        |
+        +--> GenerationRecord
+        +--> credentialed final asset
+        +--> StoredAssetReceipt
+        |
+        `--> AssetGenerationCompletion {
+               jobId
+               receiptObjectRef
+               receiptDigest
+             }
+                    |
+                    v
+             durable completion transport
+                    |
+                    v
+             Presentation completion service
+```
+
+The completion message deliberately carries no Thread ID, media ID, publication status, or semantic verdict. It is only a durable pointer to immutable output. The calling presentation domain resolves the receipt, reconstructs the owning demand scope from the already-authorized job context, and verifies that the exact stored generation job matches the exact durable demand job.
+
+For the Cloudflare deployment adapter, the durable transport is a Queue. Queue delivery is at-least-once, so the Presentation consumer must be idempotent. Duplicate delivery of a demand already recorded `ready` does not publish a second semantic event.
+
+The consumer orders a current Thread completion as:
+
+```text
+1. resolve immutable receipt and verify receipt digest
+2. find exactly one matching durable current demand
+3. ignore superseded/obsolete demand completion as stale
+4. re-verify GenerationRecord, final bytes and Content Credential
+5. let Thread Presentation admit media.ready
+6. persist operational demand state = ready
+```
+
+If semantic publication succeeds but the final demand projection update fails, queue redelivery is safe because `media.ready` has a deterministic event ID and the public-media catalog mirror is idempotent. The retry can therefore finish the operational projection without creating a second semantic event.
+
+World and Experience demand completion can be verified and recorded operationally through the same completion service, but their independent semantic publication authorities do not yet exist. This commit does not invent them.
+
+The credentialed Cloudflare generation path currently creates only successful `StoredAssetReceipt(status=ready)` records. Terminal `media.unavailable` publication remains deferred until Fibre defines a durable credential/provenance contract for terminal unsupported/policy outcomes rather than treating provider/runtime failure as semantic unavailability.
+
 ## Concurrency boundary
 
 The current operational projection uses the existing provider-neutral `catalog` port. That port is durable but does not expose compare-and-set.
 
-This is acceptable for the current Thread trigger because the presentation authority serializes snapshot admission and the trigger re-reads the current snapshot before planning. Future World/Experience admission stores must provide the same single-current-revision discipline.
+This remains acceptable for the current Thread proof because there is no independent production Thread presentation write API yet, the current snapshot trigger re-reads the admitted snapshot before planning, and completion publication is exercised against the serialized fixture/admission path.
 
-If Fibre later needs independent concurrent writers for one presentation-demand scope, move this projection behind a transactional `InfraDriver.state`/compare-and-set port. That is an open extension path, not a permanent catalog requirement.
+A future runtime with independent concurrent snapshot admission and completion consumers must move the demand projection behind transactional `InfraDriver.state`/compare-and-set or another single-writer coordination boundary before claiming race-free current-demand publication. Queue retries and idempotent events solve duplicate delivery; they do **not** create compare-and-set semantics for D1 catalog projection updates.
+
+This limitation is a temporary implementation shortcut with an explicit replacement path, not a permanent constraint.
 
 ## Supersession
 
@@ -141,28 +188,33 @@ The historical demand keeps its exact immutable job witness. The new demand rece
 
 When a slot is removed or becomes ineligible, the current demand can become `obsolete`. This is an operational demand transition; it does not delete an already generated immutable asset or rewrite presentation history.
 
+A completion for a demand already marked `superseded` or `obsolete` is not promoted to current media merely because its provider work finished later.
+
 ## Authority boundaries
 
 Permanent rules:
 
 - demand reconciliation reads only the authorized presentation slot contract;
 - Asset Generator never scans hidden Thread, World, Experience, Memory or Place state;
+- Asset Generator completion messages carry operational receipt pointers, not presentation verdicts;
 - WorldPresentation remains derived non-cognitive presentation grounding;
 - autobiographical memory remains distinct from historical/event context;
 - generated reconstruction remains distinct from both;
 - missing embodiment cannot be repaired by inventing a canonical face;
-- Workflow completion is operational, not semantic publication;
+- Workflow completion and Queue delivery are operational, not semantic publication;
+- Thread Presentation alone authors `media.ready` for a Thread completion;
 - demand projection is not evidence for identity, memory, meaning, character or history.
 
 ## Deferred after this seam
 
 Still deferred:
 
-- automatic durable completion signalling from Asset Generator back to Presentation;
-- verification and presentation-owned transition from receipt to `media.ready` / `media.unavailable`;
 - generic provider-neutral asset serving;
 - public/private audience authorization for generic asset resolution;
-- scheduled repair sweeps across pending demand;
+- independent World/Experience semantic media publication authorities;
+- terminal credentialed `media.unavailable` receipts/publication;
+- scheduled repair sweeps across pending demand and completion DLQs;
+- transactional/CAS demand projection for independent concurrent writers;
 - retry attempt/staging identities for nondeterministic provider retries.
 
-These are separate extension seams. They should not be hidden inside demand reconciliation.
+These are separate extension seams. They should not be hidden inside demand reconciliation or completion transport.

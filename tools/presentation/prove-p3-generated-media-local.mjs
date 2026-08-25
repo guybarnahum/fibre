@@ -23,18 +23,12 @@ const scheduled = await jsonFetch(`${base}/__p3/fixtures/can-tho/generate-market
 const started = Date.now();
 let readyEvent = null;
 let workflow = scheduled.workflow;
-let published = false;
 
 while (Date.now() - started < timeoutMs) {
   const status = await jsonFetch(`${base}/__p3/workflows/${encodeURIComponent(scheduled.jobId)}`);
   workflow = status.workflow;
   if (["errored", "terminated"].includes(workflow.status)) {
     throw new Error(`asset workflow ended as ${workflow.status}`);
-  }
-
-  if (!published && ["complete", "completed"].includes(workflow.status)) {
-    await jsonFetch(`${base}/__p3/fixtures/can-tho/publish-market`, { method: "POST" });
-    published = true;
   }
 
   const events = await jsonFetch(`${base}/api/threads/${threadId}/events?after=0`);
@@ -46,7 +40,6 @@ while (Date.now() - started < timeoutMs) {
 }
 
 if (!readyEvent) throw new Error(`timed out waiting for ${mediaId} media.ready`);
-if (!published) throw new Error("media.ready appeared before the presentation-owned publication step");
 if (readyEvent.sequence !== 1) throw new Error(`expected first generated media event at sequence 1, got ${readyEvent.sequence}`);
 if (readyEvent.payload.objectRef !== scheduled.objectRef) throw new Error("media.ready objectRef does not match scheduled job");
 
@@ -91,9 +84,10 @@ console.log(JSON.stringify({
   lifecycleStatus: "genesis_candidate",
   fixture: true,
   mediaId,
+  demandId: scheduled.demandId,
   jobId: scheduled.jobId,
   workflowStatus: workflow.status,
-  presentationPublication: "manual_fixture_handoff",
+  presentationPublication: "queue_completion_handoff",
   eventSequence: readyEvent.sequence,
   eventId: readyEvent.eventId,
   objectRef: readyEvent.payload.objectRef,

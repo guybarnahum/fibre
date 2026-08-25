@@ -1,4 +1,4 @@
-import { verifyCredentialedAssetForPublication } from "../../asset-generator/src/credentialed-asset-generation-service.mjs";
+import { verifyCredentialedAssetForPublication } from "#services/asset-generator/src/index.mjs";
 import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "./thread-presentation-stream-domain.mjs";
