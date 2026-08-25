@@ -1,7 +1,7 @@
 ---
 id: validation-experiment-lifecycle
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -47,7 +47,7 @@ Sealed evidence is immutable in meaning. Later repository changes may improve no
 
 When exact bytes retain continuing scientific, replay, interoperability or audit value, keep the machine-readable bundle under `artifacts/validation/`. The human-readable validation document interprets the result; Git history remains the archive for retired executables and intermediate cycles.
 
-A sealed result may retain a read-only inspection command. That command must fail closed if authoritative evidence is unavailable and must never contain or reach a provider/model execution path.
+A sealed result may retain a read-only inspection command when a retained HEAD artifact gives that command a continuing purpose. Such a command must fail closed if authoritative evidence is unavailable and must never contain or reach a provider/model execution path. Do not retain an inspector whose only default input has already been removed from HEAD.
 
 ## What remains in the active tree
 
@@ -59,7 +59,7 @@ Keep active only what is useful for current engineering:
 - reusable Development-cycle harnesses that remain useful;
 - generalized invariant/evidence-consistency tests learned from prior failures;
 - shared experiment infrastructure such as provider progress and evidence helpers;
-- optionally, a read-only sealed-result inspector that cannot call a provider.
+- optionally, a read-only sealed-result inspector backed by retained HEAD evidence and unable to call a provider.
 
 After a standing cycle is sealed, its provider-executable proof/runner should normally be removed from the active command surface and active tree. Exact historical source remains recoverable from preserved repository history.
 
@@ -83,7 +83,7 @@ For every accepted standing claim, preserve enough canonical information to reco
 - postmortem and methodological lesson;
 - immutable repository history containing the exact retired executable source.
 
-Human-readable accepted standing records remain under `docs/validation/`. Exceptional exact-byte evidence retained in HEAD belongs under `artifacts/validation/`. Repository history is the exact executable archive.
+Human-readable accepted standing records remain under `docs/validation/`. Exceptional exact-byte evidence retained in HEAD belongs under `artifacts/validation/`. Repository history is the exact executable archive and the default archive for evidence bundles that no longer justify HEAD retention.
 
 ### Archive-preservation rule for squash merges
 
@@ -140,11 +140,9 @@ The accepted current record is [`history-bends-judgment-standing-gate-v4.md`](hi
 
 Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
 
-The retained exact machine evidence is:
+The exact v4 machine evidence was committed with the accepted checkpoint and is preserved in Git history rather than retained in HEAD.
 
-- `artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`
-
-The provider-capable History standing proof/runner/template stack is no longer active after sealing. `npm run history:gate` imports only the read-only sealed-evidence inspector and cannot reach model/provider execution. `npm run history:dev` is the repeatable provider-backed Development-cycle command and uses the shared provider heartbeat.
+The provider-capable History standing proof/runner/template stack and the later read-only sealed-evidence inspector are no longer active after retention cleanup. `npm run history:dev` remains the repeatable provider-backed Development-cycle command and uses the shared provider heartbeat.
 
 The v4 Development credit is deliberately limited: Episode A's setup appraisal was scripted; deterministic Actor v1 stored requester/objective/criteria-derived descriptive memory rather than Thread-authored reflection; the later standing comparison invoked Guardian v4 directly in the harness; and the default live runtime has not generalized this into rich experience-driven self-development.
 
@@ -154,11 +152,7 @@ The accepted current record is [`semantic-guardian-v4-standing-gate-v4.md`](sema
 
 Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
 
-The retained exact machine evidence is:
-
-- `artifacts/validation/semantic_guardian_v4_standing_gate_v4.evidence.json`
-
-Retired Candidate 1-3 standing executables are not active product/test APIs and may be recovered from reachable repository history when forensic reproduction is needed.
+The exact v4 machine evidence was committed with the accepted checkpoint and is preserved in Git history rather than retained in HEAD. Retired standing executables and the later read-only sealed-evidence inspector are likewise historical, not active product/test APIs.
 
 ## Current episodic-memory limitation
 
