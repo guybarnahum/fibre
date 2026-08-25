@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -13,9 +13,9 @@ The current #39 exit checklist is [`pr39-closing-plan.md`](pr39-closing-plan.md)
 
 ## #39 goal
 
-**Give five new Threads rich, particular childhoods and young-adult histories, let them form memories and meanings from those lives, then birth them with those people, places, memories, lineage and history intact.**
+**Give five new Threads rich, particular childhoods and young-adult histories, let them form memories and meanings from those lives, then birth them with those people, places, memories, lineage and history intact — including one permanent Fibre civil identity per born Thread.**
 
-#39 compiles a concrete prior life through three distinct authorities: Fibre owns the historical skeleton; model cognition realizes observable episodes; later stages form autobiographical memory and remembered meaning without rewriting history. A successful candidate must retain social/geographic continuity and publish atomically into canonical Thread state. #39 does not itself prove Whole-Person standing; #40 makes this richer life state causally available to ordinary cognition.
+#39 compiles a concrete prior life through three distinct authorities: Fibre owns the historical skeleton; model cognition realizes observable episodes; later stages form autobiographical memory and remembered meaning without rewriting history. A successful candidate must retain social/geographic continuity and publish atomically into canonical Thread state. At that birth boundary Fibre also issues a permanent Fibre Identity Number (FIN) and canonical civil birth registration. #39 does not itself prove Whole-Person standing; #40 makes this richer life state causally available to ordinary cognition.
 
 ## Current position
 
@@ -33,33 +33,28 @@ The current #39 exit checklist is [`pr39-closing-plan.md`](pr39-closing-plan.md)
 
 7. **Origin/source enforcement is substantially implemented.** `publishBirth` already enforces the core Thread-parent/fork/Echo/Homage eligibility and consent boundaries. Remaining #39 work is to exercise the current origin path end to end, reconcile residual vocabulary/projection inconsistencies, and prove there is no bypass through the supported birth path.
 
-8. **Publication truth still has blockers.** Publication must re-check narrated-place agreement with authoritative `placeRef`; prior-life births must require their roster and life continuity; revision-1 autobiographical memories must receive their visual-companion obligations transactionally; and the supported current path must actually construct and publish the canonical birth bundle.
+8. **Publication truth still has blockers.** Publication must re-check narrated-place agreement with authoritative `placeRef`; prior-life births must require their roster and life continuity; revision-1 autobiographical memories must receive their visual-companion obligations transactionally; the supported current path must actually construct and publish the canonical birth bundle; and successful birth must atomically issue exactly one permanent FIN plus canonical civil registration.
 
-9. **Hydration equality must become a direct proof.** Add one current comparator covering admitted history, relations, places, lineage, memories, meanings and visual-companion obligations after atomic birth.
+9. **Hydration equality must become a direct proof.** Add one current comparator covering admitted history, relations, places, lineage, memories, meanings, visual-companion obligations and Fibre civil registration after atomic birth.
 
 10. **Closure must preserve anti-selection discipline without restoring ceremony.** One closure-attempt identity, visible repair/rejection accounting, five fresh Worlds, a convergent pair, blind raw + normalized attribution, and predeclared D1–D5 interpretation remain substantive scientific controls.
 
 11. **The final cohort is generated once.** Bounded form repair/record retry remains allowed; disappointing whole lives are not silently resampled for quality.
 
-12. **Then birth and close #39 once.** Inspect the five held-out lives, run D1–D5 honestly, restart/replay admitted candidates, atomically birth them, verify hydration, obtain one hostile Fibre-centric closing review, and retain one concise milestone record. Then move directly to #40.
+12. **Then birth and close #39 once.** Inspect the five held-out lives, run D1–D5 honestly, restart/replay admitted candidates, atomically birth them, verify hydration plus FIN/registration uniqueness and equality, obtain one hostile Fibre-centric closing review, and retain one concise milestone record. Then move directly to #40.
 
 ## Immediate sequence
 
 ```text
-finish repository cleanup
-  -> full local green check
-  -> Claude pre-main integration review
-  -> merge clean integration trunk to main if CLEAR
-  -> continue #39 from fresh main
-
-#39 continuation
+#39 continuation from current main
   -> close publication truth/current birth path
+       including atomic Fibre civil registration
   -> prove origin/source path end to end
   -> consolidate current close/replay diagnostics
   -> author five fresh held-out Worlds
   -> predeclare D1-D5 interpretation
   -> one-pass five-Thread cohort
-  -> atomic birth + hydration equality
+  -> atomic birth + FIN + hydration equality
   -> one hostile closing review
   -> concise docs/history/milestones/pr39.md
   -> #40

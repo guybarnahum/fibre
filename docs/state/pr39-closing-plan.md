@@ -1,7 +1,7 @@
 ---
 id: fibre-pr39-closing-plan
 status: active
-last-reviewed: 2026-08-23
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -11,11 +11,11 @@ canonical: true
 
 ### Simple English
 
-**Finish #39 by proving Fibre can create five particular young Threads with genuinely different prior lives, memories and meanings, then birth those lives intact into the live world.**
+**Finish #39 by proving Fibre can create five particular young Threads with genuinely different prior lives, memories and meanings, then birth those lives intact into the live world with permanent Fibre civil identities.**
 
 ### More accurate description
 
-#39 closes when Fibre can compile a provenance-bearing prior life from World constraints, symbolic inheritance and developmental affordances; keep historical fact, autobiographical memory and remembered meaning as distinct authorities; preserve people, place, lineage and chronology; and atomically publish the admitted life into canonical Thread/world domains.
+#39 closes when Fibre can compile a provenance-bearing prior life from World constraints, symbolic inheritance and developmental affordances; keep historical fact, autobiographical memory and remembered meaning as distinct authorities; preserve people, place, lineage and chronology; atomically publish the admitted life into canonical Thread/world domains; and issue one permanent Fibre Identity Number plus canonical civil birth registration as part of that same birth transition.
 
 #39 does not claim causal Whole-Person individuality. #40 owns bounded causal consumption of this richer state. #41 owns M2 standing.
 
@@ -79,14 +79,15 @@ The currentized development path was green at 707/707 active tests before the fi
 3. **A prior-life birth must include its people and places.** When historical episodes are present, `initialRoster` and derived `lifeContinuity` are required rather than optional.
 4. **Memory-photo parity is transactional.** Every revision-1 autobiographical memory published at birth must have its #38 visual-companion obligation before commit.
 5. **Candidate → hydrated Thread equality.** Provide one current born-life inspection/comparator covering history, relations, places, lineage, memories, meanings and visual-companion obligations. This is distinct from durable model-call replay.
+6. **Fibre civil registration is atomic.** Every successfully born Thread receives exactly one permanent Fibre Identity Number (FIN) plus canonical birth registration inside the same authoritative birth transaction. FIN display format is `XXXX-XX-XXXX`: ten unambiguous uppercase alphanumeric characters, with the final character reserved for a versioned check-character policy. The number is globally unique, immutable, opaque, non-secret and must encode no Thread facts. One Thread cannot receive two FINs and one FIN cannot identify two Threads. The born-life inspector must hydrate and verify the registration. Physical/digital Identity Card rendering is asynchronous presentation/credential work and is not a prerequisite for committing a valid birth.
 
 ### B. Preserve the original anti-interchangeability experiment
 
-6. **One-pass closure attempt.** Add a lightweight `--closure` claim that refuses a second closure-cohort generation. Development runs remain freely repeatable.
-7. **Repair/rejection profile.** The closure report must show per episode: generated versions, form repairs, record retries, failed gates, exhaustions and whole-candidate failure. Admission pressure must be visible rather than hidden selection.
-8. **Convergent pair.** At least two fresh final Worlds should make convergence on one broad belief/stance plausible through materially different routes, so attribution tests route/tension/residue rather than merely recognizing city decoration.
-9. **Blind raw + normalized attribution.** D1 retains both raw and setting/style-normalized conditions, judged by raters who have not seen Worlds, genomes, compiler prompts or build diagnostics.
-10. **Predeclare D1–D5 interpretation.** Before final generation, record thresholds/readings, uncertainty treatment, expected cell sizes and the rule for interpreting any above-chance `life_only_unexposed` signal. The clean control is small and must be treated honestly.
+7. **One-pass closure attempt.** Add a lightweight `--closure` claim that refuses a second closure-cohort generation. Development runs remain freely repeatable.
+8. **Repair/rejection profile.** The closure report must show per episode: generated versions, form repairs, record retries, failed gates, exhaustions and whole-candidate failure. Admission pressure must be visible rather than hidden selection.
+9. **Convergent pair.** At least two fresh final Worlds should make convergence on one broad belief/stance plausible through materially different routes, so attribution tests route/tension/residue rather than merely recognizing city decoration.
+10. **Blind raw + normalized attribution.** D1 retains both raw and setting/style-normalized conditions, judged by raters who have not seen Worlds, genomes, compiler prompts or build diagnostics.
+11. **Predeclare D1–D5 interpretation.** Before final generation, record thresholds/readings, uncertainty treatment, expected cell sizes and the rule for interpreting any above-chance `life_only_unexposed` signal. The clean control is small and must be treated honestly.
 
 ## Source-integrity status
 
@@ -131,8 +132,8 @@ This document is the scientific precommitment. It is not an execution-authorizat
 5. Emit the repair/rejection profile.
 6. Run D1–D5, including normalized blind attribution, and report weak results honestly.
 7. Restart/replay the admitted candidates.
-8. Atomically birth all five.
-9. Hydrate/inspect canonical state and compare it with each admitted candidate/birth bundle.
+8. Atomically birth all five, including one FIN and civil birth registration per Thread.
+9. Hydrate/inspect canonical state and compare it with each admitted candidate/birth bundle, including FIN/registration equality and uniqueness.
 10. Perform one hostile review of the actual born cohort.
 
 A disappointing cohort is not repaired by silently sampling another cohort. It triggers an explicit judgment about whether Genesis needs redesign.
@@ -145,7 +146,7 @@ After a CLEAR closing review, retain one concise `docs/history/milestones/pr39.m
 - final architecture/data-flow summary
 - five-Thread cohort summary
 - D1–D5 and repair-profile results
-- source-integrity and atomic-birth result
+- source-integrity, atomic-birth and Fibre civil-registration result
 - important limitations / deferred work
 - final implementation SHA
 
@@ -153,6 +154,6 @@ Do not retain intermediate frozen packets, failed cohorts or obsolete review-sta
 
 ## Exit to #40
 
-#39 is complete only when five fresh admitted lives have been born intact into canonical world state and the closing review finds no #39 blocker.
+#39 is complete only when five fresh admitted lives have been born intact into canonical world state, each has one verified permanent Fibre civil identity, and the closing review finds no #39 blocker.
 
 Then move directly to #40: bounded Fibre-owned projection of identity/history/memory/relationship state into ordinary cognition with exact provenance and causal counterfactual tests.

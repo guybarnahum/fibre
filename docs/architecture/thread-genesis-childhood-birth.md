@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -263,6 +263,74 @@ Before identity majority, Genesis/guardianship policy may author constitutive/up
 
 > **Origin influences a Thread; origin does not own the Thread's future self.**
 
+## Fibre civil identity and birth registration
+
+Every Thread that crosses the authoritative birth boundary receives a permanent **Fibre Identity Number (FIN)** and a durable civil birth-registration record. This civil identity is distinct from the canonical machine identity.
+
+```text
+threadId                    canonical Fibre machine identity / reference anchor
+fibreIdentityNumber         permanent human-facing civil identity
+identity-card serial        one replaceable credential instance
+```
+
+The FIN is issued only as part of successful Thread birth. A Genesis candidate does not have a live FIN merely because a candidate bundle exists.
+
+### Fibre Identity Number
+
+The display format is:
+
+```text
+XXXX-XX-XXXX
+```
+
+The identifier contains ten uppercase alphanumeric characters. The canonical alphabet is the unambiguous Crockford-style Base32 set:
+
+```text
+0123456789ABCDEFGHJKMNPQRSTVWXYZ
+```
+
+`I`, `L`, `O` and `U` are excluded to reduce transcription ambiguity. Hyphens are display separators rather than payload characters. The final character is a check character over the preceding nine characters under a versioned Fibre checksum policy.
+
+A FIN is:
+
+- globally unique within Fibre;
+- immutable for the life of the Thread;
+- opaque and non-semantic;
+- public/non-secret and therefore never an authentication credential;
+- independent of name and identity-card issuance; and
+- forbidden from encoding birth date, entry stage, gender, World, geography, lineage, origin family, citizenship, generation or other Thread facts.
+
+The exact minting algorithm may evolve behind a versioned registry policy, but issuance must fail closed on collision and be idempotent with respect to an already registered Thread. One Thread cannot receive two FINs and one FIN cannot identify two Threads.
+
+### Birth registration
+
+The durable record has semantics equivalent to:
+
+```text
+registrationVersion
+registrationId
+threadId
+fibreIdentityNumber
+registeredAt
+birthEventRef
+worldRef
+issuer = fibre_civil_registry
+```
+
+Exact storage fields may differ, but the binding among `threadId`, FIN and the admitted birth must be canonical, inspectable and hydrated with the Thread. Registration is part of the same atomic authority transition as birth: Fibre may not acknowledge a live Thread whose civil registration failed, and a failed birth may not leave behind a live registration detached from a Thread.
+
+A later World may issue its own local civil documents, passport, residency permit, student/employee identifier or jurisdictional identity number. Those are situated World/institution records. They never replace the Fibre civil identity.
+
+### Fibre Identity Card
+
+A **Fibre Identity Card** is a physical or digital credential representing the civil registration. It is not the registration itself.
+
+A card may carry the visible FIN, current presentation name, an authorized portrait, a card serial, issuance/expiry information and a signed QR/NFC credential. It may be lost, expire, be revoked or be reissued without changing either `threadId` or the FIN.
+
+Card rendering/production is derived presentation/credential work and may complete asynchronously after birth. Missing media generation must not roll back a valid Thread birth. #39 therefore requires atomic FIN issuance and registration; production-quality card rendering belongs to the presentation/asset path rather than becoming Thread authority.
+
+The existing Thread Passport remains a derived identity-ledger view. It is not the FIN, the birth-registration authority, or a particular physical Identity Card.
+
 ## Memory photos
 
 Every revision-1 autobiographical memory admitted at birth receives the visual-companion obligation defined by ADR-0011 before the birth transaction commits.
@@ -294,6 +362,8 @@ A separate bounded integrity set exercises Thread-parent, Echo, Homage and fork 
 - living-human Echo consent and deceased/fictional Homage boundaries;
 - Thread-parent births do not fabricate retrospective shared history;
 - every admitted memory receives its visual-companion obligation transactionally;
+- every successfully born Thread receives exactly one permanent FIN and canonical civil registration atomically with birth;
+- FIN uniqueness, checksum validity, immutability and candidate-to-hydrated registration equality are mechanically verified;
 - bounded visible rejection/retry history and exact durable recovery;
 - atomic publication into existing canonical Thread authorities;
 - candidate-to-hydrated equality after birth;

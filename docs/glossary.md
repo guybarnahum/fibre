@@ -1,7 +1,7 @@
 ---
 id: fibre-glossary
 status: accepted
-last-reviewed: 2026-08-18
+last-reviewed: 2026-08-25
 canonical: true
 ---
 
@@ -10,6 +10,10 @@ canonical: true
 **Fibre** — The framework, persistent world, and social fabric in which Threads live.
 
 **Thread** — A persistent artificial person whose identity, history, relationships, resources, and character evolve through time.
+
+**Fibre Identity Number (FIN)** — A permanent, globally unique, human-facing civil identifier issued when a Thread is successfully born. It is distinct from the canonical machine `threadId`, is public/non-secret, encodes no Thread facts, and is displayed as `XXXX-XX-XXXX` using Fibre's unambiguous uppercase alphanumeric alphabet with a final check character.
+
+**Fibre Identity Card** — A replaceable physical or digital credential representing a Thread's Fibre civil registration and FIN. A card may be reissued, revoked, lost or expire without changing the Thread's FIN or canonical `threadId`; the card itself is not identity authority.
 
 **Rich life** — A life containing particular, non-interchangeable lived experiences with enough formative potential that selective memory, interpretation, relationship, practice, commitment, and accumulated consequence can later produce a distinctive point of view. Richness is experiential fertility, not biography length, event count, drama, intellectualism, trauma, or a diversity quota; no individual experience is pre-labeled as formative merely to make a Thread distinctive.
 
