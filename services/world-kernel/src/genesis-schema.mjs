@@ -1,4 +1,7 @@
+import { createCivilRegistryTables } from "./civil-registry-store.mjs";
+
 export function createGenesisTables(database) {
+  createCivilRegistryTables(database);
   database.exec(`
     CREATE TABLE IF NOT EXISTS genesis_world_specs (
       world_spec_id TEXT PRIMARY KEY,
@@ -46,6 +49,47 @@ export function createGenesisTables(database) {
       ON genesis_generation_attempts(genesis_id, candidate_attempt_number, recorded_at, attempt_id);
     CREATE INDEX IF NOT EXISTS idx_genesis_origin_authority_source
       ON genesis_origin_authorities(source_party_id, authority_kind, asserted_at, authority_ref);
+
+    CREATE TRIGGER IF NOT EXISTS genesis_manifests_publish_fin_registration
+      AFTER INSERT ON genesis_manifests
+      WHEN NEW.publication_status='published'
+      BEGIN
+        SELECT CASE WHEN (
+          json_extract(NEW.record_json,'$.publication.civilRegistration.threadId') IS NULL OR
+          json_extract(NEW.record_json,'$.publication.civilRegistration.threadId') <> NEW.thread_id
+        ) THEN RAISE(ABORT,'published Genesis FIN registration Thread mismatch') END;
+        SELECT CASE WHEN (
+          json_extract(NEW.record_json,'$.publication.civilRegistration.worldRef') IS NULL OR
+          json_extract(NEW.record_json,'$.publication.civilRegistration.worldRef') <> NEW.world_spec_id
+        ) THEN RAISE(ABORT,'published Genesis FIN registration World mismatch') END;
+        SELECT CASE WHEN (
+          json_extract(NEW.record_json,'$.publication.civilRegistration.registeredAt') IS NULL OR
+          json_extract(NEW.record_json,'$.publication.civilRegistration.registeredAt') <>
+            json_extract(NEW.record_json,'$.publication.publishedAt')
+        ) THEN RAISE(ABORT,'published Genesis FIN registration time mismatch') END;
+        SELECT CASE WHEN NOT EXISTS (
+          SELECT 1 FROM thread_events
+          WHERE event_id=json_extract(NEW.record_json,'$.publication.civilRegistration.birthEventRef')
+            AND thread_id=NEW.thread_id
+            AND event_type='THREAD_SEEDED'
+        ) THEN RAISE(ABORT,'published Genesis FIN registration lacks canonical seed event') END;
+
+        INSERT INTO fibre_civil_registrations(
+          registration_id,thread_id,fibre_identity_number,birth_event_ref,world_ref,
+          registered_at,issuer,fin_policy_ref,record_json,record_digest
+        ) VALUES (
+          json_extract(NEW.record_json,'$.publication.civilRegistration.registrationId'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.threadId'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.fibreIdentityNumber'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.birthEventRef'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.worldRef'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.registeredAt'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.issuer'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.finPolicyRef'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration'),
+          json_extract(NEW.record_json,'$.publication.civilRegistration.registrationDigest')
+        );
+      END;
 
     CREATE TRIGGER IF NOT EXISTS genesis_world_specs_no_update
       BEFORE UPDATE ON genesis_world_specs
