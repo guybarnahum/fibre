@@ -14,6 +14,10 @@ import {
 } from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { eventStructurePoolV3Digest } from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
+import {
+  genesisHistoricalEnvelopePlanDigest,
+  genesisHistoricalEnvelopeStatistics,
+} from "#services/world-kernel/src/genesis-historical-envelope-authority.mjs";
 import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
 import { genesisLifeEpisodeEventId } from "#services/world-kernel/src/genesis-life-episode.mjs";
 import { assertGenesisEpisodePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
@@ -134,13 +138,20 @@ test("current Genesis candidate births atomically and hydrates to the admitted l
   try {
     const development = buildGenesisDevelopmentPlans();
     const base = development.slots[0];
-    const slotPlan = {
-      ...base,
-      envelopePlan: {
-        ...base.envelopePlan,
-        envelopes: [base.envelopePlan.envelopes[0]],
-      },
+    const envelopes = [base.envelopePlan.envelopes[0]];
+    const envelopePlan = {
+      ...base.envelopePlan,
+      envelopes,
+      statistics: genesisHistoricalEnvelopeStatistics(envelopes),
+      digest: genesisHistoricalEnvelopePlanDigest({
+        threadId: base.envelopePlan.threadId,
+        worldSpecId: base.envelopePlan.worldSpecId,
+        timeZone: base.envelopePlan.timeZone,
+        seedDomain: base.envelopePlan.seedDomain,
+        envelopes,
+      }),
     };
+    const slotPlan = { ...base, envelopePlan };
     const candidate = fixtureCandidate(slotPlan);
     const result = publishHydrateAndCompareGenesisLife({
       databasePath,

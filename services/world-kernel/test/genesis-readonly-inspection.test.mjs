@@ -30,6 +30,7 @@ test("read-only Genesis inspection is empty rather than mutating or failing on a
       genesisId: "gen_none",
       manifest: null,
       worldSpec: null,
+      historicalEnvelopePlan: null,
       attempts: [],
       threadPublished: false,
     });
