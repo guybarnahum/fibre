@@ -47,17 +47,20 @@ test("new service runtime cannot persist durable files directly", () => {
   );
 });
 
-test("the existing durable model invocation journal is the only named direct-file migration exception", () => {
+test("the two existing durable model journals are the only named direct-file migration exceptions", () => {
   assert.deepEqual(DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS, [
+    "services/world-kernel/src/guardian-model-adapter.mjs",
     "services/world-kernel/src/model-runtime/durable-invocation-journal.mjs",
   ]);
-  assert.deepEqual(
-    productionPersistenceViolationsForSource(
-      DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS[0],
-      'import { writeFileSync } from "node:fs";\nwriteFileSync("journal.json", "{}");\n',
-    ),
-    [],
-  );
+  for (const path of DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS) {
+    assert.deepEqual(
+      productionPersistenceViolationsForSource(
+        path,
+        'import { writeFileSync } from "node:fs";\nwriteFileSync("journal.json", "{}");\n',
+      ),
+      [],
+    );
+  }
 });
 
 test("service semantic code cannot import cloud storage/database SDKs directly", () => {
