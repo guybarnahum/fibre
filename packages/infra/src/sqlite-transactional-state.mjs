@@ -37,6 +37,11 @@ function normalizeScopes(scopes) {
   return normalized;
 }
 
+function normalizeSqliteRecord(record) {
+  if (record === undefined) return undefined;
+  return Object.fromEntries(Object.entries(record));
+}
+
 function stateGuarantees(databasePath) {
   return Object.freeze({
     relationalStatements: true,
@@ -96,15 +101,15 @@ function createSession(scopeId, databasePath, { readOnly, busyTimeoutMs }) {
       return Object.freeze({
         run(...params) {
           assertOpen();
-          return statement.run(...params);
+          return normalizeSqliteRecord(statement.run(...params));
         },
         get(...params) {
           assertOpen();
-          return statement.get(...params);
+          return normalizeSqliteRecord(statement.get(...params));
         },
         all(...params) {
           assertOpen();
-          return statement.all(...params);
+          return statement.all(...params).map(normalizeSqliteRecord);
         },
       });
     },
