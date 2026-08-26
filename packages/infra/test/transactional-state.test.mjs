@@ -40,7 +40,8 @@ test("state commit is visible after reopening the same logical scope", () =>
     const writer = infra.state.open("world");
     writer.exec("CREATE TABLE proof (id TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;");
     writer.beginWrite();
-    writer.prepare("INSERT INTO proof(id,value) VALUES (?,?)").run("one", "committed");
+    const writeResult = writer.prepare("INSERT INTO proof(id,value) VALUES (?,?)").run("one", "committed");
+    assert.equal(Object.getPrototypeOf(writeResult), Object.prototype);
     writer.commit();
     writer.close();
 
@@ -49,6 +50,10 @@ test("state commit is visible after reopening the same logical scope", () =>
       id: "one",
       value: "committed",
     });
+    assert.deepEqual(reader.prepare("SELECT id,value FROM proof ORDER BY id").all(), [{
+      id: "one",
+      value: "committed",
+    }]);
     reader.close();
   }));
 
