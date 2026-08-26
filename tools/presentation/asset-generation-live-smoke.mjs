@@ -143,20 +143,33 @@ function elapsedSeconds(startedAtMs) {
   return ((Date.now() - startedAtMs) / 1000).toFixed(1);
 }
 
-function createProgressFetch({ fetchImpl = fetch, heartbeatMs = 10_000 } = {}) {
+function createProgressFetch({ fetchImpl = fetch, heartbeatMs = 10_000, output = process.stdout } = {}) {
   return async (...args) => {
     const requestStartedAt = Date.now();
+    let heartbeatWidth = 0;
     console.log("      OpenAI request submitted; waiting for generated image...");
-    const heartbeat = setInterval(() => {
-      console.log(`      still generating... ${Math.round((Date.now() - requestStartedAt) / 1000)}s elapsed`);
-    }, heartbeatMs);
+
+    const renderHeartbeat = () => {
+      const message = `      still generating... ${Math.round((Date.now() - requestStartedAt) / 1000)}s elapsed`;
+      heartbeatWidth = Math.max(heartbeatWidth, message.length);
+      output.write(`\r${message.padEnd(heartbeatWidth)}`);
+    };
+    const clearHeartbeat = () => {
+      if (heartbeatWidth === 0) return;
+      output.write(`\r${" ".repeat(heartbeatWidth)}\r`);
+      heartbeatWidth = 0;
+    };
+
+    const heartbeat = setInterval(renderHeartbeat, heartbeatMs);
     heartbeat.unref?.();
     try {
       const response = await fetchImpl(...args);
+      clearHeartbeat();
       console.log(`      provider responded HTTP ${response.status} after ${elapsedSeconds(requestStartedAt)}s`);
       return response;
     } finally {
       clearInterval(heartbeat);
+      clearHeartbeat();
     }
   };
 }
