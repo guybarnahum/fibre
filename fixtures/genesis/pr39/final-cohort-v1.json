@@ -1,0 +1,24 @@
+{
+  "fixtureVersion": "pr39-final-cohort-v1",
+  "status": "FROZEN_BEFORE_GENERATION",
+  "closureId": "pr39-final-cohort-001",
+  "frozenAt": "2026-08-25T23:19:00Z",
+  "worldSetPath": "fixtures/genesis/pr39/final-worlds/world-set-v1.json",
+  "worldSetBlobSha": "6b57a49a0075168d4f27b3038cb3986651f46827",
+  "assignment": {
+    "policy": "slot_index_template_remint_v1",
+    "description": "After the five final Worlds were frozen, final slot n takes the already-burned development genome template n. The semantic loci and origin kind are preserved; Thread/Genesis-owned identifiers are reminted deterministically for the final owner. Synthetic-lineage slots retain the template's exact synthetic-ancestor source witnesses. No World content participates in assignment.",
+    "contentIndependentOfWorld": true,
+    "worldsFrozenBeforeAssignment": true,
+    "assignedAt": "2026-08-25T23:19:00Z"
+  },
+  "entry": {"stage":"young_adult","ageAtEntry":22,"bornAt":"2004-08-25T00:00:00Z","chronologyEndsAt":"2026-08-25T00:00:00Z"},
+  "generation": {"eventOfferSeedDomain":"pr39-final-event-offers-v1","historicalEnvelopeSeedDomain":"pr39-final-historical-envelope-v1","modelRequestDomain":"pr39-final-life-v1","structuresPerWindow":9,"creativeTemperature":0.3,"mechanicalRepairTemperature":0,"topP":1,"reasoningEffort":"none"},
+  "slots": [
+    {"slot":1,"threadId":"thr_pr39_final_01","genesisId":"genesis_pr39_final_01","label":"Sapporo","originMode":"de_novo","worldSpecPath":"fixtures/genesis/pr39/final-worlds/sapporo.json","worldBlobSha":"f38aa2e632aaecae318febdd09f1cc718a22ea3b","genomePath":"fixtures/genesis/pr39/final-genomes/thread-01.json","genomeBlobSha":"accac8f1dab1d30d40247e96884136358c5849d8","genomeDigest":"sha256:8e317efb6947c7be01c3336cceedcf1d03fd9f75c066c18e6b255572c6441c68","templateGenomePath":"fixtures/genesis/pr39/genomes/thread-01.json"},
+    {"slot":2,"threadId":"thr_pr39_final_02","genesisId":"genesis_pr39_final_02","label":"Kochi","originMode":"synthetic_lineage","worldSpecPath":"fixtures/genesis/pr39/final-worlds/kochi.json","worldBlobSha":"97621b9d9941bbf930ccfe658e31d78e90eebb9b","genomePath":"fixtures/genesis/pr39/final-genomes/thread-02.json","genomeBlobSha":"2979030aa05667b5ee7d6712e08a73732e335f82","genomeDigest":"sha256:32f6f3cd7125072a35adade7880fcec1375ca8c3668282fdeae8534410d16f34","templateGenomePath":"fixtures/genesis/pr39/genomes/thread-02.json"},
+    {"slot":3,"threadId":"thr_pr39_final_03","genesisId":"genesis_pr39_final_03","label":"Malmö","originMode":"de_novo","worldSpecPath":"fixtures/genesis/pr39/final-worlds/malmo.json","worldBlobSha":"36a707ebfd753c0f4049d18a1af7e1822d64d8c6","genomePath":"fixtures/genesis/pr39/final-genomes/thread-03.json","genomeBlobSha":"3ec45ec9f74c93fc907c1c4965761c64c002e240","genomeDigest":"sha256:7b4ff6656694c8ecca11c681e6faabdffb5cfa4330e560131854ee3cd6423a8b","templateGenomePath":"fixtures/genesis/pr39/genomes/thread-03.json"},
+    {"slot":4,"threadId":"thr_pr39_final_04","genesisId":"genesis_pr39_final_04","label":"Valparaíso","originMode":"de_novo","worldSpecPath":"fixtures/genesis/pr39/final-worlds/valparaiso.json","worldBlobSha":"f220b69ecd8ae9b4f4e42cc39c882b0e303cf441","genomePath":"fixtures/genesis/pr39/final-genomes/thread-04.json","genomeBlobSha":"8052a1a1503441faaaea65481a4655985bdbf3d3","genomeDigest":"sha256:e0294f69979fbd452604b0f2c74f3dd7fbafef9a10f2d841123e5068d0d1f6c5","templateGenomePath":"fixtures/genesis/pr39/genomes/thread-04.json"},
+    {"slot":5,"threadId":"thr_pr39_final_05","genesisId":"genesis_pr39_final_05","label":"Wellington","originMode":"synthetic_lineage","worldSpecPath":"fixtures/genesis/pr39/final-worlds/wellington.json","worldBlobSha":"2165129dcc4e3fd52966bae4d12b2e3177fb63b1","genomePath":"fixtures/genesis/pr39/final-genomes/thread-05.json","genomeBlobSha":"7d40a7a62a3f0d773e30c2ec20a7acdec0d9fa65","genomeDigest":"sha256:33d8b7e94708b33f3abc0ce047818240dc437aa92f0f623f00b6cf422ba530ba","templateGenomePath":"fixtures/genesis/pr39/genomes/thread-05.json"}
+  ]
+}

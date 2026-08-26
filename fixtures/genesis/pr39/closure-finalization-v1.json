@@ -1,0 +1,15 @@
+{
+  "finalizationVersion": "pr39-closure-finalization-v1",
+  "closureId": "pr39-final-cohort-001",
+  "status": "READY_FOR_ONE_PASS_GENERATION",
+  "finalizedAt": "2026-08-25T23:19:00Z",
+  "precommitmentPath": "fixtures/genesis/pr39/closure-protocol-v1.json",
+  "finalCohortPath": "fixtures/genesis/pr39/final-cohort-v1.json",
+  "worldsFrozenBeforeFinalGenomes": true,
+  "finalGenomeAssignmentStatus": "FROZEN",
+  "generationAuthorized": true,
+  "generationBlockers": [],
+  "runnerCommand": "npm run genesis:pr39-closure -- --closure",
+  "providerCallPolicy": "No provider call occurs during validation or finalization. The first provider call is permitted only after --closure atomically claims the one-pass closure attempt.",
+  "weakValidCohortMayBeResampled": false
+}
