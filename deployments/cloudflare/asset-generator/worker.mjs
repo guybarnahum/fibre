@@ -74,3 +74,12 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
     return generated;
   }
 }
+
+// Wrangler requires a default module export to classify this script as an ES
+// Module Worker. Asset generation itself is Workflow-only; direct HTTP access
+// intentionally exposes no generation API.
+export default {
+  fetch() {
+    return new Response("Not Found", { status: 404 });
+  },
+};

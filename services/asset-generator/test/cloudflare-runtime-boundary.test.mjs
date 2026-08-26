@@ -47,6 +47,10 @@ test("Asset Generator runtime is infrastructure-independent and Cloudflare exist
   assert.match(worker, /ASSET_COMPLETIONS/);
   assert.match(worker, /createOpenAIImageProvider/);
   assert.match(worker, /createHttpContentCredentialSigner/);
+  assert.match(worker, /export default\s*\{/,
+    "Cloudflare Workflow host must remain an ES Module Worker for Wrangler");
+  assert.match(worker, /new Response\("Not Found", \{ status: 404 \}\)/,
+    "default module entrypoint must not expose a parallel asset-generation HTTP API");
   assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 });
 
