@@ -13,10 +13,21 @@ import {
 const THIS_FILE = fileURLToPath(import.meta.url);
 const REPO_ROOT = resolve(dirname(THIS_FILE), "../..");
 const OUTPUT_ROOT = join(REPO_ROOT, "artifacts/generated/asset-live-cloudflare");
+const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.1";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
   return value;
+}
+
+export function shortFibreRef(value, visibleDigestChars = 8) {
+  const checked = nonEmpty("Fibre reference", value);
+  if (!Number.isInteger(visibleDigestChars) || visibleDigestChars < 4) {
+    throw new TypeError("visibleDigestChars must be an integer >= 4");
+  }
+  const match = /^(.+_)([0-9a-f]{16,})$/.exec(checked);
+  if (!match) return checked;
+  return `${match[1]}${match[2].slice(0, visibleDigestChars)}…`;
 }
 
 function parseArgs(argv) {
@@ -76,9 +87,40 @@ function runDirectoryName(timestamp) {
   return timestamp.replace(/[:.]/g, "-");
 }
 
-function renderWaiting({ startedAt, workflowStatus, head, width }) {
+function failureObservation(workflow) {
+  const message = workflow?.error?.message;
+  if (typeof message !== "string" || message.length === 0) return null;
+  try {
+    const parsed = JSON.parse(message);
+    if (parsed?.failureVersion !== FAILURE_OBSERVATION_VERSION) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function describeWorkflowFailure({ jobId, workflow }) {
+  const displayJobId = shortFibreRef(jobId);
+  const observed = failureObservation(workflow);
+  const providerProfile = workflow?.input?.providerProfile ?? "unknown";
+  const provider = observed?.provider ?? providerProfile;
+  const model = observed?.model ?? null;
+  const phase = observed?.phase ?? "workflow";
+  const retryable = typeof observed?.retryable === "boolean" ? observed.retryable : null;
+  const detail = observed?.detail ?? workflow?.error?.message ?? "no failure detail reported";
+  const errorName = workflow?.error?.name ?? "unknown";
+  return [
+    `${displayJobId} workflow ended as ${workflow?.status ?? "unknown"}`,
+    `phase: ${phase}`,
+    `provider: ${model === null ? provider : `${provider}/${model}`}`,
+    `retryable: ${retryable === null ? "unknown" : retryable ? "yes" : "no"}`,
+    `error: ${errorName}: ${detail}`,
+  ].join("\n");
+}
+
+function renderWaiting({ startedAt, workflowStatus, head, width, jobId }) {
   const elapsed = Math.round((Date.now() - startedAt) / 1000);
-  const message = `      still generating... ${elapsed}s elapsed | workflow=${workflowStatus} | stream=${head}`;
+  const message = `      still generating... ${elapsed}s elapsed | job=${shortFibreRef(jobId)} | workflow=${workflowStatus} | stream=${head}`;
   const nextWidth = Math.max(width, message.length);
   process.stdout.write(`\r${message.padEnd(nextWidth)}`);
   return nextWidth;
@@ -122,6 +164,7 @@ export async function runCloudflareLiveAssetSmoke({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ threadId: target.threadId, mediaId: target.mediaAsset.mediaId }),
   });
+  console.log(`      job=${shortFibreRef(scheduled.jobId)} (canonical ID retained internally)`);
 
   let readyEvent = null;
   let workflow = scheduled.workflow;
@@ -131,7 +174,7 @@ export async function runCloudflareLiveAssetSmoke({
     workflow = status.workflow;
     if (["errored", "terminated"].includes(workflow.status)) {
       clearWaiting(heartbeatWidth);
-      throw new Error(`asset workflow ended as ${workflow.status}`);
+      throw new Error(describeWorkflowFailure({ jobId: scheduled.jobId, workflow }));
     }
 
     const events = await jsonFetch(`${base}/api/threads/${encodeURIComponent(target.threadId)}/events?after=0`);
@@ -147,6 +190,7 @@ export async function runCloudflareLiveAssetSmoke({
       workflowStatus: workflow.status,
       head: events.head,
       width: heartbeatWidth,
+      jobId: scheduled.jobId,
     });
     await sleep(pollMs);
   }

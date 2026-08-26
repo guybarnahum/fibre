@@ -13,12 +13,30 @@ import {
 } from "../../../services/asset-generator/src/index.mjs";
 
 const CREDENTIAL_SIGNER_ID = "fibre-c2pa-node-local-v1";
+const OPENAI_IMAGE_MODEL = "gpt-image-2-2026-04-21";
+const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.1";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
     throw new TypeError(`${name} must be a non-empty string`);
   }
   return value;
+}
+
+function safeFailureDetail(error) {
+  const value = error instanceof Error ? error.message : String(error);
+  return value.length <= 2000 ? value : `${value.slice(0, 1999)}…`;
+}
+
+function generationFailureObservation(error) {
+  return {
+    failureVersion: FAILURE_OBSERVATION_VERSION,
+    phase: "credentialed_asset_generation",
+    provider: "openai",
+    model: OPENAI_IMAGE_MODEL,
+    retryable: error?.retryable === true,
+    detail: safeFailureDetail(error),
+  };
 }
 
 function createRuntime(env) {
@@ -32,6 +50,7 @@ function createRuntime(env) {
   });
   const provider = createOpenAIImageProvider({
     apiKey: nonEmpty("OPENAI_API_KEY", env.OPENAI_API_KEY),
+    model: OPENAI_IMAGE_MODEL,
   });
   const credentialSigner = createHttpContentCredentialSigner({
     baseUrl: nonEmpty("C2PA_SIGNER_URL", env.C2PA_SIGNER_URL),
@@ -52,8 +71,11 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
           return await runtime.execute(event.payload);
         } catch (error) {
           if (error instanceof AssetGenerationAttemptFailed || error?.retryable === false) {
-            const message = error instanceof Error ? error.message : String(error);
-            throw new NonRetryableError(message, "AssetGenerationAttemptFailed");
+            const observation = generationFailureObservation(error);
+            throw new NonRetryableError(
+              JSON.stringify(observation),
+              "AssetGenerationAttemptFailed",
+            );
           }
           throw error;
         }

@@ -39,17 +39,19 @@ function fakeR2Bucket() {
 
 function fakeWorkflowBinding({ failCreateOnce = false } = {}) {
   const instances = new Map();
+  const statuses = new Map();
   let creates = 0;
   let shouldFail = failCreateOnce;
   function instance(id) {
     return {
       id,
-      async status() { return { status: "queued" }; },
+      async status() { return structuredClone(statuses.get(id) ?? { status: "queued" }); },
     };
   }
   return {
     get createCount() { return creates; },
     expire(id) { instances.delete(id); },
+    setStatus(id, status) { statuses.set(id, structuredClone(status)); },
     async create({ id }) {
       if (shouldFail) {
         shouldFail = false;
@@ -108,6 +110,32 @@ test("cloudflare-v1 workflow port uses durable input witness for idempotency and
   );
 });
 
+test("cloudflare-v1 workflow status preserves safe Cloudflare failure details", async () => {
+  const bucket = fakeR2Bucket();
+  const workflow = fakeWorkflowBinding();
+  const infra = createCloudflareInfraDriver({
+    objectBucket: bucket,
+    workflowBindings: { asset_generation_v1: workflow },
+  });
+  const input = { jobId: "job_error", providerProfile: "fixture-provider" };
+  await infra.workflows.start("asset_generation_v1", "job_error", input);
+  workflow.setStatus("job_error", {
+    status: "errored",
+    error: {
+      name: "AssetGenerationAttemptFailed",
+      message: "generation provider returned an error",
+    },
+  });
+
+  const status = await infra.workflows.get("asset_generation_v1", "job_error");
+  assert.equal(status.status, "errored");
+  assert.deepEqual(status.error, {
+    name: "AssetGenerationAttemptFailed",
+    message: "generation provider returned an error",
+  });
+  assert.deepEqual(status.input, input);
+});
+
 test("cloudflare-v1 workflow status preserves Fibre input witness after Cloudflare instance retention expires", async () => {
   const bucket = fakeR2Bucket();
   const workflow = fakeWorkflowBinding();
@@ -120,6 +148,7 @@ test("cloudflare-v1 workflow status preserves Fibre input witness after Cloudfla
   workflow.expire("job_2");
   const status = await infra.workflows.get("asset_generation_v1", "job_2");
   assert.equal(status.status, "unknown");
+  assert.equal(status.error, null);
   assert.deepEqual(status.input, input);
   const duplicate = await infra.workflows.start("asset_generation_v1", "job_2", input);
   assert.equal(duplicate.duplicate, true);
@@ -144,5 +173,6 @@ test("cloudflare-v1 workflow retry remains possible until a start marker is comm
   const retried = await infra.workflows.start("asset_generation_v1", "job_retry", input);
   assert.equal(retried.duplicate, true, "the durable job identity already existed even though execution had not started");
   assert.equal(retried.status, "queued");
+  assert.equal(retried.error, null);
   assert.equal(workflow.createCount, 1);
 });

@@ -162,6 +162,20 @@ function normalizeWorkflowStatus(status) {
   return typeof value === "string" && value.length > 0 ? value : "unknown";
 }
 
+function normalizeWorkflowError(error) {
+  if (!error || typeof error !== "object") return null;
+  const name = typeof error.name === "string" && error.name.length > 0 ? error.name : "Error";
+  const message = typeof error.message === "string" && error.message.length > 0 ? error.message : "Workflow failed";
+  return Object.freeze({ name, message });
+}
+
+function observeWorkflowStatus(status) {
+  return Object.freeze({
+    status: normalizeWorkflowStatus(status),
+    error: normalizeWorkflowError(status?.error),
+  });
+}
+
 export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
   assertInfraPlainObject("workflowBindings", workflowBindings);
   if (!objects || typeof objects.putImmutable !== "function" || typeof objects.get !== "function" || typeof objects.head !== "function") {
@@ -207,12 +221,12 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
         try {
           instance = await binding.get(instanceId);
         } catch {
-          return { workflowName, instanceId, status: "unknown", duplicate: true };
+          return { workflowName, instanceId, status: "unknown", error: null, duplicate: true };
         }
         return {
           workflowName,
           instanceId,
-          status: normalizeWorkflowStatus(await instance.status()),
+          ...observeWorkflowStatus(await instance.status()),
           duplicate: true,
         };
       }
@@ -234,7 +248,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
       return {
         workflowName,
         instanceId,
-        status: normalizeWorkflowStatus(await instance.status()),
+        ...observeWorkflowStatus(await instance.status()),
         duplicate,
       };
     },
@@ -251,14 +265,14 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
         throw new Error(`Cloudflare workflow input witness for ${instanceId} is invalid`);
       }
       const binding = bindingFor(workflowName);
-      let status = "unknown";
+      let observation = { status: "unknown", error: null };
       try {
         const instance = await binding.get(instanceId);
-        status = normalizeWorkflowStatus(await instance.status());
+        observation = observeWorkflowStatus(await instance.status());
       } catch {
         // Workflow operational retention may expire before Fibre's durable witnesses.
       }
-      return { workflowName, instanceId, status, input };
+      return { workflowName, instanceId, ...observation, input };
     },
   });
 }

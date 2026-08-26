@@ -47,6 +47,11 @@ test("Asset Generator runtime is infrastructure-independent and Cloudflare exist
   assert.match(worker, /ASSET_COMPLETIONS/);
   assert.match(worker, /createOpenAIImageProvider/);
   assert.match(worker, /createHttpContentCredentialSigner/);
+  assert.match(worker, /asset-generation-failure-observation-v0\.1/,
+    "Cloudflare deployment must expose a safe operational failure observation for diagnostics");
+  assert.match(worker, /phase: "credentialed_asset_generation"/);
+  assert.match(worker, /retryable: error\?\.retryable === true/);
+  assert.match(worker, /JSON\.stringify\(observation\)/);
   assert.match(worker, /export default\s*\{/,
     "Cloudflare Workflow host must remain an ES Module Worker for Wrangler");
   assert.match(worker, /new Response\("Not Found", \{ status: 404 \}\)/,
