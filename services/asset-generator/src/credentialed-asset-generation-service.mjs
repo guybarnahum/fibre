@@ -4,6 +4,10 @@ import {
 } from "../../../packages/infra/src/infra-driver.mjs";
 import { normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
 import {
+  AssetGenerationError,
+  toAssetGenerationError,
+} from "./asset-generation-error.mjs";
+import {
   GENERATION_RECORD_VERSION,
   STORED_ASSET_RECEIPT_VERSION,
   assertContentCredentialSigner,
@@ -51,14 +55,19 @@ async function persistGenerationRecord(objects, { bytes, digest, metadata }) {
       if (!(error instanceof InfraImmutableObjectConflictError)) throw error;
     }
   }
-  throw new Error("generation record 12-hex ID candidates are exhausted");
+  throw new InfraImmutableObjectConflictError("generation record 12-hex ID candidates are exhausted");
 }
 
 async function resolveReferenceObjects(objects, refs) {
   const result = [];
   for (const objectRef of refs) {
     const stored = await objects.get(objectRef);
-    if (stored === null) throw new TypeError(`reference object ${objectRef} does not exist`);
+    if (stored === null) {
+      throw new AssetGenerationError(`reference object ${objectRef} does not exist`, {
+        phase: "reference_loading",
+        category: "missing_reference",
+      });
+    }
     result.push({ objectRef, ...stored });
   }
   return result;
@@ -90,166 +99,193 @@ export async function executeCredentialedAssetGenerationJob({
   promptDisclosurePolicy = { mode: "digest_only", authorizationRef: null },
   now = () => new Date().toISOString(),
 }) {
-  requireInfraCapabilities(infra, "objects");
-  const objects = infra.objects;
-  const job = normalizeAssetGenerationJob(rawJob);
-  const checkedProvider = assertWitnessedMediaGenerationProvider(provider);
-  const signer = assertContentCredentialSigner(credentialSigner);
-  const disclosure = normalizePromptDisclosurePolicy(promptDisclosurePolicy);
+  let phase = "validation";
+  let providerName = null;
+  let modelName = null;
+  try {
+    requireInfraCapabilities(infra, "objects");
+    const objects = infra.objects;
+    const job = normalizeAssetGenerationJob(rawJob);
+    const checkedProvider = assertWitnessedMediaGenerationProvider(provider);
+    providerName = checkedProvider.providerId;
+    const signer = assertContentCredentialSigner(credentialSigner);
+    const disclosure = normalizePromptDisclosurePolicy(promptDisclosurePolicy);
 
-  if (!checkedProvider.capabilities.includes(job.assetKind)) {
-    throw new TypeError(`provider ${checkedProvider.providerId} does not support ${job.assetKind}`);
-  }
+    if (!checkedProvider.capabilities.includes(job.assetKind)) {
+      throw new AssetGenerationError(`provider ${checkedProvider.providerId} does not support ${job.assetKind}`, {
+        phase: "validation",
+        category: "unsupported_capability",
+        provider: checkedProvider.providerId,
+      });
+    }
 
-  const referenceObjects = await resolveReferenceObjects(objects, job.referenceObjectRefs);
-  const witnessed = normalizeWitnessedMediaGenerationResult(await checkedProvider.generate({
-    assetKind: job.assetKind,
-    role: job.role,
-    variant: job.variant,
-    brief: job.brief,
-    inputReferences: job.inputReferences,
-    referenceObjects,
-    providerProfile: job.providerProfile,
-    context: job.context,
-  }), { expectedKind: job.assetKind });
-  const generated = witnessed.result;
+    phase = "reference_loading";
+    const referenceObjects = await resolveReferenceObjects(objects, job.referenceObjectRefs);
 
-  const semanticBriefDigest = await sha256(canonicalJson(job.brief));
-  const providerRequestDigest = await sha256(canonicalJson(witnessed.requestWitness));
-  const providerOutputDigest = await sha256(generated.bytes);
+    phase = "provider_generation";
+    const witnessed = normalizeWitnessedMediaGenerationResult(await checkedProvider.generate({
+      assetKind: job.assetKind,
+      role: job.role,
+      variant: job.variant,
+      brief: job.brief,
+      inputReferences: job.inputReferences,
+      referenceObjects,
+      providerProfile: job.providerProfile,
+      context: job.context,
+    }), { expectedKind: job.assetKind });
+    const generated = witnessed.result;
+    providerName = generated.provider;
+    modelName = generated.model;
 
-  const generationRecord = normalizeGenerationRecord({
-    recordVersion: GENERATION_RECORD_VERSION,
-    jobId: job.jobId,
-    job,
-    semanticBrief: job.brief,
-    semanticBriefDigest,
-    providerRequestWitness: witnessed.requestWitness,
-    providerRequestDigest,
-    providerOutputDigest,
-    providerOutput: {
+    const semanticBriefDigest = await sha256(canonicalJson(job.brief));
+    const providerRequestDigest = await sha256(canonicalJson(witnessed.requestWitness));
+    const providerOutputDigest = await sha256(generated.bytes);
+
+    const generationRecord = normalizeGenerationRecord({
+      recordVersion: GENERATION_RECORD_VERSION,
+      jobId: job.jobId,
+      job,
+      semanticBrief: job.brief,
+      semanticBriefDigest,
+      providerRequestWitness: witnessed.requestWitness,
+      providerRequestDigest,
+      providerOutputDigest,
+      providerOutput: {
+        mediaType: generated.mediaType,
+        width: generated.width,
+        height: generated.height,
+        durationMs: generated.durationMs,
+      },
+      generation: {
+        provider: generated.provider,
+        model: generated.model,
+        providerRequestId: generated.providerRequestId,
+        generatedAt: generated.generatedAt,
+        configuration: generated.configuration,
+      },
+      createdAt: now(),
+    });
+    await validateGenerationRecordDigests(generationRecord);
+
+    const generationRecordBytes = new TextEncoder().encode(canonicalJson(generationRecord));
+    const generationRecordDigest = await sha256(generationRecordBytes);
+    const generationRecordMetadata = {
+      kind: "generation_record",
+      jobId: job.jobId,
+      assetKind: job.assetKind,
+      role: job.role,
+      variant: job.variant,
+      provider: generated.provider,
+      model: generated.model,
+    };
+
+    phase = "storage_finalization";
+    const generationRecordRef = await persistGenerationRecord(objects, {
+      bytes: generationRecordBytes,
+      digest: generationRecordDigest,
+      metadata: generationRecordMetadata,
+    });
+
+    const assertion = buildEmbeddedAssetProvenance({
+      generationRecord,
+      generationRecordDigest,
+      promptDisclosurePolicy: disclosure,
+    });
+
+    phase = "credential_signing";
+    const embedded = normalizeCredentialEmbedResult(await signer.embed({
+      bytes: generated.bytes,
+      mediaType: generated.mediaType,
+      assertion,
+    }));
+    if (embedded.signerId !== signer.signerId || embedded.format !== signer.format) {
+      throw new Error("content credential embed result does not match signer");
+    }
+
+    phase = "credential_verification";
+    const verification = normalizeCredentialVerification(await signer.verify({
+      bytes: embedded.bytes,
+      mediaType: generated.mediaType,
+    }));
+    if (verification.signerId !== signer.signerId || verification.format !== signer.format) {
+      throw new Error("content credential verification does not match signer");
+    }
+    if (verification.manifestDigest !== embedded.manifestDigest) {
+      throw new Error("content credential manifest digest changed after embedding");
+    }
+    assertVerificationMatchesRecord(verification, generationRecord, assertion);
+
+    phase = "storage_finalization";
+    const finalAssetDigest = await sha256(embedded.bytes);
+    await objects.putImmutable(job.outputObjectRef, embedded.bytes, finalAssetDigest, {
+      kind: "credentialed_generated_media",
+      jobId: job.jobId,
+      assetKind: job.assetKind,
+      role: job.role,
+      variant: job.variant,
+      provider: generated.provider,
+      model: generated.model,
+      generationRecordObjectRef: generationRecordRef,
+      generationRecordDigest,
+      providerOutputDigest,
+      credentialFormat: embedded.format,
+      credentialManifestDigest: embedded.manifestDigest,
+    });
+
+    const receipt = normalizeStoredAssetReceipt({
+      receiptVersion: STORED_ASSET_RECEIPT_VERSION,
+      jobId: job.jobId,
+      status: "ready",
+      assetKind: job.assetKind,
+      role: job.role,
+      variant: job.variant,
+      objectRef: job.outputObjectRef,
+      sha256: finalAssetDigest,
       mediaType: generated.mediaType,
       width: generated.width,
       height: generated.height,
       durationMs: generated.durationMs,
-    },
-    generation: {
-      provider: generated.provider,
-      model: generated.model,
-      providerRequestId: generated.providerRequestId,
-      generatedAt: generated.generatedAt,
-      configuration: generated.configuration,
-    },
-    createdAt: now(),
-  });
-  await validateGenerationRecordDigests(generationRecord);
+      completedAt: now(),
+      generationRecordObjectRef: generationRecordRef,
+      generationRecordDigest,
+      providerOutputDigest,
+      credential: {
+        format: embedded.format,
+        signerId: embedded.signerId,
+        manifestDigest: embedded.manifestDigest,
+        embeddedAt: embedded.embeddedAt,
+        verifiedAt: verification.verifiedAt,
+      },
+      inputReferences: job.inputReferences,
+      context: job.context,
+    });
+    const persistedReceipt = await persistJsonImmutable(objects, job.receiptObjectRef, receipt, {
+      kind: "stored_asset_receipt",
+      jobId: job.jobId,
+      assetKind: job.assetKind,
+      role: job.role,
+      generationRecordDigest,
+      finalAssetDigest,
+    });
 
-  const generationRecordBytes = new TextEncoder().encode(canonicalJson(generationRecord));
-  const generationRecordDigest = await sha256(generationRecordBytes);
-  const generationRecordMetadata = {
-    kind: "generation_record",
-    jobId: job.jobId,
-    assetKind: job.assetKind,
-    role: job.role,
-    variant: job.variant,
-    provider: generated.provider,
-    model: generated.model,
-  };
-  const generationRecordRef = await persistGenerationRecord(objects, {
-    bytes: generationRecordBytes,
-    digest: generationRecordDigest,
-    metadata: generationRecordMetadata,
-  });
-
-  const assertion = buildEmbeddedAssetProvenance({
-    generationRecord,
-    generationRecordDigest,
-    promptDisclosurePolicy: disclosure,
-  });
-  const embedded = normalizeCredentialEmbedResult(await signer.embed({
-    bytes: generated.bytes,
-    mediaType: generated.mediaType,
-    assertion,
-  }));
-  if (embedded.signerId !== signer.signerId || embedded.format !== signer.format) {
-    throw new Error("content credential embed result does not match signer");
+    return {
+      receipt,
+      receiptObjectRef: persistedReceipt.objectRef,
+      receiptDigest: persistedReceipt.digest,
+      generationRecord,
+      generationRecordObjectRef: generationRecordRef,
+      generationRecordDigest,
+      providerOutputDigest,
+      finalAssetDigest,
+      verification,
+    };
+  } catch (error) {
+    throw toAssetGenerationError(error, {
+      phase,
+      provider: providerName,
+      model: modelName,
+    });
   }
-
-  const verification = normalizeCredentialVerification(await signer.verify({
-    bytes: embedded.bytes,
-    mediaType: generated.mediaType,
-  }));
-  if (verification.signerId !== signer.signerId || verification.format !== signer.format) {
-    throw new Error("content credential verification does not match signer");
-  }
-  if (verification.manifestDigest !== embedded.manifestDigest) {
-    throw new Error("content credential manifest digest changed after embedding");
-  }
-  assertVerificationMatchesRecord(verification, generationRecord, assertion);
-
-  const finalAssetDigest = await sha256(embedded.bytes);
-  await objects.putImmutable(job.outputObjectRef, embedded.bytes, finalAssetDigest, {
-    kind: "credentialed_generated_media",
-    jobId: job.jobId,
-    assetKind: job.assetKind,
-    role: job.role,
-    variant: job.variant,
-    provider: generated.provider,
-    model: generated.model,
-    generationRecordObjectRef: generationRecordRef,
-    generationRecordDigest,
-    providerOutputDigest,
-    credentialFormat: embedded.format,
-    credentialManifestDigest: embedded.manifestDigest,
-  });
-
-  const receipt = normalizeStoredAssetReceipt({
-    receiptVersion: STORED_ASSET_RECEIPT_VERSION,
-    jobId: job.jobId,
-    status: "ready",
-    assetKind: job.assetKind,
-    role: job.role,
-    variant: job.variant,
-    objectRef: job.outputObjectRef,
-    sha256: finalAssetDigest,
-    mediaType: generated.mediaType,
-    width: generated.width,
-    height: generated.height,
-    durationMs: generated.durationMs,
-    completedAt: now(),
-    generationRecordObjectRef: generationRecordRef,
-    generationRecordDigest,
-    providerOutputDigest,
-    credential: {
-      format: embedded.format,
-      signerId: embedded.signerId,
-      manifestDigest: embedded.manifestDigest,
-      embeddedAt: embedded.embeddedAt,
-      verifiedAt: verification.verifiedAt,
-    },
-    inputReferences: job.inputReferences,
-    context: job.context,
-  });
-  const persistedReceipt = await persistJsonImmutable(objects, job.receiptObjectRef, receipt, {
-    kind: "stored_asset_receipt",
-    jobId: job.jobId,
-    assetKind: job.assetKind,
-    role: job.role,
-    generationRecordDigest,
-    finalAssetDigest,
-  });
-
-  return {
-    receipt,
-    receiptObjectRef: persistedReceipt.objectRef,
-    receiptDigest: persistedReceipt.digest,
-    generationRecord,
-    generationRecordObjectRef: generationRecordRef,
-    generationRecordDigest,
-    providerOutputDigest,
-    finalAssetDigest,
-    verification,
-  };
 }
 
 export async function verifyCredentialedAssetForPublication({

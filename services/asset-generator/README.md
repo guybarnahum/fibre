@@ -43,6 +43,35 @@ The unit tests use a synthetic fixture credential format to prove Fibre's orderi
 
 The accepted direction remains full immutable Fibre provenance plus a public-safe signed C2PA / Content Credential embedded in the final asset. The exact semantic brief and exact provider-facing request are retained in Fibre provenance; exact prompt text is embedded publicly only under explicit disclosure policy, while prompt digests are the default portable credential.
 
+## Failure taxonomy and retry safety
+
+Execution failures use provider-neutral `AssetGenerationError` rather than provider-specific strings. The error preserves:
+
+```text
+phase
+category
+retryable
+provider / model
+httpStatus
+providerRequestId
+retryAfterMs
+safeDetail
+cause
+```
+
+Current phases distinguish validation and reference loading from provider generation, credential signing, credential verification, storage/finalization, and completion publication.
+
+Current categories distinguish transient rate limits, provider timeouts/unavailability, network and storage failures from terminal invalid requests, authentication, unsupported capabilities, moderation rejection, missing references, immutable conflicts and quota exhaustion. Unknown failures are classified explicitly rather than silently treated as provider errors.
+
+`assetGenerationRetryDecision(...)` is the provider-neutral policy seam. Retryability is intentionally phase-aware:
+
+- transient failures before or during the provider call may retry within bounded attempt limits;
+- missing references, immutable conflicts, authentication, moderation, invalid requests and exhausted quota are terminal;
+- completion publication may retry because it only republishes a pointer to already-immutable output;
+- transient credential/signing/finalization failures are **not** allowed to rerun the whole generation job yet, even though their category may be transient, because raw provider output is not independently staged today.
+
+That last restriction is load-bearing. Until provider output has its own durable attempt/staging identity, retrying a post-provider failure could pay for a second nondeterministic generation. The retry policy exposes `provider_output_not_staged` so the later attempt/staging work can open that retry path deliberately rather than by weakening the guard.
+
 ## Portable runtime
 
 `createAssetGenerationRuntime({ infra, provider, credentialSigner })` is the infrastructure-independent execution seam.
@@ -62,7 +91,7 @@ InfraDriver.workflows
 
 The media-generation provider and credential signer are deliberately outside `InfraDriver`: they are external behavior/provider integrations rather than generic infrastructure guarantees.
 
-Until explicit provider-attempt/staging identities exist, execution failures surface as provider-neutral `AssetGenerationAttemptFailed` with `retryable=false`. A deployment adapter must translate that into its runtime's terminal/no-retry mechanism rather than silently changing Fibre's immutable-generation semantics.
+A deployment adapter consumes `AssetGenerationError` and `assetGenerationRetryDecision(...)` and translates that portable decision into its runtime's retry/no-retry mechanism. The deployment adapter does not get to redefine Fibre's error categories or silently broaden retry safety.
 
 ## Completion contract
 
@@ -99,7 +128,7 @@ Cloudflare binding names
 cloudflare-v1 InfraDriver construction
 OpenAI provider selection for the current deployment
 C2PA signer endpoint configuration
-Cloudflare terminal-error translation
+Cloudflare retry / NonRetryableError translation
 ```
 
 The portable service owns none of those choices.
@@ -120,7 +149,7 @@ AssetGenerationJob
     -> Cloudflare Queue adapter
 ```
 
-The generation execution remains non-retryable because the provider is nondeterministic while final Fibre object identity is immutable. The completion notification remains separately retryable because it re-sends only a deterministic pointer to already-immutable output.
+Cloudflare retries only when the portable retry decision permits it. Provider-generation transport/rate-limit/availability failures can retry with bounded attempts. Post-provider credential/finalization failures remain terminal in the current whole-job step until provider output is independently durable. Completion notification is separately retryable because it re-sends only a deterministic pointer to already-immutable output.
 
 The deployment adapter does **not** import Thread Presentation, World Kernel presentation publishers, or any code that can emit `media.ready`. Successful Workflow completion means that a durable credentialed receipt exists and its completion pointer was durably handed to transport; it does not mean any calling domain has accepted or published that asset.
 

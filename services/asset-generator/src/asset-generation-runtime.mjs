@@ -1,20 +1,12 @@
 import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
 import { publishAssetGenerationCompletion } from "./asset-generation-completion.mjs";
+import {
+  AssetGenerationError,
+  toAssetGenerationError,
+} from "./asset-generation-error.mjs";
 import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation-service.mjs";
 
 export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects", "queues"]);
-
-export class AssetGenerationAttemptFailed extends Error {
-  constructor(message, { cause = null } = {}) {
-    super(message, cause === null ? undefined : { cause });
-    this.name = "AssetGenerationAttemptFailed";
-    this.retryable = false;
-  }
-}
-
-function errorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
-}
 
 export function createAssetGenerationRuntime({
   infra,
@@ -39,13 +31,22 @@ export function createAssetGenerationRuntime({
           finalAssetDigest: result.finalAssetDigest,
         });
       } catch (error) {
-        if (error instanceof AssetGenerationAttemptFailed) throw error;
-        throw new AssetGenerationAttemptFailed(errorMessage(error), { cause: error });
+        if (error instanceof AssetGenerationError) throw error;
+        throw toAssetGenerationError(error, {
+          phase: "unknown",
+          category: "unknown",
+          retryable: true,
+        });
       }
     },
 
     async publishCompletion(completion) {
-      return publishAssetGenerationCompletion({ infra, completion });
+      try {
+        return await publishAssetGenerationCompletion({ infra, completion });
+      } catch (error) {
+        if (error instanceof AssetGenerationError) throw error;
+        throw toAssetGenerationError(error, { phase: "completion_publication" });
+      }
     },
   });
 }

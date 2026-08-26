@@ -5,7 +5,7 @@ import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudfl
 import { withCloudflareQueueBindings } from "../../../packages/infra/src/cloudflare-queue-port.mjs";
 import {
   ASSET_GENERATION_COMPLETION_QUEUE,
-  AssetGenerationAttemptFailed,
+  assetGenerationRetryDecision,
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
   createHttpContentCredentialSigner,
@@ -15,6 +15,7 @@ import {
 const CREDENTIAL_SIGNER_ID = "fibre-c2pa-node-local-v1";
 const OPENAI_IMAGE_MODEL = "gpt-image-2-2026-04-21";
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.1";
+const WORKFLOW_RETRY_LIMIT = 5;
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -24,19 +25,31 @@ function nonEmpty(name, value) {
 }
 
 function safeFailureDetail(error) {
-  const value = error instanceof Error ? error.message : String(error);
+  const value = error?.safeDetail ?? (error instanceof Error ? error.message : String(error));
   return value.length <= 2000 ? value : `${value.slice(0, 1999)}…`;
 }
 
-function generationFailureObservation(error) {
+function generationFailureObservation(error, { attempt, decision }) {
   return {
     failureVersion: FAILURE_OBSERVATION_VERSION,
-    phase: "credentialed_asset_generation",
-    provider: "openai",
-    model: OPENAI_IMAGE_MODEL,
-    retryable: error?.retryable === true,
+    phase: error?.phase ?? "unknown",
+    category: error?.category ?? "unknown",
+    provider: error?.provider ?? "openai",
+    model: error?.model ?? OPENAI_IMAGE_MODEL,
+    httpStatus: Number.isSafeInteger(error?.httpStatus) ? error.httpStatus : null,
+    providerRequestId: typeof error?.providerRequestId === "string" ? error.providerRequestId : null,
+    retryAfterMs: Number.isSafeInteger(error?.retryAfterMs) ? error.retryAfterMs : null,
+    categoryRetryable: error?.retryable === true,
+    retryable: decision.retry,
+    retryDecision: decision.reason,
+    attempt,
+    maxAttempts: decision.maxAttempts,
     detail: safeFailureDetail(error),
   };
+}
+
+function workflowRetryDelay({ ctx, error }) {
+  return assetGenerationRetryDecision(error, { attempt: ctx.attempt }).delayMs;
 }
 
 function createRuntime(env) {
@@ -65,16 +78,24 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
     const runtime = createRuntime(this.env);
     const generated = await step.do(
       "generate credentialed asset",
-      { timeout: "10 minutes" },
-      async () => {
+      {
+        timeout: "10 minutes",
+        retries: {
+          limit: WORKFLOW_RETRY_LIMIT,
+          delay: workflowRetryDelay,
+        },
+      },
+      async (ctx) => {
         try {
           return await runtime.execute(event.payload);
         } catch (error) {
-          if (error instanceof AssetGenerationAttemptFailed || error?.retryable === false) {
-            const observation = generationFailureObservation(error);
+          const decision = assetGenerationRetryDecision(error, { attempt: ctx.attempt });
+          const observation = generationFailureObservation(error, { attempt: ctx.attempt, decision });
+          console.error(JSON.stringify({ event: "asset_generation_attempt_failed", ...observation }));
+          if (!decision.retry) {
             throw new NonRetryableError(
               JSON.stringify(observation),
-              "AssetGenerationAttemptFailed",
+              "AssetGenerationError",
             );
           }
           throw error;
@@ -88,10 +109,33 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
       receiptDigest: generated.receiptDigest,
     });
 
-    await step.do("signal asset generation completion", async () => {
-      await runtime.publishCompletion(completion);
-      return completion;
-    });
+    await step.do(
+      "signal asset generation completion",
+      {
+        retries: {
+          limit: WORKFLOW_RETRY_LIMIT,
+          delay: workflowRetryDelay,
+        },
+      },
+      async (ctx) => {
+        try {
+          await runtime.publishCompletion(completion);
+          return completion;
+        } catch (error) {
+          const decision = assetGenerationRetryDecision(error, {
+            attempt: ctx.attempt,
+            providerOutputDurable: true,
+          });
+          if (!decision.retry) {
+            throw new NonRetryableError(
+              JSON.stringify(generationFailureObservation(error, { attempt: ctx.attempt, decision })),
+              "AssetGenerationError",
+            );
+          }
+          throw error;
+        }
+      },
+    );
 
     return generated;
   }

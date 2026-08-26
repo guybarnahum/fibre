@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 
 const runtimeUrl = new URL("../src/asset-generation-runtime.mjs", import.meta.url);
+const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
 const workerUrl = new URL("../../../deployments/cloudflare/asset-generator/worker.mjs", import.meta.url);
 const assetConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.local.jsonc", import.meta.url);
@@ -25,8 +26,9 @@ async function json(url) {
   return JSON.parse(await text(url));
 }
 
-test("Asset Generator runtime is infrastructure-independent and Cloudflare exists only in deployment composition", async () => {
+test("Asset Generator runtime is infrastructure-independent and Cloudflare only translates portable retry policy", async () => {
   const runtime = await text(runtimeUrl);
+  const errors = await text(errorUrl);
   const worker = await text(workerUrl);
 
   await assert.rejects(() => stat(oldCloudflareDirUrl), (error) => error?.code === "ENOENT");
@@ -34,23 +36,39 @@ test("Asset Generator runtime is infrastructure-independent and Cloudflare exist
   assert.match(runtime, /createAssetGenerationRuntime/);
   assert.match(runtime, /requireInfraCapabilities/);
   assert.match(runtime, /publishAssetGenerationCompletion/);
-  assert.match(runtime, /AssetGenerationAttemptFailed/);
+  assert.match(runtime, /AssetGenerationError/);
+  assert.match(runtime, /completion_publication/);
   assert.doesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/);
   assert.doesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+
+  assert.match(errors, /assetGenerationRetryDecision/);
+  assert.match(errors, /provider_output_not_staged/,
+    "portable policy must block post-provider whole-job replay until provider output is durably staged");
+  assert.match(errors, /rate_limited/);
+  assert.match(errors, /quota_exhausted/);
+  assert.match(errors, /immutable_conflict/);
+  assert.doesNotMatch(errors, /cloudflare|WorkflowEntrypoint|NonRetryableError/);
 
   assert.match(worker, /createCloudflareInfraDriver/);
   assert.match(worker, /withCloudflareQueueBindings/);
   assert.match(worker, /createAssetGenerationRuntime/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /NonRetryableError/);
+  assert.match(worker, /assetGenerationRetryDecision/);
+  assert.match(worker, /ctx\.attempt/,
+    "Cloudflare translation must include the actual Workflow attempt in retry decisions and diagnostics");
+  assert.match(worker, /providerOutputDurable: true/,
+    "completion publication may retry only after the immutable generation result exists");
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
   assert.match(worker, /createOpenAIImageProvider/);
   assert.match(worker, /createHttpContentCredentialSigner/);
   assert.match(worker, /asset-generation-failure-observation-v0\.1/,
     "Cloudflare deployment must expose a safe operational failure observation for diagnostics");
-  assert.match(worker, /phase: "credentialed_asset_generation"/);
-  assert.match(worker, /retryable: error\?\.retryable === true/);
+  assert.match(worker, /category: error\?\.category/);
+  assert.match(worker, /retryDecision: decision\.reason/);
+  assert.match(worker, /providerRequestId/);
+  assert.match(worker, /retryAfterMs/);
   assert.match(worker, /JSON\.stringify\(observation\)/);
   assert.match(worker, /export default\s*\{/,
     "Cloudflare Workflow host must remain an ES Module Worker for Wrangler");

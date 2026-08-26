@@ -1,4 +1,9 @@
 import {
+  AssetGenerationError,
+  parseRetryAfterMs,
+  toAssetGenerationError,
+} from "../asset-generation-error.mjs";
+import {
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
 } from "../asset-provenance-domain.mjs";
 
@@ -29,6 +34,41 @@ function dimensions(size) {
   const match = /^(\d+)x(\d+)$/.exec(size);
   if (!match) throw new TypeError(`unsupported image size ${size}`);
   return { width: Number(match[1]), height: Number(match[2]) };
+}
+
+function header(response, name) {
+  return response?.headers?.get?.(name) ?? null;
+}
+
+function openAIErrorCategory(status, payload) {
+  const error = payload?.error ?? {};
+  const text = [error.code, error.type, error.message].filter((value) => typeof value === "string").join(" ").toLowerCase();
+  if (/content[_ -]?policy|moderation|safety/.test(text)) return "moderation_rejected";
+  if (/insufficient[_ -]?quota|quota|billing|credit/.test(text)) return "quota_exhausted";
+  if (/unsupported|not[_ -]?supported/.test(text)) return "unsupported_capability";
+  if (status === 401 || status === 403) return "authentication";
+  if (status === 408 || status === 504) return "provider_timeout";
+  if (status === 429) return "rate_limited";
+  if (status >= 500 && status <= 599) return "provider_unavailable";
+  if ([400, 404, 409, 413, 422].includes(status)) return "invalid_request";
+  return "unknown";
+}
+
+function openAIHttpError({ response, payload, model }) {
+  const category = openAIErrorCategory(response.status, payload);
+  const providerMessage = typeof payload?.error?.message === "string"
+    ? payload.error.message
+    : `HTTP ${response.status}`;
+  return new AssetGenerationError(`OpenAI image generation failed: ${providerMessage}`, {
+    phase: "provider_generation",
+    category,
+    provider: "openai",
+    model,
+    httpStatus: response.status,
+    providerRequestId: header(response, "x-request-id"),
+    retryAfterMs: parseRetryAfterMs(header(response, "retry-after")),
+    safeDetail: `OpenAI image generation failed: ${providerMessage}`,
+  });
 }
 
 export function compileOpenAIImagePrompt({ brief, role }) {
@@ -71,71 +111,125 @@ export function createOpenAIImageProvider({
     capabilities: ["image"],
 
     async generate(request) {
-      plain("OpenAI image request", request);
-      if (request.assetKind !== "image") throw new TypeError("OpenAI image provider supports only image jobs");
-      if (request.referenceObjects?.length) {
-        throw new TypeError("OpenAI image generation v1 does not yet accept reference objects; use a future edit provider profile");
-      }
-      const prompt = compileOpenAIImagePrompt({ brief: request.brief, role: request.role });
-      const body = {
-        model,
-        prompt,
-        n: 1,
-        size,
-        quality,
-        output_format: outputFormat,
-      };
-      const response = await fetchImpl(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-      const requestId = response.headers?.get?.("x-request-id") ?? null;
-      let payload;
-      try { payload = await response.json(); }
-      catch { throw new Error(`OpenAI image generation returned non-JSON response (${response.status})`); }
-      if (!response.ok) {
-        const message = payload?.error?.message ?? `HTTP ${response.status}`;
-        throw new Error(`OpenAI image generation failed: ${message}`);
-      }
-      const item = payload?.data?.[0];
-      if (!item || typeof item.b64_json !== "string") {
-        throw new Error("OpenAI image generation response did not include data[0].b64_json");
-      }
-      const bytes = decodeBase64(item.b64_json);
-      const generatedAt = Number.isFinite(payload.created)
-        ? new Date(payload.created * 1000).toISOString()
-        : now();
-      const mediaType = outputFormat === "jpeg" ? "image/jpeg" : `image/${outputFormat}`;
+      try {
+        plain("OpenAI image request", request);
+        if (request.assetKind !== "image") {
+          throw new AssetGenerationError("OpenAI image provider supports only image jobs", {
+            phase: "validation",
+            category: "unsupported_capability",
+            provider: "openai",
+            model,
+          });
+        }
+        if (request.referenceObjects?.length) {
+          throw new AssetGenerationError(
+            "OpenAI image generation v1 does not yet accept reference objects; use a future edit provider profile",
+            {
+              phase: "validation",
+              category: "unsupported_capability",
+              provider: "openai",
+              model,
+            },
+          );
+        }
+        const prompt = compileOpenAIImagePrompt({ brief: request.brief, role: request.role });
+        const body = {
+          model,
+          prompt,
+          n: 1,
+          size,
+          quality,
+          output_format: outputFormat,
+        };
+        let response;
+        try {
+          response = await fetchImpl(endpoint, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
+        } catch (error) {
+          throw new AssetGenerationError("OpenAI image generation network failure", {
+            phase: "provider_generation",
+            category: error?.name === "AbortError" ? "provider_timeout" : "network",
+            provider: "openai",
+            model,
+            safeDetail: `OpenAI image generation network failure: ${error instanceof Error ? error.message : String(error)}`,
+            cause: error,
+          });
+        }
 
-      return {
-        requestWitness: {
-          mediaType: "application/json",
-          body,
-          secretsRemoved: true,
-        },
-        result: {
-          assetKind: "image",
-          bytes,
-          mediaType,
-          width,
-          height,
-          durationMs: null,
+        let payload = null;
+        try { payload = await response.json(); }
+        catch (error) {
+          if (!response.ok) throw openAIHttpError({ response, payload: null, model });
+          throw new AssetGenerationError(`OpenAI image generation returned non-JSON response (${response.status})`, {
+            phase: "provider_generation",
+            category: "unknown",
+            retryable: false,
+            provider: "openai",
+            model,
+            httpStatus: response.status,
+            providerRequestId: header(response, "x-request-id"),
+            safeDetail: `OpenAI image generation returned non-JSON response (${response.status})`,
+            cause: error,
+          });
+        }
+        if (!response.ok) throw openAIHttpError({ response, payload, model });
+
+        const item = payload?.data?.[0];
+        if (!item || typeof item.b64_json !== "string") {
+          throw new AssetGenerationError("OpenAI image generation response did not include data[0].b64_json", {
+            phase: "provider_generation",
+            category: "unknown",
+            retryable: false,
+            provider: "openai",
+            model,
+            httpStatus: response.status,
+            providerRequestId: header(response, "x-request-id"),
+          });
+        }
+        const bytes = decodeBase64(item.b64_json);
+        const generatedAt = Number.isFinite(payload.created)
+          ? new Date(payload.created * 1000).toISOString()
+          : now();
+        const mediaType = outputFormat === "jpeg" ? "image/jpeg" : `image/${outputFormat}`;
+
+        return {
+          requestWitness: {
+            mediaType: "application/json",
+            body,
+            secretsRemoved: true,
+          },
+          result: {
+            assetKind: "image",
+            bytes,
+            mediaType,
+            width,
+            height,
+            durationMs: null,
+            provider: "openai",
+            model,
+            providerRequestId: header(response, "x-request-id"),
+            generatedAt,
+            configuration: {
+              endpoint: "/v1/images/generations",
+              size,
+              quality,
+              outputFormat,
+            },
+          },
+        };
+      } catch (error) {
+        throw toAssetGenerationError(error, {
+          phase: "validation",
           provider: "openai",
           model,
-          providerRequestId: requestId,
-          generatedAt,
-          configuration: {
-            endpoint: "/v1/images/generations",
-            size,
-            quality,
-            outputFormat,
-          },
-        },
-      };
+        });
+      }
     },
   });
 }
