@@ -16,7 +16,7 @@ export const DIRECT_SQLITE_MIGRATION_PREFIXES = Object.freeze([
 // set without an accepted architecture decision; migrate both behind Infra.
 export const DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS = Object.freeze([
   "services/world-kernel/src/guardian-model-adapter.mjs",
-  "services/world-kernel/src/model-runtime/durable-invocation-journal.mjs",
+  "services/birth-center/src/model-runtime/durable-invocation-journal.mjs",
 ]);
 
 const DIRECT_FILE_PERSISTENCE_SET = new Set(DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS);
