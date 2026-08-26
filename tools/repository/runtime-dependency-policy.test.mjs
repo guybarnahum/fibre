@@ -24,7 +24,6 @@ test("current service runtime has no unregistered private sibling-service depend
 test("current private sibling-service dependencies are exact migration debt", () => {
   assert.deepEqual(PRIVATE_SERVICE_MIGRATION_EDGES, [
     "services/birth-center/src/runtime.mjs::../../world-kernel/src/model-runtime/durable-invocation-journal.mjs",
-    "services/birth-center/src/server.mjs::../../world-kernel/src/http-server.mjs",
     "services/thread-presentation/src/civil-identity-projection.mjs::#services/world-kernel/src/thread-presentation-identity-domain.mjs",
     "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-domain.mjs",
     "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-identity-domain.mjs",
@@ -97,18 +96,29 @@ test("service tests are not production runtime dependency-policy targets", () =>
 });
 
 test("registered migration debt is allowed only at its exact source edge", () => {
-  const specifier = ["..", "..", "world-kernel", "src", "http-server.mjs"].join("/");
+  const registeredSpecifier = ["..", "..", "world-kernel", "src", "model-runtime", "durable-invocation-journal.mjs"].join("/");
   assert.deepEqual(
     runtimeDependencyViolationsForSource(
-      "services/birth-center/src/server.mjs",
-      fakeImport(specifier),
+      "services/birth-center/src/runtime.mjs",
+      fakeImport(registeredSpecifier),
     ),
     [],
   );
   assert.equal(
     runtimeDependencyViolationsForSource(
-      "services/birth-center/src/runtime.mjs",
-      fakeImport(specifier),
+      "services/birth-center/src/server.mjs",
+      fakeImport(registeredSpecifier),
+    ).length,
+    1,
+  );
+});
+
+test("removed Birth Center HTTP reach-through cannot be reintroduced", () => {
+  const removedSpecifier = ["..", "..", "world-kernel", "src", "http-server.mjs"].join("/");
+  assert.equal(
+    runtimeDependencyViolationsForSource(
+      "services/birth-center/src/server.mjs",
+      fakeImport(removedSpecifier),
     ).length,
     1,
   );

@@ -17,7 +17,6 @@ const DYNAMIC_MODULE_SPECIFIER = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/gu;
 // into a permanent accepted baseline.
 export const PRIVATE_SERVICE_MIGRATION_EDGES = Object.freeze([
   "services/birth-center/src/runtime.mjs::../../world-kernel/src/model-runtime/durable-invocation-journal.mjs",
-  "services/birth-center/src/server.mjs::../../world-kernel/src/http-server.mjs",
   "services/thread-presentation/src/civil-identity-projection.mjs::#services/world-kernel/src/thread-presentation-identity-domain.mjs",
   "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-domain.mjs",
   "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-identity-domain.mjs",
