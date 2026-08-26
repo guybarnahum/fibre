@@ -47,7 +47,10 @@ function fakePresentationNamespace() {
         return { ok: true, sequence, valueJson, duplicate: false };
       },
       async readAfter({ sequence, limit }) {
-        return current.entries.filter((entry) => entry.sequence > sequence).slice(0, limit);
+        return current.entries
+          .filter((entry) => entry.sequence > sequence)
+          .slice(0, limit)
+          .map((entry) => ({ sequence: entry.sequence, value_json: entry.valueJson }));
       },
       async publishSnapshot({ snapshotPointerJson, expectedSequence }) {
         if (expectedSequence !== null && expectedSequence !== current.sequence) {

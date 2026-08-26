@@ -81,9 +81,10 @@ export function createCloudflareStreamPort(channelNamespace) {
       if (!Array.isArray(rows)) throw new TypeError("Cloudflare presentation channel replay must be an array");
       return rows.map((row, index) => {
         assertInfraFiniteNumber(`replay[${index}].sequence`, row.sequence, { integer: true, minimum: 1 });
+        const valueJson = typeof row.valueJson === "string" ? row.valueJson : row.value_json;
         return {
           sequence: row.sequence,
-          value: parseJson(`replay[${index}].valueJson`, row.valueJson),
+          value: parseJson(`replay[${index}].valueJson`, valueJson),
         };
       });
     },
