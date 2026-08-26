@@ -9,7 +9,7 @@ import {
   findC2paAssertion,
 } from "./assertion-finder.mjs";
 
-const ASSERTION_LABEL = "com.insidefibre.asset-generation.v1";
+const ASSERTION_LABEL = "com.insidefibre.asset-generation";
 const SIGNER_ID = "fibre-c2pa-node-local-v1";
 const FORMAT = "c2pa";
 const PORT = Number(process.env.FIBRE_C2PA_PORT ?? 8790);
