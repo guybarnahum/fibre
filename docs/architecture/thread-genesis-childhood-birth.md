@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-26
 canonical: true
 ---
 
@@ -238,6 +238,39 @@ A life may also produce world-emergent episodes with no structure reference.
 New people may enter only through a World-afforded role/institution/relationship possibility and then receive stable provisional identity reused by later episodes. Genesis may not invent ungrounded participants simply to make a scene work.
 
 Offered-versus-used structures and structure-grounded-versus-world-emergent episodes are diagnostics, not quotas.
+
+### Historical-envelope coherence
+
+Fibre must select historical facts as a **coherent episode envelope**, not as independent random choices that are validated only after the fact.
+
+The operative consistency boundary is conceptually:
+
+```text
+developmental window
++ EventStructure / world-emergent opportunity
++ counterpart role/person
++ authoritative place
++ civil time
+= one feasible historical envelope
+```
+
+A deterministic seed ranks legal possibilities; it does not make an otherwise impossible combination legal.
+
+In particular:
+
+- an external-counterpart opportunity exists when a counterpart-required structure has at least one role that is not already represented by the initial roster and that the World can actually host;
+- when policy requires an external counterpart, Fibre must choose such an external role rather than accidentally satisfying the structure through an already-known role;
+- a required counterpart role is legal only while at least one compatible World place has remaining policy capacity;
+- structure repetition, place repetition, social-coverage and civil-time bounds remain Fibre-owned constraints;
+- Fibre must fail or select another feasible envelope rather than invent a place/person, weaken a bound, rewrite the World, or resample a whole life to rescue a locally convenient choice.
+
+The current compiler performs capacity-aware selection across these facts. Future Genesis hardening should move toward deterministic **joint feasibility planning** over the complete envelope, with bounded lookahead across later developmental windows where necessary. This is preferable to a chain of greedy `structure -> role -> place -> time` decisions because rich lives must remain self-consistent as well as varied.
+
+This is an enduring Genesis rule, not a #39 exception:
+
+> **Seeded variation chooses among possible lives; it may not create impossible facts.**
+
+Tests should exercise constrained Worlds and exhausted capacities directly so that realistic Worlds, rather than only generous synthetic fixtures, protect this invariant.
 
 ## Intellectual formation
 

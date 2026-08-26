@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-26
 canonical: true
 ---
 
@@ -89,6 +89,7 @@ Do **not** generate the final five-Thread cohort before the pre-cohort implement
 ## What comes after #39
 
 - **Infrastructure enabling work:** prove `infra.state` with the atomic birth consistency scope before treating a provider deployment as production World/Thread authority.
+- **Genesis core hardening:** evolve historical-envelope selection from sequential local feasibility toward deterministic joint feasibility over structure, counterpart, place and civil time, with bounded future-capacity reasoning where needed. Seeded ranking is preference among feasible lives; it must never weaken World truth or diversity constraints to rescue an impossible local choice.
 - **#40:** canonical bounded consumption of identity/history/memory/relationships into ordinary cognition.
 - **#41:** Whole-Person standing and M2 closure.
 - **#42+:** self-authored development, reciprocal relationships and economic consequence.
