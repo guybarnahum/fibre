@@ -3,7 +3,11 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import { Builder, LocalSigner, Reader } from "@contentauth/c2pa-node";
-import { findC2paAssertion } from "./assertion-finder.mjs";
+import {
+  activeManifestFromStore,
+  describeC2paAssertions,
+  findC2paAssertion,
+} from "./assertion-finder.mjs";
 
 const ASSERTION_LABEL = "com.insidefibre.asset-generation.v1";
 const SIGNER_ID = "fibre-c2pa-node-local-v1";
@@ -14,6 +18,7 @@ const CERT_PATH = process.env.FIBRE_C2PA_CERT
 const KEY_PATH = process.env.FIBRE_C2PA_KEY
   ?? fileURLToPath(new URL("../../.fibre/p3-c2pa/key.pem", import.meta.url));
 const MAX_BODY_BYTES = 32 * 1024 * 1024;
+const SELF_TEST_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlNfWQAAAAASUVORK5CYII=";
 
 function canonicalize(value) {
   if (value === null || typeof value !== "object") return value;
@@ -48,6 +53,7 @@ async function readJson(req) {
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
+
 async function inspect(bytes, mediaType) {
   const reader = await Reader.fromAsset(
     { buffer: Buffer.from(bytes), mimeType: mediaType },
@@ -63,9 +69,16 @@ async function inspect(bytes, mediaType) {
   );
   const storeText = reader.json();
   const store = typeof storeText === "string" ? JSON.parse(storeText) : storeText;
-  const assertion = findC2paAssertion(store, ASSERTION_LABEL);
+  const readerActive = typeof reader.getActive === "function" ? await reader.getActive() : null;
+  const active = readerActive ?? activeManifestFromStore(store);
+  const scope = active ?? store;
+  const assertion = findC2paAssertion(scope, ASSERTION_LABEL);
   if (assertion === null || typeof assertion !== "object" || Array.isArray(assertion)) {
-    throw new Error(`missing or invalid ${ASSERTION_LABEL} assertion`);
+    const observed = describeC2paAssertions(scope);
+    const suffix = observed.length === 0
+      ? "no assertions were exposed by the active manifest"
+      : `observed assertions: ${observed.join(", ")}`;
+    throw new Error(`missing or invalid ${ASSERTION_LABEL} assertion; ${suffix}`);
   }
   return {
     assertion,
@@ -150,6 +163,28 @@ async function verify(body) {
     };
   }
 }
+
+async function selfTest() {
+  const assertion = {
+    selfTestVersion: "fibre-c2pa-local-self-test-v1",
+    purpose: "sign-read-assertion-round-trip",
+  };
+  const embedded = await embed({
+    bytesBase64: SELF_TEST_PNG_BASE64,
+    mediaType: "image/png",
+    assertion,
+  });
+  const verification = await verify({
+    bytesBase64: embedded.bytesBase64,
+    mediaType: "image/png",
+  });
+  if (!verification.valid || canonicalJson(verification.assertion) !== canonicalJson(assertion)) {
+    throw new Error(`Fibre local C2PA sign/read self-test failed: ${verification.failureReason ?? "assertion mismatch"}`);
+  }
+  console.log(`Fibre local C2PA sign/read self-test passed: ${ASSERTION_LABEL}`);
+}
+
+await selfTest();
 
 const server = createServer(async (req, res) => {
   try {
