@@ -1,5 +1,14 @@
 import { assertInfraNonEmpty, assertInfraPlainObject } from "./internal.mjs";
-import { assertTransactionalStatePort } from "./transactional-state.mjs";
+import {
+  FIBRE_BIRTH_STATE_REQUIREMENTS,
+  assertTransactionalStatePort,
+  requireTransactionalStateGuarantees,
+} from "./transactional-state.mjs";
+
+export {
+  FIBRE_BIRTH_STATE_REQUIREMENTS,
+  requireTransactionalStateGuarantees,
+};
 
 export const INFRA_DRIVER_VERSION = "infra-driver-v0.1";
 
@@ -29,6 +38,7 @@ const REQUIRED_METHODS = Object.freeze({
   objects: ["putImmutable", "get", "head"],
   catalog: ["upsert", "get", "remove"],
   realtime: ["publish"],
+  queues: ["send"],
   workflows: ["start", "get"],
 });
 
