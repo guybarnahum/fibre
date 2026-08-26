@@ -1,52 +1,30 @@
-import {
-  ASSET_GENERATION_JOB_VERSION,
-  normalizeAssetGenerationJob,
-} from "./asset-generation-domain.mjs";
-
-const SHA256_DIGEST = /^sha256:([0-9a-f]{64})$/;
-
-function nonEmpty(name, value) {
-  if (typeof value !== "string" || value.trim() === "") {
-    throw new TypeError(`${name} must be a non-empty string`);
-  }
-  return value;
-}
+import { ASSET_GENERATION_JOB_VERSION, normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
+import { assertFibreSha256Digest, assertFibreShortIdSuffix, fibreShortIdCandidates, fibreShortRef } from "./fibre-short-id.mjs";
 
 export function assertAssetGenerationIdentityDigest(value) {
-  nonEmpty("asset generation identity digest", value);
-  const match = SHA256_DIGEST.exec(value);
-  if (!match) {
-    throw new TypeError("asset generation identity digest must be sha256:<64 lowercase hex>");
-  }
-  return value;
+  return assertFibreSha256Digest("asset generation identity digest", value);
 }
 
-export function createAssetGenerationJobFromIdentity({
-  identityDigest,
-  assetKind,
-  role,
-  variant,
-  brief,
-  inputReferences,
-  referenceObjectRefs = [],
-  requestedAt,
-  providerProfile,
-  context,
-}) {
+export function createAssetGenerationJobFromIdentity(options) {
+  const {
+    identityDigest, idSuffix = null, assetKind, role, variant, brief,
+    inputReferences, referenceObjectRefs = [], requestedAt, providerProfile, context,
+  } = options;
   const checkedDigest = assertAssetGenerationIdentityDigest(identityDigest);
-  const suffix = checkedDigest.slice("sha256:".length);
-
+  const candidates = fibreShortIdCandidates(checkedDigest);
+  const suffix = idSuffix === null ? candidates[0] : assertFibreShortIdSuffix("asset generation id suffix", idSuffix);
+  if (!candidates.includes(suffix)) throw new TypeError("asset generation id suffix must be derived from the identity digest");
   return normalizeAssetGenerationJob({
     jobVersion: ASSET_GENERATION_JOB_VERSION,
-    jobId: `assetjob_${suffix}`,
+    jobId: fibreShortRef("assetjob_", suffix),
     assetKind,
     role,
     variant,
     brief,
     inputReferences,
     referenceObjectRefs,
-    outputObjectRef: `asset_${suffix}`,
-    receiptObjectRef: `assetreceipt_${suffix}`,
+    outputObjectRef: fibreShortRef("asset_", suffix),
+    receiptObjectRef: fibreShortRef("assetreceipt_", suffix),
     requestedAt,
     providerProfile,
     context,
