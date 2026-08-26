@@ -26,8 +26,13 @@ import { generateGenesisLifeCandidate } from "./genesis-life-candidate.mjs";
 import {
   completePr39ClosureAttempt,
   openOrResumePr39ClosureAttempt,
+  readPr39ClosureAttempt,
 } from "./genesis-pr39-closure-authority.mjs";
 import { loadPr39ClosureFinalization } from "./genesis-pr39-closure-finalization.mjs";
+import {
+  PR39_CLOSURE_ORIGINAL_CLAIM_HEAD,
+  assertPr39ClosureRecoveryMatchesExecution,
+} from "./genesis-pr39-closure-recovery.mjs";
 import {
   buildPr39ClosureRepairProfile,
   createPr39ClosureCallRecorder,
@@ -77,6 +82,19 @@ function parseArgs(argv) {
   return { model };
 }
 
+function progressLabel(clientRequestId) {
+  if (typeof clientRequestId !== "string") return "model call";
+  const passA = clientRequestId.match(/:slot-(\d+):pass-a:episode-(\d+)(?::|$)/u);
+  if (passA) return `slot ${Number(passA[1])} · Pass A ${Number(passA[2])}/14`;
+  const passB = clientRequestId.match(/:slot-(\d+):pass-b:call-(\d+)(?::|$)/u);
+  if (passB) return `slot ${Number(passB[1])} · Pass B ${Number(passB[2])}/6`;
+  const passCInitial = clientRequestId.match(/:slot-(\d+):pass-c:initial-(\d+)(?::|$)/u);
+  if (passCInitial) return `slot ${Number(passCInitial[1])} · Pass C initial ${Number(passCInitial[2])}`;
+  const passCReinterpret = clientRequestId.match(/:slot-(\d+):pass-c:reinterpret:/u);
+  if (passCReinterpret) return `slot ${Number(passCReinterpret[1])} · Pass C reinterpretation`;
+  return clientRequestId;
+}
+
 const options = parseArgs(process.argv.slice(2));
 const frozen = loadPr39ClosureFinalization();
 const expectedModel = frozen.precommitment.protocol.sampling.generatorModel;
@@ -85,11 +103,25 @@ if (modelId !== expectedModel) fail(`closure model is frozen to ${expectedModel}
 const head = gitHead();
 const stateRoot = absolute(".fibre/genesis/pr39-closure");
 const outputRoot = `.fibre/genesis/pr39-closure/${frozen.finalization.closureId}`;
+const existingClaim = readPr39ClosureAttempt({ stateRoot });
+if (existingClaim === null && head !== PR39_CLOSURE_ORIGINAL_CLAIM_HEAD) {
+  fail("PR39 recovery code requires the preserved original closure claim; creating a replacement cohort is forbidden");
+}
+const recoveryExecution = existingClaim === null
+  ? Object.freeze({ mode: "original", amendment: null })
+  : assertPr39ClosureRecoveryMatchesExecution({
+      stateRoot,
+      claim: existingClaim,
+      currentCodeHead: head,
+      finalizationDigest: frozen.finalizationDigest,
+      modelId,
+    });
+const claimCodeHead = existingClaim?.codeHead ?? head;
 
 const opened = openOrResumePr39ClosureAttempt({
   stateRoot,
   closureId: frozen.finalization.closureId,
-  codeHead: head,
+  codeHead: claimCodeHead,
   precommitmentDigest: frozen.finalizationDigest,
   modelId,
   claimedAt: new Date().toISOString(),
@@ -99,11 +131,18 @@ const manifest = {
   version: "pr39-final-closure-run-v1",
   status: "ONE_PASS_CLOSURE_COHORT",
   closureId: frozen.finalization.closureId,
-  codeHead: head,
+  codeHead: opened.claim.codeHead,
+  executionCodeHead: head,
   finalizationDigest: frozen.finalizationDigest,
   modelId,
   claimedAt: opened.claim.claimedAt,
   resumed: opened.resumed,
+  recoveryAmendment: recoveryExecution.amendment === null ? null : {
+    version: recoveryExecution.amendment.version,
+    recoveryCodeHead: recoveryExecution.amendment.recoveryCodeHead,
+    authorizedAt: recoveryExecution.amendment.authorizedAt,
+    reason: recoveryExecution.amendment.reason,
+  },
   publicationAuthorized: false,
   candidateGenerationAuthorized: true,
 };
@@ -111,9 +150,34 @@ writeJson(`${outputRoot}/run-v1.json`, manifest);
 
 let committed = 0;
 let replayed = 0;
+const heartbeatTimers = new Map();
+const clearHeartbeat = (clientRequestId) => {
+  const timer = heartbeatTimers.get(clientRequestId);
+  if (timer !== undefined) clearInterval(timer);
+  heartbeatTimers.delete(clientRequestId);
+};
 const observer = (event) => {
-  if (event.type === "durable_model_commit") committed += 1;
-  if (event.type === "durable_model_replay") replayed += 1;
+  const id = event.clientRequestId;
+  const label = progressLabel(id);
+  if (event.type === "model_attempt" && event.attempt === 1 && typeof id === "string") {
+    clearHeartbeat(id);
+    console.log(`  ${label}: provider request`);
+    heartbeatTimers.set(id, setInterval(() => console.log(`  ${label}: waiting for model response...`), 15_000));
+  }
+  if (event.type === "model_response") {
+    clearHeartbeat(id);
+    const recovered = event.outputRecovery?.recoveries?.length ?? 0;
+    console.log(`  ${label}: response${recovered > 0 ? ` · mechanical recovery ${recovered}` : ""}`);
+  }
+  if (event.type === "operational_failure" && event.retrying !== true) clearHeartbeat(id);
+  if (event.type === "durable_model_commit") {
+    committed += 1;
+    console.log(`  ${label}: committed`);
+  }
+  if (event.type === "durable_model_replay") {
+    replayed += 1;
+    console.log(`  ${label}: replayed`);
+  }
 };
 const birthCenter = createBirthCenterRuntime({ stateRoot: absolute(`${outputRoot}/runtime`) });
 const creativeBase = createOpenAIModelAdapter({
@@ -137,9 +201,13 @@ const durableRepair = birthCenter.durableAdapter(repairBase, { observer });
 
 console.log("PR39 FINAL CLOSURE COHORT");
 console.log(`closure: ${frozen.finalization.closureId}`);
-console.log(`code: ${head}`);
+console.log(`claim code: ${opened.claim.codeHead}`);
+console.log(`execution code: ${head}`);
 console.log(`finalization: ${frozen.finalizationDigest}`);
-console.log(`attempt: ${opened.resumed ? "operational resume of existing claim" : "new one-pass claim"}`);
+console.log(`attempt: ${recoveryExecution.mode === "recovery" ? "authorized operational recovery of existing claim" : opened.resumed ? "operational resume of existing claim" : "new one-pass claim"}`);
+if (recoveryExecution.amendment !== null) {
+  console.log(`recovery: ${recoveryExecution.amendment.reason} · authorized ${recoveryExecution.amendment.authorizedAt}`);
+}
 console.log("publication: disabled until candidate diagnostics/replay stage");
 
 const candidateDigests = [];
@@ -198,6 +266,8 @@ for (const slotPlan of frozen.plans.slots) {
   console.log(`slot ${slotPlan.slot}: admitted ${candidate.candidateDigest} · A versions ${profile.totals.generatedVersions} · repairs ${profile.totals.formRepairs} · retries ${profile.totals.recordRetries}`);
 }
 
+for (const timer of heartbeatTimers.values()) clearInterval(timer);
+heartbeatTimers.clear();
 const completion = completePr39ClosureAttempt({
   stateRoot,
   claim: opened.claim,
