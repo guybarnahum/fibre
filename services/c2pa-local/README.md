@@ -17,11 +17,18 @@ npm install --prefix services/c2pa-local --no-package-lock
 npm start --prefix services/c2pa-local
 ```
 
-The certificate helper is intentionally one-shot and refuses to overwrite an existing development key. If `.fibre/p3-c2pa/` already contains the local proof credentials, skip the helper command.
+The certificate helper is intentionally one-shot and refuses to overwrite an existing development key. If `.fibre/p3-c2pa/` already contains credentials created by the older self-signed helper, remove that ignored local directory and regenerate it before starting the signer:
 
-The helper now generates the ES256 private key directly as unencrypted PKCS#8 PEM (`PRIVATE KEY`), which is the format required by `@contentauth/c2pa-node`'s `LocalSigner`. For compatibility with credentials created by an older helper, the sidecar also accepts SEC1 EC PEM (`EC PRIVATE KEY`) and normalizes it to PKCS#8 in memory before constructing the C2PA signer. Existing local proof credentials therefore do not need to be regenerated solely for this format change.
+```bash
+rm -rf .fibre/p3-c2pa
+sh services/c2pa-local/generate-dev-cert.sh
+```
 
-The helper creates a short-lived self-signed ES256 development certificate under ignored `.fibre/p3-c2pa/` with the document-signing/C2PA EKU. Verification for this local proof checks the embedded C2PA structure/signature but deliberately does not treat the development certificate as a production trust credential.
+`npm start` runs a certificate-chain preflight before loading the C2PA SDK. This deliberately fails fast on the legacy one-certificate/self-signed setup so an invalid local credential cannot be discovered only after an expensive image generation call.
+
+The helper generates an unencrypted PKCS#8 P-256 signing key plus a short-lived local development CA and a CA-issued end-entity signing certificate. `cert.pem` contains the C2PA signing chain in end-entity-first order and uses the document-signing EKU. The local CA private key is deleted after issuance; its public certificate remains in `.fibre/p3-c2pa/ca-cert.pem` for inspection.
+
+These credentials are local proof material only. Verification for this local proof checks the embedded C2PA structure/signature but deliberately does not claim that the development CA is a production trust credential.
 
 The service listens only on `127.0.0.1:8790` by default and exposes:
 
