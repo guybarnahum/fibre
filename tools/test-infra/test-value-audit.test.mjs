@@ -101,3 +101,25 @@ test("test-value audit reports byte-identical test files without treating shared
       "tools/c.test.mjs",
     ]);
   }));
+
+test("test-value audit covers every recursive npm test root including deployment adapters", () =>
+  withAuditFixture((root) => {
+    const roots = [
+      ["domain", "packages/domain/test/domain-scope.test.mjs"],
+      ["infra", "packages/infra/test/infra-scope.test.mjs"],
+      ["asset-generator", "services/asset-generator/test/asset-scope.test.mjs"],
+      ["birth-center", "services/birth-center/test/birth-scope.test.mjs"],
+      ["thread-presentation", "services/thread-presentation/test/presentation-scope.test.mjs"],
+      ["thread-presentation-cloudflare", "deployments/cloudflare/thread-presentation/test/deployment-scope.test.mjs"],
+      ["world-kernel", "services/world-kernel/test/kernel-scope.test.mjs"],
+      ["tools", "tools/tool-scope.test.mjs"],
+    ];
+    for (const [scope, path] of roots) {
+      put(root, path, `import test from "node:test"; test("${scope} scope fixture", () => {});`);
+    }
+
+    const audit = buildTestValueAudit(root);
+    assert.equal(audit.totals.files, roots.length);
+    assert.deepEqual(Object.keys(audit.byScope), roots.map(([scope]) => scope).sort());
+    for (const [scope] of roots) assert.equal(audit.byScope[scope].files, 1);
+  }));
