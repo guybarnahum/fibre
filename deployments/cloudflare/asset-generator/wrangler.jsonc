@@ -4,7 +4,7 @@
   "main": "./worker.mjs",
   "compatibility_date": "2026-08-25",
   "secrets": {
-    "required": ["OPENAI_API_KEY", "C2PA_SIGNER_URL"]
+    "required": ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_URL"]
   },
   "r2_buckets": [
     {

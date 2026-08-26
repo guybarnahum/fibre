@@ -7,6 +7,7 @@ const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
 const attemptUrl = new URL("../src/asset-generation-attempt.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
 const workerUrl = new URL("../../../deployments/cloudflare/asset-generator/worker.mjs", import.meta.url);
+const providerSelectionUrl = new URL("../../../deployments/cloudflare/asset-generator/image-provider-selection.mjs", import.meta.url);
 const assetConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.local.jsonc", import.meta.url);
 const deploymentManifestUrl = new URL("../../../deployments/environments/local.json", import.meta.url);
 const presentationWorkerUrl = new URL("../../../deployments/cloudflare/thread-presentation/worker.mjs", import.meta.url);
@@ -32,6 +33,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   const errors = await text(errorUrl);
   const attempts = await text(attemptUrl);
   const worker = await text(workerUrl);
+  const providerSelection = await text(providerSelectionUrl);
 
   await assert.rejects(() => stat(oldCloudflareDirUrl), (error) => error?.code === "ENOENT");
 
@@ -40,7 +42,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(runtime, /publishAssetGenerationCompletion/);
   assert.match(runtime, /attemptNumber/);
   assert.match(runtime, /providerOutputResumed/);
-  assert.doesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/);
+  assert.doesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/);
   assert.doesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 
   assert.match(attempts, /generation-attempt-v0\.1/);
@@ -63,6 +65,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /createCloudflareInfraDriver/);
   assert.match(worker, /withCloudflareQueueBindings/);
   assert.match(worker, /createAssetGenerationRuntime/);
+  assert.match(worker, /createCloudflareAssetImageProvider/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /NonRetryableError/);
   assert.match(worker, /assetGenerationRetryDecision/);
@@ -72,7 +75,6 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
     "diagnostics must distinguish safe staged retries from pre-stage failures");
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
-  assert.match(worker, /createOpenAIImageProvider/);
   assert.match(worker, /createHttpContentCredentialSigner/);
   assert.match(worker, /asset-generation-failure-observation-v0\.1/,
     "Cloudflare deployment must expose a safe operational failure observation for diagnostics");
@@ -86,6 +88,12 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /new Response\("Not Found", \{ status: 404 \}\)/,
     "default module entrypoint must not expose a parallel asset-generation HTTP API");
   assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+
+  assert.match(providerSelection, /openai-gpt-image-2-medium-v1/);
+  assert.match(providerSelection, /bfl-flux-2-pro-v1/);
+  assert.match(providerSelection, /createOpenAIImageProvider/);
+  assert.match(providerSelection, /createBflFluxImageProvider/);
+  assert.doesNotMatch(providerSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 });
 
 test("deployment manifest selects Cloudflare while presentation owns completion publication", async () => {
@@ -123,14 +131,14 @@ test("deployment manifest selects Cloudflare while presentation owns completion 
   assert.equal(presentationWorkflow.class_name, "AssetGenerationWorkflow");
   assert.equal(presentationWorkflow.script_name, assetConfig.name);
   assert.equal(presentationWorkflow.name, assetWorkflow.name);
-  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY"]);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY"]);
   assert.equal(presentationConfig.secrets, undefined);
   assert.equal(producer.queue, "fibre-asset-completions-local");
   assert.equal(consumer.max_retries, 10);
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-local-dlq");
 
   assert.doesNotMatch(presentationWorker, /WorkflowEntrypoint|NonRetryableError/);
-  assert.doesNotMatch(presentationWorker, /createOpenAIImageProvider|executeCredentialedAssetGenerationJob/);
+  assert.doesNotMatch(presentationWorker, /createOpenAIImageProvider|createBflFluxImageProvider|executeCredentialedAssetGenerationJob/);
   assert.match(presentationWorker, /createPresentationAssetCompletionService/);
   assert.match(presentationWorker, /createThreadPresentationAssetPublisher/);
   assert.match(presentationWorker, /async queue\(batch, env\)/);

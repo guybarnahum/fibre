@@ -7,7 +7,7 @@
     "C2PA_SIGNER_URL": "http://127.0.0.1:8790"
   },
   "secrets": {
-    "required": ["OPENAI_API_KEY"]
+    "required": ["OPENAI_API_KEY", "BFL_API_KEY"]
   },
   "r2_buckets": [
     {

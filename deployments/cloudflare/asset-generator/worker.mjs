@@ -9,11 +9,10 @@ import {
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
   createHttpContentCredentialSigner,
-  createOpenAIImageProvider,
 } from "../../../services/asset-generator/src/index.mjs";
+import { createCloudflareAssetImageProvider } from "./image-provider-selection.mjs";
 
 const CREDENTIAL_SIGNER_ID = "fibre-c2pa-node-local-v1";
-const OPENAI_IMAGE_MODEL = "gpt-image-2-2026-04-21";
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.1";
 const WORKFLOW_RETRY_LIMIT = 5;
 
@@ -34,8 +33,8 @@ function generationFailureObservation(error, { attempt, decision }) {
     failureVersion: FAILURE_OBSERVATION_VERSION,
     phase: error?.phase ?? "unknown",
     category: error?.category ?? "unknown",
-    provider: error?.provider ?? "openai",
-    model: error?.model ?? OPENAI_IMAGE_MODEL,
+    provider: error?.provider ?? "unknown",
+    model: error?.model ?? "unknown",
     httpStatus: Number.isSafeInteger(error?.httpStatus) ? error.httpStatus : null,
     providerRequestId: typeof error?.providerRequestId === "string" ? error.providerRequestId : null,
     retryAfterMs: Number.isSafeInteger(error?.retryAfterMs) ? error.retryAfterMs : null,
@@ -53,7 +52,7 @@ function workflowRetryDelay({ ctx, error }) {
   return assetGenerationRetryDecision(error, { attempt: ctx.attempt }).delayMs;
 }
 
-function createRuntime(env) {
+function createRuntime(env, job) {
   if (!env || typeof env !== "object") throw new TypeError("Cloudflare asset generation env is required");
   if (!env.ASSET_OBJECTS) throw new TypeError("ASSET_OBJECTS binding is required");
   if (!env.ASSET_COMPLETIONS) throw new TypeError("ASSET_COMPLETIONS binding is required");
@@ -62,10 +61,7 @@ function createRuntime(env) {
   const infra = withCloudflareQueueBindings(baseInfra, {
     [ASSET_GENERATION_COMPLETION_QUEUE]: env.ASSET_COMPLETIONS,
   });
-  const provider = createOpenAIImageProvider({
-    apiKey: nonEmpty("OPENAI_API_KEY", env.OPENAI_API_KEY),
-    model: OPENAI_IMAGE_MODEL,
-  });
+  const provider = createCloudflareAssetImageProvider({ env, job });
   const credentialSigner = createHttpContentCredentialSigner({
     baseUrl: nonEmpty("C2PA_SIGNER_URL", env.C2PA_SIGNER_URL),
     signerId: CREDENTIAL_SIGNER_ID,
@@ -76,7 +72,7 @@ function createRuntime(env) {
 
 export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
-    const runtime = createRuntime(this.env);
+    const runtime = createRuntime(this.env, event.payload);
     const generated = await step.do(
       "generate credentialed asset",
       {
