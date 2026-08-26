@@ -9,7 +9,12 @@ const assetConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/
 const deploymentManifestUrl = new URL("../../../deployments/environments/local.json", import.meta.url);
 const presentationWorkerUrl = new URL("../../../deployments/cloudflare/thread-presentation/worker.mjs", import.meta.url);
 const presentationConfigUrl = new URL("../../../deployments/cloudflare/thread-presentation/wrangler.local.jsonc", import.meta.url);
-const oldPresentationCloudflareUrl = new URL("../../presentation-cloudflare/", import.meta.url);
+const retiredPresentationCloudflareFiles = Object.freeze([
+  new URL("../../presentation-cloudflare/src/worker.mjs", import.meta.url),
+  new URL("../../presentation-cloudflare/src/presentation-read-api.mjs", import.meta.url),
+  new URL("../../presentation-cloudflare/wrangler.local.jsonc", import.meta.url),
+  new URL("../../presentation-cloudflare/README.md", import.meta.url),
+]);
 const p3ProofUrl = new URL("../../../tools/presentation/prove-p3-generated-media-local.mjs", import.meta.url);
 
 async function text(url) {
@@ -52,7 +57,9 @@ test("deployment manifest selects Cloudflare while presentation owns completion 
   const presentationWorker = await text(presentationWorkerUrl);
   const p3Proof = await text(p3ProofUrl);
 
-  await assert.rejects(() => stat(oldPresentationCloudflareUrl), (error) => error?.code === "ENOENT");
+  for (const retiredFile of retiredPresentationCloudflareFiles) {
+    await assert.rejects(() => stat(retiredFile), (error) => error?.code === "ENOENT");
+  }
 
   const assetDeployment = manifest.services["asset-generator"];
   const provider = manifest.providers[assetDeployment.infra];
