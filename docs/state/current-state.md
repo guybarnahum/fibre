@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-26
 canonical: true
 ---
 
@@ -22,6 +22,7 @@ Live Threads are world data, not source code stored in Git. Models provide tempo
 - Meaning-bearing identity, memory, need, emotion, relationship and self-understanding are natural-language-first; derived categories may measure or control but may not replace semantic authority.
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
 - Mechanical/substrate conditions may become versioned causal machinery, but they are not semantic evidence for identity, memory, meaning, character, needs, emotions or values.
+- Model output is candidate cognition. Provider structured-output guarantees never replace Fibre canonical validation or domain admission.
 
 ## Milestone posture
 
@@ -35,7 +36,7 @@ M1    Persistent Thread Round Trip                         CLOSED
 #36   Identity & Embodiment                                MERGED / FROZEN
 #37   Thread Passport & Identity Provenance                MERGED / FROZEN
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
-#39   Genesis, Childhood & Thread Birth                    ACTIVE — CLOSING
+#39   Genesis, Childhood & Thread Birth                    ACTIVE — FINAL COHORT RECOVERY
 #40   Identity Projection & Causal Consumption             NEXT AFTER #39
 #41   M2 Standing Gate / M2 closure                        AFTER #40
 
@@ -51,22 +52,29 @@ Planning identifiers such as `#39` are Fibre milestone identifiers. They are not
 
 ## #39 current position
 
-#39 is in a currentization-and-closure phase. The old R1/R2/G/H freeze choreography is retired by [`ADR-0015`](../decisions/ADR-0015-fibre-centric-development.md); Git history preserves that development record.
+#39 has entered its single final-cohort execution. The scientific setup is frozen: five fresh Worlds, mechanical genome assignment, model/configuration, one-pass cohort identity and D1–D5 diagnostic protocol were fixed before final generation.
 
-The current development path can produce a materially particular prior life through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings. The current Tbilisi, Kaohsiung, Recife, Fès and Hobart materials are development fixtures and are burned for the final closure cohort.
+The original closure claim was made from code HEAD `6415ba75c95e5a26a634b83a5ea2f6eeb34f337f`.
 
-The remaining #39 work is substantive rather than ceremonial:
+The first execution produced one complete admitted Sapporo candidate. Kochi then reached Pass B and twice returned a structured response with duplicate `episodeRefs`. OpenAI's transport schema cannot enforce Fibre's canonical `uniqueItems` rule; Fibre's local canonical validator correctly rejected both outputs. After the same failure repeated, execution stopped rather than continuing to sample until a convenient response appeared.
 
-- enforce narrated-place agreement with authoritative `placeRef` again at publication;
-- make the supported current Birth Center/Genesis path construct the canonical birth bundle and call `publishBirth`;
-- require roster and life-continuity material for prior-life births;
-- make revision-1 memory visual-companion obligations transactional with birth;
-- compare admitted candidate/birth bundle with hydrated canonical Thread state;
-- preserve one-attempt closure semantics and visible repair/rejection accounting;
-- predeclare and run the final D1–D5 interpretation/attribution checks on five fresh Worlds;
-- atomically birth the five admitted lives and obtain one hostile closing review.
+The final cohort is therefore **claimed but incomplete**:
 
-No final-cohort generation is authorized until the pre-cohort implementation blockers in the closing plan are green.
+```text
+Sapporo       complete and preserved
+Kochi         incomplete in Pass B
+Malmö         not started
+Valparaíso    not started
+Wellington    not started
+D1-D5         not started
+publication   not started
+```
+
+This is a runtime robustness interruption, not a scientific result. There is no second cohort and no replacement Sapporo.
+
+The recovery implementation now adds a small provider-neutral model-output recovery layer, beginning with deterministic `uniqueItems` normalization, plus explicit PR39 execution-amendment and progress/heartbeat machinery. The frozen PR39 generation prompts remain unchanged.
+
+Before another provider call, the exact recovery HEAD must pass zero-provider validation and one local recovery amendment must bind that HEAD to the preserved original closure claim. The original claim itself is not rewritten.
 
 ## Genesis authority
 
@@ -75,6 +83,14 @@ No final-cohort generation is authorized until the pre-cohort implementation blo
 The Birth Center owns provisional development and durable provider-call recovery. The World Kernel owns authoritative Thread/world reality and atomic publication.
 
 A failed or interrupted development run may preserve provisional Genesis state, invocation journals and negative evidence. It does not create a partially born Thread. A complete admitted birth bundle crosses one explicit publication boundary; `publishBirth` either commits the canonical birth or leaves the live world unchanged.
+
+### Model-output recovery
+
+Models are fallible cognitive machinery. Fibre owns the mechanical boundary that decides whether a provider response is usable; semantic domains still decide whether candidate cognition is admissible.
+
+The accepted architecture is [`../architecture/model-output-recovery.md`](../architecture/model-output-recovery.md). Recovery prefers deterministic, meaning-preserving normalization over another model call. The first supported handler removes exact duplicate items only where the canonical response schema declares `uniqueItems: true`, preserves a recovery witness and revalidates the complete canonical schema.
+
+New recovery handlers are added only from observed failure modes with a narrow mechanical rule. Prompt hints may help providers avoid known form errors but never define Fibre validity.
 
 ### Symbolic genome and lineage
 
@@ -104,7 +120,7 @@ The development sequence retained an important negative lesson: mechanically val
 
 ### Source integrity
 
-Thread-parent, fork, Echo and Homage are origin/source modes, not alternate biography generators. Current `publishBirth` enforcement already carries the key eligibility/consent boundaries for those modes. Before #39 closes, the current origin path still needs end-to-end exercise and any remaining vocabulary/projection inconsistencies must be reconciled.
+Thread-parent, fork, Echo and Homage are origin/source modes, not alternate biography generators. `publishBirth` carries the key eligibility/consent boundaries for those modes.
 
 ```text
 living identifiable human -> documented-consent Echo
