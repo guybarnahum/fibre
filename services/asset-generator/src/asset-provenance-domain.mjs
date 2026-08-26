@@ -3,6 +3,7 @@ import {
   normalizeAssetGenerationJob,
   normalizeMediaGenerationResult,
 } from "./asset-generation-domain.mjs";
+import { fibreShortIdCandidates, fibreShortRef } from "./fibre-short-id.mjs";
 
 export const GENERATION_RECORD_VERSION = "generation-record-v0.1";
 export const STORED_ASSET_RECEIPT_VERSION = "stored-asset-receipt-v0.1";
@@ -336,7 +337,13 @@ export function normalizeStoredAssetReceipt(value) {
   return structuredClone(value);
 }
 
-export function generationRecordObjectRef(generationRecordDigest) {
+export function generationRecordObjectRefs(generationRecordDigest) {
   digest("generationRecordDigest", generationRecordDigest);
-  return `generationrecord_${generationRecordDigest.slice("sha256:".length)}`;
+  return Object.freeze(
+    fibreShortIdCandidates(generationRecordDigest).map((suffix) => fibreShortRef("generationrecord_", suffix)),
+  );
+}
+
+export function generationRecordObjectRef(generationRecordDigest) {
+  return generationRecordObjectRefs(generationRecordDigest)[0];
 }

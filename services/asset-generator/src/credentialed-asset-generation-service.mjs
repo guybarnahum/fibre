@@ -1,4 +1,7 @@
-import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+import {
+  InfraImmutableObjectConflictError,
+  requireInfraCapabilities,
+} from "../../../packages/infra/src/infra-driver.mjs";
 import { normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
 import {
   GENERATION_RECORD_VERSION,
@@ -6,7 +9,7 @@ import {
   assertContentCredentialSigner,
   assertWitnessedMediaGenerationProvider,
   buildEmbeddedAssetProvenance,
-  generationRecordObjectRef,
+  generationRecordObjectRefs,
   normalizeCredentialEmbedResult,
   normalizeCredentialVerification,
   normalizeGenerationRecord,
@@ -37,6 +40,18 @@ async function persistJsonImmutable(objects, objectRef, value, metadata) {
   const digest = await sha256(bytes);
   await objects.putImmutable(objectRef, bytes, digest, metadata);
   return { objectRef, digest, bytes };
+}
+
+async function persistGenerationRecord(objects, { bytes, digest, metadata }) {
+  for (const objectRef of generationRecordObjectRefs(digest)) {
+    try {
+      await objects.putImmutable(objectRef, bytes, digest, metadata);
+      return objectRef;
+    } catch (error) {
+      if (!(error instanceof InfraImmutableObjectConflictError)) throw error;
+    }
+  }
+  throw new Error("generation record 12-hex ID candidates are exhausted");
 }
 
 async function resolveReferenceObjects(objects, refs) {
@@ -131,8 +146,7 @@ export async function executeCredentialedAssetGenerationJob({
 
   const generationRecordBytes = new TextEncoder().encode(canonicalJson(generationRecord));
   const generationRecordDigest = await sha256(generationRecordBytes);
-  const generationRecordRef = generationRecordObjectRef(generationRecordDigest);
-  await objects.putImmutable(generationRecordRef, generationRecordBytes, generationRecordDigest, {
+  const generationRecordMetadata = {
     kind: "generation_record",
     jobId: job.jobId,
     assetKind: job.assetKind,
@@ -140,6 +154,11 @@ export async function executeCredentialedAssetGenerationJob({
     variant: job.variant,
     provider: generated.provider,
     model: generated.model,
+  };
+  const generationRecordRef = await persistGenerationRecord(objects, {
+    bytes: generationRecordBytes,
+    digest: generationRecordDigest,
+    metadata: generationRecordMetadata,
   });
 
   const assertion = buildEmbeddedAssetProvenance({

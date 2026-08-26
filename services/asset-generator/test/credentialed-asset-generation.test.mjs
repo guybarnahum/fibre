@@ -6,6 +6,8 @@ import { ASSET_GENERATION_JOB_VERSION } from "../src/asset-generation-domain.mjs
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
+  generationRecordObjectRef,
+  generationRecordObjectRefs,
   normalizeEmbeddedAssetProvenance,
   normalizePromptDisclosurePolicy,
 } from "../src/asset-provenance-domain.mjs";
@@ -161,6 +163,8 @@ test("credentialed generation retains exact brief/request privately while defaul
   assert.equal(result.generationRecord.providerRequestWitness.body.prompt.startsWith("COMPILED:"), true);
   assert.notEqual(result.generationRecord.semanticBriefDigest, result.generationRecord.providerRequestDigest);
   assert.notEqual(result.providerOutputDigest, result.finalAssetDigest);
+  assert.match(result.generationRecordObjectRef, /^generationrecord_[0-9a-f]{12}$/);
+  assert.equal(result.generationRecordObjectRef, generationRecordObjectRef(result.generationRecordDigest));
 
   const generationStored = await infra.objects.get(result.generationRecordObjectRef);
   const generationText = decoder.decode(generationStored.bytes);
@@ -180,6 +184,37 @@ test("credentialed generation retains exact brief/request privately while defaul
   });
   assert.equal(proof.verification.valid, true);
   assert.equal(proof.verification.assertion.promptDisclosure.mode, "digest_only");
+});
+
+test("generation record short ID collision advances to the next deterministic candidate", async () => {
+  const baseline = await executeCredentialedAssetGenerationJob({
+    infra: createMemoryInfraDriver(),
+    provider: provider(),
+    credentialSigner: fixtureCredentialSigner(),
+    job: job(),
+    now: () => "2026-08-21T21:11:03Z",
+  });
+  const candidates = generationRecordObjectRefs(baseline.generationRecordDigest);
+  assert.equal(candidates.length > 1, true);
+
+  const infra = createMemoryInfraDriver();
+  const occupied = encoder.encode("different generation record occupying the same 12-hex candidate");
+  await infra.objects.putImmutable(candidates[0], occupied, await sha256(occupied), {
+    kind: "collision_fixture",
+  });
+
+  const result = await executeCredentialedAssetGenerationJob({
+    infra,
+    provider: provider(),
+    credentialSigner: fixtureCredentialSigner(),
+    job: job(),
+    now: () => "2026-08-21T21:11:03Z",
+  });
+
+  assert.equal(result.generationRecordDigest, baseline.generationRecordDigest);
+  assert.equal(result.generationRecordObjectRef, candidates[1]);
+  assert.match(result.generationRecordObjectRef, /^generationrecord_[0-9a-f]{12}$/);
+  assert.equal(result.receipt.generationRecordObjectRef, candidates[1]);
 });
 
 test("public_text prompt embedding requires explicit authorization and then embeds both semantic brief and provider request", async () => {
@@ -271,6 +306,7 @@ test("generation record is committed before credential embedding and no final as
   assert.equal(await infra.objects.head(job().outputObjectRef), null);
   assert.equal(await infra.objects.head(job().receiptObjectRef), null);
   assert.match(capturedGenerationRecordDigest, /^sha256:[0-9a-f]{64}$/);
-  const generationRecordRef = `generationrecord_${capturedGenerationRecordDigest.slice("sha256:".length)}`;
+  const generationRecordRef = generationRecordObjectRef(capturedGenerationRecordDigest);
+  assert.match(generationRecordRef, /^generationrecord_[0-9a-f]{12}$/);
   assert.notEqual(await infra.objects.head(generationRecordRef), null);
 });
