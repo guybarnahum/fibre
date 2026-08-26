@@ -4,6 +4,8 @@ Cloudflare runtime adapter for Fibre Thread Presentation.
 
 This service is a deployment boundary, not a new Thread authority. It composes the Fibre-owned `PresentationServer` with the general `cloudflare-v1` `InfraDriver`.
 
+This directory predates ADR-0017's repository split. New provider-specific executable composition belongs under `deployments/`; moving this existing adapter there is deferred to a dedicated refactor rather than being mixed with current Presentation serving changes.
+
 Current local runtime profile:
 
 ```text
@@ -18,7 +20,7 @@ InfraDriver cloudflare-v1
   workflows  -> cross-script Cloudflare Workflow binding
                     |
                     v
-              Asset Generator Worker
+              Asset Generator deployment
                     |
                     v
               completion Queue
@@ -107,7 +109,7 @@ Leave it running on `127.0.0.1:8790`.
 
 ### 2. Initialize and start both Cloudflare Workers
 
-Fibre's normal root `.env` supplies `OPENAI_API_KEY`; no Cloudflare infrastructure keys are needed for local mode. The secret belongs to the Asset Generator Worker, not Presentation.
+Fibre's normal root `.env` supplies `OPENAI_API_KEY`; no Cloudflare infrastructure keys are needed for local mode. The secret belongs to the Asset Generator deployment, not Presentation.
 
 ```bash
 npx wrangler@latest d1 execute fibre-presentation-local \
@@ -117,12 +119,12 @@ npx wrangler@latest d1 execute fibre-presentation-local \
 
 npx wrangler@latest dev \
   --config services/presentation-cloudflare/wrangler.local.jsonc \
-  --config services/asset-generator/wrangler.local.jsonc \
+  --config deployments/cloudflare/asset-generator/wrangler.local.jsonc \
   --env-file .env \
   --port 8787
 ```
 
-The first config is the HTTP-facing Presentation Worker and the Queue consumer. The second is the standalone Asset Generator Worker that owns the Workflow class and Queue producer. Cloudflare's `script_name` Workflow binding connects the scheduling path without a public internal HTTP hop, while the local Queue carries completion after immutable generation output exists. Wrangler locally simulates D1, R2, Durable Objects, Workflows and Queues; no production Cloudflare resources are touched.
+The first config is the HTTP-facing Presentation Worker and the Queue consumer. The second is the standalone Asset Generator Cloudflare deployment that owns the Workflow class and Queue producer. Cloudflare's `script_name` Workflow binding connects the scheduling path without a public internal HTTP hop, while the local Queue carries completion after immutable generation output exists. Wrangler locally simulates D1, R2, Durable Objects, Workflows and Queues; no production Cloudflare resources are touched.
 
 ### 3. Seed and run the one-image proof
 
@@ -175,13 +177,16 @@ ASSET_GENERATION        cross-script Cloudflare Workflow binding
 asset completion Queue  consumer binding/configuration
 ```
 
-The corresponding Asset Generator deployment owns its provider secret, generation Workflow definition, completion Queue producer, credential-embedding configuration, and object capability. Production deployment credentials belong to Wrangler authentication / CI secrets, not Fibre application `.env`.
+The corresponding Asset Generator deployment owns its provider secret, generation Workflow definition, completion Queue producer, credential-embedding configuration, and object capability. Production deployment credentials belong to provider authentication / CI secrets, not Fibre application `.env`.
+
+Provider selection itself is recorded at Fibre level in `deployments/environments/`; see `docs/architecture/deployment-provider-selection.md`.
 
 ## Current limits
 
 - generic `/api/assets/:objectRef` resolution and audience authorization are still deferred; the current Thread-specific route remains the public serving seam;
 - the completion Queue currently publishes `media.ready` only for the credentialed successful receipt path; terminal credentialed `media.unavailable` semantics remain deferred;
 - D1 catalog demand projection has no compare-and-set, so independent concurrent production presentation writers require a transactional/single-writer demand boundary before race-free current-demand publication is claimed;
+- the `presentation-cloudflare` repository location predates ADR-0017 and is deferred for migration under `deployments/cloudflare/`;
 - no browser write/message API yet;
 - only one generated asset is required for the current vertical proof; bulk generation belongs to later media work;
 - local C2PA sidecar certificate is not a production trust credential;

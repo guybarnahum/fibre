@@ -15,6 +15,11 @@ Generated-asset provenance and prompt retention are governed by:
 - `docs/decisions/ADR-0014-generated-asset-provenance.md`
 - `docs/architecture/generated-asset-provenance-and-content-credentials.md`
 
+Deployment/provider selection is governed by:
+
+- `docs/decisions/ADR-0017-deployment-provider-selection.md`
+- `docs/architecture/deployment-provider-selection.md`
+
 ## Execution paths
 
 The direct asynchronous execution path is the validated generation foundation. It proves scheduling, provider replacement, immutable storage and receipts, but it is not sufficient for publication of generated public media once credentialed publication is enabled.
@@ -33,6 +38,27 @@ The unit tests use a synthetic fixture credential format to prove Fibre's orderi
 
 The accepted direction remains full immutable Fibre provenance plus a public-safe signed C2PA / Content Credential embedded in the final asset. The exact semantic brief and exact provider-facing request are retained in Fibre provenance; exact prompt text is embedded publicly only under explicit disclosure policy, while prompt digests are the default portable credential.
 
+## Portable runtime
+
+`createAssetGenerationRuntime({ infra, provider, credentialSigner })` is the infrastructure-independent execution seam.
+
+It receives its dependencies; it does not instantiate Cloudflare, AWS, GCP, Azure, storage buckets, queues, or workflow runtimes. Its current execution profile requires:
+
+```text
+InfraDriver.objects
+InfraDriver.queues
+```
+
+Scheduling remains a separate application seam through:
+
+```text
+InfraDriver.workflows
+```
+
+The media-generation provider and credential signer are deliberately outside `InfraDriver`: they are external behavior/provider integrations rather than generic infrastructure guarantees.
+
+Until explicit provider-attempt/staging identities exist, execution failures surface as provider-neutral `AssetGenerationAttemptFailed` with `retryable=false`. A deployment adapter must translate that into its runtime's terminal/no-retry mechanism rather than silently changing Fibre's immutable-generation semantics.
+
 ## Completion contract
 
 `AssetGenerationCompletion` is intentionally smaller than a receipt:
@@ -48,40 +74,51 @@ It does not contain a Thread ID, World ID, media ID, publication status, or mean
 
 A calling application must load the receipt, verify its immutable digest and provenance, bind it back to its own durable demand/job witness, and then author any semantic publication in the calling domain. Asset Generator never emits `media.ready`.
 
-## Cloudflare execution adapter
+## Deployment adapters
 
-`src/cloudflare/` is the deployment-specific adapter for running the generic Asset Generator on Cloudflare. It is deliberately below the provider-neutral `src/index.mjs` consumer seam.
+Cloud/runtime-specific executable composition no longer lives under `services/asset-generator/src/`.
 
-The Cloudflare Worker exports `AssetGenerationWorkflow`. The Workflow owns generation execution and a separate durable completion-notification step:
+The current Cloudflare adapter is:
+
+```text
+deployments/cloudflare/asset-generator/
+  worker.mjs
+  wrangler.local.jsonc
+```
+
+That deployment layer owns:
+
+```text
+Cloudflare WorkflowEntrypoint
+Cloudflare binding names
+cloudflare-v1 InfraDriver construction
+OpenAI provider selection for the current deployment
+C2PA signer endpoint configuration
+Cloudflare terminal-error translation
+```
+
+The portable service owns none of those choices.
+
+The local Cloudflare flow remains:
 
 ```text
 AssetGenerationJob
-    -> AssetGenerationWorkflow
+    -> Cloudflare deployment adapter
+    -> createAssetGenerationRuntime(...)
     -> OpenAI image provider
     -> GenerationRecord
     -> Content Credential embed/verify
     -> immutable final asset
     -> StoredAssetReceipt
     -> AssetGenerationCompletion
-    -> ASSET_COMPLETIONS Queue
+    -> InfraDriver.queues
+    -> Cloudflare Queue adapter
 ```
 
-The generation step remains non-retryable because the provider is nondeterministic while final Fibre object identity is immutable. The completion-notification step is separate and retryable: it only re-sends a deterministic pointer to already-immutable output, so at-least-once delivery cannot create different media under the same job identity.
+The generation execution remains non-retryable because the provider is nondeterministic while final Fibre object identity is immutable. The completion notification remains separately retryable because it re-sends only a deterministic pointer to already-immutable output.
 
-It does **not** import Thread Presentation, World Kernel presentation publishers, or any code that can emit `media.ready`. Successful Workflow completion means that a durable credentialed receipt exists and its completion pointer was durably handed to transport; it does not mean any calling domain has accepted or published that asset.
+The deployment adapter does **not** import Thread Presentation, World Kernel presentation publishers, or any code that can emit `media.ready`. Successful Workflow completion means that a durable credentialed receipt exists and its completion pointer was durably handed to transport; it does not mean any calling domain has accepted or published that asset.
 
-`wrangler.local.jsonc` owns the local generation bindings:
-
-```text
-ASSET_OBJECTS      R2 object capability
-ASSET_GENERATION   Cloudflare Workflow definition
-ASSET_COMPLETIONS  completion Queue producer
-OPENAI_API_KEY     provider secret
-C2PA_SIGNER_URL    local credential adapter configuration
-```
-
-The local R2 bucket name is intentionally shared with the presentation adapter so both services exercise the same `InfraDriver.objects` namespace. The semantic boundary remains the immutable Fibre object/receipt contract, not a storage URL or bucket key.
-
-For local multi-Worker development, run Presentation as the primary Worker and this Worker as the second config in the same Wrangler dev session. The Presentation Workflow binding uses Cloudflare's cross-script `script_name` binding rather than defining the Workflow class itself, while the completion Queue connects the generator producer to the Presentation consumer.
+The local deployment configuration is `deployments/cloudflare/asset-generator/wrangler.local.jsonc`. Its bindings are operational deployment detail, not Asset Generator semantics.
 
 The version identifiers carried by generation jobs, receipts, completion messages, providers, and persistent workflow keys are compatibility data. They do not justify version-labelled runtime filenames.

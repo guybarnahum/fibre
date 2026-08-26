@@ -1,6 +1,8 @@
 # Fibre Services
 
-`services/` is the primary runtime surface of Fibre. A directory here should represent a durable capability or a deployment adapter with a clear authority boundary, not the development milestone that happened to introduce it.
+`services/` is the primary provider-neutral runtime surface of Fibre. A directory here should represent a durable Fibre capability with a clear authority boundary, not the development milestone or cloud platform that happened to introduce it.
+
+Provider-specific executable composition belongs under `deployments/`. Provider implementations of infrastructure guarantees belong under `packages/infra/`.
 
 ## Runtime map
 
@@ -8,10 +10,24 @@
 - `birth-center/` — Genesis candidate construction, admission, and atomic birth into the authoritative runtime.
 - `thread-presentation/` — non-cognitive, human-facing projection of already-authorized Thread and World truth. This is the stable presentation integration boundary for external consumers.
 - `asset-generator/` — provider-neutral execution of admissible media-generation briefs plus immutable generation provenance. It never decides what is true or publishable about a Thread.
-- `presentation-cloudflare/` — Cloudflare-specific delivery/read-model adapter for Thread Presentation.
+- `presentation-cloudflare/` — existing Cloudflare-specific delivery/read-model adapter for Thread Presentation. It predates ADR-0017 and remains a current migration exception; new provider-specific executable composition should use `deployments/` instead.
 - `c2pa-local/` — local Content Credential/C2PA support used by generated-asset publication paths.
 
-A service may depend on another service's documented public entry point. External applications, including presentation webapps, must not reach into sibling service internals simply because the implementation currently lives there.
+A service may depend on another service's documented public entry point. External applications, including presentation webapps and deployment adapters, must not reach into sibling service internals simply because the implementation currently lives there.
+
+## Deployment composition
+
+The accepted dependency direction is:
+
+```text
+deployments -> services
+deployments -> packages/infra
+services    -> InfraDriver contracts
+```
+
+A service receives its infrastructure dependency rather than choosing Cloudflare, AWS, GCP, Azure or another platform itself. `packages/infra` implements reusable provider mappings and must not know which Fibre service is using them.
+
+The versioned deployment manifests under `deployments/environments/` select the runtime provider and InfraDriver provider for each deployed service. See `docs/decisions/ADR-0017-deployment-provider-selection.md` and `docs/architecture/deployment-provider-selection.md`.
 
 ## Presentation and generated visuals
 
