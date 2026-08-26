@@ -35,17 +35,14 @@ Provider-specific executable entrypoints/configuration live under:
 deployments/<platform>/<service>/
 ```
 
-For example, the current Asset Generator Cloudflare adapter contains the Workflow entrypoint and local Wrangler configuration. It composes:
+Current Cloudflare adapters are:
 
 ```text
-Cloudflare runtime
-        +
-cloudflare-v1 InfraDriver
-        +
-portable Asset Generator runtime
+deployments/cloudflare/asset-generator/
+deployments/cloudflare/thread-presentation/
 ```
 
-It may translate provider-neutral operational outcomes into provider APIs, but it may not move Fibre semantic authority into the deployment layer.
+They compose the provider runtime, `cloudflare-v1` infrastructure capabilities, and the corresponding provider-neutral Fibre service. They may translate provider-neutral operational outcomes into provider APIs, but they may not move Fibre semantic authority into the deployment layer.
 
 ## Generated provider configuration
 

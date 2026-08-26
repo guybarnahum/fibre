@@ -19,17 +19,18 @@ Top-level `infra/` is intentionally retained as the home for near-term deploymen
 
 ### Thread Presentation
 
-Thread Presentation is active work. Its capability home is `services/thread-presentation/`.
+Thread Presentation is active work. Its provider-neutral capability home is `services/thread-presentation/`.
 
-Current concrete machinery remains in the working services that already own it:
+Current concrete machinery includes:
 
-- `services/presentation-cloudflare/` — current Cloudflare delivery and presentation read-model implementation;
-- `services/asset-generator/` — generated presentation assets;
+- `deployments/cloudflare/thread-presentation/` — current Cloudflare delivery and presentation read-model deployment;
+- `services/asset-generator/` — provider-neutral generated presentation assets;
+- `deployments/cloudflare/asset-generator/` — current Cloudflare Asset Generator deployment;
 - `services/c2pa-local/` — local provenance/C2PA support;
 - `fixtures/thread-presentation/` — reusable presentation fixtures;
 - `docs/architecture/world-presentation.md` — accepted presentation authority and non-cognitive boundary.
 
-Provider-neutral Thread-presentation orchestration and shared interfaces may move into the capability home as that machinery becomes real. Do not create a second presentation authority merely to populate the directory.
+Provider-neutral Thread-presentation orchestration and shared interfaces belong in the capability home as that machinery becomes real. Provider-specific executable composition belongs under `deployments/`. Do not create a second presentation authority merely to populate either directory.
 
 ## Product surfaces retained as design intent
 

@@ -26,7 +26,7 @@ test("retired proof and experiment tests are explicit reproducibility evidence",
     "services/asset-generator/test/asset-generation-service.test.mjs",
     "services/asset-generator/test/credentialed-asset-generation.test.mjs",
     "services/asset-generator/test/provider-adapters.test.mjs",
-    "services/presentation-cloudflare/test/presentation-read-api.test.mjs",
+    "deployments/cloudflare/thread-presentation/test/presentation-read-api.test.mjs",
     "services/world-kernel/test/thread-presentation-asset-publisher.test.mjs",
     "tools/genesis/genesis-memory-meaning-characterization.test.mjs",
     "tools/genesis/genesis-pass-a-dev.test.mjs",
@@ -63,7 +63,7 @@ test("new tests default active and the runner exposes only active, replay, or al
     "active",
   );
   assert.equal(
-    testLifecycleForPath("services/presentation-cloudflare/test/presentation-read-api.test.mjs"),
+    testLifecycleForPath("deployments/cloudflare/thread-presentation/test/presentation-read-api.test.mjs"),
     "active",
   );
 

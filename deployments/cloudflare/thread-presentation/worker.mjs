@@ -1,12 +1,12 @@
-import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
-import { FibrePresentationChannelDurableObject } from "../../../packages/infra/src/cloudflare/presentation-channel-do.mjs";
-import { createAssetGenerationService } from "../../asset-generator/src/index.mjs";
-import { createHttpContentCredentialSigner } from "../../asset-generator/src/http-content-credential-signer.mjs";
-import { createPresentationAssetCompletionService } from "../../world-kernel/src/presentation-asset-completion-service.mjs";
-import { createPresentationAssetDemandService } from "../../world-kernel/src/presentation-asset-demand-service.mjs";
-import { planThreadPresentationAssetSlots } from "../../world-kernel/src/thread-presentation-asset-planner.mjs";
-import { createThreadPresentationAssetPublisher } from "../../world-kernel/src/thread-presentation-asset-publisher.mjs";
-import { createThreadPresentationServer } from "../../world-kernel/src/thread-presentation-server.mjs";
+import { createCloudflareInfraDriver } from "#packages/infra/src/cloudflare-v1.mjs";
+import { FibrePresentationChannelDurableObject } from "#packages/infra/src/cloudflare/presentation-channel-do.mjs";
+import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
+import { createHttpContentCredentialSigner } from "#services/asset-generator/src/http-content-credential-signer.mjs";
+import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
+import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
+import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
+import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
+import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { createPresentationReadApi, channelIdForThread } from "./presentation-read-api.mjs";
 
 export { FibrePresentationChannelDurableObject };

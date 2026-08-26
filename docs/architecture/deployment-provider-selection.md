@@ -39,8 +39,8 @@ The portable service never imports a cloud runtime SDK or chooses an InfraDriver
 
 ```text
 services/
-  asset-generator/
-    src/                         provider-neutral application/runtime
+  asset-generator/               provider-neutral application/runtime
+  thread-presentation/           provider-neutral presentation capability
 
 packages/infra/
   src/infra-driver.mjs           provider-neutral capability contract
@@ -52,8 +52,12 @@ deployments/
     local.json                   Fibre provider-selection manifest
   cloudflare/
     asset-generator/
-      worker.mjs                 Cloudflare executable composition
-      wrangler.local.jsonc       Cloudflare-local binding/resource output
+      worker.mjs
+      wrangler.local.jsonc
+    thread-presentation/
+      worker.mjs
+      presentation-read-api.mjs
+      wrangler.local.jsonc
 ```
 
 A provider implementation in `packages/infra` must not import a Fibre service. A deployment adapter may import both because composition is its job.
@@ -70,10 +74,15 @@ The first manifest shape is deliberately small:
     "cloudflare-local": {
       "platform": "cloudflare",
       "infraDriver": "cloudflare-v1",
-      "capabilities": ["objects", "queues", "workflows"]
+      "capabilities": ["streams", "objects", "catalog", "realtime", "queues", "workflows"]
     }
   },
   "services": {
+    "thread-presentation": {
+      "runtime": "cloudflare-local",
+      "infra": "cloudflare-local",
+      "requires": ["streams", "objects", "catalog", "realtime", "queues", "workflows"]
+    },
     "asset-generator": {
       "runtime": "cloudflare-local",
       "infra": "cloudflare-local",
@@ -85,34 +94,22 @@ The first manifest shape is deliberately small:
 
 `runtime` and `infra` are separate references on purpose. Today they commonly identify the same provider alias. A future deployment can select different aliases without changing Asset Generator, Presentation or other service application code.
 
-The manifest validator fails closed when:
-
-- a runtime/infra alias is unknown;
-- a service requests an unsupported InfraDriver capability;
-- a provider advertises an unknown InfraDriver capability;
-- duplicate capability declarations appear;
-- the manifest version or exact schema is unsupported.
+The manifest validator fails closed when a provider alias is unknown, a requested capability is unsupported, a provider advertises an unknown capability, a capability is duplicated, or the manifest contract is unsupported.
 
 ## What the manifest does not own
 
-The manifest does not contain:
-
-- cloud access keys;
-- OpenAI/model credentials;
-- C2PA signing keys;
-- Thread IDs, World IDs or semantic authority;
-- provider-native resource identities used as Fibre object/stream identities;
-- Fibre authorization or publication decisions.
-
-Those boundaries remain with secrets/configuration, provider adapters and owning Fibre domains respectively.
+The manifest does not contain cloud access keys, model credentials, C2PA signing keys, Thread/World semantics, provider-native resource identities, or Fibre publication decisions. Those remain with provider secret/configuration mechanisms and the owning Fibre domains.
 
 ## Current implementation phase
 
-`deployments/environments/local.json` records and validates the current local provider selection. Cloudflare-specific Asset Generator execution composition now lives under `deployments/cloudflare/asset-generator/`.
+`deployments/environments/local.json` records and validates the current local provider selection. Both current Cloudflare executable adapters now live under `deployments/cloudflare/`:
 
-Wrangler JSONC is still hand-authored provider output in this phase. It must agree with the deployment manifest and is checked by boundary tests, but a general deployment compiler is **deferred**. Later tooling may generate/verify Wrangler, AWS IaC, GCP or Azure configuration from the same Fibre-level provider selection.
+```text
+asset-generator/
+thread-presentation/
+```
 
-The existing `services/presentation-cloudflare/` adapter is a pre-ADR repository shape. Moving it under `deployments/cloudflare/` is **deferred** to a dedicated refactor so the accepted provider-selection boundary is not mixed with Presentation serving changes.
+Wrangler JSONC is still hand-authored provider output in this phase. It must agree with the deployment manifest and is checked by boundary tests, but a general deployment compiler is **deferred**. Later tooling may generate or verify Wrangler, AWS IaC, GCP or Azure configuration from the same Fibre-level provider selection.
 
 ## Asset Generator runtime
 
@@ -122,28 +119,15 @@ Portable construction:
 createAssetGenerationRuntime({ infra, provider, credentialSigner })
 ```
 
-Required execution infrastructure:
+Execution/persistence uses `objects` and `queues`; scheduling uses `workflows`. The media provider and credential signer remain separate injected dependencies.
 
-```text
-objects     immutable GenerationRecord / asset / receipt storage
-queues      durable completion notification
-```
+Until generation has explicit attempt/staging identities, executing one semantic generation identity is intentionally non-retryable after failure. A deployment adapter must map that provider-neutral Fibre rule to its own runtime semantics. Completion delivery is different: it is a deterministic pointer to already-immutable output and can be delivered at least once.
 
-Scheduling is a separate application seam using:
+## Thread Presentation runtime
 
-```text
-workflows   deterministic semantic job dispatch/status
-```
+Thread Presentation remains provider-neutral under `services/thread-presentation/` and the World Kernel presentation authorities it currently delegates to. The Cloudflare deployment composes that application with `cloudflare-v1`, HTTP/WebSocket transport, the Asset Generator Workflow binding, and completion Queue consumption.
 
-The media provider and credential signer are injected dependencies outside InfraDriver because they are external behavior/provider integrations rather than generic infrastructure guarantees.
-
-## Provider-neutral retry rule
-
-Until generation has explicit attempt/staging identities, executing a semantic generation job is intentionally non-retryable after failure: a nondeterministic provider retry could produce different bytes for the same final immutable object identity.
-
-The generic runtime reports `AssetGenerationAttemptFailed` with `retryable=false`. A Cloudflare deployment maps it to `NonRetryableError`; another platform must map the same Fibre rule to its own execution semantics. Cloud choice may not silently weaken this invariant.
-
-Completion delivery is different: it is a deterministic pointer to already-immutable output and can be delivered at least once. Calling domains remain responsible for idempotent verification/admission.
+Moving the Cloudflare adapter under `deployments/` changes repository ownership only; it does not change presentation authority, public-asset admission, or Thread semantics.
 
 ## Future extension paths
 
@@ -154,6 +138,6 @@ Without changing service contracts, Fibre can later add:
 - manifest-driven config/IaC generation;
 - composite InfraDrivers where capabilities come from more than one provider;
 - environment overlays for staging/production;
-- deployment conformance checks that prove an adapter's concrete resources satisfy each advertised InfraDriver guarantee.
+- deployment conformance checks that prove concrete resources satisfy each advertised InfraDriver guarantee.
 
 Do not add empty provider/service directories merely to signal those intentions. Add them when an implementation exists.

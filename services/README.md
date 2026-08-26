@@ -10,7 +10,6 @@ Provider-specific executable composition belongs under `deployments/`. Provider 
 - `birth-center/` — Genesis candidate construction, admission, and atomic birth into the authoritative runtime.
 - `thread-presentation/` — non-cognitive, human-facing projection of already-authorized Thread and World truth. This is the stable presentation integration boundary for external consumers.
 - `asset-generator/` — provider-neutral execution of admissible media-generation briefs plus immutable generation provenance. It never decides what is true or publishable about a Thread.
-- `presentation-cloudflare/` — existing Cloudflare-specific delivery/read-model adapter for Thread Presentation. It predates ADR-0017 and remains a current migration exception; new provider-specific executable composition should use `deployments/` instead.
 - `c2pa-local/` — local Content Credential/C2PA support used by generated-asset publication paths.
 
 A service may depend on another service's documented public entry point. External applications, including presentation webapps and deployment adapters, must not reach into sibling service internals simply because the implementation currently lives there.
