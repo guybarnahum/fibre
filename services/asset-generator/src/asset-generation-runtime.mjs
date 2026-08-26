@@ -47,6 +47,7 @@ export function createAssetGenerationRuntime({
           providerOutputResumed: result.providerOutputResumed === true,
           finalAssetDigest: result.finalAssetDigest,
           finalAssetReused: result.finalAssetReused === true,
+          reuse: result.reuse ?? null,
         });
       } catch (error) {
         if (error instanceof AssetGenerationError) throw error;

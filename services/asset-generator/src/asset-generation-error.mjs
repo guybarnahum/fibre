@@ -2,6 +2,7 @@ import { InfraImmutableObjectConflictError } from "../../../packages/infra/src/i
 
 export const ASSET_GENERATION_ERROR_PHASES = Object.freeze([
   "validation",
+  "reuse_lookup",
   "reference_loading",
   "provider_generation",
   "provider_output_staging",
@@ -58,6 +59,7 @@ const BASE_RETRY_DELAY_MS = Object.freeze({
 });
 
 const SAFE_WITHOUT_STAGED_PROVIDER_OUTPUT = new Set([
+  "reuse_lookup",
   "reference_loading",
   "provider_generation",
   "completion_publication",
@@ -138,7 +140,7 @@ function categoryForCause(error, phase) {
   if (error instanceof InfraImmutableObjectConflictError) return "immutable_conflict";
   if (error?.name === "AbortError" || error?.name === "TimeoutError") return "provider_timeout";
   if (error instanceof TypeError) return "invalid_request";
-  if (["reference_loading", "provider_output_staging", "storage_finalization", "completion_publication"].includes(phase)) {
+  if (["reuse_lookup", "reference_loading", "provider_output_staging", "storage_finalization", "completion_publication"].includes(phase)) {
     return "storage_transient";
   }
   return "unknown";
