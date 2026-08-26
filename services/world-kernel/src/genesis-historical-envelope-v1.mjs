@@ -151,31 +151,100 @@ function structureCandidate(entry, { initialRoles, affordedRoles }) {
   const roles = structure.participatingRoles.filter((role) => affordedRoles.has(role));
   if (mode === "known_required" && !roles.some((role) => initialRoles.has(role))) return null;
   if (mode === "present_required" && structure.participatingRoles.length > 0 && roles.length === 0) return null;
-  const externalOnly = mode === "present_required" && roles.length > 0 && roles.every((role) => !initialRoles.has(role));
-  return { entry, mode, roles, externalOnly };
+  const externalRoles = mode === "present_required"
+    ? roles.filter((role) => !initialRoles.has(role))
+    : [];
+  const externalOnly = mode === "present_required" && roles.length > 0 && externalRoles.length === roles.length;
+  return { entry, mode, roles, externalRoles, externalOnly };
+}
+
+function placeCompatibleExternalRoles(candidate, placeRoleSet) {
+  return candidate.externalRoles.filter((role) => placeRoleSet.has(role));
 }
 function chooseStructure(windowPlan, {
-  seed, structureCounts, requireExternal, initialRoles, affordedRoles,
+  seed,
+  structureCounts,
+  requireExternal,
+  initialRoles,
+  affordedRoles,
+  placeAffordances,
+  placeCounts,
 }) {
   const normalized = windowPlan.offeredEntries
     .map((entry) => structureCandidate(entry, { initialRoles, affordedRoles }))
     .filter(Boolean);
-  let candidates = requireExternal ? normalized.filter((item) => item.externalOnly) : normalized;
-  if (candidates.length === 0 && requireExternal) fail(`window ${windowPlan.window.windowId} cannot satisfy external-counterpart coverage`);
-  candidates = candidates.filter(({ entry }) => count(structureCounts, entry.structure.structureId) < GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerStructure);
-  if (candidates.length === 0) fail(`window ${windowPlan.window.windowId} exhausted structure repetition cap`);
-  const unseen = candidates.filter(({ entry }) => count(structureCounts, entry.structure.structureId) === 0);
-  const selected = ranked(`${seed}:structure`, unseen.length > 0 ? unseen : candidates, (item) => item.entry.structure.structureId)[0];
+
+  const availablePlaceRoles = new Set(
+    placeAffordances
+      .filter((item) =>
+        count(placeCounts, item.placeRef)
+          < GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerPlace)
+      .flatMap((item) => item.ordinaryCounterpartRoles),
+  );
+
+  let candidates = normalized.filter((item) => {
+    if (requireExternal) {
+      return placeCompatibleExternalRoles(item, availablePlaceRoles).length > 0;
+    }
+
+    if (item.mode === "known_required") {
+      return item.roles.some((role) =>
+        initialRoles.has(role) && availablePlaceRoles.has(role));
+    }
+
+    if (item.mode === "present_required" && item.roles.length > 0) {
+      return item.roles.some((role) => availablePlaceRoles.has(role));
+    }
+
+    return true;
+  });
+
+  if (candidates.length === 0 && requireExternal) {
+    fail(`window ${windowPlan.window.windowId} cannot satisfy external-counterpart coverage`);
+  }
+
+  candidates = candidates.filter(({ entry }) =>
+    count(structureCounts, entry.structure.structureId)
+      < GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerStructure);
+
+  if (candidates.length === 0) {
+    fail(`window ${windowPlan.window.windowId} exhausted structure repetition cap`);
+  }
+
+  const unseen = candidates.filter(({ entry }) =>
+    count(structureCounts, entry.structure.structureId) === 0);
+
+  const selected = ranked(
+    `${seed}:structure`,
+    unseen.length > 0 ? unseen : candidates,
+    (item) => item.entry.structure.structureId,
+  )[0];
+
   increment(structureCounts, selected.entry.structure.structureId);
-  const counterpartRole = selected.mode === "present_required" || selected.mode === "known_required"
-    ? ranked(`${seed}:counterpart-role`, selected.roles)[0] ?? null
+
+  let counterpartRoles = [];
+
+  if (requireExternal) {
+    counterpartRoles =
+      placeCompatibleExternalRoles(selected, availablePlaceRoles);
+  } else if (selected.mode === "known_required") {
+    counterpartRoles = selected.roles.filter((role) =>
+      initialRoles.has(role) && availablePlaceRoles.has(role));
+  } else if (selected.mode === "present_required") {
+    counterpartRoles =
+      selected.roles.filter((role) => availablePlaceRoles.has(role));
+  }
+
+  const counterpartRole = counterpartRoles.length > 0
+    ? ranked(`${seed}:counterpart-role`, counterpartRoles)[0]
     : null;
+
   return {
     selectionKind: "offered_structure",
     structureRef: selected.entry.structure.structureId,
     counterpartMode: selected.mode,
     counterpartRole,
-    externalCounterpartRequired: selected.externalOnly,
+    externalCounterpartRequired: requireExternal,
   };
 }
 function bindCounterpart({ subjectId, counterpartRole, counterpartMode, initialRoster, generatedPersonByRole, seed }) {
@@ -247,7 +316,9 @@ export function buildHistoricalEnvelopePlan({
   const placeRoleSet = new Set(normalizedPlaceAffordances.flatMap((item) => item.ordinaryCounterpartRoles));
   const externalCapable = plans.filter(({ offeredEntries }) => offeredEntries
     .map((entry) => structureCandidate(entry, { initialRoles, affordedRoles }))
-    .some((candidate) => candidate?.externalOnly === true && candidate.roles.some((role) => placeRoleSet.has(role))));
+    .some((candidate) =>
+      candidate !== null
+      && placeCompatibleExternalRoles(candidate, placeRoleSet).length > 0));
   if (externalCapable.length < GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalCounterpartOpportunities) {
     fail(`only ${externalCapable.length} windows can force a place-compatible external counterpart`);
   }
@@ -271,7 +342,15 @@ export function buildHistoricalEnvelopePlan({
     const seed = `${seedDomain}:thread:${subject.provisionalThreadId}:window:${plan.window.windowId}`;
     const opportunity = worldEmergentOrdinals.has(plan.window.ordinal)
       ? { selectionKind: "world_emergent", structureRef: null, counterpartMode: null, counterpartRole: null, externalCounterpartRequired: false }
-      : chooseStructure(plan, { seed, structureCounts, requireExternal: externalOrdinals.has(plan.window.ordinal), initialRoles, affordedRoles });
+      : chooseStructure(plan, {
+        seed,
+        structureCounts,
+        requireExternal: externalOrdinals.has(plan.window.ordinal),
+        initialRoles,
+        affordedRoles,
+        placeAffordances: normalizedPlaceAffordances,
+        placeCounts,
+      });
     const counterpart = bindCounterpart({
       subjectId: subject.provisionalThreadId,
       counterpartRole: opportunity.counterpartRole,
