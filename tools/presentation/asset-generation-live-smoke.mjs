@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,12 +13,16 @@ import {
   verifyCredentialedAssetForPublication,
 } from "../../services/asset-generator/src/index.mjs";
 import { planThreadPresentationAssetGeneration } from "../../services/world-kernel/src/thread-presentation-asset-planner.mjs";
+import {
+  DEFAULT_LIVE_FIXTURE,
+  DEFAULT_LIVE_MEDIA_ID,
+  loadThreadPresentationLiveTarget,
+  parseLiveTargetArgs,
+} from "./thread-presentation-live-target.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const REPO_ROOT = resolve(dirname(THIS_FILE), "../..");
-const FIXTURE_DIR = join(REPO_ROOT, "fixtures/thread-presentation/can-tho");
 const OUTPUT_ROOT = join(REPO_ROOT, "artifacts/generated/asset-live");
-const TARGET_MEDIA_ID = "media_memory_tomatoes";
 const encoder = new TextEncoder();
 
 function canonicalize(value) {
@@ -38,32 +42,25 @@ async function sha256(value) {
   return `sha256:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
-async function loadBundle() {
-  const [presentation, media, provenance] = await Promise.all([
-    readFile(join(FIXTURE_DIR, "presentation.json"), "utf8").then(JSON.parse),
-    readFile(join(FIXTURE_DIR, "media.json"), "utf8").then(JSON.parse),
-    readFile(join(FIXTURE_DIR, "provenance.json"), "utf8").then(JSON.parse),
-  ]);
-  return { presentation, media, provenance };
-}
-
-export async function buildLiveAssetSmokeJob({ requestedAt = "2026-08-26T06:00:00Z" } = {}) {
-  const bundle = await loadBundle();
-  const snapshotBytes = encoder.encode(canonicalJson(bundle));
+export async function buildLiveAssetSmokeJob({
+  requestedAt = "2026-08-26T06:00:00Z",
+  fixture = DEFAULT_LIVE_FIXTURE,
+  mediaId = DEFAULT_LIVE_MEDIA_ID,
+} = {}) {
+  const target = await loadThreadPresentationLiveTarget({ fixture, mediaId });
+  const snapshotBytes = encoder.encode(canonicalJson(target.bundle));
   const snapshotDigest = await sha256(snapshotBytes);
   const snapshotObjectRef = `asset_live_snapshot_${snapshotDigest.slice("sha256:".length, "sha256:".length + 20)}`;
   const plan = planThreadPresentationAssetGeneration({
-    bundle,
+    bundle: target.bundle,
     snapshotObjectRef,
     snapshotDigest,
     requestedAt,
   });
-  const job = plan.jobs.find((candidate) => candidate.context?.mediaId === TARGET_MEDIA_ID);
-  assert.ok(job, `fixture did not produce ${TARGET_MEDIA_ID}`);
-  assert.equal(job.role, "memory_reconstruction");
-  const memory = bundle.presentation.memories.find((candidate) => candidate.mediaRefs?.includes(TARGET_MEDIA_ID));
-  assert.ok(memory, `fixture memory for ${TARGET_MEDIA_ID} is missing`);
-  return { bundle, memory, job, snapshotBytes, snapshotDigest, snapshotObjectRef };
+  const job = plan.jobs.find((candidate) => candidate.context?.mediaId === target.mediaAsset.mediaId);
+  assert.ok(job, `fixture ${target.fixtureName} did not produce generation job for ${target.mediaAsset.mediaId}`);
+  assert.equal(job.assetKind, "image", "live asset smoke currently supports image targets only");
+  return { ...target, job, snapshotBytes, snapshotDigest, snapshotObjectRef };
 }
 
 function createProcessLocalCredentialSigner({ now = () => new Date().toISOString() } = {}) {
@@ -81,13 +78,7 @@ function createProcessLocalCredentialSigner({ now = () => new Date().toISOString
       const assetDigest = await sha256(copiedBytes);
       const manifestDigest = await sha256(canonicalJson(normalizedAssertion));
       witnessed.set(assetDigest, { assertion: normalizedAssertion, manifestDigest });
-      return {
-        bytes: copiedBytes,
-        format,
-        signerId,
-        manifestDigest,
-        embeddedAt: now(),
-      };
+      return { bytes: copiedBytes, format, signerId, manifestDigest, embeddedAt: now() };
     },
     async verify({ bytes }) {
       const copiedBytes = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
@@ -139,6 +130,10 @@ function runDirectoryName(timestamp) {
   return timestamp.replace(/[:.]/g, "-");
 }
 
+function outputStem(mediaId) {
+  return mediaId.replace(/[^A-Za-z0-9._-]/g, "_");
+}
+
 function elapsedSeconds(startedAtMs) {
   return ((Date.now() - startedAtMs) / 1000).toFixed(1);
 }
@@ -174,7 +169,48 @@ function createProgressFetch({ fetchImpl = fetch, heartbeatMs = 10_000, output =
   };
 }
 
-export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } = {}) {
+function sourceEvidence(prepared) {
+  const base = {
+    fixture: `fixtures/thread-presentation/${prepared.fixtureName}`,
+    threadId: prepared.threadId,
+    presentationId: prepared.presentationId,
+    lifecycleStatus: prepared.lifecycleStatus,
+    mediaId: prepared.mediaAsset.mediaId,
+    mediaRole: prepared.mediaAsset.role,
+    label: prepared.label,
+  };
+  if (prepared.memory) {
+    return {
+      ...base,
+      sourceKind: "memory",
+      sourceRef: prepared.memory.memoryRef,
+      rememberedContent: prepared.memory.rememberedContent,
+      uncertainty: prepared.memory.uncertainty,
+      sourceReferences: prepared.memory.sourceReferences,
+    };
+  }
+  if (prepared.place) {
+    return {
+      ...base,
+      sourceKind: "place",
+      sourceRef: prepared.place.placeRef,
+      summary: prepared.place.summary,
+      region: prepared.place.region,
+      sourceReferences: prepared.place.sourceReferences,
+    };
+  }
+  return {
+    ...base,
+    sourceKind: "presentation_media",
+    sourceReferences: prepared.mediaAsset.sourceReferences,
+  };
+}
+
+export async function runLiveAssetSmoke({
+  apiKey = process.env.OPENAI_API_KEY,
+  fixture = DEFAULT_LIVE_FIXTURE,
+  mediaId = DEFAULT_LIVE_MEDIA_ID,
+} = {}) {
   if (typeof apiKey !== "string" || apiKey.trim() === "") {
     throw new Error("OPENAI_API_KEY is required for npm run test:asset-live");
   }
@@ -182,9 +218,9 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
   const runStartedMs = Date.now();
   const runStartedAt = new Date(runStartedMs).toISOString();
   console.log("FIBRE LIVE ASSET SMOKE: START");
-  console.log("[1/5] Loading Thread Presentation and planning the memory reconstruction...");
-  const prepared = await buildLiveAssetSmokeJob({ requestedAt: runStartedAt });
-  console.log(`[2/5] Grounded memory: \"${prepared.memory.title}\" (${prepared.memory.uncertainty.length} uncertainty constraints)`);
+  console.log("[1/5] Loading Thread Presentation and planning the selected asset...");
+  const prepared = await buildLiveAssetSmokeJob({ requestedAt: runStartedAt, fixture, mediaId });
+  console.log(`[2/5] Grounded target: \"${prepared.label}\" (${prepared.job.role})`);
 
   const infra = createMemoryInfraDriver();
   await infra.objects.putImmutable(
@@ -193,8 +229,8 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
     prepared.snapshotDigest,
     {
       kind: "live_asset_smoke_thread_presentation_fixture",
-      threadId: prepared.bundle.presentation.manifest.threadId,
-      presentationId: prepared.bundle.presentation.manifest.presentationId,
+      threadId: prepared.threadId,
+      presentationId: prepared.presentationId,
     },
   );
 
@@ -212,16 +248,9 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
   });
 
   console.log("[4/5] Image returned. Verifying immutable storage, receipt, digest and provenance...");
-  const proof = await verifyCredentialedAssetForPublication({
-    infra,
-    credentialSigner,
-    receipt: generated.receipt,
-  });
-
+  const proof = await verifyCredentialedAssetForPublication({ infra, credentialSigner, receipt: generated.receipt });
   assert.equal(proof.verification.valid, true);
   assert.deepEqual(generated.generationRecord.semanticBrief, prepared.job.brief);
-  assert.match(generated.generationRecord.providerRequestWitness.body.prompt, /20,000 đồng/);
-  assert.match(generated.generationRecord.providerRequestWitness.body.prompt, /Exact amount of change received/);
   assert.equal(generated.receipt.mediaType, "image/png");
 
   const stored = await infra.objects.get(generated.receipt.objectRef);
@@ -233,33 +262,23 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
   console.log("[5/5] Verification passed. Writing PNG and evidence files...");
   const outputDirectory = join(OUTPUT_ROOT, runDirectoryName(runStartedAt));
   await mkdir(outputDirectory, { recursive: true });
-  const imagePath = join(outputDirectory, "thread-memory-tomatoes.png");
+  const imagePath = join(outputDirectory, `${outputStem(prepared.mediaAsset.mediaId)}.png`);
   const evidencePath = join(outputDirectory, "evidence.json");
   await writeFile(imagePath, stored.bytes);
 
   const evidence = {
-    evidenceVersion: "fibre-live-asset-smoke-v0.1",
+    evidenceVersion: "fibre-live-asset-smoke-v0.2",
     runStartedAt,
-    purpose: "Prove that an actual Fibre Thread memory projection can generate real image bytes through the provider-neutral Asset Generator path.",
+    purpose: "Prove that a selected Fibre Thread Presentation media target can generate real image bytes through the provider-neutral Asset Generator path.",
     credentialNote: "The image provider is live OpenAI. Credential embed/verify uses a process-local test signer so this smoke test does not claim production C2PA signing.",
-    source: {
-      fixture: "fixtures/thread-presentation/can-tho/presentation.json",
-      threadId: prepared.bundle.presentation.manifest.threadId,
-      presentationId: prepared.bundle.presentation.manifest.presentationId,
-      lifecycleStatus: prepared.bundle.presentation.manifest.lifecycleStatus,
-      memoryRef: prepared.memory.memoryRef,
-      mediaId: TARGET_MEDIA_ID,
-      title: prepared.memory.title,
-      rememberedContent: prepared.memory.rememberedContent,
-      uncertainty: prepared.memory.uncertainty,
-      sourceReferences: prepared.memory.sourceReferences,
-    },
+    source: sourceEvidence(prepared),
     job: {
       jobId: prepared.job.jobId,
       role: prepared.job.role,
       assetKind: prepared.job.assetKind,
       semanticBrief: prepared.job.brief,
       inputReferences: prepared.job.inputReferences,
+      referenceObjectRefs: prepared.job.referenceObjectRefs,
       snapshotObjectRef: prepared.snapshotObjectRef,
       snapshotDigest: prepared.snapshotDigest,
     },
@@ -289,7 +308,7 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
 
   console.log(`FIBRE LIVE ASSET SMOKE: PASS (${elapsedSeconds(runStartedMs)}s total)`);
   console.log(`Thread: ${evidence.source.threadId}`);
-  console.log(`Memory: ${evidence.source.title}`);
+  console.log(`Target: ${evidence.source.label} (${evidence.source.mediaId})`);
   console.log(`Provider: ${evidence.generation.provider}/${evidence.generation.model}`);
   console.log(`Image: ${evidence.output.image}`);
   console.log(`Bytes: ${evidence.output.bytes}`);
@@ -299,17 +318,19 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
 }
 
 async function main() {
-  if (process.argv.includes("--dry-run")) {
-    const prepared = await buildLiveAssetSmokeJob();
+  const args = parseLiveTargetArgs(process.argv.slice(2));
+  if (args.dryRun) {
+    const prepared = await buildLiveAssetSmokeJob({ fixture: args.fixture, mediaId: args.mediaId });
     const prompt = compileOpenAIImagePrompt({ brief: prepared.job.brief, role: prepared.job.role });
     console.log("FIBRE LIVE ASSET SMOKE: DRY RUN");
-    console.log(`Thread: ${prepared.bundle.presentation.manifest.threadId}`);
-    console.log(`Memory: ${prepared.memory.title}`);
+    console.log(`Fixture: ${prepared.fixtureName}`);
+    console.log(`Thread: ${prepared.threadId}`);
+    console.log(`Target: ${prepared.label} (${prepared.mediaAsset.mediaId})`);
     console.log("");
     console.log(prompt);
     return;
   }
-  await runLiveAssetSmoke();
+  await runLiveAssetSmoke({ fixture: args.fixture, mediaId: args.mediaId });
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(THIS_FILE)) {

@@ -33,10 +33,25 @@ function createCredentialSigner(env) {
   });
 }
 
-async function p3MarketSlot(presentationServer) {
-  const channelId = channelIdForThread(P3_CAN_THO_THREAD_ID);
+function nonEmpty(name, value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError(`${name} must be a non-empty string`);
+  }
+  return value;
+}
+
+async function requestJson(request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
+async function p3Slot(presentationServer, { threadId, mediaId }) {
+  const channelId = channelIdForThread(threadId);
   const current = await presentationServer.getSnapshot(channelId);
-  if (current === null) throw new Error("seed the P3 Cần Thơ fixture before generating media");
+  if (current === null) throw new Error(`seed fixture Thread ${threadId} before generating media`);
   const plan = planThreadPresentationAssetSlots({
     bundle: {
       presentation: current.snapshot.presentation,
@@ -46,79 +61,130 @@ async function p3MarketSlot(presentationServer) {
     snapshotObjectRef: current.pointer.objectRef,
     snapshotDigest: current.pointer.snapshotDigest,
   });
-  const slot = plan.slots.find((candidate) => candidate.mediaId === P3_MARKET_MEDIA_ID);
+  const slot = plan.slots.find((candidate) => candidate.mediaId === mediaId);
   if (!slot || slot.status !== "missing") {
-    throw new Error("P3 market media slot is not eligible for generation");
+    throw new Error(`fixture media slot ${mediaId} is not eligible for generation`);
   }
   return slot;
+}
+
+async function publishP3Fixture({
+  bundle,
+  presentationServer,
+  objectRef = null,
+  snapshotVersion = "p3-fixture-v1",
+}) {
+  const presentation = bundle?.presentation;
+  const threadId = nonEmpty("fixture threadId", presentation?.manifest?.threadId);
+  if (presentation?.manifest?.fixture !== true) {
+    throw new TypeError("P3 seed accepts fixture presentations only");
+  }
+
+  const channelId = channelIdForThread(threadId);
+  const result = await presentationServer.publishSnapshot({
+    channelId,
+    objectRef: objectRef ?? `p3_fixture_snapshot_${threadId}_v1`,
+    snapshotVersion,
+    bundle,
+    catalog: {
+      publiclyVisible: true,
+      p3Fixture: true,
+    },
+  });
+  return {
+    ok: true,
+    fixture: true,
+    threadId,
+    channelId,
+    lifecycleStatus: presentation.manifest.lifecycleStatus,
+    snapshotVersion: result.pointer.snapshotVersion,
+    snapshotDigest: result.pointer.snapshotDigest,
+    cursor: result.pointer.sequence,
+  };
+}
+
+async function scheduleP3Media({ infra, presentationServer, threadId, mediaId }) {
+  const slot = await p3Slot(presentationServer, { threadId, mediaId });
+  const requestedAt = new Date().toISOString();
+  const demandService = createPresentationAssetDemandService({ infra });
+  const reconciled = await demandService.reconcile({
+    scope: { entityKind: "thread", entityRef: threadId },
+    slots: [slot],
+    requestedAt,
+    providerProfile: P3_PROVIDER_PROFILE,
+  });
+  const current = reconciled.projection.demands.find((entry) => (
+    entry.demand.current
+    && entry.demand.job.context?.kind === "thread_presentation_media"
+    && entry.demand.job.context.mediaId === mediaId
+  ));
+  if (!current) throw new Error(`fixture media demand ${mediaId} did not persist as current`);
+  const service = createAssetGenerationService({ infra });
+  const workflow = await service.status(current.demand.job.jobId);
+  return {
+    ok: true,
+    fixture: true,
+    threadId,
+    mediaId,
+    demandId: current.demand.demandId,
+    jobId: current.demand.job.jobId,
+    objectRef: current.demand.job.outputObjectRef,
+    workflow: workflow ?? current.dispatch,
+  };
 }
 
 async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
   if (env.P3_FIXTURE_MODE !== "1") return null;
   const url = new URL(request.url);
 
+  if (url.pathname === "/__p3/fixtures/thread" && request.method === "POST") {
+    const body = await requestJson(request);
+    if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
+    try {
+      return Response.json(await publishP3Fixture({ bundle: body.bundle, presentationServer }));
+    } catch (error) {
+      return Response.json({ error: "invalid_p3_fixture", detail: error.message }, { status: 400 });
+    }
+  }
+
+  if (url.pathname === "/__p3/fixtures/generate" && request.method === "POST") {
+    if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
+    const body = await requestJson(request);
+    if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
+    try {
+      const threadId = nonEmpty("threadId", body.threadId);
+      const mediaId = nonEmpty("mediaId", body.mediaId);
+      return Response.json(await scheduleP3Media({ infra, presentationServer, threadId, mediaId }));
+    } catch (error) {
+      return Response.json({ error: "invalid_p3_generation_request", detail: error.message }, { status: 400 });
+    }
+  }
+
   if (url.pathname === "/__p3/fixtures/can-tho" && request.method === "POST") {
-    let body;
-    try { body = await request.json(); }
-    catch { return Response.json({ error: "invalid_json" }, { status: 400 }); }
+    const body = await requestJson(request);
+    if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
     const presentation = body?.bundle?.presentation;
     if (presentation?.manifest?.threadId !== P3_CAN_THO_THREAD_ID
       || presentation?.manifest?.lifecycleStatus !== "genesis_candidate"
       || presentation?.manifest?.fixture !== true) {
       return Response.json({ error: "invalid_p3_fixture" }, { status: 400 });
     }
-
-    const channelId = channelIdForThread(P3_CAN_THO_THREAD_ID);
-    const result = await presentationServer.publishSnapshot({
-      channelId,
+    return Response.json(await publishP3Fixture({
+      bundle: body.bundle,
+      presentationServer,
       objectRef: "p3_fixture_snapshot_thr_pr39_g2_04_v1",
       snapshotVersion: "p3-can-tho-v1",
-      bundle: body.bundle,
-      catalog: {
-        publiclyVisible: true,
-        p3Fixture: true,
-      },
-    });
-    return Response.json({
-      ok: true,
-      fixture: true,
-      threadId: P3_CAN_THO_THREAD_ID,
-      channelId,
-      snapshotVersion: result.pointer.snapshotVersion,
-      snapshotDigest: result.pointer.snapshotDigest,
-      cursor: result.pointer.sequence,
-    });
+    }));
   }
 
   if (url.pathname === "/__p3/fixtures/can-tho/generate-market" && request.method === "POST") {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
-    const slot = await p3MarketSlot(presentationServer);
-    const requestedAt = new Date().toISOString();
-    const demandService = createPresentationAssetDemandService({ infra });
-    const reconciled = await demandService.reconcile({
-      scope: { entityKind: "thread", entityRef: P3_CAN_THO_THREAD_ID },
-      slots: [slot],
-      requestedAt,
-      providerProfile: P3_PROVIDER_PROFILE,
-    });
-    const current = reconciled.projection.demands.find((entry) => (
-      entry.demand.current
-      && entry.demand.job.context?.kind === "thread_presentation_media"
-      && entry.demand.job.context.mediaId === P3_MARKET_MEDIA_ID
-    ));
-    if (!current) throw new Error("P3 market demand did not persist as current");
-    const service = createAssetGenerationService({ infra });
-    const workflow = await service.status(current.demand.job.jobId);
-    return Response.json({
-      ok: true,
-      fixture: true,
+    return Response.json(await scheduleP3Media({
+      infra,
+      presentationServer,
       threadId: P3_CAN_THO_THREAD_ID,
       mediaId: P3_MARKET_MEDIA_ID,
-      demandId: current.demand.demandId,
-      jobId: current.demand.job.jobId,
-      objectRef: current.demand.job.outputObjectRef,
-      workflow: workflow ?? current.dispatch,
-    });
+    }));
   }
 
   const statusMatch = /^\/__p3\/workflows\/([A-Za-z0-9._:-]+)$/.exec(url.pathname);

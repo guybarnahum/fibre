@@ -42,7 +42,7 @@ npm install --prefix services/c2pa-local --no-package-lock
 npm start --prefix services/c2pa-local
 ```
 
-Initialize D1 and start both Cloudflare deployments:
+Initialize D1 once and start both Cloudflare deployments:
 
 ```bash
 npx wrangler@latest d1 execute fibre-presentation-local \
@@ -50,21 +50,28 @@ npx wrangler@latest d1 execute fibre-presentation-local \
   --local \
   --file packages/infra/cloudflare/d1/0001_fibre_catalog.sql
 
-npx wrangler@latest dev \
-  --config deployments/cloudflare/thread-presentation/wrangler.local.jsonc \
-  --config deployments/cloudflare/asset-generator/wrangler.local.jsonc \
-  --env-file .env \
-  --port 8787
+npm run dev:asset-stack:cloudflare
 ```
 
-Then run:
+Then run the selectable live proof:
 
 ```bash
-node tools/presentation/seed-p3-can-tho-cloudflare-local.mjs
-node tools/presentation/prove-p3-generated-media-local.mjs
+npm run test:asset-live:cloudflare -- \
+  --fixture can-tho \
+  --media-id media_memory_tomatoes
 ```
 
 The proof must pass through durable demand, the standalone Asset Generator, immutable credentialed output, completion Queue delivery, Presentation `media.ready`, and the generic `/api/assets/:objectRef` resolver.
+
+The fixture-only Cloudflare seam is generic under `P3_FIXTURE_MODE=1`:
+
+```text
+POST /__p3/fixtures/thread
+POST /__p3/fixtures/generate
+GET  /__p3/workflows/:jobId
+```
+
+The older Cần Thơ seed and market-generation paths remain compatibility aliases. These endpoints are development/e2e harnesses, not production APIs.
 
 ## Boundaries
 
