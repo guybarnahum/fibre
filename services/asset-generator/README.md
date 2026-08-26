@@ -17,8 +17,13 @@ Generated-asset provenance and prompt retention are governed by:
 
 Deployment/provider selection is governed by:
 
-- `docs/decisions/ADR-0017-deployment-provider-selection.md`
+- `docs/decisions/ADR-0018-deployment-provider-selection.md`
 - `docs/architecture/deployment-provider-selection.md`
+
+Production persistence is governed by:
+
+- `docs/decisions/ADR-0017-provider-neutral-production-persistence.md`
+- `docs/architecture/production-persistence.md`
 
 ## Execution paths
 

@@ -26,7 +26,37 @@ services    -> InfraDriver contracts
 
 A service receives its infrastructure dependency rather than choosing Cloudflare, AWS, GCP, Azure or another platform itself. `packages/infra` implements reusable provider mappings and must not know which Fibre service is using them.
 
-The versioned deployment manifests under `deployments/environments/` select the runtime provider and InfraDriver provider for each deployed service. See `docs/decisions/ADR-0017-deployment-provider-selection.md` and `docs/architecture/deployment-provider-selection.md`.
+The versioned deployment manifests under `deployments/environments/` select the runtime provider and InfraDriver provider for each deployed service. See `../docs/decisions/ADR-0018-deployment-provider-selection.md` and `../docs/architecture/deployment-provider-selection.md`.
+
+## Production persistence boundary
+
+All services follow [`../docs/architecture/production-persistence.md`](../docs/architecture/production-persistence.md) and [`ADR-0017`](../docs/decisions/ADR-0017-provider-neutral-production-persistence.md).
+
+The runtime dependency direction is:
+
+```text
+service/domain behavior
+  -> semantic store/repository
+  -> InfraDriver capability
+  -> provider adapter/mechanism
+```
+
+Semantic stores remain responsible for Fibre meaning and invariants. `InfraDriver` provides provider-neutral persistence/runtime guarantees; it is not a generic Thread/World repository.
+
+For new production work:
+
+- transactional domain state must target `infra.state` once that capability's executable contract is available;
+- generated immutable bytes and immutable byte-level receipts use `infra.objects`;
+- ordered service/delivery streams use `infra.streams`;
+- derived query indexes use `infra.catalog` and never replace semantic authority;
+- asynchronous workflows, coordination, secrets and other infrastructure use the matching `InfraDriver` capability as it becomes executable;
+- provider-native storage IDs, bucket keys, database IDs and paths stay inside infrastructure/provider adapters.
+
+Do **not** introduce a new service-local SQLite authority, durable filesystem journal or direct cloud-storage/database SDK merely because it is convenient. Current World Kernel direct SQLite persistence and its durable model-invocation filesystem journal are explicit migration debt, not patterns to copy.
+
+Repository fixtures, tests and disposable `.fibre/` development outputs are not production persistence. Tools may write those local artifacts directly. A service artifact that becomes part of a production Fibre world must cross the provider-neutral boundary appropriate to its role.
+
+A complete Thread or World JSON object is a projection/export/snapshot, not the primary live authority.
 
 ## Presentation and generated visuals
 

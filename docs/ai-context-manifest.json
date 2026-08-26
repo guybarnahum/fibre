@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 34,
+  "version": 35,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -45,10 +45,12 @@
         "docs/architecture/genesis-origin-source-integrity.md",
         "docs/architecture/genesis-rich-life-intellectual-formation.md",
         "docs/architecture/structured-obligations.md",
+        "docs/architecture/production-persistence.md",
         "docs/decisions/ADR-0011-memory-photo-obligation.md",
         "docs/decisions/ADR-0012-semantic-meaning-over-derived-categories.md",
         "docs/decisions/ADR-0013-source-identity-consent-boundary.md",
         "docs/decisions/ADR-0015-fibre-centric-development.md",
+        "docs/decisions/ADR-0017-provider-neutral-production-persistence.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/concepts/thread.md",
         "docs/concepts/identity-and-genome.md",

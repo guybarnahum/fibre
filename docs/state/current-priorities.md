@@ -43,6 +43,16 @@ The current #39 exit checklist is [`pr39-closing-plan.md`](pr39-closing-plan.md)
 
 12. **Then birth and close #39 once.** Inspect the five held-out lives, run D1–D5 honestly, restart/replay admitted candidates, atomically birth them, verify hydration plus FIN/registration uniqueness and equality, obtain one hostile Fibre-centric closing review, and retain one concise milestone record. Then move directly to #40.
 
+## Cross-cutting production persistence
+
+The provider-neutral production persistence boundary is now accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017.
+
+All new persistent production state or byte objects used by Fibre services must cross an `InfraDriver` capability while semantic stores remain responsible for Fibre meaning and invariants. This applies to every service and generated production artifact, not only Presentation.
+
+Current Presentation and Asset Generator persistence already follow this shape. World Kernel/Genesis/Civil Registry still share direct SQLite and the durable model-invocation journal still writes a local file; these are explicit migration debt and must not be copied into new capabilities.
+
+The first `infra.state` vertical proof should preserve the existing atomic Genesis birth transaction, including Civil Registry and initial Thread state. This infrastructure work does not redefine #39's scientific/local-development closure criteria: `.fibre/` candidates and local birth databases remain valid disposable development artifacts. It does define the boundary that must be crossed before treating a deployment-specific database path as the production architecture for living Fibre Worlds.
+
 ## Immediate sequence
 
 ```text
@@ -70,6 +80,7 @@ Do **not** generate the final five-Thread cohort before the pre-cohort implement
 - Current inputs are fixtures/configuration, not validation evidence.
 - Exceptional exact-byte accepted evidence belongs in `artifacts/validation/`; ordinary test output does not belong in Git.
 - Disposable generated development state lives under `.fibre/`.
+- Persistent production service state and generated production byte objects cross provider-neutral `InfraDriver` capabilities; current direct SQLite/filesystem exceptions are migration debt, not precedent.
 - Active tests protect enduring Fibre semantics, not old review-state hashes.
 - Review occurs when it can challenge an architectural claim or milestone closure, not before every development iteration.
 - Fresh held-out material is retained when scientifically necessary; the surrounding ceremony is not.
@@ -77,6 +88,7 @@ Do **not** generate the final five-Thread cohort before the pre-cohort implement
 
 ## What comes after #39
 
+- **Infrastructure enabling work:** prove `infra.state` with the atomic birth consistency scope before treating a provider deployment as production World/Thread authority.
 - **#40:** canonical bounded consumption of identity/history/memory/relationships into ordinary cognition.
 - **#41:** Whole-Person standing and M2 closure.
 - **#42+:** self-authored development, reciprocal relationships and economic consequence.

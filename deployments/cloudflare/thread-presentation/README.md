@@ -74,4 +74,4 @@ The proof must pass through durable demand, the standalone Asset Generator, immu
 - Private/audience-scoped serving remains deferred until Fibre has an authenticated principal boundary.
 - Terminal credentialed `media.unavailable`, independent concurrent demand writers, and production trust/resource configuration remain deferred.
 
-Provider selection is recorded in `deployments/environments/`; see `docs/decisions/ADR-0017-deployment-provider-selection.md` and `docs/architecture/deployment-provider-selection.md`.
+Provider selection is recorded in `deployments/environments/`; see `docs/decisions/ADR-0018-deployment-provider-selection.md` and `docs/architecture/deployment-provider-selection.md`.

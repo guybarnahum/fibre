@@ -11,7 +11,7 @@ canonical: false
 
 Make the location and infrastructure provider of each Fibre service an explicit deployment decision rather than an implementation detail hidden inside the service.
 
-This document applies ADR-0017 and complements [`infrastructure-driver.md`](infrastructure-driver.md).
+This document applies [`ADR-0018`](../decisions/ADR-0018-deployment-provider-selection.md), complements [`infrastructure-driver.md`](infrastructure-driver.md), and operates within the provider-neutral production-persistence rule in [`ADR-0017`](../decisions/ADR-0017-provider-neutral-production-persistence.md).
 
 ## Dependency direction
 
