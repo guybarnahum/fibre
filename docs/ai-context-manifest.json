@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 36,
+  "version": 37,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -39,6 +39,7 @@
         "docs/architecture/thread-genesis-childhood-birth.md",
         "docs/architecture/genesis-compiler-contract.md",
         "docs/architecture/genesis-durable-development.md",
+        "docs/architecture/model-output-recovery.md",
         "docs/architecture/birth-center-runtime.md",
         "docs/architecture/symbolic-thread-genome.md",
         "docs/architecture/genesis-memory-meaning-integration.md",
