@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { loadPr39ClosureFinalization } from "./genesis-pr39-closure-finalization.mjs";
+import { assertPr39MechanicalGenomeRemint } from "./genesis-pr39-final-plan.mjs";
 
 test("PR39 closure finalization freezes five genomes only after the World precommitment", () => {
   const frozen = loadPr39ClosureFinalization();
@@ -35,4 +36,15 @@ test("PR39 final genome assignment is slot-index mechanical and World-independen
   for (const slot of plans.fixture.slots) {
     assert.equal(slot.templateGenomePath, `fixtures/genesis/pr39/genomes/thread-${String(slot.slot).padStart(2, "0")}.json`);
   }
+});
+
+test("PR39 mechanical genome remint refuses inherited-source witness drift even when locus text is unchanged", () => {
+  const { plans } = loadPr39ClosureFinalization();
+  const genome = plans.slots.find((slot) => slot.originMode === "synthetic_lineage").genome;
+  const template = structuredClone(genome);
+  template.header.recombinationWitness.selectionSeed = `${template.header.recombinationWitness.selectionSeed}:drift`;
+  assert.throws(
+    () => assertPr39MechanicalGenomeRemint({ template, genome, slot: 2 }),
+    /inherited-source witness drift/u,
+  );
 });

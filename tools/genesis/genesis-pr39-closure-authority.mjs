@@ -3,11 +3,15 @@
 // fibre-tool-purpose: one-pass final-cohort claim and bounded operational resume for PR39 closure
 // fibre-tool-disposition: retire after PR39; keep the one-pass/recovery lesson in milestone history
 
+import { randomUUID } from "node:crypto";
 import {
   closeSync,
+  fsyncSync,
+  linkSync,
   mkdirSync,
   openSync,
   readFileSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -36,6 +40,26 @@ function readJsonOrNull(path) {
   try { return JSON.parse(readFileSync(path, "utf8")); }
   catch (error) { if (error?.code === "ENOENT") return null; throw error; }
 }
+function removeIfPresent(path) {
+  try { unlinkSync(path); }
+  catch (error) { if (error?.code !== "ENOENT") throw error; }
+}
+function writeExclusiveJson(path, value) {
+  mkdirSync(dirname(path), { recursive: true });
+  const temp = `${path}.${randomUUID()}.tmp`;
+  let descriptor;
+  try {
+    descriptor = openSync(temp, "wx", 0o600);
+    writeFileSync(descriptor, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    fsyncSync(descriptor);
+    closeSync(descriptor);
+    descriptor = undefined;
+    linkSync(temp, path);
+  } finally {
+    if (descriptor !== undefined) closeSync(descriptor);
+    removeIfPresent(temp);
+  }
+}
 
 export function pr39ClosureAttemptPath(stateRoot) {
   return resolve(requireText("stateRoot", stateRoot), PR39_CLOSURE_ATTEMPT_FILENAME);
@@ -62,12 +86,24 @@ function normalizedClaim({ closureId, codeHead, precommitmentDigest, modelId, cl
   });
 }
 
+function normalizedStoredClaim(candidate) {
+  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
+    fail("valid PR39 closure claim is required");
+  }
+  const normalized = normalizedClaim(candidate);
+  if (
+    candidate.version !== PR39_CLOSURE_ATTEMPT_VERSION ||
+    candidate.status !== "CLAIMED_ONE_PASS_CLOSURE_COHORT"
+  ) {
+    fail("valid PR39 closure claim is required");
+  }
+  return normalized;
+}
+
 export function claimPr39ClosureAttempt(args = {}) {
   const claim = normalizedClaim(args);
   const path = pr39ClosureAttemptPath(args.stateRoot);
-  mkdirSync(dirname(path), { recursive: true });
-  let descriptor;
-  try { descriptor = openSync(path, "wx", 0o600); }
+  try { writeExclusiveJson(path, claim); }
   catch (error) {
     if (error?.code === "EEXIST") {
       const existing = readPr39ClosureAttempt({ stateRoot: args.stateRoot });
@@ -75,8 +111,6 @@ export function claimPr39ClosureAttempt(args = {}) {
     }
     throw error;
   }
-  try { writeFileSync(descriptor, `${JSON.stringify(claim, null, 2)}\n`, "utf8"); }
-  finally { closeSync(descriptor); }
   return claim;
 }
 
@@ -88,40 +122,63 @@ function sameAttempt(existing, requested) {
     existing.modelId === requested.modelId;
 }
 
+export function assertPr39ClosureClaimMatchesExecution({
+  claim, closureId, codeHead, precommitmentDigest, modelId,
+} = {}) {
+  const stored = normalizedStoredClaim(claim);
+  const requested = normalizedClaim({
+    closureId,
+    codeHead,
+    precommitmentDigest,
+    modelId,
+    claimedAt: stored.claimedAt,
+  });
+  if (!sameAttempt(stored, requested)) {
+    fail("PR39 closure attempt belongs to a different frozen execution");
+  }
+  return stored;
+}
+
 export function openOrResumePr39ClosureAttempt(args = {}) {
   const completion = readPr39ClosureCompletion({ stateRoot: args.stateRoot });
   if (completion !== null) fail(`PR39 closure cohort ${completion.closureId} is already complete; a second closure generation is forbidden`);
   const requested = normalizedClaim(args);
   const existing = readPr39ClosureAttempt({ stateRoot: args.stateRoot });
   if (existing === null) return Object.freeze({ claim: claimPr39ClosureAttempt(args), resumed: false });
-  if (!sameAttempt(existing, requested)) {
-    fail(`PR39 closure attempt already belongs to a different frozen execution; a second closure generation is forbidden`);
-  }
-  return Object.freeze({ claim: Object.freeze(structuredClone(existing)), resumed: true });
+  const stored = assertPr39ClosureClaimMatchesExecution({
+    claim: existing,
+    closureId: requested.closureId,
+    codeHead: requested.codeHead,
+    precommitmentDigest: requested.precommitmentDigest,
+    modelId: requested.modelId,
+  });
+  return Object.freeze({ claim: stored, resumed: true });
 }
 
 export function completePr39ClosureAttempt({ stateRoot, claim, candidateDigests, completedAt } = {}) {
-  if (!sameAttempt(claim, claim)) fail("valid closure claim is required");
+  const requested = normalizedStoredClaim(claim);
+  const existing = readPr39ClosureAttempt({ stateRoot });
+  if (existing === null) fail("PR39 closure completion requires an existing claimed attempt");
+  const stored = normalizedStoredClaim(existing);
+  if (!sameAttempt(stored, requested) || stored.claimedAt !== requested.claimedAt) {
+    fail("PR39 closure completion claim does not match the stored claimed attempt");
+  }
   if (!Array.isArray(candidateDigests) || candidateDigests.length !== 5) fail("closure completion requires exactly five candidate digests");
   candidateDigests.forEach((value, index) => requireDigest(`candidateDigests[${index}]`, value));
   if (new Set(candidateDigests).size !== 5) fail("closure completion candidate digests must be unique");
   const completion = Object.freeze({
     version: PR39_CLOSURE_COMPLETION_VERSION,
-    closureId: claim.closureId,
-    codeHead: claim.codeHead,
-    precommitmentDigest: claim.precommitmentDigest,
-    modelId: claim.modelId,
+    closureId: stored.closureId,
+    codeHead: stored.codeHead,
+    precommitmentDigest: stored.precommitmentDigest,
+    modelId: stored.modelId,
     candidateDigests: Object.freeze([...candidateDigests]),
     completedAt: requireTimestamp("completedAt", completedAt),
     status: "COMPLETED_ONE_PASS_CLOSURE_COHORT",
   });
   const path = pr39ClosureCompletionPath(stateRoot);
-  mkdirSync(dirname(path), { recursive: true });
-  let descriptor;
-  try { descriptor = openSync(path, "wx", 0o600); }
+  try { writeExclusiveJson(path, completion); }
   catch (error) { if (error?.code === "EEXIST") fail("PR39 closure completion already exists"); throw error; }
-  try { writeFileSync(descriptor, `${JSON.stringify(completion, null, 2)}\n`, "utf8"); }
-  finally { closeSync(descriptor); }
   return completion;
 }
 

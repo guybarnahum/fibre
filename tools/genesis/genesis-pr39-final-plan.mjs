@@ -50,6 +50,27 @@ function loadParentGenomes(genome) {
   });
 }
 
+export function assertPr39MechanicalGenomeRemint({ template, genome, slot = "unknown" } = {}) {
+  if (template === null || typeof template !== "object" || genome === null || typeof genome !== "object") {
+    fail(`final slot ${slot} requires template and final genomes`);
+  }
+  if (template.header?.originKind !== genome.header?.originKind) {
+    fail(`final slot ${slot} genome origin no longer matches its mechanically assigned template`);
+  }
+  const templateLoci = (template.loci ?? []).map((item) => ({ value: item.value, provenance: item.provenance }));
+  const finalLoci = (genome.loci ?? []).map((item) => ({ value: item.value, provenance: item.provenance }));
+  if (canonicalJson(templateLoci) !== canonicalJson(finalLoci)) {
+    fail(`final slot ${slot} genome semantic/provenance remint drift`);
+  }
+  if (
+    canonicalJson(template.header?.sourceEligibility ?? null) !== canonicalJson(genome.header?.sourceEligibility ?? null) ||
+    canonicalJson(template.header?.recombinationWitness ?? null) !== canonicalJson(genome.header?.recombinationWitness ?? null)
+  ) {
+    fail(`final slot ${slot} inherited-source witness drift`);
+  }
+  return genome;
+}
+
 export function buildPr39FinalClosurePlans({ fixturePath = PR39_FINAL_COHORT_PATH } = {}) {
   const fixture = readJson(fixturePath);
   if (fixture.fixtureVersion !== "pr39-final-cohort-v1" || fixture.status !== "FROZEN_BEFORE_GENERATION") fail("unexpected final-cohort fixture status");
@@ -70,7 +91,7 @@ export function buildPr39FinalClosurePlans({ fixturePath = PR39_FINAL_COHORT_PAT
     const expectedOrigin = slot.originMode === "synthetic_lineage" ? "recombined" : "de_novo";
     if (genome.header.originKind !== expectedOrigin) fail(`final slot ${slot.slot} genome origin drift`);
     const template = readJson(slot.templateGenomePath);
-    if (template.header.originKind !== genome.header.originKind || canonicalJson(template.loci.map((item) => item.value)) !== canonicalJson(genome.loci.map((item) => item.value))) fail(`final slot ${slot.slot} no longer matches its mechanically assigned template`);
+    assertPr39MechanicalGenomeRemint({ template, genome, slot: slot.slot });
     const offersByWindow = new Map();
     for (const window of windows) {
       const seed = `${fixture.generation.eventOfferSeedDomain}:slot:${pad(slot.slot)}:structures:${window.windowId}`;

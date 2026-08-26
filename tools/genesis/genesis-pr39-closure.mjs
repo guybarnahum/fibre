@@ -4,7 +4,18 @@
 // fibre-tool-disposition: retire after PR39; retain final cohort results in milestone history
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,19 +27,39 @@ import {
   completePr39ClosureAttempt,
   openOrResumePr39ClosureAttempt,
 } from "./genesis-pr39-closure-authority.mjs";
+import { loadPr39ClosureFinalization } from "./genesis-pr39-closure-finalization.mjs";
 import {
   buildPr39ClosureRepairProfile,
   createPr39ClosureCallRecorder,
 } from "./genesis-pr39-closure-profile.mjs";
-import { loadPr39ClosureFinalization } from "./genesis-pr39-closure-finalization.mjs";
+import {
+  assertPr39SavedClosureCandidate,
+  assertPr39SavedClosureRepairProfile,
+} from "./genesis-pr39-closure-resume-integrity.mjs";
 
 function fail(message) { throw new Error(message); }
 function absolute(path) { return fileURLToPath(repoFile(path)); }
 function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")); }
+function removeIfPresent(path) {
+  try { unlinkSync(path); }
+  catch (error) { if (error?.code !== "ENOENT") throw error; }
+}
 function writeJson(path, value) {
   const target = absolute(path);
   mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, `${JSON.stringify(value, null, 2)}\n`);
+  const temp = `${target}.${randomUUID()}.tmp`;
+  let descriptor;
+  try {
+    descriptor = openSync(temp, "wx", 0o600);
+    writeFileSync(descriptor, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    fsyncSync(descriptor);
+    closeSync(descriptor);
+    descriptor = undefined;
+    renameSync(temp, target);
+  } finally {
+    if (descriptor !== undefined) closeSync(descriptor);
+    removeIfPresent(temp);
+  }
 }
 function gitHead() { return execFileSync("git", ["rev-parse", "HEAD"], { cwd: absolute("."), encoding: "utf8" }).trim(); }
 function pad(value) { return String(value).padStart(2, "0"); }
@@ -116,11 +147,17 @@ for (const slotPlan of frozen.plans.slots) {
   const candidatePath = `${outputRoot}/slot-${pad(slotPlan.slot)}-candidate-v1.json`;
   const profilePath = `${outputRoot}/slot-${pad(slotPlan.slot)}-repair-profile-v1.json`;
   if (existsSync(absolute(candidatePath))) {
-    const candidate = readJson(candidatePath);
-    if (candidate.threadId !== slotPlan.threadId || candidate.genesisId !== slotPlan.genesisId || candidate.genomeDigest !== slotPlan.genomeDigest) {
-      fail(`saved closure candidate ${slotPlan.slot} does not match frozen slot bindings`);
-    }
+    const candidate = assertPr39SavedClosureCandidate({
+      candidate: readJson(candidatePath),
+      slotPlan,
+      claim: opened.claim,
+    });
     if (!existsSync(absolute(profilePath))) fail(`saved closure candidate ${slotPlan.slot} lacks its repair profile`);
+    assertPr39SavedClosureRepairProfile({
+      profile: readJson(profilePath),
+      candidate,
+      slotPlan,
+    });
     candidateDigests.push(candidate.candidateDigest);
     console.log(`slot ${slotPlan.slot} ${slotPlan.label}: reusing completed candidate ${candidate.candidateDigest}`);
     continue;
@@ -152,8 +189,11 @@ for (const slotPlan of frozen.plans.slots) {
     candidate,
     recordedCalls: recorder.snapshot(),
   });
-  writeJson(candidatePath, candidate);
+  // The candidate file is the completed-slot marker. Write its matching repair
+  // profile first so an interruption cannot leave an apparently complete slot
+  // without the accounting needed to resume it safely.
   writeJson(profilePath, profile);
+  writeJson(candidatePath, candidate);
   candidateDigests.push(candidate.candidateDigest);
   console.log(`slot ${slotPlan.slot}: admitted ${candidate.candidateDigest} · A versions ${profile.totals.generatedVersions} · repairs ${profile.totals.formRepairs} · retries ${profile.totals.recordRetries}`);
 }
