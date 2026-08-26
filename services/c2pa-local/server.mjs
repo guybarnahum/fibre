@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import { Builder, LocalSigner, Reader } from "@contentauth/c2pa-node";
+import { findC2paAssertion } from "./assertion-finder.mjs";
 
 const ASSERTION_LABEL = "com.insidefibre.asset-generation.v1";
 const SIGNER_ID = "fibre-c2pa-node-local-v1";
@@ -47,34 +48,6 @@ async function readJson(req) {
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
-function decodeAssertionData(value) {
-  if (typeof value !== "string") return value;
-  try { return JSON.parse(value); }
-  catch { return value; }
-}
-function findAssertion(value, seen = new Set()) {
-  if (value === null || typeof value !== "object") return null;
-  if (seen.has(value)) return null;
-  seen.add(value);
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = findAssertion(item, seen);
-      if (found !== null) return found;
-    }
-    return null;
-  }
-  if (value.label === ASSERTION_LABEL && value.data !== undefined) return decodeAssertionData(value.data);
-  if (Object.hasOwn(value, ASSERTION_LABEL)) {
-    const candidate = value[ASSERTION_LABEL];
-    if (candidate?.data !== undefined) return decodeAssertionData(candidate.data);
-    return decodeAssertionData(candidate);
-  }
-  for (const item of Object.values(value)) {
-    const found = findAssertion(item, seen);
-    if (found !== null) return found;
-  }
-  return null;
-}
 async function inspect(bytes, mediaType) {
   const reader = await Reader.fromAsset(
     { buffer: Buffer.from(bytes), mimeType: mediaType },
@@ -90,7 +63,7 @@ async function inspect(bytes, mediaType) {
   );
   const storeText = reader.json();
   const store = typeof storeText === "string" ? JSON.parse(storeText) : storeText;
-  const assertion = findAssertion(store);
+  const assertion = findC2paAssertion(store, ASSERTION_LABEL);
   if (assertion === null || typeof assertion !== "object" || Array.isArray(assertion)) {
     throw new Error(`missing or invalid ${ASSERTION_LABEL} assertion`);
   }
@@ -109,10 +82,6 @@ const [certificate, privateKeyInput] = await Promise.all([
   );
 });
 
-// LocalSigner requires Node Buffers for both certificate and key. Node's crypto
-// parser accepts both current PKCS#8 keys and older SEC1 "EC PRIVATE KEY" files;
-// export PKCS#8 PEM and convert the returned PEM text back to a Buffer before
-// crossing the native C2PA binding boundary.
 const privateKeyPem = createPrivateKey(privateKeyInput).export({ format: "pem", type: "pkcs8" });
 const privateKey = Buffer.isBuffer(privateKeyPem) ? privateKeyPem : Buffer.from(privateKeyPem);
 if (!Buffer.isBuffer(certificate) || !Buffer.isBuffer(privateKey)) {
