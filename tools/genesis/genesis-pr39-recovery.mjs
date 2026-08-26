@@ -21,6 +21,7 @@ function absolute(path) { return fileURLToPath(repoFile(path)); }
 function git(args) { return execFileSync("git", args, { cwd: absolute("."), encoding: "utf8" }).trim(); }
 
 const ALLOWED_RECOVERY_PATHS = Object.freeze([
+  "docs/ai-context-manifest.json",
   "docs/architecture/model-output-recovery.md",
   "docs/architecture/system-overview.md",
   "packages/model-runtime/",
@@ -51,6 +52,9 @@ const stateRoot = absolute(".fibre/genesis/pr39-closure");
 const claim = readPr39ClosureAttempt({ stateRoot });
 if (claim === null) fail("PR39 recovery requires the preserved original closure claim");
 if (claim.codeHead !== PR39_CLOSURE_ORIGINAL_CLAIM_HEAD) fail("PR39 recovery original claim HEAD drift");
+
+const dirty = git(["status", "--porcelain"]);
+if (dirty !== "") fail("PR39 recovery authorization requires a clean Git working tree");
 
 const head = git(["rev-parse", "HEAD"]);
 if (head === PR39_CLOSURE_ORIGINAL_CLAIM_HEAD) fail("PR39 recovery code has not advanced from the blocking execution");
