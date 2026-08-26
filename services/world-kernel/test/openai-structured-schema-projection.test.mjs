@@ -26,7 +26,7 @@ function response(status, body) {
   };
 }
 
-test("OpenAI transport projects provider-risk constraints without mutating Pass-B canonical schema", async () => {
+test("OpenAI transport projects provider-risk constraints and mechanically recovers uniqueItems", async () => {
   const frozenHash = passBResponseSchemaHash();
   const canonicalBefore = structuredClone(GENESIS_PASS_B_RESPONSE_SCHEMA);
   const projected = projectOpenAIStructuredOutputSchema(GENESIS_PASS_B_RESPONSE_SCHEMA);
@@ -53,9 +53,9 @@ test("OpenAI transport projects provider-risk constraints without mutating Pass-
         status: "completed",
         model: "gpt-test",
         output_text: JSON.stringify({
-          outcome: "not_remembered",
-          episodeRefs: [],
-          rememberedContent: null,
+          outcome: "remembered",
+          episodeRefs: ["ep_1", "ep_2", "ep_1"],
+          rememberedContent: "A remembered event.",
           uncertainty: [],
         }),
         usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
@@ -63,7 +63,7 @@ test("OpenAI transport projects provider-risk constraints without mutating Pass-
     },
   });
 
-  await adapter.invoke({
+  const result = await adapter.invoke({
     systemPrompt: "Return one Pass-B record.",
     input: { fixture: true },
     responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA,
@@ -75,7 +75,17 @@ test("OpenAI transport projects provider-risk constraints without mutating Pass-
   assert.equal(Object.hasOwn(sent.properties.rememberedContent, "maxLength"), false);
   assert.equal(Object.hasOwn(sent.properties.uncertainty.items, "maxLength"), false);
   assert.equal(Object.hasOwn(sent.properties.uncertainty, "maxItems"), false);
-  assert.equal(passBResponseSchemaHash(), frozenHash, "transport projection must not change Fibre canonical schema identity");
+  assert.deepEqual(result.output.episodeRefs, ["ep_1", "ep_2"]);
+  assert.deepEqual(result.provenance.outputRecovery?.recoveries, [{
+    kind: "deterministic_normalization",
+    constraint: "uniqueItems",
+    path: "$.episodeRefs",
+    action: "deduplicate_preserve_first",
+    beforeCount: 3,
+    afterCount: 2,
+    removedItems: 1,
+  }]);
+  assert.equal(passBResponseSchemaHash(), frozenHash, "transport recovery must not change Fibre canonical schema identity");
 });
 
 test("OpenAI adapter re-enforces projected uniqueness, length and maxItems constraints locally", () => {
