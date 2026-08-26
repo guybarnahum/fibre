@@ -39,7 +39,7 @@
     "genesis:pr39-check": "npm test && npm run validate && node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-dev-check.mjs",
     "genesis:pr39-closure-check": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-closure-check.mjs",
     "genesis:pr39-recovery": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-recovery.mjs",
-    "genesis:pr39-closure": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-closure.mjs",
+    "genesis:pr39-closure": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-closure-launch.mjs",
     "genesis:pr39-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-dev.mjs",
     "genesis:pr39-birth": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-birth.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-dev-cli.mjs",
