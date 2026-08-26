@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const workerUrl = new URL("../worker.mjs", import.meta.url);
 
-test("Cloudflare live fixture harness is generic and remains explicitly dev-only", async () => {
+test("Cloudflare live fixture harness is generic, repeatable and remains explicitly dev-only", async () => {
   const source = await readFile(workerUrl, "utf8");
 
   assert.match(source, /env\.P3_FIXTURE_MODE !== "1"/);
@@ -13,6 +13,15 @@ test("Cloudflare live fixture harness is generic and remains explicitly dev-only
   assert.match(source, /body\.threadId/);
   assert.match(source, /body\.mediaId/);
   assert.match(source, /presentation\?\.manifest\?\.fixture !== true/);
+  assert.match(source, /normalizeThreadPresentationBundle/);
+  assert.match(source, /threadPresentationPacketDigest/);
+  assert.match(source, /threadMediaPacketDigest/);
+  assert.match(source, /presentationProvenanceDigest/);
+  assert.match(source, /presentationServer\.getSnapshot\(channelId\)/);
+  assert.match(source, /reused: true/,
+    "re-seeding an identical fixture must reuse the existing immutable snapshot even after stream events advance");
+  assert.match(source, /already seeded with different content/,
+    "the repeatable fixture seam must still reject a different bundle under the same fixture Thread");
   assert.match(source, /\/__p3\/fixtures\/can-tho\/generate-market/,
     "existing Cần Thơ P3 endpoint should remain as a compatibility alias");
 });

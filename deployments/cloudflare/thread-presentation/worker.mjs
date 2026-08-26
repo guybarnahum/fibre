@@ -2,6 +2,12 @@ import { createCloudflareInfraDriver } from "#packages/infra/src/cloudflare-v1.m
 import { FibrePresentationChannelDurableObject } from "#packages/infra/src/cloudflare/presentation-channel-do.mjs";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import { createHttpContentCredentialSigner } from "#services/asset-generator/src/http-content-credential-signer.mjs";
+import {
+  normalizeThreadPresentationBundle,
+  presentationProvenanceDigest,
+  threadMediaPacketDigest,
+  threadPresentationPacketDigest,
+} from "#services/thread-presentation/src/index.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
@@ -48,6 +54,27 @@ async function requestJson(request) {
   }
 }
 
+function fixtureBundleDigests(bundle) {
+  const normalized = normalizeThreadPresentationBundle(bundle);
+  return {
+    presentation: threadPresentationPacketDigest(normalized.presentation),
+    media: threadMediaPacketDigest(normalized.media),
+    provenance: presentationProvenanceDigest(normalized.provenance),
+  };
+}
+
+function sameFixtureBundle(snapshot, bundle) {
+  const existing = {
+    presentation: threadPresentationPacketDigest(snapshot.presentation),
+    media: threadMediaPacketDigest(snapshot.media),
+    provenance: presentationProvenanceDigest(snapshot.provenance),
+  };
+  const incoming = fixtureBundleDigests(bundle);
+  return existing.presentation === incoming.presentation
+    && existing.media === incoming.media
+    && existing.provenance === incoming.provenance;
+}
+
 async function p3Slot(presentationServer, { threadId, mediaId }) {
   const channelId = channelIdForThread(threadId);
   const current = await presentationServer.getSnapshot(channelId);
@@ -81,6 +108,24 @@ async function publishP3Fixture({
   }
 
   const channelId = channelIdForThread(threadId);
+  const current = await presentationServer.getSnapshot(channelId);
+  if (current !== null) {
+    if (current.pointer.threadId !== threadId || !sameFixtureBundle(current.snapshot, bundle)) {
+      throw new TypeError(`fixture Thread ${threadId} is already seeded with different content`);
+    }
+    return {
+      ok: true,
+      fixture: true,
+      reused: true,
+      threadId,
+      channelId,
+      lifecycleStatus: presentation.manifest.lifecycleStatus,
+      snapshotVersion: current.pointer.snapshotVersion,
+      snapshotDigest: current.pointer.snapshotDigest,
+      cursor: current.pointer.sequence,
+    };
+  }
+
   const result = await presentationServer.publishSnapshot({
     channelId,
     objectRef: objectRef ?? `p3_fixture_snapshot_${threadId}_v1`,
@@ -94,6 +139,7 @@ async function publishP3Fixture({
   return {
     ok: true,
     fixture: true,
+    reused: false,
     threadId,
     channelId,
     lifecycleStatus: presentation.manifest.lifecycleStatus,
