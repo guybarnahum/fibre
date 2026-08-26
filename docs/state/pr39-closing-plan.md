@@ -1,7 +1,7 @@
 ---
 id: fibre-pr39-closing-plan
 status: active
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-26
 canonical: true
 ---
 
@@ -19,141 +19,147 @@ canonical: true
 
 #39 does not claim causal Whole-Person individuality. #40 owns bounded causal consumption of this richer state. #41 owns M2 standing.
 
-## Development method
+## Development and scientific discipline
 
-Follow ADR-0015. The old R1/R2/G/H freeze choreography is retired.
+Follow ADR-0015. Git history is the development archive; current code and current fixtures drive implementation.
 
-- Current code and current fixtures drive development.
-- Generated development runs live under ignored `.fibre/` state.
-- Active tests protect Fibre invariants, not old prompt/config hashes.
-- Git history is the development archive.
-- Fresh material, predeclaration and blind evaluation remain when they protect a scientific claim rather than ceremony.
-- A weak generated result is evidence about Genesis; it is not permission to silently resample a whole life.
+The final closure keeps the scientific controls that matter:
 
-The current Tbilisi / Kaohsiung / Recife / Fès / Hobart Worlds are development fixtures. They have influenced compiler tuning and are burned for the final closure cohort.
+- five fresh held-out Worlds authored before final genome assignment;
+- content-independent mechanical genome assignment;
+- model `gpt-5.1-2025-11-13` with frozen sampling configuration;
+- Fibre-owned historical skeleton and bounded model realization;
+- exactly one final cohort identity;
+- bounded mechanical repair/retry only where policy permits it;
+- no whole-life quality resampling;
+- D1 raw + normalized attribution, D2 sentiment coupling, D3 genome propagation, D4 life funnel and D5 self-account overreach as frozen before generation;
+- weak or disappointing valid output is preserved and interpreted rather than replaced.
 
-## Current sampling policy
+History, autobiographical memory and remembered meaning remain distinct authorities. Pass A historical realization and Pass C meaning formation remain genome blind; permitted genome exposure is limited to the intended Pass-B treatment cells.
 
-Fibre owns the deterministic historical skeleton. Model cognition supplies contingent realization.
+## Frozen final cohort
 
-- time / place / EventStructure / counterpart / chronology: deterministic Fibre policy
-- Pass A realization: temperature `0.3`
-- Pass B memory formation: temperature `0.3`
-- Pass C meaning / reinterpretation: temperature `0.3`
-- fresh record retry from the same historical skeleton: temperature `0.3`
-- mechanical form repair: temperature `0`
+The frozen closure identity is `pr39-final-cohort-001`.
 
-The goal is reproducible authority and provenance, not byte-identical prose.
+The five slots are:
 
-## Current status after hostile closing-plan review
+1. Sapporo
+2. Kochi
+3. Malmö
+4. Valparaíso
+5. Wellington
 
-The currentized development path was green at 707/707 active tests before the fixes below. The hostile review found real Fibre gaps without finding a reason to restore the old freeze process.
+The final Worlds, genome assignment, finalization digest, model/configuration and D1–D5 protocol were frozen before final generation.
 
-### Implemented and substantially sound
+The original one-pass closure claim was made from code HEAD:
 
-- deterministic fourteen-window prior-life skeleton through age 21.9999
-- current EventStructure developmental policy and World-constrained realization
-- Pass A history separated from Pass B memory and Pass C remembered meaning
-- symbolic genomes with exact de-novo / recombined lineage provenance
-- Pass A and Pass C structural cognition projections that keep genome material out
-- bounded form repair / record retry
-- recurring-person and place continuity derivation
-- transactional Genesis publication machinery
-- origin/source eligibility enforcement for Thread-parent / fork / Echo / Homage inside `publishBirth`
-- living-source Echo consent authority and living-subject Homage refusal
-- source-mode structural exclusivity that prevents simple Echo/Homage relabeling
-- durable model-call replay
+```text
+6415ba75c95e5a26a634b83a5ea2f6eeb34f337f
+```
 
-### Fixed in the current cleanup slice; awaiting the normal green check
+That original claim remains immutable even if execution later resumes under the explicit recovery amendment described below.
 
-1. **Pass-B experimental-arm leakage.** The live Pass-B invocation now uses `projectPassBInputForCognition`. The model may receive the permitted genome exposure on treated calls, but it no longer receives `assignment`, `analysisStratum`, `assignmentRef`, or `genomeExposurePolicyRef`. Full assignment data remains in the candidate record for later analysis.
-2. **Lived-witness event relevance.** Cultural/language formation now requires a `THREAD_LIFE_EPISODE_RECORDED` witness; `THREAD_SEEDED` bookkeeping cannot establish lived formation. Both the JS resolver and SQLite trigger enforce the event kind.
-3. **Dead execution freeze.** `genesis-replacement-execution-authority.mjs` is removed. Current development is no longer blocked by a stale reviewed-head source hash.
+## Current execution state
 
-## Remaining blockers before final-cohort generation
+The first final-cohort execution began on 2026-08-26.
 
-### A. Publication truth and current birth path
+- **Sapporo:** complete and admitted; the candidate and durable model-call evidence are preserved.
+- **Kochi:** incomplete in Pass B. The model twice returned a structured response whose `episodeRefs` contained a duplicate item. Fibre correctly rejected both at the canonical `uniqueItems` boundary.
+- **Malmö, Valparaíso, Wellington:** not started.
+- **D1–D5:** not started.
+- **Publication/birth:** not started.
 
-1. **Narrated place must agree with authoritative place.** `observableAction` may not narrate a location incompatible with canonical `placeRef`; enforce this again at publication, not only during generation.
-2. **Current Genesis must be able to birth.** The supported current path must build the canonical birth bundle and call `publishBirth`; the legacy H runner may not remain the only executable caller.
-3. **A prior-life birth must include its people and places.** When historical episodes are present, `initialRoster` and derived `lifeContinuity` are required rather than optional.
-4. **Memory-photo parity is transactional.** Every revision-1 autobiographical memory published at birth must have its #38 visual-companion obligation before commit.
-5. **Candidate → hydrated Thread equality.** Provide one current born-life inspection/comparator covering history, relations, places, lineage, memories, meanings and visual-companion obligations. This is distinct from durable model-call replay.
-6. **Fibre civil registration is atomic.** Every successfully born Thread receives exactly one permanent Fibre Identity Number (FIN) plus canonical birth registration inside the same authoritative birth transaction. FIN display format is `XXXX-XX-XXXX`: ten unambiguous uppercase alphanumeric characters, with the final character reserved for a versioned check-character policy. The number is globally unique, immutable, opaque, non-secret and must encode no Thread facts. One Thread cannot receive two FINs and one FIN cannot identify two Threads. The born-life inspector must hydrate and verify the registration. Physical/digital Identity Card rendering is asynchronous presentation/credential work and is not a prerequisite for committing a valid birth.
+After the same Kochi failure repeated, execution was stopped. Fibre did not continue blind reruns until a convenient response appeared.
 
-### B. Preserve the original anti-interchangeability experiment
+This interruption is an implementation/runtime robustness finding, **not a scientific cohort result**. The final cohort remains claimed but incomplete. There is no second cohort and no replacement Sapporo.
 
-7. **One-pass closure attempt.** Add a lightweight `--closure` claim that refuses a second closure-cohort generation. Development runs remain freely repeatable.
-8. **Repair/rejection profile.** The closure report must show per episode: generated versions, form repairs, record retries, failed gates, exhaustions and whole-candidate failure. Admission pressure must be visible rather than hidden selection.
-9. **Convergent pair.** At least two fresh final Worlds should make convergence on one broad belief/stance plausible through materially different routes, so attribution tests route/tension/residue rather than merely recognizing city decoration.
-10. **Blind raw + normalized attribution.** D1 retains both raw and setting/style-normalized conditions, judged by raters who have not seen Worlds, genomes, compiler prompts or build diagnostics.
-11. **Predeclare D1–D5 interpretation.** Before final generation, record thresholds/readings, uncertainty treatment, expected cell sizes and the rule for interpreting any above-chance `life_only_unexposed` signal. The clean control is small and must be treated honestly.
+## Model-output recovery amendment
 
-## Source-integrity status
+The interruption exposed ordinary structured-output brittleness at a provider-compatibility seam: OpenAI Structured Outputs cannot enforce every Fibre canonical JSON-Schema constraint, including `uniqueItems`, so Fibre projects those unsupported keywords out of the provider request and re-enforces them locally.
 
-The hostile audit found that the core Slice-F gate is further along than previously recorded. Thread-parent / fork / Echo / Homage eligibility and key ADR-0013 consent/status rules are enforced inside `publishBirth`; these are not open foundational blockers.
+The enduring recovery architecture is [`../architecture/model-output-recovery.md`](../architecture/model-output-recovery.md).
 
-Before #39 closes, exercise the current origin path end-to-end enough to prove those guards are reachable and retained. Residual cleanup should also reconcile or document the older `identity.originOrientation` vocabulary and ensure source-biography projection helpers are used where source material enters generated life. These are implementation-quality issues unless they create an actual bypass of the canonical Genesis birth path.
+For this incident Fibre adds only the demonstrated general capability:
 
-## Retention pass — preserve semantics, delete archaeology
+- deterministic `uniqueItems` normalization where the canonical schema explicitly requires uniqueness;
+- preserve first occurrence and remove exact canonical duplicates;
+- do not mutate provider output;
+- retain an explicit recovery witness;
+- revalidate the full canonical response contract after normalization;
+- no semantic improvement, quality selection or extra model call for this normalization;
+- future recovery handlers are added only when observed failure modes justify them and a safe mechanical rule can be stated.
 
-Before deleting old G/replacement tools, transfer the few unique enduring checks they still carry:
+The frozen PR39 generation prompts are unchanged. Prompt hints are an allowed future model-runtime technique but are not introduced into this already-claimed cohort.
 
-- memory/meaning characterization is observational and never a regeneration/admission verdict; legal `not_remembered` and no-meaning outcomes remain legal
-- Pass C is constitutive rather than detective
-- an EventStructure must fit the whole developmental window in which it is offered
-- symbolic genome text must not encode its assigned World's geography; make this a general relocatability/separability test
+## One-time execution recovery
 
-Relocate any live active-test inputs from `artifacts/validation/` into ordinary fixtures before deleting their old artifact trees.
+Changing code after a closure claim must not silently rewrite the original execution identity.
 
-Do not delete the legacy H runner until the current path can birth. After that, remove the superseded G/R/H runners and `replacement` executable stack, then rename the surviving current Genesis modules around what they do rather than how they evolved.
+The recovery therefore uses a separate one-time amendment:
 
-Keep the methodological lessons, not their freeze machinery: thresholds/negative controls are declared before outcomes are read; disappointing outcomes do not change the rule; external raters receive projections that strip Fibre-internal identity/condition labels.
+```text
+original closure claim
+  original HEAD 6415ba75...
+  closure ID
+  finalization digest
+  model
+  claimed-at timestamp
 
-## Final-cohort plan — written before generation
+recovery amendment
+  original claim binding
+  exact recovery execution HEAD
+  repeated Kochi uniqueItems failure
+  frozen science unchanged
+```
 
-Once the publication blockers and retention transfers above are green, write one short pre-generation plan containing only substantive controls:
+Recovery authorization is permitted only when:
 
-1. five fresh factual Worlds, authored without seeing their final genomes; include the convergent pair
-2. a content-independent mechanical genome-assignment rule with both de-novo and inherited cases
-3. expected Pass-B stratum counts
-4. predeclared D1–D5 readings, thresholds and uncertainty treatment
-5. raw + normalized blind-attribution protocol and rater independence
-6. one closure-attempt identity
+1. the recovery HEAD descends from the original claim HEAD;
+2. the Git worktree is clean;
+3. the committed delta is confined to model-output recovery, recovery governance/observability and required documentation/context bookkeeping;
+4. final Worlds, genomes, assignment, model/configuration, ordinary generation prompts and D1–D5 protocol are unchanged;
+5. the original one-pass claim remains the claim;
+6. accepted Sapporo and committed Kochi calls are preserved and replayed rather than regenerated.
 
-This document is the scientific precommitment. It is not an execution-authorization chain.
+The provider-running closure command independently rejects a dirty worktree, so an authorized Git SHA cannot be paired with uncommitted execution code.
 
-## Final run
+## Resume semantics
 
-1. Author the five fresh Worlds and inspect them for factual affordances and conclusion-smuggling.
-2. Assign genomes mechanically.
-3. Generate each Thread once, apart from bounded record repair/retry.
-4. Inspect all five actual lives in plain English for particularity, continuity, breadth and Thread-owned meaning.
-5. Emit the repair/rejection profile.
-6. Run D1–D5, including normalized blind attribution, and report weak results honestly.
-7. Restart/replay the admitted candidates.
-8. Atomically birth all five, including one FIN and civil birth registration per Thread.
-9. Hydrate/inspect canonical state and compare it with each admitted candidate/birth bundle, including FIN/registration equality and uniqueness.
-10. Perform one hostile review of the actual born cohort.
+After the exact recovery HEAD is validated and the amendment is explicitly authorized:
 
-A disappointing cohort is not repaired by silently sampling another cohort. It triggers an explicit judgment about whether Genesis needs redesign.
+1. Sapporo is loaded from its admitted candidate file and is not regenerated.
+2. Kochi restarts deterministically from its candidate boundary.
+3. Every previously committed Kochi model invocation replays locally from the durable journal.
+4. The first unfinished invocation is the next operation allowed to reach the provider.
+5. If a response violates `uniqueItems`, Fibre mechanically normalizes it and revalidates it.
+6. Other failures remain governed by their existing policy; recovery does not replenish semantic or record-retry budgets.
+7. Slots 3–5 then generate normally inside the same original cohort.
 
-## Retained closeout
+A mechanical recovery is never evidence about identity, memory, meaning or character.
 
-After a CLEAR closing review, retain one concise `docs/history/milestones/pr39.md` with:
+## Remaining #39 closeout after candidate completion
 
-- what #39 made possible
-- final architecture/data-flow summary
-- five-Thread cohort summary
-- D1–D5 and repair-profile results
-- source-integrity, atomic-birth and Fibre civil-registration result
-- important limitations / deferred work
-- final implementation SHA
+Once all five candidates are complete:
 
-Do not retain intermediate frozen packets, failed cohorts or obsolete review-state executables in current `HEAD`.
+1. inspect all five actual lives in plain English for particularity, continuity and coherence without changing admission based on taste;
+2. emit and inspect repair/recovery accounting;
+3. run the frozen D1–D5 diagnostics and report weak results honestly;
+4. restart/replay the admitted candidates;
+5. atomically birth all five through the supported current Birth Center path;
+6. issue exactly one FIN and canonical civil registration per born Thread in the same birth transaction;
+7. verify history, people, places, lineage, memories, meanings, visual-companion obligations and civil identity through hydrated canonical state;
+8. perform one hostile Fibre-centric review of the actual born cohort;
+9. retain one concise `docs/history/milestones/pr39.md`;
+10. reconcile current `main`, rerun full validation, and merge the completed #39 workstream.
+
+## Source integrity and publication truth
+
+The supported birth path carries the Thread-parent / fork / Echo / Homage source-eligibility and consent boundaries. Prior-life publication must retain roster/life continuity, authoritative place agreement, autobiographical-memory visual obligations, symbolic-genome/lineage bindings, atomic FIN issuance and candidate-to-hydrated equality.
+
+These are publication invariants, not reasons to regenerate a completed life candidate.
 
 ## Exit to #40
 
-#39 is complete only when five fresh admitted lives have been born intact into canonical world state, each has one verified permanent Fibre civil identity, and the closing review finds no #39 blocker.
+#39 is complete only when five fresh admitted lives from this single final cohort have been born intact into canonical world state, each has one verified permanent Fibre civil identity, and the closing review finds no #39 blocker.
 
 Then move directly to #40: bounded Fibre-owned projection of identity/history/memory/relationship state into ordinary cognition with exact provenance and causal counterfactual tests.
