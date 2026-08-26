@@ -15,7 +15,7 @@ export {
 export {
   executeCredentialedAssetGenerationJob,
   verifyCredentialedAssetForPublication,
-} from "./credentialed-asset-generation-service.mjs";
+} from "./credentialed-asset-generation.mjs";
 export { createHttpContentCredentialSigner } from "./http-content-credential-signer.mjs";
 export {
   compileOpenAIImagePrompt,

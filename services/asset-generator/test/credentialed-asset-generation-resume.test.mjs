@@ -15,7 +15,7 @@ import {
 import {
   executeCredentialedAssetGenerationJob,
   verifyCredentialedAssetForPublication,
-} from "../src/credentialed-asset-generation-service.mjs";
+} from "../src/credentialed-asset-generation.mjs";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -198,8 +198,10 @@ test("post-provider signer retry resumes staged output without a second provider
   assert.equal(result.providerOutputResumed, true);
   assert.equal(result.generationAttempt.attemptNumber, 1);
   assert.notEqual(result.generationAttempt.attemptId, job().jobId);
-  assert.notEqual(await infra.objects.head(result.providerOutputObjectRef), null);
-  assert.notEqual(await infra.objects.head(result.generationAttemptObjectRef), null);
+  assert.notEqual(await infra.objects.head(result.generationAttemptObjectRef), null,
+    "one physical immutable attempt bundle must exist");
+  assert.equal(await infra.objects.head(result.providerOutputObjectRef), null,
+    "raw provider output is virtualized from the attempt bundle rather than stored as a second object");
 
   const proof = await verifyCredentialedAssetForPublication({
     infra,

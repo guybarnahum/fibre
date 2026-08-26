@@ -4,7 +4,7 @@ import {
   AssetGenerationError,
   toAssetGenerationError,
 } from "./asset-generation-error.mjs";
-import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation-service.mjs";
+import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation.mjs";
 
 export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects", "queues"]);
 
