@@ -20,7 +20,7 @@ function nonEmpty(name, value) {
   return value;
 }
 
-export function shortFibreRef(value, visibleDigestChars = 8) {
+export function shortFibreRef(value, visibleDigestChars = 12) {
   const checked = nonEmpty("Fibre reference", value);
   if (!Number.isInteger(visibleDigestChars) || visibleDigestChars < 4) {
     throw new TypeError("visibleDigestChars must be an integer >= 4");
@@ -69,34 +69,25 @@ function parseArgs(argv) {
 async function jsonFetch(url, init) {
   const response = await fetch(url, init);
   const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(`${init?.method ?? "GET"} ${url} failed ${response.status}: ${JSON.stringify(payload)}`);
-  }
+  if (!response.ok) throw new Error(`${init?.method ?? "GET"} ${url} failed ${response.status}: ${JSON.stringify(payload)}`);
   return payload;
 }
 
-function sleep(ms) {
-  return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
-}
-
-function outputStem(mediaId) {
-  return mediaId.replace(/[^A-Za-z0-9._-]/g, "_");
-}
-
-function runDirectoryName(timestamp) {
-  return timestamp.replace(/[:.]/g, "-");
-}
+function sleep(ms) { return new Promise((resolvePromise) => setTimeout(resolvePromise, ms)); }
+function outputStem(mediaId) { return mediaId.replace(/[^A-Za-z0-9._-]/g, "_"); }
+function runDirectoryName(timestamp) { return timestamp.replace(/[:.]/g, "-"); }
 
 function failureObservation(workflow) {
   const message = workflow?.error?.message;
   if (typeof message !== "string" || message.length === 0) return null;
-  try {
-    const parsed = JSON.parse(message);
-    if (parsed?.failureVersion !== FAILURE_OBSERVATION_VERSION) return null;
-    return parsed;
-  } catch {
-    return null;
+  const jsonStart = message.indexOf("{");
+  for (const candidate of jsonStart > 0 ? [message, message.slice(jsonStart)] : [message]) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed?.failureVersion === FAILURE_OBSERVATION_VERSION) return parsed;
+    } catch {}
   }
+  return null;
 }
 
 export function describeWorkflowFailure({ jobId, workflow }) {
@@ -164,7 +155,7 @@ export async function runCloudflareLiveAssetSmoke({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ threadId: target.threadId, mediaId: target.mediaAsset.mediaId }),
   });
-  console.log(`      job=${shortFibreRef(scheduled.jobId)} (canonical ID retained internally)`);
+  console.log(`      job=${scheduled.jobId}`);
 
   let readyEvent = null;
   let workflow = scheduled.workflow;
@@ -178,9 +169,7 @@ export async function runCloudflareLiveAssetSmoke({
     }
 
     const events = await jsonFetch(`${base}/api/threads/${encodeURIComponent(target.threadId)}/events?after=0`);
-    readyEvent = events.events.find((event) => (
-      event.kind === "media.ready" && event.payload?.mediaId === target.mediaAsset.mediaId
-    )) ?? null;
+    readyEvent = events.events.find((event) => event.kind === "media.ready" && event.payload?.mediaId === target.mediaAsset.mediaId) ?? null;
     if (readyEvent) {
       clearWaiting(heartbeatWidth);
       break;
@@ -196,9 +185,7 @@ export async function runCloudflareLiveAssetSmoke({
   }
   clearWaiting(heartbeatWidth);
   if (!readyEvent) throw new Error(`timed out waiting for ${target.mediaAsset.mediaId} media.ready`);
-  if (readyEvent.payload.objectRef !== scheduled.objectRef) {
-    throw new Error("media.ready objectRef does not match scheduled job");
-  }
+  if (readyEvent.payload.objectRef !== scheduled.objectRef) throw new Error("media.ready objectRef does not match scheduled job");
 
   console.log("[5/6] Fetching the published asset through the provider-neutral public route...");
   const mediaResponse = await fetch(`${base}/api/assets/${encodeURIComponent(readyEvent.payload.objectRef)}`);
