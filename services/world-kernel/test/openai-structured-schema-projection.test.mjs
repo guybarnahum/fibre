@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { recoverModelOutput } from "#packages/model-runtime/src/output-recovery.mjs";
 import {
   assertOpenAIProjectedSchemaConstraints,
   createOpenAIModelAdapter,
@@ -117,6 +118,34 @@ test("OpenAI adapter re-enforces projected uniqueness, length and maxItems const
     }, GENESIS_PASS_B_RESPONSE_SCHEMA),
     (error) => error?.code === "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR" && error?.providerErrorCode === "maxItems",
   );
+});
+
+test("model output recovery normalizes uniqueItems mechanically and idempotently", () => {
+  const raw = {
+    outcome: "remembered",
+    episodeRefs: ["ep_1", "ep_2", "ep_1"],
+    rememberedContent: "A remembered event.",
+    uncertainty: [],
+  };
+  const before = structuredClone(raw);
+  const recovered = recoverModelOutput({ output: raw, responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA });
+
+  assert.deepEqual(raw, before, "recovery must not mutate provider output");
+  assert.deepEqual(recovered.output.episodeRefs, ["ep_1", "ep_2"]);
+  assert.deepEqual(recovered.recoveries, [{
+    kind: "deterministic_normalization",
+    constraint: "uniqueItems",
+    path: "$.episodeRefs",
+    action: "deduplicate_preserve_first",
+    beforeCount: 3,
+    afterCount: 2,
+    removedItems: 1,
+  }]);
+  assert.doesNotThrow(() => assertOpenAIProjectedSchemaConstraints(recovered.output, GENESIS_PASS_B_RESPONSE_SCHEMA));
+
+  const second = recoverModelOutput({ output: recovered.output, responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA });
+  assert.deepEqual(second.output, recovered.output);
+  assert.deepEqual(second.recoveries, []);
 });
 
 test("Pass-B domain independently rejects duplicate episodeRefs after provider projection", () => {
