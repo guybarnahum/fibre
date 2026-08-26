@@ -39,6 +39,47 @@ An unregistered Thread returns `null`. Presentation never synthesizes a FIN. A r
 
 The public projection intentionally does not copy registry implementation fields such as `registrationDigest` or `finPolicyRef`; those remain validation/authority metadata in the Civil Registry record rather than becoming a second registry representation.
 
+## Provider-neutral public asset resolution
+
+Thread Presentation owns the provider-neutral resolver for presentation assets that have already crossed a semantic publication boundary.
+
+The public seam exports:
+
+```js
+createPublicPresentationAssetResolver({ infra, presentationReader })
+threadPresentationChannelId(threadId)
+```
+
+The resolver uses only:
+
+```text
+InfraDriver.catalog
+InfraDriver.objects
+PresentationReader.getSnapshot(channelId)
+```
+
+It does not know whether objects live in R2, S3, GCS, Azure Blob Storage, a local test driver, or a hybrid deployment. It resolves only stable Fibre `objectRef` identities.
+
+Resolution fails closed unless the serving catalog record is explicitly public, the owning Thread presentation remains public, the current media slot still agrees with the publication record, identity-card visibility still permits the asset, and the immutable object digest agrees with the publication projection.
+
+An immutable generated object or Asset Generator receipt alone is never sufficient to serve media publicly. Asset Generator produces bytes and provenance; Thread Presentation publication decides whether those bytes become presentation media.
+
+The generic delivery path is:
+
+```text
+GET /api/assets/:objectRef
+```
+
+and the older Thread-scoped path remains a compatibility facade:
+
+```text
+GET /api/threads/:threadId/media/:objectRef
+```
+
+Both use the same resolver. Private/audience-scoped serving remains deferred until Fibre has an authenticated audience/principal boundary; private identity-card media therefore remains closed rather than receiving a provider-specific bearer URL.
+
+See [`../../docs/architecture/presentation-asset-serving.md`](../../docs/architecture/presentation-asset-serving.md).
+
 ## Related services
 
 - [`../birth-center/`](../birth-center/) owns Civil Registry issuance at birth; the immutable registry is read through World Kernel's `CivilRegistryStore`.

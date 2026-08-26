@@ -42,3 +42,9 @@ export {
   civilRegistrationToPresentationCivilIdentity,
   readPresentationCivilIdentity,
 } from "./civil-identity-projection.mjs";
+
+export {
+  PublicPresentationAssetIntegrityError,
+  createPublicPresentationAssetResolver,
+  threadPresentationChannelId,
+} from "./public-asset-resolver.mjs";

@@ -36,12 +36,13 @@ GET /healthz
 GET /api/threads/:threadId/snapshot
 GET /api/threads/:threadId/events?after=N
 WS  /api/threads/:threadId/stream?after=N
-GET /api/threads/:threadId/media/:objectRef
+GET /api/assets/:objectRef
+GET /api/threads/:threadId/media/:objectRef   # compatibility facade
 ```
 
 A channel must carry an explicit `publiclyVisible: true` catalog projection before the read API exposes it. Media bytes are additionally gated by a `public_presentation_media` catalog projection created only after the credentialed asset publisher verifies and admits `media.ready`.
 
-There is no generic R2/object browser endpoint.
+The generic asset route is not an R2/object browser. It delegates to Thread Presentation's provider-neutral `PublicPresentationAssetResolver`, which resolves only admitted public Fibre `objectRef` values and rechecks current Thread/media/identity-card visibility before reading immutable bytes through `InfraDriver.objects`.
 
 ## Local P3 fixture mode
 
@@ -89,7 +90,9 @@ Cần Thơ presentation snapshot
         -> exact demand/job binding + credential re-verification
         -> media.ready at presentation sequence 1
         -> D1 public-media projection
-        -> HTTP/WebSocket viewer consumption
+        -> provider-neutral PublicPresentationAssetResolver
+        -> GET /api/assets/:objectRef
+        -> HTTP viewer consumption
 ```
 
 The provider adapter pins `gpt-image-2-2026-04-21` and records the exact provider-facing request after removing the API secret. The public C2PA assertion uses `digest_only` prompt disclosure.
@@ -135,7 +138,7 @@ node tools/presentation/seed-p3-can-tho-cloudflare-local.mjs
 node tools/presentation/prove-p3-generated-media-local.mjs
 ```
 
-The proof starts the one market demand, waits for the standalone Workflow and automatic completion path, requires the first semantic presentation event to be `media.ready` sequence `1`, downloads the image only through the guarded public-media endpoint, re-verifies its C2PA assertion, and saves a local copy under ignored `artifacts/generated/`.
+The proof starts the one market demand, waits for the standalone Workflow and automatic completion path, requires the first semantic presentation event to be `media.ready` sequence `1`, downloads the image through the generic provider-neutral `/api/assets/:objectRef` serving path, re-verifies its C2PA assertion, and saves a local copy under ignored `artifacts/generated/`.
 
 The successful result must show:
 
@@ -143,6 +146,7 @@ The successful result must show:
 lifecycleStatus          genesis_candidate
 fixture                  true
 presentationPublication  queue_completion_handoff
+assetServing             provider_neutral_generic_route
 eventSequence            1
 c2pa.valid                true
 provenanceClass          generated_reconstruction
@@ -183,7 +187,8 @@ Provider selection itself is recorded at Fibre level in `deployments/environment
 
 ## Current limits
 
-- generic `/api/assets/:objectRef` resolution and audience authorization are still deferred; the current Thread-specific route remains the public serving seam;
+- public generic `/api/assets/:objectRef` resolution is implemented; authenticated private/audience-scoped asset authorization remains deferred until Fibre has an accepted audience/principal boundary;
+- the existing Thread-specific media route remains a compatibility facade over the same provider-neutral resolver;
 - the completion Queue currently publishes `media.ready` only for the credentialed successful receipt path; terminal credentialed `media.unavailable` semantics remain deferred;
 - D1 catalog demand projection has no compare-and-set, so independent concurrent production presentation writers require a transactional/single-writer demand boundary before race-free current-demand publication is claimed;
 - the `presentation-cloudflare` repository location predates ADR-0017 and is deferred for migration under `deployments/cloudflare/`;

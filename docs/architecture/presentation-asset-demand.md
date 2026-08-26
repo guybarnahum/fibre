@@ -205,16 +205,40 @@ Permanent rules:
 - Thread Presentation alone authors `media.ready` for a Thread completion;
 - demand projection is not evidence for identity, memory, meaning, character or history.
 
+## Public serving after publication
+
+Provider-neutral public asset serving now follows semantic publication rather than generation completion:
+
+```text
+media.ready admitted
+        |
+        v
+public_presentation_media serving projection
+        |
+        v
+PublicPresentationAssetResolver
+        |
+        +--> current public Thread presentation
+        +--> current media slot / identity-card visibility
+        `--> InfraDriver.objects
+                    |
+                    v
+            stable Fibre objectRef bytes
+```
+
+The generic route is `GET /api/assets/:objectRef`. The older Thread-specific media route remains a compatibility facade over the same resolver. The resolver exposes no R2/S3/provider locator and an immutable object or generation receipt alone does not create public serving admission.
+
+See [`presentation-asset-serving.md`](presentation-asset-serving.md).
+
 ## Deferred after this seam
 
 Still deferred:
 
-- generic provider-neutral asset serving;
-- public/private audience authorization for generic asset resolution;
+- authenticated private/audience-scoped asset authorization;
 - independent World/Experience semantic media publication authorities;
 - terminal credentialed `media.unavailable` receipts/publication;
 - scheduled repair sweeps across pending demand and completion DLQs;
 - transactional/CAS demand projection for independent concurrent writers;
 - retry attempt/staging identities for nondeterministic provider retries.
 
-These are separate extension seams. They should not be hidden inside demand reconciliation or completion transport.
+These are separate extension seams. They should not be hidden inside demand reconciliation, completion transport, or public byte delivery.

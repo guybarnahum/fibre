@@ -1,12 +1,14 @@
+import {
+  PublicPresentationAssetIntegrityError,
+  createPublicPresentationAssetResolver,
+  threadPresentationChannelId,
+} from "#services/thread-presentation/src/index.mjs";
+
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
 function assertId(name, value) {
   if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new TypeError(`${name} is invalid`);
   return value;
-}
-
-function channelIdForThread(threadId) {
-  return `presentation:${assertId("threadId", threadId)}`;
 }
 
 function json(value, { status = 200, headers = {} } = {}) {
@@ -32,7 +34,7 @@ function corsHeaders(request, viewerOrigin) {
 }
 
 async function requirePublicChannel(infra, threadId) {
-  const channelId = channelIdForThread(threadId);
+  const channelId = threadPresentationChannelId(threadId);
   const record = await infra.catalog.get(channelId);
   if (record === null
     || record.threadId !== threadId
@@ -48,6 +50,8 @@ function publicIdentityCredentialAllowed(snapshot) {
 }
 
 function route(pathname) {
+  const asset = pathname.match(/^\/api\/assets\/([^/]+)$/);
+  if (asset) return { kind: "asset", objectRef: decodeURIComponent(asset[1]) };
   const snapshot = pathname.match(/^\/api\/threads\/([^/]+)\/snapshot$/);
   if (snapshot) return { kind: "snapshot", threadId: decodeURIComponent(snapshot[1]) };
   const events = pathname.match(/^\/api\/threads\/([^/]+)\/events$/);
@@ -75,6 +79,27 @@ export function createPresentationReadApi({
   }
   if (typeof openStream !== "function") throw new TypeError("presentation read API requires openStream");
 
+  const assetResolver = createPublicPresentationAssetResolver({
+    infra,
+    presentationReader: presentationServer,
+  });
+
+  async function serveAsset(objectRef, cors, { expectedThreadId = null } = {}) {
+    const resolved = await assetResolver.resolve(objectRef, { expectedThreadId });
+    if (resolved === null) return json({ error: "not_found" }, { status: 404, headers: cors });
+    return new Response(resolved.bytes, {
+      status: 200,
+      headers: {
+        ...cors,
+        "Content-Type": resolved.mediaType,
+        "Content-Length": String(resolved.bytes.byteLength ?? resolved.bytes.length),
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "ETag": `\"${resolved.digest}\"`,
+        "X-Fibre-Provenance": resolved.provenanceClass,
+      },
+    });
+  }
+
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
@@ -89,7 +114,17 @@ export function createPresentationReadApi({
       const matched = route(url.pathname);
       if (matched === null) return json({ error: "not_found" }, { status: 404, headers: cors });
       try {
+        if (matched.kind === "asset") {
+          assertId("objectRef", matched.objectRef);
+          return await serveAsset(matched.objectRef, cors);
+        }
+
         assertId("threadId", matched.threadId);
+        if (matched.kind === "media") {
+          assertId("objectRef", matched.objectRef);
+          return await serveAsset(matched.objectRef, cors, { expectedThreadId: matched.threadId });
+        }
+
         const publicChannel = await requirePublicChannel(infra, matched.threadId);
         if (publicChannel === null) return json({ error: "not_found" }, { status: 404, headers: cors });
         const { channelId } = publicChannel;
@@ -124,55 +159,14 @@ export function createPresentationReadApi({
           return json({ channelId, after, head: head.sequence, events }, { headers: { ...cors, "Cache-Control": "no-store" } });
         }
 
-        if (matched.kind === "stream") {
-          if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
-            return json({ error: "websocket_required" }, { status: 426, headers: cors });
-          }
-          return openStream({ channelId, request });
+        if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+          return json({ error: "websocket_required" }, { status: 426, headers: cors });
         }
-
-        assertId("objectRef", matched.objectRef);
-        const media = await infra.catalog.get(`media:${matched.objectRef}`);
-        if (media === null
-          || media.publiclyVisible !== true
-          || media.kind !== "public_presentation_media"
-          || media.threadId !== matched.threadId
-          || media.objectRef !== matched.objectRef) {
-          return json({ error: "not_found" }, { status: 404, headers: cors });
-        }
-
-        // Do not trust the serving catalog alone for civil-identity media. The
-        // immutable current presentation snapshot carries the credential visibility
-        // and official-photo mediaRef. Flipping publiclyVisible in D1 cannot bypass it.
-        const current = await presentationServer.getSnapshot(channelId);
-        if (current === null || current.pointer.threadId !== matched.threadId) {
-          return json({ error: "not_found" }, { status: 404, headers: cors });
-        }
-        const card = current.snapshot.presentation?.identityCard ?? null;
-        if (card !== null && card.officialPhotoMediaRef === media.mediaId && card.visibility !== "public") {
-          return json({ error: "not_found" }, { status: 404, headers: cors });
-        }
-        if (media.role === "official_id_photo"
-          && (card === null || card.officialPhotoMediaRef !== media.mediaId || card.visibility !== "public")) {
-          return json({ error: "not_found" }, { status: 404, headers: cors });
-        }
-
-        const stored = await infra.objects.get(matched.objectRef);
-        if (stored === null || stored.digest !== media.digest) {
+        return openStream({ channelId, request });
+      } catch (error) {
+        if (error instanceof PublicPresentationAssetIntegrityError) {
           return json({ error: "media_integrity_failure" }, { status: 503, headers: cors });
         }
-        return new Response(stored.bytes, {
-          status: 200,
-          headers: {
-            ...cors,
-            "Content-Type": media.mediaType,
-            "Content-Length": String(stored.bytes.byteLength ?? stored.bytes.length),
-            "Cache-Control": "public, max-age=31536000, immutable",
-            "ETag": `\"${stored.digest}\"`,
-            "X-Fibre-Provenance": media.provenanceClass,
-          },
-        });
-      } catch (error) {
         if (error instanceof TypeError) return json({ error: "invalid_request" }, { status: 400, headers: cors });
         throw error;
       }
@@ -180,4 +174,5 @@ export function createPresentationReadApi({
   });
 }
 
+const channelIdForThread = threadPresentationChannelId;
 export { channelIdForThread };

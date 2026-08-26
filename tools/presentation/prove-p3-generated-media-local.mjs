@@ -43,9 +43,9 @@ if (!readyEvent) throw new Error(`timed out waiting for ${mediaId} media.ready`)
 if (readyEvent.sequence !== 1) throw new Error(`expected first generated media event at sequence 1, got ${readyEvent.sequence}`);
 if (readyEvent.payload.objectRef !== scheduled.objectRef) throw new Error("media.ready objectRef does not match scheduled job");
 
-const mediaUrl = `${base}/api/threads/${threadId}/media/${encodeURIComponent(readyEvent.payload.objectRef)}`;
+const mediaUrl = `${base}/api/assets/${encodeURIComponent(readyEvent.payload.objectRef)}`;
 const mediaResponse = await fetch(mediaUrl);
-if (!mediaResponse.ok) throw new Error(`generated media fetch failed ${mediaResponse.status}`);
+if (!mediaResponse.ok) throw new Error(`generated asset fetch failed ${mediaResponse.status}`);
 if (mediaResponse.headers.get("x-fibre-provenance") !== "generated_reconstruction") {
   throw new Error("generated media is missing generated_reconstruction serving classification");
 }
@@ -88,6 +88,7 @@ console.log(JSON.stringify({
   jobId: scheduled.jobId,
   workflowStatus: workflow.status,
   presentationPublication: "queue_completion_handoff",
+  assetServing: "provider_neutral_generic_route",
   eventSequence: readyEvent.sequence,
   eventId: readyEvent.eventId,
   objectRef: readyEvent.payload.objectRef,
