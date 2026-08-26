@@ -5,13 +5,15 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 import {
+  DURABLE_MODEL_INVOCATION_JOURNAL_VERSION,
   DurableInvocationConflictError,
   DurableInvocationIntegrityError,
   createDurableModelAdapter,
   createFileModelInvocationJournal,
+  durableInvocationRequestWitness,
 } from "../src/model-runtime/durable-invocation-journal.mjs";
-import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../src/genesis-pass-a-reliability-v3.mjs";
-import { generateRichPassAEpisode } from "../src/genesis-rich-pass-a-runner.mjs";
+import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../../world-kernel/src/genesis-pass-a-reliability-v3.mjs";
+import { generateRichPassAEpisode } from "../../world-kernel/src/genesis-rich-pass-a-runner.mjs";
 
 const CALIBRATION_CORPUS = "fixtures/birth-center/recovery/pass-a-restart-v1.json";
 const TRIAL_175_RESULT = "fixtures/birth-center/recovery/pass-a-restart-recorded-result-v1.json";
@@ -78,6 +80,44 @@ function resultFromCalibrationResponse(result, responses, clientRequestId) {
     provenance: structuredClone(result.calls[callIndex].provenance),
   };
 }
+
+test("Birth Center journal preserves the pre-move durable invocation persistence format exactly", async (t) => {
+  const adapter = fakeAdapter(async () => successfulResult());
+  const args = simpleArgs();
+  assert.equal(DURABLE_MODEL_INVOCATION_JOURNAL_VERSION, "fibre-durable-model-invocation-journal-v1");
+  assert.deepEqual(durableInvocationRequestWitness(adapter, args), {
+    clientRequestId: "durable-test:001",
+    provider: "openai",
+    modelId: "gpt-5.1-2025-11-13",
+    configurationDigest: "sha256:addfc6c069f7fe6d50ccbf3fedf40e86ec478c22707c83da83f10a00bb33379f",
+    promptRawHash: "sha256:4bf2025db7943552d5ce22e1c160b5b449db3ef20e249547661977ead64960bd",
+    promptCanonicalJsonHash: "sha256:7cdc21b0487fff6d2a455744fcada7f18c75359c192ac78ec11aed0378d92f23",
+    inputDigest: "sha256:48208f9428d64634bd8e28ff345bf0eab60d53c18fa2fbdb0b9bc1e84df2b5f6",
+    responseSchemaDigest: "sha256:d7f69ea25824f613d0b60198abe050adc66a3bf45d9f2045d1997214a55498e5",
+    requestDigest: "sha256:fcc3019196c39250c29148b163a0df05610210503afe6b016ffb84cfce136e45",
+  });
+
+  const journal = tempJournal(t);
+  await createDurableModelAdapter({ baseAdapter: adapter, journal }).invoke(args);
+  const files = readdirSync(journal.rootPath);
+  assert.deepEqual(files, [
+    "invocation-a385cc0b1e8afc3296114bbde2e6d97ac61ae5c20cae2cc583c22344178c6c3e.json",
+  ]);
+  const text = readFileSync(join(journal.rootPath, files[0]), "utf8");
+  assert.equal(text.endsWith("\n"), true);
+  assert.equal(text.includes('\n  "recordVersion": "fibre-durable-model-invocation-journal-v1"'), true);
+  const record = JSON.parse(text);
+  assert.deepEqual(Object.keys(record), [
+    "recordVersion",
+    "request",
+    "result",
+    "resultDigest",
+    "recordedAt",
+    "recordDigest",
+  ]);
+  assert.equal(record.resultDigest, "sha256:a842341c5ae49c731d398949da42bc643be3fb6ee7103e77222a1d4365f27960");
+  assert.deepEqual(record.request, durableInvocationRequestWitness(adapter, args));
+});
 
 test("durable adapter commits a successful invocation and replays it after restart without another provider call", async (t) => {
   const journal = tempJournal(t);

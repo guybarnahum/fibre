@@ -50,7 +50,7 @@ test("new service runtime cannot persist durable files directly", () => {
 test("the two existing durable model journals are the only named direct-file migration exceptions", () => {
   assert.deepEqual(DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS, [
     "services/world-kernel/src/guardian-model-adapter.mjs",
-    "services/world-kernel/src/model-runtime/durable-invocation-journal.mjs",
+    "services/birth-center/src/model-runtime/durable-invocation-journal.mjs",
   ]);
   for (const path of DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS) {
     assert.deepEqual(

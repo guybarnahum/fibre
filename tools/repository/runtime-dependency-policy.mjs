@@ -16,7 +16,6 @@ const DYNAMIC_MODULE_SPECIFIER = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/gu;
 // structural migration, and this guard should not turn that temporary layout
 // into a permanent accepted baseline.
 export const PRIVATE_SERVICE_MIGRATION_EDGES = Object.freeze([
-  "services/birth-center/src/runtime.mjs::../../world-kernel/src/model-runtime/durable-invocation-journal.mjs",
   "services/thread-presentation/src/civil-identity-projection.mjs::#services/world-kernel/src/thread-presentation-identity-domain.mjs",
   "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-domain.mjs",
   "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-identity-domain.mjs",

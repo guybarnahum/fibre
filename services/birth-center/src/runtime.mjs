@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import {
   createDurableModelAdapter,
   createFileModelInvocationJournal,
-} from "../../world-kernel/src/model-runtime/durable-invocation-journal.mjs";
+} from "./model-runtime/durable-invocation-journal.mjs";
 
 export const BIRTH_CENTER_RUNTIME_VERSION = "fibre-birth-center-runtime-v1";
 
