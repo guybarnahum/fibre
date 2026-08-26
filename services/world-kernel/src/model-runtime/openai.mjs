@@ -1,3 +1,5 @@
+import { recoverModelOutput } from "#packages/model-runtime/src/output-recovery.mjs";
+
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
 import {
   assertId,
@@ -349,10 +351,18 @@ export function createOpenAIModelAdapter({
             throw incomplete;
           }
 
-          const output = parseOutput(extractOutputText(body));
+          const parsedOutput = parseOutput(extractOutputText(body));
+          const recovery = recoverModelOutput({ output: parsedOutput, responseSchema });
+          const output = recovery.output;
           assertOpenAIProjectedSchemaConstraints(output, responseSchema);
           const providerRequestId = response.headers?.get?.("x-request-id") ?? body?.id ?? null;
           const usage = usageFromBody(body);
+          const outputRecovery = recovery.recoveries.length === 0
+            ? null
+            : Object.freeze({
+                version: "fibre-model-output-recovery-v1",
+                recoveries: structuredClone(recovery.recoveries),
+              });
           const provenance = {
             provider: "openai",
             transport: "responses",
@@ -361,6 +371,7 @@ export function createOpenAIModelAdapter({
             configuration: { ...configuration },
             invocationAttempts: attempt,
             operationalRetries: structuredClone(operationalRetries),
+            ...(outputRecovery === null ? {} : { outputRecovery: structuredClone(outputRecovery) }),
             usage,
           };
           notify(observer, {
@@ -376,6 +387,7 @@ export function createOpenAIModelAdapter({
             promptCanonicalJsonHash: canonicalDigest(systemPrompt),
             responseSchemaHash: digest(responseSchema),
             modelOutput: structuredClone(output),
+            ...(outputRecovery === null ? {} : { outputRecovery: structuredClone(outputRecovery) }),
             usage,
           });
           return { output, provenance };
