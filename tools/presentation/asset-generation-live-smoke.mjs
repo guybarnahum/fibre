@@ -139,13 +139,40 @@ function runDirectoryName(timestamp) {
   return timestamp.replace(/[:.]/g, "-");
 }
 
+function elapsedSeconds(startedAtMs) {
+  return ((Date.now() - startedAtMs) / 1000).toFixed(1);
+}
+
+function createProgressFetch({ fetchImpl = fetch, heartbeatMs = 10_000 } = {}) {
+  return async (...args) => {
+    const requestStartedAt = Date.now();
+    console.log("      OpenAI request submitted; waiting for generated image...");
+    const heartbeat = setInterval(() => {
+      console.log(`      still generating... ${Math.round((Date.now() - requestStartedAt) / 1000)}s elapsed`);
+    }, heartbeatMs);
+    heartbeat.unref?.();
+    try {
+      const response = await fetchImpl(...args);
+      console.log(`      provider responded HTTP ${response.status} after ${elapsedSeconds(requestStartedAt)}s`);
+      return response;
+    } finally {
+      clearInterval(heartbeat);
+    }
+  };
+}
+
 export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } = {}) {
   if (typeof apiKey !== "string" || apiKey.trim() === "") {
     throw new Error("OPENAI_API_KEY is required for npm run test:asset-live");
   }
 
-  const runStartedAt = new Date().toISOString();
+  const runStartedMs = Date.now();
+  const runStartedAt = new Date(runStartedMs).toISOString();
+  console.log("FIBRE LIVE ASSET SMOKE: START");
+  console.log("[1/5] Loading Thread Presentation and planning the memory reconstruction...");
   const prepared = await buildLiveAssetSmokeJob({ requestedAt: runStartedAt });
+  console.log(`[2/5] Grounded memory: \"${prepared.memory.title}\" (${prepared.memory.uncertainty.length} uncertainty constraints)`);
+
   const infra = createMemoryInfraDriver();
   await infra.objects.putImmutable(
     prepared.snapshotObjectRef,
@@ -158,7 +185,11 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
     },
   );
 
-  const provider = createOpenAIImageProvider(providerOptionsFromEnvironment(apiKey));
+  console.log("[3/5] Generating a real image with OpenAI; this can take a minute or two...");
+  const provider = createOpenAIImageProvider({
+    ...providerOptionsFromEnvironment(apiKey),
+    fetchImpl: createProgressFetch(),
+  });
   const credentialSigner = createProcessLocalCredentialSigner();
   const generated = await executeCredentialedAssetGenerationJob({
     infra,
@@ -166,6 +197,8 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
     credentialSigner,
     job: prepared.job,
   });
+
+  console.log("[4/5] Image returned. Verifying immutable storage, receipt, digest and provenance...");
   const proof = await verifyCredentialedAssetForPublication({
     infra,
     credentialSigner,
@@ -184,6 +217,7 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
   assert.equal(stored.digest, generated.finalAssetDigest);
   assertPng(stored.bytes);
 
+  console.log("[5/5] Verification passed. Writing PNG and evidence files...");
   const outputDirectory = join(OUTPUT_ROOT, runDirectoryName(runStartedAt));
   await mkdir(outputDirectory, { recursive: true });
   const imagePath = join(outputDirectory, "thread-memory-tomatoes.png");
@@ -240,7 +274,7 @@ export async function runLiveAssetSmoke({ apiKey = process.env.OPENAI_API_KEY } 
   };
   await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, "utf8");
 
-  console.log("FIBRE LIVE ASSET SMOKE: PASS");
+  console.log(`FIBRE LIVE ASSET SMOKE: PASS (${elapsedSeconds(runStartedMs)}s total)`);
   console.log(`Thread: ${evidence.source.threadId}`);
   console.log(`Memory: ${evidence.source.title}`);
   console.log(`Provider: ${evidence.generation.provider}/${evidence.generation.model}`);
