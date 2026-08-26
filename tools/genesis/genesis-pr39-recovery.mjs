@@ -30,6 +30,7 @@ const ALLOWED_RECOVERY_PATHS = Object.freeze([
   "tools/genesis/genesis-pr39-closure-recovery.mjs",
   "tools/genesis/genesis-pr39-closure-recovery.test.mjs",
   "tools/genesis/genesis-pr39-recovery.mjs",
+  "tools/genesis/genesis-pr39-closure-launch.mjs",
   "tools/genesis/genesis-pr39-closure.mjs",
   "tools/genesis/genesis-pr39-closure-check.mjs",
   "package.json",
