@@ -4,6 +4,12 @@ How the current system is built to hold Fibre's concepts.
 
 Architecture documents define current technical authorities, boundaries, flows, storage and runtime contracts, and system structures that realize accepted concepts and foundations.
 
+## Runtime ownership and dependencies
+
+[`runtime-structure.md`](runtime-structure.md) defines the repository's runtime ownership model: durable capabilities under `services/`, genuinely shared semantic contracts under `domain/`, provider-neutral technical capabilities under `infra/`, and stable `@fibre/...` imports across ownership boundaries.
+
+The corresponding accepted decision is [`../decisions/ADR-0018-runtime-dependency-boundaries.md`](../decisions/ADR-0018-runtime-dependency-boundaries.md).
+
 ## Cross-cutting storage and infrastructure
 
 The accepted production persistence rule is [`production-persistence.md`](production-persistence.md): every persistent production state or byte object used by a Fibre service crosses a provider-neutral `InfraDriver` capability, while semantic domain stores remain the authority for Fibre meaning and invariants.

@@ -26,7 +26,7 @@ services    -> InfraDriver contracts
 
 A service receives its infrastructure dependency rather than choosing Cloudflare, AWS, GCP, Azure or another platform itself. `packages/infra` implements reusable provider mappings and must not know which Fibre service is using them.
 
-The versioned deployment manifests under `deployments/environments/` select the runtime provider and InfraDriver provider for each deployed service. See `../docs/decisions/ADR-0018-deployment-provider-selection.md` and `../docs/architecture/deployment-provider-selection.md`.
+The versioned deployment manifests under `deployments/environments/` select the runtime provider and InfraDriver provider for each deployed service. See `../docs/decisions/ADR-0019-deployment-provider-selection.md` and `../docs/architecture/deployment-provider-selection.md`.
 
 ## Production persistence boundary
 

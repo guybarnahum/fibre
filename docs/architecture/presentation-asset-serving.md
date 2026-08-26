@@ -135,4 +135,4 @@ Changing the runtime or object-store provider must not change:
 - digest checks; or
 - the meaning of the generic Fibre asset route.
 
-This follows ADR-0018: services do not choose their cloud; deployment composition selects the runtime and `InfraDriver` implementation.
+This follows ADR-0019: services do not choose their cloud; deployment composition selects the runtime and `InfraDriver` implementation.

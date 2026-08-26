@@ -1,10 +1,10 @@
 ---
-id: adr-0018
+id: adr-0019
 status: accepted
 date: 2026-08-25
 ---
 
-# ADR-0018: Deployment selects infrastructure providers; services do not
+# ADR-0019: Deployment selects infrastructure providers; services do not
 
 ## Context
 

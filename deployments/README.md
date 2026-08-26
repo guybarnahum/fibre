@@ -52,7 +52,7 @@ Do not create empty AWS/GCP/Azure directories in anticipation. Add a provider ad
 
 See:
 
-- `docs/decisions/ADR-0018-deployment-provider-selection.md`
+- `docs/decisions/ADR-0019-deployment-provider-selection.md`
 - `docs/decisions/ADR-0017-provider-neutral-production-persistence.md`
 - `docs/architecture/deployment-provider-selection.md`
 - `docs/architecture/infrastructure-driver.md`
