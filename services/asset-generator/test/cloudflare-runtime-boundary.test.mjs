@@ -4,6 +4,7 @@ import { readFile, stat } from "node:fs/promises";
 
 const runtimeUrl = new URL("../src/asset-generation-runtime.mjs", import.meta.url);
 const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
+const attemptUrl = new URL("../src/asset-generation-attempt.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
 const workerUrl = new URL("../../../deployments/cloudflare/asset-generator/worker.mjs", import.meta.url);
 const assetConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.local.jsonc", import.meta.url);
@@ -26,9 +27,10 @@ async function json(url) {
   return JSON.parse(await text(url));
 }
 
-test("Asset Generator runtime is infrastructure-independent and Cloudflare only translates portable retry policy", async () => {
+test("Asset Generator runtime stages provider attempts portably and Cloudflare only translates retry policy", async () => {
   const runtime = await text(runtimeUrl);
   const errors = await text(errorUrl);
+  const attempts = await text(attemptUrl);
   const worker = await text(workerUrl);
 
   await assert.rejects(() => stat(oldCloudflareDirUrl), (error) => error?.code === "ENOENT");
@@ -36,14 +38,23 @@ test("Asset Generator runtime is infrastructure-independent and Cloudflare only 
   assert.match(runtime, /createAssetGenerationRuntime/);
   assert.match(runtime, /requireInfraCapabilities/);
   assert.match(runtime, /publishAssetGenerationCompletion/);
-  assert.match(runtime, /AssetGenerationError/);
-  assert.match(runtime, /completion_publication/);
+  assert.match(runtime, /attemptNumber/);
+  assert.match(runtime, /providerOutputResumed/);
   assert.doesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/);
   assert.doesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 
+  assert.match(attempts, /generation-attempt-v0\.1/);
+  assert.match(attempts, /assetGenerationJobDigest/);
+  assert.match(attempts, /generationAttemptObjectRef/);
+  assert.match(attempts, /stagedProviderOutputObjectRef/);
+  assert.doesNotMatch(attempts, /cloudflare|R2|WorkflowEntrypoint/);
+
   assert.match(errors, /assetGenerationRetryDecision/);
+  assert.match(errors, /provider_output_staging/);
   assert.match(errors, /provider_output_not_staged/,
-    "portable policy must block post-provider whole-job replay until provider output is durably staged");
+    "portable policy must still block replay if raw provider output never became durable");
+  assert.match(errors, /providerOutputDurable/,
+    "portable retry policy must carry whether post-provider resume is safe");
   assert.match(errors, /rate_limited/);
   assert.match(errors, /quota_exhausted/);
   assert.match(errors, /immutable_conflict/);
@@ -55,10 +66,10 @@ test("Asset Generator runtime is infrastructure-independent and Cloudflare only 
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /NonRetryableError/);
   assert.match(worker, /assetGenerationRetryDecision/);
-  assert.match(worker, /ctx\.attempt/,
-    "Cloudflare translation must include the actual Workflow attempt in retry decisions and diagnostics");
-  assert.match(worker, /providerOutputDurable: true/,
-    "completion publication may retry only after the immutable generation result exists");
+  assert.match(worker, /attemptNumber: ctx\.attempt/,
+    "Cloudflare Workflow retries must be passed into the portable GenerationAttempt seam");
+  assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/,
+    "diagnostics must distinguish safe staged retries from pre-stage failures");
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
   assert.match(worker, /createOpenAIImageProvider/);

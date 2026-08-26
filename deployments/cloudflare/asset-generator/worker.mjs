@@ -39,6 +39,7 @@ function generationFailureObservation(error, { attempt, decision }) {
     httpStatus: Number.isSafeInteger(error?.httpStatus) ? error.httpStatus : null,
     providerRequestId: typeof error?.providerRequestId === "string" ? error.providerRequestId : null,
     retryAfterMs: Number.isSafeInteger(error?.retryAfterMs) ? error.retryAfterMs : null,
+    providerOutputDurable: error?.providerOutputDurable === true,
     categoryRetryable: error?.retryable === true,
     retryable: decision.retry,
     retryDecision: decision.reason,
@@ -87,7 +88,7 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
       },
       async (ctx) => {
         try {
-          return await runtime.execute(event.payload);
+          return await runtime.execute(event.payload, { attemptNumber: ctx.attempt });
         } catch (error) {
           const decision = assetGenerationRetryDecision(error, { attempt: ctx.attempt });
           const observation = generationFailureObservation(error, { attempt: ctx.attempt, decision });

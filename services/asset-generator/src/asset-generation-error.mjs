@@ -4,6 +4,7 @@ export const ASSET_GENERATION_ERROR_PHASES = Object.freeze([
   "validation",
   "reference_loading",
   "provider_generation",
+  "provider_output_staging",
   "credential_signing",
   "credential_verification",
   "storage_finalization",
@@ -111,6 +112,7 @@ export class AssetGenerationError extends Error {
     httpStatus = null,
     providerRequestId = null,
     retryAfterMs = null,
+    providerOutputDurable = false,
     safeDetail = message,
     cause = null,
   } = {}) {
@@ -126,6 +128,8 @@ export class AssetGenerationError extends Error {
     this.httpStatus = nullableStatus(httpStatus);
     this.providerRequestId = nullableString("providerRequestId", providerRequestId);
     this.retryAfterMs = nullableDelay(retryAfterMs);
+    if (typeof providerOutputDurable !== "boolean") throw new TypeError("providerOutputDurable must be boolean");
+    this.providerOutputDurable = providerOutputDurable;
     this.safeDetail = detail;
   }
 }
@@ -134,10 +138,40 @@ function categoryForCause(error, phase) {
   if (error instanceof InfraImmutableObjectConflictError) return "immutable_conflict";
   if (error?.name === "AbortError" || error?.name === "TimeoutError") return "provider_timeout";
   if (error instanceof TypeError) return "invalid_request";
-  if (["reference_loading", "storage_finalization", "completion_publication"].includes(phase)) {
+  if (["reference_loading", "provider_output_staging", "storage_finalization", "completion_publication"].includes(phase)) {
     return "storage_transient";
   }
   return "unknown";
+}
+
+function contextualizeExistingError(error, {
+  provider = null,
+  model = null,
+  providerOutputDurable = null,
+} = {}) {
+  const resolvedProvider = error.provider ?? provider;
+  const resolvedModel = error.model ?? model;
+  const resolvedDurable = providerOutputDurable === null
+    ? error.providerOutputDurable
+    : providerOutputDurable;
+  if (resolvedProvider === error.provider
+    && resolvedModel === error.model
+    && resolvedDurable === error.providerOutputDurable) {
+    return error;
+  }
+  return new AssetGenerationError(error.message, {
+    phase: error.phase,
+    category: error.category,
+    retryable: error.retryable,
+    provider: resolvedProvider,
+    model: resolvedModel,
+    httpStatus: error.httpStatus,
+    providerRequestId: error.providerRequestId,
+    retryAfterMs: error.retryAfterMs,
+    providerOutputDurable: resolvedDurable,
+    safeDetail: error.safeDetail,
+    cause: error,
+  });
 }
 
 export function toAssetGenerationError(error, {
@@ -146,9 +180,12 @@ export function toAssetGenerationError(error, {
   retryable = null,
   provider = null,
   model = null,
+  providerOutputDurable = null,
   safeDetail = null,
 } = {}) {
-  if (error instanceof AssetGenerationError) return error;
+  if (error instanceof AssetGenerationError) {
+    return contextualizeExistingError(error, { provider, model, providerOutputDurable });
+  }
   const resolvedCategory = category ?? categoryForCause(error, phase);
   return new AssetGenerationError(error instanceof Error ? error.message : String(error), {
     phase,
@@ -159,6 +196,7 @@ export function toAssetGenerationError(error, {
     httpStatus: Number.isSafeInteger(error?.httpStatus) ? error.httpStatus : null,
     providerRequestId: typeof error?.providerRequestId === "string" ? error.providerRequestId : null,
     retryAfterMs: Number.isSafeInteger(error?.retryAfterMs) ? error.retryAfterMs : null,
+    providerOutputDurable: providerOutputDurable === true,
     safeDetail: safeDetail ?? error?.safeDetail ?? (error instanceof Error ? error.message : String(error)),
     cause: error,
   });
@@ -175,15 +213,16 @@ export function parseRetryAfterMs(value, { nowMs = Date.now() } = {}) {
 
 export function assetGenerationRetryDecision(error, {
   attempt = 1,
-  providerOutputDurable = false,
+  providerOutputDurable = error?.providerOutputDurable === true,
 } = {}) {
   if (!Number.isSafeInteger(attempt) || attempt < 1) throw new TypeError("attempt must be a positive safe integer");
   if (typeof providerOutputDurable !== "boolean") throw new TypeError("providerOutputDurable must be boolean");
   const normalized = error instanceof AssetGenerationError
     ? error
-    : toAssetGenerationError(error, { retryable: false });
+    : toAssetGenerationError(error, { retryable: false, providerOutputDurable });
   const maxAttempts = MAX_ATTEMPTS[normalized.category] ?? 1;
   const postProviderPhase = [
+    "provider_output_staging",
     "credential_signing",
     "credential_verification",
     "storage_finalization",

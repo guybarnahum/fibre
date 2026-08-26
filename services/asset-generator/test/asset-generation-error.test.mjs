@@ -28,6 +28,7 @@ test("asset generation error preserves provider-neutral failure evidence", () =>
   assert.equal(error.httpStatus, 429);
   assert.equal(error.providerRequestId, "req_fixture");
   assert.equal(error.retryAfterMs, 12_000);
+  assert.equal(error.providerOutputDurable, false);
   assert.equal(error.safeDetail, "rate limited");
 });
 
@@ -61,21 +62,31 @@ test("retry policy retries bounded provider failures but never terminal categori
   assert.equal(assetGenerationRetryDecision(terminal).reason, "terminal_category");
 });
 
-test("post-provider transient failures are classified but held until provider output is durable", () => {
-  const signing = new AssetGenerationError("signer unavailable", {
+test("post-provider transient failures become retryable automatically once staged output is durable", () => {
+  const unstaged = new AssetGenerationError("signer unavailable", {
     phase: "credential_signing",
     category: "provider_unavailable",
   });
-  const current = assetGenerationRetryDecision(signing, { attempt: 1 });
-  assert.equal(signing.retryable, true, "the failure category itself is transient");
-  assert.equal(current.retry, false, "the current whole-job step must not pay for another provider call");
+  const current = assetGenerationRetryDecision(unstaged, { attempt: 1 });
+  assert.equal(unstaged.retryable, true, "the failure category itself is transient");
+  assert.equal(current.retry, false, "without a stage the workflow must not pay for another provider call");
   assert.equal(current.reason, "provider_output_not_staged");
 
-  const resumable = assetGenerationRetryDecision(signing, {
-    attempt: 1,
-    providerOutputDurable: true,
+  const staged = toAssetGenerationError(unstaged, { providerOutputDurable: true });
+  assert.equal(staged.providerOutputDurable, true);
+  const resumable = assetGenerationRetryDecision(staged, { attempt: 1 });
+  assert.equal(resumable.retry, true, "durable raw provider output makes signer retry safe");
+});
+
+test("provider-output staging itself remains terminal if the raw output never became durable", () => {
+  const staging = new AssetGenerationError("object store unavailable", {
+    phase: "provider_output_staging",
+    category: "storage_transient",
+    providerOutputDurable: false,
   });
-  assert.equal(resumable.retry, true, "Slice B can enable safe resume once raw provider output is staged");
+  const decision = assetGenerationRetryDecision(staging);
+  assert.equal(decision.retry, false);
+  assert.equal(decision.reason, "provider_output_not_staged");
 });
 
 test("reference loading and completion publication can retry without duplicating provider generation", () => {
@@ -86,6 +97,7 @@ test("reference loading and completion publication can retry without duplicating
   const completion = new AssetGenerationError("queue unavailable", {
     phase: "completion_publication",
     category: "storage_transient",
+    providerOutputDurable: true,
   });
   assert.equal(assetGenerationRetryDecision(referenceRead).retry, true);
   assert.equal(assetGenerationRetryDecision(completion).retry, true);
@@ -94,10 +106,11 @@ test("reference loading and completion publication can retry without duplicating
 test("immutable conflicts classify terminal and retry-after parsing accepts seconds or dates", () => {
   const classified = toAssetGenerationError(
     new InfraImmutableObjectConflictError("occupied"),
-    { phase: "storage_finalization" },
+    { phase: "storage_finalization", providerOutputDurable: true },
   );
   assert.equal(classified.category, "immutable_conflict");
   assert.equal(classified.retryable, false);
+  assert.equal(classified.providerOutputDurable, true);
 
   assert.equal(parseRetryAfterMs("1.5"), 1500);
   assert.equal(parseRetryAfterMs("Wed, 26 Aug 2026 21:00:10 GMT", {

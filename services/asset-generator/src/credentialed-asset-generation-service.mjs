@@ -8,6 +8,12 @@ import {
   toAssetGenerationError,
 } from "./asset-generation-error.mjs";
 import {
+  assetGenerationJobDigest,
+  createGenerationAttempt,
+  generationAttemptObjectRef,
+  normalizeGenerationAttempt,
+} from "./asset-generation-attempt.mjs";
+import {
   GENERATION_RECORD_VERSION,
   STORED_ASSET_RECEIPT_VERSION,
   assertContentCredentialSigner,
@@ -37,6 +43,21 @@ async function sha256(bytes) {
   const normalized = input instanceof Uint8Array ? input : new Uint8Array(input);
   const digest = await crypto.subtle.digest("SHA-256", normalized);
   return `sha256:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function storedBytes(stored) {
+  return typeof stored.bytes === "string" ? new TextEncoder().encode(stored.bytes) : stored.bytes;
+}
+
+async function parseStoredJson(stored, label) {
+  const bytes = storedBytes(stored);
+  const computed = await sha256(bytes);
+  if (computed !== stored.digest) throw new Error(`${label} digest does not match stored bytes`);
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new Error(`${label} contains invalid JSON`);
+  }
 }
 
 async function persistJsonImmutable(objects, objectRef, value, metadata) {
@@ -91,25 +112,431 @@ function assertVerificationMatchesRecord(verification, record, expectedAssertion
   }
 }
 
+function assertPositiveAttemptNumber(value) {
+  if (!Number.isSafeInteger(value) || value < 1) throw new TypeError("attemptNumber must be a positive safe integer");
+  return value;
+}
+
+async function loadGenerationAttempt(objects, objectRef) {
+  const stored = await objects.get(objectRef);
+  if (stored === null) return null;
+  const attempt = normalizeGenerationAttempt(await parseStoredJson(stored, `generation attempt ${objectRef}`));
+  return { attempt, objectRef, digest: stored.digest };
+}
+
+function witnessedFromStagedAttempt({ attempt, bytes, job }) {
+  return normalizeWitnessedMediaGenerationResult({
+    requestWitness: attempt.providerRequestWitness,
+    result: {
+      assetKind: job.assetKind,
+      bytes,
+      mediaType: attempt.providerOutput.mediaType,
+      width: attempt.providerOutput.width,
+      height: attempt.providerOutput.height,
+      durationMs: attempt.providerOutput.durationMs,
+      provider: attempt.generation.provider,
+      model: attempt.generation.model,
+      providerRequestId: attempt.generation.providerRequestId,
+      generatedAt: attempt.generation.generatedAt,
+      configuration: attempt.generation.configuration,
+    },
+  }, { expectedKind: job.assetKind });
+}
+
+async function loadStagedProviderOutput(objects, {
+  job,
+  jobDigest,
+  throughAttemptNumber,
+}) {
+  for (let candidate = 1; candidate <= throughAttemptNumber; candidate += 1) {
+    const attemptObjectRef = generationAttemptObjectRef(jobDigest, candidate);
+    const loaded = await loadGenerationAttempt(objects, attemptObjectRef);
+    if (loaded === null) continue;
+    const { attempt } = loaded;
+    if (attempt.jobId !== job.jobId || attempt.jobDigest !== jobDigest) {
+      throw new InfraImmutableObjectConflictError(`generation attempt ${attemptObjectRef} is bound to a different job`);
+    }
+
+    const output = await objects.get(attempt.providerOutputObjectRef);
+    if (output === null) {
+      if (candidate === throughAttemptNumber) {
+        throw new AssetGenerationError(`generation attempt ${attempt.attemptId} has no durable provider output`, {
+          phase: "provider_output_staging",
+          category: "storage_transient",
+          provider: attempt.generation.provider,
+          model: attempt.generation.model,
+          providerRequestId: attempt.generation.providerRequestId,
+          providerOutputDurable: false,
+        });
+      }
+      continue;
+    }
+    const outputDigest = await sha256(storedBytes(output));
+    if (output.digest !== attempt.providerOutputDigest || outputDigest !== attempt.providerOutputDigest) {
+      throw new InfraImmutableObjectConflictError(`staged provider output for ${attempt.attemptId} has a digest mismatch`);
+    }
+    if (output.metadata?.kind !== "staged_provider_output"
+      || output.metadata?.generationAttemptId !== attempt.attemptId
+      || output.metadata?.generationAttemptDigest !== loaded.digest
+      || output.metadata?.jobId !== job.jobId
+      || output.metadata?.jobDigest !== jobDigest) {
+      throw new InfraImmutableObjectConflictError(`staged provider output metadata for ${attempt.attemptId} is inconsistent`);
+    }
+    return {
+      ...loaded,
+      output,
+      witnessed: witnessedFromStagedAttempt({ attempt, bytes: storedBytes(output), job }),
+      resumed: true,
+    };
+  }
+  return null;
+}
+
+async function stageProviderOutput({
+  objects,
+  job,
+  jobDigest,
+  attemptNumber,
+  providerAdapterId,
+  witnessed,
+  now,
+}) {
+  const generated = witnessed.result;
+  const providerRequestDigest = await sha256(canonicalJson(witnessed.requestWitness));
+  const providerOutputDigest = await sha256(generated.bytes);
+  const attempt = createGenerationAttempt({
+    job,
+    jobDigest,
+    attemptNumber,
+    providerAdapterId,
+    providerRequestWitness: witnessed.requestWitness,
+    providerRequestDigest,
+    providerOutputDigest,
+    providerOutput: {
+      mediaType: generated.mediaType,
+      width: generated.width,
+      height: generated.height,
+      durationMs: generated.durationMs,
+    },
+    generation: {
+      provider: generated.provider,
+      model: generated.model,
+      providerRequestId: generated.providerRequestId,
+      generatedAt: generated.generatedAt,
+      configuration: generated.configuration,
+    },
+    createdAt: now(),
+  });
+  const persistedAttempt = await persistJsonImmutable(objects, attempt.attemptId, attempt, {
+    kind: "generation_attempt",
+    jobId: job.jobId,
+    jobDigest,
+    attemptNumber,
+    providerAdapterId,
+    provider: generated.provider,
+    model: generated.model,
+    providerOutputDigest,
+  });
+  await objects.putImmutable(attempt.providerOutputObjectRef, generated.bytes, providerOutputDigest, {
+    kind: "staged_provider_output",
+    jobId: job.jobId,
+    jobDigest,
+    generationAttemptId: attempt.attemptId,
+    generationAttemptDigest: persistedAttempt.digest,
+    attemptNumber,
+    assetKind: job.assetKind,
+    mediaType: generated.mediaType,
+    provider: generated.provider,
+    model: generated.model,
+  });
+  return {
+    attempt,
+    objectRef: persistedAttempt.objectRef,
+    digest: persistedAttempt.digest,
+    witnessed,
+    resumed: false,
+  };
+}
+
+async function generationRecordFromStaged({ objects, job, staged }) {
+  const generated = staged.witnessed.result;
+  const attempt = staged.attempt;
+  const semanticBriefDigest = await sha256(canonicalJson(job.brief));
+  const providerRequestDigest = await sha256(canonicalJson(staged.witnessed.requestWitness));
+  const providerOutputDigest = await sha256(generated.bytes);
+  if (providerRequestDigest !== attempt.providerRequestDigest
+    || providerOutputDigest !== attempt.providerOutputDigest) {
+    throw new InfraImmutableObjectConflictError("staged generation attempt digest linkage is invalid");
+  }
+
+  const generationRecord = normalizeGenerationRecord({
+    recordVersion: GENERATION_RECORD_VERSION,
+    jobId: job.jobId,
+    job,
+    semanticBrief: job.brief,
+    semanticBriefDigest,
+    providerRequestWitness: staged.witnessed.requestWitness,
+    providerRequestDigest,
+    providerOutputDigest,
+    providerOutput: {
+      mediaType: generated.mediaType,
+      width: generated.width,
+      height: generated.height,
+      durationMs: generated.durationMs,
+    },
+    generation: {
+      provider: generated.provider,
+      model: generated.model,
+      providerRequestId: generated.providerRequestId,
+      generatedAt: generated.generatedAt,
+      configuration: generated.configuration,
+    },
+    createdAt: attempt.createdAt,
+  });
+  await validateGenerationRecordDigests(generationRecord);
+
+  const generationRecordBytes = new TextEncoder().encode(canonicalJson(generationRecord));
+  const generationRecordDigest = await sha256(generationRecordBytes);
+  const generationRecordObjectRef = await persistGenerationRecord(objects, {
+    bytes: generationRecordBytes,
+    digest: generationRecordDigest,
+    metadata: {
+      kind: "generation_record",
+      jobId: job.jobId,
+      assetKind: job.assetKind,
+      role: job.role,
+      variant: job.variant,
+      provider: generated.provider,
+      model: generated.model,
+      generationAttemptId: attempt.attemptId,
+      generationAttemptObjectRef: staged.objectRef,
+      generationAttemptDigest: staged.digest,
+      providerOutputObjectRef: attempt.providerOutputObjectRef,
+    },
+  });
+  return {
+    generationRecord,
+    generationRecordObjectRef,
+    generationRecordDigest,
+    providerOutputDigest,
+  };
+}
+
+function assertFinalAssetMetadata(metadata, {
+  job,
+  staged,
+  generationRecordObjectRef,
+  generationRecordDigest,
+  providerOutputDigest,
+}) {
+  if (!metadata || metadata.kind !== "credentialed_generated_media"
+    || metadata.jobId !== job.jobId
+    || metadata.generationAttemptId !== staged.attempt.attemptId
+    || metadata.generationAttemptObjectRef !== staged.objectRef
+    || metadata.generationAttemptDigest !== staged.digest
+    || metadata.providerOutputObjectRef !== staged.attempt.providerOutputObjectRef
+    || metadata.providerOutputDigest !== providerOutputDigest
+    || metadata.generationRecordObjectRef !== generationRecordObjectRef
+    || metadata.generationRecordDigest !== generationRecordDigest) {
+    throw new InfraImmutableObjectConflictError("existing final asset metadata does not match the staged generation attempt");
+  }
+  for (const key of [
+    "mediaType", "provider", "model", "credentialFormat", "credentialSignerId",
+    "credentialManifestDigest", "credentialEmbeddedAt", "credentialVerifiedAt", "finalizedAt",
+  ]) {
+    if (typeof metadata[key] !== "string" || metadata[key].length === 0) {
+      throw new InfraImmutableObjectConflictError(`existing final asset metadata is missing ${key}`);
+    }
+  }
+}
+
+async function finalizeCredentialedAsset({
+  objects,
+  signer,
+  job,
+  staged,
+  generationRecord,
+  generationRecordObjectRef,
+  generationRecordDigest,
+  providerOutputDigest,
+  disclosure,
+  now,
+  setPhase,
+}) {
+  const generated = staged.witnessed.result;
+  const existing = await objects.get(job.outputObjectRef);
+  if (existing !== null) {
+    assertFinalAssetMetadata(existing.metadata, {
+      job,
+      staged,
+      generationRecordObjectRef,
+      generationRecordDigest,
+      providerOutputDigest,
+    });
+    const finalAssetDigest = await sha256(storedBytes(existing));
+    if (finalAssetDigest !== existing.digest) {
+      throw new InfraImmutableObjectConflictError("existing final asset digest does not match its bytes");
+    }
+    setPhase("credential_verification");
+    const verification = normalizeCredentialVerification(await signer.verify({
+      bytes: storedBytes(existing),
+      mediaType: existing.metadata.mediaType,
+    }));
+    if (verification.signerId !== existing.metadata.credentialSignerId
+      || verification.format !== existing.metadata.credentialFormat
+      || verification.manifestDigest !== existing.metadata.credentialManifestDigest) {
+      throw new Error("content credential verification does not match existing final asset metadata");
+    }
+    const assertion = buildEmbeddedAssetProvenance({
+      generationRecord,
+      generationRecordDigest,
+      promptDisclosurePolicy: disclosure,
+    });
+    assertVerificationMatchesRecord(verification, generationRecord, assertion);
+    return {
+      finalAssetDigest,
+      verification,
+      credential: {
+        format: existing.metadata.credentialFormat,
+        signerId: existing.metadata.credentialSignerId,
+        manifestDigest: existing.metadata.credentialManifestDigest,
+        embeddedAt: existing.metadata.credentialEmbeddedAt,
+        verifiedAt: existing.metadata.credentialVerifiedAt,
+      },
+      finalizedAt: existing.metadata.finalizedAt,
+      reusedFinalAsset: true,
+    };
+  }
+
+  const assertion = buildEmbeddedAssetProvenance({
+    generationRecord,
+    generationRecordDigest,
+    promptDisclosurePolicy: disclosure,
+  });
+
+  setPhase("credential_signing");
+  const embedded = normalizeCredentialEmbedResult(await signer.embed({
+    bytes: generated.bytes,
+    mediaType: generated.mediaType,
+    assertion,
+  }));
+  if (embedded.signerId !== signer.signerId || embedded.format !== signer.format) {
+    throw new Error("content credential embed result does not match signer");
+  }
+
+  setPhase("credential_verification");
+  const verification = normalizeCredentialVerification(await signer.verify({
+    bytes: embedded.bytes,
+    mediaType: generated.mediaType,
+  }));
+  if (verification.signerId !== signer.signerId || verification.format !== signer.format) {
+    throw new Error("content credential verification does not match signer");
+  }
+  if (verification.manifestDigest !== embedded.manifestDigest) {
+    throw new Error("content credential manifest digest changed after embedding");
+  }
+  assertVerificationMatchesRecord(verification, generationRecord, assertion);
+
+  const finalAssetDigest = await sha256(embedded.bytes);
+  const finalizedAt = now();
+  setPhase("storage_finalization");
+  await objects.putImmutable(job.outputObjectRef, embedded.bytes, finalAssetDigest, {
+    kind: "credentialed_generated_media",
+    jobId: job.jobId,
+    assetKind: job.assetKind,
+    role: job.role,
+    variant: job.variant,
+    mediaType: generated.mediaType,
+    width: generated.width,
+    height: generated.height,
+    durationMs: generated.durationMs,
+    provider: generated.provider,
+    model: generated.model,
+    generationAttemptId: staged.attempt.attemptId,
+    generationAttemptObjectRef: staged.objectRef,
+    generationAttemptDigest: staged.digest,
+    providerOutputObjectRef: staged.attempt.providerOutputObjectRef,
+    generationRecordObjectRef,
+    generationRecordDigest,
+    providerOutputDigest,
+    credentialFormat: embedded.format,
+    credentialSignerId: embedded.signerId,
+    credentialManifestDigest: embedded.manifestDigest,
+    credentialEmbeddedAt: embedded.embeddedAt,
+    credentialVerifiedAt: verification.verifiedAt,
+    finalizedAt,
+  });
+  return {
+    finalAssetDigest,
+    verification,
+    credential: {
+      format: embedded.format,
+      signerId: embedded.signerId,
+      manifestDigest: embedded.manifestDigest,
+      embeddedAt: embedded.embeddedAt,
+      verifiedAt: verification.verifiedAt,
+    },
+    finalizedAt,
+    reusedFinalAsset: false,
+  };
+}
+
+async function verifyGenerationAttemptLink({ objects, generationStored, generationRecord }) {
+  const metadata = generationStored.metadata ?? {};
+  const attemptObjectRef = metadata.generationAttemptObjectRef;
+  const attemptDigest = metadata.generationAttemptDigest;
+  if (attemptObjectRef === undefined && attemptDigest === undefined) return null;
+  if (typeof attemptObjectRef !== "string" || typeof attemptDigest !== "string") {
+    throw new Error("stored generation record has incomplete generation attempt linkage");
+  }
+  const loaded = await loadGenerationAttempt(objects, attemptObjectRef);
+  if (loaded === null) throw new Error("stored generation record references a missing generation attempt");
+  if (loaded.digest !== attemptDigest) throw new Error("stored generation attempt digest does not match generation record metadata");
+  const jobDigest = await assetGenerationJobDigest(generationRecord.job);
+  if (loaded.attempt.jobId !== generationRecord.jobId
+    || loaded.attempt.jobDigest !== jobDigest
+    || loaded.attempt.providerRequestDigest !== generationRecord.providerRequestDigest
+    || loaded.attempt.providerOutputDigest !== generationRecord.providerOutputDigest) {
+    throw new Error("stored generation attempt does not match generation record provenance");
+  }
+  const output = await objects.get(loaded.attempt.providerOutputObjectRef);
+  if (output === null) throw new Error("stored generation attempt references a missing staged provider output");
+  const outputDigest = await sha256(storedBytes(output));
+  if (output.digest !== loaded.attempt.providerOutputDigest || outputDigest !== loaded.attempt.providerOutputDigest) {
+    throw new Error("staged provider output digest does not match generation attempt");
+  }
+  return Object.freeze({
+    attempt: loaded.attempt,
+    attemptObjectRef,
+    attemptDigest,
+    providerOutputObjectRef: loaded.attempt.providerOutputObjectRef,
+  });
+}
+
 export async function executeCredentialedAssetGenerationJob({
   infra,
   provider,
   credentialSigner,
   job: rawJob,
+  attemptNumber = 1,
   promptDisclosurePolicy = { mode: "digest_only", authorizationRef: null },
   now = () => new Date().toISOString(),
 }) {
   let phase = "validation";
   let providerName = null;
   let modelName = null;
+  let providerOutputDurable = false;
+  const setPhase = (value) => { phase = value; };
   try {
     requireInfraCapabilities(infra, "objects");
     const objects = infra.objects;
     const job = normalizeAssetGenerationJob(rawJob);
+    const checkedAttemptNumber = assertPositiveAttemptNumber(attemptNumber);
     const checkedProvider = assertWitnessedMediaGenerationProvider(provider);
     providerName = checkedProvider.providerId;
     const signer = assertContentCredentialSigner(credentialSigner);
     const disclosure = normalizePromptDisclosurePolicy(promptDisclosurePolicy);
+    const jobDigest = await assetGenerationJobDigest(job);
 
     if (!checkedProvider.capabilities.includes(job.assetKind)) {
       throw new AssetGenerationError(`provider ${checkedProvider.providerId} does not support ${job.assetKind}`, {
@@ -122,116 +549,60 @@ export async function executeCredentialedAssetGenerationJob({
     phase = "reference_loading";
     const referenceObjects = await resolveReferenceObjects(objects, job.referenceObjectRefs);
 
-    phase = "provider_generation";
-    const witnessed = normalizeWitnessedMediaGenerationResult(await checkedProvider.generate({
-      assetKind: job.assetKind,
-      role: job.role,
-      variant: job.variant,
-      brief: job.brief,
-      inputReferences: job.inputReferences,
-      referenceObjects,
-      providerProfile: job.providerProfile,
-      context: job.context,
-    }), { expectedKind: job.assetKind });
-    const generated = witnessed.result;
-    providerName = generated.provider;
-    modelName = generated.model;
-
-    const semanticBriefDigest = await sha256(canonicalJson(job.brief));
-    const providerRequestDigest = await sha256(canonicalJson(witnessed.requestWitness));
-    const providerOutputDigest = await sha256(generated.bytes);
-
-    const generationRecord = normalizeGenerationRecord({
-      recordVersion: GENERATION_RECORD_VERSION,
-      jobId: job.jobId,
+    let staged = await loadStagedProviderOutput(objects, {
       job,
-      semanticBrief: job.brief,
-      semanticBriefDigest,
-      providerRequestWitness: witnessed.requestWitness,
-      providerRequestDigest,
-      providerOutputDigest,
-      providerOutput: {
-        mediaType: generated.mediaType,
-        width: generated.width,
-        height: generated.height,
-        durationMs: generated.durationMs,
-      },
-      generation: {
-        provider: generated.provider,
-        model: generated.model,
-        providerRequestId: generated.providerRequestId,
-        generatedAt: generated.generatedAt,
-        configuration: generated.configuration,
-      },
-      createdAt: now(),
+      jobDigest,
+      throughAttemptNumber: checkedAttemptNumber,
     });
-    await validateGenerationRecordDigests(generationRecord);
+    if (staged === null) {
+      phase = "provider_generation";
+      const witnessed = normalizeWitnessedMediaGenerationResult(await checkedProvider.generate({
+        assetKind: job.assetKind,
+        role: job.role,
+        variant: job.variant,
+        brief: job.brief,
+        inputReferences: job.inputReferences,
+        referenceObjects,
+        providerProfile: job.providerProfile,
+        context: job.context,
+      }), { expectedKind: job.assetKind });
+      providerName = witnessed.result.provider;
+      modelName = witnessed.result.model;
 
-    const generationRecordBytes = new TextEncoder().encode(canonicalJson(generationRecord));
-    const generationRecordDigest = await sha256(generationRecordBytes);
-    const generationRecordMetadata = {
-      kind: "generation_record",
-      jobId: job.jobId,
-      assetKind: job.assetKind,
-      role: job.role,
-      variant: job.variant,
-      provider: generated.provider,
-      model: generated.model,
-    };
+      phase = "provider_output_staging";
+      staged = await stageProviderOutput({
+        objects,
+        job,
+        jobDigest,
+        attemptNumber: checkedAttemptNumber,
+        providerAdapterId: checkedProvider.providerId,
+        witnessed,
+        now,
+      });
+    }
+
+    providerOutputDurable = true;
+    providerName = staged.attempt.generation.provider;
+    modelName = staged.attempt.generation.model;
 
     phase = "storage_finalization";
-    const generationRecordRef = await persistGenerationRecord(objects, {
-      bytes: generationRecordBytes,
-      digest: generationRecordDigest,
-      metadata: generationRecordMetadata,
+    const generation = await generationRecordFromStaged({ objects, job, staged });
+    const finalized = await finalizeCredentialedAsset({
+      objects,
+      signer,
+      job,
+      staged,
+      generationRecord: generation.generationRecord,
+      generationRecordObjectRef: generation.generationRecordObjectRef,
+      generationRecordDigest: generation.generationRecordDigest,
+      providerOutputDigest: generation.providerOutputDigest,
+      disclosure,
+      now,
+      setPhase,
     });
-
-    const assertion = buildEmbeddedAssetProvenance({
-      generationRecord,
-      generationRecordDigest,
-      promptDisclosurePolicy: disclosure,
-    });
-
-    phase = "credential_signing";
-    const embedded = normalizeCredentialEmbedResult(await signer.embed({
-      bytes: generated.bytes,
-      mediaType: generated.mediaType,
-      assertion,
-    }));
-    if (embedded.signerId !== signer.signerId || embedded.format !== signer.format) {
-      throw new Error("content credential embed result does not match signer");
-    }
-
-    phase = "credential_verification";
-    const verification = normalizeCredentialVerification(await signer.verify({
-      bytes: embedded.bytes,
-      mediaType: generated.mediaType,
-    }));
-    if (verification.signerId !== signer.signerId || verification.format !== signer.format) {
-      throw new Error("content credential verification does not match signer");
-    }
-    if (verification.manifestDigest !== embedded.manifestDigest) {
-      throw new Error("content credential manifest digest changed after embedding");
-    }
-    assertVerificationMatchesRecord(verification, generationRecord, assertion);
 
     phase = "storage_finalization";
-    const finalAssetDigest = await sha256(embedded.bytes);
-    await objects.putImmutable(job.outputObjectRef, embedded.bytes, finalAssetDigest, {
-      kind: "credentialed_generated_media",
-      jobId: job.jobId,
-      assetKind: job.assetKind,
-      role: job.role,
-      variant: job.variant,
-      provider: generated.provider,
-      model: generated.model,
-      generationRecordObjectRef: generationRecordRef,
-      generationRecordDigest,
-      providerOutputDigest,
-      credentialFormat: embedded.format,
-      credentialManifestDigest: embedded.manifestDigest,
-    });
-
+    const generated = staged.witnessed.result;
     const receipt = normalizeStoredAssetReceipt({
       receiptVersion: STORED_ASSET_RECEIPT_VERSION,
       jobId: job.jobId,
@@ -240,22 +611,16 @@ export async function executeCredentialedAssetGenerationJob({
       role: job.role,
       variant: job.variant,
       objectRef: job.outputObjectRef,
-      sha256: finalAssetDigest,
+      sha256: finalized.finalAssetDigest,
       mediaType: generated.mediaType,
       width: generated.width,
       height: generated.height,
       durationMs: generated.durationMs,
-      completedAt: now(),
-      generationRecordObjectRef: generationRecordRef,
-      generationRecordDigest,
-      providerOutputDigest,
-      credential: {
-        format: embedded.format,
-        signerId: embedded.signerId,
-        manifestDigest: embedded.manifestDigest,
-        embeddedAt: embedded.embeddedAt,
-        verifiedAt: verification.verifiedAt,
-      },
+      completedAt: finalized.finalizedAt,
+      generationRecordObjectRef: generation.generationRecordObjectRef,
+      generationRecordDigest: generation.generationRecordDigest,
+      providerOutputDigest: generation.providerOutputDigest,
+      credential: finalized.credential,
       inputReferences: job.inputReferences,
       context: job.context,
     });
@@ -264,26 +629,37 @@ export async function executeCredentialedAssetGenerationJob({
       jobId: job.jobId,
       assetKind: job.assetKind,
       role: job.role,
-      generationRecordDigest,
-      finalAssetDigest,
+      generationAttemptId: staged.attempt.attemptId,
+      generationAttemptObjectRef: staged.objectRef,
+      generationAttemptDigest: staged.digest,
+      providerOutputObjectRef: staged.attempt.providerOutputObjectRef,
+      generationRecordDigest: generation.generationRecordDigest,
+      finalAssetDigest: finalized.finalAssetDigest,
     });
 
     return {
       receipt,
       receiptObjectRef: persistedReceipt.objectRef,
       receiptDigest: persistedReceipt.digest,
-      generationRecord,
-      generationRecordObjectRef: generationRecordRef,
-      generationRecordDigest,
-      providerOutputDigest,
-      finalAssetDigest,
-      verification,
+      generationRecord: generation.generationRecord,
+      generationRecordObjectRef: generation.generationRecordObjectRef,
+      generationRecordDigest: generation.generationRecordDigest,
+      generationAttempt: staged.attempt,
+      generationAttemptObjectRef: staged.objectRef,
+      generationAttemptDigest: staged.digest,
+      providerOutputObjectRef: staged.attempt.providerOutputObjectRef,
+      providerOutputDigest: generation.providerOutputDigest,
+      providerOutputResumed: staged.resumed,
+      finalAssetDigest: finalized.finalAssetDigest,
+      finalAssetReused: finalized.reusedFinalAsset,
+      verification: finalized.verification,
     };
   } catch (error) {
     throw toAssetGenerationError(error, {
       phase,
       provider: providerName,
       model: modelName,
+      providerOutputDurable,
     });
   }
 }
@@ -303,25 +679,29 @@ export async function verifyCredentialedAssetForPublication({
   if (generationStored.digest !== receipt.generationRecordDigest) {
     throw new Error("stored generation record digest does not match receipt");
   }
-  const generationRecord = normalizeGenerationRecord(JSON.parse(
-    typeof generationStored.bytes === "string"
-      ? generationStored.bytes
-      : new TextDecoder().decode(generationStored.bytes),
+  const generationRecord = normalizeGenerationRecord(await parseStoredJson(
+    generationStored,
+    "stored generation record",
   ));
   await validateGenerationRecordDigests(generationRecord);
   if (generationRecord.providerOutputDigest !== receipt.providerOutputDigest) {
     throw new Error("stored asset receipt provider output digest does not match generation record");
   }
+  const generationAttempt = await verifyGenerationAttemptLink({
+    objects,
+    generationStored,
+    generationRecord,
+  });
 
   const assetStored = await objects.get(receipt.objectRef);
   if (assetStored === null) throw new Error("stored asset receipt references a missing final asset");
-  const finalDigest = await sha256(assetStored.bytes);
+  const finalDigest = await sha256(storedBytes(assetStored));
   if (assetStored.digest !== receipt.sha256 || finalDigest !== receipt.sha256) {
     throw new Error("final asset digest does not match stored asset receipt");
   }
 
   const verification = normalizeCredentialVerification(await signer.verify({
-    bytes: assetStored.bytes,
+    bytes: storedBytes(assetStored),
     mediaType: receipt.mediaType,
   }));
   if (!verification.valid) throw new Error(`content credential verification failed: ${verification.failureReason}`);
@@ -346,6 +726,7 @@ export async function verifyCredentialedAssetForPublication({
     proofVersion: "credentialed-asset-publication-proof-v0.1",
     receipt,
     generationRecord,
+    generationAttempt,
     verification,
   });
 }

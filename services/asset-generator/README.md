@@ -31,13 +31,19 @@ The direct asynchronous execution path is the validated generation foundation. I
 
 The credentialed path adds:
 
+- `GenerationAttempt`, distinct from `AssetGenerationJob`, for one successful provider call and its exact job digest/request/output witness;
+- raw provider bytes staged immutably immediately after provider success and before Content Credential work;
 - `GenerationRecord` with the exact Fibre semantic brief and exact secret-stripped provider request witness;
-- separate digests for semantic brief, provider request and provider-returned bytes;
+- separate digests for the job, provider request and provider-returned bytes;
 - prompt disclosure policy (`digest_only` by default, `public_text` only with explicit authorization);
 - `ContentCredentialSigner` embed/verify boundary;
 - final asset hashing only after credential embedding;
 - immutable `StoredAssetReceipt` linking final bytes to the exact GenerationRecord;
 - a re-verification gate before Thread Presentation may emit `media.ready`.
+
+`GenerationAttempt` and `AssetGenerationJob` intentionally have different identities. Workflow retry count is not itself provider-generation identity: once an earlier attempt has durable provider output, later Workflow retries resume that attempt instead of creating another provider call.
+
+The staged provider output is private Asset Generator material. It is not a Thread Presentation asset, is not placed in the public presentation catalog, and does not become evidence merely because it is durably stored. Its purpose is reliable continuation and provenance.
 
 The unit tests use a synthetic fixture credential format to prove Fibre's ordering and publication contract without depending on a native C2PA runtime. The local Cloudflare vertical proof separately uses `services/c2pa-local`, an isolated Node adapter around the official C2PA SDK. That proves the Fibre integration seam but does not make the local development certificate or sidecar a production trust service.
 
@@ -55,22 +61,25 @@ provider / model
 httpStatus
 providerRequestId
 retryAfterMs
+providerOutputDurable
 safeDetail
 cause
 ```
 
-Current phases distinguish validation and reference loading from provider generation, credential signing, credential verification, storage/finalization, and completion publication.
+Current phases distinguish validation and reference loading from provider generation, provider-output staging, credential signing, credential verification, storage/finalization, and completion publication.
 
 Current categories distinguish transient rate limits, provider timeouts/unavailability, network and storage failures from terminal invalid requests, authentication, unsupported capabilities, moderation rejection, missing references, immutable conflicts and quota exhaustion. Unknown failures are classified explicitly rather than silently treated as provider errors.
 
-`assetGenerationRetryDecision(...)` is the provider-neutral policy seam. Retryability is intentionally phase-aware:
+`assetGenerationRetryDecision(...)` is the provider-neutral policy seam. Retryability is phase-aware:
 
 - transient failures before or during the provider call may retry within bounded attempt limits;
 - missing references, immutable conflicts, authentication, moderation, invalid requests and exhausted quota are terminal;
-- completion publication may retry because it only republishes a pointer to already-immutable output;
-- transient credential/signing/finalization failures are **not** allowed to rerun the whole generation job yet, even though their category may be transient, because raw provider output is not independently staged today.
+- if the provider returned bytes but those bytes could not be staged durably, whole-job replay is refused because another provider call would be nondeterministic and potentially billable;
+- once raw provider output is durable, transient Content Credential and finalization failures may retry from that stage without another provider call;
+- if final credentialed bytes were already committed but receipt storage failed, retry verifies and reuses those final bytes rather than embedding/signing them again;
+- completion publication may retry because it only republishes a pointer to already-immutable output.
 
-That last restriction is load-bearing. Until provider output has its own durable attempt/staging identity, retrying a post-provider failure could pay for a second nondeterministic generation. The retry policy exposes `provider_output_not_staged` so the later attempt/staging work can open that retry path deliberately rather than by weakening the guard.
+This makes `providerOutputDurable` load-bearing state, not a diagnostic label. A deployment adapter may translate the portable retry decision into its own runtime mechanism, but it may not infer that a transient error is safe to replay when Fibre says the provider output was not staged.
 
 ## Portable runtime
 
@@ -91,7 +100,7 @@ InfraDriver.workflows
 
 The media-generation provider and credential signer are deliberately outside `InfraDriver`: they are external behavior/provider integrations rather than generic infrastructure guarantees.
 
-A deployment adapter consumes `AssetGenerationError` and `assetGenerationRetryDecision(...)` and translates that portable decision into its runtime's retry/no-retry mechanism. The deployment adapter does not get to redefine Fibre's error categories or silently broaden retry safety.
+A deployment adapter supplies its Workflow attempt number to `runtime.execute(job, { attemptNumber })`, consumes `AssetGenerationError` and `assetGenerationRetryDecision(...)`, and translates that portable decision into its runtime's retry/no-retry mechanism. The deployment adapter does not define `GenerationAttempt` identity, staging semantics, error categories, or retry safety.
 
 ## Completion contract
 
@@ -133,13 +142,15 @@ Cloudflare retry / NonRetryableError translation
 
 The portable service owns none of those choices.
 
-The local Cloudflare flow remains:
+The local Cloudflare flow is now:
 
 ```text
 AssetGenerationJob
     -> Cloudflare deployment adapter
-    -> createAssetGenerationRuntime(...)
+    -> createAssetGenerationRuntime(..., attemptNumber)
     -> OpenAI image provider
+    -> GenerationAttempt
+    -> immutable staged provider output
     -> GenerationRecord
     -> Content Credential embed/verify
     -> immutable final asset
@@ -149,10 +160,10 @@ AssetGenerationJob
     -> Cloudflare Queue adapter
 ```
 
-Cloudflare retries only when the portable retry decision permits it. Provider-generation transport/rate-limit/availability failures can retry with bounded attempts. Post-provider credential/finalization failures remain terminal in the current whole-job step until provider output is independently durable. Completion notification is separately retryable because it re-sends only a deterministic pointer to already-immutable output.
+Cloudflare retries only when the portable retry decision permits it. Provider-generation transport/rate-limit/availability failures can create later attempts. After any `GenerationAttempt` has durable staged output, credential/finalization retries reuse it and do not call OpenAI again. Completion notification is separately retryable because it re-sends only a deterministic pointer to already-immutable output.
 
 The deployment adapter does **not** import Thread Presentation, World Kernel presentation publishers, or any code that can emit `media.ready`. Successful Workflow completion means that a durable credentialed receipt exists and its completion pointer was durably handed to transport; it does not mean any calling domain has accepted or published that asset.
 
 The local deployment configuration is `deployments/cloudflare/asset-generator/wrangler.local.jsonc`. Its bindings are operational deployment detail, not Asset Generator semantics.
 
-The version identifiers carried by generation jobs, receipts, completion messages, providers, and persistent workflow keys are compatibility data. They do not justify version-labelled runtime filenames.
+The version identifiers carried by generation jobs, attempts, receipts, completion messages, providers, and persistent workflow keys are compatibility data. They do not justify version-labelled runtime filenames.

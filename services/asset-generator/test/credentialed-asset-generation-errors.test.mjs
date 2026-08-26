@@ -90,19 +90,22 @@ test("missing reference is terminal before the generation provider is called", a
     (error) => error instanceof AssetGenerationError
       && error.phase === "reference_loading"
       && error.category === "missing_reference"
-      && error.retryable === false,
+      && error.retryable === false
+      && error.providerOutputDurable === false,
   );
   assert.equal(providerCalls, 0);
 });
 
-test("post-provider signer failure is classified transient but whole-job replay stays blocked", async () => {
+test("post-provider signer failure is retryable only because the provider output was staged first", async () => {
   let providerCalls = 0;
+  const infra = createMemoryInfraDriver();
   await assert.rejects(
     () => executeCredentialedAssetGenerationJob({
-      infra: createMemoryInfraDriver(),
+      infra,
       provider: provider(() => { providerCalls += 1; }),
       credentialSigner: failingSigner(),
       job: job(),
+      attemptNumber: 1,
       now: () => "2026-08-26T20:00:02Z",
     }),
     (error) => {
@@ -110,11 +113,12 @@ test("post-provider signer failure is classified transient but whole-job replay 
       assert.equal(error.phase, "credential_signing");
       assert.equal(error.category, "unknown");
       assert.equal(error.retryable, true);
+      assert.equal(error.providerOutputDurable, true);
       const decision = assetGenerationRetryDecision(error, { attempt: 1 });
-      assert.equal(decision.retry, false);
-      assert.equal(decision.reason, "provider_output_not_staged");
+      assert.equal(decision.retry, true);
+      assert.equal(decision.reason, "retryable");
       return true;
     },
   );
-  assert.equal(providerCalls, 1, "a post-provider failure must not trigger another provider call inside the portable service");
+  assert.equal(providerCalls, 1, "the portable service stages provider output but never loops provider calls internally");
 });
