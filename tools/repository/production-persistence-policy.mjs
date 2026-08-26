@@ -11,10 +11,11 @@ export const DIRECT_SQLITE_MIGRATION_PREFIXES = Object.freeze([
   "services/world-kernel/src/",
 ]);
 
-// Existing durable local file journal. This exact path is named migration debt
-// by the accepted production-persistence architecture. Do not grow this set
-// without an accepted architecture decision.
+// Existing durable local file journals. These exact paths are named migration
+// debt by the accepted production-persistence architecture. Do not grow this
+// set without an accepted architecture decision; migrate both behind Infra.
 export const DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS = Object.freeze([
+  "services/world-kernel/src/guardian-model-adapter.mjs",
   "services/world-kernel/src/model-runtime/durable-invocation-journal.mjs",
 ]);
 
