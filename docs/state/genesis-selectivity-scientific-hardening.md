@@ -9,26 +9,26 @@ canonical: true
 
 ## Purpose
 
-This is the accepted bridge between closing #39 and starting #40. It has **no Fibre milestone number** and is not a substitute for either milestone.
+This is the accepted bridge between closed #39 and #40. It has **no Fibre milestone number** and is not a substitute for either milestone.
 
-#39 gives five Threads a particular prior life and births that life intact. #40 makes selected identity/history/memory/relationship state causally available to ordinary cognition. The bridge exists so #40 does not make newly discovered Genesis saturation or weak measurement machinery load-bearing before those problems are understood and corrected.
+#39 gave five Threads a particular prior life and canonical birth. #40 makes selected identity/history/memory/relationship state causally available to ordinary cognition. The bridge exists so #40 does not make newly discovered Genesis saturation or weak measurement machinery load-bearing before those problems are understood and corrected.
 
 The bridge proves a narrower statement:
 
 > **Genesis memory and meaning formation are selective rather than compulsory, and Fibre's diagnostics can distinguish real effects, nulls, generic narrative breadth and provenance leakage without tuning the underlying lives to pass.**
 
-This work begins only after #39 is closed and merged to `main`. It should be developed on a semantic branch such as `agent/genesis-selectivity-scientific-hardening`, with no GitHub PR unless the project owner explicitly requests one.
+This work begins only after #39 is merged to `main`. It should be developed on a semantic branch such as `agent/genesis-selectivity-scientific-hardening`, with no GitHub PR unless the project owner explicitly requests one.
 
-## What PR39 taught us
+## What #39 taught us
 
-The final PR39 cohort and D1-D5 rater run are frozen evidence. They are not rerun or regenerated to make this bridge easier.
+The final #39 cohort and D1-D5 rater run are frozen evidence. They are not rerun or regenerated to make this bridge easier.
 
 The accepted interpretation is:
 
 - **D1 — distinguishability, not personhood particularity.** A blind rater correctly attributed all five life/self-account targets in both raw and explicit-entity-normalized conditions. The actual calls were separate stateless five-way tasks, so the scorer's Bernoulli chance model uses `p=0.2` per target. Surviving environmental and cultural cues mean the result establishes reliable distinguishability of these five texts, not Fibre-level particularity by itself.
-- **D2 — original coupling statistic underpowered; positive reframing is exploratory.** Six pairs per Thread are too few for strong per-Thread Spearman conclusions. Post-hoc descriptive inspection found durable meaning more positive than its cited event in 16 of 30 pairs, more negative in 3, tied in 11, with mean ordinal uplift about `+0.50`. That is a follow-up signal, not a confirmatory PR39 finding.
+- **D2 — original coupling statistic underpowered; positive reframing is exploratory.** Six pairs per Thread are too few for strong per-Thread Spearman conclusions. Post-hoc descriptive inspection found durable meaning more positive than its cited event in 16 of 30 pairs, more negative in 3, tied in 11, with mean ordinal uplift about `+0.50`. That is a follow-up signal, not a confirmatory #39 finding.
 - **D3 — inconclusive.** Genome propagation was neither established nor ruled out. Treatment placement was confounded with memory ordinal/history horizon, cells were undersized for modest effects, calibration was an easier task, and the planned `not_remembered` arm was empty.
-- **D4 — established saturation/selectivity defect in the cohort.** All 30 of 30 memory opportunities became memories and all 30 acquired current durable meaning. This is an engineering finding about the Genesis funnel, not a personhood pathology and not a reason to regenerate the frozen cohort.
+- **D4 — scheduled-memory-call saturation / insufficient non-selection.** All `30/30` scheduled Pass-B memory decisions returned `remembered`, and all 30 resulting current memories have durable meaning. This does **not** mean every historical episode was archived: unique historical episodes cited by memory were `6,12,6,14,6` of 14 for Sapporo, Kochi, Malmö, Valparaíso and Wellington. The established engineering finding is that the scheduled memory/meaning funnel did not exercise legal non-selection/no-meaning paths in this cohort; Valparaíso is the genuinely saturated `14/14` history-coverage extreme.
 - **D5 — valid intended construct, failed instrument.** Self-account accommodation is conceptually distinct from memory coverage, but 65 of 70 episode judgments were predicted by whether memory cited the episode. The executed D5 therefore did not independently measure generalized self-account overreach.
 - **Repeated temperature-zero judgments were robustness checks.** Three stateless calls with deterministic option-order permutation test order sensitivity and response stability; they are not independent scientific replicates. Provider call attempts and committed judgments must be reported separately.
 
@@ -38,7 +38,7 @@ These conclusions constrain the permanent #39 record and define the bridge; they
 
 ### 1. Memory selectivity
 
-Memory formation must be able to **remember or decline to remember** for substantive reasons. The system must not solve the PR39 saturation finding by imposing a quota such as "remember exactly N episodes".
+Memory formation must be able to **remember or decline to remember** for substantive reasons. The system must not solve the #39 saturation finding by imposing a quota such as "remember exactly N episodes".
 
 The controlled proof should include:
 
@@ -105,7 +105,7 @@ Measure at least two distinct questions:
 1. association/coupling between event and meaning valence;
 2. systematic location shift, especially positive reframing.
 
-Do not fold positive and inverse correlations into a single absolute-correlation concern without preserving direction. The PR39 `+0.50` uplift remains descriptive/post-hoc; a larger future experiment may predeclare an ordinal mixed-effects model with valence as response, `event` versus `durable meaning` as fixed state effect, and Thread as grouping/random intercept when the number of Threads is sufficient to estimate it credibly.
+Do not fold positive and inverse correlations into a single absolute-correlation concern without preserving direction. The #39 `+0.50` uplift remains descriptive/post-hoc; a larger future experiment may predeclare an ordinal mixed-effects model with valence as response, `event` versus `durable meaning` as fixed state effect, and Thread as grouping/random intercept when the number of Threads is sufficient to estimate it credibly.
 
 #### D3 — genome propagation
 
@@ -117,13 +117,13 @@ A confounded/null result cannot be converted into evidence of absence through wo
 
 Separate:
 
-- memory opportunity -> remember/decline;
+- scheduled memory opportunity -> remember/decline;
 - historical breadth represented by memory;
 - citation cardinality per memory;
 - durable-meaning formation;
 - reinterpretation eligibility and `revise`/`unchanged` outcome.
 
-Do not treat higher citation cardinality as synonymous with more meaningful historical coverage.
+Do not treat higher citation cardinality as synonymous with more meaningful historical coverage, and do not describe a scheduled-memory-call saturation finding as though every historical episode was remembered.
 
 #### D5 — generalized self-account overreach
 
@@ -165,7 +165,7 @@ This preserves the conceptual distinction between memory coverage and self-accou
 
 ### 5. Benchmark runner hygiene
 
-Generalize only the operational improvements demonstrated necessary by PR39:
+Generalize only the operational improvements demonstrated necessary by #39:
 
 - durably commit each accepted judgment before advancing;
 - never ask again for an already committed valid judgment;
@@ -187,7 +187,7 @@ This bridge deliberately does **not** implement:
 - Fibre-owned relevance/privacy selection for live request cognition;
 - ordinary-request behavioral divergence or the standing differential gate;
 - Whole-Person/M2 standing;
-- a replacement PR39 cohort or rerating of frozen PR39 judgments;
+- a replacement #39 cohort or rerating of frozen #39 judgments;
 - retrospective threshold changes;
 - memory/meaning quotas;
 - stronger genome cues added merely to force a positive D3 result;
@@ -210,13 +210,8 @@ The bridge is complete when all of the following are true:
 ## Sequence
 
 ```text
-close #39 on its existing branch
-  -> durable replay
-  -> atomic birth + FIN/civil registration
-  -> hydration equality
-  -> hostile closing review
-  -> canonical/history/public record
-  -> full validation
+completed #39 branch
+  -> final repository validation
   -> merge #39 to main
 
 clean main
