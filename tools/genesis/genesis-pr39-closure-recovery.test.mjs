@@ -8,10 +8,11 @@ import { claimPr39ClosureAttempt } from "./genesis-pr39-closure-authority.mjs";
 import {
   PR39_CLOSURE_ORIGINAL_CLAIM_HEAD,
   assertPr39ClosureRecoveryMatchesExecution,
+  assertPr39ClosureRecoveryRecord,
   authorizePr39ClosureRecovery,
 } from "./genesis-pr39-closure-recovery.mjs";
 
-test("PR39 recovery amendment binds one changed execution HEAD to the preserved original claim", () => {
+test("PR39 recovery amendment binds generation execution while remaining inspectable after HEAD advances", () => {
   const stateRoot = mkdtempSync(join(tmpdir(), "fibre-pr39-recovery-"));
   const digest = `sha256:${"1".repeat(64)}`;
   const modelId = "gpt-5.1-2025-11-13";
@@ -52,4 +53,13 @@ test("PR39 recovery amendment binds one changed execution HEAD to the preserved 
     }),
     /does not match this frozen execution/,
   );
+
+  const historical = assertPr39ClosureRecoveryRecord({
+    stateRoot,
+    claim,
+    finalizationDigest: digest,
+    modelId,
+  });
+  assert.equal(historical.mode, "recovery");
+  assert.deepEqual(historical.amendment, amendment);
 });
