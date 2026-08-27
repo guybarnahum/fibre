@@ -16,6 +16,8 @@ const DEFAULT_SAFETY_TOLERANCE = 2;
 const DEFAULT_POLL_INTERVAL_MS = 500;
 const DEFAULT_MAX_POLL_ATTEMPTS = 240;
 const DEFAULT_MAX_DOWNLOAD_ATTEMPTS = 4;
+const MAX_REFERENCE_IMAGES = 8;
+const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -143,6 +145,89 @@ function normalizeOperationHandle(value, model) {
   };
 }
 
+function referenceBytes(value, index) {
+  const name = `BFL FLUX referenceObjects[${index}].bytes`;
+  if (typeof value === "string") return new TextEncoder().encode(value);
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  throw new TypeError(`${name} must be bytes`);
+}
+
+function base64Encode(bytes) {
+  let result = "";
+  for (let index = 0; index < bytes.length; index += 3) {
+    const a = bytes[index];
+    const b = index + 1 < bytes.length ? bytes[index + 1] : 0;
+    const c = index + 2 < bytes.length ? bytes[index + 2] : 0;
+    const value = (a << 16) | (b << 8) | c;
+    result += BASE64_ALPHABET[(value >>> 18) & 63];
+    result += BASE64_ALPHABET[(value >>> 12) & 63];
+    result += index + 1 < bytes.length ? BASE64_ALPHABET[(value >>> 6) & 63] : "=";
+    result += index + 2 < bytes.length ? BASE64_ALPHABET[value & 63] : "=";
+  }
+  return result;
+}
+
+function referenceInputField(index) {
+  return index === 0 ? "input_image" : `input_image_${index + 1}`;
+}
+
+function normalizeReferenceObjects(rawReferenceObjects, model) {
+  const values = rawReferenceObjects === undefined ? [] : rawReferenceObjects;
+  if (!Array.isArray(values)) throw new TypeError("BFL FLUX referenceObjects must be an array");
+  if (values.length > MAX_REFERENCE_IMAGES) {
+    throw new AssetGenerationError(`BFL FLUX supports at most ${MAX_REFERENCE_IMAGES} reference images`, {
+      phase: "validation",
+      category: "unsupported_capability",
+      retryable: false,
+      provider: "bfl",
+      model,
+    });
+  }
+  return values.map((value, index) => {
+    plain(`BFL FLUX referenceObjects[${index}]`, value);
+    const objectRef = nonEmpty(`BFL FLUX referenceObjects[${index}].objectRef`, value.objectRef);
+    const digest = nonEmpty(`BFL FLUX referenceObjects[${index}].digest`, value.digest);
+    const bytes = referenceBytes(value.bytes, index);
+    if (bytes.length === 0) throw new TypeError(`BFL FLUX referenceObjects[${index}].bytes must not be empty`);
+    const metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
+      ? value.metadata
+      : {};
+    const mediaType = typeof metadata.mediaType === "string" && metadata.mediaType.trim() !== ""
+      ? metadata.mediaType
+      : null;
+    if (mediaType !== null && !mediaType.startsWith("image/")) {
+      throw new AssetGenerationError(`BFL FLUX reference object ${objectRef} is not image media`, {
+        phase: "validation",
+        category: "unsupported_capability",
+        retryable: false,
+        provider: "bfl",
+        model,
+      });
+    }
+    const kind = typeof metadata.kind === "string" && metadata.kind.trim() !== "" ? metadata.kind : null;
+    return Object.freeze({
+      inputField: referenceInputField(index),
+      objectRef,
+      digest,
+      mediaType,
+      kind,
+      bytes,
+    });
+  });
+}
+
+function referenceWitness(reference) {
+  return Object.freeze({
+    inputField: reference.inputField,
+    objectRef: reference.objectRef,
+    digest: reference.digest,
+    mediaType: reference.mediaType,
+    kind: reference.kind,
+  });
+}
+
 export function compileBflFluxImagePrompt({ brief, role }) {
   plain("brief", brief);
   nonEmpty("brief.description", brief.description);
@@ -201,18 +286,7 @@ export function createBflFluxImageProvider({
           model,
         });
       }
-      if (request.referenceObjects?.length) {
-        throw new AssetGenerationError(
-          "BFL FLUX text-to-image profile does not yet bind Fibre reference objects to FLUX input_image fields",
-          {
-            phase: "validation",
-            category: "unsupported_capability",
-            provider: "bfl",
-            model,
-          },
-        );
-      }
-
+      const references = normalizeReferenceObjects(request.referenceObjects, model);
       const body = {
         prompt: compileBflFluxImagePrompt({ brief: request.brief, role: request.role }),
         disable_pup: disablePromptUpsampling,
@@ -220,6 +294,17 @@ export function createBflFluxImageProvider({
         height,
         safety_tolerance: safetyTolerance,
         output_format: outputFormat,
+      };
+      for (const reference of references) body[reference.inputField] = base64Encode(reference.bytes);
+
+      const witnessedBody = {
+        prompt: body.prompt,
+        disable_pup: body.disable_pup,
+        width: body.width,
+        height: body.height,
+        safety_tolerance: body.safety_tolerance,
+        output_format: body.output_format,
+        referenceInputs: references.map(referenceWitness),
       };
 
       let submission;
@@ -273,7 +358,7 @@ export function createBflFluxImageProvider({
       return {
         requestWitness: {
           mediaType: "application/json",
-          body,
+          body: witnessedBody,
           secretsRemoved: true,
         },
         operation: {
