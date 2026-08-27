@@ -34,6 +34,7 @@ import {
 import {
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
 } from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
+import { genesisRecordDigest } from "#services/world-kernel/src/genesis-domain.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
@@ -74,11 +75,6 @@ function writeJsonExclusive(path, value) {
   const target = absolute(path);
   mkdirSync(resolve(target, ".."), { recursive: true });
   writeFileSync(target, `${JSON.stringify(value, null, 2)}\n`, { flag: "wx" });
-}
-function writeJsonIfAbsent(path, value) {
-  if (existsSync(absolute(path))) return readJson(path);
-  writeJsonExclusive(path, value);
-  return value;
 }
 
 function parseArgs(argv) {
@@ -182,7 +178,7 @@ function assertCivilRegistration(hydrated, candidate) {
   return registration;
 }
 
-function birthResultRecord({ slotPlan, candidate, hydrated, publication, publicationAt, resumed }) {
+function birthResultRecord({ slotPlan, candidate, hydrated, publicationAt, resumed }) {
   const registration = assertCivilRegistration(hydrated, candidate);
   const core = {
     version: FINAL_BIRTH_RESULT_VERSION,
@@ -192,7 +188,7 @@ function birthResultRecord({ slotPlan, candidate, hydrated, publication, publica
     threadId: candidate.threadId,
     genesisId: candidate.genesisId,
     candidateDigest: candidate.candidateDigest,
-    manifestDigest: publication?.manifestDigest ?? digest(hydrated.manifest),
+    manifestDigest: genesisRecordDigest("manifest", hydrated.manifest),
     fibreIdentityNumber: registration.fibreIdentityNumber,
     civilRegistration: structuredClone(registration),
     manifest: structuredClone(hydrated.manifest),
@@ -381,13 +377,16 @@ function ensurePublishedSlot({ databasePath, resultPath, candidate, slotPlan, co
       slotPlan,
       candidate,
       hydrated,
-      publication: null,
       publicationAt,
       resumed: true,
     });
     if (existsSync(absolute(resultPath))) {
       const prior = validateStoredBirthResult({ result: readJson(resultPath), slotPlan, candidate, publicationAt });
-      if (prior.fibreIdentityNumber !== record.fibreIdentityNumber || !same(prior.manifest, record.manifest)) {
+      if (
+        prior.fibreIdentityNumber !== record.fibreIdentityNumber ||
+        prior.manifestDigest !== record.manifestDigest ||
+        !same(prior.manifest, record.manifest)
+      ) {
         fail(`slot ${slotPlan.slot} stored birth report differs from hydrated canonical birth`);
       }
       return { record: prior, hydrated, resumed: true };
@@ -412,10 +411,12 @@ function ensurePublishedSlot({ databasePath, resultPath, candidate, slotPlan, co
     slotPlan,
     candidate,
     hydrated,
-    publication: result.publication,
     publicationAt,
     resumed: false,
   });
+  if (record.manifestDigest !== result.publication.manifestDigest) {
+    fail(`slot ${slotPlan.slot} publication/hydration manifest digest mismatch`);
+  }
   writeJsonExclusive(resultPath, record);
   return { record, hydrated, resumed: false };
 }
@@ -435,6 +436,7 @@ function runFinalClosureBirth() {
   const completionPath = `${birthRoot}/completion-v1.json`;
   const cognition = finalClosureCognition(frozen);
 
+  const preflightPublicationAt = new Date().toISOString();
   const candidates = frozen.plans.slots.map((slotPlan) => {
     const path = `${outputRoot}/slot-${pad(slotPlan.slot)}-candidate-v1.json`;
     if (!existsSync(absolute(path))) fail(`missing frozen candidate for slot ${slotPlan.slot}`);
@@ -444,7 +446,7 @@ function runFinalClosureBirth() {
     }
     // Prebuild every birth bundle before writing any live Thread. This catches
     // deterministic candidate/plan/publication-validator drift before slot 1.
-    buildGenesisBirthBundle({ candidate, slotPlan, cognition, publicationAt: "2000-01-01T00:00:00.000Z" });
+    buildGenesisBirthBundle({ candidate, slotPlan, cognition, publicationAt: preflightPublicationAt });
     return candidate;
   });
 
