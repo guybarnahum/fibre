@@ -143,24 +143,6 @@ function normalizeOperationHandle(value, model) {
   };
 }
 
-function terminalizeUncheckpointedResume(error) {
-  if (!(error instanceof AssetGenerationError) || error.retryable !== true) return error;
-  return new AssetGenerationError(error.message, {
-    phase: error.phase,
-    category: error.category,
-    retryable: false,
-    provider: error.provider,
-    model: error.model,
-    httpStatus: error.httpStatus,
-    providerRequestId: error.providerRequestId,
-    retryAfterMs: error.retryAfterMs,
-    providerOperationDurable: false,
-    providerOutputDurable: error.providerOutputDurable,
-    safeDetail: error.safeDetail,
-    cause: error,
-  });
-}
-
 export function compileBflFluxImagePrompt({ brief, role }) {
   plain("brief", brief);
   nonEmpty("brief.description", brief.description);
@@ -311,7 +293,7 @@ export function createBflFluxImageProvider({
     }
   }
 
-  async function resumeOperation(rawOperation) {
+  async function continueOperation(rawOperation, { retryableAfterAcceptance }) {
     let operation = null;
     try {
       operation = normalizeOperationHandle(rawOperation, model);
@@ -442,7 +424,7 @@ export function createBflFluxImageProvider({
           throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} completed but image retrieval did not succeed`, {
             phase: "provider_generation",
             category: "provider_timeout",
-            retryable: true,
+            retryable: retryableAfterAcceptance,
             provider: "bfl",
             model,
             providerRequestId,
@@ -463,7 +445,7 @@ export function createBflFluxImageProvider({
       throw new AssetGenerationError(`BFL FLUX task ${operation.providerRequestId} did not complete within the polling budget`, {
         phase: "provider_generation",
         category: "provider_timeout",
-        retryable: true,
+        retryable: retryableAfterAcceptance,
         provider: "bfl",
         model,
         providerRequestId: operation.providerRequestId,
@@ -477,17 +459,17 @@ export function createBflFluxImageProvider({
     }
   }
 
+  async function resumeOperation(rawOperation) {
+    return continueOperation(rawOperation, { retryableAfterAcceptance: true });
+  }
+
   async function generate(request) {
     const started = await startOperation(request);
-    try {
-      const result = await resumeOperation(started.operation);
-      return {
-        requestWitness: started.requestWitness,
-        result,
-      };
-    } catch (error) {
-      throw terminalizeUncheckpointedResume(error);
-    }
+    const result = await continueOperation(started.operation, { retryableAfterAcceptance: false });
+    return {
+      requestWitness: started.requestWitness,
+      result,
+    };
   }
 
   return Object.freeze({
