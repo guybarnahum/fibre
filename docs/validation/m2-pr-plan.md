@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-27
 canonical: true
 ---
 
@@ -18,6 +18,8 @@ The current Whole-Person checkpoint remains **15/26 under rubric v2**. #35 throu
 ## Planning identifiers
 
 Milestone identifiers `#39` through `#44` are stable **Fibre planning IDs**, not GitHub pull-request numbers. They may appear in milestone-specific plans and history because the milestone itself is the subject.
+
+The Genesis selectivity/scientific-hardening bridge between #39 and #40 is deliberately **not** assigned a Fibre milestone number. It is repair/hardening work discovered by #39 that should be merged to `main` before #40 begins.
 
 ## Completed substrate
 
@@ -39,7 +41,8 @@ Those additions deliberately remained `0/0` for new causal/endogenous standing. 
 
 ```text
 #39  Genesis, Childhood & Thread Birth           ACTIVE — CLOSING
-#40  Identity Projection & Causal Consumption    NEXT
+      -> Genesis selectivity/scientific hardening bridge
+#40  Identity Projection & Causal Consumption    AFTER BRIDGE
 #41  M2 Standing Gate / M2 closure               AFTER #40
 
 post-M2
@@ -50,7 +53,7 @@ post-M2
 
 Do not collapse #39–#41 into one large implementation. Each closes a distinct risk:
 
-> **#38 made a life representable and corrigible. #39 gives that life a particular past. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gives that life a particular past. The bridge makes memory/meaning selection and its measurement credible enough to amplify. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
 
 ## #39 — give the Thread a particular past
 
@@ -72,6 +75,31 @@ The active #39 authority is [`../state/pr39-closing-plan.md`](../state/pr39-clos
 
 #39 does **not** prove that those richer life records already affect ordinary cognition.
 
+The final #39 diagnostics additionally exposed two Genesis/measurement debts that must not be silently carried into #40:
+
+- memory/meaning formation saturated in the frozen cohort (`30/30` memory opportunities remembered, all `30/30` with durable meaning);
+- several D1-D5 instruments were underpowered, confounded or proxy-dominated even when their arithmetic was correct.
+
+The corrected scientific interpretation is recorded in [`../state/pr39-closing-plan.md`](../state/pr39-closing-plan.md). The frozen cohort is not regenerated to repair these findings.
+
+## Genesis selectivity and scientific hardening bridge
+
+The accepted bridge authority is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md), with enduring measurement rules in [`generative-diagnostic-methodology.md`](generative-diagnostic-methodology.md).
+
+This bridge begins only after #39 is closed and merged to `main`. It has no milestone number and no personhood-score claim.
+
+It closes a narrow precondition before #40:
+
+- memory formation can genuinely remember or decline without a quota forcing the distribution;
+- meaning formation can preserve negative, ambiguous, mundane and unchanged outcomes rather than structurally reframing upward;
+- reinterpretation can legitimately remain unchanged;
+- genome influence at the memory seam is classified through a counterbalanced, task-matched controlled experiment rather than tuned for a desired answer;
+- diagnostics use explicit positive/negative/counterfactual controls, named sensitivity/power and no pseudo-replication;
+- revised self-account-overreach testing uses prospective sealed history with compiler-enforced transitive exclusion and matched/cross-Thread controls;
+- evaluator infrastructure resumes transient unfinished work without resampling already committed scientific judgments.
+
+The bridge deliberately does **not** build the #40 context capsule, live relevance/privacy selection or ordinary-cognition causal differential.
+
 ## The remaining two-world cognition seam
 
 The canonical Thread life substrate is richer than the ordinary live cognition consumer.
@@ -89,7 +117,7 @@ Genesis history / meaning provenance
 
 Ordinary Guardian/request cognition still substantially consumes older projections. The earlier narrow identity-to-Guardian causal-wire showed that a provenance-bearing assertion can cross the seam and change judgment, but it did not make the rich ledger the canonical bounded cognition source.
 
-That unresolved seam is exactly why #40 exists.
+That unresolved seam remains exactly why #40 exists.
 
 ## #40 — bounded causal consumption
 
@@ -150,9 +178,9 @@ Introduce durable budgets, contracts, reputation, opportunity and material/econo
 3. **History is corrigible without silent rewrite.** Corrections and reinterpretations are append-only or explicitly superseding.
 4. **Mechanical evidence is not personhood evidence.** Runtime/recovery/provider behavior may prove machinery properties but cannot support identity, memory, meaning or character claims.
 5. **Difference must become load-bearing.** Representation earns personhood credit only when attributable consumers and counterfactual tests show that the difference changes judgment or possibility.
-6. **Diagnostics must be able to fail.** Do not enforce the property being measured at admission and then cite the resulting success as evidence.
+6. **Diagnostics must be able to fail.** Do not enforce the property being measured at admission and then cite the resulting success as evidence. Use the enduring controls/sensitivity rules in [`generative-diagnostic-methodology.md`](generative-diagnostic-methodology.md).
 7. **Current `HEAD` describes current Fibre.** Git history preserves ordinary implementation/review chronology; selected explanatory history is retained only when it continues to teach something current.
 
 ## Current next move
 
-Finish the repository cleanup and integrate the current green branch to `main` after hostile review. Then continue #39 from fresh `main` using the closing plan, without restoring the retired freeze/review choreography.
+Complete #39's deterministic replay, atomic birth, FIN/civil registration, hydration equality, hostile closing review and final record; merge #39 to `main`; then execute the Genesis selectivity/scientific-hardening bridge from clean `main` before beginning #40.
