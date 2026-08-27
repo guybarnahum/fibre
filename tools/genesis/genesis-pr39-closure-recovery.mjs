@@ -61,13 +61,32 @@ export function readPr39ClosureRecovery({ stateRoot } = {}) {
 
 function assertOriginalClaim(claim) {
   if (claim === null || typeof claim !== "object" || Array.isArray(claim)) fail("PR39 recovery requires the preserved original closure claim");
-  if (claim.status !== "CLAIMED_ONE_PASS_CLOSURE_COHORT") fail("PR39 recovery requires an incomplete claimed closure cohort");
+  if (claim.status !== "CLAIMED_ONE_PASS_CLOSURE_COHORT") fail("PR39 recovery requires the preserved claimed closure cohort");
   if (claim.codeHead !== PR39_CLOSURE_ORIGINAL_CLAIM_HEAD) fail("PR39 recovery original claim HEAD drift");
   requireText("claim.closureId", claim.closureId);
   requireText("claim.precommitmentDigest", claim.precommitmentDigest);
   requireText("claim.modelId", claim.modelId);
   requireText("claim.claimedAt", claim.claimedAt);
   return claim;
+}
+
+function assertRecoveryAmendment({ amendment, original, finalizationDigest, modelId }) {
+  const recoveryHead = requireText("amendment.recoveryCodeHead", amendment?.recoveryCodeHead);
+  if (
+    amendment?.version !== PR39_CLOSURE_RECOVERY_VERSION ||
+    amendment?.status !== "AUTHORIZED_EXECUTION_RECOVERY" ||
+    amendment?.closureId !== original.closureId ||
+    amendment?.originalCodeHead !== original.codeHead ||
+    recoveryHead === original.codeHead ||
+    amendment?.finalizationDigest !== original.precommitmentDigest ||
+    amendment?.finalizationDigest !== finalizationDigest ||
+    amendment?.modelId !== original.modelId ||
+    amendment?.modelId !== modelId ||
+    amendment?.reason !== PR39_CLOSURE_RECOVERY_REASON
+  ) {
+    fail("PR39 closure recovery amendment does not match the preserved frozen execution");
+  }
+  return amendment;
 }
 
 export function authorizePr39ClosureRecovery({
@@ -124,6 +143,23 @@ export function authorizePr39ClosureRecovery({
   return amendment;
 }
 
+// Validate the historical generation-recovery record without requiring the
+// repository's current HEAD to remain pinned to the generation execution. This
+// is used only after the one-pass cohort has completed, when diagnostic/birth
+// tooling may legitimately advance while the generated evidence stays frozen.
+export function assertPr39ClosureRecoveryRecord({
+  stateRoot,
+  claim,
+  finalizationDigest,
+  modelId,
+} = {}) {
+  const original = assertOriginalClaim(claim);
+  const amendment = readPr39ClosureRecovery({ stateRoot });
+  if (amendment === null) return Object.freeze({ mode: "original", amendment: null });
+  assertRecoveryAmendment({ amendment, original, finalizationDigest, modelId });
+  return Object.freeze({ mode: "recovery", amendment: structuredClone(amendment) });
+}
+
 export function assertPr39ClosureRecoveryMatchesExecution({
   stateRoot,
   claim,
@@ -133,23 +169,21 @@ export function assertPr39ClosureRecoveryMatchesExecution({
 } = {}) {
   const original = assertOriginalClaim(claim);
   const head = requireText("currentCodeHead", currentCodeHead);
-  if (head === original.codeHead) return Object.freeze({ mode: "original", amendment: null });
+  const recorded = assertPr39ClosureRecoveryRecord({
+    stateRoot,
+    claim: original,
+    finalizationDigest,
+    modelId,
+  });
 
-  const amendment = readPr39ClosureRecovery({ stateRoot });
-  if (amendment === null) fail("PR39 closure is on a changed HEAD but no recovery amendment is authorized");
-  if (
-    amendment.version !== PR39_CLOSURE_RECOVERY_VERSION ||
-    amendment.status !== "AUTHORIZED_EXECUTION_RECOVERY" ||
-    amendment.closureId !== original.closureId ||
-    amendment.originalCodeHead !== original.codeHead ||
-    amendment.recoveryCodeHead !== head ||
-    amendment.finalizationDigest !== original.precommitmentDigest ||
-    amendment.finalizationDigest !== finalizationDigest ||
-    amendment.modelId !== original.modelId ||
-    amendment.modelId !== modelId ||
-    amendment.reason !== PR39_CLOSURE_RECOVERY_REASON
-  ) {
+  if (recorded.amendment === null) {
+    if (head !== original.codeHead) {
+      fail("PR39 closure is on a changed HEAD but no recovery amendment is authorized");
+    }
+    return recorded;
+  }
+  if (recorded.amendment.recoveryCodeHead !== head) {
     fail("PR39 closure recovery amendment does not match this frozen execution");
   }
-  return Object.freeze({ mode: "recovery", amendment: structuredClone(amendment) });
+  return recorded;
 }
