@@ -1,6 +1,11 @@
 import { DatabaseSync } from "node:sqlite";
 
 import {
+  FIBRE_BIRTH_STATE_REQUIREMENTS,
+  requireInfraCapabilities,
+  requireTransactionalStateGuarantees,
+} from "@fibre/infra";
+import {
   IntegrityError,
   ThreadAlreadyExistsError,
   UNCOMMANDED_EVENT_TYPES,
@@ -330,21 +335,52 @@ function normalizeBirthMemories(candidates, { manifest, threadId, lifeEventIds }
   return normalized;
 }
 
+function openGenesisDatabase(storage, { readOnly }) {
+  if (typeof storage === "string") {
+    return {
+      database: new DatabaseSync(normalizeDatabasePath(storage), {
+        readOnly,
+        enableForeignKeyConstraints: true,
+      }),
+      infraBacked: false,
+    };
+  }
+  if (storage === null || typeof storage !== "object" || Array.isArray(storage)) {
+    throw new TypeError("GenesisStore storage must be a database path or Infra state binding");
+  }
+  const { infraDriver, stateScopeId } = storage;
+  const infra = requireInfraCapabilities(infraDriver, "state");
+  requireTransactionalStateGuarantees(
+    infra.state,
+    stateScopeId,
+    FIBRE_BIRTH_STATE_REQUIREMENTS,
+  );
+  return {
+    database: infra.state.open(stateScopeId, { readOnly }),
+    infraBacked: true,
+  };
+}
+
 export class GenesisStore {
   #database;
   #readOnly;
+  #infraBacked;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
+    if (typeof readOnly !== "boolean") throw new TypeError("GenesisStore readOnly must be boolean");
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    const opened = openGenesisDatabase(storage, { readOnly });
+    this.#database = opened.database;
+    this.#infraBacked = opened.infraBacked;
     try {
       if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
+        if (!this.#infraBacked) {
+          this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
+        }
       } else {
-        this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+        if (!this.#infraBacked) {
+          this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+        }
         migrateDatabase(this.#database);
         this.#database.exec("BEGIN IMMEDIATE");
         createGenesisTables(this.#database);
@@ -360,6 +396,7 @@ export class GenesisStore {
   close() { this.#database.close(); }
 
   queryOnly() {
+    if (this.#infraBacked) return this.#readOnly;
     return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
   }
 
