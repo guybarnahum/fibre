@@ -26,9 +26,23 @@ export const GENESIS_LIFE_PASS_B_FORMATION_MODES = Object.freeze([
   "life_plus_genome",
 ]);
 
+// Frozen pre-selectivity prompt retained while the bridge evidence remains
+// replayable. Runtime Genesis uses GENESIS_LIFE_PASS_B_COGNITION_PROMPT below.
 export const GENESIS_LIFE_PASS_B_PROMPT = `${GENESIS_PASS_B_PROMPT}\n\nSparse-history authority: ${GENESIS_LIFE_SPARSE_HISTORY_NOTICE}\nDo not infer frequency, dominance, rarity, or non-occurrence from the sampling pattern.`;
 
-export const GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT = `${GENESIS_LIFE_PASS_B_PROMPT}\n\nThe previous generated record was rejected only by Fibre's mechanical genome-copy boundary. You do not receive the rejected record. Generate a fresh memory-formation record from the same supplied cognition input. If outcome=remembered, rememberedContent must describe only remembered lived experience and must not repeat a four-or-more-token sequence from any genomeExposure locus. genomeExposure may affect attention or retention, but its wording is never autobiographical evidence. not_remembered remains fully legal. Do not make the replacement richer, more meaningful, more distinctive, or more coherent because a retry occurred.`;
+// Exact amendment prospectively validated by the memory-selectivity correction
+// experiment before promotion into runtime Genesis.
+export const GENESIS_LIFE_PASS_B_SELECTIVITY_AMENDMENT = `Autobiographical memory is selective.
+A lived event being concrete, visible, recent, singular, or easy to describe is not by itself a reason to retain it autobiographically.
+Form a memory only when the supplied lived experience plausibly leaves distinct autobiographical residue at rememberingAt. Relevant reasons may include disruption of expectation or routine, care or conflict involving a relationship, loss, achievement or failure, fear or embarrassment, discovery, unresolved concern, repeated return to attention, or another personally salient break in ordinary continuity. These are considerations, not a checklist and not a target distribution.
+Ordinary routines may remain valid history without becoming autobiographical memory. When the visible material is ordinary or low-residue and there is no substantive reason for durable retention, return outcome=not_remembered. Do not invent significance in order to justify a memory.
+priorMemories are already-constituted autobiographical context. History already represented there does not by itself justify forming another memory. A new memory may cite previously remembered history only when the supplied current context supports a genuinely distinct retained recollection rather than a duplicate paraphrase.
+No quota applies. Do not remember or decline merely to balance outcomes across calls.`;
+
+export const GENESIS_LIFE_PASS_B_COGNITION_PROMPT =
+  `${GENESIS_LIFE_PASS_B_PROMPT}\n\nSelective-memory authority:\n${GENESIS_LIFE_PASS_B_SELECTIVITY_AMENDMENT}`;
+
+export const GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT = `${GENESIS_LIFE_PASS_B_COGNITION_PROMPT}\n\nThe previous generated record was rejected only by Fibre's mechanical genome-copy boundary. You do not receive the rejected record. Generate a fresh memory-formation record from the same supplied cognition input. If outcome=remembered, rememberedContent must describe only remembered lived experience and must not repeat a four-or-more-token sequence from any genomeExposure locus. genomeExposure may affect attention or retention, but its wording is never autobiographical evidence. not_remembered remains fully legal. Do not make the replacement richer, more meaningful, more distinctive, or more coherent because a retry occurred.`;
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 
@@ -60,6 +74,9 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
     if (!prompt.includes(GENESIS_LIFE_SPARSE_HISTORY_NOTICE)) {
       throw new TypeError("replacement Pass-B prompt omitted sparse-history authority");
     }
+    if (!prompt.includes(GENESIS_LIFE_PASS_B_SELECTIVITY_AMENDMENT)) {
+      throw new TypeError("replacement Pass-B prompt omitted selective-memory authority");
+    }
     const result = await adapter.invoke({
       systemPrompt: prompt,
       input: cognitionInput,
@@ -78,7 +95,7 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
   };
 
   const initial = await invoke({
-    prompt: GENESIS_LIFE_PASS_B_PROMPT,
+    prompt: GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
     kind: "initial",
     generatedVersion: 1,
   });

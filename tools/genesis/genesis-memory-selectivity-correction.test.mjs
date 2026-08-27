@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
+} from "#services/world-kernel/src/genesis-life-pass-b.mjs";
+import {
   MEMORY_SELECTIVITY_CORRECTED_PROMPT,
   buildMemorySelectivityCorrectionPlan,
   scoreMemorySelectivityCorrection,
@@ -15,6 +18,8 @@ test("memory-selectivity correction plan is fresh, paired, hidden-label and quot
   assert.equal(plan.incrementalPairCount, 3);
   assert.equal(plan.baselineBinding.classification, "SATURATED");
   assert.equal(plan.scientificRetries, 0);
+  assert.equal(plan.promptHash, "sha256:3ba80ac180b5140bc3710a33c78ed6e14bc666979e60223ca44bcba32399f26a");
+  assert.equal(GENESIS_LIFE_PASS_B_COGNITION_PROMPT, MEMORY_SELECTIVITY_CORRECTED_PROMPT);
   assert.match(MEMORY_SELECTIVITY_CORRECTED_PROMPT, /Autobiographical memory is selective/u);
   assert.match(MEMORY_SELECTIVITY_CORRECTED_PROMPT, /No quota applies/u);
   for (const trial of plan.trials) {
