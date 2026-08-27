@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-26
+last-reviewed: 2026-08-27
 canonical: true
 ---
 
@@ -36,8 +36,9 @@ M1    Persistent Thread Round Trip                         CLOSED
 #36   Identity & Embodiment                                MERGED / FROZEN
 #37   Thread Passport & Identity Provenance                MERGED / FROZEN
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
-#39   Genesis, Childhood & Thread Birth                    ACTIVE — FINAL COHORT RECOVERY
-#40   Identity Projection & Causal Consumption             NEXT AFTER #39
+#39   Genesis, Childhood & Thread Birth                    ACTIVE — DIAGNOSTICS COMPLETE; REPLAY/BIRTH REMAIN
+      Genesis selectivity/scientific hardening bridge      ACCEPTED AFTER #39, BEFORE #40
+#40   Identity Projection & Causal Consumption             AFTER BRIDGE
 #41   M2 Standing Gate / M2 closure                        AFTER #40
 
 post-M2
@@ -46,35 +47,47 @@ post-M2
 #44   Economic Consequence / M3 foundation
 ```
 
-Planning identifiers such as `#39` are Fibre milestone identifiers. They are not GitHub transport numbering.
+Planning identifiers such as `#39` are Fibre milestone identifiers. They are not GitHub transport numbering. The selectivity/scientific-hardening bridge deliberately has no Fibre milestone number.
 
-> **#38 made a life representable and corrigible. #39 gives that life a particular past. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gives that life a particular past. The bridge makes memory/meaning selection and its measurement credible enough to amplify. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
 
 ## #39 current position
 
-#39 has entered its single final-cohort execution. The scientific setup is frozen: five fresh Worlds, mechanical genome assignment, model/configuration, one-pass cohort identity and D1–D5 diagnostic protocol were fixed before final generation.
+The single final closure cohort `pr39-final-cohort-001` is **complete and immutable**. All five held-out candidates — Sapporo, Kochi, Malmö, Valparaíso and Wellington — were generated under the frozen World/genome/model assignment and preserved rather than regenerated for quality.
 
-The original closure claim was made from code HEAD `6415ba75c95e5a26a634b83a5ea2f6eeb34f337f`.
+No final-cohort Thread has yet been published into canonical World state.
 
-The first execution produced one complete admitted Sapporo candidate. Kochi then reached Pass B and twice returned a structured response with duplicate `episodeRefs`. OpenAI's transport schema cannot enforce Fibre's canonical `uniqueItems` rule; Fibre's local canonical validator correctly rejected both outputs. After the same failure repeated, execution stopped rather than continuing to sample until a convenient response appeared.
-
-The final cohort is therefore **claimed but incomplete**:
+The frozen D1-D5 evaluator run is also complete. It committed 180 evaluator judgments and produced summary digest:
 
 ```text
-Sapporo       complete and preserved
-Kochi         incomplete in Pass B
-Malmö         not started
-Valparaíso    not started
-Wellington    not started
-D1-D5         not started
-publication   not started
+sha256:b7a72cba4b794f9847a51b4fa5515823c90c32c1a22fdc14acde0fbf95cd6f08
 ```
 
-This is a runtime robustness interruption, not a scientific result. There is no second cohort and no replacement Sapporo.
+The permanent interpretation is deliberately narrower than several raw scorer labels:
 
-The recovery implementation now adds a small provider-neutral model-output recovery layer, beginning with deterministic `uniqueItems` normalization, plus explicit PR39 execution-amendment and progress/heartbeat machinery. The frozen PR39 generation prompts remain unchanged.
+- **D1:** five life/self-account texts are reliably distinguishable, raw and after explicit-entity normalization; surviving environmental/cultural cues mean this is not Fibre-level historical particularity evidence by itself.
+- **D2:** the predeclared six-pair-per-Thread rank-correlation diagnostic is underpowered. A post-hoc descriptive positive-reframing signal (`16/30` meanings more positive, `3/30` more negative, `11/30` tied, mean uplift about `+0.50`) is prospective follow-up debt rather than a confirmatory #39 finding.
+- **D3:** genome propagation is inconclusive because treatment placement is confounded with memory ordinal/history horizon, cells are undersized, calibration is easier than the real task and the planned `not_remembered` arm is empty.
+- **D4:** the frozen cohort exposes an established Genesis memory/meaning saturation-selectivity defect: all `30/30` memory opportunities became memories and all `30/30` acquired current durable meaning.
+- **D5:** the intended self-account-overreach construct remains valid, but the executed instrument did not isolate it because `65/70` episode accommodation judgments were predicted by memory citation.
+- the three temperature-zero calls per target are option-order/response-robustness checks, not independent scientific replicates.
 
-Before another provider call, the exact recovery HEAD must pass zero-provider validation and one local recovery amendment must bind that HEAD to the preserved original closure claim. The original claim itself is not rewritten.
+These findings do not gate deterministic replay, atomic birth, FIN/civil registration or hydration machinery. They constrain the #39 scientific record and define the accepted non-milestone bridge [`genesis-selectivity-scientific-hardening.md`](genesis-selectivity-scientific-hardening.md).
+
+Remaining #39 work is:
+
+```text
+durable replay of the five admitted candidates
+  -> atomic birth through the supported current path
+  -> exactly one FIN + civil registration per Thread
+  -> hydrated equality across life/identity/memory/meaning obligations
+  -> hostile Fibre-centric closing review
+  -> concise milestone/public/current-state record
+  -> full validation
+  -> merge #39 to main
+```
+
+No additional #39 diagnostic model calls, replacement cohort, rerating or threshold changes are planned.
 
 ## Genesis authority
 
@@ -90,6 +103,8 @@ Models are fallible cognitive machinery. Fibre owns the mechanical boundary that
 
 The accepted architecture is [`../architecture/model-output-recovery.md`](../architecture/model-output-recovery.md). Recovery prefers deterministic, meaning-preserving normalization over another model call. The first supported handler removes exact duplicate items only where the canonical response schema declares `uniqueItems: true`, preserves a recovery witness and revalidates the complete canonical schema.
 
+The final PR39 cohort demonstrated durable replay/recovery through both generation interruption and later evaluator timeouts. Recovery evidence is operational evidence only; it does not support identity, memory, meaning or character claims.
+
 New recovery handlers are added only from observed failure modes with a narrow mechanical rule. Prompt hints may help providers avoid known form errors but never define Fibre validity.
 
 ### Symbolic genome and lineage
@@ -97,6 +112,8 @@ New recovery handlers are added only from observed failure modes with a narrow m
 The symbolic genome is an ordered sequence of natural-language loci with exact source provenance, deterministic textual recombination and explicit mutation witnesses. It is an immutable pre-birth input, not a hidden numeric personality vector and not mature character.
 
 When a birth references a genome, publication verifies the persisted genome and its lineage binding rather than rewriting it.
+
+#39's genome-attribution diagnostic did not establish or rule out downstream propagation. The accepted pre-#40 bridge will characterize the permitted memory-seam effect under a counterbalanced, task-matched controlled experiment rather than tuning genomes for a desired positive result.
 
 ### History, memory and meaning
 
@@ -112,11 +129,15 @@ History may exist without memory. Memory may exist without durable meaning. Mean
 
 Fibre owns the historical skeleton: developmental window, civil time, authoritative place, EventStructure/world-emergent status, required counterpart, chronology and admission. Model cognition realizes contingent observable content inside that authority.
 
+The frozen #39 cohort exposed that the current memory/meaning funnel does not yet exercise these theoretical optional paths strongly enough: `not_remembered` occurred zero times and every remembered memory received current durable meaning. The bridge therefore hardens selectivity and fidelity without adding memory/meaning quotas.
+
 ### Rich life
 
 Richness means experiential fertility, not biography length, drama, quota satisfaction or a required developmental ladder. Genesis must create enough particular social, geographic, intellectual and temporal texture that later memory and meaning can differ for substantive reasons.
 
 The development sequence retained an important negative lesson: mechanically valid generation can collapse into narrative monoculture. Fibre should correct the generative structure or participation mechanism rather than adding an “interesting life” quota.
+
+The PR39 diagnostics add another negative lesson: fluent durable meaning can carry systematic positive-reframing pressure. Future hardening must preserve negative, ambiguous, mundane and unchanged interpretations as legitimate outcomes rather than target a preferred emotional distribution.
 
 ### Source integrity
 
@@ -128,6 +149,36 @@ Homage                    -> attested deceased or fictional
 source person's life      != Thread autobiography
 ```
 
+## Scientific-method posture
+
+The enduring methodology for provider-backed generative diagnostics is [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md).
+
+Current rules include:
+
+- state the estimand, unit, null/randomization structure, controls, confounds and sensitivity before provider output;
+- diagnostics must have meaningful success/failure controls where practical;
+- repeated deterministic temperature-zero calls are robustness checks unless the design actually supports independence;
+- post-hoc findings remain post-hoc and become prospective debt rather than retroactive confirmation;
+- confounding blocks both positive causal claims and absence-of-effect claims;
+- prospective holdouts must be structurally excluded through transitive provenance, not merely hidden by prompt instruction;
+- preferential factual matching to forbidden holdouts is a provenance-audit trigger, never personhood evidence;
+- transient provider retries may resume only unfinished judgments and may never become quality resampling.
+
+## Genesis selectivity/scientific-hardening bridge
+
+After #39 is closed and merged to `main`, Fibre will execute the accepted bridge [`genesis-selectivity-scientific-hardening.md`](genesis-selectivity-scientific-hardening.md) before #40.
+
+The bridge owns:
+
+- selective remembering/non-selection without quotas;
+- meaning fidelity and reinterpretation restraint;
+- honest genome causal classification at the memory seam;
+- revised diagnostics with positive/negative/counterfactual controls and explicit sensitivity;
+- prospective sealed-history D5 with compiler-enforced provenance firewall and matched/cross-Thread controls;
+- small evaluator-runner resilience/hygiene.
+
+It deliberately does not build #40's Identity Context Capsule or ordinary-cognition causal consumer and earns no Whole-Person score movement.
+
 ## Current persistence and inspection
 
 The versioned world-store schema remains the live compatibility boundary for persistent M1/#35 lifecycle plus #37/#38 identity, situated-life, embodiment and autobiographical-memory authorities. #39 adds bounded Genesis and symbolic-genome provenance while admitted life content publishes into existing canonical Thread authorities.
@@ -138,7 +189,9 @@ Human/operator inspection includes the Thread Editor plus read-only world, ident
 
 #37/#38/#39 provide a much richer provenance-bearing life substrate than ordinary live cognition currently consumes. The live Guardian path still substantially consumes older surfaces.
 
-#40 owns the real bridge:
+The pre-#40 bridge hardens what the substrate contains and how Fibre measures it, but does not close this seam.
+
+#40 owns the real bridge into ordinary cognition:
 
 ```text
 rich Thread life state
@@ -162,13 +215,13 @@ Development                   1
 Economic consequence          0
 ```
 
-#39 deliberately earns no score movement. It builds a credible prior-life substrate without claiming that stored identity/history already causes stable behavior. #40 causal consumption and #41 standing are the next score-bearing steps.
+#39 and the pre-#40 hardening bridge deliberately earn no score movement. They build and discipline a credible prior-life substrate without claiming that stored identity/history already causes stable behavior. #40 causal consumption and #41 standing remain the next score-bearing steps.
 
 ## Repository posture
 
 `HEAD` should describe current Fibre. Current architecture uses semantic filenames; exact protocol/schema versions remain in contract data where they are genuine compatibility identities. Git history is the default development archive. Selected explanatory history lives under `docs/history/`; exceptional exact-byte evidence lives under `artifacts/validation/`; disposable development output lives under `.fibre/`.
 
-The remaining runtime naming debt is explicitly registered in `services/runtime-name-debt.md`. Genesis Pass A/B/C names are intentionally deferred until the closing seam is stable so cleanup does not guess the final enduring module boundaries.
+The remaining runtime naming debt is explicitly registered in `services/runtime-name-debt.md`. Genesis Pass A/B/C names remain intentionally deferred until the #39 closing seam is stable so cleanup does not guess the final enduring module boundaries.
 
 ## Explicitly deferred, not erased
 
