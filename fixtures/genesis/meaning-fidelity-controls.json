@@ -1,0 +1,156 @@
+{
+  "contract": "fibre-genesis-meaning-fidelity-controls",
+  "developmentOnly": true,
+  "purpose": "Fresh prospective controls for current Pass-C meaning fidelity and reinterpretation restraint before any bridge correction.",
+  "decisionRule": {
+    "mundaneNoMeaningMinimum": 2,
+    "negativeDurableMeaningMinimum": 2,
+    "ambiguousDurableMeaningMinimum": 2,
+    "reinterpretationExpectedMinimum": 5,
+    "unchangedObservedMinimum": 2,
+    "revisedObservedMinimum": 2,
+    "semanticFidelityPassMinimum": 10,
+    "forbiddenSemanticFailureModes": ["inflated_mundane", "positive_uplift", "ambiguity_erased", "forced_revision"],
+    "interpretation": "Development characterization only. Expected outcomes and semantic classes never enter Pass-C cognition or the blinded semantic review. A disappointing result is retained and is not an admission gate or quality-resampling trigger."
+  },
+  "cases": [
+    {
+      "trialId": "meaning_01",
+      "mode": "initial",
+      "semanticClass": "mundane",
+      "expectedOutcome": "no_durable_meaning",
+      "rememberedContent": "I remember putting away the clean dishes after dinner, wiping the kitchen counter, and going back to my room."
+    },
+    {
+      "trialId": "meaning_02",
+      "mode": "initial",
+      "semanticClass": "mundane",
+      "expectedOutcome": "no_durable_meaning",
+      "rememberedContent": "I remember waiting at the usual bus stop, tapping my fare card, and sitting by the window on the ordinary ride home."
+    },
+    {
+      "trialId": "meaning_03",
+      "mode": "initial",
+      "semanticClass": "negative_unresolved",
+      "expectedOutcome": "durable_meaning",
+      "rememberedContent": "I remember answering too quickly in class, hearing several people laugh, and keeping my hand down for the rest of the lesson."
+    },
+    {
+      "trialId": "meaning_04",
+      "mode": "initial",
+      "semanticClass": "negative_unresolved",
+      "expectedOutcome": "durable_meaning",
+      "rememberedContent": "I remember waiting outside the cinema for Eli after he said he would meet me there; the show started, my messages went unanswered, and I went home alone."
+    },
+    {
+      "trialId": "meaning_05",
+      "mode": "initial",
+      "semanticClass": "ambiguous_unresolved",
+      "expectedOutcome": "durable_meaning",
+      "rememberedContent": "I remember finding a sealed envelope with my name on it in a kitchen drawer; when I asked about it, my caregiver took it back and said we would talk later, but we did not that night."
+    },
+    {
+      "trialId": "meaning_06",
+      "mode": "initial",
+      "semanticClass": "ambiguous_unresolved",
+      "expectedOutcome": "durable_meaning",
+      "rememberedContent": "I remember my teacher returning my group project with 'see me' written at the top; when I asked after class, she said the work was interesting but needed a longer conversation and then had to leave."
+    },
+    {
+      "trialId": "meaning_07",
+      "mode": "reinterpretation",
+      "pairId": "eli",
+      "semanticClass": "reinterpretation_control",
+      "expectedOutcome": "unchanged",
+      "rememberedContent": "I remember waiting outside the cinema for Eli after he said he would meet me there; the show started, my messages went unanswered, and I went home alone.",
+      "priorMeaning": {
+        "summary": "When Eli makes a plan with me, part of me waits for the plan to disappear without explanation.",
+        "parts": ["His promises can leave me preparing for an absence as much as for the plan itself."]
+      },
+      "trigger": {
+        "observableAction": "Years later, Eli agreed to meet for lunch, canceled by text ten minutes before, and did not explain why until the next day.",
+        "relation": "same_person_or_relationship"
+      }
+    },
+    {
+      "trialId": "meaning_08",
+      "mode": "reinterpretation",
+      "pairId": "eli",
+      "semanticClass": "reinterpretation_control",
+      "expectedOutcome": "revised",
+      "rememberedContent": "I remember waiting outside the cinema for Eli after he said he would meet me there; the show started, my messages went unanswered, and I went home alone.",
+      "priorMeaning": {
+        "summary": "When Eli makes a plan with me, part of me waits for the plan to disappear without explanation.",
+        "parts": ["His promises can leave me preparing for an absence as much as for the plan itself."]
+      },
+      "trigger": {
+        "observableAction": "Years later, Eli arrived early to help me move, stayed after everyone else left, and showed me the hospital message that had caused the missed cinema night.",
+        "relation": "same_person_or_relationship"
+      }
+    },
+    {
+      "trialId": "meaning_09",
+      "mode": "reinterpretation",
+      "pairId": "envelope",
+      "semanticClass": "reinterpretation_control",
+      "expectedOutcome": "unchanged",
+      "rememberedContent": "I remember finding a sealed envelope with my name on it; my caregiver took it back and said we would talk later, but we did not that night.",
+      "priorMeaning": {
+        "summary": "The sealed envelope left me unsure whether being protected and being kept out of something were the same thing.",
+        "parts": ["I still connect withheld explanations with both care and exclusion."]
+      },
+      "trigger": {
+        "observableAction": "Years later, when I asked the same caregiver about an unfamiliar legal letter, they put it away and said we would discuss it when there was time; the conversation did not happen that week.",
+        "relation": "same_person_or_relationship"
+      }
+    },
+    {
+      "trialId": "meaning_10",
+      "mode": "reinterpretation",
+      "pairId": "envelope",
+      "semanticClass": "reinterpretation_control",
+      "expectedOutcome": "revised",
+      "rememberedContent": "I remember finding a sealed envelope with my name on it; my caregiver took it back and said we would talk later, but we did not that night.",
+      "priorMeaning": {
+        "summary": "The sealed envelope left me unsure whether being protected and being kept out of something were the same thing.",
+        "parts": ["I still connect withheld explanations with both care and exclusion."]
+      },
+      "trigger": {
+        "observableAction": "Years later, the caregiver gave me the old envelope, explained that it contained notice of a housing dispute they had hidden while trying to keep me from worrying, and answered my questions about it.",
+        "relation": "same_person_or_relationship"
+      }
+    },
+    {
+      "trialId": "meaning_11",
+      "mode": "reinterpretation",
+      "pairId": "laughter",
+      "semanticClass": "reinterpretation_control",
+      "expectedOutcome": "unchanged",
+      "rememberedContent": "I remember answering too quickly in class, hearing several people laugh, and keeping my hand down for the rest of the lesson.",
+      "priorMeaning": {
+        "summary": "I still connect speaking too quickly in front of a group with the feeling that laughter can close my mouth.",
+        "parts": ["The uncertainty about what the laughter meant is part of what stayed with me."]
+      },
+      "trigger": {
+        "observableAction": "Years later, during a seminar, I stumbled over a phrase, heard laughter from two classmates, and stopped volunteering for the rest of the session.",
+        "relation": "same_structure_family"
+      }
+    },
+    {
+      "trialId": "meaning_12",
+      "mode": "reinterpretation",
+      "pairId": "laughter",
+      "semanticClass": "reinterpretation_control",
+      "expectedOutcome": "revised",
+      "rememberedContent": "I remember answering too quickly in class, hearing several people laugh, and keeping my hand down for the rest of the lesson.",
+      "priorMeaning": {
+        "summary": "I still connect speaking too quickly in front of a group with the feeling that laughter can close my mouth.",
+        "parts": ["The uncertainty about what the laughter meant is part of what stayed with me."]
+      },
+      "trigger": {
+        "observableAction": "Years later, one of my former classmates showed me a video of the original lesson: the laughter began when a stack of books fell behind me, before I finished my answer.",
+        "relation": "same_person_or_relationship"
+      }
+    }
+  ]
+}
