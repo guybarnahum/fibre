@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-26
+last-reviewed: 2026-08-27
 canonical: true
 ---
 
@@ -19,83 +19,57 @@ The current #39 exit authority is [`pr39-closing-plan.md`](pr39-closing-plan.md)
 
 ## Current position
 
-The final scientific setup is frozen and one closure cohort has been claimed. Five fresh Worlds, their mechanical genome assignment, model/configuration, D1–D5 diagnostics and one-pass rules were frozen before generation.
+The single final cohort `pr39-final-cohort-001` is **complete and immutable**. All five held-out candidates were generated under the frozen World/genome/model/one-pass claim and preserved rather than regenerated for quality.
 
-The first closure execution started from code HEAD `6415ba75c95e5a26a634b83a5ea2f6eeb34f337f`.
-
-- slot 1 Sapporo completed successfully and its admitted candidate is durably preserved;
-- slot 2 Kochi reached Pass B and twice returned a provider-valid structured response whose `episodeRefs` contained a duplicate;
-- Fibre correctly rejected both responses at its canonical `uniqueItems` boundary;
-- the same mechanical failure repeated, so further blind reruns were stopped rather than sampling until a convenient result appeared;
-- slots 3–5 have not started;
-- D1–D5, publication, FIN issuance, hydration comparison and closing review have not started;
-- there is still exactly one claimed final cohort and no replacement cohort.
-
-This is an **execution/runtime robustness interruption, not a scientific result**. The five-Thread cohort is incomplete and therefore has not yet been judged.
-
-## Model-output recovery hardening
-
-The interruption exposed a general Fibre requirement: ordinary model formatting brittleness must be handled below semantic domains without turning recovery into quality-based resampling.
-
-[`../architecture/model-output-recovery.md`](../architecture/model-output-recovery.md) now defines the enduring boundary:
+The final D1-D5 rater execution is also complete. It committed 180 evaluator judgments under the frozen material/plan and produced summary digest:
 
 ```text
-Fibre/domain cognition policy
-        ↓
-model execution policy
-        ↓
-provider-neutral mechanical output recovery
-        ↓
-provider adapter
+sha256:b7a72cba4b794f9847a51b4fa5515823c90c32c1a22fdc14acde0fbf95cd6f08
 ```
 
-The first supported recovery is deterministic `uniqueItems` normalization: repeated identical array items are removed while preserving first occurrence, the original output is not mutated, a recovery witness is retained, and Fibre revalidates the complete canonical schema afterward.
+The corrected scientific interpretation, after independent hostile/methodology review, is deliberately narrower than the scorer's original headline strings:
 
-This capability is intentionally small and extensible. New handlers are added only when an observed failure demonstrates a need and Fibre can state a safe mechanical recovery rule. Prompt hints may help avoid known failures, but prompts never define validity or recovery authority.
+- **D1:** the five life/self-account texts were reliably distinguishable in both raw and explicit-entity-normalized conditions. Surviving environmental/cultural cues mean this is not Fibre-level particularity evidence by itself.
+- **D2:** the predeclared per-Thread rank-correlation diagnostic is underpowered at six pairs per Thread. A post-hoc descriptive signal shows durable meaning tending more positive than its cited events (`16/30` higher, `3/30` lower, `11/30` tied; mean uplift about `+0.50`); this is follow-up evidence, not a confirmatory #39 result.
+- **D3:** genome propagation is **inconclusive**. Treatment placement is confounded with memory ordinal/history horizon, cells are undersized, calibration is an easier task, and the planned `not_remembered` arm is empty. #39 neither establishes nor rules out genome propagation.
+- **D4:** the cohort exposes an **established Genesis saturation/selectivity defect**: all `30/30` memory opportunities became memories and all `30/30` acquired current durable meaning. This is an engineering finding, not a personhood pathology and not a reason to regenerate the cohort.
+- **D5:** self-account accommodation is a valid intended construct, but the executed instrument failed to isolate it because `65/70` episode judgments were predicted by memory citation. It is not evidence that overreach is absent.
+- the three temperature-zero evaluator calls per target are option-order/response-robustness checks, not independent scientific replicates.
 
-For the frozen #39 cohort, normal generation prompts remain unchanged.
+The diagnostic findings do **not** gate deterministic replay, birth, FIN/civil registration, persistence or hydration machinery. They do constrain what #39 may claim and create explicit post-#39 scientific/Genesis debt.
 
-## PR39 recovery discipline
-
-The original closure claim remains bound to HEAD `6415ba75c95e5a26a634b83a5ea2f6eeb34f337f`; it is not rewritten.
-
-A one-time execution recovery amendment may bind one later recovery HEAD to that preserved claim only when:
-
-- the recovery HEAD descends from the original claimed HEAD;
-- the Git worktree is clean;
-- the delta is confined to the declared mechanical-recovery, observability and recovery-governance surface;
-- the frozen cohort, Worlds, genomes, assignment, model/configuration, generation prompts and D1–D5 scientific protocol are unchanged;
-- accepted Sapporo and committed Kochi model results remain preserved and replayed rather than regenerated.
-
-The actual provider-running closure command also refuses to execute from a dirty worktree.
-
-No provider resume is authorized until the recovery HEAD passes the zero-provider validation and the explicit recovery amendment is written locally.
-
-## Immediate sequence
+## #39 immediate sequence
 
 ```text
-current recovery implementation
-  -> exact-HEAD zero-provider validation
-  -> authorize one PR39 recovery amendment
-  -> closure check verifies claimed/incomplete + amended execution
-  -> resume the same cohort
-       Sapporo: reuse admitted candidate
-       Kochi: replay committed work, continue first unfinished call
-       slots 3-5: generate normally
-  -> inspect five completed candidates
-  -> D1-D5
-  -> durable replay
-  -> atomic birth + FIN/civil registration
+frozen cohort + D1-D5 complete
+  -> retain corrected scientific interpretation
+  -> durable replay proof
+  -> atomic birth of all five frozen candidates
+  -> exactly one FIN + civil registration per birth
   -> hydration equality
-  -> hostile closing review
+  -> hostile Fibre-centric closing review
   -> concise docs/history/milestones/pr39.md
-  -> reconcile latest main
+  -> public/current-state reconciliation
   -> full validation
   -> merge completed #39 to main
-  -> #40
 ```
 
-A mechanical recovery is not permission for quality selection. A weak but mechanically valid final cohort is preserved and interpreted; it is never silently replaced.
+No further #39 diagnostic model calls, replacement cohort, threshold changes or quality resampling are planned.
+
+## Bridge before #40
+
+After #39 is closed and merged to `main`, run the accepted non-milestone bridge [`genesis-selectivity-scientific-hardening.md`](genesis-selectivity-scientific-hardening.md) on a semantic branch such as `agent/genesis-selectivity-scientific-hardening`, with no GitHub PR unless explicitly requested.
+
+The bridge addresses exactly what #39 exposed before #40 makes the richer life substrate causally load-bearing:
+
+- memory selectivity and a real `not_remembered` path without quotas;
+- meaning fidelity, including negative/ambiguous/mundane/unchanged outcomes and reinterpretation restraint;
+- honest genome causal characterization at the memory seam with counterbalanced, task-matched controls;
+- diagnostic methodology with positive/negative/counterfactual controls, explicit sensitivity/power and no pseudo-replication;
+- a redesigned D5 using prospective sealed-history holdouts, compiler-enforced transitive provenance exclusion, exposure manifests and matched/cross-Thread controls;
+- small benchmark-runner hardening so transient transport failures auto-resume the same unfinished judgment while committed evidence remains immutable.
+
+This bridge does **not** implement #40's cognition projection or earn personhood standing.
 
 ## Cross-cutting production persistence
 
@@ -119,6 +93,7 @@ This infrastructure work does not redefine #39's local scientific closure criter
 
 ## What comes after #39
 
+- **Genesis selectivity/scientific hardening bridge:** complete the accepted bridge before #40; this is not a numbered Fibre milestone.
 - **Infrastructure enabling work:** prove `infra.state` with the atomic birth consistency scope before treating a provider deployment as production World/Thread authority.
 - **Genesis core hardening:** evolve historical-envelope selection from sequential local feasibility toward deterministic joint feasibility over structure, counterpart, place and civil time, with bounded future-capacity reasoning where needed.
 - **Model runtime:** extend mechanical output recovery only from observed failure modes with narrow, auditable handlers; do not create a speculative universal repair framework.
