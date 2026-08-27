@@ -232,3 +232,44 @@ test("accepted async provider task is not replayable when its durable checkpoint
   assert.equal(counters.starts, 1);
   assert.equal(counters.resumes, 0, "polling must not start before the accepted operation is durable");
 });
+
+test("durable accepted provider task fails closed when the active adapter cannot resume it", async () => {
+  const infra = createMemoryInfraDriver();
+  const counters = { starts: 0, resumes: 0 };
+  const firstRuntime = createAssetGenerationRuntime({
+    infra,
+    provider: resumableProvider(counters, { failFirstResume: true }),
+    credentialSigner: signer(),
+  });
+  await assert.rejects(() => firstRuntime.execute(job(), { attemptNumber: 1 }));
+  assert.equal(counters.starts, 1);
+
+  let fallbackGenerations = 0;
+  const incompatibleProvider = {
+    providerVersion: WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
+    providerId: "fixture-replacement-image-v1",
+    capabilities: ["image"],
+    async generate() {
+      fallbackGenerations += 1;
+      throw new Error("durable accepted task must prevent fallback generation");
+    },
+  };
+  const secondRuntime = createAssetGenerationRuntime({
+    infra,
+    provider: incompatibleProvider,
+    credentialSigner: signer(),
+  });
+
+  await assert.rejects(
+    () => secondRuntime.execute(job(), { attemptNumber: 2 }),
+    (error) => {
+      const decision = assetGenerationRetryDecision(error, { attempt: 2 });
+      return error instanceof AssetGenerationError
+        && error.category === "unsupported_capability"
+        && error.providerOperationDurable === true
+        && decision.retry === false;
+    },
+  );
+  assert.equal(counters.starts, 1, "accepted task must never be submitted again");
+  assert.equal(fallbackGenerations, 0, "incompatible adapter must not fall through to fresh generation");
+});

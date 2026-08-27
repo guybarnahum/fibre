@@ -48,20 +48,23 @@ function positiveAttemptNumber(value) {
   return value;
 }
 
-function supportsResumableOperations(provider) {
-  const hasStart = typeof provider?.startOperation === "function";
-  const hasResume = typeof provider?.resumeOperation === "function";
-  if (hasStart !== hasResume) {
-    throw new TypeError("resumable media provider must implement both startOperation and resumeOperation");
-  }
-  return hasStart;
+function resumableSupport(provider) {
+  return Object.freeze({
+    hasStart: typeof provider?.startOperation === "function",
+    hasResume: typeof provider?.resumeOperation === "function",
+  });
+}
+
+function providerAdapterId(provider) {
+  return typeof provider?.providerId === "string" && provider.providerId.trim() !== ""
+    ? provider.providerId
+    : null;
 }
 
 async function loadProviderOperation(objects, {
   job,
   jobDigest,
   throughAttemptNumber,
-  providerAdapterId,
 }) {
   for (let candidate = 1; candidate <= throughAttemptNumber; candidate += 1) {
     const objectRef = providerOperationObjectRef(jobDigest, candidate);
@@ -73,15 +76,14 @@ async function loadProviderOperation(objects, {
     ));
     if (checkpoint.jobId !== job.jobId
       || checkpoint.jobDigest !== jobDigest
-      || checkpoint.providerProfile !== job.providerProfile
-      || checkpoint.providerAdapterId !== providerAdapterId) {
-      throw new InfraImmutableObjectConflictError(`provider operation ${objectRef} is bound to a different job or provider`);
+      || checkpoint.providerProfile !== job.providerProfile) {
+      throw new InfraImmutableObjectConflictError(`provider operation ${objectRef} is bound to a different job or provider profile`);
     }
     if (stored.metadata?.kind !== "provider_operation_checkpoint"
       || stored.metadata?.jobId !== job.jobId
       || stored.metadata?.jobDigest !== jobDigest
       || stored.metadata?.attemptNumber !== candidate
-      || stored.metadata?.providerAdapterId !== providerAdapterId
+      || stored.metadata?.providerAdapterId !== checkpoint.providerAdapterId
       || stored.metadata?.providerRequestId !== checkpoint.operation.providerRequestId) {
       throw new InfraImmutableObjectConflictError(`provider operation metadata for ${objectRef} is inconsistent`);
     }
@@ -108,6 +110,24 @@ async function persistProviderOperation(objects, checkpoint) {
   return { checkpoint, objectRef: checkpoint.operationId, digest };
 }
 
+function incompatibleAcceptedOperation(loaded, currentProviderAdapterId) {
+  const expected = loaded.checkpoint.providerAdapterId;
+  const actual = currentProviderAdapterId ?? "non-resumable provider";
+  return new AssetGenerationError(
+    `accepted provider operation ${loaded.checkpoint.operation.providerRequestId} requires resumable adapter ${expected}; active adapter is ${actual}`,
+    {
+      phase: "reuse_lookup",
+      category: "unsupported_capability",
+      retryable: false,
+      provider: currentProviderAdapterId,
+      model: loaded.checkpoint.operation.model,
+      providerRequestId: loaded.checkpoint.operation.providerRequestId,
+      providerOperationDurable: true,
+      safeDetail: `durable accepted provider operation requires adapter ${expected}; active adapter is ${actual}`,
+    },
+  );
+}
+
 export async function prepareResumableProviderExecution({
   infra,
   provider,
@@ -117,7 +137,38 @@ export async function prepareResumableProviderExecution({
 }) {
   requireInfraCapabilities(infra, "objects");
   const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
-  if (!supportsResumableOperations(provider)) {
+  const job = normalizeAssetGenerationJob(rawJob);
+  const jobDigest = await assetGenerationJobDigest(job);
+  const currentProviderAdapterId = providerAdapterId(provider);
+  const support = resumableSupport(provider);
+
+  let loaded;
+  try {
+    loaded = await loadProviderOperation(infra.objects, {
+      job,
+      jobDigest,
+      throughAttemptNumber: checkedAttemptNumber,
+    });
+  } catch (error) {
+    throw toAssetGenerationError(error, {
+      phase: "reuse_lookup",
+      provider: currentProviderAdapterId,
+      providerOperationDurable: false,
+    });
+  }
+
+  if (loaded !== null && (
+    !support.hasStart
+    || !support.hasResume
+    || currentProviderAdapterId !== loaded.checkpoint.providerAdapterId
+  )) {
+    throw incompatibleAcceptedOperation(loaded, currentProviderAdapterId);
+  }
+
+  if (support.hasStart !== support.hasResume) {
+    throw new TypeError("resumable media provider must implement both startOperation and resumeOperation");
+  }
+  if (!support.hasStart) {
     return Object.freeze({
       provider,
       attemptNumber: checkedAttemptNumber,
@@ -125,26 +176,8 @@ export async function prepareResumableProviderExecution({
     });
   }
 
-  const job = normalizeAssetGenerationJob(rawJob);
-  const providerAdapterId = typeof provider.providerId === "string" && provider.providerId.trim() !== ""
-    ? provider.providerId
-    : (() => { throw new TypeError("resumable media provider.providerId must be a non-empty string"); })();
-  const jobDigest = await assetGenerationJobDigest(job);
-  let loaded;
-  try {
-    loaded = await loadProviderOperation(infra.objects, {
-      job,
-      jobDigest,
-      throughAttemptNumber: checkedAttemptNumber,
-      providerAdapterId,
-    });
-  } catch (error) {
-    throw toAssetGenerationError(error, {
-      phase: "reuse_lookup",
-      provider: providerAdapterId,
-      providerOperationDurable: false,
-    });
-  }
+  const providerAdapterId = currentProviderAdapterId
+    ?? (() => { throw new TypeError("resumable media provider.providerId must be a non-empty string"); })();
 
   let active = loaded;
   let used = false;
@@ -195,6 +228,22 @@ export async function prepareResumableProviderExecution({
           result,
         };
       } catch (error) {
+        if (loaded !== null && error instanceof TypeError) {
+          throw new AssetGenerationError(
+            `accepted provider operation ${active.checkpoint.operation.providerRequestId} cannot be resumed by adapter ${providerAdapterId}`,
+            {
+              phase: "provider_generation",
+              category: "unsupported_capability",
+              retryable: false,
+              provider: providerAdapterId,
+              model: active.checkpoint.operation.model,
+              providerRequestId: active.checkpoint.operation.providerRequestId,
+              providerOperationDurable: true,
+              safeDetail: `durable accepted provider operation cannot be resumed by adapter ${providerAdapterId}`,
+              cause: error,
+            },
+          );
+        }
         throw toAssetGenerationError(error, {
           phase: "provider_generation",
           provider: active.checkpoint.operation.provider,
