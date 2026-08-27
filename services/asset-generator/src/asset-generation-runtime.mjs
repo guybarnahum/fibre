@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import { publishAssetGenerationCompletion } from "./asset-generation-completion.mjs";
 import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation-service.mjs";
 

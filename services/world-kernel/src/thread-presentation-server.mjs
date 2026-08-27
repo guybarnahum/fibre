@@ -1,5 +1,5 @@
 import { canonicalJson, assertId, assertNonEmpty, sha256 } from "./persistence-common.mjs";
-import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
 import {
   materializeThreadPresentationEvent,

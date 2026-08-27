@@ -1,5 +1,5 @@
 import { verifyCredentialedAssetForPublication } from "#services/asset-generator/src/index.mjs";
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "./thread-presentation-stream-domain.mjs";
 

@@ -1,5 +1,5 @@
-import { createCloudflareInfraDriver } from "#packages/infra/src/cloudflare-v1.mjs";
-import { FibrePresentationChannelDurableObject } from "#packages/infra/src/cloudflare/presentation-channel-do.mjs";
+import { createCloudflareInfraDriver } from "@fibre/infra/cloudflare-v1";
+import { FibrePresentationChannelDurableObject } from "@fibre/infra/cloudflare-v1/presentation-channel-do";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import { createHttpContentCredentialSigner } from "#services/asset-generator/src/http-content-credential-signer.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";

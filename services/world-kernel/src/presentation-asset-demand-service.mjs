@@ -1,5 +1,5 @@
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import {
   assertExactKeys,
   assertIsoTimestamp,

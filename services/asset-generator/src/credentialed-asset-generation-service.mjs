@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import { normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
 import {
   GENERATION_RECORD_VERSION,

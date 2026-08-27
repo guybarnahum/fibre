@@ -1,8 +1,8 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
-import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
-import { withCloudflareQueueBindings } from "../../../packages/infra/src/cloudflare-queue-port.mjs";
+import { createCloudflareInfraDriver } from "@fibre/infra/cloudflare-v1";
+import { withCloudflareQueueBindings } from "@fibre/infra/cloudflare-queue";
 import {
   ASSET_GENERATION_COMPLETION_QUEUE,
   AssetGenerationAttemptFailed,

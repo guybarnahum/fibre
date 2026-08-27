@@ -3,7 +3,7 @@ import {
   normalizeStoredAssetReceipt,
   verifyCredentialedAssetForPublication,
 } from "#services/asset-generator/src/index.mjs";
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import {
   normalizePresentationAssetDemandProjection,
   presentationAssetDemandCatalogKey,

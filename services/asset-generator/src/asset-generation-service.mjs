@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "@fibre/infra";
 import {
   ASSET_GENERATION_RECEIPT_VERSION,
   assertMediaGenerationProvider,
