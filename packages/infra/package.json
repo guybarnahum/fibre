@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/infra-driver.mjs",
     "./memory": "./src/memory-driver.mjs",
+    "./sqlite-state": "./src/sqlite-transactional-state.mjs",
     "./cloudflare-v1": "./src/cloudflare-v1.mjs",
     "./cloudflare-v1/presentation-channel-do": "./src/cloudflare/presentation-channel-do.mjs"
   }
