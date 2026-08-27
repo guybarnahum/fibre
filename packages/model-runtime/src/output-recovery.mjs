@@ -22,8 +22,29 @@ function propertyPath(path, key) {
     : `${path}[${JSON.stringify(key)}]`;
 }
 
+function recoverString(value, schema, path, recoveries) {
+  if (!Number.isSafeInteger(schema.maxLength) || schema.maxLength < 0) return value;
+  const codePoints = [...value];
+  if (codePoints.length <= schema.maxLength) return value;
+  const recovered = codePoints.slice(0, schema.maxLength).join("");
+  recoveries.push(Object.freeze({
+    kind: "deterministic_normalization",
+    constraint: "maxLength",
+    path,
+    action: "truncate_codepoints_preserve_prefix",
+    beforeLength: codePoints.length,
+    afterLength: schema.maxLength,
+    removedCodePoints: codePoints.length - schema.maxLength,
+  }));
+  return recovered;
+}
+
 function recoverValue(value, schema, path, recoveries) {
   if (!isSchemaObject(schema)) return structuredClone(value);
+
+  if (typeof value === "string") {
+    return recoverString(value, schema, path, recoveries);
+  }
 
   if (Array.isArray(value)) {
     const recoveredItems = value.map((item, index) =>

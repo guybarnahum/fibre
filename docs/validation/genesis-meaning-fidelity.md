@@ -99,8 +99,31 @@ The runner uses the existing Birth Center durable invocation journal:
 - a completed result cannot be rerun for quality;
 - replay disables provider networking structurally.
 
-Maximum live provider calls are therefore `13`.
+Maximum live provider calls are therefore `13` for the original clean execution path.
 
 No provider call is authorized by committing this instrument or running its default preflight.
 
 Quantitative valence association/shift remains a separate diagnostic-methodology task. This baseline asks the narrower question of whether current Pass C preserves mundane, negative, ambiguous, revised, and unchanged possibilities without forcing a preferred narrative.
+
+## Operational recovery amendment
+
+The first authorized execution completed the 12 Pass-C generation requests, then the aggregate semantic-review response failed local canonical schema validation because `reviews[2].reason` was 295 Unicode code points while the frozen review schema permits at most 240.
+
+This is an operational model-output shape failure, not a scientific judgment and not evidence about Pass-C meaning fidelity. The 12 already committed Pass-C judgments remain authoritative and must not be resampled.
+
+The recovery is provider-neutral and mechanical:
+
+```text
+string maxLength violation
+  -> truncate Unicode code points to maxLength
+  -> preserve prefix
+  -> preserve all sibling fields unchanged
+  -> re-run the complete canonical schema validation
+  -> record recovery provenance
+```
+
+For the semantic reviewer this may shorten only an overlong explanatory `reason`; it cannot alter `trialId`, `fidelity`, or `issue`.
+
+The original fixture, Pass-C prompts, Pass-C schemas, reviewer prompt, reviewer schema, decision rule, plan digest and request IDs remain unchanged. Progress logging is operational observability only and likewise does not change the scientific witness.
+
+Because the failed review response was not durably committed, finishing the experiment requires one additional provider attempt for that same aggregate-review request. That additional attempt requires separate explicit authorization; the previous authorization is treated as exhausted after the 12 generation attempts plus the failed reviewer attempt.
