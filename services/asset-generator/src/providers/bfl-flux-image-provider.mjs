@@ -124,6 +124,43 @@ function pendingStatus(status) {
   return ["Pending", "Reasoning", "Generating"].includes(status);
 }
 
+function normalizeOperationHandle(value, model) {
+  const name = "BFL FLUX operation";
+  plain(name, value);
+  if (value.provider !== "bfl") throw new TypeError(`${name}.provider must be bfl`);
+  if (value.model !== model) throw new TypeError(`${name}.model does not match configured model`);
+  const providerRequestId = nonEmpty(`${name}.providerRequestId`, value.providerRequestId);
+  if (value.secretsRemoved !== true) throw new TypeError(`${name}.secretsRemoved must be true`);
+  const continuation = plain(`${name}.continuation`, value.continuation);
+  const pollingUrl = nonEmpty(`${name}.continuation.pollingUrl`, continuation.pollingUrl);
+  if (!isAllowedPollingUrl(pollingUrl)) throw new TypeError(`${name}.continuation.pollingUrl is not an allowed BFL URL`);
+  return {
+    provider: "bfl",
+    model,
+    providerRequestId,
+    continuation: { pollingUrl },
+    secretsRemoved: true,
+  };
+}
+
+function terminalizeUncheckpointedResume(error) {
+  if (!(error instanceof AssetGenerationError) || error.retryable !== true) return error;
+  return new AssetGenerationError(error.message, {
+    phase: error.phase,
+    category: error.category,
+    retryable: false,
+    provider: error.provider,
+    model: error.model,
+    httpStatus: error.httpStatus,
+    providerRequestId: error.providerRequestId,
+    retryAfterMs: error.retryAfterMs,
+    providerOperationDurable: false,
+    providerOutputDurable: error.providerOutputDurable,
+    safeDetail: error.safeDetail,
+    cause: error,
+  });
+}
+
 export function compileBflFluxImagePrompt({ brief, role }) {
   plain("brief", brief);
   nonEmpty("brief.description", brief.description);
@@ -171,230 +208,182 @@ export function createBflFluxImageProvider({
   if (typeof now !== "function") throw new TypeError("now must be a function");
   const endpoint = endpointPath(baseEndpoint, model);
 
-  return Object.freeze({
-    providerVersion: WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
-    providerId: "bfl-flux-image-v1",
-    capabilities: ["image"],
-
-    async generate(request) {
-      try {
-        plain("BFL FLUX image request", request);
-        if (request.assetKind !== "image") {
-          throw new AssetGenerationError("BFL FLUX provider supports only image jobs", {
+  async function startOperation(request) {
+    try {
+      plain("BFL FLUX image request", request);
+      if (request.assetKind !== "image") {
+        throw new AssetGenerationError("BFL FLUX provider supports only image jobs", {
+          phase: "validation",
+          category: "unsupported_capability",
+          provider: "bfl",
+          model,
+        });
+      }
+      if (request.referenceObjects?.length) {
+        throw new AssetGenerationError(
+          "BFL FLUX text-to-image profile does not yet bind Fibre reference objects to FLUX input_image fields",
+          {
             phase: "validation",
             category: "unsupported_capability",
             provider: "bfl",
             model,
-          });
-        }
-        if (request.referenceObjects?.length) {
-          throw new AssetGenerationError(
-            "BFL FLUX text-to-image profile does not yet bind Fibre reference objects to FLUX input_image fields",
-            {
-              phase: "validation",
-              category: "unsupported_capability",
-              provider: "bfl",
-              model,
-            },
-          );
-        }
+          },
+        );
+      }
 
-        const body = {
-          prompt: compileBflFluxImagePrompt({ brief: request.brief, role: request.role }),
-          disable_pup: disablePromptUpsampling,
-          width,
-          height,
-          safety_tolerance: safetyTolerance,
-          output_format: outputFormat,
-        };
+      const body = {
+        prompt: compileBflFluxImagePrompt({ brief: request.brief, role: request.role }),
+        disable_pup: disablePromptUpsampling,
+        width,
+        height,
+        safety_tolerance: safetyTolerance,
+        output_format: outputFormat,
+      };
 
-        let submission;
+      let submission;
+      try {
+        submission = await fetchImpl(endpoint, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "x-key": apiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+      } catch (error) {
+        throw new AssetGenerationError("BFL FLUX submission transport failed with ambiguous acceptance", {
+          phase: "provider_generation",
+          category: error?.name === "AbortError" ? "provider_timeout" : "network",
+          retryable: false,
+          provider: "bfl",
+          model,
+          safeDetail: `BFL FLUX submission transport failed with ambiguous acceptance: ${error instanceof Error ? error.message : String(error)}`,
+          cause: error,
+        });
+      }
+
+      const submissionPayload = await responseJson(submission);
+      if (!submission.ok) {
+        const explicitRetrySafe = submission.status === 429;
+        throw bflHttpError({
+          response: submission,
+          payload: submissionPayload,
+          model,
+          retryable: explicitRetrySafe ? true : false,
+        });
+      }
+
+      const providerRequestId = typeof submissionPayload?.id === "string" ? submissionPayload.id : null;
+      const pollingUrl = typeof submissionPayload?.polling_url === "string" ? submissionPayload.polling_url : null;
+      if (providerRequestId === null || pollingUrl === null || !isAllowedPollingUrl(pollingUrl)) {
+        throw new AssetGenerationError("BFL FLUX submission returned an invalid task identity or polling URL", {
+          phase: "provider_generation",
+          category: "unknown",
+          retryable: false,
+          provider: "bfl",
+          model,
+          httpStatus: submission.status,
+          providerRequestId,
+        });
+      }
+
+      return {
+        requestWitness: {
+          mediaType: "application/json",
+          body,
+          secretsRemoved: true,
+        },
+        operation: {
+          provider: "bfl",
+          model,
+          providerRequestId,
+          continuation: { pollingUrl },
+          secretsRemoved: true,
+        },
+      };
+    } catch (error) {
+      throw toAssetGenerationError(error, {
+        phase: "validation",
+        provider: "bfl",
+        model,
+      });
+    }
+  }
+
+  async function resumeOperation(rawOperation) {
+    let operation = null;
+    try {
+      operation = normalizeOperationHandle(rawOperation, model);
+      const providerRequestId = operation.providerRequestId;
+      const pollingUrl = operation.continuation.pollingUrl;
+
+      for (let pollAttempt = 1; pollAttempt <= maxPollAttempts; pollAttempt += 1) {
+        if (pollIntervalMs > 0) await sleep(pollIntervalMs);
+        let pollResponse;
         try {
-          submission = await fetchImpl(endpoint, {
-            method: "POST",
+          pollResponse = await fetchImpl(pollingUrl, {
+            method: "GET",
             headers: {
               accept: "application/json",
               "x-key": apiKey,
-              "Content-Type": "application/json",
             },
-            body: JSON.stringify(body),
           });
-        } catch (error) {
-          throw new AssetGenerationError("BFL FLUX submission transport failed with ambiguous acceptance", {
+        } catch {
+          continue;
+        }
+
+        const pollPayload = await responseJson(pollResponse);
+        if (!pollResponse.ok) {
+          const category = bflCategory(pollResponse.status, pollPayload);
+          if (["authentication", "quota_exhausted", "invalid_request", "moderation_rejected"].includes(category)) {
+            throw bflHttpError({
+              response: pollResponse,
+              payload: pollPayload,
+              model,
+              providerRequestId,
+              retryable: false,
+            });
+          }
+          continue;
+        }
+
+        const status = pollPayload?.status;
+        if (moderationStatus(status)) {
+          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} was moderated`, {
             phase: "provider_generation",
-            category: error?.name === "AbortError" ? "provider_timeout" : "network",
+            category: "moderation_rejected",
             retryable: false,
             provider: "bfl",
             model,
-            safeDetail: `BFL FLUX submission transport failed with ambiguous acceptance: ${error instanceof Error ? error.message : String(error)}`,
-            cause: error,
-          });
-        }
-
-        const submissionPayload = await responseJson(submission);
-        if (!submission.ok) {
-          const explicitRetrySafe = submission.status === 429;
-          throw bflHttpError({
-            response: submission,
-            payload: submissionPayload,
-            model,
-            retryable: explicitRetrySafe ? true : false,
-          });
-        }
-
-        const providerRequestId = typeof submissionPayload?.id === "string" ? submissionPayload.id : null;
-        const pollingUrl = typeof submissionPayload?.polling_url === "string" ? submissionPayload.polling_url : null;
-        if (providerRequestId === null || pollingUrl === null || !isAllowedPollingUrl(pollingUrl)) {
-          throw new AssetGenerationError("BFL FLUX submission returned an invalid task identity or polling URL", {
-            phase: "provider_generation",
-            category: "unknown",
-            retryable: false,
-            provider: "bfl",
-            model,
-            httpStatus: submission.status,
             providerRequestId,
           });
         }
-
-        for (let pollAttempt = 1; pollAttempt <= maxPollAttempts; pollAttempt += 1) {
-          if (pollIntervalMs > 0) await sleep(pollIntervalMs);
-          let pollResponse;
-          try {
-            pollResponse = await fetchImpl(pollingUrl, {
-              method: "GET",
-              headers: {
-                accept: "application/json",
-                "x-key": apiKey,
-              },
-            });
-          } catch {
-            continue;
-          }
-
-          const pollPayload = await responseJson(pollResponse);
-          if (!pollResponse.ok) {
-            const category = bflCategory(pollResponse.status, pollPayload);
-            if (["authentication", "quota_exhausted", "invalid_request", "moderation_rejected"].includes(category)) {
-              throw bflHttpError({
-                response: pollResponse,
-                payload: pollPayload,
-                model,
-                providerRequestId,
-                retryable: false,
-              });
-            }
-            continue;
-          }
-
-          const status = pollPayload?.status;
-          if (moderationStatus(status)) {
-            throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} was moderated`, {
-              phase: "provider_generation",
-              category: "moderation_rejected",
-              retryable: false,
-              provider: "bfl",
-              model,
-              providerRequestId,
-            });
-          }
-          if (status === "Task not found") {
-            throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} was not found after submission`, {
-              phase: "provider_generation",
-              category: "provider_unavailable",
-              retryable: false,
-              provider: "bfl",
-              model,
-              providerRequestId,
-            });
-          }
-          if (status === "Error" || status === "Failed") {
-            const category = bflCategory(200, pollPayload);
-            throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} failed: ${payloadText(pollPayload)}`, {
-              phase: "provider_generation",
-              category,
-              retryable: false,
-              provider: "bfl",
-              model,
-              providerRequestId,
-            });
-          }
-          if (status === "Ready") {
-            const sampleUrl = typeof pollPayload?.result?.sample === "string" ? pollPayload.result.sample : null;
-            if (sampleUrl === null || !isAllowedDeliveryUrl(sampleUrl)) {
-              throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} returned an invalid delivery URL`, {
-                phase: "provider_generation",
-                category: "unknown",
-                retryable: false,
-                provider: "bfl",
-                model,
-                providerRequestId,
-              });
-            }
-
-            for (let downloadAttempt = 1; downloadAttempt <= maxDownloadAttempts; downloadAttempt += 1) {
-              let assetResponse;
-              try {
-                assetResponse = await fetchImpl(sampleUrl, { method: "GET" });
-              } catch {
-                if (downloadAttempt < maxDownloadAttempts && pollIntervalMs > 0) await sleep(pollIntervalMs);
-                continue;
-              }
-              if (!assetResponse.ok) {
-                if (downloadAttempt < maxDownloadAttempts && pollIntervalMs > 0) await sleep(pollIntervalMs);
-                continue;
-              }
-              const bytes = new Uint8Array(await assetResponse.arrayBuffer());
-              if (bytes.length === 0) {
-                throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} returned empty image bytes`, {
-                  phase: "provider_generation",
-                  category: "unknown",
-                  retryable: false,
-                  provider: "bfl",
-                  model,
-                  providerRequestId,
-                });
-              }
-              return {
-                requestWitness: {
-                  mediaType: "application/json",
-                  body,
-                  secretsRemoved: true,
-                },
-                result: {
-                  assetKind: "image",
-                  bytes,
-                  mediaType: header(assetResponse, "content-type") ?? outputMediaType(outputFormat),
-                  width,
-                  height,
-                  durationMs: null,
-                  provider: "bfl",
-                  model,
-                  providerRequestId,
-                  generatedAt: now(),
-                  configuration: {
-                    endpoint: `/v1/${model}`,
-                    asyncResult: true,
-                    width,
-                    height,
-                    safetyTolerance,
-                    outputFormat,
-                    disablePromptUpsampling,
-                  },
-                },
-              };
-            }
-
-            throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} completed but image retrieval did not succeed`, {
-              phase: "provider_generation",
-              category: "provider_timeout",
-              retryable: false,
-              provider: "bfl",
-              model,
-              providerRequestId,
-            });
-          }
-          if (!pendingStatus(status)) {
-            throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} returned unsupported status ${String(status)}`, {
+        if (status === "Task not found") {
+          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} was not found after submission`, {
+            phase: "provider_generation",
+            category: "provider_unavailable",
+            retryable: false,
+            provider: "bfl",
+            model,
+            providerRequestId,
+          });
+        }
+        if (status === "Error" || status === "Failed") {
+          const category = bflCategory(200, pollPayload);
+          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} failed: ${payloadText(pollPayload)}`, {
+            phase: "provider_generation",
+            category,
+            retryable: false,
+            provider: "bfl",
+            model,
+            providerRequestId,
+          });
+        }
+        if (status === "Ready") {
+          const sampleUrl = typeof pollPayload?.result?.sample === "string" ? pollPayload.result.sample : null;
+          if (sampleUrl === null || !isAllowedDeliveryUrl(sampleUrl)) {
+            throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} returned an invalid delivery URL`, {
               phase: "provider_generation",
               category: "unknown",
               retryable: false,
@@ -403,23 +392,110 @@ export function createBflFluxImageProvider({
               providerRequestId,
             });
           }
-        }
 
-        throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} did not complete within the polling budget`, {
-          phase: "provider_generation",
-          category: "provider_timeout",
-          retryable: false,
-          provider: "bfl",
-          model,
-          providerRequestId,
-        });
-      } catch (error) {
-        throw toAssetGenerationError(error, {
-          phase: "validation",
-          provider: "bfl",
-          model,
-        });
+          for (let downloadAttempt = 1; downloadAttempt <= maxDownloadAttempts; downloadAttempt += 1) {
+            let assetResponse;
+            try {
+              assetResponse = await fetchImpl(sampleUrl, { method: "GET" });
+            } catch {
+              if (downloadAttempt < maxDownloadAttempts && pollIntervalMs > 0) await sleep(pollIntervalMs);
+              continue;
+            }
+            if (!assetResponse.ok) {
+              if (downloadAttempt < maxDownloadAttempts && pollIntervalMs > 0) await sleep(pollIntervalMs);
+              continue;
+            }
+            const bytes = new Uint8Array(await assetResponse.arrayBuffer());
+            if (bytes.length === 0) {
+              throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} returned empty image bytes`, {
+                phase: "provider_generation",
+                category: "unknown",
+                retryable: false,
+                provider: "bfl",
+                model,
+                providerRequestId,
+              });
+            }
+            return {
+              assetKind: "image",
+              bytes,
+              mediaType: header(assetResponse, "content-type") ?? outputMediaType(outputFormat),
+              width,
+              height,
+              durationMs: null,
+              provider: "bfl",
+              model,
+              providerRequestId,
+              generatedAt: now(),
+              configuration: {
+                endpoint: `/v1/${model}`,
+                asyncResult: true,
+                width,
+                height,
+                safetyTolerance,
+                outputFormat,
+                disablePromptUpsampling,
+              },
+            };
+          }
+
+          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} completed but image retrieval did not succeed`, {
+            phase: "provider_generation",
+            category: "provider_timeout",
+            retryable: true,
+            provider: "bfl",
+            model,
+            providerRequestId,
+          });
+        }
+        if (!pendingStatus(status)) {
+          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} returned unsupported status ${String(status)}`, {
+            phase: "provider_generation",
+            category: "unknown",
+            retryable: false,
+            provider: "bfl",
+            model,
+            providerRequestId,
+          });
+        }
       }
-    },
+
+      throw new AssetGenerationError(`BFL FLUX task ${operation.providerRequestId} did not complete within the polling budget`, {
+        phase: "provider_generation",
+        category: "provider_timeout",
+        retryable: true,
+        provider: "bfl",
+        model,
+        providerRequestId: operation.providerRequestId,
+      });
+    } catch (error) {
+      throw toAssetGenerationError(error, {
+        phase: "provider_generation",
+        provider: "bfl",
+        model,
+      });
+    }
+  }
+
+  async function generate(request) {
+    const started = await startOperation(request);
+    try {
+      const result = await resumeOperation(started.operation);
+      return {
+        requestWitness: started.requestWitness,
+        result,
+      };
+    } catch (error) {
+      throw terminalizeUncheckpointedResume(error);
+    }
+  }
+
+  return Object.freeze({
+    providerVersion: WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
+    providerId: "bfl-flux-image-v1",
+    capabilities: ["image"],
+    startOperation,
+    resumeOperation,
+    generate,
   });
 }

@@ -28,6 +28,7 @@ test("asset generation error preserves provider-neutral failure evidence", () =>
   assert.equal(error.httpStatus, 429);
   assert.equal(error.providerRequestId, "req_fixture");
   assert.equal(error.retryAfterMs, 12_000);
+  assert.equal(error.providerOperationDurable, false);
   assert.equal(error.providerOutputDurable, false);
   assert.equal(error.safeDetail, "rate limited");
 });
@@ -48,6 +49,7 @@ test("retry policy retries bounded provider failures but never terminal categori
       category: "provider_unavailable",
       phase: "provider_generation",
       categoryRetryable: true,
+      providerOperationDurable: false,
       providerOutputDurable: false,
     },
   );
@@ -76,6 +78,34 @@ test("post-provider transient failures become retryable automatically once stage
   assert.equal(staged.providerOutputDurable, true);
   const resumable = assetGenerationRetryDecision(staged, { attempt: 1 });
   assert.equal(resumable.retry, true, "durable raw provider output makes signer retry safe");
+});
+
+test("accepted provider-operation staging is terminal if the operation identity never became durable", () => {
+  const staging = new AssetGenerationError("object store unavailable", {
+    phase: "provider_operation_staging",
+    category: "storage_transient",
+    provider: "bfl",
+    model: "flux-2-pro",
+    providerRequestId: "bfl_task_1",
+    providerOperationDurable: false,
+  });
+  const decision = assetGenerationRetryDecision(staging);
+  assert.equal(decision.retry, false);
+  assert.equal(decision.reason, "provider_operation_not_staged");
+});
+
+test("a durable accepted provider operation can retry provider polling without resubmission", () => {
+  const polling = new AssetGenerationError("polling budget exhausted", {
+    phase: "provider_generation",
+    category: "provider_timeout",
+    provider: "bfl",
+    model: "flux-2-pro",
+    providerRequestId: "bfl_task_1",
+    providerOperationDurable: true,
+  });
+  const decision = assetGenerationRetryDecision(polling);
+  assert.equal(decision.retry, true);
+  assert.equal(decision.providerOperationDurable, true);
 });
 
 test("provider-output staging itself remains terminal if the raw output never became durable", () => {

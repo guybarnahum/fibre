@@ -25,9 +25,10 @@ Production persistence is governed by:
 - `docs/decisions/ADR-0017-provider-neutral-production-persistence.md`
 - `docs/architecture/production-persistence.md`
 
-Exact reuse is documented in:
+Exact reuse and async-provider recovery are documented in:
 
 - `reuse-semantics.md`
+- `provider-operation-recovery.md`
 
 ## Execution paths
 
@@ -35,6 +36,7 @@ The direct asynchronous execution path is the validated generation foundation. I
 
 The credentialed path adds:
 
+- `ProviderOperation`, for a durably accepted asynchronous provider task that does not yet have output bytes;
 - `GenerationAttempt`, distinct from `AssetGenerationJob`, for one successful provider call and its exact job digest/request/output witness;
 - raw provider bytes staged immutably immediately after provider success and before Content Credential work;
 - `GenerationRecord` with the exact Fibre semantic brief and exact secret-stripped provider request witness;
@@ -45,9 +47,9 @@ The credentialed path adds:
 - immutable `StoredAssetReceipt` linking final bytes to the exact GenerationRecord;
 - a re-verification gate before Thread Presentation may emit `media.ready`.
 
-`GenerationAttempt` and `AssetGenerationJob` intentionally have different identities. Workflow retry count is not itself provider-generation identity: once an earlier attempt has durable provider output, later Workflow retries resume that attempt instead of creating another provider call.
+`ProviderOperation`, `GenerationAttempt`, and `AssetGenerationJob` intentionally have different identities. Workflow retry count is not itself provider-generation identity. For synchronous/replay-safe providers, a later Workflow attempt may make a later provider call. For an asynchronous provider whose accepted task has been durably checkpointed, later Workflow retries resume that same provider operation and retain the attempt number that actually obtained the accepted task. Once provider output is durably staged, later retries resume the `GenerationAttempt` without calling the media provider at all.
 
-The staged provider output is private Asset Generator material. It is not a Thread Presentation asset, is not placed in the public presentation catalog, and does not become evidence merely because it is durably stored. Its purpose is reliable continuation and provenance.
+Provider-operation checkpoints and staged provider output are private Asset Generator material. They are not Thread Presentation assets, are not placed in the public presentation catalog, and do not become evidence merely because they are durably stored. Their purpose is reliable continuation and provenance.
 
 The unit tests use a synthetic fixture credential format to prove Fibre's ordering and publication contract without depending on a native C2PA runtime. The local Cloudflare vertical proof separately uses `services/c2pa-local`, an isolated Node adapter around the official C2PA SDK. That proves the Fibre integration seam but does not make the local development certificate or sidecar a production trust service.
 
@@ -70,15 +72,31 @@ providers/bfl-flux-image-provider.mjs
   model endpoint: flux-2-pro
 ```
 
-The Cloudflare deployment maps those logical provider profiles in `deployments/cloudflare/asset-generator/image-provider-selection.mjs`. The job carries a logical `providerProfile`; deployment composition decides which concrete adapter/model satisfies that profile. Provider credentials remain deployment secrets and never enter the job, request witness, GenerationAttempt, or GenerationRecord.
+The Cloudflare deployment maps those logical provider profiles in `deployments/cloudflare/asset-generator/image-provider-selection.mjs`. The job carries a logical `providerProfile`; deployment composition decides which concrete adapter/model satisfies that profile. Provider credentials remain deployment secrets and never enter the job, request witness, ProviderOperation, GenerationAttempt, or GenerationRecord.
 
-BFL FLUX uses BFL's asynchronous task API: submit once, receive a provider task ID and polling URL, poll until ready, then immediately download the provider's short-lived delivery URL into Fibre-owned immutable staging. The adapter validates returned polling and delivery hosts before following them.
+BFL FLUX uses BFL's asynchronous task API. `startOperation(...)` submits once and returns a provider task ID plus polling URL. The portable Asset Generator runtime writes that accepted operation immutably through `InfraDriver.objects` before it allows `resumeOperation(...)` to poll or download. If the process or Cloudflare Workflow invocation later retries, Fibre loads the accepted operation and resumes its polling URL instead of submitting another image request.
 
-BFL's accepted-task seam is intentionally conservative in this slice. Explicit pre-acceptance rate limiting can use Fibre's ordinary retry policy. A submission transport failure is treated as ambiguous acceptance and is **not** replayed. After a task ID has been returned, transient polling and delivery failures are retried inside the same adapter invocation; if they cannot be recovered within the bounded polling/download budget, the failure is terminal to the outer Workflow so Fibre does not accidentally submit and pay for another nondeterministic image.
+This creates three explicit retry states:
 
-A durable provider-operation checkpoint for an accepted asynchronous task is **deferred**. Adding it would allow crash/process-timeout recovery of BFL polling without resubmission. It must preserve provider-neutral job/attempt/provenance semantics rather than making BFL task IDs part of Thread Presentation or domain authority.
+- before accepted task identity exists, replay is allowed only when the provider adapter says the failure was definitely replay-safe;
+- after BFL accepted a task but before its checkpoint became durable, whole-job replay is blocked with `provider_operation_not_staged`;
+- after the ProviderOperation checkpoint is durable, transient polling/download failures may retry because the next invocation resumes the same accepted task.
 
-FLUX.2 supports reference-image editing, but this first BFL profile deliberately rejects Fibre `referenceObjects`. Binding private Fibre objects into provider `input_image` fields requires an explicit reference-media disclosure/provenance seam; it is deferred rather than silently base64-encoding or publishing those objects.
+Submission transport ambiguity remains terminal. If BFL accepted a request but Fibre never received the task ID/polling URL, the two systems have no shared transaction and Fibre has no safe continuation identity. Current BFL documentation describes task IDs, polling URLs and webhooks but does not document a submission idempotency key that would close that final ambiguity window. Fibre therefore does not guess by resubmitting.
+
+FLUX.2 supports reference-image editing, but the current BFL text-to-image profile deliberately rejects Fibre `referenceObjects`. Binding private Fibre objects into provider `input_image` fields requires an explicit reference-media disclosure/provenance seam; it is deferred rather than silently base64-encoding or publishing those objects.
+
+### Local BFL credentials
+
+For local development, add this alongside the existing OpenAI/Gemini keys:
+
+```text
+BFL_API_KEY=<your-bfl-api-key>
+```
+
+BFL's documented environment variable is `BFL_API_KEY`; the adapter sends it only in the provider's `x-key` header. Current BFL keys are project-scoped and BFL documents their format as `bfl_<random-string>`.
+
+No `BFL_MODEL` or environment-level image-provider selector is required. The Fibre job's `providerProfile` chooses the provider, and `bfl-flux-2-pro-v1` maps to the pinned `flux-2-pro` endpoint in deployment composition. `.env.example` contains the placeholder; real credentials stay only in `.env`/the deployment secret store.
 
 ## Failure taxonomy and retry safety
 
@@ -92,12 +110,13 @@ provider / model
 httpStatus
 providerRequestId
 retryAfterMs
+providerOperationDurable
 providerOutputDurable
 safeDetail
 cause
 ```
 
-Current phases distinguish validation and reference loading from provider generation, provider-output staging, credential signing, credential verification, storage/finalization, and completion publication.
+Current phases distinguish validation and reference loading from provider generation, accepted-provider-operation staging, provider-output staging, credential signing, credential verification, storage/finalization, and completion publication.
 
 Current categories distinguish transient rate limits, provider timeouts/unavailability, network and storage failures from terminal invalid requests, authentication, unsupported capabilities, moderation rejection, missing references, immutable conflicts and quota exhaustion. Unknown failures are classified explicitly rather than silently treated as provider errors.
 
@@ -105,12 +124,14 @@ Current categories distinguish transient rate limits, provider timeouts/unavaila
 
 - transient failures before or during a provider call may retry only when that provider adapter can establish that replay is safe;
 - missing references, immutable conflicts, authentication, moderation, invalid requests and exhausted quota are terminal;
+- if an asynchronous provider accepted a task but its ProviderOperation checkpoint could not be stored, whole-job replay is refused because Fibre cannot safely recover or prove that a second submission is not a duplicate;
+- once a ProviderOperation is durable, polling/download failures can retry by resuming that same accepted operation;
 - if the provider returned bytes but those bytes could not be staged durably, whole-job replay is refused because another provider call would be nondeterministic and potentially billable;
 - once raw provider output is durable, transient Content Credential and finalization failures may retry from that stage without another provider call;
 - if final credentialed bytes were already committed but receipt storage failed, retry verifies and reuses those final bytes rather than embedding/signing them again;
 - completion publication may retry because it only republishes a pointer to already-immutable output.
 
-This makes `providerOutputDurable` load-bearing state, not a diagnostic label. A deployment adapter may translate the portable retry decision into its own runtime mechanism, but it may not infer that a transient error is safe to replay when Fibre or the concrete media adapter says it is not.
+`providerOperationDurable` and `providerOutputDurable` are load-bearing state, not diagnostic labels. A deployment adapter may translate the portable retry decision into its own runtime mechanism, but it may not infer that a transient error is safe to replay when Fibre or the concrete media adapter says it is not.
 
 ## Portable runtime
 
@@ -131,7 +152,9 @@ InfraDriver.workflows
 
 The media-generation provider and credential signer are deliberately outside `InfraDriver`: they are external behavior/provider integrations rather than generic infrastructure guarantees.
 
-A deployment adapter supplies its Workflow attempt number to `runtime.execute(job, { attemptNumber })`, consumes `AssetGenerationError` and `assetGenerationRetryDecision(...)`, and translates that portable decision into its runtime's retry/no-retry mechanism. The deployment adapter does not define `GenerationAttempt` identity, staging semantics, error categories, or retry safety.
+A resumable media provider may expose `startOperation(...)` and `resumeOperation(...)` in addition to the ordinary witnessed `generate(...)` seam. The portable runtime owns ProviderOperation identity and durable checkpointing; the provider adapter owns only how an external task is submitted and resumed.
+
+A deployment adapter supplies its Workflow attempt number to `runtime.execute(job, { attemptNumber })`, consumes `AssetGenerationError` and `assetGenerationRetryDecision(...)`, and translates that portable decision into its runtime's retry/no-retry mechanism. The deployment adapter does not define ProviderOperation identity, GenerationAttempt identity, staging semantics, error categories, or retry safety.
 
 ## Completion contract
 
@@ -181,7 +204,11 @@ AssetGenerationJob
     -> Cloudflare deployment adapter
     -> provider-profile selection
     -> createAssetGenerationRuntime(..., selected provider, attemptNumber)
-    -> OpenAI image provider OR BFL FLUX image provider
+    -> OpenAI image provider
+       OR
+       BFL startOperation
+         -> immutable ProviderOperation
+         -> BFL resumeOperation
     -> GenerationAttempt
     -> immutable staged provider output
     -> GenerationRecord
@@ -193,10 +220,10 @@ AssetGenerationJob
     -> Cloudflare Queue adapter
 ```
 
-Cloudflare retries only when the portable retry decision permits it. Provider-generation transport/rate-limit/availability failures can create later attempts only when the provider adapter reports replay as safe. After any `GenerationAttempt` has durable staged output, credential/finalization retries reuse it and do not call the media provider again. Completion notification is separately retryable because it re-sends only a deterministic pointer to already-immutable output.
+Cloudflare retries only when the portable retry decision permits it. Provider-generation transport/rate-limit/availability failures can create later attempts only when the provider adapter reports replay as safe. A durable asynchronous ProviderOperation keeps later Workflow retries on the same external task. After any `GenerationAttempt` has durable staged output, credential/finalization retries reuse it and do not call the media provider again. Completion notification is separately retryable because it re-sends only a deterministic pointer to already-immutable output.
 
 The deployment adapter does **not** import Thread Presentation, World Kernel presentation publishers, or any code that can emit `media.ready`. Successful Workflow completion means that a durable credentialed receipt exists and its completion pointer was durably handed to transport; it does not mean any calling domain has accepted or published that asset.
 
 The local deployment configuration is `deployments/cloudflare/asset-generator/wrangler.local.jsonc`. Its bindings are operational deployment detail, not Asset Generator semantics.
 
-The version identifiers carried by generation jobs, attempts, receipts, completion messages, providers, provider profiles, and persistent workflow keys are compatibility data. They do not justify version-labelled runtime filenames.
+The version identifiers carried by generation jobs, provider operations, attempts, receipts, completion messages, providers, provider profiles, and persistent workflow keys are compatibility data. They do not justify version-labelled runtime filenames.

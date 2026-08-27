@@ -5,6 +5,7 @@ export const ASSET_GENERATION_ERROR_PHASES = Object.freeze([
   "reuse_lookup",
   "reference_loading",
   "provider_generation",
+  "provider_operation_staging",
   "provider_output_staging",
   "credential_signing",
   "credential_verification",
@@ -114,6 +115,7 @@ export class AssetGenerationError extends Error {
     httpStatus = null,
     providerRequestId = null,
     retryAfterMs = null,
+    providerOperationDurable = false,
     providerOutputDurable = false,
     safeDetail = message,
     cause = null,
@@ -130,6 +132,8 @@ export class AssetGenerationError extends Error {
     this.httpStatus = nullableStatus(httpStatus);
     this.providerRequestId = nullableString("providerRequestId", providerRequestId);
     this.retryAfterMs = nullableDelay(retryAfterMs);
+    if (typeof providerOperationDurable !== "boolean") throw new TypeError("providerOperationDurable must be boolean");
+    this.providerOperationDurable = providerOperationDurable;
     if (typeof providerOutputDurable !== "boolean") throw new TypeError("providerOutputDurable must be boolean");
     this.providerOutputDurable = providerOutputDurable;
     this.safeDetail = detail;
@@ -140,7 +144,14 @@ function categoryForCause(error, phase) {
   if (error instanceof InfraImmutableObjectConflictError) return "immutable_conflict";
   if (error?.name === "AbortError" || error?.name === "TimeoutError") return "provider_timeout";
   if (error instanceof TypeError) return "invalid_request";
-  if (["reuse_lookup", "reference_loading", "provider_output_staging", "storage_finalization", "completion_publication"].includes(phase)) {
+  if ([
+    "reuse_lookup",
+    "reference_loading",
+    "provider_operation_staging",
+    "provider_output_staging",
+    "storage_finalization",
+    "completion_publication",
+  ].includes(phase)) {
     return "storage_transient";
   }
   return "unknown";
@@ -149,16 +160,21 @@ function categoryForCause(error, phase) {
 function contextualizeExistingError(error, {
   provider = null,
   model = null,
+  providerOperationDurable = null,
   providerOutputDurable = null,
 } = {}) {
   const resolvedProvider = error.provider ?? provider;
   const resolvedModel = error.model ?? model;
-  const resolvedDurable = providerOutputDurable === null
+  const resolvedOperationDurable = providerOperationDurable === null
+    ? error.providerOperationDurable
+    : providerOperationDurable;
+  const resolvedOutputDurable = providerOutputDurable === null
     ? error.providerOutputDurable
     : providerOutputDurable;
   if (resolvedProvider === error.provider
     && resolvedModel === error.model
-    && resolvedDurable === error.providerOutputDurable) {
+    && resolvedOperationDurable === error.providerOperationDurable
+    && resolvedOutputDurable === error.providerOutputDurable) {
     return error;
   }
   return new AssetGenerationError(error.message, {
@@ -170,7 +186,8 @@ function contextualizeExistingError(error, {
     httpStatus: error.httpStatus,
     providerRequestId: error.providerRequestId,
     retryAfterMs: error.retryAfterMs,
-    providerOutputDurable: resolvedDurable,
+    providerOperationDurable: resolvedOperationDurable,
+    providerOutputDurable: resolvedOutputDurable,
     safeDetail: error.safeDetail,
     cause: error,
   });
@@ -182,11 +199,17 @@ export function toAssetGenerationError(error, {
   retryable = null,
   provider = null,
   model = null,
+  providerOperationDurable = null,
   providerOutputDurable = null,
   safeDetail = null,
 } = {}) {
   if (error instanceof AssetGenerationError) {
-    return contextualizeExistingError(error, { provider, model, providerOutputDurable });
+    return contextualizeExistingError(error, {
+      provider,
+      model,
+      providerOperationDurable,
+      providerOutputDurable,
+    });
   }
   const resolvedCategory = category ?? categoryForCause(error, phase);
   return new AssetGenerationError(error instanceof Error ? error.message : String(error), {
@@ -198,6 +221,7 @@ export function toAssetGenerationError(error, {
     httpStatus: Number.isSafeInteger(error?.httpStatus) ? error.httpStatus : null,
     providerRequestId: typeof error?.providerRequestId === "string" ? error.providerRequestId : null,
     retryAfterMs: Number.isSafeInteger(error?.retryAfterMs) ? error.retryAfterMs : null,
+    providerOperationDurable: providerOperationDurable === true,
     providerOutputDurable: providerOutputDurable === true,
     safeDetail: safeDetail ?? error?.safeDetail ?? (error instanceof Error ? error.message : String(error)),
     cause: error,
@@ -215,14 +239,21 @@ export function parseRetryAfterMs(value, { nowMs = Date.now() } = {}) {
 
 export function assetGenerationRetryDecision(error, {
   attempt = 1,
+  providerOperationDurable = error?.providerOperationDurable === true,
   providerOutputDurable = error?.providerOutputDurable === true,
 } = {}) {
   if (!Number.isSafeInteger(attempt) || attempt < 1) throw new TypeError("attempt must be a positive safe integer");
+  if (typeof providerOperationDurable !== "boolean") throw new TypeError("providerOperationDurable must be boolean");
   if (typeof providerOutputDurable !== "boolean") throw new TypeError("providerOutputDurable must be boolean");
   const normalized = error instanceof AssetGenerationError
     ? error
-    : toAssetGenerationError(error, { retryable: false, providerOutputDurable });
+    : toAssetGenerationError(error, {
+        retryable: false,
+        providerOperationDurable,
+        providerOutputDurable,
+      });
   const maxAttempts = MAX_ATTEMPTS[normalized.category] ?? 1;
+  const providerOperationStaging = normalized.phase === "provider_operation_staging";
   const postProviderPhase = [
     "provider_output_staging",
     "credential_signing",
@@ -238,7 +269,8 @@ export function assetGenerationRetryDecision(error, {
     reason = "terminal_category";
     retry = false;
   } else if (!safePhase) {
-    reason = postProviderPhase ? "provider_output_not_staged" : "unsafe_phase";
+    if (providerOperationStaging && !providerOperationDurable) reason = "provider_operation_not_staged";
+    else reason = postProviderPhase ? "provider_output_not_staged" : "unsafe_phase";
     retry = false;
   } else if (attempt >= maxAttempts) {
     reason = "attempt_limit_reached";
@@ -260,6 +292,7 @@ export function assetGenerationRetryDecision(error, {
     category: normalized.category,
     phase: normalized.phase,
     categoryRetryable: normalized.retryable,
+    providerOperationDurable,
     providerOutputDurable,
   });
 }

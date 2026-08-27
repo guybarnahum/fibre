@@ -5,6 +5,7 @@ import {
   toAssetGenerationError,
 } from "./asset-generation-error.mjs";
 import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation.mjs";
+import { prepareResumableProviderExecution } from "./resumable-provider-operation.mjs";
 
 export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects", "queues"]);
 
@@ -26,13 +27,20 @@ export function createAssetGenerationRuntime({
     async execute(job, { attemptNumber = 1 } = {}) {
       try {
         const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
-        const result = await executeJob({
+        const prepared = await prepareResumableProviderExecution({
           infra,
           provider,
-          credentialSigner,
           job,
           attemptNumber: checkedAttemptNumber,
         });
+        const result = await executeJob({
+          infra,
+          provider: prepared.provider,
+          credentialSigner,
+          job,
+          attemptNumber: prepared.attemptNumber,
+        });
+        const providerOperation = prepared.observation();
         return Object.freeze({
           receipt: result.receipt,
           receiptObjectRef: result.receiptObjectRef,
@@ -42,6 +50,10 @@ export function createAssetGenerationRuntime({
           generationAttempt: result.generationAttempt,
           generationAttemptObjectRef: result.generationAttemptObjectRef,
           generationAttemptDigest: result.generationAttemptDigest,
+          providerOperation: providerOperation?.checkpoint ?? null,
+          providerOperationObjectRef: providerOperation?.objectRef ?? null,
+          providerOperationDigest: providerOperation?.digest ?? null,
+          providerOperationResumed: providerOperation?.resumed === true,
           providerOutputObjectRef: result.providerOutputObjectRef,
           providerOutputDigest: result.providerOutputDigest,
           providerOutputResumed: result.providerOutputResumed === true,

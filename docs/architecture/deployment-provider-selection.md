@@ -1,7 +1,7 @@
 ---
 id: architecture-deployment-provider-selection
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-26
 canonical: false
 ---
 
@@ -52,6 +52,7 @@ deployments/
     local.json                   Fibre provider-selection manifest
   cloudflare/
     asset-generator/
+      image-provider-selection.mjs
       worker.mjs
       wrangler.local.jsonc
     thread-presentation/
@@ -100,9 +101,11 @@ The manifest validator fails closed when a provider alias is unknown, a requeste
 
 The manifest does not contain cloud access keys, model credentials, C2PA signing keys, Thread/World semantics, provider-native resource identities, or Fibre publication decisions. Those remain with provider secret/configuration mechanisms and the owning Fibre domains.
 
+Media-provider profile selection is also distinct from `InfraDriver` selection. An `AssetGenerationJob.providerProfile` names a logical media-provider profile; the deployment adapter maps that profile to a concrete OpenAI, BFL, or future provider adapter. The provider API key remains a deployment secret and never becomes job or Fibre-domain data.
+
 ## Current implementation phase
 
-`deployments/environments/local.json` records and validates the current local provider selection. Both current Cloudflare executable adapters now live under `deployments/cloudflare/`:
+`deployments/environments/local.json` records and validates the current local infrastructure-provider selection. Both current Cloudflare executable adapters live under `deployments/cloudflare/`:
 
 ```text
 asset-generator/
@@ -121,7 +124,20 @@ createAssetGenerationRuntime({ infra, provider, credentialSigner })
 
 Execution/persistence uses `objects` and `queues`; scheduling uses `workflows`. The media provider and credential signer remain separate injected dependencies.
 
-Until generation has explicit attempt/staging identities, executing one semantic generation identity is intentionally non-retryable after failure. A deployment adapter must map that provider-neutral Fibre rule to its own runtime semantics. Completion delivery is different: it is a deterministic pointer to already-immutable output and can be delivered at least once.
+Retry safety is provider-neutral even when provider APIs differ. Fibre now distinguishes three durable execution boundaries:
+
+```text
+AssetGenerationJob
+  -> optional ProviderOperation checkpoint for an accepted asynchronous provider task
+  -> GenerationAttempt + staged raw provider output
+  -> credentialed final asset + StoredAssetReceipt
+```
+
+A resumable provider may expose `startOperation(...)` and `resumeOperation(...)`. The portable Asset Generator runtime persists the accepted `ProviderOperation` through `InfraDriver.objects` before allowing polling/resume work. A later Workflow retry loads that checkpoint and resumes the same provider task rather than asking the deployment adapter to resubmit it. If an accepted task cannot be durably checkpointed, the portable retry policy blocks replay.
+
+This does not make provider task IDs part of `InfraDriver`, Thread Presentation, or Fibre semantic authority. They remain operational continuation evidence owned by Asset Generator.
+
+For BFL FLUX, the Cloudflare deployment selects the `bfl-flux-2-pro-v1` logical profile and injects the BFL adapter. For OpenAI, it selects `openai-gpt-image-2-medium-v1`. The service runtime does not branch on those names.
 
 ## Thread Presentation runtime
 
@@ -135,6 +151,7 @@ Without changing service contracts, Fibre can later add:
 
 - `aws-v1`, GCP or Azure InfraDriver implementations;
 - provider-specific deployment adapters under `deployments/<platform>/`;
+- additional media-provider profiles without changing Asset Generator domain contracts;
 - manifest-driven config/IaC generation;
 - composite InfraDrivers where capabilities come from more than one provider;
 - environment overlays for staging/production;

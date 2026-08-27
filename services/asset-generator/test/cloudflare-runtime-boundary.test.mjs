@@ -5,6 +5,7 @@ import { readFile, stat } from "node:fs/promises";
 const runtimeUrl = new URL("../src/asset-generation-runtime.mjs", import.meta.url);
 const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
 const attemptUrl = new URL("../src/asset-generation-attempt.mjs", import.meta.url);
+const providerOperationUrl = new URL("../src/resumable-provider-operation.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
 const workerUrl = new URL("../../../deployments/cloudflare/asset-generator/worker.mjs", import.meta.url);
 const providerSelectionUrl = new URL("../../../deployments/cloudflare/asset-generator/image-provider-selection.mjs", import.meta.url);
@@ -32,6 +33,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   const runtime = await text(runtimeUrl);
   const errors = await text(errorUrl);
   const attempts = await text(attemptUrl);
+  const providerOperations = await text(providerOperationUrl);
   const worker = await text(workerUrl);
   const providerSelection = await text(providerSelectionUrl);
 
@@ -39,11 +41,19 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
 
   assert.match(runtime, /createAssetGenerationRuntime/);
   assert.match(runtime, /requireInfraCapabilities/);
+  assert.match(runtime, /prepareResumableProviderExecution/);
   assert.match(runtime, /publishAssetGenerationCompletion/);
   assert.match(runtime, /attemptNumber/);
+  assert.match(runtime, /providerOperationResumed/);
   assert.match(runtime, /providerOutputResumed/);
   assert.doesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/);
   assert.doesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+
+  assert.match(providerOperations, /provider_operation_checkpoint/);
+  assert.match(providerOperations, /startOperation/);
+  assert.match(providerOperations, /resumeOperation/);
+  assert.match(providerOperations, /providerOperationObjectRef/);
+  assert.doesNotMatch(providerOperations, /cloudflare|R2|WorkflowEntrypoint|OPENAI_API_KEY|BFL_API_KEY/);
 
   assert.match(attempts, /generation-attempt-v0\.1/);
   assert.match(attempts, /assetGenerationJobDigest/);
@@ -52,6 +62,11 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.doesNotMatch(attempts, /cloudflare|R2|WorkflowEntrypoint/);
 
   assert.match(errors, /assetGenerationRetryDecision/);
+  assert.match(errors, /provider_operation_staging/);
+  assert.match(errors, /provider_operation_not_staged/,
+    "portable policy must block replay if an accepted async provider task never became durable");
+  assert.match(errors, /providerOperationDurable/,
+    "portable retry evidence must distinguish accepted-operation resume from ambiguous submission");
   assert.match(errors, /provider_output_staging/);
   assert.match(errors, /provider_output_not_staged/,
     "portable policy must still block replay if raw provider output never became durable");
@@ -71,13 +86,15 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /assetGenerationRetryDecision/);
   assert.match(worker, /attemptNumber: ctx\.attempt/,
     "Cloudflare Workflow retries must be passed into the portable GenerationAttempt seam");
+  assert.match(worker, /providerOperationDurable: error\?\.providerOperationDurable === true/,
+    "diagnostics must distinguish durable accepted-provider-task resume from ambiguous submission");
   assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/,
     "diagnostics must distinguish safe staged retries from pre-stage failures");
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
   assert.match(worker, /createHttpContentCredentialSigner/);
-  assert.match(worker, /asset-generation-failure-observation-v0\.1/,
-    "Cloudflare deployment must expose a safe operational failure observation for diagnostics");
+  assert.match(worker, /asset-generation-failure-observation-v0\.2/,
+    "Cloudflare deployment must expose the operation durability bit in its safe failure observation");
   assert.match(worker, /category: error\?\.category/);
   assert.match(worker, /retryDecision: decision\.reason/);
   assert.match(worker, /providerRequestId/);

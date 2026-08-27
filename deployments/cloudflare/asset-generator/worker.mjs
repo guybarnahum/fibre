@@ -13,7 +13,7 @@ import {
 import { createCloudflareAssetImageProvider } from "./image-provider-selection.mjs";
 
 const CREDENTIAL_SIGNER_ID = "fibre-c2pa-node-local-v1";
-const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.1";
+const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
 
 function nonEmpty(name, value) {
@@ -38,6 +38,7 @@ function generationFailureObservation(error, { attempt, decision }) {
     httpStatus: Number.isSafeInteger(error?.httpStatus) ? error.httpStatus : null,
     providerRequestId: typeof error?.providerRequestId === "string" ? error.providerRequestId : null,
     retryAfterMs: Number.isSafeInteger(error?.retryAfterMs) ? error.retryAfterMs : null,
+    providerOperationDurable: error?.providerOperationDurable === true,
     providerOutputDurable: error?.providerOutputDurable === true,
     categoryRetryable: error?.retryable === true,
     retryable: decision.retry,

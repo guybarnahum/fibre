@@ -3,6 +3,7 @@
 export * from "./asset-generation-domain.mjs";
 export * from "./asset-generation-identity.mjs";
 export * from "./asset-generation-attempt.mjs";
+export * from "./asset-generation-provider-operation.mjs";
 export * from "./asset-generation-reuse.mjs";
 export * from "./asset-generation-error.mjs";
 export * from "./asset-generation-completion.mjs";
