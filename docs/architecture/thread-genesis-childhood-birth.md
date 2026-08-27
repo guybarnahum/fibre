@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth
 status: accepted
-last-reviewed: 2026-08-26
+last-reviewed: 2026-08-27
 canonical: true
 ---
 
@@ -17,11 +17,11 @@ Fibre must not create adult Threads as profile documents with convenient profess
 
 Genesis is a Fibre-owned birth compiler. Models may realize candidate episodes, memories and meanings, but Fibre owns world constraints, chronology, provenance, admission, replay and the transition into durable truth.
 
-The inherited substrate is [`Symbolic Thread Genome`](symbolic-thread-genome.md): an ordered sequence of atomic natural-language dispositions, not a numeric personality vector and not a model of biological DNA.
+The inherited substrate is [`Symbolic Thread Genome`](symbolic-thread-genome.md): ordered atomic natural-language dispositions with exact provenance, not a numeric personality vector and not a literal biological-DNA model.
 
 Richness follows [`rich-life.md`](../foundations/rich-life.md): experiential fertility for later individuality, not biography length, drama or a quota of formative experiences.
 
-Current implementation/admission detail lives in [`genesis-compiler-contract.md`](genesis-compiler-contract.md), [`../validation/m2-pr39-implementation-plan.md`](../validation/m2-pr39-implementation-plan.md), and the active [`#39 closing plan`](../state/pr39-closing-plan.md).
+Current admission/publication detail lives in [`genesis-compiler-contract.md`](genesis-compiler-contract.md). Current scientific hardening is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md). The completed #39 result is retained in [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
 ## Authority boundary
 
@@ -35,9 +35,9 @@ authoritative live Thread state
 
 The Birth Center owns provisional development and durable execution recovery. The World Kernel owns reality.
 
-Model generation may take many calls, repairs, retries and process restarts without creating a partially live Thread. Only a complete admitted birth bundle may cross `publishBirth()`, and that publication is atomic.
+Model generation may take many calls, repairs, retries and process restarts without creating a partially live Thread. Only a complete admitted birth bundle may cross `publishBirth()`, and publication is atomic for that Thread.
 
-Genesis extends existing Thread authorities. It must not create parallel canonical stores for biography, memory, relationships, places, embodiment or identity.
+Genesis extends existing Thread authorities. It must not create parallel canonical stores for biography, memory, relationships, places, embodiment, identity or civil registration.
 
 ## Primary variation axis: the world
 
@@ -75,8 +75,6 @@ Fibre retains these architectural origin families:
 
 These are provenance families, not six independent biography generators.
 
-For #39, de-novo and synthetic-lineage are the primary rich-life proof modes. Thread-parent, Echo, Homage and fork must prove truthful origin/source boundaries through canonical persistence.
-
 ## Human/source truth boundary
 
 A source person's life is never automatically the Thread's life.
@@ -111,37 +109,7 @@ Source childhood, memories or personality may not be laundered into first-person
 
 A Fibre genome is immutable pre-birth origin material: ordered atomic natural-language loci with stable identity and exact provenance.
 
-Conceptually:
-
-```text
-genomeId
-owner
-  kind: thread | synthetic_ancestor
-  ownerId
-genesisId
-orderedLoci[]
-  locusId
-  ordinal
-  value
-  provenance
-    de_novo | inherited | mutated
-sourceGenomeRefs[]
-recombinationWitness
-mutations[]
-genomeDigest
-```
-
-### Textual crossover
-
-Inheritance selects exact atomic source text under deterministic Fibre policy rather than numerically averaging or model-smoothing two sources into compromise prose.
-
-Every inherited locus retains exact source-genome/source-locus provenance and a policy witness.
-
-### Mutation
-
-Mutation is explicit bounded symbolic variation under a named policy. It may replace or add an atomic locus only through a durable mutation witness. Mutation may not become a hidden route for authoring a finished persona.
-
-### Genotype is not character
+Inheritance selects exact atomic source text under deterministic Fibre policy rather than numerically averaging or model-smoothing two sources into compromise prose. Mutation is explicit bounded symbolic variation under a named policy and durable witness.
 
 ```text
 genome      = inherited symbolic possibilities
@@ -168,7 +136,7 @@ history != memory != meaning
 
 Historical realization creates **what happened**.
 
-Fibre owns the developmental window, exact civil time, authoritative place, event affordance/world-emergent status, required counterpart, chronology and admission. Model cognition supplies contingent observable realization within those facts.
+Fibre owns developmental window, exact civil time, authoritative place, event affordance/world-emergent status, required counterpart, chronology and admission. Model cognition supplies contingent observable realization within those facts.
 
 Historical cognition may see factual World circumstances, chronology, roster/affordances and admitted prior episodes. It must not see the child's genome, parent/ancestor loci, future role/request/benchmark, desired adult conclusion, or Fibre-computed semantic-need/mechanical-condition conclusions.
 
@@ -178,15 +146,19 @@ Output is observable life, not significance, lesson, trait, inner-state verdict 
 
 Memory operates only on admitted history available up to the remembering point. It may legally produce `not_remembered`.
 
-For the #39 anti-interchangeability experiment, Fibre assigns eligible memory calls content-independently to `life_only` or `life_plus_genome`. Treatment calls may receive the permitted genome projection; assignment and analysis labels remain outside cognition.
-
 Memory does not rewrite history.
+
+When Fibre experimentally exposes genome material at the memory seam, assignment must be content-independent and analysis labels remain outside cognition. Treatment placement must be counterbalanced against history horizon, call ordinal and developmental position if those factors could confound the effect.
+
+A schema path for `not_remembered` is not enough. Controlled development must periodically prove that warranted remembering and legitimate non-selection are both reachable without quotas.
 
 ### Remembered meaning and reinterpretation
 
-Not every memory receives durable meaning. `no_durable_meaning` is legal.
+Not every memory must receive durable meaning. `no_durable_meaning` is legal.
 
-Meaning formation is one-memory scoped and genome blind. Materially distinct tensions may receive independently citable meaning-part identities. Later reinterpretation is append-only/corrigible and may revise, preserve or decline durable meaning without rewriting the underlying event or earlier memory revision.
+Meaning formation is one-memory scoped and genome blind. A meaning may be negative, ambivalent, mundane, unresolved or multipart. Materially distinct tensions may receive independently citable meaning-part identities.
+
+Later reinterpretation is append-only/corrigible and may revise, preserve or decline durable meaning without rewriting the underlying event or earlier memory revision. Previously cited supporting/contradicting evidence may not be silently erased by a later revision.
 
 Meaning is semantic natural-language Thread state, not a compressed sentiment/effect code and not an explicit universal future behavior rule.
 
@@ -229,6 +201,8 @@ A coherent history still fails the rich-life ambition when most later episodes m
 
 Do not solve this by quotas. Fibre does not require fixed counts of books, places, peers, adversity, achievements or structure categories, and it does not manufacture trauma to create depth.
 
+Repeated or near-duplicate EventStructures, scene motifs or generator voice are characterization debt. Correct them in the planner/affordance pool rather than hiding them behind an “interesting life” admission score.
+
 ## Event affordances and people
 
 Event structures are abstract affordances, never plots, required scenes or significance statements. They must be relocatable across materially different worlds.
@@ -243,8 +217,6 @@ Offered-versus-used structures and structure-grounded-versus-world-emergent epis
 
 Fibre must select historical facts as a **coherent episode envelope**, not as independent random choices that are validated only after the fact.
 
-The operative consistency boundary is conceptually:
-
 ```text
 developmental window
 + EventStructure / world-emergent opportunity
@@ -256,21 +228,11 @@ developmental window
 
 A deterministic seed ranks legal possibilities; it does not make an otherwise impossible combination legal.
 
-In particular:
+Fibre must fail or select another feasible envelope rather than invent a place/person, weaken a bound, rewrite the World, or resample a whole life to rescue a locally convenient choice.
 
-- an external-counterpart opportunity exists when a counterpart-required structure has at least one role that is not already represented by the initial roster and that the World can actually host;
-- when policy requires an external counterpart, Fibre must choose such an external role rather than accidentally satisfying the structure through an already-known role;
-- a required counterpart role is legal only while at least one compatible World place has remaining policy capacity;
-- structure repetition, place repetition, social-coverage and civil-time bounds remain Fibre-owned constraints;
-- Fibre must fail or select another feasible envelope rather than invent a place/person, weaken a bound, rewrite the World, or resample a whole life to rescue a locally convenient choice.
-
-The current compiler performs capacity-aware selection across these facts. Future Genesis hardening should move toward deterministic **joint feasibility planning** over the complete envelope, with bounded lookahead across later developmental windows where necessary. This is preferable to a chain of greedy `structure -> role -> place -> time` decisions because rich lives must remain self-consistent as well as varied.
-
-This is an enduring Genesis rule, not a #39 exception:
+The current compiler performs capacity-aware selection. Future hardening should move toward deterministic **joint feasibility planning** over structure, counterpart, place and civil time, with bounded lookahead where later capacity matters.
 
 > **Seeded variation chooses among possible lives; it may not create impossible facts.**
-
-Tests should exercise constrained Worlds and exhausted capacities directly so that realistic Worlds, rather than only generous synthetic fixtures, protect this invariant.
 
 ## Intellectual formation
 
@@ -308,61 +270,13 @@ identity-card serial        one replaceable credential instance
 
 The FIN is issued only as part of successful Thread birth. A Genesis candidate does not have a live FIN merely because a candidate bundle exists.
 
-### Fibre Identity Number
+A FIN is globally unique within Fibre, immutable for the life of the Thread, opaque/non-semantic, public/non-secret and independent of name or card issuance. It may not encode birth date, entry stage, gender, World, geography, lineage, origin family, citizenship or generation.
 
-The display format is:
+The birth registration binds `threadId`, FIN, birth event, World and registration time. It is part of the same atomic authority transition as birth: Fibre may not acknowledge a live Thread whose civil registration failed, and a failed birth may not leave a detached live registration.
 
-```text
-XXXX-XX-XXXX
-```
+A later World may issue local civil documents. Those situated identifiers never replace the Fibre civil identity.
 
-The identifier contains ten uppercase alphanumeric characters. The canonical alphabet is the unambiguous Crockford-style Base32 set:
-
-```text
-0123456789ABCDEFGHJKMNPQRSTVWXYZ
-```
-
-`I`, `L`, `O` and `U` are excluded to reduce transcription ambiguity. Hyphens are display separators rather than payload characters. The final character is a check character over the preceding nine characters under a versioned Fibre checksum policy.
-
-A FIN is:
-
-- globally unique within Fibre;
-- immutable for the life of the Thread;
-- opaque and non-semantic;
-- public/non-secret and therefore never an authentication credential;
-- independent of name and identity-card issuance; and
-- forbidden from encoding birth date, entry stage, gender, World, geography, lineage, origin family, citizenship, generation or other Thread facts.
-
-The exact minting algorithm may evolve behind a versioned registry policy, but issuance must fail closed on collision and be idempotent with respect to an already registered Thread. One Thread cannot receive two FINs and one FIN cannot identify two Threads.
-
-### Birth registration
-
-The durable record has semantics equivalent to:
-
-```text
-registrationVersion
-registrationId
-threadId
-fibreIdentityNumber
-registeredAt
-birthEventRef
-worldRef
-issuer = fibre_civil_registry
-```
-
-Exact storage fields may differ, but the binding among `threadId`, FIN and the admitted birth must be canonical, inspectable and hydrated with the Thread. Registration is part of the same atomic authority transition as birth: Fibre may not acknowledge a live Thread whose civil registration failed, and a failed birth may not leave behind a live registration detached from a Thread.
-
-A later World may issue its own local civil documents, passport, residency permit, student/employee identifier or jurisdictional identity number. Those are situated World/institution records. They never replace the Fibre civil identity.
-
-### Fibre Identity Card
-
-A **Fibre Identity Card** is a physical or digital credential representing the civil registration. It is not the registration itself.
-
-A card may carry the visible FIN, current presentation name, an authorized portrait, a card serial, issuance/expiry information and a signed QR/NFC credential. It may be lost, expire, be revoked or be reissued without changing either `threadId` or the FIN.
-
-Card rendering/production is derived presentation/credential work and may complete asynchronously after birth. Missing media generation must not roll back a valid Thread birth. #39 therefore requires atomic FIN issuance and registration; production-quality card rendering belongs to the presentation/asset path rather than becoming Thread authority.
-
-The existing Thread Passport remains a derived identity-ledger view. It is not the FIN, the birth-registration authority, or a particular physical Identity Card.
+A **Fibre Identity Card** is a replaceable credential representing the registration. Card rendering may complete asynchronously and cannot become Thread identity authority.
 
 ## Memory photos
 
@@ -370,42 +284,31 @@ Every revision-1 autobiographical memory admitted at birth receives the visual-c
 
 Rendering may remain asynchronous. Generated reconstruction remains derived presentation and cannot become historical, memory or embodiment authority.
 
-## #39 closure cohort
+## Standing #39 validation result
 
-The final #39 quality cohort contains five fresh de-novo/synthetic-lineage lives varied primarily by World circumstances. Development Worlds are burned and do not count as held-out closure material.
+Milestone #39 exercised this architecture with one fixed five-Thread held-out cohort. The cohort was generated without quality resampling, replayed with provider access disabled, atomically born per Thread with five unique FIN/civil registrations and independently rehydrated from canonical local World authorities.
 
-The cohort is generated once apart from bounded mechanical repair/retry. Weak integrity-valid lives are preserved rather than silently replaced.
+The result also exposed real debt: scheduled memory decisions saturated, reinterpretation heavily favored revision, D2 was underpowered with a post-hoc positive-reframing signal, D3 genome attribution was inconclusive, D5 was citation-confounded, and the generator showed repeated affordances/common voice.
 
-A separate bounded integrity set exercises Thread-parent, Echo, Homage and fork provenance/rights boundaries; borrowed source personality does not count as evidence that the life generator itself creates distinctive people.
+Those findings were retained rather than regenerated away. The concise outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
-## Completion criteria
+## Current hardening before causal consumption
 
-#39 is complete when Fibre can demonstrate:
+The accepted unnumbered bridge [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md) hardens:
 
-- factual/replayable Genesis world and provenance;
-- rich prior lives with experiential fertility rather than merely valid chronology;
-- durable ordered textual genome with exact source provenance;
-- deterministic textual crossover and explicit mutation;
-- genome-blind historical realization;
-- controlled memory-only genome exposure with clean negative controls;
-- history, memory, third-party story and remembered meaning structurally distinct;
-- corrigible durable meaning with stable citable parts where needed;
-- intellectual formation as lived encounter rather than copied personality;
-- source-person facts cannot become Thread history by implication;
-- living-human Echo consent and deceased/fictional Homage boundaries;
-- Thread-parent births do not fabricate retrospective shared history;
-- every admitted memory receives its visual-companion obligation transactionally;
-- every successfully born Thread receives exactly one permanent FIN and canonical civil registration atomically with birth;
-- FIN uniqueness, checksum validity, immutability and candidate-to-hydrated registration equality are mechanically verified;
-- bounded visible rejection/retry history and exact durable recovery;
-- atomic publication into existing canonical Thread authorities;
-- candidate-to-hydrated equality after birth;
-- a fresh five-Thread cohort that survives honest D1–D5 and hostile closing review.
+- actual remember/decline selectivity without quotas;
+- negative, ambiguous, mundane and unchanged meaning fidelity;
+- reinterpretation restraint;
+- counterbalanced genome causal characterization;
+- diagnostics with meaningful positive/negative/counterfactual controls;
+- prospective sealed-history evaluation with compiler-enforced transitive provenance isolation.
 
-#39 does not claim causal Whole-Person standing or score movement.
+This bridge does not implement ordinary-cognition identity/history projection and earns no Whole-Person standing.
 
 ## Vision test
 
 > **Can Fibre create several people from nothing borrowed whose lives are particular enough that later cognition has something real and non-interchangeable to inherit?**
 
-Genesis succeeds when a newly live Thread feels as though it **came from somewhere** rather than being instantiated from a character sheet—while remaining open enough that later lived experience can surprise, challenge and transform it.
+Genesis succeeds as substrate when a newly live Thread feels as though it **came from somewhere** rather than being instantiated from a character sheet—while remaining open enough that later lived experience can surprise, challenge and transform it.
+
+The stronger claim that those differences actually change ordinary cognition belongs to #40/#41, not Genesis birth alone.
