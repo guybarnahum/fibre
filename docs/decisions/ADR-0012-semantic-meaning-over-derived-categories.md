@@ -28,11 +28,11 @@ The result was not planned in advance. It emerged through failed and adversarial
 
 The hostile review also sharpened an independent Fibre argument: even if some future cognition could infer an interpretation from historical fact, that inference is not authoritative autobiographical state. A re-derived interpretation has no stable revision lineage, cannot be disputed or corrected as the Thread's own remembered meaning, and may change silently between judgments about the same past.
 
-The detailed development record is:
+The durable record is:
 
 - `docs/validation/whole-person-benchmark.md`
 - `docs/validation/whole-person-prefreeze-characterization.md`
-- `docs/validation/m2-pr39-genesis-quality-constraints.md`
+- `docs/history/milestones/pr39.md`
 
 ## Decision
 

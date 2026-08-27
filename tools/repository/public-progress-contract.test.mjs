@@ -88,7 +88,7 @@ test("simple progress labels remain plain while precise status ids stay stable",
   assert.equal(labels.get("preserved_failure"), "Experiment failed — kept as evidence");
 });
 
-test("public population snapshot distinguishes historical evidence, burned development fixtures and the unrun final cohort", () => {
+test("public population snapshot distinguishes historical evidence, burned development fixtures and the born final cohort", () => {
   const ids = new Set();
   for (const item of progress.population.items) {
     assert.equal(ids.has(item.id), false, `duplicate population id ${item.id}`);
@@ -103,6 +103,6 @@ test("public population snapshot distinguishes historical evidence, burned devel
   assert.equal(byId.get("older_partial_failed_candidate")?.count, 1);
   assert.equal(byId.get("older_never_started_slot")?.count, 1);
   assert.equal(byId.get("burned_development_worlds")?.count, 5);
-  assert.equal(byId.get("final_held_out_lives")?.count, 0);
+  assert.equal(byId.get("final_held_out_lives")?.count, 5);
   assert.equal(progress.currentWork.finalLifeCognitionAuthorized, false);
 });
