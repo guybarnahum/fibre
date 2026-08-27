@@ -1,0 +1,236 @@
+{
+  "contract": "fibre-genesis-memory-selectivity-controls",
+  "developmentOnly": true,
+  "purpose": "Prospective matched Pass-B controls for exercising warranted remembering and legitimate non-selection without a memory quota.",
+  "subject": {
+    "provisionalThreadId": "thr_memory_selectivity_control",
+    "bornAt": "2000-04-15T00:00:00Z"
+  },
+  "world": {
+    "worldSpecId": "world_memory_selectivity_control",
+    "timeFrame": {
+      "startAt": "2000-01-01T00:00:00Z",
+      "endAt": "2020-12-31T23:59:59Z"
+    },
+    "places": [
+      {
+        "placeId": "place_ms_transit",
+        "description": "A familiar neighborhood bus route used for ordinary school travel."
+      },
+      {
+        "placeId": "place_ms_library",
+        "description": "A public library with a returns desk, open shelves and study tables."
+      },
+      {
+        "placeId": "place_ms_home",
+        "description": "A modest family apartment with a shared kitchen and bedrooms."
+      },
+      {
+        "placeId": "place_ms_school",
+        "description": "A public secondary school with classrooms and a small project lab."
+      }
+    ],
+    "householdShape": "Two caregivers, the subject and one younger sibling share the same apartment.",
+    "familyRelations": [
+      "The younger sibling is three years younger than the subject."
+    ],
+    "languages": [
+      "English"
+    ],
+    "materialCircumstances": "Housing and ordinary expenses are stable; discretionary spending is limited.",
+    "mobilityPattern": "School and local errands use walking and public transit.",
+    "schoolingOrCommunityContext": "Public school, library and neighborhood transit structure ordinary routines.",
+    "culturalContext": "A mixed urban neighborhood with ordinary family, school and peer routines.",
+    "availableInstitutions": [
+      "public_school",
+      "public_library",
+      "public_transit"
+    ],
+    "intellectualEnvironment": "Books, school projects and ordinary family discussion are available without a prescribed worldview.",
+    "affordedRoles": [
+      "caregiver",
+      "sibling",
+      "peer",
+      "teacher",
+      "librarian",
+      "transit_worker"
+    ]
+  },
+  "decisionRule": {
+    "residueRememberedMinimum": 3,
+    "ordinaryNotRememberedMinimum": 2,
+    "matchedPairSeparationMinimum": 2,
+    "requireBothOutcomes": true,
+    "interpretation": "This is a development characterization, not an admission gate. A miss is preserved and may motivate a later prompt/compiler change; accepted outputs are never rerun for quality."
+  },
+  "cases": [
+    {
+      "trialId": "trial_01",
+      "pairId": "pair_01",
+      "controlClass": "ordinary_nonselection",
+      "expectedOutcome": "not_remembered",
+      "rememberingAt": "2010-03-15T00:00:00Z",
+      "ageAtRemembering": 9.92,
+      "history": [
+        {
+          "episodeId": "ep_ms_01",
+          "occurredAt": "2009-09-14T15:30:00Z",
+          "ageAtEvent": 9.42,
+          "placeRef": "place_ms_transit",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "The child boarded the usual bus after school, sat near the rear door, and got off at the familiar neighborhood stop.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_02",
+      "pairId": "pair_01",
+      "controlClass": "strong_residue",
+      "expectedOutcome": "remembered",
+      "rememberingAt": "2010-03-15T00:00:00Z",
+      "ageAtRemembering": 9.92,
+      "history": [
+        {
+          "episodeId": "ep_ms_01",
+          "occurredAt": "2009-09-14T15:30:00Z",
+          "ageAtEvent": 9.42,
+          "placeRef": "place_ms_transit",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "A route diversion carried the child two stops past the familiar stop; the child got off, checked street signs, and walked back along the bus route to reach home.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_03",
+      "pairId": "pair_02",
+      "controlClass": "ordinary_nonselection",
+      "expectedOutcome": "not_remembered",
+      "rememberingAt": "2012-05-05T00:00:00Z",
+      "ageAtRemembering": 12.06,
+      "history": [
+        {
+          "episodeId": "ep_ms_02",
+          "occurredAt": "2011-11-05T14:10:00Z",
+          "ageAtEvent": 11.56,
+          "placeRef": "place_ms_library",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "The child returned two borrowed books, browsed one shelf, checked out another book, and walked home.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_04",
+      "pairId": "pair_02",
+      "controlClass": "strong_residue",
+      "expectedOutcome": "remembered",
+      "rememberingAt": "2012-05-05T00:00:00Z",
+      "ageAtRemembering": 12.06,
+      "history": [
+        {
+          "episodeId": "ep_ms_02",
+          "occurredAt": "2011-11-05T14:10:00Z",
+          "ageAtEvent": 11.56,
+          "placeRef": "place_ms_library",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "The child discovered a notebook used for months was missing, retraced the walk to the library, and found it under a study table before closing.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_05",
+      "pairId": "pair_03",
+      "controlClass": "ordinary_nonselection",
+      "expectedOutcome": "not_remembered",
+      "rememberingAt": "2014-01-20T00:00:00Z",
+      "ageAtRemembering": 13.76,
+      "history": [
+        {
+          "episodeId": "ep_ms_03",
+          "occurredAt": "2013-07-20T18:05:00Z",
+          "ageAtEvent": 13.26,
+          "placeRef": "place_ms_home",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "The teenager folded clean laundry, put clothes into drawers, and left the empty basket beside the washing machine.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_06",
+      "pairId": "pair_03",
+      "controlClass": "strong_residue",
+      "expectedOutcome": "remembered",
+      "rememberingAt": "2014-01-20T00:00:00Z",
+      "ageAtRemembering": 13.76,
+      "history": [
+        {
+          "episodeId": "ep_ms_03",
+          "occurredAt": "2013-07-20T18:05:00Z",
+          "ageAtEvent": 13.26,
+          "placeRef": "place_ms_home",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "During an evening power outage, the teenager found the household flashlight, checked the dark hallway with the younger sibling, and waited together until the lights returned.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_07",
+      "pairId": "pair_04",
+      "controlClass": "ordinary_nonselection",
+      "expectedOutcome": "not_remembered",
+      "rememberingAt": "2016-04-02T00:00:00Z",
+      "ageAtRemembering": 15.97,
+      "history": [
+        {
+          "episodeId": "ep_ms_04",
+          "occurredAt": "2015-10-02T12:20:00Z",
+          "ageAtEvent": 15.47,
+          "placeRef": "place_ms_school",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "The teacher changed the seating chart; the teenager moved a notebook and pencil case to the assigned desk and copied the day's assignment.",
+          "introducedParticipants": []
+        }
+      ]
+    },
+    {
+      "trialId": "trial_08",
+      "pairId": "pair_04",
+      "controlClass": "strong_residue",
+      "expectedOutcome": "remembered",
+      "rememberingAt": "2016-04-02T00:00:00Z",
+      "ageAtRemembering": 15.97,
+      "history": [
+        {
+          "episodeId": "ep_ms_04",
+          "occurredAt": "2015-10-02T12:20:00Z",
+          "ageAtEvent": 15.47,
+          "placeRef": "place_ms_school",
+          "participantRefs": [
+            "thr_memory_selectivity_control"
+          ],
+          "observableAction": "A group project display collapsed shortly before class; the teenager and a classmate rebuilt the frame with tape during lunch and presented the repaired display that afternoon.",
+          "introducedParticipants": []
+        }
+      ]
+    }
+  ]
+}

@@ -214,3 +214,38 @@ test("Genesis Pass B genome-copy retry preserves sparse-history authority on bot
   assert.equal(result.calls[1].kind, "mechanical-genome-copy-retry-1");
   assert.equal(result.output.rememberedContent, outputs[1].rememberedContent);
 });
+
+test("Genesis Pass B returns a legal not_remembered decision without retry", async () => {
+  let invocations = 0;
+  const adapter = {
+    invoke: async () => {
+      invocations += 1;
+      return {
+        output: {
+          outcome: "not_remembered",
+          episodeRefs: [],
+          rememberedContent: null,
+          uncertainty: [],
+        },
+        provenance: { provider: "fixture" },
+      };
+    },
+  };
+  const result = await generateGenesisPassBMemory({
+    adapter,
+    input: lifeOnlyInput(),
+    clientRequestId: "life-pass-b-not-remembered",
+  });
+  assert.equal(invocations, 1);
+  assert.equal(result.calls.length, 1);
+  assert.equal(result.calls[0].kind, "initial");
+  assert.deepEqual(result.output, {
+    outcome: "not_remembered",
+    episodeRefs: [],
+    rememberedContent: null,
+    uncertainty: [],
+    formationMode: "life_only",
+    priorTreatmentMemoryExposure: false,
+    analysisStratum: "life_only_unexposed",
+  });
+});
