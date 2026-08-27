@@ -17,6 +17,7 @@ import { loadPr39ClosureFinalization } from "./genesis-pr39-closure-finalization
 import {
   PR39_CLOSURE_ORIGINAL_CLAIM_HEAD,
   assertPr39ClosureRecoveryMatchesExecution,
+  assertPr39ClosureRecoveryRecord,
 } from "./genesis-pr39-closure-recovery.mjs";
 
 function fail(message) { throw new Error(message); }
@@ -34,13 +35,24 @@ let compatibleAttempt = null;
 let recoveryExecution = Object.freeze({ mode: "original", amendment: null });
 
 if (existingAttempt !== null) {
-  recoveryExecution = assertPr39ClosureRecoveryMatchesExecution({
-    stateRoot,
-    claim: existingAttempt,
-    currentCodeHead: head,
-    finalizationDigest: frozen.finalizationDigest,
-    modelId: expectedModel,
-  });
+  // While generation is incomplete, current HEAD must still be the exact
+  // original/recovery execution. Once the one-pass cohort is complete, later
+  // diagnostic/birth tooling may advance while the historical execution
+  // amendment remains immutable evidence of which code generated the cohort.
+  recoveryExecution = completion === null
+    ? assertPr39ClosureRecoveryMatchesExecution({
+        stateRoot,
+        claim: existingAttempt,
+        currentCodeHead: head,
+        finalizationDigest: frozen.finalizationDigest,
+        modelId: expectedModel,
+      })
+    : assertPr39ClosureRecoveryRecord({
+        stateRoot,
+        claim: existingAttempt,
+        finalizationDigest: frozen.finalizationDigest,
+        modelId: expectedModel,
+      });
   compatibleAttempt = assertPr39ClosureClaimMatchesExecution({
     claim: existingAttempt,
     closureId: frozen.finalization.closureId,
@@ -73,10 +85,13 @@ if (completion !== null) {
   }
 }
 
+const generationExecutionHead = recoveryExecution.amendment?.recoveryCodeHead ?? compatibleAttempt?.codeHead ?? head;
+
 console.log("PR39 CLOSURE FINALIZATION: READY");
 console.log(`Closure ID: ${frozen.finalization.closureId}`);
 console.log(`Original claim HEAD: ${compatibleAttempt?.codeHead ?? head}`);
-console.log(`Execution HEAD: ${head}`);
+console.log(`Generation execution HEAD: ${generationExecutionHead}`);
+console.log(`Current tooling HEAD: ${head}`);
 console.log(`Model: ${expectedModel}`);
 console.log(`Original World-before-genome precommitment: ${frozen.precommitment.precommitmentDigest}`);
 console.log(`Frozen finalization digest: ${frozen.finalizationDigest}`);
@@ -95,7 +110,7 @@ if (recoveryExecution.amendment !== null) {
   console.log(`Recovery amendment: AUTHORIZED · ${recoveryExecution.amendment.reason}`);
   console.log(`Recovery authorized at: ${recoveryExecution.amendment.authorizedAt}`);
 }
-if (completion !== null) console.log(`Closure generation state: COMPLETE at ${completion.completedAt}`);
+if (completion !== null) console.log(`Closure generation state: COMPLETE at ${completion.completedAt} · immutable while post-generation tooling advances`);
 else if (compatibleAttempt !== null) console.log(`Closure generation state: CLAIMED/INCOMPLETE since ${compatibleAttempt.claimedAt} · compatible with ${recoveryExecution.mode === "recovery" ? "authorized recovery execution" : "current frozen execution"}`);
 else console.log("Closure generation state: NOT YET CLAIMED");
 console.log(`Runner: ${frozen.finalization.runnerCommand}`);
