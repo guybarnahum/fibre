@@ -57,6 +57,14 @@ const PR39_DIAGNOSTIC_SUMMARY_DIGEST = "sha256:b7a72cba4b794f9847a51b4fa5515823c
 const FINAL_BIRTH_CLAIM_VERSION = "pr39-final-cohort-birth-claim-v1";
 const FINAL_BIRTH_RESULT_VERSION = "pr39-final-cohort-birth-result-v1";
 const FINAL_BIRTH_COMPLETION_VERSION = "pr39-final-cohort-birth-completion-v1";
+const FINAL_BIRTH_INTERRUPTED_CODE_HEAD = "bed275ca38c0aae81f990b6319f1b5fecdd75355";
+const FINAL_BIRTH_RECOVERY_VERSION = "pr39-final-cohort-birth-recovery-v1";
+const FINAL_BIRTH_RECOVERY_REASON = "cumulative_memory_evidence_publication_fix";
+const FINAL_BIRTH_RECOVERY_CHANGED_PATHS = Object.freeze([
+  "tools/genesis/genesis-life-publication-evidence.test.mjs",
+  "tools/genesis/genesis-life-publication.mjs",
+  "tools/genesis/genesis-pr39-birth.mjs",
+]);
 
 function absolute(path) { return resolve(ROOT, path); }
 function fail(message) { throw new Error(message); }
@@ -66,6 +74,13 @@ function same(left, right) { return canonicalJson(left) === canonicalJson(right)
 function pad(value) { return String(value).padStart(2, "0"); }
 function gitHead() {
   return execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
+}
+function gitChangedPaths(base, head) {
+  const output = execFileSync("git", ["diff", "--name-only", `${base}..${head}`], {
+    cwd: ROOT,
+    encoding: "utf8",
+  }).trim();
+  return output === "" ? [] : output.split("\n").filter(Boolean).sort();
 }
 function assertCleanTree() {
   const status = execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" }).trim();
@@ -324,25 +339,66 @@ function replayProofNow() {
   ], { cwd: ROOT, stdio: "inherit" });
 }
 
+function validateBirthClaim({ stored, frozen, prerequisites, candidateDigests }) {
+  if (
+    stored.version !== FINAL_BIRTH_CLAIM_VERSION ||
+    stored.status !== "CLAIMED_FINAL_COHORT_BIRTH" ||
+    stored.closureId !== frozen.finalization.closureId ||
+    stored.finalizationDigest !== frozen.finalizationDigest ||
+    stored.diagnosticsDigest !== prerequisites.diagnosticsDigest ||
+    !same(stored.candidateDigests, candidateDigests) ||
+    typeof stored.publicationAt !== "string" ||
+    !Number.isFinite(Date.parse(stored.publicationAt))
+  ) {
+    fail("existing PR39 final birth claim belongs to a different frozen cohort boundary");
+  }
+  return stored;
+}
+
+function openFinalBirthRecovery({ birthRoot, claim, head }) {
+  if (claim.codeHead !== FINAL_BIRTH_INTERRUPTED_CODE_HEAD) {
+    fail("PR39 final birth recovery is authorized only for the observed publication-lineage interruption");
+  }
+  const changedPaths = gitChangedPaths(claim.codeHead, head);
+  if (!same(changedPaths, [...FINAL_BIRTH_RECOVERY_CHANGED_PATHS].sort())) {
+    fail(`PR39 final birth recovery code drift: ${changedPaths.join(", ") || "no changed paths"}`);
+  }
+  const core = {
+    version: FINAL_BIRTH_RECOVERY_VERSION,
+    status: "AUTHORIZED_OPERATIONAL_BIRTH_RECOVERY",
+    reason: FINAL_BIRTH_RECOVERY_REASON,
+    originalBirthCodeHead: claim.codeHead,
+    recoveryCodeHead: head,
+    changedPaths,
+    publicationAt: claim.publicationAt,
+    candidateDigests: [...claim.candidateDigests],
+  };
+  const recovery = Object.freeze({ ...core, recoveryDigest: digest(core) });
+  const path = `${birthRoot}/recovery-v1.json`;
+  if (existsSync(absolute(path))) {
+    const stored = readJson(path);
+    if (!same(stored, recovery)) fail("PR39 final birth recovery witness differs from the authorized recovery execution");
+    return stored;
+  }
+  writeJsonExclusive(path, recovery);
+  return recovery;
+}
+
 function openFinalBirthClaim({ birthRoot, frozen, prerequisites, head }) {
   const path = `${birthRoot}/claim-v1.json`;
   const candidateDigests = [...prerequisites.completion.candidateDigests];
   if (existsSync(absolute(path))) {
-    const stored = readJson(path);
-    if (
-      stored.version !== FINAL_BIRTH_CLAIM_VERSION ||
-      stored.status !== "CLAIMED_FINAL_COHORT_BIRTH" ||
-      stored.closureId !== frozen.finalization.closureId ||
-      stored.finalizationDigest !== frozen.finalizationDigest ||
-      stored.diagnosticsDigest !== prerequisites.diagnosticsDigest ||
-      stored.codeHead !== head ||
-      !same(stored.candidateDigests, candidateDigests) ||
-      typeof stored.publicationAt !== "string" ||
-      !Number.isFinite(Date.parse(stored.publicationAt))
-    ) {
-      fail("existing PR39 final birth claim belongs to a different execution boundary");
-    }
-    return stored;
+    const stored = validateBirthClaim({
+      stored: readJson(path),
+      frozen,
+      prerequisites,
+      candidateDigests,
+    });
+    if (stored.codeHead === head) return Object.freeze({ claim: stored, recovery: null });
+    return Object.freeze({
+      claim: stored,
+      recovery: openFinalBirthRecovery({ birthRoot, claim: stored, head }),
+    });
   }
   const claim = Object.freeze({
     version: FINAL_BIRTH_CLAIM_VERSION,
@@ -355,7 +411,7 @@ function openFinalBirthClaim({ birthRoot, frozen, prerequisites, head }) {
     publicationAt: new Date().toISOString(),
   });
   writeJsonExclusive(path, claim);
-  return claim;
+  return Object.freeze({ claim, recovery: null });
 }
 
 function existingThread(databasePath, threadId) {
@@ -450,11 +506,16 @@ function runFinalClosureBirth() {
     return candidate;
   });
 
-  const birthClaim = openFinalBirthClaim({ birthRoot, frozen, prerequisites, head });
+  const openedBirth = openFinalBirthClaim({ birthRoot, frozen, prerequisites, head });
+  const birthClaim = openedBirth.claim;
 
   console.log("\nPR39 FINAL COHORT BIRTH");
   console.log(`Closure: ${frozen.finalization.closureId}`);
-  console.log(`Tooling HEAD: ${head}`);
+  console.log(`Birth claim code: ${birthClaim.codeHead}`);
+  console.log(`Execution code: ${head}`);
+  if (openedBirth.recovery !== null) {
+    console.log(`Recovery: ${openedBirth.recovery.reason} · ${openedBirth.recovery.recoveryDigest}`);
+  }
   console.log(`Finalization: ${frozen.finalizationDigest}`);
   console.log(`Diagnostics: ${prerequisites.diagnosticsDigest}`);
   console.log(`Publication time: ${birthClaim.publicationAt}`);
@@ -491,7 +552,9 @@ function runFinalClosureBirth() {
     closureId: frozen.finalization.closureId,
     finalizationDigest: frozen.finalizationDigest,
     diagnosticsDigest: prerequisites.diagnosticsDigest,
-    codeHead: head,
+    claimCodeHead: birthClaim.codeHead,
+    executionCodeHead: head,
+    recoveryDigest: openedBirth.recovery?.recoveryDigest ?? null,
     publicationAt: birthClaim.publicationAt,
     databasePath,
     candidateDigests: results.map((item) => item.candidateDigest),
