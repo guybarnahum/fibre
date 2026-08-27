@@ -9,94 +9,185 @@ canonical: true
 
 This is the engineering execution view. For public/plain-English status, use [`public-progress.md`](public-progress.md) and [`public-progress.json`](public-progress.json).
 
-The current #39 exit authority is [`pr39-closing-plan.md`](pr39-closing-plan.md). Development method is governed by [`../decisions/ADR-0015-fibre-centric-development.md`](../decisions/ADR-0015-fibre-centric-development.md).
+Milestone #39 is closed. Its durable outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md). The stable M2 continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md).
 
-## #39 goal
-
-**Give five new Threads rich, particular childhoods and young-adult histories, let them form memories and meanings from those lives, then birth them with those people, places, memories, lineage and history intact — including one permanent Fibre civil identity per born Thread.**
-
-#39 does not itself prove Whole-Person standing. #40 makes this richer life state causally available to ordinary cognition; #41 owns the M2 standing gate.
-
-## Current position
-
-The single final cohort `pr39-final-cohort-001` is **complete and immutable**. All five held-out candidates were generated under the frozen World/genome/model/one-pass claim and preserved rather than regenerated for quality.
-
-The final D1-D5 rater execution is also complete. It committed 180 evaluator judgments under the frozen material/plan and produced summary digest:
+## Immediate sequence
 
 ```text
-sha256:b7a72cba4b794f9847a51b4fa5515823c90c32c1a22fdc14acde0fbf95cd6f08
+merge completed #39 branch to main
+  -> Genesis selectivity/scientific-hardening bridge
+  -> review + full validation
+  -> merge bridge to main
+  -> #40 Identity Projection & Causal Consumption
+  -> #41 M2 Standing Gate
 ```
 
-The corrected scientific interpretation, after independent hostile/methodology review, is deliberately narrower than the scorer's original headline strings:
+The bridge deliberately has **no Fibre milestone number**. It is hardening work discovered by #39 that must happen before #40 makes the richer Genesis substrate causally load-bearing.
 
-- **D1:** the five life/self-account texts were reliably distinguishable in both raw and explicit-entity-normalized conditions. Surviving environmental/cultural cues mean this is not Fibre-level particularity evidence by itself.
-- **D2:** the predeclared per-Thread rank-correlation diagnostic is underpowered at six pairs per Thread. A post-hoc descriptive signal shows durable meaning tending more positive than its cited events (`16/30` higher, `3/30` lower, `11/30` tied; mean uplift about `+0.50`); this is follow-up evidence, not a confirmatory #39 result.
-- **D3:** genome propagation is **inconclusive**. Treatment placement is confounded with memory ordinal/history horizon, cells are undersized, calibration is an easier task, and the planned `not_remembered` arm is empty. #39 neither establishes nor rules out genome propagation.
-- **D4:** the cohort exposes an **established Genesis saturation/selectivity defect**: all `30/30` memory opportunities became memories and all `30/30` acquired current durable meaning. This is an engineering finding, not a personhood pathology and not a reason to regenerate the cohort.
-- **D5:** self-account accommodation is a valid intended construct, but the executed instrument failed to isolate it because `65/70` episode judgments were predicted by memory citation. It is not evidence that overreach is absent.
-- the three temperature-zero evaluator calls per target are option-order/response-robustness checks, not independent scientific replicates.
+## #39 result now carried forward
 
-The diagnostic findings do **not** gate deterministic replay, birth, FIN/civil registration, persistence or hydration machinery. They do constrain what #39 may claim and create explicit post-#39 scientific/Genesis debt.
+The fixed five-Thread cohort was generated, diagnostically characterized, replayed with provider access disabled, atomically born one Thread at a time, issued five unique civil identities, and independently rehydrated from canonical local World authorities.
 
-## #39 immediate sequence
+Important retained evidence:
 
 ```text
-frozen cohort + D1-D5 complete
-  -> retain corrected scientific interpretation
-  -> durable replay proof
-  -> atomic birth of all five frozen candidates
-  -> exactly one FIN + civil registration per birth
-  -> hydration equality
-  -> hostile Fibre-centric closing review
-  -> concise docs/history/milestones/pr39.md
-  -> public/current-state reconciliation
-  -> full validation
-  -> merge completed #39 to main
+D1-D5 summary       sha256:b7a72cba4b794f9847a51b4fa5515823c90c32c1a22fdc14acde0fbf95cd6f08
+birth completion    sha256:1576fdc4c30f3c8511c6042355a770e28dd0657f2ed754d90ee676681ebeccaf
+replay              5/5 candidates · 151/151 durable calls · 0 provider network accesses
+hydration            114 canonical events · 39 memory revisions · 49 relations · 24 places · 30 visual obligations
 ```
 
-No further #39 diagnostic model calls, replacement cohort, threshold changes or quality resampling are planned.
+The permanent scientific interpretation is:
 
-## Bridge before #40
+- **D1:** five life/self-account texts were reliably distinguishable, including after explicit-entity normalization; this is not by itself causal historical particularity.
+- **D2:** the planned rank-correlation diagnostic was underpowered; approximately `+0.50` descriptive valence uplift is post-hoc follow-up evidence only.
+- **D3:** genome propagation is inconclusive.
+- **D4:** all `30/30` scheduled memory decisions returned remembered and all 30 current memories have durable meaning; this is insufficient non-selection at the scheduled memory/meaning funnel, not proof that every historical episode was archived.
+- **D5:** the intended overreach construct remains useful, but the executed instrument was citation-confounded (`65/70` judgments predicted by memory citation).
+- three temperature-zero calls per target were option-order/response robustness checks, not independent replicates.
 
-After #39 is closed and merged to `main`, run the accepted non-milestone bridge [`genesis-selectivity-scientific-hardening.md`](genesis-selectivity-scientific-hardening.md) on a semantic branch such as `agent/genesis-selectivity-scientific-hardening`, with no GitHub PR unless explicitly requested.
+Generator debt also remains visible: repeated/near-duplicate EventStructures, Sapporo/Wellington near-paraphrase errand memories, a common Pass-C register, weak/off-hypothesis Sapporo/Kochi convergence, and `9/10` executed reinterpretations revising rather than remaining unchanged.
 
-The bridge addresses exactly what #39 exposed before #40 makes the richer life substrate causally load-bearing:
+No #39 replacement cohort, rerating or threshold change is planned.
 
-- memory selectivity and a real `not_remembered` path without quotas;
-- meaning fidelity, including negative/ambiguous/mundane/unchanged outcomes and reinterpretation restraint;
-- honest genome causal characterization at the memory seam with counterbalanced, task-matched controls;
-- diagnostic methodology with positive/negative/counterfactual controls, explicit sensitivity/power and no pseudo-replication;
-- a redesigned D5 using prospective sealed-history holdouts, compiler-enforced transitive provenance exclusion, exposure manifests and matched/cross-Thread controls;
-- small benchmark-runner hardening so transient transport failures auto-resume the same unfinished judgment while committed evidence remains immutable.
+## Priority 1 — memory selectivity
 
-This bridge does **not** implement #40's cognition projection or earn personhood standing.
+Memory formation must exercise both **remember** and **decline to remember** for substantive reasons. Do not fix the #39 saturation finding with a quota.
+
+The bridge must include controlled opportunities where:
+
+- remembering is clearly warranted;
+- non-selection is legitimate;
+- `not_remembered` is actually exercised;
+- no admission rule forces the measured distribution;
+- the cognition input/provenance for the decision is inspectable.
+
+The target is a real bottleneck based on salience, residue, relationship, conflict, developmental context or other Fibre-owned evidence—not random forgetting and not “remember exactly N.”
+
+## Priority 2 — meaning fidelity and reinterpretation restraint
+
+Pass-C must permit experience to remain negative, ambiguous, mundane, unresolved or unchanged.
+
+The bridge should prove that:
+
+- a bad event may remain bad;
+- an ambiguous event may remain ambiguous;
+- an ordinary memory need not become profound;
+- an existing durable meaning may legitimately remain unchanged;
+- `revise` and `unchanged` are both reachable in controlled cases;
+- valence shift is measured separately from event/meaning rank association.
+
+The goal is fidelity and range, not pessimism or a target emotional distribution.
+
+## Priority 3 — genome causal characterization
+
+Do not make symbolic genome text more obvious merely to obtain a positive diagnostic.
+
+Use a counterbalanced differential at the permitted memory seam:
+
+```text
+same historical opportunity
+same declared cognition boundary
+counterbalanced inherited/genome context
+        -> memory decision/content
+```
+
+Treatment must be counterbalanced against call ordinal, history horizon and developmental position. State the effect size/sensitivity the experiment can resolve and use a task-matched positive control.
+
+Classify the mechanism honestly as Behaviorally/future-state causal, Context-only, Inert or inconclusive. An inconclusive result is acceptable.
+
+## Priority 4 — diagnostic methodology v2
+
+Use [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md) as the enduring contract.
+
+The bridge specifically repairs the weaknesses #39 exposed:
+
+- **D1:** hard decoys/negative controls that reduce geography/culture shortcuts and avoid ceiling-only evidence;
+- **D2:** separate association from systematic valence shift and predeclare clustered analysis only with enough Threads to estimate it credibly;
+- **D3:** counterbalance treatment, state sensitivity/power, use a task-matched positive control and exercise a real non-memory contrast or remove that claim;
+- **D4:** separately measure opportunity→remember/decline, episode coverage, citation cardinality, durable meaning, and reinterpretation revise/unchanged;
+- **D5:** prospective sealed history with compiler-enforced transitive provenance isolation.
+
+### D5 sealed-history design
+
+Target up to four causally local holdout-eligible historical episodes per Thread, selected and sealed before memory formation. Four is a target, not a quota; isolation wins if fewer are safely available.
+
+Holdout information and every transitive derivative are excluded from Pass-B/Pass-C cognition by the compiler, not by “ignore this” prompting. Every cognition call records included/excluded provenance, and a deliberate-leak negative test proves the guard fires.
+
+The blind evaluator compares:
+
+| Condition | Role |
+| --- | --- |
+| remembered/cited episode | positive control |
+| own sealed holdout | experimental target |
+| matched plausible non-event | negative control |
+| another Thread's sealed holdout | counterfactual control |
+
+Score thematic accommodation separately from episode-specific factual alignment.
+
+Preferential factual matching to the Thread's own forbidden holdout is **not a success**; it triggers a provenance/isolation audit. Broad matching across true holdouts, fake events and cross-Thread events indicates generic/Barnum-style overgeneralization.
+
+## Priority 5 — evaluator runner hygiene
+
+Generalize only the operational hardening demonstrated necessary by #39:
+
+- durably commit accepted judgments before advancing;
+- never rerun an already accepted valid judgment;
+- transparently auto-resume the same unfinished trial after bounded transient transport timeout cycles;
+- use a realistic timeout for large evaluator packets;
+- stop on semantic/validation/auth/quota/configuration errors rather than turning them into scientific retries;
+- report committed judgments separately from physical provider attempts/retries;
+- keep live provider-backed benchmark runs explicitly authorized;
+- make deterministic replay/scoring ordinary CI where possible.
+
+Do not build a speculative universal experiment framework.
+
+## Explicit bridge exclusions
+
+The bridge does **not** implement:
+
+- #40's ordinary-cognition Identity Context Capsule;
+- Fibre-owned live relevance/privacy selection;
+- ordinary-request behavioral divergence;
+- M2/Whole-Person standing;
+- a replacement #39 cohort or rerating;
+- retrospective threshold changes;
+- memory/meaning quotas;
+- stronger genome cues merely to force D3;
+- reciprocal relationship or economic-consequence work.
+
+These remain deferred, not rejected.
+
+## Bridge exit criterion
+
+The bridge is complete when:
+
+1. controlled Genesis cases exercise both warranted remembering and legitimate non-selection without quotas;
+2. negative, ambiguous, mundane and unchanged meaning outcomes are reachable and admissible;
+3. genome influence at the memory seam is honestly classified under a counterbalanced, task-matched design;
+4. revised diagnostics name estimand, unit, controls, confounds and sensitivity before provider output;
+5. sealed D5 holdouts are mechanically isolated with per-call exposure manifests and deliberate leak detection;
+6. transient evaluator interruption resumes unfinished work automatically without resampling committed evidence;
+7. no personhood-standing credit is claimed.
 
 ## Cross-cutting production persistence
 
-The provider-neutral production persistence boundary is accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017.
+The provider-neutral production persistence boundary remains accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017.
 
-All new persistent production state or byte objects used by Fibre services must cross an `InfraDriver` capability while semantic stores remain responsible for Fibre meaning and invariants. Current World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt; they are not precedent for new production authorities.
-
-This infrastructure work does not redefine #39's local scientific closure criteria. Disposable generated closure state under `.fibre/` remains local development/validation state.
+The #39 birth cohort was canonical within a local `.fibre` validation World. It did **not** close the production `InfraDriver.state` migration. World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt, not precedent for new production authorities.
 
 ## Repository/development rules
 
 - `HEAD` describes current Fibre; Git history preserves ordinary development archaeology.
-- One current implementation per live behavior unless real persisted-data compatibility requires otherwise.
-- Current architecture filenames are semantic; real wire/schema versions live in contract data when compatibility requires them.
-- Current inputs are fixtures/configuration, not validation evidence.
-- Exceptional exact-byte accepted evidence belongs in `artifacts/validation/`; ordinary test output does not belong in Git.
-- Disposable generated development state lives under `.fibre/`.
-- Active tests protect enduring Fibre semantics, not old review-state hashes.
-- Fresh held-out material is retained when scientifically necessary; the surrounding ceremony is not.
-- Progress is described first in Fibre/personhood terms, then in accurate implementation terms.
+- Completed #39 execution ceremony is not retained as supported runtime tooling.
+- Permanent Genesis architecture/tests and the general model-output-recovery mechanism remain current.
+- Disposable generated runs live under `.fibre/`.
+- Active tests protect enduring Fibre semantics, not old cohort hashes.
+- Broader Genesis Pass A/B/C and milestone-name cleanup belongs to the repository-cleanup workstream now that the #39 seam is stable; do not mix it into the scientific result.
+- No provider/model call is authorized merely by beginning the bridge; live experimental calls remain explicit decisions.
 
-## What comes after #39
+## After the bridge
 
-- **Genesis selectivity/scientific hardening bridge:** complete the accepted bridge before #40; this is not a numbered Fibre milestone.
-- **Infrastructure enabling work:** prove `infra.state` with the atomic birth consistency scope before treating a provider deployment as production World/Thread authority.
-- **Genesis core hardening:** evolve historical-envelope selection from sequential local feasibility toward deterministic joint feasibility over structure, counterpart, place and civil time, with bounded future-capacity reasoning where needed.
-- **Model runtime:** extend mechanical output recovery only from observed failure modes with narrow, auditable handlers; do not create a speculative universal repair framework.
-- **#40:** canonical bounded consumption of identity/history/memory/relationships into ordinary cognition.
+- **#40:** canonical bounded consumption of identity/history/memory/relationships into ordinary cognition with Fibre-owned selection, exact provenance and counterfactual attribution.
 - **#41:** Whole-Person standing and M2 closure.
 - **#42+:** self-authored development, reciprocal relationships and economic consequence.
