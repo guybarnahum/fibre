@@ -218,25 +218,63 @@ function buildD1(frozen, candidates) {
 }
 
 function stripD2(source, sourcePrivate) {
-  return {
-    material: {
-      threads: source.packets.map((packet) => ({
-        citedEpisodes: packet.citedEpisodes.map((item) => ({ age: item.age, text: item.text })),
-        currentMeanings: packet.currentMeanings.map((item) => ({ text: item.text })),
-      })),
-    },
-    private: {
-      threads: sourcePrivate.threads.map((thread) => ({
-        slot: thread.slot,
-        eventItems: thread.eventItems,
-        meaningItems: thread.meaningItems,
-        pairs: thread.pairs,
-      })),
-    },
-  };
+  if (source.packets.length !== sourcePrivate.threads.length) fail("D2 source/private Thread count drift");
+  const materialThreads = [];
+  const privateThreads = [];
+  for (let index = 0; index < source.packets.length; index += 1) {
+    const packet = source.packets[index];
+    const privateThread = sourcePrivate.threads[index];
+    if (packet.threadPacketId !== privateThread.threadPacketId) fail(`D2 source/private Thread order drift at ${index + 1}`);
+    const eventIndexById = new Map(packet.citedEpisodes.map((item, eventIndex) => [item.itemId, eventIndex]));
+    const meaningIndexById = new Map(packet.currentMeanings.map((item, meaningIndex) => [item.itemId, meaningIndex]));
+    const episodeByItemId = new Map(privateThread.eventItems.map((item) => [item.itemId, item.episodeId]));
+    const memoryByItemId = new Map(privateThread.meaningItems.map((item) => [item.itemId, item.memoryRef]));
+    materialThreads.push({
+      citedEpisodes: packet.citedEpisodes.map((item) => ({ age: item.age, text: item.text })),
+      currentMeanings: packet.currentMeanings.map((item) => ({ text: item.text })),
+    });
+    privateThreads.push({
+      slot: privateThread.slot,
+      eventEpisodeIds: packet.citedEpisodes.map((item) => episodeByItemId.get(item.itemId) ?? fail(`D2 missing event private mapping at Thread ${index + 1}`)),
+      meaningMemoryRefs: packet.currentMeanings.map((item) => memoryByItemId.get(item.itemId) ?? fail(`D2 missing meaning private mapping at Thread ${index + 1}`)),
+      pairs: privateThread.pairs.map((pair) => {
+        const meaningIndex = meaningIndexById.get(pair.meaningItemId);
+        if (!Number.isInteger(meaningIndex)) fail(`D2 missing pair meaning mapping at Thread ${index + 1}`);
+        const citedEventIndexes = pair.citedEventItemIds.map((itemId) => {
+          const eventIndex = eventIndexById.get(itemId);
+          if (!Number.isInteger(eventIndex)) fail(`D2 missing pair event mapping at Thread ${index + 1}`);
+          return eventIndex;
+        });
+        return { meaningIndex, citedEventIndexes };
+      }),
+    });
+  }
+  return { material: { threads: materialThreads }, private: { threads: privateThreads } };
 }
 
 function stripD3(source, sourcePrivate, frozen) {
+  const choiceIndexByGenomeId = new Map(source.genomeChoices.map((choice, index) => [choice.genomeId, index]));
+  const answerByTargetId = new Map(sourcePrivate.answerKey.map((answer) => [answer.targetId, answer]));
+  const calibrationAnswers = source.calibrationTargets.map((target, index) => {
+    const answer = answerByTargetId.get(target.targetId);
+    if (answer?.kind !== "calibration") fail(`D3 calibration private mapping drift at ${index + 1}`);
+    const correctGenomeChoiceIndex = choiceIndexByGenomeId.get(answer.genomeId);
+    if (!Number.isInteger(correctGenomeChoiceIndex)) fail(`D3 calibration genome mapping drift at ${index + 1}`);
+    return { slot: answer.slot, correctGenomeChoiceIndex };
+  });
+  const memoryAnswers = source.memoryTargets.map((target, index) => {
+    const answer = answerByTargetId.get(target.targetId);
+    if (answer?.kind !== "memory") fail(`D3 memory private mapping drift at ${index + 1}`);
+    const correctGenomeChoiceIndex = choiceIndexByGenomeId.get(answer.genomeId);
+    if (!Number.isInteger(correctGenomeChoiceIndex)) fail(`D3 memory genome mapping drift at ${index + 1}`);
+    return {
+      slot: answer.slot,
+      callOrdinal: answer.callOrdinal,
+      horizon: answer.horizon,
+      cell: answer.cell,
+      correctGenomeChoiceIndex,
+    };
+  });
   return {
     material: {
       genomeChoices: source.genomeChoices.map((choice) => ({ semanticProjection: choice.semanticProjection })),
@@ -245,12 +283,14 @@ function stripD3(source, sourcePrivate, frozen) {
     },
     private: {
       genomeChoiceSlots: frozen.plans.slots.map((slot) => slot.slot),
-      answerKey: sourcePrivate.answerKey,
+      calibrationAnswers,
+      memoryAnswers,
     },
   };
 }
 
 function stripD5(source, sourcePrivate) {
+  if (source.packets.length !== sourcePrivate.threads.length) fail("D5 source/private Thread count drift");
   return {
     material: {
       threads: source.packets.map((packet) => ({
@@ -258,7 +298,12 @@ function stripD5(source, sourcePrivate) {
         currentMeanings: packet.currentMeanings.map((item) => ({ meaningLabel: item.meaningLabel, text: item.text })),
       })),
     },
-    private: { threads: sourcePrivate.threads.map((thread) => ({ slot: thread.slot })) },
+    private: {
+      threads: sourcePrivate.threads.map((thread, index) => {
+        if (source.packets[index].threadPacketId !== thread.threadPacketId) fail(`D5 source/private Thread order drift at ${index + 1}`);
+        return { slot: thread.slot };
+      }),
+    },
   };
 }
 
@@ -272,7 +317,7 @@ function walk(value, visitor, path = "$") {
 
 function assertNoBlindLeak(material) {
   const forbiddenKeys = new Set([
-    "closureId", "finalizationDigest", "candidateDigests", "targetId", "lifeId", "genomeId", "threadPacketId", "itemId", "slot",
+    "version", "closureId", "finalizationDigest", "candidateDigests", "targetId", "lifeId", "genomeId", "threadPacketId", "itemId", "slot",
   ]);
   const fibreId = /\b(?:thr|person|world|place|genesis|genome|gepv\d*|evt|mem|mpart|isrc)_[A-Za-z0-9_.:-]+\b/iu;
   const shaDigest = /sha256:[0-9a-f]{64}/iu;
@@ -312,7 +357,6 @@ const d3 = stripD3(source.rater.D3, source.privateKey.D3, frozen);
 const d5 = stripD5(source.rater.D5, source.privateKey.D5);
 
 const material = {
-  version: MATERIAL_VERSION,
   D1: d1.material,
   D2: d2.material,
   D3: d3.material,
@@ -351,10 +395,13 @@ const manifest = {
     noFibreIds: true,
     noBuildDigests: true,
     noStableAnswerIds: true,
+    noPacketSchemaMetadata: true,
     normalizedD1DeclaredNamedEntitiesRemoved: true,
     normalizedD1VisibleRedactionMarksInserted: false,
     genericPlaceKindsIncluded: true,
     genericParticipantRolesIncluded: true,
+    d2PrivatePairsUseMaterialIndexes: true,
+    d3PrivateAnswersUseMaterialIndexes: true,
   },
   providerCallsMade: 0,
 };
@@ -368,7 +415,8 @@ console.log(`Closure: ${manifest.closureId}`);
 console.log(`Source prepared packets: ${SOURCE_VERSION} · zero calls`);
 console.log(`Rater material digest: ${manifest.raterMaterialDigest}`);
 console.log("D1 normalized: declared names removed · generic place/participant roles retained · no visible redaction markers inserted");
-console.log("Blind material: no Fibre IDs · no build digests · no stable answer IDs");
+console.log("Blind material: no Fibre IDs · no build digests · no stable answer IDs · no packet schema metadata");
+console.log("Private scoring: D2 pair indexes bound · D3 answer indexes bound");
 console.log(`D4 preserved: overplot ${source.d4.cohort.overplotConcernTriggered ? "TRIGGERED" : "not triggered"} · reinterpretation revised ${source.d4.cohort.totalReinterpretationRevised}/${source.d4.cohort.totalReinterpretationRuns}`);
 console.log("Provider calls made: 0");
 console.log(`Output: ${root}`);
