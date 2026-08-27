@@ -42,6 +42,8 @@
     "genesis:pr39-closure": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-closure-launch.mjs",
     "genesis:pr39-diagnostics:prepare": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-diagnostic-packets.mjs --prepare",
     "genesis:pr39-diagnostics:ready": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-diagnostic-rater-ready.mjs --prepare",
+    "genesis:pr39-diagnostics:check": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-diagnostic-rater-runner.mjs --preflight",
+    "genesis:pr39-diagnostics:run": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-diagnostic-rater-runner.mjs --run",
     "genesis:pr39-dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-dev.mjs",
     "genesis:pr39-birth": "node --disable-warning=ExperimentalWarning tools/genesis/genesis-pr39-birth.mjs",
     "guardian:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/guardian/semantic-guardian-dev-cli.mjs",
