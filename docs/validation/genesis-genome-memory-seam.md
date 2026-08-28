@@ -1,6 +1,6 @@
 ---
 id: validation-genesis-genome-memory-seam
-status: active
+status: complete
 last-reviewed: 2026-08-27
 canonical: false
 ---
@@ -107,6 +107,44 @@ A result of 3–6 directional pairs is deliberately inconclusive: this experimen
 
 `Inert` would require absence of a meaningful consumer/effect. The current direct Pass-B cognition surface already constitutes a genome-context consumer, so the live alternatives for this seam are causal, Context-only or inconclusive unless that architecture changes.
 
+## Burned result
+
+The prospectively frozen run completed without any mechanical genome-copy retry:
+
+```text
+plan                         sha256:57dc804985fce222c4ed0772ad8d7c7dc4f4dd4517ea22a1d91753f00f4d4fd8
+fixture                      sha256:275b17e7b24ed24007356c422617349136bf62819a69390b4ea39bee6112a82d
+runtime Pass-B prompt        sha256:3ba80ac180b5140bc3710a33c78ed6e14bc666979e60223ca44bcba32399f26a
+schema                       sha256:846f94bdeef2d874498751205dffb548ea88cf55cb30c0cf0f9bdd7e17f4bf1a
+model                        openai/gpt-5.1-2025-11-13
+fresh matched units          8
+scientific judgments         16
+directional genome pairs     0/8
+reverse pairs                0/8
+pairs with different refs    3/8
+provider attempts            16
+mechanical retries           0
+standing                     CONTEXT_ONLY
+```
+
+All 16 judgments returned `remembered`. Three matched pairs differed in admitted `episodeRefs`, so the model was not literally invariant to genome context, but none of those differences formed the predeclared genome-concordant directional pattern. The probe therefore does not demonstrate an attributable genome effect at its declared large-effect resolution.
+
+Immediate provider-disabled replay reproduced all 16 judgments exactly:
+
+```text
+durable commits              0
+durable replays              16
+physical provider attempts   0
+standing                     CONTEXT_ONLY
+provider network             structurally disabled
+```
+
+The accepted interpretation is therefore:
+
+> The symbolic genome reaches Pass-B cognition and is permitted to influence attention or retention, but this controlled differential did not demonstrate a required downstream memory-selection effect. At the current Genesis memory seam, genome standing is **Context-only**, not behaviorally/future-state causal and not inert.
+
+This result does not establish absence of smaller genome effects. No runtime prompt, genome wording, history, threshold or treatment schedule is changed in response to the result.
+
 ## Execution discipline
 
 The runner uses the Birth Center durable invocation journal.
@@ -136,4 +174,4 @@ After provider output is read, Fibre must not:
 - convert a mixed/null result into evidence of absence;
 - treat context visibility as behavioral causality.
 
-If the probe is inconclusive, the bridge records that honestly and proceeds without tuning for a desired standing.
+The bridge records the `CONTEXT_ONLY` result and proceeds without tuning for a desired standing.
