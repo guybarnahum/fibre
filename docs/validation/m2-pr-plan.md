@@ -49,8 +49,8 @@ The permanent #39 outcome is [`../history/milestones/pr39.md`](../history/milest
 #40  Identity Projection & Causal Consumption              ACTIVE
       A. capsule/compiler boundary                         CLOSED
       B. canonical born-World projection                  CLOSED
-      C. one real cognition consumer                      ACTIVE / VALIDATION PENDING
-      D. attributable causal differential                 AFTER C
+      C. one real cognition consumer                      CLOSED
+      D. attributable causal differential                 ACTIVE / PREFLIGHT
       E. hostile closeout                                 AFTER D
 #41  M2 Standing Gate / M2 closure                         AFTER #40
 
@@ -172,11 +172,11 @@ provider calls                 0
 
 The detailed result is [`identity-context-projection.md`](identity-context-projection.md). This closes projection availability, not causal individuality, and earns no Whole-Person score movement.
 
-### #40 C — one real cognition consumer — active, validation pending
+### #40 C — one real cognition consumer — closed
 
-The implementation connects the exact policy-v2 capsule to the existing participation/Dignity Guardian path rather than introducing a parallel demo worker.
+The exact policy-v2 capsule is now consumed by the existing participation/Dignity Guardian path rather than a parallel demo worker.
 
-The canonical World Kernel now supplies its existing identity, autobiographical-memory, situated-life, embodiment, symbolic-genome and semantic-state stores to the compiler as read authorities. The full compiled capsule is persisted inside the existing Guardian cognition input before temporary cognition runs, so replay retains exact source bindings, included/excluded refs, `sourceSnapshotDigest` and `capsuleDigest` without a new semantic store or database authority.
+The canonical World Kernel supplies its existing identity, autobiographical-memory, situated-life, embodiment, symbolic-genome and semantic-state stores to the compiler as read authorities. The full compiled capsule is persisted inside the existing Guardian cognition input before temporary cognition runs, so replay retains exact source bindings, included/excluded refs, `sourceSnapshotDigest` and `capsuleDigest` without a new semantic store or database authority.
 
 When `identityContext` is present, the Guardian replaces—not layers—its old individual-specific evidence surface:
 
@@ -190,13 +190,49 @@ When `identityContext` is present, the Guardian replaces—not layers—its old 
 
 The historical Guardian v4 schema/generator witnesses remain frozen for sealed evidence. The new Identity Context consumer records a distinct schema/generator identifier while retaining the same task-specific Guardian prompt and dignity semantics.
 
-A scripted no-network test captures the actual Guardian model request and verifies exact `ias_...` / `mem_...` evidence while legacy snapshot/genome/memory canaries and provenance digests do not reach the model.
+Maintainer validation at `6358de508067775351d94f9cca00839e11114ccc` established:
 
-Slice C remains open until the targeted Guardian/causal/server regressions, frozen history boundary and full active suite pass on the maintainer repository. No provider call is part of that validation.
+```text
+identity-context Guardian consumption     2 / 2
+current Guardian regression               8 / 8
+causal participation regression           5 / 5
+frozen history-boundary regression        5 / 5
+canonical server-process regression       3 / 3
+prompt-asset regression                   2 / 2
+full active suite                        809 / 809
+repository/world/deployment validation    PASS
+full test-value audit                     PASS
+git diff --check                          clean
+provider calls                            0
+```
 
-### #40 D — attributable causal differential — after C
+Slice C therefore closes the real-consumer wiring seam. It proves actual bounded consumption and replayability, not yet that changing admitted life context changes cognition.
 
-Only after the real consumer is green should #40 hold the external request/situation fixed and remove or substitute one legitimate Thread-owned identity/history factor through the same boundary. The test must measure downstream cognitive differences attributable to the changed evidence while preserving the possibility of no effect.
+### #40 D — attributable causal differential — active, provider-free preflight
+
+The prospective instrument is defined in [`identity-context-causal-differential.md`](identity-context-causal-differential.md).
+
+The fixed cohort is the five canonical civil-registered #39 born Threads. The same history-relevant first-person reflection request is used for all five. For each pair, the canonical policy-v2 capsule is compared with a counterfactual built by changing **only the first selected memory's current accessibility to `inaccessible`** in a validation-only source wrapper and recompiling through the same production policy.
+
+The intervention is designed to make policy v2 naturally exclude that one memory and promote the next eligible durable memory. Preflight must prove that exactly one source binding content digest changes, non-memory evidence is identical, memory count stays constant, the same Thread/snapshot/request/policy is used, and the five-field worker boundary remains exact.
+
+The five pairs are sorted by FIN and condition order is counterbalanced. Each completed condition will be evaluated once; substantive results are never resampled. No prompt strengthening, provider shopping, scenario search, target reselection, genome promotion, memory-budget widening or cohort regeneration is permitted after results are visible.
+
+A pair is attributable only when a structured Guardian action/fit or identity-sensitive factor signature changes **and** the canonical target memory or counterfactual replacement memory is cited in an identity-sensitive factor. Rationale prose difference alone is insufficient.
+
+The interpretation is frozen before provider calls:
+
+```text
+CLEAR             3-5 / 5 attributable pairs
+MIXED             1-2 / 5 attributable pairs
+NOT ESTABLISHED   0 / 5 attributable pairs
+```
+
+The provider-free tool first records the exact real pair refs/digests and makes zero model calls. Live evaluation remains disabled until that preflight is green and provider use is explicitly authorized.
+
+### #40 E — hostile closeout — after D
+
+After the differential result is sealed, #40 closes with hostile replay/privacy/source-substitution checks and a concise standing update. Slice E must preserve negative or mixed D results rather than reinterpret them upward.
 
 #40 is where richer identity/history becomes causally available. It must not rewrite the underlying life, widen projection merely to manufacture a difference, or strengthen the accepted genome result to make tests pass.
 
@@ -241,4 +277,4 @@ Introduce durable budgets, contracts, reputation, opportunity and material/econo
 
 ## Current next move
 
-Validate #40 C provider-free on the maintainer repository: run the dedicated identity-context Guardian consumption test, current Guardian regression, causal participation regression, frozen history-boundary test, canonical server-process regression, and full active suite. If green, close Slice C. Do not run a live provider or begin the causal differential until that integration is green.
+Run the provider-free #40 D preflight against the canonical five-Thread born World and validate its regression/full suite. Record the exact target/replacement refs, capsule/source/model-input digests and counterbalanced order. Do not enable or run a live provider until the preflight is green and provider use is explicitly authorized.
