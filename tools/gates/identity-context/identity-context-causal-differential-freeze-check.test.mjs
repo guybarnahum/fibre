@@ -10,6 +10,7 @@ import {
 } from "./frozen-causal-differential-v1.mjs";
 import {
   assertFrozenIdentityContextCausalDifferential,
+  frozenLiveModelSelection,
 } from "./identity-context-causal-differential-freeze-check.mjs";
 
 function reportFromFreeze() {
@@ -37,9 +38,18 @@ function reportFromFreeze() {
   };
 }
 
-test("Slice D freeze pins the five prospective born-Thread pairs before provider use", () => {
+test("Slice D freeze pins the five prospective born-Thread pairs and live model before provider use", () => {
   assert.equal(FROZEN.providerCallsAtFreeze, 0);
   assert.equal(FROZEN.frozenFromHead, "7f8ebc8ccf0b76ecd713e1b44c0c0beb3fbfe50c");
+  assert.deepEqual(FROZEN.liveModel, {
+    reasoningBlock: "dignity_guardian",
+    provider: "openai",
+    modelId: "gpt-5.1-2025-11-13",
+  });
+  assert.deepEqual(frozenLiveModelSelection(), {
+    provider: "openai",
+    modelId: "gpt-5.1-2025-11-13",
+  });
   assert.equal(FROZEN.pairs.length, 5);
   assert.deepEqual(
     FROZEN.pairs.map((pair) => pair.fibreIdentityNumber),
