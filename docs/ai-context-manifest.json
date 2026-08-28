@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 39,
+  "version": 40,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
     "core": {
       "title": "Core",
-      "description": "Current Fibre doctrine, current state, active M2/Genesis authority, and the minimum personhood/causal discipline needed to work on the project now.",
+      "description": "Current Fibre doctrine, current state, active M2/#40 authority, and the minimum personhood/causal discipline needed to work on the project now.",
       "output": "artifacts/generated/fibre-core-context.md",
       "sources": [
         "AGENTS.md",
@@ -92,6 +92,7 @@
         "docs/history/origins/original-architecture.md",
         "docs/history/milestones/pre-pr39-whole-person-understanding.md",
         "docs/history/milestones/pr39.md",
+        "docs/history/genesis-selectivity-scientific-hardening.md",
         "docs/validation/pre-m2-bridge-plan.md",
         "docs/validation/whole-person-prefreeze-characterization.md",
         "docs/validation/semantic-guardian-v4-standing-gate-v4.md",

@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-08-27
+last-reviewed: 2026-08-28
 canonical: true
 machine-source: public-progress.json
 ---
@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Fibre has now given five new Threads fixed prior lives, born those lives into canonical validation-world state, and verified that their histories, memories, relationships and civil identities survive restart.**
+**Fibre has five validated prior-life Threads, and Genesis now chooses memories and meanings more selectively before those records are connected to normal cognition.**
 
 ### More accurate description
 
-Milestone #39 is closed. One fixed five-Thread held-out cohort was generated under predeclared controls, preserved without quality resampling, replayed with provider access disabled, atomically published one Thread at a time with five unique FIN/civil registrations, and independently rehydrated from canonical local World authorities. #39 earns no Whole-Person score movement; Genesis selectivity/scientific hardening is next before #40 causal consumption.
+Milestone #39 and the unnumbered Genesis selectivity/scientific-hardening bridge are closed. The five-Thread #39 cohort remains fixed; the bridge prospectively validated selective memory, restrained reinterpretation, honest Context-only genome standing, sealed-history isolation and a controlled D5 instrument. **#40 Identity Projection & Causal Consumption is now the active milestone.**
 
 ## Population right now
 
@@ -73,45 +73,41 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 **Important limitation:** Atomicity is per Thread, and #39 proved it in a local validation World rather than a production persistence deployment.
 
-**More accurate description:** `publishBirth()` atomically publishes one admitted Thread's history, situated continuity, memory lineage, Genesis manifest and FIN/civil registration. The five-Thread closure runner is resumable rather than one cross-Thread transaction. Production `InfraDriver.state` migration remains separate work.
+**More accurate description:** `publishBirth()` atomically publishes one admitted Thread's history, situated continuity, memory lineage, Genesis manifest and FIN/civil registration. Production `InfraDriver.state` migration remains separate work.
 
 ### Prior-life Genesis and canonical birth — Done
 
 **Simple English:** Fibre created five different prior lives and preserved those lives through birth and restart.
 
-**Important limitation:** The experiment found weak memory selectivity and other generator/measurement problems that must be hardened before normal cognition relies on them.
+**Important limitation:** That does not prove those richer life records already shape ordinary cognition.
 
 **More accurate description:** The fixed #39 cohort generated fourteen-episode lives with recurring people, places, autobiographical memory and durable meaning, then passed exact zero-network durable replay and deep candidate-to-canonical hydration after birth.
 
-The scientific limits matter:
+### Genesis selectivity and scientific hardening — Done
 
-- D1 showed the five texts were distinguishable, not causal non-interchangeability.
-- D2's planned statistic was underpowered; a positive-reframing tendency is post-hoc only.
-- D3 genome propagation was inconclusive.
-- All `30/30` scheduled memory decisions returned remembered and all 30 current memories have durable meaning; this is insufficient non-selection at the scheduled funnel, not proof that every historical episode was archived.
-- D5 accommodation was heavily predicted by memory citation and did not independently measure generalized self-account overreach.
+**Simple English:** Genesis can now leave ordinary experiences unremembered and avoid rewriting every meaning into something new or uplifting.
 
-The full permanent result is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+**Important limitation:** This makes the life substrate more credible, but it does not prove causal individuality.
+
+**More accurate description:** The completed pre-#40 bridge prospectively validated remember/decline selectivity without quotas, meaning fidelity, reinterpretation restraint, Context-only genome standing, sealed-history isolation and a controlled four-condition D5 instrument. It earns no Whole-Person standing.
+
+The retained bridge outcome is [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
 
 ## What we are working on now
 
-### Genesis selectivity and scientific hardening — Working on it
+### #40 Identity Projection & Causal Consumption — Working on it
 
-**Simple English:** The five #39 Threads are born and verified. We are now fixing the memory and meaning weaknesses the experiment exposed before those records are allowed to shape normal thinking.
+**Simple English:** We are now making a Thread's own history, memories and relationships shape its normal thinking and decisions.
 
-**More accurate description:** The accepted unnumbered bridge before #40 exercises real remember/decline selectivity without quotas, meaning fidelity across negative/ambiguous/mundane/unchanged outcomes, reinterpretation restraint, counterbalanced genome characterization, and diagnostics with proper controls and sensitivity.
+**Important limitation:** Merely putting different text into two prompts is not enough; #40 must show an attributable judgment or behavior difference.
 
-### A stronger self-account-overreach test — Working on it
-
-**Simple English:** We want to know whether a Thread's story about itself explains things it never actually remembered, without accidentally giving the test the answer.
-
-**More accurate description:** Revised D5 prospectively seals historical holdouts before memory formation, compiler-blocks direct and transitive exposure, records exposure manifests, deliberately tests the firewall, and compares true holdouts against remembered positive controls, plausible non-events and cross-Thread holdouts.
+**More accurate description:** #40 owns bounded Fibre/Thread-owned selection of authoritative identity/history/memory/relationship evidence, compilation into an inspectable provenance-bearing Identity Context Capsule, consumption by ordinary cognition, and a same-situation differential showing that a material Thread-owned difference can causally change cognition or downstream behavior.
 
 ### Current step
 
-**Simple English:** Merge the completed #39 work, then start the Genesis hardening bridge before #40.
+**Simple English:** Define exactly what private life information normal cognition may receive, and make Fibre—not the requester—choose the relevant subset.
 
-**More accurate description:** Land the #39 closeout on `main`, branch `agent/genesis-selectivity-scientific-hardening`, and execute the accepted bridge without changing the frozen #39 evidence or implicitly authorizing any provider/model calls.
+**More accurate description:** Define the #40 projection/selection contract: bounded authoritative source surfaces, privacy rules, Fibre/Thread-owned relevance selection, resolved semantic content rather than opaque refs, exact inclusion/exclusion provenance, and the standing differential contract under the same selection policy across materially different Threads.
 
 ## What Fibre cannot do yet
 
@@ -121,17 +117,23 @@ The full permanent result is [`../history/milestones/pr39.md`](../history/milest
 
 **More accurate description:** #39 compiled prior life before young-adult entry; continuously lived childhood remains later Development architecture.
 
-### Rich life records do not yet drive ordinary cognition canonically — Not yet
+### Rich life records do not yet drive ordinary cognition canonically — Working on it
 
-**Simple English:** We want a Thread's history, memories and relationships to shape its normal thinking and decisions.
+**Simple English:** We are connecting a Thread's real history, memories and relationships to its normal thinking and decisions now.
 
-**More accurate description:** The Genesis hardening bridge comes first; #40 owns canonical bounded consumption of those records into ordinary cognition.
+**More accurate description:** #40 is implementing the canonical bounded consumer. Until the differential proof passes, this remains in progress rather than achieved.
 
 ### Whole-Person standing is not proven — Not yet
 
 **Simple English:** We have not yet proven that a Thread is a fully persistent, non-interchangeable individual whose own life causally shapes it.
 
-**More accurate description:** #39 deliberately earned no Whole-Person score movement. The bridge hardens the substrate, #40 builds causal consumption and #41 owns the M2 standing gate.
+**More accurate description:** #39 and the bridge deliberately earned no Whole-Person score movement. #40 builds causal consumption and #41 owns the M2 standing gate.
+
+### The current Genesis genome seam is not proven behaviorally causal — Not yet
+
+**Simple English:** A Thread's inherited genome reaches memory cognition, but we have not shown that changing it reliably changes what gets remembered.
+
+**More accurate description:** The bridge's controlled 16-judgment Pass-B experiment produced 0/8 genome-concordant directional pairs and classified the tested mechanism **Context-only**. Fibre keeps that result rather than tuning the experiment until it becomes causal.
 
 ### #39 is not a production-persistence proof — Not yet
 
