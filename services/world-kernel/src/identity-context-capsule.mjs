@@ -9,14 +9,20 @@ const BEHAVIORAL_IDENTITY = new Set(["accepted_causal", "candidate_causal"]);
 const USABLE_IDENTITY_STATUS = new Set(["current", "corrected"]);
 const USABLE_MEMORY_STATUS = new Set(["current", "corrected"]);
 const HASH = /^sha256:[0-9a-f]{64}$/;
+const MEMORY_ACCESSIBILITY_PRIORITY = Object.freeze({
+  accessible: 0,
+  difficult: 1,
+  inaccessible: 2,
+});
 
 export const IDENTITY_CONTEXT_PROJECTION_POLICY = Object.freeze({
   id: "identity_context_projection",
-  version: "1",
+  version: "2",
   purpose: "request_appraisal",
   maximumIdentityAssertions: 8,
   maximumSemanticStates: 8,
   maximumMemories: 4,
+  maximumAvailableMeaningMemories: 2,
   maximumEvidenceItems: 20,
   maximumEvidenceBytes: 12288,
 });
@@ -122,6 +128,29 @@ function memoryText(memory) {
   return memory.rememberedContent;
 }
 
+function memoryUsabilityReason(memory) {
+  if (!USABLE_MEMORY_STATUS.has(memory.status)) return "memory_not_current_usable";
+  if (memory.accessibility === "inaccessible" || memory.retentionState === "unavailable") {
+    return "memory_not_currently_accessible";
+  }
+  return null;
+}
+
+function hasDurableMeaning(memory) {
+  if (memory.recordFormat !== "autobiographical_memory_v2") return false;
+  return memory.meaningOutcome === "durable_meaning" && memory.rememberedMeaning !== null;
+}
+
+function compareAvailableMemory(left, right) {
+  const accessibility =
+    (MEMORY_ACCESSIBILITY_PRIORITY[left.accessibility] ?? 99) -
+    (MEMORY_ACCESSIBILITY_PRIORITY[right.accessibility] ?? 99);
+  if (accessibility !== 0) return accessibility;
+  if (left.salience !== right.salience) return right.salience - left.salience;
+  if (left.asOf !== right.asOf) return right.asOf.localeCompare(left.asOf);
+  return left.memoryId.localeCompare(right.memoryId);
+}
+
 function selectEvidence(sources, request, policy) {
   const selection = { evidence: [], includedRefs: [], excluded: [], evidenceBytes: 0 };
   const linkedMemories = new Set();
@@ -160,13 +189,17 @@ function selectEvidence(sources, request, policy) {
     if (included) for (const ref of item.evidenceReferences) linkedMemories.add(ref);
   }
 
+  const orderedMemories = [...sources.memories].sort(compareAvailableMemory);
+  const linked = orderedMemories.filter((item) => linkedMemories.has(item.memoryId));
+  const availableMeaning = orderedMemories.filter((item) =>
+    !linkedMemories.has(item.memoryId) && hasDurableMeaning(item));
+  const unavailableFallback = orderedMemories.filter((item) =>
+    !linkedMemories.has(item.memoryId) && !hasDurableMeaning(item));
+
   let memoryCount = 0;
-  for (const item of [...sources.memories].sort((a, b) => a.memoryId.localeCompare(b.memoryId))) {
-    let reason = null;
-    if (!linkedMemories.has(item.memoryId)) reason = "memory_not_referenced_by_selected_context";
-    else if (!USABLE_MEMORY_STATUS.has(item.status)) reason = "memory_not_current_usable";
-    else if (item.accessibility === "inaccessible" || item.retentionState === "unavailable") reason = "memory_not_currently_accessible";
-    else if (memoryCount >= policy.maximumMemories) reason = "memory_budget";
+  for (const item of linked) {
+    let reason = memoryUsabilityReason(item);
+    if (reason === null && memoryCount >= policy.maximumMemories) reason = "memory_budget";
     const included = addEvidence(selection, {
       ref: item.memoryId,
       sourceKind: "autobiographical_memory",
@@ -174,6 +207,36 @@ function selectEvidence(sources, request, policy) {
       text: memoryText(item),
     }, reason, policy);
     if (included) memoryCount += 1;
+  }
+
+  let availableMeaningCount = 0;
+  for (const item of availableMeaning) {
+    let reason = memoryUsabilityReason(item);
+    if (reason === null && availableMeaningCount >= policy.maximumAvailableMeaningMemories) {
+      reason = "memory_available_meaning_budget";
+    } else if (reason === null && memoryCount >= policy.maximumMemories) {
+      reason = "memory_budget";
+    }
+    const included = addEvidence(selection, {
+      ref: item.memoryId,
+      sourceKind: "autobiographical_memory",
+      kind: "memory",
+      text: memoryText(item),
+    }, reason, policy);
+    if (included) {
+      availableMeaningCount += 1;
+      memoryCount += 1;
+    }
+  }
+
+  for (const item of unavailableFallback) {
+    const usabilityReason = memoryUsabilityReason(item);
+    exclude(
+      selection,
+      item.memoryId,
+      "autobiographical_memory",
+      usabilityReason ?? "memory_not_referenced_by_selected_context",
+    );
   }
 
   for (const item of sources.lifeRelations) exclude(selection, item.relationId, "life_relation", "raw_relation_requires_semantic_projection");
