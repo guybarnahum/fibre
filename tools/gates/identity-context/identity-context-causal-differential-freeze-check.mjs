@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 
+import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
 import {
   runIdentityContextCausalDifferentialPreflight,
 } from "./identity-context-causal-differential.mjs";
@@ -35,14 +36,24 @@ export function assertFrozenIdentityContextCausalDifferential(report) {
   return true;
 }
 
-export function verifyFrozenIdentityContextCausalDifferential(databasePath) {
+export function frozenLiveModelSelection({ environment = process.env } = {}) {
+  const runtime = createModelRuntime({ environment });
+  const selection = runtime.selectionForBlock(FROZEN.liveModel.reasoningBlock);
+  assert.equal(selection.provider, FROZEN.liveModel.provider);
+  assert.equal(selection.modelId, FROZEN.liveModel.modelId);
+  return selection;
+}
+
+export function verifyFrozenIdentityContextCausalDifferential(databasePath, options = {}) {
   const report = runIdentityContextCausalDifferentialPreflight(databasePath);
   assertFrozenIdentityContextCausalDifferential(report);
+  const selection = frozenLiveModelSelection(options);
   return {
     frozenInstrumentId: FROZEN.id,
     frozenFromHead: FROZEN.frozenFromHead,
     pairCount: FROZEN.pairs.length,
     providerCalls: 0,
+    selection,
     verified: true,
   };
 }
@@ -55,6 +66,7 @@ function format(result) {
     `Frozen from: ${result.frozenFromHead}`,
     `Pairs: ${result.pairCount}`,
     `Provider calls: ${result.providerCalls}`,
+    `Live model: ${result.selection.provider}/${result.selection.modelId}`,
     "",
   ].join("\n");
 }
