@@ -180,15 +180,25 @@ It establishes that the first unchanged controls were confounded with pattern-st
 
 ## Fresh reinterpretation-restraint probe
 
-Before changing the production reinterpretation prompt, a second fresh probe now asks the narrower question with stronger controls.
+Before changing the production reinterpretation prompt, a second fresh probe asked the narrower question with stronger controls.
 
-It contains four new matched pairs, eight judgments total. For every pair:
+It contained four new matched pairs, eight judgments total. For every pair:
 
-- the prior meaning already explicitly describes the relevant behavior/reaction as recurring;
-- the `unchanged` arm supplies another ordinary instance already entailed by that prior meaning, without a new explanation or contradiction;
-- the paired `revised` arm supplies direct counterevidence or an explanation that materially changes the prior interpretation;
-- pair IDs and expected outcomes are development-only controls and are not supplied as cognition fields;
-- no prompt or schema change is made before this characterization.
+- the prior meaning already explicitly described the relevant behavior/reaction as recurring;
+- the `unchanged` arm supplied another ordinary instance intended to be already entailed by that prior meaning;
+- the paired `revised` arm supplied direct counterevidence or an explanation that materially changed the prior interpretation;
+- pair IDs and expected outcomes were development-only controls and were not supplied as cognition fields;
+- no prompt or schema change was made before characterization.
+
+Frozen witnesses:
+
+```text
+plan                     sha256:8b5cb745437b518c137cca2022a3814bc7632303ae26fff6a703b8f9a1ee1c35
+fixture                  sha256:ddb56ccac91d613eed30e8c0bdbd1fa93e3df5108226b6b8a07347e3d24dbe10
+reinterpretation prompt  sha256:03e2790535fbe54156fac49d48fea2e1139fed29b9e634765658d6c14c58f0ae
+schema                   sha256:4e33f63f5f577c575bf8cada13410b29bb5b772132e730df0d54b63dbee07c6e
+model                    openai/gpt-5.1-2025-11-13
+```
 
 Predeclared criterion:
 
@@ -200,6 +210,52 @@ both unchanged and revised        required
 scientific retries                0
 ```
 
-A valid disappointing result is retained. If current Pass C still revises the genuinely redundant arms, only then is a prospective reinterpretation-prompt correction justified.
+### Fresh probe result
+
+The burned result was:
+
+```text
+unchanged correct       2/4
+revised correct         4/4
+matched-pair separation 2/4
+both outcomes            yes
+criterion                NOT MET
+provider attempts        8
+```
+
+Provider-disabled replay reproduced all eight judgments exactly with eight durable replays and zero physical provider attempts.
+
+This result is **not revision saturation**: two redundant controls did remain `unchanged`, and every direct-counterevidence arm revised. Current Pass C therefore has both semantic paths and is responsive to genuine change.
+
+However, the result does establish a narrower restraint problem. Two redundant-control arms still revised. `restraint_07` is the clearest defect: the prior meaning already said vague evaluative signals plus delayed explanation produce hope/worry, while the trigger merely repeated that structure and later delivered unspecified detailed feedback. The generated revision nevertheless introduced a new favorable theory that the pause was an "often thoughtful process" rather than a hidden verdict, which was not grounded by the trigger. `restraint_03` is less pure because eventual follow-through adds some information, but its generated revision also moved from an already-stated protection/exclusion tension toward a more explanatory theory despite the prior meaning already accommodating delayed explanations.
+
+Therefore a **narrow reinterpretation-only correction is justified**. No initial-meaning prompt change is justified.
+
+## Prospective reinterpretation-restraint correction
+
+The candidate correction is staged separately from production runtime and will not be promoted until it passes fresh prospective controls.
+
+Its rule is conservative because a durable meaning already exists:
+
+- an eligible later echo is not itself sufficient for revision;
+- `revised` requires a material fact, relation, resolution, contradiction, or attribution change that makes the prior durable meaning no longer adequate;
+- mere recurrence, another already-described instance, compatible eventual follow-through, added specificity, or richer wording should remain `unchanged`;
+- neutral detail must not be turned into a more favorable, mature, coherent, explanatory, or resolved interpretation;
+- `none` remains legal;
+- no quota applies.
+
+Fresh validation contains four new matched pairs / eight calls. The unchanged arms are designed so the prior meaning explicitly already includes both recurrence and eventual explanation where relevant. The paired revised arms contain direct counterevidence or externally grounded explanation.
+
+The same predeclared threshold is retained:
+
+```text
+unchanged >= 3/4
+revised   >= 3/4
+pair separation >= 3/4
+both outcomes required
+scientific retries = 0
+```
+
+A valid disappointing result will be retained. The candidate prompt, fixture, schema and plan hashes must be frozen by provider-free preflight before any live authorization. Production Pass C remains unchanged until that prospective validation is complete.
 
 Quantitative valence association/shift remains a separate diagnostic-methodology task. This bridge asks the narrower questions of whether meaning can remain mundane/negative/ambiguous and whether later echoes can leave an already-adequate prior meaning unchanged.
