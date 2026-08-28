@@ -199,7 +199,7 @@ test("BFL FLUX moderation is terminal and keeps the accepted task identity", asy
   );
 });
 
-test("BFL FLUX refuses Fibre reference objects until the input-image provenance seam is explicit", async () => {
+test("BFL FLUX rejects malformed reference objects before submission", async () => {
   let called = false;
   const provider = createBflFluxImageProvider({
     apiKey: "bfl-fixture",
@@ -210,7 +210,7 @@ test("BFL FLUX refuses Fibre reference objects until the input-image provenance 
     () => provider.generate(imageRequest({ referenceObjects: [{ objectRef: "reference_1" }] })),
     (error) => error instanceof AssetGenerationError
       && error.phase === "validation"
-      && error.category === "unsupported_capability"
+      && error.category === "invalid_request"
       && error.retryable === false,
   );
   assert.equal(called, false);

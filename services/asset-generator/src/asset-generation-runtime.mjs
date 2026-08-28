@@ -7,7 +7,7 @@ import {
 import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation.mjs";
 import { prepareResumableProviderExecution } from "./resumable-provider-operation.mjs";
 
-export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects", "queues"]);
+export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects"]);
 
 function positiveAttemptNumber(value) {
   if (!Number.isSafeInteger(value) || value < 1) throw new TypeError("attemptNumber must be a positive safe integer");

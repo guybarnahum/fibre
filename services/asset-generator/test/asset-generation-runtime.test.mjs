@@ -5,6 +5,7 @@ import {
   INFRA_DRIVER_VERSION,
   assertInfraDriver,
 } from "#packages/infra/src/infra-driver.mjs";
+import { ASSET_GENERATION_JOB_VERSION } from "../src/asset-generation-domain.mjs";
 import {
   AssetGenerationError,
   assetGenerationRetryDecision,
@@ -30,18 +31,40 @@ function infra(sent = [], { queueError = null } = {}) {
   });
 }
 
+function job(overrides = {}) {
+  return {
+    jobVersion: ASSET_GENERATION_JOB_VERSION,
+    jobId: "job_1",
+    assetKind: "image",
+    role: "place",
+    variant: "default",
+    brief: {
+      description: "Generated reconstruction of a market.",
+      constraints: ["Not documentary evidence."],
+    },
+    inputReferences: ["presentation_1"],
+    referenceObjectRefs: [],
+    outputObjectRef: "asset_1",
+    receiptObjectRef: "receipt_1",
+    requestedAt: "2026-08-28T21:00:00Z",
+    providerProfile: "fixture",
+    context: {},
+    ...overrides,
+  };
+}
+
 test("asset generation runtime receives InfraDriver rather than selecting an infrastructure provider", async () => {
   const sent = [];
   const runtime = createAssetGenerationRuntime({
     infra: infra(sent),
     provider: { providerId: "fixture" },
     credentialSigner: { signerId: "fixture" },
-    executeJob: async ({ infra: injected, provider, credentialSigner, job }) => {
+    executeJob: async ({ infra: injected, provider, credentialSigner, job: injectedJob }) => {
       assert.equal(injected.driverId, "asset-runtime-test");
       assert.equal(provider.providerId, "fixture");
       assert.equal(credentialSigner.signerId, "fixture");
       return {
-        receipt: { jobId: job.jobId },
+        receipt: { jobId: injectedJob.jobId },
         receiptObjectRef: "receipt_1",
         receiptDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         generationRecordObjectRef: "record_1",
@@ -52,7 +75,7 @@ test("asset generation runtime receives InfraDriver rather than selecting an inf
     },
   });
 
-  const generated = await runtime.execute({ jobId: "job_1" });
+  const generated = await runtime.execute(job());
   assert.equal(generated.receipt.jobId, "job_1");
   await runtime.publishCompletion({
     completionVersion: "asset-generation-completion-v0.1",
@@ -73,7 +96,7 @@ test("unphased execution failures become provider-neutral errors but are not bli
   });
 
   await assert.rejects(
-    () => runtime.execute({ jobId: "job_1" }),
+    () => runtime.execute(job()),
     (error) => error instanceof AssetGenerationError
       && error.phase === "unknown"
       && error.category === "unknown"
