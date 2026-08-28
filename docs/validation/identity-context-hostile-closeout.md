@@ -1,118 +1,58 @@
 ---
 id: validation-identity-context-hostile-closeout
-status: active
+status: closed
 last-reviewed: 2026-08-28
 canonical: false
 ---
 
 # Identity Context hostile closeout
 
-## Purpose
+## Outcome
 
-Slice E closes #40 without generating any new cognition. It attacks the sealed Slice-D `5/5 CLEAR` result as a persisted scientific artifact and verifies that the canonical born World still reproduces the pre-live frozen instrument.
+**CLEAR.** Slice E closed #40 without generating any new cognition. The sealed Slice-D `5/5 CLEAR` result replayed offline from the local ledger, the original frozen five-pair instrument reproduced from the canonical born World, hostile substitutions were rejected, and the World remained query-only.
 
-No provider call is part of Slice E.
-
-## Inputs
-
-Canonical born World:
+Maintainer validation at `4e84354b4d7eaebcae9e01765d79281fe9bcf456` established:
 
 ```text
-.fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite
+focused hostile regression       2 / 2
+provider calls                    0
+offline completed conditions     10 / 10
+sealed attributable result        5 / 5 CLEAR
+frozen instrument reproduced      true
+condition order/digests exact     true
+provider/model exact              true
+compact privacy surface           true
+canonical World query-only        true
+full active suite                817 / 817
+repository validation             PASS
+World seed validation             PASS
+deployment manifest               PASS
+test-value audit                  PASS
+git diff --check                  clean
+working tree                      clean
 ```
 
-Sealed local D ledger:
+The closeout was deliberately run with `OPENAI_API_KEY` and `FIBRE_GUARDIAN_OPENAI_API_KEY` blanked. It reconstructs the frozen plan without creating a model adapter and treats the sealed ledger as evidence rather than executable cognition.
 
-```text
-.fibre/validation/identity-context-causal-differential-v1/live-result.json
-```
+## What the hostile closeout proves
 
-Frozen prospective instrument:
+The closeout requires and established all of the following:
 
-```text
-tools/gates/identity-context/frozen-causal-differential-v1.mjs
-```
+- exactly ten completed conditions, with no duplicate, omitted, started, or failed condition;
+- exact prospective counterbalanced order;
+- exact FIN, Thread, condition, client request id, capsule digest, model-input digest, and response-schema hash for every condition;
+- exact frozen prompt digest and prospectively pinned `openai/gpt-5.1-2025-11-13` provider/model;
+- offline recomputation of the precommitted scientific evaluator reproducing `10/10`, `5/5`, and `CLEAR`;
+- rejection of condition reordering, digest substitution, provider substitution, and private-prose injection;
+- compact persistence of structured decisions, factor effects/evidence refs, model provenance, schema/prompt witnesses, and rationale digests only;
+- absence from the ledger of full cognition input, Identity Context capsules, autobiographical prose, remembered meaning, system prompt, and rationale prose;
+- reproduction of the original provider-free causal instrument against the unchanged canonical born World;
+- no Whole-Person score movement.
 
-Frozen observed result summary:
+## Standing
 
-```text
-tools/gates/identity-context/frozen-causal-differential-result-v1.mjs
-```
+Slice E closes #40 with this deliberately narrow claim:
 
-## Hostile checks
+> bounded provenance-bearing identity/autobiographical context is demonstrably load-bearing in one real cognition consumer and survives sealed offline replay, privacy, provenance, and source-substitution closeout.
 
-The closeout tool is:
-
-```text
-tools/gates/identity-context/identity-context-hostile-closeout.mjs
-```
-
-It intentionally constructs the frozen plan with an empty provider environment. It does not construct a model adapter or invoke a provider.
-
-A clear closeout requires all of the following:
-
-- the canonical World re-runs the original provider-free preflight and reproduces the exact frozen five-pair instrument;
-- the World is opened through the existing query-only Identity Context inspection path;
-- the ledger contains exactly ten completed conditions and no duplicate, omitted, started or failed condition;
-- ledger condition order exactly matches the prospectively counterbalanced order;
-- FIN, Thread, condition, client request id, capsule digest, model-input digest and response-schema hash match the recomputed frozen plan for every condition;
-- prompt digest, provider and model match the prospective freeze;
-- the observed response-schema hash matches the expected condition schema;
-- compact persisted output contains structured decision/factor refs and a rationale digest only;
-- full cognition input, Identity Context capsule, memory prose, remembered meaning, system prompt and rationale prose are absent from the ledger;
-- offline recomputation of the scientific evaluator from the ledger reproduces exactly `10/10`, `5/5`, `CLEAR` and the five frozen pair summaries;
-- Whole-Person score movement remains forbidden.
-
-The regression test also proves rejection of condition reordering, model-input digest substitution, provider substitution and private-prose injection.
-
-## Maintainer run
-
-Run the focused provider-free regression first:
-
-```text
-node --test tools/gates/identity-context/identity-context-hostile-closeout.test.mjs
-```
-
-Then run the actual hostile closeout with provider keys deliberately blanked:
-
-```text
-OPENAI_API_KEY= FIBRE_GUARDIAN_OPENAI_API_KEY= \
-npm run identity-context:hostile-closeout -- \
-  .fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite
-```
-
-Expected witness:
-
-```text
-Identity Context Hostile Closeout: CLEAR
-
-Provider calls: 0
-Offline completed conditions: 10/10
-Sealed result: 5/5 CLEAR
-Frozen instrument reproduced: true
-Condition order/digests exact: true
-Provider/model exact: true
-Compact privacy surface: true
-Canonical World query-only: true
-```
-
-Then run normal repository validation:
-
-```text
-npm test
-npm run validate
-npm run test:audit -- --check
-git diff --check
-git status --short
-git rev-parse HEAD
-```
-
-## Closure rule
-
-If the focused hostile tests, real-ledger closeout and repository validation are all green, Slice E closes and #40 can be marked **CLOSED / CLEAR**.
-
-The resulting #40 standing claim remains narrow:
-
-> bounded provenance-bearing identity/autobiographical context is demonstrably load-bearing in one real cognition consumer and survives sealed replay/privacy/source-substitution closeout.
-
-This does not itself establish M2 or move the Whole-Person score. #41 remains the M2 Standing Gate.
+This is not an M2 verdict and does not move the Whole-Person checkpoint from **15/26 under rubric v2**. The broader personhood/standing question belongs to #41.
