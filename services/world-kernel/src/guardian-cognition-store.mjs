@@ -25,6 +25,7 @@ import {
   normalizeSemanticStateRecord,
   SEMANTIC_STATE_SELECTION_POLICY,
 } from "./semantic-state.mjs";
+import { assertIdentityContextConsumption } from "./identity-context-consumption.mjs";
 
 const HASH = /^sha256:[0-9a-f]{64}$/;
 const INPUT_ID = /^gci_[0-9a-f]{64}$/;
@@ -54,7 +55,7 @@ function assessmentId(value) {
   return `gda_${sha256(canonicalJson(value))}`;
 }
 
-export function buildSemanticGuardianInput(trace, stateSelection) {
+export function buildSemanticGuardianInput(trace, stateSelection, identityContext = null) {
   assertPlainObject("private request trace", trace);
   assertPlainObject("semantic state selection", stateSelection);
   if (trace.privateStance !== null) {
@@ -74,6 +75,14 @@ export function buildSemanticGuardianInput(trace, stateSelection) {
       !Array.isArray(stateSelection.excludedStateIds)) {
     throw new TypeError("semantic Guardian input state selection is invalid");
   }
+  if (identityContext !== null) {
+    assertIdentityContextConsumption(identityContext, {
+      threadId: trace.threadId,
+      snapshotVersion: trace.snapshotVersion,
+      requestId: trace.requestId,
+      requestFingerprint: trace.requestFingerprint,
+    });
+  }
   const semanticState = stateSelection.included.map(normalizeSemanticStateRecord);
   const capsule = {
     ...structuredClone(trace.appraisal),
@@ -84,6 +93,7 @@ export function buildSemanticGuardianInput(trace, stateSelection) {
       includedStateIds: [...stateSelection.includedStateIds],
       excludedStateIds: [...stateSelection.excludedStateIds],
     },
+    ...(identityContext === null ? {} : { identityContext: structuredClone(identityContext) }),
   };
   const stateSelectionEvidence = {
     selectionAuthority: "fibre",
@@ -132,6 +142,18 @@ function decodeInput(row) {
   if (canonicalJson(capsule.semanticState.map((record) => record.stateId)) !==
       canonicalJson(stateSelection.includedStateIds)) {
     throw new IntegrityError(`semantic Guardian input ${row.input_id} semantic-state selection mismatch`);
+  }
+  if (capsule.identityContext !== undefined) {
+    try {
+      assertIdentityContextConsumption(capsule.identityContext, {
+        threadId: row.thread_id,
+        snapshotVersion: Number(row.snapshot_version),
+        requestId: row.request_id,
+        requestFingerprint: row.request_fingerprint,
+      });
+    } catch (error) {
+      throw new IntegrityError(`semantic Guardian input ${row.input_id} identity-context witness failed: ${error.message}`);
+    }
   }
   return {
     inputId: row.input_id,
