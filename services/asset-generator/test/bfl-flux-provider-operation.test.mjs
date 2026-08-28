@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { createBflFluxImageProvider } from "../../../integrations/media/bfl-flux-image-provider.mjs";
 import { AssetGenerationError } from "../src/asset-generation-error.mjs";
-import { createBflFluxImageProvider } from "../src/providers/bfl-flux-image-provider.mjs";
 
 function imageRequest(overrides = {}) {
   return {

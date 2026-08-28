@@ -10,7 +10,7 @@ import {
   assertOpenAIProjectedSchemaConstraints,
   createOpenAIModelAdapter,
   projectOpenAIStructuredOutputSchema,
-} from "../src/model-runtime/openai.mjs";
+} from "../../../integrations/models/openai.mjs";
 import { assertUniquePassBEpisodeRefs } from "../src/genesis-pass-b-domain.mjs";
 import {
   GENESIS_PASS_B_RESPONSE_SCHEMA,

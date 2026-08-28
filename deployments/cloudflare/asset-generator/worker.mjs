@@ -1,6 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
+import { createHttpContentCredentialSigner } from "../../../integrations/content-credentials/c2pa-http-signer.mjs";
 import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
 import { withCloudflareQueueBindings } from "../../../packages/infra/src/cloudflare-queue-port.mjs";
 import {
@@ -8,7 +9,6 @@ import {
   assetGenerationRetryDecision,
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
-  createHttpContentCredentialSigner,
 } from "../../../services/asset-generator/src/index.mjs";
 import { createCloudflareAssetImageProvider } from "./image-provider-selection.mjs";
 

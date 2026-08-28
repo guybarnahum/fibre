@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 
 const integrationsRoot = new URL("../../integrations/", import.meta.url);
 const integrationImplementations = Object.freeze([
@@ -8,19 +8,34 @@ const integrationImplementations = Object.freeze([
   new URL("models/google.mjs", integrationsRoot),
   new URL("media/openai-image-provider.mjs", integrationsRoot),
   new URL("media/bfl-flux-image-provider.mjs", integrationsRoot),
+  new URL("content-credentials/c2pa-http-signer.mjs", integrationsRoot),
 ]);
-const serviceCompatibilitySeams = Object.freeze([
+const retiredServiceIntegrationPaths = Object.freeze([
   new URL("../../services/world-kernel/src/model-runtime/openai.mjs", import.meta.url),
   new URL("../../services/world-kernel/src/model-runtime/google.mjs", import.meta.url),
+  new URL("../../services/world-kernel/src/model-runtime/retry-policy.mjs", import.meta.url),
   new URL("../../services/asset-generator/src/providers/openai-image-provider.mjs", import.meta.url),
   new URL("../../services/asset-generator/src/providers/bfl-flux-image-provider.mjs", import.meta.url),
+  new URL("../../services/asset-generator/src/http-content-credential-signer.mjs", import.meta.url),
 ]);
 const worldKernelModelRuntimeUrl = new URL(
   "../../services/world-kernel/src/model-runtime/model-runtime.mjs",
   import.meta.url,
 );
+const assetGeneratorIndexUrl = new URL(
+  "../../services/asset-generator/src/index.mjs",
+  import.meta.url,
+);
 const providerSelectionUrl = new URL(
   "../../deployments/cloudflare/asset-generator/image-provider-selection.mjs",
+  import.meta.url,
+);
+const assetWorkerUrl = new URL(
+  "../../deployments/cloudflare/asset-generator/worker.mjs",
+  import.meta.url,
+);
+const c2paServiceUrl = new URL(
+  "../../services/c2pa-local/server.mjs",
   import.meta.url,
 );
 const infraRoots = Object.freeze([
@@ -42,8 +57,8 @@ async function sourceFiles(directory) {
   return result;
 }
 
-test("third-party AI and media integrations have one shared home outside services and InfraDriver", async () => {
-  const [openaiModel, googleModel, openaiImage, bflImage] = await Promise.all(
+test("third-party integrations have one shared home outside services and InfraDriver", async () => {
+  const [openaiModel, googleModel, openaiImage, bflImage, c2paSigner] = await Promise.all(
     integrationImplementations.map(text),
   );
 
@@ -53,29 +68,43 @@ test("third-party AI and media integrations have one shared home outside service
   assert.match(googleModel, /GEMINI_API_KEY/);
   assert.match(openaiImage, /api\.openai\.com/);
   assert.match(bflImage, /api\.bfl\.ai/);
+  assert.match(c2paSigner, /\/embed/);
+  assert.match(c2paSigner, /\/verify/);
+  assert.match(c2paSigner, /createHttpContentCredentialSigner/);
 
-  for (const url of serviceCompatibilitySeams) {
-    const source = await text(url);
-    assert.match(source, /integrations\/(?:models|media)\//);
-    assert.doesNotMatch(source, /https:\/\/api\.|generativelanguage\.googleapis\.com|OPENAI_API_KEY|GEMINI_API_KEY|BFL_API_KEY/);
+  for (const url of retiredServiceIntegrationPaths) {
+    await assert.rejects(() => stat(url), (error) => error?.code === "ENOENT");
   }
 
   const worldKernelModelRuntime = await text(worldKernelModelRuntimeUrl);
   assert.match(worldKernelModelRuntime, /integrations\/models\/openai\.mjs/);
   assert.match(worldKernelModelRuntime, /integrations\/models\/google\.mjs/);
 
+  const assetGeneratorIndex = await text(assetGeneratorIndexUrl);
+  assert.doesNotMatch(assetGeneratorIndex, /createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/);
+  assert.doesNotMatch(assetGeneratorIndex, /integrations\//);
+
   const providerSelection = await text(providerSelectionUrl);
   assert.match(providerSelection, /integrations\/media\/openai-image-provider\.mjs/);
   assert.match(providerSelection, /integrations\/media\/bfl-flux-image-provider\.mjs/);
   assert.doesNotMatch(providerSelection, /services\/asset-generator\/src\/index\.mjs/);
+
+  const assetWorker = await text(assetWorkerUrl);
+  assert.match(assetWorker, /integrations\/content-credentials\/c2pa-http-signer\.mjs/);
+  assert.match(assetWorker, /createHttpContentCredentialSigner/);
+  assert.match(assetWorker, /createAssetGenerationRuntime\(\{ infra, provider, credentialSigner \}\)/);
+
+  const c2paService = await text(c2paServiceUrl);
+  assert.match(c2paService, /\/embed/);
+  assert.match(c2paService, /\/verify/);
 
   for (const root of infraRoots) {
     for (const url of await sourceFiles(root)) {
       const source = await text(url);
       assert.doesNotMatch(
         source,
-        /OPENAI_API_KEY|GEMINI_API_KEY|BFL_API_KEY|api\.openai\.com|generativelanguage\.googleapis\.com|api\.bfl\.ai|createOpenAIModelAdapter|createGoogleModelAdapter|createOpenAIImageProvider|createBflFluxImageProvider/,
-        `third-party AI/media integration leaked into infrastructure source ${url.pathname}`,
+        /OPENAI_API_KEY|GEMINI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|api\.openai\.com|generativelanguage\.googleapis\.com|api\.bfl\.ai|createOpenAIModelAdapter|createGoogleModelAdapter|createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/,
+        `third-party integration leaked into infrastructure source ${url.pathname}`,
       );
     }
   }

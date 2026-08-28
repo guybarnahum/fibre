@@ -13,8 +13,12 @@ integrations/
   media/
     openai-image-provider.mjs
     bfl-flux-image-provider.mjs
+  content-credentials/
+    c2pa-http-signer.mjs
 ```
 
-`services/` owns Fibre semantics and the inward-facing contracts these adapters implement. `deployments/` owns provider/profile selection, credentials and executable composition. `infra/` remains physical infrastructure only.
+`services/` owns Fibre semantics and the inward-facing contracts these adapters implement. `deployments/` owns provider/profile/secret selection and executable composition. `infra/` remains physical infrastructure only.
 
-The small contract bridge modules at this directory root intentionally point inward to service-owned contracts so the concrete adapters can implement those contracts without copying domain semantics. Integrations may depend on those narrow contracts; services, integrations and deployments must not make third-party AI/media providers into `InfraDriver` capabilities.
+`services/c2pa-local/` is the local Content Credentials signing service. The HTTP client that talks to it is an integration and lives here; Asset Generator receives that signer through dependency injection.
+
+The small contract bridge modules at this directory root intentionally point inward to service-owned contracts so concrete adapters can implement those contracts without copying domain semantics. Integrations may depend on those narrow contracts; services, integrations and deployments must not make third-party AI/media/content-credential services into `InfraDriver` capabilities.

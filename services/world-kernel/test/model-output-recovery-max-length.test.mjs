@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createOpenAIModelAdapter } from "../src/model-runtime/openai.mjs";
+import { createOpenAIModelAdapter } from "../../../integrations/models/openai.mjs";
 
 function response(body) {
   return {

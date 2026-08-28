@@ -1,13 +1,13 @@
 import {
   AssetGenerationError,
   parseRetryAfterMs,
-} from "./asset-generation-error.mjs";
+} from "../asset-generation-error.mjs";
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,
   normalizeCredentialEmbedResult,
   normalizeCredentialVerification,
   normalizeEmbeddedAssetProvenance,
-} from "./asset-provenance-domain.mjs";
+} from "../asset-provenance-domain.mjs";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
