@@ -1,7 +1,7 @@
 ---
 id: validation-identity-context-projection
 status: active
-last-reviewed: 2026-08-27
+last-reviewed: 2026-08-28
 canonical: false
 ---
 
@@ -81,10 +81,17 @@ The next provider-free check runs the exact compiler against the canonical civil
 
 The fixed characterization request is the same for every Thread. It is only a probe for the projection boundary; no model consumes it and no behavioral conclusion is drawn from it.
 
+The closed #39 birth tool wrote the canonical local World below the frozen closure root at:
+
+```text
+.fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite
+```
+
 For the closed five-Thread Genesis cohort, the local run is:
 
 ```text
-node tools/inspect/inspect-identity-context.mjs .fibre/world.sqlite \
+node tools/inspect/inspect-identity-context.mjs \
+  .fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite \
   --fin QA00-HG-BAJF \
   --fin NXR7-DH-C885 \
   --fin 8PKH-A4-VH5R \
