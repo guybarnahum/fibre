@@ -1,6 +1,8 @@
 // Prospective Slice-D causal-differential freeze.
-// Derived only from the provider-free canonical born-World preflight at
-// 7f8ebc8ccf0b76ecd713e1b44c0c0beb3fbfe50c. Do not revise after provider use.
+// Pair/request/prompt definitions derive only from the provider-free canonical born-World
+// preflight at 7f8ebc8ccf0b76ecd713e1b44c0c0beb3fbfe50c. The live model routing below was
+// pinned after explicit authorization but before the first provider call. Do not revise
+// any scientific field after provider use begins.
 
 export const FROZEN_IDENTITY_CONTEXT_CAUSAL_DIFFERENTIAL_V1 = Object.freeze({
   id: "identity_context_causal_differential_v1",
@@ -11,6 +13,11 @@ export const FROZEN_IDENTITY_CONTEXT_CAUSAL_DIFFERENTIAL_V1 = Object.freeze({
     "sha256:3f83a4a6f9744900ed62e33fe191a5de3cd1f7e68fd7b0a0b27d79132535266f",
   guardianPromptHash:
     "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3",
+  liveModel: Object.freeze({
+    reasoningBlock: "dignity_guardian",
+    provider: "openai",
+    modelId: "gpt-5.1-2025-11-13",
+  }),
   callsPerCondition: 1,
   rerunAfterSubstantiveResult: false,
   scenarioSearchAfterProvider: false,
