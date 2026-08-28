@@ -7,7 +7,7 @@ import {
 import {
   GENESIS_PASS_C_INITIAL_PROMPT,
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
-  GENESIS_PASS_C_REINTERPRETATION_PROMPT,
+  GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
 } from "./genesis-pass-c-prompts.mjs";
 import { projectPassCInputForCognition } from "./genesis-pass-c-cognition.mjs";
@@ -64,7 +64,7 @@ export function generateGenesisReinterpretation({ adapter, input, clientRequestI
     adapter,
     input,
     clientRequestId,
-    prompt: GENESIS_PASS_C_REINTERPRETATION_PROMPT,
+    prompt: GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
     responseSchema: GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
     normalizeOutput: normalizeReinterpretationPassCModelOutput,
     kind: "reinterpretation",

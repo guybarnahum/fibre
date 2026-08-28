@@ -1,7 +1,7 @@
 ---
 id: architecture-system-overview
 status: accepted
-last-reviewed: 2026-08-02
+last-reviewed: 2026-08-26
 canonical: true
 ---
 
@@ -31,3 +31,5 @@ The repository contains laws and machinery. Live world stores contain Threads. T
 - Event Processor
 
 Cloud provider and orchestration framework remain adapters rather than domain dependencies.
+
+The Model Gateway/runtime boundary treats provider output as fallible candidate machinery rather than authority. Provider-specific schema projection may improve compatibility, while Fibre-owned mechanical recovery and canonical validation remain provider-neutral. Domain authorities still own semantic admission and any retry budget. See [`model-output-recovery.md`](model-output-recovery.md).

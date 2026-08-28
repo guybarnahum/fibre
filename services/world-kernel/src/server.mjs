@@ -9,6 +9,11 @@ import { openExpressionStore } from "./expression-store.mjs";
 import { openCausalContextStore } from "./causal-context-store.mjs";
 import { openSemanticStateStore } from "./semantic-state-store.mjs";
 import { openGuardianCognitionStore } from "./guardian-cognition-store.mjs";
+import { openIdentityStore } from "./identity-store.mjs";
+import { openAutobiographicalMemoryStore } from "./autobiographical-memory-store.mjs";
+import { openSituatedLifeStore } from "./situated-life-store.mjs";
+import { openEmbodimentStore } from "./embodiment-store.mjs";
+import { SymbolicGenomeStore } from "./symbolic-genome-store.mjs";
 import { openObligationApplicabilityStore } from "./obligation-applicability-store.mjs";
 import { openStructuredAuthorityWithdrawalStore } from "./structured-authority-withdrawal-store.mjs";
 import { openStructuredObligationInspectionStore } from "./structured-obligation-inspection-store.mjs";
@@ -48,6 +53,9 @@ export async function startWorldKernelFromEnvironment(
   if (Object.hasOwn(serviceOptions, "authorityWithdrawalStore")) {
     throw new TypeError("canonical Structured Obligation authority-withdrawal storage is world-kernel owned");
   }
+  if (Object.hasOwn(serviceOptions, "identityContextSourceStores")) {
+    throw new TypeError("canonical identity-context source authorities are world-kernel owned");
+  }
   const databasePath = resolve(environment.FIBRE_WORLD_DATABASE ?? ".fibre/world.sqlite");
   const host = environment.FIBRE_WORLD_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
@@ -63,6 +71,11 @@ export async function startWorldKernelFromEnvironment(
   let causalContextStore;
   let semanticStateStore;
   let guardianCognitionStore;
+  let identityStore;
+  let autobiographicalMemoryStore;
+  let situatedLifeStore;
+  let embodimentStore;
+  let symbolicGenomeStore;
   let applicabilityStore;
   let authorityWithdrawalStore;
   let inspectionStore;
@@ -74,6 +87,11 @@ export async function startWorldKernelFromEnvironment(
     causalContextStore = openCausalContextStore(databasePath);
     semanticStateStore = openSemanticStateStore(databasePath);
     guardianCognitionStore = openGuardianCognitionStore(databasePath);
+    identityStore = openIdentityStore(databasePath);
+    autobiographicalMemoryStore = openAutobiographicalMemoryStore(databasePath);
+    situatedLifeStore = openSituatedLifeStore(databasePath);
+    embodimentStore = openEmbodimentStore(databasePath);
+    symbolicGenomeStore = new SymbolicGenomeStore(databasePath);
     applicabilityStore = openObligationApplicabilityStore(databasePath);
     authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);
     // Open only after schema-owning stores have completed their additive repair.
@@ -82,6 +100,11 @@ export async function startWorldKernelFromEnvironment(
     inspectionStore?.close();
     authorityWithdrawalStore?.close();
     applicabilityStore?.close();
+    symbolicGenomeStore?.close();
+    embodimentStore?.close();
+    situatedLifeStore?.close();
+    autobiographicalMemoryStore?.close();
+    identityStore?.close();
     guardianCognitionStore?.close();
     semanticStateStore?.close();
     causalContextStore?.close();
@@ -95,6 +118,15 @@ export async function startWorldKernelFromEnvironment(
 
   const guardianModelAdapter = serviceOptions.guardianModelAdapter ??
     guardianModelAdapterFromEnvironment(environment);
+  const identityContextSourceStores = {
+    worldStore: store,
+    identityStore,
+    memoryStore: autobiographicalMemoryStore,
+    situatedLifeStore,
+    embodimentStore,
+    symbolicGenomeStore,
+    semanticStateStore,
+  };
   const service = new StructuredObligationCausalWorldKernelService(
     store,
     runtimeStore,
@@ -107,6 +139,7 @@ export async function startWorldKernelFromEnvironment(
       semanticStateStore,
       guardianCognitionStore,
       guardianModelAdapter,
+      identityContextSourceStores,
       applicabilityStore,
       authorityWithdrawalStore,
     },
@@ -142,6 +175,11 @@ export async function startWorldKernelFromEnvironment(
         inspectionStore.close();
         authorityWithdrawalStore.close();
         applicabilityStore.close();
+        symbolicGenomeStore.close();
+        embodimentStore.close();
+        situatedLifeStore.close();
+        autobiographicalMemoryStore.close();
+        identityStore.close();
         guardianCognitionStore.close();
         semanticStateStore.close();
         causalContextStore.close();
@@ -162,6 +200,11 @@ export async function startWorldKernelFromEnvironment(
       causalContextStore,
       semanticStateStore,
       guardianCognitionStore,
+      identityStore,
+      autobiographicalMemoryStore,
+      situatedLifeStore,
+      embodimentStore,
+      symbolicGenomeStore,
       applicabilityStore,
       authorityWithdrawalStore,
       inspectionStore,
@@ -171,6 +214,7 @@ export async function startWorldKernelFromEnvironment(
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       causalParticipationEnabled: true,
+      identityContextConsumptionEnabled: true,
       structuredObligationAuthorityEnabled: true,
       structuredObligationDischargeEnabled: true,
       structuredAuthorityWithdrawalClosureEnabled: true,
@@ -183,6 +227,11 @@ export async function startWorldKernelFromEnvironment(
     inspectionStore.close();
     authorityWithdrawalStore.close();
     applicabilityStore.close();
+    symbolicGenomeStore.close();
+    embodimentStore.close();
+    situatedLifeStore.close();
+    autobiographicalMemoryStore.close();
+    identityStore.close();
     guardianCognitionStore.close();
     semanticStateStore.close();
     causalContextStore.close();
@@ -205,6 +254,7 @@ async function main() {
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
     causalParticipationEnabled: true,
+    identityContextConsumptionEnabled: true,
     structuredObligationAuthorityEnabled: true,
     structuredObligationDischargeEnabled: true,
     structuredAuthorityWithdrawalClosureEnabled: true,

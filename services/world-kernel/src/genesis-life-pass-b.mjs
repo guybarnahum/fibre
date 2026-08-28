@@ -1,3 +1,4 @@
+import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { GENESIS_SPARSE_HISTORY_NOTICE } from "./genesis-historical-envelope-v1.mjs";
 import { normalizePassBInput } from "./genesis-pass-b-domain.mjs";
@@ -7,10 +8,9 @@ import {
   GenesisPassBAdmissionError,
   normalizeAdmittedPassBModelOutput,
 } from "./genesis-pass-b-admission.mjs";
-import {
-  GENESIS_PASS_B_PROMPT,
-  GENESIS_PASS_B_RESPONSE_SCHEMA,
-} from "./genesis-pass-b-prompts.mjs";
+import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "./genesis-pass-b-prompts.mjs";
+
+const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
 
 // One canonical sparse-history meaning is shared by envelope protocol and the
 // actual Pass-B cognition prompt. Genesis must not redefine it.
@@ -26,9 +26,17 @@ export const GENESIS_LIFE_PASS_B_FORMATION_MODES = Object.freeze([
   "life_plus_genome",
 ]);
 
-export const GENESIS_LIFE_PASS_B_PROMPT = `${GENESIS_PASS_B_PROMPT}\n\nSparse-history authority: ${GENESIS_LIFE_SPARSE_HISTORY_NOTICE}\nDo not infer frequency, dominance, rarity, or non-occurrence from the sampling pattern.`;
+export const GENESIS_LIFE_PASS_B_PROMPT_ID = "genesis.memory-formation";
+export const GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: GENESIS_LIFE_PASS_B_PROMPT_ID,
+});
+export const GENESIS_LIFE_PASS_B_COGNITION_PROMPT = GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION.text;
 
-export const GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT = `${GENESIS_LIFE_PASS_B_PROMPT}\n\nThe previous generated record was rejected only by Fibre's mechanical genome-copy boundary. You do not receive the rejected record. Generate a fresh memory-formation record from the same supplied cognition input. If outcome=remembered, rememberedContent must describe only remembered lived experience and must not repeat a four-or-more-token sequence from any genomeExposure locus. genomeExposure may affect attention or retention, but its wording is never autobiographical evidence. not_remembered remains fully legal. Do not make the replacement richer, more meaningful, more distinctive, or more coherent because a retry occurred.`;
+export const GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.memory-formation-genome-copy-retry",
+}).text;
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 
@@ -78,7 +86,7 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
   };
 
   const initial = await invoke({
-    prompt: GENESIS_LIFE_PASS_B_PROMPT,
+    prompt: GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
     kind: "initial",
     generatedVersion: 1,
   });

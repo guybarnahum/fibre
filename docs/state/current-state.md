@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-28
 canonical: true
 ---
 
@@ -22,10 +22,11 @@ Live Threads are world data, not source code stored in Git. Models provide tempo
 - Meaning-bearing identity, memory, need, emotion, relationship and self-understanding are natural-language-first; derived categories may measure or control but may not replace semantic authority.
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
 - Mechanical/substrate conditions may become versioned causal machinery, but they are not semantic evidence for identity, memory, meaning, character, needs, emotions or values.
+- Model output is candidate cognition. Provider structured-output guarantees never replace Fibre canonical validation or domain admission.
 
 ## Milestone posture
 
-The stable continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). The active #39 exit authority is [`pr39-closing-plan.md`](pr39-closing-plan.md).
+The stable continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). The completed #39 outcome is retained in [`../history/milestones/pr39.md`](../history/milestones/pr39.md), and the completed pre-#40 hardening outcome is retained in [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
 
 ```text
 M1    Persistent Thread Round Trip                         CLOSED
@@ -35,8 +36,9 @@ M1    Persistent Thread Round Trip                         CLOSED
 #36   Identity & Embodiment                                MERGED / FROZEN
 #37   Thread Passport & Identity Provenance                MERGED / FROZEN
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
-#39   Genesis, Childhood & Thread Birth                    ACTIVE — CLOSING
-#40   Identity Projection & Causal Consumption             NEXT AFTER #39
+#39   Genesis, Childhood & Thread Birth                    CLOSED
+      Genesis selectivity/scientific hardening bridge      CLOSED
+#40   Identity Projection & Causal Consumption             NEXT
 #41   M2 Standing Gate / M2 closure                        AFTER #40
 
 post-M2
@@ -45,94 +47,84 @@ post-M2
 #44   Economic Consequence / M3 foundation
 ```
 
-Planning identifiers such as `#39` are Fibre milestone identifiers. They are not GitHub transport numbering.
+Planning identifiers such as `#40` are Fibre milestone identifiers, not GitHub transport numbering.
 
-> **#38 made a life representable and corrigible. #39 gives that life a particular past. #40 makes selected parts of that life causally matter. #41 proves that the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 now makes selected parts of that life causally matter. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
 
-## #39 current position
+## #39 and bridge outcome carried forward
 
-#39 is in a currentization-and-closure phase. The old R1/R2/G/H freeze choreography is retired by [`ADR-0015`](../decisions/ADR-0015-fibre-centric-development.md); Git history preserves that development record.
+The fixed five-Thread #39 cohort was generated once under the frozen World/genome/model assignment, preserved rather than quality-resampled, atomically published one Thread at a time into a canonical local validation World, issued five unique FINs, replayed with provider access disabled and independently rehydrated from canonical World authorities.
 
-The current development path can produce a materially particular prior life through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings. The current Tbilisi, Kaohsiung, Recife, Fès and Hobart materials are development fixtures and are burned for the final closure cohort.
+The bridge then hardened the Genesis substrate without replacing that cohort:
 
-The remaining #39 work is substantive rather than ceremonial:
+- **Memory selectivity:** a saturated fresh baseline was corrected prospectively; fresh matched controls exercised warranted remembering and legitimate non-selection at 6/6 separation with no quota.
+- **Meaning fidelity:** mundane memory can remain without durable meaning; negative and ambiguous meanings remain negative/ambiguous.
+- **Reinterpretation restraint:** the promoted Pass-C correction produced 4/4 unchanged, 4/4 revised and 4/4 matched-pair separation.
+- **Genome standing:** a 16-judgment matched-history experiment produced 0/8 genome-concordant directional pairs and 0/8 reverse pairs. The tested Pass-B genome mechanism is **Context-only**: genome meaning reaches cognition, but this probe did not demonstrate the predeclared large attributable downstream effect.
+- **D5:** prospective sealed-history taint closure, exposure manifests, deliberate-leak refusal and a four-condition blinded evaluator/scorer are now permanent machinery. There is intentionally no retrospective #39 D5 rerating because #39 history was not prospectively sealed.
+- **Runner hygiene:** permanent durable-invocation and provider-runtime tests prove restart of unfinished work, immutable committed judgments, bounded transient retry, fail-fast terminal errors and provider-free replay.
 
-- enforce narrated-place agreement with authoritative `placeRef` again at publication;
-- make the supported current Birth Center/Genesis path construct the canonical birth bundle and call `publishBirth`;
-- require roster and life-continuity material for prior-life births;
-- make revision-1 memory visual-companion obligations transactional with birth;
-- compare admitted candidate/birth bundle with hydrated canonical Thread state;
-- preserve one-attempt closure semantics and visible repair/rejection accounting;
-- predeclare and run the final D1–D5 interpretation/attribution checks on five fresh Worlds;
-- atomically birth the five admitted lives and obtain one hostile closing review.
-
-No final-cohort generation is authorized until the pre-cohort implementation blockers in the closing plan are green.
+The bridge earns no Whole-Person or M2 score movement.
 
 ## Genesis authority
 
 ### Candidate versus live reality
 
-The Birth Center owns provisional development and durable provider-call recovery. The World Kernel owns authoritative Thread/world reality and atomic publication.
+The Birth Center owns provisional development and durable provider-call recovery. The World Kernel owns authoritative Thread/world reality and atomic publication. A failed or interrupted development run may preserve provisional state and negative evidence, but it does not create a partially born Thread.
 
-A failed or interrupted development run may preserve provisional Genesis state, invocation journals and negative evidence. It does not create a partially born Thread. A complete admitted birth bundle crosses one explicit publication boundary; `publishBirth` either commits the canonical birth or leaves the live world unchanged.
+### History, memory and meaning
+
+Genesis preserves three distinct authorities:
+
+```text
+historical life        what Fibre says happened
+memory formation       what was retained autobiographically
+meaning formation      what that remembered experience came to mean
+```
+
+History may exist without memory. Memory may exist without durable meaning. Meaning may remain negative, ambiguous, mundane or unchanged. Historical realization and meaning formation remain genome blind; permitted genome exposure is limited to the intended memory-formation seam.
 
 ### Symbolic genome and lineage
 
 The symbolic genome is an ordered sequence of natural-language loci with exact source provenance, deterministic textual recombination and explicit mutation witnesses. It is an immutable pre-birth input, not a hidden numeric personality vector and not mature character.
 
-When a birth references a genome, publication verifies the persisted genome and its lineage binding rather than rewriting it.
+The bridge's controlled Pass-B experiment classified the current tested seam as **Context-only**, not behaviorally causal. That result is retained rather than tuned away.
 
-### History, memory and meaning
+### Civil identity
 
-Genesis preserves three epistemically distinct stages:
+Every successfully published Genesis Thread receives one permanent Fibre Identity Number and one canonical civil registration in the same birth transaction. `threadId` remains the canonical machine identity/reference anchor; the FIN is the human-facing civil identifier.
 
-```text
-historical life        what Fibre says happened
-memory formation       what the Thread remembers of that life
-meaning formation      what that remembered experience comes to mean
-```
+## Scientific-method posture
 
-History may exist without memory. Memory may exist without durable meaning. Meaning may be ambivalent, unresolved or later reinterpreted. Pass-A historical realization and Pass-C meaning formation remain genome blind; permitted genome exposure is limited to the intended Pass-B memory treatment.
+The enduring methodology for provider-backed generative diagnostics is [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md).
 
-Fibre owns the historical skeleton: developmental window, civil time, authoritative place, EventStructure/world-emergent status, required counterpart, chronology and admission. Model cognition realizes contingent observable content inside that authority.
+Current rules include:
 
-### Rich life
+- state the estimand, unit, controls, confounds and sensitivity before provider output;
+- use meaningful positive/failure controls where practical;
+- repeated deterministic calls are robustness checks unless the design supports independence;
+- post-hoc findings remain post-hoc;
+- confounding blocks both positive causal claims and absence-of-effect claims;
+- prospective holdouts are excluded structurally through transitive provenance, not by prompt instruction;
+- preferential factual matching to forbidden holdouts is a provenance-audit trigger, never personhood evidence;
+- transient provider retries may resume only unfinished judgments and may never become quality resampling.
 
-Richness means experiential fertility, not biography length, drama, quota satisfaction or a required developmental ladder. Genesis must create enough particular social, geographic, intellectual and temporal texture that later memory and meaning can differ for substantive reasons.
+## Current next work — #40 Identity Projection & Causal Consumption
 
-The development sequence retained an important negative lesson: mechanically valid generation can collapse into narrative monoculture. Fibre should correct the generative structure or participation mechanism rather than adding an “interesting life” quota.
+#37–#39 provide a rich provenance-bearing life substrate. The bridge has now hardened the memory/meaning and measurement seams. The remaining gap is canonical causal consumption in ordinary cognition.
 
-### Source integrity
-
-Thread-parent, fork, Echo and Homage are origin/source modes, not alternate biography generators. Current `publishBirth` enforcement already carries the key eligibility/consent boundaries for those modes. Before #39 closes, the current origin path still needs end-to-end exercise and any remaining vocabulary/projection inconsistencies must be reconciled.
-
-```text
-living identifiable human -> documented-consent Echo
-Homage                    -> attested deceased or fictional
-source person's life      != Thread autobiography
-```
-
-## Current persistence and inspection
-
-The versioned world-store schema remains the live compatibility boundary for persistent M1/#35 lifecycle plus #37/#38 identity, situated-life, embodiment and autobiographical-memory authorities. #39 adds bounded Genesis and symbolic-genome provenance while admitted life content publishes into existing canonical Thread authorities.
-
-Human/operator inspection includes the Thread Editor plus read-only world, identity, obligation, Genesis and symbolic-genome inspection surfaces. Durable model invocation journals support exact recovery of committed model work but are execution evidence, not semantic evidence.
-
-## The remaining cognition seam
-
-#37/#38/#39 provide a much richer provenance-bearing life substrate than ordinary live cognition currently consumes. The live Guardian path still substantially consumes older surfaces.
-
-#40 owns the real bridge:
+#40 owns the bounded path:
 
 ```text
-rich Thread life state
-      -> Fibre-owned bounded relevance/privacy selection
+rich canonical Thread state
+      -> Fibre/Thread-owned relevance and privacy selection
       -> inspectable Identity Context Capsule
       -> temporary cognition
       -> exact cited provenance
+      -> attributable judgment/behavior difference
 ```
 
-Caller nomination may not become identity-selection authority.
+The critical #40 proof is not merely that two Threads receive different prompt text. It must show that a Thread-owned identity/history difference can produce an attributable difference in cognition or downstream consequence under the same declared selection policy. Caller nomination may not become private-context-selection authority.
 
 ## Current score posture
 
@@ -146,13 +138,21 @@ Development                   1
 Economic consequence          0
 ```
 
-#39 deliberately earns no score movement. It builds a credible prior-life substrate without claiming that stored identity/history already causes stable behavior. #40 causal consumption and #41 standing are the next score-bearing steps.
+#39 and the completed bridge deliberately earn no score movement. #40 causal consumption and #41 standing are the next score-bearing steps.
 
-## Repository posture
+## Persistence and repository posture
 
-`HEAD` should describe current Fibre. Current architecture uses semantic filenames; exact protocol/schema versions remain in contract data where they are genuine compatibility identities. Git history is the default development archive. Selected explanatory history lives under `docs/history/`; exceptional exact-byte evidence lives under `artifacts/validation/`; disposable development output lives under `.fibre/`.
+The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. It proves the semantic publication transaction and canonical hydration boundary, **not production deployment**.
 
-The remaining runtime naming debt is explicitly registered in `services/runtime-name-debt.md`. Genesis Pass A/B/C names are intentionally deferred until the closing seam is stable so cleanup does not guess the final enduring module boundaries.
+The accepted production architecture remains:
+
+```text
+semantic domain store -> InfraDriver capability -> provider implementation
+```
+
+World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt, not precedent for new production authorities.
+
+`HEAD` describes current Fibre. Git history is the default development archive. One-shot bridge fixtures and experiment runners are not retained as supported tooling; the completed bridge outcome is historical documentation while permanent runtime behavior is protected by enduring tests.
 
 ## Explicitly deferred, not erased
 

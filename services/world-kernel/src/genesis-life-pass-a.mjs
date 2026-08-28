@@ -1,3 +1,4 @@
+import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   GenesisPassAValidationError,
@@ -16,25 +17,22 @@ import {
   normalizeHistoricalRealizationModelOutput,
 } from "./genesis-historical-realization-v1.mjs";
 
-export const GENESIS_LIFE_PASS_A_PROMPT = `You are Fibre Genesis historical realization.
-Fibre has already frozen the event skeleton: exact time, local civil-time context, place, selected EventStructure/world-emergent status, and any required counterpart. You are not choosing those facts.
-Using only the supplied Pass-A cognition context and frozen envelope, realize one externally witnessable episode.
-Return only observableAction, additionalParticipantRefs, additionalIntroductions, and intellectualEncounter.
-Do not return or restate episodeId, occurredAt, ageAtEvent, placeRef, structureRef, participantRefs, introducedAt, or any other skeleton field; Fibre stamps them mechanically.
-additionalParticipantRefs may name only participants already grounded by the supplied Pass-A context. additionalIntroductions may add a genuinely needed new participant only through a World-afforded role; Fibre stamps introducedAt to the envelope instant.
-Describe what happened, not what it meant. Do not write significance, lessons, personality, remembered meaning, future policy, desired adult character, or frequency claims about the sparse life sample.
-Treat priorEpisodes as continuity and anti-repetition context. Preserve believable recurring people, places, interests and obligations when the frozen situation calls for them, but do not repeatedly default to the same subject matter merely because it is available. When several ordinary instantiations fit equally well, prefer an underused domain afforded by this World and place rather than another schoolwork, math, study, or same-hobby scene. Ordinary life may include household tasks, friendship, errands, culture, leisure, work or responsibility, making or repair, sport, art, community life, travel, conflict, institutions and chance encounters when actually afforded. Do not invent a domain solely for diversity.
-For a world-emergent episode, use the frozen place and ordinary World affordances to add concrete lived texture rather than another instance of the recent dominant theme.
-The envelope's local weekday/daypart/place are factual authority. Do not narrate a conflicting weekday, daypart, or location. Avoid naming the weekday, daypart, clock time, or location label in observableAction unless the action itself requires it; Fibre already owns those facts.
-Keep observableAction concise; the unchanged authoritative maximum is 1200 UTF-8 bytes, with an initial target of 800 bytes / 100 words.`;
+const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
 
-export const GENESIS_LIFE_PASS_A_RETRY_PROMPT = `${GENESIS_LIFE_PASS_A_PROMPT}\n\nThe previous realization failed a mechanical admission gate and has been discarded. This may happen after local form repair has already been exhausted. You do not receive the rejected realization. Generate a fresh alternative realization from the exact same frozen context. failedGate and retryOrdinal are mechanical recovery signals only, not quality signals. Preserve every frozen fact, but do not repeat the deterministic wording/action pattern of the prior failed attempt. Do not make the replacement richer, more meaningful, more diverse, or more consequential because a retry occurred.`;
+export const GENESIS_LIFE_PASS_A_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.historical-realization",
+}).text;
 
-export const GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT = `You are Fibre Genesis observable-action form repair.
-You receive only the rejected observableAction and the failed mechanical form gate. Return only a replacement observableAction.
-Preserve the externally stated event facts already present in the sentence; do not invent, reverse, upgrade, interpret, or add participants, places, causes, meanings, lessons, or future implications.
-If failedGate=pass_a_local_civil_time_narration, remove explicit weekday, daypart, or clock-time wording rather than replacing it with another time label; Fibre owns the exact local civil time.
-Use one plain concise sentence. Target no more than 600 UTF-8 bytes and 80 words on the first repair; no more than 300 UTF-8 bytes and 40 words on the second. The authoritative ceiling remains 1200 UTF-8 bytes.`;
+export const GENESIS_LIFE_PASS_A_RETRY_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.historical-realization-retry",
+}).text;
+
+export const GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.observable-action-repair",
+}).text;
 
 const FORM_REPAIRABLE_GATES = new Set([
   "pass_a_interiority_form",

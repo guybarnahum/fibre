@@ -8,7 +8,7 @@ Use this index to load only the context needed for a task.
 
 The profiles follow repository/evidence lifecycle:
 
-- `core` — current Fibre doctrine, current state, active M2/#39 authority and current personhood/causal discipline;
+- `core` — current Fibre doctrine, current state, active M2/Genesis authority and current personhood/causal discipline;
 - `request-processing` — current appraisal, authorization, disclosure, affect and response behavior, built on `core`;
 - `full` — broad current cross-cutting context plus selected origin/milestone history and accepted sealed standing that still has explanatory or audit value.
 
@@ -29,31 +29,32 @@ Start with:
 5. `foundations/rich-life.md`
 6. `state/current-state.md`
 7. `state/current-priorities.md`
-8. `state/pr39-closing-plan.md` for active #39 work
-9. `validation/m2-pr-plan.md`
-10. the relevant concept and architecture documents for the task
+8. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
+9. `validation/generative-diagnostic-methodology.md`
+10. `validation/m2-pr-plan.md`
+11. the relevant concept and architecture documents for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant local README/contract.
 
-## Current M2 / #39 Genesis work
+## Current M2 / Genesis work
 
 ```text
-#38 life representation/corrigibility      complete
-#39 Genesis / particular prior life        active — closing
-#40 identity projection/causal consumption next
-#41 M2 standing/closure                     after #40
+#38 life representation/corrigibility                 complete
+#39 Genesis / particular prior life + canonical birth closed
+     Genesis selectivity/scientific hardening bridge   next
+#40 identity projection/causal consumption             after bridge
+#41 M2 standing/closure                                after #40
 ```
 
-Load these for #39 work:
+Load these for current Genesis work:
 
-- `state/pr39-closing-plan.md`
+- `state/genesis-selectivity-scientific-hardening.md`
+- `validation/generative-diagnostic-methodology.md`
 - `validation/m2-pr-plan.md`
-- `validation/m2-pr39-implementation-plan.md`
-- `validation/m2-pr39-genesis-quality-constraints.md`
-- `validation/m2-pr39-developmental-needs-childhood-review-resolution.md`
 - `architecture/thread-genesis-childhood-birth.md`
 - `architecture/genesis-compiler-contract.md`
 - `architecture/genesis-durable-development.md`
+- `architecture/model-output-recovery.md`
 - `architecture/birth-center-runtime.md`
 - `architecture/symbolic-thread-genome.md`
 - `architecture/genesis-memory-meaning-integration.md`
@@ -62,13 +63,15 @@ Load these for #39 work:
 - `foundations/rich-life.md`
 - `foundations/interpretive-personhood.md`
 
-The #39 epistemic distinction is:
+Use `history/milestones/pr39.md` only when the completed #39 scientific/birth result matters to the task.
+
+The enduring Genesis epistemic distinction is:
 
 ```text
 history != memory != meaning
 ```
 
-Historical realization and meaning formation are genome blind. Permitted genome exposure is limited to the intended memory-formation treatment, and experimental assignment/analysis labels remain outside cognition.
+Historical realization and meaning formation are genome blind. Permitted genome exposure is limited to the intended memory-formation seam, and experimental assignment/analysis labels remain outside cognition.
 
 ## Identity, interiority, dignity and development
 
@@ -98,6 +101,7 @@ Historical realization and meaning formation are genome blind. Permitted genome 
 - `architecture/interest-mediated-expression.md`
 - `architecture/request-participation.md`
 - `architecture/storage-model.md`
+- `architecture/production-persistence.md`
 - `architecture/prompt-synthesis.md`
 - `architecture/infrastructure-driver.md`
 
@@ -136,11 +140,11 @@ Presentation and generated media are derived surfaces. They do not become hidden
 
 ## Historical and sealed evidence
 
-Use `full` when the task requires the historical rationale behind current doctrine. It intentionally includes selected origin/milestone records and the accepted Semantic Guardian / History-bends standing documents. Exact sealed evidence bytes live under `artifacts/validation/` and are inspected through read-only tools.
+Use `full` when the task requires historical rationale behind current doctrine. It intentionally includes selected origin/milestone records and accepted Semantic Guardian / History-bends standing documents. Exact sealed evidence bytes live under `artifacts/validation/` only when a continuing reason to retain them exists.
 
-For development chronology that is not selected history, use Git history rather than loading superseded candidate/gate packets into ordinary AI context.
+For #39's completed outcome, use `history/milestones/pr39.md`; use Git history for the discarded closure/freeze/rater machinery and detailed execution chronology.
 
-Historical evidence may explain why current rules exist. It does not override current state, an active milestone plan, a current architecture contract or a later accepted decision.
+Historical evidence may explain why current rules exist. It does not override current state, active bridge/roadmap authority, current architecture or a later accepted decision.
 
 ## Challenge a proposal
 
@@ -153,7 +157,7 @@ At minimum load:
 - `validation/thread-differential-gate.md`
 - `validation/drift-scorecard.md`
 - `validation/m2-pr-plan.md`
-- the active milestone contract/closing plan
+- the active bridge/milestone contract
 - relevant ADRs
 
 For Fibre, an ordinary adversarial review is a **vision-effectiveness review** unless explicitly scoped as security/red-team work: try to falsify whether personhood-bearing state is becoming causal and load-bearing rather than merely stored, prompted or displayed.

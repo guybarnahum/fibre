@@ -2,10 +2,15 @@ import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
+import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
 import { createGoogleModelAdapter } from "#services/world-kernel/src/model-runtime/google.mjs";
 import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
 
 export const MODEL_SMOKE_TOKEN = "fibre-model-smoke-v1";
+export const MODEL_SMOKE_PROMPT = resolvePromptAsset({
+  directory: new URL("./prompts/", import.meta.url),
+  id: "model.smoke",
+}).text;
 
 export const MODEL_SMOKE_SCHEMA = Object.freeze({
   type: "object",
@@ -51,7 +56,7 @@ export function parseModelSmokeArgs(argv) {
     else throw new Error(`unknown option: ${arg}`);
   }
   if (options.help) return options;
-  if (!['openai', 'google'].includes(options.provider)) {
+  if (!["openai", "google"].includes(options.provider)) {
     throw new Error("--provider must be openai or google");
   }
   if (typeof options.model !== "string" || options.model === "") {
@@ -86,7 +91,7 @@ export async function runModelApiSmoke({ provider, model, environment = process.
   });
   const startedAt = Date.now();
   const result = await adapter.invoke({
-    systemPrompt: "Return only the requested structured result. Do not add commentary.",
+    systemPrompt: MODEL_SMOKE_PROMPT,
     input: {
       task: "Return the exact constants required by the response schema.",
       expectedStatus: "ok",
