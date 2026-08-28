@@ -1,7 +1,8 @@
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 
 export const GENESIS_PASS_C_INITIAL_PROMPT_VERSION = "genesis-pass-c-initial-prompt-v1";
-export const GENESIS_PASS_C_REINTERPRETATION_PROMPT_VERSION = "genesis-pass-c-reinterpretation-prompt-v1";
+export const GENESIS_PASS_C_REINTERPRETATION_BASE_PROMPT_VERSION = "genesis-pass-c-reinterpretation-prompt-v1";
+export const GENESIS_PASS_C_REINTERPRETATION_PROMPT_VERSION = "genesis-pass-c-reinterpretation-prompt-v2";
 
 export const GENESIS_PASS_C_INITIAL_PROMPT = `You are Fibre Genesis Pass C for initial autobiographical meaning formation.
 Form what the one supplied remembered experience comes to mean durably for the Thread at the supplied formation moment, if anything.
@@ -14,6 +15,9 @@ If no durable interpretation forms at this moment, return outcome=no_durable_mea
 Do not infer genome, omitted history, sibling memories, personality targets, future behavior, universal lessons, future policy, or preferred narrative coherence.
 Return JSON matching the supplied schema.`;
 
+// Frozen v1 reinterpretation prompt retained while the bridge's burned
+// characterization evidence remains replayable. Runtime Genesis uses
+// GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT below.
 export const GENESIS_PASS_C_REINTERPRETATION_PROMPT = `You are Fibre Genesis Pass C for autobiographical meaning reinterpretation.
 Reconsider the one supplied prior durable meaning in light of exactly the one supplied eligible later trigger, and form the Thread's durable interpretation at the supplied formation moment, if the later echo changes what the memory comes to mean.
 This is a constitutive reinterpretation task. It is not a request to detect, prove, or recover a revised meaning that must already exist elsewhere.
@@ -22,6 +26,18 @@ If a revision forms, write it as the Thread's own concise first-person interpret
 Return outcome=revised only when a new durable interpretation forms and supersedes the prior meaning. Return outcome=unchanged when the later echo is genuinely considered but the prior durable meaning survives. Return outcome=none when no new durable meaning forms from the eligible echo. All three outcomes are fully legal; do not force revision.
 For unchanged or none, use summary=null and parts=[]. For revised, express only the newly formed durable interpretation grounded in the allowed cognition input.
 Return JSON matching the supplied schema.`;
+
+// Exact amendment prospectively validated by the reinterpretation-restraint
+// correction experiment before promotion into runtime Genesis.
+export const GENESIS_PASS_C_REINTERPRETATION_RESTRAINT_AMENDMENT = `Reinterpretation is conservative because an existing durable meaning has already formed.
+The existence of an eligible later echo is not by itself a reason to replace that meaning.
+Return outcome=revised only when the supplied trigger introduces a material fact, relation, resolution, contradiction, or change of attribution that makes the prior durable meaning no longer adequate as the Thread's current durable interpretation.
+Mere recurrence, another instance of a pattern already named by the prior meaning, eventual follow-through already compatible with that meaning, added specificity, or a richer wording for the same tension is not enough to supersede it. In those cases return outcome=unchanged.
+Do not manufacture a more favorable, mature, coherent, explanatory, or resolved interpretation from neutral detail. If the prior meaning already accommodates the trigger, preserve it even when you could phrase the situation more richly.
+outcome=none remains available when the eligible echo yields no new durable meaning at all. No quota applies across calls.`;
+
+export const GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT =
+  `${GENESIS_PASS_C_REINTERPRETATION_PROMPT}\n\nReinterpretation-restraint authority:\n${GENESIS_PASS_C_REINTERPRETATION_RESTRAINT_AMENDMENT}`;
 
 export const GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA = Object.freeze({
   type: "object",
@@ -72,10 +88,17 @@ export function passCInitialPromptHash() {
   });
 }
 
+export function passCReinterpretationBaselinePromptHash() {
+  return digest({
+    version: GENESIS_PASS_C_REINTERPRETATION_BASE_PROMPT_VERSION,
+    prompt: GENESIS_PASS_C_REINTERPRETATION_PROMPT,
+  });
+}
+
 export function passCReinterpretationPromptHash() {
   return digest({
     version: GENESIS_PASS_C_REINTERPRETATION_PROMPT_VERSION,
-    prompt: GENESIS_PASS_C_REINTERPRETATION_PROMPT,
+    prompt: GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
   });
 }
 
