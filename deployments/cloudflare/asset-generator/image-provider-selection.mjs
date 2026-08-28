@@ -1,8 +1,6 @@
-import {
-  AssetGenerationError,
-  createBflFluxImageProvider,
-  createOpenAIImageProvider,
-} from "../../../services/asset-generator/src/index.mjs";
+import { createBflFluxImageProvider } from "../../../integrations/media/bfl-flux-image-provider.mjs";
+import { createOpenAIImageProvider } from "../../../integrations/media/openai-image-provider.mjs";
+import { AssetGenerationError } from "../../../services/asset-generator/src/asset-generation-error.mjs";
 
 export const OPENAI_IMAGE_PROVIDER_PROFILE = "openai-gpt-image-2-medium-v1";
 export const BFL_FLUX_IMAGE_PROVIDER_PROFILE = "bfl-flux-2-pro-v1";
