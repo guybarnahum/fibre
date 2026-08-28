@@ -127,7 +127,38 @@ This was a useful negative result: the boundary was safe but the born lives were
 
 The #39 closeout record independently establishes that all 30 current cohort memories have durable meaning. Policy v2 therefore uses only that already-admitted semantic memory authority for the narrow fallback instead of broadening access to raw history or arbitrary recollection.
 
-An empty or sparse projection remains a legitimate characterization result, not a reason to alter the born life or silently promote causal standing. The underlying #39 cohort remains unchanged.
+### Policy-v2 born-World result
+
+The maintainer reran the exact five-Thread characterization at `ce0e86f4f62090abfb0b4c4439b03b834100581a` after the bounded durable-memory fallback was introduced. The result was:
+
+```text
+Threads structurally valid     5 / 5
+Consumer-ready projections     5 / 5
+Identity evidence              5 / 5
+Memory evidence                5 / 5
+Semantic-state evidence        0 / 5
+
+per Thread
+  included identity             1
+  included memories             2
+  remaining memories by budget  4
+```
+
+Evidence payloads remained bounded between 1,138 and 1,663 UTF-8 bytes per Thread, well below the fixed 12,288-byte capsule ceiling. Every Thread excluded exactly four otherwise-available durable memories as `memory_available_meaning_budget`, demonstrating that the new rule widened the projection only to the declared two-memory fallback rather than turning the capsule into a life dump.
+
+Raw relationship/place records remained excluded pending semantic projection. Symbolic genome loci remained excluded as `genome_context_only_until_attributable_consumer`. Semantic-state storage is absent in the canonical #39 birth World, so the 0/5 semantic-state result is expected and is not repaired by inventing state.
+
+The targeted regressions and inspector passed, followed by the complete active suite at **807 / 807**. No provider call was made.
+
+### Slice-B conclusion
+
+The born-World projection slice is **closed**.
+
+It established that the five canonical born Threads can each produce a deterministic, bounded, provenance-bearing cognition capsule containing differentiated admitted identity and autobiographical memory while preserving privacy, sealed-history exclusion, explicit budgets and the accepted genome standing.
+
+This is still availability/consumption scaffolding, not causal individuality evidence. Projection richness should not be widened merely to improve a later behavioral result. The next #40 slice must consume this exact boundary in one real cognition path and preserve the ability to remove/substitute legitimate Thread-owned evidence for an attributable differential.
+
+An empty or sparse projection remains a legitimate future characterization result, not a reason to alter a Thread's life or silently promote causal standing. The underlying #39 cohort remains unchanged.
 
 No provider call is part of this characterization or the policy-v2 correction.
 
