@@ -47,6 +47,11 @@ The permanent #39 outcome is [`../history/milestones/pr39.md`](../history/milest
 #39  Genesis, Childhood & Thread Birth                     CLOSED
       Genesis selectivity/scientific hardening bridge      CLOSED
 #40  Identity Projection & Causal Consumption              ACTIVE
+      A. capsule/compiler boundary                         CLOSED
+      B. canonical born-World projection                  CLOSED
+      C. one real cognition consumer                      NEXT
+      D. attributable causal differential                 AFTER C
+      E. hostile closeout                                 AFTER D
 #41  M2 Standing Gate / M2 closure                         AFTER #40
 
 post-M2
@@ -142,11 +147,50 @@ Requirements include:
 - counterfactual removal/substitution can attribute behavioral differences to selected life evidence;
 - changing the temporary cognition provider must not change who owns life state or provenance.
 
-The first #40 slice is provider-free: define and test the Identity Context Capsule/compiler, exact included/excluded provenance, hard bounds, sealed/protected-source exclusion, prompt-asset resolution and the five-part worker input (`Task`, `Actors`, `Evidence`, `Rules`, `Output schema`). It is scaffolding only and must not claim behavioral causality.
+### #40 A — capsule/compiler boundary — closed
 
-Later #40 slices may introduce controlled cognition only after that boundary is green. They must hold the external situation fixed and vary legitimate Thread-owned context through the same compiler so any downstream difference is attributable rather than prompt folklore.
+The provider-free compiler defines deterministic source inventory, exact included/excluded provenance, explicit item/byte bounds, requester-selector refusal, sealed/protected-source exclusion, prompt-asset ownership and a five-part worker input (`Task`, `Actors`, `Evidence`, `Rules`, `Output schema`). It is scaffolding only and makes no behavioral-causality claim.
 
-#40 is where richer identity/history becomes causally available. It must not rewrite the underlying life or strengthen the accepted genome result to make tests pass.
+### #40 B — canonical born-World projection — closed
+
+The exact compiler was run read-only against all five canonical civil-registered #39 Threads. Policy v1 was structurally safe but exposed only one tiny identity item per Thread and no autobiographical memory. That negative result was retained rather than hidden.
+
+Policy v2 corrected only the projection seam: linked memory remains first-class, while Fibre may expose at most two otherwise-unlinked current accessible memories with already-admitted durable meaning, ordered deterministically by accessibility, salience and recency. Raw history, relationships/places without semantic projection, embodiment and the `CONTEXT_ONLY` genome remain excluded.
+
+The canonical rerun established:
+
+```text
+structurally valid             5 / 5
+consumer-ready                 5 / 5
+identity evidence              5 / 5
+memory evidence                5 / 5
+semantic-state evidence        0 / 5  (storage absent in birth World)
+per Thread                     1 identity + 2 memories
+full active suite              807 / 807
+provider calls                 0
+```
+
+The detailed result is [`identity-context-projection.md`](identity-context-projection.md). This closes projection availability, not causal individuality, and earns no Whole-Person score movement.
+
+### #40 C — one real cognition consumer — next
+
+Connect the exact bounded capsule to one existing ordinary cognition path rather than creating a parallel demo worker. The preferred consumer is the live participation/Dignity Guardian appraisal path because it already produces persisted, inspectable Thread-owned private judgment and has an established replay boundary.
+
+The integration must:
+
+- compile context from authoritative semantic stores before temporary cognition;
+- preserve the existing five-part semantic worker boundary rather than expose Fibre internals to the model;
+- make selected capsule identity/memory evidence eligible for Guardian reasoning with exact source refs;
+- prevent legacy whole-Thread projections (`semanticTraits`, old resolved-memory summaries, or full snapshot prose) from silently remaining co-equal identity authority once the new capsule owns that semantic role;
+- persist capsule/source digests so replay can prove exactly which Thread-owned context was consumed;
+- remain testable with a scripted/no-network adapter before any provider call;
+- preserve request/authorization/dignity semantics unless the supplied Thread evidence legitimately changes the Guardian result.
+
+### #40 D — attributable causal differential — after C
+
+Only after the real consumer is green should #40 hold the external request/situation fixed and remove or substitute one legitimate Thread-owned identity/history factor through the same boundary. The test must measure downstream cognitive differences attributable to the changed evidence while preserving the possibility of no effect.
+
+#40 is where richer identity/history becomes causally available. It must not rewrite the underlying life, widen projection merely to manufacture a difference, or strengthen the accepted genome result to make tests pass.
 
 ## #41 — M2 standing
 
@@ -189,4 +233,4 @@ Introduce durable budgets, contracts, reputation, opportunity and material/econo
 
 ## Current next move
 
-Run and review the provider-free #40 Identity Context Capsule slice from clean `main`: prove deterministic bounded projection, exact inclusion/exclusion provenance, Fibre-owned private-context selection, prompt-asset ownership and hostile leakage refusal before any live causal-consumption experiment or provider call.
+Implement #40 C provider-free against the existing participation/Dignity Guardian path: feed the exact policy-v2 Identity Context Capsule into that real consumer with exact provenance/replay witnesses and scripted no-network tests. Do not run a live provider or causal differential until this integration is green.
