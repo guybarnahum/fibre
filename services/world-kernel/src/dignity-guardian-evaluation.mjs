@@ -19,8 +19,10 @@ export const DIGNITY_GUARDIAN_V4_POLICY = Object.freeze({
   version: "4-dev",
 });
 
-export const DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION = "9";
+// Historical v4 evidence remains pinned to the schema that produced it.
+export const DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION = "8";
 export const DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_VERSION = "6-dignity-only-actions";
+export const DIGNITY_GUARDIAN_IDENTITY_CONTEXT_PROMPT_SCHEMA_VERSION = "9-identity-context";
 
 export const DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT = resolvePromptAsset({
   directory: WORLD_KERNEL_PROMPT_DIRECTORY,
@@ -54,7 +56,7 @@ const DECISIONS = new Set(DECISION_VALUES);
 
 const SCHEMA_GENERATOR_DESCRIPTOR = Object.freeze({
   id: "semantic_guardian_v4_dynamic_response_schema",
-  version: "6",
+  version: "5",
   factors: DIGNITY_GUARDIAN_V4_FACTOR_KEYS,
   factorShape: ["effect", "evidenceRefs"],
   evidencePolicy: "exact_per_request_enum_with_factor_allowlists",
@@ -72,8 +74,28 @@ const SCHEMA_GENERATOR_DESCRIPTOR = Object.freeze({
   numericDignityInModelOutput: false,
 });
 
+const IDENTITY_CONTEXT_SCHEMA_GENERATOR_DESCRIPTOR = Object.freeze({
+  id: "semantic_guardian_identity_context_dynamic_response_schema",
+  version: "1",
+  factors: DIGNITY_GUARDIAN_V4_FACTOR_KEYS,
+  factorShape: ["effect", "evidenceRefs"],
+  evidencePolicy: "exact_policy_v2_identity_memory_refs_with_factor_allowlists",
+  evidenceNormalization: "deduplicate_and_conservatively_downgrade_unsupported",
+  modelFields: ["decision", "rationale", "factors"],
+  workerInput: ["task", "actors", "evidence", "rules", "outputSchema"],
+  individualEvidenceAuthority: "identity_context_projection_v2",
+  semanticStateAuthority: "guardian_state_selection",
+  decisionEncoding: "fit_<high|mixed|low>__<action>",
+  highFitAction: "accept_only",
+  delegation: "outside_dignity_cognition",
+  cognitionFit: ["high", "mixed", "low"],
+  numericDignityInModelOutput: false,
+});
+
 export const DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH =
   `sha256:${sha256(canonicalJson(SCHEMA_GENERATOR_DESCRIPTOR))}`;
+export const DIGNITY_GUARDIAN_IDENTITY_CONTEXT_RESPONSE_SCHEMA_GENERATOR_HASH =
+  `sha256:${sha256(canonicalJson(IDENTITY_CONTEXT_SCHEMA_GENERATOR_DESCRIPTOR))}`;
 
 function validateCapsule(capsule) {
   assertPlainObject("Semantic Guardian v4 capsule", capsule);
@@ -618,17 +640,22 @@ function finishV4(capsule, invocation) {
     assertPlainObject("Semantic Guardian v4 model invocation", invocation);
     assertPlainObject("Semantic Guardian v4 model provenance", invocation.provenance);
     const output = validateDignityGuardianV4Output(capsule, invocation.output);
+    const consumesIdentityContext = capsule.identityContext !== undefined;
     return {
       output,
       assessment: derivePrivateAssessmentFromValidatedV4Output(capsule, output),
       decisionBasis: structuredClone(output.decisionBasis),
       provenance: structuredClone(invocation.provenance),
       policy: { ...DIGNITY_GUARDIAN_V4_POLICY },
-      promptSchemaVersion: DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION,
+      promptSchemaVersion: consumesIdentityContext
+        ? DIGNITY_GUARDIAN_IDENTITY_CONTEXT_PROMPT_SCHEMA_VERSION
+        : DIGNITY_GUARDIAN_V4_PROMPT_SCHEMA_VERSION,
       promptHash: DIGNITY_GUARDIAN_V4_PROMPT_HASH,
       responseSchemaVersion: DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_VERSION,
       responseSchemaHash: dignityGuardianV4ResolvedSchemaHash(capsule),
-      responseSchemaGeneratorHash: DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH,
+      responseSchemaGeneratorHash: consumesIdentityContext
+        ? DIGNITY_GUARDIAN_IDENTITY_CONTEXT_RESPONSE_SCHEMA_GENERATOR_HASH
+        : DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH,
     };
   } catch (error) {
     throw cognitionFailure(error);
