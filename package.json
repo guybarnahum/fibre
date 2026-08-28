@@ -45,6 +45,7 @@
     "history:dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/history/history-bends-judgment-dev-cli.mjs",
     "history:gate": "node --disable-warning=ExperimentalWarning tools/gates/history/history-bends-judgment-sealed-inspector.mjs",
     "identity-context:causal-live": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/gates/identity-context/identity-context-causal-differential-live.mjs",
+    "identity-context:hostile-closeout": "node --disable-warning=ExperimentalWarning tools/gates/identity-context/identity-context-hostile-closeout.mjs",
     "inspect:db": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-world-database.mjs",
     "inspect:obligations": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-structured-obligations.mjs",
     "inspect:identity": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-thread-identity.mjs",
