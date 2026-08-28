@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-27
+last-reviewed: 2026-08-28
 canonical: true
 ---
 
@@ -13,13 +13,13 @@ M2 is not “add richer identity fields.” It is the sequence by which Fibre es
 
 Representation is necessary but insufficient. Any identity/history surface claimed as functional must name a real consumer and survive attributable causal tests. Stored-but-unconsumed state remains explicit substrate rather than personhood credit.
 
-The current Whole-Person checkpoint remains **15/26 under rubric v2**. #35 through #39 deliberately did not earn score movement merely by adding honest durable representation.
+The current Whole-Person checkpoint remains **15/26 under rubric v2**. #35 through #39 and the completed pre-#40 bridge deliberately did not earn score movement merely by adding or hardening durable representation.
 
 ## Planning identifiers
 
 Milestone identifiers `#39` through `#44` are stable **Fibre planning IDs**, not GitHub pull-request numbers.
 
-The Genesis selectivity/scientific-hardening bridge between #39 and #40 deliberately has **no Fibre milestone number**. It is hardening work discovered by #39 and must be merged to `main` before #40 begins.
+The Genesis selectivity/scientific-hardening bridge between #39 and #40 deliberately has **no Fibre milestone number**. It was completed and merged to `main` before #40 began.
 
 ## Completed substrate
 
@@ -32,21 +32,22 @@ M1    Persistent Thread Round Trip                         CLOSED
 #37   Thread Passport & Identity Provenance                MERGED / FROZEN
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
 #39   Genesis, Childhood & Thread Birth                    CLOSED
+      Genesis selectivity/scientific hardening bridge      CLOSED
 ```
 
 Through #38 Fibre made lineage, place, embodiment and autobiographical memory representable and corrigible. #39 then proved that a fixed generated prior life can cross the birth boundary intact into canonical Thread authorities with replayable history, memory/meaning lineage, situated continuity, symbolic inheritance, visual obligations and one Fibre civil registration.
 
-The permanent #39 outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+The permanent #39 outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md). The completed bridge outcome is [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
 
-#39 still earned no causal/endogenous standing. Its born validation cohort is substrate for later causal work, not proof that ordinary cognition is already non-interchangeably shaped by that substrate.
+#39 and the bridge earned no causal/endogenous standing. Their outputs are substrate for later causal work, not proof that ordinary cognition is already non-interchangeably shaped by that substrate.
 
 ## Active sequence
 
 ```text
-#39  Genesis, Childhood & Thread Birth           CLOSED
-      -> Genesis selectivity/scientific hardening bridge   NEXT
-#40  Identity Projection & Causal Consumption    AFTER BRIDGE
-#41  M2 Standing Gate / M2 closure               AFTER #40
+#39  Genesis, Childhood & Thread Birth                     CLOSED
+      Genesis selectivity/scientific hardening bridge      CLOSED
+#40  Identity Projection & Causal Consumption              ACTIVE
+#41  M2 Standing Gate / M2 closure                         AFTER #40
 
 post-M2
 #42  Self-authored Development
@@ -56,7 +57,7 @@ post-M2
 
 Do not collapse the bridge, #40 and #41 into one implementation. Each closes a distinct risk:
 
-> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge makes memory/meaning selection and its measurement credible enough to amplify. #40 makes selected parts of that life causally matter. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 makes selected parts of that life causally matter. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
 
 ## #39 — closed prior-life/birth substrate
 
@@ -83,23 +84,23 @@ The fixed final cohort also exposed important debt rather than being regenerated
 - D5 accommodation was largely predicted by explicit memory citation;
 - the generator showed repeated/near-duplicate affordances and common Pass-C voice.
 
-Those are preserved findings, not admission failures. They define the bridge.
+Those are preserved findings, not admission failures. They motivated the bridge rather than reopening #39.
 
-## Genesis selectivity and scientific hardening bridge
+## Genesis selectivity and scientific hardening bridge — closed
 
-The active bridge authority is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md), with enduring methodology in [`generative-diagnostic-methodology.md`](generative-diagnostic-methodology.md).
+The completed bridge outcome is retained in [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md), with enduring methodology in [`generative-diagnostic-methodology.md`](generative-diagnostic-methodology.md).
 
-It closes a narrow precondition before #40:
+It closed the narrow precondition before #40:
 
 - memory formation can genuinely remember or decline without a quota forcing the distribution;
 - meaning formation can preserve negative, ambiguous, mundane and unchanged outcomes rather than structurally reframing upward;
 - reinterpretation can legitimately remain unchanged;
-- genome influence at the memory seam is classified through a counterbalanced, task-matched experiment rather than tuned for a desired answer;
+- genome influence at the memory seam was classified through a counterbalanced, task-matched experiment rather than tuned for a desired answer;
 - diagnostics use explicit positive/negative/counterfactual controls, named sensitivity/power and no pseudo-replication;
-- revised self-account-overreach testing uses prospectively sealed history with compiler-enforced transitive exclusion, matched plausible non-events and cross-Thread controls;
+- self-account-overreach testing now has prospective sealed-history machinery with compiler-enforced transitive exclusion, matched plausible non-events and cross-Thread controls;
 - evaluator infrastructure resumes transient unfinished work without resampling already committed scientific judgments.
 
-The bridge deliberately does **not** build the #40 context capsule, live relevance/privacy selection or ordinary-cognition causal differential. It earns no Whole-Person score movement.
+Accepted bridge standing is intentionally mixed: memory selectivity and reinterpretation restraint were established prospectively, while the tested Pass-B genome seam remains **Context-only**. The bridge deliberately did **not** build the #40 ordinary-cognition causal differential and earned no Whole-Person score movement.
 
 ## The remaining two-world cognition seam
 
@@ -118,7 +119,7 @@ symbolic genome / lineage
 civil registration
 ```
 
-Ordinary Guardian/request cognition still substantially consumes older projections. That unresolved seam is exactly why #40 exists.
+Ordinary Guardian/request cognition still substantially consumes older projections. That unresolved seam is exactly what #40 now closes.
 
 ## #40 — bounded causal consumption
 
@@ -141,7 +142,11 @@ Requirements include:
 - counterfactual removal/substitution can attribute behavioral differences to selected life evidence;
 - changing the temporary cognition provider must not change who owns life state or provenance.
 
-#40 is where richer identity/history becomes causally available. It must not rewrite the underlying life to make tests pass.
+The first #40 slice is provider-free: define and test the Identity Context Capsule/compiler, exact included/excluded provenance, hard bounds, sealed/protected-source exclusion, prompt-asset resolution and the five-part worker input (`Task`, `Actors`, `Evidence`, `Rules`, `Output schema`). It is scaffolding only and must not claim behavioral causality.
+
+Later #40 slices may introduce controlled cognition only after that boundary is green. They must hold the external situation fixed and vary legitimate Thread-owned context through the same compiler so any downstream difference is attributable rather than prompt folklore.
+
+#40 is where richer identity/history becomes causally available. It must not rewrite the underlying life or strengthen the accepted genome result to make tests pass.
 
 ## #41 — M2 standing
 
@@ -184,4 +189,4 @@ Introduce durable budgets, contracts, reputation, opportunity and material/econo
 
 ## Current next move
 
-Merge the completed #39 closeout to `main`, then execute the unnumbered Genesis selectivity/scientific-hardening bridge from clean `main`. Only after that bridge is green and reviewed should #40 begin.
+Run and review the provider-free #40 Identity Context Capsule slice from clean `main`: prove deterministic bounded projection, exact inclusion/exclusion provenance, Fibre-owned private-context selection, prompt-asset ownership and hostile leakage refusal before any live causal-consumption experiment or provider call.
