@@ -176,7 +176,7 @@ export async function prepareResumableProviderExecution({
     });
   }
 
-  const providerAdapterId = currentProviderAdapterId
+  const activeProviderAdapterId = currentProviderAdapterId
     ?? (() => { throw new TypeError("resumable media provider.providerId must be a non-empty string"); })();
 
   let active = loaded;
@@ -194,7 +194,7 @@ export async function prepareResumableProviderExecution({
           job,
           jobDigest,
           attemptNumber: checkedAttemptNumber,
-          providerAdapterId,
+          providerAdapterId: activeProviderAdapterId,
           providerRequestWitness: started.requestWitness,
           providerRequestDigest,
           operation: started.operation,
@@ -230,16 +230,16 @@ export async function prepareResumableProviderExecution({
       } catch (error) {
         if (loaded !== null && error instanceof TypeError) {
           throw new AssetGenerationError(
-            `accepted provider operation ${active.checkpoint.operation.providerRequestId} cannot be resumed by adapter ${providerAdapterId}`,
+            `accepted provider operation ${active.checkpoint.operation.providerRequestId} cannot be resumed by adapter ${activeProviderAdapterId}`,
             {
               phase: "provider_generation",
               category: "unsupported_capability",
               retryable: false,
-              provider: providerAdapterId,
+              provider: activeProviderAdapterId,
               model: active.checkpoint.operation.model,
               providerRequestId: active.checkpoint.operation.providerRequestId,
               providerOperationDurable: true,
-              safeDetail: `durable accepted provider operation cannot be resumed by adapter ${providerAdapterId}`,
+              safeDetail: `durable accepted provider operation cannot be resumed by adapter ${activeProviderAdapterId}`,
               cause: error,
             },
           );
