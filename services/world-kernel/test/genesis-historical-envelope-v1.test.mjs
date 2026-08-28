@@ -185,3 +185,99 @@ test("historical envelope rejects structural or local-civil-time drift", () => {
   assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `In the ${wrongDaypart}, they sorted two books.` }, envelope), /daypart inconsistent/i);
   assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, participantRefs: ["thr_test_envelope"] }, envelope), /omitted frozen.*counterpart/i);
 });
+
+test("historical envelope does not choose a counterpart role after its compatible places are full", () => {
+  const capacityWorld = {
+    ...world(),
+    worldSpecId: "world_test_place_capacity",
+    places: [
+      { placeId: "place_capacity_library", description: "Library" },
+      { placeId: "place_capacity_school_1", description: "School 1" },
+      { placeId: "place_capacity_school_2", description: "School 2" },
+      { placeId: "place_capacity_school_3", description: "School 3" },
+      { placeId: "place_capacity_school_4", description: "School 4" },
+    ],
+    affordedRoles: ["caregiver", "sibling", "librarian", "teacher"],
+  };
+
+  const capacityAffordances = [
+    {
+      placeRef: "place_capacity_library",
+      placeKind: "library",
+      ordinaryCounterpartRoles: ["librarian"],
+    },
+    {
+      placeRef: "place_capacity_school_1",
+      placeKind: "school",
+      ordinaryCounterpartRoles: ["teacher"],
+    },
+    {
+      placeRef: "place_capacity_school_2",
+      placeKind: "school",
+      ordinaryCounterpartRoles: ["teacher"],
+    },
+    {
+      placeRef: "place_capacity_school_3",
+      placeKind: "school",
+      ordinaryCounterpartRoles: ["teacher"],
+    },
+    {
+      placeRef: "place_capacity_school_4",
+      placeKind: "school",
+      ordinaryCounterpartRoles: ["teacher"],
+    },
+  ];
+
+  const capacityOffers = new Map();
+  for (const window of windows()) {
+    capacityOffers.set(
+      window.windowId,
+      Array.from({ length: 9 }, (_, index) => ({
+        structure: {
+          structureId: `ges_test_capacity_${index + 1}`,
+          abstractSituation: `Capacity situation ${index + 1}`,
+          participatingRoles: ["librarian", "teacher"],
+          developmentalRange: { minAge: 0, maxAge: 30 },
+          consequenceClass: "low",
+        },
+        contextKinds: ["ordinary_practical"],
+        accessModes: ["peer_mediated"],
+      })),
+    );
+  }
+
+  const plan = buildHistoricalEnvelopePlan({
+    ...args(),
+    worldSpec: capacityWorld,
+    offersByWindow: capacityOffers,
+    placeAffordances: capacityAffordances,
+  });
+
+  const librarianEpisodes = plan.envelopes.filter(
+    (item) => item.counterpart?.roleRef === "librarian",
+  );
+
+  assert.equal(
+    librarianEpisodes.length,
+    GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerPlace,
+  );
+
+  assert.equal(
+    librarianEpisodes.every(
+      (item) => item.placeRef === "place_capacity_library",
+    ),
+    true,
+  );
+
+  // With this seed, window 12 prefers librarian. The library has already
+  // reached its four-episode cap, so the planner must select teacher instead
+  // rather than freezing an impossible librarian -> place assignment.
+  const window12 = plan.envelopes.find((item) => item.windowId === "window_12");
+  assert.equal(window12.counterpart?.roleRef, "teacher");
+
+  assert.equal(
+    plan.statistics.maxPlaceUse
+      <= GENESIS_HISTORICAL_ENVELOPE_POLICY.maxEpisodesPerPlace,
+    true,
+  );
+});

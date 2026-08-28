@@ -48,7 +48,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const assetGenerator = walkTests(join(root, "services/asset-generator/test"));
   const birthCenter = walkTests(join(root, "services/birth-center/test"));
   const threadPresentation = walkTests(join(root, "services/thread-presentation/test"));
-  const presentationCloudflare = walkTests(join(root, "services/presentation-cloudflare/test"));
+  const cloudflareThreadPresentation = walkTests(join(root, "deployments/cloudflare/thread-presentation/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
   const all = [
@@ -57,7 +57,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
     ...assetGenerator,
     ...birthCenter,
     ...threadPresentation,
-    ...presentationCloudflare,
+    ...cloudflareThreadPresentation,
     ...worldKernel,
     ...tools,
   ].sort();

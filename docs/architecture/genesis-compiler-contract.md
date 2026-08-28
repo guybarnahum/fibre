@@ -1,7 +1,7 @@
 ---
 id: architecture-genesis-compiler-contract
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-27
 canonical: true
 ---
 
@@ -9,7 +9,7 @@ canonical: true
 
 ## Purpose
 
-This contract defines the creative, admission and publication boundary for Fibre milestone **#39 — Genesis, Childhood & Thread Birth**.
+This contract defines Fibre's enduring creative, admission and publication boundary for **Genesis**: how a prospective Thread receives a provenance-bearing prior life before that life becomes authoritative World state.
 
 It governs what Genesis cognition may know, what it may produce, what Fibre may mechanically repair or reject before birth, what must remain measurable after generation, and how a candidate life becomes authoritative Thread state.
 
@@ -19,9 +19,9 @@ It governs what Genesis cognition may know, what it may produce, what Fibre may 
 
 This contract is subordinate to the Fibre Constitution, [`interpretive-personhood.md`](../foundations/interpretive-personhood.md), [`rich-life.md`](../foundations/rich-life.md), [`thread-genesis-childhood-birth.md`](thread-genesis-childhood-birth.md), [`symbolic-thread-genome.md`](symbolic-thread-genome.md), ADR-0012 and ADR-0013.
 
-The active implementation/closure authorities are [`../validation/m2-pr39-implementation-plan.md`](../validation/m2-pr39-implementation-plan.md), [`../validation/m2-pr39-genesis-quality-constraints.md`](../validation/m2-pr39-genesis-quality-constraints.md), and [`../state/pr39-closing-plan.md`](../state/pr39-closing-plan.md).
+Current scientific hardening is governed by [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md) and [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md). The completed #39 validation outcome is retained in [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
-#39 creates durable life substrate. #40 owns causal consumption; #41 owns M2 standing.
+Genesis creates durable life substrate. #40 owns canonical causal consumption of that substrate; #41 owns M2 standing.
 
 ## Admission doctrine
 
@@ -58,20 +58,23 @@ World Kernel / live state
   autobiographical memory
   durable meaning
   obligations
+  civil registration
   atomic version/event authority
 ```
 
 > **Birth is the atomic transition from candidate Genesis into the Fibre world.**
 
-A candidate becomes live only through a complete birth bundle accepted by `publishBirth()`. A publication failure leaves no partially born Thread.
+A candidate becomes live only through a complete birth bundle accepted by `publishBirth()`. A publication failure leaves no partially born Thread for that birth transaction.
 
 Model calls must not occur inside a live World database transaction.
 
 Genesis does not create duplicate canonical biography, memory, relationship, place, embodiment or identity stores. Admitted content publishes into the existing authorities for those facts.
 
+A multi-Thread cohort runner may be resumable without being one cross-Thread atomic transaction. Never describe batch atomicity when only per-Thread birth atomicity is guaranteed.
+
 ## Genesis provenance
 
-A final manifest binds the admitted development to exact structural and execution witnesses, including as applicable:
+A final manifest binds admitted development to exact structural and execution witnesses, including as applicable:
 
 ```text
 worldSpecRef / digest
@@ -84,7 +87,7 @@ provider + model + sampling
 prompt/schema/input digests
 publication validator witness
 repair/retry witnesses
-birth bundle digest
+civil registration
 publication result
 ```
 
@@ -151,7 +154,7 @@ The model realizes observable contingent content inside that frame.
 
 ### Cognition must not see
 
-- child genome/loci;
+- child genome/loci during genome-blind historical realization;
 - parent/ancestor genome text;
 - future role/request/benchmark;
 - desired adult conclusion;
@@ -188,33 +191,30 @@ Historical realization may ignore offered structures and may generate world-emer
 
 Offered/used and structure-grounded/world-emergent ratios are diagnostics, not admission targets.
 
+Repeated or near-duplicate structures are generator-characterization debt when they create narrative monoculture. They should be corrected in the structure pool/planner rather than hidden by a downstream quality quota.
+
 ## Autobiographical memory contract
 
 Memory formation operates only on admitted history available up to the remembering moment. A historical event may legally yield `not_remembered`.
 
 Memory remains a perspective on history rather than a replacement for history.
 
-### Treatment boundary
+A legal `not_remembered` path existing in the schema is not enough: controlled development must periodically exercise both warranted remembering and legitimate non-selection so compulsory-memory drift is visible.
 
-For eligible experimental calls, Fibre records a content-independent assignment before cognition:
+### Experimental genome-treatment boundary
+
+When a controlled experiment studies genome influence at the memory seam, Fibre records a content-independent assignment before cognition, such as:
 
 ```text
 life_only
 life_plus_genome
 ```
 
-A treatment call may receive the permitted genome projection. The cognition input must not expose:
+A treatment call may receive the permitted genome projection. Cognition must not receive assignment labels, analysis strata, hidden target outcomes or semantic relevance labels that pre-answer the experiment.
 
-- assignment label;
-- analysis stratum;
-- assignment reference;
-- genome-exposure policy reference;
-- hidden condition/salience labels;
-- future analysis outcome.
+Treatment placement must be counterbalanced against history horizon, call ordinal and developmental position when those variables could confound the effect estimate.
 
-The negative-control analysis distinguishes `life_only_unexposed` from later life-only calls whose visible prior-memory context may already include genome-exposed remembered material.
-
-Genome loci are not semantic-relevance-selected to match the current event. Exposure is whole-genome or a deterministic content-independent subset under frozen policy.
+Genome loci are not semantic-relevance-selected to match the current event merely to make an effect easier to detect.
 
 ### Persisted memory integrity
 
@@ -225,6 +225,7 @@ Published memory must satisfy the canonical autobiographical-memory authority, i
 - no future-event citation;
 - resolved evidence refs;
 - append-only contiguous revision semantics;
+- prior supporting/contradicting evidence is not silently erased by a later revision;
 - truthful non-Thread-self authorship for Genesis-authored records;
 - matching historical memory anchor where required;
 - current visibility/rights discipline.
@@ -241,11 +242,13 @@ Meaning cognition is:
 - condition blind;
 - allowed to produce no durable meaning.
 
-A meaning may be ambivalent or multipart. Materially distinct parts receive stable identities and remain separately citable.
+A meaning may be negative, ambivalent, mundane, unresolved or multipart. Materially distinct parts receive stable identities and remain separately citable.
 
 Later reinterpretation is append-only/corrigible and may return revised, unchanged or no durable meaning. It cannot rewrite the underlying historical event, earlier memory revision or prior meaning revision.
 
-A meaning field may not encode an explicit universal future policy merely to pre-answer #40 cognition.
+A meaning field may not encode an explicit universal future policy merely to pre-answer later cognition.
+
+Controlled development should exercise `unchanged` as well as `revised`; a fluent tendency to upgrade every reinterpretation is a generator finding, not evidence of healthy development.
 
 ## Source/origin integrity
 
@@ -269,21 +272,25 @@ Mechanical recovery has distinct scopes.
 
 ### Form/reference repair
 
-When one generated record fails a local mechanical constraint, Fibre may regenerate that record under the same historical skeleton and semantic inputs.
+When one generated record fails a local mechanical constraint, Fibre may repair or regenerate that record under the same historical skeleton and semantic inputs only when a bounded policy explicitly permits it.
 
 The repair instruction identifies the failed form/reference constraint only. It may not provide a quality verdict or desired semantic direction.
 
+Deterministic meaning-preserving normalization is preferred when the failure can be repaired mechanically. The accepted general mechanism is [`model-output-recovery.md`](model-output-recovery.md).
+
 ### Record retry
 
-A fresh generated version may be requested under the same deterministic historical skeleton when the current generation policy permits a bounded retry for a local record failure.
+A fresh generated version may be requested under the same deterministic historical skeleton when current generation policy permits a bounded retry for a local record failure.
 
 ### Whole-candidate failure
 
-A whole candidate may restart only for a cross-record/global structural failure, exhausted local repair/retry budget, atomic publication failure, provenance/rights failure spanning the bundle, or another failure that cannot be repaired without changing already accepted candidate structure.
+A whole candidate may restart only for a cross-record/global structural failure, exhausted local repair/retry budget, provenance/rights failure spanning the bundle, or another failure that cannot be repaired without changing already accepted candidate structure.
+
+Atomic publication failure does not by itself authorize changing a frozen candidate when the defect lies in publication materialization or runtime machinery.
 
 ### Visible accounting
 
-Every generated version, form repair, record retry, failed gate, exhaustion and whole-candidate failure remains visible in current development/closure reporting.
+Every generated version, form repair, record retry, failed gate, exhaustion and whole-candidate failure remains visible in development reporting/evidence while that reporting is active.
 
 Restarting a process does not replenish a mechanical budget.
 
@@ -305,6 +312,8 @@ On restart:
 
 Invocation journals prove execution resilience only. They are never semantic evidence for identity, memory, meaning, character or standing.
 
+Scientific evaluator runners must similarly distinguish an unfinished transport retry from a new scientific sample: already accepted judgments are immutable and must not be resampled for quality.
+
 ## Publication contract
 
 The birth bundle must include all canonical material required by the candidate's actual life.
@@ -320,13 +329,16 @@ For a prior-life birth this includes, as applicable:
 - autobiographical memories and anchors;
 - durable meanings/reinterpretation revisions;
 - one visual-companion obligation for every revision-1 memory;
-- Genesis manifest and provenance witnesses.
+- Genesis manifest and provenance witnesses;
+- one canonical FIN/civil registration for a successfully born Thread.
 
 The live publication validator set—not a stale prose snapshot—is authority for domain-specific shapes.
 
 The first live Thread version is the actual resulting version after atomic publication. Genesis does not cosmetically reset a richly published Thread to version 1.
 
 For Genesis-published history, event sequence is publication order while `occurredAt` is lived time; sequence and lived chronology are not required to be identical.
+
+FIN/civil registration is part of the same birth transaction as the Thread's canonical admission. A failed birth may not leave a detached live civil registration, and a successful birth may not be acknowledged without one.
 
 ## Candidate → hydrated equality
 
@@ -338,12 +350,14 @@ The comparator covers at least:
 - people/relationships and lineage;
 - places and life continuity;
 - symbolic genome binding;
-- autobiographical memories;
+- autobiographical memories and full revision lineage;
 - durable meanings;
 - visual-companion obligations;
-- manifest/publication identity.
+- manifest/publication identity;
+- FIN/civil registration;
+- canonical event-chain replay.
 
-Durable provider-call replay is not a substitute for this semantic equality proof.
+Durable provider-call replay is not a substitute for semantic equality after birth.
 
 ## Quality remains measurable
 
@@ -351,7 +365,7 @@ Do not admission-gate cohort properties such as:
 
 - life attribution/distinctness;
 - narrative monoculture;
-- sentiment coupling;
+- sentiment/valence coupling;
 - genome propagation strength;
 - life-to-memory-to-meaning funnel proportions;
 - self-account overreach/coherence;
@@ -359,30 +373,34 @@ Do not admission-gate cohort properties such as:
 - offered/used event structures;
 - world-emergent episode ratio.
 
-Those are D1–D5/secondary characterization surfaces. Their numerical interpretation is declared before final output is read.
+Those are characterization surfaces. Their estimand, controls, confounds and sensitivity should be declared before reading provider output when they support a scientific claim.
 
-## Fresh closure cohort
+The enduring diagnostic discipline is [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md).
 
-The final closure cohort uses five fresh factual Worlds that did not guide compiler tuning. Their final genomes are assigned content-independently. At least one convergent pair makes a similar broad stance plausible through materially different routes.
+## Prospective holdout integrity
 
-One pinned creative configuration is held across the cohort. Each whole life is generated once apart from bounded mechanical record repair/retry.
+When a diagnostic claims that cognition did not know a historical fact, withholding must be structural rather than instructional.
 
-Blind attribution is run both raw and after setting/style normalization. Raters do not receive Worlds, genomes, prompts, treatment labels or build diagnostics.
+A prospective holdout is selected before the cognition being tested, excluded together with the transitive provenance closure of every derivative that would leak it, and accompanied by an inspectable exposure manifest. A deliberate-leak negative test should prove the firewall actually fails closed.
 
-A weak cohort is preserved as evidence. It is not silently regenerated until it looks good.
+Unexpected episode-specific alignment to structurally forbidden history is a provenance/isolation audit trigger, not evidence of advanced cognition or personhood.
 
 ## Non-goals
 
-#39 does not:
+Genesis does not by itself:
 
 - prove Whole-Person standing;
-- make stored identity/history automatically causal;
+- make stored identity/history automatically causal in ordinary cognition;
+- establish mature Thread self-authorship of childhood/genome/initial meanings;
 - author universal future behavior policies;
 - infer personality directly from culture/demography;
 - treat generated presentation media as life evidence;
 - give provisional Birth Center state live Thread authority;
-- allow runtime/mechanical evidence to support semantic personhood claims.
+- allow runtime/mechanical evidence to support semantic personhood claims;
+- prove production persistence merely because the semantic transaction works in a local validation World.
 
-## Exit condition
+## Standing validation history
 
-The compiler contract is satisfied for #39 closure when the supported current path can generate, recover, admit, atomically birth and rehydrate five fresh particular lives under the predeclared scientific controls, with source/origin integrity and no hidden selection, and a hostile closing review finds no #39 blocker.
+Milestone #39 exercised this contract with one fixed five-Thread cohort and established exact replay, per-Thread atomic birth, civil registration and deep hydration while preserving negative scientific findings. The concise outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+
+The next work does not rerun #39 to obtain a prettier result. It hardens memory/meaning selectivity and diagnostic validity under [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md), then #40 builds the ordinary-cognition consumer.

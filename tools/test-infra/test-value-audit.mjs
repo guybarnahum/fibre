@@ -1,11 +1,16 @@
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
   { scope: "domain", directory: "packages/domain/test" },
+  { scope: "infra", directory: "packages/infra/test" },
+  { scope: "asset-generator", directory: "services/asset-generator/test" },
+  { scope: "birth-center", directory: "services/birth-center/test" },
+  { scope: "thread-presentation", directory: "services/thread-presentation/test" },
+  { scope: "thread-presentation-cloudflare", directory: "deployments/cloudflare/thread-presentation/test" },
   { scope: "world-kernel", directory: "services/world-kernel/test" },
   { scope: "tools", directory: "tools" },
 ]);
@@ -57,6 +62,7 @@ function sha256(value) { return createHash("sha256").update(value).digest("hex")
 function normalizedPath(root, path) { return relative(root, path).split("\\").join("/"); }
 
 function walkTests(directory, scope) {
+  if (!existsSync(directory)) return [];
   const result = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);

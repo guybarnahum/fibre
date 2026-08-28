@@ -45,57 +45,61 @@ The exact list below is generated from the canonical region in [`docs/foundation
 3. Read [`docs/foundations/invariants.md`](docs/foundations/invariants.md).
 4. Read [`docs/state/current-state.md`](docs/state/current-state.md).
 5. Read [`docs/state/current-priorities.md`](docs/state/current-priorities.md).
-6. For current milestone sequencing, read [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md).
-7. For implementation agents, read [`AGENTS.md`](AGENTS.md) and the relevant subsystem README/contract.
+6. For current M2 sequencing, read [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md).
+7. For current Genesis hardening, read [`docs/state/genesis-selectivity-scientific-hardening.md`](docs/state/genesis-selectivity-scientific-hardening.md).
+8. For implementation agents, read [`AGENTS.md`](AGENTS.md) and the relevant subsystem README/contract.
 
 ## Current status
 
 **M1 Persistent Thread Round Trip is fully closed.** Fibre has durable Thread state, append-only history, private appraisal/stance, request-bound participation authority, interest-mediated external expression, runtime thaw/freeze, replay and human inspection.
 
-The pre-M2/M2 substrate through **#38** is also complete: Semantic Guardian standing, history-bends-judgment evidence, Structured Obligations, the M2 identity contract, claim-level Passport/provenance, lineage/geography/culture, embodiment and autobiographical-memory epistemics.
+The pre-M2/M2 substrate through **#38** is complete: Semantic Guardian standing, history-bends-judgment evidence, Structured Obligations, the M2 identity contract, claim-level Passport/provenance, lineage/geography/culture, embodiment and autobiographical-memory epistemics.
 
-**Milestone #39 — Genesis, Childhood & Thread Birth — is ACTIVE — CLOSING.** The current development path can compile a materially particular prior life through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings, and the current birth path can publish and hydrate-compare an admitted life. Tbilisi, Kaohsiung, Recife, Fès and Hobart are burned development fixtures; the final fresh five-World closure cohort has not been generated.
+**Milestone #39 — Genesis, Childhood & Thread Birth — is CLOSED.** One fixed five-Thread held-out cohort was generated without quality resampling, diagnostically characterized, replayed with provider access disabled, atomically published one Thread at a time into a canonical local validation World with five unique FIN/civil registrations, and independently rehydrated from canonical authorities. The permanent result is [`docs/history/milestones/pr39.md`](docs/history/milestones/pr39.md).
+
+#39 also exposed real debt rather than hiding it: every scheduled memory decision returned remembered, all current memories acquired durable meaning, meaning showed a post-hoc positive-reframing tendency, genome propagation remained inconclusive, and the original self-account-overreach diagnostic was citation-confounded. The accepted **Genesis selectivity/scientific-hardening bridge** addresses those problems before #40 makes the richer life substrate causally load-bearing.
 
 The current M2 sequence is:
 
 ```text
-#38  made a life representable and corrigible        COMPLETE
-#39  gives that life a particular past               ACTIVE
-#40  makes selected identity/history causally matter NEXT
-#41  proves stable non-interchangeable individuality M2 CLOSURE
+#38  life representable/corrigible                    COMPLETE
+#39  particular prior life + canonical birth         CLOSED
+      Genesis selectivity/scientific hardening        NEXT
+#40  selected identity/history causally available     AFTER BRIDGE
+#41  stable non-interchangeable individuality         M2 CLOSURE
 ```
 
 The Whole-Person checkpoint remains **15/26 under rubric v2**. #39 deliberately earns no causal-standing credit merely by producing rich prior lives.
 
-See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise current posture and [`docs/state/pr39-closing-plan.md`](docs/state/pr39-closing-plan.md) for the active #39 exit boundary.
+See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise posture and [`docs/state/current-priorities.md`](docs/state/current-priorities.md) for the current execution plan.
 
 ## Repository map
 
 - `docs/` — canonical vision, foundations, concepts, architecture, decisions, current state, validation, and selected history/origin material.
 - `apps/thread-editor/` — human-facing Thread Editor prototype.
 - `packages/domain/` — portable Fibre domain types and freeze/thaw logic.
-- `services/` — world-kernel and other implementation boundaries.
+- `services/` — primary runtime/service boundaries.
 - `schemas/` — machine-readable schemas.
 - `fixtures/` — reusable synthetic test inputs organized by the kind of Fibre object or workflow they represent.
 - `scenarios/` — executable canonical use-case populations.
 - `experiments/` — current falsifiable research experiments.
 - `artifacts/validation/` — exceptional retained exact-byte scientific, replay, interoperability, or audit evidence; disposable local output belongs under `.fibre/`.
 - `tools/` — operational tooling organized by lifecycle; see [`tools/README.md`](tools/README.md).
-- `tools/replays/` — retained historical proof/experiment instruments; executable does not mean current production authority.
-- `docs/history/` — selected historical explanation and formative origin material; Git history remains the default archive for routine superseded work.
+- `tools/replays/` — retained historical proof/experiment instruments only when they still have a named continuing purpose.
+- `docs/history/` — selected explanatory history and milestone outcomes; Git history remains the default archive for routine superseded work.
 
 ## Test and evidence lifecycle
 
-Stage 6 separates everyday regression from retained scientific reproducibility:
+Everyday regression and retained scientific reproducibility are separate:
 
 ```bash
-npm test            # active product/regression/operator suite
-npm run test:replay  # retained proof/experiment reproducibility suite
-npm run test:all    # complete retained test envelope
+npm test
+npm run test:replay
+npm run test:all
 npm run test:audit -- --check
 ```
 
-Failed and burned experiments remain evidence. They are not rewritten or deleted merely because a later mechanism succeeds.
+Failed experiments remain visible in the durable record when they teach something current. One-shot milestone ceremony and ordinary generated output do not remain supported runtime surfaces merely because they once mattered.
 
 ## Canonical Markdown includes
 
@@ -115,9 +119,9 @@ Use includes only when exact in-place visibility is valuable. Otherwise link to 
 
 [`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the canonical machine-readable source for bounded model context. The profiles follow evidence lifecycle:
 
-- `core` — current doctrine/state and active M2/#39 authority;
+- `core` — current doctrine/state, active M2/Genesis authority and causal discipline;
 - `request-processing` — current appraisal/authorization/expression behavior;
-- `full` — broad context including sealed/failed historical evidence.
+- `full` — broad context including selected milestone/origin history and sealed standing with continuing explanatory value.
 
 Run `npm run context-pack` to generate:
 

@@ -1,3 +1,4 @@
+import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
 import { normalizePassBInput, normalizePassBModelOutput } from "./genesis-pass-b-domain.mjs";
 import {
   GENESIS_PASS_B_PROMPT,
@@ -5,13 +6,16 @@ import {
 } from "./genesis-pass-b-prompts.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 
+const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
+
 export const GENESIS_PASS_B_GENOME_COPY_GATE = "pass_b_genome_verbatim_ngram";
 export const GENESIS_PASS_B_GENOME_COPY_MIN_TOKENS = 4;
 export const GENESIS_PASS_B_MAX_GENERATED_VERSIONS_PER_CALL = 2;
 
-export const GENESIS_PASS_B_GENOME_COPY_RETRY_PROMPT = `${GENESIS_PASS_B_PROMPT}
-
-The previous generated record was rejected only by Fibre's mechanical genome-copy boundary. You do not receive the rejected record. Generate a fresh memory-formation record from the same supplied cognition input. If outcome=remembered, rememberedContent must describe only remembered lived experience and must not repeat a four-or-more-token sequence from any genomeExposure locus. genomeExposure may affect attention or retention, but its wording is never autobiographical evidence. not_remembered remains fully legal. Do not make the replacement richer, more meaningful, more distinctive, or more coherent because a retry occurred.`;
+export const GENESIS_PASS_B_GENOME_COPY_RETRY_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.memory-genome-copy-retry",
+}).text;
 
 export class GenesisPassBAdmissionError extends TypeError {
   constructor(gate, message, details = {}) {

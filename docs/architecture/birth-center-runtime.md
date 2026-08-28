@@ -1,7 +1,7 @@
 ---
 id: architecture-birth-center-runtime
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-27
 canonical: true
 ---
 
@@ -44,6 +44,8 @@ The Birth Center runtime must not open or mutate the live World database merely 
 
 The publication boundary may be injected in-process for tests and local composition. A later deployment may replace that injection with a narrow authenticated RPC/API without changing authority ownership.
 
+Milestone #39 exercised this boundary end to end with a fixed five-Thread cohort: each admitted Thread published atomically with its FIN/civil registration, and independent hydration reconstructed the admitted life from canonical authorities. The retained result is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+
 ## Durability
 
 The Birth Center uses the canonical durable-development rule from [`genesis-durable-development.md`](genesis-durable-development.md):
@@ -53,6 +55,8 @@ The Birth Center uses the canonical durable-development rule from [`genesis-dura
 A successful provider invocation is committed before later machinery can depend on it. Restart replays that exact committed result locally after verifying the request witness and contacts the provider only for the first unfinished invocation.
 
 Durable development is execution resilience. It does not make provisional candidate material authoritative Thread life or semantic evidence.
+
+#39 demonstrated exact zero-network replay of 151 committed generation calls after the cohort was fixed. That proof remains execution/restart evidence only; it does not support identity, memory, meaning or personhood claims.
 
 ## Runtime service
 
@@ -78,8 +82,8 @@ FIBRE_BIRTH_CENTER_STATE
 
 `GET /health` and `GET /v1/status` expose runtime ownership/status only. The `/v1/` route label is an HTTP compatibility surface; it is not a reason to version the architecture filename.
 
-## Current #39 boundary
+## Current development boundary
 
-The active #39 closing authority is [`../state/pr39-closing-plan.md`](../state/pr39-closing-plan.md). The old freeze/replacement execution choreography is retired.
+The current Genesis hardening plan is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md). It may evolve memory/meaning selection and experimental instrumentation, but it does not move authoritative birth state into the Birth Center.
 
-Before #39 closes, the supported current Birth Center path must construct the canonical birth bundle and exercise the real `publishBirth()` boundary end to end. Recovery machinery may preserve genuine unfinished development, but recovery evidence is not a substitute for the fresh closure cohort or for canonical atomic birth.
+Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Local `.fibre` development state and direct World Kernel SQLite are not precedent for new production authorities.

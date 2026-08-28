@@ -30,6 +30,8 @@ import { DIGNITY_GUARDIAN_POLICY } from "./dignity-guardian.mjs";
 import { selectSemanticStateForAppraisal } from "./semantic-state.mjs";
 import { buildSemanticGuardianInput } from "./guardian-cognition-store.mjs";
 import { runSemanticDignityGuardian } from "./semantic-guardian-runner.mjs";
+import { compileIdentityContextCapsule } from "./identity-context-capsule.mjs";
+import { identityContextConsumptionWitness } from "./identity-context-consumption.mjs";
 
 function isoFromClock(clock) {
   const value = clock();
@@ -81,6 +83,7 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
   #semanticStateStore;
   #guardianCognitionStore;
   #guardianModelAdapter;
+  #identityContextSourceStores;
   #causalClock;
   #leaseDurationMs;
 
@@ -131,6 +134,13 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
         typeof guardianModelAdapter.invoke !== "function") {
       throw new TypeError("guardianModelAdapter.invoke is required for semantic participation");
     }
+    const identityContextSourceStores = options.identityContextSourceStores ?? null;
+    if (
+      identityContextSourceStores !== null &&
+      (typeof identityContextSourceStores !== "object" || Array.isArray(identityContextSourceStores))
+    ) {
+      throw new TypeError("identityContextSourceStores must be an object when configured");
+    }
     const clock = options.clock ?? (() => new Date());
     if (typeof clock !== "function") throw new TypeError("causal participation clock must be a function");
     const leaseDurationMs = options.leaseDurationMs ?? 5 * 60 * 1000;
@@ -143,6 +153,7 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
     this.#semanticStateStore = semanticStateStore;
     this.#guardianCognitionStore = guardianCognitionStore;
     this.#guardianModelAdapter = guardianModelAdapter;
+    this.#identityContextSourceStores = identityContextSourceStores;
     this.#causalClock = clock;
     this.#leaseDurationMs = leaseDurationMs;
   }
@@ -164,6 +175,15 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
     return selectSemanticStateForAppraisal(records, trace.request);
   }
 
+  #identityContext(trace) {
+    if (this.#identityContextSourceStores === null) return null;
+    return compileIdentityContextCapsule({
+      threadId: trace.threadId,
+      request: trace.request,
+      sourceStores: this.#identityContextSourceStores,
+    });
+  }
+
   health() {
     return {
       ...super.health(),
@@ -171,6 +191,9 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
       appraisalAuthority: "fibre",
       contextSelectionAuthority: "fibre",
       semanticStateSelectionAuthority: "fibre",
+      identityContextConsumption: this.#identityContextSourceStores === null
+        ? "legacy_compatibility"
+        : "bounded_identity_context_v2",
       semanticFitAuthority: "model_backed_guardian",
       guardianProvider: this.#guardianModelAdapter.provider ?? "configured_adapter",
       guardianModelId: this.#guardianModelAdapter.modelId ?? "configured_model",
@@ -217,7 +240,11 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
 
     let input = this.#guardianCognitionStore.getInputByAppraisal(trace.appraisalId, { required: false });
     if (input === null) {
-      const prepared = buildSemanticGuardianInput(trace, this.#semanticStateSelection(trace));
+      const prepared = buildSemanticGuardianInput(
+        trace,
+        this.#semanticStateSelection(trace),
+        this.#identityContext(trace),
+      );
       input = this.#guardianCognitionStore.recordInput(prepared, this.#now()).input;
     }
 
@@ -327,6 +354,9 @@ export class PreM2CausalWorldKernelService extends M1ExpressionWorldKernelServic
         responseSchemaVersion: assessment.responseSchemaVersion,
         responseSchemaHash: assessment.responseSchemaHash,
       },
+      identityContext: input.capsule.identityContext === undefined
+        ? null
+        : identityContextConsumptionWitness(input.capsule.identityContext),
       stateSelection: structuredClone(input.stateSelection),
       factors: structuredClone(assessment.derivedAssessment.factors),
       evidenceRefs: [...assessment.derivedAssessment.evidenceRefs],

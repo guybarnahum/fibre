@@ -2,11 +2,18 @@ import { createServer } from "node:http";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { assertLoopbackBindHost } from "../../world-kernel/src/http-server.mjs";
 import {
   BIRTH_CENTER_RUNTIME_VERSION,
   createBirthCenterRuntime,
 } from "./runtime.mjs";
+
+const LOOPBACK_BIND_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
+
+function assertLoopbackBindHost(host) {
+  if (typeof host !== "string" || !LOOPBACK_BIND_HOSTS.has(host)) {
+    throw new TypeError("The M1 world-kernel server may bind only to a loopback host");
+  }
+}
 
 function parsePort(value) {
   const port = Number(value);

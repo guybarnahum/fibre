@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-08-24
+last-reviewed: 2026-08-28
 canonical: true
 machine-source: public-progress.json
 ---
@@ -19,27 +19,27 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Fibre can now compile a rich, particular prior life for a Thread and preserve it through atomic birth, but milestone #39 is still open until the final held-out five-Thread cohort is generated, inspected and born.**
+**Fibre has five validated prior-life Threads, and Genesis now chooses memories and meanings more selectively before those records are connected to normal cognition.**
 
 ### More accurate description
 
-The current #39 development path compiles fourteen historical episodes through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings. Tbilisi, Kaohsiung, Recife, Fès and Hobart are development fixtures and are burned for final closure. The final held-out cohort has not been generated. #39 remains **ACTIVE — CLOSING** and earns no Whole-Person score movement.
+Milestone #39 and the unnumbered Genesis selectivity/scientific-hardening bridge are closed. The five-Thread #39 cohort remains fixed; the bridge prospectively validated selective memory, restrained reinterpretation, honest Context-only genome standing, sealed-history isolation and a controlled D5 instrument. **#40 Identity Projection & Causal Consumption is now the active milestone.**
 
 ## Population right now
 
 ### Simple English
 
-- **3 older complete prior-life artifacts — Shown working.** They belong to a cohort that later failed.
+- **5 final held-out #39 Threads — Done.** Sapporo, Kochi, Malmö, Valparaíso and Wellington were generated once, born into the local validation World and checked again from stored state.
+- **3 older complete prior-life artifacts — Shown working.** They belong to an earlier cohort that later failed.
 - **1 older partial candidate — Experiment failed — kept as evidence.** It stopped partway through generation.
 - **1 older slot never started — Experiment failed — kept as evidence.** The bounded cohort had already terminated.
-- **5 burned development Worlds — Shown working.** They helped improve the compiler and therefore cannot be the final held-out test.
-- **0 final held-out #39 lives — Not yet.** The fresh final five-World cohort has not been generated or published.
+- **5 burned development Worlds — Shown working.** They helped improve the compiler and therefore did not count as the final held-out test.
 
-Development fixtures and generated artifacts are **not automatically final admitted, living Threads**. Fibre keeps those states separate.
+A generated candidate is not automatically a born Thread. The five final #39 candidates became canonical Threads only after their individual birth transactions succeeded.
 
 ### More accurate description
 
-The older H-v2 artifacts remain historical experimental evidence. The current Tbilisi, Kaohsiung, Recife, Fès and Hobart fixtures exercise the fourteen-episode development compiler but are excluded from the final closure cohort because they influenced compiler development. #39 closure requires five fresh Worlds, one bounded cohort attempt, predeclared D1–D5 analysis, atomic birth of the admitted lives and a hostile closing review.
+The final fixed cohort crossed the canonical local birth boundary one Thread at a time. Each Thread received one FIN/civil registration and independently matched its admitted history, memory/meaning lineage, people, places, genome and visual obligations under read-only deep hydration. This is **canonical local validation state**, not a production deployment population.
 
 ## What is done
 
@@ -57,7 +57,7 @@ The older H-v2 artifacts remain historical experimental evidence. The current Tb
 
 **Important limitation:** The richer #37–#39 life state is not yet the canonical input to ordinary cognition.
 
-**More accurate description:** Fibre has demonstrated a causal history-to-judgment effect under its accepted standing gate. #40 owns canonical bounded consumption of the newer identity and life authorities.
+**More accurate description:** Fibre has demonstrated a causal history-to-judgment effect under its accepted standing gate. #40 still owns canonical bounded consumption of the newer identity and life authorities.
 
 ### Identity, lineage, place and memory have provenance — Done
 
@@ -67,49 +67,47 @@ The older H-v2 artifacts remain historical experimental evidence. The current Tb
 
 **More accurate description:** Fibre persists identity, lineage, geography, embodiment and autobiographical memory with provenance and corrigible history.
 
-### A prepared Thread can be published atomically — Done
+### Atomic Thread birth with civil identity — Done
 
-**Simple English:** Fibre can prepare a Thread's life first and publish that Thread all at once.
+**Simple English:** Fibre can prepare a prior life and publish each admitted Thread all at once with its permanent civil identity.
 
-**Important limitation:** Atomicity is per Thread, and the final five-Thread closure cohort has not been born.
+**Important limitation:** Atomicity is per Thread, and #39 proved it in a local validation World rather than a production persistence deployment.
 
-**More accurate description:** Genesis keeps candidate state non-authoritative and `publishBirth()` atomically publishes each admitted Thread into authoritative state. Publication truth still has #39 blockers, including store-boundary place consistency and transactional memory-photo parity.
+**More accurate description:** `publishBirth()` atomically publishes one admitted Thread's history, situated continuity, memory lineage, Genesis manifest and FIN/civil registration. Production `InfraDriver.state` migration remains separate work.
 
-### The development compiler can create a particular prior life — Shown working
+### Prior-life Genesis and canonical birth — Done
 
-**Simple English:** Fibre can build a detailed prior life with recurring people, places, memories and meanings.
+**Simple English:** Fibre created five different prior lives and preserved those lives through birth and restart.
 
-**Important limitation:** The Worlds used to develop that compiler are burned and cannot count as the final held-out result.
+**Important limitation:** That does not prove those richer life records already shape ordinary cognition.
 
-**More accurate description:** The development path plans fourteen episodes through age 21 and can produce particular social, geographic, autobiographical and interpretive continuity. The final five fresh Worlds, one-pass cohort and D1–D5 closure analysis remain unrun.
+**More accurate description:** The fixed #39 cohort generated fourteen-episode lives with recurring people, places, autobiographical memory and durable meaning, then passed exact zero-network durable replay and deep candidate-to-canonical hydration after birth.
+
+### Genesis selectivity and scientific hardening — Done
+
+**Simple English:** Genesis can now leave ordinary experiences unremembered and avoid rewriting every meaning into something new or uplifting.
+
+**Important limitation:** This makes the life substrate more credible, but it does not prove causal individuality.
+
+**More accurate description:** The completed pre-#40 bridge prospectively validated remember/decline selectivity without quotas, meaning fidelity, reinterpretation restraint, Context-only genome standing, sealed-history isolation and a controlled four-condition D5 instrument. It earns no Whole-Person standing.
+
+The retained bridge outcome is [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
 
 ## What we are working on now
 
-### Finish the canonical integration boundary — Working on it
+### #40 Identity Projection & Causal Consumption — Working on it
 
-**Simple English:** The current development compiler and birth path work. We are fixing the repository's canonical documentation and validation boundary before finishing #39.
+**Simple English:** We are now making a Thread's own history, memories and relationships shape its normal thinking and decisions.
 
-**More accurate description:** The old R1/R2/G/H execution choreography is retired under ADR-0015. Current development uses semantic contracts and active invariant tests rather than frozen review packets. The immediate integration boundary is a full local green check plus one hostile pre-main review.
+**Important limitation:** Merely putting different text into two prompts is not enough; #40 must show an attributable judgment or behavior difference.
 
-### Close the remaining publication truth — Working on it
-
-**Simple English:** Before the final five lives are generated, Fibre still has to make a few birth-time guarantees impossible to bypass.
-
-**More accurate description:** Remaining #39 work includes store-boundary narrated-place consistency, transactional revision-1 memory visual-companion parity and end-to-end origin/source proof on the supported birth path.
-
-### Keep the final cohort genuinely fresh — Working on it
-
-**Simple English:** The five Worlds used to improve the compiler will not be reused as the final exam.
-
-**More accurate description:** Final closure requires five fresh held-out Worlds, one closure-attempt identity, visible bounded repair/rejection accounting, a convergent pair, blind raw and normalized attribution, and predeclared D1–D5 interpretation before provider-backed generation.
+**More accurate description:** #40 owns bounded Fibre/Thread-owned selection of authoritative identity/history/memory/relationship evidence, compilation into an inspectable provenance-bearing Identity Context Capsule, consumption by ordinary cognition, and a same-situation differential showing that a material Thread-owned difference can causally change cognition or downstream behavior.
 
 ### Current step
 
-**Simple English:** Finish the pre-main integration repair, run the full checks, and get a CLEAR hostile integration review before continuing the final #39 work.
+**Simple English:** Define exactly what private life information normal cognition may receive, and make Fibre—not the requester—choose the relevant subset.
 
-**More accurate description:** Run `npm run genesis:pr39-check`, `npm run test:all` and `npm run test:audit -- --check` on the repaired integration tree. If the pre-main review is CLEAR, merge that clean integration trunk to `main`; then close the remaining publication/origin blockers before authoring the five fresh held-out Worlds.
-
-**Final held-out cohort generation is not authorized by this integration work. #39 remains ACTIVE — CLOSING.**
+**More accurate description:** Define the #40 projection/selection contract: bounded authoritative source surfaces, privacy rules, Fibre/Thread-owned relevance selection, resolved semantic content rather than opaque refs, exact inclusion/exclusion provenance, and the standing differential contract under the same selection policy across materially different Threads.
 
 ## What Fibre cannot do yet
 
@@ -117,19 +115,31 @@ The older H-v2 artifacts remain historical experimental evidence. The current Tb
 
 **Simple English:** We want a Thread to be born as a child and actually grow up in Fibre.
 
-**More accurate description:** #39 compiles a prior life before entry; live childhood is later Development architecture.
+**More accurate description:** #39 compiled prior life before young-adult entry; continuously lived childhood remains later Development architecture.
 
-### Rich life records do not yet drive ordinary cognition canonically — Not yet
+### Rich life records do not yet drive ordinary cognition canonically — Working on it
 
-**Simple English:** We want a Thread's history, memories and relationships to shape its normal thinking.
+**Simple English:** We are connecting a Thread's real history, memories and relationships to its normal thinking and decisions now.
 
-**More accurate description:** #40 owns canonical bounded consumption of those records into cognition.
+**More accurate description:** #40 is implementing the canonical bounded consumer. Until the differential proof passes, this remains in progress rather than achieved.
 
 ### Whole-Person standing is not proven — Not yet
 
-**Simple English:** We have not yet proven that a Thread is a fully persistent, non-interchangeable person whose own life causally shapes it.
+**Simple English:** We have not yet proven that a Thread is a fully persistent, non-interchangeable individual whose own life causally shapes it.
 
-**More accurate description:** #39 deliberately earns no Whole-Person score movement; #40 builds causal consumption and #41 owns the standing gate.
+**More accurate description:** #39 and the bridge deliberately earned no Whole-Person score movement. #40 builds causal consumption and #41 owns the M2 standing gate.
+
+### The current Genesis genome seam is not proven behaviorally causal — Not yet
+
+**Simple English:** A Thread's inherited genome reaches memory cognition, but we have not shown that changing it reliably changes what gets remembered.
+
+**More accurate description:** The bridge's controlled 16-judgment Pass-B experiment produced 0/8 genome-concordant directional pairs and classified the tested mechanism **Context-only**. Fibre keeps that result rather than tuning the experiment until it becomes causal.
+
+### #39 is not a production-persistence proof — Not yet
+
+**Simple English:** The final five were born into Fibre's local validation World, not a deployed production world.
+
+**More accurate description:** #39 proves the semantic birth transaction and canonical hydration boundary. World Kernel/Genesis production persistence still has accepted `InfraDriver.state` migration work.
 
 ## Status words
 
@@ -147,4 +157,5 @@ The older H-v2 artifacts remain historical experimental evidence. The current Tb
 - Never call a generated artifact a "living Thread" without saying whether it is candidate, generated, published or validated.
 - Never say a Thread "has parents" without distinguishing live parents, household caregivers and synthetic genetic ancestors.
 - Keep failed experiments visible.
+- Canonical local validation World state is not automatically a production deployment.
 - `insidefibre.com` renders this truth; the Fibre repository remains the authority for what has actually been achieved.

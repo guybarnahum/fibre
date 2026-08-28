@@ -23,18 +23,12 @@ const scheduled = await jsonFetch(`${base}/__p3/fixtures/can-tho/generate-market
 const started = Date.now();
 let readyEvent = null;
 let workflow = scheduled.workflow;
-let published = false;
 
 while (Date.now() - started < timeoutMs) {
   const status = await jsonFetch(`${base}/__p3/workflows/${encodeURIComponent(scheduled.jobId)}`);
   workflow = status.workflow;
   if (["errored", "terminated"].includes(workflow.status)) {
     throw new Error(`asset workflow ended as ${workflow.status}`);
-  }
-
-  if (!published && ["complete", "completed"].includes(workflow.status)) {
-    await jsonFetch(`${base}/__p3/fixtures/can-tho/publish-market`, { method: "POST" });
-    published = true;
   }
 
   const events = await jsonFetch(`${base}/api/threads/${threadId}/events?after=0`);
@@ -46,13 +40,12 @@ while (Date.now() - started < timeoutMs) {
 }
 
 if (!readyEvent) throw new Error(`timed out waiting for ${mediaId} media.ready`);
-if (!published) throw new Error("media.ready appeared before the presentation-owned publication step");
 if (readyEvent.sequence !== 1) throw new Error(`expected first generated media event at sequence 1, got ${readyEvent.sequence}`);
 if (readyEvent.payload.objectRef !== scheduled.objectRef) throw new Error("media.ready objectRef does not match scheduled job");
 
-const mediaUrl = `${base}/api/threads/${threadId}/media/${encodeURIComponent(readyEvent.payload.objectRef)}`;
+const mediaUrl = `${base}/api/assets/${encodeURIComponent(readyEvent.payload.objectRef)}`;
 const mediaResponse = await fetch(mediaUrl);
-if (!mediaResponse.ok) throw new Error(`generated media fetch failed ${mediaResponse.status}`);
+if (!mediaResponse.ok) throw new Error(`generated asset fetch failed ${mediaResponse.status}`);
 if (mediaResponse.headers.get("x-fibre-provenance") !== "generated_reconstruction") {
   throw new Error("generated media is missing generated_reconstruction serving classification");
 }
@@ -91,9 +84,11 @@ console.log(JSON.stringify({
   lifecycleStatus: "genesis_candidate",
   fixture: true,
   mediaId,
+  demandId: scheduled.demandId,
   jobId: scheduled.jobId,
   workflowStatus: workflow.status,
-  presentationPublication: "manual_fixture_handoff",
+  presentationPublication: "queue_completion_handoff",
+  assetServing: "provider_neutral_generic_route",
   eventSequence: readyEvent.sequence,
   eventId: readyEvent.eventId,
   objectRef: readyEvent.payload.objectRef,

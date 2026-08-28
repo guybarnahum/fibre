@@ -83,3 +83,13 @@ test("Birth Center runs as a distinct loopback runtime service", async (t) => {
   assert.equal(body.providerInvocationPersistenceOwned, true);
   assert.equal(body.worldPublicationConfigured, false);
 });
+
+test("Birth Center preserves the loopback-only bind contract without World Kernel internals", async () => {
+  await assert.rejects(
+    startBirthCenterFromEnvironment({
+      FIBRE_BIRTH_CENTER_HOST: "0.0.0.0",
+      FIBRE_BIRTH_CENTER_PORT: "0",
+    }),
+    new TypeError("The M1 world-kernel server may bind only to a loopback host"),
+  );
+});

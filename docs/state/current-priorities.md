@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-28
 canonical: true
 ---
 
@@ -9,86 +9,131 @@ canonical: true
 
 This is the engineering execution view. For public/plain-English status, use [`public-progress.md`](public-progress.md) and [`public-progress.json`](public-progress.json).
 
-The current #39 exit checklist is [`pr39-closing-plan.md`](pr39-closing-plan.md). Development method is governed by [`../decisions/ADR-0015-fibre-centric-development.md`](../decisions/ADR-0015-fibre-centric-development.md).
-
-## #39 goal
-
-**Give five new Threads rich, particular childhoods and young-adult histories, let them form memories and meanings from those lives, then birth them with those people, places, memories, lineage and history intact — including one permanent Fibre civil identity per born Thread.**
-
-#39 compiles a concrete prior life through three distinct authorities: Fibre owns the historical skeleton; model cognition realizes observable episodes; later stages form autobiographical memory and remembered meaning without rewriting history. A successful candidate must retain social/geographic continuity and publish atomically into canonical Thread state. At that birth boundary Fibre also issues a permanent Fibre Identity Number (FIN) and canonical civil birth registration. #39 does not itself prove Whole-Person standing; #40 makes this richer life state causally available to ordinary cognition.
-
-## Current position
-
-1. **The development compiler works end to end before publication.** Current development material can produce fourteen prior-life episodes through age 21 with recurring people, authoritative places, autobiographical memories and durable meanings.
-
-2. **Historical authority is Fibre-owned.** Developmental window, civil time, authoritative place, EventStructure/world-emergent status, required counterpart, chronology and admission are deterministic Fibre facts. The model realizes contingent observable content inside those constraints.
-
-3. **History, memory and meaning remain separate.** Historical realization writes observable life; memory formation may remember or decline to remember; meaning formation may form, revise or decline durable meaning. History is not retrospectively rewritten by either later stage.
-
-4. **Genome exposure is bounded.** Historical realization and meaning formation remain genome blind. Permitted genome content reaches only the intended memory-formation treatment calls; assignment/analysis labels remain outside cognition.
-
-5. **Development fixtures are burned for closure.** Tbilisi, Kaohsiung, Recife, Fès and Hobart have influenced compiler development and remain explicitly milestone-specific fixtures. The final closure cohort must use five fresh Worlds.
-
-6. **Old freeze choreography is retired.** Current development no longer obtains execution authority from R1/R2/G/H review packets. Git history preserves those experiments and reviews; current tests protect enduring Fibre semantics.
-
-7. **Origin/source enforcement is substantially implemented.** `publishBirth` already enforces the core Thread-parent/fork/Echo/Homage eligibility and consent boundaries. Remaining #39 work is to exercise the current origin path end to end, reconcile residual vocabulary/projection inconsistencies, and prove there is no bypass through the supported birth path.
-
-8. **Publication truth still has blockers.** Publication must re-check narrated-place agreement with authoritative `placeRef`; prior-life births must require their roster and life continuity; revision-1 autobiographical memories must receive their visual-companion obligations transactionally; the supported current path must actually construct and publish the canonical birth bundle; and successful birth must atomically issue exactly one permanent FIN plus canonical civil registration.
-
-9. **Hydration equality must become a direct proof.** Add one current comparator covering admitted history, relations, places, lineage, memories, meanings, visual-companion obligations and Fibre civil registration after atomic birth.
-
-10. **Closure must preserve anti-selection discipline without restoring ceremony.** One closure-attempt identity, visible repair/rejection accounting, five fresh Worlds, a convergent pair, blind raw + normalized attribution, and predeclared D1–D5 interpretation remain substantive scientific controls.
-
-11. **The final cohort is generated once.** Bounded form repair/record retry remains allowed; disappointing whole lives are not silently resampled for quality.
-
-12. **Then birth and close #39 once.** Inspect the five held-out lives, run D1–D5 honestly, restart/replay admitted candidates, atomically birth them, verify hydration plus FIN/registration uniqueness and equality, obtain one hostile Fibre-centric closing review, and retain one concise milestone record. Then move directly to #40.
-
-## Cross-cutting production persistence
-
-The provider-neutral production persistence boundary is now accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017.
-
-All new persistent production state or byte objects used by Fibre services must cross an `InfraDriver` capability while semantic stores remain responsible for Fibre meaning and invariants. This applies to every service and generated production artifact, not only Presentation.
-
-Current Presentation and Asset Generator persistence already follow this shape. World Kernel/Genesis/Civil Registry still share direct SQLite and the durable model-invocation journal still writes a local file; these are explicit migration debt and must not be copied into new capabilities.
-
-The first `infra.state` vertical proof should preserve the existing atomic Genesis birth transaction, including Civil Registry and initial Thread state. This infrastructure work does not redefine #39's scientific/local-development closure criteria: `.fibre/` candidates and local birth databases remain valid disposable development artifacts. It does define the boundary that must be crossed before treating a deployment-specific database path as the production architecture for living Fibre Worlds.
+Milestone #39 is closed. The unnumbered Genesis selectivity/scientific-hardening bridge is also closed. Their retained outcomes are [`../history/milestones/pr39.md`](../history/milestones/pr39.md) and [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md). The stable M2 continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md).
 
 ## Immediate sequence
 
 ```text
-#39 continuation from current main
-  -> close publication truth/current birth path
-       including atomic Fibre civil registration
-  -> prove origin/source path end to end
-  -> consolidate current close/replay diagnostics
-  -> author five fresh held-out Worlds
-  -> predeclare D1-D5 interpretation
-  -> one-pass five-Thread cohort
-  -> atomic birth + FIN + hydration equality
-  -> one hostile closing review
-  -> concise docs/history/milestones/pr39.md
-  -> #40
+#39 Genesis, Childhood & Thread Birth                    CLOSED
+Genesis selectivity/scientific-hardening bridge          CLOSED
+#40 Identity Projection & Causal Consumption             NEXT
+#41 M2 Standing Gate / M2 closure                        AFTER #40
 ```
 
-Do **not** generate the final five-Thread cohort before the pre-cohort implementation blockers in [`pr39-closing-plan.md`](pr39-closing-plan.md) are closed.
+## What the completed bridge changed
+
+The bridge removed the main pre-#40 scientific risks exposed by #39 without changing the frozen #39 cohort:
+
+- selective Pass-B memory formation now has a prospectively validated remember/decline boundary without quotas;
+- Pass-C preserves mundane, negative, ambiguous and unchanged meaning and uses the validated reinterpretation-restraint prompt;
+- the current tested genome seam is honestly classified **Context-only** rather than promoted to causal standing;
+- prospective sealed-history provenance exclusion and exposure manifests are permanent tested machinery;
+- the four-condition D5 diagnostic is executable on future prospectively isolated material;
+- permanent durable-invocation/provider-runtime tests cover bounded retry, unfinished-work restart, immutable committed judgments and provider-free replay.
+
+The bridge earns no Whole-Person score movement. Its purpose was to make the substrate credible enough for causal consumption, not to claim that causal consumption already exists.
+
+## Priority 1 — #40 canonical identity/history projection
+
+Build the bounded canonical path from authoritative Thread state into ordinary cognition:
+
+```text
+canonical Thread state
+  -> Fibre/Thread-owned selection
+  -> bounded Identity Context Capsule
+  -> temporary cognition
+  -> exact provenance
+```
+
+The capsule must contain resolved semantic content, not opaque refs described as though their contents were consumed.
+
+The initial content surface should be deliberately bounded but architecture-preserving: identity, embodiment, lineage/geography where relevant, autobiographical memory/meaning, relationships and obligations that the declared selection policy actually chooses.
+
+## Priority 2 — endogenous selection and privacy
+
+Private context selection must belong to Fibre/Thread cognition rather than the requester.
+
+Required properties:
+
+- the same declared selection/retrieval policy applies across comparison Threads;
+- callers cannot author or directly choose the private subset used to prove individuality;
+- included and excluded references are recorded;
+- restricted/private state does not leak merely because it exists;
+- selection remains inspectable enough to attribute later differences.
+
+A caller-supplied private subset may be development scaffolding, but it cannot count as standing causal-individuality evidence.
+
+## Priority 3 — causal differential proof
+
+#40 must exercise a real differential, not merely show different prompt text.
+
+The standing shape is:
+
+```text
+same external request/situation
+same Fibre/Thread-owned selection policy
+materially different Thread-owned identity/history
+        -> different cognition/stance/behavior
+```
+
+The difference must be attributable to the consumed Thread-owned context and survive the relevant counterfactual/substitution check. Different capsules alone are **Context-only** evidence.
+
+Use [`../validation/thread-differential-gate.md`](../validation/thread-differential-gate.md) as the standing differential contract.
+
+## Priority 4 — provenance and authority
+
+Every claimed causal identity/history input must resolve to authoritative Thread-owned records and preserve exact provenance into cognition and downstream judgment.
+
+Do not:
+
+- treat opaque refs as proof that semantic content reached cognition;
+- let derived verdicts replace their underlying meaning-bearing evidence;
+- let model output directly mutate identity, relationships, balances, permissions or other authoritative state;
+- let requesters inject private context and then count the resulting behavior as endogenous individuality.
+
+## Priority 5 — scientific discipline
+
+Carry forward the completed bridge methodology:
+
+- predeclare estimand, unit, controls, confounds and sensitivity;
+- preserve nulls and mixed results;
+- no quality resampling of accepted judgments;
+- separate durable commits/replays from physical provider attempts;
+- use provider-free deterministic replay/scoring where possible;
+- treat `Context-only` honestly as wiring, not causal standing.
+
+The tested Pass-B genome result remains `Context-only`; #40 must not silently upgrade it.
+
+## #40 exclusions
+
+#40 should not absorb later work merely because the new capsule can represent it. In particular:
+
+- #41 still owns Whole-Person/M2 standing closure;
+- continuously lived infancy/childhood remains later Development work;
+- reciprocal relationship development remains #43;
+- durable economic consequence remains #44/M3 foundation;
+- production persistence migration remains its own infrastructure workstream.
+
+These are deferred, not rejected.
+
+## Cross-cutting production persistence
+
+The provider-neutral production persistence boundary remains accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017.
+
+The #39 cohort and bridge experiments used local `.fibre` validation/development state. That does not close the production `InfraDriver.state` migration. World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt, not precedent for new production authorities.
 
 ## Repository/development rules
 
 - `HEAD` describes current Fibre; Git history preserves ordinary development archaeology.
-- One current implementation per live behavior unless real persisted-data compatibility requires otherwise.
-- Current architecture filenames are semantic; real wire/schema versions live in contract data when compatibility requires them.
-- Current inputs are fixtures/configuration, not validation evidence.
-- Exceptional exact-byte accepted evidence belongs in `artifacts/validation/`; ordinary test output does not belong in Git.
-- Disposable generated development state lives under `.fibre/`.
-- Persistent production service state and generated production byte objects cross provider-neutral `InfraDriver` capabilities; current direct SQLite/filesystem exceptions are migration debt, not precedent.
-- Active tests protect enduring Fibre semantics, not old review-state hashes.
-- Review occurs when it can challenge an architectural claim or milestone closure, not before every development iteration.
-- Fresh held-out material is retained when scientifically necessary; the surrounding ceremony is not.
-- Progress is described first in Fibre/personhood terms, then in accurate implementation terms.
+- The completed bridge is retained as one concise outcome, not as supported one-shot experiment ceremony.
+- Permanent runtime tests protect the exact promoted Pass-B and Pass-C prompts and the sealed-history firewall.
+- Disposable generated runs live under `.fibre/`.
+- Broader Genesis Pass A/B/C naming cleanup belongs to the repository-cleanup workstream; do not mix it into #40 semantics.
+- No provider/model call is authorized merely by starting #40; live experimental calls remain explicit decisions.
 
-## What comes after #39
+## After #40
 
-- **Infrastructure enabling work:** prove `infra.state` with the atomic birth consistency scope before treating a provider deployment as production World/Thread authority.
-- **#40:** canonical bounded consumption of identity/history/memory/relationships into ordinary cognition.
 - **#41:** Whole-Person standing and M2 closure.
-- **#42+:** self-authored development, reciprocal relationships and economic consequence.
+- **#42:** self-authored development.
+- **#43:** reciprocal relationships.
+- **#44:** economic consequence / M3 foundation.

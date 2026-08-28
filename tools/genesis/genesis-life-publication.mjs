@@ -148,6 +148,7 @@ export function materializeGenesisMemoryRecords(candidate, publicationAt) {
     const initial = initialByMemory.get(memory.memoryRef);
     if (!initial) fail(`candidate memory ${memory.memoryRef} lacks its initial Pass-C result`);
     let revision = 1;
+    const supportingEvidenceRefs = [];
     records.push(memoryRevision({
       candidate,
       memory,
@@ -159,6 +160,9 @@ export function materializeGenesisMemoryRecords(candidate, publicationAt) {
     for (const interpretation of memory.reinterpretations ?? []) {
       if (interpretation.outcome !== "revised") continue;
       revision += 1;
+      if (!supportingEvidenceRefs.includes(interpretation.supportingEventRef)) {
+        supportingEvidenceRefs.push(interpretation.supportingEventRef);
+      }
       records.push(memoryRevision({
         candidate,
         memory,
@@ -166,7 +170,7 @@ export function materializeGenesisMemoryRecords(candidate, publicationAt) {
         revision,
         asOf: interpretation.asOf,
         publicationAt,
-        supportingEvidenceRefs: [interpretation.supportingEventRef],
+        supportingEvidenceRefs,
       }));
     }
   }

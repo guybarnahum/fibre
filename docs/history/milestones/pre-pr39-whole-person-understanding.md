@@ -13,7 +13,7 @@ It is a historical state/decision checkpoint, not a current state document, new 
 
 Canonical decision at the boundary: [`ADR-0012`](../../decisions/ADR-0012-semantic-meaning-over-derived-categories.md).
 Detailed development evidence: [`whole-person-prefreeze-characterization.md`](../../validation/whole-person-prefreeze-characterization.md).
-#39 quality constraints: [`m2-pr39-genesis-quality-constraints.md`](../../validation/m2-pr39-genesis-quality-constraints.md).
+Subsequent #39 milestone outcome: [`pr39.md`](./pr39.md).
 
 ## What changed in our understanding
 
