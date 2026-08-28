@@ -49,7 +49,7 @@ The permanent #39 outcome is [`../history/milestones/pr39.md`](../history/milest
 #40  Identity Projection & Causal Consumption              ACTIVE
       A. capsule/compiler boundary                         CLOSED
       B. canonical born-World projection                  CLOSED
-      C. one real cognition consumer                      NEXT
+      C. one real cognition consumer                      ACTIVE / VALIDATION PENDING
       D. attributable causal differential                 AFTER C
       E. hostile closeout                                 AFTER D
 #41  M2 Standing Gate / M2 closure                         AFTER #40
@@ -124,7 +124,7 @@ symbolic genome / lineage
 civil registration
 ```
 
-Ordinary Guardian/request cognition still substantially consumes older projections. That unresolved seam is exactly what #40 now closes.
+Ordinary Guardian/request cognition historically consumed older projections. #40 closes that seam without creating a second identity authority.
 
 ## #40 — bounded causal consumption
 
@@ -172,19 +172,27 @@ provider calls                 0
 
 The detailed result is [`identity-context-projection.md`](identity-context-projection.md). This closes projection availability, not causal individuality, and earns no Whole-Person score movement.
 
-### #40 C — one real cognition consumer — next
+### #40 C — one real cognition consumer — active, validation pending
 
-Connect the exact bounded capsule to one existing ordinary cognition path rather than creating a parallel demo worker. The preferred consumer is the live participation/Dignity Guardian appraisal path because it already produces persisted, inspectable Thread-owned private judgment and has an established replay boundary.
+The implementation connects the exact policy-v2 capsule to the existing participation/Dignity Guardian path rather than introducing a parallel demo worker.
 
-The integration must:
+The canonical World Kernel now supplies its existing identity, autobiographical-memory, situated-life, embodiment, symbolic-genome and semantic-state stores to the compiler as read authorities. The full compiled capsule is persisted inside the existing Guardian cognition input before temporary cognition runs, so replay retains exact source bindings, included/excluded refs, `sourceSnapshotDigest` and `capsuleDigest` without a new semantic store or database authority.
 
-- compile context from authoritative semantic stores before temporary cognition;
-- preserve the existing five-part semantic worker boundary rather than expose Fibre internals to the model;
-- make selected capsule identity/memory evidence eligible for Guardian reasoning with exact source refs;
-- prevent legacy whole-Thread projections (`semanticTraits`, old resolved-memory summaries, or full snapshot prose) from silently remaining co-equal identity authority once the new capsule owns that semantic role;
-- persist capsule/source digests so replay can prove exactly which Thread-owned context was consumed;
-- remain testable with a scripted/no-network adapter before any provider call;
-- preserve request/authorization/dignity semantics unless the supplied Thread evidence legitimately changes the Guardian result.
+When `identityContext` is present, the Guardian replaces—not layers—its old individual-specific evidence surface:
+
+- exact capsule identity and memory refs become the individual evidence eligible for dignity reasoning;
+- legacy snapshot identity, self-model prose, textual genome traits, legacy needs/feelings and old resolved-memory summaries are not model evidence;
+- current semantic state remains under the existing Guardian state-selection authority;
+- the worker receives exactly `Task`, `Actors`, `Evidence`, `Rules`, `Output schema`;
+- provenance/digests remain persisted outside the semantic worker input;
+- judgment inspection returns the compact capsule/source-digest witness without model recall;
+- tampered or mismatched capsule evidence fails before cognition.
+
+The historical Guardian v4 schema/generator witnesses remain frozen for sealed evidence. The new Identity Context consumer records a distinct schema/generator identifier while retaining the same task-specific Guardian prompt and dignity semantics.
+
+A scripted no-network test captures the actual Guardian model request and verifies exact `ias_...` / `mem_...` evidence while legacy snapshot/genome/memory canaries and provenance digests do not reach the model.
+
+Slice C remains open until the targeted Guardian/causal/server regressions, frozen history boundary and full active suite pass on the maintainer repository. No provider call is part of that validation.
 
 ### #40 D — attributable causal differential — after C
 
@@ -233,4 +241,4 @@ Introduce durable budgets, contracts, reputation, opportunity and material/econo
 
 ## Current next move
 
-Implement #40 C provider-free against the existing participation/Dignity Guardian path: feed the exact policy-v2 Identity Context Capsule into that real consumer with exact provenance/replay witnesses and scripted no-network tests. Do not run a live provider or causal differential until this integration is green.
+Validate #40 C provider-free on the maintainer repository: run the dedicated identity-context Guardian consumption test, current Guardian regression, causal participation regression, frozen history-boundary test, canonical server-process regression, and full active suite. If green, close Slice C. Do not run a live provider or begin the causal differential until that integration is green.
