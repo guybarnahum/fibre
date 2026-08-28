@@ -142,7 +142,21 @@ node tools/gates/identity-context/identity-context-causal-differential-freeze-ch
   .fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite
 ```
 
-At this point Slice D is **scientifically frozen and ready for live evaluation**, but no provider call has yet been made. Live use still requires explicit authorization.
+### Frozen-instrument verification
+
+The maintainer then verified the frozen instrument at `816d909972b0666a7d9d3a008560af41badfe01d` against the same canonical born World. The checker returned:
+
+```text
+Identity Context Causal Differential: FROZEN INSTRUMENT VERIFIED
+Instrument: identity_context_causal_differential_v1
+Frozen from: 7f8ebc8ccf0b76ecd713e1b44c0c0beb3fbfe50c
+Pairs: 5
+Provider calls: 0
+```
+
+The complete active suite passed **813 / 813** at that checkpoint. The working tree remained clean and the verified HEAD was exactly `816d909972b0666a7d9d3a008560af41badfe01d`.
+
+At this point Slice D is **scientifically frozen, mechanically verified, and ready for live evaluation**, but no provider call has yet been made. Live use still requires explicit authorization.
 
 ## Scientific guardrails
 
