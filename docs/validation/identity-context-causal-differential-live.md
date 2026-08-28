@@ -62,10 +62,19 @@ A pair counts only when a structured action/fit or identity-sensitive factor sig
 
 ## Authorized command
 
-The local execution command is:
+Local live tools follow the repository's existing `.env` convention using Node's native `--env-file-if-exists=.env` option. The preferred command is the npm script:
 
 ```text
-node tools/gates/identity-context/identity-context-causal-differential-live.mjs \
+npm run identity-context:causal-live -- \
+  .fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite \
+  --authorized
+```
+
+Equivalent direct invocation:
+
+```text
+node --env-file-if-exists=.env --disable-warning=ExperimentalWarning \
+  tools/gates/identity-context/identity-context-causal-differential-live.mjs \
   .fibre/genesis/pr39-closure/pr39-final-cohort-001/birth/world.sqlite \
   --authorized
 ```
