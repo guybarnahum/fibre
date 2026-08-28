@@ -140,7 +140,7 @@ test("Genesis birth publishes Thread, manifest, and Civil Registry through one I
     const registry = new CivilRegistryStore(databasePath);
     const registration = registry.getCivilRegistrationByThreadId(birth.thread.threadId);
     assert.equal(registration.registrationId, birth.manifest.publication.civilRegistration.registrationId);
-    assert.equal(registration.birthEventRef, birth.thread.provenance.lastEventId);
+    assert.equal(registration.birthEventRef, birth.manifest.publication.civilRegistration.birthEventRef);
     registry.close();
   }));
 
