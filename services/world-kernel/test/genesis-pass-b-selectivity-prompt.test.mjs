@@ -7,17 +7,20 @@ import test from "node:test";
 
 import {
   GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
-  GENESIS_LIFE_PASS_B_PROMPT,
-  GENESIS_LIFE_PASS_B_SELECTIVITY_AMENDMENT,
+  GENESIS_LIFE_PASS_B_PROMPT_ID,
+  GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION,
 } from "../src/genesis-life-pass-b.mjs";
 import { sha256 } from "../src/persistence-common.mjs";
 
 const rawDigest = (value) => `sha256:${sha256(value)}`;
 
-test("runtime Pass-B prompt is the exact prospectively validated selective-memory candidate", () => {
+test("runtime Pass-B prompt resolves from the exact prospectively validated prompt asset", () => {
+  assert.equal(GENESIS_LIFE_PASS_B_PROMPT_ID, "genesis.memory-formation");
+  assert.equal(GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION.profile, null);
+  assert.equal(GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION.text, GENESIS_LIFE_PASS_B_COGNITION_PROMPT);
   assert.equal(
-    GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
-    `${GENESIS_LIFE_PASS_B_PROMPT}\n\nSelective-memory authority:\n${GENESIS_LIFE_PASS_B_SELECTIVITY_AMENDMENT}`,
+    GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION.digest,
+    "sha256:3ba80ac180b5140bc3710a33c78ed6e14bc666979e60223ca44bcba32399f26a",
   );
   assert.equal(
     rawDigest(GENESIS_LIFE_PASS_B_COGNITION_PROMPT),
