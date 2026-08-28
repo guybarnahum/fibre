@@ -1,231 +1,58 @@
 ---
 id: fibre-genesis-selectivity-scientific-hardening
-status: accepted
+status: completed
 last-reviewed: 2026-08-27
 canonical: true
 ---
 
 # Genesis selectivity and scientific hardening
 
-## Purpose
+## Status
 
-This is the accepted bridge between closed #39 and #40. It has **no Fibre milestone number** and is not a substitute for either milestone.
+**Completed.** This unnumbered bridge between closed #39 and #40 hardened Genesis memory/meaning behavior and the scientific machinery used to characterize it. The retained outcome is [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
 
-#39 gave five Threads a particular prior life and canonical birth. #40 makes selected identity/history/memory/relationship state causally available to ordinary cognition. The bridge exists so #40 does not make newly discovered Genesis saturation or weak measurement machinery load-bearing before those problems are understood and corrected.
+The bridge proved the narrower statement it set out to establish:
 
-The bridge proves a narrower statement:
+> **Genesis memory and meaning formation are selective rather than compulsory, and Fibre's diagnostics can distinguish large effects, null/mixed outcomes, generic narrative breadth and provenance leakage without tuning the underlying lives to pass.**
 
-> **Genesis memory and meaning formation are selective rather than compulsory, and Fibre's diagnostics can distinguish real effects, nulls, generic narrative breadth and provenance leakage without tuning the underlying lives to pass.**
+It earns no Whole-Person or M2 standing credit. #40 still owns causal consumption into ordinary cognition and #41 still owns standing.
 
-This work begins only after #39 is merged to `main`. It should be developed on a semantic branch such as `agent/genesis-selectivity-scientific-hardening`, with no GitHub PR unless the project owner explicitly requests one.
+## Final result
 
-## What #39 taught us
+- **Memory selectivity:** a burned saturated baseline was corrected prospectively; fresh controls exercised both warranted remembering and legitimate non-selection with 6/6 matched-pair separation and no quota.
+- **Meaning fidelity:** mundane memory can remain without durable meaning; negative and ambiguous interpretations remain negative/ambiguous; no forced positive uplift was observed in the fresh semantic review.
+- **Reinterpretation restraint:** a narrow prospective correction produced 4/4 unchanged, 4/4 revised, 4/4 matched-pair separation and was promoted into runtime Pass C.
+- **Genome standing:** the controlled 16-judgment matched-history probe produced 0/8 genome-concordant directional pairs, 0/8 reverse pairs and 3/8 differing episode-reference sets. Standing at the tested Pass-B seam is **Context-only**: genome meaning reaches cognition, but this probe did not demonstrate the predeclared large attributable downstream effect.
+- **D5 isolation:** prospective sealed-history taint closure, Pass-B filtering, Pass-C exclusion, per-call manifests, deliberate-leak refusal and incomplete-provenance refusal are permanent tested machinery.
+- **D5 instrument:** the prospective four-condition blind diagnostic compares remembered/cited positive controls, own sealed holdouts, matched plausible non-events and cross-Thread sealed holdouts while separating thematic accommodation from episode-specific factual alignment.
+- **Runner hygiene:** existing durable-invocation and provider-runtime machinery already proves bounded transient retry, restart of unfinished work, immutable committed judgments, fail-fast terminal provider errors and provider-free replay. A separate bridge framework was not retained.
 
-The final #39 cohort and D1-D5 rater run are frozen evidence. They are not rerun or regenerated to make this bridge easier.
+## Important scientific boundaries
 
-The accepted interpretation is:
+- The bridge did **not** rerun or replace the #39 cohort.
+- It did **not** strengthen genome loci or move thresholds to obtain a causal result.
+- `Context-only` is meaningful cognition wiring, not causal individuality.
+- There is no retrospective live D5 result: #39 history was not prospectively sealed before cognition, so rerating it would be invalid.
+- Preferential factual alignment to forbidden sealed history is an integrity/provenance alarm, never personhood evidence.
+- Mechanical/runtime evidence cannot support identity, memory, meaning or character claims.
 
-- **D1 — distinguishability, not personhood particularity.** A blind rater correctly attributed all five life/self-account targets in both raw and explicit-entity-normalized conditions. The actual calls were separate stateless five-way tasks, so the scorer's Bernoulli chance model uses `p=0.2` per target. Surviving environmental and cultural cues mean the result establishes reliable distinguishability of these five texts, not Fibre-level particularity by itself.
-- **D2 — original coupling statistic underpowered; positive reframing is exploratory.** Six pairs per Thread are too few for strong per-Thread Spearman conclusions. Post-hoc descriptive inspection found durable meaning more positive than its cited event in 16 of 30 pairs, more negative in 3, tied in 11, with mean ordinal uplift about `+0.50`. That is a follow-up signal, not a confirmatory #39 finding.
-- **D3 — inconclusive.** Genome propagation was neither established nor ruled out. Treatment placement was confounded with memory ordinal/history horizon, cells were undersized for modest effects, calibration was an easier task, and the planned `not_remembered` arm was empty.
-- **D4 — scheduled-memory-call saturation / insufficient non-selection.** All `30/30` scheduled Pass-B memory decisions returned `remembered`, and all 30 resulting current memories have durable meaning. This does **not** mean every historical episode was archived: unique historical episodes cited by memory were `6,12,6,14,6` of 14 for Sapporo, Kochi, Malmö, Valparaíso and Wellington. The established engineering finding is that the scheduled memory/meaning funnel did not exercise legal non-selection/no-meaning paths in this cohort; Valparaíso is the genuinely saturated `14/14` history-coverage extreme.
-- **D5 — valid intended construct, failed instrument.** Self-account accommodation is conceptually distinct from memory coverage, but 65 of 70 episode judgments were predicted by whether memory cited the episode. The executed D5 therefore did not independently measure generalized self-account overreach.
-- **Repeated temperature-zero judgments were robustness checks.** Three stateless calls with deterministic option-order permutation test order sensitivity and response stability; they are not independent scientific replicates. Provider call attempts and committed judgments must be reported separately.
+## Permanent extension path
 
-These conclusions constrain the permanent #39 record and define the bridge; they do not retroactively alter the frozen D1-D5 protocol, thresholds, candidates or rater judgments.
-
-## Scope
-
-### 1. Memory selectivity
-
-Memory formation must be able to **remember or decline to remember** for substantive reasons. The system must not solve the #39 saturation finding by imposing a quota such as "remember exactly N episodes".
-
-The controlled proof should include:
-
-- opportunities where remembering is strongly warranted;
-- ordinary opportunities where non-selection is legitimate;
-- an exercised `not_remembered` path;
-- no admission rule that forces the measured outcome;
-- provenance showing which Thread/history material the memory decision actually received.
-
-The goal is an actual bottleneck based on salience/residue/relevance/relationship/developmental context, not random forgetting and not a biography quota.
-
-### 2. Meaning fidelity and reinterpretation restraint
-
-Pass-C meaning formation must be able to preserve negative, ambiguous, mundane, unresolved and unchanged interpretations. It must not structurally convert adverse or ordinary experience into growth, optimism or significance.
-
-The bridge should establish that:
-
-- a bad event may remain bad;
-- an ambiguous event may remain ambiguous;
-- a mundane memory need not become profound;
-- existing durable meaning may legitimately remain unchanged;
-- `revise` and `unchanged` are both reachable under controlled cases;
-- descriptive valence shift is measured separately from rank correlation.
-
-Do not tune for pessimism. The requirement is fidelity and range, not a target emotional distribution.
-
-### 3. Genome causal characterization at the memory seam
-
-Do not make symbolic genome text more obvious merely to make attribution easier.
-
-Use a controlled differential experiment around the permitted memory-formation seam:
+Current HEAD retains the smallest proof that preserves the larger architecture:
 
 ```text
-same historical opportunity
-same declared cognition boundary
-counterbalanced inherited/genome context
-        -> memory decision/content
+selective Pass-B memory formation
+restrained Pass-C meaning reinterpretation
+        +
+sealed-history provenance firewall
+prospective four-condition D5 diagnostic
+        +
+durable provider retry/replay machinery
+        -> #40 Identity Projection & Causal Consumption
 ```
 
-Treatment placement must be counterbalanced against age, call ordinal and history horizon. The experiment must state the effect size it can resolve and use a task-matched positive control rather than only an easier direct-visible calibration.
+#40 may now make bounded selected identity/history/memory/relationship state causally available to ordinary cognition without making the #39 saturation defects or citation-confounded D5 instrument load-bearing.
 
-Classify the observed genome mechanism honestly using Fibre's standing vocabulary:
+## Retention
 
-- **Behaviorally/future-state causal** when inherited difference produces an attributable change in memory selection/content or later possibility;
-- **Context-only** when genome meaning reaches cognition but no required downstream difference is demonstrated;
-- **Inert** when no meaningful consumer/effect is established.
-
-An inconclusive result is acceptable. Do not tune cognition until a desired causal classification appears.
-
-### 4. Diagnostic methodology
-
-Future Genesis diagnostics must be able to fail and must separate the property of interest from convenient proxies.
-
-#### D1 — life distinguishability / particularity
-
-Use hard decoys and negative controls that reduce easy geography/culture matching. Examples include similar environmental/cultural settings with materially different histories, corrupted self-accounts, and matched alternatives designed to fail attribution.
-
-Avoid ceiling-only evidence. A future diagnostic should distinguish text/context recognizability from stronger claims about particular historical identity.
-
-#### D2 — event/meaning valence
-
-Measure at least two distinct questions:
-
-1. association/coupling between event and meaning valence;
-2. systematic location shift, especially positive reframing.
-
-Do not fold positive and inverse correlations into a single absolute-correlation concern without preserving direction. The #39 `+0.50` uplift remains descriptive/post-hoc; a larger future experiment may predeclare an ordinal mixed-effects model with valence as response, `event` versus `durable meaning` as fixed state effect, and Thread as grouping/random intercept when the number of Threads is sufficient to estimate it credibly.
-
-#### D3 — genome propagation
-
-Counterbalance treatment, state the power/resolution of each cell, use a positive control matched to the difficulty of the real task, and either exercise a genuine `not_remembered` contrast or do not claim one.
-
-A confounded/null result cannot be converted into evidence of absence through wording.
-
-#### D4 — memory funnel
-
-Separate:
-
-- scheduled memory opportunity -> remember/decline;
-- historical breadth represented by memory;
-- citation cardinality per memory;
-- durable-meaning formation;
-- reinterpretation eligibility and `revise`/`unchanged` outcome.
-
-Do not treat higher citation cardinality as synonymous with more meaningful historical coverage, and do not describe a scheduled-memory-call saturation finding as though every historical episode was remembered.
-
-#### D5 — generalized self-account overreach
-
-D5 keeps its intended construct but replaces the citation-confounded instrument with **prospective sealed-history evaluation**.
-
-Target up to four holdout-eligible episodes per Thread, stratified across development when possible. Four is an experimental target, not a quota; never weaken isolation merely to reach it.
-
-A holdout episode must be selected and sealed **before memory formation** and must be causally local enough that later visible history does not reveal it. If an episode has downstream semantic/historical descendants that would expose it, either exclude the full descendant provenance closure or, preferably, choose another holdout.
-
-Holdout isolation is a compiler invariant, not a prompt instruction:
-
-```text
-sealed history episode
-      -> transitive provenance-taint closure
-      -> excluded from every Pass-B / Pass-C cognition input
-```
-
-Every cognition invocation must persist an inspectable inclusion/exclusion manifest. Execution fails if any holdout-tainted source reaches memory or meaning cognition. A deliberate-leak negative test must prove that this firewall actually fires.
-
-The blind D5 evaluator then compares four conditions:
-
-| Condition | Role |
-| --- | --- |
-| remembered/cited episode | positive control |
-| own sealed holdout | experimental target |
-| matched plausible non-event | negative control |
-| another Thread's sealed holdout | counterfactual control |
-
-Score **thematic accommodation** separately from **episode-specific factual alignment**.
-
-Interpretation rules:
-
-- broad accommodation of true holdouts, plausible non-events and cross-Thread holdouts indicates generic/Barnum-style self-account overgeneralization;
-- an isolated surprising match is a stochastic collision unless it exceeds the control baseline systematically;
-- preferential factual alignment to the Thread's own sealed history is **not evidence of advanced cognition**, because cognition was forbidden to see it; it triggers an isolation/provenance audit;
-- some thematic generalization to a sealed real episode may be legitimate, so the desired result is not "all holdouts fail accommodation".
-
-This preserves the conceptual distinction between memory coverage and self-account overreach while giving D5 positive, negative and counterfactual controls.
-
-### 5. Benchmark runner hygiene
-
-Generalize only the operational improvements demonstrated necessary by #39:
-
-- durably commit each accepted judgment before advancing;
-- never ask again for an already committed valid judgment;
-- automatically resume the same unfinished trial after exhausted clearly transient transport timeouts, with bounded/backed-off retry cycles;
-- use a timeout appropriate to large evaluator packets;
-- stop on provider-valid but diagnostic-invalid output rather than silently resampling;
-- stop on auth/quota/configuration failures rather than treating them as scientific retries;
-- report committed judgments separately from physical provider attempts/retries;
-- keep live evaluator runs explicitly authorized and development-only;
-- make deterministic scoring/replay of retained evidence suitable for ordinary CI.
-
-Do not build a speculative universal experiment framework merely because this bridge needs one robust runner.
-
-## Out of scope
-
-This bridge deliberately does **not** implement:
-
-- #40's ordinary-cognition identity/history projection or Identity Context Capsule;
-- Fibre-owned relevance/privacy selection for live request cognition;
-- ordinary-request behavioral divergence or the standing differential gate;
-- Whole-Person/M2 standing;
-- a replacement #39 cohort or rerating of frozen #39 judgments;
-- retrospective threshold changes;
-- memory/meaning quotas;
-- stronger genome cues added merely to force a positive D3 result;
-- reciprocal relationship or economic consequence work.
-
-Those extension paths remain open and are not narrowed by this bridge.
-
-## Exit criteria
-
-The bridge is complete when all of the following are true:
-
-1. **Selective memory is exercised.** Controlled Genesis opportunities demonstrate both warranted remembering and legitimate non-selection without a quota forcing the distribution.
-2. **Meaning fidelity is exercised.** Controlled cases show that negative, ambiguous, mundane and unchanged meaning outcomes are reachable and admissible rather than structurally rewritten upward.
-3. **Genome standing is honestly classified.** A counterbalanced, task-matched experiment classifies the memory-seam genome mechanism as causal, Context-only, Inert or inconclusive without tuning the cohort to obtain a preferred answer.
-4. **Diagnostics have real controls.** The revised D1-D5 methodology names the estimand, unit of observation, controls, confounds and sensitivity/power boundary before provider output is read.
-5. **D5 isolation is mechanically proven.** Prospective sealed holdouts, transitive provenance exclusion, per-call exposure manifests and a deliberate-leak negative test are green; true-holdout matching is interpreted against matched non-event and cross-Thread controls.
-6. **Operational replay is routine.** Transient evaluator interruption resumes the unfinished trial automatically while committed evidence remains immutable; deterministic replay/scoring needs no provider call.
-7. **No personhood credit is claimed.** The bridge improves the Genesis substrate and its measurement. #40 still owns causal consumption into ordinary cognition; #41 still owns M2 standing.
-
-## Sequence
-
-```text
-completed #39 branch
-  -> final repository validation
-  -> merge #39 to main
-
-clean main
-  -> agent/genesis-selectivity-scientific-hardening
-  -> memory selectivity
-  -> meaning fidelity / reinterpretation restraint
-  -> genome causal characterization
-  -> controlled diagnostic methodology
-  -> benchmark-runner hygiene
-  -> review + full validation
-  -> merge bridge to main
-
-clean main
-  -> #40 Identity Projection & Causal Consumption
-```
-
-The bridge should remain small enough that #40 is still recognizably the next Fibre milestone, while strong enough that #40 does not causally amplify a compulsory-memory or uniformly-upbeat Genesis substrate.
+One-shot bridge fixtures, baseline/correction runners and historical replay wrappers are ordinary development archaeology and are not supported runtime tooling. Their exact protocols and commits remain in Git history. The enduring scientific outcome is retained in [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md), while current runtime behavior is protected by permanent tests.
