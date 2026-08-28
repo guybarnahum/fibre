@@ -1,3 +1,4 @@
+import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   GENESIS_PASS_A_POLICY,
@@ -14,25 +15,17 @@ import {
   projectPassAInputForCognition,
 } from "./genesis-pass-a-cognition.mjs";
 
-export const GENESIS_PASS_A_PROMPT = `You are Fibre Genesis Pass A. Create exactly one concrete historical episode: what happened, not what it meant.
-Use only the supplied world, factual roster, chronology, prior episodes, introduced participants, and offered EventStructure affordances.
-The offered structures are possibilities, never a checklist. You may produce a world-emergent episode by returning structureRef=null.
-If structureRef is non-null, it must exactly match a structureId in the current offeredStructures array; prior history does not authorize a structure for the current episode.
-Describe only externally witnessable action and circumstance. Do not explain significance, lessons, traits, personality, inner-state conclusions, remembered meaning, or future behavior.
-Keep observableAction concise and no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes; one or two concrete sentences is normally enough.
-Do not foreshadow a profession, adult role, benchmark, later request, or desired personality conclusion.
-The provisional Thread identified by subject.provisionalThreadId must participate in the episode.
-A participant must already exist in the roster/history or be introduced in this same episode through a role explicitly afforded by the world.
-If introducing a participant, use a stable provisional ID, an afforded roleRef, and introducedAt exactly equal to the episode occurredAt.
-If structureRef is non-null, the episode participants must actually represent every participatingRole declared by that offered structure.
-Advance chronology beyond the last prior episode and remain within chronologyEndsAt. ageAtEvent must match subject.bornAt and occurredAt.`;
+const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
 
-export const GENESIS_PASS_A_REPAIR_PROMPT = `You are Fibre Genesis record-form repair for Pass A.
-Repair only the rejected episode's observableAction wording so it satisfies the observable-history form contract.
-Preserve episodeId, occurredAt, ageAtEvent, placeRef, participantRefs, structureRef, and introducedParticipants exactly.
-observableAction must be no more than ${GENESIS_PASS_A_POLICY.maxObservableActionBytes} UTF-8 bytes. Shorten wording rather than changing any event fact.
-Do not improve the life, make it more interesting, change its meaning, or select a different event.
-Remove explicit lesson, significance, personality, inner-state conclusion, remembered-meaning, or future-policy wording and describe only witnessable action/circumstance.`;
+export const GENESIS_PASS_A_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.pass-a",
+}).text;
+
+export const GENESIS_PASS_A_REPAIR_PROMPT = resolvePromptAsset({
+  directory: GENESIS_PROMPT_DIRECTORY,
+  id: "genesis.pass-a-repair",
+}).text;
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
