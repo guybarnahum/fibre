@@ -45,7 +45,7 @@ The compiler does not query raw Thread events or authoritative history. A worker
 
 ## Worker boundary
 
-The worker packet resolves its system prompt from:
+The standalone projection worker packet resolves its system prompt from:
 
 ```text
 services/world-kernel/prompts/identity-context.local-reasoning.md
@@ -60,6 +60,8 @@ The semantic model input contains exactly five sections:
 5. Output schema
 
 Prompt-resolution metadata, source digests, domain registries, provenance machinery, selection policy, and excluded refs remain outside that semantic model input. The worker is not asked to understand Fibre ontology.
+
+When the capsule is consumed by an existing cognition service, that service keeps its own task-specific system prompt and response contract, but the same five-section semantic boundary applies and Fibre provenance remains outside the model input.
 
 ## Provider-free acceptance
 
@@ -162,8 +164,32 @@ An empty or sparse projection remains a legitimate future characterization resul
 
 No provider call is part of this characterization or the policy-v2 correction.
 
+## Dignity Guardian consumption — Slice C
+
+Slice C uses the existing participation/Dignity Guardian appraisal path as the first real cognition consumer. It does not create a parallel demonstration worker.
+
+The canonical runtime opens the existing identity, autobiographical-memory, situated-life, embodiment, symbolic-genome and semantic-state stores and supplies those authorities to the same policy-v2 compiler. The compiled capsule is persisted inside the existing Guardian cognition input JSON before temporary cognition runs. No new semantic store or second identity authority is created.
+
+When a persisted Guardian input contains `identityContext`:
+
+- individual-specific Guardian evidence comes only from the capsule's exact identity and autobiographical-memory refs;
+- legacy snapshot identity, self-model prose, textual genome traits, legacy needs/feelings and old resolved-memory summaries remain compatibility/replay fields but are not model evidence;
+- current semantic state remains selected through the Guardian's existing Fibre-owned state-selection authority rather than being duplicated as a second state authority from the capsule;
+- the temporary worker receives exactly `Task`, `Actors`, `Evidence`, `Rules`, and `Output schema`;
+- the full capsule remains outside the semantic worker input, including excluded refs, bindings, source digests and projection metadata;
+- the persisted Guardian input retains the full capsule so replay can verify the exact `capsuleDigest`, `sourceSnapshotDigest`, projection policy and included refs;
+- `inspectCausalJudgment` exposes that compact consumption witness without recalling a model.
+
+A consumption verifier recomputes the source-snapshot and capsule digests, checks exact included/excluded partitioning, evidence-byte accounting, current projection policy and Thread/request/snapshot binding before cognition or replay accepts the capsule. Tampering therefore fails before model evidence is constructed.
+
+The Dignity Guardian's historical v4 prompt/schema witnesses remain frozen for previously sealed evidence. The Identity Context consumer has a distinct active prompt-schema/generator identifier while retaining the same `dignity.guardian` prompt asset and dignity semantics; old sealed evidence is not rewritten to match the new worker envelope.
+
+The provider-free integration test captures the actual scripted Guardian model request and requires exact `ias_...` / `mem_...` evidence refs while proving legacy snapshot/genome/memory canaries and provenance digests are absent from model input. It also proves a tampered capsule is rejected before cognition.
+
+**Implementation status: complete; local validation pending.** Slice C is not closed until the targeted regressions, sealed historical boundary and full active suite are green on the maintainer repository. No provider call is authorized or required for that validation.
+
 ## Scientific standing
 
-This slice is architecture, selection and provenance scaffolding only. It earns no Whole Person / M2 score movement and does not establish behavioral causality, non-interchangeability, genome effect, self-authorship, or personhood evidence.
+Slices A-C are architecture, selection, provenance and consumption scaffolding only. They earn no Whole Person / M2 score movement and do not establish behavioral causality, non-interchangeability, genome effect, self-authorship, or personhood evidence.
 
-A later controlled slice must hold the external situation fixed and vary a legitimate Thread-owned factor through this boundary, then show an attributable downstream cognitive difference without treating identity as deterministic destiny. Only that experiment can change causal standing.
+A later controlled slice must hold the external situation fixed and vary a legitimate Thread-owned factor through this same consumed boundary, then show an attributable downstream cognitive difference without treating identity as deterministic destiny. Only that experiment can change causal standing.
