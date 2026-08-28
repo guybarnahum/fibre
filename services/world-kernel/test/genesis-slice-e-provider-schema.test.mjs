@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createGoogleModelAdapter } from "../src/model-runtime/google.mjs";
-import { createOpenAIModelAdapter } from "../src/model-runtime/openai.mjs";
+import { createGoogleModelAdapter } from "../../../integrations/models/google.mjs";
+import { createOpenAIModelAdapter } from "../../../integrations/models/openai.mjs";
 import { GENESIS_RICH_PASS_A_RESPONSE_SCHEMA } from "../src/genesis-rich-life-episode.mjs";
 
 function headers(values = {}) {

@@ -4,8 +4,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { createGoogleModelAdapter } from "#services/world-kernel/src/model-runtime/google.mjs";
-import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
+import { createGoogleModelAdapter } from "#integrations/models/google.mjs";
+import { createOpenAIModelAdapter } from "#integrations/models/openai.mjs";
 import {
   buildPassAInput,
   passAFunnelMetrics,

@@ -1,2 +1,7 @@
-// Narrow inward-facing provenance contract bridge for Asset Generator media integrations.
-export { WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION } from "../services/asset-generator/src/asset-provenance-domain.mjs";
+export {
+  CONTENT_CREDENTIAL_SIGNER_VERSION,
+  WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
+  normalizeCredentialEmbedResult,
+  normalizeCredentialVerification,
+  normalizeEmbeddedAssetProvenance,
+} from "../services/asset-generator/src/asset-provenance-domain.mjs";

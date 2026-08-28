@@ -1,7 +1,7 @@
+import { createHttpContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import { createCloudflareInfraDriver } from "#packages/infra/src/cloudflare-v1.mjs";
 import { FibrePresentationChannelDurableObject } from "#packages/infra/src/cloudflare/presentation-channel-do.mjs";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
-import { createHttpContentCredentialSigner } from "#services/asset-generator/src/http-content-credential-signer.mjs";
 import {
   normalizeThreadPresentationBundle,
   presentationProvenanceDigest,

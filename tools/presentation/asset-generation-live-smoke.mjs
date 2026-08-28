@@ -3,11 +3,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  compileOpenAIImagePrompt,
+  createOpenAIImageProvider,
+} from "../../integrations/media/openai-image-provider.mjs";
 import { createMemoryInfraDriver } from "../../packages/infra/src/memory-driver.mjs";
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,
-  compileOpenAIImagePrompt,
-  createOpenAIImageProvider,
   executeCredentialedAssetGenerationJob,
   normalizeEmbeddedAssetProvenance,
   verifyCredentialedAssetForPublication,

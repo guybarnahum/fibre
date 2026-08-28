@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createGoogleModelAdapter } from "../src/model-runtime/google.mjs";
+import { createGoogleModelAdapter } from "../../../integrations/models/google.mjs";
 
 test("Google generateContent translates JSON-Schema nullable union at the provider boundary", async () => {
   let request = null;

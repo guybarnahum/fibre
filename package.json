@@ -5,7 +5,6 @@
   "description": "Persistent world for artificial persons called Threads",
   "type": "module",
   "imports": {
-    "#services/world-kernel/src/model-runtime/openai.mjs": "./integrations/models/openai.mjs",
     "#services/*": "./services/*",
     "#integrations/*": "./integrations/*",
     "#apps/*": "./apps/*",
