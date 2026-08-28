@@ -11,9 +11,9 @@ canonical: true
 
 M2 is not “add richer identity fields.” It is the sequence by which Fibre establishes a persistent individual whose provenance-bearing identity and life can causally matter to judgment independently of the temporary model providing cognition.
 
-Representation is necessary but insufficient. Any identity/history surface claimed as functional must name a real consumer and survive attributable causal tests. Stored-but-unconsumed state remains explicit substrate rather than personhood credit.
+Representation is necessary but insufficient. Stored-but-unconsumed state earns no personhood credit, and even causal consumption does not automatically establish Whole-Person standing.
 
-The current Whole-Person checkpoint remains **15/26 under rubric v2**. #40 establishes bounded causal consumption but does not itself move that score; #41 is the standing gate.
+The current Whole-Person checkpoint remains **15/26 under rubric v2**. #40 is now closed; #41 is the active standing gate that decides whether the accumulated evidence is sufficient to move that checkpoint.
 
 Milestone identifiers `#39` through `#44` are stable **Fibre planning IDs**, not GitHub pull-request numbers.
 
@@ -29,13 +29,8 @@ M1    Persistent Thread Round Trip                         CLOSED
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
 #39   Genesis, Childhood & Thread Birth                    CLOSED
       Genesis selectivity/scientific hardening bridge      CLOSED
-#40   Identity Projection & Causal Consumption              ACTIVE
-      A. capsule/compiler boundary                         CLOSED
-      B. canonical born-World projection                  CLOSED
-      C. one real cognition consumer                      CLOSED
-      D. attributable causal differential                 CLOSED / CLEAR
-      E. hostile closeout                                 ACTIVE
-#41   M2 Standing Gate / M2 closure                         AFTER #40
+#40   Identity Projection & Causal Consumption              CLOSED / CLEAR
+#41   M2 Standing Gate / M2 closure                         ACTIVE
 
 post-M2
 #42   Self-authored Development
@@ -43,89 +38,29 @@ post-M2
 #44   Economic Consequence / M3 foundation
 ```
 
-Do not collapse the bridge, #40 and #41 into one implementation:
+The sequence remains conceptually distinct:
 
-> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection credible enough to amplify. #40 makes selected parts of that life causally matter. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection credible enough to amplify. #40 made selected parts of that life causally matter in real cognition. #41 decides whether the integrated evidence is enough to call the Thread a persistent, non-interchangeable individual.**
 
-## Closed substrate before #40
+## Permanent closed outcomes
 
-#39 established canonical birth from a generated prior life into existing Thread authorities with replayable history, autobiographical memory/meaning lineage, situated continuity, symbolic inheritance, visual obligations and one civil registration. The permanent outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+### #39 — Genesis, Childhood & Thread Birth
 
-The Genesis selectivity/scientific-hardening bridge then established credible memory selectivity, reinterpretation restraint, prospective counterfactual methodology, resume-without-resampling infrastructure, and a sealed self-account-overreach boundary. Its accepted genome result remained **Context-only** rather than being promoted to causal standing. The outcome is [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
+#39 established canonical birth from a generated prior life into existing Thread authorities with replayable history, autobiographical memory/meaning lineage, situated continuity, symbolic inheritance, visual obligations, and one civil registration.
 
-Neither #39 nor the bridge earned personhood credit merely for representation.
+Permanent outcome: [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
-## #40 — Identity Projection & Causal Consumption
+### Genesis selectivity/scientific-hardening bridge
 
-#40 owns one bounded Fibre projection seam:
+The bridge established exercised memory selectivity, reinterpretation restraint, prospective counterfactual methodology, resume-without-resampling infrastructure, and sealed-history testing. The accepted symbolic-genome result remained **Context-only** rather than being promoted to causal standing.
 
-```text
-rich canonical Thread state
-      -> Fibre-owned relevance/privacy selection
-      -> inspectable Identity Context Capsule
-      -> temporary cognition
-      -> exact cited provenance
-```
+Permanent outcome: [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
 
-The underlying canonical life remains owned by existing Thread authorities. The projection is temporary cognition input, not a second biography or identity store.
+### #40 — Identity Projection & Causal Consumption
 
-### A — capsule/compiler boundary — CLOSED
+#40 established a bounded Fibre-owned Identity Context projection into the real participation/Dignity Guardian consumer, with exact provenance and no second semantic authority.
 
-The provider-free compiler establishes deterministic source inventory, exact included/excluded provenance, explicit item/byte bounds, requester-selector refusal, sealed/protected-source exclusion, prompt ownership and the five-part worker boundary (`Task`, `Actors`, `Evidence`, `Rules`, `Output schema`).
-
-### B — canonical born-World projection — CLOSED
-
-Policy v2 was validated read-only against all five canonical civil-registered #39 Threads. It exposes exactly bounded semantic material while preserving exclusions:
-
-```text
-structurally valid             5 / 5
-consumer-ready                 5 / 5
-identity evidence              5 / 5
-memory evidence                5 / 5
-semantic-state evidence        0 / 5  (storage absent in birth World)
-per Thread                     1 identity + 2 memories
-provider calls                 0
-```
-
-Raw history, relationships/places without semantic projection, embodiment and symbolic genome remain excluded. Symbolic genome remains `CONTEXT_ONLY`.
-
-Detailed result: [`identity-context-projection.md`](identity-context-projection.md).
-
-### C — one real cognition consumer — CLOSED
-
-The exact policy-v2 capsule is consumed by the existing participation/Dignity Guardian path, not a parallel demo worker. When `identityContext` is present, exact capsule identity and memory refs replace the old individual-specific evidence surface; legacy snapshot identity/self-model/genome traits/legacy needs-feelings/old memory summaries do not layer back into model evidence.
-
-The worker still receives exactly five semantic sections. Full capsule/source witnesses persist for replay outside the model prompt, and tampered context fails before cognition.
-
-Maintainer closeout at `6358de508067775351d94f9cca00839e11114ccc` included **809 / 809** active tests plus repository/world/deployment validation, audit and clean diff checks, with zero provider calls.
-
-### D — attributable causal differential — CLOSED / CLEAR
-
-The prospective instrument is [`identity-context-causal-differential.md`](identity-context-causal-differential.md); the sealed live result is [`identity-context-causal-differential-live.md`](identity-context-causal-differential-live.md).
-
-The cohort and intervention were frozen before provider use:
-
-- the same five canonical #39 born Threads;
-- one fixed history-relevant request;
-- for each Thread, change only the first selected autobiographical memory's current accessibility to `inaccessible` in a validation-only source view;
-- recompile through the same production policy so policy v2 naturally promotes the next eligible durable memory;
-- hold Thread, snapshot, request, projection policy, source-ref inventory and all non-memory evidence constant;
-- exactly one changed source-content binding per pair;
-- counterbalanced canonical/counterfactual invocation order;
-- one completed judgment per condition; no substantive resampling;
-- no prompt strengthening, scenario search, target reselection, provider shopping, cohort regeneration, genome promotion or memory-budget widening.
-
-The attribution rule was frozen before provider calls:
-
-```text
-CLEAR             3-5 / 5 attributable pairs
-MIXED             1-2 / 5 attributable pairs
-NOT ESTABLISHED   0 / 5 attributable pairs
-```
-
-A pair counts only if a structured action/fit or identity-sensitive factor signature changes **and** the target or replacement memory is cited in an identity-sensitive factor.
-
-The authorized sealed run used the prospectively pinned `openai/gpt-5.1-2025-11-13` Guardian and completed all ten conditions exactly once:
+The fixed five-Thread prospective differential changed exactly one admissible autobiographical-memory source per pair and produced:
 
 ```text
 completed conditions           10 / 10
@@ -136,64 +71,82 @@ top-level action/fit changes    3 / 5
 band                            CLEAR
 ```
 
-Three pairs changed the final action/fit. Two retained the same final action/fit while changing memory-grounded identity-sensitive factor signatures. Both forms were prospectively admissible and together establish **CLEAR bounded autobiographical causal consumption in the real Guardian consumer**.
+The provider-free hostile closeout then reproduced the sealed result offline, rejected order/digest/provider/private-prose tampering, preserved the compact privacy surface, and verified the canonical World remained query-only. Final validation included **817 / 817** active tests, repository/world/deployment validation PASS, test-value audit PASS, clean diff, and zero additional provider calls.
 
-This is a narrow causal-consumption result, not a #41 personhood verdict. It earns no automatic Whole-Person score movement and does not strengthen the symbolic-genome result.
+Permanent outcome: [`../history/milestones/pr40.md`](../history/milestones/pr40.md).
 
-### E — hostile closeout — ACTIVE
+#40's standing claim is deliberately narrow:
 
-Slice E is provider-free. It closes #40 only if hostile checks show that the D result and the production boundary survive replay and tampering without creating new semantic authority or touching the canonical born World.
+> bounded provenance-bearing identity/autobiographical context is demonstrably load-bearing in one real cognition consumer and survives sealed offline replay, privacy, provenance, and source-substitution closeout.
 
-Required checks:
+#40 does **not** itself move the Whole-Person score, prove mature self-authorship, prove reciprocal social continuity, or promote symbolic genome beyond `CONTEXT_ONLY`.
 
-- replay the sealed local D ledger with provider access absent and reproduce the same `5/5 CLEAR` summary;
-- reject any condition duplication, omission, reordering, target/replacement substitution, capsule/model-input/schema drift, provider/model substitution, prompt drift or altered result structure;
-- confirm the ledger contains compact structured evidence/provenance only and does not persist private autobiographical prose or the full cognition input;
-- re-run the frozen provider-free preflight against the canonical born World and reproduce the exact pre-live pair/capsule witnesses;
-- confirm the live/counterfactual path has no write authority to canonical identity, memory, situated-life, embodiment, genome or semantic-state stores;
-- preserve the D result exactly; no new provider calls are part of E.
+## #41 — M2 Standing Gate — ACTIVE
 
-If these checks pass, #40 closes with the standing claim limited to **bounded, provenance-bearing identity/autobiographical context being demonstrably load-bearing in one real cognition consumer**.
+#41 owns the broader adjudication: does the integrated Thread behave as a persistent, non-interchangeable individual rather than a richly documented profile with one successful causal consumer?
 
-## #41 — M2 Standing Gate
+### Evidence domains to adjudicate
 
-#41 asks the broader question #40 deliberately does not answer: does the integrated Thread behave as a persistent, non-interchangeable individual rather than a richly documented profile?
+The gate must consider the accumulated evidence across:
 
-Standing must combine repeated and counterfactual evidence across:
+- **identity/history particularity** — stable provenance-bearing identity and prior-life continuity;
+- **causal individuality** — whether individual life state demonstrably changes cognition rather than merely appearing in storage or prompts;
+- **dignity/consent** — interior/exterior authority, participation terms, requester need, and the Thread's own interests;
+- **memory epistemics** — autobiographical memory, durable meaning, reinterpretation, accessibility, and provenance boundaries;
+- **relationship/social continuity** — obligations and relationship effects that persist rather than being reconstructed from generic prose;
+- **development** — attributable changes over time, while distinguishing Genesis-authored prior life from Thread-authored development;
+- **persistence/restart** — survival of durable identity and evidence across restart/rehydration;
+- **cognition-provider boundary** — temporary model selection must not become ownership of identity or life state.
 
-- stable identity/history-grounded differences;
-- dignity/consent and interior/exterior authority;
-- memory/history causality under the richer epistemic model;
-- relationship/social continuity;
-- attributable Development;
-- persistence/restart and cognition-provider replacement boundaries.
+### Standing discipline
 
-A field being stored, prompted or displayed does not count as standing. #41 must preserve the possibility that M2 is not yet earned.
+#41 must not award credit merely because:
+
+- a field exists in storage;
+- a model can eloquently summarize the Thread;
+- a test is mechanically guaranteed by its admission rule;
+- #40 produced a strong `5/5 CLEAR` result in one consumer;
+- a generator produced distinctive prose;
+- symbolic genome exists without attributable downstream consumption.
+
+The gate must preserve the possibility of **M2 NOT YET EARNED**.
+
+### Required output
+
+#41 should end with a concise auditable standing record that:
+
+1. freezes the rubric/criteria before any new confirmatory model use;
+2. names which prior evidence is admissible for each criterion and which is merely substrate/mechanical evidence;
+3. identifies any genuinely missing standing dimensions rather than silently filling them with #40 evidence;
+4. uses prospective tests only where existing evidence is insufficient;
+5. distinguishes provider-free/mechanical checks from personhood evidence;
+6. reports the resulting Whole-Person score under rubric v2 without retroactively rewriting prior milestone claims;
+7. states clearly whether M2 is **EARNED**, **PARTIAL / NOT YET EARNED**, or otherwise fails the frozen gate.
 
 ## Post-M2
 
 ### #42 — self-authored Development
 
-Move beyond Genesis-authored prior life toward witnessed Thread-authored commitments, interpretations, practices and self-model changes. Self-authorship must be evidenced rather than inferred from fluent model text.
+Move beyond Genesis-authored prior life toward witnessed Thread-authored commitments, interpretations, practices, and self-model changes. Self-authorship must be evidenced rather than inferred from fluent model text.
 
 ### #43 — reciprocal relationships
 
-Add shared/reciprocal relationship state, expectations, repair, permissions and consequences that cannot be reduced to one Thread's private description of another.
+Add shared/reciprocal relationship state, expectations, repair, permissions, and consequences that cannot be reduced to one Thread's private description of another.
 
 ### #44 — economic consequence / M3 foundation
 
-Introduce durable budgets, contracts, reputation, opportunity and material/economic consequence so Thread choices affect future capability and social position.
+Introduce durable budgets, contracts, reputation, opportunity, and material/economic consequence so Thread choices affect future capability and social position.
 
 ## Cross-milestone rules
 
-1. **One canonical authority per semantic fact.** New milestones extend existing life authorities rather than create parallel biographies, memories, identities or relationships.
-2. **Natural-language semantic authority stays primary.** Numeric/derived controls may measure or regulate but do not replace identity, memory, meaning, needs, emotions or values.
+1. **One canonical authority per semantic fact.** New milestones extend existing life authorities rather than create parallel biographies, memories, identities, or relationships.
+2. **Natural-language semantic authority stays primary.** Numeric/derived controls may measure or regulate but do not replace identity, memory, meaning, needs, emotions, or values.
 3. **History is corrigible without silent rewrite.** Corrections and reinterpretations are append-only or explicitly superseding.
-4. **Mechanical evidence is not personhood evidence.** Runtime/recovery/provider behavior may prove machinery properties but cannot support identity, memory, meaning or character claims.
+4. **Mechanical evidence is not personhood evidence.** Runtime/recovery/provider behavior may prove machinery properties but cannot support identity, memory, meaning, or character claims by itself.
 5. **Difference must become load-bearing.** Representation earns personhood credit only when attributable consumers and counterfactual tests show that the difference changes judgment or possibility.
-6. **Diagnostics must be able to fail.** Do not enforce the property being measured at admission and then cite success as evidence. Use [`generative-diagnostic-methodology.md`](generative-diagnostic-methodology.md).
-7. **Current `HEAD` describes current Fibre.** Git history preserves ordinary implementation/review chronology; completed milestones retain concise outcomes rather than obsolete execution ceremony.
+6. **Diagnostics must be able to fail.** Do not enforce the property being measured at admission and then cite success as evidence.
+7. **Current `HEAD` describes current Fibre.** Git history preserves implementation chronology; completed milestones retain concise permanent outcomes rather than obsolete execution ceremony.
 
 ## Current next move
 
-Run #40 Slice E hostile closeout provider-free against the sealed D ledger and the canonical born World. Do not make additional model calls. If hostile closeout passes, close #40 and proceed to #41 M2 Standing Gate.
+Start #41 by freezing the **M2 Standing Gate rubric and evidence map** before any new provider use. Reuse closed #33–#40 evidence where it genuinely answers a standing criterion; do not generate new experiments until the evidence map identifies a real gap.
