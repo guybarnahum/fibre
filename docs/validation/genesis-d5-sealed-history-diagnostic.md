@@ -143,7 +143,7 @@ This wording deliberately does not claim absence of smaller overgeneralization e
 - provider-disabled exact replay of committed evaluator judgments;
 - separate reporting of logical units, committed judgments and physical provider attempts.
 
-Operational transport retries remain bounded provider-runtime recovery, not scientific resampling. Once a valid evaluator judgment is durably committed it is never requested again.
+Operational transport retries remain bounded provider-runtime recovery, not scientific resampling. The shared OpenAI runtime currently allows at most two transient retries after the initial attempt, so a packet with `J` blinded judgments has `J` clean calls and a worst-case physical-attempt ceiling of `3J`. Actual physical attempts are reported separately in the result. Once a valid evaluator judgment is durably committed it is never requested again.
 
 ## Current bridge standing
 
