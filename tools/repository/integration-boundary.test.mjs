@@ -15,6 +15,10 @@ const serviceCompatibilitySeams = Object.freeze([
   new URL("../../services/asset-generator/src/providers/openai-image-provider.mjs", import.meta.url),
   new URL("../../services/asset-generator/src/providers/bfl-flux-image-provider.mjs", import.meta.url),
 ]);
+const worldKernelModelRuntimeUrl = new URL(
+  "../../services/world-kernel/src/model-runtime/model-runtime.mjs",
+  import.meta.url,
+);
 const providerSelectionUrl = new URL(
   "../../deployments/cloudflare/asset-generator/image-provider-selection.mjs",
   import.meta.url,
@@ -55,6 +59,10 @@ test("third-party AI and media integrations have one shared home outside service
     assert.match(source, /integrations\/(?:models|media)\//);
     assert.doesNotMatch(source, /https:\/\/api\.|generativelanguage\.googleapis\.com|OPENAI_API_KEY|GEMINI_API_KEY|BFL_API_KEY/);
   }
+
+  const worldKernelModelRuntime = await text(worldKernelModelRuntimeUrl);
+  assert.match(worldKernelModelRuntime, /integrations\/models\/openai\.mjs/);
+  assert.match(worldKernelModelRuntime, /integrations\/models\/google\.mjs/);
 
   const providerSelection = await text(providerSelectionUrl);
   assert.match(providerSelection, /integrations\/media\/openai-image-provider\.mjs/);

@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
+import { createGoogleModelAdapter } from "../../../../integrations/models/google.mjs";
+import { createOpenAIModelAdapter } from "../../../../integrations/models/openai.mjs";
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
-import { createGoogleModelAdapter } from "./google.mjs";
-import { createOpenAIModelAdapter } from "./openai.mjs";
 
 export const DEFAULT_MODEL_CONFIG_URL = new URL("../../../../config/models.yaml", import.meta.url);
 
