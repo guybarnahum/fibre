@@ -13,7 +13,7 @@ import {
   assertSealedHistoryExposureManifest,
   computeSealedHistoryTaintClosure,
 } from "#services/world-kernel/src/genesis-sealed-history-isolation.mjs";
-import { createOpenAIModelAdapter } from "#services/world-kernel/src/model-runtime/openai.mjs";
+import { createOpenAIModelAdapter } from "#integrations/models/openai.mjs";
 import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
 
 export const GENESIS_D5_PACKET_CONTRACT = "fibre-genesis-d5-sealed-history-packet-v1";
