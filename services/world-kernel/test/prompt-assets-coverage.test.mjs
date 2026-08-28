@@ -37,6 +37,7 @@ import {
   GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
 } from "../src/genesis-pass-c-prompts.mjs";
 import { DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT } from "../src/dignity-guardian-evaluation.mjs";
+import { IDENTITY_CONTEXT_REASONING_PROMPT } from "../src/identity-context-capsule.mjs";
 import { sha256 } from "../src/persistence-common.mjs";
 import { GENESIS_D5_EVALUATOR_PROMPT } from "../../../tools/genesis/genesis-d5-sealed-history-diagnostic.mjs";
 import { MODEL_SMOKE_PROMPT } from "../../../tools/model/model-api-smoke.mjs";
@@ -75,6 +76,10 @@ test("supported LLM prompt owners resolve their prose from prompt assets", () =>
   assert.equal(GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT, asset(WORLD_KERNEL_PROMPTS, "genesis.meaning-reinterpretation"));
 
   assert.equal(DIGNITY_GUARDIAN_V4_SYSTEM_PROMPT, asset(WORLD_KERNEL_PROMPTS, "dignity.guardian"));
+  assert.equal(
+    IDENTITY_CONTEXT_REASONING_PROMPT.text,
+    asset(WORLD_KERNEL_PROMPTS, "identity-context.local-reasoning"),
+  );
   assert.equal(GENESIS_D5_EVALUATOR_PROMPT, asset(D5_PROMPTS, "genesis.d5-sealed-history-evaluator"));
   assert.equal(MODEL_SMOKE_PROMPT, asset(MODEL_PROMPTS, "model.smoke"));
 });
