@@ -73,6 +73,34 @@ This slice is accepted only if deterministic and hostile tests establish:
 
 No provider call is part of this acceptance slice.
 
+## Canonical born-World characterization
+
+The next provider-free check runs the exact compiler against the canonical civil-registered Threads produced by Genesis rather than reconstructing candidate files or inventing a richer fixture.
+
+`tools/inspect/inspect-identity-context.mjs` opens the World read-only, discovers civil-registered Threads (or an explicit FIN subset), compiles each capsule twice, and reports only source counts, included refs, exclusion reasons and digests. It intentionally does **not** print private identity or memory prose.
+
+The fixed characterization request is the same for every Thread. It is only a probe for the projection boundary; no model consumes it and no behavioral conclusion is drawn from it.
+
+For the closed five-Thread Genesis cohort, the local run is:
+
+```text
+node tools/inspect/inspect-identity-context.mjs .fibre/world.sqlite \
+  --fin QA00-HG-BAJF \
+  --fin NXR7-DH-C885 \
+  --fin 8PKH-A4-VH5R \
+  --fin S22Y-SF-MWY5 \
+  --fin EBYE-Z1-0434
+```
+
+The inspector separates two questions:
+
+- **structural validity** — deterministic compilation, exact source partition, bounds, privacy exclusions, genome exclusion and the five-field worker boundary all hold;
+- **consumer readiness** — the current conservative policy actually exposes at least one semantic evidence item for the probe.
+
+An empty projection is therefore a legitimate characterization result, not a reason to alter the born life or silently promote causal standing. If canonical born Threads carry rich memory/situated authorities but little or none reaches this projection, the next correction belongs in the projection/selection policy. The underlying #39 cohort remains unchanged.
+
+No provider call is part of this characterization.
+
 ## Scientific standing
 
 This slice is architecture and provenance scaffolding only. It earns no Whole Person / M2 score movement and does not establish behavioral causality, non-interchangeability, genome effect, self-authorship, or personhood evidence.
