@@ -38,6 +38,7 @@
     "genesis:meaning-fidelity": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-meaning-fidelity-historical-command.mjs",
     "genesis:reinterpretation-restraint": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-reinterpretation-restraint-command.mjs",
     "genesis:reinterpretation-restraint:correction": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-reinterpretation-restraint-correction.mjs",
+    "genesis:genome-memory-seam": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-genome-memory-seam.mjs",
     "demo:m1": "node --disable-warning=ExperimentalWarning tools/replays/m1/m1-reviewed-proof.mjs",
     "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/replays/m1/m1-demo-editor.mjs",
     "model:smoke": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-api-smoke.mjs",
