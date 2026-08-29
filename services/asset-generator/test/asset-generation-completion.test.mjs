@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   INFRA_DRIVER_VERSION,
   assertInfraDriver,
-} from "#packages/infra/src/infra-driver.mjs";
+} from "#infra";
 import {
   ASSET_GENERATION_COMPLETION_QUEUE,
   ASSET_GENERATION_COMPLETION_VERSION,
