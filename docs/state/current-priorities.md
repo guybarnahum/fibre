@@ -22,7 +22,7 @@ Genesis selectivity/scientific-hardening bridge          CLOSED
 
 ## Execution rule — Fibre capability before abstraction
 
-[`../decisions/ADR-0018-vision-led-development-discipline.md`](../decisions/ADR-0018-vision-led-development-discipline.md) is now a standing planning constraint.
+[`../decisions/ADR-0020-vision-led-development-discipline.md`](../decisions/ADR-0020-vision-led-development-discipline.md) is now a standing planning constraint.
 
 The critical path is the Fibre organism and the standing claims about it, not infrastructure completeness. Work should preferentially make Threads more causally individual, persistent, developmental, embodied, relational, economically situated or capable of living in the World.
 
@@ -128,7 +128,7 @@ These are deferred, not rejected.
 
 ## Cross-cutting production persistence
 
-The provider-neutral production persistence boundary remains accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017. ADR-0018 constrains how that migration competes for the critical path.
+The provider-neutral production persistence boundary remains accepted in [`../architecture/production-persistence.md`](../architecture/production-persistence.md) and ADR-0017. ADR-0020 constrains how that migration competes for the critical path.
 
 The production rule remains strict for new code: do not create new persistence bypasses. But existing direct SQLite/file paths are migration debt, not a mandate to finish every store before advancing Fibre semantics.
 
