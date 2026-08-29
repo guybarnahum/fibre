@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   ASSET_GENERATION_JOB_VERSION,
   CONTENT_CREDENTIAL_SIGNER_VERSION,
