@@ -1,7 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
-import { createHttpContentCredentialSigner } from "../../../integrations/content-credentials/c2pa-http-signer.mjs";
 import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
 import { withCloudflareQueueBindings } from "../../../packages/infra/src/cloudflare-queue-port.mjs";
 import {
@@ -10,18 +9,11 @@ import {
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
 } from "../../../services/asset-generator/src/index.mjs";
+import { createCloudflareContentCredentialSigner } from "../content-credentials/signer-selection.mjs";
 import { createCloudflareAssetImageProvider } from "./image-provider-selection.mjs";
 
-const CREDENTIAL_SIGNER_ID = "fibre-c2pa-node-local-v1";
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
-
-function nonEmpty(name, value) {
-  if (typeof value !== "string" || value.trim() === "") {
-    throw new TypeError(`${name} must be a non-empty string`);
-  }
-  return value;
-}
 
 function safeFailureDetail(error) {
   const value = error?.safeDetail ?? (error instanceof Error ? error.message : String(error));
@@ -63,10 +55,7 @@ function createRuntime(env, job) {
     [ASSET_GENERATION_COMPLETION_QUEUE]: env.ASSET_COMPLETIONS,
   });
   const provider = createCloudflareAssetImageProvider({ env, job });
-  const credentialSigner = createHttpContentCredentialSigner({
-    baseUrl: nonEmpty("C2PA_SIGNER_URL", env.C2PA_SIGNER_URL),
-    signerId: CREDENTIAL_SIGNER_ID,
-  });
+  const credentialSigner = createCloudflareContentCredentialSigner(env);
 
   return createAssetGenerationRuntime({ infra, provider, credentialSigner });
 }
