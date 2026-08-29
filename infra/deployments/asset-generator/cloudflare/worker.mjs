@@ -4,13 +4,13 @@ import { NonRetryableError } from "cloudflare:workflows";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { withCloudflareQueueBindings } from "#infra/providers/cloudflare/queue";
 import { createService } from "#infra/service";
+import { createHttpContentCredentialSigner as createContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import {
   ASSET_GENERATION_COMPLETION_QUEUE,
   assetGenerationRetryDecision,
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
 } from "#services/asset-generator/src/index.mjs";
-import { createContentCredentialSigner } from "../../content-credential-signer.mjs";
 import { selectAssetImageProvider } from "../image-provider-selection.mjs";
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
