@@ -45,19 +45,19 @@ export function testLifecycleForPath(path, root = DEFAULT_TEST_ROOT) {
 export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const domain = walkTests(join(root, "packages/domain/test"));
   const infra = walkTests(join(root, "infra/test"));
+  const deployments = walkTests(join(root, "infra/deployments"));
   const assetGenerator = walkTests(join(root, "services/asset-generator/test"));
   const birthCenter = walkTests(join(root, "services/birth-center/test"));
   const threadPresentation = walkTests(join(root, "services/thread-presentation/test"));
-  const cloudflareThreadPresentation = walkTests(join(root, "deployments/cloudflare/thread-presentation/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
   const all = [
     ...domain,
     ...infra,
+    ...deployments,
     ...assetGenerator,
     ...birthCenter,
     ...threadPresentation,
-    ...cloudflareThreadPresentation,
     ...worldKernel,
     ...tools,
   ].sort();
