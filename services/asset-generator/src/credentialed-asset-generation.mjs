@@ -1,4 +1,4 @@
-import { InfraImmutableObjectConflictError } from "../../../packages/infra/src/infra-driver.mjs";
+import { InfraImmutableObjectConflictError } from "@fibre/infra";
 import { normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
 import { assetGenerationJobDigest } from "./asset-generation-attempt.mjs";
 import { toAssetGenerationError } from "./asset-generation-error.mjs";

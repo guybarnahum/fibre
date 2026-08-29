@@ -32,13 +32,26 @@ function normalizeRepoPath(path) {
   return path.replaceAll("\\", "/");
 }
 
+function isTestSource(path) {
+  return path.includes("/test/")
+    || path.endsWith(".test.mjs")
+    || path.endsWith(".test.js")
+    || path.endsWith(".test.ts");
+}
+
+function isGuardedRuntimeSource(path) {
+  return RUNTIME_SOURCE.test(path)
+    && !isTestSource(path)
+    && (
+      path.startsWith("services/")
+      || path.startsWith("deployments/")
+      || path.startsWith("tools/deployment/")
+      || path.startsWith("tools/presentation/")
+    );
+}
+
 function isRuntimeServiceSource(path) {
-  return path.startsWith("services/")
-    && RUNTIME_SOURCE.test(path)
-    && !path.includes("/test/")
-    && !path.endsWith(".test.mjs")
-    && !path.endsWith(".test.js")
-    && !path.endsWith(".test.ts");
+  return path.startsWith("services/") && isGuardedRuntimeSource(path);
 }
 
 function serviceOwner(path) {
@@ -69,6 +82,15 @@ function targetOwnerForSpecifier(sourcePath, specifier) {
   return targetOwner !== null && targetOwner !== sourceOwner ? targetOwner : null;
 }
 
+function resolvesToPrivateInfraSource(sourcePath, specifier) {
+  if (specifier === "#packages/infra/src" || specifier.startsWith("#packages/infra/src/")) {
+    return true;
+  }
+  if (!specifier.startsWith(".")) return false;
+  const resolved = normalizeRepoPath(normalizePosix(join(dirname(sourcePath), specifier)));
+  return resolved === "packages/infra/src" || resolved.startsWith("packages/infra/src/");
+}
+
 export function privateServiceEdgesForSource(path, text) {
   const normalizedPath = normalizeRepoPath(path);
   if (!isRuntimeServiceSource(normalizedPath)) return [];
@@ -92,28 +114,48 @@ function violationForEdge(edge) {
   return `Runtime dependency boundary: ${edge.sourcePath} reaches into ${edge.targetOwner} through private cross-owner specifier ${edge.specifier}; use a stable public @fibre/... boundary`;
 }
 
-export function runtimeDependencyViolationsForSource(path, text) {
-  return privateServiceEdgesForSource(path, text)
-    .filter((edge) => !PRIVATE_SERVICE_MIGRATION_SET.has(edge.key))
-    .map(violationForEdge);
+function privateInfraViolationsForSource(path, text) {
+  const normalizedPath = normalizeRepoPath(path);
+  if (!isGuardedRuntimeSource(normalizedPath)) return [];
+  return moduleSpecifiers(text)
+    .filter((specifier) => resolvesToPrivateInfraSource(normalizedPath, specifier))
+    .map((specifier) => (
+      `Runtime dependency boundary: ${normalizedPath} reaches into private Infra source through ${specifier}; use a public @fibre/infra export`
+    ));
 }
 
-function trackedServiceSources(root) {
-  return execFileSync("git", ["ls-files", "--", "services"], {
+export function runtimeDependencyViolationsForSource(path, text) {
+  return [
+    ...privateServiceEdgesForSource(path, text)
+      .filter((edge) => !PRIVATE_SERVICE_MIGRATION_SET.has(edge.key))
+      .map(violationForEdge),
+    ...privateInfraViolationsForSource(path, text),
+  ];
+}
+
+function trackedRuntimeSources(root) {
+  return execFileSync("git", [
+    "ls-files",
+    "--",
+    "services",
+    "deployments",
+    "tools/deployment",
+    "tools/presentation",
+  ], {
     cwd: root,
     encoding: "utf8",
   })
     .split(/\r?\n/u)
     .map((path) => normalizeRepoPath(path.trim()))
-    .filter((path) => path && isRuntimeServiceSource(path));
+    .filter((path) => path && isGuardedRuntimeSource(path));
 }
 
 export function validateRuntimeDependencyPolicy({ root = process.cwd(), paths = null } = {}) {
-  const servicePaths = paths ?? trackedServiceSources(root);
+  const runtimePaths = paths ?? trackedRuntimeSources(root);
   const errors = [];
   const seenMigrationEdges = new Set();
 
-  for (const path of servicePaths) {
+  for (const path of runtimePaths) {
     const text = readFileSync(resolve(root, path), "utf8");
     for (const edge of privateServiceEdgesForSource(path, text)) {
       if (PRIVATE_SERVICE_MIGRATION_SET.has(edge.key)) {
@@ -122,6 +164,7 @@ export function validateRuntimeDependencyPolicy({ root = process.cwd(), paths = 
         errors.push(violationForEdge(edge));
       }
     }
+    errors.push(...privateInfraViolationsForSource(path, text));
   }
 
   if (paths === null) {

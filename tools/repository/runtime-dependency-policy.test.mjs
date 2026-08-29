@@ -17,7 +17,7 @@ function fakeExport(specifier) {
   return `${"ex" + "port"} { Example } from "${specifier}";\n`;
 }
 
-test("current service runtime has no unregistered private sibling-service dependencies", () => {
+test("current runtime has no unregistered private cross-owner dependencies", () => {
   assert.deepEqual(validateRuntimeDependencyPolicy(), []);
 });
 
@@ -60,14 +60,49 @@ test("new repository aliases cannot expose another service private source tree",
   );
 });
 
+test("private Infra aliases cannot bypass the @fibre/infra public seam", () => {
+  const specifier = ["#packages", "infra", "src", "infra-driver.mjs"].join("/");
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource(
+      "services/example/src/runtime.mjs",
+      fakeImport(specifier),
+    ),
+    [
+      `Runtime dependency boundary: services/example/src/runtime.mjs reaches into private Infra source through ${specifier}; use a public @fibre/infra export`,
+    ],
+  );
+});
+
+test("deployment composition cannot reach Infra through relative private source paths", () => {
+  const specifier = ["..", "..", "..", "packages", "infra", "src", "cloudflare-v1.mjs"].join("/");
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource(
+      "deployments/cloudflare/example/worker.mjs",
+      fakeImport(specifier),
+    ),
+    [
+      `Runtime dependency boundary: deployments/cloudflare/example/worker.mjs reaches into private Infra source through ${specifier}; use a public @fibre/infra export`,
+    ],
+  );
+});
+
 test("same-owner imports and stable named package boundaries remain legal", () => {
   const source = [
     fakeImport("../shared/local-thing.mjs").trimEnd(),
     fakeImport("@fibre/domain/civil-identity").trimEnd(),
     fakeImport("@fibre/asset-generator").trimEnd(),
+    fakeImport("@fibre/infra").trimEnd(),
+    fakeImport("@fibre/infra/cloudflare-v1").trimEnd(),
   ].join("\n");
   assert.deepEqual(privateServiceEdgesForSource("services/example/src/runtime.mjs", source), []);
   assert.deepEqual(runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", source), []);
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource(
+      "deployments/cloudflare/example/worker.mjs",
+      fakeImport("@fibre/infra/cloudflare-v1"),
+    ),
+    [],
+  );
 });
 
 test("dynamic imports are subject to the same ownership boundary", () => {
@@ -83,12 +118,21 @@ test("dynamic imports are subject to the same ownership boundary", () => {
   );
 });
 
-test("service tests are not production runtime dependency-policy targets", () => {
-  const specifier = ["..", "..", "world-kernel", "src", "world-store.mjs"].join("/");
+test("runtime tests are not production dependency-policy targets", () => {
+  const serviceSpecifier = ["..", "..", "world-kernel", "src", "world-store.mjs"].join("/");
   assert.deepEqual(
     runtimeDependencyViolationsForSource(
       "services/example/test/integration.test.mjs",
-      fakeImport(specifier),
+      fakeImport(serviceSpecifier),
+    ),
+    [],
+  );
+
+  const infraSpecifier = ["..", "..", "..", "packages", "infra", "src", "cloudflare-v1.mjs"].join("/");
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource(
+      "deployments/cloudflare/example/test/worker.test.mjs",
+      fakeImport(infraSpecifier),
     ),
     [],
   );
