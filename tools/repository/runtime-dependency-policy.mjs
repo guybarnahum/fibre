@@ -9,12 +9,10 @@ const DYNAMIC_MODULE_SPECIFIER = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/gu;
 
 // Exact current sibling-service private runtime edges. These are migration debt,
 // not permission for either endpoint to grow another reach-through. Shrink this
-// list whenever an edge moves behind a stable public @fibre/... boundary.
+// list whenever an edge moves behind a stable public boundary.
 //
-// Package-private #packages/.../src imports are intentionally not frozen here:
-// ADR-0018 already marks the packages -> domain/infra relocation as a separate
-// structural migration, and this guard should not turn that temporary layout
-// into a permanent accepted baseline.
+// Root Infra is different: `infra/` is its physical owner and runtime consumers
+// must use the stable root `#infra...` entry points rather than private paths.
 export const PRIVATE_SERVICE_MIGRATION_EDGES = Object.freeze([
   "services/thread-presentation/src/civil-identity-projection.mjs::#services/world-kernel/src/thread-presentation-identity-domain.mjs",
   "services/thread-presentation/src/index.mjs::../../world-kernel/src/thread-presentation-domain.mjs",
@@ -82,13 +80,18 @@ function targetOwnerForSpecifier(sourcePath, specifier) {
   return targetOwner !== null && targetOwner !== sourceOwner ? targetOwner : null;
 }
 
+function isLegacyInfraSpecifier(specifier) {
+  return specifier === "@fibre/infra"
+    || specifier.startsWith("@fibre/infra/")
+    || specifier === "#packages/infra"
+    || specifier.startsWith("#packages/infra/");
+}
+
 function resolvesToPrivateInfraSource(sourcePath, specifier) {
-  if (specifier === "#packages/infra/src" || specifier.startsWith("#packages/infra/src/")) {
-    return true;
-  }
+  if (isLegacyInfraSpecifier(specifier)) return true;
   if (!specifier.startsWith(".")) return false;
   const resolved = normalizeRepoPath(normalizePosix(join(dirname(sourcePath), specifier)));
-  return resolved === "packages/infra/src" || resolved.startsWith("packages/infra/src/");
+  return resolved === "infra" || resolved.startsWith("infra/");
 }
 
 export function privateServiceEdgesForSource(path, text) {
@@ -120,7 +123,7 @@ function privateInfraViolationsForSource(path, text) {
   return moduleSpecifiers(text)
     .filter((specifier) => resolvesToPrivateInfraSource(normalizedPath, specifier))
     .map((specifier) => (
-      `Runtime dependency boundary: ${normalizedPath} reaches into private Infra source through ${specifier}; use a public @fibre/infra export`
+      `Runtime dependency boundary: ${normalizedPath} reaches Infra through non-public specifier ${specifier}; use a public #infra entry point`
     ));
 }
 
