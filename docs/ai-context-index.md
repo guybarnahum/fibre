@@ -29,7 +29,7 @@ Start with:
 5. `foundations/rich-life.md`
 6. `state/current-state.md`
 7. `state/current-priorities.md`
-8. `decisions/ADR-0018-vision-led-development-discipline.md`
+8. `decisions/ADR-0020-vision-led-development-discipline.md`
 9. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
 10. `validation/generative-diagnostic-methodology.md`
 11. `validation/m2-pr-plan.md`
@@ -108,7 +108,7 @@ Historical realization and meaning formation are genome blind. Permitted genome 
 - `architecture/prompt-synthesis.md`
 - `architecture/infrastructure-driver.md`
 - `decisions/ADR-0017-provider-neutral-production-persistence.md`
-- `decisions/ADR-0018-vision-led-development-discipline.md`
+- `decisions/ADR-0020-vision-led-development-discipline.md`
 
 Provider-neutral persistence remains mandatory for production authority, but it is not an independent completion program. Use the hardest representative Fibre requirement to earn the abstraction, then return to Fibre capability work unless further migration is concretely required.
 
@@ -164,7 +164,7 @@ At minimum load:
 - `validation/thread-differential-gate.md`
 - `validation/drift-scorecard.md`
 - `validation/m2-pr-plan.md`
-- `decisions/ADR-0018-vision-led-development-discipline.md`
+- `decisions/ADR-0020-vision-led-development-discipline.md`
 - the active bridge/milestone contract
 - relevant ADRs
 
