@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "#infra";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
