@@ -3,7 +3,7 @@ import {
   normalizeStoredAssetReceipt,
   verifyCredentialedAssetForPublication,
 } from "#services/asset-generator/src/index.mjs";
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "#infra";
 import {
   normalizePresentationAssetDemandProjection,
   presentationAssetDemandCatalogKey,
@@ -141,8 +141,6 @@ export function createPresentationAssetCompletionService({
         observedAt: now(),
       });
       if (!marked.applied && !marked.duplicate) {
-        // A supersession that races after verification/publication is an operational
-        // concurrency boundary. Do not pretend the stale demand became current-ready.
         return Object.freeze({
           handled: false,
           duplicate: false,
