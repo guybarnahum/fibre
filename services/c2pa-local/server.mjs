@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import { Builder, LocalSigner, Reader } from "@contentauth/c2pa-node";
 import {
+  bearerAuth,
+  createServiceRuntime,
+  readJsonRequest,
+} from "../../infra/service-runtime/service-runtime.mjs";
+import { createNodeServiceHandler } from "../../infra/local/node-service-runtime.mjs";
+import {
   activeManifestFromStore,
   describeC2paAssertions,
   findC2paAssertion,
@@ -13,6 +19,7 @@ const ASSERTION_LABEL = "com.insidefibre.asset-generation";
 const SIGNER_ID = "fibre-c2pa-node-local-v1";
 const FORMAT = "c2pa";
 const PORT = Number(process.env.FIBRE_C2PA_PORT ?? 8790);
+const SERVICE_TOKEN = process.env.FIBRE_C2PA_SERVICE_TOKEN ?? null;
 const CERT_PATH = process.env.FIBRE_C2PA_CERT
   ?? fileURLToPath(new URL("../../.fibre/p3-c2pa/cert.pem", import.meta.url));
 const KEY_PATH = process.env.FIBRE_C2PA_KEY
@@ -34,24 +41,6 @@ function now() { return new Date().toISOString(); }
 function bytesFromBase64(value) {
   if (typeof value !== "string" || value.length === 0) throw new TypeError("bytesBase64 is required");
   return Buffer.from(value, "base64");
-}
-function json(res, status, value) {
-  const body = JSON.stringify(value);
-  res.writeHead(status, {
-    "content-type": "application/json",
-    "content-length": Buffer.byteLength(body),
-  });
-  res.end(body);
-}
-async function readJson(req) {
-  const chunks = [];
-  let total = 0;
-  for await (const chunk of req) {
-    total += chunk.length;
-    if (total > MAX_BODY_BYTES) throw new Error("request body too large");
-    chunks.push(chunk);
-  }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
 async function inspect(bytes, mediaType) {
@@ -186,21 +175,34 @@ async function selfTest() {
 
 await selfTest();
 
-const server = createServer(async (req, res) => {
-  try {
-    if (req.method === "GET" && req.url === "/healthz") {
-      return json(res, 200, { ok: true, format: FORMAT, signerId: SIGNER_ID });
-    }
-    if (req.method !== "POST" || !["/embed", "/verify"].includes(req.url)) {
-      return json(res, 404, { error: "not_found" });
-    }
-    const body = await readJson(req);
-    const result = req.url === "/embed" ? await embed(body) : await verify(body);
-    return json(res, 200, result);
-  } catch (error) {
-    return json(res, 400, { error: error instanceof Error ? error.message : String(error) });
-  }
+const routeAuth = SERVICE_TOKEN === null ? null : bearerAuth(SERVICE_TOKEN);
+const httpRuntime = createServiceRuntime({
+  serviceName: "c2pa-local",
+  health: {
+    format: FORMAT,
+    signerId: SIGNER_ID,
+    trustPolicy: "development_signature_only",
+  },
+  routes: [
+    {
+      method: "POST",
+      path: "/embed",
+      auth: routeAuth,
+      handler: async ({ request }) => embed(await readJsonRequest(request)),
+    },
+    {
+      method: "POST",
+      path: "/verify",
+      auth: routeAuth,
+      handler: async ({ request }) => verify(await readJsonRequest(request)),
+    },
+  ],
 });
+
+const server = createServer(createNodeServiceHandler({
+  runtime: httpRuntime,
+  maxBodyBytes: MAX_BODY_BYTES,
+}));
 
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`Fibre local C2PA signer listening on http://127.0.0.1:${PORT}`);
