@@ -4,7 +4,7 @@ import {
   FIBRE_IDENTITY_NUMBER_ALPHABET,
   buildFibreCivilRegistration,
   fibreIdentityNumberFromPayload,
-} from "#packages/domain/src/fibre-civil-identity.mjs";
+} from "#core/src/fibre-civil-identity.mjs";
 import { normalizeSeedSnapshot } from "../../src/persistence-domain.mjs";
 import { sha256 } from "../../src/persistence-common.mjs";
 

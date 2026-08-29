@@ -1,6 +1,6 @@
 import {
   normalizeFibreCivilRegistration,
-} from "#packages/domain/src/fibre-civil-identity.mjs";
+} from "#core/src/fibre-civil-identity.mjs";
 import {
   WORLD_STORE_SCHEMA_VERSION,
   assertExactKeys,

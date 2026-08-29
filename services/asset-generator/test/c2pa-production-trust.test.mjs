@@ -129,13 +129,13 @@ test("production verifier must return trust evidence and the configured signer i
 async function json(url) { return JSON.parse(await readFile(url, "utf8")); }
 
 test("Cloudflare deployment separates development signature proof from production C2PA trust", async () => {
-  const assetLocal = await json(new URL("../../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url));
-  const assetRemote = await json(new URL("../../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url));
-  const presentationLocal = await json(new URL("../../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url));
-  const presentationRemote = await json(new URL("../../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url));
-  const assetWorker = await readFile(new URL("../../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url), "utf8");
-  const presentationWorker = await readFile(new URL("../../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url), "utf8");
-  const selector = await readFile(new URL("../../../../infra/deployments/content-credential-signer.mjs", import.meta.url), "utf8");
+  const assetLocal = await json(new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url));
+  const assetRemote = await json(new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url));
+  const presentationLocal = await json(new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url));
+  const presentationRemote = await json(new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url));
+  const assetWorker = await readFile(new URL("../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url), "utf8");
+  const presentationWorker = await readFile(new URL("../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url), "utf8");
+  const selector = await readFile(new URL("../../../infra/deployments/content-credential-signer.mjs", import.meta.url), "utf8");
 
   for (const config of [assetLocal, presentationLocal]) {
     assert.equal(config.vars.C2PA_SIGNER_ID, "fibre-c2pa-node-local-v1");

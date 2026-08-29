@@ -7,15 +7,15 @@ const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
 const attemptUrl = new URL("../src/asset-generation-attempt.mjs", import.meta.url);
 const providerOperationUrl = new URL("../src/resumable-provider-operation.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
-const workerUrl = new URL("../../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url);
-const providerSelectionUrl = new URL("../../../../infra/deployments/asset-generator/image-provider-selection.mjs", import.meta.url);
-const assetConfigUrl = new URL("../../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url);
-const assetRemoteConfigUrl = new URL("../../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url);
-const deploymentManifestUrl = new URL("../../../../infra/deployments/environments/local.json", import.meta.url);
-const remoteDeploymentManifestUrl = new URL("../../../../infra/deployments/environments/cloudflare-remote.json", import.meta.url);
-const presentationWorkerUrl = new URL("../../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url);
-const presentationConfigUrl = new URL("../../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url);
-const presentationRemoteConfigUrl = new URL("../../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url);
+const workerUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url);
+const providerSelectionUrl = new URL("../../../infra/deployments/asset-generator/image-provider-selection.mjs", import.meta.url);
+const assetConfigUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url);
+const assetRemoteConfigUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url);
+const deploymentManifestUrl = new URL("../../../infra/deployments/environments/local.json", import.meta.url);
+const remoteDeploymentManifestUrl = new URL("../../../infra/deployments/environments/cloudflare-remote.json", import.meta.url);
+const presentationWorkerUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url);
+const presentationConfigUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url);
+const presentationRemoteConfigUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url);
 const retiredPresentationCloudflareFiles = Object.freeze([
   new URL("../../presentation-cloudflare/src/worker.mjs", import.meta.url),
   new URL("../../presentation-cloudflare/src/presentation-read-api.mjs", import.meta.url),

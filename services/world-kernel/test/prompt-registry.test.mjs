@@ -10,7 +10,7 @@ import { join, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
 
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 
 const digest = (text) => `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
 

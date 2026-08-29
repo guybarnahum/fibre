@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   GenesisPassAValidationError,

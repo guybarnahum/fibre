@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createHttpContentCredentialSigner } from "../../../integrations/content-credentials/c2pa-http-signer.mjs";
-import { createOpenAIImageProvider } from "../../../integrations/media/openai-image-provider.mjs";
+import { createOpenAIImageProvider } from "../../../integrations/ai/image/openai.mjs";
 import { AssetGenerationError } from "../src/asset-generation-error.mjs";
 
 const encoder = new TextEncoder();

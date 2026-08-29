@@ -84,7 +84,7 @@ See [`../../docs/architecture/presentation-asset-serving.md`](../../docs/archite
 
 - [`../birth-center/`](../birth-center/) owns Civil Registry issuance at birth; the immutable registry is read through World Kernel's `CivilRegistryStore`.
 - [`../asset-generator/`](../asset-generator/) executes generated-media briefs and records immutable generation provenance.
-- [`../../deployments/cloudflare/thread-presentation/`](../../deployments/cloudflare/thread-presentation/) is the current Cloudflare delivery/read-model deployment adapter.
+- [`../../infra/deployments/thread-presentation/cloudflare/`](../../infra/deployments/thread-presentation/cloudflare/) is the current Cloudflare delivery/read-model deployment adapter.
 - [`../c2pa-local/`](../c2pa-local/) supplies local provenance/Content Credential support.
 - [`../../fixtures/thread-presentation/`](../../fixtures/thread-presentation/) contains reusable presentation fixtures.
 
@@ -94,4 +94,4 @@ Thread Presentation decides what already-authorized material may enter a present
 
 A valid packet can still be thin. Tests here therefore treat richness as a semantic consumer contract: a Thread projection should remain temporally continuous, socially and geographically situated, internally cross-linked, selective about memory versus history, and grounded when it presents meanings. Those checks complement, rather than replace, authority and causal tests in World Kernel and Birth Center.
 
-Deployment-specific executable composition belongs under `deployments/`. Do not duplicate cognition, Thread state, memory, identity, meaning, or world authorization there.
+Deployment-specific executable composition belongs under `infra/deployments/`. Do not duplicate cognition, Thread state, memory, identity, meaning, or world authorization there.

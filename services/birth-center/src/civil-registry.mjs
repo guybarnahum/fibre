@@ -3,7 +3,7 @@ import {
   mintFibreIdentityNumber,
   normalizeFibreCivilRegistration,
   normalizeFibreIdentityNumber,
-} from "#packages/domain/src/fibre-civil-identity.mjs";
+} from "#core/src/fibre-civil-identity.mjs";
 
 const MAX_MINT_ATTEMPTS = 64;
 

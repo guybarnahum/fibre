@@ -8,7 +8,7 @@ import {
   resolveServiceDeployment,
 } from "./deployment-manifest.mjs";
 
-const localManifestUrl = new URL("../../deployments/environments/local.json", import.meta.url);
+const localManifestUrl = new URL("../../infra/deployments/environments/local.json", import.meta.url);
 
 async function localManifest() {
   return JSON.parse(await readFile(localManifestUrl, "utf8"));

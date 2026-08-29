@@ -77,7 +77,7 @@ See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise
 
 - `docs/` — canonical vision, foundations, concepts, architecture, decisions, current state, validation, and selected history/origin material.
 - `apps/thread-editor/` — human-facing Thread Editor prototype.
-- `packages/domain/` — portable Fibre domain types and freeze/thaw logic.
+- `core/` — foundational Fibre concepts, types, and rules shared across services.
 - `services/` — primary runtime/service boundaries.
 - `schemas/` — machine-readable schemas.
 - `fixtures/` — reusable synthetic test inputs organized by the kind of Fibre object or workflow they represent.

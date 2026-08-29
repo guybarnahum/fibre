@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { assertExactKeys, canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
   GENESIS_PASS_A_POLICY,

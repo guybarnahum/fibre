@@ -73,8 +73,8 @@ test("third-party integrations have one shared home outside services and Infra p
   }
 
   const worldKernelModelRuntime = await text(worldKernelModelRuntimeUrl);
-  assertSourceMatches(worldKernelModelRuntime, /integrations\/models\/openai\.mjs/, "world-kernel model runtime must use the shared OpenAI integration");
-  assertSourceMatches(worldKernelModelRuntime, /integrations\/models\/google\.mjs/, "world-kernel model runtime must use the shared Google integration");
+  assertSourceMatches(worldKernelModelRuntime, /#integrations\/ai\/reasoning\/openai\.mjs/, "world-kernel model runtime must use the shared OpenAI integration");
+  assertSourceMatches(worldKernelModelRuntime, /#integrations\/ai\/reasoning\/google\.mjs/, "world-kernel model runtime must use the shared Google integration");
 
   const assetGeneratorIndex = await text(assetGeneratorIndexUrl);
   assertSourceOmits(assetGeneratorIndex, /createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/, "asset-generator service index must not construct third-party integration adapters");

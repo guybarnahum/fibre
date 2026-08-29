@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import {
   GENESIS_PASS_A_PROMPT,
   GENESIS_PASS_A_REPAIR_PROMPT,

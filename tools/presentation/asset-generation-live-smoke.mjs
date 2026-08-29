@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   compileOpenAIImagePrompt,
   createOpenAIImageProvider,
-} from "../../integrations/media/openai-image-provider.mjs";
+} from "../../integrations/ai/image/openai.mjs";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,

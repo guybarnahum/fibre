@@ -1,4 +1,4 @@
-import { recoverModelOutput } from "#packages/model-runtime/src/output-recovery.mjs";
+import { recoverModelOutput } from "#integrations/ai/reasoning/output-recovery.mjs";
 
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
 import {

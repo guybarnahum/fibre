@@ -5,12 +5,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { recoverModelOutput } from "#packages/model-runtime/src/output-recovery.mjs";
+import { recoverModelOutput } from "#integrations/ai/reasoning/output-recovery.mjs";
 import {
   assertOpenAIProjectedSchemaConstraints,
   createOpenAIModelAdapter,
   projectOpenAIStructuredOutputSchema,
-} from "../../../integrations/models/openai.mjs";
+} from "../../../integrations/ai/reasoning/openai.mjs";
 import { assertUniquePassBEpisodeRefs } from "../src/genesis-pass-b-domain.mjs";
 import {
   GENESIS_PASS_B_RESPONSE_SCHEMA,

@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { normalizeActivationRequest, requestFingerprint } from "./private-participation.mjs";
 import { selectSemanticStateForAppraisal } from "./semantic-state.mjs";

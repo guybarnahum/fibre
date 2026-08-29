@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 
 export const GENESIS_PASS_B_PROMPT_VERSION = "genesis-pass-b-memory-formation-prompt-v1";

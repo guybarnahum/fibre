@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import {
   normalizeFibreCivilRegistration,
   normalizeFibreIdentityNumber,
-} from "#packages/domain/src/fibre-civil-identity.mjs";
+} from "#core/src/fibre-civil-identity.mjs";
 import {
   IntegrityError,
   canonicalJson,

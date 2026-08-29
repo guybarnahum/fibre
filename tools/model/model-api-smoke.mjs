@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-import { createGoogleModelAdapter } from "#integrations/models/google.mjs";
-import { createOpenAIModelAdapter } from "#integrations/models/openai.mjs";
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { createGoogleModelAdapter } from "#integrations/ai/reasoning/google.mjs";
+import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 
 export const MODEL_SMOKE_TOKEN = "fibre-model-smoke-v1";
 export const MODEL_SMOKE_PROMPT = resolvePromptAsset({

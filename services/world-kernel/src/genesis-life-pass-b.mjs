@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { GENESIS_SPARSE_HISTORY_NOTICE } from "./genesis-historical-envelope-v1.mjs";
 import { normalizePassBInput } from "./genesis-pass-b-domain.mjs";

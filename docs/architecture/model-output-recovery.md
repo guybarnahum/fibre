@@ -29,7 +29,7 @@ Mechanical recovery lives below Genesis, memory, identity, dignity and other sem
 
 ## Ownership
 
-A small reusable model-runtime package owns provider-neutral mechanical output recovery. Provider adapters such as OpenAI or Google may project Fibre's canonical response schema to the subset their transport supports, but the provider's schema support never becomes Fibre's validity definition.
+The provider-neutral reasoning integration owns mechanical model-output recovery. Provider adapters such as OpenAI or Google may project Fibre's canonical response schema to the subset their transport supports, but the provider's schema support never becomes Fibre's validity definition.
 
 Domain callers own semantic admission and any budget for making another model call. The generic recovery layer may identify and mechanically recover an authorized form failure; it may never retry because an answer is weak, boring, inconvenient or scientifically disappointing.
 
@@ -101,4 +101,4 @@ Long model calls should expose lightweight progress through existing observer/ev
 
 This capability proves execution robustness, not Thread individuality or agency. It deliberately excludes semantic admission policy, quality judgment, autonomous model selection and general provider orchestration; those remain in their owning domains/runtime layers.
 
-No permanent Fibre constraint is introduced. The extension path remains open to new providers, new mechanical recovery handlers and richer model gateways without moving identity, memory, meaning or authorization authority into the model-runtime layer.
+No permanent Fibre constraint is introduced. The extension path remains open to new providers, new mechanical recovery handlers and richer model gateways without moving identity, memory, meaning or authorization authority into the reasoning integration layer.

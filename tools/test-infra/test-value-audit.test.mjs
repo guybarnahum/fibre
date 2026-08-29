@@ -9,7 +9,7 @@ import { buildTestValueAudit } from "./test-value-audit.mjs";
 function withAuditFixture(run) {
   const root = mkdtempSync(join(tmpdir(), "fibre-test-value-audit-"));
   for (const directory of [
-    "packages/domain/test",
+    "core/test",
     "services/world-kernel/test",
     "tools",
   ]) {
@@ -27,7 +27,7 @@ function put(root, path, source) {
 
 test("test-value audit distinguishes semantic tests from mechanical tombstones and aliases", () =>
   withAuditFixture((root) => {
-    put(root, "packages/domain/test/thread.test.mjs", `
+    put(root, "core/test/thread.test.mjs", `
       import test from "node:test";
       test("thread identity persists", () => {});
     `);
@@ -81,7 +81,7 @@ test("test-value audit reports byte-identical test files without treating shared
       import test from "node:test";
       test("same boundary", () => {});
     `;
-    put(root, "packages/domain/test/a.test.mjs", duplicate);
+    put(root, "core/test/a.test.mjs", duplicate);
     put(root, "services/world-kernel/test/b.test.mjs", duplicate);
     put(root, "tools/c.test.mjs", `
       import test from "node:test";
@@ -91,12 +91,12 @@ test("test-value audit reports byte-identical test files without treating shared
     const audit = buildTestValueAudit(root);
     assert.equal(audit.hygiene.exactDuplicateBodies.length, 1);
     assert.deepEqual(audit.hygiene.exactDuplicateBodies[0].paths, [
-      "packages/domain/test/a.test.mjs",
+      "core/test/a.test.mjs",
       "services/world-kernel/test/b.test.mjs",
     ]);
     assert.equal(audit.hygiene.duplicateTitles.length, 1);
     assert.deepEqual(audit.hygiene.duplicateTitles[0].paths, [
-      "packages/domain/test/a.test.mjs",
+      "core/test/a.test.mjs",
       "services/world-kernel/test/b.test.mjs",
       "tools/c.test.mjs",
     ]);
@@ -105,7 +105,7 @@ test("test-value audit reports byte-identical test files without treating shared
 test("test-value audit covers every recursive npm test root including deployment adapters", () =>
   withAuditFixture((root) => {
     const roots = [
-      ["domain", "packages/domain/test/domain-scope.test.mjs"],
+      ["domain", "core/test/domain-scope.test.mjs"],
       ["infra", "packages/infra/test/infra-scope.test.mjs"],
       ["asset-generator", "services/asset-generator/test/asset-scope.test.mjs"],
       ["birth-center", "services/birth-center/test/birth-scope.test.mjs"],

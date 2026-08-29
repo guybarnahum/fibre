@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createGoogleModelAdapter } from "../../../integrations/models/google.mjs";
-import { createOpenAIModelAdapter } from "../../../integrations/models/openai.mjs";
+import { createGoogleModelAdapter } from "../../../integrations/ai/reasoning/google.mjs";
+import { createOpenAIModelAdapter } from "../../../integrations/ai/reasoning/openai.mjs";
 import { canonicalJson, sha256 } from "../src/persistence-common.mjs";
 
 const SCHEMA = {

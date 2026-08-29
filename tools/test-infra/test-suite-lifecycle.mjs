@@ -43,7 +43,7 @@ export function testLifecycleForPath(path, root = DEFAULT_TEST_ROOT) {
 }
 
 export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
-  const domain = walkTests(join(root, "packages/domain/test"));
+  const domain = walkTests(join(root, "core/test"));
   const infra = walkTests(join(root, "infra/test"));
   const deployments = walkTests(join(root, "infra/deployments"));
   const assetGenerator = walkTests(join(root, "services/asset-generator/test"));

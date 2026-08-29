@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import {
   createDurableModelAdapter,
   createFileModelInvocationJournal,
@@ -13,7 +13,7 @@ import {
   assertSealedHistoryExposureManifest,
   computeSealedHistoryTaintClosure,
 } from "#services/world-kernel/src/genesis-sealed-history-isolation.mjs";
-import { createOpenAIModelAdapter } from "#integrations/models/openai.mjs";
+import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
 
 export const GENESIS_D5_PACKET_CONTRACT = "fibre-genesis-d5-sealed-history-packet-v1";

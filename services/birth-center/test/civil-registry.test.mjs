@@ -8,7 +8,7 @@ import {
   fibreIdentityNumberFromPayload,
   normalizeFibreCivilRegistration,
   normalizeFibreIdentityNumber,
-} from "#packages/domain/src/fibre-civil-identity.mjs";
+} from "#core/src/fibre-civil-identity.mjs";
 import { createCivilRegistryService } from "../src/civil-registry.mjs";
 
 function fakeAuthority(registrations = []) {

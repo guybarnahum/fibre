@@ -19,7 +19,7 @@ A FIN is prepared only for an admitted birth bundle and has display form:
 XXXX-XX-XXXX
 ```
 
-The value contract and checksum policy are provider-neutral and live in `packages/domain/src/fibre-civil-identity.mjs`. The Civil Registry service owns minting, collision avoidance and lookup orchestration. The World Kernel publication adapter persists the prepared registration inside the same transaction that makes the Thread live, so no valid birth can commit without its civil registration.
+The value contract and checksum policy are provider-neutral and live in `core/src/fibre-civil-identity.mjs`. The Civil Registry service owns minting, collision avoidance and lookup orchestration. The World Kernel publication adapter persists the prepared registration inside the same transaction that makes the Thread live, so no valid birth can commit without its civil registration.
 
 The FIN is public/non-secret and must not be used as an authentication credential. It encodes no name, World, date, stage, gender, lineage, origin mode, citizenship or other Thread facts.
 

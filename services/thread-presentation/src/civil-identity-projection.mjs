@@ -1,4 +1,4 @@
-import { normalizeFibreCivilRegistration } from "#packages/domain/src/fibre-civil-identity.mjs";
+import { normalizeFibreCivilRegistration } from "#core/src/fibre-civil-identity.mjs";
 import { normalizePresentationCivilIdentity } from "#services/world-kernel/src/thread-presentation-identity-domain.mjs";
 
 function assertRegistryReader(civilRegistry) {

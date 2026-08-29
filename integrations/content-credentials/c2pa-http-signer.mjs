@@ -1,13 +1,13 @@
 import {
   AssetGenerationError,
   parseRetryAfterMs,
-} from "../asset-generation-error.mjs";
+} from "../ai/asset-generation-error.mjs";
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,
   normalizeCredentialEmbedResult,
   normalizeCredentialVerification,
   normalizeEmbeddedAssetProvenance,
-} from "../asset-provenance-domain.mjs";
+} from "../ai/asset-provenance-domain.mjs";
 
 export const C2PA_HTTP_TRUST_POLICIES = Object.freeze([
   "development_signature_only",

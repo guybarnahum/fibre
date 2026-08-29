@@ -86,7 +86,7 @@ Cross-owner runtime imports use stable package identities:
 @fibre/asset-generator
 ```
 
-Do not import a sibling capability with `../../other-service/src/...`. Do not import `domain/src/...` or `infra/src/...` from outside those owners. `package.json#exports` is the public seam.
+Do not import a sibling capability with `../../other-service/src/...`. Do not import `core/src/...` or `infra/src/...` from outside those owners. `package.json#exports` is the public seam.
 
 Inside one owner, direct `./` imports are preferred. Existing `../` imports that remain within one owner may be migrated incrementally, but new runtime code should not introduce parent traversal when an owner entry point can express the dependency. Repository validation enforces the cross-owner rule now and should tighten the local rule as the tree is reorganized.
 

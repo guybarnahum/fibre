@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
-  { scope: "domain", directory: "packages/domain/test" },
+  { scope: "domain", directory: "core/test" },
   { scope: "infra", directory: "packages/infra/test" },
   { scope: "asset-generator", directory: "services/asset-generator/test" },
   { scope: "birth-center", directory: "services/birth-center/test" },

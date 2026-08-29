@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#packages/model-runtime/src/prompt-registry.mjs";
+import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { normalizePassBInput, normalizePassBModelOutput } from "./genesis-pass-b-domain.mjs";
 import {
   GENESIS_PASS_B_PROMPT,
