@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import { presentationAssetSourceDigest } from "../src/presentation-asset-demand.mjs";
 import {
   createPresentationAssetDemandService,
