@@ -29,12 +29,15 @@ Start with:
 5. `foundations/rich-life.md`
 6. `state/current-state.md`
 7. `state/current-priorities.md`
-8. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
-9. `validation/generative-diagnostic-methodology.md`
-10. `validation/m2-pr-plan.md`
-11. the relevant concept and architecture documents for the task
+8. `decisions/ADR-0018-vision-led-development-discipline.md`
+9. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
+10. `validation/generative-diagnostic-methodology.md`
+11. `validation/m2-pr-plan.md`
+12. the relevant concept and architecture documents for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant local README/contract.
+
+A standing execution rule is that infrastructure exists to enable and protect Fibre capabilities. Once a representative architectural proof is sufficient for the current milestone, non-blocking abstraction cleanup returns to tracked debt rather than displacing organism development.
 
 ## Current M2 / Genesis work
 
@@ -104,6 +107,10 @@ Historical realization and meaning formation are genome blind. Permitted genome 
 - `architecture/production-persistence.md`
 - `architecture/prompt-synthesis.md`
 - `architecture/infrastructure-driver.md`
+- `decisions/ADR-0017-provider-neutral-production-persistence.md`
+- `decisions/ADR-0018-vision-led-development-discipline.md`
+
+Provider-neutral persistence remains mandatory for production authority, but it is not an independent completion program. Use the hardest representative Fibre requirement to earn the abstraction, then return to Fibre capability work unless further migration is concretely required.
 
 ## Presentation and derived assets
 
@@ -157,7 +164,8 @@ At minimum load:
 - `validation/thread-differential-gate.md`
 - `validation/drift-scorecard.md`
 - `validation/m2-pr-plan.md`
+- `decisions/ADR-0018-vision-led-development-discipline.md`
 - the active bridge/milestone contract
 - relevant ADRs
 
-For Fibre, an ordinary adversarial review is a **vision-effectiveness review** unless explicitly scoped as security/red-team work: try to falsify whether personhood-bearing state is becoming causal and load-bearing rather than merely stored, prompted or displayed.
+For Fibre, an ordinary adversarial review is a **vision-effectiveness review** unless explicitly scoped as security/red-team work: try to falsify whether personhood-bearing state is becoming causal and load-bearing rather than merely stored, prompted or displayed. Also challenge whether proposed infrastructure work has a concrete Fibre beneficiary and a defined stop condition rather than expanding abstraction for its own sake.
