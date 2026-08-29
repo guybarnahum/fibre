@@ -77,6 +77,12 @@ function testFiles(root = DEFAULT_ROOT) {
     .sort((left, right) => left.path.localeCompare(right.path));
 }
 
+function missingTestRoots(root = DEFAULT_ROOT) {
+  return TEST_SCOPES
+    .filter(({ directory }) => !existsSync(join(root, directory)))
+    .map(({ scope, directory }) => ({ scope, directory }));
+}
+
 function lexicalView(source) {
   const masked = [...source];
   const strings = [];
@@ -202,6 +208,8 @@ function duplicateGroups(records, selector) {
 }
 
 export function buildTestValueAudit(root = DEFAULT_ROOT) {
+  const warnings = missingTestRoots(root)
+    .map(({ scope, directory }) => `configured test root is missing: ${directory} (scope ${scope})`);
   const records = testFiles(root).map(({ scope, path }) => {
     const source = readFileSync(path, "utf8");
     const analysis = analyzeTestSource(source);
@@ -235,6 +243,7 @@ export function buildTestValueAudit(root = DEFAULT_ROOT) {
     totals: { files: records.length, declaredTestCalls: records.reduce((s, r) => s + r.declaredTestCalls, 0), bytes: records.reduce((s, r) => s + r.bytes, 0) },
     byScope: summarizeBy(records, "scope"),
     byFamily: summarizeBy(records, "family"),
+    warnings,
     records,
     hygiene: { exactDuplicateBodies, testImportAliases, zeroDeclaredTests, commentOnlyTestFiles, duplicateTitles },
   };
@@ -303,6 +312,7 @@ function parseArgs(argv) {
 function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const audit = buildTestValueAudit();
+  for (const warning of audit.warnings) process.stderr.write(`TEST-AUDIT WARNING: ${warning}\n`);
   if (args.json) writeFileSync(args.json, JSON.stringify(audit, null, 2));
   if (args.markdown) writeFileSync(args.markdown, renderAudit(audit));
   if (!args.json && !args.markdown) process.stdout.write(renderAudit(audit));

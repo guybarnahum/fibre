@@ -102,6 +102,15 @@ test("test-value audit reports byte-identical test files without treating shared
     ]);
   }));
 
+test("test-value audit warns when configured test roots are missing", () =>
+  withAuditFixture((root) => {
+    const audit = buildTestValueAudit(root);
+    assert.ok(audit.warnings.includes("configured test root is missing: infra/test (scope infra)"));
+    assert.equal(audit.warnings.some((warning) => warning.includes("core/test")), false);
+    assert.equal(audit.warnings.some((warning) => warning.includes("services/world-kernel/test")), false);
+    assert.equal(audit.warnings.some((warning) => warning.includes("tools")), false);
+  }));
+
 test("test-value audit covers every recursive npm test root including deployment adapters", () =>
   withAuditFixture((root) => {
     const roots = [
@@ -120,6 +129,7 @@ test("test-value audit covers every recursive npm test root including deployment
 
     const audit = buildTestValueAudit(root);
     assert.equal(audit.totals.files, roots.length);
+    assert.deepEqual(audit.warnings, []);
     assert.deepEqual(Object.keys(audit.byScope), roots.map(([scope]) => scope).sort());
     for (const [scope] of roots) assert.equal(audit.byScope[scope].files, 1);
   }));
