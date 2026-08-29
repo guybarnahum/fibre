@@ -6,19 +6,22 @@ Current layout:
 
 ```text
 integrations/
-  models/
-    openai.mjs
-    google.mjs
-    retry-policy.mjs
-  media/
-    openai-image-provider.mjs
-    bfl-flux-image-provider.mjs
+  ai/
+    reasoning/
+      openai.mjs
+      google.mjs
+      retry-policy.mjs
+      output-recovery.mjs
+      prompt-assets.mjs
+    image/
+      openai.mjs
+      bfl.mjs
   content-credentials/
     c2pa-http-signer.mjs
 ```
 
-`services/` owns Fibre semantics and the inward-facing contracts these adapters implement. `deployments/` owns provider/profile/secret selection and executable composition. `infra/` remains physical infrastructure only.
+`services/` owns Fibre semantics and the inward-facing contracts these adapters implement. Service-owned prompt text remains under the owning service. `deployments/` owns provider/profile/secret selection and executable composition. `infra/` remains physical infrastructure only.
 
-`services/c2pa-local/` is the local Content Credentials signing service. The HTTP client that talks to it is an integration and lives here; Asset Generator receives that signer through dependency injection.
+The small contract bridge modules under `integrations/ai/` intentionally point inward to service-owned contracts so concrete AI adapters can implement those contracts without copying domain semantics. Integrations may depend on those narrow contracts; services must not select concrete AI providers, and AI integrations must not know Fibre service topology.
 
-The small contract bridge modules at this directory root intentionally point inward to service-owned contracts so concrete adapters can implement those contracts without copying domain semantics. Integrations may depend on those narrow contracts; services, integrations and deployments must not make third-party AI/media/content-credential services into `InfraDriver` capabilities.
+The Content Credentials HTTP client is an integration. The C2PA signing service itself remains a Fibre runtime service and is supplied to Asset Generator through deployment composition.
