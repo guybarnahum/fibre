@@ -135,7 +135,6 @@ test("Cloudflare deployment separates development signature proof from productio
   const presentationRemote = await json(new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url));
   const assetWorker = await readFile(new URL("../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url), "utf8");
   const presentationWorker = await readFile(new URL("../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url), "utf8");
-  const selector = await readFile(new URL("../../../infra/deployments/content-credential-signer.mjs", import.meta.url), "utf8");
 
   for (const config of [assetLocal, presentationLocal]) {
     assert.equal(config.vars.C2PA_SIGNER_ID, "fibre-c2pa-node-local-v1");
@@ -148,13 +147,16 @@ test("Cloudflare deployment separates development signature proof from productio
     assert.ok(config.secrets.required.includes("C2PA_SIGNER_TOKEN"));
   }
 
-  assert.match(assetWorker, /createContentCredentialSigner/);
-  assert.match(presentationWorker, /createContentCredentialSigner/);
+  assert.match(assetWorker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/);
+  assert.match(presentationWorker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/);
+  assert.match(assetWorker, /createHttpContentCredentialSigner/);
+  assert.match(presentationWorker, /createHttpContentCredentialSigner/);
   assert.match(assetWorker, /baseUrl: env\.C2PA_SIGNER_URL/);
   assert.match(presentationWorker, /baseUrl: env\.C2PA_SIGNER_URL/);
+  assert.match(assetWorker, /authorizationToken: env\.C2PA_SIGNER_TOKEN/);
+  assert.match(presentationWorker, /authorizationToken: env\.C2PA_SIGNER_TOKEN/);
+  assert.match(assetWorker, /trustPolicy: env\.C2PA_TRUST_POLICY/);
+  assert.match(presentationWorker, /trustPolicy: env\.C2PA_TRUST_POLICY/);
   assert.doesNotMatch(assetWorker, /fibre-c2pa-node-local-v1/);
   assert.doesNotMatch(presentationWorker, /fibre-c2pa-node-local-v1/);
-  assert.match(selector, /authorizationToken/);
-  assert.match(selector, /trustPolicy/);
-  assert.match(selector, /createHttpContentCredentialSigner/);
 });
