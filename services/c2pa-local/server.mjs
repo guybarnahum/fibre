@@ -5,10 +5,10 @@ import { createServer } from "node:http";
 import { Builder, LocalSigner, Reader } from "@contentauth/c2pa-node";
 import {
   bearerAuth,
-  createServiceRuntime,
+  createService,
   readJsonRequest,
-} from "#infra/service-runtime";
-import { createNodeServiceHandler } from "#infra/node-service-runtime";
+} from "#infra/service";
+import { createNodeServiceHandler } from "#infra/providers/local/service";
 import {
   activeManifestFromStore,
   describeC2paAssertions,
@@ -176,7 +176,7 @@ async function selfTest() {
 await selfTest();
 
 const routeAuth = SERVICE_TOKEN === null ? null : bearerAuth(SERVICE_TOKEN);
-const httpRuntime = createServiceRuntime({
+const service = createService({
   serviceName: "c2pa-local",
   health: {
     format: FORMAT,
@@ -200,7 +200,7 @@ const httpRuntime = createServiceRuntime({
 });
 
 const server = createServer(createNodeServiceHandler({
-  runtime: httpRuntime,
+  service,
   maxBodyBytes: MAX_BODY_BYTES,
 }));
 
