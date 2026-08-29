@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "#infra";
 import { normalizePresentationAssetDemand } from "./presentation-asset-demand.mjs";
 import {
   normalizePresentationAssetDemandProjection,
