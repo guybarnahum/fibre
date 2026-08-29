@@ -1,0 +1,85 @@
+schema: fibre-deployment
+environment: local
+
+runtimes:
+  node-local:
+    provider: local-node
+  cloudflare-local:
+    provider: cloudflare
+
+infra:
+  cloudflare-local:
+    provider: cloudflare
+    driver: cloudflare-v1
+    capabilities:
+      - streams
+      - objects
+      - catalog
+      - realtime
+      - queues
+      - workflows
+
+integrations:
+  guardian-openai:
+    kind: ai.reasoning
+    provider: openai
+    config:
+      model: gpt-5.1-2025-11-13
+    secrets:
+      apiKey: OPENAI_API_KEY
+  asset-image-openai:
+    kind: ai.image
+    provider: openai
+    config:
+      model: gpt-image-2-2026-04-21
+    secrets:
+      apiKey: OPENAI_API_KEY
+  asset-image-bfl:
+    kind: ai.image
+    provider: bfl
+    config:
+      model: flux-2-pro
+    secrets:
+      apiKey: BFL_API_KEY
+  c2pa-local-http:
+    kind: content-credentials
+    provider: c2pa-http
+    environment:
+      baseUrl: C2PA_SIGNER_URL
+      signerId: C2PA_SIGNER_ID
+      trustPolicy: C2PA_TRUST_POLICY
+      authorizationToken: C2PA_SIGNER_TOKEN
+  c2pa-node-local:
+    kind: content-credentials.signer
+    provider: c2pa-node
+    config:
+      signerId: fibre-c2pa-node-local-v1
+      trustPolicy: development_signature_only
+      certificatePath: .fibre/p3-c2pa/cert.pem
+      privateKeyPath: .fibre/p3-c2pa/key.pem
+    environment:
+      serviceToken: FIBRE_C2PA_SERVICE_TOKEN
+
+services:
+  world-kernel:
+    runtime: node-local
+    integrations:
+      dignityGuardian: guardian-openai
+  birth-center:
+    runtime: node-local
+  content-credential-signer:
+    runtime: node-local
+    integrations:
+      signer: c2pa-node-local
+  thread-presentation:
+    runtime: cloudflare-local
+    infra: cloudflare-local
+    integrations:
+      contentCredentials: c2pa-local-http
+  asset-generator:
+    runtime: cloudflare-local
+    infra: cloudflare-local
+    integrations:
+      openai-gpt-image-2-medium-v1: asset-image-openai
+      bfl-flux-2-pro-v1: asset-image-bfl
+      contentCredentials: c2pa-local-http
