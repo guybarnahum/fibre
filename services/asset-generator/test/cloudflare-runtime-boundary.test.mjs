@@ -95,7 +95,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
     "diagnostics must distinguish safe staged retries from pre-stage failures");
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
-  assert.match(worker, /createHttpContentCredentialSigner/);
+  assert.match(worker, /createCloudflareContentCredentialSigner/);
   assert.match(worker, /asset-generation-failure-observation-v0\.2/,
     "Cloudflare deployment must expose the operation durability bit in its safe failure observation");
   assert.match(worker, /category: error\?\.category/);
@@ -224,7 +224,11 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(assetConfig.queues.consumers, undefined,
     "Asset Generator publishes completion facts; it does not own Presentation admission");
 
-  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL"]);
+  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN"]);
+  assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, "fibre-c2pa-production-v1");
+  assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
+  assert.equal(assetConfig.vars.C2PA_SIGNER_ID, presentationConfig.vars.C2PA_SIGNER_ID);
+  assert.equal(assetConfig.vars.C2PA_TRUST_POLICY, presentationConfig.vars.C2PA_TRUST_POLICY);
   assert.equal(presentationConfig.vars?.P3_FIXTURE_MODE, undefined,
     "fixture mutation endpoints must stay disabled in the remote composition");
 });
