@@ -227,14 +227,14 @@ Every substantial persistence/Infra slice should therefore name four things befo
 
 If those cannot be stated concretely, the work should normally be deferred in favor of Fibre capability development.
 
-This discipline is governed by [`../decisions/ADR-0018-vision-led-development-discipline.md`](../decisions/ADR-0018-vision-led-development-discipline.md).
+This discipline is governed by [`../decisions/ADR-0020-vision-led-development-discipline.md`](../decisions/ADR-0020-vision-led-development-discipline.md).
 
 ## Relationship to other architecture
 
 - [`storage-model.md`](storage-model.md) defines semantic storage authorities, append-only discipline, transaction boundaries and repository/world separation.
 - [`infrastructure-driver.md`](infrastructure-driver.md) remains the evolving design for the umbrella provider-neutral capability bundle and concrete port contracts.
 - [`../decisions/ADR-0017-provider-neutral-production-persistence.md`](../decisions/ADR-0017-provider-neutral-production-persistence.md) records the production boundary.
-- [`../decisions/ADR-0018-vision-led-development-discipline.md`](../decisions/ADR-0018-vision-led-development-discipline.md) defines when further abstraction belongs on the critical path.
+- [`../decisions/ADR-0020-vision-led-development-discipline.md`](../decisions/ADR-0020-vision-led-development-discipline.md) defines when further abstraction belongs on the critical path.
 
 The short form is:
 
