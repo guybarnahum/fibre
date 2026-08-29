@@ -79,7 +79,7 @@ test("legacy package Infra aliases cannot bypass the root #infra public seam", (
 });
 
 test("deployment composition cannot reach root Infra through relative private paths", () => {
-  const specifier = ["..", "..", "..", "infra", "src", "cloudflare-v1.mjs"].join("/");
+  const specifier = ["..", "..", "..", "infra", "providers", "cloudflare", "driver.mjs"].join("/");
   assert.deepEqual(
     runtimeDependencyViolationsForSource(
       "deployments/cloudflare/example/worker.mjs",
@@ -97,14 +97,15 @@ test("same-owner imports, stable named package boundaries and root Infra entry p
     fakeImport("@fibre/domain/civil-identity").trimEnd(),
     fakeImport("@fibre/asset-generator").trimEnd(),
     fakeImport("#infra").trimEnd(),
-    fakeImport("#infra/memory").trimEnd(),
+    fakeImport("#infra/service").trimEnd(),
+    fakeImport("#infra/providers/local").trimEnd(),
   ].join("\n");
   assert.deepEqual(privateServiceEdgesForSource("services/example/src/runtime.mjs", source), []);
   assert.deepEqual(runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", source), []);
   assert.deepEqual(
     runtimeDependencyViolationsForSource(
       "deployments/cloudflare/example/worker.mjs",
-      fakeImport("#infra/cloudflare-v1"),
+      fakeImport("#infra/providers/cloudflare"),
     ),
     [],
   );
@@ -133,7 +134,7 @@ test("runtime tests are not production dependency-policy targets", () => {
     [],
   );
 
-  const infraSpecifier = ["..", "..", "..", "infra", "src", "cloudflare-v1.mjs"].join("/");
+  const infraSpecifier = ["..", "..", "..", "infra", "providers", "cloudflare", "driver.mjs"].join("/");
   assert.deepEqual(
     runtimeDependencyViolationsForSource(
       "deployments/cloudflare/example/test/worker.test.mjs",
