@@ -50,7 +50,7 @@ In another terminal:
 npx wrangler@latest d1 execute fibre-presentation-local \
   --config deployments/cloudflare/thread-presentation/wrangler.local.jsonc \
   --local \
-  --file packages/infra/cloudflare/d1/0001_fibre_catalog.sql
+  --file infra/providers/cloudflare/d1/0001_fibre_catalog.sql
 
 npm run dev:asset-stack:cloudflare
 ```
