@@ -1,6 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
+import { createServiceRuntime } from "../../../infra/service-runtime/service-runtime.mjs";
 import { createCloudflareInfraDriver } from "../../../packages/infra/src/cloudflare-v1.mjs";
 import { withCloudflareQueueBindings } from "../../../packages/infra/src/cloudflare-queue-port.mjs";
 import {
@@ -14,6 +15,10 @@ import { createCloudflareAssetImageProvider } from "./image-provider-selection.m
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
+const HTTP_RUNTIME = createServiceRuntime({
+  serviceName: "asset-generator",
+  health: { role: "workflow-host" },
+});
 
 function safeFailureDetail(error) {
   const value = error?.safeDetail ?? (error instanceof Error ? error.message : String(error));
@@ -128,11 +133,12 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   }
 }
 
-// Wrangler requires a default module export to classify this script as an ES
-// Module Worker. Asset generation itself is Workflow-only; direct HTTP access
-// intentionally exposes no generation API.
 export default {
-  fetch() {
+  fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/healthz") {
+      return HTTP_RUNTIME.fetch(request);
+    }
     return new Response("Not Found", { status: 404 });
   },
 };
