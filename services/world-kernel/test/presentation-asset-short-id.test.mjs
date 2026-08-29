@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "#infra/memory";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import { fibreShortIdCandidates, fibreShortRef } from "#services/asset-generator/src/index.mjs";
 import {
   presentationAssetIdentityDigest,
