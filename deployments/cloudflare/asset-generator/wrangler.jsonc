@@ -3,8 +3,12 @@
   "name": "fibre-asset-generator",
   "main": "./worker.mjs",
   "compatibility_date": "2026-08-25",
+  "vars": {
+    "C2PA_SIGNER_ID": "fibre-c2pa-production-v1",
+    "C2PA_TRUST_POLICY": "c2pa_trust_list"
+  },
   "secrets": {
-    "required": ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_URL"]
+    "required": ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN"]
   },
   "r2_buckets": [
     {
