@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS fibre_catalog (
+  catalog_key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
