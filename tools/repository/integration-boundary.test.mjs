@@ -21,7 +21,6 @@ const retiredServiceIntegrationPaths = Object.freeze([
 const worldKernelModelRuntimeUrl = new URL("../../services/world-kernel/src/model-runtime/model-runtime.mjs", import.meta.url);
 const assetGeneratorIndexUrl = new URL("../../services/asset-generator/src/index.mjs", import.meta.url);
 const providerSelectionUrl = new URL("../../infra/deployments/asset-generator/image-provider-selection.mjs", import.meta.url);
-const signerSelectionUrl = new URL("../../infra/deployments/content-credential-signer.mjs", import.meta.url);
 const assetWorkerUrl = new URL("../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url);
 const c2paServiceUrl = new URL("../../services/c2pa-local/server.mjs", import.meta.url);
 const infraProviderRoots = Object.freeze([new URL("../../infra/providers/", import.meta.url)]);
@@ -85,15 +84,9 @@ test("third-party integrations have one shared home outside services and Infra p
   assertSourceMatches(providerSelection, /#integrations\/ai\/image\/bfl\.mjs/, "image-provider selector must use the shared BFL image integration");
   assertSourceOmits(providerSelection, /services\/asset-generator\/src\/index\.mjs/, "image-provider selector must not depend on the asset-generator service index");
 
-  const signerSelection = await text(signerSelectionUrl);
-  assertSourceMatches(signerSelection, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/, "content-credential composition must use the shared C2PA HTTP signer integration");
-  assertSourceMatches(signerSelection, /createHttpContentCredentialSigner/, "content-credential composition must construct createHttpContentCredentialSigner");
-  assertSourceOmits(signerSelection, /services\/asset-generator\/src\/index\.mjs/, "content-credential composition must not depend on the asset-generator service index");
-
   const assetWorker = await text(assetWorkerUrl);
-  assertSourceMatches(assetWorker, /content-credential-signer\.mjs/, "Asset Generator Worker must select C2PA through deployment composition");
-  assertSourceMatches(assetWorker, /createContentCredentialSigner/, "Asset Generator Worker must construct credentials through provider-neutral deployment composition");
-  assertSourceOmits(assetWorker, /integrations\/content-credentials\/c2pa-http-signer\.mjs/, "Asset Generator Worker must not bypass deployment composition and import the C2PA integration directly");
+  assertSourceMatches(assetWorker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/, "Asset Generator deployment must use the shared C2PA HTTP signer integration directly");
+  assertSourceMatches(assetWorker, /createHttpContentCredentialSigner/, "Asset Generator deployment must construct the shared C2PA HTTP signer integration");
   assertSourceMatches(assetWorker, /createAssetGenerationRuntime\(\{ infra, provider, credentialSigner \}\)/, "Asset Generator Worker must inject infra, image provider, and credential signer into the portable runtime");
 
   const c2paService = await text(c2paServiceUrl);
