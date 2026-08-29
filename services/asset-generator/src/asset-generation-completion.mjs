@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "../../../packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "#infra";
 
 export const ASSET_GENERATION_COMPLETION_VERSION = "asset-generation-completion-v0.1";
 export const ASSET_GENERATION_COMPLETION_QUEUE = "asset_generation_completions";
