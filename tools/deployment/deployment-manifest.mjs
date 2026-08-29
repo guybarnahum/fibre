@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { INFRA_CAPABILITIES } from "#packages/infra/src/infra-driver.mjs";
+import { INFRA_CAPABILITIES } from "#infra";
 
 export const FIBRE_DEPLOYMENT_VERSION = "fibre-deployment-v0.1";
 
