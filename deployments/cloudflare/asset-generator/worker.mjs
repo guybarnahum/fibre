@@ -1,9 +1,9 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
-import { createCloudflareInfraDriver } from "#infra/cloudflare-v1";
-import { withCloudflareQueueBindings } from "#infra/cloudflare-queue";
-import { createServiceRuntime } from "#infra/service-runtime";
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { withCloudflareQueueBindings } from "#infra/providers/cloudflare/queue";
+import { createService } from "#infra/service";
 import {
   ASSET_GENERATION_COMPLETION_QUEUE,
   assetGenerationRetryDecision,
@@ -15,7 +15,7 @@ import { createCloudflareAssetImageProvider } from "./image-provider-selection.m
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
-const HTTP_RUNTIME = createServiceRuntime({
+const HTTP_SERVICE = createService({
   serviceName: "asset-generator",
   health: { role: "workflow-host" },
 });
@@ -135,10 +135,6 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
 
 export default {
   fetch(request) {
-    const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/healthz") {
-      return HTTP_RUNTIME.fetch(request);
-    }
-    return new Response("Not Found", { status: 404 });
+    return HTTP_SERVICE.fetch(request);
   },
 };
