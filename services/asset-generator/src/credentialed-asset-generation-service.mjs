@@ -1,7 +1,7 @@
 import {
   InfraImmutableObjectConflictError,
   requireInfraCapabilities,
-} from "@fibre/infra";
+} from "#infra";
 import { normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
 import {
   AssetGenerationError,
