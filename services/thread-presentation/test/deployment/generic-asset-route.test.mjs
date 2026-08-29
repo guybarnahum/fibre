@@ -7,7 +7,7 @@ import { createThreadPresentationServer } from "#services/world-kernel/src/threa
 import { createPresentationReadApi, channelIdForThread } from "../presentation-read-api.mjs";
 
 async function p2Bundle() {
-  const base = new URL("../../../../fixtures/thread-presentation/can-tho/", import.meta.url);
+  const base = new URL("../../../../../fixtures/thread-presentation/can-tho/", import.meta.url);
   return {
     presentation: JSON.parse(await readFile(new URL("presentation.json", base), "utf8")),
     media: JSON.parse(await readFile(new URL("media.json", base), "utf8")),
