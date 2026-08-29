@@ -44,7 +44,6 @@ const c2paServiceUrl = new URL(
 );
 const infraRoots = Object.freeze([
   new URL("../../infra/", import.meta.url),
-  new URL("../../packages/infra/src/", import.meta.url),
 ]);
 
 async function text(url) {
