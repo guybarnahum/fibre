@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import {
   InfraImmutableObjectConflictError,
   InfraWorkflowConflictError,
-} from "../src/infra-driver.mjs";
-import { createCloudflareInfraDriver } from "../src/cloudflare-v1.mjs";
+} from "../infra-driver.mjs";
+import { createCloudflareInfraDriver } from "../providers/cloudflare/driver.mjs";
 
 function fakeR2Bucket() {
   const objects = new Map();
