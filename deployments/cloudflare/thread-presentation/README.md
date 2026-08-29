@@ -55,7 +55,7 @@ Initialize D1 once and start both Cloudflare deployments:
 npx wrangler@latest d1 execute fibre-presentation-local \
   --config deployments/cloudflare/thread-presentation/wrangler.local.jsonc \
   --local \
-  --file infra/cloudflare/d1/0001_fibre_catalog.sql
+  --file infra/providers/cloudflare/d1/0001_fibre_catalog.sql
 
 npm run dev:asset-stack:cloudflare
 ```
@@ -117,7 +117,7 @@ After the remote D1 catalog has been provisioned, initialize its schema before t
 npx wrangler@latest d1 execute PRESENTATION_CATALOG \
   --config deployments/cloudflare/thread-presentation/wrangler.jsonc \
   --remote \
-  --file infra/cloudflare/d1/0001_fibre_catalog.sql
+  --file infra/providers/cloudflare/d1/0001_fibre_catalog.sql
 ```
 
 The remote config intentionally does **not** enable `P3_FIXTURE_MODE`; fixture mutation endpoints remain local/e2e-only.
