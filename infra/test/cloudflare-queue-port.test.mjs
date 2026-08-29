@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "../src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "../providers/local/memory-driver.mjs";
 import {
   createCloudflareQueuePort,
   withCloudflareQueueBindings,
-} from "../src/cloudflare-queue-port.mjs";
+} from "../providers/cloudflare/queue.mjs";
 
 function fakeQueueBinding() {
   const messages = [];
