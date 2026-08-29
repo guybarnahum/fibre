@@ -52,9 +52,13 @@ test("legacy package Infra aliases cannot bypass the root #infra public seam", (
   }
 });
 
-test("deployment composition may import sibling composition but not providers through private relative paths", () => {
+test("deployment composition may import integrations and public Infra providers but not providers through private relative paths", () => {
   assert.deepEqual(
-    runtimeDependencyViolationsForSource("infra/deployments/example/cloudflare/worker.mjs", fakeImport("../../content-credential-signer.mjs")),
+    runtimeDependencyViolationsForSource("infra/deployments/example/cloudflare/worker.mjs", fakeImport("#integrations/content-credentials/c2pa-http-signer.mjs")),
+    [],
+  );
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource("infra/deployments/example/cloudflare/worker.mjs", fakeImport("#infra/providers/cloudflare")),
     [],
   );
   const specifier = ["..", "..", "..", "providers", "cloudflare", "driver.mjs"].join("/");
