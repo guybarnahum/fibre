@@ -30,6 +30,10 @@ const providerSelectionUrl = new URL(
   "../../deployments/cloudflare/asset-generator/image-provider-selection.mjs",
   import.meta.url,
 );
+const signerSelectionUrl = new URL(
+  "../../deployments/cloudflare/content-credentials/signer-selection.mjs",
+  import.meta.url,
+);
 const assetWorkerUrl = new URL(
   "../../deployments/cloudflare/asset-generator/worker.mjs",
   import.meta.url,
@@ -89,9 +93,15 @@ test("third-party integrations have one shared home outside services and InfraDr
   assert.match(providerSelection, /integrations\/media\/bfl-flux-image-provider\.mjs/);
   assert.doesNotMatch(providerSelection, /services\/asset-generator\/src\/index\.mjs/);
 
+  const signerSelection = await text(signerSelectionUrl);
+  assert.match(signerSelection, /integrations\/content-credentials\/c2pa-http-signer\.mjs/);
+  assert.match(signerSelection, /createHttpContentCredentialSigner/);
+  assert.doesNotMatch(signerSelection, /services\/asset-generator\/src\/index\.mjs/);
+
   const assetWorker = await text(assetWorkerUrl);
-  assert.match(assetWorker, /integrations\/content-credentials\/c2pa-http-signer\.mjs/);
-  assert.match(assetWorker, /createHttpContentCredentialSigner/);
+  assert.match(assetWorker, /content-credentials\/signer-selection\.mjs/);
+  assert.match(assetWorker, /createCloudflareContentCredentialSigner/);
+  assert.doesNotMatch(assetWorker, /integrations\/content-credentials\/c2pa-http-signer\.mjs/);
   assert.match(assetWorker, /createAssetGenerationRuntime\(\{ infra, provider, credentialSigner \}\)/);
 
   const c2paService = await text(c2paServiceUrl);
