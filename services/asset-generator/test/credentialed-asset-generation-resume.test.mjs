@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/memory";
 import { ASSET_GENERATION_JOB_VERSION } from "../src/asset-generation-domain.mjs";
 import {
   AssetGenerationError,
