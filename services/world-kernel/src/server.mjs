@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { createNodeServiceHandler } from "#infra/providers/local/service";
+import { createService } from "#infra/service";
 import { openWorldStore } from "./persistence.mjs";
 import { openRuntimeStore } from "./runtime-store.mjs";
 import { openFreezeStore } from "./freeze-store.mjs";
@@ -32,6 +34,29 @@ function parsePort(value) {
     throw new TypeError("FIBRE_WORLD_PORT must be an integer from 0 through 65535");
   }
   return port;
+}
+
+function attachOperationalService(server, kernelService, { repairEnabled }) {
+  const handlers = server.listeners("request");
+  if (handlers.length !== 1) throw new Error("world-kernel HTTP server must expose exactly one request handler before service composition");
+  const [domainHandler] = handlers;
+  const service = createService({
+    serviceName: "world-kernel",
+    health: () => {
+      const current = kernelService.health();
+      const { ok: _ok, service: _service, ...details } = current;
+      return { ...details, repairEnabled };
+    },
+  });
+  const operationalHandler = createNodeServiceHandler({ service });
+  server.removeAllListeners("request");
+  server.on("request", (request, response) => {
+    if (request.method === "GET" && request.url === "/healthz") {
+      return operationalHandler(request, response);
+    }
+    return domainHandler(request, response);
+  });
+  return service;
 }
 
 export async function startWorldKernelFromEnvironment(
@@ -94,7 +119,6 @@ export async function startWorldKernelFromEnvironment(
     symbolicGenomeStore = new SymbolicGenomeStore(databasePath);
     applicabilityStore = openObligationApplicabilityStore(databasePath);
     authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);
-    // Open only after schema-owning stores have completed their additive repair.
     inspectionStore = openStructuredObligationInspectionStore(databasePath);
   } catch (error) {
     inspectionStore?.close();
@@ -116,8 +140,7 @@ export async function startWorldKernelFromEnvironment(
     throw error;
   }
 
-  const guardianModelAdapter = serviceOptions.guardianModelAdapter ??
-    guardianModelAdapterFromEnvironment(environment);
+  const guardianModelAdapter = serviceOptions.guardianModelAdapter ?? guardianModelAdapterFromEnvironment(environment);
   const identityContextSourceStores = {
     worldStore: store,
     identityStore,
@@ -162,6 +185,9 @@ export async function startWorldKernelFromEnvironment(
       })}\n`);
     },
   });
+  const operationalService = attachOperationalService(server, service, {
+    repairEnabled: adminToken !== null,
+  });
 
   try {
     const address = await listenWorldKernelHttpServer(server, { host, port });
@@ -192,6 +218,7 @@ export async function startWorldKernelFromEnvironment(
     };
     return {
       server,
+      operationalService,
       store,
       runtimeStore,
       freezeStore,
