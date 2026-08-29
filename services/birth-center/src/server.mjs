@@ -1,7 +1,9 @@
 import { createServer } from "node:http";
 import { resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
+import { createNodeServiceHandler } from "#infra/providers/local/service";
+import { createService } from "#infra/service";
 import {
   BIRTH_CENTER_RUNTIME_VERSION,
   createBirthCenterRuntime,
@@ -11,7 +13,7 @@ const LOOPBACK_BIND_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
 
 function assertLoopbackBindHost(host) {
   if (typeof host !== "string" || !LOOPBACK_BIND_HOSTS.has(host)) {
-    throw new TypeError("The M1 world-kernel server may bind only to a loopback host");
+    throw new TypeError("The Birth Center server may bind only to a loopback host");
   }
 }
 
@@ -21,14 +23,6 @@ function parsePort(value) {
     throw new TypeError("FIBRE_BIRTH_CENTER_PORT must be an integer from 0 through 65535");
   }
   return port;
-}
-
-function writeJson(response, statusCode, value) {
-  response.writeHead(statusCode, {
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-  });
-  response.end(`${JSON.stringify(value)}\n`);
 }
 
 export async function startBirthCenterFromEnvironment(
@@ -41,16 +35,22 @@ export async function startBirthCenterFromEnvironment(
   assertLoopbackBindHost(host);
 
   const runtime = createBirthCenterRuntime({ stateRoot, worldPublisher });
-  const server = createServer((request, response) => {
-    if (request.method === "GET" && (request.url === "/health" || request.url === "/v1/status")) {
-      writeJson(response, 200, {
-        service: "fibre-birth-center",
-        ...runtime.status(),
-      });
-      return;
-    }
-    writeJson(response, 404, { error: "not_found" });
+  const status = () => ({
+    service: "fibre-birth-center",
+    ...runtime.status(),
   });
+  const service = createService({
+    serviceName: "birth-center",
+    health: () => ({
+      runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
+      ...runtime.status(),
+    }),
+    routes: [
+      { method: "GET", path: "/health", handler: status },
+      { method: "GET", path: "/v1/status", handler: status },
+    ],
+  });
+  const server = createServer(createNodeServiceHandler({ service }));
 
   await new Promise((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
@@ -73,6 +73,7 @@ export async function startBirthCenterFromEnvironment(
 
   return Object.freeze({
     runtime,
+    service,
     server,
     address: Object.freeze({ host: address.address, port: address.port }),
     close,
