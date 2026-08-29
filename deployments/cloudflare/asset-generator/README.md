@@ -2,12 +2,24 @@
 
 This directory is the Cloudflare composition root for the provider-neutral Asset Generator service.
 
-It may choose Cloudflare Workers/Workflows, R2, Queues, the OpenAI image provider, and a Content Credential signer. It does not own Thread identity, memory, presentation authority, or the decision that generated media is publishable.
+It may choose Cloudflare Workers/Workflows, R2, Queues, image providers, and a Content Credential signer. It does not own Thread identity, memory, presentation authority, or the decision that generated media is publishable.
+
+## HTTP surface
+
+The Worker exposes one side-effect-free operational endpoint:
+
+```text
+GET /healthz
+```
+
+It returns service health only. It does not call OpenAI, BFL, C2PA, R2, Queues, or Workflows and therefore does not intentionally trigger paid generation.
+
+All other direct HTTP requests return `404`. Asset generation remains Workflow-only; this Worker does not expose a public `/generate` API.
 
 ## Configs
 
 - `wrangler.local.jsonc` — local Wrangler development. It points at the local C2PA signer on `127.0.0.1:8790` and must not be used for a remote deployment.
-- `wrangler.jsonc` — remote Cloudflare Asset Generator deployment. It requires configured `OPENAI_API_KEY` and `C2PA_SIGNER_URL` secrets and uses provider-native resource names only below the deployment boundary.
+- `wrangler.jsonc` — remote Cloudflare Asset Generator deployment. It uses production C2PA trust policy and provider-native resource names only below the deployment boundary.
 
 ## Local development
 
@@ -71,17 +83,18 @@ npx wrangler@latest r2 bucket create fibre-presentation-assets
 npx wrangler@latest queues create fibre-asset-completions
 ```
 
-Configure the required secrets against the remote Worker config:
+The remote Worker requires these secrets:
 
-```bash
-npx wrangler@latest secret put OPENAI_API_KEY \
-  --config deployments/cloudflare/asset-generator/wrangler.jsonc
-
-npx wrangler@latest secret put C2PA_SIGNER_URL \
-  --config deployments/cloudflare/asset-generator/wrangler.jsonc
+```text
+OPENAI_API_KEY
+BFL_API_KEY
+C2PA_SIGNER_URL
+C2PA_SIGNER_TOKEN
 ```
 
-`C2PA_SIGNER_URL` must be reachable from Cloudflare. `http://127.0.0.1:8790` is valid only for local development.
+The image-provider keys stay inside Asset Generator. `C2PA_SIGNER_URL` must be an HTTPS endpoint reachable from Cloudflare when production trust policy is enabled. `C2PA_SIGNER_TOKEN` authenticates Asset Generator to that service. The local `127.0.0.1` signer and its development certificate cannot satisfy the production trust policy.
+
+Configure each secret against the remote Worker config with Wrangler before deployment.
 
 Validate the deploy bundle without publishing it:
 
@@ -95,9 +108,11 @@ Deploy:
 npm run deploy:asset-generator:cloudflare
 ```
 
+After deployment, `GET /healthz` is the first smoke test. A successful health response proves only that the Worker HTTP runtime is alive; it does not prove image-provider, C2PA, storage, queue, or Workflow readiness.
+
 ## Remote stack boundary
 
-A checked remote Thread Presentation composition now lives at `deployments/cloudflare/thread-presentation/wrangler.jsonc`, with provider selection declared in `deployments/environments/cloudflare-remote.json`.
+A checked remote Thread Presentation composition lives at `deployments/cloudflare/thread-presentation/wrangler.jsonc`, with provider selection declared in `deployments/environments/cloudflare-remote.json`.
 
 The two remote compositions intentionally agree on:
 
@@ -115,6 +130,6 @@ npm run deploy:asset-generator:cloudflare:dry
 npm run deploy:thread-presentation:cloudflare:dry
 ```
 
-This does not make the remote media path production-ready. Fibre still has a local C2PA signer integration proof rather than an accepted production trust service, and the Presentation D1 catalog must be provisioned and initialized before live operation.
+The checked composition is not yet a live production media path. Fibre still needs a deployed production C2PA signer/verifier backed by an accepted trust credential and protected signing key, plus the real Worker secrets and provisioned remote data resources.
 
 Provider selection remains governed by `deployments/environments/` and `docs/decisions/ADR-0019-deployment-provider-selection.md`. The provider-native names in these files are deployment detail, not Fibre identities.
