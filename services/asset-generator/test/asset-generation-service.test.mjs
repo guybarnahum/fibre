@@ -4,7 +4,7 @@ import {
   ASSET_GENERATION_JOB_VERSION,
   MEDIA_GENERATION_PROVIDER_VERSION,
 } from "../src/asset-generation-domain.mjs";
-import { createMemoryInfraDriver } from "../../../packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   createAssetGenerationService,
   executeAssetGenerationJob,
