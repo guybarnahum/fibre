@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createPresentationAssetDemandService } from "../src/presentation-asset-demand-service.mjs";
 import { createThreadPresentationAssetDemandTrigger } from "../src/thread-presentation-asset-demand.mjs";
 import { createThreadPresentationServer } from "../src/thread-presentation-server.mjs";
