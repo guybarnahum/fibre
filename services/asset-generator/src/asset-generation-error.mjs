@@ -1,4 +1,4 @@
-import { InfraImmutableObjectConflictError } from "../../../packages/infra/src/infra-driver.mjs";
+import { InfraImmutableObjectConflictError } from "@fibre/infra";
 
 export const ASSET_GENERATION_ERROR_PHASES = Object.freeze([
   "validation",
