@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import {
   createMemoryInfraDriver,
   InfraImmutableObjectConflictError,
-} from "#packages/infra/src/memory-driver.mjs";
+} from "#infra/memory";
 import {
   normalizeThreadPresentationBundle,
   presentationProvenanceDigest,
