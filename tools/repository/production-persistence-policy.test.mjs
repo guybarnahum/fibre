@@ -81,7 +81,7 @@ test("read-only local filesystem access and InfraDriver use are not persistence 
       "services/example/src/runtime.mjs",
       [
         'import { readFileSync } from "node:fs";',
-        'import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";',
+        'import { requireInfraCapabilities } from "#infra";',
         "export function createService(infra) { requireInfraCapabilities(infra, 'objects'); return infra.objects; }",
       ].join("\n"),
     ),
