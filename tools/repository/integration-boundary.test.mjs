@@ -51,6 +51,14 @@ async function text(url) {
   return readFile(url, "utf8");
 }
 
+function assertSourceMatches(source, pattern, message) {
+  assert.ok(pattern.test(source), message);
+}
+
+function assertSourceOmits(source, pattern, message) {
+  assert.ok(!pattern.test(source), message);
+}
+
 async function sourceFiles(directory) {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -66,52 +74,56 @@ test("third-party integrations have one shared home outside services and InfraDr
     integrationImplementations.map(text),
   );
 
-  assert.match(openaiModel, /api\.openai\.com/);
-  assert.match(openaiModel, /OPENAI_API_KEY/);
-  assert.match(googleModel, /generativelanguage\.googleapis\.com/);
-  assert.match(googleModel, /GEMINI_API_KEY/);
-  assert.match(openaiImage, /api\.openai\.com/);
-  assert.match(bflImage, /api\.bfl\.ai/);
-  assert.match(c2paSigner, /\/embed/);
-  assert.match(c2paSigner, /\/verify/);
-  assert.match(c2paSigner, /createHttpContentCredentialSigner/);
+  assertSourceMatches(openaiModel, /api\.openai\.com/, "OpenAI model integration must call the OpenAI API");
+  assertSourceMatches(openaiModel, /OPENAI_API_KEY/, "OpenAI model integration must own OPENAI_API_KEY handling");
+  assertSourceMatches(googleModel, /generativelanguage\.googleapis\.com/, "Google model integration must call the Google Generative Language API");
+  assertSourceMatches(googleModel, /GEMINI_API_KEY/, "Google model integration must own GEMINI_API_KEY handling");
+  assertSourceMatches(openaiImage, /api\.openai\.com/, "OpenAI image integration must call the OpenAI API");
+  assertSourceMatches(bflImage, /api\.bfl\.ai/, "BFL image integration must call the BFL API");
+  assertSourceMatches(c2paSigner, /\/embed/, "C2PA HTTP signer integration must expose the signer /embed call");
+  assertSourceMatches(c2paSigner, /\/verify/, "C2PA HTTP signer integration must expose the signer /verify call");
+  assertSourceMatches(c2paSigner, /createHttpContentCredentialSigner/, "C2PA HTTP signer integration must export createHttpContentCredentialSigner");
 
   for (const url of retiredServiceIntegrationPaths) {
-    await assert.rejects(() => stat(url), (error) => error?.code === "ENOENT");
+    await assert.rejects(
+      () => stat(url),
+      (error) => error?.code === "ENOENT",
+      `retired service-local integration must stay removed: ${url.pathname}`,
+    );
   }
 
   const worldKernelModelRuntime = await text(worldKernelModelRuntimeUrl);
-  assert.match(worldKernelModelRuntime, /integrations\/models\/openai\.mjs/);
-  assert.match(worldKernelModelRuntime, /integrations\/models\/google\.mjs/);
+  assertSourceMatches(worldKernelModelRuntime, /integrations\/models\/openai\.mjs/, "world-kernel model runtime must use the shared OpenAI integration");
+  assertSourceMatches(worldKernelModelRuntime, /integrations\/models\/google\.mjs/, "world-kernel model runtime must use the shared Google integration");
 
   const assetGeneratorIndex = await text(assetGeneratorIndexUrl);
-  assert.doesNotMatch(assetGeneratorIndex, /createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/);
-  assert.doesNotMatch(assetGeneratorIndex, /integrations\//);
+  assertSourceOmits(assetGeneratorIndex, /createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/, "asset-generator service index must not construct third-party integration adapters");
+  assertSourceOmits(assetGeneratorIndex, /integrations\//, "asset-generator service index must remain integration-agnostic");
 
   const providerSelection = await text(providerSelectionUrl);
-  assert.match(providerSelection, /integrations\/media\/openai-image-provider\.mjs/);
-  assert.match(providerSelection, /integrations\/media\/bfl-flux-image-provider\.mjs/);
-  assert.doesNotMatch(providerSelection, /services\/asset-generator\/src\/index\.mjs/);
+  assertSourceMatches(providerSelection, /integrations\/media\/openai-image-provider\.mjs/, "Cloudflare image-provider selector must use the shared OpenAI image integration");
+  assertSourceMatches(providerSelection, /integrations\/media\/bfl-flux-image-provider\.mjs/, "Cloudflare image-provider selector must use the shared BFL image integration");
+  assertSourceOmits(providerSelection, /services\/asset-generator\/src\/index\.mjs/, "Cloudflare image-provider selector must not depend on the asset-generator service index");
 
   const signerSelection = await text(signerSelectionUrl);
-  assert.match(signerSelection, /integrations\/content-credentials\/c2pa-http-signer\.mjs/);
-  assert.match(signerSelection, /createHttpContentCredentialSigner/);
-  assert.doesNotMatch(signerSelection, /services\/asset-generator\/src\/index\.mjs/);
+  assertSourceMatches(signerSelection, /integrations\/content-credentials\/c2pa-http-signer\.mjs/, "Cloudflare signer selector must use the shared C2PA HTTP signer integration");
+  assertSourceMatches(signerSelection, /createHttpContentCredentialSigner/, "Cloudflare signer selector must construct createHttpContentCredentialSigner");
+  assertSourceOmits(signerSelection, /services\/asset-generator\/src\/index\.mjs/, "Cloudflare signer selector must not depend on the asset-generator service index");
 
   const assetWorker = await text(assetWorkerUrl);
-  assert.match(assetWorker, /content-credentials\/signer-selection\.mjs/);
-  assert.match(assetWorker, /createCloudflareContentCredentialSigner/);
-  assert.doesNotMatch(assetWorker, /integrations\/content-credentials\/c2pa-http-signer\.mjs/);
-  assert.match(assetWorker, /createAssetGenerationRuntime\(\{ infra, provider, credentialSigner \}\)/);
+  assertSourceMatches(assetWorker, /content-credentials\/signer-selection\.mjs/, "Asset Generator Worker must select C2PA through the Cloudflare signer selector");
+  assertSourceMatches(assetWorker, /createCloudflareContentCredentialSigner/, "Asset Generator Worker must construct credentials through createCloudflareContentCredentialSigner");
+  assertSourceOmits(assetWorker, /integrations\/content-credentials\/c2pa-http-signer\.mjs/, "Asset Generator Worker must not bypass the Cloudflare signer selector and import the C2PA integration directly");
+  assertSourceMatches(assetWorker, /createAssetGenerationRuntime\(\{ infra, provider, credentialSigner \}\)/, "Asset Generator Worker must inject infra, image provider, and credential signer into the portable runtime");
 
   const c2paService = await text(c2paServiceUrl);
-  assert.match(c2paService, /\/embed/);
-  assert.match(c2paService, /\/verify/);
+  assertSourceMatches(c2paService, /\/embed/, "local C2PA service must expose /embed");
+  assertSourceMatches(c2paService, /\/verify/, "local C2PA service must expose /verify");
 
   for (const root of infraRoots) {
     for (const url of await sourceFiles(root)) {
       const source = await text(url);
-      assert.doesNotMatch(
+      assertSourceOmits(
         source,
         /OPENAI_API_KEY|GEMINI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|api\.openai\.com|generativelanguage\.googleapis\.com|api\.bfl\.ai|createOpenAIModelAdapter|createGoogleModelAdapter|createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/,
         `third-party integration leaked into infrastructure source ${url.pathname}`,
@@ -121,7 +133,7 @@ test("third-party integrations have one shared home outside services and InfraDr
 
   for (const url of integrationImplementations) {
     const source = await text(url);
-    assert.doesNotMatch(
+    assertSourceOmits(
       source,
       /packages\/infra|deployments\/|createCloudflareInfraDriver|WorkflowEntrypoint/,
       `integration implementation selected infrastructure/deployment behavior in ${url.pathname}`,
