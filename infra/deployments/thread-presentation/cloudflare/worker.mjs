@@ -1,6 +1,7 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
 import { createService } from "#infra/service";
+import { createHttpContentCredentialSigner as createContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import {
   normalizeThreadPresentationBundle,
@@ -14,7 +15,6 @@ import { createPresentationAssetDemandService } from "#services/world-kernel/src
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
-import { createContentCredentialSigner } from "../../content-credential-signer.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
