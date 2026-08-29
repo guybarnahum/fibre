@@ -12,13 +12,13 @@ import {
   threadMediaPacketDigest,
   threadPresentationPacketDigest,
 } from "#services/thread-presentation/src/index.mjs";
+import { channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
-import { channelIdForThread } from "../presentation-read-api.mjs";
 
 const workerUrl = new URL("../worker.mjs", import.meta.url);
 
 async function p2Bundle() {
-  const base = new URL("../../../../fixtures/thread-presentation/can-tho/", import.meta.url);
+  const base = new URL("../../../../../fixtures/thread-presentation/can-tho/", import.meta.url);
   return {
     presentation: JSON.parse(await readFile(new URL("presentation.json", base), "utf8")),
     media: JSON.parse(await readFile(new URL("media.json", base), "utf8")),

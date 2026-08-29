@@ -8,34 +8,33 @@ date: 2026-08-25
 
 ## Context
 
-Fibre is Cloudflare-first today, but Cloudflare is not part of Fibre's domain model. AWS is an expected next infrastructure target, and GCP, Azure, local and hybrid deployments must remain credible without rewriting Fibre services.
-
-`InfraDriver` already defines provider-neutral infrastructure capabilities such as objects, queues, workflows, streams, catalog and realtime delivery. Provider-specific Worker/Lambda entrypoints do not belong inside portable Fibre services, and moving them into `packages/infra` would wrongly make the infrastructure package know Fibre service topology.
+Fibre is Cloudflare-first today, but Cloudflare is not part of Fibre's domain model. `InfraDriver` defines provider-neutral capabilities such as objects, queues, workflows, streams, catalog and realtime delivery. Provider-specific Worker/Lambda entrypoints do not belong inside portable Fibre services, while reusable infrastructure providers must not learn Fibre service topology.
 
 ## Decision
 
 Fibre separates three layers:
 
 ```text
-services/       provider-neutral Fibre capability/application logic
-packages/infra/ InfraDriver contracts plus provider implementations
-deployments/    environment/provider selection and executable composition
+services/           provider-neutral Fibre capability/application logic
+infra/providers/    reusable infrastructure/runtime provider implementations
+infra/deployments/  environment/provider selection and executable composition
 ```
 
 The rules are:
 
-1. **Services do not choose their cloud.** A portable service receives an `InfraDriver` and any non-infrastructure provider dependencies through dependency injection.
-2. **`packages/infra` does not know Fibre service topology.** It implements reusable provider mappings for Fibre infrastructure guarantees, not service entrypoints.
-3. **Deployment configuration selects providers.** A versioned manifest under `deployments/environments/` names the runtime provider alias and InfraDriver provider alias for each deployed service and declares the service's required InfraDriver capabilities.
-4. **Runtime and infrastructure selection are distinct.** They may initially point to the same provider, but Fibre preserves the ability to execute a service on one platform while satisfying its InfraDriver capabilities from another or from a composite driver.
-5. **Provider-specific executable entrypoints and deployment configuration live under `deployments/<platform>/<service>/`.** Examples include Cloudflare `worker.mjs`/Wrangler configuration and future AWS runtime/IaC adapters.
-6. **Provider-native IDs and secrets do not enter Fibre service contracts.** Deployment manifests contain logical provider selection and capability declarations, not credentials. Secrets remain in the selected platform's secret mechanism.
-7. **Media/model providers remain separate from InfraDriver.** OpenAI or another generation/model provider can change independently of where Asset Generator executes or stores/queues work.
-8. **Provider configuration may be generated later, but the Fibre manifest is the provider-selection authority.** The first implementation validates the manifest and keeps hand-authored provider output explicit; a later deployment compiler may generate or verify provider configuration without changing service APIs.
+1. **Services do not choose their cloud.** Portable service/application code receives infrastructure and non-infrastructure providers through explicit boundaries.
+2. **`infra/providers/` does not know Fibre service topology.** Provider adapters implement reusable Fibre infrastructure guarantees.
+3. **`infra/deployments/` is composition.** It may import services, `infra/providers/`, and integrations because joining those layers is its job.
+4. **Deployment organization is service-first.** Executable provider hosts live under `infra/deployments/<service>/<provider>/`.
+5. **Runtime and infrastructure selection are distinct.** A versioned manifest under `infra/deployments/environments/` names both aliases and each service's required capabilities.
+6. **Provider-native IDs and secrets do not enter Fibre service contracts.** They remain deployment/provider configuration.
+7. **Media/model providers are integrations, not InfraDriver providers.** OpenAI/BFL/model selection can change independently of runtime/storage/queue provider selection.
+8. **No speculative provider scaffolding.** Do not create an AWS/GCP/Azure provider or deployment directory until real implementation exists.
+9. **A generalized deployment compiler remains deferred.** Hand-authored provider output is acceptable while the Fibre manifest remains the provider-selection authority.
 
 ## Asset Generator application
 
-The portable Asset Generator runtime is created as:
+The portable runtime is constructed as:
 
 ```text
 createAssetGenerationRuntime({
@@ -45,17 +44,15 @@ createAssetGenerationRuntime({
 })
 ```
 
-Its infrastructure profile is expressed in Fibre guarantees. Scheduling uses `infra.workflows`; execution/persistence uses `infra.objects`; completion signalling uses `infra.queues`.
+Scheduling uses `infra.workflows`; execution/persistence uses `infra.objects`; completion signalling uses `infra.queues`. Provider retry semantics remain portable, while a thin deployment host translates them into its runtime's retry mechanism.
 
-The rule that a generation execution attempt is not implicitly retried before explicit attempt/staging identities exist is provider-neutral. A deployment adapter translates that Fibre operational result into its provider's terminal/non-retryable mechanism.
+Asset Generator emits completion facts only. Thread Presentation retains admission/publication authority and is the only layer that may author authoritative `media.ready`.
 
 ## Consequences
 
-- Adding AWS should mean implementing/selecting an AWS InfraDriver and AWS deployment adapter, not editing Fibre application logic.
-- Cloudflare Worker classes, bindings and Wrangler configuration do not belong under provider-neutral service runtime trees.
-- `packages/infra/cloudflare*` remains reusable Cloudflare capability machinery; it must not import Asset Generator or Presentation.
-- `deployments/environments/local.json` is the first checked provider-selection manifest and is validated against advertised InfraDriver capabilities.
-- Runtime-provider and InfraDriver-provider aliases can diverge later without changing service contracts.
-- Composite/hybrid capability selection remains an extension path, not a requirement of the first manifest schema.
-- Current Cloudflare Asset Generator composition lives under `deployments/cloudflare/asset-generator/`.
-- The earlier `services/presentation-cloudflare/` migration exception has been removed; current Cloudflare Thread Presentation composition lives under `deployments/cloudflare/thread-presentation/`.
+- Cloudflare capability machinery lives under `infra/providers/cloudflare/` and remains service-unaware.
+- Cloudflare Asset Generator composition lives under `infra/deployments/asset-generator/cloudflare/`.
+- Cloudflare Thread Presentation composition lives under `infra/deployments/thread-presentation/cloudflare/`.
+- Environment manifests live under `infra/deployments/environments/`.
+- Provider-neutral Thread Presentation HTTP behavior lives with `services/thread-presentation/`, not inside the Cloudflare deployment host.
+- Adding AWS later means implementing a real `infra/providers/aws/` adapter and service deployment host when needed, not editing Fibre application logic or adding empty placeholders now.

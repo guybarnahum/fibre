@@ -8,13 +8,13 @@ import {
   threadMediaPacketDigest,
   threadPresentationPacketDigest,
 } from "#services/thread-presentation/src/index.mjs";
+import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
-import { createCloudflareContentCredentialSigner } from "../content-credentials/signer-selection.mjs";
-import { createPresentationReadApi, channelIdForThread } from "./presentation-read-api.mjs";
+import { createContentCredentialSigner } from "../../content-credential-signer.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
@@ -38,7 +38,12 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 }
 
 function createCredentialSigner(env) {
-  return createCloudflareContentCredentialSigner(env);
+  return createContentCredentialSigner({
+    baseUrl: env.C2PA_SIGNER_URL,
+    signerId: env.C2PA_SIGNER_ID,
+    trustPolicy: env.C2PA_TRUST_POLICY,
+    authorizationToken: env.C2PA_SIGNER_TOKEN ?? null,
+  });
 }
 
 function nonEmpty(name, value) {

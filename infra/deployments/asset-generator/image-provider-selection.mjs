@@ -15,26 +15,27 @@ function nonEmpty(name, value) {
   return value;
 }
 
-export function createCloudflareAssetImageProvider({ env, job }) {
-  if (!env || typeof env !== "object") throw new TypeError("Cloudflare asset generation env is required");
-  if (!job || typeof job !== "object" || Array.isArray(job)) throw new TypeError("AssetGenerationJob is required");
+export function selectAssetImageProvider({ profile, secrets } = {}) {
+  if (!secrets || typeof secrets !== "object" || Array.isArray(secrets)) {
+    throw new TypeError("asset image provider secrets are required");
+  }
 
-  switch (job.providerProfile) {
+  switch (profile) {
     case OPENAI_IMAGE_PROVIDER_PROFILE:
       return createOpenAIImageProvider({
-        apiKey: nonEmpty("OPENAI_API_KEY", env.OPENAI_API_KEY),
+        apiKey: nonEmpty("OpenAI image API key", secrets.openAiApiKey),
         model: OPENAI_IMAGE_MODEL,
       });
     case BFL_FLUX_IMAGE_PROVIDER_PROFILE:
       return createBflFluxImageProvider({
-        apiKey: nonEmpty("BFL_API_KEY", env.BFL_API_KEY),
+        apiKey: nonEmpty("BFL image API key", secrets.bflApiKey),
         model: BFL_FLUX_MODEL,
       });
     default:
-      throw new AssetGenerationError(`unsupported asset image provider profile ${String(job.providerProfile)}`, {
+      throw new AssetGenerationError(`unsupported asset image provider profile ${String(profile)}`, {
         phase: "validation",
         category: "unsupported_capability",
-        safeDetail: `unsupported asset image provider profile ${String(job.providerProfile)}`,
+        safeDetail: `unsupported asset image provider profile ${String(profile)}`,
       });
   }
 }

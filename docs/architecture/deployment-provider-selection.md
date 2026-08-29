@@ -9,176 +9,110 @@ canonical: false
 
 ## Purpose
 
-Make the location and infrastructure provider of each Fibre service an explicit deployment decision rather than an implementation detail hidden inside the service.
-
-This document applies [`ADR-0019`](../decisions/ADR-0019-deployment-provider-selection.md), complements [`infrastructure-driver.md`](infrastructure-driver.md), and operates within the provider-neutral production-persistence rule in [`ADR-0017`](../decisions/ADR-0017-provider-neutral-production-persistence.md).
+Make runtime location and infrastructure provider selection explicit deployment decisions instead of hidden service implementation details. This applies [`ADR-0019`](../decisions/ADR-0019-deployment-provider-selection.md) and complements [`infrastructure-driver.md`](infrastructure-driver.md).
 
 ## Dependency direction
 
 ```text
-deployment manifest
-        |
-        v
-deployment adapter / bootstrap
-        |
-        +------> provider InfraDriver implementation
-        |              |
-        |              v
-        |        InfraDriver capability bundle
-        |              |
-        v              v
-provider runtime --> Fibre service runtime
-                         |
-                         +--> other provider abstractions
-                              (media/model, credential signer, etc.)
+environment manifest
+       |
+       v
+infra/deployments/<service>/<provider>/
+       |             |
+       |             +--> integrations (media/model/credentials)
+       +--> infra/providers/<provider>/
+       |
+       v
+provider-neutral Fibre service
 ```
 
-The portable service never imports a cloud runtime SDK or chooses an InfraDriver implementation.
+The invariants are:
+
+```text
+services do not choose the cloud
+infra/providers do not know service topology
+infra/deployments may compose both
+media/model vendors are integrations, not InfraDriver providers
+```
 
 ## Repository boundaries
 
 ```text
 services/
-  asset-generator/               provider-neutral application/runtime
-  thread-presentation/           provider-neutral presentation capability
+  asset-generator/
+  thread-presentation/
+    src/http/read-api.mjs
 
-packages/infra/
-  src/infra-driver.mjs           provider-neutral capability contract
-  src/cloudflare-*               Cloudflare capability implementations
-  ...future AWS/GCP/Azure ports
-
-deployments/
-  environments/
-    local.json                   local provider-selection manifest
-    cloudflare-remote.json       remote Cloudflare provider-selection manifest
-  cloudflare/
+infra/
+  infra-driver.mjs
+  internal.mjs
+  service.mjs
+  providers/
+    local/
+    cloudflare/
+  deployments/
+    environments/
+      local.json
+      cloudflare-remote.json
     asset-generator/
       image-provider-selection.mjs
-      worker.mjs
-      wrangler.local.jsonc
-      wrangler.jsonc
+      cloudflare/
+        worker.mjs
+        wrangler.local.jsonc
+        wrangler.jsonc
     thread-presentation/
-      worker.mjs
-      presentation-read-api.mjs
-      wrangler.local.jsonc
-      wrangler.jsonc
+      cloudflare/
+        worker.mjs
+        wrangler.local.jsonc
+        wrangler.jsonc
 ```
 
-A provider implementation in `packages/infra` must not import a Fibre service. A deployment adapter may import both because composition is its job.
+`infra/providers/` must not import Fibre services. `infra/deployments/` may import services, infrastructure providers and integrations. Provider-neutral Fetch/API behavior belongs with the owning service rather than a provider host.
 
 ## Manifest contract
 
-The first manifest shape is deliberately small:
+The manifest records logical provider aliases, runtime provider, InfraDriver provider, advertised capabilities, and each service's required capabilities. Runtime and infrastructure aliases remain separate even when they currently select the same Cloudflare environment.
 
-```json
-{
-  "deploymentVersion": "fibre-deployment-v0.1",
-  "environment": "local",
-  "providers": {
-    "cloudflare-local": {
-      "platform": "cloudflare",
-      "infraDriver": "cloudflare-v1",
-      "capabilities": ["streams", "objects", "catalog", "realtime", "queues", "workflows"]
-    }
-  },
-  "services": {
-    "thread-presentation": {
-      "runtime": "cloudflare-local",
-      "infra": "cloudflare-local",
-      "requires": ["streams", "objects", "catalog", "realtime", "queues", "workflows"]
-    },
-    "asset-generator": {
-      "runtime": "cloudflare-local",
-      "infra": "cloudflare-local",
-      "requires": ["objects", "queues", "workflows"]
-    }
-  }
-}
-```
+The manifest contains no cloud credentials, model credentials, C2PA signing keys, provider-native resource identities, Thread/World semantics, or publication decisions.
 
-`runtime` and `infra` are separate references on purpose. Today they commonly identify the same provider alias. A future deployment can select different aliases without changing Asset Generator, Presentation or other service application code.
-
-The manifest validator fails closed when a provider alias is unknown, a requested capability is unsupported, a provider advertises an unknown capability, a capability is duplicated, or the manifest contract is unsupported.
-
-## What the manifest does not own
-
-The manifest does not contain cloud access keys, model credentials, C2PA signing keys, Thread/World semantics, provider-native resource identities, or Fibre publication decisions. Those remain with provider secret/configuration mechanisms and the owning Fibre domains.
-
-Media-provider profile selection is also distinct from `InfraDriver` selection. An `AssetGenerationJob.providerProfile` names a logical media-provider profile; the deployment adapter maps that profile to a concrete OpenAI, BFL, or future provider adapter. The provider API key remains a deployment secret and never becomes job or Fibre-domain data.
-
-## Current implementation phase
-
-`deployments/environments/local.json` records and validates local provider selection. `deployments/environments/cloudflare-remote.json` records the corresponding remote Cloudflare selection without introducing a production semantic profile.
-
-Both current Cloudflare executable adapters live under `deployments/cloudflare/` and now have separate local and remote Wrangler composition:
+Current manifests:
 
 ```text
-asset-generator/
-  wrangler.local.jsonc
-  wrangler.jsonc
-thread-presentation/
-  wrangler.local.jsonc
-  wrangler.jsonc
+infra/deployments/environments/local.json
+infra/deployments/environments/cloudflare-remote.json
 ```
 
-The remote configs are intentionally topology, not production-trust declarations. They agree on the shared generated-media R2 bucket, Asset Generator Workflow identity, and completion Queue while Thread Presentation retains its own D1 catalog and Durable Object/realtime state. Production C2PA trust and live resource provisioning remain separate operational work.
+A generalized manifest-to-provider compiler remains deferred; current Wrangler JSONC is explicit provider output checked against Fibre's architecture and deployment tests.
 
-Wrangler JSONC is still hand-authored provider output in this phase. It must agree with the deployment manifest and is checked by boundary tests, but a general deployment compiler is **deferred**. Later tooling may generate or verify Wrangler, AWS IaC, GCP or Azure configuration from the same Fibre-level provider selection.
+## Asset Generator
 
-## Asset Generator runtime
-
-Portable construction:
+Portable construction remains:
 
 ```text
 createAssetGenerationRuntime({ infra, provider, credentialSigner })
 ```
 
-Execution/persistence uses `objects` and `queues`; scheduling uses `workflows`. The media provider and credential signer remain separate injected dependencies.
+Cloudflare host composition lives at `infra/deployments/asset-generator/cloudflare/`. Logical image-provider profile selection lives one level above the Cloudflare host and receives abstract secrets from the host. OpenAI/BFL integrations stay under `integrations/ai/`.
 
-Retry safety is provider-neutral even when provider APIs differ. Fibre now distinguishes three durable execution boundaries:
+Asset Generator remains Workflow-only. Its HTTP surface is the shared, side-effect-free `GET /healthz`; it has no public generation route. It stores immutable generated output/receipts and emits completion facts, but never publishes `media.ready`.
 
-```text
-AssetGenerationJob
-  -> optional ProviderOperation checkpoint for an accepted asynchronous provider task
-  -> GenerationAttempt + staged raw provider output
-  -> credentialed final asset + StoredAssetReceipt
-```
+## Thread Presentation
 
-A resumable provider may expose `startOperation(...)` and `resumeOperation(...)`. The portable Asset Generator runtime persists the accepted `ProviderOperation` through `InfraDriver.objects` before allowing polling/resume work. A later Workflow retry loads that checkpoint and resumes the same provider task rather than asking the deployment adapter to resubmit it. If an accepted task cannot be durably checkpointed, the portable retry policy blocks replay.
+Provider-neutral read API behavior lives at `services/thread-presentation/src/http/read-api.mjs`. The Cloudflare host at `infra/deployments/thread-presentation/cloudflare/` injects R2/D1/Durable Object/Workflow/Queue facilities and consumes Asset Generator completion facts.
 
-This does not make provider task IDs part of `InfraDriver`, Thread Presentation, or Fibre semantic authority. They remain operational continuation evidence owned by Asset Generator.
-
-For BFL FLUX, the Cloudflare deployment selects the `bfl-flux-2-pro-v1` logical profile and injects the BFL adapter. For OpenAI, it selects `openai-gpt-image-2-medium-v1`. The service runtime does not branch on those names.
-
-## Thread Presentation runtime
-
-Thread Presentation remains provider-neutral under `services/thread-presentation/` and the World Kernel presentation authorities it currently delegates to. The Cloudflare deployment composes that application with `cloudflare-v1`, HTTP/WebSocket transport, the Asset Generator Workflow binding, and completion Queue consumption.
-
-The remote composition preserves the same ownership boundary as local development:
+The authority flow remains:
 
 ```text
 Presentation demand
-   -> Asset Generator Workflow
-   -> immutable generated bytes + completion fact
-   -> completion Queue
-   -> Thread Presentation admission
-   -> media.ready
+  -> Asset Generator Workflow
+  -> immutable generated bytes + completion fact
+  -> completion Queue
+  -> Thread Presentation admission
+  -> media.ready
 ```
 
-Asset Generator does not gain Presentation publication authority merely because both are deployed on Cloudflare. The completion Queue remains a handoff boundary, and public serving still requires Presentation admission.
+Moving deployment composition under root Infra changes filesystem ownership only; it does not move Thread authority or publication semantics.
 
-Moving the Cloudflare adapter under `deployments/` changes repository ownership only; it does not change presentation authority, public-asset admission, or Thread semantics.
+## Extension rule
 
-## Future extension paths
-
-Without changing service contracts, Fibre can later add:
-
-- `aws-v1`, GCP or Azure InfraDriver implementations;
-- provider-specific deployment adapters under `deployments/<platform>/`;
-- additional media-provider profiles without changing Asset Generator domain contracts;
-- manifest-driven config/IaC generation;
-- composite InfraDrivers where capabilities come from more than one provider;
-- named staging/production overlays once those environments have real trust/resource policy;
-- deployment conformance checks that prove concrete resources satisfy each advertised InfraDriver guarantee.
-
-Do not add empty provider/service directories merely to signal those intentions. Add them when an implementation exists.
+Do not add empty provider directories or generic deployment-framework abstractions. A future AWS/GCP/Azure implementation should appear only when a real Fibre deployment needs it, under `infra/providers/<provider>/` and `infra/deployments/<service>/<provider>/` as appropriate.

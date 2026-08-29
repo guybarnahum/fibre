@@ -18,22 +18,24 @@ test("Infra has one root owner with provider implementations below providers", a
   assert.equal(await exists("infra/service.mjs"), true);
   assert.equal(await exists("infra/providers/local/"), true);
   assert.equal(await exists("infra/providers/cloudflare/"), true);
-  assert.equal(await exists("infra/providers/aws/"), true);
+  assert.equal(await exists("infra/deployments/"), true);
 
   for (const removed of [
     "packages/infra/",
+    "deployments/",
     "infra/src/",
     "infra/service-runtime/",
     "infra/local/",
     "infra/cloudflare/",
     "infra/aws/",
+    "infra/providers/aws/",
   ]) {
     assert.equal(await exists(removed), false, `${removed} must not be reintroduced`);
   }
 });
 
-test("Infra root stays shallow and provider-neutral", async () => {
+test("Infra root stays shallow", async () => {
   const entries = await readdir(new URL("infra/", ROOT), { withFileTypes: true });
   const directories = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
-  assert.deepEqual(directories, ["providers", "test"]);
+  assert.deepEqual(directories, ["deployments", "providers", "test"]);
 });

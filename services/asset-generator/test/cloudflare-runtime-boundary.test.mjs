@@ -7,15 +7,15 @@ const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
 const attemptUrl = new URL("../src/asset-generation-attempt.mjs", import.meta.url);
 const providerOperationUrl = new URL("../src/resumable-provider-operation.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
-const workerUrl = new URL("../../../deployments/cloudflare/asset-generator/worker.mjs", import.meta.url);
-const providerSelectionUrl = new URL("../../../deployments/cloudflare/asset-generator/image-provider-selection.mjs", import.meta.url);
-const assetConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.local.jsonc", import.meta.url);
-const assetRemoteConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.jsonc", import.meta.url);
-const deploymentManifestUrl = new URL("../../../deployments/environments/local.json", import.meta.url);
-const remoteDeploymentManifestUrl = new URL("../../../deployments/environments/cloudflare-remote.json", import.meta.url);
-const presentationWorkerUrl = new URL("../../../deployments/cloudflare/thread-presentation/worker.mjs", import.meta.url);
-const presentationConfigUrl = new URL("../../../deployments/cloudflare/thread-presentation/wrangler.local.jsonc", import.meta.url);
-const presentationRemoteConfigUrl = new URL("../../../deployments/cloudflare/thread-presentation/wrangler.jsonc", import.meta.url);
+const workerUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url);
+const providerSelectionUrl = new URL("../../../infra/deployments/asset-generator/image-provider-selection.mjs", import.meta.url);
+const assetConfigUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url);
+const assetRemoteConfigUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url);
+const deploymentManifestUrl = new URL("../../../infra/deployments/environments/local.json", import.meta.url);
+const remoteDeploymentManifestUrl = new URL("../../../infra/deployments/environments/cloudflare-remote.json", import.meta.url);
+const presentationWorkerUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url);
+const presentationConfigUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url);
+const presentationRemoteConfigUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url);
 const retiredPresentationCloudflareFiles = Object.freeze([
   new URL("../../presentation-cloudflare/src/worker.mjs", import.meta.url),
   new URL("../../presentation-cloudflare/src/presentation-read-api.mjs", import.meta.url),
@@ -24,13 +24,8 @@ const retiredPresentationCloudflareFiles = Object.freeze([
 ]);
 const p3ProofUrl = new URL("../../../tools/presentation/prove-p3-generated-media-local.mjs", import.meta.url);
 
-async function text(url) {
-  return readFile(url, "utf8");
-}
-
-async function json(url) {
-  return JSON.parse(await text(url));
-}
+async function text(url) { return readFile(url, "utf8"); }
+async function json(url) { return JSON.parse(await text(url)); }
 
 test("Asset Generator runtime stages provider attempts portably and Cloudflare only translates retry policy", async () => {
   const runtime = await text(runtimeUrl);
@@ -41,7 +36,6 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   const providerSelection = await text(providerSelectionUrl);
 
   await assert.rejects(() => stat(oldCloudflareDirUrl), (error) => error?.code === "ENOENT");
-
   assert.match(runtime, /createAssetGenerationRuntime/);
   assert.match(runtime, /requireInfraCapabilities/);
   assert.match(runtime, /prepareResumableProviderExecution/);
@@ -66,15 +60,11 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
 
   assert.match(errors, /assetGenerationRetryDecision/);
   assert.match(errors, /provider_operation_staging/);
-  assert.match(errors, /provider_operation_not_staged/,
-    "portable policy must block replay if an accepted async provider task never became durable");
-  assert.match(errors, /providerOperationDurable/,
-    "portable retry evidence must distinguish accepted-operation resume from ambiguous submission");
+  assert.match(errors, /provider_operation_not_staged/);
+  assert.match(errors, /providerOperationDurable/);
   assert.match(errors, /provider_output_staging/);
-  assert.match(errors, /provider_output_not_staged/,
-    "portable policy must still block replay if raw provider output never became durable");
-  assert.match(errors, /providerOutputDurable/,
-    "portable retry policy must carry whether post-provider resume is safe");
+  assert.match(errors, /provider_output_not_staged/);
+  assert.match(errors, /providerOutputDurable/);
   assert.match(errors, /rate_limited/);
   assert.match(errors, /quota_exhausted/);
   assert.match(errors, /immutable_conflict/);
@@ -83,34 +73,26 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /createCloudflareInfraDriver/);
   assert.match(worker, /withCloudflareQueueBindings/);
   assert.match(worker, /createAssetGenerationRuntime/);
-  assert.match(worker, /createCloudflareAssetImageProvider/);
+  assert.match(worker, /selectAssetImageProvider/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /NonRetryableError/);
   assert.match(worker, /assetGenerationRetryDecision/);
-  assert.match(worker, /attemptNumber: ctx\.attempt/,
-    "Cloudflare Workflow retries must be passed into the portable GenerationAttempt seam");
-  assert.match(worker, /providerOperationDurable: error\?\.providerOperationDurable === true/,
-    "diagnostics must distinguish durable accepted-provider-task resume from ambiguous submission");
-  assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/,
-    "diagnostics must distinguish safe staged retries from pre-stage failures");
+  assert.match(worker, /attemptNumber: ctx\.attempt/);
+  assert.match(worker, /providerOperationDurable: error\?\.providerOperationDurable === true/);
+  assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/);
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
-  assert.match(worker, /createCloudflareContentCredentialSigner/);
-  assert.match(worker, /asset-generation-failure-observation-v0\.2/,
-    "Cloudflare deployment must expose the operation durability bit in its safe failure observation");
+  assert.match(worker, /createContentCredentialSigner/);
+  assert.match(worker, /asset-generation-failure-observation-v0\.2/);
   assert.match(worker, /category: error\?\.category/);
   assert.match(worker, /retryDecision: decision\.reason/);
   assert.match(worker, /providerRequestId/);
   assert.match(worker, /retryAfterMs/);
   assert.match(worker, /JSON\.stringify\(observation\)/);
-  assert.match(worker, /export default\s*\{/,
-    "Cloudflare Workflow host must remain an ES Module Worker for Wrangler");
-  assert.match(worker, /createService\(\{/,
-    "Asset Generator HTTP hosting must use the shared Infra service seam");
-  assert.match(worker, /HTTP_SERVICE\.fetch\(request\)/,
-    "default module entrypoint must delegate HTTP handling to the shared service seam");
-  assert.doesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/,
-    "Asset Generator must expose health only and no parallel paid generation HTTP API");
+  assert.match(worker, /export default\s*\{/);
+  assert.match(worker, /createService\(\{/);
+  assert.match(worker, /HTTP_SERVICE\.fetch\(request\)/);
+  assert.doesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/);
   assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 
   assert.match(providerSelection, /openai-gpt-image-2-medium-v1/);
@@ -204,35 +186,25 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(presentationConfig.name, "fibre-thread-presentation");
   assert.equal(presentationConfig.main, "./worker.mjs");
   assert.equal(assetBucket.bucket_name, "fibre-presentation-assets");
-  assert.equal(presentationBucket.bucket_name, assetBucket.bucket_name,
-    "Asset Generator and Presentation must address the same immutable generated bytes");
-
-  assert.ok(catalog, "remote Presentation must bind its catalog through D1");
-  assert.equal(catalog.database_id, undefined,
-    "account-specific D1 identity stays out of the checked topology and is provisioned by Wrangler");
+  assert.equal(presentationBucket.bucket_name, assetBucket.bucket_name);
+  assert.ok(catalog);
+  assert.equal(catalog.database_id, undefined);
   assert.equal(presentationChannel.class_name, "FibrePresentationChannelDurableObject");
   assert.equal(presentationConfig.exports.FibrePresentationChannelDurableObject.storage, "sqlite");
-
   assert.equal(assetWorkflow.name, "fibre-asset-generation");
   assert.equal(presentationWorkflow.name, assetWorkflow.name);
   assert.equal(presentationWorkflow.class_name, assetWorkflow.class_name);
-  assert.equal(presentationWorkflow.script_name, assetConfig.name,
-    "Presentation must call the standalone Asset Generator Workflow rather than host it");
-
+  assert.equal(presentationWorkflow.script_name, assetConfig.name);
   assert.equal(producer.queue, "fibre-asset-completions");
   assert.equal(consumer.queue, producer.queue);
   assert.equal(consumer.max_retries, 10);
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-dlq");
-  assert.equal(presentationConfig.queues.producers, undefined,
-    "Presentation consumes completion facts; it does not publish a competing completion path");
-  assert.equal(assetConfig.queues.consumers, undefined,
-    "Asset Generator publishes completion facts; it does not own Presentation admission");
-
+  assert.equal(presentationConfig.queues.producers, undefined);
+  assert.equal(assetConfig.queues.consumers, undefined);
   assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN"]);
   assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, "fibre-c2pa-production-v1");
   assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
   assert.equal(assetConfig.vars.C2PA_SIGNER_ID, presentationConfig.vars.C2PA_SIGNER_ID);
   assert.equal(assetConfig.vars.C2PA_TRUST_POLICY, presentationConfig.vars.C2PA_TRUST_POLICY);
-  assert.equal(presentationConfig.vars?.P3_FIXTURE_MODE, undefined,
-    "fixture mutation endpoints must stay disabled in the remote composition");
+  assert.equal(presentationConfig.vars?.P3_FIXTURE_MODE, undefined);
 });

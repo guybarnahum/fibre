@@ -4,8 +4,8 @@ import { readFile } from "node:fs/promises";
 
 const ROOT = new URL("../../", import.meta.url);
 const HOSTS = Object.freeze({
-  assetGenerator: new URL("deployments/cloudflare/asset-generator/worker.mjs", ROOT),
-  threadPresentation: new URL("deployments/cloudflare/thread-presentation/worker.mjs", ROOT),
+  assetGenerator: new URL("infra/deployments/asset-generator/cloudflare/worker.mjs", ROOT),
+  threadPresentation: new URL("infra/deployments/thread-presentation/cloudflare/worker.mjs", ROOT),
   c2pa: new URL("services/c2pa-local/server.mjs", ROOT),
   birthCenter: new URL("services/birth-center/src/server.mjs", ROOT),
   worldKernel: new URL("services/world-kernel/src/server.mjs", ROOT),

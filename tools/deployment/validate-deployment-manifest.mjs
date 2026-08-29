@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { loadDeploymentManifest } from "./deployment-manifest.mjs";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
-const requested = process.argv[2] ?? "deployments/environments/local.json";
+const requested = process.argv[2] ?? "infra/deployments/environments/local.json";
 const manifestPath = resolve(repoRoot, requested);
 const manifest = await loadDeploymentManifest(manifestPath);
 

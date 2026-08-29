@@ -9,9 +9,9 @@ import {
   assetGenerationRetryDecision,
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
-} from "../../../services/asset-generator/src/index.mjs";
-import { createCloudflareContentCredentialSigner } from "../content-credentials/signer-selection.mjs";
-import { createCloudflareAssetImageProvider } from "./image-provider-selection.mjs";
+} from "#services/asset-generator/src/index.mjs";
+import { createContentCredentialSigner } from "../../content-credential-signer.mjs";
+import { selectAssetImageProvider } from "../image-provider-selection.mjs";
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
@@ -59,8 +59,19 @@ function createRuntime(env, job) {
   const infra = withCloudflareQueueBindings(baseInfra, {
     [ASSET_GENERATION_COMPLETION_QUEUE]: env.ASSET_COMPLETIONS,
   });
-  const provider = createCloudflareAssetImageProvider({ env, job });
-  const credentialSigner = createCloudflareContentCredentialSigner(env);
+  const provider = selectAssetImageProvider({
+    profile: job?.providerProfile,
+    secrets: {
+      openAiApiKey: env.OPENAI_API_KEY,
+      bflApiKey: env.BFL_API_KEY,
+    },
+  });
+  const credentialSigner = createContentCredentialSigner({
+    baseUrl: env.C2PA_SIGNER_URL,
+    signerId: env.C2PA_SIGNER_ID,
+    trustPolicy: env.C2PA_TRUST_POLICY,
+    authorizationToken: env.C2PA_SIGNER_TOKEN ?? null,
+  });
 
   return createAssetGenerationRuntime({ infra, provider, credentialSigner });
 }

@@ -12,5 +12,5 @@ jobs:
       - run: npm run test:all
       - run: npm run validate
       - run: npm run test:audit -- --check
-      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config deployments/cloudflare/asset-generator/wrangler.jsonc
-      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config deployments/cloudflare/thread-presentation/wrangler.jsonc
+      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/asset-generator/cloudflare/wrangler.jsonc
+      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc
