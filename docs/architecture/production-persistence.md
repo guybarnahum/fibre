@@ -1,7 +1,7 @@
 ---
 id: architecture-production-persistence
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-08-28
 canonical: true
 ---
 
@@ -210,12 +210,32 @@ Do not perform a broad rewrite merely to make diagrams uniform. Migrate persiste
 
 The migration order should be driven by real transaction requirements. Genesis birth is the first state proof because it exercises the strongest current consistency boundary. Later World Kernel, runtime coordination, additional services and durable journals can move behind the same accepted infrastructure boundary as their required capability contracts become executable.
 
+### Stop condition: architectural proof, not abstraction completion
+
+Provider-neutral persistence is a **constraint on Fibre development**, not a competing product roadmap.
+
+The migration is sufficiently proven for a given development phase when representative vertical slices demonstrate the guarantees that the next Fibre capability actually depends on. At that point, unrelated remaining direct-provider paths become tracked migration debt and do not automatically stay on the critical path.
+
+In particular, do not continue migrating stores merely for symmetry after the relevant consistency, durability, replay and provider-neutral dependency boundaries have been demonstrated. Resume deferred migration when a concrete Fibre feature reaches that authority, an imminent production deployment requires it, a stronger cross-domain semantic transaction needs it, or a demonstrated correctness risk makes it necessary.
+
+Every substantial persistence/Infra slice should therefore name four things before it displaces Fibre milestone work:
+
+1. the concrete Fibre capability it enables or protects;
+2. the semantic invariant or deployment blocker at risk;
+3. the smallest representative proof required;
+4. the stop condition after which further cleanup returns to the debt backlog.
+
+If those cannot be stated concretely, the work should normally be deferred in favor of Fibre capability development.
+
+This discipline is governed by [`../decisions/ADR-0018-vision-led-development-discipline.md`](../decisions/ADR-0018-vision-led-development-discipline.md).
+
 ## Relationship to other architecture
 
 - [`storage-model.md`](storage-model.md) defines semantic storage authorities, append-only discipline, transaction boundaries and repository/world separation.
 - [`infrastructure-driver.md`](infrastructure-driver.md) remains the evolving design for the umbrella provider-neutral capability bundle and concrete port contracts.
-- [`../decisions/ADR-0017-provider-neutral-production-persistence.md`](../decisions/ADR-0017-provider-neutral-production-persistence.md) records the accepted decision.
+- [`../decisions/ADR-0017-provider-neutral-production-persistence.md`](../decisions/ADR-0017-provider-neutral-production-persistence.md) records the production boundary.
+- [`../decisions/ADR-0018-vision-led-development-discipline.md`](../decisions/ADR-0018-vision-led-development-discipline.md) defines when further abstraction belongs on the critical path.
 
 The short form is:
 
-> **Domain stores own meaning. InfraDriver owns provider-neutral persistence guarantees. Provider adapters own physical mechanisms. Object storage owns bytes, not life. Git owns code, laws, fixtures and deliberately retained evidence — not living Fibre state.**
+> **Domain stores own meaning. InfraDriver owns provider-neutral persistence guarantees. Provider adapters own physical mechanisms. Object storage owns bytes, not life. Git owns code, laws, fixtures and deliberately retained evidence — not living Fibre state. Infrastructure proves and protects the organism; it does not replace the organism roadmap.**
