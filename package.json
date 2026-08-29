@@ -16,12 +16,6 @@
     "#infra/providers/cloudflare": "./infra/providers/cloudflare/driver.mjs",
     "#infra/providers/cloudflare/queue": "./infra/providers/cloudflare/queue.mjs",
     "#infra/providers/cloudflare/presentation-channel-do": "./infra/providers/cloudflare/presentation-channel-do.mjs",
-    "#infra/memory": "./infra/src/memory-driver.mjs",
-    "#infra/cloudflare-v1": "./infra/src/cloudflare-v1.mjs",
-    "#infra/cloudflare-queue": "./infra/src/cloudflare-queue-port.mjs",
-    "#infra/cloudflare-v1/presentation-channel-do": "./infra/src/cloudflare/presentation-channel-do.mjs",
-    "#infra/service-runtime": "./infra/service-runtime/service-runtime.mjs",
-    "#infra/node-service-runtime": "./infra/local/node-service-runtime.mjs",
     "#fixtures/*": "./fixtures/*",
     "#tools/*": "./tools/*",
     "#repo-root": "./tools/shared/repo-root.mjs"
