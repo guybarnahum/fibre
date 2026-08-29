@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { InfraImmutableObjectConflictError } from "#packages/infra/src/infra-driver.mjs";
+import { InfraImmutableObjectConflictError } from "#infra";
 import {
   AssetGenerationError,
   assetGenerationRetryDecision,
