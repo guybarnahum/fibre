@@ -90,6 +90,6 @@ test("Birth Center preserves the loopback-only bind contract without World Kerne
       FIBRE_BIRTH_CENTER_HOST: "0.0.0.0",
       FIBRE_BIRTH_CENTER_PORT: "0",
     }),
-    new TypeError("The M1 world-kernel server may bind only to a loopback host"),
+    new TypeError("The Birth Center server may bind only to a loopback host"),
   );
 });
