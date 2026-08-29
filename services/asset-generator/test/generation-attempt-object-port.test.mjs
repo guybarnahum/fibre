@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/memory";
 import { createGenerationAttemptObjectPort } from "../src/generation-attempt-object-port.mjs";
 
 const encoder = new TextEncoder();
