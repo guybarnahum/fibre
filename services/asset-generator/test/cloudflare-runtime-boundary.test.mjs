@@ -105,8 +105,12 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /JSON\.stringify\(observation\)/);
   assert.match(worker, /export default\s*\{/,
     "Cloudflare Workflow host must remain an ES Module Worker for Wrangler");
-  assert.match(worker, /new Response\("Not Found", \{ status: 404 \}\)/,
-    "default module entrypoint must not expose a parallel asset-generation HTTP API");
+  assert.match(worker, /createService\(\{/,
+    "Asset Generator HTTP hosting must use the shared Infra service seam");
+  assert.match(worker, /HTTP_SERVICE\.fetch\(request\)/,
+    "default module entrypoint must delegate HTTP handling to the shared service seam");
+  assert.doesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/,
+    "Asset Generator must expose health only and no parallel paid generation HTTP API");
   assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 
   assert.match(providerSelection, /openai-gpt-image-2-medium-v1/);
