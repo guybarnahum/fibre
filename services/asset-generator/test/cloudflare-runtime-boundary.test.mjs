@@ -12,6 +12,7 @@ const providerSelectionUrl = new URL("../../../deployments/cloudflare/asset-gene
 const assetConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.local.jsonc", import.meta.url);
 const assetRemoteConfigUrl = new URL("../../../deployments/cloudflare/asset-generator/wrangler.jsonc", import.meta.url);
 const deploymentManifestUrl = new URL("../../../deployments/environments/local.json", import.meta.url);
+const remoteDeploymentManifestUrl = new URL("../../../deployments/environments/cloudflare-remote.json", import.meta.url);
 const presentationWorkerUrl = new URL("../../../deployments/cloudflare/thread-presentation/worker.mjs", import.meta.url);
 const presentationConfigUrl = new URL("../../../deployments/cloudflare/thread-presentation/wrangler.local.jsonc", import.meta.url);
 const presentationRemoteConfigUrl = new URL("../../../deployments/cloudflare/thread-presentation/wrangler.jsonc", import.meta.url);
@@ -169,8 +170,22 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
 });
 
 test("remote Cloudflare composition shares generated assets and completion topology without moving publication authority", async () => {
+  const manifest = await json(remoteDeploymentManifestUrl);
   const assetConfig = await json(assetRemoteConfigUrl);
   const presentationConfig = await json(presentationRemoteConfigUrl);
+
+  const remoteProvider = manifest.providers["cloudflare-remote"];
+  const assetDeployment = manifest.services["asset-generator"];
+  const presentationDeployment = manifest.services["thread-presentation"];
+  assert.equal(manifest.environment, "cloudflare-remote");
+  assert.equal(remoteProvider.platform, "cloudflare");
+  assert.equal(remoteProvider.infraDriver, "cloudflare-v1");
+  assert.equal(assetDeployment.runtime, "cloudflare-remote");
+  assert.equal(assetDeployment.infra, "cloudflare-remote");
+  assert.deepEqual(assetDeployment.requires, ["objects", "queues", "workflows"]);
+  assert.equal(presentationDeployment.runtime, "cloudflare-remote");
+  assert.equal(presentationDeployment.infra, "cloudflare-remote");
+  assert.deepEqual(presentationDeployment.requires, ["streams", "objects", "catalog", "realtime", "queues", "workflows"]);
 
   const assetBucket = assetConfig.r2_buckets.find((binding) => binding.binding === "ASSET_OBJECTS");
   const presentationBucket = presentationConfig.r2_buckets.find((binding) => binding.binding === "PRESENTATION_OBJECTS");
