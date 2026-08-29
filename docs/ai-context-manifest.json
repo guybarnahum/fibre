@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 41,
+  "version": 42,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -51,7 +51,7 @@
         "docs/decisions/ADR-0013-source-identity-consent-boundary.md",
         "docs/decisions/ADR-0015-fibre-centric-development.md",
         "docs/decisions/ADR-0017-provider-neutral-production-persistence.md",
-        "docs/decisions/ADR-0018-vision-led-development-discipline.md",
+        "docs/decisions/ADR-0020-vision-led-development-discipline.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/concepts/thread.md",
         "docs/concepts/identity-and-genome.md",
