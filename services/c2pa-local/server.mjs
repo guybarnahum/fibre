@@ -7,8 +7,8 @@ import {
   bearerAuth,
   createServiceRuntime,
   readJsonRequest,
-} from "../../infra/service-runtime/service-runtime.mjs";
-import { createNodeServiceHandler } from "../../infra/local/node-service-runtime.mjs";
+} from "#infra/service-runtime";
+import { createNodeServiceHandler } from "#infra/node-service-runtime";
 import {
   activeManifestFromStore,
   describeC2paAssertions,
