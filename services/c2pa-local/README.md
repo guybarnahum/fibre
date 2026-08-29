@@ -30,7 +30,7 @@ The helper generates an unencrypted PKCS#8 P-256 signing key plus a short-lived 
 
 These credentials are local proof material only. Verification for this local proof checks the embedded C2PA structure/signature but deliberately does not claim that the development CA is a production trust credential.
 
-The service listens only on `127.0.0.1:8790` by default and exposes:
+The HTTP surface uses the shared `infra/service-runtime` plumbing. It listens only on `127.0.0.1:8790` by default and exposes:
 
 ```text
 GET  /healthz
@@ -38,4 +38,6 @@ POST /embed
 POST /verify
 ```
 
-Production should replace this sidecar with a signer/verifier backed by an accepted trust credential and KMS/HSM or another approved signing service. Cloudflare-native C2PA verification can replace the sidecar when the upstream SDK provides a supported Worker byte API; the Fibre contracts do not change.
+`GET /healthz` is always public and side-effect free. Local development leaves `/embed` and `/verify` unauthenticated by default to preserve the existing proof flow. Set `FIBRE_C2PA_SERVICE_TOKEN` to require `Authorization: Bearer <token>` on both protected routes when exercising service authentication locally.
+
+Production should replace this sidecar with a signer/verifier backed by an accepted trust credential and KMS/HSM or another approved signing service. The production service should require authenticated `/embed` and `/verify` calls and return the C2PA Trust List evidence required by Fibre's production HTTP signer adapter. Cloudflare-native C2PA verification can replace the sidecar when the upstream SDK provides a supported Worker byte API; the Fibre contracts do not change.
