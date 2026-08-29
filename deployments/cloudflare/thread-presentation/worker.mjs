@@ -1,5 +1,6 @@
-import { createCloudflareInfraDriver } from "#infra/cloudflare-v1";
-import { FibrePresentationChannelDurableObject } from "#infra/cloudflare-v1/presentation-channel-do";
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
+import { createService } from "#infra/service";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import {
   normalizeThreadPresentationBundle,
@@ -17,6 +18,10 @@ import { createPresentationReadApi, channelIdForThread } from "./presentation-re
 
 export { FibrePresentationChannelDurableObject };
 
+const HTTP_SERVICE = createService({
+  serviceName: "thread-presentation",
+  health: { role: "presentation-api" },
+});
 const P3_CAN_THO_THREAD_ID = "thr_pr39_g2_04";
 const P3_MARKET_MEDIA_ID = "media_place_market";
 const P3_PROVIDER_PROFILE = "openai-gpt-image-2-medium-v1";
@@ -86,9 +91,7 @@ async function p3Slot(presentationServer, { threadId, mediaId }) {
     snapshotDigest: current.pointer.snapshotDigest,
   });
   const slot = plan.slots.find((candidate) => candidate.mediaId === mediaId);
-  if (!slot || slot.status !== "missing") {
-    throw new Error(`fixture media slot ${mediaId} is not eligible for generation`);
-  }
+  if (!slot || slot.status !== "missing") throw new Error(`fixture media slot ${mediaId} is not eligible for generation`);
   return slot;
 }
 
@@ -100,9 +103,7 @@ async function publishP3Fixture({
 }) {
   const presentation = bundle?.presentation;
   const threadId = nonEmpty("fixture threadId", presentation?.manifest?.threadId);
-  if (presentation?.manifest?.fixture !== true) {
-    throw new TypeError("P3 seed accepts fixture presentations only");
-  }
+  if (presentation?.manifest?.fixture !== true) throw new TypeError("P3 seed accepts fixture presentations only");
 
   const channelId = channelIdForThread(threadId);
   const current = await presentationServer.getSnapshot(channelId);
@@ -128,10 +129,7 @@ async function publishP3Fixture({
     objectRef: objectRef ?? `p3_fixture_snapshot_${threadId}_v1`,
     snapshotVersion,
     bundle,
-    catalog: {
-      publiclyVisible: true,
-      p3Fixture: true,
-    },
+    catalog: { publiclyVisible: true, p3Fixture: true },
   });
   return {
     ok: true,
@@ -222,12 +220,7 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
 
   if (url.pathname === "/__p3/fixtures/can-tho/generate-market" && request.method === "POST") {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
-    return Response.json(await scheduleP3Media({
-      infra,
-      presentationServer,
-      threadId: P3_CAN_THO_THREAD_ID,
-      mediaId: P3_MARKET_MEDIA_ID,
-    }));
+    return Response.json(await scheduleP3Media({ infra, presentationServer, threadId: P3_CAN_THO_THREAD_ID, mediaId: P3_MARKET_MEDIA_ID }));
   }
 
   const statusMatch = /^\/__p3\/workflows\/([A-Za-z0-9._:-]+)$/.exec(url.pathname);
@@ -256,16 +249,16 @@ function createCompletionConsumer(env, infra, presentationServer) {
     credentialSigner: createCredentialSigner(env),
     async publishReady({ scope, receipt }) {
       if (scope.entityKind !== "thread") return null;
-      return publisher.publishReady({
-        receipt,
-        channelId: channelIdForThread(scope.entityRef),
-      });
+      return publisher.publishReady({ receipt, channelId: channelIdForThread(scope.entityRef) });
     },
   });
 }
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/healthz") return HTTP_SERVICE.fetch(request);
+
     const infra = createInfra(env);
     const presentationServer = createThreadPresentationServer({ infra });
 
