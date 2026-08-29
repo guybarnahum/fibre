@@ -95,17 +95,26 @@ Deploy:
 npm run deploy:asset-generator:cloudflare
 ```
 
-## What this does and does not deploy
+## Remote stack boundary
 
-This command deploys the Asset Generator process only. A complete remote Fibre media path also needs a Thread Presentation deployment wired to:
+A checked remote Thread Presentation composition now lives at `deployments/cloudflare/thread-presentation/wrangler.jsonc`, with provider selection declared in `deployments/environments/cloudflare-remote.json`.
 
-- the same generated-object R2 storage;
-- the Asset Generator Workflow service binding;
-- the same completion Queue as a consumer;
-- its own Presentation state/catalog/realtime resources.
+The two remote compositions intentionally agree on:
 
-That remote Thread Presentation composition is not yet checked in, so this is not yet a one-command production stack deployment.
+- generated-object R2 storage: `fibre-presentation-assets`;
+- Asset Generator Workflow identity: `fibre-asset-generation` hosted by `fibre-asset-generator`;
+- completion Queue: `fibre-asset-completions`.
 
-Likewise, Fibre currently has a local C2PA signer integration proof, not an accepted production trust service. The Asset Generator can be deployed remotely now, but successful credentialed remote generation requires a separately reachable signer with production-appropriate trust/configuration.
+Asset Generator remains the completion producer. Thread Presentation is the completion consumer and retains sole authority to admit the result and publish `media.ready`.
 
-Provider selection remains governed by `deployments/environments/` and `docs/decisions/ADR-0019-deployment-provider-selection.md`. The provider-native names in this file are deployment detail, not Fibre identities.
+Validate the remote declaration and both bundles without publishing:
+
+```bash
+npm run deployment:validate:remote
+npm run deploy:asset-generator:cloudflare:dry
+npm run deploy:thread-presentation:cloudflare:dry
+```
+
+This does not make the remote media path production-ready. Fibre still has a local C2PA signer integration proof rather than an accepted production trust service, and the Presentation D1 catalog must be provisioned and initialized before live operation.
+
+Provider selection remains governed by `deployments/environments/` and `docs/decisions/ADR-0019-deployment-provider-selection.md`. The provider-native names in these files are deployment detail, not Fibre identities.
