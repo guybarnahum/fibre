@@ -7,7 +7,7 @@ import {
   compileOpenAIImagePrompt,
   createOpenAIImageProvider,
 } from "../../integrations/media/openai-image-provider.mjs";
-import { createMemoryInfraDriver } from "#infra/memory";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   CONTENT_CREDENTIAL_SIGNER_VERSION,
   executeCredentialedAssetGenerationJob,
