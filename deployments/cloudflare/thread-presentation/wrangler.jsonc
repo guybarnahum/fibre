@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-thread-presentation",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-08-28",
+  "secrets": {
+    "required": ["C2PA_SIGNER_URL"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "PRESENTATION_OBJECTS",
+      "bucket_name": "fibre-presentation-assets"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "PRESENTATION_CATALOG"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PRESENTATION_CHANNELS",
+        "class_name": "FibrePresentationChannelDurableObject"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "name": "fibre-asset-generation",
+      "binding": "ASSET_GENERATION",
+      "class_name": "AssetGenerationWorkflow",
+      "script_name": "fibre-asset-generator"
+    }
+  ],
+  "queues": {
+    "consumers": [
+      {
+        "queue": "fibre-asset-completions",
+        "max_batch_size": 10,
+        "max_batch_timeout": 1,
+        "max_retries": 10,
+        "dead_letter_queue": "fibre-asset-completions-dlq"
+      }
+    ]
+  },
+  "exports": {
+    "FibrePresentationChannelDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}
