@@ -1,5 +1,5 @@
 import { verifyCredentialedAssetForPublication } from "#services/asset-generator/src/index.mjs";
-import { requireInfraCapabilities } from "#packages/infra/src/infra-driver.mjs";
+import { requireInfraCapabilities } from "#infra";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "./thread-presentation-stream-domain.mjs";
 
@@ -89,9 +89,6 @@ export function createThreadPresentationAssetPublisher({
       };
       const accepted = await presentationServer.appendEvent(eventInput, { expectedSequence });
 
-      // This is a serving projection, not publication authority. Identity-credential
-      // media defaults closed and becomes public only when the immutable current
-      // presentation card explicitly authorizes public visibility.
       await infra.catalog.upsert(`media:${stored.objectRef}`, {
         kind: "public_presentation_media",
         publiclyVisible,
