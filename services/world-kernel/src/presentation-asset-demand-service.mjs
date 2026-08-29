@@ -6,7 +6,7 @@ import {
 import {
   InfraImmutableObjectConflictError,
   requireInfraCapabilities,
-} from "@fibre/infra";
+} from "#infra";
 import {
   assertExactKeys,
   assertIsoTimestamp,
