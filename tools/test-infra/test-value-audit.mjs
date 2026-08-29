@@ -5,12 +5,12 @@ import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const TEST_SCOPES = Object.freeze([
-  { scope: "domain", directory: "core/test" },
-  { scope: "infra", directory: "packages/infra/test" },
+  { scope: "core", directory: "core/test" },
+  { scope: "infra", directory: "infra/test" },
   { scope: "asset-generator", directory: "services/asset-generator/test" },
   { scope: "birth-center", directory: "services/birth-center/test" },
   { scope: "thread-presentation", directory: "services/thread-presentation/test" },
-  { scope: "thread-presentation-cloudflare", directory: "deployments/cloudflare/thread-presentation/test" },
+  { scope: "thread-presentation-cloudflare", directory: "infra/deployments/thread-presentation/cloudflare/test" },
   { scope: "world-kernel", directory: "services/world-kernel/test" },
   { scope: "tools", directory: "tools" },
 ]);
