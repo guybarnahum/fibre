@@ -4,10 +4,10 @@ import { readdir, readFile, stat } from "node:fs/promises";
 
 const integrationsRoot = new URL("../../integrations/", import.meta.url);
 const integrationImplementations = Object.freeze([
-  new URL("models/openai.mjs", integrationsRoot),
-  new URL("models/google.mjs", integrationsRoot),
-  new URL("media/openai-image-provider.mjs", integrationsRoot),
-  new URL("media/bfl-flux-image-provider.mjs", integrationsRoot),
+  new URL("ai/reasoning/openai.mjs", integrationsRoot),
+  new URL("ai/reasoning/google.mjs", integrationsRoot),
+  new URL("ai/image/openai.mjs", integrationsRoot),
+  new URL("ai/image/bfl.mjs", integrationsRoot),
   new URL("content-credentials/c2pa-http-signer.mjs", integrationsRoot),
 ]);
 const retiredServiceIntegrationPaths = Object.freeze([
@@ -100,8 +100,8 @@ test("third-party integrations have one shared home outside services and InfraDr
   assertSourceOmits(assetGeneratorIndex, /integrations\//, "asset-generator service index must remain integration-agnostic");
 
   const providerSelection = await text(providerSelectionUrl);
-  assertSourceMatches(providerSelection, /integrations\/media\/openai-image-provider\.mjs/, "Cloudflare image-provider selector must use the shared OpenAI image integration");
-  assertSourceMatches(providerSelection, /integrations\/media\/bfl-flux-image-provider\.mjs/, "Cloudflare image-provider selector must use the shared BFL image integration");
+  assertSourceMatches(providerSelection, /#integrations\/ai\/image\/openai\.mjs/, "Cloudflare image-provider selector must use the shared OpenAI image integration");
+  assertSourceMatches(providerSelection, /#integrations\/ai\/image\/bfl\.mjs/, "Cloudflare image-provider selector must use the shared BFL image integration");
   assertSourceOmits(providerSelection, /services\/asset-generator\/src\/index\.mjs/, "Cloudflare image-provider selector must not depend on the asset-generator service index");
 
   const signerSelection = await text(signerSelectionUrl);
