@@ -1,4 +1,4 @@
-import { requireInfraCapabilities } from "@fibre/infra";
+import { requireInfraCapabilities } from "#infra";
 import { publishAssetGenerationCompletion } from "./asset-generation-completion.mjs";
 import {
   AssetGenerationError,
