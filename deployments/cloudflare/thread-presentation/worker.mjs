@@ -1,4 +1,3 @@
-import { createHttpContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import { createCloudflareInfraDriver } from "#packages/infra/src/cloudflare-v1.mjs";
 import { FibrePresentationChannelDurableObject } from "#packages/infra/src/cloudflare/presentation-channel-do.mjs";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
@@ -13,6 +12,7 @@ import { createPresentationAssetDemandService } from "#services/world-kernel/src
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
+import { createCloudflareContentCredentialSigner } from "../content-credentials/signer-selection.mjs";
 import { createPresentationReadApi, channelIdForThread } from "./presentation-read-api.mjs";
 
 export { FibrePresentationChannelDurableObject };
@@ -33,10 +33,7 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 }
 
 function createCredentialSigner(env) {
-  return createHttpContentCredentialSigner({
-    baseUrl: env.C2PA_SIGNER_URL,
-    signerId: "fibre-c2pa-node-local-v1",
-  });
+  return createCloudflareContentCredentialSigner(env);
 }
 
 function nonEmpty(name, value) {
