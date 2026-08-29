@@ -4,13 +4,13 @@ import assert from "node:assert/strict";
 import {
   InfraIdempotencyConflictError,
   InfraSequenceConflictError,
-} from "../src/infra-driver.mjs";
+} from "../infra-driver.mjs";
 import {
   createCloudflareCatalogPort,
   createCloudflareInfraDriver,
   createCloudflareRealtimePort,
   createCloudflareStreamPort,
-} from "../src/cloudflare-v1.mjs";
+} from "../providers/cloudflare/driver.mjs";
 
 function fakePresentationNamespace() {
   const channels = new Map();
