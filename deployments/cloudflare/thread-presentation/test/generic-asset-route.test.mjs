@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { createMemoryInfraDriver } from "#packages/infra/src/memory-driver.mjs";
+import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { createPresentationReadApi, channelIdForThread } from "../presentation-read-api.mjs";
 
