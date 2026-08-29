@@ -1,5 +1,5 @@
-import { createCloudflareInfraDriver } from "@fibre/infra/cloudflare-v1";
-import { FibrePresentationChannelDurableObject } from "@fibre/infra/cloudflare-v1/presentation-channel-do";
+import { createCloudflareInfraDriver } from "#infra/cloudflare-v1";
+import { FibrePresentationChannelDurableObject } from "#infra/cloudflare-v1/presentation-channel-do";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import {
   normalizeThreadPresentationBundle,
