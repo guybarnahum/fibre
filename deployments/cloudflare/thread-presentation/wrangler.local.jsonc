@@ -6,7 +6,9 @@
   "vars": {
     "VIEWER_ORIGIN": "http://localhost:5173",
     "P3_FIXTURE_MODE": "1",
-    "C2PA_SIGNER_URL": "http://127.0.0.1:8790"
+    "C2PA_SIGNER_URL": "http://127.0.0.1:8790",
+    "C2PA_SIGNER_ID": "fibre-c2pa-node-local-v1",
+    "C2PA_TRUST_POLICY": "development_signature_only"
   },
   "r2_buckets": [
     {
