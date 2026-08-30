@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 43,
+  "version": 44,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -30,6 +30,7 @@
         "docs/validation/m2-pr-plan.md",
         "docs/validation/thread-conditions-experiment-plan.md",
         "docs/architecture/identity-embodiment-contract.md",
+        "docs/architecture/canonical-visual-identity.md",
         "docs/architecture/character-formation-model.md",
         "docs/architecture/interior-exterior-situated-identity.md",
         "docs/architecture/developmental-continuity-and-past-selves.md",
@@ -53,6 +54,7 @@
         "docs/decisions/ADR-0015-fibre-centric-development.md",
         "docs/decisions/ADR-0017-provider-neutral-production-persistence.md",
         "docs/decisions/ADR-0020-vision-led-development-discipline.md",
+        "docs/decisions/ADR-0021-canonical-visual-identity-reference.md",
         "docs/validation/pre-m2-causal-status-register.md",
         "docs/concepts/thread.md",
         "docs/concepts/identity-and-genome.md",
