@@ -12,10 +12,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { validateLocalC2paCertificateChain } from "../../c2pa-local/preflight-cert.mjs";
+import { validateLocalC2paCertificateChain } from "#integrations/content-credentials/c2pa-node/preflight-cert.mjs";
 
 const execFile = promisify(execFileCallback);
-const generator = fileURLToPath(new URL("../../c2pa-local/generate-dev-cert.sh", import.meta.url));
+const generator = fileURLToPath(new URL("../../../integrations/content-credentials/c2pa-node/generate-dev-cert.sh", import.meta.url));
 
 function certificateBlocks(input) {
   return Buffer.from(input).toString("utf8")
