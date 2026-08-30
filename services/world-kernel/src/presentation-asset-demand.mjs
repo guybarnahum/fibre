@@ -1,4 +1,5 @@
 import {
+  ASSET_GENERATION_JOB_VERSION,
   ASSET_KINDS,
   createAssetGenerationJobFromIdentity,
   fibreShortIdCandidates,
@@ -7,6 +8,7 @@ import {
   fibreShortRefSuffix,
   normalizeAssetGenerationBrief,
   normalizeAssetGenerationJob,
+  normalizeStoredAssetReceipt,
 } from "#services/asset-generator/src/index.mjs";
 import {
   assertJsonValue,
@@ -282,3 +284,12 @@ export function reconcilePresentationAssets({
     jobs,
   });
 }
+
+// World Kernel owner-local compatibility exports. These remain behind the
+// already-registered Asset Generator migration edge until @fibre/asset-generator
+// is an executable package boundary in this repository.
+export {
+  ASSET_GENERATION_JOB_VERSION,
+  normalizeAssetGenerationJob,
+  normalizeStoredAssetReceipt,
+};
