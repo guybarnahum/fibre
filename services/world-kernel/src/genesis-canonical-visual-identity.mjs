@@ -47,6 +47,40 @@ export function normalizeGenesisCanonicalVisualIdentity(candidate, { threadId } 
   });
 }
 
+/**
+ * Makes canonical visual identity an explicit immutable birth input. Because the
+ * value becomes part of the seed Thread snapshot it is covered by the Thread
+ * state hash, seed event, and replay authority without a parallel visual store.
+ */
+export function attachGenesisCanonicalVisualIdentity(bundle, canonicalVisualIdentity) {
+  assertPlainObject("Genesis birth bundle", bundle);
+  assertPlainObject("Genesis birth bundle.thread", bundle.thread);
+  assertId("Genesis birth bundle.thread.threadId", bundle.thread.threadId);
+  assertPlainObject("Genesis birth bundle.thread.identity", bundle.thread.identity);
+  const normalized = normalizeGenesisCanonicalVisualIdentity(canonicalVisualIdentity, {
+    threadId: bundle.thread.threadId,
+  });
+  const existing = bundle.thread.identity.canonicalVisualIdentity;
+  if (existing !== undefined) {
+    const normalizedExisting = normalizeGenesisCanonicalVisualIdentity(existing, {
+      threadId: bundle.thread.threadId,
+    });
+    if (JSON.stringify(normalizedExisting) !== JSON.stringify(normalized)) {
+      throw new TypeError("Genesis birth bundle carries a conflicting canonical visual identity");
+    }
+  }
+  return Object.freeze({
+    ...bundle,
+    thread: {
+      ...bundle.thread,
+      identity: {
+        ...bundle.thread.identity,
+        canonicalVisualIdentity: structuredClone(normalized),
+      },
+    },
+  });
+}
+
 export function pendingCanonicalVisualIdentityEmbodiment({
   threadId,
   canonicalVisualIdentity,
