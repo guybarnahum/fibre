@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { runM1ReviewedProof } from "./m1-reviewed-proof.mjs";
 import {
   startWorldKernelFromEnvironment,
-} from "#services/world-kernel/src/server.mjs";
+} from "../../../infra/deployments/world-kernel/local/server.mjs";
 import {
   startThreadEditorFromEnvironment,
 } from "#tools/editor/serve-thread-editor.mjs";
