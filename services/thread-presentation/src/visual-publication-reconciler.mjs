@@ -1,10 +1,11 @@
-import { normalizeEmbodimentRepresentation } from "#services/world-kernel/src/embodiment-domain.mjs";
-import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
-import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
-import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
-import { createThreadPresentationIdentityMediaRewriteService } from "#services/world-kernel/src/thread-presentation-identity-media-rewrite-service.mjs";
-import { assertId } from "#services/world-kernel/src/persistence-common.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
+
+function assertId(name, value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError(`${name} must be a non-empty string`);
+  }
+  return value;
+}
 
 function assertIsoTimestamp(name, value) {
   if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) {
@@ -13,11 +14,31 @@ function assertIsoTimestamp(name, value) {
   return value;
 }
 
-function requireProviderSelector(value) {
+function requireFunction(name, value) {
   if (typeof value !== "function") {
-    throw new TypeError("Thread Presentation visual reconciler requires selectProviderProfile()");
+    throw new TypeError(`Thread Presentation visual reconciler requires ${name}()`);
   }
   return value;
+}
+
+function requireProviderSelector(value) {
+  return requireFunction("selectProviderProfile", value);
+}
+
+function normalizeAdmittedCanonicalPortrait(candidate) {
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+    throw new TypeError("Thread Presentation visual reconciliation requires an admitted canonical portrait");
+  }
+  assertId("embodiment.embodimentId", candidate.embodimentId);
+  assertId("embodiment.threadId", candidate.threadId);
+  if (candidate.kind !== "portrait"
+    || candidate.visibility !== "public"
+    || candidate.status !== "available"
+    || typeof candidate.asset?.referenceObjectRef !== "string"
+    || candidate.asset.referenceObjectRef.trim() === "") {
+    throw new TypeError("Thread Presentation visual reconciliation requires an admitted public canonical portrait");
+  }
+  return candidate;
 }
 
 function result(complete, stage, detail = {}) {
@@ -38,15 +59,20 @@ function suppliedEmbodimentReader(embodiment) {
  * The caller supplies an already-admitted canonical Embodiment projection from
  * World. Presentation may project it and request derived media, but this module
  * never writes World state and never decides canonical identity.
+ *
+ * Presentation-owned collaborators are injected explicitly. This keeps the
+ * service independent of World Kernel private implementation modules; deployment
+ * composition may wire current implementations while those presentation
+ * capabilities finish migrating behind the stable service boundary.
  */
 export function createThreadPresentationVisualPublicationReconciler({
   presentationServer,
   infra,
   selectProviderProfile,
-  createDemandService = createPresentationAssetDemandService,
-  createVisualRewrite = createThreadPresentationEmbodimentRewriteService,
-  createIdentityRewrite = createThreadPresentationIdentityMediaRewriteService,
-  planSlots = planThreadPresentationAssetSlots,
+  createDemandService,
+  createVisualRewrite,
+  createIdentityRewrite,
+  planSlots,
 } = {}) {
   if (!presentationServer
     || typeof presentationServer.getSnapshot !== "function"
@@ -55,7 +81,10 @@ export function createThreadPresentationVisualPublicationReconciler({
   }
   if (!infra) throw new TypeError("Thread Presentation visual reconciler requires infra");
   requireProviderSelector(selectProviderProfile);
-  if (typeof planSlots !== "function") throw new TypeError("Thread Presentation visual reconciler planSlots must be a function");
+  requireFunction("createDemandService", createDemandService);
+  requireFunction("createVisualRewrite", createVisualRewrite);
+  requireFunction("createIdentityRewrite", createIdentityRewrite);
+  requireFunction("planSlots", planSlots);
   const demandService = createDemandService({ infra });
   const identityRewrite = createIdentityRewrite({ presentationServer });
 
@@ -63,15 +92,9 @@ export function createThreadPresentationVisualPublicationReconciler({
     async reconcileAvailableEmbodiment({ threadId, embodiment: candidate, observedAt } = {}) {
       assertId("threadId", threadId);
       assertIsoTimestamp("observedAt", observedAt);
-      const embodiment = normalizeEmbodimentRepresentation(candidate);
+      const embodiment = normalizeAdmittedCanonicalPortrait(candidate);
       if (embodiment.threadId !== threadId) {
         throw new TypeError("supplied Embodiment belongs to a different Thread");
-      }
-      if (embodiment.kind !== "portrait"
-        || embodiment.visibility !== "public"
-        || embodiment.status !== "available"
-        || !embodiment.asset?.referenceObjectRef) {
-        throw new TypeError("Thread Presentation visual reconciliation requires an admitted public canonical portrait");
       }
 
       const channelId = threadPresentationChannelId(threadId);
