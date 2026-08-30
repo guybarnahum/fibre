@@ -114,6 +114,8 @@ rich canonical visual identity text
 
 A pending text specification does not yet constitute an operational public visual reference.
 
+Slice C has now closed this root contract in executable code: generic/thin appearance text is rejected, the root job carries no prior image references, exact verified credentialed output is admitted back into the pending Embodiment revision, and the admitted asset records the one canonical `referenceObjectRef`. The runtime dependency-policy guard remains green without granting the new root module a private cross-owner exception.
+
 After admission:
 
 ```text
@@ -122,6 +124,8 @@ canonical Fibre reference image
   -> memory/life reconstructions at event age
   -> other Thread-depicting media at scene age/context
 ```
+
+A permanent cross-age planner proof now asserts that the official image and a materially different-age autobiographical reconstruction carry the exact same canonical object reference, reference age 25, and distinct chronology-derived target ages. This is a guardrail for the downstream slices, not a claim that their provider/C2PA/publication E2E is already closed.
 
 All such later media remains derived and must not replace the root through ordinary aging or aesthetic preference.
 
@@ -144,7 +148,7 @@ Current rules include:
 
 ## Current next work — #40 Identity Projection & Causal Consumption
 
-#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the active deployment vertical is closing identity projection through the canonical visual root and public presentation.
+#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the active deployment vertical is now carrying the admitted canonical visual root into the public presentation boundary.
 
 The cognition path remains:
 
@@ -162,8 +166,8 @@ The active public/visual path is:
 ```text
 Genesis birth
   -> public pre-embodiment presentation                    DONE
-  -> canonical visual identity root                        CURRENT
-  -> Embodiment admission + public visual projection       NEXT
+  -> canonical visual identity root                        DONE / GREEN
+  -> Embodiment admission + public visual projection       CURRENT
   -> reference/age-conditioned official + memory images    NEXT
   -> C2PA completion + Thread Presentation publication     NEXT
   -> Viewer + one-birth recovery E2E                       FINAL VERTICAL GATE
@@ -209,7 +213,7 @@ The following remain part of Fibre's intended architecture:
 - M2 standing across repeated trials and causal substitutions (#41);
 - richer Thread-authored development and self-model change (#42);
 - reciprocal/shared relationship structures, repair, expectations and permissions (#43);
-- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
+- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation;
 - richer visual appearance timelines beyond the canonical root + target-age model where later lived embodiment requires them;
 - endogenous motivation using clearly separated mechanical conditions plus Thread-authored semantic interpretation;
 - general isolated worker/tool/model gateway and model-capable Actor;
