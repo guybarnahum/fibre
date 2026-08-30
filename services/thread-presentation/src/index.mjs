@@ -43,6 +43,8 @@ export {
   readPresentationCivilIdentity,
 } from "./civil-identity-projection.mjs";
 
+export { projectNewbornThreadPresentation } from "./newborn-presentation-projector.mjs";
+
 export {
   PublicPresentationAssetIntegrityError,
   createPublicPresentationAssetResolver,
