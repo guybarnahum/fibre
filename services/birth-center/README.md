@@ -4,6 +4,8 @@ The Birth Center is Fibre's runtime boundary for developing prospective Threads 
 
 The World Kernel still owns live Thread reality and the atomic persistence transaction. The Birth Center must not mutate live-world tables directly.
 
+The cross-service path from admitted birth through public Thread Presentation and generated media is defined by [`../../docs/architecture/thread-birth-presentation-data-flow.md`](../../docs/architecture/thread-birth-presentation-data-flow.md).
+
 ## Fibre Civil Registry
 
 `src/civil-registry.mjs` is the Birth Center service for Fibre Identity Numbers (FINs). It is the logical central directory for the permanent mapping:
