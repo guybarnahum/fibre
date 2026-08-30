@@ -35,6 +35,14 @@ function sameBytes(left, right) {
   return true;
 }
 
+function normalizeCatalogListOptions({ prefix = "", after = null, limit = 100 } = {}) {
+  if (typeof prefix !== "string") throw new TypeError("catalog list prefix must be a string");
+  if (after !== null) assertInfraId("catalog list after", after);
+  assertInfraFiniteNumber("catalog list limit", limit, { integer: true, minimum: 1 });
+  if (limit > 1000) throw new TypeError("catalog list limit must be <= 1000");
+  return { prefix, after, limit };
+}
+
 export function createMemoryInfraDriver() {
   const channels = new Map();
   const objects = new Map();
@@ -142,6 +150,17 @@ export function createMemoryInfraDriver() {
     async remove(key) {
       assertInfraId("catalog key", key);
       return catalog.delete(key);
+    },
+    async list(options = {}) {
+      const { prefix, after, limit } = normalizeCatalogListOptions(options);
+      const keys = [...catalog.keys()]
+        .filter((key) => key.startsWith(prefix) && (after === null || key > after))
+        .sort();
+      const selected = keys.slice(0, limit);
+      return {
+        entries: selected.map((key) => ({ key, value: clone(catalog.get(key)) })),
+        nextCursor: keys.length > limit ? selected.at(-1) : null,
+      };
     },
   };
 
