@@ -32,6 +32,8 @@ export interface ThreadSnapshot {
     name: string;
     originOrientation: "original" | "echo" | "homage" | "composite";
     selfDescription: string;
+    birthDate?: string;
+    languages?: string[];
     birthCity?: string;
     currentWorkCity?: string;
     culture?: string[];
@@ -258,20 +260,4 @@ export interface ThreadContextCapsule {
   relevantMemories: string[];
   relevantRelationships: string[];
   permissions: string[];
-  budgets?: ThreadSnapshot["accounts"];
-  participation: ParticipationAuthorization;
-  auditPolicies: [
-    "dignity_guardian",
-    "goal_guardian",
-    "self_examiner_steward",
-  ];
-}
-
-export interface ProposedLifeChange {
-  summary: string;
-  newMemories?: string[];
-  updatedNeeds?: string[];
-  updatedFeelings?: string[];
-  updatedSelfModel?: string;
-  updatedUnresolvedIntentions?: string[];
 }
