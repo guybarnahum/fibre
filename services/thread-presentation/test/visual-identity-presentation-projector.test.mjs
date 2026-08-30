@@ -11,6 +11,7 @@ import { projectVisualIdentityThreadPresentation } from "../src/visual-identity-
 
 const DIGEST_A = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const DIGEST_B = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+const CANONICAL_REFERENCE = "visual_identity_reference_thr_visual_identity_projection_001";
 
 function newborn() {
   const threadId = "thr_visual_identity_projection_001";
@@ -59,12 +60,12 @@ function visualIdentity({ revision = 1, digest = DIGEST_A } = {}) {
       : "Natural head-and-shoulders portrait of the same person with age-significant appearance changes faithfully preserved.",
     sourceReferences: ["emb_visual_identity_projection_001", "evt_seed_thr_visual_identity_projection_001"],
     permissionReferences: [],
-    referenceObjectRefs: [],
+    referenceObjectRefs: [CANONICAL_REFERENCE],
     provenanceRef: `prov_visual_identity_projection_r${revision}`,
   };
 }
 
-test("authorized visual identity atomically creates identity card and deferred official-photo slot", () => {
+test("authorized visual identity atomically creates identity card and reference-conditioned official-photo slot", () => {
   const input = newborn();
   const projected = projectVisualIdentityThreadPresentation({
     bundle: input,
@@ -74,6 +75,7 @@ test("authorized visual identity atomically creates identity card and deferred o
   });
 
   assert.equal(projected.presentation.visualIdentity.embodimentId, "emb_visual_identity_projection_001");
+  assert.deepEqual(projected.presentation.visualIdentity.referenceObjectRefs, [CANONICAL_REFERENCE]);
   assert.equal(projected.presentation.identityCard.revision, 1);
   assert.equal(projected.presentation.identityCard.visibility, "public");
   assert.equal(projected.presentation.identityCard.displayName, "Mina Park");
@@ -97,8 +99,13 @@ test("authorized visual identity atomically creates identity card and deferred o
   assert.ok(official);
   assert.equal(official.status, "missing");
   assert.equal(official.role, "official_id_photo");
+  assert.deepEqual(official.referenceObjectRefs, [CANONICAL_REFERENCE]);
+  assert.equal(official.context.referenceAgeYears, 25);
+  assert.equal(official.context.targetAgeYears, 22);
   assert.match(official.brief.description, /oval face/);
   assert.match(official.brief.description, /head-and-shoulders portrait/);
+  assert.match(official.brief.description, /25/);
+  assert.match(official.brief.description, /22 years old/);
   assert.equal(official.inputReferences.includes("emb_visual_identity_projection_001"), true);
 });
 
