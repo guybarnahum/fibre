@@ -4,7 +4,7 @@ import {
   THREAD_MEDIA_PACKET_VERSION,
   THREAD_PRESENTATION_PACKET_CURRENT_VERSION,
   normalizeThreadPresentationBundle,
-} from "#services/world-kernel/src/thread-presentation-domain.mjs";
+} from "#services/thread-presentation/src/index.mjs";
 import { civilRegistrationToPresentationCivilIdentity } from "./civil-identity-projection.mjs";
 
 function nonEmpty(name, value) {
