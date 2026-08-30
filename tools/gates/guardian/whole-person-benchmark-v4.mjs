@@ -5,7 +5,7 @@ import {
   buildDignityGuardianV4ResponseSchema,
   semanticDignityGuardianV4,
 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import { guardianModelAdapterFromEnvironment } from "#services/world-kernel/src/guardian-model-adapter.mjs";
+import { createLocalReasoningAdapter } from "../../../infra/deployments/local-reasoning.mjs";
 import {
   WHOLE_PERSON_BENCHMARK_V4,
   buildWholePersonPass1Cases,
@@ -143,7 +143,7 @@ export async function runWholePersonBenchmark(options) {
   const cases = buildWholePersonPass1Cases();
   const neutrality = wholePersonNeutralityReport(cases);
   assertWholePersonNeutrality(neutrality);
-  const adapter = guardianModelAdapterFromEnvironment();
+  const adapter = createLocalReasoningAdapter();
   const results = [];
 
   for (const { arm, capsule } of cases) {
