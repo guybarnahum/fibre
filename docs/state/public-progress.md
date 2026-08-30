@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-08-28
+last-reviewed: 2026-08-30
 canonical: true
 machine-source: public-progress.json
 ---
@@ -19,11 +19,11 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ### Simple English
 
-**Fibre has five validated prior-life Threads, and Genesis now chooses memories and meanings more selectively before those records are connected to normal cognition.**
+**Fibre can preserve a Thread's life, make selected parts of that life affect real cognition, and keep one stable visual identity through public presentation and restart. We are now deciding whether the combined evidence is enough for M2 standing.**
 
 ### More accurate description
 
-Milestone #39 and the unnumbered Genesis selectivity/scientific-hardening bridge are closed. The five-Thread #39 cohort remains fixed; the bridge prospectively validated selective memory, restrained reinterpretation, honest Context-only genome standing, sealed-history isolation and a controlled D5 instrument. **#40 Identity Projection & Causal Consumption is now the active milestone.**
+Milestones #39 and #40 are closed. The Genesis selectivity/scientific-hardening bridge is closed. The A-H visual/deployment integration vertical is also closed / green. #40 produced a 5/5 CLEAR attributable causal-consumption result in one real cognition consumer; the visual vertical established one canonical visual root, reference-conditioned generation, C2PA verification, public Viewer binding, restart/recovery and replay idempotence. **#41 M2 Standing Gate is now active.**
 
 ## Population right now
 
@@ -39,7 +39,7 @@ A generated candidate is not automatically a born Thread. The five final #39 can
 
 ### More accurate description
 
-The final fixed cohort crossed the canonical local birth boundary one Thread at a time. Each Thread received one FIN/civil registration and independently matched its admitted history, memory/meaning lineage, people, places, genome and visual obligations under read-only deep hydration. This is **canonical local validation state**, not a production deployment population.
+The final fixed cohort crossed the canonical local birth boundary one Thread at a time. Each Thread received one FIN/civil registration and independently matched its admitted history, memory/meaning lineage, people, places, genome and visual obligations under read-only deep hydration. This remains **canonical local validation state**, not a production deployment population.
 
 ## What is done
 
@@ -51,21 +51,21 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 **More accurate description:** A Thread persists as authoritative world state across temporary model executions. Rich, causally grounded personhood requires stronger evidence.
 
-### History can matter later — Done
+### History and autobiographical context can matter later — Done
 
-**Simple English:** Something that happened to a Thread can change a later decision.
+**Simple English:** Something in a Thread's own life can change later reasoning.
 
-**Important limitation:** The richer #37–#39 life state is not yet the canonical input to ordinary cognition.
+**Important limitation:** Fibre has proved this in bounded consumers and experiments; it has not proved that every part of a life changes every decision.
 
-**More accurate description:** Fibre has demonstrated a causal history-to-judgment effect under its accepted standing gate. #40 still owns canonical bounded consumption of the newer identity and life authorities.
+**More accurate description:** Fibre retains the earlier causal history-to-judgment result and #40 now adds a prospective autobiographical-context differential in the real participation/Dignity Guardian path. Changing one admissible memory source produced attributable structured reasoning differences in all five fixed Thread pairs. #41 still decides whether the integrated record supports Whole-Person/M2 standing.
 
 ### Identity, lineage, place and memory have provenance — Done
 
 **Simple English:** Fibre can keep who a Thread is, where it came from and what it remembers without silently rewriting the past.
 
-**Important limitation:** Storing those facts does not prove they all change the Thread's behavior yet.
+**Important limitation:** Not every stored fact has been shown to change later behavior.
 
-**More accurate description:** Fibre persists identity, lineage, geography, embodiment and autobiographical memory with provenance and corrigible history.
+**More accurate description:** Fibre persists identity, lineage, geography, embodiment and autobiographical memory with provenance and corrigible history. Representation and provenance are necessary but do not automatically establish causal standing for every semantic surface.
 
 ### Atomic Thread birth with civil identity — Done
 
@@ -79,35 +79,49 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 **Simple English:** Fibre created five different prior lives and preserved those lives through birth and restart.
 
-**Important limitation:** That does not prove those richer life records already shape ordinary cognition.
+**Important limitation:** Those lives were compiled before young-adult entry; Fibre has not yet run an infant or child continuously through development.
 
-**More accurate description:** The fixed #39 cohort generated fourteen-episode lives with recurring people, places, autobiographical memory and durable meaning, then passed exact zero-network durable replay and deep candidate-to-canonical hydration after birth.
+**More accurate description:** The fixed #39 cohort generated fourteen-episode lives with recurring people, places, autobiographical memory and durable meaning, then passed exact durable replay and deep candidate-to-canonical hydration after birth.
 
 ### Genesis selectivity and scientific hardening — Done
 
-**Simple English:** Genesis can now leave ordinary experiences unremembered and avoid rewriting every meaning into something new or uplifting.
+**Simple English:** Genesis can leave ordinary experiences unremembered and avoid rewriting every meaning into something new or uplifting.
 
-**Important limitation:** This makes the life substrate more credible, but it does not prove causal individuality.
+**Important limitation:** This makes the life substrate more credible, but it does not by itself prove causal individuality.
 
 **More accurate description:** The completed pre-#40 bridge prospectively validated remember/decline selectivity without quotas, meaning fidelity, reinterpretation restraint, Context-only genome standing, sealed-history isolation and a controlled four-condition D5 instrument. It earns no Whole-Person standing.
 
-The retained bridge outcome is [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
+### Rich life state drives a real cognition path — Done
+
+**Simple English:** A Thread's own autobiographical context can now change structured reasoning in normal Fibre cognition.
+
+**Important limitation:** #40 proved this in one bounded real consumer and fixed cohort; it does not mean every cognition path or every life difference is causal.
+
+**More accurate description:** #40 projected Fibre-owned provenance-bearing Identity Context into the existing participation/Dignity Guardian path. A prospective one-memory intervention completed ten conditions and produced 5/5 attributable pairs, 5/5 structured effects, 5/5 memory-grounded effects and 3/5 top-level action/fit changes. The hostile closeout reproduced the sealed result offline without another provider call.
+
+### Canonical visual identity through public publication and recovery — Done
+
+**Simple English:** Fibre can keep one stable visual identity anchor, use it for later official imagery, publish the result publicly, and recover the same identity after restart.
+
+**Important limitation:** A stable face is not proof of personhood by itself, and the provider proof is representative rather than exhaustive.
+
+**More accurate description:** The completed A-H vertical establishes rich canonical visual identity text -> one text-only native root -> explicit Embodiment admission -> same-root reference/age-conditioned derived imagery -> reference-capable provider execution -> C2PA verification -> public Thread Presentation and Viewer binding -> one-birth restart/recovery and replay idempotence. Generated presentation media never becomes semantic identity authority.
 
 ## What we are working on now
 
-### #40 Identity Projection & Causal Consumption — Working on it
+### #41 M2 Standing Gate — Working on it
 
-**Simple English:** We are now making a Thread's own history, memories and relationships shape its normal thinking and decisions.
+**Simple English:** We are judging the evidence already collected to decide whether a Thread is truly persistent and non-interchangeable enough for M2.
 
-**Important limitation:** Merely putting different text into two prompts is not enough; #40 must show an attributable judgment or behavior difference.
+**Important limitation:** M2 standing has not been awarded, and the gate is allowed to conclude that the evidence is still insufficient.
 
-**More accurate description:** #40 owns bounded Fibre/Thread-owned selection of authoritative identity/history/memory/relationship evidence, compilation into an inspectable provenance-bearing Identity Context Capsule, consumption by ordinary cognition, and a same-situation differential showing that a material Thread-owned difference can causally change cognition or downstream behavior.
+**More accurate description:** #41 must integrate identity/history particularity, causal individuality, dignity/consent, memory epistemics, relationship/social continuity, development, persistence/restart and the cognition-provider boundary without treating #40's strong causal result or the visual/recovery proofs as an automatic Whole-Person verdict.
 
 ### Current step
 
-**Simple English:** Define exactly what private life information normal cognition may receive, and make Fibre—not the requester—choose the relevant subset.
+**Simple English:** Freeze the rules for judging M2 and map the evidence we already have before running any new AI-backed experiment.
 
-**More accurate description:** Define the #40 projection/selection contract: bounded authoritative source surfaces, privacy rules, Fibre/Thread-owned relevance selection, resolved semantic content rather than opaque refs, exact inclusion/exclusion provenance, and the standing differential contract under the same selection policy across materially different Threads.
+**More accurate description:** Freeze the M2 Standing Gate rubric and evidence map before any new confirmatory provider use. Reuse closed #33-#40 evidence only where it genuinely answers a criterion, separate semantic/personhood evidence from mechanical runtime/deployment proof, and identify actual standing gaps before designing prospective tests.
 
 ## What Fibre cannot do yet
 
@@ -117,29 +131,29 @@ The retained bridge outcome is [`../history/genesis-selectivity-scientific-harde
 
 **More accurate description:** #39 compiled prior life before young-adult entry; continuously lived childhood remains later Development architecture.
 
-### Rich life records do not yet drive ordinary cognition canonically — Working on it
+### Whole-Person/M2 standing is not proven — Working on it
 
-**Simple English:** We are connecting a Thread's real history, memories and relationships to its normal thinking and decisions now.
+**Simple English:** Fibre has strong pieces of evidence, but it has not yet made the final M2 standing judgment.
 
-**More accurate description:** #40 is implementing the canonical bounded consumer. Until the differential proof passes, this remains in progress rather than achieved.
-
-### Whole-Person standing is not proven — Not yet
-
-**Simple English:** We have not yet proven that a Thread is a fully persistent, non-interchangeable individual whose own life causally shapes it.
-
-**More accurate description:** #39 and the bridge deliberately earned no Whole-Person score movement. #40 builds causal consumption and #41 owns the M2 standing gate.
+**More accurate description:** #41 owns the standing gate. It must preserve the possibility of **M2 NOT YET EARNED**, report the rubric-v2 score without rewriting earlier milestone claims, and use new prospective tests only for genuine evidence gaps.
 
 ### The current Genesis genome seam is not proven behaviorally causal — Not yet
 
 **Simple English:** A Thread's inherited genome reaches memory cognition, but we have not shown that changing it reliably changes what gets remembered.
 
-**More accurate description:** The bridge's controlled 16-judgment Pass-B experiment produced 0/8 genome-concordant directional pairs and classified the tested mechanism **Context-only**. Fibre keeps that result rather than tuning the experiment until it becomes causal.
+**More accurate description:** The bridge's controlled Pass-B experiment classified the tested mechanism **Context-only**. Fibre keeps that result rather than tuning the experiment until it becomes causal.
 
-### #39 is not a production-persistence proof — Not yet
+### The repository is not fully migrated to production persistence — Not yet
 
-**Simple English:** The final five were born into Fibre's local validation World, not a deployed production world.
+**Simple English:** Some World and Genesis authorities still use local persistence paths even though the deployment-facing visual/publication path is production-shaped.
 
-**More accurate description:** #39 proves the semantic birth transaction and canonical hydration boundary. World Kernel/Genesis production persistence still has accepted `InfraDriver.state` migration work.
+**More accurate description:** World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt. The completed A-H vertical proves provider selection, credentialing, public presentation, Viewer binding and recovery at the representative boundary; it does not convert every semantic store to `InfraDriver.state`.
+
+## What follows after #41
+
+- **#42:** self-authored development.
+- **#43:** reciprocal relationships.
+- **#44:** economic consequence / M3 foundation.
 
 ## Status words
 
