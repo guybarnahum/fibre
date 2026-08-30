@@ -1,6 +1,0 @@
-version: 1
-
-reasoning:
-  dignity_guardian:
-    provider: openai
-    model: gpt-5.1-2025-11-13
