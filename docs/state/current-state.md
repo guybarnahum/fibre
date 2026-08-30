@@ -23,12 +23,13 @@ Live Threads are world data, not source code stored in Git. Models provide tempo
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
 - Mechanical/substrate conditions may become versioned causal machinery, but they are not semantic evidence for identity, memory, meaning, character, needs, emotions or values.
 - Model output is candidate cognition. Provider structured-output guarantees never replace Fibre canonical validation or domain admission.
-- Visual identity follows one root-anchor invariant: rich canonical visual identity text establishes semantic appearance authority; one admitted canonical reference image supplies operational likeness continuity; every later Thread-depicting generated image uses that root plus target age/context and remains derived media.
+- Visual identity follows one root-anchor invariant: rich canonical visual identity text establishes semantic appearance authority; one admitted canonical reference image supplies operational likeness continuity; every later Thread-depicting generated image uses that root plus chronology-supported target age, time-local appearance and scene/context and remains derived media.
 - Age is not visual identity. Synthetic canonical roots normalize at reference age 25; chronology selects later target age without replacing the root.
+- Identity is authoritative. Presentation is projection. Publication is a permission decision.
 
 ## Milestone posture
 
-The stable continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). The completed #39 outcome is retained in [`../history/milestones/pr39.md`](../history/milestones/pr39.md), and the completed pre-#40 hardening outcome is retained in [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
+The stable continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). Completed milestone outcomes are retained in [`../history/milestones/`](../history/milestones/), including [`../history/milestones/pr40.md`](../history/milestones/pr40.md).
 
 ```text
 M1    Persistent Thread Round Trip                         CLOSED
@@ -40,8 +41,9 @@ M1    Persistent Thread Round Trip                         CLOSED
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
 #39   Genesis, Childhood & Thread Birth                    CLOSED
       Genesis selectivity/scientific hardening bridge      CLOSED
-#40   Identity Projection & Causal Consumption             CURRENT
-#41   M2 Standing Gate / M2 closure                        AFTER #40
+#40   Identity Projection & Causal Consumption             CLOSED / CLEAR
+      A-H visual/deployment integration vertical           CLOSED / GREEN
+#41   M2 Standing Gate / M2 closure                        ACTIVE
 
 post-M2
 #42   Self-authored Development
@@ -49,9 +51,9 @@ post-M2
 #44   Economic Consequence / M3 foundation
 ```
 
-Planning identifiers such as `#40` are Fibre milestone identifiers, not GitHub transport numbering.
+Planning identifiers such as `#40` are Fibre milestone identifiers, not GitHub transport numbering. The A-H visual/deployment sequence is an implementation vertical, not a planning milestone.
 
-> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 now makes selected parts of that life causally matter and projects authoritative identity into real public/deployment surfaces. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 made selected parts of that life causally matter in real cognition and carried authoritative identity through a production-shaped public visual path. #41 now decides whether the integrated evidence is enough to call the Thread a persistent, non-interchangeable individual.**
 
 ## #39 and bridge outcome carried forward
 
@@ -59,14 +61,33 @@ The fixed five-Thread #39 cohort was generated once under the frozen World/genom
 
 The bridge then hardened the Genesis substrate without replacing that cohort:
 
-- **Memory selectivity:** a saturated fresh baseline was corrected prospectively; fresh matched controls exercised warranted remembering and legitimate non-selection at 6/6 separation with no quota.
+- **Memory selectivity:** fresh matched controls exercised warranted remembering and legitimate non-selection without quotas.
 - **Meaning fidelity:** mundane memory can remain without durable meaning; negative and ambiguous meanings remain negative/ambiguous.
-- **Reinterpretation restraint:** the promoted Pass-C correction produced 4/4 unchanged, 4/4 revised and 4/4 matched-pair separation.
-- **Genome standing:** a 16-judgment matched-history experiment produced 0/8 genome-concordant directional pairs and 0/8 reverse pairs. The tested Pass-B genome mechanism is **Context-only**: genome meaning reaches cognition, but this probe did not demonstrate the predeclared large attributable downstream effect.
-- **D5:** prospective sealed-history taint closure, exposure manifests, deliberate-leak refusal and a four-condition blinded evaluator/scorer are now permanent machinery. There is intentionally no retrospective #39 D5 rerating because #39 history was not prospectively sealed.
-- **Runner hygiene:** permanent durable-invocation and provider-runtime tests prove restart of unfinished work, immutable committed judgments, bounded transient retry, fail-fast terminal errors and provider-free replay.
+- **Reinterpretation restraint:** the promoted Pass-C correction preserved unchanged meaning when warranted and revised it when warranted.
+- **Genome standing:** the tested Pass-B genome mechanism remains **Context-only** rather than being promoted to causal standing.
+- **D5:** prospective sealed-history provenance exclusion, exposure manifests, deliberate-leak refusal and the four-condition diagnostic remain permanent machinery.
+- **Runner hygiene:** durable-invocation/provider-runtime tests prove restart of unfinished work, immutable committed judgments, bounded transient retry, fail-fast terminal errors and provider-free replay.
 
 The bridge earns no Whole-Person or M2 score movement.
+
+## #40 causal-consumption outcome carried forward
+
+#40 is **closed / CLEAR**. It established one bounded Fibre-owned Identity Context projection into the real participation/Dignity Guardian consumer with exact provenance and no second semantic authority.
+
+The fixed five-Thread prospective differential changed exactly one admissible autobiographical-memory source per pair and produced:
+
+```text
+completed conditions           10 / 10
+attributable pairs              5 / 5
+structured effects              5 / 5
+memory-grounded effects         5 / 5
+top-level action/fit changes    3 / 5
+band                            CLEAR
+```
+
+The provider-free hostile closeout reproduced the sealed result offline, rejected order/digest/provider/private-prose tampering, preserved the compact privacy surface, and verified the canonical World remained query-only.
+
+The permanent claim remains narrow: bounded provenance-bearing identity/autobiographical context is demonstrably load-bearing in one real cognition consumer and survives sealed offline replay, privacy, provenance and source-substitution closeout. #40 does not by itself establish Whole-Person/M2 standing, mature self-authorship, reciprocal social continuity or symbolic-genome causality.
 
 ## Genesis authority
 
@@ -98,7 +119,7 @@ Visual phenotype inheritance may reuse the same natural-language recombination p
 
 Every successfully published Genesis Thread receives one permanent Fibre Identity Number and one canonical civil registration in the same birth transaction. `threadId` remains the canonical machine identity/reference anchor; the FIN is the human-facing civil identifier.
 
-### Canonical visual identity
+## Canonical visual identity and completed A-H vertical
 
 [`../decisions/ADR-0021-canonical-visual-identity-reference.md`](../decisions/ADR-0021-canonical-visual-identity-reference.md) and [`../architecture/canonical-visual-identity.md`](../architecture/canonical-visual-identity.md) are the standing visual-identity authority.
 
@@ -106,36 +127,43 @@ For native/de-novo/inherited Threads:
 
 ```text
 rich canonical visual identity text
-  -> text-only root generation
+  -> text-only root generation with zero prior image references
   -> normalized reference age 25
   -> immutable verified root asset
   -> explicit Embodiment admission
+  -> ONE canonical reference image
+  -> every later Thread-depicting image uses that root
+       + target age when chronology supports it
+       + time-local appearance
+       + scene/context
 ```
 
-A pending text specification does not yet constitute an operational public visual reference.
+A pending text specification does not constitute an operational public visual reference. Generated bytes become canonical only through explicit Embodiment admission. The production admission chronology remains strict: `bindVerifiedCanonicalVisualIdentityProof(...)` requires the admission `recordedAt` to be at or after the stored receipt `completedAt`.
 
-Slice C closed this root contract in executable code: generic/thin appearance text is rejected, the root job carries no prior image references, exact verified credentialed output is admitted back into the pending Embodiment revision, and the admitted asset records the one canonical `referenceObjectRef`. The runtime dependency-policy guard remains green without granting the root module a new private cross-owner exception.
+The completed A-H visual/deployment vertical now proves:
 
-Slices D and E closed the public projection and downstream demand semantics. The admitted canonical Embodiment can issue the bounded Fibre Identity Card/official-photo placeholder without creating another identity authority, and person-depicting demand carries the exact canonical root plus chronology-derived target age. Autobiographical memory uses the same root at event age when the Thread is actually depicted; memory ownership alone does not imply depiction, ambiguous multi-event chronology does not invent a false exact age, and place/environment imagery remains reference-free.
+- newborn public Thread Presentation is projected from authoritative birth/civil identity;
+- one canonical native root is generated text-only with no prior reference image;
+- generic/thin appearance text cannot establish that root;
+- the credentialed root is verified and explicitly admitted into Embodiment;
+- World restart recovers the same civil identity, Embodiment lineage and root object reference;
+- public visual identity is rewritten from admitted World authority rather than caller-injected Embodiment content;
+- Fibre Identity Card issuance creates one official-photo media binding without creating a second identity authority;
+- official-photo and self-depicting memory demand use the same root with chronology-derived age when supported;
+- memory ownership alone does not imply depiction, ambiguous chronology does not invent an exact age, and place-only imagery remains reference-free;
+- deployment composition chooses a provider by explicit reference-object capability; reference-bearing demand cannot silently fall back to text-only likeness generation;
+- the configured BFL FLUX 2 Pro adapter consumes the canonical root through `input_image` while World/domain semantics remain provider-neutral;
+- generated output passes credential embedding and verification before public completion is admitted;
+- C2PA authorization tokens remain HTTP-header-only and do not enter request bodies or persisted provenance;
+- Thread Presentation publishes exactly one `media.ready` result and serves the final credentialed bytes through its public asset boundary;
+- insidefibre.com Viewer deployment is bound to the Thread Presentation public API origin and does not read raw World/Embodiment state;
+- duplicate/recovery replay does not create a second root, second identity card, second provider operation or second `media.ready` publication.
 
-After admission:
+The final code-bearing H checkpoint is `e41742135cb577a989963d738fc7515f16177a12`. On that exact SHA the focused one-birth recovery E2E passed locally, the user's full final local gates passed (`983/983` all tests, `978/978` active tests, repository/world/deployment validation, and test-value audit), and the exact-sha GitHub Actions `validate` workflow completed successfully. That workflow also includes both Cloudflare deployment dry-runs.
 
-```text
-canonical Fibre reference image
-  -> official identity photo at target current age
-  -> memory/life reconstructions at event age
-  -> other Thread-depicting media at scene age/context
-```
+This closes the representative visual/deployment stop condition. Unrelated media/provider polish and exhaustive provider parity return to backlog. Visual continuity remains derived presentation evidence and does not itself earn causal-individuality standing.
 
-Permanent tests assert that the official image and a materially different-age autobiographical reconstruction carry the exact same canonical object reference, reference age 25, and distinct chronology-derived target ages. A pre-Embodiment self-memory defers instead of inventing a face from biography or remembered text.
-
-Slice F has now closed the production-shaped execution boundary for that semantic contract. Deployment composition chooses a reference-capable image profile when the job carries canonical reference objects; the configured BFL FLUX 2 Pro adapter consumes the root through `input_image` instead of discarding it. The provider request is durably witnessed by object identity/digest metadata without persisting reference bytes. Generated output is credentialed and re-verified through the configured C2PA production trust-list path before completion is admitted. Thread Presentation then publishes exactly one public `media.ready` result; duplicate completion replay remains idempotent. Credential transport secrets remain header-only and are absent from signer bodies and persisted generation/receipt/proof/catalog/presentation state.
-
-This closes the representative reference-capable provider/C2PA/publication vertical required by the visual stop condition. It does not require exhaustive image-provider feature parity, and it does not make generated presentation media into identity authority.
-
-All later media remains derived and must not replace the root through ordinary aging or aesthetic preference.
-
-Echo/Homage is the explicit source-grounded creation exception. Authorized sponsor/homage source images may participate in forming the transformed Fibre canonical root under the established consent/source-rights rules. Once admitted, later images use the Fibre root rather than repeatedly using the original sponsor/homage source.
+Echo/Homage remains the explicit source-grounded creation exception. Authorized source images may participate in forming the transformed Fibre canonical root under the established consent/source-rights rules. Once admitted, later images use the Fibre root rather than reopening the original source on every generation call.
 
 ## Scientific-method posture
 
@@ -150,43 +178,33 @@ Current rules include:
 - confounding blocks both positive causal claims and absence-of-effect claims;
 - prospective holdouts are excluded structurally through transitive provenance, not by prompt instruction;
 - preferential factual matching to forbidden holdouts is a provenance-audit trigger, never personhood evidence;
-- transient provider retries may resume only unfinished judgments and may never become quality resampling.
+- transient provider retries may resume only unfinished judgments and may never become quality resampling;
+- diagnostics must remain able to fail.
 
-## Current next work — #40 Identity Projection & Causal Consumption
+## Current next work — #41 M2 Standing Gate
 
-#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the deployment vertical has now advanced through canonical root admission, public visual projection, reference/age-conditioned demand, and reference-capable credentialed publication convergence to the Viewer boundary.
+The next already-planned workstream is #41, not another visual/provider slice and not a new numbered milestone.
 
-The cognition path remains:
+Start #41 by freezing the **M2 Standing Gate rubric and evidence map before any new provider use**. Reuse closed #33-#40 evidence where it genuinely answers a standing criterion and identify actual gaps rather than generating stronger-looking demonstrations by default.
 
-```text
-rich canonical Thread state
-      -> Fibre/Thread-owned relevance and privacy selection
-      -> inspectable Identity Context Capsule
-      -> temporary cognition
-      -> exact cited provenance
-      -> attributable judgment/behavior difference
-```
+The gate must adjudicate the accumulated evidence across:
 
-The active public/visual path is:
+- identity/history particularity;
+- causal individuality;
+- dignity/consent;
+- memory epistemics;
+- relationship/social continuity;
+- development;
+- persistence/restart;
+- cognition-provider boundary.
 
-```text
-Genesis birth
-  -> public pre-embodiment presentation                    DONE / GREEN
-  -> canonical visual identity root                        DONE / GREEN
-  -> Embodiment admission + public visual projection       DONE / GREEN
-  -> reference/age-conditioned official + memory demand    DONE / GREEN
-  -> reference-capable generation + C2PA/publication       DONE / GREEN
-  -> insidefibre.com Viewer closure                        CURRENT
-  -> one-birth recovery E2E                                FINAL VERTICAL GATE
-```
+It must distinguish semantic/personhood evidence from substrate/mechanical evidence and preserve the possibility of **M2 NOT YET EARNED**.
 
-The critical #40 standing proof is still not merely that two Threads receive different prompt text or appear visually different. It must show that a Thread-owned identity/history difference can produce an attributable difference in cognition or downstream consequence under the same declared selection policy. Caller nomination may not become private-context-selection authority.
-
-The visual/deployment substream has an explicit stop condition in [`current-priorities.md`](current-priorities.md): the representative reference-capable provider/C2PA/publication proof is now closed, so unrelated provider/media polish returns to backlog while G and H finish Viewer/public-API and recovery closure. Broader #40 causal consumption remains milestone-critical.
+The required #41 output is an auditable standing record that freezes criteria first, maps admissible evidence, identifies genuine gaps, uses prospective tests only where existing evidence is insufficient, reports the Whole-Person score under rubric v2 without rewriting prior milestone claims, and concludes clearly whether M2 is **EARNED**, **PARTIAL / NOT YET EARNED**, or otherwise fails the frozen gate.
 
 ## Current score posture
 
-Historical M1 remains **11/26**. The live Whole-Person checkpoint remains **15/26 under rubric v2**.
+Historical M1 remains **11/26**. The live Whole-Person checkpoint remains **15/26 under rubric v2** until #41 adjudicates it.
 
 ```text
 Non-interchangeability        1
@@ -196,11 +214,11 @@ Development                   1
 Economic consequence          0
 ```
 
-#39 and the completed bridge deliberately earn no score movement. Visual continuity itself also does not earn causal individuality standing. #40 causal consumption and #41 standing are the next score-bearing steps.
+#39 and the completed bridge deliberately earned no score movement. #40 established load-bearing causal consumption but did not itself award Whole-Person score movement. Visual continuity itself also does not earn causal individuality standing.
 
 ## Persistence and repository posture
 
-The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. It proves the semantic publication transaction and canonical hydration boundary, **not production deployment**.
+The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical adds production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs; it does not by itself convert every World authority to production persistence.
 
 The accepted production architecture remains:
 
@@ -208,16 +226,15 @@ The accepted production architecture remains:
 semantic domain store -> InfraDriver capability -> provider implementation
 ```
 
-World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt, not precedent for new production authorities.
+World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt, not precedent for new production authorities and not an automatic prerequisite for #41.
 
-`HEAD` describes current Fibre. Git history is the default development archive. One-shot bridge fixtures and experiment runners are not retained as supported tooling; the completed bridge outcome is historical documentation while permanent runtime behavior is protected by enduring tests.
+`HEAD` describes current Fibre. Git history is the default development archive. Completed milestones retain concise permanent outcomes while permanent runtime behavior is protected by enduring tests.
 
 ## Explicitly deferred, not erased
 
 The following remain part of Fibre's intended architecture:
 
-- canonical bounded identity/history consumption and endogenous selection (#40);
-- M2 standing across repeated trials and causal substitutions (#41);
+- #41 Whole-Person/M2 standing closure;
 - richer Thread-authored development and self-model change (#42);
 - reciprocal/shared relationship structures, repair, expectations and permissions (#43);
 - budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
