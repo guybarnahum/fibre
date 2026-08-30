@@ -18,10 +18,6 @@ function unique(values) {
   return [...new Set(values)];
 }
 
-function same(left, right) {
-  return canonicalJson(left) === canonicalJson(right);
-}
-
 function cardSourceReferences(presentation) {
   const civil = presentation.civilIdentity;
   const visual = presentation.visualIdentity;
@@ -109,7 +105,7 @@ function buildOfficialPhotoPlaceholder(identityCard, identity, sourceReferences)
   };
 }
 
-function provenanceEntries(identityCard, photo, identity, sourceReferences) {
+function provenanceEntries(photo, identity, sourceReferences) {
   return [
     {
       provenanceId: identity.cardProvenanceRef,
@@ -230,7 +226,7 @@ export function createThreadPresentationIdentityMediaRewriteService({ presentati
       const sourceReferences = cardSourceReferences(presentation);
       const identityCard = buildIdentityCard(presentation, identity, issuedAt, sourceReferences);
       const officialPhoto = buildOfficialPhotoPlaceholder(identityCard, identity, sourceReferences);
-      const addedProvenance = provenanceEntries(identityCard, officialPhoto, identity, sourceReferences);
+      const addedProvenance = provenanceEntries(officialPhoto, identity, sourceReferences);
 
       const nextBundle = normalizeThreadPresentationBundle({
         presentation: {
