@@ -3,7 +3,11 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { createNodeServiceHandler } from "#infra/providers/local/service";
+import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 import { createService } from "#infra/service";
+import { createGenesisPresentationDeliveryService } from "#services/thread-presentation/src/index.mjs";
+import { CivilRegistryStore } from "#services/world-kernel/src/civil-registry-store.mjs";
+import { GenesisPresentationOutboxStore } from "#services/world-kernel/src/genesis-presentation-outbox-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { openRuntimeStore } from "#services/world-kernel/src/runtime-store.mjs";
 import { openFreezeStore } from "#services/world-kernel/src/freeze-store.mjs";
@@ -32,6 +36,7 @@ import {
 import { createStructuredObligationInspectionHttpServer } from "#services/world-kernel/src/structured-obligation-inspection-http-server.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
+import { createThreadPresentationPublisher } from "./thread-presentation-publisher.mjs";
 
 const LOCAL_MANIFEST = parseDeploymentManifest(
   readFileSync(new URL("../../environments/local.yaml", import.meta.url), "utf8"),
@@ -47,6 +52,14 @@ function parsePort(value) {
     throw new TypeError("FIBRE_WORLD_PORT must be an integer from 0 through 65535");
   }
   return port;
+}
+
+function parseRetryMs(value) {
+  const retryMs = Number(value);
+  if (!Number.isSafeInteger(retryMs) || retryMs < 100 || retryMs > 60_000) {
+    throw new TypeError("FIBRE_PRESENTATION_RETRY_MS must be an integer from 100 through 60000");
+  }
+  return retryMs;
 }
 
 function attachOperationalService(server, kernelService, { repairEnabled }) {
@@ -99,9 +112,13 @@ export async function startWorldKernelFromEnvironment(
   const port = parsePort(environment.FIBRE_WORLD_PORT ?? "8787");
   const adminToken = environment.FIBRE_ADMIN_TOKEN ?? null;
   const privateToken = environment.FIBRE_PRIVATE_TOKEN ?? null;
+  const presentationBaseUrl = environment.FIBRE_THREAD_PRESENTATION_URL ?? "http://127.0.0.1:8788";
+  const presentationRetryMs = parseRetryMs(environment.FIBRE_PRESENTATION_RETRY_MS ?? "5000");
   assertLoopbackBindHost(host);
 
-  const store = openWorldStore(databasePath);
+  const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
+  const worldStorage = Object.freeze({ infraDriver, stateScopeId: "world" });
+  const store = openWorldStore(worldStorage);
   let runtimeStore;
   let freezeStore;
   let lifecycleStore;
@@ -115,6 +132,8 @@ export async function startWorldKernelFromEnvironment(
   let embodimentStore;
   let symbolicGenomeStore;
   let genesisStore;
+  let civilRegistryStore;
+  let presentationOutboxStore;
   let applicabilityStore;
   let authorityWithdrawalStore;
   let inspectionStore;
@@ -131,7 +150,9 @@ export async function startWorldKernelFromEnvironment(
     situatedLifeStore = openSituatedLifeStore(databasePath);
     embodimentStore = openEmbodimentStore(databasePath);
     symbolicGenomeStore = new SymbolicGenomeStore(databasePath);
-    genesisStore = new GenesisStore(databasePath);
+    genesisStore = new GenesisStore(worldStorage);
+    civilRegistryStore = new CivilRegistryStore(worldStorage);
+    presentationOutboxStore = new GenesisPresentationOutboxStore(worldStorage);
     applicabilityStore = openObligationApplicabilityStore(databasePath);
     authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);
     inspectionStore = openStructuredObligationInspectionStore(databasePath);
@@ -139,6 +160,8 @@ export async function startWorldKernelFromEnvironment(
     inspectionStore?.close();
     authorityWithdrawalStore?.close();
     applicabilityStore?.close();
+    presentationOutboxStore?.close();
+    civilRegistryStore?.close();
     genesisStore?.close();
     symbolicGenomeStore?.close();
     embodimentStore?.close();
@@ -184,7 +207,78 @@ export async function startWorldKernelFromEnvironment(
       authorityWithdrawalStore,
     },
   );
-  const birthPublisher = createGenesisBirthPublicationService({ authority: genesisStore });
+  const authoritativeBirthPublisher = createGenesisBirthPublicationService({ authority: genesisStore });
+  const presentationDelivery = privateToken === null ? null : createGenesisPresentationDeliveryService({
+    worldReader: store,
+    civilRegistry: civilRegistryStore,
+    outbox: presentationOutboxStore,
+    presentationPublisher: createThreadPresentationPublisher({
+      baseUrl: presentationBaseUrl,
+      privateToken,
+    }),
+  });
+
+  function reportPresentationDelivery(result) {
+    if (result?.delivered === true) return;
+    process.stderr.write(`${JSON.stringify({
+      level: "warn",
+      event: "genesis-presentation-delivery-pending",
+      genesisId: result?.genesisId ?? null,
+      threadId: result?.threadId ?? null,
+      attemptCount: result?.attemptCount ?? null,
+      error: result?.error ?? null,
+    })}\n`);
+  }
+
+  async function deliverGenesisPresentation(genesisId) {
+    if (presentationDelivery === null) return null;
+    try {
+      const result = await presentationDelivery.deliverGenesis(genesisId);
+      reportPresentationDelivery(result);
+      return result;
+    } catch (error) {
+      process.stderr.write(`${JSON.stringify({
+        level: "error",
+        event: "genesis-presentation-delivery-failed",
+        genesisId,
+        errorName: error?.constructor?.name ?? "Error",
+        message: error?.message ?? String(error),
+      })}\n`);
+      return null;
+    }
+  }
+
+  let presentationSweepRunning = false;
+  async function deliverPendingPresentations() {
+    if (presentationDelivery === null || presentationSweepRunning) return null;
+    presentationSweepRunning = true;
+    try {
+      const result = await presentationDelivery.deliverPending();
+      for (const item of result.results) reportPresentationDelivery(item);
+      return result;
+    } catch (error) {
+      process.stderr.write(`${JSON.stringify({
+        level: "error",
+        event: "genesis-presentation-retry-sweep-failed",
+        errorName: error?.constructor?.name ?? "Error",
+        message: error?.message ?? String(error),
+      })}\n`);
+      return null;
+    } finally {
+      presentationSweepRunning = false;
+    }
+  }
+
+  const birthPublisher = Object.freeze({
+    async publishBirth(bundle) {
+      const result = await authoritativeBirthPublisher.publishBirth(bundle);
+      const genesisId = result?.manifest?.genesisId ?? bundle?.manifest?.genesisId;
+      if (presentationDelivery !== null && typeof genesisId === "string") {
+        void deliverGenesisPresentation(genesisId);
+      }
+      return result;
+    },
+  });
   const onRequestError = (error, context) => {
     process.stderr.write(`${JSON.stringify({
       level: "error",
@@ -216,16 +310,25 @@ export async function startWorldKernelFromEnvironment(
 
   try {
     const address = await listenWorldKernelHttpServer(server, { host, port });
+    let presentationRetryTimer = null;
+    if (presentationDelivery !== null) {
+      void deliverPendingPresentations();
+      presentationRetryTimer = setInterval(() => void deliverPendingPresentations(), presentationRetryMs);
+      presentationRetryTimer.unref?.();
+    }
     let closed = false;
     const close = async () => {
       if (closed) return;
       closed = true;
+      if (presentationRetryTimer !== null) clearInterval(presentationRetryTimer);
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
         inspectionStore.close();
         authorityWithdrawalStore.close();
         applicabilityStore.close();
+        presentationOutboxStore.close();
+        civilRegistryStore.close();
         genesisStore.close();
         symbolicGenomeStore.close();
         embodimentStore.close();
@@ -245,6 +348,8 @@ export async function startWorldKernelFromEnvironment(
     return {
       server,
       operationalService,
+      infraDriver,
+      worldStorage,
       store,
       runtimeStore,
       freezeStore,
@@ -259,6 +364,9 @@ export async function startWorldKernelFromEnvironment(
       embodimentStore,
       symbolicGenomeStore,
       genesisStore,
+      civilRegistryStore,
+      presentationOutboxStore,
+      presentationDelivery,
       birthPublisher,
       applicabilityStore,
       authorityWithdrawalStore,
@@ -266,9 +374,12 @@ export async function startWorldKernelFromEnvironment(
       service,
       address,
       databasePath,
+      presentationBaseUrl,
+      presentationRetryMs,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       genesisBirthPublicationEnabled: true,
+      genesisPresentationDeliveryEnabled: presentationDelivery !== null,
       causalParticipationEnabled: true,
       identityContextConsumptionEnabled: true,
       structuredObligationAuthorityEnabled: true,
@@ -283,6 +394,8 @@ export async function startWorldKernelFromEnvironment(
     inspectionStore.close();
     authorityWithdrawalStore.close();
     applicabilityStore.close();
+    presentationOutboxStore.close();
+    civilRegistryStore.close();
     genesisStore.close();
     symbolicGenomeStore.close();
     embodimentStore.close();
@@ -308,9 +421,12 @@ async function main() {
     host: runtime.address.host,
     port: runtime.address.port,
     databasePath: runtime.databasePath,
+    presentationBaseUrl: runtime.presentationBaseUrl,
+    presentationRetryMs: runtime.presentationRetryMs,
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
     genesisBirthPublicationEnabled: runtime.genesisBirthPublicationEnabled,
+    genesisPresentationDeliveryEnabled: runtime.genesisPresentationDeliveryEnabled,
     causalParticipationEnabled: true,
     identityContextConsumptionEnabled: true,
     structuredObligationAuthorityEnabled: true,
