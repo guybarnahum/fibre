@@ -345,6 +345,22 @@ test("Slice F reference-capable generation converges through C2PA verification i
   assert.equal(eventsAfterDuplicate.filter((event) => event.kind === "media.ready").length, 1);
   assert.ok(c2pa.calls.some((call) => call.url.endsWith("/embed")));
   assert.ok(c2pa.calls.some((call) => call.url.endsWith("/verify")));
-  assert.equal(JSON.stringify(c2pa.calls).includes("slice-f-c2pa-token"), false,
-    "C2PA authorization token must stay in headers and never enter request bodies or persisted provenance");
+
+  const c2paBodies = c2pa.calls.map((call) => JSON.parse(call.init.body));
+  assert.equal(
+    JSON.stringify(c2paBodies).includes("slice-f-c2pa-token"),
+    false,
+    "C2PA authorization token must never enter signer request bodies",
+  );
+  assert.equal(
+    JSON.stringify({
+      generationRecord,
+      receipt: generated.receipt,
+      proof: accepted.proof,
+      publicMedia,
+      presentationEvents: eventsAfterDuplicate,
+    }).includes("slice-f-c2pa-token"),
+    false,
+    "C2PA authorization token must never enter persisted generation, credential, catalog, or presentation provenance",
+  );
 });
