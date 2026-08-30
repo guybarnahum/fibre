@@ -1,4 +1,5 @@
 import { verifyCredentialedAssetForPublication } from "#services/asset-generator/src/index.mjs";
+import { threadPresentationChannelId } from "#services/thread-presentation/src/public-asset-resolver.mjs";
 import {
   bindVerifiedCanonicalVisualIdentityProof,
   planCanonicalVisualIdentityGeneration,
@@ -126,6 +127,7 @@ export function createThreadVisualPublicationOrchestrator({
   return Object.freeze({
     async reconcileThread({ threadId } = {}) {
       assertId("threadId", threadId);
+      const channelId = threadPresentationChannelId(threadId);
       let embodiment = currentCanonicalPortrait(embodimentStore, threadId);
       if (embodiment === null) return waiting("awaiting_embodiment", { threadId });
 
@@ -164,19 +166,19 @@ export function createThreadVisualPublicationOrchestrator({
         });
       }
 
-      const snapshot = await presentationServer.getSnapshot(`thread:${threadId}`);
+      const snapshot = await presentationServer.getSnapshot(channelId);
       if (snapshot === null) return waiting("awaiting_genesis_projection", { threadId });
 
       const visual = await visualRewrite.project({
-        channelId: `thread:${threadId}`,
+        channelId,
         embodimentId: embodiment.embodimentId,
       });
       const issuedAt = assertIsoTimestamp("identity media issuedAt", now());
       const identity = await identityRewrite.ensureOfficialIdentityMedia({
-        channelId: `thread:${threadId}`,
+        channelId,
         issuedAt,
       });
-      const current = await presentationServer.getSnapshot(`thread:${threadId}`);
+      const current = await presentationServer.getSnapshot(channelId);
       if (current === null) throw new Error(`Thread ${threadId} presentation disappeared during visual publication`);
       const slots = planThreadPresentationAssetSlots({
         bundle: {
