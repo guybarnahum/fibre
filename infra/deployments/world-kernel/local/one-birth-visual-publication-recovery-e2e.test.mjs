@@ -418,7 +418,7 @@ test("one birth recovers through one canonical root and one public identity/phot
         generationRecord: rootGenerationRecord,
         verification: rootVerification,
       },
-      recordedAt: "2026-08-30T18:40:00Z",
+      recordedAt: rootGenerated.receipt.completedAt,
     });
     world.embodimentStore.record(available);
     const rootObjectRef = available.asset.referenceObjectRef;
