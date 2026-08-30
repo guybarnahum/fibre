@@ -32,6 +32,9 @@ integrations:
     provider: openai
     config:
       model: gpt-image-2-2026-04-21
+      acceptsReferenceObjects: false
+      presentationDefault: true
+      presentationReferenceDefault: false
     secrets:
       apiKey: OPENAI_API_KEY
   asset-image-bfl:
@@ -39,6 +42,9 @@ integrations:
     provider: bfl
     config:
       model: flux-2-pro
+      acceptsReferenceObjects: true
+      presentationDefault: false
+      presentationReferenceDefault: true
     secrets:
       apiKey: BFL_API_KEY
   c2pa-local-http:
