@@ -1,5 +1,4 @@
 import { randomBytes } from "node:crypto";
-import { DatabaseSync } from "node:sqlite";
 
 import {
   WORLD_STORE_SCHEMA_VERSION,
@@ -16,7 +15,6 @@ import {
   assertExactKeys,
   assertId,
   assertIsoTimestamp,
-  assertNonEmpty,
   assertPlainObject,
   canonicalJson,
   threadStateHash,
@@ -46,7 +44,6 @@ import {
 } from "./private-participation.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
   safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
@@ -54,6 +51,7 @@ import {
   ensureMemoryVisualCompanion,
   persistLegacySeedIdentity,
 } from "./identity-schema.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 export {
   WORLD_STORE_SCHEMA_VERSION,
@@ -85,15 +83,8 @@ function newPrivateRecordId(prefix) {
 export class WorldStore {
   #database;
 
-  constructor(databasePath) {
-    assertNonEmpty("databasePath", databasePath);
-    const normalizedPath = normalizeDatabasePath(databasePath);
-    this.#database = new DatabaseSync(normalizedPath, {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec(
-      "PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL; PRAGMA busy_timeout = 5000;",
-    );
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { storeName: "WorldStore" });
     try {
       migrateDatabase(this.#database);
     } catch (error) {
@@ -919,6 +910,6 @@ export class WorldStore {
   }
 }
 
-export function openWorldStore(databasePath) {
-  return new WorldStore(databasePath);
+export function openWorldStore(storage) {
+  return new WorldStore(storage);
 }
