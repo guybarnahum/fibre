@@ -8,6 +8,10 @@ import {
   presentationAssetSourceDigest,
   reconcilePresentationAssets,
 } from "./presentation-asset-demand.mjs";
+import {
+  CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
+  ageYearsAt,
+} from "./visual-identity-reference-domain.mjs";
 
 export const THREAD_PRESENTATION_ASSET_PLAN_VERSION = "thread-presentation-asset-plan-v0.1";
 
@@ -29,22 +33,35 @@ function placeBrief(place) {
   };
 }
 
-function memoryBrief(memory) {
+function ageInstruction(targetAgeYears) {
+  return targetAgeYears === null
+    ? `The supplied canonical identity reference depicts the same person at normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}; preserve identity without asserting an unsupported exact scene age.`
+    : `The supplied canonical identity reference depicts the same person at normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}; preserve that person's identity while age-transforming them naturally to ${targetAgeYears} years old for this image.`;
+}
+
+function memoryBrief(memory, { visualIdentity = null, targetAgeYears = null } = {}) {
   const uncertainty = memory.uncertainty.length > 0
     ? `Uncertain details that must not be rendered as exact facts: ${memory.uncertainty.join("; ")}.`
     : "No additional uncertainty list was supplied.";
+  const hasIdentityReference = visualIdentity?.referenceObjectRefs?.length === 1;
   return {
     description: [
       "Generated reconstruction of an autobiographical memory for a Thread presentation.",
       `${memory.title}.`,
       memory.rememberedContent,
       uncertainty,
+      ...(hasIdentityReference ? [ageInstruction(targetAgeYears)] : []),
     ].join(" "),
     constraints: [
       "This is a reconstruction of remembered content, not a documentary photograph or historical fact record.",
       "Do not add facts that are absent from the remembered content.",
       "Do not convert uncertainty into precise visual claims.",
-      "Do not invent a canonical facial likeness when embodiment is not supplied.",
+      ...(hasIdentityReference
+        ? [
+            "If the Thread is depicted, use the supplied canonical visual-identity reference as the facial/physical identity anchor; age, expression, clothing, and scene may change, but the person must remain recognizably the same identity.",
+            "Do not copy the canonical reference portrait's neutral pose or background unless the memory itself calls for them; it is an identity reference, not scene composition evidence.",
+          ]
+        : ["Do not invent a canonical facial likeness when embodiment is not supplied."]),
       "Avoid text overlays, labels, signatures, or claims that the image is authentic evidence.",
     ],
   };
@@ -60,17 +77,19 @@ function officialPhotoAwkwardness(visualIdentityDigest) {
   return options[Number.parseInt(visualIdentityDigest.at(-1), 16) % options.length];
 }
 
-function officialIdPhotoBrief(visualIdentity) {
+function officialIdPhotoBrief(visualIdentity, targetAgeYears) {
   const identityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
   return {
     description: [
-      "Generated official identity photograph derived only from an authorized Thread visual-identity projection.",
+      "Generated official identity photograph derived only from an authorized Thread visual-identity projection and its canonical reference image.",
       `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
       `Authorized rendering continuity: ${visualIdentity.renderDescription}`,
+      ageInstruction(targetAgeYears),
       officialPhotoAwkwardness(identityDigest),
     ].join(" "),
     constraints: [
-      "Preserve the supplied authorized visual identity; do not invent or materially redesign the person's canonical face or body.",
+      "Use the supplied canonical reference image as the identity anchor; do not invent or materially redesign the person's face or body.",
+      "Age-transform naturally to the requested target age while preserving identity-defining proportions, asymmetries, and distinctive marks.",
       "Use front-facing or almost front-facing head-and-shoulders administrative ID-photo framing.",
       "Use a plain neutral background, even boring administrative lighting, ordinary focus, and minimal styling.",
       "No cinematic depth of field, glamour treatment, dramatic pose, fashion-editorial styling, or flattering beauty retouching.",
@@ -90,6 +109,13 @@ function baseAssetSource(asset) {
     sourceReferences: asset.sourceReferences,
     provenanceRef: asset.provenanceRef,
   };
+}
+
+function memoryTargetAge(presentation, memory) {
+  if (presentation.subject.birthDate === null) return null;
+  const event = presentation.life.timeline.find((item) => memory.sourceReferences.includes(item.eventRef));
+  const at = event?.occurredAt ?? memory.formedAt;
+  return at === null ? null : ageYearsAt(presentation.subject.birthDate, at);
 }
 
 export function planThreadPresentationAssetSlots({
@@ -115,13 +141,21 @@ export function planThreadPresentationAssetSlots({
       const visualIdentity = presentation.visualIdentity ?? null;
       if (visualIdentity === null) {
         deferredReason = "deferred_missing_embodiment";
+      } else if (visualIdentity.referenceObjectRefs.length !== 1) {
+        deferredReason = "deferred_missing_visual_identity_reference";
       } else {
         const visualIdentityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
+        const targetAgeYears = ageYearsAt(
+          presentation.subject.birthDate,
+          presentation.manifest.generatedAt,
+        );
         semanticSource = {
           asset: baseAssetSource(asset),
           visualIdentityDigest,
+          targetAgeYears,
+          referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
         };
-        brief = officialIdPhotoBrief(visualIdentity);
+        brief = officialIdPhotoBrief(visualIdentity, targetAgeYears);
         referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
         extraInputReferences = [
           visualIdentity.embodimentId,
@@ -135,6 +169,8 @@ export function planThreadPresentationAssetSlots({
           role: asset.role,
           provenanceRef: asset.provenanceRef,
           visualIdentityDigest,
+          referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
+          targetAgeYears,
         };
       }
     } else if (asset.role === "place") {
@@ -150,8 +186,33 @@ export function planThreadPresentationAssetSlots({
       if (memory) {
         entityKind = "memory";
         entityRef = memory.memoryRef;
-        semanticSource = { asset: baseAssetSource(asset), memory };
-        brief = memoryBrief(memory);
+        const visualIdentity = presentation.visualIdentity ?? null;
+        if (visualIdentity !== null && visualIdentity.referenceObjectRefs.length !== 1) {
+          deferredReason = "deferred_missing_visual_identity_reference";
+        } else {
+          const targetAgeYears = memoryTargetAge(presentation, memory);
+          const visualIdentityDigest = visualIdentity === null
+            ? null
+            : threadVisualIdentityProjectionDigest(visualIdentity);
+          semanticSource = {
+            asset: baseAssetSource(asset),
+            memory,
+            visualIdentityDigest,
+            targetAgeYears,
+            referenceAgeYears: visualIdentity === null
+              ? null
+              : CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
+          };
+          brief = memoryBrief(memory, { visualIdentity, targetAgeYears });
+          if (visualIdentity !== null) {
+            referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
+            extraInputReferences = [
+              visualIdentity.embodimentId,
+              ...visualIdentity.sourceReferences,
+              ...visualIdentity.permissionReferences,
+            ];
+          }
+        }
       }
     } else if (asset.role === "primary_portrait") {
       deferredReason = "deferred_missing_embodiment_brief";
