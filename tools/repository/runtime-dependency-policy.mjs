@@ -19,6 +19,9 @@ export const PRIVATE_SERVICE_MIGRATION_EDGES = Object.freeze([
 ]);
 
 const PRIVATE_SERVICE_MIGRATION_SET = new Set(PRIVATE_SERVICE_MIGRATION_EDGES);
+const SERVICE_ALLOWED_INTEGRATION_SPECIFIERS = new Set([
+  "#integrations/ai/reasoning/prompt-assets.mjs",
+]);
 
 function normalizeRepoPath(path) { return path.replaceAll("\\", "/"); }
 function isTestSource(path) {
@@ -85,6 +88,7 @@ export function privateServiceEdgesForSource(path, text) {
 function violationForEdge(edge) {
   return `Runtime dependency boundary: ${edge.sourcePath} reaches into ${edge.targetOwner} through private cross-owner specifier ${edge.specifier}; use a stable public @fibre/... boundary`;
 }
+
 function privateInfraViolationsForSource(path, text) {
   const normalizedPath = normalizeRepoPath(path);
   if (!isGuardedRuntimeSource(normalizedPath)) return [];
@@ -93,10 +97,26 @@ function privateInfraViolationsForSource(path, text) {
     .map((specifier) => `Runtime dependency boundary: ${normalizedPath} reaches Infra through non-public specifier ${specifier}; use a public #infra entry point`);
 }
 
+function serviceProviderSelectionViolationsForSource(path, text) {
+  const normalizedPath = normalizeRepoPath(path);
+  if (!isRuntimeServiceSource(normalizedPath)) return [];
+  const errors = [];
+  for (const specifier of moduleSpecifiers(text)) {
+    if (specifier.startsWith("#infra/providers/")) {
+      errors.push(`Runtime dependency boundary: ${normalizedPath} selects concrete infrastructure provider ${specifier}; provider selection belongs in infra/deployments`);
+    }
+    if (specifier.startsWith("#integrations/") && !SERVICE_ALLOWED_INTEGRATION_SPECIFIERS.has(specifier)) {
+      errors.push(`Runtime dependency boundary: ${normalizedPath} selects concrete integration ${specifier}; integration selection belongs in infra/deployments`);
+    }
+  }
+  return errors;
+}
+
 export function runtimeDependencyViolationsForSource(path, text) {
   return [
     ...privateServiceEdgesForSource(path, text).filter((edge) => !PRIVATE_SERVICE_MIGRATION_SET.has(edge.key)).map(violationForEdge),
     ...privateInfraViolationsForSource(path, text),
+    ...serviceProviderSelectionViolationsForSource(path, text),
   ];
 }
 
@@ -118,6 +138,7 @@ export function validateRuntimeDependencyPolicy({ root = process.cwd(), paths = 
       else errors.push(violationForEdge(edge));
     }
     errors.push(...privateInfraViolationsForSource(path, text));
+    errors.push(...serviceProviderSelectionViolationsForSource(path, text));
   }
   if (paths === null) {
     for (const edge of PRIVATE_SERVICE_MIGRATION_EDGES) {
