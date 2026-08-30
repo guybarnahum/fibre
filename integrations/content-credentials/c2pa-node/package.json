@@ -1,0 +1,13 @@
+{
+  "name": "fibre-c2pa-node-integration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prestart": "node preflight-cert.mjs",
+    "start": "node ../../../infra/deployments/content-credential-signer/local/server.mjs"
+  },
+  "dependencies": {
+    "@contentauth/c2pa-node": "0.9.1"
+  }
+}
