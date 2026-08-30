@@ -176,7 +176,7 @@ test("Genesis birth commits Thread, manifest, FIN, and presentation outbox atomi
     assert.equal(pending.genesisId, committed.manifest.genesisId);
     assert.equal(pending.threadId, committed.thread.threadId);
     assert.deepEqual(pending.manifest, committed.manifest);
-    assert.equal(pending.publicationDigest, published.recordDigest);
+    assert.equal(pending.publicationDigest, published.manifestDigest);
     assert.equal(pending.publishedAt, committed.manifest.publication.publishedAt);
     assert.equal(pending.state, "pending");
     assert.equal(pending.attemptCount, 0);
