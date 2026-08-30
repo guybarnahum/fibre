@@ -6,12 +6,12 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { startWorldKernelFromEnvironment } from "../src/server.mjs";
+import { startWorldKernelFromEnvironment } from "../../../infra/deployments/world-kernel/local/server.mjs";
 
 const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
-const serverPath = fileURLToPath(new URL("../src/server.mjs", import.meta.url));
+const serverPath = fileURLToPath(new URL("../../../infra/deployments/world-kernel/local/server.mjs", import.meta.url));
 const ADMIN_TOKEN = "0123456789abcdef";
 
 function command(overrides = {}) {
