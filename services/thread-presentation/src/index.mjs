@@ -46,6 +46,7 @@ export {
 export { createGenesisPresentationDeliveryService } from "./genesis-presentation-delivery-service.mjs";
 export { projectNewbornThreadPresentation } from "./newborn-presentation-projector.mjs";
 export { projectVisualIdentityThreadPresentation } from "./visual-identity-presentation-projector.mjs";
+export { createThreadPresentationVisualPublicationReconciler } from "./visual-publication-reconciler.mjs";
 
 export {
   PublicPresentationAssetIntegrityError,
