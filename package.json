@@ -13,6 +13,7 @@
     "#infra/service": "./infra/service.mjs",
     "#infra/providers/local": "./infra/providers/local/memory-driver.mjs",
     "#infra/providers/local/service": "./infra/providers/local/service.mjs",
+    "#infra/providers/local/sqlite-state": "./infra/providers/local/sqlite-state.mjs",
     "#infra/providers/cloudflare": "./infra/providers/cloudflare/driver.mjs",
     "#infra/providers/cloudflare/queue": "./infra/providers/cloudflare/queue.mjs",
     "#infra/providers/cloudflare/presentation-channel-do": "./infra/providers/cloudflare/presentation-channel-do.mjs",
