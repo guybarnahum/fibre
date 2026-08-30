@@ -218,7 +218,7 @@ The following remain part of Fibre's intended architecture:
 - M2 standing across repeated trials and causal substitutions (#41);
 - richer Thread-authored development and self-model change (#42);
 - reciprocal/shared relationship structures, repair, expectations and permissions (#43);
-- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation;
+- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
 - richer visual appearance timelines beyond the canonical root + target-age model where later lived embodiment requires them;
 - endogenous motivation using clearly separated mechanical conditions plus Thread-authored semantic interpretation;
 - general isolated worker/tool/model gateway and model-capable Actor;
