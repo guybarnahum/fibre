@@ -30,10 +30,11 @@ Start with:
 6. `state/current-state.md`
 7. `state/current-priorities.md`
 8. `decisions/ADR-0020-vision-led-development-discipline.md`
-9. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
-10. `validation/generative-diagnostic-methodology.md`
-11. `validation/m2-pr-plan.md`
-12. the relevant concept and architecture documents for the task
+9. `decisions/ADR-0021-canonical-visual-identity-reference.md` when identity/embodiment/media is involved
+10. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
+11. `validation/generative-diagnostic-methodology.md`
+12. `validation/m2-pr-plan.md`
+13. the relevant concept and architecture documents for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant local README/contract.
 
@@ -44,8 +45,8 @@ A standing execution rule is that infrastructure exists to enable and protect Fi
 ```text
 #38 life representation/corrigibility                 complete
 #39 Genesis / particular prior life + canonical birth closed
-     Genesis selectivity/scientific hardening bridge   next
-#40 identity projection/causal consumption             after bridge
+     Genesis selectivity/scientific hardening bridge   closed
+#40 identity projection/causal consumption             current
 #41 M2 standing/closure                                after #40
 ```
 
@@ -75,6 +76,33 @@ history != memory != meaning
 ```
 
 Historical realization and meaning formation are genome blind. Permitted genome exposure is limited to the intended memory-formation seam, and experimental assignment/analysis labels remain outside cognition.
+
+## Identity, embodiment and visual continuity
+
+Load these together for visual identity work:
+
+- `architecture/identity-embodiment-contract.md`
+- `architecture/canonical-visual-identity.md`
+- `architecture/thread-birth-presentation-data-flow.md`
+- `decisions/ADR-0021-canonical-visual-identity-reference.md`
+- `decisions/ADR-0013-source-identity-consent-boundary.md`
+- `decisions/ADR-0005-family-and-inheritance.md`
+- `decisions/ADR-0006-echo-and-homage.md`
+- `concepts/culture-geography-and-embodiment.md`
+- `concepts/sponsorship-adoption-and-echoes.md`
+- `concepts/homage-threads.md`
+
+The standing visual invariant is:
+
+```text
+canonical visual identity text
+  -> one canonical reference image
+  -> every later Thread-depicting image uses that reference + target age/context
+```
+
+Native/inherited roots are text-only at creation. Thread-parent resemblance comes from provenance-bearing textual phenotype recombination, not parent-pixel blending. Echo/Homage roots may use authorized source imagery, but once the transformed Fibre root is admitted, later media uses the Fibre root rather than reopening the original sponsor/homage source.
+
+Age is a rendering variable, not identity. The normalized synthetic reference age is 25; later imagery preserves the same identity while rendering the chronology-grounded target age.
 
 ## Identity, interiority, dignity and development
 
@@ -118,10 +146,13 @@ Provider-neutral persistence remains mandatory for production authority, but it 
 - `architecture/thread-presentation-infrastructure-profile.md`
 - `architecture/thread-presentation-cloudflare-stream.md`
 - `architecture/world-presentation.md`
+- `architecture/canonical-visual-identity.md`
+- `architecture/thread-birth-presentation-data-flow.md`
 - `architecture/asset-generation-service.md`
 - `architecture/generated-asset-provenance-and-content-credentials.md`
+- `decisions/ADR-0021-canonical-visual-identity-reference.md`
 
-Presentation and generated media are derived surfaces. They do not become hidden identity, history, memory, meaning or embodiment authority.
+Presentation and generated media are derived surfaces. They do not become hidden identity, history, memory, meaning or embodiment authority. The canonical visual reference is admitted by Embodiment authority before derived media is allowed to use it.
 
 ## Request, consent and response behavior
 
@@ -165,6 +196,7 @@ At minimum load:
 - `validation/drift-scorecard.md`
 - `validation/m2-pr-plan.md`
 - `decisions/ADR-0020-vision-led-development-discipline.md`
+- `decisions/ADR-0021-canonical-visual-identity-reference.md` for visual/person depiction work
 - the active bridge/milestone contract
 - relevant ADRs
 
