@@ -1,4 +1,4 @@
-import { startWorldKernelFromEnvironment } from "../../src/server.mjs";
+import { startWorldKernelFromEnvironment } from "../../../../infra/deployments/world-kernel/local/server.mjs";
 import { createScriptedGuardianModelAdapter } from "./scripted-guardian-model-adapter.mjs";
 
 const guardianModelAdapter = createScriptedGuardianModelAdapter();
