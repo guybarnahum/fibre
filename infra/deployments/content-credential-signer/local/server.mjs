@@ -39,14 +39,8 @@ export async function startContentCredentialSignerFromEnvironment(environment = 
     throw new TypeError("content-credential-signer local deployment requires c2pa-node signer integration");
   }
 
-  const certificatePath = resolve(
-    REPO_ROOT,
-    environment.FIBRE_C2PA_CERT ?? selected.config.certificatePath,
-  );
-  const privateKeyPath = resolve(
-    REPO_ROOT,
-    environment.FIBRE_C2PA_KEY ?? selected.config.privateKeyPath,
-  );
+  const certificatePath = resolve(REPO_ROOT, environment.FIBRE_C2PA_CERT ?? selected.config.certificatePath);
+  const privateKeyPath = resolve(REPO_ROOT, environment.FIBRE_C2PA_KEY ?? selected.config.privateKeyPath);
   const signer = await createC2paNodeSigner({
     certificatePath,
     privateKeyPath,
@@ -85,11 +79,11 @@ export async function startContentCredentialSignerFromEnvironment(environment = 
 
 async function main() {
   const runtime = await startContentCredentialSignerFromEnvironment();
-  console.log(`Fibre local C2PA sign/read self-test passed: com.insidefibre.asset-generation`);
+  console.log("Fibre local C2PA sign/read self-test passed: com.insidefibre.asset-generation");
   console.log(`Fibre content credential signer listening on http://127.0.0.1:${runtime.address.port}`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
   main().catch((error) => {
     console.error(`Fibre content credential signer failed: ${error.message}`);
     process.exitCode = 1;
