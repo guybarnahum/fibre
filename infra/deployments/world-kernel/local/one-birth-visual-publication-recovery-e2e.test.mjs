@@ -456,7 +456,7 @@ test("one birth recovers through one canonical root and one public identity/phot
     const identityMedia = createThreadPresentationIdentityMediaRewriteService({ presentationServer });
     const issued = await identityMedia.ensureOfficialIdentityMedia({
       channelId,
-      issuedAt: "2026-08-30T18:41:00Z",
+      issuedAt: available.recordedAt,
     });
     assert.equal(issued.rewritten, true);
     const credentialId = issued.identityCard.credentialId;
