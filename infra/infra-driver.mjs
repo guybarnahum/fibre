@@ -26,7 +26,7 @@ const CAPABILITY_SET = new Set(INFRA_CAPABILITIES);
 const REQUIRED_METHODS = Object.freeze({
   streams: ["getHead", "append", "readAfter", "publishSnapshot", "getSnapshotPointer"],
   objects: ["putImmutable", "get", "head"],
-  catalog: ["upsert", "get", "remove"],
+  catalog: ["upsert", "get", "remove", "list"],
   realtime: ["publish"],
   queues: ["send"],
   workflows: ["start", "get"],
