@@ -1,1 +1,1 @@
-export { GuardianModelError } from "#services/world-kernel/src/reasoning-port.mjs";
+export { GuardianModelError } from "#services/world-kernel/src/guardian-model-adapter.mjs";
