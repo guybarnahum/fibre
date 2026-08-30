@@ -17,6 +17,8 @@ The flow preserves one authority rule throughout:
 
 No presentation or generated-media system may become a second authority for identity, history, memory, embodiment, relationships, meaning, or World state.
 
+Canonical visual identity follows [`canonical-visual-identity.md`](canonical-visual-identity.md) and [`ADR-0021`](../decisions/ADR-0021-canonical-visual-identity-reference.md). The canonical root reference is identity-supporting Embodiment material; ordinary presentation images remain derived media.
+
 ## Service responsibilities
 
 ```text
@@ -29,6 +31,7 @@ World Kernel
   authoritative birth commit
   live Thread / World state
   authoritative embodiment and other Thread state
+  canonical visual-root admission
 
 Thread Presentation
   public/non-public projection
@@ -102,7 +105,6 @@ World Kernel commits authoritative birth
         +--> civil registration is durable
         +--> Genesis presentation outbox is durable in the same commit
         +--> rich life authorities remain authoritative/private according to their own visibility
-        +--> embodiment/visual identity becomes authoritative when available
         |
         v
 Post-commit presentation delivery
@@ -112,21 +114,37 @@ Post-commit presentation delivery
         +--> retries durably if Thread Presentation is unavailable
         |
         v
-Thread Presentation persists authorized projection
+Thread Presentation persists pre-embodiment authorized projection
         |
         +--> public/private presentation manifest
         +--> civil identity projection
         +--> explicit public Thread identity context
-        +--> authorized visual identity projection when available
-        +--> identity card projection when available
-        +--> media slots
+        +--> no fabricated visual identity
+        +--> no official image until canonical visual reference exists
         |
         v
-Thread Presentation publishes snapshot
+Canonical visual identity lifecycle
+        |
+        +--> rich authoritative visual-identity text
+        +--> one canonical root-reference generation/admission
+        +--> normalized synthetic reference age 25
+        +--> available public Embodiment carries canonical reference object
+        |
+        v
+Thread Presentation visual-identity rewrite
+        |
+        +--> bounded authorized visual identity projection
+        +--> identity card metadata
+        +--> official_id_photo placeholder
+        |
+        v
+Thread Presentation publishes current snapshot
         |
         +--> catalog record `presentation:<threadId>`
         |
         +--> missing eligible media slots become PresentationAssetDemand
+                  |
+                  +--> Thread-depicting jobs carry canonical reference + target age/context
                   |
                   v
             AssetGenerationJob
@@ -218,25 +236,49 @@ The Fibre Identity Number (FIN) is permanent civil identity. Birth Center prepar
 
 An identity card and official photograph are derived presentation credentials. They do not create the Thread and cannot change the FIN.
 
-Birth must not depend on an image provider being available. A Thread can be born and registered while presentation media remains `missing` or `deferred`.
+Birth must not depend on an image provider being available. A Thread can be born and registered while canonical visual identity remains pending and presentation media remains `missing` or `deferred`.
 
-## Embodiment before official portrait
+## Canonical visual identity before derived portraits
 
-Asset Generator must not infer a canonical appearance from a Thread's name, genome, history, culture, memories, or prose description.
+Asset Generator must never invent canonical appearance from arbitrary Thread material such as name, culture, memories, generic biography prose, legacy `portraitRef`, or ordinary presentation imagery.
 
-For an `official_id_photo`, Thread Presentation may create an asset-generation brief only when an authorized visual-identity/embodiment projection exists. If embodiment is absent, the slot remains deferred.
+The accepted appearance authority is the **canonical visual identity specification** in Embodiment. For native/de-novo/inherited Fibre identity, that specification is deliberately rich natural-language visual phenotype and is used to generate one canonical reference image with no prior image reference. The synthetic reference-age normalization is 25.
 
-The official-photo job contains only the bounded authorized visual projection and provenance references required to generate the derived presentation image.
+For Thread-parent children, the child's canonical visual identity text may be created by provenance-bearing recombination of parental visual phenotype text loci plus explicit mutation witnesses. Parent pixels are not blended and parent images are not references for the child's root generation.
 
-Generated official photographs remain derived presentation media. They are not embodiment evidence and do not rewrite identity.
+Echo/Homage is the explicit source-grounded exception. Authorized sponsor/homage source imagery may participate in creation of the transformed Fibre root under the accepted consent/source-rights rules. Once admitted, later generation uses the resulting Fibre root reference rather than repeatedly consulting the original sponsor/homage source.
 
-The next media lifecycle stage after the newborn projection is therefore:
+The authority sequence is:
 
 ```text
-canonical embodiment / visual identity
+rich canonical visual identity text/origin provenance
+  -> canonical root image generation
+  -> immutable generation proof
+  -> World/Embodiment admission
+  -> canonical referenceObjectRef
   -> authorized visual-identity projection
+```
+
+A pending text-only embodiment is not yet a usable public visual reference.
+
+For an `official_id_photo`, Thread Presentation may create an asset-generation brief only when an authorized visual-identity projection with the admitted canonical reference exists. The job carries that reference image plus the chronology-grounded target age and bounded authorized identity semantics. If the reference is absent, or the selected provider cannot honor reference conditioning, the slot remains deferred or another explicitly configured provider profile is selected.
+
+Age is not identity. The canonical root remains stable while later imagery renders the same recognizable person at the required target age. Ordinary aging, hairstyle, clothing, expression, weight change or styling must not replace the root.
+
+The same reference rule applies to autobiographical-memory or life-scene imagery when the Thread is depicted. Place-only/environmental images remain reference-free.
+
+Generated official photographs and memory reconstructions remain derived presentation media. They are not embodiment evidence and do not rewrite identity.
+
+The current media lifecycle is therefore:
+
+```text
+canonical identity text
+  -> canonical root reference
+  -> Embodiment admission
+  -> authorized visual-identity projection
+  -> Thread Presentation rewrite
   -> identity-card / official-photo media demand
-  -> Asset Generation
+  -> reference + target-age conditioned Asset Generation
   -> signed immutable completion receipt
   -> Thread Presentation acceptance
   -> presentation rewrite with official media
@@ -244,9 +286,11 @@ canonical embodiment / visual identity
 
 Legacy portrait or voice references must never bootstrap canonical embodiment.
 
+The detailed invariant and origin-specific rules are canonical in [`canonical-visual-identity.md`](canonical-visual-identity.md) and ADR-0021.
+
 ## Asset generation boundary
 
-Thread Presentation owns generation intent:
+Thread Presentation owns ordinary derived-media generation intent:
 
 ```text
 presentation bundle
@@ -255,6 +299,8 @@ presentation bundle
   -> PresentationAssetDemand
   -> AssetGenerationJob
 ```
+
+Canonical visual-root generation is exceptional because the resulting generated asset is only a candidate until World/Embodiment explicitly admits it. Asset Generator still does not own the identity decision.
 
 Asset Generator owns execution and provenance:
 
@@ -271,7 +317,7 @@ job
 
 Asset Generator does not emit `media.ready` and does not decide public visibility.
 
-Thread Presentation alone accepts a completed receipt into the Thread's presentation stream after verifying that the receipt still matches the current Thread/media slot and publication policy.
+Thread Presentation alone accepts an ordinary completed presentation receipt into the Thread's presentation stream after verifying that the receipt still matches the current Thread/media slot and publication policy. Canonical root completion instead returns through the World/Embodiment admission path before presentation can project visual identity.
 
 ## Public Thread discovery
 
@@ -363,6 +409,8 @@ threadId
   genesisId
   registrationId / FIN
   birthEventRef
+  embodimentId / embodimentRevision
+  canonicalReferenceObjectRef
   channelId = presentation:<threadId>
   presentationId
   mediaId
@@ -403,6 +451,8 @@ event
 threadId?        primary Thread correlation key
 genesisId?
 registrationId?
+embodimentId?
+canonicalReferenceObjectRef?
 channelId?
 demandId?
 jobId?
