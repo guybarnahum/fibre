@@ -50,7 +50,7 @@ export async function startContentCredentialSignerFromEnvironment(environment = 
   const serviceToken = optionalEnvironmentValue(selected.environment, "serviceToken", environment);
   const service = createContentCredentialSignerService({ signer, serviceToken });
   const server = createServer(createNodeServiceHandler({ service, maxBodyBytes: MAX_BODY_BYTES }));
-  const port = parsePort(environment.FIBRE_C2PA_PORT ?? "8790");
+  const port = parsePort(environment.FIBRE_C2PA_PORT ?? "8791");
 
   await new Promise((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
@@ -79,13 +79,22 @@ export async function startContentCredentialSignerFromEnvironment(environment = 
 
 async function main() {
   const runtime = await startContentCredentialSignerFromEnvironment();
-  console.log("Fibre local C2PA sign/read self-test passed: com.insidefibre.asset-generation");
-  console.log(`Fibre content credential signer listening on http://127.0.0.1:${runtime.address.port}`);
+  process.stdout.write(`${JSON.stringify({
+    event: "content-credential-signer-listening",
+    host: runtime.address.host,
+    port: runtime.address.port,
+    signerId: runtime.signer.signerId,
+    trustPolicy: runtime.signer.trustPolicy,
+  })}\n`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
   main().catch((error) => {
-    console.error(`Fibre content credential signer failed: ${error.message}`);
+    process.stderr.write(`${JSON.stringify({
+      event: "content-credential-signer-start-failed",
+      errorName: error?.constructor?.name ?? "Error",
+      message: error?.message ?? String(error),
+    })}\n`);
     process.exitCode = 1;
   });
 }
