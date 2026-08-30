@@ -37,6 +37,7 @@ export const EMBODIMENT_VISIBILITIES = Object.freeze(["public", "restricted", "p
 const ASSET_REF_PATTERN = /^(?:cache|asset):\/\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]+$/;
 const MIN_SUBJECT_DESCRIPTION_BYTES = 40;
 const MIN_RENDER_DESCRIPTION_BYTES = 24;
+const MAX_CANONICAL_DESCRIPTION_BYTES = 4000;
 
 function assertEnum(name, value, allowed) {
   if (!allowed.includes(value)) throw new TypeError(`${name} is invalid`);
@@ -63,7 +64,7 @@ function normalizeSubject(value) {
   assertId("embodiment.specification.subject.partyId", value.partyId);
   assertBoundedDescription("embodiment.specification.subject.description", value.description, {
     minimum: MIN_SUBJECT_DESCRIPTION_BYTES,
-    maximum: 1000,
+    maximum: MAX_CANONICAL_DESCRIPTION_BYTES,
   });
   return { partyId: value.partyId, description: value.description };
 }
@@ -77,7 +78,7 @@ function normalizeSpecification(value, kind) {
   }
   assertBoundedDescription("embodiment.specification.description", value.description, {
     minimum: MIN_RENDER_DESCRIPTION_BYTES,
-    maximum: 1000,
+    maximum: MAX_CANONICAL_DESCRIPTION_BYTES,
   });
   if (kind === "portrait" && /\bvoice\b/i.test(value.method)) {
     throw new TypeError("portrait specification method cannot describe voice acquisition");
@@ -110,12 +111,21 @@ function normalizeAsset(value, kind, status) {
     return null;
   }
   assertPlainObject("embodiment.asset", value);
-  assertExactKeys("embodiment.asset", value, ["assetRef", "sha256", "mediaType", "width", "height", "durationMs"]);
+  assertExactKeys("embodiment.asset", value, [
+    "assetRef", "referenceObjectRef", "sha256", "mediaType", "width", "height", "durationMs",
+  ]);
   assertNonEmpty("embodiment.asset.assetRef", value.assetRef);
   if (!ASSET_REF_PATTERN.test(value.assetRef)) throw new TypeError("embodiment.asset.assetRef must be an opaque cache:// or asset:// locator");
+  const referenceObjectRef = value.referenceObjectRef ?? null;
+  if (referenceObjectRef !== null) assertId("embodiment.asset.referenceObjectRef", referenceObjectRef);
   if (!/^sha256:[0-9a-f]{64}$/.test(value.sha256)) throw new TypeError("embodiment.asset.sha256 is invalid");
   assertNonEmpty("embodiment.asset.mediaType", value.mediaType);
-  const normalized = { assetRef: value.assetRef, sha256: value.sha256, mediaType: value.mediaType };
+  const normalized = {
+    assetRef: value.assetRef,
+    referenceObjectRef,
+    sha256: value.sha256,
+    mediaType: value.mediaType,
+  };
   if (kind === "portrait") {
     if (!value.mediaType.startsWith("image/")) throw new TypeError("portrait embodiment asset must use an image media type");
     assertFiniteNumber("embodiment.asset.width", value.width, { integer: true, minimum: 1 });
