@@ -116,7 +116,7 @@ A pending text specification does not yet constitute an operational public visua
 
 Slice C closed this root contract in executable code: generic/thin appearance text is rejected, the root job carries no prior image references, exact verified credentialed output is admitted back into the pending Embodiment revision, and the admitted asset records the one canonical `referenceObjectRef`. The runtime dependency-policy guard remains green without granting the root module a new private cross-owner exception.
 
-Slices D and E have now closed the public projection and downstream demand semantics. The admitted canonical Embodiment can issue the bounded Fibre Identity Card/official-photo placeholder without creating another identity authority, and person-depicting demand carries the exact canonical root plus chronology-derived target age. Autobiographical memory uses the same root at event age when the Thread is actually depicted; memory ownership alone does not imply depiction, ambiguous multi-event chronology does not invent a false exact age, and place/environment imagery remains reference-free.
+Slices D and E closed the public projection and downstream demand semantics. The admitted canonical Embodiment can issue the bounded Fibre Identity Card/official-photo placeholder without creating another identity authority, and person-depicting demand carries the exact canonical root plus chronology-derived target age. Autobiographical memory uses the same root at event age when the Thread is actually depicted; memory ownership alone does not imply depiction, ambiguous multi-event chronology does not invent a false exact age, and place/environment imagery remains reference-free.
 
 After admission:
 
@@ -127,9 +127,11 @@ canonical Fibre reference image
   -> other Thread-depicting media at scene age/context
 ```
 
-Permanent tests now assert that the official image and a materially different-age autobiographical reconstruction carry the exact same canonical object reference, reference age 25, and distinct chronology-derived target ages. A pre-Embodiment self-memory defers instead of inventing a face from biography or remembered text.
+Permanent tests assert that the official image and a materially different-age autobiographical reconstruction carry the exact same canonical object reference, reference age 25, and distinct chronology-derived target ages. A pre-Embodiment self-memory defers instead of inventing a face from biography or remembered text.
 
-This closes the semantic request contract, not live person-image provider execution. The current OpenAI image adapter rejects reference objects rather than silently dropping them; Slice F owns a reference-capable provider path plus credential/provenance completion and Thread Presentation publication convergence.
+Slice F has now closed the production-shaped execution boundary for that semantic contract. Deployment composition chooses a reference-capable image profile when the job carries canonical reference objects; the configured BFL FLUX 2 Pro adapter consumes the root through `input_image` instead of discarding it. The provider request is durably witnessed by object identity/digest metadata without persisting reference bytes. Generated output is credentialed and re-verified through the configured C2PA production trust-list path before completion is admitted. Thread Presentation then publishes exactly one public `media.ready` result; duplicate completion replay remains idempotent. Credential transport secrets remain header-only and are absent from signer bodies and persisted generation/receipt/proof/catalog/presentation state.
+
+This closes the representative reference-capable provider/C2PA/publication vertical required by the visual stop condition. It does not require exhaustive image-provider feature parity, and it does not make generated presentation media into identity authority.
 
 All later media remains derived and must not replace the root through ordinary aging or aesthetic preference.
 
@@ -152,7 +154,7 @@ Current rules include:
 
 ## Current next work — #40 Identity Projection & Causal Consumption
 
-#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the deployment vertical has advanced through canonical root admission, public visual projection and reference/age-conditioned demand to the reference-capable execution boundary.
+#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the deployment vertical has now advanced through canonical root admission, public visual projection, reference/age-conditioned demand, and reference-capable credentialed publication convergence to the Viewer boundary.
 
 The cognition path remains:
 
@@ -173,14 +175,14 @@ Genesis birth
   -> canonical visual identity root                        DONE / GREEN
   -> Embodiment admission + public visual projection       DONE / GREEN
   -> reference/age-conditioned official + memory demand    DONE / GREEN
-  -> reference-capable generation + C2PA/publication       CURRENT
-  -> insidefibre.com Viewer closure                        NEXT
+  -> reference-capable generation + C2PA/publication       DONE / GREEN
+  -> insidefibre.com Viewer closure                        CURRENT
   -> one-birth recovery E2E                                FINAL VERTICAL GATE
 ```
 
 The critical #40 standing proof is still not merely that two Threads receive different prompt text or appear visually different. It must show that a Thread-owned identity/history difference can produce an attributable difference in cognition or downstream consequence under the same declared selection policy. Caller nomination may not become private-context-selection authority.
 
-The visual/deployment substream has an explicit stop condition in [`current-priorities.md`](current-priorities.md): after one production-shaped reference-capable vertical is proven, unrelated provider/media polish returns to backlog rather than displacing causal consumption.
+The visual/deployment substream has an explicit stop condition in [`current-priorities.md`](current-priorities.md): the representative reference-capable provider/C2PA/publication proof is now closed, so unrelated provider/media polish returns to backlog while G and H finish Viewer/public-API and recovery closure. Broader #40 causal consumption remains milestone-critical.
 
 ## Current score posture
 
