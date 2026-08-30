@@ -192,6 +192,14 @@ test("authoritative Genesis birth automatically becomes a persisted public non-f
       publicSnapshot.snapshot.presentation.introduction.summary,
       candidate.thread.identity.selfDescription,
     );
+    assert.deepEqual(
+      publicSnapshot.snapshot.presentation.origins.map(({ summary }) => summary),
+      candidate.thread.identity.culture,
+    );
+    assert.deepEqual(
+      publicSnapshot.snapshot.presentation.places.map(({ displayName }) => displayName),
+      [candidate.thread.identity.birthCity, candidate.thread.identity.currentWorkCity],
+    );
     assert.equal(
       publicSnapshot.snapshot.presentation.civilIdentity.fibreIdentityNumber,
       candidate.manifest.publication.civilRegistration.fibreIdentityNumber,
@@ -199,6 +207,8 @@ test("authoritative Genesis birth automatically becomes a persisted public non-f
     assert.equal(publicSnapshot.snapshot.presentation.visualIdentity, null);
     assert.equal(publicSnapshot.snapshot.presentation.identityCard, null);
     assert.deepEqual(publicSnapshot.snapshot.media.assets, []);
+    assert.equal(JSON.stringify(publicSnapshot).includes(candidate.thread.identity.portraitRef), false);
+    assert.equal(JSON.stringify(publicSnapshot).includes(candidate.thread.identity.voiceRef), false);
 
     const discovery = await readApi.fetch(new Request("http://presentation.local/api/threads"));
     assert.equal(discovery.status, 200);
