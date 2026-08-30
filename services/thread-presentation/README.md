@@ -4,6 +4,8 @@ This directory is the capability-level home for Fibre machinery that turns alrea
 
 Thread Presentation is **non-cognitive**. It must not invent, reinterpret, or privately reason about a Thread, and it must not become a second authority for identity, memory, history, meaning, relationships, or world state. The canonical presentation contract is defined by [`../../docs/architecture/world-presentation.md`](../../docs/architecture/world-presentation.md).
 
+The cross-service newborn/publication flow is defined by [`../../docs/architecture/thread-birth-presentation-data-flow.md`](../../docs/architecture/thread-birth-presentation-data-flow.md).
+
 ## Public consumer seam
 
 External applications and sibling services should import the provider-neutral presentation contract from:
@@ -15,6 +17,23 @@ import { normalizeThreadPresentationBundle } from "./services/thread-presentatio
 The packet normalizers and digests currently delegate to the implementation in `world-kernel` because that is where the authoritative projection rules already run. That is an implementation detail. New consumers must not import `world-kernel/src/thread-presentation-*.mjs` directly; keeping the service entry point stable lets the implementation move here later without changing consumers such as a Thread Presentation webapp.
 
 Serialized packet/version constants are compatibility identifiers. They justify versioning wire data, not milestone/version runtime filenames.
+
+## Public discovery/read API
+
+The provider-neutral HTTP read API exposes public presentation only:
+
+```text
+GET /api/threads
+GET /api/threads/:threadId/snapshot
+GET /api/threads/:threadId/events
+GET /api/threads/:threadId/stream
+GET /api/assets/:objectRef
+GET /api/threads/:threadId/media/:objectRef
+```
+
+`GET /api/threads` is intentionally a small discovery contract. It lists only explicitly public Thread presentations and returns the Thread ID, lifecycle status and current snapshot witness. It does not duplicate the presentation bundle. Consumers such as `insidefibre.com` discover a Thread through the collection route and then load that Thread's current snapshot through the Thread-scoped route.
+
+Discovery uses ordered prefix listing from `InfraDriver.catalog` and fails closed when the current snapshot is absent, belongs to a different Thread, or immutable identity-card visibility forbids public presentation.
 
 ## Civil Registry projection
 
@@ -84,8 +103,9 @@ See [`../../docs/architecture/presentation-asset-serving.md`](../../docs/archite
 
 - [`../birth-center/`](../birth-center/) owns Civil Registry issuance at birth; the immutable registry is read through World Kernel's `CivilRegistryStore`.
 - [`../asset-generator/`](../asset-generator/) executes generated-media briefs and records immutable generation provenance.
+- [`../content-credential-signer/`](../content-credential-signer/) defines the provider-neutral Content Credential signer service.
+- [`../../integrations/content-credentials/`](../../integrations/content-credentials/) contains concrete Content Credential integrations.
 - [`../../infra/deployments/thread-presentation/cloudflare/`](../../infra/deployments/thread-presentation/cloudflare/) is the current Cloudflare delivery/read-model deployment adapter.
-- [`../c2pa-local/`](../c2pa-local/) supplies local provenance/Content Credential support.
 - [`../../fixtures/thread-presentation/`](../../fixtures/thread-presentation/) contains reusable presentation fixtures.
 
 Thread Presentation decides what already-authorized material may enter a presentation and what reconstruction is requested. Asset Generator only executes the exact admissible brief it receives. A generated image never becomes biographical evidence merely because it looks plausible or was generated successfully.
