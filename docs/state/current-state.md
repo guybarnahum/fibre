@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-28
+last-reviewed: 2026-08-30
 canonical: true
 ---
 
@@ -23,6 +23,8 @@ Live Threads are world data, not source code stored in Git. Models provide tempo
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
 - Mechanical/substrate conditions may become versioned causal machinery, but they are not semantic evidence for identity, memory, meaning, character, needs, emotions or values.
 - Model output is candidate cognition. Provider structured-output guarantees never replace Fibre canonical validation or domain admission.
+- Visual identity follows one root-anchor invariant: rich canonical visual identity text establishes semantic appearance authority; one admitted canonical reference image supplies operational likeness continuity; every later Thread-depicting generated image uses that root plus target age/context and remains derived media.
+- Age is not visual identity. Synthetic canonical roots normalize at reference age 25; chronology selects later target age without replacing the root.
 
 ## Milestone posture
 
@@ -38,7 +40,7 @@ M1    Persistent Thread Round Trip                         CLOSED
 #38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
 #39   Genesis, Childhood & Thread Birth                    CLOSED
       Genesis selectivity/scientific hardening bridge      CLOSED
-#40   Identity Projection & Causal Consumption             NEXT
+#40   Identity Projection & Causal Consumption             CURRENT
 #41   M2 Standing Gate / M2 closure                        AFTER #40
 
 post-M2
@@ -49,7 +51,7 @@ post-M2
 
 Planning identifiers such as `#40` are Fibre milestone identifiers, not GitHub transport numbering.
 
-> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 now makes selected parts of that life causally matter. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
+> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 now makes selected parts of that life causally matter and projects authoritative identity into real public/deployment surfaces. #41 tests whether the resulting Thread is a persistent, non-interchangeable individual.**
 
 ## #39 and bridge outcome carried forward
 
@@ -90,9 +92,40 @@ The symbolic genome is an ordered sequence of natural-language loci with exact s
 
 The bridge's controlled Pass-B experiment classified the current tested seam as **Context-only**, not behaviorally causal. That result is retained rather than tuned away.
 
+Visual phenotype inheritance may reuse the same natural-language recombination principles while remaining a distinct semantic domain. A Thread-parent child may inherit atomic parental appearance loci and explicit mutations to form the child's canonical visual identity text. This does not make visual phenotype evidence for personality/disposition genome effects, and parent images are not pixel-blended into the child's identity.
+
 ### Civil identity
 
 Every successfully published Genesis Thread receives one permanent Fibre Identity Number and one canonical civil registration in the same birth transaction. `threadId` remains the canonical machine identity/reference anchor; the FIN is the human-facing civil identifier.
+
+### Canonical visual identity
+
+[`../decisions/ADR-0021-canonical-visual-identity-reference.md`](../decisions/ADR-0021-canonical-visual-identity-reference.md) and [`../architecture/canonical-visual-identity.md`](../architecture/canonical-visual-identity.md) are the standing visual-identity authority.
+
+For native/de-novo/inherited Threads:
+
+```text
+rich canonical visual identity text
+  -> text-only root generation
+  -> normalized reference age 25
+  -> immutable verified root asset
+  -> explicit Embodiment admission
+```
+
+A pending text specification does not yet constitute an operational public visual reference.
+
+After admission:
+
+```text
+canonical Fibre reference image
+  -> official identity photo at target current age
+  -> memory/life reconstructions at event age
+  -> other Thread-depicting media at scene age/context
+```
+
+All such later media remains derived and must not replace the root through ordinary aging or aesthetic preference.
+
+Echo/Homage is the explicit source-grounded creation exception. Authorized sponsor/homage source images may participate in forming the transformed Fibre canonical root under the established consent/source-rights rules. Once admitted, later images use the Fibre root rather than repeatedly using the original sponsor/homage source.
 
 ## Scientific-method posture
 
@@ -111,9 +144,9 @@ Current rules include:
 
 ## Current next work — #40 Identity Projection & Causal Consumption
 
-#37–#39 provide a rich provenance-bearing life substrate. The bridge has now hardened the memory/meaning and measurement seams. The remaining gap is canonical causal consumption in ordinary cognition.
+#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the active deployment vertical is closing identity projection through the canonical visual root and public presentation.
 
-#40 owns the bounded path:
+The cognition path remains:
 
 ```text
 rich canonical Thread state
@@ -124,7 +157,21 @@ rich canonical Thread state
       -> attributable judgment/behavior difference
 ```
 
-The critical #40 proof is not merely that two Threads receive different prompt text. It must show that a Thread-owned identity/history difference can produce an attributable difference in cognition or downstream consequence under the same declared selection policy. Caller nomination may not become private-context-selection authority.
+The active public/visual path is:
+
+```text
+Genesis birth
+  -> public pre-embodiment presentation                    DONE
+  -> canonical visual identity root                        CURRENT
+  -> Embodiment admission + public visual projection       NEXT
+  -> reference/age-conditioned official + memory images    NEXT
+  -> C2PA completion + Thread Presentation publication     NEXT
+  -> Viewer + one-birth recovery E2E                       FINAL VERTICAL GATE
+```
+
+The critical #40 standing proof is still not merely that two Threads receive different prompt text or appear visually different. It must show that a Thread-owned identity/history difference can produce an attributable difference in cognition or downstream consequence under the same declared selection policy. Caller nomination may not become private-context-selection authority.
+
+The visual/deployment substream has an explicit stop condition in [`current-priorities.md`](current-priorities.md): after one production-shaped reference-capable vertical is proven, unrelated provider/media polish returns to backlog rather than displacing causal consumption.
 
 ## Current score posture
 
@@ -138,7 +185,7 @@ Development                   1
 Economic consequence          0
 ```
 
-#39 and the completed bridge deliberately earn no score movement. #40 causal consumption and #41 standing are the next score-bearing steps.
+#39 and the completed bridge deliberately earn no score movement. Visual continuity itself also does not earn causal individuality standing. #40 causal consumption and #41 standing are the next score-bearing steps.
 
 ## Persistence and repository posture
 
@@ -163,6 +210,7 @@ The following remain part of Fibre's intended architecture:
 - richer Thread-authored development and self-model change (#42);
 - reciprocal/shared relationship structures, repair, expectations and permissions (#43);
 - budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
+- richer visual appearance timelines beyond the canonical root + target-age model where later lived embodiment requires them;
 - endogenous motivation using clearly separated mechanical conditions plus Thread-authored semantic interpretation;
 - general isolated worker/tool/model gateway and model-capable Actor;
 - demonstrated cognition-provider/runtime replacement continuity;
