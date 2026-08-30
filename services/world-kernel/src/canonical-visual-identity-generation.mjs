@@ -2,7 +2,7 @@ import {
   ASSET_GENERATION_JOB_VERSION,
   normalizeAssetGenerationJob,
   normalizeStoredAssetReceipt,
-} from "#services/asset-generator/src/index.mjs";
+} from "./presentation-asset-demand.mjs";
 import { normalizeEmbodimentRepresentation } from "./embodiment-domain.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import { CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS } from "./visual-identity-reference-domain.mjs";
