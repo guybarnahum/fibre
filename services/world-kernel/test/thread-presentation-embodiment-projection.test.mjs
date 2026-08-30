@@ -7,7 +7,12 @@ import {
 } from "../src/embodiment-domain.mjs";
 import { projectPublicEmbodimentVisualIdentity } from "../src/thread-presentation-embodiment-projection.mjs";
 
-function portrait({ visibility = "public", status = "pending_generation", revision = 1 } = {}) {
+function portrait({
+  visibility = "public",
+  status = "available",
+  revision = 1,
+  referenceObjectRef = "asset_visual_identity_reference_001",
+} = {}) {
   const threadId = "thr_embodiment_projection_001";
   const specification = {
     subject: {
@@ -33,13 +38,21 @@ function portrait({ visibility = "public", status = "pending_generation", revisi
     respecification: null,
     status,
     unavailableReason: status === "unavailable_with_reason" ? "No valid current representation." : null,
-    asset: null,
+    asset: status === "available" ? {
+      assetRef: "asset://embodiment/canonical-portrait-001",
+      referenceObjectRef,
+      sha256: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      mediaType: "image/webp",
+      width: 1024,
+      height: 1024,
+      durationMs: null,
+    } : null,
     visibility,
     recordedAt: "2026-08-30T04:40:00Z",
   };
 }
 
-test("public canonical portrait becomes a bounded visual identity authority projection", () => {
+test("verified public canonical portrait image becomes the visual identity reference", () => {
   const embodiment = portrait();
   const projected = projectPublicEmbodimentVisualIdentity(embodiment, {
     provenanceRef: "prov_visual_identity_projection_001",
@@ -57,10 +70,17 @@ test("public canonical portrait becomes a bounded visual identity authority proj
     "evt_seed_thr_embodiment_projection_001",
   ]);
   assert.deepEqual(projected.permissionReferences, []);
-  assert.deepEqual(projected.referenceObjectRefs, []);
+  assert.deepEqual(projected.referenceObjectRefs, ["asset_visual_identity_reference_001"]);
+  assert.equal(JSON.stringify(projected).includes("asset://"), false);
 });
 
-test("private, restricted, unavailable, and non-portrait embodiment cannot become public visual identity", () => {
+test("text-only pending embodiment cannot masquerade as an available visual reference", () => {
+  assert.equal(projectPublicEmbodimentVisualIdentity(portrait({ status: "pending_generation" }), {
+    provenanceRef: "prov_pending",
+  }), null);
+});
+
+test("private, restricted, unavailable, reference-less, and non-portrait embodiment cannot become public visual identity", () => {
   assert.equal(projectPublicEmbodimentVisualIdentity(portrait({ visibility: "private" }), {
     provenanceRef: "prov_private",
   }), null);
@@ -69,6 +89,9 @@ test("private, restricted, unavailable, and non-portrait embodiment cannot becom
   }), null);
   assert.equal(projectPublicEmbodimentVisualIdentity(portrait({ status: "unavailable_with_reason" }), {
     provenanceRef: "prov_unavailable",
+  }), null);
+  assert.equal(projectPublicEmbodimentVisualIdentity(portrait({ referenceObjectRef: null }), {
+    provenanceRef: "prov_reference_less",
   }), null);
 
   const voice = {
@@ -80,30 +103,22 @@ test("private, restricted, unavailable, and non-portrait embodiment cannot becom
         partyId: "thr_embodiment_projection_001",
         description: "The same Thread represented through a canonical synthetic voice identity specification for later speech rendering.",
       },
-      method: "canonical synthetic voice specification",
-      description: "A calm mid-range speaking voice with measured pacing and clear articulation.",
-      model: "replaceable-voice-renderer",
+      method: "canonical synthetic speech specification",
+      description: "A calm mid-range speaking style with measured pacing and clear articulation.",
+      model: "replaceable-speech-renderer",
+    },
+    asset: {
+      assetRef: "asset://embodiment/canonical-voice-001",
+      referenceObjectRef: "asset_voice_reference_001",
+      sha256: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      mediaType: "audio/wav",
+      width: null,
+      height: null,
+      durationMs: 1000,
     },
   };
   voice.specificationDigest = embodimentSpecificationDigest(voice.specification);
   assert.equal(projectPublicEmbodimentVisualIdentity(voice, {
     provenanceRef: "prov_voice",
   }), null);
-});
-
-test("World-owned embodiment asset locator is not reinterpreted as a presentation object reference", () => {
-  const embodiment = portrait({ status: "available" });
-  embodiment.asset = {
-    assetRef: "asset://embodiment/canonical-portrait-001",
-    sha256: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    mediaType: "image/webp",
-    width: 1024,
-    height: 1024,
-    durationMs: null,
-  };
-  const projected = projectPublicEmbodimentVisualIdentity(embodiment, {
-    provenanceRef: "prov_visual_identity_projection_asset",
-  });
-  assert.deepEqual(projected.referenceObjectRefs, []);
-  assert.equal(JSON.stringify(projected).includes("asset://"), false);
 });
