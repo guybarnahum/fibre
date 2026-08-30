@@ -25,8 +25,8 @@ The active #40 deployment/identity-projection vertical is now:
 ```text
 A. Genesis -> public pre-embodiment presentation          CLOSED / GREEN
 B. authoritative newborn public identity context         CLOSED / GREEN
-C. canonical visual identity root                        CURRENT
-D. Embodiment -> public visual identity rewrite          NEXT
+C. canonical visual identity root                        CLOSED / GREEN
+D. Embodiment -> public visual identity rewrite          CURRENT
 E. reference+age-conditioned official/memory imagery     NEXT
 F. Asset Generator + C2PA completion/publication         AFTER E
 G. insidefibre.com Viewer closure                        AFTER F
@@ -84,24 +84,32 @@ The capsule must contain resolved semantic content, not opaque refs described as
 
 The initial content surface should be deliberately bounded but architecture-preserving: identity, embodiment, lineage/geography where relevant, autobiographical memory/meaning, relationships and obligations that the declared selection/publication policy actually chooses.
 
-### Priority 1A — close the canonical visual identity root
+### Priority 1A — canonical visual identity root — Slice C CLOSED
 
-The current implementation slice must establish the root before any official-photo E2E is considered complete.
-
-For native/de-novo/inherited Fibre identity:
+Slice C established and permanently tests the canonical root contract for native/de-novo/inherited Fibre identity:
 
 ```text
 rich visual identity text
   -> text-only root generation, no image reference
   -> normalized reference age 25
   -> immutable credentialed generation proof
-  -> World/Embodiment admission
+  -> explicit Embodiment admission
   -> canonical referenceObjectRef
 ```
 
-The root prompt must be materially richer than an ordinary image prompt: stable face geometry, proportions, eyes/brows, nose, mouth, jaw, skin, hair/hairline, body/build where relevant, distinctive marks/asymmetries and explicit cross-age identity invariants.
+Closure evidence includes:
 
-A pending text specification is not yet a usable visual reference. Public visual identity is unlocked only by an admitted canonical root asset.
+- thin/generic appearance text is rejected before root generation;
+- the root `AssetGenerationJob` carries zero `referenceObjectRefs` and a deterministic canonical-role identity;
+- verified credentialed completion is bound back to the exact pending Embodiment revision/specification before that Embodiment becomes `available`;
+- the admitted asset records the immutable `referenceObjectRef` used by later visual-identity projection;
+- a pending text specification cannot masquerade as an available visual reference;
+- the runtime dependency-policy gate remains green without registering a new World Kernel -> Asset Generator private edge;
+- a permanent cross-age proof shows one canonical objectRef feeding both a current-age official photo and a materially different-age autobiographical reconstruction, with reference age 25 and explicit target ages carried in job context.
+
+The root prompt remains materially richer than an ordinary image prompt: stable face geometry, proportions, eyes/brows, nose, mouth, jaw, skin, hair/hairline, body/build where relevant, distinctive marks/asymmetries and explicit cross-age identity invariants.
+
+A pending text specification is not yet a usable visual reference. Public visual identity is unlocked only by an admitted canonical root asset. Slice D now owns wiring that admitted authority through the public presentation rewrite; Slice C does not make presentation or derived imagery into identity authority.
 
 ### Priority 1B — preserve truthful origin variants
 
@@ -142,6 +150,8 @@ canonical reference object
   -> C2PA/provenance completion
   -> Thread Presentation acceptance
 ```
+
+Slice D is current: wire the already-admitted canonical Embodiment through the bounded visual-identity projection and atomic presentation rewrite without giving Thread Presentation raw World authority or allowing the projection to invent appearance.
 
 If a person-depicting job requires a canonical reference and the selected provider cannot consume reference objects, the job must defer/select another explicitly configured profile. Fibre may not silently drop the reference and regress to text-only likeness generation.
 
