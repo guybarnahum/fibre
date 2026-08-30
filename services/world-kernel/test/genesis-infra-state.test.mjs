@@ -7,6 +7,7 @@ import test from "node:test";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { CivilRegistryStore } from "../src/civil-registry-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
+import { GenesisPresentationOutboxStore } from "../src/genesis-presentation-outbox-store.mjs";
 import { GenesisStore } from "../src/genesis-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { attachTestCivilRegistration } from "./support/civil-registration-fixture.mjs";
@@ -129,9 +130,16 @@ function assertBirthAbsent(storage, candidate) {
   } finally {
     registry.close();
   }
+
+  const outbox = new GenesisPresentationOutboxStore(storage);
+  try {
+    assert.equal(outbox.get(candidate.manifest.genesisId), null);
+  } finally {
+    outbox.close();
+  }
 }
 
-test("Genesis birth commits Thread, manifest, and FIN atomically through Infra state", () => {
+test("Genesis birth commits Thread, manifest, FIN, and presentation outbox atomically through Infra state", () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-genesis-infra-state-"));
   const databasePath = join(directory, "world.sqlite");
   const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
@@ -162,6 +170,17 @@ test("Genesis birth commits Thread, manifest, and FIN atomically through Infra s
       committed.manifest.publication.civilRegistration.fibreIdentityNumber,
     );
     registry.close();
+
+    const outbox = new GenesisPresentationOutboxStore(storage);
+    const pending = outbox.get(committed.manifest.genesisId);
+    assert.equal(pending.genesisId, committed.manifest.genesisId);
+    assert.equal(pending.threadId, committed.thread.threadId);
+    assert.deepEqual(pending.manifest, committed.manifest);
+    assert.equal(pending.publicationDigest, published.recordDigest);
+    assert.equal(pending.publishedAt, committed.manifest.publication.publishedAt);
+    assert.equal(pending.state, "pending");
+    assert.equal(pending.attemptCount, 0);
+    outbox.close();
 
     const afterSeed = birth("thr_birth_infra_rollback_seed");
     assert.throws(

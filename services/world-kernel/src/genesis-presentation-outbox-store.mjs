@@ -1,7 +1,5 @@
-import { DatabaseSync } from "node:sqlite";
-
 import { assertId } from "./persistence-common.mjs";
-import { normalizeDatabasePath, safeRollback } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 const OUTBOX_TABLE = "genesis_presentation_outbox";
 
@@ -28,64 +26,10 @@ function rowToRecord(row) {
 export class GenesisPresentationOutboxStore {
   #database;
 
-  constructor(databasePath) {
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, {
+      storeName: "GenesisPresentationOutboxStore",
     });
-    try {
-      this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.exec(`
-        CREATE TABLE IF NOT EXISTS ${OUTBOX_TABLE} (
-          genesis_id TEXT PRIMARY KEY,
-          thread_id TEXT NOT NULL UNIQUE,
-          manifest_json TEXT NOT NULL CHECK (json_valid(manifest_json)),
-          publication_digest TEXT NOT NULL CHECK (publication_digest LIKE 'sha256:%'),
-          published_at TEXT NOT NULL,
-          state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','delivered')),
-          attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
-          last_attempt_at TEXT,
-          last_error_json TEXT CHECK (last_error_json IS NULL OR json_valid(last_error_json)),
-          delivered_at TEXT
-        ) STRICT;
-
-        CREATE INDEX IF NOT EXISTS idx_genesis_presentation_outbox_pending
-          ON ${OUTBOX_TABLE}(state, published_at, genesis_id);
-
-        DROP TRIGGER IF EXISTS genesis_manifests_enqueue_presentation;
-        CREATE TRIGGER genesis_manifests_enqueue_presentation
-          AFTER INSERT ON genesis_manifests
-          WHEN NEW.publication_status='published'
-          BEGIN
-            INSERT OR IGNORE INTO ${OUTBOX_TABLE}(
-              genesis_id,thread_id,manifest_json,publication_digest,published_at
-            ) VALUES (
-              NEW.genesis_id,
-              NEW.thread_id,
-              NEW.record_json,
-              NEW.record_digest,
-              json_extract(NEW.record_json,'$.publication.publishedAt')
-            );
-          END;
-
-        INSERT OR IGNORE INTO ${OUTBOX_TABLE}(
-          genesis_id,thread_id,manifest_json,publication_digest,published_at
-        )
-        SELECT
-          genesis_id,
-          thread_id,
-          record_json,
-          record_digest,
-          json_extract(record_json,'$.publication.publishedAt')
-        FROM genesis_manifests
-        WHERE publication_status='published';
-      `);
-      this.#database.exec("COMMIT");
-    } catch (error) {
-      safeRollback(this.#database);
-      this.#database.close();
-      throw error;
-    }
   }
 
   close() { this.#database.close(); }

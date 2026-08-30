@@ -1,29 +1,37 @@
-import { DatabaseSync } from "node:sqlite";
+import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import assert from "node:assert/strict";
 
+import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { GenesisPresentationOutboxStore } from "../src/genesis-presentation-outbox-store.mjs";
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "fibre-genesis-presentation-outbox-"));
   const databasePath = join(root, "world.sqlite");
-  const database = new DatabaseSync(databasePath);
-  database.exec(`
-    CREATE TABLE genesis_manifests (
+  const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
+  const storage = { infraDriver, stateScopeId: "world" };
+  const session = infraDriver.state.open("world");
+  session.exec(`
+    CREATE TABLE genesis_presentation_outbox (
       genesis_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL UNIQUE,
-      publication_status TEXT NOT NULL,
-      record_json TEXT NOT NULL,
-      record_digest TEXT NOT NULL
+      manifest_json TEXT NOT NULL CHECK (json_valid(manifest_json)),
+      publication_digest TEXT NOT NULL CHECK (publication_digest LIKE 'sha256:%'),
+      published_at TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','delivered')),
+      attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+      last_attempt_at TEXT,
+      last_error_json TEXT CHECK (last_error_json IS NULL OR json_valid(last_error_json)),
+      delivered_at TEXT
     ) STRICT;
   `);
-  database.close();
-  const store = new GenesisPresentationOutboxStore(databasePath);
+  session.close();
+  const store = new GenesisPresentationOutboxStore(storage);
   return {
-    databasePath,
+    infraDriver,
+    storage,
     store,
     close() {
       store.close();
@@ -43,23 +51,28 @@ function publishedManifest({ genesisId = "gen_test", threadId = "thr_test" } = {
   };
 }
 
-test("published Genesis manifest atomically enqueues presentation delivery", () => {
+function seedPending(current, { digestChar = "a" } = {}) {
+  const manifest = publishedManifest();
+  const session = current.infraDriver.state.open("world");
+  session.prepare(`
+    INSERT INTO genesis_presentation_outbox(
+      genesis_id,thread_id,manifest_json,publication_digest,published_at
+    ) VALUES (?,?,?,?,?)
+  `).run(
+    manifest.genesisId,
+    manifest.threadId,
+    JSON.stringify(manifest),
+    `sha256:${digestChar.repeat(64)}`,
+    manifest.publication.publishedAt,
+  );
+  session.close();
+  return manifest;
+}
+
+test("Genesis presentation outbox reads pending delivery through Infra state binding", () => {
   const current = fixture();
   try {
-    const database = new DatabaseSync(current.databasePath);
-    const manifest = publishedManifest();
-    database.prepare(`
-      INSERT INTO genesis_manifests(genesis_id,thread_id,publication_status,record_json,record_digest)
-      VALUES (?,?,?,?,?)
-    `).run(
-      manifest.genesisId,
-      manifest.threadId,
-      "published",
-      JSON.stringify(manifest),
-      `sha256:${"a".repeat(64)}`,
-    );
-    database.close();
-
+    seedPending(current);
     const pending = current.store.listPending();
     assert.equal(pending.length, 1);
     assert.equal(pending[0].genesisId, "gen_test");
@@ -71,22 +84,10 @@ test("published Genesis manifest atomically enqueues presentation delivery", () 
   }
 });
 
-test("presentation outbox records retry failure and idempotent delivery", () => {
+test("presentation outbox records retry failure and idempotent delivery through Infra state", () => {
   const current = fixture();
   try {
-    const database = new DatabaseSync(current.databasePath);
-    const manifest = publishedManifest();
-    database.prepare(`
-      INSERT INTO genesis_manifests(genesis_id,thread_id,publication_status,record_json,record_digest)
-      VALUES (?,?,?,?,?)
-    `).run(
-      manifest.genesisId,
-      manifest.threadId,
-      "published",
-      JSON.stringify(manifest),
-      `sha256:${"b".repeat(64)}`,
-    );
-    database.close();
+    seedPending(current, { digestChar: "b" });
 
     const failed = current.store.recordFailure("gen_test", new Error("presentation unavailable"), {
       attemptedAt: "2026-08-30T00:00:01.000Z",
