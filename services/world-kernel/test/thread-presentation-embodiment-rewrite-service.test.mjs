@@ -12,6 +12,7 @@ import { createThreadPresentationServer } from "../src/thread-presentation-serve
 
 const THREAD_ID = "thr_pr39_g2_04";
 const CHANNEL_ID = `presentation:${THREAD_ID}`;
+const EMBODIMENT_ID = "emb_visual_identity_primary";
 
 async function liveBundle() {
   const base = new URL("../../../fixtures/thread-presentation/can-tho/", import.meta.url);
@@ -33,7 +34,7 @@ async function liveBundle() {
 
 function embodiment({
   revision = 2,
-  embodimentId = "emb_visual_identity_primary",
+  embodimentId = EMBODIMENT_ID,
   status = "available",
   visibility = "public",
   referenceObjectRef = "visual_identity_reference_root_001",
@@ -78,9 +79,23 @@ function embodiment({
   };
 }
 
-async function fixture() {
+function embodimentAuthority(initial) {
+  let current = initial;
+  return {
+    reader: {
+      listCurrent(threadId) {
+        assert.equal(threadId, THREAD_ID);
+        return current === null ? [] : [structuredClone(current)];
+      },
+    },
+    set(next) { current = next; },
+  };
+}
+
+async function fixture({ currentEmbodiment = embodiment() } = {}) {
   const infra = createMemoryInfraDriver();
   const server = createThreadPresentationServer({ infra });
+  const authority = embodimentAuthority(currentEmbodiment);
   const bundle = await liveBundle();
   await server.publishSnapshot({
     channelId: CHANNEL_ID,
@@ -99,19 +114,28 @@ async function fixture() {
     infra,
     server,
     bundle,
-    service: createThreadPresentationEmbodimentRewriteService({ presentationServer: server }),
+    authority,
+    service: createThreadPresentationEmbodimentRewriteService({
+      presentationServer: server,
+      embodimentReader: authority.reader,
+    }),
   };
 }
 
 test("admitted public Embodiment rewrites bounded visual identity without creating derived media", async () => {
   const current = await fixture();
   const before = await current.server.getSnapshot(CHANNEL_ID);
-  const result = await current.service.project({ channelId: CHANNEL_ID, embodiment: embodiment() });
+  const result = await current.service.project({
+    channelId: CHANNEL_ID,
+    embodimentId: EMBODIMENT_ID,
+    embodiment: embodiment({ revision: 99, embodimentId: "emb_injected_not_authority" }),
+  });
 
   assert.equal(result.rewritten, true);
   assert.equal(result.reused, false);
   assert.equal(result.projection.authority, "authorized_embodiment_projection");
-  assert.equal(result.projection.embodimentRevision, 2);
+  assert.equal(result.projection.embodimentId, EMBODIMENT_ID);
+  assert.equal(result.projection.embodimentRevision, 2, "projection must come from authority, not caller-supplied content");
   assert.deepEqual(result.projection.referenceObjectRefs, ["visual_identity_reference_root_001"]);
 
   const after = await current.server.getSnapshot(CHANNEL_ID);
@@ -135,15 +159,15 @@ test("admitted public Embodiment rewrites bounded visual identity without creati
   assert.equal(catalog.genesisId, "genesis_visual_identity_rewrite");
   assert.equal(catalog.publicationDigest, `sha256:${"a".repeat(64)}`);
   assert.equal(catalog.projectionKind, "embodiment_visual_identity");
-  assert.equal(catalog.visualIdentityEmbodimentId, "emb_visual_identity_primary");
+  assert.equal(catalog.visualIdentityEmbodimentId, EMBODIMENT_ID);
   assert.equal(catalog.visualIdentityEmbodimentRevision, 2);
 });
 
 test("replaying the same admitted Embodiment is an exact no-op", async () => {
   const current = await fixture();
-  const first = await current.service.project({ channelId: CHANNEL_ID, embodiment: embodiment() });
+  const first = await current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID });
   const firstPointer = (await current.server.getSnapshot(CHANNEL_ID)).pointer;
-  const repeated = await current.service.project({ channelId: CHANNEL_ID, embodiment: embodiment() });
+  const repeated = await current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID });
   const repeatedPointer = (await current.server.getSnapshot(CHANNEL_ID)).pointer;
 
   assert.equal(first.rewritten, true);
@@ -152,37 +176,38 @@ test("replaying the same admitted Embodiment is an exact no-op", async () => {
   assert.deepEqual(repeatedPointer, firstPointer);
 });
 
-test("a stale or different Embodiment lineage cannot overwrite current public visual identity", async () => {
+test("a stale or different current Embodiment lineage cannot overwrite public visual identity", async () => {
   const current = await fixture();
-  const newer = embodiment({ revision: 3, recordedAt: "2026-08-30T05:25:00Z" });
-  await current.service.project({ channelId: CHANNEL_ID, embodiment: newer });
+  current.authority.set(embodiment({ revision: 3, recordedAt: "2026-08-30T05:25:00Z" }));
+  await current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID });
 
+  current.authority.set(embodiment({ revision: 2 }));
   await assert.rejects(
-    () => current.service.project({ channelId: CHANNEL_ID, embodiment: embodiment({ revision: 2 }) }),
+    () => current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID }),
     ThreadPresentationVisualIdentityConflictError,
   );
+
+  const otherId = "emb_visual_identity_other_lineage";
+  current.authority.set(embodiment({ revision: 4, embodimentId: otherId }));
   await assert.rejects(
-    () => current.service.project({
-      channelId: CHANNEL_ID,
-      embodiment: embodiment({ revision: 4, embodimentId: "emb_visual_identity_other_lineage" }),
-    }),
+    () => current.service.project({ channelId: CHANNEL_ID, embodimentId: otherId }),
     ThreadPresentationVisualIdentityConflictError,
   );
 
   const after = await current.server.getSnapshot(CHANNEL_ID);
   assert.equal(after.snapshot.presentation.visualIdentity.embodimentRevision, 3);
-  assert.equal(after.snapshot.presentation.visualIdentity.embodimentId, "emb_visual_identity_primary");
+  assert.equal(after.snapshot.presentation.visualIdentity.embodimentId, EMBODIMENT_ID);
 });
 
-test("pending or non-public Embodiment cannot create public visual identity", async () => {
+test("pending or non-public authoritative Embodiment cannot create public visual identity", async () => {
   for (const candidate of [
     embodiment({ revision: 1, status: "pending_generation", referenceObjectRef: null }),
     embodiment({ visibility: "private" }),
     embodiment({ visibility: "restricted" }),
   ]) {
-    const current = await fixture();
+    const current = await fixture({ currentEmbodiment: candidate });
     const before = await current.server.getSnapshot(CHANNEL_ID);
-    const result = await current.service.project({ channelId: CHANNEL_ID, embodiment: candidate });
+    const result = await current.service.project({ channelId: CHANNEL_ID, embodimentId: candidate.embodimentId });
     const after = await current.server.getSnapshot(CHANNEL_ID);
     assert.equal(result.rewritten, false);
     assert.equal(result.reason, "embodiment_not_publicly_projectable");
@@ -191,9 +216,18 @@ test("pending or non-public Embodiment cannot create public visual identity", as
   }
 });
 
+test("non-current Embodiment ids cannot be projected even when the caller knows them", async () => {
+  const current = await fixture({ currentEmbodiment: null });
+  await assert.rejects(
+    () => current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID }),
+    ThreadPresentationVisualIdentityConflictError,
+  );
+});
+
 test("visual identity cannot be projected into candidate/fixture presentation state", async () => {
   const infra = createMemoryInfraDriver();
   const server = createThreadPresentationServer({ infra });
+  const authority = embodimentAuthority(embodiment());
   const bundle = await liveBundle();
   bundle.presentation.manifest.lifecycleStatus = "genesis_candidate";
   bundle.presentation.manifest.fixture = true;
@@ -205,9 +239,12 @@ test("visual identity cannot be projected into candidate/fixture presentation st
     expectedSequence: 0,
     catalog: { publiclyVisible: false },
   });
-  const service = createThreadPresentationEmbodimentRewriteService({ presentationServer: server });
+  const service = createThreadPresentationEmbodimentRewriteService({
+    presentationServer: server,
+    embodimentReader: authority.reader,
+  });
   await assert.rejects(
-    () => service.project({ channelId: CHANNEL_ID, embodiment: embodiment() }),
+    () => service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID }),
     ThreadPresentationVisualIdentityConflictError,
   );
 });
