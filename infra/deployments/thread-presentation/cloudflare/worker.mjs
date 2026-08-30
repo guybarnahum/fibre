@@ -1,7 +1,6 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
 import { createService } from "#infra/service";
-import { createHttpContentCredentialSigner as createContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import {
   normalizeThreadPresentationBundle,
@@ -15,6 +14,10 @@ import { createPresentationAssetDemandService } from "#services/world-kernel/src
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
+import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
+import localDeploymentYaml from "../../environments/local.yaml";
+import { selectContentCredentialIntegration } from "../../integration-selection.mjs";
+import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
@@ -25,6 +28,17 @@ const HTTP_SERVICE = createService({
 const P3_CAN_THO_THREAD_ID = "thr_pr39_g2_04";
 const P3_MARKET_MEDIA_ID = "media_place_market";
 const P3_PROVIDER_PROFILE = "openai-gpt-image-2-medium-v1";
+const DEPLOYMENTS = Object.freeze({
+  local: parseDeploymentManifest(localDeploymentYaml),
+  cloudflare: parseDeploymentManifest(cloudflareDeploymentYaml),
+});
+
+function serviceDeployment(env) {
+  const environment = env?.FIBRE_DEPLOYMENT_ENV;
+  const manifest = DEPLOYMENTS[environment];
+  if (!manifest) throw new TypeError(`unsupported thread-presentation deployment environment ${String(environment)}`);
+  return resolveServiceDeployment(manifest, "thread-presentation");
+}
 
 function createInfra(env, { includeWorkflows = true } = {}) {
   return createCloudflareInfraDriver({
@@ -38,11 +52,8 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 }
 
 function createCredentialSigner(env) {
-  return createContentCredentialSigner({
-    baseUrl: env.C2PA_SIGNER_URL,
-    signerId: env.C2PA_SIGNER_ID,
-    trustPolicy: env.C2PA_TRUST_POLICY,
-    authorizationToken: env.C2PA_SIGNER_TOKEN ?? null,
+  return selectContentCredentialIntegration(serviceDeployment(env).integrations.contentCredentials, {
+    environment: env,
   });
 }
 
