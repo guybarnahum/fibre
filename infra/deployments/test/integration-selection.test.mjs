@@ -9,11 +9,15 @@ import {
 import {
   selectContentCredentialIntegration,
   selectImageIntegration,
+  selectImageProviderProfile,
   selectReasoningIntegration,
 } from "../integration-selection.mjs";
 
 const local = parseDeploymentManifest(
   readFileSync(new URL("../environments/local.yaml", import.meta.url), "utf8"),
+);
+const cloudflare = parseDeploymentManifest(
+  readFileSync(new URL("../environments/cloudflare.yaml", import.meta.url), "utf8"),
 );
 
 test("deployment composition constructs selected reasoning integration", () => {
@@ -38,6 +42,37 @@ test("deployment composition constructs selected image integrations", () => {
   });
   assert.equal(openai.providerId, "openai-image-v1");
   assert.equal(bfl.providerId, "bfl-flux-image-v1");
+});
+
+test("presentation image profile selection is deployment-owned and reference-aware", () => {
+  for (const manifest of [local, cloudflare]) {
+    const assetGenerator = resolveServiceDeployment(manifest, "asset-generator");
+    assert.equal(
+      selectImageProviderProfile(assetGenerator, { requiresReferenceObjects: false }),
+      "openai-gpt-image-2-medium-v1",
+    );
+    assert.equal(
+      selectImageProviderProfile(assetGenerator, { requiresReferenceObjects: true }),
+      "bfl-flux-2-pro-v1",
+    );
+    assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.acceptsReferenceObjects, false);
+    assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.acceptsReferenceObjects, true);
+  }
+});
+
+test("reference-aware profile selection fails closed when deployment has no capable image profile", () => {
+  const assetGenerator = resolveServiceDeployment(local, "asset-generator");
+  const incapable = {
+    ...assetGenerator,
+    integrations: Object.freeze({
+      "openai-gpt-image-2-medium-v1": assetGenerator.integrations["openai-gpt-image-2-medium-v1"],
+      contentCredentials: assetGenerator.integrations.contentCredentials,
+    }),
+  };
+  assert.throws(
+    () => selectImageProviderProfile(incapable, { requiresReferenceObjects: true }),
+    /no image profile capable of reference objects/,
+  );
 });
 
 test("deployment composition constructs selected content credential client", () => {
