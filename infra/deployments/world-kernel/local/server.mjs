@@ -17,6 +17,9 @@ import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/auto
 import { openSituatedLifeStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
+import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
+import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
+import { attachGenesisBirthPublicationHttpServer } from "#services/world-kernel/src/genesis-birth-http-server.mjs";
 import { openObligationApplicabilityStore } from "#services/world-kernel/src/obligation-applicability-store.mjs";
 import { openStructuredAuthorityWithdrawalStore } from "#services/world-kernel/src/structured-authority-withdrawal-store.mjs";
 import { openStructuredObligationInspectionStore } from "#services/world-kernel/src/structured-obligation-inspection-store.mjs";
@@ -111,6 +114,7 @@ export async function startWorldKernelFromEnvironment(
   let situatedLifeStore;
   let embodimentStore;
   let symbolicGenomeStore;
+  let genesisStore;
   let applicabilityStore;
   let authorityWithdrawalStore;
   let inspectionStore;
@@ -127,6 +131,7 @@ export async function startWorldKernelFromEnvironment(
     situatedLifeStore = openSituatedLifeStore(databasePath);
     embodimentStore = openEmbodimentStore(databasePath);
     symbolicGenomeStore = new SymbolicGenomeStore(databasePath);
+    genesisStore = new GenesisStore(databasePath);
     applicabilityStore = openObligationApplicabilityStore(databasePath);
     authorityWithdrawalStore = openStructuredAuthorityWithdrawalStore(databasePath);
     inspectionStore = openStructuredObligationInspectionStore(databasePath);
@@ -134,6 +139,7 @@ export async function startWorldKernelFromEnvironment(
     inspectionStore?.close();
     authorityWithdrawalStore?.close();
     applicabilityStore?.close();
+    genesisStore?.close();
     symbolicGenomeStore?.close();
     embodimentStore?.close();
     situatedLifeStore?.close();
@@ -178,23 +184,31 @@ export async function startWorldKernelFromEnvironment(
       authorityWithdrawalStore,
     },
   );
+  const birthPublisher = createGenesisBirthPublicationService({ authority: genesisStore });
+  const onRequestError = (error, context) => {
+    process.stderr.write(`${JSON.stringify({
+      level: "error",
+      event: "world-kernel-request-failed",
+      requestId: context.requestId,
+      method: context.method,
+      url: context.url,
+      errorName: error?.constructor?.name ?? "Error",
+      errorCode: error?.code ?? null,
+      message: error?.message ?? "Unknown error",
+    })}\n`);
+  };
   const server = createStructuredObligationInspectionHttpServer({
     service,
     inspectionStore,
     adminToken,
     privateToken,
-    onError(error, context) {
-      process.stderr.write(`${JSON.stringify({
-        level: "error",
-        event: "world-kernel-request-failed",
-        requestId: context.requestId,
-        method: context.method,
-        url: context.url,
-        errorName: error?.constructor?.name ?? "Error",
-        errorCode: error?.code ?? null,
-        message: error?.message ?? "Unknown error",
-      })}\n`);
-    },
+    onError: onRequestError,
+  });
+  attachGenesisBirthPublicationHttpServer({
+    server,
+    birthPublisher,
+    privateToken,
+    onError: onRequestError,
   });
   const operationalService = attachOperationalService(server, service, {
     repairEnabled: adminToken !== null,
@@ -212,6 +226,7 @@ export async function startWorldKernelFromEnvironment(
         inspectionStore.close();
         authorityWithdrawalStore.close();
         applicabilityStore.close();
+        genesisStore.close();
         symbolicGenomeStore.close();
         embodimentStore.close();
         situatedLifeStore.close();
@@ -243,6 +258,8 @@ export async function startWorldKernelFromEnvironment(
       situatedLifeStore,
       embodimentStore,
       symbolicGenomeStore,
+      genesisStore,
+      birthPublisher,
       applicabilityStore,
       authorityWithdrawalStore,
       inspectionStore,
@@ -251,6 +268,7 @@ export async function startWorldKernelFromEnvironment(
       databasePath,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
+      genesisBirthPublicationEnabled: true,
       causalParticipationEnabled: true,
       identityContextConsumptionEnabled: true,
       structuredObligationAuthorityEnabled: true,
@@ -265,6 +283,7 @@ export async function startWorldKernelFromEnvironment(
     inspectionStore.close();
     authorityWithdrawalStore.close();
     applicabilityStore.close();
+    genesisStore.close();
     symbolicGenomeStore.close();
     embodimentStore.close();
     situatedLifeStore.close();
@@ -291,6 +310,7 @@ async function main() {
     databasePath: runtime.databasePath,
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
+    genesisBirthPublicationEnabled: runtime.genesisBirthPublicationEnabled,
     causalParticipationEnabled: true,
     identityContextConsumptionEnabled: true,
     structuredObligationAuthorityEnabled: true,
