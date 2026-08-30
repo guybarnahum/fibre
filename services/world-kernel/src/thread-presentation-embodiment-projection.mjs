@@ -8,12 +8,10 @@ import {
  * Convert one committed canonical portrait Embodiment record into the bounded
  * authority projection Thread Presentation is allowed to consume.
  *
- * This function does not decide layout, identity-card policy, media demand, or
- * public presentation structure. It only carries authoritative appearance
- * semantics across the World Kernel -> Thread Presentation boundary.
- *
- * Non-public, non-portrait, and unavailable embodiments intentionally produce
- * no public visual-identity authority projection.
+ * The textual embodiment specification defines the person, but does not by
+ * itself establish a usable visual reference. Public visual identity appears
+ * only after the canonical reference image has been generated, verified, and
+ * bound back to the Embodiment as an immutable Asset Generator object ref.
  */
 export function projectPublicEmbodimentVisualIdentity(
   embodimentCandidate,
@@ -23,7 +21,8 @@ export function projectPublicEmbodimentVisualIdentity(
   if (
     embodiment.kind !== "portrait"
     || embodiment.visibility !== "public"
-    || embodiment.status === "unavailable_with_reason"
+    || embodiment.status !== "available"
+    || embodiment.asset?.referenceObjectRef === null
   ) {
     return null;
   }
@@ -38,10 +37,7 @@ export function projectPublicEmbodimentVisualIdentity(
     renderDescription: embodiment.specification.description,
     sourceReferences: [embodiment.embodimentId, ...embodiment.sourceReferences],
     permissionReferences: embodiment.permissionReferences,
-    // Embodiment asset locators are World-owned opaque cache:// / asset://
-    // references, not Thread Presentation object-store references. Do not leak
-    // or reinterpret them as presentation object refs here.
-    referenceObjectRefs: [],
+    referenceObjectRefs: [embodiment.asset.referenceObjectRef],
     provenanceRef,
   });
 }
