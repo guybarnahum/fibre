@@ -119,6 +119,18 @@ function d1Changes(result) {
   return Number.isSafeInteger(changes) ? changes : 0;
 }
 
+function normalizeCatalogListOptions({ prefix = "", after = null, limit = 100 } = {}) {
+  if (typeof prefix !== "string") throw new TypeError("catalog list prefix must be a string");
+  if (after !== null) assertInfraId("catalog list after", after);
+  assertInfraFiniteNumber("catalog list limit", limit, { integer: true, minimum: 1 });
+  if (limit > 1000) throw new TypeError("catalog list limit must be <= 1000");
+  return { prefix, after, limit };
+}
+
+function likePrefix(prefix) {
+  return `${prefix.replace(/[\\%_]/g, (value) => `\\${value}`)}%`;
+}
+
 export function createCloudflareCatalogPort(databaseBinding) {
   const database = assertD1Database(databaseBinding);
   return Object.freeze({
@@ -146,6 +158,26 @@ export function createCloudflareCatalogPort(databaseBinding) {
       assertInfraId("catalog key", key);
       const result = await database.prepare("DELETE FROM fibre_catalog WHERE catalog_key = ?").bind(key).run();
       return d1Changes(result) > 0;
+    },
+    async list(options = {}) {
+      const { prefix, after, limit } = normalizeCatalogListOptions(options);
+      const result = await database.prepare(`
+        SELECT catalog_key, value_json
+        FROM fibre_catalog
+        WHERE catalog_key LIKE ? ESCAPE '\\'
+          AND catalog_key > ?
+        ORDER BY catalog_key ASC
+        LIMIT ?
+      `).bind(likePrefix(prefix), after ?? "", limit + 1).all();
+      const rows = Array.isArray(result?.results) ? result.results : [];
+      const selected = rows.slice(0, limit);
+      return {
+        entries: selected.map((row, index) => ({
+          key: row.catalog_key,
+          value: parseJson(`catalog list[${index}].value_json`, row.value_json),
+        })),
+        nextCursor: rows.length > limit ? selected.at(-1).catalog_key : null,
+      };
     },
   });
 }
