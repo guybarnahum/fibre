@@ -184,7 +184,9 @@ function normalizeService(id, value, { runtimes, infra, integrations }) {
   allowedKeys(`deployment service ${id}`, value, ["runtime", "infra", "integrations"]);
   const runtime = nonEmpty(`deployment service ${id}.runtime`, value.runtime);
   if (!runtimes[runtime]) throw new TypeError(`deployment service ${id}.runtime references unknown runtime ${runtime}`);
-  const infraId = value.infra === undefined ? null : nonEmpty(`deployment service ${id}.infra`, value.infra);
+  const infraId = value.infra === undefined || value.infra === null
+    ? null
+    : nonEmpty(`deployment service ${id}.infra`, value.infra);
   if (infraId !== null && !infra[infraId]) throw new TypeError(`deployment service ${id}.infra references unknown infra ${infraId}`);
   const selectedIntegrations = stringMap(`deployment service ${id}.integrations`, value.integrations);
   for (const [port, integrationId] of Object.entries(selectedIntegrations)) {
@@ -227,9 +229,13 @@ export function parseDeploymentManifest(text) {
 }
 
 export function resolveServiceDeployment(manifestValue, serviceId) {
-  const manifest = normalizeDeploymentManifest(manifestValue);
+  const manifest = manifestValue;
+  plain("deployment manifest", manifest);
+  if (manifest.schema !== FIBRE_DEPLOYMENT_SCHEMA) {
+    throw new TypeError(`unsupported deployment schema ${String(manifest.schema)}`);
+  }
   const id = nonEmpty("serviceId", serviceId);
-  const service = manifest.services[id];
+  const service = manifest.services?.[id];
   if (!service) throw new TypeError(`deployment manifest has no service ${id}`);
   return Object.freeze({
     serviceId: id,
