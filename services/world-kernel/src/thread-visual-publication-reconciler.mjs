@@ -69,12 +69,24 @@ function normalizePresentationResult(result) {
   return result;
 }
 
+function normalizeMaterializationResult(result) {
+  if (!result || typeof result !== "object") {
+    throw new TypeError("canonical Embodiment materializer must return a result object");
+  }
+  if (result.state === "pending") return result;
+  if (result.state !== "ready" || !result.embodiment) {
+    throw new TypeError("canonical Embodiment materializer state must be pending or ready with an Embodiment");
+  }
+  return { ...result, embodiment: normalizeEmbodimentRepresentation(result.embodiment) };
+}
+
 /**
  * World-owned convergent process for one Thread's canonical visual publication.
  *
  * This process owns no second durable workflow state. Recovery is derived from
- * authoritative Embodiment state plus the durable downstream handoff state.
- * Re-running after a crash therefore resumes from the first incomplete seam.
+ * authoritative Genesis/Embodiment state plus the durable downstream handoff
+ * state. Re-running after a crash therefore resumes from the first incomplete
+ * seam.
  *
  * Authority split:
  * - World owns the canonical Embodiment and admission of the generated root.
@@ -84,6 +96,7 @@ function normalizePresentationResult(result) {
  */
 export function createThreadVisualPublicationReconciler({
   embodimentStore,
+  canonicalEmbodimentMaterializer = null,
   canonicalRootBoundary,
   presentationBoundary,
   now = () => new Date().toISOString(),
@@ -93,6 +106,9 @@ export function createThreadVisualPublicationReconciler({
     || typeof embodimentStore.record !== "function") {
     throw new TypeError("Thread visual publication reconciler requires writable Embodiment authority");
   }
+  if (canonicalEmbodimentMaterializer !== null) {
+    requireBoundary("canonicalEmbodimentMaterializer", canonicalEmbodimentMaterializer, "materialize");
+  }
   requireBoundary("canonicalRootBoundary", canonicalRootBoundary, "reconcile");
   requireBoundary("presentationBoundary", presentationBoundary, "reconcileAvailableEmbodiment");
   if (typeof now !== "function") throw new TypeError("Thread visual publication reconciler now must be a function");
@@ -101,6 +117,15 @@ export function createThreadVisualPublicationReconciler({
     async reconcileThread({ threadId } = {}) {
       assertId("threadId", threadId);
       let embodiment = currentCanonicalPortrait(embodimentStore, threadId);
+      if (embodiment === null && canonicalEmbodimentMaterializer !== null) {
+        const materialized = normalizeMaterializationResult(
+          await canonicalEmbodimentMaterializer.materialize({ threadId }),
+        );
+        if (materialized.state === "pending") {
+          return pending(materialized.reason ?? "awaiting_canonical_embodiment", { threadId });
+        }
+        embodiment = materialized.embodiment;
+      }
       if (embodiment === null) {
         return pending("awaiting_canonical_embodiment", { threadId });
       }
