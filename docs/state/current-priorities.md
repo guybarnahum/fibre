@@ -28,8 +28,8 @@ B. authoritative newborn public identity context         CLOSED / GREEN
 C. canonical visual identity root                        CLOSED / GREEN
 D. Embodiment -> public visual identity rewrite          CLOSED / GREEN
 E. reference+age-conditioned official/memory imagery     CLOSED / GREEN
-F. Asset Generator + C2PA completion/publication         CURRENT
-G. insidefibre.com Viewer closure                        AFTER F
+F. Asset Generator + C2PA completion/publication         CLOSED / GREEN
+G. insidefibre.com Viewer closure                        CURRENT
 H. one-birth full-stack E2E + recovery proof             FINAL VERTICAL GATE
 ```
 
@@ -136,7 +136,7 @@ historical/life scene   birthDate -> scene time        -> targetAge
 
 The generator must preserve the same identity while naturally age-transforming from the canonical anchor. Ordinary aging, hairstyle, clothing, weight, expression or styling never replaces the root.
 
-### Priority 1D — public projection and reference-conditioned demand — Slices D/E CLOSED
+### Priority 1D — public projection, reference-conditioned demand and credentialed completion — Slices D–F CLOSED
 
 After Embodiment admission:
 
@@ -163,9 +163,18 @@ Slice E closed the downstream demand semantics. Permanent tests prove that:
 - place/environment imagery remains reference-free;
 - pre-Embodiment self-memory remains deferred, while the generic live smoke continues to exercise a real reference-free place target.
 
-Slice E therefore proves what Fibre asks the generator to do, not that the current provider can already execute a person-image request. The current OpenAI image adapter rejects reference objects rather than silently discarding them. Slice F is current and owns the production-shaped reference-capable execution path, credential/provenance completion and Thread Presentation publication convergence.
+Slice F closed the production-shaped reference-capable execution and publication path. Permanent deployment/convergence tests now prove that:
 
-If a person-depicting job requires a canonical reference and the selected provider cannot consume reference objects, the job must defer/select another explicitly configured profile. Fibre may not silently drop the reference and regress to text-only likeness generation.
+- deployment composition chooses an image profile by declared reference-object capability rather than World/domain provider knowledge;
+- reference-bearing person-image demand selects the configured BFL FLUX 2 Pro profile, while reference-free presentation imagery can remain on the default OpenAI profile;
+- the BFL adapter actually consumes the canonical root as `input_image` rather than dropping it;
+- the durable provider-request witness preserves the canonical reference object identity, digest, media type and role without copying reference image bytes into provenance;
+- generated output is credentialed through the configured C2PA signer and subsequently verified under the production trust-list policy before completion is admitted;
+- accepted completion publishes exactly one `media.ready` event and public catalog record for the official identity photo;
+- duplicate completion replay is idempotent and does not produce a second public-media admission;
+- the C2PA authorization token remains transport-only in the HTTP Authorization header and is absent from signer bodies and persisted generation/receipt/proof/catalog/presentation surfaces.
+
+If a person-depicting job requires a canonical reference and the selected provider cannot consume reference objects, deployment selection fails closed or selects another explicitly configured capable profile. Fibre may not silently drop the reference and regress to text-only likeness generation.
 
 ### Priority 1E — vertical stop condition
 
@@ -181,7 +190,7 @@ This visual/deployment substream stops displacing broader #40 work once permanen
 8. Viewer renders the result through public APIs only;
 9. retry/recovery does not create a second root or second identity.
 
-Items 1–6 are now closed by Slices C–E. Slice F starts at item 7; G and H finish the remaining vertical gates. After this stop condition, unrelated media/provider polish returns to backlog and #40 causal identity/history consumption remains the milestone-critical proof.
+Items 1–7 are now closed by Slices C–F. Slice G owns item 8 and Slice H owns the final recovery/one-birth gate. After this stop condition, unrelated media/provider polish returns to backlog and #40 causal identity/history consumption remains the milestone-critical proof.
 
 ## Priority 2 — endogenous selection and privacy
 
