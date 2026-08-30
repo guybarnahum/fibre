@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
+import {
+  createLocalReasoningAdapter,
+  localReasoningSelection,
+} from "../../../infra/deployments/local-reasoning.mjs";
 import { SEMANTIC_GUARDIAN_V4_DEVELOPMENT_SET as SET } from "../experiments/semantic-guardian-v4/development-set.mjs";
 import {
   blockedV4DevelopmentReport,
@@ -11,11 +14,10 @@ import {
   runSemanticGuardianV4DevelopmentProof,
 } from "./semantic-guardian-v4-dev-proof.mjs";
 
-const REASONING_BLOCK = "dignity_guardian";
 const EXPECTED_CASES = buildSemanticGuardianV4DevelopmentCases().length;
 
 function usage() {
-  return `Fibre Semantic Guardian development runner\n\nUsage:\n  npm run guardian:dev\n  npm run guardian:dev -- --model gpt-5.6-luna\n  npm run guardian:dev -- --summary --json\n\nOptions:\n  --model <id> Override the YAML-selected model for this non-evidentiary run.\n  --summary    Print a deterministic human-readable development summary.\n  --json       Print the complete non-evidentiary development report.\n  --fail-fast  Stop after the first provider, protocol, cognition, or behavioral failure.\n  --help       Show this help.\n\nProvider is selected by config/models.yaml for the dignity_guardian reasoning block.\n--model overrides only the model id; credentials still come only from environment variables / local .env.\nCLI overrides take precedence over YAML selection for this run only and never modify config/models.yaml.\nThis runner is repeatable, non-evidentiary, and never permits Fibre score movement.\n`;
+  return `Fibre Semantic Guardian development runner\n\nUsage:\n  npm run guardian:dev\n  npm run guardian:dev -- --model gpt-5.6-luna\n  npm run guardian:dev -- --summary --json\n\nOptions:\n  --model <id> Override the deployment-selected model for this non-evidentiary run.\n  --summary    Print a deterministic human-readable development summary.\n  --json       Print the complete non-evidentiary development report.\n  --fail-fast  Stop after the first provider, protocol, cognition, or behavioral failure.\n  --help       Show this help.\n\nProvider and baseline model are selected by infra/deployments/environments/local.yaml.\n--model overrides only the model id; credentials still come only from environment variables / local .env.\nCLI overrides apply to this run only and never modify the deployment manifest.\nThis runner is repeatable, non-evidentiary, and never permits Fibre score movement.\n`;
 }
 
 function readModelArg(argv, index) {
@@ -274,11 +276,9 @@ export async function runDevelopmentGuardian(environment = process.env, options 
   };
   const observer = (event) => appendFileSync(journalPath, `${JSON.stringify(event)}\n`, "utf8");
 
-  const modelOverrides = options.model === null || options.model === undefined
-    ? null
-    : { [REASONING_BLOCK]: options.model };
-  const runtime = options.modelRuntime ?? createModelRuntime({ environment, observer, modelOverrides });
-  const selection = runtime.selectionForBlock(REASONING_BLOCK);
+  const selection = options.modelAdapter
+    ? Object.freeze({ provider: options.modelAdapter.provider, modelId: options.modelAdapter.modelId })
+    : localReasoningSelection({ model: options.model });
   const progress = startProgress(journalPath, selection);
   let interruptHandled = false;
   const onSigint = () => {
@@ -295,7 +295,11 @@ export async function runDevelopmentGuardian(environment = process.env, options 
   try {
     let report;
     try {
-      const modelAdapter = options.modelAdapter ?? runtime.forBlock(REASONING_BLOCK);
+      const modelAdapter = options.modelAdapter ?? createLocalReasoningAdapter({
+        environment,
+        model: options.model,
+        observer,
+      });
       report = await runSemanticGuardianV4DevelopmentProof(environment, {
         failFast: options.failFast ?? false,
         modelAdapter,
