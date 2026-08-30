@@ -1,0 +1,126 @@
+import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+
+import { createNodeServiceHandler } from "#infra/providers/local/service";
+import { createService } from "#infra/service";
+import {
+  BIRTH_CENTER_RUNTIME_VERSION,
+  createBirthCenterRuntime,
+} from "#services/birth-center/src/runtime.mjs";
+import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
+
+const LOCAL_MANIFEST = parseDeploymentManifest(
+  readFileSync(new URL("../../environments/local.yaml", import.meta.url), "utf8"),
+);
+const DEPLOYMENT = resolveServiceDeployment(LOCAL_MANIFEST, "birth-center");
+if (DEPLOYMENT.runtime.provider !== "local-node") {
+  throw new TypeError(`birth-center local host requires local-node runtime, got ${DEPLOYMENT.runtime.provider}`);
+}
+
+const LOOPBACK_BIND_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
+
+function assertLoopbackBindHost(host) {
+  if (typeof host !== "string" || !LOOPBACK_BIND_HOSTS.has(host)) {
+    throw new TypeError("The Birth Center server may bind only to a loopback host");
+  }
+}
+
+function parsePort(value) {
+  const port = Number(value);
+  if (!Number.isSafeInteger(port) || port < 0 || port > 65535) {
+    throw new TypeError("FIBRE_BIRTH_CENTER_PORT must be an integer from 0 through 65535");
+  }
+  return port;
+}
+
+export async function startBirthCenterFromEnvironment(
+  environment = process.env,
+  { worldPublisher = null } = {},
+) {
+  const host = environment.FIBRE_BIRTH_CENTER_HOST ?? "127.0.0.1";
+  const port = parsePort(environment.FIBRE_BIRTH_CENTER_PORT ?? "8790");
+  const stateRoot = resolve(environment.FIBRE_BIRTH_CENTER_STATE ?? ".fibre/birth-center");
+  assertLoopbackBindHost(host);
+
+  const runtime = createBirthCenterRuntime({ stateRoot, worldPublisher });
+  const status = () => ({
+    service: "fibre-birth-center",
+    ...runtime.status(),
+  });
+  const service = createService({
+    serviceName: "birth-center",
+    health: () => ({
+      runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
+      ...runtime.status(),
+    }),
+    routes: [
+      { method: "GET", path: "/health", handler: status },
+      { method: "GET", path: "/v1/status", handler: status },
+    ],
+  });
+  const server = createServer(createNodeServiceHandler({ service }));
+
+  await new Promise((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(port, host, () => {
+      server.off("error", rejectListen);
+      resolveListen();
+    });
+  });
+
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("Birth Center did not bind a TCP address");
+  let closed = false;
+  const close = async () => {
+    if (closed) return;
+    closed = true;
+    await new Promise((resolveClose, rejectClose) => {
+      server.close((error) => error ? rejectClose(error) : resolveClose());
+    });
+  };
+
+  return Object.freeze({
+    runtime,
+    service,
+    server,
+    address: Object.freeze({ host: address.address, port: address.port }),
+    close,
+  });
+}
+
+async function main() {
+  const service = await startBirthCenterFromEnvironment();
+  process.stdout.write(`${JSON.stringify({
+    event: "birth-center-listening",
+    runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
+    host: service.address.host,
+    port: service.address.port,
+    stateRoot: service.runtime.stateRoot,
+    authoritativeThreadStateOwned: false,
+  })}\n`);
+
+  const shutdown = async (signal) => {
+    try {
+      await service.close();
+      process.stdout.write(`${JSON.stringify({ event: "birth-center-stopped", signal })}\n`);
+    } catch (error) {
+      process.stderr.write(`${JSON.stringify({ event: "birth-center-stop-failed", signal, message: error.message })}\n`);
+      process.exitCode = 1;
+    }
+  };
+  process.once("SIGINT", () => void shutdown("SIGINT"));
+  process.once("SIGTERM", () => void shutdown("SIGTERM"));
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    process.stderr.write(`${JSON.stringify({
+      event: "birth-center-start-failed",
+      errorName: error?.constructor?.name ?? "Error",
+      message: error?.message ?? String(error),
+    })}\n`);
+    process.exitCode = 1;
+  });
+}
