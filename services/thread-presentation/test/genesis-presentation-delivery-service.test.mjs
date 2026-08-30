@@ -18,7 +18,10 @@ function fixture() {
   }]]);
   const outbox = {
     listPending({ limit = 100 } = {}) {
-      return [...entries.values()].filter((entry) => entry.state === "pending").slice(0, limit).map(structuredClone);
+      return [...entries.values()]
+        .filter((entry) => entry.state === "pending")
+        .slice(0, limit)
+        .map((entry) => structuredClone(entry));
     },
     get(genesisId) {
       const entry = entries.get(genesisId);
