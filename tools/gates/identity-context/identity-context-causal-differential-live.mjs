@@ -9,10 +9,10 @@ import {
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { selectReasoningIntegration } from "../../../infra/deployments/integration-selection.mjs";
 import {
   semanticDignityGuardianV4,
 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
 import {
   canonicalJson,
   sha256,
@@ -24,6 +24,7 @@ import {
   evaluateIdentityContextCausalDifferentialPair,
 } from "./identity-context-causal-differential.mjs";
 import {
+  frozenLiveModelIntegration,
   verifyFrozenIdentityContextCausalDifferential,
 } from "./identity-context-causal-differential-freeze-check.mjs";
 import {
@@ -335,10 +336,11 @@ export async function runFrozenIdentityContextCausalDifferentialLive({
 } = {}) {
   if (databasePath === undefined) throw new TypeError("Slice D live runner requires databasePath");
   const plan = buildFrozenIdentityContextLivePlan(databasePath, { environment });
-  const runtime = createModelRuntime({ environment });
-  const selection = runtime.selectionForBlock(FROZEN.liveModel.reasoningBlock);
-  assert.deepEqual(selection, plan.verification.selection);
-  const adapter = runtime.forBlock(FROZEN.liveModel.reasoningBlock);
+  const adapter = selectReasoningIntegration(frozenLiveModelIntegration(), { environment });
+  assert.deepEqual(
+    { provider: adapter.provider, modelId: adapter.modelId },
+    plan.verification.selection,
+  );
   return executeIdentityContextLivePlan({
     plan,
     statePath,
