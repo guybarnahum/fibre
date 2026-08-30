@@ -28,12 +28,28 @@ function fixture() {
         name: "Mina Park",
         originOrientation: "original",
         selfDescription: "I am a careful infrastructure reviewer who values family continuity, precise commitments, and practical help.",
+        birthDate: "2004-02-17",
+        languages: ["English", "Korean"],
         birthCity: "Los Angeles, California",
         currentWorkCity: "Seattle, Washington",
-        culture: ["Korean-American upbringing"],
+        culture: ["Korean-American upbringing", "West Coast engineering culture"],
         portraitRef: "fixture://portraits/mina",
         voiceRef: "fixture://voices/mina",
       },
+      genome: {
+        textualTraits: {
+          persistence: "She makes several materially different attempts before escalating.",
+        },
+        runtimeBaselines: { temperature: 0.35 },
+      },
+      currentState: {
+        needs: ["Build a stronger record in application security"],
+        feelings: ["quiet confidence"],
+        selfModel: "I am reliable in systems work.",
+        unresolvedIntentions: ["Read a case study on identity-system failures"],
+      },
+      relationshipRefs: ["rel_private_001"],
+      memoryRefs: ["mem_private_001"],
     },
     manifest: {
       genesisId: "gen_newborn_projection_001",
@@ -58,7 +74,20 @@ test("newborn projector creates a canonical non-fixture public bundle from autho
   assert.equal(bundle.presentation.manifest.lifecycleStatus, "frozen");
   assert.equal(bundle.presentation.manifest.fixture, false);
   assert.equal(bundle.presentation.subject.displayName, "Mina Park");
+  assert.equal(bundle.presentation.subject.birthDate, "2004-02-17");
+  assert.deepEqual(bundle.presentation.subject.languages, ["English", "Korean"]);
   assert.equal(bundle.presentation.introduction.summary, input.thread.identity.selfDescription);
+  assert.deepEqual(
+    bundle.presentation.origins.map(({ title, summary }) => ({ title, summary })),
+    [
+      { title: "Cultural context", summary: "Korean-American upbringing" },
+      { title: "Cultural context", summary: "West Coast engineering culture" },
+    ],
+  );
+  assert.deepEqual(
+    bundle.presentation.places.map(({ displayName }) => displayName),
+    ["Los Angeles, California", "Seattle, Washington"],
+  );
   assert.equal(
     bundle.presentation.civilIdentity.fibreIdentityNumber,
     input.civilRegistration.fibreIdentityNumber,
@@ -67,6 +96,20 @@ test("newborn projector creates a canonical non-fixture public bundle from autho
   assert.equal(bundle.presentation.visualIdentity, null);
   assert.equal(bundle.presentation.identityCard, null);
   assert.deepEqual(bundle.media.assets, []);
+});
+
+test("newborn projector does not leak private Thread state or opaque semantic references", () => {
+  const bundle = projectNewbornThreadPresentation(fixture());
+  const serialized = JSON.stringify(bundle);
+
+  assert.equal(bundle.presentation.relationships.length, 0);
+  assert.equal(bundle.presentation.memories.length, 0);
+  assert.equal(bundle.presentation.meanings.length, 0);
+  assert.equal(bundle.presentation.life.timeline.length, 0);
+  assert.equal(serialized.includes("rel_private_001"), false);
+  assert.equal(serialized.includes("mem_private_001"), false);
+  assert.equal(serialized.includes("application security"), false);
+  assert.equal(serialized.includes("materially different attempts"), false);
 });
 
 test("newborn projector is deterministic and does not turn portrait references into visual identity authority", () => {
@@ -79,6 +122,7 @@ test("newborn projector is deterministic and does not turn portrait references i
   assert.equal(first.presentation.identityCard, null);
   assert.equal(first.media.assets.length, 0);
   assert.equal(JSON.stringify(first).includes("fixture://portraits/mina"), false);
+  assert.equal(JSON.stringify(first).includes("fixture://voices/mina"), false);
 });
 
 test("newborn projector rejects cross-Thread civil identity instead of publishing mixed authority", () => {
