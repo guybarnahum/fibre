@@ -289,18 +289,29 @@ test("multi-event self memory keeps the canonical identity anchor but omits an u
   assert.match(memory.brief.description, /without asserting an unsupported exact scene age/);
 });
 
-test("an official-photo-shaped slot without a Fibre Identity Card is not generation authority", async () => {
-  const bundle = await visualIdentityBundle();
-  bundle.media.assets = bundle.media.assets.map((asset) =>
-    asset.mediaId === "media_portrait_primary" ? { ...asset, role: "official_id_photo" } : asset);
+test("an extra official-photo slot is not generation authority when the Fibre Identity Card does not bind it", async () => {
+  const current = await fixture();
+  await current.rewrite.ensureOfficialIdentityMedia({
+    channelId: CHANNEL_ID,
+    issuedAt: "2026-08-30T05:40:00Z",
+  });
+  const admitted = await current.server.getSnapshot(CHANNEL_ID);
+  const bundle = structuredClone(asBundle(admitted.snapshot));
+  const bound = bundle.media.assets.find((asset) =>
+    asset.mediaId === bundle.presentation.identityCard.officialPhotoMediaRef);
+  bundle.media.assets.push({
+    ...bound,
+    mediaId: "media_official_id_photo_unbound",
+  });
+
   const plan = planThreadPresentationAssetSlots({
     bundle,
     snapshotObjectRef: "snapshot_slice_e_unbound_official_photo",
     snapshotDigest: `sha256:${"e".repeat(64)}`,
   });
-  const official = plan.slots.find((slot) => slot.mediaId === "media_portrait_primary");
+  const unbound = plan.slots.find((slot) => slot.mediaId === "media_official_id_photo_unbound");
 
-  assert.equal(official.status, "deferred");
-  assert.equal(official.deferredReason, "deferred_missing_identity_card");
-  assert.deepEqual(official.referenceObjectRefs, []);
+  assert.equal(unbound.status, "deferred");
+  assert.equal(unbound.deferredReason, "deferred_missing_identity_card");
+  assert.deepEqual(unbound.referenceObjectRefs, []);
 });
