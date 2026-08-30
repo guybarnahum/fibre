@@ -440,7 +440,7 @@ test("one birth recovers through one canonical root and one public identity/phot
     assert.throws(() => planCanonicalVisualIdentityGeneration({
       embodiment: recoveredEmbodiments[0],
       requestedAt: "2026-08-30T18:40:10Z",
-    }), /pending portrait embodiment/);
+    }), /pending_generation embodiment without an asset/);
 
     const visualRewrite = createThreadPresentationEmbodimentRewriteService({
       presentationServer,
