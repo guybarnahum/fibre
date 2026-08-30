@@ -1,4 +1,16 @@
 import { assertInfraNonEmpty, assertInfraPlainObject } from "./internal.mjs";
+import {
+  FIBRE_BIRTH_STATE_REQUIREMENTS,
+  FIBRE_WORLD_STATE_REQUIREMENTS,
+  assertTransactionalStatePort,
+  requireTransactionalStateGuarantees,
+} from "./transactional-state.mjs";
+
+export {
+  FIBRE_BIRTH_STATE_REQUIREMENTS,
+  FIBRE_WORLD_STATE_REQUIREMENTS,
+  requireTransactionalStateGuarantees,
+};
 
 export const INFRA_DRIVER_VERSION = "infra-driver-v0.1";
 
@@ -50,6 +62,7 @@ export function assertInfraDriver(driver, { required = [] } = {}) {
     if (!CAPABILITY_SET.has(capability)) throw new TypeError(`unknown required infra capability ${capability}`);
     if (!declared.has(capability)) throw new TypeError(`infra driver lacks required capability ${capability}`);
   }
+  if (declared.has("state")) assertTransactionalStatePort(driver.state);
   for (const [capability, methods] of Object.entries(REQUIRED_METHODS)) {
     if (!declared.has(capability)) continue;
     assertInfraPlainObject(`infra driver.${capability}`, driver[capability]);

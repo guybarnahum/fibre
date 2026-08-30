@@ -1,5 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
-
 import {
   IntegrityError,
   ThreadAlreadyExistsError,
@@ -16,7 +14,6 @@ import {
 } from "./persistence-domain.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
   safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
@@ -61,6 +58,7 @@ import {
   assertGenesisHistoricalEnvelopePublication,
   normalizeGenesisHistoricalEnvelopePlan,
 } from "./genesis-historical-envelope-authority.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -334,17 +332,14 @@ export class GenesisStore {
   #database;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
+    this.#database = openWorldStateDatabase(storage, {
       readOnly,
-      enableForeignKeyConstraints: true,
+      storeName: "GenesisStore",
     });
     try {
-      if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+      if (!readOnly) {
         migrateDatabase(this.#database);
         this.#database.exec("BEGIN IMMEDIATE");
         createGenesisTables(this.#database);
@@ -360,7 +355,7 @@ export class GenesisStore {
   close() { this.#database.close(); }
 
   queryOnly() {
-    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
+    return this.#readOnly;
   }
 
   recordWorldSpec(candidate) {
@@ -540,6 +535,7 @@ export class GenesisStore {
       failAfterFirstMemoryForTest = false,
       failAfterLineageForTest = false,
       failAfterSituatedContinuityForTest = false,
+      failAfterManifestForTest = false,
     } = {},
   ) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot publish birth");
@@ -784,6 +780,9 @@ export class GenesisStore {
         historicalEnvelopeRecordDigest = this.#insertHistoricalEnvelopePlan(manifest, historicalEnvelopePlan);
       }
       const manifestDigest = this.#insertManifest(manifest);
+      if (failAfterManifestForTest) {
+        throw new GenesisConflictError("simulated post-manifest publication failure");
+      }
       this.#database.exec("COMMIT");
       return {
         thread: structuredClone(publishedThread),

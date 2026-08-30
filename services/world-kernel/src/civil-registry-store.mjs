@@ -1,5 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
-
 import {
   normalizeFibreCivilRegistration,
   normalizeFibreIdentityNumber,
@@ -8,7 +6,7 @@ import {
   IntegrityError,
   canonicalJson,
 } from "./persistence-common.mjs";
-import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 function tableExists(database) {
   return database.prepare(
@@ -114,12 +112,11 @@ export function persistCivilRegistrationInTransaction(database, candidate, {
 export class CivilRegistryStore {
   #database;
 
-  constructor(databasePath) {
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, {
       readOnly: true,
-      enableForeignKeyConstraints: true,
+      storeName: "CivilRegistryStore",
     });
-    this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
   }
 
   close() { this.#database.close(); }
