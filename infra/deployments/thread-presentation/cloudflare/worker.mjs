@@ -17,7 +17,10 @@ import { createThreadPresentationAssetPublisher } from "#services/world-kernel/s
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
-import { selectContentCredentialIntegration } from "../../integration-selection.mjs";
+import {
+  selectContentCredentialIntegration,
+  selectImageProviderProfile,
+} from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 
 export { FibrePresentationChannelDurableObject };
@@ -28,17 +31,24 @@ const HTTP_SERVICE = createService({
 });
 const P3_CAN_THO_THREAD_ID = "thr_pr39_g2_04";
 const P3_MARKET_MEDIA_ID = "media_place_market";
-const P3_PROVIDER_PROFILE = "openai-gpt-image-2-medium-v1";
 const DEPLOYMENTS = Object.freeze({
   local: parseDeploymentManifest(localDeploymentYaml),
   cloudflare: parseDeploymentManifest(cloudflareDeploymentYaml),
 });
 
-function serviceDeployment(env) {
+function deploymentManifest(env) {
   const environment = env?.FIBRE_DEPLOYMENT_ENV;
   const manifest = DEPLOYMENTS[environment];
   if (!manifest) throw new TypeError(`unsupported thread-presentation deployment environment ${String(environment)}`);
-  return resolveServiceDeployment(manifest, "thread-presentation");
+  return manifest;
+}
+
+function serviceDeployment(env) {
+  return resolveServiceDeployment(deploymentManifest(env), "thread-presentation");
+}
+
+function assetGeneratorDeployment(env) {
+  return resolveServiceDeployment(deploymentManifest(env), "asset-generator");
 }
 
 function createInfra(env, { includeWorkflows = true } = {}) {
@@ -161,15 +171,18 @@ async function publishP3Fixture({
   };
 }
 
-async function scheduleP3Media({ infra, presentationServer, threadId, mediaId }) {
+async function scheduleP3Media({ env, infra, presentationServer, threadId, mediaId }) {
   const slot = await p3Slot(presentationServer, { threadId, mediaId });
   const requestedAt = new Date().toISOString();
+  const providerProfile = selectImageProviderProfile(assetGeneratorDeployment(env), {
+    requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
+  });
   const demandService = createPresentationAssetDemandService({ infra });
   const reconciled = await demandService.reconcile({
     scope: { entityKind: "thread", entityRef: threadId },
     slots: [slot],
     requestedAt,
-    providerProfile: P3_PROVIDER_PROFILE,
+    providerProfile,
   });
   const current = reconciled.projection.demands.find((entry) => (
     entry.demand.current
@@ -184,6 +197,7 @@ async function scheduleP3Media({ infra, presentationServer, threadId, mediaId })
     fixture: true,
     threadId,
     mediaId,
+    providerProfile,
     demandId: current.demand.demandId,
     jobId: current.demand.job.jobId,
     objectRef: current.demand.job.outputObjectRef,
@@ -212,7 +226,7 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
     try {
       const threadId = nonEmpty("threadId", body.threadId);
       const mediaId = nonEmpty("mediaId", body.mediaId);
-      return Response.json(await scheduleP3Media({ infra, presentationServer, threadId, mediaId }));
+      return Response.json(await scheduleP3Media({ env, infra, presentationServer, threadId, mediaId }));
     } catch (error) {
       return Response.json({ error: "invalid_p3_generation_request", detail: error.message }, { status: 400 });
     }
@@ -237,7 +251,13 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
 
   if (url.pathname === "/__p3/fixtures/can-tho/generate-market" && request.method === "POST") {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
-    return Response.json(await scheduleP3Media({ infra, presentationServer, threadId: P3_CAN_THO_THREAD_ID, mediaId: P3_MARKET_MEDIA_ID }));
+    return Response.json(await scheduleP3Media({
+      env,
+      infra,
+      presentationServer,
+      threadId: P3_CAN_THO_THREAD_ID,
+      mediaId: P3_MARKET_MEDIA_ID,
+    }));
   }
 
   const statusMatch = /^\/__p3\/workflows\/([A-Za-z0-9._:-]+)$/.exec(url.pathname);
