@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-birth-presentation-data-flow
 status: accepted
-last-reviewed: 2026-08-29
+last-reviewed: 2026-08-30
 canonical: true
 ---
 
@@ -51,6 +51,40 @@ insidefibre.com
   public presentation consumer only
 ```
 
+## Current implemented birth publication boundary
+
+The minimum Genesis-to-public-presentation transport is executable and covered end to end.
+
+The local World Kernel deployment selects the concrete SQLite state provider at the deployment edge and binds the authoritative Genesis publication stores to one provider-neutral World state scope:
+
+```text
+local deployment composition
+  -> createSqliteStateInfraDriver(...)
+  -> { infraDriver, stateScopeId: "world" }
+       -> World store
+       -> GenesisStore
+       -> CivilRegistryStore
+       -> GenesisPresentationOutboxStore
+```
+
+The Genesis schema owns the presentation-outbox trigger. A successful published Genesis manifest therefore commits its presentation outbox row in the same authoritative database transaction as the birth publication. Presentation transport is not allowed to manufacture a missing birth or FIN after the fact.
+
+The durable post-commit path is:
+
+```text
+published Genesis transaction
+  -> pending genesis_presentation_outbox row
+  -> authoritative Thread + Civil Registration read
+  -> canonical newborn presentation projection
+  -> private Thread Presentation write API
+  -> persisted Thread Presentation snapshot/catalog
+  -> outbox marked delivered
+```
+
+Failure after the authoritative birth commit leaves the outbox pending/failed and retryable. Retrying converges on the same deterministic projection and the private Thread Presentation write boundary is idempotent for exact replay.
+
+This path is covered by an E2E test that performs only the authoritative `publishBirth(...)` operation and then observes the resulting Thread through the public Thread Presentation read/discovery APIs.
+
 ## End-to-end newborn flow
 
 ```text
@@ -66,15 +100,25 @@ World Kernel commits authoritative birth
         |
         +--> Thread exists in live Fibre state
         +--> civil registration is durable
+        +--> Genesis presentation outbox is durable in the same commit
+        +--> rich life authorities remain authoritative/private according to their own visibility
         +--> embodiment/visual identity becomes authoritative when available
         |
         v
-Thread Presentation derives authorized projection
+Post-commit presentation delivery
+        |
+        +--> reads authoritative Thread + FIN
+        +--> creates deterministic newborn public projection
+        +--> retries durably if Thread Presentation is unavailable
+        |
+        v
+Thread Presentation persists authorized projection
         |
         +--> public/private presentation manifest
         +--> civil identity projection
-        +--> authorized visual identity projection
-        +--> identity card projection
+        +--> explicit public Thread identity context
+        +--> authorized visual identity projection when available
+        +--> identity card projection when available
         +--> media slots
         |
         v
@@ -126,6 +170,48 @@ Public Thread Presentation API
 insidefibre.com
 ```
 
+## Newborn public semantic projection
+
+A Thread snapshot is not a biography document. Current Genesis intentionally starts from a bounded Thread seed while publishing prior-life episodes, autobiographical memories, situated relationships/places, lineage, and genome through their own authoritative records.
+
+Those authorities must not be flattened back into the Thread snapshot merely to make presentation convenient.
+
+The first public newborn projection currently permits only facts explicitly carried on the authoritative Thread identity plus the Civil Registration:
+
+```text
+Thread identity
+  name
+  selfDescription
+  birthDate?          -> subject when present
+  languages?          -> subject when present
+  birthCity?          -> public place when present
+  currentWorkCity?    -> public place when present
+  culture?            -> public origin/context claims when present
+
+Civil Registration
+  registrationId / FIN / birthEventRef / worldRef
+```
+
+The projector deliberately does **not** publish:
+
+```text
+genome.textualTraits
+runtime baselines
+current needs / feelings / self-model / intentions
+opaque relationshipRefs
+opaque memoryRefs
+legacy portraitRef / voiceRef
+private Genesis autobiographical memories
+private Genesis life relations
+private Genesis place episodes
+```
+
+Genesis currently creates its autobiographical-memory, situated-life relationship, and situated-life place records with private visibility. Their existence makes the Thread richly grounded; it does not make those records public. A later presentation-semantic slice may project them only through an explicit authorization/visibility rule and with provenance preserved.
+
+This is intentional separation of concerns:
+
+> **identity is authoritative; presentation is projection; publication is a permission decision.**
+
 ## Birth and Civil Registry ordering
 
 The Fibre Identity Number (FIN) is permanent civil identity. Birth Center prepares a registration for the admitted birth bundle; World Kernel persists the registration as part of the authoritative birth publication boundary.
@@ -143,6 +229,20 @@ For an `official_id_photo`, Thread Presentation may create an asset-generation b
 The official-photo job contains only the bounded authorized visual projection and provenance references required to generate the derived presentation image.
 
 Generated official photographs remain derived presentation media. They are not embodiment evidence and do not rewrite identity.
+
+The next media lifecycle stage after the newborn projection is therefore:
+
+```text
+canonical embodiment / visual identity
+  -> authorized visual-identity projection
+  -> identity-card / official-photo media demand
+  -> Asset Generation
+  -> signed immutable completion receipt
+  -> Thread Presentation acceptance
+  -> presentation rewrite with official media
+```
+
+Legacy portrait or voice references must never bootstrap canonical embodiment.
 
 ## Asset generation boundary
 
@@ -252,7 +352,7 @@ npm run dev
 
 The Cloudflare local presentation deployment allows `http://localhost:5173` as the viewer origin and points its local Content Credential integration at `http://127.0.0.1:8791`.
 
-The local services are still not one production topology: World Kernel and Birth Center currently retain development-local persistence seams that will move behind executable provider-neutral state capabilities in a later persistence slice.
+The local World Kernel is in an incremental persistence migration. GenesisStore, CivilRegistryStore, GenesisPresentationOutboxStore, and the World store are already composed against shared provider-neutral World state while several older semantic/runtime stores still receive the legacy database path. Concrete SQLite selection remains deployment composition, not service-domain policy; remaining stores should migrate behind the same state capability incrementally rather than through a parallel persistence architecture.
 
 ## Following one Thread through the flow
 
