@@ -211,6 +211,16 @@ export function planThreadPresentationAssetSlots({
               ...visualIdentity.sourceReferences,
               ...visualIdentity.permissionReferences,
             ];
+            stableContext = {
+              kind: "thread_presentation_media",
+              threadId: presentation.manifest.threadId,
+              mediaId: asset.mediaId,
+              role: asset.role,
+              provenanceRef: asset.provenanceRef,
+              visualIdentityDigest,
+              referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
+              targetAgeYears,
+            };
           }
         }
       }
