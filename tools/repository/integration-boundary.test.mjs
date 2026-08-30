@@ -2,33 +2,51 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 
-const integrationsRoot = new URL("../../integrations/", import.meta.url);
+const repoRoot = new URL("../../", import.meta.url);
+const servicesRoot = new URL("services/", repoRoot);
+const infraProvidersRoot = new URL("infra/providers/", repoRoot);
+const integrationsRoot = new URL("integrations/", repoRoot);
+const integrationSelectionUrl = new URL("infra/deployments/integration-selection.mjs", repoRoot);
+const localDeploymentUrl = new URL("infra/deployments/environments/local.yaml", repoRoot);
+const cloudflareDeploymentUrl = new URL("infra/deployments/environments/cloudflare.yaml", repoRoot);
+
 const integrationImplementations = Object.freeze([
   new URL("ai/reasoning/openai.mjs", integrationsRoot),
   new URL("ai/reasoning/google.mjs", integrationsRoot),
   new URL("ai/image/openai.mjs", integrationsRoot),
   new URL("ai/image/bfl.mjs", integrationsRoot),
   new URL("content-credentials/c2pa-http-signer.mjs", integrationsRoot),
+  new URL("content-credentials/c2pa-node/signer.mjs", integrationsRoot),
 ]);
-const retiredServiceIntegrationPaths = Object.freeze([
-  new URL("../../services/world-kernel/src/model-runtime/openai.mjs", import.meta.url),
-  new URL("../../services/world-kernel/src/model-runtime/google.mjs", import.meta.url),
-  new URL("../../services/world-kernel/src/model-runtime/retry-policy.mjs", import.meta.url),
-  new URL("../../services/asset-generator/src/providers/openai-image-provider.mjs", import.meta.url),
-  new URL("../../services/asset-generator/src/providers/bfl-flux-image-provider.mjs", import.meta.url),
-  new URL("../../services/asset-generator/src/http-content-credential-signer.mjs", import.meta.url),
+
+const retiredSelectionPaths = Object.freeze([
+  new URL("config/models.yaml", repoRoot),
+  new URL("services/world-kernel/src/model-runtime/model-runtime.mjs", repoRoot),
+  new URL("services/world-kernel/src/server.mjs", repoRoot),
+  new URL("services/birth-center/src/server.mjs", repoRoot),
+  new URL("services/c2pa-local/server.mjs", repoRoot),
+  new URL("infra/deployments/asset-generator/image-provider-selection.mjs", repoRoot),
 ]);
-const worldKernelModelRuntimeUrl = new URL("../../services/world-kernel/src/model-runtime/model-runtime.mjs", import.meta.url);
-const assetGeneratorIndexUrl = new URL("../../services/asset-generator/src/index.mjs", import.meta.url);
-const providerSelectionUrl = new URL("../../infra/deployments/asset-generator/image-provider-selection.mjs", import.meta.url);
-const assetWorkerUrl = new URL("../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url);
-const c2paServiceUrl = new URL("../../services/c2pa-local/server.mjs", import.meta.url);
-const infraProviderRoots = Object.freeze([new URL("../../infra/providers/", import.meta.url)]);
-const infraCoreFiles = Object.freeze([
-  new URL("../../infra/infra-driver.mjs", import.meta.url),
-  new URL("../../infra/internal.mjs", import.meta.url),
-  new URL("../../infra/service.mjs", import.meta.url),
-]);
+
+const serviceConcreteSelectionPattern = new RegExp([
+  "#infra/providers/",
+  "#integrations/ai/reasoning/(?:openai|google)\\.mjs",
+  "#integrations/ai/image/",
+  "#integrations/content-credentials/",
+  "@contentauth/c2pa-node",
+  "createOpenAIModelAdapter",
+  "createGoogleModelAdapter",
+  "createOpenAIImageProvider",
+  "createBflFluxImageProvider",
+  "createHttpContentCredentialSigner",
+  "OPENAI_API_KEY",
+  "GEMINI_API_KEY",
+  "BFL_API_KEY",
+  "C2PA_SIGNER_URL",
+  "api\\.openai\\.com",
+  "generativelanguage\\.googleapis\\.com",
+  "api\\.bfl\\.ai",
+].join("|"), "u");
 
 async function text(url) {
   return readFile(url, "utf8");
@@ -46,65 +64,84 @@ async function sourceFiles(directory) {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const url = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, directory);
-    if (entry.isDirectory()) result.push(...await sourceFiles(url));
-    else if (/\.(?:mjs|js|ts)$/.test(entry.name)) result.push(url);
+    if (entry.isDirectory()) {
+      if (entry.name === "test" || entry.name === "node_modules") continue;
+      result.push(...await sourceFiles(url));
+    } else if (/\.(?:mjs|js|ts)$/.test(entry.name)) {
+      result.push(url);
+    }
   }
   return result;
 }
 
-const thirdPartyPattern = /OPENAI_API_KEY|GEMINI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|api\.openai\.com|generativelanguage\.googleapis\.com|api\.bfl\.ai|createOpenAIModelAdapter|createGoogleModelAdapter|createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/;
-
-test("third-party integrations have one shared home outside services and Infra providers", async () => {
-  const [openaiModel, googleModel, openaiImage, bflImage, c2paSigner] = await Promise.all(integrationImplementations.map(text));
-
-  assertSourceMatches(openaiModel, /api\.openai\.com/, "OpenAI model integration must call the OpenAI API");
-  assertSourceMatches(openaiModel, /OPENAI_API_KEY/, "OpenAI model integration must own OPENAI_API_KEY handling");
-  assertSourceMatches(googleModel, /generativelanguage\.googleapis\.com/, "Google model integration must call the Google Generative Language API");
-  assertSourceMatches(googleModel, /GEMINI_API_KEY/, "Google model integration must own GEMINI_API_KEY handling");
-  assertSourceMatches(openaiImage, /api\.openai\.com/, "OpenAI image integration must call the OpenAI API");
-  assertSourceMatches(bflImage, /api\.bfl\.ai/, "BFL image integration must call the BFL API");
-  assertSourceMatches(c2paSigner, /\/embed/, "C2PA HTTP signer integration must expose the signer /embed call");
-  assertSourceMatches(c2paSigner, /\/verify/, "C2PA HTTP signer integration must expose the signer /verify call");
-  assertSourceMatches(c2paSigner, /createHttpContentCredentialSigner/, "C2PA HTTP signer integration must export createHttpContentCredentialSigner");
-
-  for (const url of retiredServiceIntegrationPaths) {
-    await assert.rejects(() => stat(url), (error) => error?.code === "ENOENT", `retired service-local integration must stay removed: ${url.pathname}`);
+test("services declare ports but never select concrete infrastructure or integrations", async () => {
+  for (const url of await sourceFiles(servicesRoot)) {
+    const source = await text(url);
+    assertSourceOmits(
+      source,
+      serviceConcreteSelectionPattern,
+      `service source selected a concrete provider/integration: ${url.pathname}`,
+    );
   }
+});
 
-  const worldKernelModelRuntime = await text(worldKernelModelRuntimeUrl);
-  assertSourceMatches(worldKernelModelRuntime, /#integrations\/ai\/reasoning\/openai\.mjs/, "world-kernel model runtime must use the shared OpenAI integration");
-  assertSourceMatches(worldKernelModelRuntime, /#integrations\/ai\/reasoning\/google\.mjs/, "world-kernel model runtime must use the shared Google integration");
+test("deployment composition is the one place that maps stable selections to concrete factories", async () => {
+  const source = await text(integrationSelectionUrl);
+  assertSourceMatches(source, /#integrations\/ai\/reasoning\/openai\.mjs/, "deployment selector must map OpenAI reasoning");
+  assertSourceMatches(source, /#integrations\/ai\/reasoning\/google\.mjs/, "deployment selector must map Google reasoning");
+  assertSourceMatches(source, /#integrations\/ai\/image\/openai\.mjs/, "deployment selector must map OpenAI images");
+  assertSourceMatches(source, /#integrations\/ai\/image\/bfl\.mjs/, "deployment selector must map BFL images");
+  assertSourceMatches(source, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/, "deployment selector must map C2PA HTTP signing");
 
-  const assetGeneratorIndex = await text(assetGeneratorIndexUrl);
-  assertSourceOmits(assetGeneratorIndex, /createOpenAIImageProvider|createBflFluxImageProvider|createHttpContentCredentialSigner/, "asset-generator service index must not construct third-party integration adapters");
-  assertSourceOmits(assetGeneratorIndex, /integrations\//, "asset-generator service index must remain integration-agnostic");
+  const [local, cloudflare] = await Promise.all([text(localDeploymentUrl), text(cloudflareDeploymentUrl)]);
+  assertSourceMatches(local, /provider: openai/, "local deployment must select integrations explicitly");
+  assertSourceMatches(local, /dignityGuardian: guardian-openai/, "World Kernel reasoning must be selected by deployment");
+  assertSourceMatches(cloudflare, /provider: bfl/, "Cloudflare deployment must name image integration choices");
+  assertSourceOmits(local, /(?:sk-|Bearer\s+[A-Za-z0-9])/, "deployment YAML must not contain secret values");
+  assertSourceOmits(cloudflare, /(?:sk-|Bearer\s+[A-Za-z0-9])/, "deployment YAML must not contain secret values");
+});
 
-  const providerSelection = await text(providerSelectionUrl);
-  assertSourceMatches(providerSelection, /#integrations\/ai\/image\/openai\.mjs/, "image-provider selector must use the shared OpenAI image integration");
-  assertSourceMatches(providerSelection, /#integrations\/ai\/image\/bfl\.mjs/, "image-provider selector must use the shared BFL image integration");
-  assertSourceOmits(providerSelection, /services\/asset-generator\/src\/index\.mjs/, "image-provider selector must not depend on the asset-generator service index");
-
-  const assetWorker = await text(assetWorkerUrl);
-  assertSourceMatches(assetWorker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/, "Asset Generator deployment must use the shared C2PA HTTP signer integration directly");
-  assertSourceMatches(assetWorker, /createHttpContentCredentialSigner/, "Asset Generator deployment must construct the shared C2PA HTTP signer integration");
-  assertSourceMatches(assetWorker, /createAssetGenerationRuntime\(\{ infra, provider, credentialSigner \}\)/, "Asset Generator Worker must inject infra, image provider, and credential signer into the portable runtime");
-
-  const c2paService = await text(c2paServiceUrl);
-  assertSourceMatches(c2paService, /\/embed/, "local C2PA service must expose /embed");
-  assertSourceMatches(c2paService, /\/verify/, "local C2PA service must expose /verify");
-
-  for (const url of infraCoreFiles) {
-    assertSourceOmits(await text(url), thirdPartyPattern, `third-party integration leaked into infrastructure core ${url.pathname}`);
-  }
-  for (const root of infraProviderRoots) {
-    for (const url of await sourceFiles(root)) {
-      assertSourceOmits(await text(url), thirdPartyPattern, `third-party integration leaked into infrastructure provider ${url.pathname}`);
-      assertSourceOmits(await text(url), /#services\/|\.\.\/\.\.\/\.\.\/services\//, `infrastructure provider imported service topology in ${url.pathname}`);
-    }
-  }
-
+test("third-party integration implementations remain infrastructure- and topology-agnostic", async () => {
   for (const url of integrationImplementations) {
     const source = await text(url);
-    assertSourceOmits(source, /packages\/infra|infra\/deployments\/|createCloudflareInfraDriver|WorkflowEntrypoint/, `integration implementation selected infrastructure/deployment behavior in ${url.pathname}`);
+    assertSourceOmits(
+      source,
+      /infra\/deployments\/|#infra\/providers\/|createCloudflareInfraDriver|WorkflowEntrypoint/,
+      `integration selected infrastructure/deployment behavior: ${url.pathname}`,
+    );
+    assertSourceOmits(
+      source,
+      /#services\/(?!world-kernel\/src\/guardian-model-adapter\.mjs)/,
+      `integration imported service topology beyond its narrow contract bridge: ${url.pathname}`,
+    );
+  }
+});
+
+test("infrastructure providers remain service- and integration-unaware", async () => {
+  for (const url of await sourceFiles(infraProvidersRoot)) {
+    const source = await text(url);
+    assertSourceOmits(source, /#services\/|\/services\//, `infra provider imported service topology: ${url.pathname}`);
+    assertSourceOmits(source, /#integrations\/|\/integrations\//, `infra provider imported integration topology: ${url.pathname}`);
+  }
+});
+
+test("content credential signer service owns HTTP semantics but not the C2PA SDK", async () => {
+  const source = await text(new URL("services/content-credential-signer/src/index.mjs", repoRoot));
+  assertSourceMatches(source, /path: "\/embed"/, "signer service must expose /embed");
+  assertSourceMatches(source, /path: "\/verify"/, "signer service must expose /verify");
+  assertSourceOmits(source, /@contentauth\/c2pa-node|LocalSigner|Reader|Builder/, "signer service must not own C2PA implementation");
+
+  const native = await text(new URL("integrations/content-credentials/c2pa-node/signer.mjs", repoRoot));
+  assertSourceMatches(native, /@contentauth\/c2pa-node/, "native integration must own the C2PA SDK");
+  assertSourceOmits(native, /#infra\/|#services\//, "native integration must not host Fibre services");
+});
+
+test("retired service-local selection and host paths stay removed", async () => {
+  for (const url of retiredSelectionPaths) {
+    await assert.rejects(
+      () => stat(url),
+      (error) => error?.code === "ENOENT",
+      `retired architecture path must stay removed: ${url.pathname}`,
+    );
   }
 });
