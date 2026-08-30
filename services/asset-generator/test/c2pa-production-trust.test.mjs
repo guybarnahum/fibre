@@ -4,6 +4,10 @@ import { readFile } from "node:fs/promises";
 
 import { createHttpContentCredentialSigner } from "../../../integrations/content-credentials/c2pa-http-signer.mjs";
 import { AssetGenerationError } from "../src/asset-generation-error.mjs";
+import {
+  parseDeploymentManifest,
+  resolveServiceDeployment,
+} from "../../../infra/deployments/manifest.mjs";
 
 const encoder = new TextEncoder();
 const productionSignerId = "fibre-c2pa-production-v1";
@@ -127,36 +131,48 @@ test("production verifier must return trust evidence and the configured signer i
 });
 
 async function json(url) { return JSON.parse(await readFile(url, "utf8")); }
+async function deployment(url) { return parseDeploymentManifest(await readFile(url, "utf8")); }
 
 test("Cloudflare deployment separates development signature proof from production C2PA trust", async () => {
   const assetLocal = await json(new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url));
   const assetRemote = await json(new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url));
   const presentationLocal = await json(new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url));
   const presentationRemote = await json(new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url));
+  const localManifest = await deployment(new URL("../../../infra/deployments/environments/local.yaml", import.meta.url));
+  const remoteManifest = await deployment(new URL("../../../infra/deployments/environments/cloudflare.yaml", import.meta.url));
   const assetWorker = await readFile(new URL("../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url), "utf8");
   const presentationWorker = await readFile(new URL("../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url), "utf8");
 
   for (const config of [assetLocal, presentationLocal]) {
     assert.equal(config.vars.C2PA_SIGNER_ID, "fibre-c2pa-node-local-v1");
     assert.equal(config.vars.C2PA_TRUST_POLICY, "development_signature_only");
+    assert.equal(config.vars.FIBRE_DEPLOYMENT_ENV, "local");
   }
   for (const config of [assetRemote, presentationRemote]) {
     assert.equal(config.vars.C2PA_SIGNER_ID, productionSignerId);
     assert.equal(config.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
+    assert.equal(config.vars.FIBRE_DEPLOYMENT_ENV, "cloudflare");
     assert.ok(config.secrets.required.includes("C2PA_SIGNER_URL"));
     assert.ok(config.secrets.required.includes("C2PA_SIGNER_TOKEN"));
   }
 
-  assert.match(assetWorker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/);
-  assert.match(presentationWorker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/);
-  assert.match(assetWorker, /createHttpContentCredentialSigner/);
-  assert.match(presentationWorker, /createHttpContentCredentialSigner/);
-  assert.match(assetWorker, /baseUrl: env\.C2PA_SIGNER_URL/);
-  assert.match(presentationWorker, /baseUrl: env\.C2PA_SIGNER_URL/);
-  assert.match(assetWorker, /authorizationToken: env\.C2PA_SIGNER_TOKEN/);
-  assert.match(presentationWorker, /authorizationToken: env\.C2PA_SIGNER_TOKEN/);
-  assert.match(assetWorker, /trustPolicy: env\.C2PA_TRUST_POLICY/);
-  assert.match(presentationWorker, /trustPolicy: env\.C2PA_TRUST_POLICY/);
-  assert.doesNotMatch(assetWorker, /fibre-c2pa-node-local-v1/);
-  assert.doesNotMatch(presentationWorker, /fibre-c2pa-node-local-v1/);
+  const localAsset = resolveServiceDeployment(localManifest, "asset-generator");
+  const localPresentation = resolveServiceDeployment(localManifest, "thread-presentation");
+  const remoteAsset = resolveServiceDeployment(remoteManifest, "asset-generator");
+  const remotePresentation = resolveServiceDeployment(remoteManifest, "thread-presentation");
+  for (const selected of [localAsset.integrations.contentCredentials, localPresentation.integrations.contentCredentials]) {
+    assert.equal(selected.provider, "c2pa-http");
+    assert.equal(selected.environment.trustPolicy, "C2PA_TRUST_POLICY");
+  }
+  for (const selected of [remoteAsset.integrations.contentCredentials, remotePresentation.integrations.contentCredentials]) {
+    assert.equal(selected.provider, "c2pa-http");
+    assert.equal(selected.environment.authorizationToken, "C2PA_SIGNER_TOKEN");
+  }
+
+  for (const worker of [assetWorker, presentationWorker]) {
+    assert.match(worker, /integration-selection\.mjs/);
+    assert.match(worker, /selectContentCredentialIntegration/);
+    assert.doesNotMatch(worker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/);
+    assert.doesNotMatch(worker, /fibre-c2pa-node-local-v1/);
+  }
 });
