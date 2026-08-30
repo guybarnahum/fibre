@@ -4,38 +4,44 @@ import assert from "node:assert/strict";
 import { buildLiveAssetSmokeJob } from "./asset-generation-live-smoke.mjs";
 import { parseLiveTargetArgs } from "./thread-presentation-live-target.mjs";
 
-test("live asset smoke defaults to a real Thread memory with uncertainty intact", async () => {
+test("live asset smoke defaults to a real reference-free Thread place", async () => {
   const prepared = await buildLiveAssetSmokeJob({ requestedAt: "2026-08-26T06:00:00Z" });
 
   assert.equal(prepared.threadId, "thr_pr39_g2_04");
-  assert.equal(prepared.memory.title, "Tomatoes and change");
-  assert.match(prepared.memory.rememberedContent, /20,000 đồng/);
-  assert.deepEqual(prepared.memory.uncertainty, [
-    "Exact words spoken in Vietnamese",
-    "Exact amount of change received",
-  ]);
-  assert.equal(prepared.job.context.mediaId, "media_memory_tomatoes");
-  assert.equal(prepared.job.role, "memory_reconstruction");
+  assert.equal(prepared.place.displayName, "Neighborhood market");
+  assert.match(prepared.place.summary, /groceries, prepared food, household goods/);
+  assert.equal(prepared.job.context.mediaId, "media_place_market");
+  assert.equal(prepared.job.role, "place");
   assert.equal(prepared.job.assetKind, "image");
-  assert.match(prepared.job.brief.description, /20,000 đồng/);
-  assert.equal(prepared.job.brief.constraints.some((value) => value.includes("Do not convert uncertainty")), true);
-  assert.equal(prepared.job.inputReferences.includes(prepared.memory.memoryRef), true);
+  assert.match(prepared.job.brief.description, /Neighborhood market/);
+  assert.equal(prepared.job.inputReferences.includes(prepared.place.placeRef), true);
   assert.deepEqual(prepared.job.referenceObjectRefs, []);
   assert.match(prepared.snapshotDigest, /^sha256:[0-9a-f]{64}$/);
 });
 
-test("live asset smoke target is selectable instead of hardcoded to one memory", async () => {
+test("live asset smoke target is selectable instead of hardcoded to one place", async () => {
   const prepared = await buildLiveAssetSmokeJob({
     requestedAt: "2026-08-26T06:00:00Z",
     fixture: "can-tho",
-    mediaId: "media_memory_sandals",
+    mediaId: "media_place_home",
   });
 
-  assert.equal(prepared.mediaAsset.mediaId, "media_memory_sandals");
-  assert.equal(prepared.memory.title, "Blue or red sandals");
-  assert.match(prepared.job.brief.description, /blue and red sandals/i);
-  assert.equal(prepared.job.context.mediaId, "media_memory_sandals");
+  assert.equal(prepared.mediaAsset.mediaId, "media_place_home");
+  assert.equal(prepared.place.displayName, "Home in Ninh Kiều");
+  assert.match(prepared.job.brief.description, /mixed residential-commercial street/i);
+  assert.equal(prepared.job.context.mediaId, "media_place_home");
   assert.notEqual(prepared.job.jobId, (await buildLiveAssetSmokeJob({ requestedAt: "2026-08-26T06:00:00Z" })).job.jobId);
+});
+
+test("pre-embodiment self-memory is not a valid live generation target", async () => {
+  await assert.rejects(
+    buildLiveAssetSmokeJob({
+      requestedAt: "2026-08-26T06:00:00Z",
+      fixture: "can-tho",
+      mediaId: "media_memory_tomatoes",
+    }),
+    /did not produce generation job for media_memory_tomatoes/,
+  );
 });
 
 test("live asset target CLI rejects path traversal and accepts fixture/media selection", () => {
