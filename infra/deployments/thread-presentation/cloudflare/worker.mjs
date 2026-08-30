@@ -8,6 +8,7 @@ import {
   threadMediaPacketDigest,
   threadPresentationPacketDigest,
 } from "#services/thread-presentation/src/index.mjs";
+import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
 import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
@@ -277,6 +278,12 @@ export default {
 
     const infra = createInfra(env);
     const presentationServer = createThreadPresentationServer({ infra });
+    const genesisWriteApi = createGenesisPresentationWriteApi({
+      presentationServer,
+      privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
+    });
+    const genesisWriteResponse = await genesisWriteApi.fetch(request);
+    if (genesisWriteResponse !== null) return genesisWriteResponse;
 
     const fixtureResponse = await maybeHandleP3Fixture(request, env, infra, presentationServer);
     if (fixtureResponse !== null) return fixtureResponse;
