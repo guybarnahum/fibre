@@ -22,7 +22,10 @@ import { selectCausalContext } from "#services/world-kernel/src/causal-context.m
 import { deterministicActorOutput } from "#services/world-kernel/src/runtime-domain.mjs";
 import { requestFingerprint } from "#services/world-kernel/src/private-participation.mjs";
 import { semanticDignityGuardianV4 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
+import {
+  createLocalReasoningAdapter,
+  localReasoningSelection,
+} from "../../../infra/deployments/local-reasoning.mjs";
 import {
   createScriptedGuardianModelAdapter,
   grounded,
@@ -35,7 +38,6 @@ export const HISTORY_BENDS_JUDGMENT_DEVELOPMENT = Object.freeze({
   scoreMovementPermitted: false,
 });
 
-const REASONING_BLOCK = "dignity_guardian";
 const minaFixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
@@ -458,10 +460,8 @@ export async function runHistoryDevelopment({
     let adapter = modelAdapter;
     let selection;
     if (adapter === null) {
-      const modelOverrides = model === null ? null : { [REASONING_BLOCK]: model };
-      const runtime = createModelRuntime({ environment, modelOverrides });
-      selection = runtime.selectionForBlock(REASONING_BLOCK);
-      adapter = runtime.forBlock(REASONING_BLOCK);
+      selection = localReasoningSelection({ model });
+      adapter = createLocalReasoningAdapter({ environment, model });
     } else {
       selection = selectionForInjectedAdapter(adapter);
     }
@@ -588,7 +588,7 @@ export function parseHistoryDevelopmentArgs(argv) {
 }
 
 function usage() {
-  return `Fibre History bends judgment development\n\nUsage:\n  npm run history:dev\n  npm run history:dev -- --model gpt-5.6-luna\n  npm run history:dev -- --summary --json\n\nOptions:\n  --model <id> Override the YAML-selected dignity_guardian model for this non-evidentiary run.\n  --summary    Print the human-readable Development summary.\n  --json       Print the complete Development report.\n  --help       Show this help.\n\nEpisode A uses a deterministic development-only setup judgment so this command isolates history causality rather than re-testing #33.\nThe later with/without-history pair uses unchanged Semantic Guardian v4 and the configured real provider.\nThis command is repeatable, never seals a standing cycle, and never permits Fibre score movement.\n`;
+  return `Fibre History bends judgment development\n\nUsage:\n  npm run history:dev\n  npm run history:dev -- --model gpt-5.6-luna\n  npm run history:dev -- --summary --json\n\nOptions:\n  --model <id> Override the deployment-selected Guardian model for this non-evidentiary run.\n  --summary    Print the human-readable Development summary.\n  --json       Print the complete Development report.\n  --help       Show this help.\n\nEpisode A uses a deterministic development-only setup judgment so this command isolates history causality rather than re-testing #33.\nThe later with/without-history pair uses unchanged Semantic Guardian v4 and the provider selected by infra/deployments/environments/local.yaml.\nThis command is repeatable, never seals a standing cycle, and never permits Fibre score movement.\n`;
 }
 
 async function main() {
