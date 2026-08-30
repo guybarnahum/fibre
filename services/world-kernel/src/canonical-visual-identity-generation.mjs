@@ -110,21 +110,35 @@ export function planCanonicalVisualIdentityGeneration({
   });
 }
 
-export function bindVerifiedCanonicalVisualIdentityReceipt({
+export function bindVerifiedCanonicalVisualIdentityProof({
   embodiment: embodimentCandidate,
-  receipt: receiptCandidate,
+  proof,
   recordedAt,
 } = {}) {
   const embodiment = normalizeEmbodimentRepresentation(embodimentCandidate);
-  const receipt = normalizeStoredAssetReceipt(receiptCandidate);
+  const receipt = normalizeStoredAssetReceipt(proof?.receipt);
+  const job = normalizeAssetGenerationJob(proof?.generationRecord?.job);
   assertIsoTimestamp("recordedAt", recordedAt);
+  if (proof?.verification?.valid !== true) {
+    throw new TypeError("canonical visual identity completion requires verified credentialed generation proof");
+  }
   if (embodiment.kind !== "portrait" || embodiment.status !== "pending_generation" || embodiment.asset !== null) {
     throw new TypeError("canonical visual identity completion requires pending portrait embodiment");
   }
   if (receipt.status !== "ready" || receipt.assetKind !== "image" || receipt.role !== CANONICAL_VISUAL_IDENTITY_ROLE) {
     throw new TypeError("canonical visual identity completion requires a ready canonical reference image receipt");
   }
-  if (receipt.job.referenceObjectRefs.length !== 0) {
+  if (
+    job.jobId !== receipt.jobId
+    || job.outputObjectRef !== receipt.objectRef
+    || job.role !== receipt.role
+    || job.assetKind !== receipt.assetKind
+    || canonicalJson(job.inputReferences) !== canonicalJson(receipt.inputReferences)
+    || canonicalJson(job.context) !== canonicalJson(receipt.context)
+  ) {
+    throw new TypeError("canonical visual identity proof job does not match the stored receipt");
+  }
+  if (job.referenceObjectRefs.length !== 0) {
     throw new TypeError("canonical visual identity root image must have been generated without reference images");
   }
   const context = receipt.context;
