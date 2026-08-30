@@ -5,6 +5,7 @@ import {
 } from "#services/thread-presentation/src/index.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
+const PRESENTATION_CHANNEL_PREFIX = "presentation:";
 
 function assertId(name, value) {
   if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new TypeError(`${name} is invalid`);
@@ -50,6 +51,7 @@ function publicIdentityCredentialAllowed(snapshot) {
 }
 
 function route(pathname) {
+  if (pathname === "/api/threads") return { kind: "threads" };
   const asset = pathname.match(/^\/api\/assets\/([^/]+)$/);
   if (asset) return { kind: "asset", objectRef: decodeURIComponent(asset[1]) };
   const snapshot = pathname.match(/^\/api\/threads\/([^/]+)\/snapshot$/);
@@ -67,13 +69,60 @@ function route(pathname) {
   return null;
 }
 
+function discoveryPage(url) {
+  const limitText = url.searchParams.get("limit") ?? "50";
+  if (!/^\d+$/.test(limitText)) throw new TypeError("discovery limit is invalid");
+  const limit = Number(limitText);
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200) throw new TypeError("discovery limit is invalid");
+  const cursor = url.searchParams.get("cursor");
+  if (cursor !== null) assertId("discovery cursor", cursor);
+  return { limit, cursor };
+}
+
+async function discoverPublicThreads({ infra, presentationServer, url }) {
+  const { limit, cursor } = discoveryPage(url);
+  const page = await infra.catalog.list({
+    prefix: PRESENTATION_CHANNEL_PREFIX,
+    after: cursor,
+    limit,
+  });
+  const threads = [];
+  for (const { key, value } of page.entries) {
+    if (value?.publiclyVisible !== true || value?.channelId !== key) continue;
+    try {
+      assertId("discovery threadId", value.threadId);
+    } catch {
+      continue;
+    }
+    if (threadPresentationChannelId(value.threadId) !== key) continue;
+    const current = await presentationServer.getSnapshot(key);
+    if (current === null
+      || current.pointer.threadId !== value.threadId
+      || !publicIdentityCredentialAllowed(current.snapshot)) {
+      continue;
+    }
+    threads.push({
+      threadId: value.threadId,
+      lifecycleStatus: value.lifecycleStatus ?? null,
+      snapshotVersion: current.pointer.snapshotVersion,
+      snapshotDigest: current.pointer.snapshotDigest,
+    });
+  }
+  return {
+    threads,
+    nextCursor: page.nextCursor,
+  };
+}
+
 export function createPresentationReadApi({
   infra,
   presentationServer,
   openStream,
   viewerOrigin = null,
 }) {
-  if (!infra?.catalog || !infra?.objects) throw new TypeError("presentation read API requires infra catalog and objects ports");
+  if (!infra?.catalog || !infra?.objects || typeof infra.catalog.list !== "function") {
+    throw new TypeError("presentation read API requires infra catalog and objects ports");
+  }
   if (!presentationServer || typeof presentationServer.getSnapshot !== "function" || typeof presentationServer.readEvents !== "function") {
     throw new TypeError("presentation read API requires PresentationServer read methods");
   }
@@ -114,6 +163,12 @@ export function createPresentationReadApi({
       const matched = route(url.pathname);
       if (matched === null) return json({ error: "not_found" }, { status: 404, headers: cors });
       try {
+        if (matched.kind === "threads") {
+          return json(await discoverPublicThreads({ infra, presentationServer, url }), {
+            headers: { ...cors, "Cache-Control": "no-cache" },
+          });
+        }
+
         if (matched.kind === "asset") {
           assertId("objectRef", matched.objectRef);
           return await serveAsset(matched.objectRef, cors);
