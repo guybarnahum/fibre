@@ -64,6 +64,7 @@ function resolvesToPrivateInfraSource(sourcePath, specifier) {
   if (!specifier.startsWith(".")) return false;
   const resolved = normalizeRepoPath(normalizePosix(join(dirname(sourcePath), specifier)));
   if (sourcePath.startsWith("infra/deployments/") && resolved.startsWith("infra/deployments/")) return false;
+  if (sourcePath.startsWith("tools/deployment/") && resolved.startsWith("infra/deployments/")) return false;
   return resolved === "infra" || resolved.startsWith("infra/");
 }
 
