@@ -1,13 +1,22 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
+import {
+  parseDeploymentManifest,
+  resolveServiceDeployment,
+} from "../../../infra/deployments/manifest.mjs";
 import {
   runIdentityContextCausalDifferentialPreflight,
 } from "./identity-context-causal-differential.mjs";
 import {
   FROZEN_IDENTITY_CONTEXT_CAUSAL_DIFFERENTIAL_V1 as FROZEN,
 } from "./frozen-causal-differential-v1.mjs";
+
+const LOCAL_DEPLOYMENT = parseDeploymentManifest(
+  readFileSync(new URL("../../../infra/deployments/environments/local.yaml", import.meta.url), "utf8"),
+);
+const WORLD_KERNEL_DEPLOYMENT = resolveServiceDeployment(LOCAL_DEPLOYMENT, "world-kernel");
 
 function compactPair(pair) {
   return {
@@ -36,18 +45,27 @@ export function assertFrozenIdentityContextCausalDifferential(report) {
   return true;
 }
 
-export function frozenLiveModelSelection({ environment = process.env } = {}) {
-  const runtime = createModelRuntime({ environment });
-  const selection = runtime.selectionForBlock(FROZEN.liveModel.reasoningBlock);
-  assert.equal(selection.provider, FROZEN.liveModel.provider);
-  assert.equal(selection.modelId, FROZEN.liveModel.modelId);
-  return selection;
+export function frozenLiveModelIntegration() {
+  const integration = WORLD_KERNEL_DEPLOYMENT.integrations.dignityGuardian;
+  assert.ok(integration, "world-kernel deployment must select dignityGuardian reasoning");
+  assert.equal(integration.kind, "ai.reasoning");
+  assert.equal(integration.provider, FROZEN.liveModel.provider);
+  assert.equal(integration.config.model, FROZEN.liveModel.modelId);
+  return integration;
 }
 
-export function verifyFrozenIdentityContextCausalDifferential(databasePath, options = {}) {
+export function frozenLiveModelSelection() {
+  const integration = frozenLiveModelIntegration();
+  return Object.freeze({
+    provider: integration.provider,
+    modelId: integration.config.model,
+  });
+}
+
+export function verifyFrozenIdentityContextCausalDifferential(databasePath) {
   const report = runIdentityContextCausalDifferentialPreflight(databasePath);
   assertFrozenIdentityContextCausalDifferential(report);
-  const selection = frozenLiveModelSelection(options);
+  const selection = frozenLiveModelSelection();
   return {
     frozenInstrumentId: FROZEN.id,
     frozenFromHead: FROZEN.frozenFromHead,
