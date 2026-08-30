@@ -26,9 +26,9 @@ The active #40 deployment/identity-projection vertical is now:
 A. Genesis -> public pre-embodiment presentation          CLOSED / GREEN
 B. authoritative newborn public identity context         CLOSED / GREEN
 C. canonical visual identity root                        CLOSED / GREEN
-D. Embodiment -> public visual identity rewrite          CURRENT
-E. reference+age-conditioned official/memory imagery     NEXT
-F. Asset Generator + C2PA completion/publication         AFTER E
+D. Embodiment -> public visual identity rewrite          CLOSED / GREEN
+E. reference+age-conditioned official/memory imagery     CLOSED / GREEN
+F. Asset Generator + C2PA completion/publication         CURRENT
 G. insidefibre.com Viewer closure                        AFTER F
 H. one-birth full-stack E2E + recovery proof             FINAL VERTICAL GATE
 ```
@@ -109,7 +109,7 @@ Closure evidence includes:
 
 The root prompt remains materially richer than an ordinary image prompt: stable face geometry, proportions, eyes/brows, nose, mouth, jaw, skin, hair/hairline, body/build where relevant, distinctive marks/asymmetries and explicit cross-age identity invariants.
 
-A pending text specification is not yet a usable visual reference. Public visual identity is unlocked only by an admitted canonical root asset. Slice D now owns wiring that admitted authority through the public presentation rewrite; Slice C does not make presentation or derived imagery into identity authority.
+A pending text specification is not yet a usable visual reference. Public visual identity is unlocked only by an admitted canonical root asset. Slice D has now closed the wiring of that admitted authority through the public presentation rewrite; Slice C does not make presentation or derived imagery into identity authority.
 
 ### Priority 1B — preserve truthful origin variants
 
@@ -136,7 +136,7 @@ historical/life scene   birthDate -> scene time        -> targetAge
 
 The generator must preserve the same identity while naturally age-transforming from the canonical anchor. Ordinary aging, hairstyle, clothing, weight, expression or styling never replaces the root.
 
-### Priority 1D — reference-conditioned downstream generation
+### Priority 1D — public projection and reference-conditioned demand — Slices D/E CLOSED
 
 After Embodiment admission:
 
@@ -145,17 +145,27 @@ canonical reference object
   -> bounded public visual identity projection
   -> Thread Presentation rewrite
   -> identity-card + official-photo placeholder
-  -> PresentationAssetDemand carrying canonical reference
+  -> PresentationAssetDemand carrying canonical reference + target age
   -> reference-capable Asset Generator profile
   -> C2PA/provenance completion
   -> Thread Presentation acceptance
 ```
 
-Slice D is current: wire the already-admitted canonical Embodiment through the bounded visual-identity projection and atomic presentation rewrite without giving Thread Presentation raw World authority or allowing the projection to invent appearance.
+Slice D closed the bounded public-identity rewrite: the already-admitted canonical Embodiment is projected without giving Thread Presentation raw World authority, a Fibre Identity Card/official-photo placeholder is issued from admitted authority, reconciliation is idempotent, and presentation cannot mint a second credential or visual root.
+
+Slice E closed the downstream demand semantics. Permanent tests prove that:
+
+- official-photo demand carries the exact admitted canonical root, reference age 25, credential witness and chronology-derived target age;
+- a self-depicting autobiographical-memory demand uses that same canonical root and the event-derived target age;
+- memory ownership alone does not imply that the Thread is visually depicted;
+- a self-depicting memory without admitted visual identity defers instead of inventing a face from remembered text;
+- multi-event memories retain the canonical identity anchor but omit an exact age when chronology does not support one;
+- place/environment imagery remains reference-free;
+- pre-Embodiment self-memory remains deferred, while the generic live smoke continues to exercise a real reference-free place target.
+
+Slice E therefore proves what Fibre asks the generator to do, not that the current provider can already execute a person-image request. The current OpenAI image adapter rejects reference objects rather than silently discarding them. Slice F is current and owns the production-shaped reference-capable execution path, credential/provenance completion and Thread Presentation publication convergence.
 
 If a person-depicting job requires a canonical reference and the selected provider cannot consume reference objects, the job must defer/select another explicitly configured profile. Fibre may not silently drop the reference and regress to text-only likeness generation.
-
-The same canonical reference should be used for autobiographical-memory reconstructions when the Thread appears. Place-only/environmental imagery remains reference-free.
 
 ### Priority 1E — vertical stop condition
 
@@ -171,7 +181,7 @@ This visual/deployment substream stops displacing broader #40 work once permanen
 8. Viewer renders the result through public APIs only;
 9. retry/recovery does not create a second root or second identity.
 
-After this stop condition, unrelated media/provider polish returns to backlog and #40 causal identity/history consumption remains the milestone-critical proof.
+Items 1–6 are now closed by Slices C–E. Slice F starts at item 7; G and H finish the remaining vertical gates. After this stop condition, unrelated media/provider polish returns to backlog and #40 causal identity/history consumption remains the milestone-critical proof.
 
 ## Priority 2 — endogenous selection and privacy
 
