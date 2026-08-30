@@ -63,6 +63,7 @@ async function startProcess(databasePath, { adminToken = ADMIN_TOKEN } = {}) {
   const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", serverPath], {
     env: {
       ...process.env,
+      OPENAI_API_KEY: "test-world-kernel-key",
       FIBRE_WORLD_DATABASE: databasePath,
       FIBRE_WORLD_HOST: "127.0.0.1",
       FIBRE_WORLD_PORT: "0",
