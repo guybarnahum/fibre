@@ -52,6 +52,21 @@ test("legacy package Infra aliases cannot bypass the root #infra public seam", (
   }
 });
 
+test("services cannot select concrete Infra providers or concrete integrations", () => {
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", fakeImport("#infra/providers/local")),
+    [
+      "Runtime dependency boundary: services/example/src/runtime.mjs selects concrete infrastructure provider #infra/providers/local; provider selection belongs in infra/deployments",
+    ],
+  );
+  assert.deepEqual(
+    runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", fakeImport("#integrations/ai/reasoning/openai.mjs")),
+    [
+      "Runtime dependency boundary: services/example/src/runtime.mjs selects concrete integration #integrations/ai/reasoning/openai.mjs; integration selection belongs in infra/deployments",
+    ],
+  );
+});
+
 test("deployment composition may import integrations and public Infra providers but not providers through private relative paths", () => {
   assert.deepEqual(
     runtimeDependencyViolationsForSource("infra/deployments/example/cloudflare/worker.mjs", fakeImport("#integrations/content-credentials/c2pa-http-signer.mjs")),
@@ -74,7 +89,6 @@ test("same-owner imports, stable named package boundaries and root Infra entry p
     fakeImport("@fibre/asset-generator").trimEnd(),
     fakeImport("#infra").trimEnd(),
     fakeImport("#infra/service").trimEnd(),
-    fakeImport("#infra/providers/local").trimEnd(),
   ].join("\n");
   assert.deepEqual(privateServiceEdgesForSource("services/example/src/runtime.mjs", source), []);
   assert.deepEqual(runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", source), []);
