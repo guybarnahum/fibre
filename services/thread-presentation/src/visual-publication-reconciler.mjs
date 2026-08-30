@@ -46,6 +46,7 @@ export function createThreadPresentationVisualPublicationReconciler({
   createDemandService = createPresentationAssetDemandService,
   createVisualRewrite = createThreadPresentationEmbodimentRewriteService,
   createIdentityRewrite = createThreadPresentationIdentityMediaRewriteService,
+  planSlots = planThreadPresentationAssetSlots,
 } = {}) {
   if (!presentationServer
     || typeof presentationServer.getSnapshot !== "function"
@@ -54,6 +55,7 @@ export function createThreadPresentationVisualPublicationReconciler({
   }
   if (!infra) throw new TypeError("Thread Presentation visual reconciler requires infra");
   requireProviderSelector(selectProviderProfile);
+  if (typeof planSlots !== "function") throw new TypeError("Thread Presentation visual reconciler planSlots must be a function");
   const demandService = createDemandService({ infra });
   const identityRewrite = createIdentityRewrite({ presentationServer });
 
@@ -91,7 +93,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       const current = await presentationServer.getSnapshot(channelId);
       if (current === null) throw new Error(`Thread ${threadId} presentation disappeared during visual reconciliation`);
 
-      const slots = planThreadPresentationAssetSlots({
+      const slots = planSlots({
         bundle: {
           presentation: current.snapshot.presentation,
           media: current.snapshot.media,
