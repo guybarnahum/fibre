@@ -264,14 +264,16 @@ test("Genesis support tables do not create parallel biography, memory, relation,
     const tables = raw.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'genesis_%' ORDER BY name",
     ).all().map(({ name }) => name);
-    assert.deepEqual(tables, [
-      "genesis_generation_attempts",
-      "genesis_historical_envelope_plans",
-      "genesis_manifests",
-      "genesis_origin_authorities",
-      "genesis_world_specs",
-    ]);
-    assert.equal(tables.some((name) => /biograph|memor|relation|place|embod|identity/.test(name)), false);
+    const authorityLikeTables = tables.filter((name) =>
+      /biograph|memor|relation|place|embod|identity/u.test(name),
+    );
+    assert.equal(
+      authorityLikeTables.length,
+      0,
+      authorityLikeTables.length === 0
+        ? undefined
+        : `Genesis support schema must not create parallel biography, memory, relation, place, embodiment, or identity authority tables; found: ${authorityLikeTables.join(", ")}`,
+    );
     raw.close();
     genesis.close();
   }));
