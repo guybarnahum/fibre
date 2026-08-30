@@ -17,7 +17,7 @@ async function p2Bundle() {
   };
 }
 
-test("Cần Thơ asset planner schedules only image slots grounded by presentation text", async () => {
+test("Cần Thơ pre-embodiment planner schedules place imagery but defers self-depicting memories", async () => {
   const bundle = await p2Bundle();
   const plan = planThreadPresentationAssetGeneration({
     bundle,
@@ -25,17 +25,27 @@ test("Cần Thơ asset planner schedules only image slots grounded by presentati
     snapshotDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     requestedAt: "2026-08-21T20:10:11Z",
   });
-  assert.equal(plan.jobs.length, 11);
-  assert.equal(plan.deferred.length, 3);
-  assert.deepEqual(new Set(plan.jobs.map((job) => job.role)), new Set(["place", "memory_reconstruction"]));
+  assert.equal(plan.jobs.length, 5);
+  assert.equal(plan.deferred.length, 9);
+  assert.deepEqual(new Set(plan.jobs.map((job) => job.role)), new Set(["place"]));
   plan.jobs.forEach((job) => assert.doesNotThrow(() => normalizeAssetGenerationJob(job)));
   assert.equal(plan.jobs.every((job) => job.variant === "default" && job.referenceObjectRefs.length === 0), true);
+
+  const selfMemories = bundle.presentation.memories.map((memory) => memory.mediaRefs[0]);
+  assert.equal(selfMemories.length, 6);
+  for (const mediaId of selfMemories) {
+    assert.equal(
+      plan.deferred.some((item) => item.mediaId === mediaId && item.reason === "deferred_missing_embodiment"),
+      true,
+      `${mediaId} must not invent a Thread likeness before canonical visual identity is admitted`,
+    );
+  }
   assert.equal(plan.deferred.some((item) => item.mediaId === "media_portrait_primary" && item.reason === "deferred_missing_embodiment_brief"), true);
   assert.equal(plan.deferred.some((item) => item.mediaId === "media_voice_primary" && item.reason === "deferred_non_image_asset"), true);
   assert.equal(plan.deferred.some((item) => item.mediaId === "media_life_film" && item.reason === "deferred_non_image_asset"), true);
 });
 
-test("memory reconstruction brief uses remembered content and preserves uncertainty boundary", async () => {
+test("self-depicting memory remains deferred before Embodiment instead of using remembered text to invent a face", async () => {
   const bundle = await p2Bundle();
   const plan = planThreadPresentationAssetGeneration({
     bundle,
@@ -43,12 +53,10 @@ test("memory reconstruction brief uses remembered content and preserves uncertai
     snapshotDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     requestedAt: "2026-08-21T20:10:11Z",
   });
-  const tomatoes = plan.jobs.find((job) => job.context.mediaId === "media_memory_tomatoes");
+  const tomatoes = plan.deferred.find((item) => item.mediaId === "media_memory_tomatoes");
   assert.ok(tomatoes);
-  assert.match(tomatoes.brief.description, /20,000 đồng/);
-  assert.match(tomatoes.brief.description, /Uncertain details/);
-  assert.equal(tomatoes.brief.constraints.some((value) => value.includes("not a documentary photograph")), true);
-  assert.equal(tomatoes.brief.constraints.some((value) => value.includes("canonical facial likeness")), true);
+  assert.equal(tomatoes.reason, "deferred_missing_embodiment");
+  assert.equal(plan.jobs.some((job) => job.context.mediaId === "media_memory_tomatoes"), false);
 });
 
 test("same snapshot and provider profile produce deterministic job and object identities", async () => {
