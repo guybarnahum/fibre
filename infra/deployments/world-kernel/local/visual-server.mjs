@@ -1,6 +1,16 @@
 import { attachWorldVisualPublicationRuntime } from "./visual-publication-runtime.mjs";
 import { startWorldKernelFromEnvironment } from "./server.mjs";
 
+function defaultVisualPublicationErrorReporter(entry, error) {
+  console.error(JSON.stringify({
+    event: "world_visual_publication_reconciliation_failed",
+    threadId: entry.threadId,
+    errorName: entry.errorName,
+    message: entry.message,
+    stack: error instanceof Error ? error.stack : null,
+  }));
+}
+
 /**
  * Local deployment composition for Slice-A visual publication.
  *
@@ -18,6 +28,7 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
   try {
     visualRuntime = attachWorldVisualPublicationRuntime({
       worldRuntime,
+      onError: defaultVisualPublicationErrorReporter,
       ...visualOptions,
     });
   } catch (error) {
