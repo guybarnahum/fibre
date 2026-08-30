@@ -49,7 +49,7 @@ function cognition() {
     modelId: "fixture-model-v1",
     promptHash: sha(char),
     schemaHash: sha(char === "a" ? "b" : char),
-    sampling: { temperature: 0, seed: 39 },
+    sampling: { temperature: 0.4, seed: 39 },
   });
   return {
     passA: surface("a"),
@@ -85,7 +85,7 @@ function birth(threadId) {
       entry: {
         stage: "young_adult",
         ageAtEntry: 22,
-        chronologyEndsAt: "2026-08-29T23:57:00Z",
+        chronologyEndsAt: "2026-08-29T23:54:00Z",
         justification: "Atomic-birth state-boundary fixture.",
         policyRef: "entry-policy-v1",
       },
