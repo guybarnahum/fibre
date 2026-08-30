@@ -276,6 +276,7 @@ function createC2paFixtureFetch() {
         verifiedAt: `2026-08-30T18:${38 + sequence}:00Z`,
         failureReason: null,
         trust: { policy: "c2pa_trust_list", trusted: true },
+        failureReason: null,
       });
     }
     throw new Error(`unexpected C2PA fixture URL ${url}`);
@@ -324,7 +325,7 @@ async function startWorld({
       presentationBoundary,
       runImmediately: false,
       intervalMs: 60_000,
-      now: () => "2026-08-30T18:42:00Z",
+      now: () => "2026-09-01T00:00:00Z",
     },
   );
 }
@@ -414,7 +415,7 @@ test("real birth automatically converges to one canonical root and one official 
 
     const secondRun = await world.visualRuntime.runOnce();
     const second = resultForThread(secondRun);
-    assert.equal(second.ok, true);
+    assert.equal(second.ok, true, second.message);
     assert.equal(second.reconciliation.stage, "official_photo_pending");
     assert.equal(openai.calls.length, 2, "one failed provider call plus one successful retry is expected");
 
