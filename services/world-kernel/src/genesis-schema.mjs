@@ -22,6 +22,19 @@ export function createGenesisTables(database) {
       FOREIGN KEY (world_spec_id) REFERENCES genesis_world_specs(world_spec_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS genesis_presentation_outbox (
+      genesis_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL UNIQUE,
+      manifest_json TEXT NOT NULL CHECK (json_valid(manifest_json)),
+      publication_digest TEXT NOT NULL CHECK (publication_digest LIKE 'sha256:%'),
+      published_at TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','delivered')),
+      attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+      last_attempt_at TEXT,
+      last_error_json TEXT CHECK (last_error_json IS NULL OR json_valid(last_error_json)),
+      delivered_at TEXT
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS genesis_historical_envelope_plans (
       genesis_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL UNIQUE,
@@ -59,6 +72,8 @@ export function createGenesisTables(database) {
       ON genesis_generation_attempts(genesis_id, candidate_attempt_number, recorded_at, attempt_id);
     CREATE INDEX IF NOT EXISTS idx_genesis_origin_authority_source
       ON genesis_origin_authorities(source_party_id, authority_kind, asserted_at, authority_ref);
+    CREATE INDEX IF NOT EXISTS idx_genesis_presentation_outbox_pending
+      ON genesis_presentation_outbox(state, published_at, genesis_id);
 
     DROP TRIGGER IF EXISTS genesis_manifests_require_historical_envelope;
     CREATE TRIGGER genesis_manifests_require_historical_envelope
@@ -128,6 +143,34 @@ export function createGenesisTables(database) {
           json_extract(NEW.record_json,'$.publication.civilRegistration.registrationDigest')
         );
       END;
+
+    DROP TRIGGER IF EXISTS genesis_manifests_enqueue_presentation;
+    CREATE TRIGGER genesis_manifests_enqueue_presentation
+      AFTER INSERT ON genesis_manifests
+      WHEN NEW.publication_status='published'
+      BEGIN
+        INSERT OR IGNORE INTO genesis_presentation_outbox(
+          genesis_id,thread_id,manifest_json,publication_digest,published_at
+        ) VALUES (
+          NEW.genesis_id,
+          NEW.thread_id,
+          NEW.record_json,
+          NEW.record_digest,
+          json_extract(NEW.record_json,'$.publication.publishedAt')
+        );
+      END;
+
+    INSERT OR IGNORE INTO genesis_presentation_outbox(
+      genesis_id,thread_id,manifest_json,publication_digest,published_at
+    )
+    SELECT
+      genesis_id,
+      thread_id,
+      record_json,
+      record_digest,
+      json_extract(record_json,'$.publication.publishedAt')
+    FROM genesis_manifests
+    WHERE publication_status='published';
 
     CREATE TRIGGER IF NOT EXISTS genesis_world_specs_no_update
       BEFORE UPDATE ON genesis_world_specs
