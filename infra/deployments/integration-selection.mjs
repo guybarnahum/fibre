@@ -36,6 +36,58 @@ function environmentValue(name, mapping, key, environment, { required = true } =
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
+function imageProfileFlag(profile, integration, key) {
+  const value = integration?.config?.[key];
+  if (typeof value !== "boolean") {
+    throw new TypeError(`asset image provider profile ${profile} config.${key} must be boolean`);
+  }
+  return value;
+}
+
+export function selectImageProviderProfile(serviceDeployment, {
+  requiresReferenceObjects = false,
+} = {}) {
+  if (!serviceDeployment || typeof serviceDeployment !== "object" || Array.isArray(serviceDeployment)) {
+    throw new TypeError("asset-generator service deployment is required");
+  }
+  if (serviceDeployment.serviceId !== "asset-generator") {
+    throw new TypeError("image provider profile selection requires the asset-generator service deployment");
+  }
+  if (typeof requiresReferenceObjects !== "boolean") {
+    throw new TypeError("requiresReferenceObjects must be boolean");
+  }
+
+  const images = Object.entries(serviceDeployment.integrations ?? {})
+    .filter(([, integration]) => integration?.kind === "ai.image")
+    .map(([profile, integration]) => ({
+      profile,
+      integration,
+      acceptsReferenceObjects: imageProfileFlag(profile, integration, "acceptsReferenceObjects"),
+      presentationDefault: imageProfileFlag(profile, integration, "presentationDefault"),
+      presentationReferenceDefault: imageProfileFlag(profile, integration, "presentationReferenceDefault"),
+    }));
+  if (images.length === 0) throw new TypeError("asset-generator deployment has no ai.image provider profiles");
+
+  if (!requiresReferenceObjects) {
+    const defaults = images.filter((candidate) => candidate.presentationDefault);
+    if (defaults.length !== 1) {
+      throw new TypeError("asset-generator deployment must declare exactly one default presentation image profile");
+    }
+    return defaults[0].profile;
+  }
+
+  const capable = images.filter((candidate) => candidate.acceptsReferenceObjects);
+  if (capable.length === 0) {
+    throw new TypeError("asset-generator deployment has no image profile capable of reference objects");
+  }
+  if (capable.length === 1) return capable[0].profile;
+  const defaults = capable.filter((candidate) => candidate.presentationReferenceDefault);
+  if (defaults.length !== 1) {
+    throw new TypeError("asset-generator deployment must declare exactly one default reference-capable presentation image profile");
+  }
+  return defaults[0].profile;
+}
+
 export function selectReasoningIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch, observer = null } = {}) {
   const chosen = selection("reasoning integration", value, "ai.reasoning");
   const modelId = configured("reasoning integration config.model", chosen.config?.model);
