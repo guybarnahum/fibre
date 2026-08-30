@@ -6,6 +6,7 @@ import {
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const PRESENTATION_CHANNEL_PREFIX = "presentation:";
+const DISCOVERY_SCAN_PAGE_SIZE = 100;
 
 function assertId(name, value) {
   if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new TypeError(`${name} is invalid`);
@@ -79,39 +80,56 @@ function discoveryPage(url) {
   return { limit, cursor };
 }
 
-async function discoverPublicThreads({ infra, presentationServer, url }) {
-  const { limit, cursor } = discoveryPage(url);
-  const page = await infra.catalog.list({
-    prefix: PRESENTATION_CHANNEL_PREFIX,
-    after: cursor,
-    limit,
-  });
-  const threads = [];
-  for (const { key, value } of page.entries) {
-    if (value?.publiclyVisible !== true || value?.channelId !== key) continue;
-    try {
-      assertId("discovery threadId", value.threadId);
-    } catch {
-      continue;
-    }
-    if (threadPresentationChannelId(value.threadId) !== key) continue;
-    const current = await presentationServer.getSnapshot(key);
-    if (current === null
-      || current.pointer.threadId !== value.threadId
-      || !publicIdentityCredentialAllowed(current.snapshot)) {
-      continue;
-    }
-    threads.push({
-      threadId: value.threadId,
-      lifecycleStatus: value.lifecycleStatus ?? null,
-      snapshotVersion: current.pointer.snapshotVersion,
-      snapshotDigest: current.pointer.snapshotDigest,
-    });
+function publicDiscoveryEntry({ key, value, current }) {
+  if (value?.publiclyVisible !== true || value?.channelId !== key) return null;
+  try {
+    assertId("discovery threadId", value.threadId);
+  } catch {
+    return null;
+  }
+  if (threadPresentationChannelId(value.threadId) !== key) return null;
+  if (current === null
+    || current.pointer.threadId !== value.threadId
+    || !publicIdentityCredentialAllowed(current.snapshot)) {
+    return null;
   }
   return {
-    threads,
-    nextCursor: page.nextCursor,
+    threadId: value.threadId,
+    lifecycleStatus: value.lifecycleStatus ?? null,
+    snapshotVersion: current.pointer.snapshotVersion,
+    snapshotDigest: current.pointer.snapshotDigest,
   };
+}
+
+async function discoverPublicThreads({ infra, presentationServer, url }) {
+  const { limit, cursor } = discoveryPage(url);
+  const threads = [];
+  let after = cursor;
+
+  while (threads.length < limit) {
+    const page = await infra.catalog.list({
+      prefix: PRESENTATION_CHANNEL_PREFIX,
+      after,
+      limit: DISCOVERY_SCAN_PAGE_SIZE,
+    });
+    if (page.entries.length === 0) return { threads, nextCursor: null };
+
+    for (const { key, value } of page.entries) {
+      after = key;
+      const current = await presentationServer.getSnapshot(key);
+      const entry = publicDiscoveryEntry({ key, value, current });
+      if (entry !== null) threads.push(entry);
+      if (threads.length === limit) {
+        const moreCatalogEntries = key !== page.entries.at(-1).key || page.nextCursor !== null;
+        return { threads, nextCursor: moreCatalogEntries ? key : null };
+      }
+    }
+
+    if (page.nextCursor === null) return { threads, nextCursor: null };
+    after = page.nextCursor;
+  }
+
+  return { threads, nextCursor: after };
 }
 
 export function createPresentationReadApi({
