@@ -39,7 +39,16 @@ test("Thread demand trigger always reconciles the current admitted snapshot", as
     requestedAt: "2026-08-25T19:47:00Z",
   });
   assert.equal(first.snapshotDigest, firstSnapshot.digest);
-  assert.equal(first.demand.reconciliation.jobs.length, 11);
+  assert.equal(first.demand.reconciliation.jobs.length, 5, "pre-embodiment fixture may generate places only");
+  assert.deepEqual(
+    new Set(first.demand.reconciliation.jobs.map((job) => job.role)),
+    new Set(["place"]),
+  );
+  assert.equal(
+    first.demand.reconciliation.deferredSlots.filter((slot) =>
+      slot.role === "memory_reconstruction" && slot.deferredReason === "deferred_missing_embodiment").length,
+    6,
+  );
 
   const changedBundle = structuredClone(firstBundle);
   const market = changedBundle.presentation.places.find(
