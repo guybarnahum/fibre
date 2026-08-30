@@ -10,6 +10,7 @@ import {
   createBirthCenterRuntime,
 } from "#services/birth-center/src/runtime.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
+import { createWorldKernelBirthPublisher } from "./world-kernel-birth-publisher.mjs";
 
 const LOCAL_MANIFEST = parseDeploymentManifest(
   readFileSync(new URL("../../environments/local.yaml", import.meta.url), "utf8"),
@@ -35,15 +36,30 @@ function parsePort(value) {
   return port;
 }
 
+function worldPublisherFromEnvironment(environment) {
+  const privateToken = environment.FIBRE_PRIVATE_TOKEN;
+  if (typeof privateToken !== "string" || privateToken === "") return null;
+  return createWorldKernelBirthPublisher({
+    endpoint: environment.FIBRE_WORLD_KERNEL_URL ?? "http://127.0.0.1:8787",
+    privateToken,
+  });
+}
+
 export async function startBirthCenterFromEnvironment(
   environment = process.env,
-  { worldPublisher = null } = {},
+  options = {},
 ) {
+  if (options === null || typeof options !== "object" || Array.isArray(options)) {
+    throw new TypeError("birth-center deployment options must be an object");
+  }
   const host = environment.FIBRE_BIRTH_CENTER_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_BIRTH_CENTER_PORT ?? "8790");
   const stateRoot = resolve(environment.FIBRE_BIRTH_CENTER_STATE ?? ".fibre/birth-center");
   assertLoopbackBindHost(host);
 
+  const worldPublisher = Object.hasOwn(options, "worldPublisher")
+    ? options.worldPublisher
+    : worldPublisherFromEnvironment(environment);
   const runtime = createBirthCenterRuntime({ stateRoot, worldPublisher });
   const status = () => ({
     service: "fibre-birth-center",
@@ -98,6 +114,7 @@ async function main() {
     host: service.address.host,
     port: service.address.port,
     stateRoot: service.runtime.stateRoot,
+    worldPublicationConfigured: service.runtime.worldPublicationConfigured,
     authoritativeThreadStateOwned: false,
   })}\n`);
 
