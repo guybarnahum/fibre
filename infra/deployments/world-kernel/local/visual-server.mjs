@@ -2,13 +2,14 @@ import { attachWorldVisualPublicationRuntime } from "./visual-publication-runtim
 import { startWorldKernelFromEnvironment } from "./server.mjs";
 
 function defaultVisualPublicationErrorReporter(entry, error) {
-  console.error(JSON.stringify({
+  const diagnostic = JSON.stringify({
     event: "world_visual_publication_reconciliation_failed",
     threadId: entry.threadId,
     errorName: entry.errorName,
     message: entry.message,
     stack: error instanceof Error ? error.stack : null,
-  }));
+  });
+  process.stderr.write(`${diagnostic}\n`);
 }
 
 /**
