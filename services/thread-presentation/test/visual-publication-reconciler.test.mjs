@@ -158,6 +158,7 @@ test("Presentation visual reconciliation waits for the newborn projection before
     createIdentityRewrite() { touched = true; return {}; },
     planSlots() { touched = true; return { slots: [] }; },
   });
+  touched = false;
 
   const result = await reconciler.reconcileAvailableEmbodiment({
     threadId: embodiment.threadId,
