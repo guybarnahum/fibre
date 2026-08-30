@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { createBirthCenterRuntime } from "../src/runtime.mjs";
-import { startBirthCenterFromEnvironment } from "../src/server.mjs";
+import { startBirthCenterFromEnvironment } from "../../../infra/deployments/birth-center/local/server.mjs";
 
 function tempState(t) {
   const root = mkdtempSync(join(tmpdir(), "fibre-birth-center-"));
