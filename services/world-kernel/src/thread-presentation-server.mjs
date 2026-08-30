@@ -74,7 +74,9 @@ export function createThreadPresentationServer({ infra }) {
         snapshotDigest: digest,
         threadId: normalized.presentation.manifest.threadId,
       }, { expectedSequence: head.sequence });
+      const priorCatalog = await infra.catalog.get(channelId);
       await infra.catalog.upsert(channelId, {
+        ...(priorCatalog ?? {}),
         channelId,
         threadId: normalized.presentation.manifest.threadId,
         lifecycleStatus: normalized.presentation.manifest.lifecycleStatus,
