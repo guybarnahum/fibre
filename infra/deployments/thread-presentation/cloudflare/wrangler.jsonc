@@ -3,7 +3,15 @@
   "name": "fibre-thread-presentation",
   "main": "./worker.mjs",
   "compatibility_date": "2026-08-28",
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.yaml"],
+      "fallthrough": true
+    }
+  ],
   "vars": {
+    "FIBRE_DEPLOYMENT_ENV": "cloudflare",
     "C2PA_SIGNER_ID": "fibre-c2pa-production-v1",
     "C2PA_TRUST_POLICY": "c2pa_trust_list"
   },
