@@ -114,7 +114,9 @@ rich canonical visual identity text
 
 A pending text specification does not yet constitute an operational public visual reference.
 
-Slice C has now closed this root contract in executable code: generic/thin appearance text is rejected, the root job carries no prior image references, exact verified credentialed output is admitted back into the pending Embodiment revision, and the admitted asset records the one canonical `referenceObjectRef`. The runtime dependency-policy guard remains green without granting the new root module a private cross-owner exception.
+Slice C closed this root contract in executable code: generic/thin appearance text is rejected, the root job carries no prior image references, exact verified credentialed output is admitted back into the pending Embodiment revision, and the admitted asset records the one canonical `referenceObjectRef`. The runtime dependency-policy guard remains green without granting the root module a new private cross-owner exception.
+
+Slices D and E have now closed the public projection and downstream demand semantics. The admitted canonical Embodiment can issue the bounded Fibre Identity Card/official-photo placeholder without creating another identity authority, and person-depicting demand carries the exact canonical root plus chronology-derived target age. Autobiographical memory uses the same root at event age when the Thread is actually depicted; memory ownership alone does not imply depiction, ambiguous multi-event chronology does not invent a false exact age, and place/environment imagery remains reference-free.
 
 After admission:
 
@@ -125,9 +127,11 @@ canonical Fibre reference image
   -> other Thread-depicting media at scene age/context
 ```
 
-A permanent cross-age planner proof now asserts that the official image and a materially different-age autobiographical reconstruction carry the exact same canonical object reference, reference age 25, and distinct chronology-derived target ages. This is a guardrail for the downstream slices, not a claim that their provider/C2PA/publication E2E is already closed.
+Permanent tests now assert that the official image and a materially different-age autobiographical reconstruction carry the exact same canonical object reference, reference age 25, and distinct chronology-derived target ages. A pre-Embodiment self-memory defers instead of inventing a face from biography or remembered text.
 
-All such later media remains derived and must not replace the root through ordinary aging or aesthetic preference.
+This closes the semantic request contract, not live person-image provider execution. The current OpenAI image adapter rejects reference objects rather than silently dropping them; Slice F owns a reference-capable provider path plus credential/provenance completion and Thread Presentation publication convergence.
+
+All later media remains derived and must not replace the root through ordinary aging or aesthetic preference.
 
 Echo/Homage is the explicit source-grounded creation exception. Authorized sponsor/homage source images may participate in forming the transformed Fibre canonical root under the established consent/source-rights rules. Once admitted, later images use the Fibre root rather than repeatedly using the original sponsor/homage source.
 
@@ -148,7 +152,7 @@ Current rules include:
 
 ## Current next work — #40 Identity Projection & Causal Consumption
 
-#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the active deployment vertical is now carrying the admitted canonical visual root into the public presentation boundary.
+#37–#39 provide a rich provenance-bearing life substrate. The bridge has hardened the memory/meaning and measurement seams. The remaining milestone gap is canonical causal consumption in ordinary cognition, while the deployment vertical has advanced through canonical root admission, public visual projection and reference/age-conditioned demand to the reference-capable execution boundary.
 
 The cognition path remains:
 
@@ -165,12 +169,13 @@ The active public/visual path is:
 
 ```text
 Genesis birth
-  -> public pre-embodiment presentation                    DONE
+  -> public pre-embodiment presentation                    DONE / GREEN
   -> canonical visual identity root                        DONE / GREEN
-  -> Embodiment admission + public visual projection       CURRENT
-  -> reference/age-conditioned official + memory images    NEXT
-  -> C2PA completion + Thread Presentation publication     NEXT
-  -> Viewer + one-birth recovery E2E                       FINAL VERTICAL GATE
+  -> Embodiment admission + public visual projection       DONE / GREEN
+  -> reference/age-conditioned official + memory demand    DONE / GREEN
+  -> reference-capable generation + C2PA/publication       CURRENT
+  -> insidefibre.com Viewer closure                        NEXT
+  -> one-birth recovery E2E                                FINAL VERTICAL GATE
 ```
 
 The critical #40 standing proof is still not merely that two Threads receive different prompt text or appear visually different. It must show that a Thread-owned identity/history difference can produce an attributable difference in cognition or downstream consequence under the same declared selection policy. Caller nomination may not become private-context-selection authority.
@@ -213,7 +218,7 @@ The following remain part of Fibre's intended architecture:
 - M2 standing across repeated trials and causal substitutions (#41);
 - richer Thread-authored development and self-model change (#42);
 - reciprocal/shared relationship structures, repair, expectations and permissions (#43);
-- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
+- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation;
 - richer visual appearance timelines beyond the canonical root + target-age model where later lived embodiment requires them;
 - endogenous motivation using clearly separated mechanical conditions plus Thread-authored semantic interpretation;
 - general isolated worker/tool/model gateway and model-capable Actor;
