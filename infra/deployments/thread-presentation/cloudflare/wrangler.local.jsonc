@@ -3,7 +3,15 @@
   "name": "fibre-presentation-local",
   "main": "./worker.mjs",
   "compatibility_date": "2026-08-21",
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.yaml"],
+      "fallthrough": true
+    }
+  ],
   "vars": {
+    "FIBRE_DEPLOYMENT_ENV": "local",
     "VIEWER_ORIGIN": "http://localhost:5173",
     "P3_FIXTURE_MODE": "1",
     "C2PA_SIGNER_URL": "http://127.0.0.1:8790",
