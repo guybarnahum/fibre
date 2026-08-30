@@ -43,6 +43,7 @@ export {
   readPresentationCivilIdentity,
 } from "./civil-identity-projection.mjs";
 
+export { createGenesisPresentationDeliveryService } from "./genesis-presentation-delivery-service.mjs";
 export { projectNewbornThreadPresentation } from "./newborn-presentation-projector.mjs";
 
 export {
