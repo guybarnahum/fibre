@@ -7,10 +7,8 @@ import {
   DIGNITY_GUARDIAN_V4_RESPONSE_SCHEMA_GENERATOR_HASH,
   semanticDignityGuardianV4,
 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import {
-  GuardianModelError,
-  createOpenAIResponsesGuardianAdapter,
-} from "#services/world-kernel/src/guardian-model-adapter.mjs";
+import { GuardianModelError } from "#services/world-kernel/src/guardian-model-adapter.mjs";
+import { createLocalReasoningAdapter } from "../../../infra/deployments/local-reasoning.mjs";
 import { SEMANTIC_GUARDIAN_V4_DEVELOPMENT_SET as SET } from "../experiments/semantic-guardian-v4/development-set.mjs";
 
 const minaFixture = JSON.parse(
@@ -22,11 +20,6 @@ const danielFixture = JSON.parse(
 const amaraFixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/amara.thread.json", import.meta.url), "utf8"),
 );
-
-function apiKey(environment) {
-  const value = environment.FIBRE_GUARDIAN_OPENAI_API_KEY ?? environment.OPENAI_API_KEY;
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
-}
 
 function normalizedThread(fixture) {
   const thread = structuredClone(fixture);
@@ -319,18 +312,15 @@ export async function runSemanticGuardianV4DevelopmentProof(
     cases = null,
   } = {},
 ) {
-  const key = apiKey(environment);
-  if (modelAdapter === null && key === null) {
-    return blockedV4DevelopmentReport(
-      "A real-model development run requires FIBRE_GUARDIAN_OPENAI_API_KEY or OPENAI_API_KEY.",
-      { modelId, reasoningEffort },
-    );
+  let adapter = modelAdapter;
+  if (adapter === null) {
+    try {
+      adapter = createLocalReasoningAdapter({ environment, model: modelId });
+    } catch (error) {
+      if (error?.code !== "MODEL_UNAVAILABLE") throw error;
+      return blockedV4DevelopmentReport(error.message, { modelId, reasoningEffort });
+    }
   }
-  const adapter = modelAdapter ?? createOpenAIResponsesGuardianAdapter({
-    apiKey: key,
-    modelId,
-    reasoningEffort,
-  });
   const selectedCases = cases ?? buildSemanticGuardianV4DevelopmentCases();
   const providerFailures = [];
   const protocolValidationFailures = [];
