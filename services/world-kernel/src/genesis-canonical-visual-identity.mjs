@@ -36,10 +36,10 @@ function normalizeSpecificationForThread(specification, threadId) {
 
 export function normalizeGenesisCanonicalVisualIdentity(candidate, { threadId } = {}) {
   assertId("canonical visual identity threadId", threadId);
-  assertPlainObject("manifest.canonicalVisualIdentity", candidate);
-  assertExactKeys("manifest.canonicalVisualIdentity", candidate, ["policyRef", "specification"]);
+  assertPlainObject("canonicalVisualIdentity", candidate);
+  assertExactKeys("canonicalVisualIdentity", candidate, ["policyRef", "specification"]);
   if (candidate.policyRef !== GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY) {
-    throw new TypeError("manifest.canonicalVisualIdentity.policyRef is invalid");
+    throw new TypeError("canonicalVisualIdentity.policyRef is invalid");
   }
   return Object.freeze({
     policyRef: candidate.policyRef,
@@ -91,11 +91,15 @@ function currentCanonicalPortrait(embodimentStore, threadId) {
 }
 
 export function createGenesisCanonicalEmbodimentMaterializer({
+  visualIdentityStore,
   genesisStore,
   worldStore,
   embodimentStore,
 } = {}) {
-  if (!genesisStore || typeof genesisStore.getManifestByThreadId !== "function") {
+  if (!visualIdentityStore || typeof visualIdentityStore.getByThreadId !== "function") {
+    throw new TypeError("Genesis canonical Embodiment materializer requires canonical visual identity authority");
+  }
+  if (!genesisStore || typeof genesisStore.getManifest !== "function") {
     throw new TypeError("Genesis canonical Embodiment materializer requires Genesis manifest authority");
   }
   if (!worldStore || typeof worldStore.listEvents !== "function") {
@@ -111,20 +115,21 @@ export function createGenesisCanonicalEmbodimentMaterializer({
       const existing = currentCanonicalPortrait(embodimentStore, threadId);
       if (existing !== null) return Object.freeze({ state: "ready", embodiment: existing, created: false });
 
-      const manifestRecord = genesisStore.getManifestByThreadId(threadId, { required: false });
-      const manifest = manifestRecord?.manifest ?? null;
-      if (manifest === null || manifest.publication.status !== "published") {
-        return Object.freeze({ state: "pending", reason: "awaiting_published_genesis" });
-      }
-      if (manifest.canonicalVisualIdentity === undefined) {
+      const visualIdentityRecord = visualIdentityStore.getByThreadId(threadId, { required: false });
+      if (visualIdentityRecord === null) {
         return Object.freeze({ state: "pending", reason: "awaiting_canonical_visual_identity" });
+      }
+      const manifestRecord = genesisStore.getManifest(visualIdentityRecord.genesisId, { required: false });
+      const manifest = manifestRecord?.manifest ?? null;
+      if (manifest === null || manifest.threadId !== threadId || manifest.publication.status !== "published") {
+        return Object.freeze({ state: "pending", reason: "awaiting_published_genesis" });
       }
       const originEvent = worldStore.listEvents(threadId)[0];
       if (!originEvent) return Object.freeze({ state: "pending", reason: "awaiting_origin_event" });
 
       const embodiment = embodimentStore.record(pendingCanonicalVisualIdentityEmbodiment({
         threadId,
-        canonicalVisualIdentity: manifest.canonicalVisualIdentity,
+        canonicalVisualIdentity: visualIdentityRecord.canonicalVisualIdentity,
         originEventRef: originEvent.eventId,
         recordedAt: manifest.publication.publishedAt,
       }));
