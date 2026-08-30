@@ -7,7 +7,7 @@ const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const FIXTURE_ROOT = join(REPO_ROOT, "fixtures/thread-presentation");
 
 export const DEFAULT_LIVE_FIXTURE = "can-tho";
-export const DEFAULT_LIVE_MEDIA_ID = "media_memory_tomatoes";
+export const DEFAULT_LIVE_MEDIA_ID = "media_place_market";
 
 export function normalizeLiveFixtureName(value = DEFAULT_LIVE_FIXTURE) {
   if (typeof value !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(value)) {
