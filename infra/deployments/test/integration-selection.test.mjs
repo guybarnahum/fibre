@@ -37,7 +37,7 @@ test("deployment composition constructs selected image integrations", () => {
     fetchImpl: async () => { throw new Error("not called"); },
   });
   assert.equal(openai.providerId, "openai-image-v1");
-  assert.equal(bfl.providerId, "bfl-flux-v1");
+  assert.equal(bfl.providerId, "bfl-flux-image-v1");
 });
 
 test("deployment composition constructs selected content credential client", () => {
