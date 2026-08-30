@@ -133,6 +133,16 @@ async function waitForPublicSnapshot(readApi, threadId, { timeoutMs = 3_000 } = 
   throw new Error(`public Thread Presentation for ${threadId} was not projected before timeout`);
 }
 
+async function waitForDeliveredOutbox(outbox, genesisId, { timeoutMs = 3_000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const current = outbox.get(genesisId);
+    if (current?.state === "delivered") return current;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`Genesis presentation outbox ${genesisId} was not delivered before timeout`);
+}
+
 test("authoritative Genesis birth automatically becomes a persisted public non-fixture Thread Presentation", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-genesis-presentation-e2e-"));
   const databasePath = join(directory, "world.sqlite");
@@ -196,8 +206,10 @@ test("authoritative Genesis birth automatically becomes a persisted public non-f
     assert.equal(discoveryBody.threads.length, 1);
     assert.equal(discoveryBody.threads[0].threadId, candidate.thread.threadId);
 
-    const outbox = world.presentationOutboxStore.get(candidate.manifest.genesisId);
-    assert.equal(outbox.state, "delivered");
+    const outbox = await waitForDeliveredOutbox(
+      world.presentationOutboxStore,
+      candidate.manifest.genesisId,
+    );
     assert.equal(outbox.attemptCount, 1);
     assert.equal(outbox.lastError, null);
   } finally {
