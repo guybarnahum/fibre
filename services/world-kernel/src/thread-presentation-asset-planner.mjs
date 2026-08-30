@@ -39,7 +39,11 @@ function ageInstruction(targetAgeYears) {
     : `The supplied canonical identity reference depicts the same person at normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}; preserve that person's identity while age-transforming them naturally to ${targetAgeYears} years old for this image.`;
 }
 
-function memoryBrief(memory, { visualIdentity = null, targetAgeYears = null } = {}) {
+function memoryBrief(memory, {
+  visualIdentity = null,
+  targetAgeYears = null,
+  depictsThread = false,
+} = {}) {
   const uncertainty = memory.uncertainty.length > 0
     ? `Uncertain details that must not be rendered as exact facts: ${memory.uncertainty.join("; ")}.`
     : "No additional uncertainty list was supplied.";
@@ -58,10 +62,13 @@ function memoryBrief(memory, { visualIdentity = null, targetAgeYears = null } = 
       "Do not convert uncertainty into precise visual claims.",
       ...(hasIdentityReference
         ? [
-            "If the Thread is depicted, use the supplied canonical visual-identity reference as the facial/physical identity anchor; age, expression, clothing, and scene may change, but the person must remain recognizably the same identity.",
+            "The backed life-event participation record establishes that the Thread is present in this scene; use the supplied canonical visual-identity reference as that person's facial/physical identity anchor.",
+            "Age, expression, clothing, and scene may change, but the Thread must remain recognizably the same identity.",
             "Do not copy the canonical reference portrait's neutral pose or background unless the memory itself calls for them; it is an identity reference, not scene composition evidence.",
           ]
-        : ["Do not invent a canonical facial likeness when embodiment is not supplied."]),
+        : depictsThread
+          ? ["Do not generate this self-depicting scene without the admitted canonical visual-identity reference."]
+          : ["The backed life-event participation record does not establish the Thread as depicted; do not insert the Thread or invent/use a canonical likeness merely because this is the Thread's memory."]),
       "Avoid text overlays, labels, signatures, or claims that the image is authentic evidence.",
     ],
   };
@@ -111,11 +118,33 @@ function baseAssetSource(asset) {
   };
 }
 
-function memoryTargetAge(presentation, memory) {
-  if (presentation.subject.birthDate === null) return null;
-  const event = presentation.life.timeline.find((item) => memory.sourceReferences.includes(item.eventRef));
-  const at = event?.occurredAt ?? memory.formedAt;
-  return at === null ? null : ageYearsAt(presentation.subject.birthDate, at);
+function memoryDepictionContext(presentation, memory) {
+  const sceneEvents = presentation.life.timeline.filter((item) =>
+    memory.sourceReferences.includes(item.eventRef));
+  const threadSceneEvents = sceneEvents.filter((item) =>
+    item.participantRefs.includes(presentation.manifest.threadId));
+  const depictsThread = threadSceneEvents.length > 0;
+
+  let targetAgeYears = null;
+  if (depictsThread && presentation.subject.birthDate !== null) {
+    const ages = threadSceneEvents
+      .map((item) => ageYearsAt(presentation.subject.birthDate, item.occurredAt))
+      .filter((age) => age !== null);
+    const uniqueAges = [...new Set(ages)];
+    if (ages.length === threadSceneEvents.length && uniqueAges.length === 1) {
+      [targetAgeYears] = uniqueAges;
+    }
+  }
+
+  return Object.freeze({ sceneEvents, threadSceneEvents, depictsThread, targetAgeYears });
+}
+
+function eventInputReferences(events) {
+  return unique(events.flatMap((event) => [
+    event.eventRef,
+    event.provenanceRef,
+    ...event.sourceReferences,
+  ]));
 }
 
 export function planThreadPresentationAssetSlots({
@@ -138,8 +167,11 @@ export function planThreadPresentationAssetSlots({
     let stableContext = null;
 
     if (asset.role === "official_id_photo") {
+      const identityCard = presentation.identityCard ?? null;
       const visualIdentity = presentation.visualIdentity ?? null;
-      if (visualIdentity === null) {
+      if (identityCard === null || identityCard.officialPhotoMediaRef !== asset.mediaId) {
+        deferredReason = "deferred_missing_identity_card";
+      } else if (visualIdentity === null) {
         deferredReason = "deferred_missing_embodiment";
       } else if (visualIdentity.referenceObjectRefs.length !== 1) {
         deferredReason = "deferred_missing_visual_identity_reference";
@@ -147,27 +179,39 @@ export function planThreadPresentationAssetSlots({
         const visualIdentityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
         const targetAgeYears = ageYearsAt(
           presentation.subject.birthDate,
-          presentation.manifest.generatedAt,
+          identityCard.issuedAt,
         );
         semanticSource = {
           asset: baseAssetSource(asset),
+          identityCard: {
+            credentialId: identityCard.credentialId,
+            revision: identityCard.revision,
+            issuedAt: identityCard.issuedAt,
+            sourceReferences: identityCard.sourceReferences,
+            provenanceRef: identityCard.provenanceRef,
+          },
           visualIdentityDigest,
           targetAgeYears,
           referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
         };
         brief = officialIdPhotoBrief(visualIdentity, targetAgeYears);
         referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
-        extraInputReferences = [
+        extraInputReferences = unique([
+          identityCard.credentialId,
+          identityCard.provenanceRef,
+          ...identityCard.sourceReferences,
           visualIdentity.embodimentId,
           ...visualIdentity.sourceReferences,
           ...visualIdentity.permissionReferences,
-        ];
+        ]);
         stableContext = {
           kind: "thread_presentation_media",
           threadId: presentation.manifest.threadId,
           mediaId: asset.mediaId,
           role: asset.role,
           provenanceRef: asset.provenanceRef,
+          identityCardCredentialId: identityCard.credentialId,
+          identityCardRevision: identityCard.revision,
           visualIdentityDigest,
           referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
           targetAgeYears,
@@ -186,31 +230,41 @@ export function planThreadPresentationAssetSlots({
       if (memory) {
         entityKind = "memory";
         entityRef = memory.memoryRef;
-        const visualIdentity = presentation.visualIdentity ?? null;
-        if (visualIdentity !== null && visualIdentity.referenceObjectRefs.length !== 1) {
+        const depiction = memoryDepictionContext(presentation, memory);
+        const visualIdentity = depiction.depictsThread ? (presentation.visualIdentity ?? null) : null;
+        if (depiction.depictsThread && visualIdentity === null) {
+          deferredReason = "deferred_missing_embodiment";
+        } else if (visualIdentity !== null && visualIdentity.referenceObjectRefs.length !== 1) {
           deferredReason = "deferred_missing_visual_identity_reference";
         } else {
-          const targetAgeYears = memoryTargetAge(presentation, memory);
           const visualIdentityDigest = visualIdentity === null
             ? null
             : threadVisualIdentityProjectionDigest(visualIdentity);
           semanticSource = {
             asset: baseAssetSource(asset),
             memory,
+            sceneEvents: depiction.sceneEvents,
+            depictsThread: depiction.depictsThread,
             visualIdentityDigest,
-            targetAgeYears,
+            targetAgeYears: depiction.targetAgeYears,
             referenceAgeYears: visualIdentity === null
               ? null
               : CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
           };
-          brief = memoryBrief(memory, { visualIdentity, targetAgeYears });
+          brief = memoryBrief(memory, {
+            visualIdentity,
+            targetAgeYears: depiction.targetAgeYears,
+            depictsThread: depiction.depictsThread,
+          });
+          extraInputReferences = eventInputReferences(depiction.sceneEvents);
           if (visualIdentity !== null) {
             referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
-            extraInputReferences = [
+            extraInputReferences = unique([
+              ...extraInputReferences,
               visualIdentity.embodimentId,
               ...visualIdentity.sourceReferences,
               ...visualIdentity.permissionReferences,
-            ];
+            ]);
             stableContext = {
               kind: "thread_presentation_media",
               threadId: presentation.manifest.threadId,
@@ -219,7 +273,7 @@ export function planThreadPresentationAssetSlots({
               provenanceRef: asset.provenanceRef,
               visualIdentityDigest,
               referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
-              targetAgeYears,
+              targetAgeYears: depiction.targetAgeYears,
             };
           }
         }
