@@ -127,17 +127,49 @@ function publicationIdentity(current, projection) {
   });
 }
 
-export function createThreadPresentationEmbodimentRewriteService({ presentationServer } = {}) {
+async function readCurrentEmbodiment(embodimentReader, threadId, embodimentId) {
+  const current = await embodimentReader.listCurrent(threadId);
+  if (!Array.isArray(current)) throw new TypeError("Embodiment authority listCurrent() must return an array");
+  const matches = current.filter((candidate) => candidate?.embodimentId === embodimentId);
+  if (matches.length !== 1) {
+    throw new ThreadPresentationVisualIdentityConflictError(
+      matches.length === 0
+        ? `Embodiment ${embodimentId} is not current authoritative state for Thread ${threadId}`
+        : `Embodiment authority returned duplicate current records for ${embodimentId}`,
+    );
+  }
+  return normalizeEmbodimentRepresentation(matches[0]);
+}
+
+export function createThreadPresentationEmbodimentRewriteService({
+  presentationServer,
+  embodimentReader,
+} = {}) {
   if (!presentationServer
     || typeof presentationServer.getSnapshot !== "function"
     || typeof presentationServer.publishSnapshot !== "function") {
     throw new TypeError("visual identity rewrite service requires a PresentationServer");
   }
+  if (!embodimentReader || typeof embodimentReader.listCurrent !== "function") {
+    throw new TypeError("visual identity rewrite service requires the Embodiment authority reader");
+  }
 
   return Object.freeze({
-    async project({ channelId, embodiment: embodimentCandidate } = {}) {
+    async project({ channelId, embodimentId } = {}) {
       assertId("channelId", channelId);
-      const embodiment = normalizeEmbodimentRepresentation(embodimentCandidate);
+      assertId("embodimentId", embodimentId);
+      const current = await presentationServer.getSnapshot(channelId);
+      if (current === null) {
+        throw new ThreadPresentationVisualIdentityConflictError(
+          "public visual identity requires an existing Thread presentation snapshot",
+        );
+      }
+      assertId("presentation threadId", current.pointer.threadId);
+      const embodiment = await readCurrentEmbodiment(
+        embodimentReader,
+        current.pointer.threadId,
+        embodimentId,
+      );
       const provenanceRef = projectionProvenanceRef(embodiment);
       const projection = projectPublicEmbodimentVisualIdentity(embodiment, { provenanceRef });
       if (projection === null) {
@@ -150,12 +182,6 @@ export function createThreadPresentationEmbodimentRewriteService({ presentationS
         });
       }
 
-      const current = await presentationServer.getSnapshot(channelId);
-      if (current === null) {
-        throw new ThreadPresentationVisualIdentityConflictError(
-          "public visual identity requires an existing Thread presentation snapshot",
-        );
-      }
       const rewrite = rewriteIdentity({ current, projection, embodiment });
       if (rewrite.reused) {
         return Object.freeze({
