@@ -4,15 +4,18 @@ import { resolve } from "node:path";
 
 import { requestFingerprint } from "#services/world-kernel/src/private-participation.mjs";
 import { semanticDignityGuardianV4 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
-import { createModelRuntime } from "#services/world-kernel/src/model-runtime/model-runtime.mjs";
+import {
+  createLocalReasoningAdapter,
+  localReasoningSelection,
+} from "../../../infra/deployments/local-reasoning.mjs";
 import { SEMANTIC_GUARDIAN_V4_COUNTERFACTUAL_DEVELOPMENT as SET } from "../experiments/semantic-guardian-v4/counterfactual-development.mjs";
 
-const REASONING_BLOCK = "dignity_guardian";
+const REASONING_PORT = "dignityGuardian";
 const minaFixture = JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"));
 const amaraFixture = JSON.parse(readFileSync(new URL("../../../fixtures/threads/amara.thread.json", import.meta.url), "utf8"));
 
 function usage() {
-  return `Fibre Semantic Guardian v4 counterfactual development\n\nUsage:\n  npm run guardian:dev:counterfactual\n  npm run guardian:dev:counterfactual -- --model gpt-5.6-luna\n\nOptions:\n  --model <id> Override the YAML-selected model for this non-evidentiary run.\n  --help       Show this help.\n\nProvider remains selected by config/models.yaml. --model overrides only the model id for this run and never modifies the YAML file.\n`;
+  return `Fibre Semantic Guardian v4 counterfactual development\n\nUsage:\n  npm run guardian:dev:counterfactual\n  npm run guardian:dev:counterfactual -- --model gpt-5.6-luna\n\nOptions:\n  --model <id> Override the deployment-selected model for this non-evidentiary run.\n  --help       Show this help.\n\nProvider remains selected by infra/deployments/environments/local.yaml. --model overrides only the model id for this run and never modifies the deployment manifest.\n`;
 }
 
 export function parseCounterfactualDevelopmentArgs(argv) {
@@ -303,10 +306,13 @@ export async function runCounterfactualDevelopment({ environment = process.env, 
   validateCounterfactualPairs(cases);
   let progress = null;
   const observer = (event) => progress?.observe(event);
-  const modelOverrides = model === null || model === undefined ? null : { [REASONING_BLOCK]: model };
-  const runtime = createModelRuntime({ environment, observer, modelOverrides });
-  const selection = runtime.selectionForBlock(REASONING_BLOCK);
-  const adapter = runtime.forBlock(REASONING_BLOCK);
+  const selection = localReasoningSelection({ port: REASONING_PORT, model });
+  const adapter = createLocalReasoningAdapter({
+    environment,
+    port: REASONING_PORT,
+    model,
+    observer,
+  });
   const results = [];
   progress = startCounterfactualProgress(selection, cases.length);
 
