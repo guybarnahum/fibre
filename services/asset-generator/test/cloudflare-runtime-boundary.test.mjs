@@ -2,17 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 
+import {
+  parseDeploymentManifest,
+  resolveServiceDeployment,
+} from "../../../infra/deployments/manifest.mjs";
+
 const runtimeUrl = new URL("../src/asset-generation-runtime.mjs", import.meta.url);
 const errorUrl = new URL("../src/asset-generation-error.mjs", import.meta.url);
 const attemptUrl = new URL("../src/asset-generation-attempt.mjs", import.meta.url);
 const providerOperationUrl = new URL("../src/resumable-provider-operation.mjs", import.meta.url);
 const oldCloudflareDirUrl = new URL("../src/cloudflare/", import.meta.url);
 const workerUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/worker.mjs", import.meta.url);
-const providerSelectionUrl = new URL("../../../infra/deployments/asset-generator/image-provider-selection.mjs", import.meta.url);
+const integrationSelectionUrl = new URL("../../../infra/deployments/integration-selection.mjs", import.meta.url);
 const assetConfigUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.local.jsonc", import.meta.url);
 const assetRemoteConfigUrl = new URL("../../../infra/deployments/asset-generator/cloudflare/wrangler.jsonc", import.meta.url);
-const deploymentManifestUrl = new URL("../../../infra/deployments/environments/local.json", import.meta.url);
-const remoteDeploymentManifestUrl = new URL("../../../infra/deployments/environments/cloudflare-remote.json", import.meta.url);
+const deploymentManifestUrl = new URL("../../../infra/deployments/environments/local.yaml", import.meta.url);
+const remoteDeploymentManifestUrl = new URL("../../../infra/deployments/environments/cloudflare.yaml", import.meta.url);
 const presentationWorkerUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/worker.mjs", import.meta.url);
 const presentationConfigUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.local.jsonc", import.meta.url);
 const presentationRemoteConfigUrl = new URL("../../../infra/deployments/thread-presentation/cloudflare/wrangler.jsonc", import.meta.url);
@@ -26,6 +31,7 @@ const p3ProofUrl = new URL("../../../tools/presentation/prove-p3-generated-media
 
 async function text(url) { return readFile(url, "utf8"); }
 async function json(url) { return JSON.parse(await text(url)); }
+async function deployment(url) { return parseDeploymentManifest(await text(url)); }
 
 test("Asset Generator runtime stages provider attempts portably and Cloudflare only translates retry policy", async () => {
   const runtime = await text(runtimeUrl);
@@ -33,7 +39,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   const attempts = await text(attemptUrl);
   const providerOperations = await text(providerOperationUrl);
   const worker = await text(workerUrl);
-  const providerSelection = await text(providerSelectionUrl);
+  const integrationSelection = await text(integrationSelectionUrl);
 
   await assert.rejects(() => stat(oldCloudflareDirUrl), (error) => error?.code === "ENOENT");
   assert.match(runtime, /createAssetGenerationRuntime/);
@@ -73,7 +79,8 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /createCloudflareInfraDriver/);
   assert.match(worker, /withCloudflareQueueBindings/);
   assert.match(worker, /createAssetGenerationRuntime/);
-  assert.match(worker, /selectAssetImageProvider/);
+  assert.match(worker, /selectImageIntegration/);
+  assert.match(worker, /selectContentCredentialIntegration/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /NonRetryableError/);
   assert.match(worker, /assetGenerationRetryDecision/);
@@ -82,7 +89,6 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/);
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
-  assert.match(worker, /createContentCredentialSigner/);
   assert.match(worker, /asset-generation-failure-observation-v0\.2/);
   assert.match(worker, /category: error\?\.category/);
   assert.match(worker, /retryDecision: decision\.reason/);
@@ -94,16 +100,16 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /HTTP_SERVICE\.fetch\(request\)/);
   assert.doesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/);
   assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+  assert.doesNotMatch(worker, /#integrations\/ai\/image|#integrations\/content-credentials/);
 
-  assert.match(providerSelection, /openai-gpt-image-2-medium-v1/);
-  assert.match(providerSelection, /bfl-flux-2-pro-v1/);
-  assert.match(providerSelection, /createOpenAIImageProvider/);
-  assert.match(providerSelection, /createBflFluxImageProvider/);
-  assert.doesNotMatch(providerSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+  assert.match(integrationSelection, /createOpenAIImageProvider/);
+  assert.match(integrationSelection, /createBflFluxImageProvider/);
+  assert.match(integrationSelection, /createHttpContentCredentialSigner/);
+  assert.doesNotMatch(integrationSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/);
 });
 
 test("local deployment manifest selects Cloudflare while presentation owns completion publication", async () => {
-  const manifest = await json(deploymentManifestUrl);
+  const manifest = await deployment(deploymentManifestUrl);
   const assetConfig = await json(assetConfigUrl);
   const presentationConfig = await json(presentationConfigUrl);
   const presentationWorker = await text(presentationWorkerUrl);
@@ -113,16 +119,21 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
     await assert.rejects(() => stat(retiredFile), (error) => error?.code === "ENOENT");
   }
 
-  const assetDeployment = manifest.services["asset-generator"];
-  const provider = manifest.providers[assetDeployment.infra];
-  assert.equal(assetDeployment.runtime, "cloudflare-local");
-  assert.equal(provider.platform, "cloudflare");
-  assert.equal(provider.infraDriver, "cloudflare-v1");
-  assert.deepEqual(assetDeployment.requires, ["objects", "queues", "workflows"]);
+  const assetDeployment = resolveServiceDeployment(manifest, "asset-generator");
+  assert.equal(assetDeployment.runtime.runtimeId, "cloudflare-local");
+  assert.equal(assetDeployment.runtime.provider, "cloudflare");
+  assert.equal(assetDeployment.infra.infraId, "cloudflare-local");
+  assert.equal(assetDeployment.infra.provider, "cloudflare");
+  assert.equal(assetDeployment.infra.driver, "cloudflare-v1");
+  assert.ok(assetDeployment.infra.capabilities.includes("objects"));
+  assert.ok(assetDeployment.infra.capabilities.includes("queues"));
+  assert.ok(assetDeployment.infra.capabilities.includes("workflows"));
+  assert.equal(assetDeployment.integrations["openai-gpt-image-2-medium-v1"].provider, "openai");
+  assert.equal(assetDeployment.integrations["bfl-flux-2-pro-v1"].provider, "bfl");
 
-  const presentationDeployment = manifest.services["thread-presentation"];
-  assert.equal(presentationDeployment.runtime, "cloudflare-local");
-  assert.equal(presentationDeployment.infra, "cloudflare-local");
+  const presentationDeployment = resolveServiceDeployment(manifest, "thread-presentation");
+  assert.equal(presentationDeployment.runtime.runtimeId, "cloudflare-local");
+  assert.equal(presentationDeployment.infra.infraId, "cloudflare-local");
 
   const assetWorkflow = assetConfig.workflows.find((binding) => binding.binding === "ASSET_GENERATION");
   const presentationWorkflow = presentationConfig.workflows.find((binding) => binding.binding === "ASSET_GENERATION");
@@ -133,6 +144,8 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.equal(assetConfig.main, "./worker.mjs");
   assert.equal(presentationConfig.name, "fibre-presentation-local");
   assert.equal(presentationConfig.main, "./worker.mjs");
+  assert.equal(assetConfig.vars.FIBRE_DEPLOYMENT_ENV, "local");
+  assert.equal(presentationConfig.vars.FIBRE_DEPLOYMENT_ENV, "local");
   assert.equal(assetWorkflow.class_name, "AssetGenerationWorkflow");
   assert.equal(presentationWorkflow.class_name, "AssetGenerationWorkflow");
   assert.equal(presentationWorkflow.script_name, assetConfig.name);
@@ -147,6 +160,7 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.doesNotMatch(presentationWorker, /createOpenAIImageProvider|createBflFluxImageProvider|executeCredentialedAssetGenerationJob/);
   assert.match(presentationWorker, /createPresentationAssetCompletionService/);
   assert.match(presentationWorker, /createThreadPresentationAssetPublisher/);
+  assert.match(presentationWorker, /selectContentCredentialIntegration/);
   assert.match(presentationWorker, /async queue\(batch, env\)/);
   assert.match(presentationWorker, /message\.ack\(\)/);
   assert.match(presentationWorker, /message\.retry/);
@@ -156,22 +170,26 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
 });
 
 test("remote Cloudflare composition shares generated assets and completion topology without moving publication authority", async () => {
-  const manifest = await json(remoteDeploymentManifestUrl);
+  const manifest = await deployment(remoteDeploymentManifestUrl);
   const assetConfig = await json(assetRemoteConfigUrl);
   const presentationConfig = await json(presentationRemoteConfigUrl);
 
-  const remoteProvider = manifest.providers["cloudflare-remote"];
-  const assetDeployment = manifest.services["asset-generator"];
-  const presentationDeployment = manifest.services["thread-presentation"];
-  assert.equal(manifest.environment, "cloudflare-remote");
-  assert.equal(remoteProvider.platform, "cloudflare");
-  assert.equal(remoteProvider.infraDriver, "cloudflare-v1");
-  assert.equal(assetDeployment.runtime, "cloudflare-remote");
-  assert.equal(assetDeployment.infra, "cloudflare-remote");
-  assert.deepEqual(assetDeployment.requires, ["objects", "queues", "workflows"]);
-  assert.equal(presentationDeployment.runtime, "cloudflare-remote");
-  assert.equal(presentationDeployment.infra, "cloudflare-remote");
-  assert.deepEqual(presentationDeployment.requires, ["streams", "objects", "catalog", "realtime", "queues", "workflows"]);
+  const assetDeployment = resolveServiceDeployment(manifest, "asset-generator");
+  const presentationDeployment = resolveServiceDeployment(manifest, "thread-presentation");
+  assert.equal(manifest.environment, "cloudflare");
+  assert.equal(assetDeployment.runtime.runtimeId, "cloudflare");
+  assert.equal(assetDeployment.infra.infraId, "cloudflare");
+  assert.equal(assetDeployment.infra.provider, "cloudflare");
+  assert.equal(assetDeployment.infra.driver, "cloudflare-v1");
+  assert.ok(assetDeployment.infra.capabilities.includes("objects"));
+  assert.ok(assetDeployment.infra.capabilities.includes("queues"));
+  assert.ok(assetDeployment.infra.capabilities.includes("workflows"));
+  assert.equal(presentationDeployment.runtime.runtimeId, "cloudflare");
+  assert.equal(presentationDeployment.infra.infraId, "cloudflare");
+  assert.ok(presentationDeployment.infra.capabilities.includes("streams"));
+  assert.ok(presentationDeployment.infra.capabilities.includes("realtime"));
+  assert.equal(assetDeployment.integrations.contentCredentials.provider, "c2pa-http");
+  assert.equal(presentationDeployment.integrations.contentCredentials.provider, "c2pa-http");
 
   const assetBucket = assetConfig.r2_buckets.find((binding) => binding.binding === "ASSET_OBJECTS");
   const presentationBucket = presentationConfig.r2_buckets.find((binding) => binding.binding === "PRESENTATION_OBJECTS");
@@ -185,6 +203,8 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(assetConfig.name, "fibre-asset-generator");
   assert.equal(presentationConfig.name, "fibre-thread-presentation");
   assert.equal(presentationConfig.main, "./worker.mjs");
+  assert.equal(assetConfig.vars.FIBRE_DEPLOYMENT_ENV, "cloudflare");
+  assert.equal(presentationConfig.vars.FIBRE_DEPLOYMENT_ENV, "cloudflare");
   assert.equal(assetBucket.bucket_name, "fibre-presentation-assets");
   assert.equal(presentationBucket.bucket_name, assetBucket.bucket_name);
   assert.ok(catalog);
