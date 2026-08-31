@@ -67,6 +67,18 @@ function reasoningProfile(name) {
   return selected;
 }
 
+function reasoningCredentialsPresent(environment) {
+  for (const name of ["creative", "repair"]) {
+    const variable = reasoningProfile(name).secrets?.apiKey;
+    if (typeof variable !== "string" || variable.trim() === "") {
+      throw new TypeError(`birth-center local ${name} reasoning integration must declare secrets.apiKey`);
+    }
+    const value = environment?.[variable];
+    if (typeof value !== "string" || value.trim() === "") return false;
+  }
+  return true;
+}
+
 function reasoningAdaptersFromEnvironment(environment) {
   return Object.freeze({
     creativeAdapter: selectReasoningIntegration(reasoningProfile("creative"), { environment }),
@@ -80,7 +92,9 @@ function createDevelopmentComponents({ environment, options, runtime, worldPubli
   }
   const reasoningAdapters = Object.hasOwn(options, "reasoningAdapters")
     ? options.reasoningAdapters
-    : reasoningAdaptersFromEnvironment(environment);
+    : reasoningCredentialsPresent(environment)
+      ? reasoningAdaptersFromEnvironment(environment)
+      : null;
   if (reasoningAdapters === null) {
     return Object.freeze({ reasoningAdapters: null, developmentService: null, developmentApi: null });
   }
