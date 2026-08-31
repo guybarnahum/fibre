@@ -24,16 +24,6 @@ function createDurableThreadSource(databasePath) {
   });
 }
 
-function throwExplicitReconciliationFailure(result) {
-  const failure = result.results.find((entry) => entry.ok === false);
-  if (failure) {
-    const error = new Error(`${failure.errorName}: ${failure.message}`);
-    error.name = failure.errorName;
-    throw error;
-  }
-  return result;
-}
-
 /**
  * Attaches Slice-A visual reconciliation to an already-composed local World
  * runtime. Durable Thread enumeration makes startup/restart recovery independent
@@ -79,9 +69,7 @@ export function attachWorldVisualPublicationRuntime({
     process,
     reconciler,
     canonicalEmbodimentMaterializer,
-    async runOnce() {
-      return throwExplicitReconciliationFailure(await process.runOnce());
-    },
+    runOnce: () => process.runOnce(),
     stop: () => scheduler.stop(),
   });
 }
