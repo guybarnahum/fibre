@@ -11,6 +11,7 @@ import {
   createAssetGenerationCompletion,
   createAssetGenerationRuntime,
 } from "#services/asset-generator/src/index.mjs";
+import { shouldPublishPresentationAssetCompletion } from "../completion-routing.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
 import {
@@ -105,7 +106,8 @@ function createRuntime(env, job) {
 
 export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
-    const runtime = createRuntime(this.env, event.payload);
+    const job = event.payload;
+    const runtime = createRuntime(this.env, job);
     const generated = await step.do(
       "generate credentialed asset",
       {
@@ -117,7 +119,7 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
       },
       async (ctx) => {
         try {
-          return await runtime.execute(event.payload, { attemptNumber: ctx.attempt });
+          return await runtime.execute(job, { attemptNumber: ctx.attempt });
         } catch (error) {
           const decision = assetGenerationRetryDecision(error, { attempt: ctx.attempt });
           const observation = generationFailureObservation(error, { attempt: ctx.attempt, decision });
@@ -133,39 +135,41 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
       },
     );
 
-    const completion = createAssetGenerationCompletion({
-      jobId: generated.receipt.jobId,
-      receiptObjectRef: generated.receiptObjectRef,
-      receiptDigest: generated.receiptDigest,
-    });
+    if (shouldPublishPresentationAssetCompletion(job)) {
+      const completion = createAssetGenerationCompletion({
+        jobId: generated.receipt.jobId,
+        receiptObjectRef: generated.receiptObjectRef,
+        receiptDigest: generated.receiptDigest,
+      });
 
-    await step.do(
-      "signal asset generation completion",
-      {
-        retries: {
-          limit: WORKFLOW_RETRY_LIMIT,
-          delay: workflowRetryDelay,
+      await step.do(
+        "signal asset generation completion",
+        {
+          retries: {
+            limit: WORKFLOW_RETRY_LIMIT,
+            delay: workflowRetryDelay,
+          },
         },
-      },
-      async (ctx) => {
-        try {
-          await runtime.publishCompletion(completion);
-          return completion;
-        } catch (error) {
-          const decision = assetGenerationRetryDecision(error, {
-            attempt: ctx.attempt,
-            providerOutputDurable: true,
-          });
-          if (!decision.retry) {
-            throw new NonRetryableError(
-              JSON.stringify(generationFailureObservation(error, { attempt: ctx.attempt, decision })),
-              "AssetGenerationError",
-            );
+        async (ctx) => {
+          try {
+            await runtime.publishCompletion(completion);
+            return completion;
+          } catch (error) {
+            const decision = assetGenerationRetryDecision(error, {
+              attempt: ctx.attempt,
+              providerOutputDurable: true,
+            });
+            if (!decision.retry) {
+              throw new NonRetryableError(
+                JSON.stringify(generationFailureObservation(error, { attempt: ctx.attempt, decision })),
+                "AssetGenerationError",
+              );
+            }
+            throw error;
           }
-          throw error;
-        }
-      },
-    );
+        },
+      );
+    }
 
     return generated;
   }
