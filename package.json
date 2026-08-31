@@ -4,6 +4,10 @@
   "private": true,
   "description": "Persistent world for artificial persons called Threads",
   "type": "module",
+  "exports": {
+    "./world-kernel/genesis-development-contracts": "./services/world-kernel/public/genesis-development-contracts.mjs",
+    "./world-kernel/genesis-publication-contracts": "./services/world-kernel/public/genesis-publication-contracts.mjs"
+  },
   "imports": {
     "#services/*": "./services/*",
     "#integrations/*": "./integrations/*",

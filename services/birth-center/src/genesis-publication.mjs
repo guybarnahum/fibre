@@ -5,17 +5,18 @@ import {
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
+  assertGenesisCandidatePlaceConsistency,
+  canonicalJson,
+  eventStructurePoolV3Digest,
+  lifeRelationId,
   normalizeAutobiographicalMemory,
-} from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
-import {
   normalizeGenesisManifest,
+  normalizeLifeRelation,
+  normalizeSeedSnapshot,
   publicationValidatorSetWitness,
-} from "#services/world-kernel/src/genesis-domain.mjs";
-import { eventStructurePoolV3Digest } from "#services/world-kernel/src/genesis-event-structure-pool-v3.mjs";
-import { assertGenesisCandidatePlaceConsistency } from "#services/world-kernel/src/genesis-publication-place-consistency.mjs";
-import { normalizeSeedSnapshot, validateThreadSnapshot } from "#services/world-kernel/src/persistence-domain.mjs";
-import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
-import { lifeRelationId, normalizeLifeRelation } from "#services/world-kernel/src/situated-life-domain.mjs";
+  sha256,
+  validateThreadSnapshot,
+} from "fibre/world-kernel/genesis-publication-contracts";
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 const fail = (message) => { throw new Error(message); };

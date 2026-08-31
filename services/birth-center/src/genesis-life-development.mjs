@@ -1,33 +1,24 @@
-import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
 import {
   GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,
-  normalizePassCInput,
-} from "#services/world-kernel/src/genesis-pass-c-domain.mjs";
-import {
-  buildScheduledReinterpretationPassCInput,
-  scheduleReinterpretationOpportunities,
-} from "#services/world-kernel/src/genesis-pass-c-reinterpretation.mjs";
-import { sharedIntellectualSourceRefs } from "#services/world-kernel/src/genesis-intellectual-encounter.mjs";
-import {
   autobiographicalMemoryId,
-} from "#services/world-kernel/src/autobiographical-memory-domain.mjs";
-import { genesisLifeEpisodeEventId } from "#services/world-kernel/src/genesis-life-episode.mjs";
-import {
-  constrainPassAContextToHistoricalEnvelope,
-} from "#services/world-kernel/src/genesis-historical-envelope-v1.mjs";
-import {
+  buildGenesisPassBInput,
   buildRichLifePassAInput,
-  syntheticLineageWitnessFromRecombinedGenome,
-} from "#services/world-kernel/src/genesis-rich-life-domain.mjs";
-import { generateGenesisHistoricalEpisode } from "#services/world-kernel/src/genesis-life-pass-a.mjs";
-import { buildGenesisPassBInput } from "#services/world-kernel/src/genesis-life-pass-b-input.mjs";
-import { generateGenesisPassBMemory } from "#services/world-kernel/src/genesis-life-pass-b.mjs";
-import {
+  buildScheduledReinterpretationPassCInput,
+  canonicalJson,
+  constrainPassAContextToHistoricalEnvelope,
+  deriveGenesisLifeContinuity,
+  generateGenesisHistoricalEpisode,
   generateGenesisInitialMeaning,
+  generateGenesisPassBMemory,
   generateGenesisReinterpretation,
-} from "#services/world-kernel/src/genesis-life-pass-c.mjs";
-import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
+  genesisLifeEpisodeEventId,
+  normalizePassCInput,
+  scheduleReinterpretationOpportunities,
+  sha256,
+  sharedIntellectualSourceRefs,
+  syntheticLineageWitnessFromRecombinedGenome,
+} from "fibre/world-kernel/genesis-development-contracts";
 
 // Keep the persisted version string stable while the implementation sheds its
 // replacement-era module names. Candidate bytes remain comparable across the

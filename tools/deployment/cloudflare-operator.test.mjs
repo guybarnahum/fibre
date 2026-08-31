@@ -127,7 +127,7 @@ test("Slice E secret configuration uploads only each service subset and persists
     ["asset-generator", "fibre-asset-generator-staging", ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]],
     ["thread-presentation", "fibre-thread-presentation-staging", ["C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]],
     ["world-kernel", "fibre-world-kernel-staging", ["FIBRE_PRIVATE_TOKEN"]],
-    ["birth-center", "fibre-birth-center-staging", ["FIBRE_PRIVATE_TOKEN"]],
+    ["birth-center", "fibre-birth-center-staging", ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"]],
   ]);
   assert.equal(result.runtimeConfigByService["asset-generator"].C2PA_SIGNER_URL, "https://signer.staging.example");
   const asset = await readFile(resolve(repoRoot, state.wranglerConfigs["asset-generator"]), "utf8");

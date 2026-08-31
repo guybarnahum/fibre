@@ -1,8 +1,30 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { selectReasoningIntegration } from "../../integration-selection.mjs";
+import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
+import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createBirthCenterCloudflareRuntime } from "./runtime.mjs";
 
 const BIRTH_SCOPE_ID = "birth";
+const DEPLOYMENT = resolveServiceDeployment(
+  parseDeploymentManifest(cloudflareDeploymentYaml),
+  "birth-center",
+);
+
+function reasoningProfile(name) {
+  const selected = DEPLOYMENT.integrations?.[name];
+  if (!selected || selected.kind !== "ai.reasoning") {
+    throw new TypeError(`birth-center Cloudflare deployment requires ${name} reasoning integration`);
+  }
+  return selected;
+}
+
+function createReasoningAdapters(env) {
+  return Object.freeze({
+    creativeAdapter: selectReasoningIntegration(reasoningProfile("creative"), { environment: env }),
+    repairAdapter: selectReasoningIntegration(reasoningProfile("repair"), { environment: env }),
+  });
+}
 
 export class FibreBirthCenterDurableObject extends DurableObject {
   constructor(ctx, env) {
@@ -12,7 +34,11 @@ export class FibreBirthCenterDurableObject extends DurableObject {
 
   runtimeForRequest() {
     if (this.runtime === null) {
-      this.runtime = createBirthCenterCloudflareRuntime({ storage: this.ctx.storage, env: this.env });
+      this.runtime = createBirthCenterCloudflareRuntime({
+        storage: this.ctx.storage,
+        env: this.env,
+        reasoningAdapters: createReasoningAdapters(this.env),
+      });
     }
     return this.runtime;
   }
@@ -29,11 +55,13 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         stateScopeId: BIRTH_SCOPE_ID,
         capabilities: cloud.infraDriver.capabilities,
         pendingBirthCount: cloud.runtime.status().pendingBirthCount,
-        genesisDevelopmentConfigured: true,
+        genesisDevelopmentConfigured: cloud.developmentApi !== null,
       });
     }
-    const developmentResponse = await cloud.developmentApi.fetch(request);
-    if (developmentResponse !== null) return developmentResponse;
+    if (cloud.developmentApi !== null) {
+      const developmentResponse = await cloud.developmentApi.fetch(request);
+      if (developmentResponse !== null) return developmentResponse;
+    }
     const birthResponse = await cloud.birthApi.fetch(request);
     if (birthResponse !== null) return birthResponse;
     return Response.json({ error: "not_found" }, { status: 404 });

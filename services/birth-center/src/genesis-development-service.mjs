@@ -1,20 +1,17 @@
-import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
 import {
+  GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
   GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
   GENESIS_LIFE_PASS_A_PROMPT,
-} from "#services/world-kernel/src/genesis-life-pass-a.mjs";
-import { GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-historical-realization-v1.mjs";
-import { GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
-import {
   GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
-} from "#services/world-kernel/src/genesis-life-pass-b.mjs";
-import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-pass-b-prompts.mjs";
-import {
+  GENESIS_PASS_B_RESPONSE_SCHEMA,
   GENESIS_PASS_C_INITIAL_PROMPT,
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
   GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
-} from "#services/world-kernel/src/genesis-pass-c-prompts.mjs";
+  GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
+  canonicalJson,
+  sha256,
+} from "fibre/world-kernel/genesis-development-contracts";
 
 import { generateGenesisLifeCandidate } from "./genesis-life-development.mjs";
 import { hydrateGenesisDevelopmentPlan } from "./genesis-development-plan.mjs";
