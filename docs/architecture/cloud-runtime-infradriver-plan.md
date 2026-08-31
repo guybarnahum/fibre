@@ -356,7 +356,7 @@ birth/pending work
  -> no duplicate semantic admission
 ```
 
-**Implementation status:** implemented on `agent/cloud-runtime-infradriver`. The shared scheduler contract drives both local and Cloudflare World reconciliation; the Cloudflare Worker hosts one named SQLite-backed World Durable Object using `state + scheduler`; service bindings preserve the Asset Generator and Thread Presentation fetch contracts; and the recovery test proves a scheduled wake survives runtime disposal and converges without duplicate canonical Embodiment admission. Live production deployment is not claimed by this slice.
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`; the shared scheduler contract drives both local and Cloudflare World reconciliation, the Cloudflare Worker hosts one named SQLite-backed World Durable Object using `state + scheduler`, service bindings preserve the Asset Generator and Thread Presentation fetch contracts, the recovery test proves a scheduled wake survives runtime disposal and converges without duplicate canonical Embodiment admission, and exact-head validation including the World Wrangler dry-run passed. Live production deployment is not claimed by this slice.
 
 ## Cloud Slice D — Birth Center portability and cloud runtime
 
@@ -737,8 +737,8 @@ Asset Generator cloud runtime                   EXISTS
 Thread Presentation cloud runtime               EXISTS
 insidefibre.com public contract E2E             EXISTS
 
-Cloud transactional state provider              GAP
-World stores fully on InfraDriver.state          GAP
+Cloud transactional state provider              EXISTS
+World stores fully on InfraDriver.state          EXISTS
 provider-neutral scheduler + local parity       EXISTS
 World Cloudflare runtime                        EXISTS
 Birth persistence through InfraDriver.state      GAP
