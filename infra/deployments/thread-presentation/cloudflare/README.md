@@ -9,7 +9,7 @@ Provider-neutral HTTP/read behavior lives at `services/thread-presentation/src/h
 - `wrangler.local.jsonc` — local/e2e composition with the dev-only P3 fixture seam and local C2PA signer.
 - `wrangler.jsonc` — remote Cloudflare topology.
 
-Remote provider selection is declared in `infra/deployments/environments/cloudflare-remote.json`.
+Remote provider selection is declared in `infra/deployments/environments/cloudflare.yaml`.
 
 ## Runtime shape
 
@@ -27,6 +27,25 @@ InfraDriver cloudflare-v1
 ```
 
 Public read routes include snapshot/events/stream and admitted presentation assets. Object possession or an Asset Generator receipt is insufficient for public serving; Presentation admission remains required.
+
+## Private World handoff
+
+World remains authoritative for the canonical Embodiment. Once World has admitted the canonical visual root, it sends the admitted Embodiment over the authenticated internal endpoint:
+
+```text
+POST /internal/visual-publication/reconcile
+x-fibre-private-token: <shared private token>
+
+{
+  "threadId": "...",
+  "embodiment": { "...": "admitted World-owned Embodiment" },
+  "observedAt": "..."
+}
+```
+
+Presentation does not read World storage and does not redefine canonical identity. It validates the supplied admitted Embodiment, projects visual identity into its own snapshot, ensures identity media, and durably schedules derived media through Asset Generator. Repeated handoffs are idempotent and return the current reconciliation stage.
+
+`FIBRE_PRIVATE_TOKEN` is required in the remote Worker secrets alongside the C2PA signer credentials. Validation/auth failures return 4xx. Transient reconciliation failures return 5xx so World can retry on a later reconciliation sweep.
 
 ## Local generated-media proof
 
