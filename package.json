@@ -45,7 +45,7 @@
     "git-check": "node tools/repository/check-git-sync.mjs",
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/editor/serve-thread-editor.mjs",
-    "world-kernel": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/world-kernel/local/server.mjs",
+    "world-kernel": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/world-kernel/local/visual-server.mjs",
     "birth-center": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/birth-center/local/server.mjs",
     "content-credential-signer": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/content-credential-signer/local/server.mjs",
     "genesis:d5-sealed-history": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-d5-sealed-history-diagnostic.mjs",
