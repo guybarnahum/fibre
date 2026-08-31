@@ -29,7 +29,7 @@ function mediaReadySnapshotIdentity(current, event) {
 }
 
 async function projectMediaReadySnapshot(presentationServer, current, event, proof) {
-  if (current === null || typeof presentationServer.publishSnapshot !== "function") return null;
+  if (current === null) return null;
   const assets = current.snapshot.media.assets;
   const index = assets.findIndex((asset) => asset.mediaId === event.payload.mediaId);
   if (index < 0) return null;
@@ -112,8 +112,11 @@ export function createThreadPresentationAssetPublisher({
   now = () => new Date().toISOString(),
 }) {
   requireInfraCapabilities(infra, "catalog");
-  if (!presentationServer || typeof presentationServer.appendEvent !== "function" || typeof presentationServer.getSnapshot !== "function") {
-    throw new TypeError("presentationServer must provide appendEvent and getSnapshot");
+  if (!presentationServer
+    || typeof presentationServer.appendEvent !== "function"
+    || typeof presentationServer.getSnapshot !== "function"
+    || typeof presentationServer.publishSnapshot !== "function") {
+    throw new TypeError("presentationServer must provide appendEvent, getSnapshot, and publishSnapshot");
   }
 
   return Object.freeze({
