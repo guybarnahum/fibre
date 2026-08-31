@@ -70,6 +70,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(errors, /providerOperationDurable/);
   assert.match(errors, /provider_output_staging/);
   assert.match(errors, /provider_output_not_staged/);
+  assert.match(errors, /providerOperationDurable/);
   assert.match(errors, /providerOutputDurable/);
   assert.match(errors, /rate_limited/);
   assert.match(errors, /quota_exhausted/);
@@ -79,6 +80,8 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /createCloudflareInfraDriver/);
   assert.match(worker, /withCloudflareQueueBindings/);
   assert.match(worker, /createAssetGenerationRuntime/);
+  assert.match(worker, /createAssetGenerationControlService/);
+  assert.match(worker, /createAssetGenerationControlApi/);
   assert.match(worker, /selectImageIntegration/);
   assert.match(worker, /selectContentCredentialIntegration/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
@@ -89,6 +92,8 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/);
   assert.match(worker, /ASSET_OBJECTS/);
   assert.match(worker, /ASSET_COMPLETIONS/);
+  assert.match(worker, /ASSET_GENERATION/);
+  assert.match(worker, /FIBRE_PRIVATE_TOKEN/);
   assert.match(worker, /asset-generation-failure-observation-v0\.2/);
   assert.match(worker, /category: error\?\.category/);
   assert.match(worker, /retryDecision: decision\.reason/);
@@ -150,7 +155,7 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.equal(presentationWorkflow.class_name, "AssetGenerationWorkflow");
   assert.equal(presentationWorkflow.script_name, assetConfig.name);
   assert.equal(presentationWorkflow.name, assetWorkflow.name);
-  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY"]);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
   assert.equal(presentationConfig.secrets, undefined);
   assert.equal(producer.queue, "fibre-asset-completions-local");
   assert.equal(consumer.max_retries, 10);
@@ -221,6 +226,7 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-dlq");
   assert.equal(presentationConfig.queues.producers, undefined);
   assert.equal(assetConfig.queues.consumers, undefined);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
   assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
   assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, "fibre-c2pa-production-v1");
   assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
