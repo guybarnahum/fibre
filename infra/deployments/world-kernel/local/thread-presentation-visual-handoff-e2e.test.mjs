@@ -130,16 +130,39 @@ test("World hands admitted Embodiment to deployed Presentation contract without 
     planSlots: planThreadPresentationAssetSlots,
   });
   const api = createVisualPublicationWriteApi({ reconciler, privateToken: PRIVATE_TOKEN });
-  const boundary = createThreadPresentationVisualHttpBoundary({
+  const embodiment = admittedEmbodiment();
+
+  const unavailableBoundary = createThreadPresentationVisualHttpBoundary({
+    baseUrl: "https://presentation.example",
+    privateToken: PRIVATE_TOKEN,
+    async fetchImpl() {
+      return new Response(JSON.stringify({ ok: false, error: "temporarily_unavailable" }), {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  });
+  await assert.rejects(
+    () => unavailableBoundary.reconcileAvailableEmbodiment({
+      threadId: THREAD_ID,
+      embodiment,
+      observedAt: "2026-08-31T00:49:00Z",
+    }),
+    (error) => error.code === "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED" && error.retryable === true,
+  );
+
+  const beforeRetry = await presentationServer.getSnapshot(CHANNEL_ID);
+  assert.equal(beforeRetry.snapshot.presentation.visualIdentity, null);
+  assert.equal(beforeRetry.snapshot.presentation.identityCard, null);
+
+  const restartedBoundary = createThreadPresentationVisualHttpBoundary({
     baseUrl: "https://presentation.example",
     privateToken: PRIVATE_TOKEN,
     fetchImpl(url, init) {
       return api.fetch(new Request(url, init));
     },
   });
-  const embodiment = admittedEmbodiment();
-
-  const first = await boundary.reconcileAvailableEmbodiment({
+  const first = await restartedBoundary.reconcileAvailableEmbodiment({
     threadId: THREAD_ID,
     embodiment,
     observedAt: "2026-08-31T00:50:00Z",
@@ -165,7 +188,14 @@ test("World hands admitted Embodiment to deployed Presentation contract without 
   assert.equal(workflow.input.context.threadId, THREAD_ID);
   assert.equal(workflow.input.context.mediaId, photoMediaId);
 
-  const replay = await boundary.reconcileAvailableEmbodiment({
+  const secondRestartBoundary = createThreadPresentationVisualHttpBoundary({
+    baseUrl: "https://presentation.example",
+    privateToken: PRIVATE_TOKEN,
+    fetchImpl(url, init) {
+      return api.fetch(new Request(url, init));
+    },
+  });
+  const replay = await secondRestartBoundary.reconcileAvailableEmbodiment({
     threadId: THREAD_ID,
     embodiment,
     observedAt: "2026-08-31T00:51:00Z",
