@@ -115,7 +115,7 @@ function birth() {
     createdBy: "fibre.genesis",
     lastEventId: `evt_seed_${THREAD_ID}`,
   };
-  const bundle = attachTestCivilRegistration({
+  const visualBundle = attachGenesisCanonicalVisualIdentity({
     manifest: {
       genesisId: `gen_${THREAD_ID}`,
       threadId: THREAD_ID,
@@ -140,8 +140,8 @@ function birth() {
       createdAt: "2026-08-30T18:30:30Z",
     },
     thread,
-  });
-  return attachGenesisCanonicalVisualIdentity(bundle, CANONICAL_VISUAL_IDENTITY);
+  }, CANONICAL_VISUAL_IDENTITY);
+  return attachTestCivilRegistration(visualBundle);
 }
 
 async function listen(server) {
