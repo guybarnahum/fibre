@@ -5,6 +5,14 @@ function assertAuthority(authority) {
   return authority;
 }
 
+function optionalRecordAuthority(name, authority, method) {
+  if (authority === null || authority === undefined) return null;
+  if (typeof authority !== "object" || Array.isArray(authority) || typeof authority[method] !== "function") {
+    throw new TypeError(`${name} must expose ${method}()`);
+  }
+  return authority;
+}
+
 function sameJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -38,10 +46,36 @@ function attachCivilRegistration(bundle) {
   };
 }
 
-export function createGenesisBirthPublicationService({ authority } = {}) {
+function prerequisiteGenomes(bundle) {
+  if (bundle.symbolicGenomes === undefined) return [];
+  if (!Array.isArray(bundle.symbolicGenomes)) {
+    throw new TypeError("Genesis birth symbolicGenomes must be an array");
+  }
+  return bundle.symbolicGenomes;
+}
+
+export function createGenesisBirthPublicationService({
+  authority,
+  worldSpecAuthority = null,
+  genomeAuthority = null,
+} = {}) {
   const target = assertAuthority(authority);
+  const worlds = optionalRecordAuthority("Genesis WorldSpec authority", worldSpecAuthority, "recordWorldSpec");
+  const genomes = optionalRecordAuthority("Genesis symbolic genome authority", genomeAuthority, "recordGenome");
   return Object.freeze({
     async publishBirth(bundle) {
+      if (bundle === null || typeof bundle !== "object" || Array.isArray(bundle)) {
+        throw new TypeError("Genesis birth publication bundle must be an object");
+      }
+      if (bundle.worldSpec !== undefined) {
+        if (worlds === null) throw new TypeError("Genesis birth publication cannot admit worldSpec without a WorldSpec authority");
+        worlds.recordWorldSpec(bundle.worldSpec);
+      }
+      const symbolicGenomes = prerequisiteGenomes(bundle);
+      if (symbolicGenomes.length > 0 && genomes === null) {
+        throw new TypeError("Genesis birth publication cannot admit symbolicGenomes without a genome authority");
+      }
+      for (const genome of symbolicGenomes) genomes.recordGenome(genome);
       return target.publishBirth(attachCivilRegistration(bundle));
     },
   });
