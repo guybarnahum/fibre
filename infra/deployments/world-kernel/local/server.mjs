@@ -227,7 +227,11 @@ export async function startWorldKernelFromEnvironment(
       authorityWithdrawalStore,
     },
   );
-  const authoritativeBirthPublisher = createGenesisBirthPublicationService({ authority: genesisStore });
+  const authoritativeBirthPublisher = createGenesisBirthPublicationService({
+    authority: genesisStore,
+    worldSpecAuthority: genesisStore,
+    genomeAuthority: symbolicGenomeStore,
+  });
   const presentationDelivery = privateToken === null ? null : createGenesisPresentationDeliveryService({
     worldReader: store,
     civilRegistry: civilRegistryStore,
