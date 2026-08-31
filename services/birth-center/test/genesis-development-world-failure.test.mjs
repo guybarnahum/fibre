@@ -142,8 +142,8 @@ test("World rejects divergent replay of a Birth Center-developed birth and prese
   assert.equal(world.listEvents(first.threadId).length, 15);
 
   const divergent = structuredClone(saved.admission);
-  divergent.manifest.publication.publishedAt = new Date(
-    Date.parse(divergent.manifest.publication.publishedAt) + 1_000,
+  divergent.manifest.createdAt = new Date(
+    Date.parse(divergent.manifest.createdAt) + 1_000,
   ).toISOString();
   await assert.rejects(
     worldPublisher.publishBirth(divergent),
