@@ -8,7 +8,7 @@
     "FIBRE_BIRTH_RECONCILIATION_MS": "5000"
   },
   "secrets": {
-    "required": ["FIBRE_PRIVATE_TOKEN"]
+    "required": ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"]
   },
   "durable_objects": {
     "bindings": [
