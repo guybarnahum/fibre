@@ -12,6 +12,7 @@ import {
 } from "../../internal.mjs";
 import {
   TRANSACTIONAL_STATE_VERSION,
+  assertSynchronousTransactionResult,
   assertTransactionalStateSession,
 } from "../../transactional-state.mjs";
 
@@ -54,14 +55,6 @@ function stateGuarantees(databasePath) {
   });
 }
 
-function sqlTransactionTransition(sql) {
-  const normalized = String(sql).trim().replace(/;+\s*$/u, "").toUpperCase();
-  if (/^BEGIN(?:\s|$)/u.test(normalized)) return "begin";
-  if (normalized === "COMMIT" || normalized === "END") return "commit";
-  if (normalized === "ROLLBACK") return "rollback";
-  return null;
-}
-
 function createSession(scopeId, databasePath, { readOnly, busyTimeoutMs }) {
   const database = new DatabaseSync(databasePath, {
     readOnly,
@@ -90,11 +83,7 @@ function createSession(scopeId, databasePath, { readOnly, busyTimeoutMs }) {
     readOnly,
     exec(sql) {
       assertOpen();
-      const transition = sqlTransactionTransition(sql);
-      const result = database.exec(sql);
-      if (transition === "begin") transactionActive = true;
-      else if (transition === "commit" || transition === "rollback") transactionActive = false;
-      return result;
+      return database.exec(sql);
     },
     prepare(sql) {
       assertOpen();
@@ -114,22 +103,23 @@ function createSession(scopeId, databasePath, { readOnly, busyTimeoutMs }) {
         },
       });
     },
-    beginWrite() {
+    transaction(callback) {
       assertOpen();
-      if (readOnly) throw new Error(`transactional state scope ${scopeId} is read-only`);
+      if (typeof callback !== "function") throw new TypeError("transactional state transaction callback must be a function");
       if (transactionActive) throw new Error(`transactional state scope ${scopeId} already has an active transaction`);
-      session.exec("BEGIN IMMEDIATE");
-    },
-    commit() {
-      assertOpen();
-      if (!transactionActive) throw new Error(`transactional state scope ${scopeId} has no active transaction`);
-      session.exec("COMMIT");
-    },
-    rollback() {
-      assertOpen();
-      if (!transactionActive) return false;
-      session.exec("ROLLBACK");
-      return true;
+      database.exec(readOnly ? "BEGIN" : "BEGIN IMMEDIATE");
+      transactionActive = true;
+      try {
+        const result = assertSynchronousTransactionResult(callback(session));
+        database.exec("COMMIT");
+        transactionActive = false;
+        return result;
+      } catch (error) {
+        try { database.exec("ROLLBACK"); }
+        catch { /* Preserve the original transaction failure. */ }
+        transactionActive = false;
+        throw error;
+      }
     },
     close() {
       if (closed) return;
