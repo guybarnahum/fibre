@@ -163,7 +163,8 @@ test("World remote root handoff converges from durable pending workflow to verif
 
   const ready = await boundary.reconcile({ job: job() });
   assert.equal(ready.state, "ready");
-  assert.equal(ready.recordedAt, "2026-08-31T01:40:02Z");
+  assert.equal(ready.recordedAt, ready.proof.receipt.completedAt);
+  assert.equal(Number.isNaN(Date.parse(ready.recordedAt)), false);
   assert.equal(ready.proof.receipt.jobId, job().jobId);
   assert.equal(ready.proof.receipt.objectRef, job().outputObjectRef);
   assert.equal(ready.proof.verification.valid, true);
