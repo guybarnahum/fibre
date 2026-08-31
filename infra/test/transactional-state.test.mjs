@@ -45,19 +45,17 @@ test("same-scope write transactions serialize across independently opened sessio
     first.exec("CREATE TABLE serialization_proof (id TEXT PRIMARY KEY) STRICT;");
     const second = infra.state.open("world");
 
-    first.beginWrite();
-    first.prepare("INSERT INTO serialization_proof(id) VALUES (?)").run("first");
+    first.transaction(() => {
+      first.prepare("INSERT INTO serialization_proof(id) VALUES (?)").run("first");
+      assert.throws(
+        () => second.transaction(() => second.prepare("INSERT INTO serialization_proof(id) VALUES (?)").run("blocked")),
+        /busy|locked/i,
+      );
+    });
 
-    assert.throws(
-      () => second.beginWrite(),
-      /busy|locked/i,
-    );
-
-    first.commit();
-
-    second.beginWrite();
-    second.prepare("INSERT INTO serialization_proof(id) VALUES (?)").run("second");
-    second.commit();
+    second.transaction(() => {
+      second.prepare("INSERT INTO serialization_proof(id) VALUES (?)").run("second");
+    });
 
     assert.deepEqual(
       second.prepare("SELECT id FROM serialization_proof ORDER BY id").all(),
@@ -72,10 +70,10 @@ test("state commit is visible after reopening the same logical scope", () =>
   withDriver(({ infra }) => {
     const writer = infra.state.open("world");
     writer.exec("CREATE TABLE proof (id TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;");
-    writer.beginWrite();
-    const writeResult = writer.prepare("INSERT INTO proof(id,value) VALUES (?,?)").run("one", "committed");
-    assert.equal(Object.getPrototypeOf(writeResult), Object.prototype);
-    writer.commit();
+    writer.transaction(() => {
+      const writeResult = writer.prepare("INSERT INTO proof(id,value) VALUES (?,?)").run("one", "committed");
+      assert.equal(Object.getPrototypeOf(writeResult), Object.prototype);
+    });
     writer.close();
 
     const reader = infra.state.open("world", { readOnly: true });
@@ -90,25 +88,46 @@ test("state commit is visible after reopening the same logical scope", () =>
     reader.close();
   }));
 
-test("failed state transaction can roll back without a partial durable write", () =>
+test("failed state transaction rolls back without a partial durable write", () =>
   withDriver(({ infra }) => {
     const session = infra.state.open("world");
     session.exec("CREATE TABLE proof (id TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;");
-    session.beginWrite();
-    session.prepare("INSERT INTO proof(id,value) VALUES (?,?)").run("one", "temporary");
-    assert.equal(session.rollback(), true);
+    assert.throws(() => session.transaction(() => {
+      session.prepare("INSERT INTO proof(id,value) VALUES (?,?)").run("one", "temporary");
+      throw new Error("abort transaction");
+    }), /abort transaction/);
     assert.equal(session.prepare("SELECT id FROM proof WHERE id=?").get("one"), undefined);
     session.close();
   }));
 
-test("read-only state sessions refuse write transactions", () =>
+test("transaction callbacks are synchronous for every provider", () =>
+  withDriver(({ infra }) => {
+    const session = infra.state.open("world");
+    session.exec("CREATE TABLE proof (id TEXT PRIMARY KEY) STRICT;");
+    assert.throws(
+      () => session.transaction(async () => {
+        session.prepare("INSERT INTO proof(id) VALUES (?)").run("one");
+      }),
+      /must be synchronous/,
+    );
+    assert.equal(session.prepare("SELECT id FROM proof").get(), undefined);
+    session.close();
+  }));
+
+test("read-only state sessions permit transactional reads but refuse writes", () =>
   withDriver(({ infra }) => {
     const writer = infra.state.open("world");
     writer.exec("CREATE TABLE proof (id TEXT PRIMARY KEY) STRICT;");
+    writer.transaction(() => writer.prepare("INSERT INTO proof(id) VALUES (?)").run("one"));
     writer.close();
 
     const reader = infra.state.open("world", { readOnly: true });
-    assert.throws(() => reader.beginWrite(), /read-only/);
+    const result = reader.transaction(() => reader.prepare("SELECT id FROM proof").get());
+    assert.deepEqual(result, { id: "one" });
+    assert.throws(
+      () => reader.transaction(() => reader.prepare("INSERT INTO proof(id) VALUES (?)").run("two")),
+      /read-only|readonly/i,
+    );
     reader.close();
   }));
 
