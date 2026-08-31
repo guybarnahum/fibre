@@ -3,7 +3,7 @@ import {
   assertInfraPlainObject,
 } from "./internal.mjs";
 
-export const TRANSACTIONAL_STATE_VERSION = "transactional-state-v0.1";
+export const TRANSACTIONAL_STATE_VERSION = "transactional-state-v0.2";
 
 export const FIBRE_WORLD_STATE_REQUIREMENTS = Object.freeze({
   relationalStatements: true,
@@ -20,9 +20,7 @@ export const FIBRE_BIRTH_STATE_REQUIREMENTS = FIBRE_WORLD_STATE_REQUIREMENTS;
 const SESSION_METHODS = Object.freeze([
   "exec",
   "prepare",
-  "beginWrite",
-  "commit",
-  "rollback",
+  "transaction",
   "close",
 ]);
 
@@ -50,6 +48,13 @@ export function assertTransactionalStateGuarantees(guarantees) {
   return guarantees;
 }
 
+export function assertSynchronousTransactionResult(value) {
+  if (value && typeof value.then === "function") {
+    throw new TypeError("transactional state transaction callback must be synchronous");
+  }
+  return value;
+}
+
 export function assertTransactionalStateSession(session, {
   scopeId = null,
   readOnly = null,
@@ -67,7 +72,7 @@ export function assertTransactionalStateSession(session, {
   }
   for (const method of SESSION_METHODS) {
     if (typeof session[method] !== "function") {
-      throw new TypeError(`transactional state session.${method} must be a function`);
+      throw new TypeError(`infra driver state session.${method} must be a function`);
     }
   }
   return session;
