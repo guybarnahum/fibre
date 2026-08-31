@@ -180,17 +180,29 @@ test("private official ID photo can become media.ready without becoming public m
   const generationJob = job({ role: "official_id_photo", mediaId: "media_official_id_photo", suffix: "official" });
   const result = await generated(infra, generationJob);
   const acceptedEvents = [];
+  const projectedSnapshots = [];
   const presentationServer = {
     async getSnapshot() {
       return {
-        pointer: { threadId: "thr_1" },
+        pointer: {
+          threadId: "thr_1",
+          snapshotDigest: "sha256:fixture-private-id-snapshot",
+        },
         snapshot: {
           presentation: {
+            manifest: { generatedAt: "2026-08-21T21:19:58Z" },
             identityCard: { officialPhotoMediaRef: "media_official_id_photo", visibility: "private" },
           },
           media: {
-            assets: [{ mediaId: "media_official_id_photo", role: "official_id_photo", kind: "image" }],
+            generatedAt: "2026-08-21T21:19:58Z",
+            assets: [{
+              mediaId: "media_official_id_photo",
+              role: "official_id_photo",
+              kind: "image",
+              status: "placeholder",
+            }],
           },
+          provenance: { generatedAt: "2026-08-21T21:19:58Z" },
         },
       };
     },
@@ -198,6 +210,10 @@ test("private official ID photo can become media.ready without becoming public m
       const accepted = { ...event, sequence: 1 };
       acceptedEvents.push(accepted);
       return { event: accepted, duplicate: false };
+    },
+    async publishSnapshot(input) {
+      projectedSnapshots.push(input);
+      return { pointer: { threadId: "thr_1" }, snapshot: input.bundle };
     },
   };
   const publisher = createThreadPresentationAssetPublisher({
@@ -212,10 +228,24 @@ test("private official ID photo can become media.ready without becoming public m
   });
   assert.equal(accepted.event.kind, "media.ready");
   assert.equal(acceptedEvents.length, 1);
+  assert.equal(projectedSnapshots.length, 1);
+  assert.equal(projectedSnapshots[0].bundle.media.assets[0].status, "ready");
   const catalog = await infra.catalog.get(`media:${result.receipt.objectRef}`);
   assert.equal(catalog.publiclyVisible, false);
   assert.equal(catalog.identityCredentialMedia, true);
   assert.equal(catalog.role, "official_id_photo");
+});
+
+test("publisher requires snapshot projection capability", async () => {
+  const infra = createMemoryInfraDriver();
+  assert.throws(() => createThreadPresentationAssetPublisher({
+    infra,
+    credentialSigner: signer(),
+    presentationServer: {
+      async getSnapshot() { return null; },
+      async appendEvent() { return null; },
+    },
+  }), /appendEvent, getSnapshot, and publishSnapshot/);
 });
 
 test("invalid credential blocks media.ready and public-media catalog projection", async () => {
