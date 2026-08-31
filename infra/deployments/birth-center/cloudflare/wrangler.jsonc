@@ -3,6 +3,13 @@
   "name": "fibre-birth-center",
   "main": "./worker.mjs",
   "compatibility_date": "2026-08-31",
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.yaml"],
+      "fallthrough": true
+    }
+  ],
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
     "FIBRE_BIRTH_RECONCILIATION_MS": "5000"
