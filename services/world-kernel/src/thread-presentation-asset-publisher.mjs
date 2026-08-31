@@ -7,6 +7,93 @@ function unique(values) {
   return [...new Set(values)];
 }
 
+function latestTimestamp(...values) {
+  return values.reduce((latest, value) => (
+    Date.parse(value) > Date.parse(latest) ? value : latest
+  ));
+}
+
+function mediaReadySnapshotIdentity(current, event) {
+  const digest = sha256(canonicalJson({
+    priorSnapshotDigest: current.pointer.snapshotDigest,
+    eventId: event.eventId,
+    eventSequence: event.sequence,
+    mediaId: event.payload.mediaId,
+    objectRef: event.payload.objectRef,
+    digest: event.payload.digest,
+  }));
+  return Object.freeze({
+    objectRef: `snapshot_media_ready_${digest}`,
+    snapshotVersion: `media-ready-${digest.slice(0, 24)}`,
+  });
+}
+
+async function projectMediaReadySnapshot(presentationServer, current, event) {
+  if (current === null) return null;
+  const assets = current.snapshot.media.assets;
+  const index = assets.findIndex((asset) => asset.mediaId === event.payload.mediaId);
+  if (index < 0) return null;
+
+  const prior = assets[index];
+  if (prior.status === "ready") {
+    if (prior.locator !== event.payload.objectRef
+      || prior.mediaType !== event.payload.mediaType
+      || prior.sha256 !== event.payload.digest) {
+      throw new TypeError(`media.ready conflicts with already-ready media ${event.payload.mediaId}`);
+    }
+    return current;
+  }
+
+  const generatedAt = latestTimestamp(
+    current.snapshot.presentation.manifest.generatedAt,
+    current.snapshot.media.generatedAt,
+    current.snapshot.provenance.generatedAt,
+    event.emittedAt,
+  );
+  const nextAssets = assets.map((asset, assetIndex) => (
+    assetIndex === index
+      ? {
+          ...asset,
+          status: "ready",
+          locator: event.payload.objectRef,
+          mediaType: event.payload.mediaType,
+          sha256: event.payload.digest,
+          unavailableReason: null,
+        }
+      : asset
+  ));
+  const identity = mediaReadySnapshotIdentity(current, event);
+  return presentationServer.publishSnapshot({
+    channelId: event.channelId,
+    objectRef: identity.objectRef,
+    snapshotVersion: identity.snapshotVersion,
+    expectedSequence: event.sequence,
+    bundle: {
+      presentation: {
+        ...current.snapshot.presentation,
+        manifest: {
+          ...current.snapshot.presentation.manifest,
+          generatedAt,
+        },
+      },
+      media: {
+        ...current.snapshot.media,
+        generatedAt,
+        assets: nextAssets,
+      },
+      provenance: {
+        ...current.snapshot.provenance,
+        generatedAt,
+      },
+    },
+    catalog: {
+      projectionKind: "media_ready",
+      mediaId: event.payload.mediaId,
+      mediaObjectRef: event.payload.objectRef,
+    },
+  });
+}
+
 export function createThreadPresentationAssetPublisher({
   infra,
   credentialSigner,
@@ -39,10 +126,11 @@ export function createThreadPresentationAssetPublisher({
         assertId(name, value);
       }
 
+      const currentSnapshot = await presentationServer.getSnapshot(channelId);
       let identityCredentialMedia = false;
       let publiclyVisible = true;
       if (stored.role === "official_id_photo") {
-        const current = await presentationServer.getSnapshot(channelId);
+        const current = currentSnapshot;
         if (current === null || current.pointer.threadId !== context.threadId) {
           throw new TypeError("official ID photo requires the current matching Thread presentation snapshot");
         }
@@ -88,6 +176,9 @@ export function createThreadPresentationAssetPublisher({
         },
       };
       const accepted = await presentationServer.appendEvent(eventInput, { expectedSequence });
+      const snapshotProjection = accepted.duplicate
+        ? currentSnapshot
+        : await projectMediaReadySnapshot(presentationServer, currentSnapshot, accepted.event);
 
       await infra.catalog.upsert(`media:${stored.objectRef}`, {
         kind: "public_presentation_media",
@@ -104,7 +195,7 @@ export function createThreadPresentationAssetPublisher({
         eventSequence: accepted.event.sequence,
       });
 
-      return { ...accepted, proof };
+      return { ...accepted, proof, snapshotProjection };
     },
   });
 }
