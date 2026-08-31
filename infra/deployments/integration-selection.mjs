@@ -99,6 +99,13 @@ export function selectReasoningIntegration(value, { environment = process.env, f
       modelId,
       fetchImpl,
       observer,
+      temperature: chosen.config?.temperature,
+      topP: chosen.config?.topP,
+      reasoningEffort: chosen.config?.reasoningEffort,
+      maxOutputTokens: chosen.config?.maxOutputTokens,
+      timeoutMs: chosen.config?.timeoutMs,
+      retryLimit: chosen.config?.retryLimit,
+      retryDelayMs: chosen.config?.retryDelayMs,
     });
   }
   if (chosen.provider === "google") {
