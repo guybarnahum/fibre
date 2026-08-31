@@ -547,7 +547,7 @@ test("one birth recovers through one canonical root and one public identity/phot
     );
 
     const eventsResponse = await readApi.fetch(
-      new Request(`http://presentation.local/api/threads/${THREAD_ID}/events?after=${publicSnapshot.snapshot.cursor}&limit=100`),
+      new Request(`http://presentation.local/api/threads/${THREAD_ID}/events?after=${publicSnapshot.snapshot.cursor - 1}&limit=100`),
     );
     assert.equal(eventsResponse.status, 200);
     const eventBody = await eventsResponse.json();
