@@ -7,10 +7,13 @@ import { createLocalInfraDriver } from "#infra/providers/local";
 import { createNodeServiceHandler } from "#infra/providers/local/service";
 import { createService } from "#infra/service";
 import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-write-api.mjs";
+import { createGenesisDevelopmentApi } from "#services/birth-center/src/genesis-development-api.mjs";
+import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
 import {
   BIRTH_CENTER_RUNTIME_VERSION,
   createBirthCenterRuntime,
 } from "#services/birth-center/src/runtime.mjs";
+import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createWorldKernelBirthPublisher } from "./world-kernel-birth-publisher.mjs";
 
@@ -56,6 +59,56 @@ function worldPublisherFromEnvironment(environment) {
   });
 }
 
+function reasoningProfile(name) {
+  const selected = DEPLOYMENT.integrations?.[name];
+  if (!selected || selected.kind !== "ai.reasoning") {
+    throw new TypeError(`birth-center local deployment requires ${name} reasoning integration`);
+  }
+  return selected;
+}
+
+function reasoningAdaptersFromEnvironment(environment) {
+  return Object.freeze({
+    creativeAdapter: selectReasoningIntegration(reasoningProfile("creative"), { environment }),
+    repairAdapter: selectReasoningIntegration(reasoningProfile("repair"), { environment }),
+  });
+}
+
+function createDevelopmentComponents({ environment, options, runtime, worldPublisher }) {
+  if (worldPublisher === null) {
+    return Object.freeze({ reasoningAdapters: null, developmentService: null, developmentApi: null });
+  }
+  const reasoningAdapters = Object.hasOwn(options, "reasoningAdapters")
+    ? options.reasoningAdapters
+    : reasoningAdaptersFromEnvironment(environment);
+  if (reasoningAdapters === null) {
+    return Object.freeze({ reasoningAdapters: null, developmentService: null, developmentApi: null });
+  }
+  if (!reasoningAdapters || typeof reasoningAdapters !== "object" || Array.isArray(reasoningAdapters)) {
+    throw new TypeError("birth-center local reasoningAdapters must be an object or null");
+  }
+  const creativeAdapter = reasoningAdapters.creativeAdapter;
+  const repairAdapter = reasoningAdapters.repairAdapter ?? creativeAdapter;
+  const developmentService = createGenesisDevelopmentService({
+    runtime,
+    creativeAdapter,
+    repairAdapter,
+    now: options.now,
+    randomIntFn: options.randomIntFn,
+  });
+  const developmentApi = createGenesisDevelopmentApi({
+    developmentService,
+    privateToken: environment.FIBRE_PRIVATE_TOKEN,
+    onError(error) {
+      console.error(JSON.stringify({
+        event: "birth-center-development-failed",
+        message: error instanceof Error ? error.message : String(error),
+      }));
+    },
+  });
+  return Object.freeze({ reasoningAdapters, developmentService, developmentApi });
+}
+
 export async function startBirthCenterFromEnvironment(
   environment = process.env,
   options = {},
@@ -91,10 +144,22 @@ export async function startBirthCenterFromEnvironment(
     storage: birthStorage,
     worldPublisher,
     retryMs: retryMs(environment),
+    now: options.now,
+    nowMs: options.nowMs,
   });
   await runtime.ensureScheduled();
 
-  const status = () => ({ service: "fibre-birth-center", ...runtime.status() });
+  const development = createDevelopmentComponents({
+    environment,
+    options,
+    runtime,
+    worldPublisher,
+  });
+  const status = () => ({
+    service: "fibre-birth-center",
+    ...runtime.status(),
+    genesisDevelopmentConfigured: development.developmentApi !== null,
+  });
   const routes = [
     { method: "GET", path: "/health", handler: status },
     { method: "GET", path: "/v1/status", handler: status },
@@ -109,10 +174,21 @@ export async function startBirthCenterFromEnvironment(
       path: "/internal/births",
       handler: ({ request }) => birthApi.fetch(request),
     });
+    if (development.developmentApi !== null) {
+      routes.push({
+        method: "POST",
+        path: "/internal/births/develop",
+        handler: ({ request }) => development.developmentApi.fetch(request),
+      });
+    }
   }
   const service = createService({
     serviceName: "birth-center",
-    health: () => ({ runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION, ...runtime.status() }),
+    health: () => ({
+      runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
+      ...runtime.status(),
+      genesisDevelopmentConfigured: development.developmentApi !== null,
+    }),
     routes,
   });
   const server = createServer(createNodeServiceHandler({ service }));
@@ -142,6 +218,8 @@ export async function startBirthCenterFromEnvironment(
     runtime,
     infraDriver,
     birthStorage,
+    developmentService: development.developmentService,
+    developmentApi: development.developmentApi,
     service,
     server,
     address: Object.freeze({ host: address.address, port: address.port }),
@@ -159,6 +237,7 @@ async function main() {
     stateScopeId: service.runtime.stateScopeId,
     infraCapabilities: service.runtime.infraDriver.capabilities,
     worldPublicationConfigured: service.runtime.worldPublicationConfigured,
+    genesisDevelopmentConfigured: service.developmentApi !== null,
     authoritativeThreadStateOwned: false,
   })}\n`);
 

@@ -6,6 +6,20 @@ The World Kernel still owns live Thread reality and the atomic persistence trans
 
 The cross-service path from admitted birth through public Thread Presentation and generated media is defined by [`../../docs/architecture/thread-birth-presentation-data-flow.md`](../../docs/architecture/thread-birth-presentation-data-flow.md).
 
+## Genesis development boundary
+
+The authenticated `POST /internal/births/develop` route accepts narrow origin material, not a caller-authored Thread or birth bundle. The caller supplies a factual WorldSpec, atomic text genome values, the non-subject initial participants and place affordances, and the bounded birth/entry chronology. Birth Center derives the provisional Thread and Genesis identities, de-novo symbolic genome provenance, the fourteen developmental windows, reviewed EventStructure offers, frozen historical envelopes, model-call domains, developed life, admission package, and civil registration.
+
+A request is durably reserved before the first provider call. The completed admission package is persisted before World submission. Replaying the exact request therefore resumes the same canonical plan/admission and never regenerates an already-built birth package; changing material under the same request identity is a conflict.
+
+Local and Cloudflare deployments expose the same route when World publication, private authentication, and the `creative`/`repair` reasoning integrations are configured. The operator E2E command is:
+
+```bash
+npm run genesis:e2e
+```
+
+It uses `FIBRE_PRIVATE_TOKEN`, defaults `FIBRE_BIRTH_CENTER_URL` to `http://127.0.0.1:8790`, submits one development request from the reviewed development cohort fixture, waits for World reconciliation to report `published`, then replays the exact request and requires idempotent publication with no regeneration. `FIBRE_GENESIS_REQUEST_ID` may be set to deliberately replay a prior request; `FIBRE_GENESIS_E2E_SLOT` selects a one-based fixture slot.
+
 ## Fibre Civil Registry
 
 `src/civil-registry.mjs` is the Birth Center service for Fibre Identity Numbers (FINs). It is the logical central directory for the permanent mapping:
@@ -29,4 +43,4 @@ A physical/digital Fibre Identity Card is a derived presentation credential and 
 
 ## Runtime boundary
 
-The provider-facing model runtime remains in `src/runtime.mjs`. A configured World Kernel publication boundary may be injected in-process for local/test composition and later replaced by a narrow authenticated service boundary without changing authority ownership.
+The provider-facing model runtime remains in `src/runtime.mjs`. A configured World Kernel publication boundary may be injected in-process for local/test composition or reached through the narrow authenticated service boundary without changing authority ownership.

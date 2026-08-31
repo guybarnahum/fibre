@@ -76,6 +76,38 @@ test("Birth Center runs as a distinct loopback runtime service", async (t) => {
   assert.equal(body.authoritativeThreadStateOwned, false);
   assert.equal(body.providerInvocationPersistenceOwned, true);
   assert.equal(body.worldPublicationConfigured, false);
+  assert.equal(body.genesisDevelopmentConfigured, false);
+});
+
+test("Birth Center local host exposes the authenticated Genesis development route when cognition is configured", async (t) => {
+  const state = tempBirthState(t);
+  const counter = { calls: 0 };
+  const adapter = fakeAdapter(counter);
+  const service = await startBirthCenterFromEnvironment({
+    FIBRE_BIRTH_CENTER_HOST: "127.0.0.1",
+    FIBRE_BIRTH_CENTER_PORT: "0",
+    FIBRE_BIRTH_CENTER_STATE: state.databasePath,
+    FIBRE_PRIVATE_TOKEN: "local-private-token-123",
+  }, {
+    worldPublisher: { async publishBirth() { throw new Error("must not publish during route authorization test"); } },
+    reasoningAdapters: { creativeAdapter: adapter, repairAdapter: adapter },
+  });
+  t.after(() => service.close());
+
+  const health = await fetch(`http://127.0.0.1:${service.address.port}/health`);
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).genesisDevelopmentConfigured, true);
+
+  const unauthorized = await fetch(`http://127.0.0.1:${service.address.port}/internal/births/develop`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-fibre-private-token": "wrong-private-token-123",
+    },
+    body: JSON.stringify({}),
+  });
+  assert.equal(unauthorized.status, 403);
+  assert.equal(counter.calls, 0);
 });
 
 test("Birth Center preserves the loopback-only bind contract without World Kernel internals", async () => {

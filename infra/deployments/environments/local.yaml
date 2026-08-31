@@ -39,6 +39,26 @@ integrations:
       model: gpt-5.1-2025-11-13
     secrets:
       apiKey: OPENAI_API_KEY
+  genesis-openai-creative:
+    kind: ai.reasoning
+    provider: openai
+    config:
+      model: gpt-5.1-2025-11-13
+      temperature: 0.3
+      topP: 1
+      reasoningEffort: none
+    secrets:
+      apiKey: OPENAI_API_KEY
+  genesis-openai-repair:
+    kind: ai.reasoning
+    provider: openai
+    config:
+      model: gpt-5.1-2025-11-13
+      temperature: 0
+      topP: 1
+      reasoningEffort: none
+    secrets:
+      apiKey: OPENAI_API_KEY
   asset-image-openai:
     kind: ai.image
     provider: openai
@@ -87,6 +107,9 @@ services:
   birth-center:
     runtime: node-local
     infra: birth-local
+    integrations:
+      creative: genesis-openai-creative
+      repair: genesis-openai-repair
   content-credential-signer:
     runtime: node-local
     integrations:
