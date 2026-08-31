@@ -1,3 +1,9 @@
+import {
+  createAssetGenerationService,
+  normalizeStoredAssetReceipt,
+  verifyCredentialedAssetForPublication,
+} from "#services/asset-generator/src/index.mjs";
+
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") {
     throw new TypeError(`${name} must expose ${method}()`);
@@ -20,59 +26,64 @@ function parseJsonObject(bytes, label) {
 }
 
 /**
- * Deployment adapter for World-owned canonical visual-root generation.
+ * World-side deployment adapter for canonical visual-root generation.
  *
- * Asset Generator remains the generic executor. Reconciliation re-submits the
- * same deterministic job; Asset Generator's durable resumable execution makes
- * this restart-safe and prevents a second provider operation after a durable
- * checkpoint or completed asset already exists.
+ * World owns the semantic request and admission decision, but never executes an
+ * image provider. It schedules the deterministic Asset Generator workflow and
+ * reconciles only from durable workflow/object state. Re-running after restart
+ * therefore reuses the same workflow instance and completed receipt.
  */
 export function createCanonicalVisualRootBoundary({
   infra,
-  assetRuntime,
   credentialSigner,
+  workflowName = "asset_generation_v1",
 } = {}) {
   if (!infra?.objects || typeof infra.objects.get !== "function") {
     throw new TypeError("canonical visual root boundary requires object storage");
   }
-  requireMethod("assetRuntime", assetRuntime, "execute");
+  if (!infra?.workflows || typeof infra.workflows.start !== "function" || typeof infra.workflows.get !== "function") {
+    throw new TypeError("canonical visual root boundary requires durable workflows");
+  }
   requireMethod("credentialSigner", credentialSigner, "verify");
+  const assetGeneration = createAssetGenerationService({ infra, workflowName });
 
   return Object.freeze({
     async reconcile({ job } = {}) {
-      let generated;
-      try {
-        generated = await assetRuntime.execute(job);
-      } catch (error) {
-        if (error?.retryable === true) {
-          return Object.freeze({ state: "pending", retryable: true });
-        }
-        throw error;
+      const receiptStored = await infra.objects.get(job.receiptObjectRef);
+      if (receiptStored === null) {
+        const scheduled = await assetGeneration.request(job);
+        return Object.freeze({
+          state: "pending",
+          retryable: true,
+          workflowName: scheduled.instance.workflowName,
+          instanceId: scheduled.instance.instanceId,
+          workflowStatus: scheduled.instance.status,
+          duplicate: scheduled.instance.duplicate === true,
+        });
       }
 
-      const asset = await infra.objects.get(generated.receipt.objectRef);
-      if (!asset) throw new Error(`canonical visual root asset ${generated.receipt.objectRef} is not durable`);
-      const generationRecordStored = await infra.objects.get(generated.generationRecordObjectRef);
-      if (!generationRecordStored) {
-        throw new Error(`canonical visual root generation record ${generated.generationRecordObjectRef} is not durable`);
+      const receipt = normalizeStoredAssetReceipt(parseJsonObject(
+        receiptStored.bytes,
+        `canonical visual root receipt ${job.receiptObjectRef}`,
+      ));
+      if (receipt.jobId !== job.jobId || receipt.objectRef !== job.outputObjectRef) {
+        throw new Error(`canonical visual root receipt ${job.receiptObjectRef} does not match the requested job`);
       }
-      const verification = await credentialSigner.verify({
-        bytes: asset.bytes,
-        mediaType: generated.receipt.mediaType,
+      const proof = await verifyCredentialedAssetForPublication({
+        infra,
+        credentialSigner,
+        receipt,
       });
-      if (verification.valid !== true) {
+      if (proof.verification.valid !== true) {
         throw new Error("canonical visual root credential verification failed");
       }
       return Object.freeze({
         state: "ready",
-        recordedAt: generated.receipt.completedAt,
+        recordedAt: proof.receipt.completedAt,
         proof: Object.freeze({
-          receipt: generated.receipt,
-          generationRecord: parseJsonObject(
-            generationRecordStored.bytes,
-            `canonical visual root generation record ${generated.generationRecordObjectRef}`,
-          ),
-          verification,
+          receipt: proof.receipt,
+          generationRecord: proof.generationRecord,
+          verification: proof.verification,
         }),
       });
     },
