@@ -4,10 +4,11 @@ import {
   createDurableModelAdapter,
   createStateModelInvocationJournal,
 } from "./model-runtime/durable-invocation-journal.mjs";
+import { createGenesisDevelopmentRequestStore } from "./genesis-development-request-store.mjs";
 import { createProvisionalBirthStore } from "./provisional-birth-store.mjs";
 import { createBirthReconciliationRuntime } from "./birth-reconciliation-process.mjs";
 
-export const BIRTH_CENTER_RUNTIME_VERSION = "fibre-birth-center-runtime-v2";
+export const BIRTH_CENTER_RUNTIME_VERSION = "fibre-birth-center-runtime-v3";
 
 function assertPublisher(publisher) {
   if (publisher === null) return;
@@ -35,10 +36,14 @@ export function createBirthCenterRuntime({
   assertPublisher(worldPublisher);
 
   const invocationJournal = createStateModelInvocationJournal(storage, { now });
-  let provisionalBirthStore;
+  let provisionalBirthStore = null;
+  let developmentRequestStore = null;
   try {
     provisionalBirthStore = createProvisionalBirthStore(storage, { now });
+    developmentRequestStore = createGenesisDevelopmentRequestStore(storage, { now });
   } catch (error) {
+    try { developmentRequestStore?.close(); } catch {}
+    try { provisionalBirthStore?.close(); } catch {}
     invocationJournal.close();
     throw error;
   }
@@ -62,6 +67,7 @@ export function createBirthCenterRuntime({
     stateScopeId,
     invocationJournal,
     provisionalBirthStore,
+    developmentRequestStore,
     reconciliationRuntime,
     worldPublicationConfigured: worldPublisher !== null,
 
@@ -98,6 +104,7 @@ export function createBirthCenterRuntime({
         authoritativeThreadStateOwned: false,
         providerInvocationPersistenceOwned: true,
         provisionalDevelopmentStateOwned: true,
+        developmentRequestReservationOwned: true,
         pendingBirthCount: provisionalBirthStore.countPending(),
       });
     },
@@ -105,6 +112,7 @@ export function createBirthCenterRuntime({
     close() {
       if (closed) return;
       closed = true;
+      developmentRequestStore.close();
       provisionalBirthStore.close();
       invocationJournal.close();
     },

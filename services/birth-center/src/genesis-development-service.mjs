@@ -16,6 +16,7 @@ import {
 import { generateGenesisLifeCandidate } from "./genesis-life-development.mjs";
 import {
   buildGenesisDevelopmentPlan,
+  hydrateGenesisDevelopmentPlan,
   serializeGenesisDevelopmentPlan,
 } from "./genesis-development-plan.mjs";
 import {
@@ -23,7 +24,7 @@ import {
   buildGenesisPublicationCognition,
 } from "./genesis-publication.mjs";
 
-export const GENESIS_DEVELOPMENT_SERVICE_VERSION = "fibre-genesis-development-service-v2";
+export const GENESIS_DEVELOPMENT_SERVICE_VERSION = "fibre-genesis-development-service-v3";
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
@@ -36,6 +37,14 @@ function assertRuntime(runtime) {
   if (!runtime.provisionalBirthStore || typeof runtime.provisionalBirthStore.get !== "function") {
     throw new TypeError("Genesis development service requires Birth Center provisional birth lookup");
   }
+  if (
+    !runtime.developmentRequestStore ||
+    typeof runtime.developmentRequestStore.reserve !== "function" ||
+    typeof runtime.developmentRequestStore.saveAdmission !== "function" ||
+    typeof runtime.developmentRequestStore.markSubmitted !== "function"
+  ) {
+    throw new TypeError("Genesis development service requires durable development request reservation");
+  }
   return runtime;
 }
 
@@ -44,28 +53,6 @@ function assertAdapter(name, adapter) {
     throw new TypeError(`${name} must expose invoke()`);
   }
   return adapter;
-}
-
-function existingDevelopmentResult(existing, planDigest, plan) {
-  if (existing === null) return null;
-  if (existing.threadId !== plan.threadId) {
-    throw new Error(`Genesis development ${plan.genesisId} already belongs to another Thread`);
-  }
-  if (existing.bundle?.developmentPlanDigest !== planDigest) {
-    throw new Error(`Genesis development ${plan.genesisId} already exists for different development material`);
-  }
-  return Object.freeze({
-    serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
-    requestId: plan.requestId,
-    requestDigest: plan.requestDigest,
-    developmentPlanDigest: planDigest,
-    genesisId: existing.genesisId,
-    threadId: existing.threadId,
-    fibreIdentityNumber: existing.bundle?.civilRegistration?.fibreIdentityNumber ?? null,
-    status: existing.status,
-    idempotent: true,
-    generated: false,
-  });
 }
 
 function currentCognition({ creativeAdapter, repairAdapter }) {
@@ -89,6 +76,19 @@ function currentCognition({ creativeAdapter, repairAdapter }) {
   });
 }
 
+function replayResult(reservation, provisional) {
+  if (reservation.status !== "submitted" || reservation.submissionResult === null) return null;
+  if (provisional === null) {
+    throw new Error(`submitted Genesis development ${reservation.requestId} has no provisional Birth record`);
+  }
+  return Object.freeze({
+    ...structuredClone(reservation.submissionResult),
+    status: provisional.status,
+    idempotent: true,
+    generated: false,
+  });
+}
+
 export function createGenesisDevelopmentService({
   runtime,
   creativeAdapter,
@@ -105,35 +105,48 @@ export function createGenesisDevelopmentService({
     serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
 
     async develop(developmentRequest) {
-      const plan = buildGenesisDevelopmentPlan(developmentRequest);
-      const serializedPlan = serializeGenesisDevelopmentPlan(plan);
+      const builtPlan = buildGenesisDevelopmentPlan(developmentRequest);
+      const serializedPlan = serializeGenesisDevelopmentPlan(builtPlan);
       const planDigest = digest(serializedPlan);
-      const existing = birthRuntime.provisionalBirthStore.get(plan.genesisId);
-      const replay = existingDevelopmentResult(existing, planDigest, plan);
+      const reservation = birthRuntime.developmentRequestStore.reserve({
+        requestId: builtPlan.requestId,
+        requestDigest: builtPlan.requestDigest,
+        plan: serializedPlan,
+      });
+      if (reservation.planDigest !== planDigest) {
+        throw new Error(`durable Genesis development plan digest drift for ${builtPlan.requestId}`);
+      }
+      const plan = hydrateGenesisDevelopmentPlan(reservation.plan);
+      const existingProvisional = birthRuntime.provisionalBirthStore.get(plan.genesisId);
+      const replay = replayResult(reservation, existingProvisional);
       if (replay !== null) return replay;
 
-      const creative = birthRuntime.durableAdapter(creativeBase);
-      const repair = birthRuntime.durableAdapter(repairBase);
-      const attemptStartedAt = now();
-      const candidate = await generateGenesisLifeCandidate({
-        slotPlan: plan,
-        adapter: creative,
-        repairAdapter: repair,
-        attemptStartedAt,
-      });
-      const publicationAt = now();
-      const admission = {
-        ...buildGenesisAdmissionPackage({
-          candidate,
+      let admission = reservation.admission;
+      if (admission === null) {
+        const creative = birthRuntime.durableAdapter(creativeBase);
+        const repair = birthRuntime.durableAdapter(repairBase);
+        const candidate = await generateGenesisLifeCandidate({
           slotPlan: plan,
-          cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
-          publicationAt,
-          randomIntFn,
-        }),
-        developmentPlanDigest: planDigest,
-      };
+          adapter: creative,
+          repairAdapter: repair,
+          attemptStartedAt: reservation.createdAt,
+        });
+        const publicationAt = now();
+        admission = {
+          ...buildGenesisAdmissionPackage({
+            candidate,
+            slotPlan: plan,
+            cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
+            publicationAt,
+            randomIntFn,
+          }),
+          developmentPlanDigest: planDigest,
+        };
+        admission = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, admission).admission;
+      }
+
       const accepted = await birthRuntime.submitBirth(admission);
-      return Object.freeze({
+      const result = Object.freeze({
         serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
         requestId: plan.requestId,
         requestDigest: plan.requestDigest,
@@ -143,8 +156,10 @@ export function createGenesisDevelopmentService({
         fibreIdentityNumber: admission.civilRegistration.fibreIdentityNumber,
         status: accepted.status,
         idempotent: accepted.idempotent === true,
-        generated: true,
+        generated: reservation.admission === null,
       });
+      birthRuntime.developmentRequestStore.markSubmitted(plan.requestId, result);
+      return result;
     },
   });
 }
