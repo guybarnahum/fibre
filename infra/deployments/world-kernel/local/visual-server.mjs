@@ -1,5 +1,6 @@
 import { attachWorldVisualPublicationRuntime } from "./visual-publication-runtime.mjs";
 import { startWorldKernelFromEnvironment } from "./server.mjs";
+import { createThreadPresentationVisualHttpBoundary } from "./thread-presentation-visual-http-boundary.mjs";
 
 function defaultVisualPublicationErrorReporter(entry, error) {
   process.stderr.write(`${JSON.stringify({
@@ -11,12 +12,20 @@ function defaultVisualPublicationErrorReporter(entry, error) {
   })}\n`);
 }
 
+function productionPresentationBoundary(environment) {
+  return createThreadPresentationVisualHttpBoundary({
+    baseUrl: environment.FIBRE_THREAD_PRESENTATION_URL ?? "http://127.0.0.1:8788",
+    privateToken: environment.FIBRE_PRIVATE_TOKEN,
+  });
+}
+
 /**
- * Local deployment composition for Slice-A visual publication.
+ * World deployment composition for automatic visual publication.
  *
- * The base World server remains independently reusable. This composition starts
- * it and attaches the restart-safe visual reconciliation process as part of the
- * same lifecycle, wrapping close() so no reconciliation survives World shutdown.
+ * World owns the restart-safe reconciliation lifecycle. Unless a test/deployment
+ * explicitly injects a Presentation boundary, admitted Embodiments cross the
+ * production service boundary over authenticated HTTP; Presentation owns its
+ * snapshot projection and derived-media demand state.
  */
 export async function startWorldKernelVisualPublicationFromEnvironment(
   environment = process.env,
@@ -26,10 +35,13 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
   const worldRuntime = await startWorldKernelFromEnvironment(environment, serviceOptions);
   let visualRuntime;
   try {
+    const presentationBoundary = visualOptions.presentationBoundary
+      ?? productionPresentationBoundary(environment);
     visualRuntime = attachWorldVisualPublicationRuntime({
       worldRuntime,
       onError: defaultVisualPublicationErrorReporter,
       ...visualOptions,
+      presentationBoundary,
     });
   } catch (error) {
     await worldRuntime.close();
