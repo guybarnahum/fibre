@@ -1,6 +1,7 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-write-api.mjs";
 import { createGenesisDevelopmentApi } from "#services/birth-center/src/genesis-development-api.mjs";
+import { createGenesisDevelopmentInspectionService } from "#services/birth-center/src/genesis-development-inspection.mjs";
 import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
 import { createWorldKernelBirthPublisher } from "../world-kernel-boundary.mjs";
@@ -39,6 +40,7 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       creativeAdapter: null,
       repairAdapter: null,
       developmentService: null,
+      developmentInspectionService: null,
       developmentApi: null,
     });
   }
@@ -51,8 +53,10 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
     now,
     randomIntFn,
   });
+  const developmentInspectionService = createGenesisDevelopmentInspectionService({ runtime });
   const developmentApi = createGenesisDevelopmentApi({
     developmentService,
+    inspectionService: developmentInspectionService,
     privateToken,
     onError(error) {
       console.error(JSON.stringify({
@@ -61,7 +65,7 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       }));
     },
   });
-  return Object.freeze({ creativeAdapter, repairAdapter, developmentService, developmentApi });
+  return Object.freeze({ creativeAdapter, repairAdapter, developmentService, developmentInspectionService, developmentApi });
 }
 
 export function createBirthCenterCloudflareRuntime({
@@ -118,6 +122,7 @@ export function createBirthCenterCloudflareRuntime({
     creativeAdapter: development.creativeAdapter,
     repairAdapter: development.repairAdapter,
     developmentService: development.developmentService,
+    developmentInspectionService: development.developmentInspectionService,
     developmentApi: development.developmentApi,
     birthApi,
     close() { runtime.close(); },

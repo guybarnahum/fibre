@@ -101,6 +101,12 @@ export function createStateModelInvocationJournal(storage, {
     FROM birth_model_invocations
     WHERE client_request_id = ?
   `);
+  const selectByPrefix = session.prepare(`
+    SELECT record_json
+    FROM birth_model_invocations
+    WHERE substr(client_request_id, 1, ?) = ?
+    ORDER BY recorded_at, client_request_id
+  `);
   const insertRecord = session.prepare(`
     INSERT INTO birth_model_invocations (
       client_request_id,
@@ -128,6 +134,23 @@ export function createStateModelInvocationJournal(storage, {
       );
     }
     return record;
+  }
+
+  function listByPrefix(prefix) {
+    if (typeof prefix !== "string" || prefix.trim() === "") {
+      throw new TypeError("durable invocation prefix is required");
+    }
+    return selectByPrefix.all(prefix.length, prefix).map((row) => {
+      let parsed;
+      try {
+        parsed = JSON.parse(row.record_json);
+      } catch (error) {
+        throw new DurableInvocationIntegrityError(
+          `cannot read durable invocation journal record for ${prefix}: ${error.message}`,
+        );
+      }
+      return normalizeStoredRecord(parsed);
+    });
   }
 
   function commit(request, result) {
@@ -164,6 +187,7 @@ export function createStateModelInvocationJournal(storage, {
   return Object.freeze({
     stateScopeId: session.scopeId,
     load,
+    listByPrefix,
     commit,
     close() { session.close(); },
   });

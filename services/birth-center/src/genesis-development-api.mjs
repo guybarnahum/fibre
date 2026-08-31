@@ -1,4 +1,5 @@
 const TOKEN_ENCODER = new TextEncoder();
+const INSPECTION_ROUTE = /^\/internal\/births\/develop\/([A-Za-z0-9][A-Za-z0-9._:-]{0,127})\/inspection$/u;
 export const DEFAULT_GENESIS_DEVELOPMENT_MAX_BODY_BYTES = 4 * 1024 * 1024;
 
 function constantTimeEqual(left, right) {
@@ -46,12 +47,16 @@ async function readJson(request, maxBodyBytes) {
 
 export function createGenesisDevelopmentApi({
   developmentService,
+  inspectionService = null,
   privateToken,
   maxBodyBytes = DEFAULT_GENESIS_DEVELOPMENT_MAX_BODY_BYTES,
   onError = () => {},
 } = {}) {
   if (!developmentService || typeof developmentService.develop !== "function") {
     throw new TypeError("Genesis development API requires developmentService.develop(request)");
+  }
+  if (inspectionService !== null && typeof inspectionService?.inspect !== "function") {
+    throw new TypeError("Genesis development API inspectionService must expose inspect(requestId)");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Genesis development API privateToken must be at least 16 characters");
@@ -64,13 +69,23 @@ export function createGenesisDevelopmentApi({
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname !== "/internal/births/develop") return null;
+      const inspectionMatch = INSPECTION_ROUTE.exec(url.pathname);
+      const isDevelopment = url.pathname === "/internal/births/develop";
+      if (!isDevelopment && inspectionMatch === null) return null;
       try {
         if (url.search !== "") return json(400, { error: { code: "QUERY_NOT_SUPPORTED" } });
-        if (request.method !== "POST") return json(405, { error: { code: "METHOD_NOT_ALLOWED" } });
         if (!constantTimeEqual(request.headers.get("x-fibre-private-token"), privateToken)) {
           return json(403, { error: { code: "PRIVATE_TOKEN_REQUIRED" } });
         }
+        if (inspectionMatch !== null) {
+          if (request.method !== "GET") return json(405, { error: { code: "METHOD_NOT_ALLOWED" } });
+          if (inspectionService === null) return json(503, { error: { code: "INSPECTION_NOT_CONFIGURED" } });
+          const inspection = inspectionService.inspect(inspectionMatch[1]);
+          return inspection === null
+            ? json(404, { error: { code: "DEVELOPMENT_NOT_FOUND" } })
+            : json(200, { ok: true, inspection });
+        }
+        if (request.method !== "POST") return json(405, { error: { code: "METHOD_NOT_ALLOWED" } });
         const developmentRequest = await readJson(request, maxBodyBytes);
         const result = await developmentService.develop(developmentRequest);
         return json(result.status === "published" ? 200 : 202, { ok: true, development: result });
@@ -82,7 +97,7 @@ export function createGenesisDevelopmentApi({
         return json(status, {
           error: {
             code: status >= 500 ? "INTERNAL_ERROR" : "INVALID_REQUEST",
-            message: status >= 500 ? "Birth Center could not develop the Genesis candidate" : error.message,
+            message: status >= 500 ? "Birth Center could not serve the Genesis development request" : error.message,
           },
         });
       }

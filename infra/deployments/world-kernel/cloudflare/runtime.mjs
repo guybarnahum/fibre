@@ -7,6 +7,7 @@ import { createGenesisBirthWriteApi } from "#services/world-kernel/src/genesis-b
 import { createGenesisCanonicalEmbodimentMaterializer } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
 import { GenesisPresentationOutboxStore } from "#services/world-kernel/src/genesis-presentation-outbox-store.mjs";
 import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
+import { createGenesisThreadInspectionApi } from "#services/world-kernel/src/genesis-thread-inspection-api.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
@@ -51,11 +52,7 @@ function reconciliationIntervalMs(env) {
 }
 
 function createDurableThreadSource(identityStore) {
-  return Object.freeze({
-    listThreadIds() {
-      return identityStore.listThreadIds();
-    },
-  });
+  return Object.freeze({ listThreadIds() { return identityStore.listThreadIds(); } });
 }
 
 function closeAll(stores) {
@@ -141,11 +138,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     presentationDelivery,
     visualPublicationProcess,
     onError(entry, error) {
-      console.error(JSON.stringify({
-        event: "world-reconciliation-failed",
-        ...entry,
-        stack: error instanceof Error ? error.stack : null,
-      }));
+      console.error(JSON.stringify({ event: "world-reconciliation-failed", ...entry, stack: error instanceof Error ? error.stack : null }));
     },
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
@@ -168,6 +161,14 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     },
   });
   const birthApi = createGenesisBirthWriteApi({ birthPublisher, privateToken });
+  const inspectionApi = createGenesisThreadInspectionApi({
+    worldReader: worldStore,
+    genesisReader: genesisStore,
+    genomeReader: symbolicGenomeStore,
+    civilRegistry: civilRegistryStore,
+    embodimentReader: embodimentStore,
+    privateToken,
+  });
 
   let closed = false;
   return Object.freeze({
@@ -186,6 +187,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     reconciliationRuntime,
     birthPublisher,
     birthApi,
+    inspectionApi,
     async close({ cancelSchedule = false } = {}) {
       if (closed) return;
       closed = true;
