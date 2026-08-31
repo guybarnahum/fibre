@@ -1,7 +1,7 @@
 ---
 id: architecture-birth-center-runtime
 status: accepted
-last-reviewed: 2026-08-27
+last-reviewed: 2026-08-31
 canonical: true
 ---
 
@@ -42,7 +42,7 @@ A complete admitted birth bundle crosses one explicit boundary to the World Kern
 
 The Birth Center runtime must not open or mutate the live World database merely because it shares a repository with world-kernel code. Development storage and provider credentials belong to the Birth Center side; authoritative publication belongs to the World side.
 
-The publication boundary may be injected in-process for tests and local composition. A later deployment may replace that injection with a narrow authenticated RPC/API without changing authority ownership.
+The publication boundary is fetch-shaped and provider-neutral. Local composition can inject it directly; Cloudflare composition backs the same boundary with a private service binding to World. Authority ownership does not change: Birth Center may retry publication, while World alone admits the authoritative Thread.
 
 Milestone #39 exercised this boundary end to end with a fixed five-Thread cohort: each admitted Thread published atomically with its FIN/civil registration, and independent hydration reconstructed the admitted life from canonical authorities. The retained result is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
@@ -52,7 +52,7 @@ The Birth Center uses the canonical durable-development rule from [`genesis-dura
 
 > **Commit development as it becomes valid. On machinery failure, preserve the failure and resume from the last committed developmental state. Never regenerate accepted history.**
 
-A successful provider invocation is committed before later machinery can depend on it. Restart replays that exact committed result locally after verifying the request witness and contacts the provider only for the first unfinished invocation.
+A successful provider invocation is committed through the Birth Center `InfraDriver.state` scope before later machinery can depend on it. Restart replays that exact committed result after verifying the request witness and contacts the provider only for the first unfinished invocation. Local maps the state scope to SQLite; Cloudflare maps it to SQLite-backed Durable Object state.
 
 Durable development is execution resilience. It does not make provisional candidate material authoritative Thread life or semantic evidence.
 
@@ -82,8 +82,10 @@ FIBRE_BIRTH_CENTER_STATE
 
 `GET /health` and `GET /v1/status` expose runtime ownership/status only. The `/v1/` route label is an HTTP compatibility surface; it is not a reason to version the architecture filename.
 
+The Cloudflare deployment uses a private Worker plus one named SQLite-backed Durable Object scope for Birth state and alarm scheduling. A private birth request durably records provisional publication work; the Durable Object alarm resumes pending World handoff after Worker disposal/restart.
+
 ## Current development boundary
 
 The current Genesis hardening plan is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md). It may evolve memory/meaning selection and experimental instrumentation, but it does not move authoritative birth state into the Birth Center.
 
-Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Authoritative World relational state now crosses `InfraDriver.state`; local `.fibre` development artifacts and the remaining durable model-invocation filesystem journal are not precedent for new production authorities.
+Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Authoritative World relational state and Birth Center provisional/provider-call durability now cross `InfraDriver.state`; local `.fibre` development artifacts are fixtures/validation artifacts rather than production persistence precedent.

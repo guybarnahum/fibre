@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-08-31
 canonical: true
 ---
 
@@ -133,7 +133,7 @@ The hostile provider-free closeout reproduced the sealed result offline and reje
 
 The critical path is the Fibre organism and the standing claims about it, not infrastructure completeness. Cross-cutting infrastructure belongs on the critical path only when it enables the current Fibre capability, preserves a required semantic invariant, removes a demonstrated milestone blocker, or supplies the smallest representative proof needed to continue safely.
 
-The visual/deployment vertical has reached its stop condition. Unrelated media/provider polish and exhaustive provider parity return to backlog. Authoritative World relational persistence and reconciliation now cross provider-neutral `InfraDriver.state` and `InfraDriver.scheduler`, with matching local/Cloudflare shapes and a Cloudflare World recovery proof. Live World deployment plus Birth Center durable model-invocation/runtime portability remain explicit infrastructure work rather than an automatic prerequisite for #41.
+The visual/deployment vertical has reached its stop condition. Unrelated media/provider polish and exhaustive provider parity return to backlog. Authoritative World relational persistence/reconciliation and Birth Center provisional/provider-call durability now cross provider-neutral `InfraDriver.state` and `InfraDriver.scheduler`, with matching local/Cloudflare shapes and restart/replay recovery proofs. Live resource provisioning, secret/configuration closure and deployment remain explicit infrastructure work rather than an automatic prerequisite for #41.
 
 The production rule remains strict for new code: do not create new persistence bypasses or new semantic authorities.
 

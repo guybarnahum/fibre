@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-08-31
 canonical: true
 ---
 
@@ -218,7 +218,7 @@ Economic consequence          0
 
 ## Persistence and repository posture
 
-The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical added production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs. The World portability work then moved authoritative World/Genesis stores off raw database paths and onto the executable `InfraDriver.state` contract, and added provider-neutral World scheduling plus a Cloudflare World runtime without changing semantic authority.
+The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical added production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs. The cloud portability work then moved authoritative World/Genesis stores and Birth Center provisional/provider-call durability onto executable `InfraDriver.state`, with provider-neutral scheduling and Cloudflare World/Birth runtimes that preserve the same authority boundaries.
 
 The accepted production architecture is now executable for authoritative World relational state and reconciliation:
 
@@ -228,9 +228,9 @@ semantic domain store/process -> InfraDriver capability -> provider implementati
 
 Authoritative World Kernel/Genesis stores open the same logical `world` scope through `InfraDriver.state`. The local provider maps that scope to SQLite; the Cloudflare provider maps it to one SQLite-backed Durable Object scope. `InfraDriver.scheduler` now has the same `get/schedule/cancel` surface in both environments: local maps it to the timer mechanism, Cloudflare maps it to the Durable Object alarm, and the World reconciliation process owns the semantic work performed on each wake. The canonical local World runtime uses this scheduler rather than a separate semantic `setInterval` loop.
 
-A Cloudflare World Worker/SQLite-backed Durable Object composition now exists for authoritative Genesis birth publication and durable reconciliation. It reuses fetch-shaped Asset Generator and Thread Presentation boundaries through Cloudflare service bindings. A restart/recovery contract proves that a birth can schedule pending work, the runtime instance can disappear, the durable wake can resume reconciliation, and canonical Embodiment admission remains single/idempotent across restart. The World deployment is included in the canonical Wrangler dry-run gate.
+A Cloudflare World Worker/SQLite-backed Durable Object composition now exists for authoritative Genesis birth publication and durable reconciliation. A matching Cloudflare Birth Center Worker/Durable Object composition owns provisional Birth state and durable model-invocation witnesses through the same `state + scheduler` capability shape used locally. Birth publication uses a private fetch-shaped World boundary/service binding. Recovery tests prove that World reconciliation survives runtime loss without duplicate semantic admission and that Birth Center survives a lost World acknowledgement, retries exact publication after restart, and converges on one authoritative Thread; divergent birth replay still fails closed. Both World and Birth Center deployments are included in the canonical Wrangler dry-run gate.
 
-This does **not** claim that the World Worker has been deployed to live production, that Birth Center provisional persistence/runtime is cloud-portable, or that browser-to-World E2E is complete. The Birth Center durable model-invocation filesystem journal remains explicit production-persistence migration debt.
+This does **not** claim that either Worker has been provisioned/deployed to a live Cloudflare environment, that production resources/secrets are configured, or that the full cloud birth-to-Viewer E2E is complete. Those are the next cloud deployment slices.
 
 `HEAD` describes current Fibre. Git history is the default development archive. Completed milestones retain concise permanent outcomes while permanent runtime behavior is protected by enduring tests.
 

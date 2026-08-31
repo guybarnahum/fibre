@@ -143,11 +143,11 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 **More accurate description:** The bridge's controlled Pass-B experiment classified the tested mechanism **Context-only**. Fibre keeps that result rather than tuning the experiment until it becomes causal.
 
-### The repository is not fully migrated to production persistence — Not yet
+### The cloud runtime is not live-provisioned yet — Not yet
 
-**Simple English:** Fibre's authoritative World now has the same storage and wake-up architecture locally and on Cloudflare, including a restart-safe cloud World runtime in code; Birth Center still needs its durable cloud migration, and no live World deployment is claimed yet.
+**Simple English:** Fibre now has the same World and Birth Center storage/wake-up architecture locally and on Cloudflare, with restart tests for both. The remaining gap is provisioning/configuring real cloud resources and deploying the complete system.
 
-**More accurate description:** Authoritative World/Genesis relational stores use one logical `InfraDriver.state` scope across local SQLite and Cloudflare SQLite-backed Durable Object state. World reconciliation now uses the same `InfraDriver.scheduler` `get/schedule/cancel` contract locally and on Cloudflare, and the Cloudflare World runtime has a restart/recovery proof for scheduled Genesis/visual reconciliation without duplicate canonical Embodiment admission. The Birth Center durable model-invocation filesystem journal/runtime and live production deployment remain separate work.
+**More accurate description:** World/Genesis authority and Birth Center provisional/provider-call durability use `InfraDriver.state` across local SQLite and Cloudflare SQLite-backed Durable Object state, while both runtimes consume the same provider-neutral scheduler contract. World recovery preserves one canonical semantic admission; Birth Center recovery survives a lost World acknowledgement and exact replay converges on one authoritative Thread. These are code/recovery and deployment-dry-run proofs, not a claim that Cloudflare resources, secrets or live services are already provisioned.
 
 ## What follows after #41
 

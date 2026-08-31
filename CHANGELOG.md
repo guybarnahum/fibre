@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Closed cloud Slice D: migrated Birth Center provisional/provider-call durability to `InfraDriver.state`, added matching local/Cloudflare `state + scheduler` runtime composition, added restart-safe Cloudflare Birth publication, and made exact World birth replay idempotent while divergent replay still fails closed.
 - Added provider-neutral World scheduling with identical local/Cloudflare `InfraDriver.scheduler` shape, moved local World reconciliation off semantic `setInterval` timers, added the Cloudflare World Durable Object runtime with service-binding handoffs, and proved durable wake recovery without duplicate canonical Embodiment admission.
 - Migrated authoritative World/Genesis persistence from raw database paths to the provider-neutral `InfraDriver.state` boundary, converted load-bearing store transactions to `session.transaction(...)`, added a no-direct-SQLite production guard, and proved the same real `WorldStore` migration/commit/reopen/rollback/integrity contract against local SQLite and Cloudflare SQLite-backed Durable Object state.
 - Added Thread Passport & Identity Provenance v1: a closed identity-domain registry, append-only claim histories with provenance/authorship/evidence classification, deterministic current/`asOf` views, a derived Passport, read-only inspection, and schema-v6 migration of legacy flat identity without claiming new causal or endogenous Development credit.

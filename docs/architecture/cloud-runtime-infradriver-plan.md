@@ -116,7 +116,7 @@ World
  -> insidefibre.com Viewer
 ```
 
-World Kernel and Birth Center remain local Node runtimes. Authoritative World relational persistence now uses `InfraDriver.state` with local SQLite and Cloudflare SQLite-backed Durable Object providers, while the Birth Center durable model-invocation journal still has a direct filesystem assumption. Therefore the current deployment is production-shaped and World-state-portable, but not fully cloud-hosted.
+World Kernel and Birth Center now both have provider-neutral local/cloud runtime compositions in code. Authoritative World relational persistence and Birth Center provisional/provider-call durability use `InfraDriver.state`; both cloud runtimes map state and scheduler wakes to SQLite-backed Durable Object storage/alarms. These slices prove restart-safe runtime behavior and Wrangler deployment shape, but do not claim that the services are already provisioned or deployed to a live Cloudflare environment.
 
 ## Target cloud topology
 
@@ -389,6 +389,8 @@ cloud Birth Center
 ```
 
 Retry/restart may preserve provisional work but may not create a partially born authoritative Thread.
+
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`; Birth Center provisional state and durable model-invocation witnesses now use `InfraDriver.state`, local/cloud Birth runtimes use the same `state + scheduler` shape, the Cloudflare Birth Durable Object resumes pending publication after runtime loss, exact World birth replay is idempotent while divergent replay fails closed, and exact-head validation including the Birth Center Wrangler dry-run passed. Live resource provisioning/deployment is not claimed by this slice.
 
 ## Cloud Slice E — resource provisioning and configuration closure
 
@@ -741,8 +743,8 @@ Cloud transactional state provider              EXISTS
 World stores fully on InfraDriver.state          EXISTS
 provider-neutral scheduler + local parity       EXISTS
 World Cloudflare runtime                        EXISTS
-Birth persistence through InfraDriver.state      GAP
-Birth Cloudflare runtime                        GAP
+Birth persistence through InfraDriver.state      EXISTS
+Birth Cloudflare runtime                        EXISTS
 explicit resource provisioning                  GAP
 explicit secret-file configuration tool         GAP
 production C2PA deployment/health resolution    GAP
