@@ -426,7 +426,7 @@ It should verify/create required resources and report provider identifiers witho
 
 Production resource names and IDs are operational configuration, not secrets.
 
-**Implementation status:** implemented on `agent/cloud-runtime-infradriver`. `cloud:provision` derives resource names from the checked Wrangler topology, creates/verifies D1/R2/Queue resources idempotently, reapplies the idempotent Presentation catalog schema, and writes resolved provider IDs/configuration only under ignored `.fibre/cloudflare/<environment>/`. Staging uses isolated `-staging` names. Current Cloudflare lifecycle is respected rather than emulated: Durable Object namespaces are reconciled by Worker `exports` on deploy, while Workflows, service bindings, Workers and custom domains are deploy-managed. The separate Viewer repository remains the owner of `insidefibre.com`; Fibre records that domain as an external deployment dependency. No live Cloudflare provisioning is claimed by the ordinary test gate.
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:provision` derives resource names from the checked Wrangler topology, creates/verifies D1/R2/Queue resources idempotently, reapplies the idempotent Presentation catalog schema, and writes resolved provider IDs/configuration only under ignored `.fibre/cloudflare/<environment>/`. Staging uses isolated `-staging` names. Current Cloudflare lifecycle is respected rather than emulated: Durable Object namespaces are reconciled by Worker `exports` on deploy, while Workflows, service bindings, Workers and custom domains are deploy-managed. The separate Viewer repository remains the owner of `insidefibre.com`; Fibre records that domain as an external deployment dependency. The focused operator suite, broad local gates, exact-head validation and all four Wrangler dry-runs passed. No live Cloudflare provisioning is claimed by the ordinary test gate.
 
 ## Secrets and credentials
 
@@ -535,34 +535,37 @@ npm run cloud:configure-secrets -- --file .env --env staging
 
 but `.env` is simply the caller-selected input file.
 
-**Implementation status:** implemented on `agent/cloud-runtime-infradriver`. `cloud:configure-secrets` requires an explicit file, validates every mandatory service value before any upload, sends only each Worker's secret subset through Wrangler stdin, and never writes secret values into repository or generated config files. `C2PA_SIGNER_URL` is now correctly treated as non-secret runtime configuration; generated resolved Wrangler configs carry non-secret environment configuration separately. Wrangler version-secret bulk is used so secret configuration creates a Worker version without intentionally switching traffic; first empty-environment behavior still requires the Slice I rebuild proof.
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:configure-secrets` requires an explicit file, validates every mandatory service value before any upload, sends only each Worker's secret subset through Wrangler stdin, and never writes secret values into repository or generated config files. `C2PA_SIGNER_URL` is correctly treated as non-secret runtime configuration; generated resolved Wrangler configs carry non-secret environment configuration separately. Wrangler version-secret bulk is used so secret configuration creates a Worker version without intentionally switching traffic. The focused operator suite, broad local gates and exact-head validation passed; first empty-environment behavior still requires the Slice I rebuild proof.
 
 ## Cloud Slice F — deploy command and health closure
 
-Create a reproducible deployment command, conceptually:
+Create a reproducible deployment command:
 
 ```text
 npm run cloud:deploy -- --env staging
 ```
 
-Expected order:
+The implemented deployment/health order is:
 
 ```text
 1. repository/deployment validation
 2. Cloudflare operator authentication check
-3. resource provisioning verification
-4. required secret-name verification
-5. production C2PA signer health/trust verification
-6. Asset Generator deploy
-7. Thread Presentation deploy
-8. World Kernel deploy
-9. Birth Center deploy
-10. insidefibre.com deploy
-11. service health checks
-12. in-vivo acceptance test
+3. idempotent Slice E resource provisioning verification
+4. required remote secret-name verification
+5. production C2PA signer health/identity/trust verification
+6. Asset Generator deploy + /healthz
+7. Thread Presentation deploy + /healthz
+8. World Kernel deploy + /healthz
+9. Birth Center deploy + /healthz
+10. non-mutating Thread Presentation discovery acceptance
+11. external Viewer reachability verification
 ```
 
-Deployment must not print secret values.
+Wrangler automatic resource provisioning is disabled during deploy so Slice E remains the resource authority. Deployment must not print secret values.
+
+The separate `insidefibre.com` Viewer repository is not mutated by this command; Fibre verifies the configured Viewer endpoint as an external dependency. A genuine new Thread birth and full birth-to-Viewer acceptance proof belong to Slice G rather than being hidden inside deployment orchestration.
+
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:deploy` enforces validation/auth/resource/secret/signer preflight, deploys the four Fibre Cloudflare services in service-binding dependency order, checks each service health, then checks the public Presentation discovery API and Viewer reachability. Focused Slice F tests passed locally, broad local validation passed (`1045/1045` active and `1050/1050` all), and exact-head GitHub validation including all four Wrangler dry-runs passed. This slice does not claim that a live staging deployment has actually been executed or that a genuine cloud Thread has been born; those are Slice G acceptance work.
 
 ## Cloud Slice G — full cloud in-vivo E2E
 
@@ -751,7 +754,8 @@ Birth persistence through InfraDriver.state      EXISTS
 Birth Cloudflare runtime                        EXISTS
 explicit resource provisioning                  EXISTS
 explicit secret-file configuration tool         EXISTS
-production C2PA deployment/health resolution    GAP
+cloud deploy/health orchestration               EXISTS
+production C2PA deployment/health resolution    EXISTS AS PREFLIGHT CONTRACT; LIVE STAGING NOT YET RUN
 full cloud one-Thread in-vivo E2E               GAP
 cloud failure/restart acceptance                GAP
 empty-environment rebuild proof                 GAP
