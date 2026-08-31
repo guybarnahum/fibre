@@ -1,6 +1,6 @@
-import { DatabaseSync } from "node:sqlite";
 import { IntegrityError, canonicalJson, sha256 } from "./persistence-common.mjs";
-import { migrateDatabase, normalizeDatabasePath, safeRollback, translateStorageError } from "./persistence-sqlite.mjs";
+import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { normalizeEmbodimentRepresentation } from "./embodiment-domain.mjs";
 import { normalizeEmbodimentRightsAuthority } from "./embodiment-rights-domain.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";
@@ -65,28 +65,24 @@ export class EmbodimentStore {
   #db;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#db = new DatabaseSync(normalizeDatabasePath(databasePath), { readOnly, enableForeignKeyConstraints: true });
+    this.#db = openWorldStateDatabase(storage, { readOnly, storeName: "EmbodimentPersistenceStore" });
     try {
-      if (readOnly) {
-        this.#db.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#db.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+      if (!readOnly) {
         migrateDatabase(this.#db);
-        this.#db.exec("BEGIN IMMEDIATE");
-        createEmbodimentTables(this.#db);
-        this.#db.exec("COMMIT");
+        this.#db.transaction(() => {
+          createEmbodimentTables(this.#db);
+        });
       }
     } catch (error) {
-      safeRollback(this.#db);
       this.#db.close();
       throw error;
     }
   }
 
   close() { this.#db.close(); }
-  queryOnly() { return Number(this.#db.prepare("PRAGMA query_only").get().query_only) === 1; }
+  queryOnly() { return this.#readOnly; }
 
   #requireThread(threadId) {
     const row = this.#db.prepare("SELECT created_at FROM threads WHERE thread_id=?").get(threadId);
@@ -149,36 +145,36 @@ export class EmbodimentStore {
       throw new EmbodimentConflictError("embodiment rights authority cannot predate Thread creation");
     }
     try {
-      this.#db.exec("BEGIN IMMEDIATE");
-      this.#requireWorldEvidence(authority.threadId, authority.evidenceReferences, "embodiment rights evidence");
-      const prior = this.#db.prepare(
-        "SELECT record_json,record_digest FROM embodiment_rights_authorities WHERE authority_id=?",
-      ).get(authority.authorityId);
-      if (prior) {
-        if (prior.record_json !== canonicalJson(authority) || prior.record_digest !== rightsDigest(authority)) {
-          throw new EmbodimentConflictError(`embodiment rights authority ${authority.authorityId} already exists with different content`);
+      const transactionResult = this.#db.transaction(() => {
+        this.#requireWorldEvidence(authority.threadId, authority.evidenceReferences, "embodiment rights evidence");
+        const prior = this.#db.prepare(
+          "SELECT record_json,record_digest FROM embodiment_rights_authorities WHERE authority_id=?",
+        ).get(authority.authorityId);
+        if (prior) {
+          if (prior.record_json !== canonicalJson(authority) || prior.record_digest !== rightsDigest(authority)) {
+            throw new EmbodimentConflictError(`embodiment rights authority ${authority.authorityId} already exists with different content`);
+          }
+
+          return authority;
         }
-        this.#db.exec("COMMIT");
+        this.#db.prepare(`
+          INSERT INTO embodiment_rights_authorities(
+            authority_id,thread_id,authority_kind,source_party_id,max_visibility,record_json,record_digest,recorded_at
+          ) VALUES (?,?,?,?,?,?,?,?)
+        `).run(
+          authority.authorityId,
+          authority.threadId,
+          authority.authorityKind,
+          authority.sourcePartyId,
+          authority.maxVisibility,
+          canonicalJson(authority),
+          rightsDigest(authority),
+          authority.recordedAt,
+        );
         return authority;
-      }
-      this.#db.prepare(`
-        INSERT INTO embodiment_rights_authorities(
-          authority_id,thread_id,authority_kind,source_party_id,max_visibility,record_json,record_digest,recorded_at
-        ) VALUES (?,?,?,?,?,?,?,?)
-      `).run(
-        authority.authorityId,
-        authority.threadId,
-        authority.authorityKind,
-        authority.sourcePartyId,
-        authority.maxVisibility,
-        canonicalJson(authority),
-        rightsDigest(authority),
-        authority.recordedAt,
-      );
-      this.#db.exec("COMMIT");
-      return authority;
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#db);
       throw translateStorageError(error);
     }
   }
@@ -258,93 +254,93 @@ export class EmbodimentStore {
       throw new EmbodimentConflictError("embodiment cannot be recorded before Thread creation");
     }
     try {
-      this.#db.exec("BEGIN IMMEDIATE");
-      this.#requireWorldEvidence(record.threadId, record.sourceReferences, "embodiment source");
-      const authorities = this.#resolveAuthorities(record);
-      this.#assertVisibilityAuthorized(record, authorities);
-      if (record.representationKind === "human_source_derivative") {
-        const sourcePartyIds = new Set(authorities.map((authority) => authority.sourcePartyId));
-        if (sourcePartyIds.size !== 1) {
-          throw new EmbodimentConflictError("human-derived embodiment must resolve to one human source identity");
-        }
-      }
-
-      const history = this.history(record.threadId, record.embodimentId, { required: false });
-      if (history.length !== record.revision - 1) {
-        throw new EmbodimentConflictError(`embodiment ${record.embodimentId} expected revision ${history.length + 1}`);
-      }
-      if (history.length > 0) {
-        const prior = history.at(-1);
-        if (!sameSlot(history[0], record)) {
-          throw new EmbodimentConflictError(`embodiment ${record.embodimentId} cannot switch source truth or rights basis`);
-        }
+      const transactionResult = this.#db.transaction(() => {
+        this.#requireWorldEvidence(record.threadId, record.sourceReferences, "embodiment source");
+        const authorities = this.#resolveAuthorities(record);
+        this.#assertVisibilityAuthorized(record, authorities);
         if (record.representationKind === "human_source_derivative") {
-          if (!isSuperset(record.sourceReferences, prior.sourceReferences)) {
-            throw new EmbodimentConflictError("human-derived embodiment cannot discard prior source evidence");
-          }
-          if (!isSuperset(record.permissionReferences, prior.permissionReferences)) {
-            throw new EmbodimentConflictError("human-derived embodiment cannot discard prior permission authority");
-          }
-          const priorAuthorities = this.#resolveAuthorities(prior);
-          if (authorities[0].sourcePartyId !== priorAuthorities[0].sourcePartyId) {
-            throw new EmbodimentConflictError("human-derived embodiment cannot change its human source identity");
+          const sourcePartyIds = new Set(authorities.map((authority) => authority.sourcePartyId));
+          if (sourcePartyIds.size !== 1) {
+            throw new EmbodimentConflictError("human-derived embodiment must resolve to one human source identity");
           }
         }
-        if (VISIBILITY_RANK[record.visibility] > VISIBILITY_RANK[prior.visibility]) {
-          const newAuthorityRefs = record.permissionReferences.filter(
-            (reference) => !prior.permissionReferences.includes(reference),
-          );
-          if (record.representationKind === "human_source_derivative") {
-            if (newAuthorityRefs.length === 0) {
-              throw new EmbodimentConflictError("widening human-derived embodiment visibility requires new rights authority");
-            }
-            const newAuthorities = newAuthorityRefs.map((reference) => this.#rightsAuthority(reference, record));
-            if (!newAuthorities.some(
-              (authority) => VISIBILITY_RANK[authority.maxVisibility] >= VISIBILITY_RANK[record.visibility],
-            )) {
-              throw new EmbodimentConflictError("new rights authority does not permit widened embodiment visibility");
-            }
-          }
-        }
-      }
 
-      const previousHeadDigest = history.length === 0
-        ? null
-        : this.#db.prepare(
-          "SELECT head_digest FROM embodiment_lineage_heads WHERE embodiment_id=? AND revision=?",
-        ).get(record.embodimentId, record.revision - 1).head_digest;
-      const contentDigest = embodimentContentDigest(record);
-      const headDigest = embodimentHeadDigest(record, previousHeadDigest);
-      this.#db.prepare(`
-        INSERT INTO embodiment_records(
-          embodiment_id,revision,thread_id,kind,representation_kind,truth_status,rights_basis,
-          visibility,status,recorded_at,supersedes_revision,specification_digest,asset_sha256,record_json,record_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.embodimentId,
-        record.revision,
-        record.threadId,
-        record.kind,
-        record.representationKind,
-        record.truthStatus,
-        record.rightsBasis,
-        record.visibility,
-        record.status,
-        record.recordedAt,
-        record.supersedesRevision ?? null,
-        record.specificationDigest,
-        record.asset?.sha256 ?? null,
-        canonicalJson(record),
-        contentDigest,
-      );
-      this.#db.prepare(`
-        INSERT INTO embodiment_lineage_heads(embodiment_id,revision,thread_id,head_digest,recorded_at)
-        VALUES (?,?,?,?,?)
-      `).run(record.embodimentId, record.revision, record.threadId, headDigest, record.recordedAt);
-      this.#db.exec("COMMIT");
-      return record;
+        const history = this.history(record.threadId, record.embodimentId, { required: false });
+        if (history.length !== record.revision - 1) {
+          throw new EmbodimentConflictError(`embodiment ${record.embodimentId} expected revision ${history.length + 1}`);
+        }
+        if (history.length > 0) {
+          const prior = history.at(-1);
+          if (!sameSlot(history[0], record)) {
+            throw new EmbodimentConflictError(`embodiment ${record.embodimentId} cannot switch source truth or rights basis`);
+          }
+          if (record.representationKind === "human_source_derivative") {
+            if (!isSuperset(record.sourceReferences, prior.sourceReferences)) {
+              throw new EmbodimentConflictError("human-derived embodiment cannot discard prior source evidence");
+            }
+            if (!isSuperset(record.permissionReferences, prior.permissionReferences)) {
+              throw new EmbodimentConflictError("human-derived embodiment cannot discard prior permission authority");
+            }
+            const priorAuthorities = this.#resolveAuthorities(prior);
+            if (authorities[0].sourcePartyId !== priorAuthorities[0].sourcePartyId) {
+              throw new EmbodimentConflictError("human-derived embodiment cannot change its human source identity");
+            }
+          }
+          if (VISIBILITY_RANK[record.visibility] > VISIBILITY_RANK[prior.visibility]) {
+            const newAuthorityRefs = record.permissionReferences.filter(
+              (reference) => !prior.permissionReferences.includes(reference),
+            );
+            if (record.representationKind === "human_source_derivative") {
+              if (newAuthorityRefs.length === 0) {
+                throw new EmbodimentConflictError("widening human-derived embodiment visibility requires new rights authority");
+              }
+              const newAuthorities = newAuthorityRefs.map((reference) => this.#rightsAuthority(reference, record));
+              if (!newAuthorities.some(
+                (authority) => VISIBILITY_RANK[authority.maxVisibility] >= VISIBILITY_RANK[record.visibility],
+              )) {
+                throw new EmbodimentConflictError("new rights authority does not permit widened embodiment visibility");
+              }
+            }
+          }
+        }
+
+        const previousHeadDigest = history.length === 0
+          ? null
+          : this.#db.prepare(
+            "SELECT head_digest FROM embodiment_lineage_heads WHERE embodiment_id=? AND revision=?",
+          ).get(record.embodimentId, record.revision - 1).head_digest;
+        const contentDigest = embodimentContentDigest(record);
+        const headDigest = embodimentHeadDigest(record, previousHeadDigest);
+        this.#db.prepare(`
+          INSERT INTO embodiment_records(
+            embodiment_id,revision,thread_id,kind,representation_kind,truth_status,rights_basis,
+            visibility,status,recorded_at,supersedes_revision,specification_digest,asset_sha256,record_json,record_digest
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.embodimentId,
+          record.revision,
+          record.threadId,
+          record.kind,
+          record.representationKind,
+          record.truthStatus,
+          record.rightsBasis,
+          record.visibility,
+          record.status,
+          record.recordedAt,
+          record.supersedesRevision ?? null,
+          record.specificationDigest,
+          record.asset?.sha256 ?? null,
+          canonicalJson(record),
+          contentDigest,
+        );
+        this.#db.prepare(`
+          INSERT INTO embodiment_lineage_heads(embodiment_id,revision,thread_id,head_digest,recorded_at)
+          VALUES (?,?,?,?,?)
+        `).run(record.embodimentId, record.revision, record.threadId, headDigest, record.recordedAt);
+        return record;
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#db);
       throw translateStorageError(error);
     }
   }
@@ -354,10 +350,10 @@ export class EmbodimentStore {
   }
 }
 
-export function openEmbodimentStore(databasePath) {
-  return new EmbodimentStore(databasePath);
+export function openEmbodimentStore(storage) {
+  return new EmbodimentStore(storage);
 }
 
-export function openEmbodimentInspectionStore(databasePath) {
-  return new EmbodimentStore(databasePath, { readOnly: true });
+export function openEmbodimentInspectionStore(storage) {
+  return new EmbodimentStore(storage, { readOnly: true });
 }

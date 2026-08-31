@@ -9,6 +9,7 @@ import {
 } from "#apps/thread-editor/editor-model.js";
 import { explainExpression } from "#apps/thread-editor/expression-readable.js";
 import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 import { runM1ReviewedProof } from "#tools/replays/m1/m1-reviewed-proof.mjs";
 import { repoFile } from "#repo-root";
 
@@ -233,7 +234,7 @@ test("persisted obligation_override keeps the compelled banner if authorization 
 
 test("readable expression consumes a kernel-produced audience array and persisted basis", async () => {
   const proof = await runM1ReviewedProof({ keepDatabase: true });
-  const store = openExpressionStore(proof.databasePath);
+  const store = openExpressionStore(localWorldStateStorage(proof.databasePath));
   try {
     const requestId = "req_mina_obligation_attempt";
     const chain = store.getExpressionChain("thr_mina_001", requestId);

@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -52,14 +53,14 @@ test("embodiment lineage survives restart and preserves synthetic truth", () => 
   const dir = mkdtempSync(join(tmpdir(), "fibre-emb-"));
   const db = join(dir, "world.sqlite");
   try {
-    const world = openWorldStore(db);
+    const world = openWorldStore(localWorldStateStorage(db));
     world.seedThread(structuredClone(fixture));
     world.close();
-    const store = openEmbodimentStore(db);
+    const store = openEmbodimentStore(localWorldStateStorage(db));
     store.record(record(1));
     store.record(record(2, "available"));
     store.close();
-    const reopened = openEmbodimentStore(db);
+    const reopened = openEmbodimentStore(localWorldStateStorage(db));
     const history = reopened.history(fixture.threadId, record(1).embodimentId);
     assert.equal(history.length, 2);
     assert.equal(history.at(-1).status, "available");

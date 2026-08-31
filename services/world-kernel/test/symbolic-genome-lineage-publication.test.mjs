@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -135,7 +136,7 @@ function genomeSet({ childId = CHILD_ID, genesisId = GENESIS_ID } = {}) {
 }
 
 function recordGenomes(databasePath, set, { includeChild = true } = {}) {
-  const store = new SymbolicGenomeStore(databasePath);
+  const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
   store.recordGenome(set.a);
   store.recordGenome(set.b);
   if (includeChild) store.recordGenome(set.child);
@@ -199,7 +200,7 @@ function relations(thread = childThread()) {
 }
 
 function setupGenesis(databasePath) {
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   genesis.recordWorldSpec(worldSpec());
   return genesis;
 }
@@ -237,7 +238,7 @@ test("Stage 8 atomically binds persisted child genome to admitted #38 synthetic-
     assert.equal(result.thread.threadId, CHILD_ID);
     genesis.close();
 
-    const situated = openSituatedLifeInspectionStore(databasePath);
+    const situated = openSituatedLifeInspectionStore(localWorldStateStorage(databasePath));
     const current = situated.listCurrentLifeRelations(CHILD_ID);
     assert.equal(current.length, 2);
     assert.deepEqual(
@@ -371,7 +372,7 @@ test("Stage 8 requires both parent-genome-source relations and rolls them back w
     genesis.close();
     assertNoPublishedChild(databasePath);
 
-    const genomeStore = new SymbolicGenomeStore(databasePath, { readOnly: true });
+    const genomeStore = new SymbolicGenomeStore(localWorldStateStorage(databasePath), { readOnly: true });
     assert.equal(genomeStore.getGenome(set.child.header.genomeId).header.owner.ownerId, CHILD_ID);
     genomeStore.close();
   }));

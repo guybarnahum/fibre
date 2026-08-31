@@ -1,6 +1,5 @@
-import { DatabaseSync } from "node:sqlite";
 import { canonicalJson } from "./persistence-common.mjs";
-import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   embodimentSubjectDigest,
   normalizeEmbodimentRepresentation,
@@ -27,14 +26,14 @@ function rightsGrounded(record) {
 }
 
 export class EmbodimentStore {
-  #databasePath;
+  #storage;
   #inner;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
-    this.#databasePath = normalizeDatabasePath(databasePath);
+  constructor(storage, { readOnly = false } = {}) {
+    this.#storage = storage;
     this.#readOnly = readOnly;
-    this.#inner = new IntegrityEmbodimentStore(databasePath, { readOnly });
+    this.#inner = new IntegrityEmbodimentStore(storage, { readOnly });
   }
 
   close() { return this.#inner.close(); }
@@ -42,7 +41,7 @@ export class EmbodimentStore {
   recordRightsAuthority(...args) { return this.#inner.recordRightsAuthority(...args); }
 
   #withReadDatabase(run) {
-    const database = new DatabaseSync(this.#databasePath, { readOnly: true, enableForeignKeyConstraints: true });
+    const database = openWorldStateDatabase(this.#storage, { readOnly: true, storeName: "EmbodimentStore inspection" });
     try { return run(database); } finally { database.close(); }
   }
 
@@ -164,10 +163,10 @@ export class EmbodimentStore {
   }
 }
 
-export function openEmbodimentStore(databasePath) {
-  return new EmbodimentStore(databasePath);
+export function openEmbodimentStore(storage) {
+  return new EmbodimentStore(storage);
 }
 
-export function openEmbodimentInspectionStore(databasePath) {
-  return new EmbodimentStore(databasePath, { readOnly: true });
+export function openEmbodimentInspectionStore(storage) {
+  return new EmbodimentStore(storage, { readOnly: true });
 }

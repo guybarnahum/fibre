@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -9,10 +8,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   sameSemanticStateSlot,
   semanticStateDigest,
@@ -54,12 +52,8 @@ function rowToState(row) {
 export class SemanticStateStore {
   #database;
 
-  constructor(databasePath) {
-    assertNonEmpty("databasePath", databasePath);
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+  constructor(storage) {
+        this.#database = openWorldStateDatabase(storage, { storeName: "SemanticStateStore" });
     try {
       migrateDatabase(this.#database);
       createSemanticStateTables(this.#database);
@@ -194,36 +188,35 @@ export class SemanticStateStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO semantic_state_records(
-          state_id,thread_id,domain,dimension,target_json,state_text,evidence_refs_json,
-          as_of,supersedes_state_id,provenance_json,visibility,staleness,state_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.stateId,
-        record.threadId,
-        record.domain,
-        record.dimension,
-        record.target === null ? null : canonicalJson(record.target),
-        record.state,
-        canonicalJson(record.evidenceReferences),
-        record.asOf,
-        record.supersedes,
-        canonicalJson(record.provenance),
-        record.visibility,
-        record.staleness,
-        semanticStateDigest(record),
-      );
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO semantic_state_records(
+            state_id,thread_id,domain,dimension,target_json,state_text,evidence_refs_json,
+            as_of,supersedes_state_id,provenance_json,visibility,staleness,state_digest
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.stateId,
+          record.threadId,
+          record.domain,
+          record.dimension,
+          record.target === null ? null : canonicalJson(record.target),
+          record.state,
+          canonicalJson(record.evidenceReferences),
+          record.asOf,
+          record.supersedes,
+          canonicalJson(record.provenance),
+          record.visibility,
+          record.staleness,
+          semanticStateDigest(record),
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { state: this.getState(record.stateId), created: true };
   }
 }
 
-export function openSemanticStateStore(databasePath) {
-  return new SemanticStateStore(databasePath);
+export function openSemanticStateStore(storage) {
+  return new SemanticStateStore(storage);
 }

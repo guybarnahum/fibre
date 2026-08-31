@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -34,11 +35,11 @@ function withDatabase(run) {
 }
 
 function openExpressionWorld(databasePath) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
-  const expressionStore = openExpressionStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
+  const lifecycleStore = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
+  const expressionStore = openExpressionStore(localWorldStateStorage(databasePath));
   const service = new M1ExpressionWorldKernelService(
     worldStore,
     runtimeStore,
@@ -182,7 +183,7 @@ test("re-signed audience wording substitution fails disclosure-derived integrity
     }
 
     // Reopening the expression store restores the additive append-only trigger before verification.
-    const restored = openExpressionStore(databasePath);
+    const restored = openExpressionStore(localWorldStateStorage(databasePath));
     restored.close();
 
     world = openExpressionWorld(databasePath);
@@ -245,7 +246,7 @@ test("re-signed participation-basis substitution cannot turn compulsion into wil
     }
 
     // Restore append-only protection, then prove the incoherent re-signed chain still fails on read.
-    const restored = openExpressionStore(databasePath);
+    const restored = openExpressionStore(localWorldStateStorage(databasePath));
     restored.close();
 
     world = openExpressionWorld(databasePath);

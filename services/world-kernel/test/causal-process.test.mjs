@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -155,7 +156,7 @@ async function seedAndAcquireCompelledRuntime(processHandle, databasePath, threa
   });
   assert.equal(seeded.response.status, 201);
 
-  const obligationStore = openObligationStore(databasePath);
+  const obligationStore = openObligationStore(localWorldStateStorage(databasePath));
   try {
     const recorded = obligationStore.recordRevision(
       structuredObligation(thread.threadId, request),
@@ -265,7 +266,7 @@ test("canonical world-kernel completes and persists a compelled Structured Oblig
     assert.deepEqual(frozen.body.freeze.consumption.obligationReferences, []);
     assert.equal(frozen.body.freeze.report.authorizationId, authorizationId);
 
-    const discharged = openObligationStore(databasePath);
+    const discharged = openObligationStore(localWorldStateStorage(databasePath));
     try {
       const history = discharged.listHistory(thread.threadId, obligationId);
       assert.equal(history.length, 2);
@@ -330,7 +331,7 @@ test("canonical world-kernel completes and persists a compelled Structured Oblig
     assert.equal(runtime.body.runtime.authorization.participationBasis, "obligation_override");
     assert.equal(runtime.body.runtime.authorization.applicability.obligationId, obligationId);
 
-    const restartedObligations = openObligationStore(databasePath);
+    const restartedObligations = openObligationStore(localWorldStateStorage(databasePath));
     try {
       const current = restartedObligations.getCurrentRevision(thread.threadId, obligationId);
       assert.equal(current.obligation.revision, 2);
@@ -385,7 +386,7 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     assert.equal(stillActive.body.runtime.session.status, "active");
     assert.equal(stillActive.body.runtime.lease.status, "active");
 
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     try {
       const revoked = {
         ...structuredObligation(thread.threadId, request),
@@ -559,7 +560,7 @@ test("freeze cannot consume Structured Obligation authority after a newer revoca
     assert.equal(withdrawalIntegrity.body.authorityWithdrawalCausalChainsVerified, true);
     assert.equal(withdrawalIntegrity.body.authorityWithdrawalHistoryEventsVerified, true);
 
-    const currentStore = openObligationStore(databasePath);
+    const currentStore = openObligationStore(localWorldStateStorage(databasePath));
     try {
       const current = currentStore.getCurrentRevision(thread.threadId, obligationId);
       assert.equal(current.obligation.revision, 2);
@@ -621,7 +622,7 @@ test("withdrawn compelled episode remains closable after lease expiry and cannot
       request,
       "_expiry",
     );
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     try {
       obligations.recordRevision({
         ...structuredObligation(thread.threadId, request),
@@ -642,7 +643,7 @@ test("withdrawn compelled episode remains closable after lease expiry and cannot
       statedNeed: "Exercise a later thaw without erasing the prior episode.",
     };
     const secondObligationId = `obl_${"d".repeat(64)}`;
-    const secondStore = openObligationStore(databasePath);
+    const secondStore = openObligationStore(localWorldStateStorage(databasePath));
     try {
       secondStore.recordRevision({
         ...structuredObligation(thread.threadId, secondRequest),

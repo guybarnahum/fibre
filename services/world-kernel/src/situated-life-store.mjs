@@ -1,15 +1,13 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
   canonicalJson,
 } from "./persistence-common.mjs";
 import {
-  normalizeDatabasePath,
   migrateDatabase,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   normalizeLifeRelation,
   normalizePlaceEpisode,
@@ -154,27 +152,18 @@ export class SituatedLifeStore {
   #database;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "SituatedLifeStore" });
     try {
-      if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#database.exec(
-          "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-        );
+      if (!readOnly) {
         migrateDatabase(this.#database);
-        this.#database.exec("BEGIN IMMEDIATE");
-        createSituatedLifeTables(this.#database);
-        ensureSituatedLifeDigestColumns(this.#database);
-        this.#database.exec("COMMIT");
+        this.#database.transaction(() => {
+          createSituatedLifeTables(this.#database);
+          ensureSituatedLifeDigestColumns(this.#database);
+        });
       }
     } catch (error) {
-      safeRollback(this.#database);
       this.#database.close();
       throw error;
     }
@@ -182,7 +171,7 @@ export class SituatedLifeStore {
 
   close() { this.#database.close(); }
   queryOnly() {
-    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
+    return this.#readOnly;
   }
 
   #requireThread(threadId) {
@@ -341,81 +330,81 @@ export class SituatedLifeStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#requireRelatedParty(record);
-      this.#resolvedEvidence(record.threadId, record.sourceReferences);
-      const history = this.lifeRelationHistory(
-        record.threadId,
-        record.relationId,
-        { required: false },
-      );
-      if (history.length !== record.revision - 1) {
-        throw new SituatedLifeConflictError(
-          `life relation ${record.relationId} expected revision ${history.length + 1}`,
+      const transactionResult = this.#database.transaction(() => {
+        this.#requireRelatedParty(record);
+        this.#resolvedEvidence(record.threadId, record.sourceReferences);
+        const history = this.lifeRelationHistory(
+          record.threadId,
+          record.relationId,
+          { required: false },
         );
-      }
-      const previous = history.at(-1) ?? null;
-      if (previous !== null) {
-        if (!sameRelationSlot(previous, record)) {
+        if (history.length !== record.revision - 1) {
           throw new SituatedLifeConflictError(
-            `life relation ${record.relationId} changes its stable identity slot`,
+            `life relation ${record.relationId} expected revision ${history.length + 1}`,
           );
         }
-        if (!referencesAreSuperset(previous.sourceReferences, record.sourceReferences)) {
-          throw new SituatedLifeConflictError("life relation revision cannot discard prior evidence");
+        const previous = history.at(-1) ?? null;
+        if (previous !== null) {
+          if (!sameRelationSlot(previous, record)) {
+            throw new SituatedLifeConflictError(
+              `life relation ${record.relationId} changes its stable identity slot`,
+            );
+          }
+          if (!referencesAreSuperset(previous.sourceReferences, record.sourceReferences)) {
+            throw new SituatedLifeConflictError("life relation revision cannot discard prior evidence");
+          }
+          if (
+            record.provenance === "genesis_created" &&
+            previous.provenance !== "genesis_created"
+          ) {
+            throw new SituatedLifeConflictError(
+              "later relation revision cannot retroactively mint genesis_created provenance",
+            );
+          }
+          if (
+            visibilityRank(record.visibility) > visibilityRank(previous.visibility) &&
+            !hasNewReference(previous.sourceReferences, record.sourceReferences)
+          ) {
+            throw new SituatedLifeConflictError(
+              "widening relation visibility requires new evidence",
+            );
+          }
+          if (
+            record.geneticContributionRole !== previous.geneticContributionRole &&
+            !hasNewReference(previous.sourceReferences, record.sourceReferences)
+          ) {
+            throw new SituatedLifeConflictError(
+              "changing genetic contribution role requires new evidence",
+            );
+          }
         }
-        if (
-          record.provenance === "genesis_created" &&
-          previous.provenance !== "genesis_created"
-        ) {
-          throw new SituatedLifeConflictError(
-            "later relation revision cannot retroactively mint genesis_created provenance",
-          );
-        }
-        if (
-          visibilityRank(record.visibility) > visibilityRank(previous.visibility) &&
-          !hasNewReference(previous.sourceReferences, record.sourceReferences)
-        ) {
-          throw new SituatedLifeConflictError(
-            "widening relation visibility requires new evidence",
-          );
-        }
-        if (
-          record.geneticContributionRole !== previous.geneticContributionRole &&
-          !hasNewReference(previous.sourceReferences, record.sourceReferences)
-        ) {
-          throw new SituatedLifeConflictError(
-            "changing genetic contribution role requires new evidence",
-          );
-        }
-      }
 
-      if (
-        record.geneticContributionRole === "parent_genome_source" &&
-        situatedLifeRecordIsCurrent(record)
-      ) {
-        const other = this.listCurrentLifeRelations(record.threadId).filter(
-          (relation) => relation.relationId !== record.relationId &&
-            relation.geneticContributionRole === "parent_genome_source",
-        );
-        if (other.length >= 2) {
-          throw new SituatedLifeConflictError(
-            "a Thread may have at most two current parent_genome_source relations",
+        if (
+          record.geneticContributionRole === "parent_genome_source" &&
+          situatedLifeRecordIsCurrent(record)
+        ) {
+          const other = this.listCurrentLifeRelations(record.threadId).filter(
+            (relation) => relation.relationId !== record.relationId &&
+              relation.geneticContributionRole === "parent_genome_source",
           );
+          if (other.length >= 2) {
+            throw new SituatedLifeConflictError(
+              "a Thread may have at most two current parent_genome_source relations",
+            );
+          }
         }
-      }
 
-      const previousDigest = previous === null
-        ? null
-        : this.#database.prepare(`
-            SELECT record_digest FROM life_relation_records
-            WHERE relation_id=? AND revision=?
-          `).get(record.relationId, previous.revision).record_digest;
-      appendLifeRelationRevisionInTransaction(this.#database, record, { previousDigest });
-      this.#database.exec("COMMIT");
-      return record;
+        const previousDigest = previous === null
+          ? null
+          : this.#database.prepare(`
+              SELECT record_digest FROM life_relation_records
+              WHERE relation_id=? AND revision=?
+            `).get(record.relationId, previous.revision).record_digest;
+        appendLifeRelationRevisionInTransaction(this.#database, record, { previousDigest });
+        return record;
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
@@ -431,100 +420,100 @@ export class SituatedLifeStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#resolvedEvidence(record.threadId, record.sourceReferences);
-      const history = this.placeEpisodeHistory(
-        record.threadId,
-        record.episodeId,
-        { required: false },
-      );
-      if (history.length !== record.revision - 1) {
-        throw new SituatedLifeConflictError(
-          `place episode ${record.episodeId} expected revision ${history.length + 1}`,
+      const transactionResult = this.#database.transaction(() => {
+        this.#resolvedEvidence(record.threadId, record.sourceReferences);
+        const history = this.placeEpisodeHistory(
+          record.threadId,
+          record.episodeId,
+          { required: false },
         );
-      }
-      const previous = history.at(-1) ?? null;
-      if (previous !== null) {
-        if (!samePlaceSlot(previous, record)) {
+        if (history.length !== record.revision - 1) {
           throw new SituatedLifeConflictError(
-            `place episode ${record.episodeId} changes its stable place slot`,
+            `place episode ${record.episodeId} expected revision ${history.length + 1}`,
           );
         }
-        if (!referencesAreSuperset(previous.sourceReferences, record.sourceReferences)) {
-          throw new SituatedLifeConflictError("place revision cannot discard prior evidence");
+        const previous = history.at(-1) ?? null;
+        if (previous !== null) {
+          if (!samePlaceSlot(previous, record)) {
+            throw new SituatedLifeConflictError(
+              `place episode ${record.episodeId} changes its stable place slot`,
+            );
+          }
+          if (!referencesAreSuperset(previous.sourceReferences, record.sourceReferences)) {
+            throw new SituatedLifeConflictError("place revision cannot discard prior evidence");
+          }
+          if (
+            record.provenance === "genesis_created" &&
+            previous.provenance !== "genesis_created"
+          ) {
+            throw new SituatedLifeConflictError(
+              "later place revision cannot retroactively mint genesis_created provenance",
+            );
+          }
+          if (
+            visibilityRank(record.visibility) > visibilityRank(previous.visibility) &&
+            !hasNewReference(previous.sourceReferences, record.sourceReferences)
+          ) {
+            throw new SituatedLifeConflictError(
+              "widening place visibility requires new evidence",
+            );
+          }
         }
-        if (
-          record.provenance === "genesis_created" &&
-          previous.provenance !== "genesis_created"
-        ) {
-          throw new SituatedLifeConflictError(
-            "later place revision cannot retroactively mint genesis_created provenance",
-          );
-        }
-        if (
-          visibilityRank(record.visibility) > visibilityRank(previous.visibility) &&
-          !hasNewReference(previous.sourceReferences, record.sourceReferences)
-        ) {
-          throw new SituatedLifeConflictError(
-            "widening place visibility requires new evidence",
-          );
-        }
-      }
 
-      if (
-        record.episodeKind === "birth" &&
-        situatedLifeRecordIsCurrent(record)
-      ) {
-        const existingBirth = this.listCurrentPlaceEpisodes(record.threadId).find(
-          (episode) => episode.episodeKind === "birth" && episode.episodeId !== record.episodeId,
+        if (
+          record.episodeKind === "birth" &&
+          situatedLifeRecordIsCurrent(record)
+        ) {
+          const existingBirth = this.listCurrentPlaceEpisodes(record.threadId).find(
+            (episode) => episode.episodeKind === "birth" && episode.episodeId !== record.episodeId,
+          );
+          if (existingBirth !== undefined) {
+            throw new SituatedLifeConflictError(
+              `Thread ${record.threadId} already has current birth episode ${existingBirth.episodeId}`,
+            );
+          }
+        }
+
+        const previousDigest = previous === null
+          ? null
+          : this.#database.prepare(`
+              SELECT record_digest FROM place_episode_records
+              WHERE episode_id=? AND revision=?
+            `).get(record.episodeId, previous.revision).record_digest;
+        const digest = situatedRecordDigest("place_episode", record, previousDigest);
+        this.#database.prepare(`
+          INSERT INTO place_episode_records(
+            episode_id,revision,thread_id,episode_kind,place_id,visibility,
+            provenance,recorded_at,supersedes_revision,record_json,record_digest
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.episodeId,
+          record.revision,
+          record.threadId,
+          record.episodeKind,
+          record.place.placeId,
+          record.visibility,
+          record.provenance,
+          record.recordedAt,
+          record.supersedesRevision ?? null,
+          canonicalJson(record),
+          digest,
         );
-        if (existingBirth !== undefined) {
-          throw new SituatedLifeConflictError(
-            `Thread ${record.threadId} already has current birth episode ${existingBirth.episodeId}`,
-          );
-        }
-      }
-
-      const previousDigest = previous === null
-        ? null
-        : this.#database.prepare(`
-            SELECT record_digest FROM place_episode_records
-            WHERE episode_id=? AND revision=?
-          `).get(record.episodeId, previous.revision).record_digest;
-      const digest = situatedRecordDigest("place_episode", record, previousDigest);
-      this.#database.prepare(`
-        INSERT INTO place_episode_records(
-          episode_id,revision,thread_id,episode_kind,place_id,visibility,
-          provenance,recorded_at,supersedes_revision,record_json,record_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.episodeId,
-        record.revision,
-        record.threadId,
-        record.episodeKind,
-        record.place.placeId,
-        record.visibility,
-        record.provenance,
-        record.recordedAt,
-        record.supersedesRevision ?? null,
-        canonicalJson(record),
-        digest,
-      );
-      this.#database.prepare(`
-        INSERT INTO situated_life_lineage_heads(
-          ledger_kind,lineage_id,revision,thread_id,head_digest,recorded_at
-        ) VALUES ('place_episode',?,?,?,?,?)
-      `).run(
-        record.episodeId,
-        record.revision,
-        record.threadId,
-        digest,
-        record.recordedAt,
-      );
-      this.#database.exec("COMMIT");
-      return record;
+        this.#database.prepare(`
+          INSERT INTO situated_life_lineage_heads(
+            ledger_kind,lineage_id,revision,thread_id,head_digest,recorded_at
+          ) VALUES ('place_episode',?,?,?,?,?)
+        `).run(
+          record.episodeId,
+          record.revision,
+          record.threadId,
+          digest,
+          record.recordedAt,
+        );
+        return record;
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
@@ -538,10 +527,10 @@ export class SituatedLifeStore {
   }
 }
 
-export function openSituatedLifeStore(databasePath) {
-  return new SituatedLifeStore(databasePath);
+export function openSituatedLifeStore(storage) {
+  return new SituatedLifeStore(storage);
 }
 
-export function openSituatedLifeInspectionStore(databasePath) {
-  return new SituatedLifeStore(databasePath, { readOnly: true });
+export function openSituatedLifeInspectionStore(storage) {
+  return new SituatedLifeStore(storage, { readOnly: true });
 }

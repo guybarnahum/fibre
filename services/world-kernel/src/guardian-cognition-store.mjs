@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -11,10 +10,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { createGuardianCognitionTables } from "./guardian-cognition-schema.mjs";
 import {
   DIGNITY_GUARDIAN_POLICY,
@@ -244,12 +242,8 @@ function decodeAssessment(row, input) {
 export class GuardianCognitionStore {
   #database;
 
-  constructor(databasePath) {
-    assertNonEmpty("databasePath", databasePath);
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+  constructor(storage) {
+        this.#database = openWorldStateDatabase(storage, { storeName: "GuardianCognitionStore" });
     try {
       migrateDatabase(this.#database);
       createGuardianCognitionTables(this.#database);
@@ -287,32 +281,31 @@ export class GuardianCognitionStore {
       throw new IntegrityError(`semantic Guardian input for ${prepared.appraisalId} already exists with different content`);
     }
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO semantic_guardian_inputs(
-          input_id,appraisal_id,thread_id,request_id,snapshot_version,thread_state_hash,
-          request_fingerprint,policy_id,policy_version,capsule_json,capsule_digest,
-          state_selection_json,state_selection_digest,created_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        prepared.inputId,
-        prepared.appraisalId,
-        prepared.threadId,
-        prepared.requestId,
-        prepared.snapshotVersion,
-        prepared.threadStateHash,
-        prepared.requestFingerprint,
-        prepared.policy.id,
-        prepared.policy.version,
-        canonicalJson(prepared.capsule),
-        prepared.capsuleDigest,
-        canonicalJson(prepared.stateSelection),
-        prepared.stateSelectionDigest,
-        createdAt,
-      );
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO semantic_guardian_inputs(
+            input_id,appraisal_id,thread_id,request_id,snapshot_version,thread_state_hash,
+            request_fingerprint,policy_id,policy_version,capsule_json,capsule_digest,
+            state_selection_json,state_selection_digest,created_at
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          prepared.inputId,
+          prepared.appraisalId,
+          prepared.threadId,
+          prepared.requestId,
+          prepared.snapshotVersion,
+          prepared.threadStateHash,
+          prepared.requestFingerprint,
+          prepared.policy.id,
+          prepared.policy.version,
+          canonicalJson(prepared.capsule),
+          prepared.capsuleDigest,
+          canonicalJson(prepared.stateSelection),
+          prepared.stateSelectionDigest,
+          createdAt,
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { input: this.getInputByAppraisal(prepared.appraisalId), created: true };
@@ -365,43 +358,42 @@ export class GuardianCognitionStore {
     const withId = { assessmentId: assessmentId(body), ...body };
     const recordDigest = assessmentRecordDigest(withId);
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO dignity_guardian_assessments(
-          assessment_id,input_id,appraisal_id,thread_id,request_id,policy_id,policy_version,
-          provider,model_id,prompt_schema_version,prompt_hash,response_schema_version,
-          response_schema_hash,provenance_json,model_output_json,derived_assessment_json,
-          record_digest,recorded_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        withId.assessmentId,
-        withId.inputId,
-        withId.appraisalId,
-        withId.threadId,
-        withId.requestId,
-        withId.policy.id,
-        withId.policy.version,
-        withId.provider,
-        withId.modelId,
-        withId.promptSchemaVersion,
-        withId.promptHash,
-        withId.responseSchemaVersion,
-        withId.responseSchemaHash,
-        canonicalJson(withId.provenance),
-        canonicalJson(withId.modelOutput),
-        canonicalJson(withId.derivedAssessment),
-        recordDigest,
-        withId.recordedAt,
-      );
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO dignity_guardian_assessments(
+            assessment_id,input_id,appraisal_id,thread_id,request_id,policy_id,policy_version,
+            provider,model_id,prompt_schema_version,prompt_hash,response_schema_version,
+            response_schema_hash,provenance_json,model_output_json,derived_assessment_json,
+            record_digest,recorded_at
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          withId.assessmentId,
+          withId.inputId,
+          withId.appraisalId,
+          withId.threadId,
+          withId.requestId,
+          withId.policy.id,
+          withId.policy.version,
+          withId.provider,
+          withId.modelId,
+          withId.promptSchemaVersion,
+          withId.promptHash,
+          withId.responseSchemaVersion,
+          withId.responseSchemaHash,
+          canonicalJson(withId.provenance),
+          canonicalJson(withId.modelOutput),
+          canonicalJson(withId.derivedAssessment),
+          recordDigest,
+          withId.recordedAt,
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { assessment: this.getAssessmentByAppraisal(input.appraisalId), created: true };
   }
 }
 
-export function openGuardianCognitionStore(databasePath) {
-  return new GuardianCognitionStore(databasePath);
+export function openGuardianCognitionStore(storage) {
+  return new GuardianCognitionStore(storage);
 }

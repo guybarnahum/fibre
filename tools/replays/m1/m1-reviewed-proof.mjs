@@ -16,6 +16,7 @@ import { M1LifecycleWorldKernelService } from "#services/world-kernel/src/lifecy
 import { AuthorizationConsumedError } from "#services/world-kernel/src/freeze-domain.mjs";
 import { ParticipationAuthorizationRejectedError } from "#services/world-kernel/src/runtime-domain.mjs";
 import { repoFile } from "#repo-root";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 const fixture = JSON.parse(
   readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
@@ -63,10 +64,11 @@ function acquireRecord() {
 }
 
 function assertHistoricalDischargeGuard(databasePath) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-m1-reviewed-discharge" });
+  const worldStore = openWorldStore(worldStorage);
+  const runtimeStore = openRuntimeStore(worldStorage);
+  const freezeStore = openFreezeStore(worldStorage);
+  const lifecycleStore = openLifecycleHardeningStore(worldStorage);
   const service = new M1LifecycleWorldKernelService(
     worldStore,
     runtimeStore,
@@ -121,10 +123,11 @@ function expiredClockForSession(databasePath, sessionId) {
 }
 
 function assertServiceConsumptionPrecheck(databasePath, sessionId) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-m1-reviewed-consumption" });
+  const worldStore = openWorldStore(worldStorage);
+  const runtimeStore = openRuntimeStore(worldStorage);
+  const freezeStore = openFreezeStore(worldStorage);
+  const lifecycleStore = openLifecycleHardeningStore(worldStorage);
   let storageReached = false;
   freezeStore.freezeRuntime = () => {
     storageReached = true;
@@ -195,7 +198,7 @@ function assertBoundedAudienceStatus(integrity, name) {
 }
 
 function assertExpressionClosure(databasePath, evidence) {
-  const expressionStore = openExpressionStore(databasePath);
+  const expressionStore = openExpressionStore(localWorldStateStorage(databasePath, { driverId: "sqlite-m1-reviewed-expression" }));
   try {
     const summaries = expressionStore.listExpressionSummaries(fixture.threadId);
     const completedExpressionSummaries = summaries.filter(

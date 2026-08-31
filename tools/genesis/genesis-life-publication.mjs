@@ -22,6 +22,7 @@ import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-co
 import { lifeRelationId, normalizeLifeRelation } from "#services/world-kernel/src/situated-life-domain.mjs";
 import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 const fail = (message) => { throw new Error(message); };
@@ -267,8 +268,8 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
   });
 }
 
-function persistCurrentGenomeBundle(databasePath, slotPlan) {
-  const store = new SymbolicGenomeStore(databasePath);
+function persistCurrentGenomeBundle(worldStorage, slotPlan) {
+  const store = new SymbolicGenomeStore(worldStorage);
   try {
     for (const parent of slotPlan.parentGenomes ?? []) store.recordGenome(parent.bundle);
     store.recordGenome(slotPlan.genome);
@@ -277,8 +278,8 @@ function persistCurrentGenomeBundle(databasePath, slotPlan) {
   }
 }
 
-function attachCivilRegistration(databasePath, birth) {
-  const authority = new CivilRegistryStore(databasePath);
+function attachCivilRegistration(worldStorage, birth) {
+  const authority = new CivilRegistryStore(worldStorage);
   try {
     const registry = createCivilRegistryService({ authority });
     const registration = registry.prepareBirthRegistration({
@@ -302,11 +303,12 @@ function attachCivilRegistration(databasePath, birth) {
 
 export function publishGenesisLifeCandidate({ databasePath, candidate, slotPlan, cognition, publicationAt } = {}) {
   const candidateBirth = buildGenesisBirthBundle({ candidate, slotPlan, cognition, publicationAt });
-  persistCurrentGenomeBundle(databasePath, slotPlan);
-  const genesis = new GenesisStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-genesis-life-publication" });
+  persistCurrentGenomeBundle(worldStorage, slotPlan);
+  const genesis = new GenesisStore(worldStorage);
   try {
     genesis.recordWorldSpec(slotPlan.worldSpec);
-    const birth = attachCivilRegistration(databasePath, candidateBirth);
+    const birth = attachCivilRegistration(worldStorage, candidateBirth);
     const publication = genesis.publishBirth(birth);
     return { birth, publication };
   } finally {
@@ -315,13 +317,14 @@ export function publishGenesisLifeCandidate({ databasePath, candidate, slotPlan,
 }
 
 export function hydrateGenesisLife({ databasePath, candidate, slotPlan, birth } = {}) {
-  const genesis = new GenesisStore(databasePath, { readOnly: true });
-  const world = openWorldStore(databasePath);
-  const situated = openSituatedLifeInspectionStore(databasePath);
-  const memory = openAutobiographicalMemoryInspectionStore(databasePath);
-  const identity = openIdentityInspectionStore(databasePath);
-  const genomes = new SymbolicGenomeStore(databasePath, { readOnly: true });
-  const registry = new CivilRegistryStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-genesis-life-hydration" });
+  const genesis = new GenesisStore(worldStorage, { readOnly: true });
+  const world = openWorldStore(worldStorage);
+  const situated = openSituatedLifeInspectionStore(worldStorage);
+  const memory = openAutobiographicalMemoryInspectionStore(worldStorage);
+  const identity = openIdentityInspectionStore(worldStorage);
+  const genomes = new SymbolicGenomeStore(worldStorage, { readOnly: true });
+  const registry = new CivilRegistryStore(worldStorage);
   try {
     const events = world.listEvents(candidate.threadId);
     const episodeEvents = events.filter((event) => event.eventType === "THREAD_LIFE_EPISODE_RECORDED");

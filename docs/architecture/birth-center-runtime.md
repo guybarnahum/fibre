@@ -86,4 +86,4 @@ FIBRE_BIRTH_CENTER_STATE
 
 The current Genesis hardening plan is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md). It may evolve memory/meaning selection and experimental instrumentation, but it does not move authoritative birth state into the Birth Center.
 
-Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Local `.fibre` development state and direct World Kernel SQLite are not precedent for new production authorities.
+Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Authoritative World relational state now crosses `InfraDriver.state`; local `.fibre` development artifacts and the remaining durable model-invocation filesystem journal are not precedent for new production authorities.

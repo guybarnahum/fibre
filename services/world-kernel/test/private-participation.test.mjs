@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -110,7 +111,7 @@ function updateCommand() {
 }
 
 function seededService(databasePath) {
-  const store = openWorldStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
   const service = new WorldKernelService(store);
   service.seedThread({ thread: fixture });
   return { store, service };
@@ -259,7 +260,7 @@ test("private request traces survive restart and verify against historical Threa
     runtime.store.applyCommand(updateCommand());
     runtime.store.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     const service = new WorldKernelService(reopened);
     const recovered = service.getPrivateRequestTrace(fixture.threadId, trace.requestId);
     assert.equal(recovered.snapshotVersion, 1);
@@ -298,7 +299,7 @@ test("private records are append-only and coherent tampering is detected", () =>
       .run(`sha256:${"0".repeat(64)}`, trace.appraisalId);
     database.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => reopened.getPrivateRequestTrace(fixture.threadId, trace.requestId),
       IntegrityError,
@@ -319,7 +320,7 @@ test("schema version 1 migrates in place to private participation schema version
     `);
     database.close();
 
-    const migrated = openWorldStore(databasePath);
+    const migrated = openWorldStore(localWorldStateStorage(databasePath));
     assert.equal(migrated.storageMetadata().schemaVersion, WORLD_STORE_SCHEMA_VERSION);
     assert.equal(migrated.getThread(fixture.threadId).threadId, fixture.threadId);
     const service = new WorldKernelService(migrated);

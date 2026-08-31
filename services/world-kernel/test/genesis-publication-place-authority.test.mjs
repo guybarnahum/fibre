@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 // fibre-test-lifecycle: permanent
 // fibre-test-scope: genesis-birth
 // fibre-test-purpose: authoritative-place-and-narrated-scene-must-agree-at-publication
@@ -187,7 +188,7 @@ function assertNothingPublished(databasePath) {
 test("publishBirth refuses prior life without its authoritative historical-envelope plan", () =>
   withDatabase((databasePath) => {
     const { world, bundle } = birth({ omitEnvelope: true });
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(world);
     assert.throws(
       () => genesis.publishBirth(bundle),
@@ -200,7 +201,7 @@ test("publishBirth refuses prior life without its authoritative historical-envel
 test("publishBirth rejects narrated beach against authoritative library place and commits nothing", () =>
   withDatabase((databasePath) => {
     const { world, bundle } = birth({ tamperNarration: true });
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(world);
     assert.throws(
       () => genesis.publishBirth(bundle),

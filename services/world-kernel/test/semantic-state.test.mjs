@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,8 +19,8 @@ const mina = JSON.parse(
 function withStores(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-semantic-state-"));
   const databasePath = join(directory, "world.sqlite");
-  const worldStore = openWorldStore(databasePath);
-  const stateStore = openSemanticStateStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const stateStore = openSemanticStateStore(localWorldStateStorage(databasePath));
   try {
     worldStore.seedThread(mina);
     return run({ worldStore, stateStore });

@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -53,14 +54,14 @@ function headers() {
 async function startCausalApi() {
   const directory = mkdtempSync(join(tmpdir(), "fibre-causal-api-"));
   const databasePath = join(directory, "world.sqlite");
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
-  const expressionStore = openExpressionStore(databasePath);
-  const causalContextStore = openCausalContextStore(databasePath);
-  const semanticStateStore = openSemanticStateStore(databasePath);
-  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
+  const lifecycleStore = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
+  const expressionStore = openExpressionStore(localWorldStateStorage(databasePath));
+  const causalContextStore = openCausalContextStore(localWorldStateStorage(databasePath));
+  const semanticStateStore = openSemanticStateStore(localWorldStateStorage(databasePath));
+  const guardianCognitionStore = openGuardianCognitionStore(localWorldStateStorage(databasePath));
   const guardianModelAdapter = createScriptedGuardianModelAdapter();
   const service = new PreM2CausalWorldKernelService(
     worldStore,

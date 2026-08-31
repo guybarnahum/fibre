@@ -14,7 +14,6 @@ import {
 } from "./persistence-domain.mjs";
 import {
   migrateDatabase,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
 import {
@@ -341,12 +340,11 @@ export class GenesisStore {
     try {
       if (!readOnly) {
         migrateDatabase(this.#database);
-        this.#database.exec("BEGIN IMMEDIATE");
-        createGenesisTables(this.#database);
-        this.#database.exec("COMMIT");
+        this.#database.transaction(() => {
+          createGenesisTables(this.#database);
+        });
       }
     } catch (error) {
-      safeRollback(this.#database);
       this.#database.close();
       throw error;
     }
@@ -372,14 +370,13 @@ export class GenesisStore {
       return { record: structuredClone(record), recordDigest: digest, idempotent: true };
     }
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO genesis_world_specs(world_spec_id,record_json,record_digest,created_at)
-        VALUES (?,?,?,?)
-      `).run(record.worldSpecId, canonicalJson(record), digest, record.createdAt);
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO genesis_world_specs(world_spec_id,record_json,record_digest,created_at)
+          VALUES (?,?,?,?)
+        `).run(record.worldSpecId, canonicalJson(record), digest, record.createdAt);
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { record: structuredClone(record), recordDigest: digest, idempotent: false };
@@ -420,27 +417,26 @@ export class GenesisStore {
       return { record: structuredClone(record), recordDigest: digest, idempotent: true };
     }
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO genesis_generation_attempts(
-          attempt_id,genesis_id,provisional_thread_id,candidate_attempt_number,
-          scope,failed_pass,failed_gate,record_json,record_digest,recorded_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.attemptId,
-        record.genesisId,
-        record.provisionalThreadId,
-        record.candidateAttemptNumber,
-        record.scope,
-        record.failedPass,
-        record.failedGate,
-        canonicalJson(record),
-        digest,
-        record.recordedAt,
-      );
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO genesis_generation_attempts(
+            attempt_id,genesis_id,provisional_thread_id,candidate_attempt_number,
+            scope,failed_pass,failed_gate,record_json,record_digest,recorded_at
+          ) VALUES (?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.attemptId,
+          record.genesisId,
+          record.provisionalThreadId,
+          record.candidateAttemptNumber,
+          record.scope,
+          record.failedPass,
+          record.failedGate,
+          canonicalJson(record),
+          digest,
+          record.recordedAt,
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { record: structuredClone(record), recordDigest: digest, idempotent: false };
@@ -508,12 +504,12 @@ export class GenesisStore {
     this.getWorldSpec(manifest.worldSpecRef);
     assertCurrentPublicationValidators(manifest);
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const digest = this.#insertManifest(manifest);
-      this.#database.exec("COMMIT");
-      return { manifest: structuredClone(manifest), manifestDigest: digest };
+      const transactionResult = this.#database.transaction(() => {
+        const digest = this.#insertManifest(manifest);
+        return { manifest: structuredClone(manifest), manifestDigest: digest };
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
@@ -656,144 +652,144 @@ export class GenesisStore {
     const episodeStateHash = threadStateHash(publishedThread);
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      assertBirthOriginWitnessesInTransaction(this.#database, manifest, originFixtureCandidate);
-      this.#database.prepare(`
-        INSERT INTO threads(
-          thread_id,version,status,state_json,state_hash,last_event_id,created_at,updated_at
-        ) VALUES (?,?,?,?,?,?,?,?)
-      `).run(
-        publishedThread.threadId,
-        publishedThread.version,
-        publishedThread.status,
-        episodeStateJson,
-        episodeStateHash,
-        publishedThread.provenance.lastEventId,
-        seedSnapshot.provenance.createdAt,
-        publishedAt,
-      );
-      this.#database.prepare(`
-        INSERT INTO thread_events(
-          event_id,thread_id,sequence,expected_version,resulting_version,event_type,
-          command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
-          authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-        ) VALUES (?,?,1,0,?,'THREAD_SEEDED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
-      `).run(
-        seedEventId,
-        seedSnapshot.threadId,
-        seedSnapshot.version,
-        seedPayloadJson,
-        actorJson,
-        publishedAt,
-        seedStateHash,
-        seedEventId,
-        manifest.genesisId,
-        seedProvenanceJson,
-      );
-
-      // The exact live #37/#38 validators/triggers remain authority. Genesis exercises them
-      // inside the same publication transaction rather than creating parallel birth stores.
-      persistLegacySeedIdentity(this.#database, seedSnapshot, { sourceEventId: seedEventId });
-      for (const memoryRef of seedSnapshot.memoryRefs) {
-        ensureMemoryVisualCompanion(this.#database, {
-          threadId: seedSnapshot.threadId,
-          memoryRef,
-          recordedAt: seedSnapshot.provenance.createdAt,
-          createdFrom: "legacy_memory_reference",
-        });
-      }
-
-      if (failAfterSeedForTest) throw new GenesisConflictError("simulated Slice-A publication failure");
-
-      for (const { event, payloadJson, provenanceJson } of publishedEpisodes) {
+      const transactionResult = this.#database.transaction(() => {
+        assertBirthOriginWitnessesInTransaction(this.#database, manifest, originFixtureCandidate);
+        this.#database.prepare(`
+          INSERT INTO threads(
+            thread_id,version,status,state_json,state_hash,last_event_id,created_at,updated_at
+          ) VALUES (?,?,?,?,?,?,?,?)
+        `).run(
+          publishedThread.threadId,
+          publishedThread.version,
+          publishedThread.status,
+          episodeStateJson,
+          episodeStateHash,
+          publishedThread.provenance.lastEventId,
+          seedSnapshot.provenance.createdAt,
+          publishedAt,
+        );
         this.#database.prepare(`
           INSERT INTO thread_events(
             event_id,thread_id,sequence,expected_version,resulting_version,event_type,
             command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
             authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-          ) VALUES (?,?,?,?,?,'THREAD_LIFE_EPISODE_RECORDED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
+          ) VALUES (?,?,1,0,?,'THREAD_SEEDED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
         `).run(
-          event.eventId,
-          event.threadId,
-          event.sequence,
-          event.expectedVersion,
-          event.resultingVersion,
-          payloadJson,
+          seedEventId,
+          seedSnapshot.threadId,
+          seedSnapshot.version,
+          seedPayloadJson,
           actorJson,
-          event.occurredAt,
-          event.stateHash,
-          event.causationId,
-          event.correlationId,
-          provenanceJson,
+          publishedAt,
+          seedStateHash,
+          seedEventId,
+          manifest.genesisId,
+          seedProvenanceJson,
         );
-      }
 
-      let situatedContinuity = null;
-      if (hasSituatedContinuity) {
-        situatedContinuity = publishGenesisSituatedContinuityInTransaction(this.#database, {
+        // The exact live #37/#38 validators/triggers remain authority. Genesis exercises them
+        // inside the same publication transaction rather than creating parallel birth stores.
+        persistLegacySeedIdentity(this.#database, seedSnapshot, { sourceEventId: seedEventId });
+        for (const memoryRef of seedSnapshot.memoryRefs) {
+          ensureMemoryVisualCompanion(this.#database, {
+            threadId: seedSnapshot.threadId,
+            memoryRef,
+            recordedAt: seedSnapshot.provenance.createdAt,
+            createdFrom: "legacy_memory_reference",
+          });
+        }
+
+        if (failAfterSeedForTest) throw new GenesisConflictError("simulated Slice-A publication failure");
+
+        for (const { event, payloadJson, provenanceJson } of publishedEpisodes) {
+          this.#database.prepare(`
+            INSERT INTO thread_events(
+              event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+              command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+              authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+            ) VALUES (?,?,?,?,?,'THREAD_LIFE_EPISODE_RECORDED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
+          `).run(
+            event.eventId,
+            event.threadId,
+            event.sequence,
+            event.expectedVersion,
+            event.resultingVersion,
+            payloadJson,
+            actorJson,
+            event.occurredAt,
+            event.stateHash,
+            event.causationId,
+            event.correlationId,
+            provenanceJson,
+          );
+        }
+
+        let situatedContinuity = null;
+        if (hasSituatedContinuity) {
+          situatedContinuity = publishGenesisSituatedContinuityInTransaction(this.#database, {
+            manifest,
+            worldSpec: worldSpecRecord,
+            initialRoster: initialRosterCandidate,
+            episodes: normalizedEpisodes.map(({ episode }) => episode),
+            lifeContinuity: lifeContinuityCandidate,
+            seedEventId,
+            ErrorType: GenesisConflictError,
+          });
+          if (failAfterSituatedContinuityForTest) {
+            throw new GenesisConflictError("simulated situated-continuity publication failure");
+          }
+        }
+
+        bindBirthGenomeAndLineageInTransaction(this.#database, {
           manifest,
-          worldSpec: worldSpecRecord,
-          initialRoster: initialRosterCandidate,
-          episodes: normalizedEpisodes.map(({ episode }) => episode),
-          lifeContinuity: lifeContinuityCandidate,
+          lifeRelationCandidates,
           seedEventId,
           ErrorType: GenesisConflictError,
         });
-        if (failAfterSituatedContinuityForTest) {
-          throw new GenesisConflictError("simulated situated-continuity publication failure");
+        if (failAfterLineageForTest) {
+          throw new GenesisConflictError("simulated Stage-8 lineage publication failure");
         }
-      }
 
-      bindBirthGenomeAndLineageInTransaction(this.#database, {
-        manifest,
-        lifeRelationCandidates,
-        seedEventId,
-        ErrorType: GenesisConflictError,
+        const memoryHeadById = new Map();
+        for (let index = 0; index < normalizedMemories.length; index += 1) {
+          const record = normalizedMemories[index];
+          const previous = memoryHeadById.get(record.memoryId) ?? null;
+          const appended = appendAutobiographicalMemoryRevisionInTransaction(this.#database, record, {
+            previousRecord: previous?.record ?? null,
+            previousDigest: previous?.recordDigest ?? null,
+            ConflictErrorType: GenesisConflictError,
+            createdFrom: "genesis_birth",
+          });
+          publishedThread = appended.thread;
+          memoryHeadById.set(record.memoryId, appended);
+          if (failAfterFirstMemoryForTest && index === 0) {
+            throw new GenesisConflictError("simulated Slice-D memory publication failure");
+          }
+        }
+
+        validateThreadSnapshot(publishedThread);
+        if (publishedThread.version !== derivedFirstLiveVersion) {
+          throw new IntegrityError("derived Genesis Thread version disagrees with complete birth event chain");
+        }
+        let historicalEnvelopeRecordDigest = null;
+        if (historicalEnvelopePlan !== null) {
+          historicalEnvelopeRecordDigest = this.#insertHistoricalEnvelopePlan(manifest, historicalEnvelopePlan);
+        }
+        const manifestDigest = this.#insertManifest(manifest);
+        if (failAfterManifestForTest) {
+          throw new GenesisConflictError("simulated post-manifest publication failure");
+        }
+        return {
+          thread: structuredClone(publishedThread),
+          manifest: structuredClone(manifest),
+          manifestDigest,
+          historicalEnvelopePlan: historicalEnvelopePlan === null ? null : structuredClone(historicalEnvelopePlan),
+          historicalEnvelopeRecordDigest,
+          situatedContinuity: situatedContinuity === null ? null : structuredClone(situatedContinuity),
+        };
       });
-      if (failAfterLineageForTest) {
-        throw new GenesisConflictError("simulated Stage-8 lineage publication failure");
-      }
-
-      const memoryHeadById = new Map();
-      for (let index = 0; index < normalizedMemories.length; index += 1) {
-        const record = normalizedMemories[index];
-        const previous = memoryHeadById.get(record.memoryId) ?? null;
-        const appended = appendAutobiographicalMemoryRevisionInTransaction(this.#database, record, {
-          previousRecord: previous?.record ?? null,
-          previousDigest: previous?.recordDigest ?? null,
-          ConflictErrorType: GenesisConflictError,
-          createdFrom: "genesis_birth",
-        });
-        publishedThread = appended.thread;
-        memoryHeadById.set(record.memoryId, appended);
-        if (failAfterFirstMemoryForTest && index === 0) {
-          throw new GenesisConflictError("simulated Slice-D memory publication failure");
-        }
-      }
-
-      validateThreadSnapshot(publishedThread);
-      if (publishedThread.version !== derivedFirstLiveVersion) {
-        throw new IntegrityError("derived Genesis Thread version disagrees with complete birth event chain");
-      }
-      let historicalEnvelopeRecordDigest = null;
-      if (historicalEnvelopePlan !== null) {
-        historicalEnvelopeRecordDigest = this.#insertHistoricalEnvelopePlan(manifest, historicalEnvelopePlan);
-      }
-      const manifestDigest = this.#insertManifest(manifest);
-      if (failAfterManifestForTest) {
-        throw new GenesisConflictError("simulated post-manifest publication failure");
-      }
-      this.#database.exec("COMMIT");
-      return {
-        thread: structuredClone(publishedThread),
-        manifest: structuredClone(manifest),
-        manifestDigest,
-        historicalEnvelopePlan: historicalEnvelopePlan === null ? null : structuredClone(historicalEnvelopePlan),
-        historicalEnvelopeRecordDigest,
-        situatedContinuity: situatedContinuity === null ? null : structuredClone(situatedContinuity),
-      };
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }

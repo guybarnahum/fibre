@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -21,7 +22,7 @@ function withDatabase(run) {
 }
 
 function seed(databasePath) {
-  const store = openWorldStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
   store.seedThread(structuredClone(fixture));
   store.close();
 }
@@ -30,7 +31,7 @@ test("photo completion is an observable outstanding obligation, not a freeze pre
   withDatabase((databasePath) => {
     seed(databasePath);
 
-    let inspector = openIdentityInspectionStore(databasePath);
+    let inspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
     const pending = inspector.verifyThreadIdentityIntegrity(fixture.threadId);
     assert.equal(pending.ok, true);
     assert.equal(pending.memoryPhotoRequirementSatisfied, false);
@@ -38,7 +39,7 @@ test("photo completion is an observable outstanding obligation, not a freeze pre
     assert.deepEqual(pending.memoriesMissingPhoto, [...fixture.memoryRefs].sort());
     inspector.close();
 
-    const identity = openIdentityStore(databasePath);
+    const identity = openIdentityStore(localWorldStateStorage(databasePath));
     const first = identity.getMemoryVisualCompanionHistory(
       fixture.threadId,
       fixture.memoryRefs[0],
@@ -53,7 +54,7 @@ test("photo completion is an observable outstanding obligation, not a freeze pre
     });
     identity.close();
 
-    inspector = openIdentityInspectionStore(databasePath);
+    inspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
     const satisfied = inspector.verifyThreadIdentityIntegrity(fixture.threadId);
     assert.equal(satisfied.ok, true);
     assert.equal(satisfied.memoryPhotoRequirementSatisfied, true);
@@ -71,7 +72,7 @@ test("pre-production identity persistence uses one current registry format", () 
     raw.close();
     assert.deepEqual(versions, [IDENTITY_DOMAIN_REGISTRY_VERSION]);
 
-    const inspector = openIdentityInspectionStore(databasePath);
+    const inspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
     const integrity = inspector.verifyThreadIdentityIntegrity(fixture.threadId);
     assert.equal(integrity.ok, true);
     assert.deepEqual(integrity.admittedRegistryVersions, [IDENTITY_DOMAIN_REGISTRY_VERSION]);

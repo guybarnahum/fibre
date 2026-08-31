@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -147,7 +148,7 @@ function registeredBirth(thread, manifest = publishedManifest(thread)) {
 
 test("Slice A WorldSpec is immutable, factual-shaped, and rejects extra personality fields", () =>
   withDatabase((databasePath) => {
-    const store = new GenesisStore(databasePath);
+    const store = new GenesisStore(localWorldStateStorage(databasePath));
     const created = store.recordWorldSpec(worldSpec());
     assert.equal(created.idempotent, false);
     assert.equal(store.recordWorldSpec(worldSpec()).idempotent, true);
@@ -161,12 +162,12 @@ test("Slice A WorldSpec is immutable, factual-shaped, and rejects extra personal
 
 test("candidate Genesis audit state is not a live Thread authority", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
     genesis.recordGenerationAttempt(failedAttempt());
     assert.equal(genesis.inspectGenesis("gen_slice_a_001").threadPublished, false);
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     assert.equal(world.getThread("thr_genesis_slice_a", { required: false }), null);
     world.close();
     genesis.close();
@@ -174,14 +175,14 @@ test("candidate Genesis audit state is not a live Thread authority", () =>
 
 test("atomic birth publishes the existing Thread authority and final manifest without resetting version", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
     const thread = genesisThread();
     const result = genesis.publishBirth(registeredBirth(thread));
     assert.equal(result.thread.version, thread.version);
     assert.equal(result.manifest.publication.resultingThreadVersion, thread.version);
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const live = world.getThread(thread.threadId);
     assert.equal(live.version, thread.version);
     assert.equal(world.listEvents(thread.threadId).length, 1);
@@ -199,7 +200,7 @@ test("atomic birth publishes the existing Thread authority and final manifest wi
 
 test("simulated failure after Thread seed rolls back the entire birth", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
     const thread = genesisThread();
     assert.throws(
@@ -211,7 +212,7 @@ test("simulated failure after Thread seed rolls back the entire birth", () =>
     );
     assert.equal(genesis.getManifest("gen_slice_a_001", { required: false }), null);
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     assert.equal(world.getThread(thread.threadId, { required: false }), null);
     world.close();
 
@@ -225,7 +226,7 @@ test("simulated failure after Thread seed rolls back the entire birth", () =>
 
 test("birth is pinned to the current publication-validator witness", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
     const thread = genesisThread();
     const manifest = publishedManifest(thread);
@@ -243,7 +244,7 @@ test("birth is pinned to the current publication-validator witness", () =>
 
 test("live #37 identity validation fails inside birth and leaves no half-born Thread", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
     const thread = genesisThread();
     thread.identity.selfDescription = "I am careful; I am also impatient with vague promises.";
@@ -251,7 +252,7 @@ test("live #37 identity validation fails inside birth and leaves no half-born Th
       () => genesis.publishBirth(registeredBirth(thread)),
       /material proposition|bundle|assertion/i,
     );
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     assert.equal(world.getThread(thread.threadId, { required: false }), null);
     world.close();
     genesis.close();
@@ -259,7 +260,7 @@ test("live #37 identity validation fails inside birth and leaves no half-born Th
 
 test("Genesis support tables do not create parallel biography, memory, relation, place, embodiment, or identity authority", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     const raw = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
     const tables = raw.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'genesis_%' ORDER BY name",

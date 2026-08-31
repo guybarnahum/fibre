@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   assertId,
@@ -7,10 +6,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   normalizeSymbolicGenomeHeader,
   normalizeSymbolicGenomeLocus,
@@ -50,24 +48,17 @@ export class SymbolicGenomeStore {
   #database;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "SymbolicGenomeStore" });
     try {
-      if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+      if (!readOnly) {
         migrateDatabase(this.#database);
-        this.#database.exec("BEGIN IMMEDIATE");
-        createSymbolicGenomeTables(this.#database);
-        this.#database.exec("COMMIT");
+        this.#database.transaction(() => {
+          createSymbolicGenomeTables(this.#database);
+        });
       }
     } catch (error) {
-      safeRollback(this.#database);
       this.#database.close();
       throw error;
     }
@@ -76,7 +67,7 @@ export class SymbolicGenomeStore {
   close() { this.#database.close(); }
 
   queryOnly() {
-    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
+    return this.#readOnly;
   }
 
   #readBundle(genomeId, { required = true } = {}) {
@@ -141,63 +132,62 @@ export class SymbolicGenomeStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO symbolic_genomes(
-          genome_id,owner_kind,owner_id,genesis_id,origin_kind,header_json,genome_digest,created_at
-        ) VALUES (?,?,?,?,?,?,?,?)
-      `).run(
-        header.genomeId,
-        header.owner.kind,
-        header.owner.ownerId,
-        header.genesisId,
-        header.originKind,
-        canonicalJson(header),
-        bundle.genomeDigest,
-        header.createdAt,
-      );
-      const locusInsert = this.#database.prepare(`
-        INSERT INTO symbolic_genome_loci(
-          locus_id,genome_id,ordinal,value,provenance_kind,source_genome_ref,
-          source_locus_ref,mutation_ref,record_json,record_digest
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
-      `);
-      for (const locus of loci) {
-        locusInsert.run(
-          locus.locusId,
-          locus.genomeId,
-          locus.ordinal,
-          locus.value,
-          locus.provenance.kind,
-          locus.provenance.sourceGenomeRef,
-          locus.provenance.sourceLocusRef,
-          locus.provenance.mutationRef,
-          canonicalJson(locus),
-          recordDigest("locus", locus),
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO symbolic_genomes(
+            genome_id,owner_kind,owner_id,genesis_id,origin_kind,header_json,genome_digest,created_at
+          ) VALUES (?,?,?,?,?,?,?,?)
+        `).run(
+          header.genomeId,
+          header.owner.kind,
+          header.owner.ownerId,
+          header.genesisId,
+          header.originKind,
+          canonicalJson(header),
+          bundle.genomeDigest,
+          header.createdAt,
         );
-      }
-      const mutationInsert = this.#database.prepare(`
-        INSERT INTO symbolic_genome_mutations(
-          mutation_id,genome_id,ordinal,operation,source_genome_ref,source_locus_ref,
-          record_json,record_digest,created_at
-        ) VALUES (?,?,?,?,?,?,?,?,?)
-      `);
-      for (const mutation of mutations) {
-        mutationInsert.run(
-          mutation.mutationId,
-          mutation.genomeId,
-          mutation.ordinal,
-          mutation.operation,
-          mutation.sourceGenomeRef,
-          mutation.sourceLocusRef,
-          canonicalJson(mutation),
-          recordDigest("mutation", mutation),
-          mutation.createdAt,
-        );
-      }
-      this.#database.exec("COMMIT");
+        const locusInsert = this.#database.prepare(`
+          INSERT INTO symbolic_genome_loci(
+            locus_id,genome_id,ordinal,value,provenance_kind,source_genome_ref,
+            source_locus_ref,mutation_ref,record_json,record_digest
+          ) VALUES (?,?,?,?,?,?,?,?,?,?)
+        `);
+        for (const locus of loci) {
+          locusInsert.run(
+            locus.locusId,
+            locus.genomeId,
+            locus.ordinal,
+            locus.value,
+            locus.provenance.kind,
+            locus.provenance.sourceGenomeRef,
+            locus.provenance.sourceLocusRef,
+            locus.provenance.mutationRef,
+            canonicalJson(locus),
+            recordDigest("locus", locus),
+          );
+        }
+        const mutationInsert = this.#database.prepare(`
+          INSERT INTO symbolic_genome_mutations(
+            mutation_id,genome_id,ordinal,operation,source_genome_ref,source_locus_ref,
+            record_json,record_digest,created_at
+          ) VALUES (?,?,?,?,?,?,?,?,?)
+        `);
+        for (const mutation of mutations) {
+          mutationInsert.run(
+            mutation.mutationId,
+            mutation.genomeId,
+            mutation.ordinal,
+            mutation.operation,
+            mutation.sourceGenomeRef,
+            mutation.sourceLocusRef,
+            canonicalJson(mutation),
+            recordDigest("mutation", mutation),
+            mutation.createdAt,
+          );
+        }
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { ...structuredClone(bundle), idempotent: false };

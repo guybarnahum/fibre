@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -22,7 +23,7 @@ test("situated-life head detects coherent row rewrite even when attacker recompu
   const dir = mkdtempSync(join(tmpdir(), "fibre-situated-tamper-"));
   const db = join(dir, "world.sqlite");
   try {
-    const world = openWorldStore(db);
+    const world = openWorldStore(localWorldStateStorage(db));
     world.seedThread(structuredClone(fixture));
     world.close();
     const rawSeed = new DatabaseSync(db, { enableForeignKeyConstraints: true });
@@ -44,7 +45,7 @@ test("situated-life head detects coherent row rewrite even when attacker recompu
       provenance: "genesis_created",
       recordedAt: "2026-08-13T16:00:00Z",
     };
-    const writer = openSituatedLifeStore(db);
+    const writer = openSituatedLifeStore(localWorldStateStorage(db));
     writer.recordLifeRelation(relation);
     writer.close();
 
@@ -60,7 +61,7 @@ test("situated-life head detects coherent row rewrite even when attacker recompu
     ).run(canonicalJson(changed), attackerDigest, relationId);
     raw.close();
 
-    const inspector = openSituatedLifeInspectionStore(db);
+    const inspector = openSituatedLifeInspectionStore(localWorldStateStorage(db));
     assert.throws(
       () => inspector.lifeRelationHistory(fixture.threadId, relationId),
       /head mismatch|chained-head integrity/i,

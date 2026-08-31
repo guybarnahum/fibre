@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -203,7 +204,7 @@ function encounterEpisode(threadId, {
 }
 
 function publishEpisodes(databasePath, threadId, episodes) {
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   if (genesis.getWorldSpec("world_slice_f_001", { required: false }) === null) genesis.recordWorldSpec(worldSpec());
   const thread = genesisThread(threadId);
   publishMinimalGenesisPriorLifeFixture(genesis, { manifest: manifest(thread, episodes.length), thread, episodes });
@@ -236,7 +237,7 @@ test("living identifiable source requires Echo consent even when public sources 
   assert.match(genesisOriginIntegrityFixtureDigest(normalized), /^sha256:[0-9a-f]{64}$/);
 
   withDatabase((databasePath) => {
-    let authorities = new GenesisOriginAuthorityStore(databasePath);
+    let authorities = new GenesisOriginAuthorityStore(localWorldStateStorage(databasePath));
     authorities.recordAuthority(authorityRecord({
       authorityRef: "consent_echo_fixture_001",
       authorityKind: "living_source_consent",
@@ -244,7 +245,7 @@ test("living identifiable source requires Echo consent even when public sources 
       subjectStatus: "living",
     }));
     authorities.close();
-    authorities = new GenesisOriginAuthorityStore(databasePath, { readOnly: true });
+    authorities = new GenesisOriginAuthorityStore(localWorldStateStorage(databasePath), { readOnly: true });
     const witness = assertGenesisOriginAuthorityResolved({ originFixture: echoFixture(), authorityStore: authorities });
     assert.equal(witness.authorityKind, "living_source_consent");
     assert.equal(witness.sourcePartyId, "human_source_fixture_001");
@@ -266,7 +267,7 @@ test("living source cannot be relabeled Homage and Homage requires explicit dece
   assert.equal(normalizeGenesisOriginIntegrityFixture(homageFixture({ subjectStatus: "fictional" })).sourceBundle.subjectStatus, "fictional");
 
   withDatabase((databasePath) => {
-    const authorities = new GenesisOriginAuthorityStore(databasePath);
+    const authorities = new GenesisOriginAuthorityStore(localWorldStateStorage(databasePath));
     authorities.recordAuthority(authorityRecord({
       authorityRef: "attestation_homage_fixture_001",
       authorityKind: "subject_status_attestation",
@@ -325,7 +326,7 @@ test("approved source material becomes Thread formation only through an actual m
     });
     publishEpisodes(databasePath, fixture.threadId, [matching, noEncounter, different]);
 
-    const historyStore = openWorldStore(databasePath);
+    const historyStore = openWorldStore(localWorldStateStorage(databasePath));
     const witness = assertSourceMaterialEncounteredByThread({
       originFixture: fixture,
       sourceMaterialRef: materialRef,
@@ -376,7 +377,7 @@ test("source-material encounter cannot be borrowed from another Thread's episode
     publishEpisodes(databasePath, fixture.threadId, [encounterEpisode(fixture.threadId, { intellectualEncounter: false })]);
     publishEpisodes(databasePath, "thr_someone_else", [encounterEpisode("thr_someone_else")]);
 
-    const historyStore = openWorldStore(databasePath);
+    const historyStore = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => assertSourceMaterialEncounteredByThread({
         originFixture: fixture,
@@ -418,7 +419,7 @@ test("Thread-parent fixture refuses fabricated retrospective shared childhood", 
 test("fork fixture requires an exact divergence boundary and cannot import post-fork source history", () =>
   withDatabase((databasePath) => {
     const sourceThreadId = "thr_fork_source_001";
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const source = genesisThread(sourceThreadId);
     world.seedThread(source);
     world.applyCommand(updateSelfModelCommand(sourceThreadId, source.version, 1));

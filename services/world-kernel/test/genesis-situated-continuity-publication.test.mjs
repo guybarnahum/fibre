@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 // fibre-test-lifecycle: permanent
 // fibre-test-scope: genesis-birth
 // fibre-test-purpose: canonical-situated-life-publication-and-atomicity
@@ -195,7 +196,7 @@ function parseRows(database, table) {
 test("Genesis birth publishes participant/place continuity through canonical situated-life authority", () =>
   withDatabase((databasePath) => {
     const { world, birth } = publicationCandidate();
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(world);
     const result = genesis.publishBirth(birth);
     assert.ok(result.situatedContinuity);
@@ -242,7 +243,7 @@ test("Genesis birth publishes participant/place continuity through canonical sit
 test("situated continuity is inside the atomic Genesis birth transaction", () =>
   withDatabase((databasePath) => {
     const { world, birth } = publicationCandidate();
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(world);
     assert.throws(
       () => genesis.publishBirth(birth, { failAfterSituatedContinuityForTest: true }),

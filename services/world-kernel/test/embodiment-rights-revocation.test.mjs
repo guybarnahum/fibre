@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -53,12 +54,12 @@ test("human consent can end future embodiment use without erasing historical pro
   const dir = mkdtempSync(join(tmpdir(), "fibre-emb-revoke-"));
   const databasePath = join(dir, "world.sqlite");
   try {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const seeded = world.seedThread(structuredClone(fixture)).thread;
     world.close();
     const eventRef = seeded.provenance.lastEventId;
 
-    const store = openEmbodimentStore(databasePath);
+    const store = openEmbodimentStore(localWorldStateStorage(databasePath));
     const authority = {
       authorityId: embodimentRightsAuthorityId({ threadId: fixture.threadId, source: "human_mina_source", scope: "portrait-private" }),
       threadId: fixture.threadId,
@@ -73,7 +74,7 @@ test("human consent can end future embodiment use without erasing historical pro
     const first = store.record(portrait(1, eventRef, authority.authorityId));
     store.close();
 
-    const revocations = openEmbodimentRightsRevocationStore(databasePath);
+    const revocations = openEmbodimentRightsRevocationStore(localWorldStateStorage(databasePath));
     revocations.record({
       revocationId: embodimentRightsRevocationId({ authorityId: authority.authorityId, recordedAt: "2026-08-13T16:02:00Z" }),
       threadId: fixture.threadId,
@@ -84,7 +85,7 @@ test("human consent can end future embodiment use without erasing historical pro
     });
     revocations.close();
 
-    const reopened = openEmbodimentStore(databasePath);
+    const reopened = openEmbodimentStore(localWorldStateStorage(databasePath));
     assert.equal(reopened.history(fixture.threadId, first.embodimentId).length, 1);
     assert.equal(reopened.history(fixture.threadId, first.embodimentId)[0].permissionReferences[0], authority.authorityId);
     assert.throws(

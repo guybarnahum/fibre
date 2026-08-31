@@ -1,11 +1,10 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
   assertId,
   assertNonEmpty,
 } from "./persistence-common.mjs";
-import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 function parseEvidence(memoryId, value) {
   try {
@@ -22,10 +21,8 @@ function parseEvidence(memoryId, value) {
 export class CausalContextStore {
   #database;
 
-  constructor(databasePath) {
-    assertNonEmpty("databasePath", databasePath);
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath));
-    this.#database.exec("PRAGMA query_only = ON; PRAGMA busy_timeout = 5000;");
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { readOnly: true, storeName: "CausalContextStore" });
   }
 
   close() {
@@ -58,6 +55,6 @@ export class CausalContextStore {
   }
 }
 
-export function openCausalContextStore(databasePath) {
-  return new CausalContextStore(databasePath);
+export function openCausalContextStore(storage) {
+  return new CausalContextStore(storage);
 }

@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -10,10 +9,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   normalizeStructuredObligation,
   structuredObligationDigest,
@@ -143,14 +141,8 @@ function rowToRevision(row) {
 export class ObligationStore {
   #database;
 
-  constructor(databasePath) {
-    assertNonEmpty("databasePath", databasePath);
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-    );
+  constructor(storage) {
+        this.#database = openWorldStateDatabase(storage, { storeName: "ObligationStore" });
     try {
       migrateDatabase(this.#database);
       createObligationTables(this.#database);
@@ -359,147 +351,146 @@ export class ObligationStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-
-      const thread = this.#database.prepare(
-        "SELECT thread_id FROM threads WHERE thread_id=?",
-      ).get(obligation.threadId);
-      if (thread === undefined) {
-        throw new ObligationNotFoundError(
-          `Thread ${obligation.threadId} must exist before recording an obligation`,
-        );
-      }
-
-      const owner = this.#ownerThreadId(obligation.obligationId);
-      if (owner !== null && owner !== obligation.threadId) {
-        throw new ObligationConflictError(
-          `obligation ${obligation.obligationId} already belongs to Thread ${owner}`,
-        );
-      }
-
-      const history = this.#validatedHistory(
-        obligation.threadId,
-        obligation.obligationId,
-        { required: false },
-      );
-      const existing = history.find(
-        (item) => item.obligation.revision === obligation.revision,
-      );
-      if (existing !== undefined) {
-        if (canonicalJson(existing.obligation) === canonicalJson(obligation)) {
-          this.#database.exec("COMMIT");
-          return { revision: existing, created: false };
-        }
-        throw new ObligationConflictError(
-          `obligation ${obligation.obligationId} revision ${obligation.revision} already exists with different content`,
-        );
-      }
-
-      if (obligation.revision === 1) {
-        if (history.length !== 0) {
-          throw new ObligationConflictError(
-            `obligation ${obligation.obligationId} already has revision history`,
+      const transactionResult = this.#database.transaction(() => {
+        const thread = this.#database.prepare(
+          "SELECT thread_id FROM threads WHERE thread_id=?",
+        ).get(obligation.threadId);
+        if (thread === undefined) {
+          throw new ObligationNotFoundError(
+            `Thread ${obligation.threadId} must exist before recording an obligation`,
           );
         }
-        if (obligation.legacySourceDigest !== undefined) {
-          const duplicateLegacy = this.#database.prepare(`
-            SELECT obligation_id
-            FROM obligation_records
-            WHERE thread_id=? AND revision=1 AND legacy_source_digest=?
-            LIMIT 1
-          `).get(obligation.threadId, obligation.legacySourceDigest);
-          if (duplicateLegacy !== undefined) {
+
+        const owner = this.#ownerThreadId(obligation.obligationId);
+        if (owner !== null && owner !== obligation.threadId) {
+          throw new ObligationConflictError(
+            `obligation ${obligation.obligationId} already belongs to Thread ${owner}`,
+          );
+        }
+
+        const history = this.#validatedHistory(
+          obligation.threadId,
+          obligation.obligationId,
+          { required: false },
+        );
+        const existing = history.find(
+          (item) => item.obligation.revision === obligation.revision,
+        );
+        if (existing !== undefined) {
+          if (canonicalJson(existing.obligation) === canonicalJson(obligation)) {
+
+            return { revision: existing, created: false };
+          }
+          throw new ObligationConflictError(
+            `obligation ${obligation.obligationId} revision ${obligation.revision} already exists with different content`,
+          );
+        }
+
+        if (obligation.revision === 1) {
+          if (history.length !== 0) {
             throw new ObligationConflictError(
-              `legacy source ${obligation.legacySourceDigest} already belongs to obligation ${duplicateLegacy.obligation_id}`,
+              `obligation ${obligation.obligationId} already has revision history`,
+            );
+          }
+          if (obligation.legacySourceDigest !== undefined) {
+            const duplicateLegacy = this.#database.prepare(`
+              SELECT obligation_id
+              FROM obligation_records
+              WHERE thread_id=? AND revision=1 AND legacy_source_digest=?
+              LIMIT 1
+            `).get(obligation.threadId, obligation.legacySourceDigest);
+            if (duplicateLegacy !== undefined) {
+              throw new ObligationConflictError(
+                `legacy source ${obligation.legacySourceDigest} already belongs to obligation ${duplicateLegacy.obligation_id}`,
+              );
+            }
+          }
+        } else {
+          if (history.length === 0) {
+            throw new StaleObligationRevisionError(
+              `obligation ${obligation.obligationId} cannot append revision ${obligation.revision} without revision 1`,
+            );
+          }
+          const current = history[history.length - 1];
+          if (current.obligation.revision !== obligation.revision - 1) {
+            throw new StaleObligationRevisionError(
+              `obligation ${obligation.obligationId} cannot append revision ${obligation.revision}; ` +
+              `current revision is ${current.obligation.revision}`,
+            );
+          }
+          if (!sameEntityIdentity(current.obligation.issuer, obligation.issuer)) {
+            throw new ObligationConflictError(
+              `obligation ${obligation.obligationId} cannot change issuer identity`,
+            );
+          }
+          if (!sameNullable(current.obligation.legacySourceDigest, obligation.legacySourceDigest)) {
+            throw new ObligationConflictError(
+              `obligation ${obligation.obligationId} cannot change legacy source identity`,
+            );
+          }
+          if (
+            current.obligation.status !== "active" &&
+            obligation.status !== current.obligation.status
+          ) {
+            throw new ObligationConflictError(
+              `obligation ${obligation.obligationId} cannot change terminal status ${current.obligation.status}`,
+            );
+          }
+          if (Date.parse(recordedAt) < Date.parse(current.recordedAt)) {
+            throw new ObligationConflictError(
+              `obligation ${obligation.obligationId} recordedAt cannot move backwards`,
             );
           }
         }
-      } else {
-        if (history.length === 0) {
-          throw new StaleObligationRevisionError(
-            `obligation ${obligation.obligationId} cannot append revision ${obligation.revision} without revision 1`,
-          );
-        }
-        const current = history[history.length - 1];
-        if (current.obligation.revision !== obligation.revision - 1) {
-          throw new StaleObligationRevisionError(
-            `obligation ${obligation.obligationId} cannot append revision ${obligation.revision}; ` +
-            `current revision is ${current.obligation.revision}`,
-          );
-        }
-        if (!sameEntityIdentity(current.obligation.issuer, obligation.issuer)) {
-          throw new ObligationConflictError(
-            `obligation ${obligation.obligationId} cannot change issuer identity`,
-          );
-        }
-        if (!sameNullable(current.obligation.legacySourceDigest, obligation.legacySourceDigest)) {
-          throw new ObligationConflictError(
-            `obligation ${obligation.obligationId} cannot change legacy source identity`,
-          );
-        }
+
         if (
-          current.obligation.status !== "active" &&
-          obligation.status !== current.obligation.status
+          obligation.status === "active" &&
+          obligation.legacySourceDigest !== undefined &&
+          this.hasLegacyTombstone(obligation.threadId, obligation.legacySourceDigest)
         ) {
           throw new ObligationConflictError(
-            `obligation ${obligation.obligationId} cannot change terminal status ${current.obligation.status}`,
+            `obligation ${obligation.obligationId} cannot reactivate spent legacy authority`,
           );
         }
-        if (Date.parse(recordedAt) < Date.parse(current.recordedAt)) {
-          throw new ObligationConflictError(
-            `obligation ${obligation.obligationId} recordedAt cannot move backwards`,
-          );
-        }
-      }
 
-      if (
-        obligation.status === "active" &&
-        obligation.legacySourceDigest !== undefined &&
-        this.hasLegacyTombstone(obligation.threadId, obligation.legacySourceDigest)
-      ) {
-        throw new ObligationConflictError(
-          `obligation ${obligation.obligationId} cannot reactivate spent legacy authority`,
-        );
-      }
-
-      const digest = structuredObligationDigest(obligation);
-      this.#database.prepare(`
-        INSERT INTO obligation_records(
-          obligation_id,revision,thread_id,status,obligation_json,obligation_digest,
-          supersedes_revision,effective_at,expires_at,standing_visibility,terms_visibility,
-          legacy_source_digest,recorded_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        obligation.obligationId,
-        obligation.revision,
-        obligation.threadId,
-        obligation.status,
-        canonicalJson(obligation),
-        digest,
-        nullable(obligation.supersedesRevision),
-        obligation.effectiveAt,
-        nullable(obligation.expiresAt),
-        obligation.visibility.standing,
-        obligation.visibility.terms,
-        nullable(obligation.legacySourceDigest),
-        recordedAt,
-      );
-      this.#database.exec("COMMIT");
-      return {
-        revision: this.getRevision(
-          obligation.threadId,
+        const digest = structuredObligationDigest(obligation);
+        this.#database.prepare(`
+          INSERT INTO obligation_records(
+            obligation_id,revision,thread_id,status,obligation_json,obligation_digest,
+            supersedes_revision,effective_at,expires_at,standing_visibility,terms_visibility,
+            legacy_source_digest,recorded_at
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
           obligation.obligationId,
           obligation.revision,
-        ),
-        created: true,
-      };
+          obligation.threadId,
+          obligation.status,
+          canonicalJson(obligation),
+          digest,
+          nullable(obligation.supersedesRevision),
+          obligation.effectiveAt,
+          nullable(obligation.expiresAt),
+          obligation.visibility.standing,
+          obligation.visibility.terms,
+          nullable(obligation.legacySourceDigest),
+          recordedAt,
+        );
+        return {
+          revision: this.getRevision(
+            obligation.threadId,
+            obligation.obligationId,
+            obligation.revision,
+          ),
+          created: true,
+        };
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
 }
 
-export function openObligationStore(databasePath) {
-  return new ObligationStore(databasePath);
+export function openObligationStore(storage) {
+  return new ObligationStore(storage);
 }

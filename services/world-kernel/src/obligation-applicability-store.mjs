@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -28,10 +27,9 @@ import {
 } from "./obligation-store.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 const APPLICABILITY_ID_PATTERN = /^oba_[0-9a-f]{64}$/;
 const OBLIGATION_ID_PATTERN = /^obl_[0-9a-f]{64}$/;
@@ -216,22 +214,15 @@ export class ObligationApplicabilityStore {
   #database;
   #obligations;
 
-  constructor(databasePath) {
-    assertNonEmpty("databasePath", databasePath);
-    const normalizedPath = normalizeDatabasePath(databasePath);
-    this.#database = new DatabaseSync(normalizedPath, {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-    );
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { storeName: "ObligationApplicabilityStore" });
     try {
       migrateDatabase(this.#database);
       installApplicabilityBackstops(this.#database);
       // A companion read connection reuses ObligationStore's full-chain validation. The
-      // applicability writer takes BEGIN IMMEDIATE before consulting it, so no competing
+      // applicability writer holds the provider-neutral write transaction while consulting it, so no competing
       // writer can append a newer obligation revision between resolution and persistence.
-      this.#obligations = openObligationStore(normalizedPath);
+      this.#obligations = openObligationStore(storage);
     } catch (error) {
       this.#database.close();
       throw error;
@@ -421,122 +412,121 @@ export class ObligationApplicabilityStore {
     const inputDigest = applicabilityInputDigest(normalizedInput);
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
+      const transactionResult = this.#database.transaction(() => {
+        const priorRow = this.#decisionRowByOperation(input.operationId);
+        if (priorRow !== undefined) {
+          const prior = this.#rowToDecision(priorRow);
+          if (prior.decision.inputDigest !== inputDigest) {
+            throw new ApplicabilityConflictError(
+              `applicability operation ${input.operationId} was already used with different input`,
+            );
+          }
 
-      const priorRow = this.#decisionRowByOperation(input.operationId);
-      if (priorRow !== undefined) {
-        const prior = this.#rowToDecision(priorRow);
-        if (prior.decision.inputDigest !== inputDigest) {
-          throw new ApplicabilityConflictError(
-            `applicability operation ${input.operationId} was already used with different input`,
-          );
+          return { ...prior, created: false };
         }
-        this.#database.exec("COMMIT");
-        return { ...prior, created: false };
-      }
 
-      const request = this.#verifiedRequest(input.threadId, input.requestId);
-      if (Date.parse(input.decidedAt) < Date.parse(request.occurredAt)) {
-        throw new TypeError("applicability decision cannot predate its activation request");
-      }
+        const request = this.#verifiedRequest(input.threadId, input.requestId);
+        if (Date.parse(input.decidedAt) < Date.parse(request.occurredAt)) {
+          throw new TypeError("applicability decision cannot predate its activation request");
+        }
 
-      let revision;
-      try {
-        revision = this.#obligations.getCurrentRevision(input.threadId, input.obligationId);
-      } catch (error) {
-        if (error instanceof ObligationNotFoundError) throw error;
-        throw error;
-      }
-      if (Date.parse(input.decidedAt) < Date.parse(revision.recordedAt)) {
-        throw new TypeError("applicability decision cannot predate the current obligation revision");
-      }
+        let revision;
+        try {
+          revision = this.#obligations.getCurrentRevision(input.threadId, input.obligationId);
+        } catch (error) {
+          if (error instanceof ObligationNotFoundError) throw error;
+          throw error;
+        }
+        if (Date.parse(input.decidedAt) < Date.parse(revision.recordedAt)) {
+          throw new TypeError("applicability decision cannot predate the current obligation revision");
+        }
 
-      const legacyTombstoned =
-        revision.obligation.legacySourceDigest !== undefined &&
+        const legacyTombstoned =
+          revision.obligation.legacySourceDigest !== undefined &&
+          this.#database.prepare(`
+            SELECT 1 AS present
+            FROM legacy_obligation_tombstones
+            WHERE thread_id=? AND legacy_reference_digest=?
+          `).get(input.threadId, revision.obligation.legacySourceDigest) !== undefined;
+
+        const outcome = deterministicApplicability(revision.obligation, {
+          threadId: input.threadId,
+          requestFingerprint: request.requestFingerprint,
+          decidedAt: input.decidedAt,
+          legacyTombstoned,
+        });
+        const evidenceReferences = [
+          requestEvidenceReference(request),
+          snapshotEvidenceReference(request),
+          obligationEvidenceReference(revision),
+          ...(legacyTombstoned
+            ? [tombstoneEvidenceReference(revision.obligation.legacySourceDigest)]
+            : []),
+        ];
+        const applicabilityId = applicabilityIdForInput(normalizedInput);
+        const decision = {
+          applicabilityId,
+          operationId: input.operationId,
+          inputDigest,
+          threadId: input.threadId,
+          snapshotVersion: request.snapshotVersion,
+          threadStateHash: request.threadStateHash,
+          requestId: input.requestId,
+          requestFingerprint: request.requestFingerprint,
+          obligationId: revision.obligation.obligationId,
+          obligationRevision: revision.obligation.revision,
+          obligationDigest: revision.obligationDigest,
+          nominationSource: input.nominationSource,
+          result: outcome.result,
+          reasonCode: outcome.reasonCode,
+          policy: { ...STRUCTURED_OBLIGATION_POLICY },
+          evidenceReferences,
+          decidedAt: input.decidedAt,
+          causationId: input.causationId,
+          correlationId,
+        };
+        assertDecisionBody(decision);
+        const decisionDigest = applicabilityDecisionDigest(decision);
+
         this.#database.prepare(`
-          SELECT 1 AS present
-          FROM legacy_obligation_tombstones
-          WHERE thread_id=? AND legacy_reference_digest=?
-        `).get(input.threadId, revision.obligation.legacySourceDigest) !== undefined;
-
-      const outcome = deterministicApplicability(revision.obligation, {
-        threadId: input.threadId,
-        requestFingerprint: request.requestFingerprint,
-        decidedAt: input.decidedAt,
-        legacyTombstoned,
+          INSERT INTO obligation_applicability_decisions(
+            applicability_id,operation_id,thread_id,snapshot_version,thread_state_hash,
+            request_id,request_fingerprint,obligation_id,obligation_revision,obligation_digest,
+            nomination_source,result,reason_code,policy_id,policy_version,evidence_refs_json,
+            decision_json,decision_digest,decided_at,causation_id,correlation_id
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          decision.applicabilityId,
+          decision.operationId,
+          decision.threadId,
+          decision.snapshotVersion,
+          decision.threadStateHash,
+          decision.requestId,
+          decision.requestFingerprint,
+          decision.obligationId,
+          decision.obligationRevision,
+          decision.obligationDigest,
+          decision.nominationSource,
+          decision.result,
+          decision.reasonCode,
+          decision.policy.id,
+          decision.policy.version,
+          canonicalJson(decision.evidenceReferences),
+          canonicalJson(decision),
+          decisionDigest,
+          decision.decidedAt,
+          decision.causationId,
+          decision.correlationId,
+        );
+        return { decision, decisionDigest, created: true };
       });
-      const evidenceReferences = [
-        requestEvidenceReference(request),
-        snapshotEvidenceReference(request),
-        obligationEvidenceReference(revision),
-        ...(legacyTombstoned
-          ? [tombstoneEvidenceReference(revision.obligation.legacySourceDigest)]
-          : []),
-      ];
-      const applicabilityId = applicabilityIdForInput(normalizedInput);
-      const decision = {
-        applicabilityId,
-        operationId: input.operationId,
-        inputDigest,
-        threadId: input.threadId,
-        snapshotVersion: request.snapshotVersion,
-        threadStateHash: request.threadStateHash,
-        requestId: input.requestId,
-        requestFingerprint: request.requestFingerprint,
-        obligationId: revision.obligation.obligationId,
-        obligationRevision: revision.obligation.revision,
-        obligationDigest: revision.obligationDigest,
-        nominationSource: input.nominationSource,
-        result: outcome.result,
-        reasonCode: outcome.reasonCode,
-        policy: { ...STRUCTURED_OBLIGATION_POLICY },
-        evidenceReferences,
-        decidedAt: input.decidedAt,
-        causationId: input.causationId,
-        correlationId,
-      };
-      assertDecisionBody(decision);
-      const decisionDigest = applicabilityDecisionDigest(decision);
-
-      this.#database.prepare(`
-        INSERT INTO obligation_applicability_decisions(
-          applicability_id,operation_id,thread_id,snapshot_version,thread_state_hash,
-          request_id,request_fingerprint,obligation_id,obligation_revision,obligation_digest,
-          nomination_source,result,reason_code,policy_id,policy_version,evidence_refs_json,
-          decision_json,decision_digest,decided_at,causation_id,correlation_id
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        decision.applicabilityId,
-        decision.operationId,
-        decision.threadId,
-        decision.snapshotVersion,
-        decision.threadStateHash,
-        decision.requestId,
-        decision.requestFingerprint,
-        decision.obligationId,
-        decision.obligationRevision,
-        decision.obligationDigest,
-        decision.nominationSource,
-        decision.result,
-        decision.reasonCode,
-        decision.policy.id,
-        decision.policy.version,
-        canonicalJson(decision.evidenceReferences),
-        canonicalJson(decision),
-        decisionDigest,
-        decision.decidedAt,
-        decision.causationId,
-        decision.correlationId,
-      );
-      this.#database.exec("COMMIT");
-      return { decision, decisionDigest, created: true };
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
 }
 
-export function openObligationApplicabilityStore(databasePath) {
-  return new ObligationApplicabilityStore(databasePath);
+export function openObligationApplicabilityStore(storage) {
+  return new ObligationApplicabilityStore(storage);
 }

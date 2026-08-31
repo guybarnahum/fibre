@@ -4,13 +4,6 @@ import { resolve } from "node:path";
 
 const RUNTIME_SOURCE = /\.(?:mjs|js|ts|tsx|jsx)$/u;
 
-// Existing World Kernel stores share one direct SQLite consistency domain.
-// This is accepted migration debt, not permission for another service to copy
-// the pattern. Shrink this prefix as semantic stores move behind infra.state.
-export const DIRECT_SQLITE_MIGRATION_PREFIXES = Object.freeze([
-  "services/world-kernel/src/",
-]);
-
 // Existing durable local file journal. This exact path is named migration debt
 // by the accepted production-persistence architecture. Do not grow this set;
 // migrate the journal behind infra.state once that capability is executable.
@@ -56,8 +49,7 @@ export function productionPersistenceViolationsForSource(path, text) {
   if (!isRuntimeServiceSource(normalizedPath)) return [];
   const errors = [];
 
-  if (SQLITE_IMPORT.test(text)
-      && !DIRECT_SQLITE_MIGRATION_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix))) {
+  if (SQLITE_IMPORT.test(text)) {
     errors.push(
       `Production persistence bypass: ${normalizedPath} imports SQLite directly; new service state must use a semantic store over InfraDriver`,
     );

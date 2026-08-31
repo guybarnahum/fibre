@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -128,7 +129,7 @@ function updateCommand(overrides = {}) {
 }
 
 function seededService(databasePath) {
-  const store = openWorldStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
   const service = new WorldKernelService(store);
   service.seedThread({ thread: fixture });
   return { store, service };
@@ -412,7 +413,7 @@ test("coherent capsule JSON, digest, and identifier rewriting is detected by his
     );
     database.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => reopened.verifyPrivateRequestTrace(fixture.threadId, trace.requestId),
       IntegrityError,

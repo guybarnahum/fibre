@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -7,10 +6,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { createGenesisTables } from "./genesis-schema.mjs";
 import {
   genesisOriginAuthorityDigest,
@@ -35,24 +33,17 @@ export class GenesisOriginAuthorityStore {
   #database;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "GenesisOriginAuthorityStore" });
     try {
-      if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+      if (!readOnly) {
         migrateDatabase(this.#database);
-        this.#database.exec("BEGIN IMMEDIATE");
-        createGenesisTables(this.#database);
-        this.#database.exec("COMMIT");
+        this.#database.transaction(() => {
+          createGenesisTables(this.#database);
+        });
       }
     } catch (error) {
-      safeRollback(this.#database);
       this.#database.close();
       throw error;
     }
@@ -76,24 +67,23 @@ export class GenesisOriginAuthorityStore {
       return { record: structuredClone(record), recordDigest, idempotent: true };
     }
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database.prepare(`
-        INSERT INTO genesis_origin_authorities(
-          authority_ref,authority_kind,source_party_id,subject_status,
-          record_json,record_digest,asserted_at
-        ) VALUES (?,?,?,?,?,?,?)
-      `).run(
-        record.authorityRef,
-        record.authorityKind,
-        record.sourcePartyId,
-        record.subjectStatus,
-        canonicalJson(record),
-        recordDigest,
-        record.assertedAt,
-      );
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database.prepare(`
+          INSERT INTO genesis_origin_authorities(
+            authority_ref,authority_kind,source_party_id,subject_status,
+            record_json,record_digest,asserted_at
+          ) VALUES (?,?,?,?,?,?,?)
+        `).run(
+          record.authorityRef,
+          record.authorityKind,
+          record.sourcePartyId,
+          record.subjectStatus,
+          canonicalJson(record),
+          recordDigest,
+          record.assertedAt,
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { record: structuredClone(record), recordDigest, idempotent: false };

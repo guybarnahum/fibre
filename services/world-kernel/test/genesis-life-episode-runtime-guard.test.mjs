@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,7 +20,7 @@ function withDatabase(run) {
 
 test("runtime command authority cannot mint a Genesis life episode", () =>
   withDatabase((databasePath) => {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const thread = structuredClone(fixture);
     thread.threadId = "thr_genesis_guard_001";
     thread.relationshipRefs = [];

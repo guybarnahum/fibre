@@ -1,7 +1,8 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, parse, resolve } from "node:path";
+import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
@@ -13,7 +14,6 @@ import {
   StaleThreadVersionError,
   WORLD_STORE_SCHEMA_VERSION,
   canonicalJson,
-  normalizeDatabasePath,
   openWorldStore,
   threadStateHash,
 } from "../src/persistence.mjs";
@@ -79,7 +79,7 @@ test("canonical JSON is stable and rejects lossy JSON values", () => {
 
 test("schema version and busy timeout are explicit", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     assert.deepEqual(store.storageMetadata(), {
       schemaVersion: WORLD_STORE_SCHEMA_VERSION,
       busyTimeoutMs: 5000,
@@ -92,18 +92,12 @@ test("refuses an unknown schema version", () =>
     const database = rawDatabase(databasePath);
     database.exec("PRAGMA user_version = 99");
     database.close();
-    assert.throws(() => openWorldStore(databasePath), /Unsupported world-store schema version 99/);
+    assert.throws(() => openWorldStore(localWorldStateStorage(databasePath)), /Unsupported world-store schema version 99/);
   }));
-
-test("root-parent path normalization preserves the basename", () => {
-  const root = parse(resolve("/")).root;
-  const requested = join(root, "fibre-world-root-test.sqlite");
-  assert.equal(normalizeDatabasePath(requested), requested);
-});
 
 test("seeds Mina with normalized projection metadata and an append-only event", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     const seeded = store.seedThread(fixture);
     assert.equal(seeded.created, true);
     assert.notEqual(seeded.thread.provenance.lastEventId, fixture.provenance.lastEventId);
@@ -129,7 +123,7 @@ test("a schema-valid snapshot without lastEventId seeds and reads back", () =>
   withDatabase((databasePath) => {
     const source = structuredClone(fixture);
     delete source.provenance.lastEventId;
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     const seeded = store.seedThread(source);
     assert.match(seeded.thread.provenance.lastEventId, /^evt_thr_mina_001_seed_/);
     assert.deepEqual(store.getThread(source.threadId), seeded.thread);
@@ -139,7 +133,7 @@ test("a schema-valid snapshot without lastEventId seeds and reads back", () =>
 
 test("applies a validated self-model command atomically and preserves lifecycle status", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const result = store.applyCommand(updateSelfModelCommand());
     assert.equal(result.idempotent, false);
@@ -164,7 +158,7 @@ test("UPDATE_SELF_MODEL permits dormant Threads without waking them", () =>
   withDatabase((databasePath) => {
     const dormant = structuredClone(fixture);
     dormant.status = "dormant";
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store, dormant);
     const result = store.applyCommand(updateSelfModelCommand());
     assert.equal(result.thread.status, "dormant");
@@ -177,7 +171,7 @@ test("UPDATE_SELF_MODEL rejects retired and runtime lifecycle statuses", () => {
     withDatabase((databasePath) => {
       const source = structuredClone(fixture);
       source.status = status;
-      const store = openWorldStore(databasePath);
+      const store = openWorldStore(localWorldStateStorage(databasePath));
       normalizedSeed(store, source);
       assert.throws(() => store.applyCommand(updateSelfModelCommand()), LifecycleCommandError);
       assert.equal(store.listEvents(source.threadId).length, 1);
@@ -189,7 +183,7 @@ test("UPDATE_SELF_MODEL rejects retired and runtime lifecycle statuses", () => {
 
 test("rejects a stale expected version without appending an event", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     store.applyCommand(updateSelfModelCommand());
     assert.throws(
@@ -212,7 +206,7 @@ test("rejects a stale expected version without appending an event", () =>
 
 test("retries an identical command by replaying its accepted event", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const first = store.applyCommand(updateSelfModelCommand());
     const retry = store.applyCommand(updateSelfModelCommand());
@@ -225,7 +219,7 @@ test("retries an identical command by replaying its accepted event", () =>
 
 test("rejects reuse of an idempotency key with different content", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     store.applyCommand(updateSelfModelCommand());
     assert.throws(
@@ -246,7 +240,7 @@ test("rejects reuse of an idempotency key with different content", () =>
 
 test("rejects unknown and oversized command payload fields", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     assert.throws(
       () =>
@@ -279,13 +273,13 @@ test("rejects unknown and oversized command payload fields", () =>
 
 test("survives close and reopen with identical replay hash", () =>
   withDatabase((databasePath) => {
-    const firstStore = openWorldStore(databasePath);
+    const firstStore = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(firstStore);
     const result = firstStore.applyCommand(updateSelfModelCommand());
     const beforeRestart = firstStore.verifyThreadIntegrity(fixture.threadId);
     firstStore.close();
 
-    const restartedStore = openWorldStore(databasePath);
+    const restartedStore = openWorldStore(localWorldStateStorage(databasePath));
     assert.deepEqual(restartedStore.getThread(fixture.threadId), result.thread);
     assert.deepEqual(restartedStore.verifyThreadIntegrity(fixture.threadId), beforeRestart);
     restartedStore.close();
@@ -293,7 +287,7 @@ test("survives close and reopen with identical replay hash", () =>
 
 test("database triggers enforce append-only events and commands", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const result = store.applyCommand(updateSelfModelCommand());
     store.close();
@@ -326,7 +320,7 @@ test("database triggers enforce append-only events and commands", () =>
 
 test("getThread rejects a coherent projection identity swap", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     const seeded = normalizedSeed(store);
     store.close();
 
@@ -338,7 +332,7 @@ test("getThread rejects a coherent projection identity swap", () =>
       .run(canonicalJson(forged), threadStateHash(forged), fixture.threadId);
     database.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.getThread(fixture.threadId), /projection contains identity/);
     assert.throws(() => reopened.verifyThreadIntegrity(fixture.threadId), IntegrityError);
     reopened.close();
@@ -346,7 +340,7 @@ test("getThread rejects a coherent projection identity swap", () =>
 
 test("replay rejects a seed payload whose identity differs from event.thread_id", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     const seeded = normalizedSeed(store);
     const seedEvent = store.listEvents(fixture.threadId)[0];
     store.close();
@@ -360,7 +354,7 @@ test("replay rejects a seed payload whose identity differs from event.thread_id"
       .run(canonicalJson({ snapshot: forged }), threadStateHash(forged), seedEvent.eventId);
     database.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.replayThread(fixture.threadId), /snapshot belongs to/);
     reopened.close();
   }));
@@ -372,13 +366,13 @@ test("projection hash, projection columns, and last-event witness are mandatory 
     (db) => db.exec("UPDATE threads SET last_event_id = 'evt_missing'"),
   ]) {
     withDatabase((databasePath) => {
-      const store = openWorldStore(databasePath);
+      const store = openWorldStore(localWorldStateStorage(databasePath));
       normalizedSeed(store);
       store.close();
       const database = rawDatabase(databasePath);
       mutate(database);
       database.close();
-      const reopened = openWorldStore(databasePath);
+      const reopened = openWorldStore(localWorldStateStorage(databasePath));
       assert.throws(() => reopened.getThread(fixture.threadId), IntegrityError);
       reopened.close();
     });
@@ -387,7 +381,7 @@ test("projection hash, projection columns, and last-event witness are mandatory 
 
 test("repairs a forged projection from immutable event history", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const result = store.applyCommand(updateSelfModelCommand());
     store.close();
@@ -400,7 +394,7 @@ test("repairs a forged projection from immutable event history", () =>
       .run(canonicalJson(forged), threadStateHash(forged), fixture.threadId);
     database.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.getThread(fixture.threadId), /last event/);
     const repaired = reopened.repairThreadProjection(fixture.threadId);
     assert.equal(repaired.repaired, true);
@@ -411,7 +405,7 @@ test("repairs a forged projection from immutable event history", () =>
 
 test("detects coherent history rewriting through command digest and command witness", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const result = store.applyCommand(updateSelfModelCommand());
     store.close();
@@ -433,14 +427,14 @@ test("detects coherent history rewriting through command digest and command witn
       .run(canonicalJson(forgedThread), forgedHash, fixture.threadId);
     database.close();
 
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.verifyThreadIntegrity(fixture.threadId), /command digest/);
     reopened.close();
   }));
 
 test("detects a missing command witness", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     store.applyCommand(updateSelfModelCommand());
     store.close();
@@ -448,14 +442,14 @@ test("detects a missing command witness", () =>
     database.exec("DROP TRIGGER commands_no_delete");
     database.exec("DELETE FROM commands");
     database.close();
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.replayThread(fixture.threadId), /no accepted command witness/);
     reopened.close();
   }));
 
 test("detects replay sequence gaps", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const result = store.applyCommand(updateSelfModelCommand());
     store.close();
@@ -465,14 +459,14 @@ test("detects replay sequence gaps", () =>
       .prepare("UPDATE thread_events SET sequence = 3 WHERE event_id = ?")
       .run(result.event.eventId);
     database.close();
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.replayThread(fixture.threadId), /sequence has a gap/);
     reopened.close();
   }));
 
 test("detects invalid seed version metadata", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const seedEvent = store.listEvents(fixture.threadId)[0];
     store.close();
@@ -482,21 +476,21 @@ test("detects invalid seed version metadata", () =>
       .prepare("UPDATE thread_events SET expected_version = 1 WHERE event_id = ?")
       .run(seedEvent.eventId);
     database.close();
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(() => reopened.replayThread(fixture.threadId), /invalid version metadata/);
     reopened.close();
   }));
 
 test("stored-data corruption is reported as IntegrityError", () =>
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     store.close();
     const database = rawDatabase(databasePath);
     database.exec("PRAGMA ignore_check_constraints = ON");
     database.exec("UPDATE threads SET state_json = '{\"version\":1}'");
     database.close();
-    const reopened = openWorldStore(databasePath);
+    const reopened = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => reopened.getThread(fixture.threadId),
       (error) => error instanceof IntegrityError && /Stored Thread/.test(error.message),
@@ -506,7 +500,7 @@ test("stored-data corruption is reported as IntegrityError", () =>
 
 test("Thread snapshots reject unknown top-level obligation-shaped fields", () => {
   withDatabase((databasePath) => {
-    const store = openWorldStore(databasePath);
+    const store = openWorldStore(localWorldStateStorage(databasePath));
     const spoofed = structuredClone(fixture);
     spoofed.obligations = [{
       obligationId: `obl_${"f".repeat(64)}`,

@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -30,7 +31,7 @@ function withDatabase(run) {
 }
 
 function seed(databasePath) {
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath));
   world.seedThread(structuredClone(fixture));
   world.close();
   const database = new DatabaseSync(databasePath);
@@ -211,7 +212,7 @@ test("the existing #38 store persists and reopens v2 memory without a parallel G
   withDatabase((databasePath) => {
     const event = seed(databasePath);
     const first = genesisRecord(event);
-    const writer = openAutobiographicalMemoryStore(databasePath);
+    const writer = openAutobiographicalMemoryStore(localWorldStateStorage(databasePath));
     writer.recordMemory(first);
 
     const {
@@ -232,7 +233,7 @@ test("the existing #38 store persists and reopens v2 memory without a parallel G
     writer.recordMemory(genesisRecord(event, 2, durableMeaning(first.memoryId)));
     writer.close();
 
-    const reader = openAutobiographicalMemoryInspectionStore(databasePath);
+    const reader = openAutobiographicalMemoryInspectionStore(localWorldStateStorage(databasePath));
     const history = reader.memoryHistory(fixture.threadId, first.memoryId);
     assert.equal(history.length, 2);
     assert.equal(history[0].recordFormat, AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2);

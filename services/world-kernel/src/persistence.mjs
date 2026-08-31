@@ -44,7 +44,6 @@ import {
 } from "./private-participation.mjs";
 import {
   migrateDatabase,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
 import {
@@ -71,7 +70,6 @@ export {
   sha256,
   threadStateHash,
 } from "./persistence-common.mjs";
-export { normalizeDatabasePath } from "./persistence-sqlite.mjs";
 
 const APPRAISAL_ID_PATTERN = /^app_[0-9a-f]{64}$/;
 const STANCE_ID_PATTERN = /^pst_[0-9a-f]{64}$/;
@@ -130,57 +128,56 @@ export class WorldStore {
     const provenanceJson = canonicalJson({ source: "seedThread", adapter: "sqlite-v2" });
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      this.#database
-        .prepare(`
-          INSERT INTO threads (
-            thread_id, version, status, state_json, state_hash,
-            last_event_id, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `)
-        .run(
-          normalized.threadId,
-          normalized.version,
-          normalized.status,
-          stateJson,
-          stateHash,
-          eventId,
-          normalized.provenance.createdAt,
-          occurredAt,
-        );
-      this.#database
-        .prepare(`
-          INSERT INTO thread_events (
-            event_id, thread_id, sequence, expected_version, resulting_version,
-            event_type, command_id, command_digest, payload_json, actor_json,
-            occurred_at, state_hash, authorization_id, causation_id, correlation_id,
-            payload_schema_version, provenance_json
-          ) VALUES (?, ?, 1, 0, ?, 'THREAD_SEEDED', NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, 1, ?)
-        `)
-        .run(
-          eventId,
-          normalized.threadId,
-          normalized.version,
-          payloadJson,
-          actorJson,
-          occurredAt,
-          stateHash,
-          eventId,
-          eventId,
-          provenanceJson,
-        );
-      persistLegacySeedIdentity(this.#database, normalized, { sourceEventId: eventId });
-      for (const memoryRef of normalized.memoryRefs) {
-        ensureMemoryVisualCompanion(this.#database, {
-          threadId: normalized.threadId,
-          memoryRef,
-          recordedAt: normalized.provenance.createdAt,
-          createdFrom: "legacy_memory_reference",
-        });
-      }
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        this.#database
+          .prepare(`
+            INSERT INTO threads (
+              thread_id, version, status, state_json, state_hash,
+              last_event_id, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `)
+          .run(
+            normalized.threadId,
+            normalized.version,
+            normalized.status,
+            stateJson,
+            stateHash,
+            eventId,
+            normalized.provenance.createdAt,
+            occurredAt,
+          );
+        this.#database
+          .prepare(`
+            INSERT INTO thread_events (
+              event_id, thread_id, sequence, expected_version, resulting_version,
+              event_type, command_id, command_digest, payload_json, actor_json,
+              occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+              payload_schema_version, provenance_json
+            ) VALUES (?, ?, 1, 0, ?, 'THREAD_SEEDED', NULL, NULL, ?, ?, ?, ?, NULL, ?, ?, 1, ?)
+          `)
+          .run(
+            eventId,
+            normalized.threadId,
+            normalized.version,
+            payloadJson,
+            actorJson,
+            occurredAt,
+            stateHash,
+            eventId,
+            eventId,
+            provenanceJson,
+          );
+        persistLegacySeedIdentity(this.#database, normalized, { sourceEventId: eventId });
+        for (const memoryRef of normalized.memoryRefs) {
+          ensureMemoryVisualCompanion(this.#database, {
+            threadId: normalized.threadId,
+            memoryRef,
+            recordedAt: normalized.provenance.createdAt,
+            createdFrom: "legacy_memory_reference",
+          });
+        }
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { thread: structuredClone(normalized), created: true };
@@ -344,112 +341,112 @@ export class WorldStore {
     if (priorRead !== undefined) return this.#idempotentResult(command, digest, priorRead);
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const prior = this.#commandRecord(command.threadId, command.commandId);
-      if (prior !== undefined) {
-        this.#database.exec("COMMIT");
-        return this.#idempotentResult(command, digest, prior);
-      }
+      const transactionResult = this.#database.transaction(() => {
+        const prior = this.#commandRecord(command.threadId, command.commandId);
+        if (prior !== undefined) {
 
-      const thread = this.getThread(command.threadId);
-      if (thread.version !== command.expectedVersion) {
-        throw new StaleThreadVersionError(
-          `Thread ${command.threadId} is version ${thread.version}; command expected ${command.expectedVersion}`,
-        );
-      }
-      assertCommandLifecycle(thread, command);
+          return this.#idempotentResult(command, digest, prior);
+        }
 
-      const lastSequenceRow = this.#database
-        .prepare(
-          "SELECT COALESCE(MAX(sequence), 0) AS last_sequence FROM thread_events WHERE thread_id = ?",
-        )
-        .get(command.threadId);
-      const sequence = Number(lastSequenceRow.last_sequence) + 1;
-      const eventId = eventIdForCommand(command, digest);
-      const nextThread = applyCommandToThread(thread, command, eventId);
-      validateThreadSnapshot(nextThread);
-      const stateJson = canonicalJson(nextThread);
-      const stateHash = threadStateHash(nextThread);
-      const eventType = "SELF_MODEL_UPDATED";
-      const payloadJson = canonicalJson(command.payload);
-      const actorJson = canonicalJson(command.actor);
-      const provenanceJson = canonicalJson({ source: "applyCommand", adapter: "sqlite-v2" });
+        const thread = this.getThread(command.threadId);
+        if (thread.version !== command.expectedVersion) {
+          throw new StaleThreadVersionError(
+            `Thread ${command.threadId} is version ${thread.version}; command expected ${command.expectedVersion}`,
+          );
+        }
+        assertCommandLifecycle(thread, command);
 
-      this.#database
-        .prepare(`
-          INSERT INTO thread_events (
-            event_id, thread_id, sequence, expected_version, resulting_version,
-            event_type, command_id, command_digest, payload_json, actor_json,
-            occurred_at, state_hash, authorization_id, causation_id, correlation_id,
-            payload_schema_version, provenance_json
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 1, ?)
-        `)
-        .run(
-          eventId,
-          command.threadId,
-          sequence,
-          command.expectedVersion,
-          nextThread.version,
-          eventType,
-          command.commandId,
-          digest,
-          payloadJson,
-          actorJson,
-          command.occurredAt,
-          stateHash,
-          command.commandId,
-          command.commandId,
-          provenanceJson,
-        );
+        const lastSequenceRow = this.#database
+          .prepare(
+            "SELECT COALESCE(MAX(sequence), 0) AS last_sequence FROM thread_events WHERE thread_id = ?",
+          )
+          .get(command.threadId);
+        const sequence = Number(lastSequenceRow.last_sequence) + 1;
+        const eventId = eventIdForCommand(command, digest);
+        const nextThread = applyCommandToThread(thread, command, eventId);
+        validateThreadSnapshot(nextThread);
+        const stateJson = canonicalJson(nextThread);
+        const stateHash = threadStateHash(nextThread);
+        const eventType = "SELF_MODEL_UPDATED";
+        const payloadJson = canonicalJson(command.payload);
+        const actorJson = canonicalJson(command.actor);
+        const provenanceJson = canonicalJson({ source: "applyCommand", adapter: "sqlite-v2" });
 
-      const update = this.#database
-        .prepare(`
-          UPDATE threads
-          SET version = ?, status = ?, state_json = ?, state_hash = ?,
-              last_event_id = ?, updated_at = ?
-          WHERE thread_id = ? AND version = ?
-        `)
-        .run(
-          nextThread.version,
-          nextThread.status,
-          stateJson,
-          stateHash,
-          eventId,
-          command.occurredAt,
-          command.threadId,
-          command.expectedVersion,
-        );
-      if (Number(update.changes) !== 1) {
-        throw new StaleThreadVersionError(
-          `Thread ${command.threadId} changed while applying command`,
-        );
-      }
+        this.#database
+          .prepare(`
+            INSERT INTO thread_events (
+              event_id, thread_id, sequence, expected_version, resulting_version,
+              event_type, command_id, command_digest, payload_json, actor_json,
+              occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+              payload_schema_version, provenance_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 1, ?)
+          `)
+          .run(
+            eventId,
+            command.threadId,
+            sequence,
+            command.expectedVersion,
+            nextThread.version,
+            eventType,
+            command.commandId,
+            digest,
+            payloadJson,
+            actorJson,
+            command.occurredAt,
+            stateHash,
+            command.commandId,
+            command.commandId,
+            provenanceJson,
+          );
 
-      this.#database
-        .prepare(`
-          INSERT INTO commands (
-            thread_id, command_id, command_digest, expected_version,
-            resulting_version, event_id, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `)
-        .run(
-          command.threadId,
-          command.commandId,
-          digest,
-          command.expectedVersion,
-          nextThread.version,
-          eventId,
-          command.occurredAt,
-        );
+        const update = this.#database
+          .prepare(`
+            UPDATE threads
+            SET version = ?, status = ?, state_json = ?, state_hash = ?,
+                last_event_id = ?, updated_at = ?
+            WHERE thread_id = ? AND version = ?
+          `)
+          .run(
+            nextThread.version,
+            nextThread.status,
+            stateJson,
+            stateHash,
+            eventId,
+            command.occurredAt,
+            command.threadId,
+            command.expectedVersion,
+          );
+        if (Number(update.changes) !== 1) {
+          throw new StaleThreadVersionError(
+            `Thread ${command.threadId} changed while applying command`,
+          );
+        }
 
-      this.#database.exec("COMMIT");
-      return {
-        thread: nextThread,
-        event: this.listEvents(command.threadId).at(-1),
-        idempotent: false,
-      };
+        this.#database
+          .prepare(`
+            INSERT INTO commands (
+              thread_id, command_id, command_digest, expected_version,
+              resulting_version, event_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          `)
+          .run(
+            command.threadId,
+            command.commandId,
+            digest,
+            command.expectedVersion,
+            nextThread.version,
+            eventId,
+            command.occurredAt,
+          );
+
+        return {
+          thread: nextThread,
+          event: this.listEvents(command.threadId).at(-1),
+          idempotent: false,
+        };
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
@@ -665,78 +662,78 @@ export class WorldStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const raced = this.#privateRequestRow(record.threadId, record.request.requestId);
-      if (raced !== undefined) {
-        this.#database.exec("COMMIT");
-        // The recursive call is bounded: the next entry observes the committed row
-        // and returns an idempotent result or a conflict.
-        return this.recordRequestAppraisal(record);
-      }
-      const thread = this.getThread(record.threadId);
-      if (thread.version !== record.appraisal.snapshotVersion) {
-        throw new StaleAppraisalError(
-          `Thread ${record.threadId} is version ${thread.version}; appraisal used ${record.appraisal.snapshotVersion}`,
-        );
-      }
-      assertCapsuleMatchesThread(thread, record.request, record.appraisal);
-      const fingerprint = requestFingerprint(record.request);
-      const stateHash = threadStateHash(thread);
-      const requestDigestValue = requestRecordDigest({
-        threadId: record.threadId,
-        snapshotVersion: thread.version,
-        threadStateHash: stateHash,
-        request: record.request,
-        requestFingerprint: fingerprint,
-        occurredAt: record.occurredAt,
-        causationId: record.causationId,
-        correlationId: record.correlationId,
-      });
-      const appraisalIdValue = newPrivateRecordId("app");
-      const appraisalDigestValue = appraisalDigest(record.appraisal);
+      const transactionResult = this.#database.transaction(() => {
+        const raced = this.#privateRequestRow(record.threadId, record.request.requestId);
+        if (raced !== undefined) {
 
-      this.#database.prepare(`
-        INSERT INTO activation_requests (
-          thread_id, request_id, snapshot_version, thread_state_hash,
-          request_fingerprint, request_json, record_digest, occurred_at,
-          causation_id, correlation_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        record.threadId,
-        record.request.requestId,
-        thread.version,
-        stateHash,
-        fingerprint,
-        canonicalJson(record.request),
-        requestDigestValue,
-        record.occurredAt,
-        record.causationId,
-        record.correlationId,
-      );
-      this.#database.prepare(`
-        INSERT INTO request_appraisals (
-          appraisal_id, thread_id, request_id, snapshot_version, thread_state_hash,
-          request_fingerprint, policy_id, policy_version, capsule_json,
-          capsule_digest, occurred_at, causation_id, correlation_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        appraisalIdValue,
-        record.threadId,
-        record.request.requestId,
-        thread.version,
-        stateHash,
-        fingerprint,
-        record.appraisal.appraisalPolicy.id,
-        record.appraisal.appraisalPolicy.version,
-        canonicalJson(record.appraisal),
-        appraisalDigestValue,
-        record.occurredAt,
-        record.causationId,
-        record.correlationId,
-      );
-      this.#database.exec("COMMIT");
+          // The recursive call is bounded: the next entry observes the committed row
+          // and returns an idempotent result or a conflict.
+          return this.recordRequestAppraisal(record);
+        }
+        const thread = this.getThread(record.threadId);
+        if (thread.version !== record.appraisal.snapshotVersion) {
+          throw new StaleAppraisalError(
+            `Thread ${record.threadId} is version ${thread.version}; appraisal used ${record.appraisal.snapshotVersion}`,
+          );
+        }
+        assertCapsuleMatchesThread(thread, record.request, record.appraisal);
+        const fingerprint = requestFingerprint(record.request);
+        const stateHash = threadStateHash(thread);
+        const requestDigestValue = requestRecordDigest({
+          threadId: record.threadId,
+          snapshotVersion: thread.version,
+          threadStateHash: stateHash,
+          request: record.request,
+          requestFingerprint: fingerprint,
+          occurredAt: record.occurredAt,
+          causationId: record.causationId,
+          correlationId: record.correlationId,
+        });
+        const appraisalIdValue = newPrivateRecordId("app");
+        const appraisalDigestValue = appraisalDigest(record.appraisal);
+
+        this.#database.prepare(`
+          INSERT INTO activation_requests (
+            thread_id, request_id, snapshot_version, thread_state_hash,
+            request_fingerprint, request_json, record_digest, occurred_at,
+            causation_id, correlation_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          record.threadId,
+          record.request.requestId,
+          thread.version,
+          stateHash,
+          fingerprint,
+          canonicalJson(record.request),
+          requestDigestValue,
+          record.occurredAt,
+          record.causationId,
+          record.correlationId,
+        );
+        this.#database.prepare(`
+          INSERT INTO request_appraisals (
+            appraisal_id, thread_id, request_id, snapshot_version, thread_state_hash,
+            request_fingerprint, policy_id, policy_version, capsule_json,
+            capsule_digest, occurred_at, causation_id, correlation_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          appraisalIdValue,
+          record.threadId,
+          record.request.requestId,
+          thread.version,
+          stateHash,
+          fingerprint,
+          record.appraisal.appraisalPolicy.id,
+          record.appraisal.appraisalPolicy.version,
+          canonicalJson(record.appraisal),
+          appraisalDigestValue,
+          record.occurredAt,
+          record.causationId,
+          record.correlationId,
+        );
+      });
+      if (transactionResult !== undefined) return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return {
@@ -774,41 +771,41 @@ export class WorldStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      trace = this.getPrivateRequestTrace(record.threadId, record.requestId);
-      if (trace.privateStance !== null) {
-        this.#database.exec("COMMIT");
-        // The recursive call is bounded: the next entry observes the committed
-        // stance and returns an idempotent result or a conflict.
-        return this.recordPrivateStance(record);
-      }
-      assertStanceMatchesTrace(trace, record.stance);
-      const stanceIdValue = newPrivateRecordId("pst");
-      this.#database.prepare(`
-        INSERT INTO private_participation_stances (
-          stance_id, appraisal_id, thread_id, request_id, snapshot_version,
-          thread_state_hash, request_fingerprint, policy_id, policy_version,
-          stance_json, stance_digest, recorded_at, causation_id, correlation_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        stanceIdValue,
-        trace.appraisalId,
-        record.threadId,
-        record.requestId,
-        trace.snapshotVersion,
-        trace.threadStateHash,
-        trace.requestFingerprint,
-        record.stance.policy.id,
-        record.stance.policy.version,
-        canonicalJson(record.stance),
-        stanceDigestValue,
-        record.recordedAt,
-        record.causationId,
-        record.correlationId,
-      );
-      this.#database.exec("COMMIT");
+      const transactionResult = this.#database.transaction(() => {
+        trace = this.getPrivateRequestTrace(record.threadId, record.requestId);
+        if (trace.privateStance !== null) {
+
+          // The recursive call is bounded: the next entry observes the committed
+          // stance and returns an idempotent result or a conflict.
+          return this.recordPrivateStance(record);
+        }
+        assertStanceMatchesTrace(trace, record.stance);
+        const stanceIdValue = newPrivateRecordId("pst");
+        this.#database.prepare(`
+          INSERT INTO private_participation_stances (
+            stance_id, appraisal_id, thread_id, request_id, snapshot_version,
+            thread_state_hash, request_fingerprint, policy_id, policy_version,
+            stance_json, stance_digest, recorded_at, causation_id, correlation_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          stanceIdValue,
+          trace.appraisalId,
+          record.threadId,
+          record.requestId,
+          trace.snapshotVersion,
+          trace.threadStateHash,
+          trace.requestFingerprint,
+          record.stance.policy.id,
+          record.stance.policy.version,
+          canonicalJson(record.stance),
+          stanceDigestValue,
+          record.recordedAt,
+          record.causationId,
+          record.correlationId,
+        );
+      });
+      if (transactionResult !== undefined) return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return {
@@ -876,29 +873,28 @@ export class WorldStore {
     const stateJson = canonicalJson(replayed);
     const stateHash = threadStateHash(replayed);
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const result = this.#database
-        .prepare(`
-          UPDATE threads
-          SET version = ?, status = ?, state_json = ?, state_hash = ?,
-              last_event_id = ?, updated_at = ?
-          WHERE thread_id = ?
-        `)
-        .run(
-          replayed.version,
-          replayed.status,
-          stateJson,
-          stateHash,
-          lastEvent.eventId,
-          lastEvent.occurredAt,
-          threadId,
-        );
-      if (Number(result.changes) !== 1) {
-        throw new ThreadNotFoundError(`Thread ${threadId} was not found`);
-      }
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        const result = this.#database
+          .prepare(`
+            UPDATE threads
+            SET version = ?, status = ?, state_json = ?, state_hash = ?,
+                last_event_id = ?, updated_at = ?
+            WHERE thread_id = ?
+          `)
+          .run(
+            replayed.version,
+            replayed.status,
+            stateJson,
+            stateHash,
+            lastEvent.eventId,
+            lastEvent.occurredAt,
+            threadId,
+          );
+        if (Number(result.changes) !== 1) {
+          throw new ThreadNotFoundError(`Thread ${threadId} was not found`);
+        }
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return {

@@ -1,26 +1,13 @@
-import { DatabaseSync } from "node:sqlite";
-
 import { createGenesisCanonicalEmbodimentMaterializer } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
 import { createThreadVisualPublicationProcess, startThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
-import { normalizeDatabasePath } from "#services/world-kernel/src/persistence.mjs";
 
-function createDurableThreadSource(databasePath) {
-  const normalizedPath = normalizeDatabasePath(databasePath);
+function createDurableThreadSource(identityStore) {
+  if (!identityStore || typeof identityStore.listThreadIds !== "function") {
+    throw new TypeError("visual publication runtime requires a World identity store");
+  }
   return Object.freeze({
-    listThreadIds() {
-      const database = new DatabaseSync(normalizedPath, {
-        readOnly: true,
-        enableForeignKeyConstraints: true,
-      });
-      try {
-        database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-        return database.prepare("SELECT thread_id FROM threads ORDER BY thread_id").all()
-          .map((row) => row.thread_id);
-      } finally {
-        database.close();
-      }
-    },
+    listThreadIds: () => identityStore.listThreadIds(),
   });
 }
 
@@ -39,7 +26,7 @@ export function attachWorldVisualPublicationRuntime({
   onResult = null,
   onError = null,
 } = {}) {
-  if (!worldRuntime?.store || !worldRuntime?.embodimentStore || typeof worldRuntime.databasePath !== "string") {
+  if (!worldRuntime?.store || !worldRuntime?.identityStore || !worldRuntime?.embodimentStore) {
     throw new TypeError("visual publication runtime requires a started World Kernel runtime");
   }
   const canonicalEmbodimentMaterializer = createGenesisCanonicalEmbodimentMaterializer({
@@ -54,7 +41,7 @@ export function attachWorldVisualPublicationRuntime({
     now,
   });
   const process = createThreadVisualPublicationProcess({
-    threadSource: createDurableThreadSource(worldRuntime.databasePath),
+    threadSource: createDurableThreadSource(worldRuntime.identityStore),
     reconciler,
     onResult,
     onError,

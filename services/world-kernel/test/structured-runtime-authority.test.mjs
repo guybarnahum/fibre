@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -98,16 +99,16 @@ function withDatabase(run) {
 }
 
 function openStructuredWorld(databasePath, time = controlledClock()) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
-  const expressionStore = openExpressionStore(databasePath);
-  const causalContextStore = openCausalContextStore(databasePath);
-  const semanticStateStore = openSemanticStateStore(databasePath);
-  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
-  const obligationStore = openObligationStore(databasePath);
-  const applicabilityStore = openObligationApplicabilityStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
+  const lifecycleStore = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
+  const expressionStore = openExpressionStore(localWorldStateStorage(databasePath));
+  const causalContextStore = openCausalContextStore(localWorldStateStorage(databasePath));
+  const semanticStateStore = openSemanticStateStore(localWorldStateStorage(databasePath));
+  const guardianCognitionStore = openGuardianCognitionStore(localWorldStateStorage(databasePath));
+  const obligationStore = openObligationStore(localWorldStateStorage(databasePath));
+  const applicabilityStore = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
   let afterApplicability = null;
   const applicabilityAuthority = {
     decideApplicability(input) {

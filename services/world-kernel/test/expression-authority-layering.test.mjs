@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -35,11 +36,11 @@ function withDatabase(run) {
 }
 
 function openWorld(databasePath) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
-  const expressionStore = openExpressionStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
+  const lifecycleStore = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
+  const expressionStore = openExpressionStore(localWorldStateStorage(databasePath));
   const service = new M1ExpressionWorldKernelService(
     worldStore,
     runtimeStore,
@@ -201,7 +202,7 @@ test("domain normalization alone refuses non-execution accept authority", () => 
 
 test("expression store alone refuses an accept-bearing non-execution record", () =>
   withDatabase((databasePath) => {
-    const store = openExpressionStore(databasePath);
+    const store = openExpressionStore(localWorldStateStorage(databasePath));
     try {
       assert.throws(
         () => store.recordNonExecutionAuthorization({

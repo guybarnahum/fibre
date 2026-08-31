@@ -1,6 +1,5 @@
-import { DatabaseSync } from "node:sqlite";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
-import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { normalizeEmbodimentRightsRevocation } from "./embodiment-rights-revocation.mjs";
 
 export class EmbodimentRightsRevocationConflictError extends Error {}
@@ -12,9 +11,8 @@ function digest(record) {
 export class EmbodimentRightsRevocationStore {
   #database;
 
-  constructor(databasePath) {
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), { enableForeignKeyConstraints: true });
-    this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { storeName: "EmbodimentRightsRevocationStore" });
     this.#database.exec(`
       CREATE TRIGGER IF NOT EXISTS embodiment_revoked_rights_no_new_representation
       BEFORE INSERT ON embodiment_records
@@ -46,44 +44,44 @@ export class EmbodimentRightsRevocationStore {
         throw new EmbodimentRightsRevocationConflictError(`rights revocation reference ${reference} is not durable Thread evidence`);
       }
     }
-    this.#database.exec("BEGIN IMMEDIATE");
     try {
-      const authority = this.#database.prepare(`
-        SELECT authority_kind,recorded_at
-        FROM embodiment_rights_authorities
-        WHERE authority_id=? AND thread_id=?
-      `).get(record.authorityId, record.threadId);
-      if (!authority) throw new EmbodimentRightsRevocationConflictError(`rights authority ${record.authorityId} does not exist for Thread ${record.threadId}`);
-      if (authority.authority_kind !== "explicit_consent") {
-        throw new EmbodimentRightsRevocationConflictError("only explicit consent authority can be revoked by its source");
-      }
-      if (Date.parse(record.recordedAt) < Date.parse(authority.recorded_at)) {
-        throw new EmbodimentRightsRevocationConflictError("rights revocation cannot predate its authority");
-      }
-      const prior = this.#database.prepare(
-        "SELECT record_json,record_digest FROM embodiment_rights_revocations WHERE authority_id=?",
-      ).get(record.authorityId);
-      if (prior) {
-        if (prior.record_json !== canonicalJson(record) || prior.record_digest !== digest(record)) {
-          throw new EmbodimentRightsRevocationConflictError(`rights authority ${record.authorityId} already has a different revocation`);
+      const transactionResult = this.#database.transaction(() => {
+        const authority = this.#database.prepare(`
+          SELECT authority_kind,recorded_at
+          FROM embodiment_rights_authorities
+          WHERE authority_id=? AND thread_id=?
+        `).get(record.authorityId, record.threadId);
+        if (!authority) throw new EmbodimentRightsRevocationConflictError(`rights authority ${record.authorityId} does not exist for Thread ${record.threadId}`);
+        if (authority.authority_kind !== "explicit_consent") {
+          throw new EmbodimentRightsRevocationConflictError("only explicit consent authority can be revoked by its source");
         }
-        this.#database.exec("COMMIT");
+        if (Date.parse(record.recordedAt) < Date.parse(authority.recorded_at)) {
+          throw new EmbodimentRightsRevocationConflictError("rights revocation cannot predate its authority");
+        }
+        const prior = this.#database.prepare(
+          "SELECT record_json,record_digest FROM embodiment_rights_revocations WHERE authority_id=?",
+        ).get(record.authorityId);
+        if (prior) {
+          if (prior.record_json !== canonicalJson(record) || prior.record_digest !== digest(record)) {
+            throw new EmbodimentRightsRevocationConflictError(`rights authority ${record.authorityId} already has a different revocation`);
+          }
+
+          return record;
+        }
+        this.#database.prepare(`
+          INSERT INTO embodiment_rights_revocations(
+            revocation_id,thread_id,authority_id,record_json,record_digest,recorded_at
+          ) VALUES (?,?,?,?,?,?)
+        `).run(record.revocationId, record.threadId, record.authorityId, canonicalJson(record), digest(record), record.recordedAt);
         return record;
-      }
-      this.#database.prepare(`
-        INSERT INTO embodiment_rights_revocations(
-          revocation_id,thread_id,authority_id,record_json,record_digest,recorded_at
-        ) VALUES (?,?,?,?,?,?)
-      `).run(record.revocationId, record.threadId, record.authorityId, canonicalJson(record), digest(record), record.recordedAt);
-      this.#database.exec("COMMIT");
-      return record;
+      });
+      return transactionResult;
     } catch (error) {
-      try { this.#database.exec("ROLLBACK"); } catch {}
       throw error;
     }
   }
 }
 
-export function openEmbodimentRightsRevocationStore(databasePath) {
-  return new EmbodimentRightsRevocationStore(databasePath);
+export function openEmbodimentRightsRevocationStore(storage) {
+  return new EmbodimentRightsRevocationStore(storage);
 }

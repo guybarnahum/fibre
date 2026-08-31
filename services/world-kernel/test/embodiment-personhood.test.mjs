@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,7 +20,7 @@ function withDb(run) {
   const dir = mkdtempSync(join(tmpdir(), "fibre-emb-personhood-"));
   const databasePath = join(dir, "world.sqlite");
   try {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const seeded = world.seedThread(structuredClone(fixture)).thread;
     world.close();
     return run(databasePath, seeded.provenance.lastEventId);
@@ -96,7 +97,7 @@ test("an asset cannot substitute for a meaningful embodiment specification", () 
 });
 
 test("embodiment source and consent are durable Thread-scoped authority, not labels", () => withDb((databasePath, eventRef) => {
-  const store = openEmbodimentStore(databasePath);
+  const store = openEmbodimentStore(localWorldStateStorage(databasePath));
   const fakeAuthority = rights(fixture.threadId, "evt_not_real", "private", "fake");
   assert.throws(() => store.recordRightsAuthority(fakeAuthority), /not durable evidence/);
 
@@ -109,7 +110,7 @@ test("embodiment source and consent are durable Thread-scoped authority, not lab
 }));
 
 test("rights-grounded embodiment accumulates permission and needs fresh authority to become more public", () => withDb((databasePath, eventRef) => {
-  const store = openEmbodimentStore(databasePath);
+  const store = openEmbodimentStore(localWorldStateStorage(databasePath));
   const first = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "a"));
   const second = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "b"));
   const publicAuthority = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "public", "public"));
@@ -125,7 +126,7 @@ test("rights-grounded embodiment accumulates permission and needs fresh authorit
 }));
 
 test("embodiment lineage cannot silently change who it depicts", () => withDb((databasePath, eventRef) => {
-  const store = openEmbodimentStore(databasePath);
+  const store = openEmbodimentStore(localWorldStateStorage(databasePath));
   const mina = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "mina", "human_mina_source"));
   const other = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "other", "human_other_source"));
   store.record(humanPortrait({ revision: 1, eventRef, permissionReferences: [mina.authorityId] }));
@@ -138,7 +139,7 @@ test("embodiment lineage cannot silently change who it depicts", () => withDb((d
 }));
 
 test("legitimate subject change is explicit, prior-bound, and witnessed", () => withDb((databasePath, eventRef) => {
-  const store = openEmbodimentStore(databasePath);
+  const store = openEmbodimentStore(localWorldStateStorage(databasePath));
   const mina = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "mina"));
   const firstSpec = specification();
   const first = store.record(humanPortrait({ revision: 1, eventRef, permissionReferences: [mina.authorityId], spec: firstSpec }));
@@ -160,7 +161,7 @@ test("legitimate subject change is explicit, prior-bound, and witnessed", () => 
 }));
 
 test("captured_source with explicit consent cannot swap consent or depicted human", () => withDb((databasePath, eventRef) => {
-  const store = openEmbodimentStore(databasePath);
+  const store = openEmbodimentStore(localWorldStateStorage(databasePath));
   const mina = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "captured-mina"));
   const other = store.recordRightsAuthority(rights(fixture.threadId, eventRef, "private", "captured-other", "human_other_source"));
   store.record(humanPortrait({ revision: 1, eventRef, permissionReferences: [mina.authorityId], representationKind: "captured_source", truthStatus: "captured_source_evidence" }));

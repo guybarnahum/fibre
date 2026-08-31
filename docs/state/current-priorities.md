@@ -133,7 +133,7 @@ The hostile provider-free closeout reproduced the sealed result offline and reje
 
 The critical path is the Fibre organism and the standing claims about it, not infrastructure completeness. Cross-cutting infrastructure belongs on the critical path only when it enables the current Fibre capability, preserves a required semantic invariant, removes a demonstrated milestone blocker, or supplies the smallest representative proof needed to continue safely.
 
-The visual/deployment vertical has reached its stop condition. Unrelated media/provider polish and exhaustive provider parity return to backlog. Existing direct SQLite/file persistence paths remain explicit migration debt rather than an automatic prerequisite for #41.
+The visual/deployment vertical has reached its stop condition. Unrelated media/provider polish and exhaustive provider parity return to backlog. Authoritative World relational persistence now crosses `InfraDriver.state`; the remaining durable model-invocation filesystem journal and later cloud runtime/scheduler composition remain explicit infrastructure work rather than an automatic prerequisite for #41.
 
 The production rule remains strict for new code: do not create new persistence bypasses or new semantic authorities.
 

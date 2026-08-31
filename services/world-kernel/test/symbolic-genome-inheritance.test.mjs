@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -59,7 +60,7 @@ function parentThread(threadId, name) {
 }
 
 function seedParents(databasePath) {
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath));
   const parentA = parentThread("thr_genome_parent_a", "Parent A");
   const parentB = parentThread("thr_genome_parent_b", "Parent B");
   world.seedThread(parentA);
@@ -101,7 +102,7 @@ test("locus gate protects atomic textual form without pretending to judge specif
 test("deterministic crossover preserves exact source loci and explicit mutation witnesses", () =>
   withDatabase((databasePath) => {
     seedParents(databasePath);
-    const store = new SymbolicGenomeStore(databasePath);
+    const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
     const { sourceA, sourceB } = sourceBundles(store);
     const child = buildRecombinedSymbolicGenome({
       threadId: "thr_genome_child",
@@ -146,7 +147,7 @@ test("deterministic crossover preserves exact source loci and explicit mutation 
     assert.deepEqual(inspected.genome.loci, child.loci);
     store.close();
 
-    const reader = new SymbolicGenomeStore(databasePath, { readOnly: true });
+    const reader = new SymbolicGenomeStore(localWorldStateStorage(databasePath), { readOnly: true });
     assert.equal(reader.queryOnly(), true);
     assert.deepEqual(reader.getGenome(child.header.genomeId), child);
     reader.close();
@@ -155,7 +156,7 @@ test("deterministic crossover preserves exact source loci and explicit mutation 
 test("Thread-owned source genomes require the exact persisted source owner and a live source Thread", () =>
   withDatabase((databasePath) => {
     seedParents(databasePath);
-    const store = new SymbolicGenomeStore(databasePath);
+    const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
     const { sourceA, sourceB } = sourceBundles(store);
     const child = buildRecombinedSymbolicGenome({
       threadId: "thr_genome_child_eligibility",
@@ -189,9 +190,9 @@ test("Thread-owned source genomes require the exact persisted source owner and a
 
 test("synthetic-lineage source genomes belong to synthetic ancestors without minting fake parent Threads", () =>
   withDatabase((databasePath) => {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.close();
-    const store = new SymbolicGenomeStore(databasePath);
+    const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
     const mother = buildSyntheticAncestorSymbolicGenome({
       ancestorId: "ancestor.synthetic.mother",
       genesisId: "gen_synthetic_lineage_sources",
@@ -226,7 +227,7 @@ test("synthetic-lineage source genomes belong to synthetic ancestors without min
 test("inherited text cannot change without an explicit mutation witness", () =>
   withDatabase((databasePath) => {
     seedParents(databasePath);
-    const store = new SymbolicGenomeStore(databasePath);
+    const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
     const { sourceA, sourceB } = sourceBundles(store);
     const child = buildRecombinedSymbolicGenome({
       threadId: "thr_genome_child_tamper",
@@ -243,9 +244,9 @@ test("inherited text cannot change without an explicit mutation witness", () =>
 
 test("symbolic genotype is immutable after persistence", () =>
   withDatabase((databasePath) => {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.close();
-    const store = new SymbolicGenomeStore(databasePath);
+    const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
     const genome = buildDeNovoSymbolicGenome({
       threadId: "thr_future_genome_owner",
       genesisId: "gen_future_genome_owner",
@@ -269,9 +270,9 @@ test("symbolic genotype is immutable after persistence", () =>
 
 test("read-only genome inspection is empty on worlds that never enabled symbolic genomes", () =>
   withDatabase((databasePath) => {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.close();
-    const reader = new SymbolicGenomeStore(databasePath, { readOnly: true });
+    const reader = new SymbolicGenomeStore(localWorldStateStorage(databasePath), { readOnly: true });
     assert.deepEqual(reader.inspectGenome("genome_none"), {
       genomeId: "genome_none",
       genome: null,

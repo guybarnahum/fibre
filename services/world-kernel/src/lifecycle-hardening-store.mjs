@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -8,10 +7,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   freezeReportDigest,
   memoryRecordDigest,
@@ -46,13 +44,8 @@ function sorted(values) {
 export class LifecycleHardeningStore {
   #database;
 
-  constructor(databasePath) {
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-    );
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { storeName: "LifecycleHardeningStore" });
     try {
       migrateDatabase(this.#database);
     } catch (error) {
@@ -199,129 +192,129 @@ export class LifecycleHardeningStore {
     if (prior) return { abandonment: prior, idempotent: true };
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const raced = this.#database.prepare(
-        "SELECT operation_digest FROM runtime_abandons WHERE operation_id=?",
-      ).get(record.operationId);
-      if (raced) {
-        this.#database.exec("COMMIT");
-        return {
-          abandonment: this.getRuntimeAbandonmentByOperation(
-            record.operationId,
-            record.operationDigest,
-            { required: true },
-          ),
-          idempotent: true,
-        };
-      }
+      const transactionResult = this.#database.transaction(() => {
+        const raced = this.#database.prepare(
+          "SELECT operation_digest FROM runtime_abandons WHERE operation_id=?",
+        ).get(record.operationId);
+        if (raced) {
 
-      const runtime = this.#database.prepare(`
-        SELECT s.status AS session_status,s.request_id,s.authorization_id,s.lease_id,
-          l.status AS lease_status,l.acquired_at,l.expires_at,
-          ga.audit_id,ga.audit_json,
-          ra.operation_id AS abandon_operation_id,
-          c.operation_id AS consumption_operation_id,
-          f.report_id
-        FROM runtime_sessions s
-        JOIN thaw_leases l ON l.lease_id=s.lease_id
-        LEFT JOIN goal_guardian_audits ga ON ga.session_id=s.session_id
-        LEFT JOIN runtime_abandons ra ON ra.session_id=s.session_id
-        LEFT JOIN authorization_consumptions c ON c.authorization_id=s.authorization_id
-        LEFT JOIN freeze_reports f ON f.session_id=s.session_id
-        WHERE s.thread_id=? AND s.session_id=?
-      `).get(record.threadId, record.sessionId);
-      if (!runtime) {
-        throw new RuntimeAbandonNotFoundError(
-          `Runtime session ${record.sessionId} was not found for Thread ${record.threadId}`,
-        );
-      }
-      if (runtime.abandon_operation_id) {
-        throw new RuntimeAbandonConflictError(
-          `Runtime session ${record.sessionId} was already abandoned by ${runtime.abandon_operation_id}`,
-        );
-      }
-      if (runtime.session_status !== "active" || runtime.lease_status !== "active") {
-        throw new RuntimeAbandonRejectedError(
-          `Runtime session ${record.sessionId} is not active`,
-        );
-      }
-      if (Date.parse(record.abandonedAt) < Date.parse(runtime.acquired_at)) {
-        throw new IntegrityError("kernel clock moved before lease acquisition");
-      }
-      if (Date.parse(record.abandonedAt) >= Date.parse(runtime.expires_at)) {
-        throw new RuntimeAbandonRejectedError(
-          `Runtime session ${record.sessionId} lease expired before abandonment`,
-        );
-      }
-      if (!runtime.audit_id) {
-        throw new RuntimeAbandonRejectedError(
-          `Runtime session ${record.sessionId} has no Goal Guardian audit`,
-        );
-      }
-      const audit = parseJson(`Goal Guardian audit ${runtime.audit_id}`, runtime.audit_json);
-      if (audit.decision !== "reject") {
-        throw new RuntimeAbandonRejectedError(
-          "runtime abandonment requires Goal Guardian decision reject",
-        );
-      }
-      if (runtime.consumption_operation_id || runtime.report_id) {
-        throw new RuntimeAbandonRejectedError(
-          `Runtime session ${record.sessionId} already changed authoritative state`,
-        );
-      }
-      for (const [name, actual, expected] of [
-        ["request", record.requestId, runtime.request_id],
-        ["authorization", record.authorizationId, runtime.authorization_id],
-        ["Goal Guardian audit", record.goalGuardianAuditId, runtime.audit_id],
-      ]) {
-        if (actual !== expected) {
-          throw new RuntimeAbandonConflictError(
-            `Runtime abandonment ${name} binding changed before commit`,
+          return {
+            abandonment: this.getRuntimeAbandonmentByOperation(
+              record.operationId,
+              record.operationDigest,
+              { required: true },
+            ),
+            idempotent: true,
+          };
+        }
+
+        const runtime = this.#database.prepare(`
+          SELECT s.status AS session_status,s.request_id,s.authorization_id,s.lease_id,
+            l.status AS lease_status,l.acquired_at,l.expires_at,
+            ga.audit_id,ga.audit_json,
+            ra.operation_id AS abandon_operation_id,
+            c.operation_id AS consumption_operation_id,
+            f.report_id
+          FROM runtime_sessions s
+          JOIN thaw_leases l ON l.lease_id=s.lease_id
+          LEFT JOIN goal_guardian_audits ga ON ga.session_id=s.session_id
+          LEFT JOIN runtime_abandons ra ON ra.session_id=s.session_id
+          LEFT JOIN authorization_consumptions c ON c.authorization_id=s.authorization_id
+          LEFT JOIN freeze_reports f ON f.session_id=s.session_id
+          WHERE s.thread_id=? AND s.session_id=?
+        `).get(record.threadId, record.sessionId);
+        if (!runtime) {
+          throw new RuntimeAbandonNotFoundError(
+            `Runtime session ${record.sessionId} was not found for Thread ${record.threadId}`,
           );
         }
-      }
-      const digest = runtimeAbandonRecordDigest(record.abandonment);
-      same("runtime abandonment input digest", digest, record.recordDigest);
+        if (runtime.abandon_operation_id) {
+          throw new RuntimeAbandonConflictError(
+            `Runtime session ${record.sessionId} was already abandoned by ${runtime.abandon_operation_id}`,
+          );
+        }
+        if (runtime.session_status !== "active" || runtime.lease_status !== "active") {
+          throw new RuntimeAbandonRejectedError(
+            `Runtime session ${record.sessionId} is not active`,
+          );
+        }
+        if (Date.parse(record.abandonedAt) < Date.parse(runtime.acquired_at)) {
+          throw new IntegrityError("kernel clock moved before lease acquisition");
+        }
+        if (Date.parse(record.abandonedAt) >= Date.parse(runtime.expires_at)) {
+          throw new RuntimeAbandonRejectedError(
+            `Runtime session ${record.sessionId} lease expired before abandonment`,
+          );
+        }
+        if (!runtime.audit_id) {
+          throw new RuntimeAbandonRejectedError(
+            `Runtime session ${record.sessionId} has no Goal Guardian audit`,
+          );
+        }
+        const audit = parseJson(`Goal Guardian audit ${runtime.audit_id}`, runtime.audit_json);
+        if (audit.decision !== "reject") {
+          throw new RuntimeAbandonRejectedError(
+            "runtime abandonment requires Goal Guardian decision reject",
+          );
+        }
+        if (runtime.consumption_operation_id || runtime.report_id) {
+          throw new RuntimeAbandonRejectedError(
+            `Runtime session ${record.sessionId} already changed authoritative state`,
+          );
+        }
+        for (const [name, actual, expected] of [
+          ["request", record.requestId, runtime.request_id],
+          ["authorization", record.authorizationId, runtime.authorization_id],
+          ["Goal Guardian audit", record.goalGuardianAuditId, runtime.audit_id],
+        ]) {
+          if (actual !== expected) {
+            throw new RuntimeAbandonConflictError(
+              `Runtime abandonment ${name} binding changed before commit`,
+            );
+          }
+        }
+        const digest = runtimeAbandonRecordDigest(record.abandonment);
+        same("runtime abandonment input digest", digest, record.recordDigest);
 
-      this.#database.prepare(`
-        INSERT INTO runtime_abandons(
-          abandonment_id,operation_id,operation_digest,session_id,thread_id,request_id,
-          authorization_id,audit_id,reason,record_json,record_digest,abandoned_at,
-          causation_id,correlation_id
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.abandonment.abandonmentId,
-        record.operationId,
-        record.operationDigest,
-        record.sessionId,
-        record.threadId,
-        record.requestId,
-        record.authorizationId,
-        record.goalGuardianAuditId,
-        record.abandonment.reason,
-        canonicalJson(record.abandonment),
-        record.recordDigest,
-        record.abandonedAt,
-        record.abandonment.causationId,
-        record.abandonment.correlationId,
-      );
-      const sessionUpdate = this.#database.prepare(`
-        UPDATE runtime_sessions SET status='aborted',completed_at=?
-        WHERE session_id=? AND status='active'
-      `).run(record.abandonedAt, record.sessionId);
-      const leaseUpdate = this.#database.prepare(`
-        UPDATE thaw_leases
-        SET status='released',released_at=?,release_reason='guardian_rejected_abandon'
-        WHERE lease_id=? AND status='active'
-      `).run(record.abandonedAt, runtime.lease_id);
-      if (Number(sessionUpdate.changes) !== 1 || Number(leaseUpdate.changes) !== 1) {
-        throw new RuntimeAbandonConflictError(
-          `Runtime session ${record.sessionId} changed during abandonment`,
+        this.#database.prepare(`
+          INSERT INTO runtime_abandons(
+            abandonment_id,operation_id,operation_digest,session_id,thread_id,request_id,
+            authorization_id,audit_id,reason,record_json,record_digest,abandoned_at,
+            causation_id,correlation_id
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.abandonment.abandonmentId,
+          record.operationId,
+          record.operationDigest,
+          record.sessionId,
+          record.threadId,
+          record.requestId,
+          record.authorizationId,
+          record.goalGuardianAuditId,
+          record.abandonment.reason,
+          canonicalJson(record.abandonment),
+          record.recordDigest,
+          record.abandonedAt,
+          record.abandonment.causationId,
+          record.abandonment.correlationId,
         );
-      }
-      this.#database.exec("COMMIT");
+        const sessionUpdate = this.#database.prepare(`
+          UPDATE runtime_sessions SET status='aborted',completed_at=?
+          WHERE session_id=? AND status='active'
+        `).run(record.abandonedAt, record.sessionId);
+        const leaseUpdate = this.#database.prepare(`
+          UPDATE thaw_leases
+          SET status='released',released_at=?,release_reason='guardian_rejected_abandon'
+          WHERE lease_id=? AND status='active'
+        `).run(record.abandonedAt, runtime.lease_id);
+        if (Number(sessionUpdate.changes) !== 1 || Number(leaseUpdate.changes) !== 1) {
+          throw new RuntimeAbandonConflictError(
+            `Runtime session ${record.sessionId} changed during abandonment`,
+          );
+        }
+      });
+      if (transactionResult !== undefined) return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
 
@@ -415,6 +408,6 @@ export class LifecycleHardeningStore {
   }
 }
 
-export function openLifecycleHardeningStore(databasePath) {
-  return new LifecycleHardeningStore(databasePath);
+export function openLifecycleHardeningStore(storage) {
+  return new LifecycleHardeningStore(storage);
 }

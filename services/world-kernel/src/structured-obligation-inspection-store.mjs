@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -25,7 +24,7 @@ import {
   structuredObligationDischargeDigest,
   structuredObligationDischargeId,
 } from "./structured-obligation-discharge.mjs";
-import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   normalizeStructuredAuthorityWithdrawal,
   structuredAuthorityWithdrawalDigest,
@@ -245,17 +244,8 @@ function rowToDischarge(row) {
 export class StructuredObligationInspectionStore {
   #database;
 
-  constructor(databasePath) {
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly: true,
-      enableForeignKeyConstraints: true,
-    });
-    try {
-      this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-    } catch (error) {
-      this.#database.close();
-      throw error;
-    }
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { readOnly: true, storeName: "StructuredObligationInspectionStore" });
   }
 
   close() {
@@ -263,7 +253,7 @@ export class StructuredObligationInspectionStore {
   }
 
   queryOnly() {
-    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
+    return true;
   }
 
   #requireThread(threadId) {
@@ -815,6 +805,6 @@ export class StructuredObligationInspectionStore {
   }
 }
 
-export function openStructuredObligationInspectionStore(databasePath) {
-  return new StructuredObligationInspectionStore(databasePath);
+export function openStructuredObligationInspectionStore(storage) {
+  return new StructuredObligationInspectionStore(storage);
 }

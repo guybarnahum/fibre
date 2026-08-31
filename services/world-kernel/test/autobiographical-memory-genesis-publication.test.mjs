@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -212,7 +213,7 @@ function publish(databasePath, {
   const thread = genesisThread(threadId);
   const lifeEpisode = episode();
   const memoryRecords = memories ?? [memoryFor(thread, genesisId, lifeEpisode)];
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   genesis.recordWorldSpec(worldSpec(worldSpecId));
   const result = publishMinimalGenesisPriorLifeFixture(genesis, {
     manifest: manifest(thread, 1 + memoryRecords.length, { worldSpecId, genesisId }),
@@ -229,7 +230,7 @@ test("Genesis atomically publishes v2 memory through #38 authority and counts it
     const { thread, memories, result } = publish(databasePath);
     const memory = memories[0];
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const events = world.listEvents(thread.threadId);
     assert.deepEqual(events.map((item) => item.eventType), [
       "THREAD_SEEDED",
@@ -249,7 +250,7 @@ test("Genesis atomically publishes v2 memory through #38 authority and counts it
     assert.doesNotThrow(() => world.verifyThreadIntegrity(thread.threadId));
     world.close();
 
-    const reader = openAutobiographicalMemoryInspectionStore(databasePath);
+    const reader = openAutobiographicalMemoryInspectionStore(localWorldStateStorage(databasePath));
     const history = reader.memoryHistory(thread.threadId, memory.memoryId);
     assert.equal(history.length, 1);
     assert.equal(history[0].rememberedContent, memory.rememberedContent);
@@ -282,7 +283,7 @@ test("Genesis publishes multiple meaning revisions through one memory lineage wi
     });
     assert.equal(result.thread.version, thread.version + 3);
 
-    const reader = openAutobiographicalMemoryInspectionStore(databasePath);
+    const reader = openAutobiographicalMemoryInspectionStore(localWorldStateStorage(databasePath));
     const history = reader.memoryHistory(thread.threadId, first.memoryId);
     assert.equal(history.length, 2);
     assert.equal(history[0].rememberedContent, history[1].rememberedContent);
@@ -308,7 +309,7 @@ test("Genesis refuses to redefine the Pass-B recollection during a meaning revis
       durable: true,
       overrides: { rememberedContent: "I now claim the childhood event was a completely different remembered scene." },
     });
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec("world_slice_d_rewrite_001"));
     assert.throws(
       () => publishMinimalGenesisPriorLifeFixture(genesis, {
@@ -342,7 +343,7 @@ test("Genesis memory subject must be an admitted Pass-A life event, never THREAD
       subject: invalidSubject,
       eventRefs: [invalidSubject.originEventRef],
     };
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec("world_slice_d_seed_memory_001"));
     assert.throws(
       () => publishMinimalGenesisPriorLifeFixture(genesis, {
@@ -366,7 +367,7 @@ test("failure after the first memory append rolls back Thread, events, memory, a
     const thread = genesisThread(threadId);
     const lifeEpisode = episode();
     const memory = memoryFor(thread, genesisId, lifeEpisode);
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec("world_slice_d_atomic_rollback"));
     assert.throws(
       () => publishMinimalGenesisPriorLifeFixture(genesis, {
@@ -400,7 +401,7 @@ test("failure after the first memory append rolls back Thread, events, memory, a
 
 test("ordinary #38 v2 writes use the same lineage rule that forbids Pass-C from rewriting Pass-B recollection", () =>
   withDatabase((databasePath) => {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.seedThread(structuredClone(mina));
     world.close();
     const database = new DatabaseSync(databasePath);
@@ -444,7 +445,7 @@ test("ordinary #38 v2 writes use the same lineage rule that forbids Pass-C from 
       status: "current",
       recordedAt: "2030-01-01T00:00:00Z",
     };
-    const writer = openAutobiographicalMemoryStore(databasePath);
+    const writer = openAutobiographicalMemoryStore(localWorldStateStorage(databasePath));
     writer.recordMemory(first);
     assert.throws(
       () => writer.recordMemory({

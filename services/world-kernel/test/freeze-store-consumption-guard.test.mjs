@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -98,9 +99,9 @@ function freezeBody() {
 test("freeze store rejects consumed authorization before the uniqueness constraint", () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-freeze-store-consumption-"));
   const databasePath = join(directory, "world.sqlite");
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
   const service = new M1FreezeWorldKernelService(
     worldStore,
     runtimeStore,

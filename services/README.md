@@ -45,14 +45,14 @@ Semantic stores remain responsible for Fibre meaning and invariants. `InfraDrive
 
 For new production work:
 
-- transactional domain state must target `infra.state` once that capability's executable contract is available;
+- transactional domain state targets the executable `infra.state` contract;
 - generated immutable bytes and immutable byte-level receipts use `infra.objects`;
 - ordered service/delivery streams use `infra.streams`;
 - derived query indexes use `infra.catalog` and never replace semantic authority;
 - asynchronous workflows, coordination, secrets and other infrastructure use the matching `InfraDriver` capability as it becomes executable;
 - provider-native storage IDs, bucket keys, database IDs and paths stay inside infrastructure/provider adapters.
 
-Do **not** introduce a new service-local SQLite authority, durable filesystem journal or direct cloud-storage/database SDK merely because it is convenient. Current World Kernel direct SQLite persistence and its durable model-invocation filesystem journal are explicit migration debt, not patterns to copy.
+Do **not** introduce a new service-local SQLite authority, durable filesystem journal or direct cloud-storage/database SDK merely because it is convenient. Authoritative World stores are already behind `InfraDriver.state`; the durable model-invocation filesystem journal remains explicit migration debt, not a pattern to copy.
 
 Repository fixtures, tests and disposable `.fibre/` development outputs are not production persistence. Tools may write those local artifacts directly. A service artifact that becomes part of a production Fibre world must cross the provider-neutral boundary appropriate to its role.
 

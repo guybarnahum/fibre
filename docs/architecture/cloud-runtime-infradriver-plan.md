@@ -1,7 +1,7 @@
 ---
 id: fibre-cloud-runtime-infradriver-plan
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-08-31
 canonical: true
 ---
 
@@ -116,7 +116,7 @@ World
  -> insidefibre.com Viewer
 ```
 
-However, World Kernel and Birth Center remain local Node runtimes, and authoritative World/Birth persistence still contains direct SQLite/filesystem assumptions. Therefore the current deployment is production-shaped but not fully cloud-hosted.
+World Kernel and Birth Center remain local Node runtimes. Authoritative World relational persistence now uses `InfraDriver.state` with local SQLite and Cloudflare SQLite-backed Durable Object providers, while the Birth Center durable model-invocation journal still has a direct filesystem assumption. Therefore the current deployment is production-shaped and World-state-portable, but not fully cloud-hosted.
 
 ## Target cloud topology
 
@@ -202,7 +202,7 @@ Do not grant services broad provider capabilities merely because the provider su
 
 ### Goal
 
-Implement cloud transactional state that satisfies Fibre's existing `transactional-state-v0.1` contract and the existing World/Birth guarantees:
+Implement cloud transactional state that satisfies Fibre's executable `transactional-state-v0.2` contract and the existing World/Birth guarantees:
 
 ```text
 relationalStatements
@@ -240,9 +240,7 @@ state.guarantees(scopeId)
 
 session.exec
 session.prepare
-session.beginWrite
-session.commit
-session.rollback
+session.transaction(callback)
 session.close
 ```
 
@@ -252,7 +250,7 @@ The local provider must implement the same contract and shared conformance tests
 
 ### Gate
 
-The same transactional state contract suite passes against local and Cloudflare providers, including conflict, rollback, durable commit, migration and restart cases.
+The same transactional state contract suite passes against local and Cloudflare providers, including serialized writes, rollback, durable commit, synchronous callbacks, transactional reads and read-only mutation rejection. **Completed before Slice B.**
 
 ## Cloud Slice B — World persistence portability
 
@@ -260,7 +258,7 @@ The same transactional state contract suite passes against local and Cloudflare 
 
 Remove direct database-path and filesystem persistence assumptions from authoritative World runtime composition.
 
-Today several World stores still open the shared local database directly. They must instead receive provider-neutral storage context such as:
+Before this slice, several World stores still opened the shared local database directly. They now receive provider-neutral storage context:
 
 ```text
 {
@@ -291,9 +289,11 @@ World schema initialization/migration must operate through the state capability.
 
 - authoritative World persistence runs through `InfraDriver.state`;
 - no production World store depends on local filesystem/database paths outside the local provider boundary;
-- existing local tests remain green through the local InfraDriver;
-- equivalent cloud state tests pass;
-- restart/replay recovers the same canonical authorities.
+- existing local tests run through the local InfraDriver;
+- the same real `WorldStore` migration/commit/reopen/rollback/integrity contract passes against local and Cloudflare state providers;
+- repository policy rejects renewed direct SQLite imports in production World source.
+
+**Implementation status:** code-complete locally on `agent/cloud-runtime-infradriver`; Slice B is closed only after the branch-wide gates and exact-head CI pass.
 
 ## Cloud Slice C — provider-neutral scheduler and World cloud runtime
 

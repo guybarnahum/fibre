@@ -3,7 +3,6 @@ import test from "node:test";
 
 import {
   DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS,
-  DIRECT_SQLITE_MIGRATION_PREFIXES,
   productionPersistenceViolationsForSource,
   validateProductionPersistencePolicy,
 } from "./production-persistence-policy.mjs";
@@ -24,14 +23,15 @@ test("new services cannot create a direct SQLite authority", () => {
   );
 });
 
-test("current World Kernel SQLite prefix is explicit migration debt, not a global exemption", () => {
-  assert.deepEqual(DIRECT_SQLITE_MIGRATION_PREFIXES, ["services/world-kernel/src/"]);
+test("authoritative World stores cannot bypass InfraDriver.state with direct SQLite", () => {
   assert.deepEqual(
     productionPersistenceViolationsForSource(
       "services/world-kernel/src/example-current-store.mjs",
       'import { DatabaseSync } from "node:sqlite";\n',
     ),
-    [],
+    [
+      "Production persistence bypass: services/world-kernel/src/example-current-store.mjs imports SQLite directly; new service state must use a semantic store over InfraDriver",
+    ],
   );
 });
 

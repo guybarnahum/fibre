@@ -3,12 +3,13 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { openStructuredObligationInspectionStore } from "#services/world-kernel/src/structured-obligation-inspection-store.mjs";
+import { localWorldStateStorage } from "../shared/local-world-state.mjs";
 
 export function inspectStructuredObligations(databasePath, { threadId = null } = {}) {
   const absolutePath = resolve(databasePath);
   if (!existsSync(absolutePath)) throw new Error(`database does not exist: ${absolutePath}`);
   if (!statSync(absolutePath).isFile()) throw new Error(`database path is not a file: ${absolutePath}`);
-  const store = openStructuredObligationInspectionStore(absolutePath);
+  const store = openStructuredObligationInspectionStore(localWorldStateStorage(absolutePath));
   try {
     const threadIds = threadId === null ? store.listThreadIds() : [threadId];
     const threads = threadIds.map((id) => ({

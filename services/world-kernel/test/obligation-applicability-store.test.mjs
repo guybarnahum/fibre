@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -112,7 +113,7 @@ function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-obligation-applicability-"));
   const databasePath = join(directory, "world.sqlite");
   try {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.seedThread(fixture);
     const kernel = new WorldKernelService(world);
     kernel.recordRequestAppraisal(fixture.threadId, {
@@ -129,7 +130,7 @@ function withDatabase(run) {
     });
     world.close();
 
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision(obligation(), { recordedAt: "2026-08-09T19:01:00.000Z" });
     obligations.close();
     return run(databasePath);
@@ -140,7 +141,7 @@ function withDatabase(run) {
 
 test("Fibre computes and persists an applies decision from current obligation and request witnesses", () =>
   withDatabase((databasePath) => {
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const input = decisionInput();
     const result = store.decideApplicability(input);
     assert.equal(result.created, true);
@@ -172,11 +173,11 @@ test("Fibre computes and persists an applies decision from current obligation an
 
 test("exact operation retry is idempotent after restart and ignores later kernel time", () =>
   withDatabase((databasePath) => {
-    let store = openObligationApplicabilityStore(databasePath);
+    let store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const first = store.decideApplicability(decisionInput());
     store.close();
 
-    store = openObligationApplicabilityStore(databasePath);
+    store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const retry = store.decideApplicability(decisionInput({
       decidedAt: "2026-08-09T20:10:00.000Z",
     }));
@@ -188,13 +189,13 @@ test("exact operation retry is idempotent after restart and ignores later kernel
 
 test("operation identity cannot be reused for a different nomination", () =>
   withDatabase((databasePath) => {
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision(obligation({ obligationId: OBLIGATION_B }), {
       recordedAt: "2026-08-09T19:02:00.000Z",
     });
     obligations.close();
 
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     store.decideApplicability(decisionInput());
     assert.throws(
       () => store.decideApplicability(decisionInput({ obligationId: OBLIGATION_B })),
@@ -210,7 +211,7 @@ test("operation identity cannot be reused for a different nomination", () =>
 
 test("caller cannot author applicability result, reason, policy, revision, digest, or evidence", () =>
   withDatabase((databasePath) => {
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     for (const [key, value] of [
       ["result", "applies"],
       ["reasonCode", "request_binding_match"],
@@ -230,11 +231,11 @@ test("caller cannot author applicability result, reason, policy, revision, diges
 
 test("Fibre resolves the exact current revision rather than a caller-selected historical revision", () =>
   withDatabase((databasePath) => {
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision(revision2(), { recordedAt: "2026-08-09T20:02:30.000Z" });
     obligations.close();
 
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const result = store.decideApplicability(decisionInput({
       decidedAt: "2026-08-09T20:03:00.000Z",
     }));
@@ -245,14 +246,14 @@ test("Fibre resolves the exact current revision rather than a caller-selected hi
 
 test("unrelated current obligation persists does_not_apply instead of gaining authority from nomination", () =>
   withDatabase((databasePath) => {
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision(obligation({
       obligationId: OBLIGATION_B,
       binding: WRONG_FINGERPRINT,
     }), { recordedAt: "2026-08-09T19:02:00.000Z" });
     obligations.close();
 
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const result = store.decideApplicability(decisionInput({
       operationId: "oba_op_unrelated",
       obligationId: OBLIGATION_B,
@@ -268,17 +269,17 @@ test("unknown and foreign obligation nominations produce no applicability author
     const other = structuredClone(fixture);
     other.threadId = "thr_mina_applicability_other";
     other.identity.name = "Mina Other";
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.seedThread(other);
     world.close();
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision({
       ...obligation({ obligationId: OBLIGATION_B }),
       threadId: other.threadId,
     }, { recordedAt: "2026-08-09T19:02:00.000Z" });
     obligations.close();
 
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.decideApplicability(decisionInput({
         operationId: "oba_op_unknown",
@@ -299,15 +300,15 @@ test("unknown and foreign obligation nominations produce no applicability author
 
 test("a persisted decision remains historical after revision advance while a new operation binds the new current revision", () =>
   withDatabase((databasePath) => {
-    let store = openObligationApplicabilityStore(databasePath);
+    let store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const first = store.decideApplicability(decisionInput());
     store.close();
 
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision(revision2(), { recordedAt: "2026-08-09T20:02:30.000Z" });
     obligations.close();
 
-    store = openObligationApplicabilityStore(databasePath);
+    store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const historicalRetry = store.decideApplicability(decisionInput({
       decidedAt: "2026-08-09T20:04:00.000Z",
     }));
@@ -338,7 +339,7 @@ test("request witness corruption is detected before any decision is persisted", 
     `).run(WRONG_FINGERPRINT, fixture.threadId, request().requestId);
     raw.close();
 
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.decideApplicability(decisionInput()),
       /activation request .* fingerprint failed/,
@@ -349,7 +350,7 @@ test("request witness corruption is detected before any decision is persisted", 
 
 test("decision chronology cannot predate its request or current obligation revision", () =>
   withDatabase((databasePath) => {
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.decideApplicability(decisionInput({
         operationId: "oba_op_too_early_request",
@@ -359,13 +360,13 @@ test("decision chronology cannot predate its request or current obligation revis
     );
     store.close();
 
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     obligations.recordRevision(revision2({ createdAt: "2026-08-09T20:02:00.000Z" }), {
       recordedAt: "2026-08-09T20:02:30.000Z",
     });
     obligations.close();
 
-    const reopened = openObligationApplicabilityStore(databasePath);
+    const reopened = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => reopened.decideApplicability(decisionInput({
         operationId: "oba_op_too_early_revision",
@@ -379,7 +380,7 @@ test("decision chronology cannot predate its request or current obligation revis
 
 test("append-only and SQL binding backstops independently reject rewritten or mismatched decisions", () =>
   withDatabase((databasePath) => {
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const persisted = store.decideApplicability(decisionInput());
     store.close();
 
@@ -439,8 +440,8 @@ test("append-only and SQL binding backstops independently reject rewritten or mi
 
 test("two independent applicability writers converge on one exact operation record", () =>
   withDatabase((databasePath) => {
-    const firstStore = openObligationApplicabilityStore(databasePath);
-    const secondStore = openObligationApplicabilityStore(databasePath);
+    const firstStore = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
+    const secondStore = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const first = firstStore.decideApplicability(decisionInput());
     const second = secondStore.decideApplicability(decisionInput({
       decidedAt: "2026-08-09T20:05:00.000Z",
@@ -456,7 +457,7 @@ test("two independent applicability writers converge on one exact operation reco
 test("legacy tombstone is Fibre-owned evidence that forces does_not_apply", () =>
   withDatabase((databasePath) => {
     const legacyDigest = `sha256:${"7".repeat(64)}`;
-    const obligations = openObligationStore(databasePath);
+    const obligations = openObligationStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => obligations.recordRevision(revision2({ legacySourceDigest: legacyDigest }), {
         recordedAt: "2026-08-09T20:02:30.000Z",
@@ -466,7 +467,7 @@ test("legacy tombstone is Fibre-owned evidence that forces does_not_apply", () =
     obligations.close();
 
     const legacyObligationId = `obl_${"7".repeat(64)}`;
-    const legacyObligations = openObligationStore(databasePath);
+    const legacyObligations = openObligationStore(localWorldStateStorage(databasePath));
     legacyObligations.recordRevision(obligation({
       obligationId: legacyObligationId,
       legacySourceDigest: legacyDigest,
@@ -491,7 +492,7 @@ test("legacy tombstone is Fibre-owned evidence that forces does_not_apply", () =
     );
     raw.close();
 
-    const store = openObligationApplicabilityStore(databasePath);
+    const store = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const result = store.decideApplicability(decisionInput({
       operationId: "oba_op_legacy_spent",
       obligationId: legacyObligationId,
@@ -507,7 +508,7 @@ test("legacy tombstone is Fibre-owned evidence that forces does_not_apply", () =
 
 test("read-only inspection re-derives applicability policy without downstream authority witnesses", () =>
   withDatabase((databasePath) => {
-    const applicability = openObligationApplicabilityStore(databasePath);
+    const applicability = openObligationApplicabilityStore(localWorldStateStorage(databasePath));
     const persisted = applicability.decideApplicability(decisionInput());
     assert.equal(persisted.decision.result, "applies");
     applicability.close();
@@ -540,7 +541,7 @@ test("read-only inspection re-derives applicability policy without downstream au
       db.close();
     }
 
-    const inspector = openStructuredObligationInspectionStore(databasePath);
+    const inspector = openStructuredObligationInspectionStore(localWorldStateStorage(databasePath));
     try {
       assert.throws(
         () => inspector.listRequestApplicability(fixture.threadId, request().requestId),

@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,7 +21,7 @@ function withDatabase(run) {
 
 test("schema version 3 migration creates rejected-runtime closure and spent-obligation guards", () =>
   withDatabase((databasePath) => {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.close();
 
     let database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -34,7 +35,7 @@ test("schema version 3 migration creates rejected-runtime closure and spent-obli
     `);
     database.close();
 
-    const lifecycle = openLifecycleHardeningStore(databasePath);
+    const lifecycle = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
     assert.equal(lifecycle.storageMetadata().schemaVersion, WORLD_STORE_SCHEMA_VERSION);
     lifecycle.close();
 
@@ -63,7 +64,7 @@ test("schema version 3 migration creates rejected-runtime closure and spent-obli
 
 test("runtime abandonment records are append-only", () =>
   withDatabase((databasePath) => {
-    const lifecycle = openLifecycleHardeningStore(databasePath);
+    const lifecycle = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
     lifecycle.close();
 
     const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: false });

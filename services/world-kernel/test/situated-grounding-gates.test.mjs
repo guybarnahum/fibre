@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,10 +20,10 @@ function withDb(run) {
 }
 
 test("situated-life writer requires a persisted evidence reference", () => withDb((db) => {
-  const world = openWorldStore(db);
+  const world = openWorldStore(localWorldStateStorage(db));
   world.seedThread(structuredClone(fixture));
   world.close();
-  const situated = openSituatedLifeStore(db);
+  const situated = openSituatedLifeStore(localWorldStateStorage(db));
   const relationId = lifeRelationId({ child: fixture.threadId, parent: "synthetic_mother" });
   assert.throws(() => situated.recordLifeRelation({
     relationId,
@@ -43,10 +44,10 @@ test("situated-life writer requires a persisted evidence reference", () => withD
 }));
 
 test("direct IdentityStore requires a real lived-event witness", () => withDb((db) => {
-  const world = openWorldStore(db);
+  const world = openWorldStore(localWorldStateStorage(db));
   world.seedThread(structuredClone(fixture));
   world.close();
-  const identity = openIdentityStore(db);
+  const identity = openIdentityStore(localWorldStateStorage(db));
   const candidate = livedCulturalFormationClaim({
     threadId: fixture.threadId,
     kind: "cultural_practice",
@@ -60,13 +61,13 @@ test("direct IdentityStore requires a real lived-event witness", () => withDb((d
 }));
 
 test("THREAD_SEEDED bookkeeping cannot establish lived cultural formation", () => withDb((db) => {
-  const world = openWorldStore(db);
+  const world = openWorldStore(localWorldStateStorage(db));
   world.seedThread(structuredClone(fixture));
   const seedEvent = world.listEvents(fixture.threadId).find((event) => event.eventType === "THREAD_SEEDED");
   assert.ok(seedEvent, "fixture seed event must exist");
   world.close();
 
-  const identity = openIdentityStore(db);
+  const identity = openIdentityStore(localWorldStateStorage(db));
   const candidate = livedCulturalFormationClaim({
     threadId: fixture.threadId,
     kind: "cultural_practice",

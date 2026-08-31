@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -67,7 +68,7 @@ test("World Kernel registration store resolves the same immutable record by FIN 
     const stored = persistCivilRegistrationInTransaction(database, record);
     assert.equal(stored.idempotent, false);
 
-    const registry = new CivilRegistryStore(databasePath);
+    const registry = new CivilRegistryStore(localWorldStateStorage(databasePath));
     assert.deepEqual(registry.getCivilRegistrationByFin(record.fibreIdentityNumber), record);
     assert.deepEqual(registry.getCivilRegistrationByThreadId(record.threadId), record);
     registry.close();
@@ -128,7 +129,7 @@ test("FIN and Thread mappings are one-to-one and registry rows are immutable", (
 
 test("read-only registry returns null for an unregistered Thread or FIN when requested", () =>
   withDatabase(({ databasePath }) => {
-    const registry = new CivilRegistryStore(databasePath);
+    const registry = new CivilRegistryStore(localWorldStateStorage(databasePath));
     assert.equal(registry.getCivilRegistrationByThreadId("thr_missing", { required: false }), null);
     assert.equal(
       registry.getCivilRegistrationByFin(fibreIdentityNumberFromPayload("ABCDEFGHJ"), { required: false }),

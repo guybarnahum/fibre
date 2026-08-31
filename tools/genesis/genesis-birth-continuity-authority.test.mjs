@@ -21,6 +21,7 @@ import {
 import { GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 import { buildGenesisBirthBundle, buildGenesisPublicationCognition } from "./genesis-life-publication.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 function cognition() {
   const adapter = Object.freeze({
@@ -98,7 +99,7 @@ test("GenesisStore refuses prior-life episodes without roster and life continuit
   };
   let store;
   try {
-    store = new GenesisStore(databasePath);
+    store = new GenesisStore(localWorldStateStorage(databasePath, { driverId: "sqlite-genesis-birth-continuity-test" }));
     store.recordWorldSpec(slotPlan.worldSpec);
     // The current compiler normally makes omission unreachable. Deliberately
     // remove both inputs here to exercise GenesisStore's authority boundary.

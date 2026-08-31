@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,7 +25,7 @@ function withDatabase(run) {
 }
 
 function seed(databasePath) {
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath));
   world.seedThread(structuredClone(fixture));
   world.close();
 }
@@ -32,7 +33,7 @@ function seed(databasePath) {
 test("Slice D fulfills every outstanding memory-photo obligation from durable Fibre prompts", async () =>
   withDatabase(async (databasePath) => {
     seed(databasePath);
-    const identity = openIdentityStore(databasePath);
+    const identity = openIdentityStore(localWorldStateStorage(databasePath));
     const memoryRef = fixture.memoryRefs[0];
     const pending = identity.getMemoryVisualCompanionHistory(fixture.threadId, memoryRef).at(-1).companion;
 
@@ -76,7 +77,7 @@ test("Slice D fulfills every outstanding memory-photo obligation from durable Fi
 test("provider failure, corrupt cache and regeneration never rewrite memory truth", async () =>
   withDatabase(async (databasePath) => {
     seed(databasePath);
-    const identity = openIdentityStore(databasePath);
+    const identity = openIdentityStore(localWorldStateStorage(databasePath));
     const memoryRef = fixture.memoryRefs[0];
     const original = identity.getMemoryVisualCompanionHistory(fixture.threadId, memoryRef).at(-1).companion;
 

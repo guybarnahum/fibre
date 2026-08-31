@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-08-31
 canonical: true
 machine-source: public-progress.json
 ---
@@ -73,7 +73,7 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 **Important limitation:** Atomicity is per Thread, and #39 proved it in a local validation World rather than a production persistence deployment.
 
-**More accurate description:** `publishBirth()` atomically publishes one admitted Thread's history, situated continuity, memory lineage, Genesis manifest and FIN/civil registration. Production `InfraDriver.state` migration remains separate work.
+**More accurate description:** `publishBirth()` atomically publishes one admitted Thread's history, situated continuity, memory lineage, Genesis manifest and FIN/civil registration. The authoritative World store boundary now runs through `InfraDriver.state`; the original #39 evidence remains a local validation run rather than a deployed cloud-World proof.
 
 ### Prior-life Genesis and canonical birth — Done
 
@@ -145,9 +145,9 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 ### The repository is not fully migrated to production persistence — Not yet
 
-**Simple English:** Some World and Genesis authorities still use local persistence paths even though the deployment-facing visual/publication path is production-shaped.
+**Simple English:** Fibre's authoritative World data can now use the same storage contract locally or through the Cloudflare state adapter, but one durable model-call journal and the full cloud runtime still need migration.
 
-**More accurate description:** World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt. The completed A-H vertical proves provider selection, credentialing, public presentation, Viewer binding and recovery at the representative boundary; it does not convert every semantic store to `InfraDriver.state`.
+**More accurate description:** Authoritative World/Genesis relational stores now open one logical state scope through `InfraDriver.state`, with local SQLite and Cloudflare SQLite-backed Durable Object implementations tested against the same real `WorldStore` transaction contract. The durable model-invocation filesystem journal, cloud scheduler/reconciliation and deployed World/Birth runtimes remain separate work.
 
 ## What follows after #41
 

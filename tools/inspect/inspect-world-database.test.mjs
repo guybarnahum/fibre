@@ -9,6 +9,7 @@ import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { repoFile } from "#repo-root";
 import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
 import { runM1ReviewedProof } from "#tools/replays/m1/m1-reviewed-proof.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 import {
   formatWorldDatabaseSummary,
   inspectWorldDatabase,
@@ -23,13 +24,14 @@ const fixture = JSON.parse(
 function seededDatabase() {
   const directory = mkdtempSync(join(tmpdir(), "fibre-inspector-test-"));
   const databasePath = join(directory, "world.sqlite");
-  const store = openWorldStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-world-inspector-test" });
+  const store = openWorldStore(worldStorage);
   try {
     store.seedThread(fixture);
   } finally {
     store.close();
   }
-  const expressionStore = openExpressionStore(databasePath);
+  const expressionStore = openExpressionStore(worldStorage);
   expressionStore.close();
   return { directory, databasePath };
 }

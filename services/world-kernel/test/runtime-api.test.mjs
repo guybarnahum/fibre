@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -114,8 +115,8 @@ async function startApi({ leaseDurationMs = 60_000 } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-runtime-api-"));
   const databasePath = join(directory, "world.sqlite");
   const time = controlledClock();
-  const store = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
   const service = new M1RuntimeWorldKernelService(store, runtimeStore, {
     clock: time.clock,
     leaseDurationMs,

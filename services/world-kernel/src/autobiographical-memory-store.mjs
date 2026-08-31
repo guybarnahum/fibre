@@ -1,11 +1,9 @@
-import { DatabaseSync } from "node:sqlite";
 import { IntegrityError, canonicalJson } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   autobiographicalMemoryIsCurrent,
   autobiographicalMemoryRecordDigest,
@@ -35,16 +33,11 @@ export class AutobiographicalMemoryStore {
   #database;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "AutobiographicalMemoryStore" });
     try {
-      if (readOnly) this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      else {
-        this.#database.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;");
+      if (!readOnly) {
         migrateDatabase(this.#database);
       }
     } catch (error) {
@@ -54,7 +47,7 @@ export class AutobiographicalMemoryStore {
   }
 
   close() { this.#database.close(); }
-  queryOnly() { return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1; }
+  queryOnly() { return this.#readOnly; }
 
   #requireThread(threadId) {
     const row = this.#database.prepare(`
@@ -200,32 +193,32 @@ export class AutobiographicalMemoryStore {
     const record = normalizeAutobiographicalMemory(candidate);
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const history = this.memoryHistory(record.threadId, record.memoryId, { required: false });
-      if (history.length !== record.revision - 1) {
-        throw new AutobiographicalMemoryConflictError(`memory ${record.memoryId} expected revision ${history.length + 1}`);
-      }
-      const previous = history.at(-1) ?? null;
-      const previousDigest = previous === null
-        ? null
-        : this.#database.prepare(
-          "SELECT record_digest FROM autobiographical_memory_records WHERE memory_id=? AND revision=?",
-        ).get(record.memoryId, previous.revision).record_digest;
-      const appended = appendAutobiographicalMemoryRevisionInTransaction(this.#database, record, {
-        previousRecord: previous,
-        previousDigest,
-        ConflictErrorType: AutobiographicalMemoryConflictError,
-        createdFrom: "persisted_autobiographical_memory",
+      const transactionResult = this.#database.transaction(() => {
+        const history = this.memoryHistory(record.threadId, record.memoryId, { required: false });
+        if (history.length !== record.revision - 1) {
+          throw new AutobiographicalMemoryConflictError(`memory ${record.memoryId} expected revision ${history.length + 1}`);
+        }
+        const previous = history.at(-1) ?? null;
+        const previousDigest = previous === null
+          ? null
+          : this.#database.prepare(
+            "SELECT record_digest FROM autobiographical_memory_records WHERE memory_id=? AND revision=?",
+          ).get(record.memoryId, previous.revision).record_digest;
+        const appended = appendAutobiographicalMemoryRevisionInTransaction(this.#database, record, {
+          previousRecord: previous,
+          previousDigest,
+          ConflictErrorType: AutobiographicalMemoryConflictError,
+          createdFrom: "persisted_autobiographical_memory",
+        });
+        return appended.record;
       });
-      this.#database.exec("COMMIT");
-      return appended.record;
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       if (error instanceof IntegrityError || error instanceof AutobiographicalMemoryConflictError || error instanceof AutobiographicalMemoryNotFoundError) throw error;
       throw translateStorageError(error);
     }
   }
 }
 
-export function openAutobiographicalMemoryStore(databasePath) { return new AutobiographicalMemoryStore(databasePath); }
-export function openAutobiographicalMemoryInspectionStore(databasePath) { return new AutobiographicalMemoryStore(databasePath, { readOnly: true }); }
+export function openAutobiographicalMemoryStore(storage) { return new AutobiographicalMemoryStore(storage); }
+export function openAutobiographicalMemoryInspectionStore(storage) { return new AutobiographicalMemoryStore(storage, { readOnly: true }); }

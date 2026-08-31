@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -100,12 +101,12 @@ function publishLivedThread(databasePath) {
     createdAt: "2026-08-13T15:58:30Z",
   };
 
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   genesis.recordWorldSpec(worldSpec);
   publishMinimalGenesisPriorLifeFixture(genesis, { manifest, thread, episodes });
   genesis.close();
 
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath));
   const events = world.listEvents(thread.threadId);
   world.close();
   return {
@@ -120,7 +121,7 @@ test("language formation requires a real lived event and remains context-only", 
   const db = join(dir, "world.sqlite");
   try {
     const published = publishLivedThread(db);
-    const service = new SituatedLanguageService(db);
+    const service = new SituatedLanguageService(localWorldStateStorage(db));
     const input = {
       threadId: published.threadId,
       kind: "household_language_use",

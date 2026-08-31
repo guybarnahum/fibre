@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -27,13 +28,13 @@ async function withDatabase(run) {
 }
 
 function seed(databasePath) {
-  const store = openWorldStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
   store.seedThread(structuredClone(fixture));
   store.close();
 }
 
 function recordCandidateAssertion(databasePath) {
-  const identity = openIdentityStore(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
   const seedEvent = identity.getCurrentIdentityView(fixture.threadId).assertions[0].sourceReferences[0];
   const claimId = identityClaimId({ threadId: fixture.threadId, purpose: "album-repair-practice" });
   const recordedAt = "2026-08-14T20:15:00Z";
@@ -146,7 +147,7 @@ test("an admitted identity claim crosses the Guardian boundary and exact-claim a
   const stored = recordCandidateAssertion(databasePath);
 
   // Reopen read-only so the proof consumes durable identity state rather than the write object.
-  const inspector = openIdentityInspectionStore(databasePath);
+  const inspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
   const identityView = inspector.getCurrentIdentityView(fixture.threadId);
   inspector.close();
 
@@ -215,7 +216,7 @@ test("an admitted identity claim crosses the Guardian boundary and exact-claim a
     "the Guardian evidence schema admits the projected claim ref",
   );
 
-  const integrity = openIdentityInspectionStore(databasePath);
+  const integrity = openIdentityInspectionStore(localWorldStateStorage(databasePath));
   assert.equal(integrity.verifyThreadIdentityIntegrity(fixture.threadId).acceptedCausalAssertions, 0);
   assert.equal(integrity.verifyThreadIdentityIntegrity(fixture.threadId).endogenousEvidenceAssertions, 0);
   integrity.close();

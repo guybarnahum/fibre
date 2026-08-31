@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -38,10 +37,9 @@ import {
 } from "./memory-visual-companion.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 const CLAIM_ID_PATTERN = /^icl_[0-9a-f]{64}$/;
 
@@ -175,19 +173,11 @@ export class IdentityStore {
   #database;
   #readOnly;
 
-  constructor(databasePath, { readOnly = false } = {}) {
+  constructor(storage, { readOnly = false } = {}) {
     this.#readOnly = readOnly;
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      readOnly,
-      enableForeignKeyConstraints: true,
-    });
+    this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "IdentityStore" });
     try {
-      if (readOnly) {
-        this.#database.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-      } else {
-        this.#database.exec(
-          "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-        );
+      if (!readOnly) {
         migrateDatabase(this.#database);
       }
     } catch (error) {
@@ -201,7 +191,7 @@ export class IdentityStore {
   }
 
   queryOnly() {
-    return Number(this.#database.prepare("PRAGMA query_only").get().query_only) === 1;
+    return this.#readOnly;
   }
 
   #requireThread(threadId) {
@@ -561,93 +551,93 @@ export class IdentityStore {
     }
 
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const priorById = this.#database.prepare(`
-        SELECT ${ASSERTION_COLUMNS} FROM identity_assertion_records WHERE assertion_id=?
-      `).get(assertion.assertionId);
-      if (priorById !== undefined) {
-        const prior = rowToAssertion(priorById);
-        if (prior.registryVersion !== registryVersion || canonicalJson(prior.assertion) !== canonicalJson(assertion)) {
-          throw new IdentityConflictError(
-            `identity assertion ${assertion.assertionId} already exists with different content or registry semantics`,
-          );
-        }
-        this.#database.exec("COMMIT");
-        return { ...prior, isCurrentRevision: true, idempotent: true };
-      }
+      const transactionResult = this.#database.transaction(() => {
+        const priorById = this.#database.prepare(`
+          SELECT ${ASSERTION_COLUMNS} FROM identity_assertion_records WHERE assertion_id=?
+        `).get(assertion.assertionId);
+        if (priorById !== undefined) {
+          const prior = rowToAssertion(priorById);
+          if (prior.registryVersion !== registryVersion || canonicalJson(prior.assertion) !== canonicalJson(assertion)) {
+            throw new IdentityConflictError(
+              `identity assertion ${assertion.assertionId} already exists with different content or registry semantics`,
+            );
+          }
 
-      const history = this.#validatedHistory(assertion.threadId, assertion.claimId, {
-        required: false,
+          return { ...prior, isCurrentRevision: true, idempotent: true };
+        }
+
+        const history = this.#validatedHistory(assertion.threadId, assertion.claimId, {
+          required: false,
+        });
+        if (assertion.revision === 1) {
+          if (history.length !== 0) {
+            throw new IdentityConflictError(`identity claim ${assertion.claimId} already exists`);
+          }
+          const definition = definitionForRegistry(assertion.domain, registryVersion);
+          if (definition.authoringStatus === "superseded") {
+            throw new IdentityConflictError(
+              `identity domain ${assertion.domain} is superseded for new authoring by ${definition.supersededBy.join(", ")}`,
+            );
+          }
+          if (definition.singletonKinds.includes(assertion.kind)) {
+            const other = this.#database.prepare(`
+              SELECT claim_id FROM identity_assertion_records
+              WHERE thread_id=? AND domain=? AND kind=? AND claim_id<>?
+              LIMIT 1
+            `).get(
+              assertion.threadId,
+              assertion.domain,
+              assertion.kind,
+              assertion.claimId,
+            );
+            if (other !== undefined) {
+              throw new IdentityConflictError(
+                `identity slot ${assertion.domain}/${assertion.kind} must revise existing claim ${other.claim_id}`,
+              );
+            }
+          }
+        } else {
+          if (history.length !== assertion.revision - 1) {
+            throw new IdentityConflictError(
+              `identity claim ${assertion.claimId} expected revision ${history.length + 1}, got ${assertion.revision}`,
+            );
+          }
+          const previous = history.at(-1);
+          if (previous.registryVersion !== registryVersion) {
+            throw new IdentityConflictError(
+              `identity claim ${assertion.claimId} cannot change registry version`,
+            );
+          }
+          if (!sameIdentitySlot(assertion, previous.assertion)) {
+            throw new IdentityConflictError(`identity claim ${assertion.claimId} changes identity slot`);
+          }
+          if (!samePredicateSlot(assertion, previous.assertion)) {
+            throw new IdentityConflictError(`identity claim ${assertion.claimId} changes claim predicate subject/predicate`);
+          }
+          if (assertion.supersedesAssertionId !== previous.assertion.assertionId) {
+            throw new IdentityConflictError(
+              `identity claim ${assertion.claimId} must supersede ${previous.assertion.assertionId}`,
+            );
+          }
+          if (Date.parse(assertion.recordedAt) < Date.parse(previous.assertion.recordedAt)) {
+            throw new IdentityConflictError(`identity claim ${assertion.claimId} recordedAt moves backwards`);
+          }
+          if (behavioralEscalated(previous.assertion.behavioralStatus, assertion.behavioralStatus)) {
+            const previousRefs = new Set(previous.assertion.sourceReferences);
+            const hasEvidenceDelta = assertion.sourceReferences.some((reference) => !previousRefs.has(reference));
+            if (assertion.meaning === previous.assertion.meaning || !hasEvidenceDelta) {
+              throw new IdentityConflictError(
+                `identity claim ${assertion.claimId} behavioral escalation requires changed meaning and new evidence`,
+              );
+            }
+          }
+        }
+
+        const stored = persistIdentityAssertionRow(this.#database, assertion, { registryVersion });
+        return { ...stored, isCurrentRevision: true, idempotent: false };
       });
-      if (assertion.revision === 1) {
-        if (history.length !== 0) {
-          throw new IdentityConflictError(`identity claim ${assertion.claimId} already exists`);
-        }
-        const definition = definitionForRegistry(assertion.domain, registryVersion);
-        if (definition.authoringStatus === "superseded") {
-          throw new IdentityConflictError(
-            `identity domain ${assertion.domain} is superseded for new authoring by ${definition.supersededBy.join(", ")}`,
-          );
-        }
-        if (definition.singletonKinds.includes(assertion.kind)) {
-          const other = this.#database.prepare(`
-            SELECT claim_id FROM identity_assertion_records
-            WHERE thread_id=? AND domain=? AND kind=? AND claim_id<>?
-            LIMIT 1
-          `).get(
-            assertion.threadId,
-            assertion.domain,
-            assertion.kind,
-            assertion.claimId,
-          );
-          if (other !== undefined) {
-            throw new IdentityConflictError(
-              `identity slot ${assertion.domain}/${assertion.kind} must revise existing claim ${other.claim_id}`,
-            );
-          }
-        }
-      } else {
-        if (history.length !== assertion.revision - 1) {
-          throw new IdentityConflictError(
-            `identity claim ${assertion.claimId} expected revision ${history.length + 1}, got ${assertion.revision}`,
-          );
-        }
-        const previous = history.at(-1);
-        if (previous.registryVersion !== registryVersion) {
-          throw new IdentityConflictError(
-            `identity claim ${assertion.claimId} cannot change registry version`,
-          );
-        }
-        if (!sameIdentitySlot(assertion, previous.assertion)) {
-          throw new IdentityConflictError(`identity claim ${assertion.claimId} changes identity slot`);
-        }
-        if (!samePredicateSlot(assertion, previous.assertion)) {
-          throw new IdentityConflictError(`identity claim ${assertion.claimId} changes claim predicate subject/predicate`);
-        }
-        if (assertion.supersedesAssertionId !== previous.assertion.assertionId) {
-          throw new IdentityConflictError(
-            `identity claim ${assertion.claimId} must supersede ${previous.assertion.assertionId}`,
-          );
-        }
-        if (Date.parse(assertion.recordedAt) < Date.parse(previous.assertion.recordedAt)) {
-          throw new IdentityConflictError(`identity claim ${assertion.claimId} recordedAt moves backwards`);
-        }
-        if (behavioralEscalated(previous.assertion.behavioralStatus, assertion.behavioralStatus)) {
-          const previousRefs = new Set(previous.assertion.sourceReferences);
-          const hasEvidenceDelta = assertion.sourceReferences.some((reference) => !previousRefs.has(reference));
-          if (assertion.meaning === previous.assertion.meaning || !hasEvidenceDelta) {
-            throw new IdentityConflictError(
-              `identity claim ${assertion.claimId} behavioral escalation requires changed meaning and new evidence`,
-            );
-          }
-        }
-      }
-
-      const stored = persistIdentityAssertionRow(this.#database, assertion, { registryVersion });
-      this.#database.exec("COMMIT");
-      return { ...stored, isCurrentRevision: true, idempotent: false };
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
@@ -665,51 +655,51 @@ export class IdentityStore {
       throw new IdentityConflictError("memory visual cannot be recorded before Thread creation");
     }
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const existingRow = this.#database.prepare(`
-        SELECT ${VISUAL_COLUMNS}
-        FROM memory_visual_companion_records
-        WHERE companion_id=? AND revision=?
-      `).get(companion.companionId, companion.revision);
-      if (existingRow !== undefined) {
-        const existing = decodeMemoryVisualCompanionRow(existingRow);
-        if (canonicalJson(existing.companion) !== canonicalJson(companion)) {
-          throw new IdentityConflictError(
-            `memory visual ${companion.companionId} revision ${companion.revision} already exists with different content`,
-          );
+      const transactionResult = this.#database.transaction(() => {
+        const existingRow = this.#database.prepare(`
+          SELECT ${VISUAL_COLUMNS}
+          FROM memory_visual_companion_records
+          WHERE companion_id=? AND revision=?
+        `).get(companion.companionId, companion.revision);
+        if (existingRow !== undefined) {
+          const existing = decodeMemoryVisualCompanionRow(existingRow);
+          if (canonicalJson(existing.companion) !== canonicalJson(companion)) {
+            throw new IdentityConflictError(
+              `memory visual ${companion.companionId} revision ${companion.revision} already exists with different content`,
+            );
+          }
+
+          return { ...existing, idempotent: true };
         }
-        this.#database.exec("COMMIT");
-        return { ...existing, idempotent: true };
-      }
-      const history = this.getMemoryVisualCompanionHistory(
-        companion.threadId,
-        companion.memoryRef,
-        { required: false },
-      );
-      if (history.length !== companion.revision - 1) {
-        throw new IdentityConflictError(
-          `memory visual ${companion.companionId} expected revision ${history.length + 1}, got ${companion.revision}`,
+        const history = this.getMemoryVisualCompanionHistory(
+          companion.threadId,
+          companion.memoryRef,
+          { required: false },
         );
-      }
-      if (history.length > 0) {
-        const prior = history.at(-1).companion;
-        if (companion.representationKind !== prior.representationKind) {
+        if (history.length !== companion.revision - 1) {
           throw new IdentityConflictError(
-            `memory visual ${companion.companionId} cannot change representation kind; captured evidence and synthetic reconstruction are different lineages`,
+            `memory visual ${companion.companionId} expected revision ${history.length + 1}, got ${companion.revision}`,
           );
         }
-        if (companion.supersedesRevision !== prior.revision) {
-          throw new IdentityConflictError(`memory visual ${companion.companionId} must supersede revision ${prior.revision}`);
+        if (history.length > 0) {
+          const prior = history.at(-1).companion;
+          if (companion.representationKind !== prior.representationKind) {
+            throw new IdentityConflictError(
+              `memory visual ${companion.companionId} cannot change representation kind; captured evidence and synthetic reconstruction are different lineages`,
+            );
+          }
+          if (companion.supersedesRevision !== prior.revision) {
+            throw new IdentityConflictError(`memory visual ${companion.companionId} must supersede revision ${prior.revision}`);
+          }
+          if (Date.parse(companion.recordedAt) < Date.parse(prior.recordedAt)) {
+            throw new IdentityConflictError(`memory visual ${companion.companionId} recordedAt moves backwards`);
+          }
         }
-        if (Date.parse(companion.recordedAt) < Date.parse(prior.recordedAt)) {
-          throw new IdentityConflictError(`memory visual ${companion.companionId} recordedAt moves backwards`);
-        }
-      }
-      const stored = persistMemoryVisualCompanionRow(this.#database, companion);
-      this.#database.exec("COMMIT");
-      return { ...stored, idempotent: false };
+        const stored = persistMemoryVisualCompanionRow(this.#database, companion);
+        return { ...stored, idempotent: false };
+      });
+      return transactionResult;
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
   }
@@ -795,10 +785,10 @@ export class IdentityStore {
   }
 }
 
-export function openIdentityStore(databasePath) {
-  return new IdentityStore(databasePath);
+export function openIdentityStore(storage) {
+  return new IdentityStore(storage);
 }
 
-export function openIdentityInspectionStore(databasePath) {
-  return new IdentityStore(databasePath, { readOnly: true });
+export function openIdentityInspectionStore(storage) {
+  return new IdentityStore(storage, { readOnly: true });
 }

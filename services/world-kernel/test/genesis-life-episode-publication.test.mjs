@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -182,7 +183,7 @@ function memoryRecord(threadId, event, subjectPeriod, slot) {
 }
 
 function publish(databasePath, { threadId = "thr_genesis_life_001", worldSpecId = "world_genesis_life_001", genesisId = "gen_genesis_life_001", publishedEpisodes = episodes() } = {}) {
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   genesis.recordWorldSpec(worldSpec(worldSpecId));
   const thread = genesisThread(threadId);
   const result = publishMinimalGenesisPriorLifeFixture(genesis, {
@@ -255,7 +256,7 @@ test("Genesis publishes Pass-A episodes as uncommanded authoritative history wit
     const publishedEpisodes = episodes();
     const { thread, result } = publish(databasePath, { publishedEpisodes });
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const events = world.listEvents(thread.threadId);
     assert.equal(events.length, 1 + publishedEpisodes.length);
     assert.deepEqual(events.map((item) => item.eventType), [
@@ -298,7 +299,7 @@ test("#38 memory can cite a Genesis life episode while THREAD_SEEDED remains an 
     const publishedEpisodes = [episodes()[0]];
     const { thread } = publish(databasePath, { publishedEpisodes });
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const events = world.listEvents(thread.threadId);
     const seedEvent = events[0];
     const lifeEvent = events[1];
@@ -309,7 +310,7 @@ test("#38 memory can cite a Genesis life episode while THREAD_SEEDED remains an 
       startAt: "2004-01-01T00:00:00Z",
       endAt: "2004-12-31T23:59:59Z",
     };
-    const memoryStore = openAutobiographicalMemoryStore(databasePath);
+    const memoryStore = openAutobiographicalMemoryStore(localWorldStateStorage(databasePath));
     assert.doesNotThrow(() => memoryStore.recordMemory(
       memoryRecord(thread.threadId, lifeEvent, childhood, "genesis-childhood-life-event"),
     ));
@@ -321,7 +322,7 @@ test("#38 memory can cite a Genesis life episode while THREAD_SEEDED remains an 
     );
     memoryStore.close();
 
-    const verified = openWorldStore(databasePath);
+    const verified = openWorldStore(localWorldStateStorage(databasePath));
     assert.doesNotThrow(() => verified.verifyThreadIntegrity(thread.threadId));
     verified.close();
   }));
@@ -330,7 +331,7 @@ test("same-version migration rebuilds a pre-existing event CHECK before Genesis 
   withDatabase((databasePath) => {
     createPreEpisodeSchema(databasePath);
 
-    const migrated = openWorldStore(databasePath);
+    const migrated = openWorldStore(localWorldStateStorage(databasePath));
     assert.equal(migrated.storageMetadata().schemaVersion, 6);
     migrated.close();
 
@@ -348,7 +349,7 @@ test("same-version migration rebuilds a pre-existing event CHECK before Genesis 
       genesisId: "gen_genesis_migrated_001",
       publishedEpisodes,
     });
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     assert.deepEqual(world.listEvents(thread.threadId).map((item) => item.eventType), [
       "THREAD_SEEDED",
       "THREAD_LIFE_EPISODE_RECORDED",

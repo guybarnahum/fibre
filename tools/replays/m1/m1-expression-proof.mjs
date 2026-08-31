@@ -377,13 +377,14 @@ export async function runWithM1ExpressionProof(run) {
 
   globalThis.fetch = async (input, init) => {
     const response = await originalFetch(input, init);
+    const callerResponse = response.clone();
     const url = urlOf(input);
     const method = methodOf(input, init);
     const privateToken = privateTokenOf(input, init);
 
     if (method === "POST" && response.ok && privateToken !== null) {
       if (acceptedRuntimePath(url.pathname) && evidence.accepted === null) {
-        const payload = await response.clone().json();
+        const payload = await response.json();
         acceptedSessionId = payload.runtime.session.sessionId;
         evidence.accepted = await recordExpression(
           originalFetch,
@@ -415,7 +416,7 @@ export async function runWithM1ExpressionProof(run) {
         obligationRuntimePath(url.pathname) &&
         evidence.obligationMediated === null
       ) {
-        const payload = await response.clone().json();
+        const payload = await response.json();
         evidence.obligationMediated = await recordExpression(
           originalFetch,
           url.origin,
@@ -436,7 +437,7 @@ export async function runWithM1ExpressionProof(run) {
         assert.match(evidence.obligationMediated.audience.message, /recorded obligation/i);
       }
     }
-    return response;
+    return callerResponse;
   };
 
   try {

@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -141,7 +142,7 @@ function manifest(thread, publishedEpisodes = []) {
 }
 
 function seedThread(path) {
-  const world = openWorldStore(path);
+  const world = openWorldStore(localWorldStateStorage(path));
   world.seedThread(structuredClone(mina));
   const event = world.listEvents(mina.threadId)[0];
   world.close();
@@ -296,7 +297,7 @@ test("Genesis publication supports the full Thread-ID contract without exceeding
 
     const thread = longThread();
     const episodes = longBirthEpisodes();
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
     const published = publishMinimalGenesisPriorLifeFixture(genesis, {
       manifest: manifest(thread, episodes),
@@ -307,7 +308,7 @@ test("Genesis publication supports the full Thread-ID contract without exceeding
     assert.equal(published.thread.version, thread.version + episodes.length);
     genesis.close();
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const replayed = world.replayThread(thread.threadId);
     const events = world.listEvents(thread.threadId);
     world.close();
@@ -352,14 +353,14 @@ test("historical memories survive later content-policy tightening while new writ
     const digest = insertHistoricalMemory(databasePath, historical);
     assert.equal(digest, autobiographicalMemoryRecordDigest(historical));
 
-    const reader = openAutobiographicalMemoryInspectionStore(databasePath);
+    const reader = openAutobiographicalMemoryInspectionStore(localWorldStateStorage(databasePath));
     const history = reader.memoryHistory(mina.threadId, historical.memoryId);
     assert.equal(history.length, 1);
     assert.equal(history[0].rememberedContent, historical.rememberedContent);
     assert.equal(reader.listCurrentMemories(mina.threadId)[0].memoryId, historical.memoryId);
     reader.close();
 
-    const writer = openAutobiographicalMemoryStore(databasePath);
+    const writer = openAutobiographicalMemoryStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => writer.recordMemory(historical),
       /rememberedContent exceeds/,

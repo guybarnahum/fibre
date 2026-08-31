@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -45,11 +46,11 @@ function controlledClock(start = "2026-08-06T22:10:00Z") {
 }
 
 function openWorld(databasePath, time = controlledClock()) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
-  const expressionStore = openExpressionStore(databasePath);
+  const worldStore = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
+  const lifecycleStore = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
+  const expressionStore = openExpressionStore(localWorldStateStorage(databasePath));
   const service = new M1ExpressionWorldKernelService(
     worldStore,
     runtimeStore,

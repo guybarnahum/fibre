@@ -14,6 +14,7 @@ import {
   listenWorldKernelHttpServer,
 } from "#services/world-kernel/src/http-server.mjs";
 import { deterministicActorOutput } from "#services/world-kernel/src/runtime-domain.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 function parsePort(value) {
   const port = Number(value);
@@ -53,16 +54,17 @@ export async function startM1DemoWorldKernel(environment = process.env) {
   const leaseDurationMs = parseLeaseDuration(environment.FIBRE_DEMO_LEASE_DURATION_MS);
   assertLoopbackBindHost(host);
 
-  const store = openWorldStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-m1-demo-world" });
+  const store = openWorldStore(worldStorage);
   let runtimeStore;
   let freezeStore;
   let lifecycleStore;
   let expressionStore;
   try {
-    runtimeStore = openRuntimeStore(databasePath);
-    freezeStore = openFreezeStore(databasePath);
-    lifecycleStore = openLifecycleHardeningStore(databasePath);
-    expressionStore = openExpressionStore(databasePath);
+    runtimeStore = openRuntimeStore(worldStorage);
+    freezeStore = openFreezeStore(worldStorage);
+    lifecycleStore = openLifecycleHardeningStore(worldStorage);
+    expressionStore = openExpressionStore(worldStorage);
   } catch (error) {
     expressionStore?.close();
     lifecycleStore?.close();

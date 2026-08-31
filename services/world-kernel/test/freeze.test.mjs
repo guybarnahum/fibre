@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -103,9 +104,9 @@ function assessment(trace, { action = "accept", score = 82 } = {}) {
 }
 
 function start(databasePath, { time = controlledClock(), actor, leaseDurationMs = 10 * 60 * 1000 } = {}) {
-  const store = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
   const service = new M1FreezeWorldKernelService(store, runtimeStore, freezeStore, {
     clock: time.clock,
     leaseDurationMs,
@@ -211,7 +212,7 @@ test("atomically freezes a Guardian-approved runtime, records memory, and surviv
     assert.equal(runtime.service.verifyFreezeIntegrity(fixture.threadId, prepared.session.sessionId).runtimeCompleted, true);
 
     const persistedMemory = result.freeze.memories[0];
-    const identityInspector = openIdentityInspectionStore(databasePath);
+    const identityInspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
     try {
       const visualHistory = identityInspector.getMemoryVisualCompanionHistory(
         fixture.threadId,

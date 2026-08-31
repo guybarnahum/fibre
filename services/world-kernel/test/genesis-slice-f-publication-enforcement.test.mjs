@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -166,7 +167,7 @@ function registered(birth) {
 
 test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin witnesses", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
 
     const echo = thread("thr_publish_echo");
@@ -183,7 +184,7 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
       /origin authority consent_jane_doe was not found/,
     );
 
-    const authorities = new GenesisOriginAuthorityStore(databasePath);
+    const authorities = new GenesisOriginAuthorityStore(localWorldStateStorage(databasePath));
     authorities.recordAuthority(authority({
       authorityRef: "consent_jane_doe",
       authorityKind: "living_source_consent",
@@ -218,7 +219,7 @@ test("publishBirth itself enforces Thread-parent, Echo, Homage, and Fork origin 
     }));
     assert.equal(publishedHomage.manifest.originMode, "homage");
 
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     const parent = thread("thr_publish_parent");
     world.seedThread(parent);
     const forkSource = thread("thr_publish_fork_source");

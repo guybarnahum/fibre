@@ -2,10 +2,10 @@ import { openIdentityInspectionStore } from "./identity-store.mjs";
 import { openSituatedLifeInspectionStore } from "./situated-life-store.mjs";
 import { openEmbodimentInspectionStore } from "./embodiment-store.mjs";
 
-export function inspectSituatedPerson(databasePath, threadId) {
-  const identity = openIdentityInspectionStore(databasePath);
-  const situated = openSituatedLifeInspectionStore(databasePath);
-  const embodiment = openEmbodimentInspectionStore(databasePath);
+export function inspectSituatedPerson(storage, threadId) {
+  const identity = openIdentityInspectionStore(storage);
+  const situated = openSituatedLifeInspectionStore(storage);
+  const embodiment = openEmbodimentInspectionStore(storage);
   try {
     const identityIntegrity = identity.verifyThreadIdentityIntegrity(threadId);
     const passport = identity.getPassport(threadId);

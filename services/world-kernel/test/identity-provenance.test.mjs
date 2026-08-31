@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,7 +23,7 @@ function withDatabase(run) {
 }
 
 function seed(databasePath) {
-  const store = openWorldStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
   const thread = store.seedThread(structuredClone(fixture)).thread;
   store.close();
   return thread;
@@ -95,7 +96,7 @@ function currentClaim(identity, purpose = "craft") {
 
 test("seeded Thread identity uses one current registry and remains non-causal", () => withDatabase((databasePath) => {
   seed(databasePath);
-  const identity = openIdentityStore(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
   const integrity = identity.verifyThreadIdentityIntegrity(fixture.threadId);
   assert.equal(integrity.ok, true);
   assert.deepEqual(integrity.admittedRegistryVersions, [IDENTITY_DOMAIN_REGISTRY_VERSION]);
@@ -116,7 +117,7 @@ test("seeded Thread identity uses one current registry and remains non-causal", 
 
 test("current identity revisions stay in one format and biography bundles are rejected", () => withDatabase((databasePath) => {
   seed(databasePath);
-  const identity = openIdentityStore(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
   const original = identity.getCurrentIdentityView(fixture.threadId).assertions.find((item) => item.domain === "passport_name");
   const changed = revisionOf(original, {
     meaning: "Mina Park Lee",
@@ -134,7 +135,7 @@ test("current identity revisions stay in one format and biography bundles are re
 
 test("current claims require structured predicates and the current discipline witness", () => withDatabase((databasePath) => {
   seed(databasePath);
-  const identity = openIdentityStore(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
   const base = currentClaim(identity);
   const stored = identity.recordAssertion(base);
   assert.equal(stored.registryVersion, IDENTITY_DOMAIN_REGISTRY_VERSION);
@@ -159,7 +160,7 @@ test("current claims require structured predicates and the current discipline wi
 
 test("natural-language identity may use ordinary conjunctions without being treated as a schema error", () => withDatabase((databasePath) => {
   seed(databasePath);
-  const identity = openIdentityStore(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
   const candidate = currentClaim(identity, "ordinary-conjunctions");
   candidate.meaning = "I enjoy drawing and painting and writing stories with close friends.";
   candidate.assertionId = identityAssertionId({ claimId: candidate.claimId, revision: 1, meaning: candidate.meaning, recordedAt: candidate.recordedAt });
@@ -169,7 +170,7 @@ test("natural-language identity may use ordinary conjunctions without being trea
 
 test("#38 refuses causal inflation, endogenous credit, and cross-slot revisions", () => withDatabase((databasePath) => {
   seed(databasePath);
-  const identity = openIdentityStore(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
   const base = currentClaim(identity);
   identity.recordAssertion(base);
   const causal = currentClaim(identity, "causal");
@@ -189,7 +190,7 @@ test("#38 refuses causal inflation, endogenous credit, and cross-slot revisions"
 
 test("identity and visual ledgers remain append-only and read-only inspection stays query-only", () => withDatabase((databasePath) => {
   seed(databasePath);
-  const inspector = openIdentityInspectionStore(databasePath);
+  const inspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
   assert.equal(inspector.queryOnly(), true);
   assert.equal(inspector.verifyThreadIdentityIntegrity(fixture.threadId).ok, true);
   assert.throws(() => inspector.recordAssertion(inspector.getCurrentIdentityView(fixture.threadId).assertions[0]), IdentityConflictError);
@@ -209,7 +210,7 @@ test("read-only identity inspection detects coherent JSON tampering", () => with
   database.exec("DROP TRIGGER identity_assertions_no_update");
   database.prepare("UPDATE identity_assertion_records SET assertion_json=? WHERE assertion_id=?").run(JSON.stringify(tampered), row.assertion_id);
   database.close();
-  const inspector = openIdentityInspectionStore(databasePath);
+  const inspector = openIdentityInspectionStore(localWorldStateStorage(databasePath));
   assert.throws(() => inspector.verifyThreadIdentityIntegrity(fixture.threadId), /digest\/canonical JSON verification/);
   inspector.close();
 }));

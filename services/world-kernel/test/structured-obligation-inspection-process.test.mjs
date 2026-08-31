@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -159,7 +160,7 @@ async function createCompletedCompelledLife(processHandle, databasePath) {
   });
   assert.equal(seeded.response.status, 201);
 
-  const obligations = openObligationStore(databasePath);
+  const obligations = openObligationStore(localWorldStateStorage(databasePath));
   try {
     obligations.recordRevision(obligation(thread.threadId, request), {
       recordedAt: "2026-08-10T00:00:01.000Z",
@@ -347,7 +348,7 @@ test("F inspection is private, read-only, restart-stable, and cross-chain verifi
     assert.equal(admin.sourceReadOnly, true);
     assert.equal(admin.threads[0].integrity.dischargeCausalChainsVerified, true);
 
-    const freezeStore = openFreezeStore(databasePath);
+    const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
     try {
       const freezeIntegrity = freezeStore.verifyFreezeIntegrity(
         life.thread.threadId,

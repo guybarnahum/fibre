@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+
+import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 
 import { WORLD_STORE_SCHEMA_VERSION } from "../src/persistence-common.mjs";
 import {
@@ -15,9 +16,11 @@ const SHA_A = `sha256:${"a".repeat(64)}`;
 const SHA_B = `sha256:${"b".repeat(64)}`;
 
 function database() {
-  const db = new DatabaseSync(":memory:", { enableForeignKeyConstraints: true });
-  db.exec("PRAGMA foreign_keys=ON");
-  return db;
+  const infraDriver = createSqliteStateInfraDriver({
+    driverId: "sqlite-obligation-schema-test",
+    scopes: { world: ":memory:" },
+  });
+  return infraDriver.state.open("world");
 }
 
 test("current world-store schema creates the Structured Obligation tables additively", () => {

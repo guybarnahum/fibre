@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,8 +12,8 @@ const fixture = JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.
 test("integrated situated-person inspection is query-only and preserves zero standing inflation", () => {
   const dir = mkdtempSync(join(tmpdir(), "fibre-situated-inspect-")); const db = join(dir, "world.sqlite");
   try {
-    const world = openWorldStore(db); world.seedThread(structuredClone(fixture)); world.close();
-    const report = inspectSituatedPerson(db, fixture.threadId);
+    const world = openWorldStore(localWorldStateStorage(db)); world.seedThread(structuredClone(fixture)); world.close();
+    const report = inspectSituatedPerson(localWorldStateStorage(db), fixture.threadId);
     assert.deepEqual(report.inspectionMode, { identityQueryOnly: true, situatedLifeQueryOnly: true, embodimentQueryOnly: true });
     assert.equal(report.antiInflation.acceptedCausalAssertions, 0);
     assert.equal(report.antiInflation.endogenousEvidenceAssertions, 0);

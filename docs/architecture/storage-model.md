@@ -1,7 +1,7 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-08-20
+last-reviewed: 2026-08-31
 canonical: true
 ---
 
@@ -11,15 +11,24 @@ A Thread is a logical aggregate reconstructed from durable world state. It is no
 
 The long-term architecture may use several physical stores—relational state, append-only events, graphs, semantic indexes, object storage, secrets and double-entry ledgers—but domain authority is defined by explicit records, provenance, versions and replay contracts rather than by a particular cloud/database product.
 
-## Current local persistence profile
+## Current transactional persistence profile
 
-The current local world kernel uses one SQLite database with one authoritative `PRAGMA user_version` for the versioned world-store schema.
+Authoritative World stores receive one provider-neutral state binding:
+
+```text
+{
+  infraDriver,
+  stateScopeId: "world"
+}
+```
+
+They open relational state only through `openWorldStateDatabase(...)`, which requires the Fibre transactional-state guarantees before returning a session. The local deployment maps the logical `world` scope to one SQLite database through the local `InfraDriver.state` provider; the Cloudflare provider maps the same contract to one named SQLite-backed Durable Object scope.
 
 ```text
 WORLD_STORE_SCHEMA_VERSION = 6
 ```
 
-SQLite is a prototype implementation choice, not a permanent Fibre constraint. The durable contracts are the important part: identity, event order, versions, hashes, idempotency, authorization, append-only history, privacy boundaries and cross-record causal witnesses must remain portable to later adapters.
+SQLite remains the current local physical implementation, not a World/domain dependency or permanent Fibre constraint. The durable contracts are the important part: identity, event order, versions, hashes, idempotency, authorization, append-only history, privacy boundaries, schema migration, rollback and cross-record causal witnesses must remain portable across providers.
 
 ## Core Thread world authority
 
@@ -88,7 +97,7 @@ Every admitted memory has a visual companion lineage. A generated reconstruction
 
 Genesis adds **provenance and compilation authority**, not a parallel biography authority.
 
-`GenesisStore` opens the same SQLite world and creates bounded additive Genesis tables when needed:
+`GenesisStore` opens the same named transactional World state scope and creates bounded additive Genesis tables when needed:
 
 ```text
 genesis_world_specs
@@ -139,7 +148,7 @@ Pass A remains genome blind. Publication-time provenance validation is not a chi
 
 ## Transaction boundaries
 
-Fibre uses separate store interfaces to preserve responsibility boundaries even when they share one SQLite consistency domain.
+Fibre uses separate store interfaces to preserve responsibility boundaries even when they share one named relational consistency domain. Provider composition, not the store classes, decides whether that scope is local SQLite or Cloudflare Durable Object SQLite.
 
 A consequential write transaction rereads the exact current versions, IDs, hashes, lifecycle state and authority witnesses it depends on. Cross-store invariants are not trusted from an earlier application read.
 
@@ -167,7 +176,7 @@ Projection repair may reconstruct current state from authoritative events; it ma
 
 ## Read-only inspection
 
-Human/operator inspection uses bounded read-only surfaces. Database inspectors open SQLite read-only and use `PRAGMA query_only` where applicable. Inspection verifies chains rather than silently repairing them.
+Human/operator inspection uses bounded read-only surfaces. World inspection stores request read-only `InfraDriver.state` sessions. The local database inspector additionally opens its source SQLite file read-only and uses `PRAGMA query_only` where applicable before verifying a temporary snapshot through the provider-neutral stores. Inspection verifies chains rather than silently repairing them.
 
 Current inspection families include world/replay, identity, Structured Obligations, Genesis and symbolic genome. The Thread Editor remains a human-facing application over validated APIs, not a raw database mutation surface.
 

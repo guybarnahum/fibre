@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -9,10 +8,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { createExpressionTables } from "./expression-schema.mjs";
 import {
   ExpressionConflictError,
@@ -98,13 +96,8 @@ function translateExpressionStorageError(error) {
 export class ExpressionStore {
   #db;
 
-  constructor(databasePath) {
-    this.#db = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
-    });
-    this.#db.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-    );
+  constructor(storage) {
+    this.#db = openWorldStateDatabase(storage, { storeName: "ExpressionStore" });
     try {
       migrateDatabase(this.#db);
       createExpressionTables(this.#db);
@@ -289,100 +282,100 @@ export class ExpressionStore {
     }
 
     try {
-      this.#db.exec("BEGIN IMMEDIATE");
-      const thread = this.#db.prepare(
-        "SELECT version,status,state_json,state_hash FROM threads WHERE thread_id=?",
-      ).get(record.threadId);
-      if (!thread) {
-        throw new ParticipationAuthorizationNotFoundError(
-          `Thread ${record.threadId} was not found`,
-        );
-      }
-      if (
-        Number(thread.version) !== record.snapshotVersion ||
-        thread.state_hash !== record.threadStateHash ||
-        !["frozen", "dormant"].includes(thread.status)
-      ) {
-        throw new ExpressionConflictError(
-          `Thread ${record.threadId} changed before participation authorization`,
-        );
-      }
-      if (
-        threadStateHash(json(`Thread ${record.threadId}`, thread.state_json)) !==
-        record.threadStateHash
-      ) {
-        throw new IntegrityError(
-          `Thread ${record.threadId} state hash failed during authorization`,
-        );
-      }
-
-      const trace = this.#db.prepare(`
-        SELECT p.appraisal_id,s.stance_id,s.thread_state_hash,
-          s.request_fingerprint,s.stance_digest
-        FROM request_appraisals p
-        JOIN private_participation_stances s ON s.appraisal_id=p.appraisal_id
-        WHERE p.thread_id=? AND p.request_id=?
-      `).get(record.threadId, record.requestId);
-      if (
-        !trace ||
-        trace.appraisal_id !== record.appraisalId ||
-        trace.stance_id !== record.stanceId ||
-        trace.thread_state_hash !== record.threadStateHash ||
-        trace.request_fingerprint !== record.requestFingerprint ||
-        trace.stance_digest !== record.stanceDigest
-      ) {
-        throw new ExpressionConflictError(
-          `Request ${record.requestId} changed before participation authorization`,
-        );
-      }
-
-      const raced = this.#db.prepare(`
-        SELECT authorization_id,operation_id,operation_digest
-        FROM participation_authorizations
-        WHERE operation_id=? OR stance_id=?
-      `).get(record.operationId, record.stanceId);
-      if (raced) {
-        if (
-          raced.operation_id !== record.operationId ||
-          raced.operation_digest !== record.operationDigest
-        ) {
-          throw new ExpressionConflictError(
-            `Private stance ${record.stanceId} already has different participation authority`,
+      const transactionResult = this.#db.transaction(() => {
+        const thread = this.#db.prepare(
+          "SELECT version,status,state_json,state_hash FROM threads WHERE thread_id=?",
+        ).get(record.threadId);
+        if (!thread) {
+          throw new ParticipationAuthorizationNotFoundError(
+            `Thread ${record.threadId} was not found`,
           );
         }
-        this.#db.exec("COMMIT");
-        return {
-          authorization: this.getAuthorization(
-            record.threadId,
-            raced.authorization_id,
-          ),
-          idempotent: true,
-        };
-      }
+        if (
+          Number(thread.version) !== record.snapshotVersion ||
+          thread.state_hash !== record.threadStateHash ||
+          !["frozen", "dormant"].includes(thread.status)
+        ) {
+          throw new ExpressionConflictError(
+            `Thread ${record.threadId} changed before participation authorization`,
+          );
+        }
+        if (
+          threadStateHash(json(`Thread ${record.threadId}`, thread.state_json)) !==
+          record.threadStateHash
+        ) {
+          throw new IntegrityError(
+            `Thread ${record.threadId} state hash failed during authorization`,
+          );
+        }
 
-      this.#db.prepare(
-        "INSERT INTO participation_authorizations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      ).run(
-        record.authorization.authorizationId,
-        record.operationId,
-        canonicalJson(record.operation),
-        record.operationDigest,
-        record.threadId,
-        record.requestId,
-        record.appraisalId,
-        record.stanceId,
-        record.snapshotVersion,
-        record.threadStateHash,
-        record.requestFingerprint,
-        canonicalJson(record.authorization),
-        record.authorizationDigest,
-        record.authorization.issuedAt,
-        record.authorization.causationId,
-        record.authorization.correlationId,
-      );
-      this.#db.exec("COMMIT");
+        const trace = this.#db.prepare(`
+          SELECT p.appraisal_id,s.stance_id,s.thread_state_hash,
+            s.request_fingerprint,s.stance_digest
+          FROM request_appraisals p
+          JOIN private_participation_stances s ON s.appraisal_id=p.appraisal_id
+          WHERE p.thread_id=? AND p.request_id=?
+        `).get(record.threadId, record.requestId);
+        if (
+          !trace ||
+          trace.appraisal_id !== record.appraisalId ||
+          trace.stance_id !== record.stanceId ||
+          trace.thread_state_hash !== record.threadStateHash ||
+          trace.request_fingerprint !== record.requestFingerprint ||
+          trace.stance_digest !== record.stanceDigest
+        ) {
+          throw new ExpressionConflictError(
+            `Request ${record.requestId} changed before participation authorization`,
+          );
+        }
+
+        const raced = this.#db.prepare(`
+          SELECT authorization_id,operation_id,operation_digest
+          FROM participation_authorizations
+          WHERE operation_id=? OR stance_id=?
+        `).get(record.operationId, record.stanceId);
+        if (raced) {
+          if (
+            raced.operation_id !== record.operationId ||
+            raced.operation_digest !== record.operationDigest
+          ) {
+            throw new ExpressionConflictError(
+              `Private stance ${record.stanceId} already has different participation authority`,
+            );
+          }
+
+          return {
+            authorization: this.getAuthorization(
+              record.threadId,
+              raced.authorization_id,
+            ),
+            idempotent: true,
+          };
+        }
+
+        this.#db.prepare(
+          "INSERT INTO participation_authorizations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ).run(
+          record.authorization.authorizationId,
+          record.operationId,
+          canonicalJson(record.operation),
+          record.operationDigest,
+          record.threadId,
+          record.requestId,
+          record.appraisalId,
+          record.stanceId,
+          record.snapshotVersion,
+          record.threadStateHash,
+          record.requestFingerprint,
+          canonicalJson(record.authorization),
+          record.authorizationDigest,
+          record.authorization.issuedAt,
+          record.authorization.causationId,
+          record.authorization.correlationId,
+        );
+      });
+      if (transactionResult !== undefined) return transactionResult;
     } catch (error) {
-      safeRollback(this.#db);
       throw translateExpressionStorageError(error);
     }
     return {
@@ -502,63 +495,63 @@ export class ExpressionStore {
     );
     if (prior) return { disclosure: prior, idempotent: true };
     try {
-      this.#db.exec("BEGIN IMMEDIATE");
-      const authorization = this.getAuthorization(
-        record.threadId,
-        record.authorizationId,
-      );
-      if (
-        authorization.authorizationDigest !== record.authorizationDigest ||
-        authorization.appraisalId !== record.appraisalId ||
-        authorization.stanceId !== record.stanceId ||
-        authorization.authorization.threadStateHash !== record.threadStateHash ||
-        authorization.authorization.requestFingerprint !== record.requestFingerprint
-      ) {
-        throw new ExpressionConflictError(
-          "Participation authority changed before disclosure persistence",
+      const transactionResult = this.#db.transaction(() => {
+        const authorization = this.getAuthorization(
+          record.threadId,
+          record.authorizationId,
         );
-      }
-      const existing = this.#strategyRow(record.threadId, record.requestId);
-      if (existing) {
         if (
-          existing.operation_id !== record.operationId ||
-          existing.operation_digest !== record.operationDigest
+          authorization.authorizationDigest !== record.authorizationDigest ||
+          authorization.appraisalId !== record.appraisalId ||
+          authorization.stanceId !== record.stanceId ||
+          authorization.authorization.threadStateHash !== record.threadStateHash ||
+          authorization.authorization.requestFingerprint !== record.requestFingerprint
         ) {
           throw new ExpressionConflictError(
-            `Request ${record.requestId} already has a different disclosure strategy`,
+            "Participation authority changed before disclosure persistence",
           );
         }
-        this.#db.exec("COMMIT");
-        return { disclosure: this.#decodeStrategy(existing), idempotent: true };
-      }
-      this.#db.prepare(`
-        INSERT INTO disclosure_strategies(
-          strategy_id,operation_id,operation_json,operation_digest,thread_id,request_id,
-          snapshot_version,thread_state_hash,request_fingerprint,appraisal_id,stance_id,
-          authorization_id,strategy_json,strategy_digest,recorded_at,causation_id,correlation_id
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.strategy.strategyId,
-        record.operationId,
-        canonicalJson(record.operation),
-        record.operationDigest,
-        record.threadId,
-        record.requestId,
-        record.snapshotVersion,
-        record.threadStateHash,
-        record.requestFingerprint,
-        record.appraisalId,
-        record.stanceId,
-        record.authorizationId,
-        canonicalJson(record.strategy),
-        record.strategyDigest,
-        record.strategy.recordedAt,
-        record.strategy.causationId,
-        record.strategy.correlationId,
-      );
-      this.#db.exec("COMMIT");
+        const existing = this.#strategyRow(record.threadId, record.requestId);
+        if (existing) {
+          if (
+            existing.operation_id !== record.operationId ||
+            existing.operation_digest !== record.operationDigest
+          ) {
+            throw new ExpressionConflictError(
+              `Request ${record.requestId} already has a different disclosure strategy`,
+            );
+          }
+
+          return { disclosure: this.#decodeStrategy(existing), idempotent: true };
+        }
+        this.#db.prepare(`
+          INSERT INTO disclosure_strategies(
+            strategy_id,operation_id,operation_json,operation_digest,thread_id,request_id,
+            snapshot_version,thread_state_hash,request_fingerprint,appraisal_id,stance_id,
+            authorization_id,strategy_json,strategy_digest,recorded_at,causation_id,correlation_id
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.strategy.strategyId,
+          record.operationId,
+          canonicalJson(record.operation),
+          record.operationDigest,
+          record.threadId,
+          record.requestId,
+          record.snapshotVersion,
+          record.threadStateHash,
+          record.requestFingerprint,
+          record.appraisalId,
+          record.stanceId,
+          record.authorizationId,
+          canonicalJson(record.strategy),
+          record.strategyDigest,
+          record.strategy.recordedAt,
+          record.strategy.causationId,
+          record.strategy.correlationId,
+        );
+      });
+      if (transactionResult !== undefined) return transactionResult;
     } catch (error) {
-      safeRollback(this.#db);
       throw translateStorageError(error);
     }
     return {
@@ -658,57 +651,57 @@ export class ExpressionStore {
     );
     if (prior) return { response: prior, idempotent: true };
     try {
-      this.#db.exec("BEGIN IMMEDIATE");
-      const disclosure = this.getDisclosureStrategy(
-        record.threadId,
-        record.requestId,
-      );
-      if (
-        disclosure.strategy.strategyId !== record.strategyId ||
-        disclosure.strategyDigest !== record.strategyDigest ||
-        disclosure.strategy.authorizationId !== record.authorizationId
-      ) {
-        throw new ExpressionConflictError(
-          "Disclosure strategy changed before audience response persistence",
+      const transactionResult = this.#db.transaction(() => {
+        const disclosure = this.getDisclosureStrategy(
+          record.threadId,
+          record.requestId,
         );
-      }
-      const existing = this.#responseRow(record.threadId, record.requestId);
-      if (existing) {
         if (
-          existing.operation_id !== record.operationId ||
-          existing.operation_digest !== record.operationDigest
+          disclosure.strategy.strategyId !== record.strategyId ||
+          disclosure.strategyDigest !== record.strategyDigest ||
+          disclosure.strategy.authorizationId !== record.authorizationId
         ) {
           throw new ExpressionConflictError(
-            `Request ${record.requestId} already has a different audience response`,
+            "Disclosure strategy changed before audience response persistence",
           );
         }
-        this.#db.exec("COMMIT");
-        return { response: this.#decodeResponse(existing), idempotent: true };
-      }
-      this.#db.prepare(`
-        INSERT INTO audience_participation_responses(
-          response_id,operation_id,operation_json,operation_digest,strategy_id,
-          authorization_id,thread_id,request_id,response_json,response_digest,
-          recorded_at,causation_id,correlation_id
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-      `).run(
-        record.response.responseId,
-        record.operationId,
-        canonicalJson(record.operation),
-        record.operationDigest,
-        record.strategyId,
-        record.authorizationId,
-        record.threadId,
-        record.requestId,
-        canonicalJson(record.response),
-        record.responseDigest,
-        record.response.recordedAt,
-        record.response.causationId,
-        record.response.correlationId,
-      );
-      this.#db.exec("COMMIT");
+        const existing = this.#responseRow(record.threadId, record.requestId);
+        if (existing) {
+          if (
+            existing.operation_id !== record.operationId ||
+            existing.operation_digest !== record.operationDigest
+          ) {
+            throw new ExpressionConflictError(
+              `Request ${record.requestId} already has a different audience response`,
+            );
+          }
+
+          return { response: this.#decodeResponse(existing), idempotent: true };
+        }
+        this.#db.prepare(`
+          INSERT INTO audience_participation_responses(
+            response_id,operation_id,operation_json,operation_digest,strategy_id,
+            authorization_id,thread_id,request_id,response_json,response_digest,
+            recorded_at,causation_id,correlation_id
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.response.responseId,
+          record.operationId,
+          canonicalJson(record.operation),
+          record.operationDigest,
+          record.strategyId,
+          record.authorizationId,
+          record.threadId,
+          record.requestId,
+          canonicalJson(record.response),
+          record.responseDigest,
+          record.response.recordedAt,
+          record.response.causationId,
+          record.response.correlationId,
+        );
+      });
+      if (transactionResult !== undefined) return transactionResult;
     } catch (error) {
-      safeRollback(this.#db);
       throw translateStorageError(error);
     }
     return {
@@ -782,6 +775,6 @@ export class ExpressionStore {
   }
 }
 
-export function openExpressionStore(databasePath) {
-  return new ExpressionStore(databasePath);
+export function openExpressionStore(storage) {
+  return new ExpressionStore(storage);
 }

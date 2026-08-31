@@ -19,6 +19,7 @@ import {
   openLifecycleHardeningStore,
 } from "#services/world-kernel/src/lifecycle-hardening-store.mjs";
 import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 const EXPECTED_TABLES = [
   "threads",
@@ -299,11 +300,12 @@ function verifyDomainRecords(databasePath, raw) {
   let lifecycleStore = null;
   let expressionStore = null;
   try {
-    worldStore = openWorldStore(databasePath);
-    runtimeStore = openRuntimeStore(databasePath);
-    freezeStore = openFreezeStore(databasePath);
-    lifecycleStore = openLifecycleHardeningStore(databasePath);
-    expressionStore = openExpressionStore(databasePath);
+    const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-world-inspector-snapshot" });
+    worldStore = openWorldStore(worldStorage);
+    runtimeStore = openRuntimeStore(worldStorage);
+    freezeStore = openFreezeStore(worldStorage);
+    lifecycleStore = openLifecycleHardeningStore(worldStorage);
+    expressionStore = openExpressionStore(worldStorage);
   } catch (error) {
     expressionStore?.close();
     lifecycleStore?.close();

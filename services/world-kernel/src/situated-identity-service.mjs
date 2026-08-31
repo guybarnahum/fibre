@@ -1,7 +1,6 @@
-import { DatabaseSync } from "node:sqlite";
 
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
-import { normalizeDatabasePath } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { openIdentityStore } from "./identity-store.mjs";
 import { openSituatedLifeStore } from "./situated-life-store.mjs";
 import { livedCulturalFormationClaim } from "./lived-cultural-formation-authoring.mjs";
@@ -16,10 +15,10 @@ function exactRevision(history, revision, name) {
 }
 
 export class SituatedIdentityService {
-  #databasePath;
+  #storage;
 
-  constructor(databasePath) {
-    this.#databasePath = normalizeDatabasePath(databasePath);
+  constructor(storage) {
+    this.#storage = storage;
   }
 
   recordCulturalFormation({
@@ -34,12 +33,8 @@ export class SituatedIdentityService {
     effectiveAt = recordedAt,
     visibility = "private",
   }) {
-    const evidenceDb = new DatabaseSync(this.#databasePath, {
-      readOnly: true,
-      enableForeignKeyConstraints: true,
-    });
-    evidenceDb.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=5000;");
-    try {
+    const evidenceDb = openWorldStateDatabase(this.#storage, { readOnly: true, storeName: "SituatedIdentityService evidence" });
+        try {
       for (const eventId of eventReferences) {
         const row = evidenceDb.prepare(
           "SELECT 1 AS present FROM thread_events WHERE thread_id=? AND event_id=?",
@@ -50,7 +45,7 @@ export class SituatedIdentityService {
       evidenceDb.close();
     }
 
-    const situated = openSituatedLifeStore(this.#databasePath);
+    const situated = openSituatedLifeStore(this.#storage);
     let lifeRelations;
     let placeEpisodes;
     try {
@@ -82,7 +77,7 @@ export class SituatedIdentityService {
       effectiveAt,
       visibility,
     });
-    const identity = openIdentityStore(this.#databasePath);
+    const identity = openIdentityStore(this.#storage);
     try {
       const stored = identity.recordAssertion(candidate);
       const evidenceBody = {

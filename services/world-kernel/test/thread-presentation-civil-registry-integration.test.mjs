@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 // fibre-test-lifecycle: permanent
 
 import assert from "node:assert/strict";
@@ -68,7 +69,7 @@ function register(database, {
 test("Thread Presentation reads the real immutable Civil Registry record and emits a bounded civil projection", () =>
   withRegistry(({ databasePath, database }) => {
     const record = register(database);
-    const registry = new CivilRegistryStore(databasePath);
+    const registry = new CivilRegistryStore(localWorldStateStorage(databasePath));
     try {
       const projected = readPresentationCivilIdentity({
         civilRegistry: registry,
@@ -95,7 +96,7 @@ test("Thread Presentation reads the real immutable Civil Registry record and emi
 
 test("unregistered Thread produces no civil-identity presentation rather than a synthetic FIN", () =>
   withRegistry(({ databasePath }) => {
-    const registry = new CivilRegistryStore(databasePath);
+    const registry = new CivilRegistryStore(localWorldStateStorage(databasePath));
     try {
       assert.equal(readPresentationCivilIdentity({
         civilRegistry: registry,

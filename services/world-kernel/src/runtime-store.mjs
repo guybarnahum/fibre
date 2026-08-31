@@ -1,4 +1,3 @@
-import { DatabaseSync } from "node:sqlite";
 
 import {
   IntegrityError,
@@ -9,10 +8,9 @@ import {
 } from "./persistence-common.mjs";
 import {
   migrateDatabase,
-  normalizeDatabasePath,
-  safeRollback,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   RuntimeConflictError,
   RuntimeLeaseExpiredError,
@@ -70,13 +68,8 @@ function storedTimestamp(name, value, { nullable = false } = {}) {
 export class RuntimeStore {
   #database;
 
-  constructor(databasePath) {
-    this.#database = new DatabaseSync(normalizeDatabasePath(databasePath), {
-      enableForeignKeyConstraints: true,
-    });
-    this.#database.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;",
-    );
+  constructor(storage) {
+    this.#database = openWorldStateDatabase(storage, { storeName: "RuntimeStore" });
     try {
       migrateDatabase(this.#database);
     } catch (error) {
@@ -405,136 +398,135 @@ export class RuntimeStore {
     const prior = this.getRuntimeByAcquireOperation(record.operationId, record.operationDigest);
     if (prior) return { runtime: prior, idempotent: true };
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const thread = this.#database.prepare(
-        "SELECT version,status,state_json,state_hash FROM threads WHERE thread_id=?",
-      ).get(record.threadId);
-      if (!thread) throw new RuntimeNotFoundError(`Thread ${record.threadId} was not found`);
-      if (
-        Number(thread.version) !== record.snapshotVersion ||
-        thread.state_hash !== record.threadStateHash ||
-        !["frozen", "dormant"].includes(thread.status)
-      ) {
-        throw new RuntimeStateChangedError(
-          `Thread ${record.threadId} changed before thaw lease acquisition`,
-        );
-      }
-      if (threadStateHash(json(`Thread ${record.threadId}`, thread.state_json)) !== record.threadStateHash) {
-        throw new IntegrityError(`Thread ${record.threadId} state hash failed during thaw`);
-      }
-      const trace = this.#database.prepare(`
-        SELECT a.appraisal_id,s.stance_id,s.thread_state_hash,
-          s.request_fingerprint,s.stance_digest
-        FROM request_appraisals a
-        JOIN private_participation_stances s ON s.appraisal_id=a.appraisal_id
-        WHERE a.thread_id=? AND a.request_id=?
-      `).get(record.threadId, record.requestId);
-      if (
-        !trace ||
-        trace.appraisal_id !== record.appraisalId ||
-        trace.stance_id !== record.stanceId ||
-        trace.thread_state_hash !== record.threadStateHash ||
-        trace.request_fingerprint !== record.requestFingerprint ||
-        trace.stance_digest !== record.stanceDigest
-      ) {
-        throw new RuntimeStateChangedError(
-          `Request ${record.requestId} changed before thaw lease acquisition`,
-        );
-      }
-      const existingAuthority = this.#database.prepare(`
-        SELECT authorization_id,operation_id
-        FROM participation_authorizations
-        WHERE operation_id=? OR stance_id=?
-      `).get(record.operationId, record.stanceId);
-      if (existingAuthority) {
-        if (existingAuthority.operation_id === record.operationId) {
+      this.#database.transaction(() => {
+        const thread = this.#database.prepare(
+          "SELECT version,status,state_json,state_hash FROM threads WHERE thread_id=?",
+        ).get(record.threadId);
+        if (!thread) throw new RuntimeNotFoundError(`Thread ${record.threadId} was not found`);
+        if (
+          Number(thread.version) !== record.snapshotVersion ||
+          thread.state_hash !== record.threadStateHash ||
+          !["frozen", "dormant"].includes(thread.status)
+        ) {
+          throw new RuntimeStateChangedError(
+            `Thread ${record.threadId} changed before thaw lease acquisition`,
+          );
+        }
+        if (threadStateHash(json(`Thread ${record.threadId}`, thread.state_json)) !== record.threadStateHash) {
+          throw new IntegrityError(`Thread ${record.threadId} state hash failed during thaw`);
+        }
+        const trace = this.#database.prepare(`
+          SELECT a.appraisal_id,s.stance_id,s.thread_state_hash,
+            s.request_fingerprint,s.stance_digest
+          FROM request_appraisals a
+          JOIN private_participation_stances s ON s.appraisal_id=a.appraisal_id
+          WHERE a.thread_id=? AND a.request_id=?
+        `).get(record.threadId, record.requestId);
+        if (
+          !trace ||
+          trace.appraisal_id !== record.appraisalId ||
+          trace.stance_id !== record.stanceId ||
+          trace.thread_state_hash !== record.threadStateHash ||
+          trace.request_fingerprint !== record.requestFingerprint ||
+          trace.stance_digest !== record.stanceDigest
+        ) {
+          throw new RuntimeStateChangedError(
+            `Request ${record.requestId} changed before thaw lease acquisition`,
+          );
+        }
+        const existingAuthority = this.#database.prepare(`
+          SELECT authorization_id,operation_id
+          FROM participation_authorizations
+          WHERE operation_id=? OR stance_id=?
+        `).get(record.operationId, record.stanceId);
+        if (existingAuthority) {
+          if (existingAuthority.operation_id === record.operationId) {
+            throw new RuntimeConflictError(
+              `Runtime operation ${record.operationId} already belongs to participation authority ${existingAuthority.authorization_id}`,
+            );
+          }
           throw new RuntimeConflictError(
-            `Runtime operation ${record.operationId} already belongs to participation authority ${existingAuthority.authorization_id}`,
+            `Private stance ${record.stanceId} already has participation authority and cannot acquire a second authorization`,
           );
         }
-        throw new RuntimeConflictError(
-          `Private stance ${record.stanceId} already has participation authority and cannot acquire a second authorization`,
+        const active = this.#database.prepare(
+          "SELECT lease_id,expires_at FROM thaw_leases WHERE thread_id=? AND status='active'",
+        ).get(record.threadId);
+        if (active) {
+          if (Date.parse(active.expires_at) > Date.parse(record.acquiredAt)) {
+            throw new ThawLeaseConflictError(
+              `Thread ${record.threadId} already has active thaw lease ${active.lease_id}`,
+            );
+          }
+          if (this.#expiredCompelledEpisodeNeedsAuthorityWithdrawal(active.lease_id, active.expires_at)) {
+            throw new ThawLeaseConflictError(
+              `Thread ${record.threadId} has an interrupted compelled runtime that must be closed as governing_authority_withdrawn before another thaw`,
+            );
+          }
+          this.#database.prepare(`
+            UPDATE runtime_sessions SET status='aborted',completed_at=?
+            WHERE lease_id=? AND status='active'
+          `).run(record.acquiredAt, active.lease_id);
+          this.#database.prepare(`
+            UPDATE thaw_leases
+            SET status='expired',released_at=?,release_reason='lease_expired'
+            WHERE lease_id=? AND status='active'
+          `).run(record.acquiredAt, active.lease_id);
+        }
+        this.#database.prepare(
+          "INSERT INTO participation_authorizations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ).run(
+          record.authorizationId,
+          record.operationId,
+          canonicalJson(record.operation),
+          record.operationDigest,
+          record.threadId,
+          record.requestId,
+          record.appraisalId,
+          record.stanceId,
+          record.snapshotVersion,
+          record.threadStateHash,
+          record.requestFingerprint,
+          canonicalJson(record.authorization),
+          record.authorizationDigest,
+          record.authorization.issuedAt,
+          record.authorization.causationId,
+          record.authorization.correlationId,
         );
-      }
-      const active = this.#database.prepare(
-        "SELECT lease_id,expires_at FROM thaw_leases WHERE thread_id=? AND status='active'",
-      ).get(record.threadId);
-      if (active) {
-        if (Date.parse(active.expires_at) > Date.parse(record.acquiredAt)) {
-          throw new ThawLeaseConflictError(
-            `Thread ${record.threadId} already has active thaw lease ${active.lease_id}`,
-          );
-        }
-        if (this.#expiredCompelledEpisodeNeedsAuthorityWithdrawal(active.lease_id, active.expires_at)) {
-          throw new ThawLeaseConflictError(
-            `Thread ${record.threadId} has an interrupted compelled runtime that must be closed as governing_authority_withdrawn before another thaw`,
-          );
-        }
         this.#database.prepare(`
-          UPDATE runtime_sessions SET status='aborted',completed_at=?
-          WHERE lease_id=? AND status='active'
-        `).run(record.acquiredAt, active.lease_id);
+          INSERT INTO thaw_leases(
+            lease_id,authorization_id,thread_id,snapshot_version,thread_state_hash,
+            status,acquired_at,expires_at
+          ) VALUES (?,?,?,?,?,'active',?,?)
+        `).run(
+          record.leaseId,
+          record.authorizationId,
+          record.threadId,
+          record.snapshotVersion,
+          record.threadStateHash,
+          record.acquiredAt,
+          record.expiresAt,
+        );
         this.#database.prepare(`
-          UPDATE thaw_leases
-          SET status='expired',released_at=?,release_reason='lease_expired'
-          WHERE lease_id=? AND status='active'
-        `).run(record.acquiredAt, active.lease_id);
-      }
-      this.#database.prepare(
-        "INSERT INTO participation_authorizations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      ).run(
-        record.authorizationId,
-        record.operationId,
-        canonicalJson(record.operation),
-        record.operationDigest,
-        record.threadId,
-        record.requestId,
-        record.appraisalId,
-        record.stanceId,
-        record.snapshotVersion,
-        record.threadStateHash,
-        record.requestFingerprint,
-        canonicalJson(record.authorization),
-        record.authorizationDigest,
-        record.authorization.issuedAt,
-        record.authorization.causationId,
-        record.authorization.correlationId,
-      );
-      this.#database.prepare(`
-        INSERT INTO thaw_leases(
-          lease_id,authorization_id,thread_id,snapshot_version,thread_state_hash,
-          status,acquired_at,expires_at
-        ) VALUES (?,?,?,?,?,'active',?,?)
-      `).run(
-        record.leaseId,
-        record.authorizationId,
-        record.threadId,
-        record.snapshotVersion,
-        record.threadStateHash,
-        record.acquiredAt,
-        record.expiresAt,
-      );
-      this.#database.prepare(`
-        INSERT INTO runtime_sessions(
-          session_id,lease_id,authorization_id,thread_id,request_id,
-          snapshot_version,thread_state_hash,context_json,context_digest,session_digest,status,started_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,'active',?)
-      `).run(
-        record.sessionId,
-        record.leaseId,
-        record.authorizationId,
-        record.threadId,
-        record.requestId,
-        record.snapshotVersion,
-        record.threadStateHash,
-        canonicalJson(record.context),
-        record.contextDigest,
-        record.sessionDigest,
-        record.acquiredAt,
-      );
-      this.#database.exec("COMMIT");
+          INSERT INTO runtime_sessions(
+            session_id,lease_id,authorization_id,thread_id,request_id,
+            snapshot_version,thread_state_hash,context_json,context_digest,session_digest,status,started_at
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,'active',?)
+        `).run(
+          record.sessionId,
+          record.leaseId,
+          record.authorizationId,
+          record.threadId,
+          record.requestId,
+          record.snapshotVersion,
+          record.threadStateHash,
+          canonicalJson(record.context),
+          record.contextDigest,
+          record.sessionDigest,
+          record.acquiredAt,
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       if (
         /UNIQUE constraint failed: participation_authorizations\.(?:stance_id|operation_id)/i.test(
           error?.message ?? "",
@@ -572,30 +564,29 @@ export class RuntimeStore {
     );
     if (prior) return { runtime: prior, idempotent: true };
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const runtime = this.getRuntime(record.threadId, record.sessionId);
-      this.#active(runtime, record.completedAt);
-      if (runtime.actorRun) {
-        throw new RuntimeConflictError(`Runtime session ${record.sessionId} already has an Actor run`);
-      }
-      if (record.inputDigest !== runtime.session.contextDigest) {
-        throw new IntegrityError("Actor input digest does not match runtime context");
-      }
-      this.#database.prepare("INSERT INTO actor_runs VALUES (?,?,?,?,?,?,?,?,?,?)").run(
-        record.actorRunId,
-        record.operationId,
-        record.operationDigest,
-        record.sessionId,
-        record.threadId,
-        runtime.requestId,
-        record.inputDigest,
-        canonicalJson(record.output),
-        record.outputDigest,
-        record.completedAt,
-      );
-      this.#database.exec("COMMIT");
+      this.#database.transaction(() => {
+        const runtime = this.getRuntime(record.threadId, record.sessionId);
+        this.#active(runtime, record.completedAt);
+        if (runtime.actorRun) {
+          throw new RuntimeConflictError(`Runtime session ${record.sessionId} already has an Actor run`);
+        }
+        if (record.inputDigest !== runtime.session.contextDigest) {
+          throw new IntegrityError("Actor input digest does not match runtime context");
+        }
+        this.#database.prepare("INSERT INTO actor_runs VALUES (?,?,?,?,?,?,?,?,?,?)").run(
+          record.actorRunId,
+          record.operationId,
+          record.operationDigest,
+          record.sessionId,
+          record.threadId,
+          runtime.requestId,
+          record.inputDigest,
+          canonicalJson(record.output),
+          record.outputDigest,
+          record.completedAt,
+        );
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { runtime: this.getRuntime(record.threadId, record.sessionId), idempotent: false };
@@ -609,44 +600,43 @@ export class RuntimeStore {
     );
     if (prior) return { runtime: prior, idempotent: true };
     try {
-      this.#database.exec("BEGIN IMMEDIATE");
-      const runtime = this.getRuntime(record.threadId, record.sessionId);
-      this.#active(runtime, record.completedAt);
-      if (!runtime.actorRun) {
-        throw new RuntimeOrderError(
-          `Runtime session ${record.sessionId} must run the Actor before Goal Guardian`,
+      this.#database.transaction(() => {
+        const runtime = this.getRuntime(record.threadId, record.sessionId);
+        this.#active(runtime, record.completedAt);
+        if (!runtime.actorRun) {
+          throw new RuntimeOrderError(
+            `Runtime session ${record.sessionId} must run the Actor before Goal Guardian`,
+          );
+        }
+        if (runtime.goalGuardianAudit) {
+          throw new RuntimeConflictError(
+            `Runtime session ${record.sessionId} already has a Goal Guardian audit`,
+          );
+        }
+        if (
+          record.contextDigest !== runtime.session.contextDigest ||
+          record.actorOutputDigest !== runtime.actorRun.outputDigest
+        ) {
+          throw new IntegrityError("Goal Guardian inputs do not match persisted runtime witnesses");
+        }
+        this.#database.prepare(
+          "INSERT INTO goal_guardian_audits VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        ).run(
+          record.auditId,
+          record.operationId,
+          record.operationDigest,
+          record.sessionId,
+          runtime.actorRun.actorRunId,
+          record.threadId,
+          runtime.requestId,
+          record.contextDigest,
+          record.actorOutputDigest,
+          canonicalJson(record.audit),
+          record.auditDigest,
+          record.completedAt,
         );
-      }
-      if (runtime.goalGuardianAudit) {
-        throw new RuntimeConflictError(
-          `Runtime session ${record.sessionId} already has a Goal Guardian audit`,
-        );
-      }
-      if (
-        record.contextDigest !== runtime.session.contextDigest ||
-        record.actorOutputDigest !== runtime.actorRun.outputDigest
-      ) {
-        throw new IntegrityError("Goal Guardian inputs do not match persisted runtime witnesses");
-      }
-      this.#database.prepare(
-        "INSERT INTO goal_guardian_audits VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-      ).run(
-        record.auditId,
-        record.operationId,
-        record.operationDigest,
-        record.sessionId,
-        runtime.actorRun.actorRunId,
-        record.threadId,
-        runtime.requestId,
-        record.contextDigest,
-        record.actorOutputDigest,
-        canonicalJson(record.audit),
-        record.auditDigest,
-        record.completedAt,
-      );
-      this.#database.exec("COMMIT");
+      });
     } catch (error) {
-      safeRollback(this.#database);
       throw translateStorageError(error);
     }
     return { runtime: this.getRuntime(record.threadId, record.sessionId), idempotent: false };
@@ -676,6 +666,6 @@ export class RuntimeStore {
   }
 }
 
-export function openRuntimeStore(databasePath) {
-  return new RuntimeStore(databasePath);
+export function openRuntimeStore(storage) {
+  return new RuntimeStore(storage);
 }

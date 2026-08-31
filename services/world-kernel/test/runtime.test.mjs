@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -119,8 +120,8 @@ function startRuntime(
   databasePath,
   { time = controlledClock(), leaseDurationMs = 10 * 60 * 1000, actor } = {},
 ) {
-  const store = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
   const service = new M1RuntimeWorldKernelService(store, runtimeStore, {
     clock: time.clock,
     leaseDurationMs,
@@ -707,8 +708,8 @@ test("separate runtime connections still yield exactly one active lease", () =>
     const first = startRuntime(databasePath, { time });
     const traceA = seedAndStance(first.service, "req_connection_a");
     const traceB = recordStance(first.service, "req_connection_b");
-    const secondStore = openWorldStore(databasePath);
-    const secondRuntimeStore = openRuntimeStore(databasePath);
+    const secondStore = openWorldStore(localWorldStateStorage(databasePath));
+    const secondRuntimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
     const second = new M1RuntimeWorldKernelService(secondStore, secondRuntimeStore, {
       clock: time.clock,
       leaseDurationMs: 10 * 60 * 1000,

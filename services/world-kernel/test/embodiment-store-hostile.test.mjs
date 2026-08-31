@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -43,7 +44,7 @@ function withDb(run) {
   const dir = mkdtempSync(join(tmpdir(), "fibre-emb-hostile-"));
   const db = join(dir, "world.sqlite");
   try {
-    const w = openWorldStore(db);
+    const w = openWorldStore(localWorldStateStorage(db));
     w.seedThread(structuredClone(fixture));
     w.close();
     return run(db);
@@ -53,7 +54,7 @@ function withDb(run) {
 }
 
 test("embodiment lineage cannot switch synthetic representation into captured truth", () => withDb((db) => {
-  const store = openEmbodimentStore(db);
+  const store = openEmbodimentStore(localWorldStateStorage(db));
   store.record(portrait(1));
   const forged = { ...portrait(2), representationKind: "captured_source", truthStatus: "captured_source_evidence", rightsBasis: "thread_self_owned" };
   assert.throws(() => store.record(forged), EmbodimentConflictError);
@@ -61,10 +62,10 @@ test("embodiment lineage cannot switch synthetic representation into captured tr
 }));
 
 test("embodiment inspection is query-only and cannot author", () => withDb((db) => {
-  const writer = openEmbodimentStore(db);
+  const writer = openEmbodimentStore(localWorldStateStorage(db));
   writer.record(portrait(1));
   writer.close();
-  const inspector = openEmbodimentInspectionStore(db);
+  const inspector = openEmbodimentInspectionStore(localWorldStateStorage(db));
   assert.equal(inspector.queryOnly(), true);
   assert.equal(inspector.inspectThread(fixture.threadId).embodiment.length, 1);
   assert.throws(() => inspector.record(portrait(2)), EmbodimentConflictError);

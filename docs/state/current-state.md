@@ -218,15 +218,17 @@ Economic consequence          0
 
 ## Persistence and repository posture
 
-The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical adds production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs; it does not by itself convert every World authority to production persistence.
+The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical added production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs. The subsequent World persistence portability slice moved authoritative World/Genesis stores off raw database paths and onto the executable `InfraDriver.state` contract without changing their semantic authority.
 
-The accepted production architecture remains:
+The accepted production architecture is now executable for authoritative World relational state:
 
 ```text
 semantic domain store -> InfraDriver capability -> provider implementation
 ```
 
-World Kernel/Genesis direct SQLite and the durable model-invocation filesystem journal remain explicit migration debt, not precedent for new production authorities and not an automatic prerequisite for #41.
+Authoritative World Kernel/Genesis stores now open the same logical `world` state scope through `InfraDriver.state`. The local provider maps that scope to SQLite; the Cloudflare provider maps it to one SQLite-backed Durable Object scope. A shared `WorldStore` provider contract proves schema migration, commit/reopen, transactional rollback and integrity through both providers, and repository policy rejects renewed direct SQLite imports under production World source.
+
+This does **not** yet prove a deployed Cloudflare World runtime, durable cloud scheduling/reconciliation, Birth Center cloud runtime, or browser-to-World E2E. The durable model-invocation filesystem journal remains explicit production-persistence migration debt.
 
 `HEAD` describes current Fibre. Git history is the default development archive. Completed milestones retain concise permanent outcomes while permanent runtime behavior is protected by enduring tests.
 

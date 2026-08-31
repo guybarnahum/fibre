@@ -21,7 +21,7 @@ Restricted records:
 
 Events, commands, requests, appraisals, stances, participation authorizations, Actor/Guardian results, consumptions, freeze reports, memories, abandonments, disclosure strategies, and audience responses are append-only. Lease and session rows are intentional trigger-constrained mutable lifecycle records and cannot be deleted.
 
-WorldStore, RuntimeStore, FreezeStore, LifecycleHardeningStore, and ExpressionStore use separate WAL connections over the same file. Dependent writes reread their required cross-interface witnesses inside the load-bearing transaction.
+WorldStore, RuntimeStore, FreezeStore, LifecycleHardeningStore, and ExpressionStore keep separate semantic interfaces while opening sessions in the same logical state scope. The local SQLite provider currently supplies separate WAL-backed connections over one file. Dependent writes reread their required cross-interface witnesses inside the load-bearing provider-neutral transaction.
 
 ## Run the complete proof
 
@@ -135,7 +135,7 @@ A private stance is not authority. Accepted execution authority is minted only t
 
 A separate standalone authorization path persists `clarify`, `negotiate`, `delegate`, or `refuse` without runtime. It is available only while the Thread is stable (`frozen` or `dormant`) and rejects `authorizedAction: accept` at both domain and store layers.
 
-A request attempt may have only one Participation Authorization. Runtime and non-execution writers detect each other's records before insertion and retain a SQLite uniqueness backstop; collisions are translated to stable domain errors rather than raw `500`s.
+A request attempt may have only one Participation Authorization. Runtime and non-execution writers detect each other's records before insertion and retain a relational uniqueness backstop; collisions are translated to stable domain errors rather than raw `500`s.
 
 Disclosure strategy is a restricted immutable record bound to the exact request, stance, and authorization. Its mode is private strategy intent, not a kernel honesty classifier. Disclosure cannot create or expand authority.
 

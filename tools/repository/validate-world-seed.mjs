@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { repoFile } from "#repo-root";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 const fixture = JSON.parse(
   readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
@@ -13,7 +14,7 @@ const directory = mkdtempSync(join(tmpdir(), "fibre-validate-world-seed-"));
 const databasePath = join(directory, "world.sqlite");
 
 try {
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath, { driverId: "sqlite-world-seed-validation" }));
   try {
     const result = world.seedThread(structuredClone(fixture));
     assert.equal(result.created, true, "validation smoke must be able to create a Thread");

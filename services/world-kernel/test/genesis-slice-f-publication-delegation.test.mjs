@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -181,9 +182,9 @@ function registered(birth) {
 
 test("publishBirth delegates Echo source-party matching to canonical Slice-F authority", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
-    const authorities = new GenesisOriginAuthorityStore(databasePath);
+    const authorities = new GenesisOriginAuthorityStore(localWorldStateStorage(databasePath));
     authorities.recordAuthority(authority({
       authorityRef: "consent_jane_doe",
       authorityKind: "living_source_consent",
@@ -206,9 +207,9 @@ test("publishBirth delegates Echo source-party matching to canonical Slice-F aut
 
 test("publishBirth delegates Homage subject-status matching to canonical Slice-F authority", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
-    const authorities = new GenesisOriginAuthorityStore(databasePath);
+    const authorities = new GenesisOriginAuthorityStore(localWorldStateStorage(databasePath));
     authorities.recordAuthority(authority({
       authorityRef: "attestation_homage_subject",
       authorityKind: "subject_status_attestation",
@@ -234,11 +235,11 @@ test("publishBirth delegates Homage subject-status matching to canonical Slice-F
 
 test("publishBirth delegates exact fork-prefix matching to canonical Slice-F boundary", () =>
   withDatabase((databasePath) => {
-    const genesis = new GenesisStore(databasePath);
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(worldSpec());
 
     const source = thread("thr_f_delegation_fork_source");
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.seedThread(source);
     world.applyCommand(updateSelfModelCommand(source));
     const events = world.listEvents(source.threadId);

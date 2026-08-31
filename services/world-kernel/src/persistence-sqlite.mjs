@@ -1,6 +1,3 @@
-import { mkdirSync, realpathSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
-
 import {
   WORLD_STORE_SCHEMA_VERSION,
   IntegrityError,
@@ -25,19 +22,6 @@ import { createSituatedLifeTables } from "./situated-life-schema.mjs";
 import { ensureSituatedLifeDigestColumns } from "./situated-life-integrity.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
-
-export function normalizeDatabasePath(databasePath) {
-  if (databasePath === ":memory:") return databasePath;
-  const absolutePath = resolve(databasePath);
-  mkdirSync(dirname(absolutePath), { recursive: true });
-  const parent = realpathSync(dirname(absolutePath));
-  return resolve(parent, basename(absolutePath));
-}
-
-export function safeRollback(database) {
-  try { database.exec("ROLLBACK"); }
-  catch { /* Preserve the original transaction error. */ }
-}
 
 export function translateStorageError(error) {
   if (/database is locked|database is busy/i.test(error?.message ?? "")) return new StorageBusyError(error.message);
@@ -233,34 +217,29 @@ export function migrateDatabase(database) {
   }
 
   if (currentVersion === WORLD_STORE_SCHEMA_VERSION && !needsEventSchemaUpgrade(database)) {
-    try {
-      database.exec("BEGIN IMMEDIATE");
+    database.transaction(() => {
       createAndRepairSchema(database);
       migrateLegacyConsumedObligations(database);
-      database.exec("COMMIT");
-    } catch (error) { safeRollback(database); throw error; }
+    });
     return;
   }
 
   const rebuildEvents = currentVersion > 0 && needsEventSchemaUpgrade(database);
   if (rebuildEvents) database.exec("PRAGMA foreign_keys=OFF");
   try {
-    database.exec("BEGIN IMMEDIATE");
-    if (rebuildEvents) rebuildEventTables(database);
-    createAndRepairSchema(database);
-    migrateLegacyConsumedObligations(database);
-    if (currentVersion < WORLD_STORE_SCHEMA_VERSION) {
-      const identityMigration = backfillLegacyThreadIdentity(database);
-      if (identityMigration.droppedPostSeedAdditions !== 0) throw new IntegrityError(`identity migration found ${identityMigration.droppedPostSeedAdditions} post-seed legacy projection additions with no trustworthy provenance; migration refused rather than silently dropping or fabricating identity history`);
-      backfillMemoryVisualCompanions(database);
-      database.exec(`PRAGMA user_version = ${WORLD_STORE_SCHEMA_VERSION}`);
-    }
-    const violations = database.prepare("PRAGMA foreign_key_check").all();
-    if (violations.length !== 0) throw new IntegrityError("world-store migration produced foreign-key violations");
-    database.exec("COMMIT");
-  } catch (error) {
-    safeRollback(database);
-    throw error;
+    database.transaction(() => {
+      if (rebuildEvents) rebuildEventTables(database);
+      createAndRepairSchema(database);
+      migrateLegacyConsumedObligations(database);
+      if (currentVersion < WORLD_STORE_SCHEMA_VERSION) {
+        const identityMigration = backfillLegacyThreadIdentity(database);
+        if (identityMigration.droppedPostSeedAdditions !== 0) throw new IntegrityError(`identity migration found ${identityMigration.droppedPostSeedAdditions} post-seed legacy projection additions with no trustworthy provenance; migration refused rather than silently dropping or fabricating identity history`);
+        backfillMemoryVisualCompanions(database);
+        database.exec(`PRAGMA user_version = ${WORLD_STORE_SCHEMA_VERSION}`);
+      }
+      const violations = database.prepare("PRAGMA foreign_key_check").all();
+      if (violations.length !== 0) throw new IntegrityError("world-store migration produced foreign-key violations");
+    });
   } finally {
     if (rebuildEvents) database.exec("PRAGMA foreign_keys=ON");
   }

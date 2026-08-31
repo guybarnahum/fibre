@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -96,7 +97,7 @@ function genesisThread() {
 }
 
 function publish(databasePath) {
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   genesis.recordWorldSpec(worldSpec());
   const thread = genesisThread();
   const publishedEpisode = {
@@ -141,7 +142,7 @@ test("published Genesis history survives later Pass-A form-policy drift while co
   withDatabase((databasePath) => {
     const { threadId, genesisId } = publish(databasePath);
 
-    let world = openWorldStore(databasePath);
+    let world = openWorldStore(localWorldStateStorage(databasePath));
     const lifeEvent = world.listEvents(threadId)[1];
     const liveThread = world.getThread(threadId);
     world.close();
@@ -207,7 +208,7 @@ test("published Genesis history survives later Pass-A form-policy drift while co
     );
     database.close();
 
-    world = openWorldStore(databasePath);
+    world = openWorldStore(localWorldStateStorage(databasePath));
     assert.deepEqual(world.replayThread(threadId), historicalThread);
     assert.doesNotThrow(() => world.verifyThreadIntegrity(threadId));
     world.close();
@@ -224,7 +225,7 @@ test("published Genesis history survives later Pass-A form-policy drift while co
     ).run(canonicalJson(tamperedPayload), historicalEventId);
     database.close();
 
-    world = openWorldStore(databasePath);
+    world = openWorldStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => world.replayThread(threadId),
       /does not match its Genesis episode content/,

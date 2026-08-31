@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -107,10 +108,10 @@ function start(databasePath, {
   actor,
   leaseDurationMs = 10 * 60 * 1000,
 } = {}) {
-  const store = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
+  const lifecycleStore = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
   const service = new M1LifecycleWorldKernelService(
     store,
     runtimeStore,
@@ -421,7 +422,7 @@ test("M1 obligation discharge identity is exact UTF-8 prose", async () =>
 
 test("same-version schema open restores newer lifecycle tables and triggers", async () =>
   withDatabase(async (databasePath) => {
-    const lifecycle = openLifecycleHardeningStore(databasePath);
+    const lifecycle = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
     assert.equal(lifecycle.storageMetadata().schemaVersion, 6);
     lifecycle.close();
 
@@ -436,7 +437,7 @@ test("same-version schema open restores newer lifecycle tables and triggers", as
     assert.equal(Number(database.prepare("PRAGMA user_version").get().user_version), 6);
     database.close();
 
-    const reopened = openLifecycleHardeningStore(databasePath);
+    const reopened = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
     assert.equal(reopened.storageMetadata().schemaVersion, 6);
     reopened.close();
 

@@ -6,6 +6,7 @@ import test from "node:test";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { WorldKernelService } from "../src/kernel-service.mjs";
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import {
   closeWorldKernelHttpServer,
   createWorldKernelHttpServer,
@@ -84,7 +85,7 @@ function assessment(trace, overrides = {}) {
 
 async function startApi({ privateToken = PRIVATE_TOKEN, thread = fixture } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-private-api-"));
-  const store = openWorldStore(join(directory, "world.sqlite"));
+  const store = openWorldStore(localWorldStateStorage(join(directory, "world.sqlite")));
   const service = new WorldKernelService(store);
   service.seedThread({ thread });
   const server = createWorldKernelHttpServer({ service, privateToken });

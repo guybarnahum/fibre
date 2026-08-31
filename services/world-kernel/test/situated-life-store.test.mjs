@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,7 +25,7 @@ function withDatabase(run) {
 }
 
 function seed(databasePath) {
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath));
   world.seedThread(structuredClone(fixture));
   world.close();
   const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -83,14 +84,14 @@ function place(sourceEvent) {
 test("situated life persists revision history and survives restart", () =>
   withDatabase((databasePath) => {
     const sourceEvent = seed(databasePath);
-    const store = openSituatedLifeStore(databasePath);
+    const store = openSituatedLifeStore(localWorldStateStorage(databasePath));
     store.recordLifeRelation(relation(sourceEvent, 1));
     store.recordLifeRelation(relation(sourceEvent, 2));
     store.recordPlaceEpisode(place(sourceEvent));
     assert.equal(store.lifeRelationHistory(fixture.threadId, relation(sourceEvent, 1).relationId).length, 2);
     store.close();
 
-    const reopened = openSituatedLifeStore(databasePath);
+    const reopened = openSituatedLifeStore(localWorldStateStorage(databasePath));
     assert.equal(reopened.listCurrentLifeRelations(fixture.threadId)[0].revision, 2);
     assert.equal(reopened.listCurrentPlaceEpisodes(fixture.threadId)[0].place.placeId, "place.kr.seoul");
     reopened.close();
@@ -99,12 +100,12 @@ test("situated life persists revision history and survives restart", () =>
 test("read-only inspection is query-only and cannot author situated life", () =>
   withDatabase((databasePath) => {
     const sourceEvent = seed(databasePath);
-    const writer = openSituatedLifeStore(databasePath);
+    const writer = openSituatedLifeStore(localWorldStateStorage(databasePath));
     writer.recordLifeRelation(relation(sourceEvent, 1));
     writer.recordPlaceEpisode(place(sourceEvent));
     writer.close();
 
-    const inspector = openSituatedLifeInspectionStore(databasePath);
+    const inspector = openSituatedLifeInspectionStore(localWorldStateStorage(databasePath));
     assert.equal(inspector.queryOnly(), true);
     const report = inspector.inspectThread(fixture.threadId);
     assert.equal(report.lifeRelations.length, 1);

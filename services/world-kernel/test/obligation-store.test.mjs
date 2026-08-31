@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -29,7 +30,7 @@ function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-obligation-store-"));
   const databasePath = join(directory, "world.sqlite");
   try {
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.seedThread(fixture);
     world.close();
     return run(databasePath);
@@ -103,7 +104,7 @@ function revision3(overrides = {}) {
 
 test("records revision 1 transactionally and exact retry is idempotent across restart", () =>
   withDatabase((databasePath) => {
-    let store = openObligationStore(databasePath);
+    let store = openObligationStore(localWorldStateStorage(databasePath));
     const first = store.recordRevision(obligation(), {
       recordedAt: "2026-08-09T20:01:00.000Z",
     });
@@ -112,7 +113,7 @@ test("records revision 1 transactionally and exact retry is idempotent across re
     assert.equal(first.revision.obligationDigest, structuredObligationDigest(obligation()));
     store.close();
 
-    store = openObligationStore(databasePath);
+    store = openObligationStore(localWorldStateStorage(databasePath));
     const retry = store.recordRevision(obligation(), {
       recordedAt: "2026-08-09T20:10:00.000Z",
     });
@@ -124,7 +125,7 @@ test("records revision 1 transactionally and exact retry is idempotent across re
 
 test("current resolution binds exact revision and digest", () =>
   withDatabase((databasePath) => {
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     const first = store.recordRevision(obligation(), {
       recordedAt: "2026-08-09T20:01:00.000Z",
     }).revision;
@@ -165,7 +166,7 @@ test("current resolution binds exact revision and digest", () =>
 
 test("revision append rejects skipped, missing, and conflicting revisions", () =>
   withDatabase((databasePath) => {
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.recordRevision(obligation({
         revision: 2,
@@ -193,8 +194,8 @@ test("revision append rejects skipped, missing, and conflicting revisions", () =
 
 test("independent connections serialize competing revision attempts", () =>
   withDatabase((databasePath) => {
-    const firstStore = openObligationStore(databasePath);
-    const secondStore = openObligationStore(databasePath);
+    const firstStore = openObligationStore(localWorldStateStorage(databasePath));
+    const secondStore = openObligationStore(localWorldStateStorage(databasePath));
     firstStore.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
 
     const winner = firstStore.recordRevision(revision2(), {
@@ -220,11 +221,11 @@ test("obligation identity cannot move between Threads", () =>
     const other = structuredClone(fixture);
     other.threadId = "thr_mina_other";
     other.identity.name = "Mina Other";
-    const world = openWorldStore(databasePath);
+    const world = openWorldStore(localWorldStateStorage(databasePath));
     world.seedThread(other);
     world.close();
 
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
     assert.throws(
       () => store.recordRevision(obligation({ threadId: other.threadId }), {
@@ -245,7 +246,7 @@ test("obligation identity cannot move between Threads", () =>
 
 test("issuer identity is stable and terminal status cannot be resurrected", () =>
   withDatabase((databasePath) => {
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
     assert.throws(
       () => store.recordRevision(revision2({
@@ -276,7 +277,7 @@ test("legacy source identity is unique, stable, and spent authority cannot becom
   withDatabase((databasePath) => {
     const legacyReference = "Legacy bounded review commitment";
     const legacyDigest = legacyObligationReferenceDigest(fixture.threadId, legacyReference);
-    let store = openObligationStore(databasePath);
+    let store = openObligationStore(localWorldStateStorage(databasePath));
     store.recordRevision(obligation({
       status: "satisfied",
       legacySourceDigest: legacyDigest,
@@ -316,7 +317,7 @@ test("legacy source identity is unique, stable, and spent authority cannot becom
     );
     raw.close();
 
-    store = openObligationStore(databasePath);
+    store = openObligationStore(localWorldStateStorage(databasePath));
     assert.equal(store.hasLegacyTombstone(fixture.threadId, legacyDigest), true);
     assert.throws(
       () => store.recordRevision(revision2({
@@ -330,7 +331,7 @@ test("legacy source identity is unique, stable, and spent authority cannot becom
 
 test("append-only enforcement rejects ordinary row rewriting", () =>
   withDatabase((databasePath) => {
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
     store.close();
 
@@ -347,7 +348,7 @@ test("append-only enforcement rejects ordinary row rewriting", () =>
 
 test("reads detect digest and denormalized-column corruption after append-only protection is bypassed", () =>
   withDatabase((databasePath) => {
-    let store = openObligationStore(databasePath);
+    let store = openObligationStore(localWorldStateStorage(databasePath));
     const first = store.recordRevision(obligation(), {
       recordedAt: "2026-08-09T20:01:00.000Z",
     }).revision;
@@ -361,7 +362,7 @@ test("reads detect digest and denormalized-column corruption after append-only p
     `).run(REQUEST_B, OBLIGATION_A);
     raw.close();
 
-    store = openObligationStore(databasePath);
+    store = openObligationStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.getCurrentRevision(fixture.threadId, OBLIGATION_A),
       /digest failed/,
@@ -376,7 +377,7 @@ test("reads detect digest and denormalized-column corruption after append-only p
     `).run(first.obligationDigest, OBLIGATION_A);
     raw.close();
 
-    store = openObligationStore(databasePath);
+    store = openObligationStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.getCurrentRevision(fixture.threadId, OBLIGATION_A),
       /status does not match obligation_json/,
@@ -386,7 +387,7 @@ test("reads detect digest and denormalized-column corruption after append-only p
 
 test("current resolution verifies chronology across the full revision chain", () =>
   withDatabase((databasePath) => {
-    let store = openObligationStore(databasePath);
+    let store = openObligationStore(localWorldStateStorage(databasePath));
     store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
     store.recordRevision(revision2(), { recordedAt: "2026-08-09T20:06:00.000Z" });
     store.close();
@@ -399,7 +400,7 @@ test("current resolution verifies chronology across the full revision chain", ()
     `).run("2026-08-09T20:07:00.000Z", OBLIGATION_A);
     raw.close();
 
-    store = openObligationStore(databasePath);
+    store = openObligationStore(localWorldStateStorage(databasePath));
     assert.throws(
       () => store.getCurrentRevision(fixture.threadId, OBLIGATION_A),
       /recordedAt moves backwards/,
@@ -409,7 +410,7 @@ test("current resolution verifies chronology across the full revision chain", ()
 
 test("listCurrent resolves each aggregate through verified history", () =>
   withDatabase((databasePath) => {
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     const first = store.recordRevision(obligation(), {
       recordedAt: "2026-08-09T20:01:00.000Z",
     }).revision;
@@ -423,7 +424,7 @@ test("listCurrent resolves each aggregate through verified history", () =>
 
 test("public ObligationStore cannot author discharged terminal revisions", () =>
   withDatabase((databasePath) => {
-    const store = openObligationStore(databasePath);
+    const store = openObligationStore(localWorldStateStorage(databasePath));
     store.recordRevision(obligation(), { recordedAt: "2026-08-09T20:01:00.000Z" });
     assert.throws(
       () => store.recordRevision(revision2({ status: "discharged" }), {

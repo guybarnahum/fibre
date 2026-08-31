@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -86,9 +87,9 @@ function acquireBody(requestId) {
 async function startApi() {
   const directory = mkdtempSync(join(tmpdir(), "fibre-freeze-api-"));
   const databasePath = join(directory, "world.sqlite");
-  const store = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
+  const store = openWorldStore(localWorldStateStorage(databasePath));
+  const runtimeStore = openRuntimeStore(localWorldStateStorage(databasePath));
+  const freezeStore = openFreezeStore(localWorldStateStorage(databasePath));
   const service = new M1FreezeWorldKernelService(store, runtimeStore, freezeStore, {
     clock: () => new Date("2026-08-05T21:00:00Z"),
   });

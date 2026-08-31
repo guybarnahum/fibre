@@ -22,6 +22,7 @@ import { selectCausalContext } from "#services/world-kernel/src/causal-context.m
 import { deterministicActorOutput } from "#services/world-kernel/src/runtime-domain.mjs";
 import { requestFingerprint } from "#services/world-kernel/src/private-participation.mjs";
 import { semanticDignityGuardianV4 } from "#services/world-kernel/src/dignity-guardian-evaluation.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 import {
   createLocalReasoningAdapter,
   localReasoningSelection,
@@ -130,14 +131,15 @@ function episodeSetupAcceptOutput(input) {
 }
 
 function openEpisodeWorld(databasePath, time = controlledClock()) {
-  const worldStore = openWorldStore(databasePath);
-  const runtimeStore = openRuntimeStore(databasePath);
-  const freezeStore = openFreezeStore(databasePath);
-  const lifecycleStore = openLifecycleHardeningStore(databasePath);
-  const expressionStore = openExpressionStore(databasePath);
-  const causalContextStore = openCausalContextStore(databasePath);
-  const semanticStateStore = openSemanticStateStore(databasePath);
-  const guardianCognitionStore = openGuardianCognitionStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-history-development" });
+  const worldStore = openWorldStore(worldStorage);
+  const runtimeStore = openRuntimeStore(worldStorage);
+  const freezeStore = openFreezeStore(worldStorage);
+  const lifecycleStore = openLifecycleHardeningStore(worldStorage);
+  const expressionStore = openExpressionStore(worldStorage);
+  const causalContextStore = openCausalContextStore(worldStorage);
+  const semanticStateStore = openSemanticStateStore(worldStorage);
+  const guardianCognitionStore = openGuardianCognitionStore(worldStorage);
   const guardianModelAdapter = createScriptedGuardianModelAdapter({
     provider: "history_development_setup",
     modelId: "history-development-setup-v1",
@@ -305,8 +307,9 @@ function verifyRestart(databasePath, episode, progress) {
 }
 
 function causalSnapshot(databasePath, { withholdMemoryId = null } = {}) {
-  const worldStore = openWorldStore(databasePath);
-  const causalContextStore = openCausalContextStore(databasePath);
+  const worldStorage = localWorldStateStorage(databasePath, { driverId: "sqlite-history-snapshot" });
+  const worldStore = openWorldStore(worldStorage);
+  const causalContextStore = openCausalContextStore(worldStorage);
   try {
     const thread = worldStore.getThread(minaFixture.threadId);
     const worldThreads = causalContextStore

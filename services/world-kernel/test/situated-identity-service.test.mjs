@@ -1,3 +1,4 @@
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -108,12 +109,12 @@ function publishLivedThread(databasePath) {
     createdAt: "2026-08-13T15:58:30Z",
   };
 
-  const genesis = new GenesisStore(databasePath);
+  const genesis = new GenesisStore(localWorldStateStorage(databasePath));
   genesis.recordWorldSpec(worldSpec);
   publishMinimalGenesisPriorLifeFixture(genesis, { manifest, thread, episodes });
   genesis.close();
 
-  const world = openWorldStore(databasePath);
+  const world = openWorldStore(localWorldStateStorage(databasePath));
   const events = world.listEvents(thread.threadId);
   world.close();
   return {
@@ -127,7 +128,7 @@ test("cultural formation requires Fibre-resolved lived evidence and remains cont
   withDb((databasePath) => {
     const published = publishLivedThread(databasePath);
 
-    const situated = openSituatedLifeStore(databasePath);
+    const situated = openSituatedLifeStore(localWorldStateStorage(databasePath));
     const relationId = lifeRelationId({ child: published.threadId, parent: "synthetic_mother" });
     situated.recordLifeRelation({
       relationId, revision: 1, threadId: published.threadId,
@@ -145,7 +146,7 @@ test("cultural formation requires Fibre-resolved lived evidence and remains cont
     });
     situated.close();
 
-    const service = new SituatedIdentityService(databasePath);
+    const service = new SituatedIdentityService(localWorldStateStorage(databasePath));
     assert.throws(() => service.recordCulturalFormation({
       threadId: published.threadId, kind: "household_language",
       claimPredicate: { subject: "self", predicate: "used_language_at_home", object: "Korean" },
