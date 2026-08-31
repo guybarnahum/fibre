@@ -48,7 +48,9 @@ async function initialPresentationBundle() {
   };
   presentation.visualIdentity = null;
   presentation.identityCard = null;
+  media.threadId = THREAD_ID;
   media.generatedAt = "2026-08-31T00:40:00Z";
+  provenance.threadId = THREAD_ID;
   provenance.generatedAt = "2026-08-31T00:40:00Z";
   provenance.entries = [
     ...provenance.entries.filter((entry) => entry.provenanceId !== "prov_slice_b_civil"),
