@@ -6,6 +6,12 @@ runtimes:
     provider: cloudflare
 
 infra:
+  world-cloudflare:
+    provider: cloudflare
+    driver: cloudflare-v1
+    capabilities:
+      - state
+      - scheduler
   cloudflare:
     provider: cloudflare
     driver: cloudflare-v1
@@ -48,6 +54,9 @@ integrations:
       authorizationToken: C2PA_SIGNER_TOKEN
 
 services:
+  world-kernel:
+    runtime: cloudflare
+    infra: world-cloudflare
   thread-presentation:
     runtime: cloudflare
     infra: cloudflare

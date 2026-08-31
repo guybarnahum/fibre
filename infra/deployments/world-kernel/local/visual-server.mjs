@@ -51,7 +51,7 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
       ?? productionCanonicalRootBoundary(environment);
     const presentationBoundary = visualOptions.presentationBoundary
       ?? productionPresentationBoundary(environment);
-    visualRuntime = attachWorldVisualPublicationRuntime({
+    visualRuntime = await attachWorldVisualPublicationRuntime({
       worldRuntime,
       onError: defaultVisualPublicationErrorReporter,
       ...visualOptions,

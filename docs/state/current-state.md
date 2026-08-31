@@ -218,17 +218,19 @@ Economic consequence          0
 
 ## Persistence and repository posture
 
-The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical added production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs. The subsequent World persistence portability slice moved authoritative World/Genesis stores off raw database paths and onto the executable `InfraDriver.state` contract without changing their semantic authority.
+The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical added production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs. The World portability work then moved authoritative World/Genesis stores off raw database paths and onto the executable `InfraDriver.state` contract, and added provider-neutral World scheduling plus a Cloudflare World runtime without changing semantic authority.
 
-The accepted production architecture is now executable for authoritative World relational state:
+The accepted production architecture is now executable for authoritative World relational state and reconciliation:
 
 ```text
-semantic domain store -> InfraDriver capability -> provider implementation
+semantic domain store/process -> InfraDriver capability -> provider implementation
 ```
 
-Authoritative World Kernel/Genesis stores now open the same logical `world` state scope through `InfraDriver.state`. The local provider maps that scope to SQLite; the Cloudflare provider maps it to one SQLite-backed Durable Object scope. A shared `WorldStore` provider contract proves schema migration, commit/reopen, transactional rollback and integrity through both providers, and repository policy rejects renewed direct SQLite imports under production World source.
+Authoritative World Kernel/Genesis stores open the same logical `world` scope through `InfraDriver.state`. The local provider maps that scope to SQLite; the Cloudflare provider maps it to one SQLite-backed Durable Object scope. `InfraDriver.scheduler` now has the same `get/schedule/cancel` surface in both environments: local maps it to the timer mechanism, Cloudflare maps it to the Durable Object alarm, and the World reconciliation process owns the semantic work performed on each wake. The canonical local World runtime uses this scheduler rather than a separate semantic `setInterval` loop.
 
-This does **not** yet prove a deployed Cloudflare World runtime, durable cloud scheduling/reconciliation, Birth Center cloud runtime, or browser-to-World E2E. The durable model-invocation filesystem journal remains explicit production-persistence migration debt.
+A Cloudflare World Worker/SQLite-backed Durable Object composition now exists for authoritative Genesis birth publication and durable reconciliation. It reuses fetch-shaped Asset Generator and Thread Presentation boundaries through Cloudflare service bindings. A restart/recovery contract proves that a birth can schedule pending work, the runtime instance can disappear, the durable wake can resume reconciliation, and canonical Embodiment admission remains single/idempotent across restart. The World deployment is included in the canonical Wrangler dry-run gate.
+
+This does **not** claim that the World Worker has been deployed to live production, that Birth Center provisional persistence/runtime is cloud-portable, or that browser-to-World E2E is complete. The Birth Center durable model-invocation filesystem journal remains explicit production-persistence migration debt.
 
 `HEAD` describes current Fibre. Git history is the default development archive. Completed milestones retain concise permanent outcomes while permanent runtime behavior is protected by enduring tests.
 

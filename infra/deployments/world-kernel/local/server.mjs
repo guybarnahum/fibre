@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { createNodeServiceHandler } from "#infra/providers/local/service";
-import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
+import { createLocalInfraDriver } from "#infra/providers/local";
 import { createService } from "#infra/service";
 import { createGenesisPresentationDeliveryService } from "#services/thread-presentation/src/index.mjs";
 import { CivilRegistryStore } from "#services/world-kernel/src/civil-registry-store.mjs";
@@ -23,6 +23,10 @@ import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
+import {
+  createWorldReconciliationProcess,
+  createWorldReconciliationRuntime,
+} from "#services/world-kernel/src/world-reconciliation-process.mjs";
 import { attachGenesisBirthPublicationHttpServer } from "#services/world-kernel/src/genesis-birth-http-server.mjs";
 import { openObligationApplicabilityStore } from "#services/world-kernel/src/obligation-applicability-store.mjs";
 import { openStructuredAuthorityWithdrawalStore } from "#services/world-kernel/src/structured-authority-withdrawal-store.mjs";
@@ -54,12 +58,12 @@ function parsePort(value) {
   return port;
 }
 
-function parseRetryMs(value) {
-  const retryMs = Number(value);
-  if (!Number.isSafeInteger(retryMs) || retryMs < 100 || retryMs > 60_000) {
-    throw new TypeError("FIBRE_PRESENTATION_RETRY_MS must be an integer from 100 through 60000");
+function parseReconciliationIntervalMs(value) {
+  const intervalMs = Number(value);
+  if (!Number.isSafeInteger(intervalMs) || intervalMs < 100 || intervalMs > 60_000) {
+    throw new TypeError("FIBRE_WORLD_RECONCILIATION_MS must be an integer from 100 through 60000");
   }
-  return retryMs;
+  return intervalMs;
 }
 
 function attachOperationalService(server, kernelService, { repairEnabled }) {
@@ -113,10 +117,26 @@ export async function startWorldKernelFromEnvironment(
   const adminToken = environment.FIBRE_ADMIN_TOKEN ?? null;
   const privateToken = environment.FIBRE_PRIVATE_TOKEN ?? null;
   const presentationBaseUrl = environment.FIBRE_THREAD_PRESENTATION_URL ?? "http://127.0.0.1:8788";
-  const presentationRetryMs = parseRetryMs(environment.FIBRE_PRESENTATION_RETRY_MS ?? "5000");
+  const reconciliationIntervalMs = parseReconciliationIntervalMs(environment.FIBRE_WORLD_RECONCILIATION_MS ?? "5000");
   assertLoopbackBindHost(host);
 
-  const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
+  let reconciliationWake = async () => {};
+  const infraDriver = createLocalInfraDriver({
+    stateScopes: { world: databasePath },
+    schedulerScopes: {
+      world: {
+        onWake: () => reconciliationWake(),
+        onError(error) {
+          process.stderr.write(`${JSON.stringify({
+            level: "error",
+            event: "world-reconciliation-scheduler-wake-failed",
+            errorName: error?.constructor?.name ?? "Error",
+            message: error?.message ?? String(error),
+          })}\n`);
+        },
+      },
+    },
+  });
   const worldStorage = Object.freeze({ infraDriver, stateScopeId: "world" });
   const store = openWorldStore(worldStorage);
   let runtimeStore;
@@ -218,64 +238,32 @@ export async function startWorldKernelFromEnvironment(
     }),
   });
 
-  function reportPresentationDelivery(result) {
-    if (result?.delivered === true) return;
+  function reportReconciliationError(entry, error) {
     process.stderr.write(`${JSON.stringify({
-      level: "warn",
-      event: "genesis-presentation-delivery-pending",
-      genesisId: result?.genesisId ?? null,
-      threadId: result?.threadId ?? null,
-      attemptCount: result?.attemptCount ?? null,
-      error: result?.error ?? null,
+      level: "error",
+      event: "world-reconciliation-failed",
+      kind: entry.kind,
+      errorName: entry.errorName,
+      message: entry.message,
+      stack: error instanceof Error ? error.stack : null,
     })}\n`);
   }
 
-  async function deliverGenesisPresentation(genesisId) {
-    if (presentationDelivery === null) return null;
-    try {
-      const result = await presentationDelivery.deliverGenesis(genesisId);
-      reportPresentationDelivery(result);
-      return result;
-    } catch (error) {
-      process.stderr.write(`${JSON.stringify({
-        level: "error",
-        event: "genesis-presentation-delivery-failed",
-        genesisId,
-        errorName: error?.constructor?.name ?? "Error",
-        message: error?.message ?? String(error),
-      })}\n`);
-      return null;
-    }
-  }
-
-  let presentationSweepRunning = false;
-  async function deliverPendingPresentations() {
-    if (presentationDelivery === null || presentationSweepRunning) return null;
-    presentationSweepRunning = true;
-    try {
-      const result = await presentationDelivery.deliverPending();
-      for (const item of result.results) reportPresentationDelivery(item);
-      return result;
-    } catch (error) {
-      process.stderr.write(`${JSON.stringify({
-        level: "error",
-        event: "genesis-presentation-retry-sweep-failed",
-        errorName: error?.constructor?.name ?? "Error",
-        message: error?.message ?? String(error),
-      })}\n`);
-      return null;
-    } finally {
-      presentationSweepRunning = false;
-    }
-  }
+  const reconciliationProcess = createWorldReconciliationProcess({
+    presentationDelivery,
+    onError: reportReconciliationError,
+  });
+  const reconciliationRuntime = createWorldReconciliationRuntime({
+    infraDriver,
+    process: reconciliationProcess,
+    intervalMs: reconciliationIntervalMs,
+  });
+  reconciliationWake = () => reconciliationRuntime.handleWake();
 
   const birthPublisher = Object.freeze({
     async publishBirth(bundle) {
       const result = await authoritativeBirthPublisher.publishBirth(bundle);
-      const genesisId = result?.manifest?.genesisId ?? bundle?.manifest?.genesisId;
-      if (presentationDelivery !== null && typeof genesisId === "string") {
-        void deliverGenesisPresentation(genesisId);
-      }
+      await reconciliationRuntime.requestWake();
       return result;
     },
   });
@@ -310,17 +298,13 @@ export async function startWorldKernelFromEnvironment(
 
   try {
     const address = await listenWorldKernelHttpServer(server, { host, port });
-    let presentationRetryTimer = null;
-    if (presentationDelivery !== null) {
-      void deliverPendingPresentations();
-      presentationRetryTimer = setInterval(() => void deliverPendingPresentations(), presentationRetryMs);
-      presentationRetryTimer.unref?.();
-    }
+    await reconciliationRuntime.ensureScheduled();
+    if (presentationDelivery !== null) await reconciliationRuntime.requestWake();
     let closed = false;
     const close = async () => {
       if (closed) return;
       closed = true;
-      if (presentationRetryTimer !== null) clearInterval(presentationRetryTimer);
+      await reconciliationRuntime.stop();
       try {
         await closeWorldKernelHttpServer(server);
       } finally {
@@ -375,7 +359,9 @@ export async function startWorldKernelFromEnvironment(
       address,
       databasePath,
       presentationBaseUrl,
-      presentationRetryMs,
+      reconciliationIntervalMs,
+      reconciliationProcess,
+      reconciliationRuntime,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       genesisBirthPublicationEnabled: true,
@@ -422,7 +408,7 @@ async function main() {
     port: runtime.address.port,
     databasePath: runtime.databasePath,
     presentationBaseUrl: runtime.presentationBaseUrl,
-    presentationRetryMs: runtime.presentationRetryMs,
+    reconciliationIntervalMs: runtime.reconciliationIntervalMs,
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
     genesisBirthPublicationEnabled: runtime.genesisBirthPublicationEnabled,

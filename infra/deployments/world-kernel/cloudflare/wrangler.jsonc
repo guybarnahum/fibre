@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-world-kernel",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-08-31",
+  "vars": {
+    "FIBRE_DEPLOYMENT_ENV": "cloudflare",
+    "FIBRE_WORLD_RECONCILIATION_MS": "5000"
+  },
+  "secrets": {
+    "required": ["FIBRE_PRIVATE_TOKEN"]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WORLD_STATE",
+        "class_name": "FibreWorldDurableObject"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "THREAD_PRESENTATION",
+      "service": "fibre-thread-presentation"
+    },
+    {
+      "binding": "ASSET_GENERATOR",
+      "service": "fibre-asset-generator"
+    }
+  ],
+  "exports": {
+    "FibreWorldDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}

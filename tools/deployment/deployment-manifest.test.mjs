@@ -29,7 +29,8 @@ test("local deployment YAML selects runtime, InfraDriver and integrations outsid
 
   const worldKernel = resolveServiceDeployment(manifest, "world-kernel");
   assert.equal(worldKernel.runtime.provider, "local-node");
-  assert.equal(worldKernel.infra, null);
+  assert.equal(worldKernel.infra.driver, "local-v1");
+  assert.deepEqual(worldKernel.infra.capabilities, ["state", "scheduler"]);
   assert.equal(worldKernel.integrations.dignityGuardian.kind, "ai.reasoning");
   assert.equal(worldKernel.integrations.dignityGuardian.provider, "openai");
 });

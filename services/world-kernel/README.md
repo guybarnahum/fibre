@@ -180,3 +180,9 @@ The Thread Editor is loopback-only and non-authoritative. Its private token rema
 M1 is fully closed for the deterministic persistent participation, expression, cognition, life-change, closure, replay, and inspection boundary.
 
 It does not send real messages, prove delivery, provide a general performed-action ledger, implement production authentication, distributed leasing, worker isolation, a tool/model gateway, remote communication, production database topology, structured obligation records, or M2 identity/embodiment.
+
+## Provider-neutral World reconciliation
+
+World reconciliation uses `InfraDriver.scheduler` rather than a service-owned timer API. The executable scheduler surface is identical locally and on Cloudflare: `get(scopeId)`, `schedule(scopeId, scheduledTimeMs)`, and `cancel(scopeId)`. Local maps that port to its timer mechanism; Cloudflare maps it to the alarm on the same named SQLite-backed Durable Object scope that supplies `InfraDriver.state`.
+
+The Cloudflare deployment lives under `infra/deployments/world-kernel/cloudflare/`. Its private Genesis birth boundary schedules durable reconciliation, and its internal Asset Generator / Thread Presentation calls reuse the provider-neutral fetch-shaped service boundaries through Cloudflare service bindings. Recovery is derived from authoritative World/downstream state; the scheduler is a wake mechanism, not a second semantic workflow authority.

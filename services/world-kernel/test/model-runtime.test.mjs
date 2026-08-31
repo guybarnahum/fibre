@@ -28,7 +28,8 @@ test("deployment YAML owns reasoning provider/model selection without embedding 
   assert.doesNotMatch(text, /sk-[A-Za-z0-9]|AIza[A-Za-z0-9]/);
   const manifest = parseDeploymentManifest(text);
   const worldKernel = resolveServiceDeployment(manifest, "world-kernel");
-  assert.equal(worldKernel.infra, null);
+  assert.equal(worldKernel.infra.driver, "local-v1");
+  assert.deepEqual(worldKernel.infra.capabilities, ["state", "scheduler"]);
   assert.deepEqual(
     {
       provider: worldKernel.integrations.dignityGuardian.provider,

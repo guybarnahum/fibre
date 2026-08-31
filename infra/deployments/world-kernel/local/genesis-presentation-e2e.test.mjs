@@ -170,7 +170,7 @@ test("authoritative Genesis birth automatically becomes a persisted public non-f
       FIBRE_WORLD_PORT: "0",
       FIBRE_PRIVATE_TOKEN: PRIVATE_TOKEN,
       FIBRE_THREAD_PRESENTATION_URL: `http://127.0.0.1:${presentationAddress.port}`,
-      FIBRE_PRESENTATION_RETRY_MS: "100",
+      FIBRE_WORLD_RECONCILIATION_MS: "100",
     }, {
       guardianModelAdapter: createScriptedGuardianModelAdapter(),
     });

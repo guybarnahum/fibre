@@ -59,7 +59,6 @@ export function createLocalSchedulerPort({ scopes, now = Date.now } = {}) {
           .then(() => config.onWake())
           .catch((error) => config.onError(error));
       }, delayMs);
-      timer.unref?.();
       scheduled.set(scopeId, { scheduledTimeMs, timer });
       return Object.freeze({ scopeId, scheduledTimeMs });
     },

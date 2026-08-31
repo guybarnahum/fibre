@@ -325,7 +325,7 @@ function worldEnvironment(databasePath, presentationPort) {
     FIBRE_WORLD_PORT: "0",
     FIBRE_PRIVATE_TOKEN: PRIVATE_TOKEN,
     FIBRE_THREAD_PRESENTATION_URL: `http://127.0.0.1:${presentationPort}`,
-    FIBRE_PRESENTATION_RETRY_MS: "100",
+    FIBRE_WORLD_RECONCILIATION_MS: "100",
   };
 }
 

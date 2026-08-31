@@ -8,6 +8,12 @@ runtimes:
     provider: cloudflare
 
 infra:
+  world-local:
+    provider: local
+    driver: local-v1
+    capabilities:
+      - state
+      - scheduler
   cloudflare-local:
     provider: cloudflare
     driver: cloudflare-v1
@@ -69,6 +75,7 @@ integrations:
 services:
   world-kernel:
     runtime: node-local
+    infra: world-local
     integrations:
       dignityGuardian: guardian-openai
   birth-center:

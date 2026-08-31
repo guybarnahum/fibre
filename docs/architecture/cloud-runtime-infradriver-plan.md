@@ -293,7 +293,7 @@ World schema initialization/migration must operate through the state capability.
 - the same real `WorldStore` migration/commit/reopen/rollback/integrity contract passes against local and Cloudflare state providers;
 - repository policy rejects renewed direct SQLite imports in production World source.
 
-**Implementation status:** code-complete locally on `agent/cloud-runtime-infradriver`; Slice B is closed only after the branch-wide gates and exact-head CI pass.
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`; authoritative World relational persistence is provider-neutral and exact-head branch validation passed.
 
 ## Cloud Slice C — provider-neutral scheduler and World cloud runtime
 
@@ -317,6 +317,8 @@ Cloudflare scheduler provider
 ```
 
 The local runtime must use this scheduler too; no separate timer architecture is allowed.
+
+The executable scheduler contract is `scheduler-v0.1` with the same provider-neutral surface in both environments: `get(scopeId)`, `schedule(scopeId, scheduledTimeMs)`, and `cancel(scopeId)`. Local maps that contract to a timer adapter; Cloudflare maps it to the alarm on the same named World Durable Object scope. World reconciliation, not the provider, decides what work a wake means.
 
 ### Cloud World deployment
 
@@ -353,6 +355,8 @@ birth/pending work
  -> same current Presentation demand
  -> no duplicate semantic admission
 ```
+
+**Implementation status:** implemented on `agent/cloud-runtime-infradriver`. The shared scheduler contract drives both local and Cloudflare World reconciliation; the Cloudflare Worker hosts one named SQLite-backed World Durable Object using `state + scheduler`; service bindings preserve the Asset Generator and Thread Presentation fetch contracts; and the recovery test proves a scheduled wake survives runtime disposal and converges without duplicate canonical Embodiment admission. Live production deployment is not claimed by this slice.
 
 ## Cloud Slice D — Birth Center portability and cloud runtime
 
@@ -735,8 +739,8 @@ insidefibre.com public contract E2E             EXISTS
 
 Cloud transactional state provider              GAP
 World stores fully on InfraDriver.state          GAP
-provider-neutral scheduler + local parity       GAP
-World Cloudflare runtime                        GAP
+provider-neutral scheduler + local parity       EXISTS
+World Cloudflare runtime                        EXISTS
 Birth persistence through InfraDriver.state      GAP
 Birth Cloudflare runtime                        GAP
 explicit resource provisioning                  GAP

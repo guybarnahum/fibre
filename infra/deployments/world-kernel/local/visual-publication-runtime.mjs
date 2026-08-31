@@ -1,5 +1,5 @@
 import { createGenesisCanonicalEmbodimentMaterializer } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
-import { createThreadVisualPublicationProcess, startThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
+import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
 
 function createDurableThreadSource(identityStore) {
@@ -12,15 +12,15 @@ function createDurableThreadSource(identityStore) {
 }
 
 /**
- * Attaches Slice-A visual reconciliation to an already-composed local World
- * runtime. Durable Thread enumeration makes startup/restart recovery independent
- * of whether the original birth callback was observed by this process.
+ * Attaches visual reconciliation to an already-composed World runtime. Durable
+ * Thread enumeration makes recovery independent of whether the original birth
+ * callback was observed. Scheduling remains owned by InfraDriver.scheduler via
+ * the single World reconciliation schedule.
  */
-export function attachWorldVisualPublicationRuntime({
+export async function attachWorldVisualPublicationRuntime({
   worldRuntime,
   canonicalRootBoundary,
   presentationBoundary,
-  intervalMs = 5_000,
   runImmediately = true,
   now = () => new Date().toISOString(),
   onResult = null,
@@ -28,6 +28,9 @@ export function attachWorldVisualPublicationRuntime({
 } = {}) {
   if (!worldRuntime?.store || !worldRuntime?.identityStore || !worldRuntime?.embodimentStore) {
     throw new TypeError("visual publication runtime requires a started World Kernel runtime");
+  }
+  if (!worldRuntime?.reconciliationProcess || !worldRuntime?.reconciliationRuntime) {
+    throw new TypeError("visual publication runtime requires World reconciliation scheduling");
   }
   const canonicalEmbodimentMaterializer = createGenesisCanonicalEmbodimentMaterializer({
     worldStore: worldRuntime.store,
@@ -46,17 +49,19 @@ export function attachWorldVisualPublicationRuntime({
     onResult,
     onError,
   });
-  const scheduler = startThreadVisualPublicationProcess({
-    process,
-    intervalMs,
-    runImmediately,
-  });
+  worldRuntime.reconciliationProcess.setVisualPublicationProcess(process);
+  if (runImmediately) await worldRuntime.reconciliationRuntime.runNow();
 
+  let stopped = false;
   return Object.freeze({
     process,
     reconciler,
     canonicalEmbodimentMaterializer,
     runOnce: () => process.runOnce(),
-    stop: () => scheduler.stop(),
+    stop() {
+      if (stopped) return;
+      stopped = true;
+      worldRuntime.reconciliationProcess.setVisualPublicationProcess(null);
+    },
   });
 }

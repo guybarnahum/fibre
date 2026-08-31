@@ -71,29 +71,3 @@ export function createThreadVisualPublicationProcess({
     },
   });
 }
-
-export function startThreadVisualPublicationProcess({
-  process,
-  intervalMs = 5_000,
-  runImmediately = true,
-} = {}) {
-  requireMethod("process", process, "runOnce");
-  if (!Number.isSafeInteger(intervalMs) || intervalMs < 100 || intervalMs > 3_600_000) {
-    throw new TypeError("visual publication intervalMs must be an integer from 100 through 3600000");
-  }
-  let stopped = false;
-  const run = () => {
-    if (stopped) return;
-    void process.runOnce();
-  };
-  if (runImmediately) run();
-  const timer = setInterval(run, intervalMs);
-  timer.unref?.();
-  return Object.freeze({
-    stop() {
-      if (stopped) return;
-      stopped = true;
-      clearInterval(timer);
-    },
-  });
-}

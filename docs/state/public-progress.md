@@ -145,9 +145,9 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 ### The repository is not fully migrated to production persistence — Not yet
 
-**Simple English:** Fibre's authoritative World data can now use the same storage contract locally or through the Cloudflare state adapter, but one durable model-call journal and the full cloud runtime still need migration.
+**Simple English:** Fibre's authoritative World now has the same storage and wake-up architecture locally and on Cloudflare, including a restart-safe cloud World runtime in code; Birth Center still needs its durable cloud migration, and no live World deployment is claimed yet.
 
-**More accurate description:** Authoritative World/Genesis relational stores now open one logical state scope through `InfraDriver.state`, with local SQLite and Cloudflare SQLite-backed Durable Object implementations tested against the same real `WorldStore` transaction contract. The durable model-invocation filesystem journal, cloud scheduler/reconciliation and deployed World/Birth runtimes remain separate work.
+**More accurate description:** Authoritative World/Genesis relational stores use one logical `InfraDriver.state` scope across local SQLite and Cloudflare SQLite-backed Durable Object state. World reconciliation now uses the same `InfraDriver.scheduler` `get/schedule/cancel` contract locally and on Cloudflare, and the Cloudflare World runtime has a restart/recovery proof for scheduled Genesis/visual reconciliation without duplicate canonical Embodiment admission. The Birth Center durable model-invocation filesystem journal/runtime and live production deployment remain separate work.
 
 ## What follows after #41
 
