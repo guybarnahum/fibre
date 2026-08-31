@@ -16,6 +16,7 @@ import {
   createCloudflareRealtimePort,
   createCloudflareStreamPort,
 } from "./presentation-ports.mjs";
+import { createCloudflareTransactionalStatePort } from "./transactional-state.mjs";
 
 const DIGEST_META = "fibre-digest";
 const JSON_META = "fibre-metadata";
@@ -276,6 +277,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
 }
 
 export function createCloudflareInfraDriver({
+  stateScopes = {},
   objectBucket = null,
   workflowBindings = {},
   presentationChannels = null,
@@ -286,6 +288,10 @@ export function createCloudflareInfraDriver({
     driverVersion: INFRA_DRIVER_VERSION,
     capabilities: [],
   };
+  if (Object.keys(stateScopes).length > 0) {
+    driver.state = createCloudflareTransactionalStatePort({ scopes: stateScopes });
+    driver.capabilities.push("state");
+  }
   if (objectBucket !== null) {
     driver.objects = createCloudflareObjectPort(objectBucket);
     driver.capabilities.push("objects");
@@ -311,4 +317,5 @@ export {
   createCloudflareCatalogPort,
   createCloudflareRealtimePort,
   createCloudflareStreamPort,
+  createCloudflareTransactionalStatePort,
 };
