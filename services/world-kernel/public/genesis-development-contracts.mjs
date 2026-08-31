@@ -1,4 +1,14 @@
 export { canonicalJson, sha256 } from "../src/persistence-common.mjs";
+export { normalizeGenesisWorldSpec } from "../src/genesis-domain.mjs";
+export {
+  buildDeNovoSymbolicGenome,
+  symbolicGenomeDigest,
+} from "../src/symbolic-genome-domain.mjs";
+export {
+  GENESIS_EVENT_STRUCTURE_POOL_V3,
+  sampleEventStructuresV3,
+} from "../src/genesis-event-structure-pool-v3.mjs";
+export { buildHistoricalEnvelopePlan } from "../src/genesis-historical-envelope-v1.mjs";
 export {
   GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
   GENESIS_LIFE_PASS_A_PROMPT,

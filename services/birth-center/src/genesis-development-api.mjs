@@ -51,7 +51,7 @@ export function createGenesisDevelopmentApi({
   onError = () => {},
 } = {}) {
   if (!developmentService || typeof developmentService.develop !== "function") {
-    throw new TypeError("Genesis development API requires developmentService.develop(plan)");
+    throw new TypeError("Genesis development API requires developmentService.develop(request)");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Genesis development API privateToken must be at least 16 characters");
@@ -64,15 +64,15 @@ export function createGenesisDevelopmentApi({
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname !== "/internal/developments") return null;
+      if (url.pathname !== "/internal/births/develop") return null;
       try {
         if (url.search !== "") return json(400, { error: { code: "QUERY_NOT_SUPPORTED" } });
         if (request.method !== "POST") return json(405, { error: { code: "METHOD_NOT_ALLOWED" } });
         if (!constantTimeEqual(request.headers.get("x-fibre-private-token"), privateToken)) {
           return json(403, { error: { code: "PRIVATE_TOKEN_REQUIRED" } });
         }
-        const serializedPlan = await readJson(request, maxBodyBytes);
-        const result = await developmentService.develop(serializedPlan);
+        const developmentRequest = await readJson(request, maxBodyBytes);
+        const result = await developmentService.develop(developmentRequest);
         return json(result.status === "published" ? 200 : 202, { ok: true, development: result });
       } catch (error) {
         const status = error instanceof TypeError ? (error.httpStatus ?? 400) : 500;

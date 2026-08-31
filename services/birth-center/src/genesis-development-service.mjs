@@ -14,13 +14,16 @@ import {
 } from "fibre/world-kernel/genesis-development-contracts";
 
 import { generateGenesisLifeCandidate } from "./genesis-life-development.mjs";
-import { hydrateGenesisDevelopmentPlan } from "./genesis-development-plan.mjs";
+import {
+  buildGenesisDevelopmentPlan,
+  serializeGenesisDevelopmentPlan,
+} from "./genesis-development-plan.mjs";
 import {
   buildGenesisAdmissionPackage,
   buildGenesisPublicationCognition,
 } from "./genesis-publication.mjs";
 
-export const GENESIS_DEVELOPMENT_SERVICE_VERSION = "fibre-genesis-development-service-v1";
+export const GENESIS_DEVELOPMENT_SERVICE_VERSION = "fibre-genesis-development-service-v2";
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
@@ -53,6 +56,9 @@ function existingDevelopmentResult(existing, planDigest, plan) {
   }
   return Object.freeze({
     serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
+    requestId: plan.requestId,
+    requestDigest: plan.requestDigest,
+    developmentPlanDigest: planDigest,
     genesisId: existing.genesisId,
     threadId: existing.threadId,
     fibreIdentityNumber: existing.bundle?.civilRegistration?.fibreIdentityNumber ?? null,
@@ -98,8 +104,9 @@ export function createGenesisDevelopmentService({
   return Object.freeze({
     serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
 
-    async develop(serializedPlan) {
-      const plan = hydrateGenesisDevelopmentPlan(serializedPlan);
+    async develop(developmentRequest) {
+      const plan = buildGenesisDevelopmentPlan(developmentRequest);
+      const serializedPlan = serializeGenesisDevelopmentPlan(plan);
       const planDigest = digest(serializedPlan);
       const existing = birthRuntime.provisionalBirthStore.get(plan.genesisId);
       const replay = existingDevelopmentResult(existing, planDigest, plan);
@@ -128,6 +135,9 @@ export function createGenesisDevelopmentService({
       const accepted = await birthRuntime.submitBirth(admission);
       return Object.freeze({
         serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
+        requestId: plan.requestId,
+        requestDigest: plan.requestDigest,
+        developmentPlanDigest: planDigest,
         genesisId: plan.genesisId,
         threadId: plan.threadId,
         fibreIdentityNumber: admission.civilRegistration.fibreIdentityNumber,
