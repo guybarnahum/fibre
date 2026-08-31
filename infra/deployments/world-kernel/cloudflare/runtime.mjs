@@ -9,6 +9,7 @@ import { GenesisPresentationOutboxStore } from "#services/world-kernel/src/genes
 import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
 import {
@@ -83,6 +84,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   let identityStore;
   let embodimentStore;
   let genesisStore;
+  let symbolicGenomeStore;
   let civilRegistryStore;
   let presentationOutboxStore;
 
@@ -90,10 +92,11 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     identityStore = openIdentityStore(worldStorage);
     embodimentStore = openEmbodimentStore(worldStorage);
     genesisStore = new GenesisStore(worldStorage);
+    symbolicGenomeStore = new SymbolicGenomeStore(worldStorage);
     civilRegistryStore = new CivilRegistryStore(worldStorage);
     presentationOutboxStore = new GenesisPresentationOutboxStore(worldStorage);
   } catch (error) {
-    closeAll([presentationOutboxStore, civilRegistryStore, genesisStore, embodimentStore, identityStore, worldStore]);
+    closeAll([presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
     throw error;
   }
 
@@ -152,7 +155,11 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     now: nowMs,
   });
 
-  const authoritativeBirthPublisher = createGenesisBirthPublicationService({ authority: genesisStore });
+  const authoritativeBirthPublisher = createGenesisBirthPublicationService({
+    authority: genesisStore,
+    worldSpecAuthority: genesisStore,
+    genomeAuthority: symbolicGenomeStore,
+  });
   const birthPublisher = Object.freeze({
     async publishBirth(bundle) {
       const result = await authoritativeBirthPublisher.publishBirth(bundle);
@@ -170,6 +177,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     identityStore,
     embodimentStore,
     genesisStore,
+    symbolicGenomeStore,
     civilRegistryStore,
     presentationOutboxStore,
     presentationDelivery,
@@ -182,7 +190,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (closed) return;
       closed = true;
       if (cancelSchedule) await reconciliationRuntime.stop();
-      closeAll([presentationOutboxStore, civilRegistryStore, genesisStore, embodimentStore, identityStore, worldStore]);
+      closeAll([presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
     },
   });
 }
