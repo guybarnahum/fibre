@@ -9,7 +9,22 @@ function defaultVisualPublicationErrorReporter(entry, error) {
     message: entry.message,
     stack: error instanceof Error ? error.stack : null,
   })}\n`);
-  throw error;
+}
+
+function failFastExplicitRuntime(runtime) {
+  return Object.freeze({
+    ...runtime,
+    async runOnce() {
+      const result = await runtime.runOnce();
+      const failure = result.results.find((entry) => entry.ok === false);
+      if (failure) {
+        const error = new Error(`${failure.errorName}: ${failure.message}`);
+        error.name = failure.errorName;
+        throw error;
+      }
+      return result;
+    },
+  });
 }
 
 /**
@@ -25,9 +40,9 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
   visualOptions = {},
 ) {
   const worldRuntime = await startWorldKernelFromEnvironment(environment, serviceOptions);
-  let visualRuntime;
+  let attachedVisualRuntime;
   try {
-    visualRuntime = attachWorldVisualPublicationRuntime({
+    attachedVisualRuntime = attachWorldVisualPublicationRuntime({
       worldRuntime,
       onError: defaultVisualPublicationErrorReporter,
       ...visualOptions,
@@ -36,6 +51,7 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
     await worldRuntime.close();
     throw error;
   }
+  const visualRuntime = failFastExplicitRuntime(attachedVisualRuntime);
 
   let closed = false;
   const close = async () => {
