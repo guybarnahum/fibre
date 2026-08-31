@@ -29,8 +29,11 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         stateScopeId: BIRTH_SCOPE_ID,
         capabilities: cloud.infraDriver.capabilities,
         pendingBirthCount: cloud.runtime.status().pendingBirthCount,
+        genesisDevelopmentConfigured: true,
       });
     }
+    const developmentResponse = await cloud.developmentApi.fetch(request);
+    if (developmentResponse !== null) return developmentResponse;
     const birthResponse = await cloud.birthApi.fetch(request);
     if (birthResponse !== null) return birthResponse;
     return Response.json({ error: "not_found" }, { status: 404 });
