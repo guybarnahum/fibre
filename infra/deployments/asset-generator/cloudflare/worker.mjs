@@ -9,8 +9,10 @@ import {
   AssetGenerationError,
   assetGenerationRetryDecision,
   createAssetGenerationCompletion,
+  createAssetGenerationControlService,
   createAssetGenerationRuntime,
 } from "#services/asset-generator/src/index.mjs";
+import { createAssetGenerationControlApi } from "#services/asset-generator/src/http/asset-generation-control-api.mjs";
 import { shouldPublishPresentationAssetCompletion } from "../completion-routing.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
@@ -104,6 +106,24 @@ function createRuntime(env, job) {
   return createAssetGenerationRuntime({ infra, provider, credentialSigner });
 }
 
+function createControlApi(env) {
+  if (!env?.ASSET_OBJECTS) throw new TypeError("ASSET_OBJECTS binding is required");
+  if (!env?.ASSET_GENERATION) throw new TypeError("ASSET_GENERATION binding is required");
+  const deployment = serviceDeployment(env);
+  const infra = createCloudflareInfraDriver({
+    objectBucket: env.ASSET_OBJECTS,
+    workflowBindings: { asset_generation_v1: env.ASSET_GENERATION },
+  });
+  const credentialSigner = selectContentCredentialIntegration(deployment.integrations.contentCredentials, {
+    environment: env,
+  });
+  const controlService = createAssetGenerationControlService({ infra, credentialSigner });
+  return createAssetGenerationControlApi({
+    privateToken: env.FIBRE_PRIVATE_TOKEN,
+    controlService,
+  });
+}
+
 export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
     const job = event.payload;
@@ -176,7 +196,11 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
 }
 
 export default {
-  fetch(request) {
+  fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === "/internal/generation/reconcile") {
+      return createControlApi(env).fetch(request);
+    }
     return HTTP_SERVICE.fetch(request);
   },
 };
