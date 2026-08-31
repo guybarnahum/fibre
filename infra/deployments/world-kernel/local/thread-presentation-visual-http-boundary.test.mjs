@@ -63,7 +63,55 @@ test("World visual HTTP boundary surfaces Presentation rejection with HTTP statu
     (error) => {
       assert.equal(error.code, "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED");
       assert.equal(error.httpStatus, 403);
+      assert.equal(error.retryable, false);
       assert.match(error.message, /private_token_required/);
+      return true;
+    },
+  );
+});
+
+test("World visual HTTP boundary marks transient Presentation failures retryable", async () => {
+  for (const status of [429, 500, 503]) {
+    const boundary = createThreadPresentationVisualHttpBoundary({
+      baseUrl: "https://presentation.example",
+      privateToken: "shared-private-token",
+      async fetchImpl() {
+        return new Response(JSON.stringify({ ok: false, error: "temporarily_unavailable" }), {
+          status,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    });
+
+    await assert.rejects(
+      () => boundary.reconcileAvailableEmbodiment(HANDOFF),
+      (error) => {
+        assert.equal(error.code, "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED");
+        assert.equal(error.httpStatus, status);
+        assert.equal(error.retryable, true);
+        return true;
+      },
+    );
+  }
+});
+
+test("World visual HTTP boundary retries malformed successful Presentation responses", async () => {
+  const boundary = createThreadPresentationVisualHttpBoundary({
+    baseUrl: "https://presentation.example",
+    privateToken: "shared-private-token",
+    async fetchImpl() {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  });
+
+  await assert.rejects(
+    () => boundary.reconcileAvailableEmbodiment(HANDOFF),
+    (error) => {
+      assert.equal(error.code, "THREAD_PRESENTATION_VISUAL_HANDOFF_INVALID_RESPONSE");
+      assert.equal(error.retryable, true);
       return true;
     },
   );
