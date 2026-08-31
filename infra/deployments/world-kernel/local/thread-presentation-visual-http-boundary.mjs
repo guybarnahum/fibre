@@ -37,10 +37,14 @@ export function createThreadPresentationVisualHttpBoundary({
         const error = new Error(`Thread Presentation rejected visual publication handoff: ${detail}`);
         error.code = "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED";
         error.httpStatus = response.status;
+        error.retryable = response.status === 429 || response.status >= 500;
         throw error;
       }
       if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
-        throw new Error("Thread Presentation returned an invalid visual publication response");
+        const error = new Error("Thread Presentation returned an invalid visual publication response");
+        error.code = "THREAD_PRESENTATION_VISUAL_HANDOFF_INVALID_RESPONSE";
+        error.retryable = true;
+        throw error;
       }
       return body.result;
     },
