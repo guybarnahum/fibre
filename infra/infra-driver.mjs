@@ -1,4 +1,5 @@
 import { assertInfraNonEmpty, assertInfraPlainObject } from "./internal.mjs";
+import { assertSchedulerPort, SCHEDULER_VERSION } from "./scheduler.mjs";
 import {
   FIBRE_BIRTH_STATE_REQUIREMENTS,
   FIBRE_WORLD_STATE_REQUIREMENTS,
@@ -9,6 +10,7 @@ import {
 export {
   FIBRE_BIRTH_STATE_REQUIREMENTS,
   FIBRE_WORLD_STATE_REQUIREMENTS,
+  SCHEDULER_VERSION,
   requireTransactionalStateGuarantees,
 };
 
@@ -63,6 +65,7 @@ export function assertInfraDriver(driver, { required = [] } = {}) {
     if (!declared.has(capability)) throw new TypeError(`infra driver lacks required capability ${capability}`);
   }
   if (declared.has("state")) assertTransactionalStatePort(driver.state);
+  if (declared.has("scheduler")) assertSchedulerPort(driver.scheduler);
   for (const [capability, methods] of Object.entries(REQUIRED_METHODS)) {
     if (!declared.has(capability)) continue;
     assertInfraPlainObject(`infra driver.${capability}`, driver[capability]);
