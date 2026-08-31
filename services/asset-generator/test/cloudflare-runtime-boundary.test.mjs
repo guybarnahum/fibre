@@ -221,7 +221,7 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-dlq");
   assert.equal(presentationConfig.queues.producers, undefined);
   assert.equal(assetConfig.queues.consumers, undefined);
-  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN"]);
+  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
   assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, "fibre-c2pa-production-v1");
   assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
   assert.equal(assetConfig.vars.C2PA_SIGNER_ID, presentationConfig.vars.C2PA_SIGNER_ID);
