@@ -39,6 +39,8 @@
     "deploy:thread-presentation:cloudflare": "npx wrangler@latest deploy --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc",
     "deploy:world-kernel:cloudflare:dry": "npx wrangler@latest deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
     "deploy:world-kernel:cloudflare": "npx wrangler@latest deploy --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
+    "deploy:birth-center:cloudflare:dry": "npx wrangler@latest deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc",
+    "deploy:birth-center:cloudflare": "npx wrangler@latest deploy --config infra/deployments/birth-center/cloudflare/wrangler.jsonc",
     "test:audit": "node tools/test-infra/test-value-audit.mjs",
     "deployment:validate": "node tools/deployment/validate-deployment-manifest.mjs",
     "deployment:validate:remote": "node tools/deployment/validate-deployment-manifest.mjs infra/deployments/environments/cloudflare.yaml",

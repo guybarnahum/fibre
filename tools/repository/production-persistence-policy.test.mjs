@@ -47,19 +47,17 @@ test("new service runtime cannot persist durable files directly", () => {
   );
 });
 
-test("Birth Center durable invocation journal is the only named direct-file migration exception", () => {
-  assert.deepEqual(DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS, [
-    "services/birth-center/src/model-runtime/durable-invocation-journal.mjs",
-  ]);
-  for (const path of DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS) {
-    assert.deepEqual(
-      productionPersistenceViolationsForSource(
-        path,
-        'import { writeFileSync } from "node:fs";\nwriteFileSync("journal.json", "{}");\n',
-      ),
-      [],
-    );
-  }
+test("Birth Center has no direct-file production persistence exception after InfraDriver.state migration", () => {
+  assert.deepEqual(DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS, []);
+  assert.deepEqual(
+    productionPersistenceViolationsForSource(
+      "services/birth-center/src/model-runtime/durable-invocation-journal.mjs",
+      'import { writeFileSync } from "node:fs";\nwriteFileSync("journal.json", "{}");\n',
+    ),
+    [
+      "Production persistence bypass: services/birth-center/src/model-runtime/durable-invocation-journal.mjs writes durable files directly; service persistence must use an InfraDriver capability",
+    ],
+  );
 });
 
 test("service semantic code cannot import cloud storage/database SDKs directly", () => {

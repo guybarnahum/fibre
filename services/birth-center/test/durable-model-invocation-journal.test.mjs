@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import test from "node:test";
 
 import {
@@ -9,20 +8,49 @@ import {
   DurableInvocationConflictError,
   DurableInvocationIntegrityError,
   createDurableModelAdapter,
-  createFileModelInvocationJournal,
+  createStateModelInvocationJournal,
   durableInvocationRequestWitness,
 } from "../src/model-runtime/durable-invocation-journal.mjs";
 import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../../world-kernel/src/genesis-pass-a-reliability-v3.mjs";
 import { generateRichPassAEpisode } from "../../world-kernel/src/genesis-rich-pass-a-runner.mjs";
+import { tempBirthState } from "./support/birth-state-fixture.mjs";
 
 const CALIBRATION_CORPUS = "fixtures/birth-center/recovery/pass-a-restart-v1.json";
 const TRIAL_175_RESULT = "fixtures/birth-center/recovery/pass-a-restart-recorded-result-v1.json";
 const BASE_CONFIGURATION = Object.freeze({ transport: "test", temperature: 0 });
 
+const journalStates = new WeakMap();
+
 function tempJournal(t) {
-  const root = mkdtempSync(join(tmpdir(), "fibre-durable-model-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  return createFileModelInvocationJournal(root);
+  const state = tempBirthState(t);
+  const journal = createStateModelInvocationJournal(state.storage());
+  journalStates.set(journal, state);
+  t.after(() => journal.close());
+  return journal;
+}
+
+function journalRecord(journal, clientRequestId = "durable-test:001") {
+  const state = journalStates.get(journal);
+  const storage = state.storage();
+  const session = storage.infraDriver.state.open(storage.stateScopeId);
+  try {
+    const row = session.prepare("SELECT record_json FROM birth_model_invocations WHERE client_request_id = ?").get(clientRequestId);
+    return row === undefined ? null : JSON.parse(row.record_json);
+  } finally {
+    session.close();
+  }
+}
+
+function replaceJournalRecord(journal, clientRequestId, record) {
+  const state = journalStates.get(journal);
+  const storage = state.storage();
+  const session = storage.infraDriver.state.open(storage.stateScopeId);
+  try {
+    session.prepare("UPDATE birth_model_invocations SET record_json = ? WHERE client_request_id = ?")
+      .run(JSON.stringify(record), clientRequestId);
+  } finally {
+    session.close();
+  }
 }
 
 function fakeAdapter(invoke, configuration = BASE_CONFIGURATION) {
@@ -81,7 +109,7 @@ function resultFromCalibrationResponse(result, responses, clientRequestId) {
   };
 }
 
-test("Birth Center journal preserves the pre-move durable invocation persistence format exactly", async (t) => {
+test("Birth Center journal preserves the durable invocation witness and record format in InfraDriver.state", async (t) => {
   const adapter = fakeAdapter(async () => successfulResult());
   const args = simpleArgs();
   assert.equal(DURABLE_MODEL_INVOCATION_JOURNAL_VERSION, "fibre-durable-model-invocation-journal-v1");
@@ -99,21 +127,15 @@ test("Birth Center journal preserves the pre-move durable invocation persistence
 
   const journal = tempJournal(t);
   await createDurableModelAdapter({ baseAdapter: adapter, journal }).invoke(args);
-  const files = readdirSync(journal.rootPath);
-  assert.deepEqual(files, [
-    "invocation-a385cc0b1e8afc3296114bbde2e6d97ac61ae5c20cae2cc583c22344178c6c3e.json",
-  ]);
-  const text = readFileSync(join(journal.rootPath, files[0]), "utf8");
-  assert.equal(text.endsWith("\n"), true);
-  assert.equal(text.includes('\n  "recordVersion": "fibre-durable-model-invocation-journal-v1"'), true);
-  const record = JSON.parse(text);
+  const record = journalRecord(journal);
+  assert.ok(record);
   assert.deepEqual(Object.keys(record), [
+    "recordDigest",
     "recordVersion",
+    "recordedAt",
     "request",
     "result",
     "resultDigest",
-    "recordedAt",
-    "recordDigest",
   ]);
   assert.equal(record.resultDigest, "sha256:a842341c5ae49c731d398949da42bc643be3fb6ee7103e77222a1d4365f27960");
   assert.deepEqual(record.request, durableInvocationRequestWitness(adapter, args));
@@ -209,12 +231,10 @@ test("journal corruption is detected rather than regenerated over", async (t) =>
   });
   await adapter.invoke(simpleArgs());
 
-  const files = readdirSync(journal.rootPath);
-  assert.equal(files.length, 1);
-  const path = join(journal.rootPath, files[0]);
-  const record = JSON.parse(readFileSync(path, "utf8"));
+  const record = journalRecord(journal);
+  assert.ok(record);
   record.result.output.answer = "forged";
-  writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
+  replaceJournalRecord(journal, "durable-test:001", record);
 
   await assert.rejects(adapter.invoke(simpleArgs()), DurableInvocationIntegrityError);
 });

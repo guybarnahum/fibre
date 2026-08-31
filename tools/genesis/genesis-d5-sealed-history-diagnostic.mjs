@@ -5,9 +5,10 @@ import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
+import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 import {
   createDurableModelAdapter,
-  createFileModelInvocationJournal,
+  createStateModelInvocationJournal,
 } from "#services/birth-center/src/model-runtime/durable-invocation-journal.mjs";
 import {
   assertSealedHistoryExposureManifest,
@@ -351,7 +352,14 @@ function createBaseAdapter({ model, observer, replay }) {
 async function executePlan({ plan, rootPath, replay }) {
   const modelEvents = [];
   const durableEvents = [];
-  const journal = createFileModelInvocationJournal(resolve(rootPath, "invocations"));
+  const journalInfraDriver = createSqliteStateInfraDriver({
+    driverId: "genesis-d5-local-state",
+    scopes: { birth: resolve(rootPath, "birth-state.sqlite") },
+  });
+  const journal = createStateModelInvocationJournal({
+    infraDriver: journalInfraDriver,
+    stateScopeId: "birth",
+  });
   const adapter = createDurableModelAdapter({
     baseAdapter: createBaseAdapter({ model: plan.model, observer: (event) => modelEvents.push(event), replay }),
     journal,
@@ -374,7 +382,7 @@ async function executePlan({ plan, rootPath, replay }) {
     }));
   }
   const score = scoreGenesisD5(plan, results);
-  return Object.freeze({
+  const executionResult = Object.freeze({
     contract: GENESIS_D5_RESULT_CONTRACT,
     developmentOnly: true,
     generatedAt: new Date().toISOString(),
@@ -400,6 +408,8 @@ async function executePlan({ plan, rootPath, replay }) {
       physicalProviderAttemptsThisInvocation: modelEvents.filter((event) => event.type === "model_attempt").length,
     }),
   });
+  journal.close();
+  return executionResult;
 }
 
 function comparable(result) {

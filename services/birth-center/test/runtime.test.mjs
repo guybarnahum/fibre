@@ -1,17 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import test from "node:test";
 
 import { createBirthCenterRuntime } from "../src/runtime.mjs";
 import { startBirthCenterFromEnvironment } from "../../../infra/deployments/birth-center/local/server.mjs";
-
-function tempState(t) {
-  const root = mkdtempSync(join(tmpdir(), "fibre-birth-center-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  return root;
-}
+import { tempBirthState } from "./support/birth-state-fixture.mjs";
 
 function fakeAdapter(counter) {
   return Object.freeze({
@@ -44,8 +36,8 @@ const invocation = Object.freeze({
 });
 
 test("Birth Center owns durable development state but not authoritative Thread state", async (t) => {
-  const stateRoot = tempState(t);
-  const runtime = createBirthCenterRuntime({ stateRoot });
+  const state = tempBirthState(t);
+  const runtime = createBirthCenterRuntime({ storage: state.storage() });
   const status = runtime.status();
   assert.equal(status.authoritativeThreadStateOwned, false);
   assert.equal(status.providerInvocationPersistenceOwned, true);
@@ -57,21 +49,23 @@ test("Birth Center owns durable development state but not authoritative Thread s
   const initial = await first.invoke(invocation);
   assert.equal(counter.calls, 1);
 
-  const restarted = createBirthCenterRuntime({ stateRoot });
+  runtime.close();
+  const restarted = createBirthCenterRuntime({ storage: state.storage() });
   const replayCounter = { calls: 0 };
   const replay = await restarted.durableAdapter(fakeAdapter(replayCounter)).invoke(invocation);
   assert.equal(replayCounter.calls, 0);
   assert.deepEqual(replay, initial);
 
-  await assert.rejects(runtime.publishBirth({}), /no World Kernel publication boundary configured/);
+  await assert.rejects(restarted.submitBirth({}), /no World Kernel publication boundary configured/);
+  restarted.close();
 });
 
 test("Birth Center runs as a distinct loopback runtime service", async (t) => {
-  const stateRoot = tempState(t);
+  const state = tempBirthState(t);
   const service = await startBirthCenterFromEnvironment({
     FIBRE_BIRTH_CENTER_HOST: "127.0.0.1",
     FIBRE_BIRTH_CENTER_PORT: "0",
-    FIBRE_BIRTH_CENTER_STATE: stateRoot,
+    FIBRE_BIRTH_CENTER_STATE: state.databasePath,
   });
   t.after(() => service.close());
 

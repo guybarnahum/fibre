@@ -14,6 +14,12 @@ infra:
     capabilities:
       - state
       - scheduler
+  birth-local:
+    provider: local
+    driver: local-v1
+    capabilities:
+      - state
+      - scheduler
   cloudflare-local:
     provider: cloudflare
     driver: cloudflare-v1
@@ -80,6 +86,7 @@ services:
       dignityGuardian: guardian-openai
   birth-center:
     runtime: node-local
+    infra: birth-local
   content-credential-signer:
     runtime: node-local
     integrations:

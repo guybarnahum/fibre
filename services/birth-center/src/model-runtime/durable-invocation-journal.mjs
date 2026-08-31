@@ -1,89 +1,15 @@
-import { createHash } from "node:crypto";
+import { openBirthStateDatabase } from "../birth-state-storage.mjs";
 import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
-import { resolve } from "node:path";
+  canonicalDigest,
+  canonicalJson,
+  rawTextDigest,
+  sha256,
+} from "../state-codec.mjs";
 
 export const DURABLE_MODEL_INVOCATION_JOURNAL_VERSION = "fibre-durable-model-invocation-journal-v1";
 
 export class DurableInvocationConflictError extends Error {}
 export class DurableInvocationIntegrityError extends Error {}
-
-// These canonical JSON and SHA-256 semantics are part of the durable journal
-// persistence format. They intentionally match the implementation that owned
-// this journal in World Kernel before the capability moved to Birth Center.
-function assertPlainObject(name, value) {
-  if (
-    value === null ||
-    typeof value !== "object" ||
-    Array.isArray(value) ||
-    Object.getPrototypeOf(value) !== Object.prototype
-  ) {
-    throw new TypeError(`${name} must be a plain object`);
-  }
-}
-
-function assertFiniteNumber(name, value) {
-  if (typeof value !== "number" || !Number.isFinite(value) || Object.is(value, -0)) {
-    throw new TypeError(`${name} must be a finite number`);
-  }
-}
-
-function assertJsonValue(name, value, seen = new Set()) {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return;
-  if (typeof value === "number") {
-    assertFiniteNumber(name, value);
-    return;
-  }
-  if (typeof value !== "object") {
-    throw new TypeError(`${name} contains a non-JSON value`);
-  }
-  if (seen.has(value)) throw new TypeError(`${name} contains a cycle`);
-  seen.add(value);
-  if (Array.isArray(value)) {
-    for (let index = 0; index < value.length; index += 1) {
-      if (!(index in value)) throw new TypeError(`${name} contains a sparse array`);
-      assertJsonValue(`${name}[${index}]`, value[index], seen);
-    }
-  } else {
-    assertPlainObject(name, value);
-    for (const [key, item] of Object.entries(value)) {
-      if (item === undefined) throw new TypeError(`${name}.${key} is undefined`);
-      assertJsonValue(`${name}.${key}`, item, seen);
-    }
-  }
-  seen.delete(value);
-}
-
-function canonicalize(value) {
-  if (value === null || typeof value !== "object") return value;
-  if (Array.isArray(value)) return value.map(canonicalize);
-  return Object.fromEntries(
-    Object.keys(value)
-      .sort()
-      .map((key) => [key, canonicalize(value[key])]),
-  );
-}
-
-function canonicalJson(value) {
-  assertJsonValue("value", value);
-  return JSON.stringify(canonicalize(value));
-}
-
-function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-function canonicalDigest(value) {
-  return `sha256:${sha256(canonicalJson(value))}`;
-}
-
-function rawTextDigest(value) {
-  return `sha256:${sha256(value)}`;
-}
 
 function assertAdapter(adapter) {
   if (adapter === null || typeof adapter?.invoke !== "function") {
@@ -124,10 +50,6 @@ export function durableInvocationRequestWitness(adapter, args) {
   return Object.freeze({ ...witness, requestDigest: canonicalDigest(witness) });
 }
 
-function recordFileName(clientRequestId) {
-  return `invocation-${sha256(canonicalJson(clientRequestId))}.json`;
-}
-
 function normalizeStoredRecord(candidate) {
   if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
     throw new DurableInvocationIntegrityError("durable invocation journal record must be an object");
@@ -154,22 +76,50 @@ function normalizeStoredRecord(candidate) {
   return structuredClone(candidate);
 }
 
-export function createFileModelInvocationJournal(rootPath) {
-  if (typeof rootPath !== "string" || rootPath.trim() === "") throw new TypeError("durable invocation journal rootPath is required");
-  const root = resolve(rootPath);
+function migrate(session) {
+  session.exec(`
+    CREATE TABLE IF NOT EXISTS birth_model_invocations (
+      client_request_id TEXT PRIMARY KEY,
+      request_digest TEXT NOT NULL,
+      record_json TEXT NOT NULL,
+      recorded_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS birth_model_invocations_request_digest_idx
+      ON birth_model_invocations(request_digest);
+  `);
+}
 
-  function pathFor(clientRequestId) {
-    return resolve(root, recordFileName(clientRequestId));
-  }
+export function createStateModelInvocationJournal(storage, {
+  now = () => new Date().toISOString(),
+} = {}) {
+  if (typeof now !== "function") throw new TypeError("durable invocation journal now must be a function");
+  const session = openBirthStateDatabase(storage, { storeName: "Birth Center durable invocation journal" });
+  migrate(session);
+
+  const selectRecord = session.prepare(`
+    SELECT record_json
+    FROM birth_model_invocations
+    WHERE client_request_id = ?
+  `);
+  const insertRecord = session.prepare(`
+    INSERT INTO birth_model_invocations (
+      client_request_id,
+      request_digest,
+      record_json,
+      recorded_at
+    ) VALUES (?, ?, ?, ?)
+  `);
 
   function load(request) {
-    const path = pathFor(request.clientRequestId);
-    if (!existsSync(path)) return null;
+    const row = selectRecord.get(request.clientRequestId);
+    if (row === undefined) return null;
     let parsed;
     try {
-      parsed = JSON.parse(readFileSync(path, "utf8"));
+      parsed = JSON.parse(row.record_json);
     } catch (error) {
-      throw new DurableInvocationIntegrityError(`cannot read durable invocation journal record ${request.clientRequestId}: ${error.message}`);
+      throw new DurableInvocationIntegrityError(
+        `cannot read durable invocation journal record ${request.clientRequestId}: ${error.message}`,
+      );
     }
     const record = normalizeStoredRecord(parsed);
     if (record.request.requestDigest !== request.requestDigest) {
@@ -181,43 +131,42 @@ export function createFileModelInvocationJournal(rootPath) {
   }
 
   function commit(request, result) {
-    const existing = load(request);
-    if (existing !== null) {
-      const incomingDigest = canonicalDigest(result);
-      if (existing.resultDigest !== incomingDigest) {
-        throw new DurableInvocationConflictError(
-          `durable invocation ${request.clientRequestId} already has a different successful result`,
-        );
+    return session.transaction(() => {
+      const existing = load(request);
+      if (existing !== null) {
+        const incomingDigest = canonicalDigest(result);
+        if (existing.resultDigest !== incomingDigest) {
+          throw new DurableInvocationConflictError(
+            `durable invocation ${request.clientRequestId} already has a different successful result`,
+          );
+        }
+        return existing;
       }
-      return existing;
-    }
 
-    mkdirSync(root, { recursive: true });
-    const core = {
-      recordVersion: DURABLE_MODEL_INVOCATION_JOURNAL_VERSION,
-      request: structuredClone(request),
-      result: structuredClone(result),
-      resultDigest: canonicalDigest(result),
-      recordedAt: new Date().toISOString(),
-    };
-    const record = { ...core, recordDigest: canonicalDigest(core) };
-    const path = pathFor(request.clientRequestId);
-    try {
-      writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, { flag: "wx" });
-    } catch (error) {
-      if (error?.code !== "EEXIST") throw error;
-      const raced = load(request);
-      if (raced.resultDigest !== record.resultDigest) {
-        throw new DurableInvocationConflictError(
-          `durable invocation ${request.clientRequestId} raced with a different successful result`,
-        );
-      }
-      return raced;
-    }
-    return normalizeStoredRecord(record);
+      const core = {
+        recordVersion: DURABLE_MODEL_INVOCATION_JOURNAL_VERSION,
+        request: structuredClone(request),
+        result: structuredClone(result),
+        resultDigest: canonicalDigest(result),
+        recordedAt: now(),
+      };
+      const record = { ...core, recordDigest: canonicalDigest(core) };
+      insertRecord.run(
+        request.clientRequestId,
+        request.requestDigest,
+        canonicalJson(record),
+        record.recordedAt,
+      );
+      return normalizeStoredRecord(record);
+    });
   }
 
-  return Object.freeze({ rootPath: root, load, commit });
+  return Object.freeze({
+    stateScopeId: session.scopeId,
+    load,
+    commit,
+    close() { session.close(); },
+  });
 }
 
 function notify(observer, event) {
@@ -259,4 +208,8 @@ export function createDurableModelAdapter({ baseAdapter, journal, observer = nul
       return structuredClone(committed.result);
     },
   });
+}
+
+export function durableInvocationRecordKey(clientRequestId) {
+  return `invocation-${sha256(canonicalJson(clientRequestId))}`;
 }

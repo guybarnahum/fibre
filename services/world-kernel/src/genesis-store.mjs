@@ -4,6 +4,7 @@ import {
   UNCOMMANDED_EVENT_TYPES,
   assertId,
   canonicalJson,
+  sha256,
   threadStateHash,
 } from "./persistence-common.mjs";
 import {
@@ -105,6 +106,31 @@ function assertExactReferenceList(name, actual, expected) {
   if (canonicalJson(actual) !== canonicalJson(expected)) {
     throw new GenesisConflictError(`${name} does not exactly match the verified origin witness`);
   }
+}
+
+function birthPublicationRequestDigest(request) {
+  return `sha256:${sha256(canonicalJson(request))}`;
+}
+
+function exactBirthPublicationReplay(database, { genesisId, threadId, requestDigest }) {
+  if (!tableExists(database, "genesis_birth_publications")) return null;
+  const row = database.prepare(`
+    SELECT genesis_id,thread_id,request_digest,result_json
+    FROM genesis_birth_publications
+    WHERE genesis_id=? OR thread_id=?
+    LIMIT 1
+  `).get(genesisId, threadId);
+  if (row === undefined) return null;
+  if (row.genesis_id !== genesisId || row.thread_id !== threadId || row.request_digest !== requestDigest) {
+    throw new GenesisConflictError(
+      `Genesis birth replay conflicts with existing publication for ${genesisId}/${threadId}`,
+    );
+  }
+  const result = parseRecord(`Genesis birth publication ${genesisId}`, row.result_json);
+  if (canonicalJson(result) !== row.result_json) {
+    throw new IntegrityError(`Genesis birth publication ${genesisId} failed canonical verification`);
+  }
+  return Object.freeze({ ...structuredClone(result), idempotent: true });
 }
 
 function canonicalThreadEventsInTransaction(database, threadId) {
@@ -554,6 +580,25 @@ export class GenesisStore {
       throw new GenesisConflictError("Genesis situated continuity requires admitted life episodes");
     }
 
+    const publicationRequest = {
+      manifest: manifestCandidate,
+      thread: threadCandidate,
+      episodes: episodeCandidates,
+      memories: memoryCandidates,
+      lifeRelations: lifeRelationCandidates,
+      initialRoster: initialRosterCandidate,
+      lifeContinuity: lifeContinuityCandidate,
+      historicalEnvelopePlan: historicalEnvelopePlanCandidate,
+      originFixture: originFixtureCandidate,
+    };
+    const publicationRequestDigest = birthPublicationRequestDigest(publicationRequest);
+    const replay = exactBirthPublicationReplay(this.#database, {
+      genesisId: manifest.genesisId,
+      threadId: seedSnapshot.threadId,
+      requestDigest: publicationRequestDigest,
+    });
+    if (replay !== null) return replay;
+
     let historicalEnvelopePlan = null;
     if (normalizedEpisodes.length > 0) {
       if (historicalEnvelopePlanCandidate === null || historicalEnvelopePlanCandidate === undefined) {
@@ -779,7 +824,7 @@ export class GenesisStore {
         if (failAfterManifestForTest) {
           throw new GenesisConflictError("simulated post-manifest publication failure");
         }
-        return {
+        const result = {
           thread: structuredClone(publishedThread),
           manifest: structuredClone(manifest),
           manifestDigest,
@@ -787,8 +832,20 @@ export class GenesisStore {
           historicalEnvelopeRecordDigest,
           situatedContinuity: situatedContinuity === null ? null : structuredClone(situatedContinuity),
         };
+        this.#database.prepare(`
+          INSERT INTO genesis_birth_publications(
+            genesis_id,thread_id,request_digest,result_json,published_at
+          ) VALUES (?,?,?,?,?)
+        `).run(
+          manifest.genesisId,
+          seedSnapshot.threadId,
+          publicationRequestDigest,
+          canonicalJson(result),
+          publishedAt,
+        );
+        return result;
       });
-      return transactionResult;
+      return Object.freeze({ ...transactionResult, idempotent: false });
     } catch (error) {
       throw translateStorageError(error);
     }

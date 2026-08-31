@@ -22,6 +22,16 @@ export function createGenesisTables(database) {
       FOREIGN KEY (world_spec_id) REFERENCES genesis_world_specs(world_spec_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS genesis_birth_publications (
+      genesis_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL UNIQUE,
+      request_digest TEXT NOT NULL CHECK (request_digest LIKE 'sha256:%'),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json)),
+      published_at TEXT NOT NULL,
+      FOREIGN KEY (genesis_id) REFERENCES genesis_manifests(genesis_id),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS genesis_presentation_outbox (
       genesis_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL UNIQUE,
@@ -178,6 +188,12 @@ export function createGenesisTables(database) {
     CREATE TRIGGER IF NOT EXISTS genesis_world_specs_no_delete
       BEFORE DELETE ON genesis_world_specs
       BEGIN SELECT RAISE(ABORT,'genesis_world_specs is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_birth_publications_no_update
+      BEFORE UPDATE ON genesis_birth_publications
+      BEGIN SELECT RAISE(ABORT,'genesis_birth_publications is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_birth_publications_no_delete
+      BEFORE DELETE ON genesis_birth_publications
+      BEGIN SELECT RAISE(ABORT,'genesis_birth_publications is immutable'); END;
     CREATE TRIGGER IF NOT EXISTS genesis_manifests_no_update
       BEFORE UPDATE ON genesis_manifests
       BEGIN SELECT RAISE(ABORT,'genesis_manifests is immutable'); END;

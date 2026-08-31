@@ -4,14 +4,9 @@ import { resolve } from "node:path";
 
 const RUNTIME_SOURCE = /\.(?:mjs|js|ts|tsx|jsx)$/u;
 
-// Existing durable local file journal. This exact path is named migration debt
-// by the accepted production-persistence architecture. Do not grow this set;
-// migrate the journal behind infra.state once that capability is executable.
-export const DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS = Object.freeze([
-  "services/birth-center/src/model-runtime/durable-invocation-journal.mjs",
-]);
+export const DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS = Object.freeze([]);
 
-const DIRECT_FILE_PERSISTENCE_SET = new Set(DIRECT_FILE_PERSISTENCE_MIGRATION_PATHS);
+const DIRECT_FILE_PERSISTENCE_SET = new Set();
 
 const SQLITE_IMPORT = /(?:from\s+["'](?:node:sqlite|better-sqlite3|sqlite3)["']|require\(\s*["'](?:node:sqlite|better-sqlite3|sqlite3)["']\s*\))/u;
 const FS_WRITE_NAME = "(?:writeFileSync|writeFile|appendFileSync|appendFile|createWriteStream|copyFileSync|copyFile)";

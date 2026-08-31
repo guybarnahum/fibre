@@ -201,3 +201,37 @@ test("Genesis birth commits Thread, manifest, FIN, and presentation outbox atomi
     rmSync(directory, { recursive: true, force: true });
   }
 });
+test("Genesis birth publication is idempotent for exact replay and rejects divergent replay", () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-genesis-birth-replay-"));
+  const databasePath = join(directory, "world.sqlite");
+  const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
+  const storage = { infraDriver, stateScopeId: "world" };
+
+  try {
+    const genesis = new GenesisStore(storage);
+    genesis.recordWorldSpec(worldSpec());
+    const candidate = birth("thr_birth_infra_replay");
+
+    const first = genesis.publishBirth(candidate);
+    assert.equal(first.idempotent, false);
+    const replay = genesis.publishBirth(structuredClone(candidate));
+    assert.equal(replay.idempotent, true);
+    assert.deepEqual(replay.thread, first.thread);
+    assert.deepEqual(replay.manifest, first.manifest);
+
+    const divergent = structuredClone(candidate);
+    divergent.thread.currentState.selfModel = `${divergent.thread.currentState.selfModel} Divergent replay.`;
+    assert.throws(
+      () => genesis.publishBirth(divergent),
+      /Genesis birth replay conflicts with existing publication/,
+    );
+
+    const world = openWorldStore(storage);
+    assert.equal(world.listEvents(candidate.thread.threadId).length, 1);
+    assert.equal(world.getThread(candidate.thread.threadId).version, first.thread.version);
+    world.close();
+    genesis.close();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

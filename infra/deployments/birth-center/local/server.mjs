@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { createLocalInfraDriver } from "#infra/providers/local";
 import { createNodeServiceHandler } from "#infra/providers/local/service";
 import { createService } from "#infra/service";
+import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-write-api.mjs";
 import {
   BIRTH_CENTER_RUNTIME_VERSION,
   createBirthCenterRuntime,
@@ -20,6 +22,7 @@ if (DEPLOYMENT.runtime.provider !== "local-node") {
   throw new TypeError(`birth-center local host requires local-node runtime, got ${DEPLOYMENT.runtime.provider}`);
 }
 
+const BIRTH_SCOPE_ID = "birth";
 const LOOPBACK_BIND_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
 
 function assertLoopbackBindHost(host) {
@@ -34,6 +37,14 @@ function parsePort(value) {
     throw new TypeError("FIBRE_BIRTH_CENTER_PORT must be an integer from 0 through 65535");
   }
   return port;
+}
+
+function retryMs(environment) {
+  const value = Number(environment.FIBRE_BIRTH_RECONCILIATION_MS ?? 5_000);
+  if (!Number.isSafeInteger(value) || value < 100 || value > 3_600_000) {
+    throw new TypeError("FIBRE_BIRTH_RECONCILIATION_MS must be an integer from 100 through 3600000");
+  }
+  return value;
 }
 
 function worldPublisherFromEnvironment(environment) {
@@ -54,27 +65,55 @@ export async function startBirthCenterFromEnvironment(
   }
   const host = environment.FIBRE_BIRTH_CENTER_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_BIRTH_CENTER_PORT ?? "8790");
-  const stateRoot = resolve(environment.FIBRE_BIRTH_CENTER_STATE ?? ".fibre/birth-center");
+  const statePath = resolve(environment.FIBRE_BIRTH_CENTER_STATE ?? ".fibre/birth-center/birth.sqlite");
   assertLoopbackBindHost(host);
 
   const worldPublisher = Object.hasOwn(options, "worldPublisher")
     ? options.worldPublisher
     : worldPublisherFromEnvironment(environment);
-  const runtime = createBirthCenterRuntime({ stateRoot, worldPublisher });
-  const status = () => ({
-    service: "fibre-birth-center",
-    ...runtime.status(),
+  let runtime = null;
+  const infraDriver = createLocalInfraDriver({
+    stateScopes: { [BIRTH_SCOPE_ID]: statePath },
+    schedulerScopes: {
+      [BIRTH_SCOPE_ID]: {
+        onWake() { return runtime?.handleWake(); },
+        onError(error) {
+          console.error(JSON.stringify({
+            event: "birth-center-reconciliation-failed",
+            message: error instanceof Error ? error.message : String(error),
+          }));
+        },
+      },
+    },
   });
+  const birthStorage = Object.freeze({ infraDriver, stateScopeId: BIRTH_SCOPE_ID });
+  runtime = createBirthCenterRuntime({
+    storage: birthStorage,
+    worldPublisher,
+    retryMs: retryMs(environment),
+  });
+  await runtime.ensureScheduled();
+
+  const status = () => ({ service: "fibre-birth-center", ...runtime.status() });
+  const routes = [
+    { method: "GET", path: "/health", handler: status },
+    { method: "GET", path: "/v1/status", handler: status },
+  ];
+  if (worldPublisher !== null) {
+    const birthApi = createBirthCenterWriteApi({
+      runtime,
+      privateToken: environment.FIBRE_PRIVATE_TOKEN,
+    });
+    routes.push({
+      method: "POST",
+      path: "/internal/births",
+      handler: ({ request }) => birthApi.fetch(request),
+    });
+  }
   const service = createService({
     serviceName: "birth-center",
-    health: () => ({
-      runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
-      ...runtime.status(),
-    }),
-    routes: [
-      { method: "GET", path: "/health", handler: status },
-      { method: "GET", path: "/v1/status", handler: status },
-    ],
+    health: () => ({ runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION, ...runtime.status() }),
+    routes,
   });
   const server = createServer(createNodeServiceHandler({ service }));
 
@@ -92,13 +131,17 @@ export async function startBirthCenterFromEnvironment(
   const close = async () => {
     if (closed) return;
     closed = true;
+    await infraDriver.scheduler.cancel(BIRTH_SCOPE_ID);
     await new Promise((resolveClose, rejectClose) => {
       server.close((error) => error ? rejectClose(error) : resolveClose());
     });
+    runtime.close();
   };
 
   return Object.freeze({
     runtime,
+    infraDriver,
+    birthStorage,
     service,
     server,
     address: Object.freeze({ host: address.address, port: address.port }),
@@ -113,7 +156,8 @@ async function main() {
     runtimeVersion: BIRTH_CENTER_RUNTIME_VERSION,
     host: service.address.host,
     port: service.address.port,
-    stateRoot: service.runtime.stateRoot,
+    stateScopeId: service.runtime.stateScopeId,
+    infraCapabilities: service.runtime.infraDriver.capabilities,
     worldPublicationConfigured: service.runtime.worldPublicationConfigured,
     authoritativeThreadStateOwned: false,
   })}\n`);

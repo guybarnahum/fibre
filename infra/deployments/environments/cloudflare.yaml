@@ -12,6 +12,12 @@ infra:
     capabilities:
       - state
       - scheduler
+  birth-cloudflare:
+    provider: cloudflare
+    driver: cloudflare-v1
+    capabilities:
+      - state
+      - scheduler
   cloudflare:
     provider: cloudflare
     driver: cloudflare-v1
@@ -57,6 +63,9 @@ services:
   world-kernel:
     runtime: cloudflare
     infra: world-cloudflare
+  birth-center:
+    runtime: cloudflare
+    infra: birth-cloudflare
   thread-presentation:
     runtime: cloudflare
     infra: cloudflare
