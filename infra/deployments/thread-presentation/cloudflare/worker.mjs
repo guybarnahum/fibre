@@ -3,6 +3,7 @@ import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudfla
 import { createService } from "#infra/service";
 import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
 import {
+  createThreadPresentationVisualPublicationReconciler,
   normalizeThreadPresentationBundle,
   presentationProvenanceDigest,
   threadMediaPacketDigest,
@@ -10,10 +11,13 @@ import {
 } from "#services/thread-presentation/src/index.mjs";
 import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
 import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
+import { createVisualPublicationWriteApi } from "#services/thread-presentation/src/http/visual-publication-write-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
+import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
+import { createThreadPresentationIdentityMediaRewriteService } from "#services/world-kernel/src/thread-presentation-identity-media-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
@@ -65,6 +69,21 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 function createCredentialSigner(env) {
   return selectContentCredentialIntegration(serviceDeployment(env).integrations.contentCredentials, {
     environment: env,
+  });
+}
+
+function createVisualReconciler(env, infra, presentationServer) {
+  return createThreadPresentationVisualPublicationReconciler({
+    presentationServer,
+    infra,
+    selectProviderProfile: ({ requiresReferenceObjects }) => selectImageProviderProfile(
+      assetGeneratorDeployment(env),
+      { requiresReferenceObjects },
+    ),
+    createDemandService: createPresentationAssetDemandService,
+    createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
+    createIdentityRewrite: createThreadPresentationIdentityMediaRewriteService,
+    planSlots: planThreadPresentationAssetSlots,
   });
 }
 
@@ -122,35 +141,18 @@ async function p3Slot(presentationServer, { threadId, mediaId }) {
   return slot;
 }
 
-async function publishP3Fixture({
-  bundle,
-  presentationServer,
-  objectRef = null,
-  snapshotVersion = "p3-fixture-v1",
-}) {
+async function publishP3Fixture({ bundle, presentationServer, objectRef = null, snapshotVersion = "p3-fixture-v1" }) {
   const presentation = bundle?.presentation;
   const threadId = nonEmpty("fixture threadId", presentation?.manifest?.threadId);
   if (presentation?.manifest?.fixture !== true) throw new TypeError("P3 seed accepts fixture presentations only");
-
   const channelId = channelIdForThread(threadId);
   const current = await presentationServer.getSnapshot(channelId);
   if (current !== null) {
     if (current.pointer.threadId !== threadId || !sameFixtureBundle(current.snapshot, bundle)) {
       throw new TypeError(`fixture Thread ${threadId} is already seeded with different content`);
     }
-    return {
-      ok: true,
-      fixture: true,
-      reused: true,
-      threadId,
-      channelId,
-      lifecycleStatus: presentation.manifest.lifecycleStatus,
-      snapshotVersion: current.pointer.snapshotVersion,
-      snapshotDigest: current.pointer.snapshotDigest,
-      cursor: current.pointer.sequence,
-    };
+    return { ok: true, fixture: true, reused: true, threadId, channelId, lifecycleStatus: presentation.manifest.lifecycleStatus, snapshotVersion: current.pointer.snapshotVersion, snapshotDigest: current.pointer.snapshotDigest, cursor: current.pointer.sequence };
   }
-
   const result = await presentationServer.publishSnapshot({
     channelId,
     objectRef: objectRef ?? `p3_fixture_snapshot_${threadId}_v1`,
@@ -158,129 +160,61 @@ async function publishP3Fixture({
     bundle,
     catalog: { publiclyVisible: true, p3Fixture: true },
   });
-  return {
-    ok: true,
-    fixture: true,
-    reused: false,
-    threadId,
-    channelId,
-    lifecycleStatus: presentation.manifest.lifecycleStatus,
-    snapshotVersion: result.pointer.snapshotVersion,
-    snapshotDigest: result.pointer.snapshotDigest,
-    cursor: result.pointer.sequence,
-  };
+  return { ok: true, fixture: true, reused: false, threadId, channelId, lifecycleStatus: presentation.manifest.lifecycleStatus, snapshotVersion: result.pointer.snapshotVersion, snapshotDigest: result.pointer.snapshotDigest, cursor: result.pointer.sequence };
 }
 
 async function scheduleP3Media({ env, infra, presentationServer, threadId, mediaId }) {
   const slot = await p3Slot(presentationServer, { threadId, mediaId });
   const requestedAt = new Date().toISOString();
-  const providerProfile = selectImageProviderProfile(assetGeneratorDeployment(env), {
-    requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
-  });
+  const providerProfile = selectImageProviderProfile(assetGeneratorDeployment(env), { requiresReferenceObjects: slot.referenceObjectRefs.length > 0 });
   const demandService = createPresentationAssetDemandService({ infra });
-  const reconciled = await demandService.reconcile({
-    scope: { entityKind: "thread", entityRef: threadId },
-    slots: [slot],
-    requestedAt,
-    providerProfile,
-  });
-  const current = reconciled.projection.demands.find((entry) => (
-    entry.demand.current
-    && entry.demand.job.context?.kind === "thread_presentation_media"
-    && entry.demand.job.context.mediaId === mediaId
-  ));
+  const reconciled = await demandService.reconcile({ scope: { entityKind: "thread", entityRef: threadId }, slots: [slot], requestedAt, providerProfile });
+  const current = reconciled.projection.demands.find((entry) => entry.demand.current && entry.demand.job.context?.kind === "thread_presentation_media" && entry.demand.job.context.mediaId === mediaId);
   if (!current) throw new Error(`fixture media demand ${mediaId} did not persist as current`);
   const service = createAssetGenerationService({ infra });
   const workflow = await service.status(current.demand.job.jobId);
-  return {
-    ok: true,
-    fixture: true,
-    threadId,
-    mediaId,
-    providerProfile,
-    demandId: current.demand.demandId,
-    jobId: current.demand.job.jobId,
-    objectRef: current.demand.job.outputObjectRef,
-    workflow: workflow ?? current.dispatch,
-  };
+  return { ok: true, fixture: true, threadId, mediaId, providerProfile, demandId: current.demand.demandId, jobId: current.demand.job.jobId, objectRef: current.demand.job.outputObjectRef, workflow: workflow ?? current.dispatch };
 }
 
 async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
   if (env.P3_FIXTURE_MODE !== "1") return null;
   const url = new URL(request.url);
-
   if (url.pathname === "/__p3/fixtures/thread" && request.method === "POST") {
     const body = await requestJson(request);
     if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
-    try {
-      return Response.json(await publishP3Fixture({ bundle: body.bundle, presentationServer }));
-    } catch (error) {
-      return Response.json({ error: "invalid_p3_fixture", detail: error.message }, { status: 400 });
-    }
+    try { return Response.json(await publishP3Fixture({ bundle: body.bundle, presentationServer })); }
+    catch (error) { return Response.json({ error: "invalid_p3_fixture", detail: error.message }, { status: 400 }); }
   }
-
   if (url.pathname === "/__p3/fixtures/generate" && request.method === "POST") {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
     const body = await requestJson(request);
     if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
-    try {
-      const threadId = nonEmpty("threadId", body.threadId);
-      const mediaId = nonEmpty("mediaId", body.mediaId);
-      return Response.json(await scheduleP3Media({ env, infra, presentationServer, threadId, mediaId }));
-    } catch (error) {
-      return Response.json({ error: "invalid_p3_generation_request", detail: error.message }, { status: 400 });
-    }
+    try { return Response.json(await scheduleP3Media({ env, infra, presentationServer, threadId: nonEmpty("threadId", body.threadId), mediaId: nonEmpty("mediaId", body.mediaId) })); }
+    catch (error) { return Response.json({ error: "invalid_p3_generation_request", detail: error.message }, { status: 400 }); }
   }
-
   if (url.pathname === "/__p3/fixtures/can-tho" && request.method === "POST") {
     const body = await requestJson(request);
     if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
     const presentation = body?.bundle?.presentation;
-    if (presentation?.manifest?.threadId !== P3_CAN_THO_THREAD_ID
-      || presentation?.manifest?.lifecycleStatus !== "genesis_candidate"
-      || presentation?.manifest?.fixture !== true) {
-      return Response.json({ error: "invalid_p3_fixture" }, { status: 400 });
-    }
-    return Response.json(await publishP3Fixture({
-      bundle: body.bundle,
-      presentationServer,
-      objectRef: "p3_fixture_snapshot_thr_pr39_g2_04_v1",
-      snapshotVersion: "p3-can-tho-v1",
-    }));
+    if (presentation?.manifest?.threadId !== P3_CAN_THO_THREAD_ID || presentation?.manifest?.lifecycleStatus !== "genesis_candidate" || presentation?.manifest?.fixture !== true) return Response.json({ error: "invalid_p3_fixture" }, { status: 400 });
+    return Response.json(await publishP3Fixture({ bundle: body.bundle, presentationServer, objectRef: "p3_fixture_snapshot_thr_pr39_g2_04_v1", snapshotVersion: "p3-can-tho-v1" }));
   }
-
   if (url.pathname === "/__p3/fixtures/can-tho/generate-market" && request.method === "POST") {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
-    return Response.json(await scheduleP3Media({
-      env,
-      infra,
-      presentationServer,
-      threadId: P3_CAN_THO_THREAD_ID,
-      mediaId: P3_MARKET_MEDIA_ID,
-    }));
+    return Response.json(await scheduleP3Media({ env, infra, presentationServer, threadId: P3_CAN_THO_THREAD_ID, mediaId: P3_MARKET_MEDIA_ID }));
   }
-
   const statusMatch = /^\/__p3\/workflows\/([A-Za-z0-9._:-]+)$/.exec(url.pathname);
   if (statusMatch && request.method === "GET") {
     const service = createAssetGenerationService({ infra });
     const status = await service.status(statusMatch[1]);
-    return status === null
-      ? Response.json({ error: "workflow_not_found" }, { status: 404 })
-      : Response.json({ ok: true, workflow: status });
+    return status === null ? Response.json({ error: "workflow_not_found" }, { status: 404 }) : Response.json({ ok: true, workflow: status });
   }
-
-  if (url.pathname.startsWith("/__p3/") && request.method !== "GET" && request.method !== "POST") {
-    return Response.json({ error: "method_not_allowed" }, { status: 405 });
-  }
+  if (url.pathname.startsWith("/__p3/") && request.method !== "GET" && request.method !== "POST") return Response.json({ error: "method_not_allowed" }, { status: 405 });
   return null;
 }
 
 function createCompletionConsumer(env, infra, presentationServer) {
-  const publisher = createThreadPresentationAssetPublisher({
-    infra,
-    credentialSigner: createCredentialSigner(env),
-    presentationServer,
-  });
+  const publisher = createThreadPresentationAssetPublisher({ infra, credentialSigner: createCredentialSigner(env), presentationServer });
   return createPresentationAssetCompletionService({
     infra,
     credentialSigner: createCredentialSigner(env),
@@ -298,12 +232,16 @@ export default {
 
     const infra = createInfra(env);
     const presentationServer = createThreadPresentationServer({ infra });
-    const genesisWriteApi = createGenesisPresentationWriteApi({
-      presentationServer,
-      privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
-    });
+    const genesisWriteApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: env.FIBRE_PRIVATE_TOKEN ?? null });
     const genesisWriteResponse = await genesisWriteApi.fetch(request);
     if (genesisWriteResponse !== null) return genesisWriteResponse;
+
+    const visualWriteApi = createVisualPublicationWriteApi({
+      reconciler: createVisualReconciler(env, infra, presentationServer),
+      privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
+    });
+    const visualWriteResponse = await visualWriteApi.fetch(request);
+    if (visualWriteResponse !== null) return visualWriteResponse;
 
     const fixtureResponse = await maybeHandleP3Fixture(request, env, infra, presentationServer);
     if (fixtureResponse !== null) return fixtureResponse;
@@ -312,9 +250,7 @@ export default {
       infra,
       presentationServer,
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
-      openStream({ channelId, request: streamRequest }) {
-        return env.PRESENTATION_CHANNELS.getByName(channelId).fetch(streamRequest);
-      },
+      openStream({ channelId, request: streamRequest }) { return env.PRESENTATION_CHANNELS.getByName(channelId).fetch(streamRequest); },
     });
     return api.fetch(request);
   },
@@ -323,20 +259,13 @@ export default {
     const infra = createInfra(env);
     const presentationServer = createThreadPresentationServer({ infra });
     const completions = createCompletionConsumer(env, infra, presentationServer);
-
     for (const message of batch.messages) {
       try {
         await completions.consume(message.body);
         message.ack();
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        console.error(JSON.stringify({
-          event: "presentation_asset_completion_retry",
-          queue: batch.queue,
-          messageId: message.id,
-          attempts: message.attempts,
-          error: detail,
-        }));
+        console.error(JSON.stringify({ event: "presentation_asset_completion_retry", queue: batch.queue, messageId: message.id, attempts: message.attempts, error: detail }));
         const exponent = Math.min(Math.max(message.attempts - 1, 0), 6);
         message.retry({ delaySeconds: Math.min(300, 5 * (2 ** exponent)) });
       }
