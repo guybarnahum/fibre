@@ -28,7 +28,7 @@ function mediaReadySnapshotIdentity(current, event) {
   });
 }
 
-async function projectMediaReadySnapshot(presentationServer, current, event) {
+async function projectMediaReadySnapshot(presentationServer, current, event, proof) {
   if (current === null) return null;
   const assets = current.snapshot.media.assets;
   const index = assets.findIndex((asset) => asset.mediaId === event.payload.mediaId);
@@ -44,6 +44,8 @@ async function projectMediaReadySnapshot(presentationServer, current, event) {
     return current;
   }
 
+  const receipt = proof.receipt;
+  const generation = proof.generationRecord.generation;
   const generatedAt = latestTimestamp(
     current.snapshot.presentation.manifest.generatedAt,
     current.snapshot.media.generatedAt,
@@ -58,7 +60,16 @@ async function projectMediaReadySnapshot(presentationServer, current, event) {
           locator: event.payload.objectRef,
           mediaType: event.payload.mediaType,
           sha256: event.payload.digest,
+          width: receipt.width,
+          height: receipt.height,
+          durationMs: receipt.durationMs,
           unavailableReason: null,
+          generation: {
+            provider: generation.provider,
+            model: generation.model,
+            generatedAt: generation.generatedAt,
+            inputReferences: [...receipt.inputReferences],
+          },
         }
       : asset
   ));
@@ -178,7 +189,7 @@ export function createThreadPresentationAssetPublisher({
       const accepted = await presentationServer.appendEvent(eventInput, { expectedSequence });
       const snapshotProjection = accepted.duplicate
         ? currentSnapshot
-        : await projectMediaReadySnapshot(presentationServer, currentSnapshot, accepted.event);
+        : await projectMediaReadySnapshot(presentationServer, currentSnapshot, accepted.event, proof);
 
       await infra.catalog.upsert(`media:${stored.objectRef}`, {
         kind: "public_presentation_media",
