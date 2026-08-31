@@ -7,20 +7,20 @@ import test from "node:test";
 
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createNodeServiceHandler } from "#infra/providers/local/service";
-import {
-  createAssetGenerationCompletion,
-  createAssetGenerationRuntime,
-} from "#services/asset-generator/src/index.mjs";
 import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
 import { createPresentationReadApi } from "#services/thread-presentation/src/http/read-api.mjs";
 import { threadPresentationChannelId } from "#services/thread-presentation/src/public-asset-resolver.mjs";
-import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
+import {
+  GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
+  attachGenesisCanonicalVisualIdentity,
+} from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
 import { createScriptedGuardianModelAdapter } from "#services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
+import { createLocalAssetGenerationWorker } from "../../asset-generator/local/worker-harness.mjs";
 import {
   selectContentCredentialIntegration,
   selectImageIntegration,
@@ -110,14 +110,12 @@ function birth() {
   thread.status = "active";
   thread.relationshipRefs = [];
   thread.memoryRefs = [];
-  thread.identity.canonicalVisualIdentity = structuredClone(CANONICAL_VISUAL_IDENTITY);
-  thread.identity.canonicalVisualIdentity.specification.subject.partyId = THREAD_ID;
   thread.provenance = {
     createdAt: "2026-08-30T18:31:00Z",
     createdBy: "fibre.genesis",
     lastEventId: `evt_seed_${THREAD_ID}`,
   };
-  return attachTestCivilRegistration({
+  const bundle = attachTestCivilRegistration({
     manifest: {
       genesisId: `gen_${THREAD_ID}`,
       threadId: THREAD_ID,
@@ -143,6 +141,7 @@ function birth() {
     },
     thread,
   });
+  return attachGenesisCanonicalVisualIdentity(bundle, CANONICAL_VISUAL_IDENTITY);
 }
 
 async function listen(server) {
@@ -245,11 +244,9 @@ function createBflFixtureFetch({ expectedReferenceBase64 }) {
 }
 
 function createC2paFixtureFetch() {
-  const calls = [];
   let embeddedAssertion = null;
   let sequence = 0;
   const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, init });
     assert.equal(init.headers.Authorization, "Bearer slice-a-c2pa-token");
     const body = JSON.parse(init.body);
     if (url.endsWith("/embed")) {
@@ -276,12 +273,11 @@ function createC2paFixtureFetch() {
         verifiedAt: `2026-08-30T18:${38 + sequence}:00Z`,
         failureReason: null,
         trust: { policy: "c2pa_trust_list", trusted: true },
-        failureReason: null,
       });
     }
     throw new Error(`unexpected C2PA fixture URL ${url}`);
   };
-  return { calls, fetchImpl };
+  return { fetchImpl };
 }
 
 function signerFromFixture(c2pa) {
@@ -307,16 +303,11 @@ function worldEnvironment(databasePath, presentationPort) {
   };
 }
 
-function resultForThread(run, threadId = THREAD_ID) {
-  return run.results.find((entry) => entry.threadId === threadId);
+function resultForThread(run) {
+  return run.results.find((entry) => entry.threadId === THREAD_ID);
 }
 
-async function startWorld({
-  databasePath,
-  presentationPort,
-  canonicalRootBoundary,
-  presentationBoundary,
-}) {
+async function startWorld({ databasePath, presentationPort, canonicalRootBoundary, presentationBoundary }) {
   return startWorldKernelVisualPublicationFromEnvironment(
     worldEnvironment(databasePath, presentationPort),
     { guardianModelAdapter: createScriptedGuardianModelAdapter() },
@@ -330,41 +321,63 @@ async function startWorld({
   );
 }
 
-test("real birth automatically converges to one canonical root and one official photo across retry and restart", async () => {
+test("real birth automatically converges through durable root and photo workflows across retry and restart", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-slice-a-automatic-visual-"));
   const databasePath = join(directory, "world.sqlite");
-  const presentationInfra = createMemoryInfraDriver();
-  const presentationServer = createThreadPresentationServer({ infra: presentationInfra });
+  const infra = createMemoryInfraDriver();
+  const presentationServer = createThreadPresentationServer({ infra });
   const writeApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: PRIVATE_TOKEN });
   const presentationHttp = createServer(createNodeServiceHandler({ service: writeApi }));
   const presentationAddress = await listen(presentationHttp);
   const readApi = createPresentationReadApi({
-    infra: presentationInfra,
+    infra,
     presentationServer,
     openStream() { throw new Error("stream route is not part of the Slice-A proof"); },
   });
-  const c2pa = createC2paFixtureFetch();
-  const signer = signerFromFixture(c2pa);
-  const rootProviderBytes = encoder.encode("slice-a-canonical-root-provider-bytes");
-  const openai = createRetryingOpenAiFixtureFetch(rootProviderBytes);
+  const signer = signerFromFixture(createC2paFixtureFetch());
+  const openai = createRetryingOpenAiFixtureFetch(encoder.encode("slice-a-canonical-root-provider-bytes"));
   const rootProvider = selectImageIntegration(ASSET_DEPLOYMENT.integrations["openai-gpt-image-2-medium-v1"], {
     environment: { OPENAI_API_KEY: "slice-a-openai-key" },
     fetchImpl: openai.fetchImpl,
   });
-  const rootAssetRuntime = createAssetGenerationRuntime({
-    infra: presentationInfra,
-    provider: rootProvider,
+  let photoProvider = null;
+  let bfl = null;
+
+  const channelId = threadPresentationChannelId(THREAD_ID);
+  const publisher = createThreadPresentationAssetPublisher({
+    infra,
     credentialSigner: signer,
+    presentationServer,
+  });
+  const completions = createPresentationAssetCompletionService({
+    infra,
+    credentialSigner: signer,
+    async publishReady({ scope, receipt }) {
+      assert.deepEqual(scope, { entityKind: "thread", entityRef: THREAD_ID });
+      return publisher.publishReady({ receipt, channelId });
+    },
+  });
+  const worker = createLocalAssetGenerationWorker({
+    infra,
+    credentialSigner: signer,
+    selectProvider(job) {
+      if (job.providerProfile === "openai-gpt-image-2-medium-v1") return rootProvider;
+      if (job.providerProfile === "bfl-flux-2-pro-v1" && photoProvider !== null) return photoProvider;
+      throw new Error(`unexpected local worker provider profile ${job.providerProfile}`);
+    },
+    completionSink(completion, { job }) {
+      return job.context?.kind === "thread_presentation_media"
+        ? completions.consume(completion)
+        : null;
+    },
   });
   const canonicalRootBoundary = createCanonicalVisualRootBoundary({
-    infra: presentationInfra,
-    assetRuntime: rootAssetRuntime,
+    infra,
     credentialSigner: signer,
   });
-  const demandService = createPresentationAssetCompletionService;
   const presentationBoundary = createThreadPresentationVisualBoundary({
     presentationServer,
-    infra: presentationInfra,
+    infra,
     selectProviderProfile: ({ requiresReferenceObjects }) => selectImageProviderProfile(
       ASSET_DEPLOYMENT,
       { requiresReferenceObjects },
@@ -380,24 +393,29 @@ test("real birth automatically converges to one canonical root and one official 
       presentationBoundary,
     });
     world.genesisStore.recordWorldSpec(worldSpec());
-    const candidate = birth();
-    const published = await world.birthPublisher.publishBirth(candidate);
+    const published = await world.birthPublisher.publishBirth(birth());
     assert.equal(published.thread.threadId, THREAD_ID);
 
     const newborn = await waitForPublicSnapshot(readApi, THREAD_ID);
     assert.equal(newborn.snapshot.presentation.visualIdentity, null);
     assert.equal(newborn.snapshot.presentation.identityCard, null);
 
-    const firstRun = await world.visualRuntime.runOnce();
-    const first = resultForThread(firstRun);
+    const first = resultForThread(await world.visualRuntime.runOnce());
     assert.equal(first.ok, true);
     assert.equal(first.reconciliation.stage, "canonical_visual_root_pending");
-    const firstEmbodiments = world.embodimentStore.listCurrent(THREAD_ID);
-    assert.equal(firstEmbodiments.length, 1);
-    assert.equal(firstEmbodiments[0].revision, 1);
-    assert.equal(firstEmbodiments[0].status, "pending_generation");
-    assert.equal(firstEmbodiments[0].sourceReferences.length, 1);
+    const rootJobId = first.reconciliation.jobId;
+    const rootWorkflow = await infra.workflows.get("asset_generation_v1", rootJobId);
+    assert.ok(rootWorkflow);
+    assert.equal(rootWorkflow.status, "queued");
+    assert.equal(rootWorkflow.input.referenceObjectRefs.length, 0);
+    assert.equal(openai.calls.length, 0, "World must not execute the image provider");
+
+    await assert.rejects(
+      () => worker.run({ jobId: rootJobId, attemptNumber: 1 }),
+      /temporary fixture outage/,
+    );
     assert.equal(openai.calls.length, 1);
+    assert.equal(await infra.objects.get(rootWorkflow.input.receiptObjectRef), null);
 
     await world.close();
     world = null;
@@ -413,105 +431,82 @@ test("real birth automatically converges to one canonical root and one official 
     assert.equal(recovered[0].revision, 1);
     assert.equal(recovered[0].status, "pending_generation");
 
-    const secondRun = await world.visualRuntime.runOnce();
-    const second = resultForThread(secondRun);
-    assert.equal(second.ok, true, second.message);
-    assert.equal(second.reconciliation.stage, "official_photo_pending");
+    const stillPending = resultForThread(await world.visualRuntime.runOnce());
+    assert.equal(stillPending.reconciliation.stage, "canonical_visual_root_pending");
+    assert.equal(stillPending.reconciliation.jobId, rootJobId);
+    assert.equal(openai.calls.length, 1, "World restart must not execute or duplicate the provider operation");
+
+    const rootGenerated = await worker.run({ jobId: rootJobId, attemptNumber: 2 });
+    assert.equal(rootGenerated.generated.receipt.jobId, rootJobId);
     assert.equal(openai.calls.length, 2, "one failed provider call plus one successful retry is expected");
 
+    const projected = resultForThread(await world.visualRuntime.runOnce());
+    assert.equal(projected.ok, true);
+    assert.equal(projected.reconciliation.stage, "official_photo_pending");
     const available = world.embodimentStore.listCurrent(THREAD_ID);
     assert.equal(available.length, 1);
     assert.equal(available[0].revision, 2);
     assert.equal(available[0].status, "available");
     assert.equal(world.embodimentStore.history(THREAD_ID, available[0].embodimentId).length, 2);
     const rootObjectRef = available[0].asset.referenceObjectRef;
-    const rootStored = await presentationInfra.objects.get(rootObjectRef);
+    assert.equal(rootObjectRef, rootGenerated.generated.receipt.objectRef);
+
+    const photoJobId = projected.reconciliation.jobId;
+    assert.notEqual(photoJobId, rootJobId);
+    const photoWorkflow = await infra.workflows.get("asset_generation_v1", photoJobId);
+    assert.ok(photoWorkflow);
+    assert.equal(photoWorkflow.status, "queued");
+    assert.deepEqual(photoWorkflow.input.referenceObjectRefs, [rootObjectRef]);
+
+    const rootStored = await infra.objects.get(rootObjectRef);
     assert.ok(rootStored);
-
-    const jobId = second.reconciliation.jobId;
-    const workflow = await presentationInfra.workflows.get("asset_generation_v1", jobId);
-    assert.ok(workflow, "Presentation reconciliation must durably schedule the official-photo workflow");
-    assert.equal(workflow.status, "queued");
-    assert.equal(workflow.input.jobId, jobId);
-    assert.deepEqual(workflow.input.referenceObjectRefs, [rootObjectRef]);
-
-    const bfl = createBflFixtureFetch({
+    bfl = createBflFixtureFetch({
       expectedReferenceBase64: Buffer.from(rootStored.bytes).toString("base64"),
     });
-    const photoProvider = selectImageIntegration(ASSET_DEPLOYMENT.integrations[workflow.input.providerProfile], {
+    photoProvider = selectImageIntegration(ASSET_DEPLOYMENT.integrations[photoWorkflow.input.providerProfile], {
       environment: { BFL_API_KEY: "slice-a-bfl-key" },
       fetchImpl: bfl.fetchImpl,
     });
-    const photoRuntime = createAssetGenerationRuntime({
-      infra: presentationInfra,
-      provider: photoProvider,
-      credentialSigner: signer,
-    });
-    const generatedPhoto = await photoRuntime.execute(workflow.input);
+
+    const photoGenerated = await worker.run({ jobId: photoJobId, attemptNumber: 1 });
+    assert.equal(photoGenerated.completionResult.handled, true);
+    assert.equal(photoGenerated.completionResult.duplicate, false);
+    assert.equal(photoGenerated.completionResult.publication.event.kind, "media.ready");
     assert.equal(bfl.calls.filter((call) => call.init.method === "POST").length, 1);
 
-    const channelId = threadPresentationChannelId(THREAD_ID);
-    const publisher = createThreadPresentationAssetPublisher({
-      infra: presentationInfra,
-      credentialSigner: signer,
-      presentationServer,
-    });
-    const completions = createPresentationAssetCompletionService({
-      infra: presentationInfra,
-      credentialSigner: signer,
-      async publishReady({ scope, receipt }) {
-        assert.deepEqual(scope, { entityKind: "thread", entityRef: THREAD_ID });
-        return publisher.publishReady({ receipt, channelId });
-      },
-    });
-    const completion = createAssetGenerationCompletion({
-      jobId: generatedPhoto.receipt.jobId,
-      receiptObjectRef: generatedPhoto.receiptObjectRef,
-      receiptDigest: generatedPhoto.receiptDigest,
-    });
-    const accepted = await completions.consume(completion);
-    assert.equal(accepted.handled, true);
-    assert.equal(accepted.duplicate, false);
-    assert.equal(accepted.publication.event.kind, "media.ready");
-
-    const finalRun = await world.visualRuntime.runOnce();
-    const final = resultForThread(finalRun);
+    const final = resultForThread(await world.visualRuntime.runOnce());
     assert.equal(final.ok, true);
     assert.equal(final.reconciliation.complete, true);
     assert.equal(final.reconciliation.stage, "complete");
 
-    const publicSnapshotResponse = await readApi.fetch(
+    const response = await readApi.fetch(
       new Request(`http://presentation.local/api/threads/${THREAD_ID}/snapshot`),
     );
-    assert.equal(publicSnapshotResponse.status, 200);
-    const publicSnapshot = await publicSnapshotResponse.json();
+    assert.equal(response.status, 200);
+    const publicSnapshot = await response.json();
     assert.deepEqual(publicSnapshot.snapshot.presentation.visualIdentity.referenceObjectRefs, [rootObjectRef]);
-    assert.ok(publicSnapshot.snapshot.presentation.identityCard);
     const officialMediaId = publicSnapshot.snapshot.presentation.identityCard.officialPhotoMediaRef;
-    assert.equal(
-      publicSnapshot.snapshot.media.assets.filter((asset) => (
-        asset.role === "official_id_photo" && asset.mediaId === officialMediaId
-      )).length,
-      1,
-    );
+    const officialPhotos = publicSnapshot.snapshot.media.assets.filter((asset) => (
+      asset.role === "official_id_photo" && asset.mediaId === officialMediaId
+    ));
+    assert.equal(officialPhotos.length, 1);
+    assert.equal(officialPhotos[0].status, "ready");
 
-    const replay = await world.visualRuntime.runOnce();
-    assert.equal(resultForThread(replay).reconciliation.complete, true);
-    const duplicate = await completions.consume(completion);
-    assert.equal(duplicate.duplicate, true);
-    assert.equal(world.embodimentStore.listCurrent(THREAD_ID).length, 1);
-    assert.equal(world.embodimentStore.history(THREAD_ID, available[0].embodimentId).length, 2);
-    assert.equal(openai.calls.length, 2, "replay must not generate another canonical root");
+    const replay = resultForThread(await world.visualRuntime.runOnce());
+    assert.equal(replay.reconciliation.complete, true);
+    assert.equal((await infra.workflows.get("asset_generation_v1", rootJobId)).instanceId, rootJobId);
+    assert.equal((await infra.workflows.get("asset_generation_v1", photoJobId)).instanceId, photoJobId);
+    assert.equal(openai.calls.length, 2, "replay must not generate a second canonical root");
     assert.equal(
       bfl.calls.filter((call) => call.init.method === "POST").length,
       1,
-      "replay must not generate another official photo",
+      "replay must not generate a second official photo",
     );
     const events = await presentationServer.readEvents({ channelId, after: 0, limit: 100 });
     assert.equal(
       events.filter((event) => event.kind === "media.ready" && event.payload.mediaId === officialMediaId).length,
       1,
-      "completion replay must not publish a second media.ready event",
+      "completion must publish exactly one media.ready event",
     );
   } finally {
     await world?.close();
