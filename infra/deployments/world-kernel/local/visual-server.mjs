@@ -11,22 +11,6 @@ function defaultVisualPublicationErrorReporter(entry, error) {
   })}\n`);
 }
 
-function failFastExplicitRuntime(runtime) {
-  return Object.freeze({
-    ...runtime,
-    async runOnce() {
-      const result = await runtime.runOnce();
-      const failure = result.results.find((entry) => entry.ok === false);
-      if (failure) {
-        const error = new Error(`${failure.errorName}: ${failure.message}`);
-        error.name = failure.errorName;
-        throw error;
-      }
-      return result;
-    },
-  });
-}
-
 /**
  * Local deployment composition for Slice-A visual publication.
  *
@@ -40,9 +24,9 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
   visualOptions = {},
 ) {
   const worldRuntime = await startWorldKernelFromEnvironment(environment, serviceOptions);
-  let attachedVisualRuntime;
+  let visualRuntime;
   try {
-    attachedVisualRuntime = attachWorldVisualPublicationRuntime({
+    visualRuntime = attachWorldVisualPublicationRuntime({
       worldRuntime,
       onError: defaultVisualPublicationErrorReporter,
       ...visualOptions,
@@ -51,7 +35,6 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
     await worldRuntime.close();
     throw error;
   }
-  const visualRuntime = failFastExplicitRuntime(attachedVisualRuntime);
 
   let closed = false;
   const close = async () => {
