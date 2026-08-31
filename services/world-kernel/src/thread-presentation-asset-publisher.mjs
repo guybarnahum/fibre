@@ -29,7 +29,7 @@ function mediaReadySnapshotIdentity(current, event) {
 }
 
 async function projectMediaReadySnapshot(presentationServer, current, event, proof) {
-  if (current === null) return null;
+  if (current === null || typeof presentationServer.publishSnapshot !== "function") return null;
   const assets = current.snapshot.media.assets;
   const index = assets.findIndex((asset) => asset.mediaId === event.payload.mediaId);
   if (index < 0) return null;
