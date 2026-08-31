@@ -14,6 +14,14 @@ async function jsonBody(request) {
   }
 }
 
+function failureResponse(error) {
+  const detail = error instanceof Error ? error.message : String(error);
+  if (error instanceof TypeError) {
+    return Response.json({ error: "invalid_visual_publication_handoff", detail }, { status: 400 });
+  }
+  return Response.json({ error: "visual_publication_reconciliation_failed", detail }, { status: 503 });
+}
+
 export function createVisualPublicationWriteApi({ reconciler, privateToken } = {}) {
   if (!reconciler || typeof reconciler.reconcileAvailableEmbodiment !== "function") {
     throw new TypeError("visual publication write API requires a reconciler");
@@ -39,10 +47,7 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
         });
         return Response.json({ ok: true, result });
       } catch (error) {
-        return Response.json({
-          error: "invalid_visual_publication_handoff",
-          detail: error instanceof Error ? error.message : String(error),
-        }, { status: 400 });
+        return failureResponse(error);
       }
     },
   });
