@@ -1,10 +1,19 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-write-api.mjs";
+import { createGenesisDevelopmentApi } from "#services/birth-center/src/genesis-development-api.mjs";
+import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
+import { selectReasoningIntegration } from "../../integration-selection.mjs";
+import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
+import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createWorldKernelBirthPublisher } from "../world-kernel-boundary.mjs";
 
 const BIRTH_SCOPE_ID = "birth";
 const DEFAULT_RETRY_MS = 5_000;
+const DEPLOYMENT = resolveServiceDeployment(
+  parseDeploymentManifest(cloudflareDeploymentYaml),
+  "birth-center",
+);
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -31,11 +40,21 @@ function reconciliationRetryMs(env) {
   return value;
 }
 
+function reasoningProfile(name) {
+  const selected = DEPLOYMENT.integrations?.[name];
+  if (!selected || selected.kind !== "ai.reasoning") {
+    throw new TypeError(`birth-center Cloudflare deployment requires ${name} reasoning integration`);
+  }
+  return selected;
+}
+
 export function createBirthCenterCloudflareRuntime({
   storage,
   env,
   now = () => new Date().toISOString(),
   nowMs = Date.now,
+  fetchImpl = globalThis.fetch,
+  randomIntFn,
 } = {}) {
   if (!storage || typeof storage !== "object") {
     throw new TypeError("Cloudflare Birth Center runtime requires Durable Object storage");
@@ -67,12 +86,41 @@ export function createBirthCenterCloudflareRuntime({
       }));
     },
   });
+  const creativeAdapter = selectReasoningIntegration(reasoningProfile("creative"), {
+    environment: env,
+    fetchImpl,
+  });
+  const repairAdapter = selectReasoningIntegration(reasoningProfile("repair"), {
+    environment: env,
+    fetchImpl,
+  });
+  const developmentService = createGenesisDevelopmentService({
+    runtime,
+    creativeAdapter,
+    repairAdapter,
+    now,
+    randomIntFn,
+  });
+  const developmentApi = createGenesisDevelopmentApi({
+    developmentService,
+    privateToken,
+    onError(error) {
+      console.error(JSON.stringify({
+        event: "birth-center-development-failed",
+        message: error instanceof Error ? error.message : String(error),
+      }));
+    },
+  });
   const birthApi = createBirthCenterWriteApi({ runtime, privateToken });
 
   return Object.freeze({
     infraDriver,
     birthStorage,
     runtime,
+    creativeAdapter,
+    repairAdapter,
+    developmentService,
+    developmentApi,
     birthApi,
     close() { runtime.close(); },
   });
