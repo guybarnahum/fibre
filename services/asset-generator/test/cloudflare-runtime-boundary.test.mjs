@@ -213,6 +213,7 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(assetBucket.bucket_name, "fibre-presentation-assets");
   assert.equal(presentationBucket.bucket_name, assetBucket.bucket_name);
   assert.ok(catalog);
+  assert.equal(catalog.database_name, "fibre-presentation-catalog");
   assert.equal(catalog.database_id, undefined);
   assert.equal(presentationChannel.class_name, "FibrePresentationChannelDurableObject");
   assert.equal(presentationConfig.exports.FibrePresentationChannelDurableObject.storage, "sqlite");
@@ -226,8 +227,8 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-dlq");
   assert.equal(presentationConfig.queues.producers, undefined);
   assert.equal(assetConfig.queues.consumers, undefined);
-  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
-  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
+  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
   assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, "fibre-c2pa-production-v1");
   assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
   assert.equal(assetConfig.vars.C2PA_SIGNER_ID, presentationConfig.vars.C2PA_SIGNER_ID);

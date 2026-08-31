@@ -152,7 +152,7 @@ test("Cloudflare deployment separates development signature proof from productio
     assert.equal(config.vars.C2PA_SIGNER_ID, productionSignerId);
     assert.equal(config.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
     assert.equal(config.vars.FIBRE_DEPLOYMENT_ENV, "cloudflare");
-    assert.ok(config.secrets.required.includes("C2PA_SIGNER_URL"));
+    assert.ok(!config.secrets.required.includes("C2PA_SIGNER_URL"));
     assert.ok(config.secrets.required.includes("C2PA_SIGNER_TOKEN"));
   }
 

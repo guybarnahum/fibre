@@ -426,6 +426,8 @@ It should verify/create required resources and report provider identifiers witho
 
 Production resource names and IDs are operational configuration, not secrets.
 
+**Implementation status:** implemented on `agent/cloud-runtime-infradriver`. `cloud:provision` derives resource names from the checked Wrangler topology, creates/verifies D1/R2/Queue resources idempotently, reapplies the idempotent Presentation catalog schema, and writes resolved provider IDs/configuration only under ignored `.fibre/cloudflare/<environment>/`. Staging uses isolated `-staging` names. Current Cloudflare lifecycle is respected rather than emulated: Durable Object namespaces are reconciled by Worker `exports` on deploy, while Workflows, service bindings, Workers and custom domains are deploy-managed. The separate Viewer repository remains the owner of `insidefibre.com`; Fibre records that domain as an external deployment dependency. No live Cloudflare provisioning is claimed by the ordinary test gate.
+
 ## Secrets and credentials
 
 ### Application secrets
@@ -532,6 +534,8 @@ npm run cloud:configure-secrets -- --file .env --env staging
 ```
 
 but `.env` is simply the caller-selected input file.
+
+**Implementation status:** implemented on `agent/cloud-runtime-infradriver`. `cloud:configure-secrets` requires an explicit file, validates every mandatory service value before any upload, sends only each Worker's secret subset through Wrangler stdin, and never writes secret values into repository or generated config files. `C2PA_SIGNER_URL` is now correctly treated as non-secret runtime configuration; generated resolved Wrangler configs carry non-secret environment configuration separately. Wrangler version-secret bulk is used so secret configuration creates a Worker version without intentionally switching traffic; first empty-environment behavior still requires the Slice I rebuild proof.
 
 ## Cloud Slice F — deploy command and health closure
 
@@ -745,8 +749,8 @@ provider-neutral scheduler + local parity       EXISTS
 World Cloudflare runtime                        EXISTS
 Birth persistence through InfraDriver.state      EXISTS
 Birth Cloudflare runtime                        EXISTS
-explicit resource provisioning                  GAP
-explicit secret-file configuration tool         GAP
+explicit resource provisioning                  EXISTS
+explicit secret-file configuration tool         EXISTS
 production C2PA deployment/health resolution    GAP
 full cloud one-Thread in-vivo E2E               GAP
 cloud failure/restart acceptance                GAP

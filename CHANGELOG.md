@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Added cloud Slice E operator preparation: idempotent Cloudflare D1/R2/Queue provisioning, environment-resolved Wrangler configs with concrete D1 IDs, explicit secret-file validation/upload, and corrected separation of C2PA URL configuration from credentials.
 
 - Closed cloud Slice D: migrated Birth Center provisional/provider-call durability to `InfraDriver.state`, added matching local/Cloudflare `state + scheduler` runtime composition, added restart-safe Cloudflare Birth publication, and made exact World birth replay idempotent while divergent replay still fails closed.
 - Added provider-neutral World scheduling with identical local/Cloudflare `InfraDriver.scheduler` shape, moved local World reconciliation off semantic `setInterval` timers, added the Cloudflare World Durable Object runtime with service-binding handoffs, and proved durable wake recovery without duplicate canonical Embodiment admission.

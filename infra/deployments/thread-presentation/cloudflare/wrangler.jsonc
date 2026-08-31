@@ -23,7 +23,7 @@
     "C2PA_TRUST_POLICY": "c2pa_trust_list"
   },
   "secrets": {
-    "required": ["C2PA_SIGNER_URL", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]
+    "required": ["C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]
   },
   "r2_buckets": [
     {
@@ -33,7 +33,8 @@
   ],
   "d1_databases": [
     {
-      "binding": "PRESENTATION_CATALOG"
+      "binding": "PRESENTATION_CATALOG",
+      "database_name": "fibre-presentation-catalog"
     }
   ],
   "durable_objects": {

@@ -45,7 +45,7 @@ x-fibre-private-token: <shared private token>
 
 Presentation does not read World storage and does not redefine canonical identity. It validates the supplied admitted Embodiment, projects visual identity into its own snapshot, ensures identity media, and durably schedules derived media through Asset Generator. Repeated handoffs are idempotent and return the current reconciliation stage.
 
-`FIBRE_PRIVATE_TOKEN` is required in the remote Worker secrets alongside the C2PA signer credentials. Validation/auth failures return 4xx. Transient reconciliation failures return 5xx so World can retry on a later reconciliation sweep.
+`FIBRE_PRIVATE_TOKEN` and `C2PA_SIGNER_TOKEN` are required remote Worker secrets. `C2PA_SIGNER_URL` is non-secret runtime configuration supplied by the explicit cloud operator configuration flow. Validation/auth failures return 4xx. Transient reconciliation failures return 5xx so World can retry on a later reconciliation sweep.
 
 ## Local generated-media proof
 
@@ -73,7 +73,7 @@ The fixture-only mutation endpoints are enabled only when `P3_FIXTURE_MODE=1`; t
 ```text
 Worker:      fibre-thread-presentation
 R2:          fibre-presentation-assets
-D1:          Presentation catalog
+D1:          fibre-presentation-catalog
 Durable Obj: FibrePresentationChannelDurableObject
 Workflow:    fibre-asset-generation hosted by fibre-asset-generator
 Queue:       fibre-asset-completions

@@ -145,9 +145,9 @@ The final fixed cohort crossed the canonical local birth boundary one Thread at 
 
 ### The cloud runtime is not live-provisioned yet — Not yet
 
-**Simple English:** Fibre now has the same World and Birth Center storage/wake-up architecture locally and on Cloudflare, with restart tests for both. The remaining gap is provisioning/configuring real cloud resources and deploying the complete system.
+**Simple English:** Fibre now has the same World and Birth Center storage/wake-up architecture locally and on Cloudflare, plus tested operator commands for preparing resources and secrets. We have not yet run that flow to create and deploy a complete live cloud environment.
 
-**More accurate description:** World/Genesis authority and Birth Center provisional/provider-call durability use `InfraDriver.state` across local SQLite and Cloudflare SQLite-backed Durable Object state, while both runtimes consume the same provider-neutral scheduler contract. World recovery preserves one canonical semantic admission; Birth Center recovery survives a lost World acknowledgement and exact replay converges on one authoritative Thread. These are code/recovery and deployment-dry-run proofs, not a claim that Cloudflare resources, secrets or live services are already provisioned.
+**More accurate description:** World/Genesis authority and Birth Center provisional/provider-call durability use `InfraDriver.state` across local SQLite and Cloudflare SQLite-backed Durable Object state, while both runtimes consume the same provider-neutral scheduler contract. World recovery preserves one canonical semantic admission; Birth Center recovery survives a lost World acknowledgement and exact replay converges on one authoritative Thread. Slice E now adds idempotent D1/R2/Queue provisioning, environment-resolved Wrangler configuration with concrete D1 IDs, and explicit per-service secret/config validation without persisting secret values. These remain tooling and dry-run proofs, not a claim that staging/production resources, secrets or live services have actually been provisioned.
 
 ## What follows after #41
 

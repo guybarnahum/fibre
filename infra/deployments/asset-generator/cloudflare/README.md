@@ -62,7 +62,7 @@ Workflow: fibre-asset-generation
 Queue:    fibre-asset-completions
 ```
 
-Remote configuration requires image-provider credentials, `C2PA_SIGNER_URL`, `C2PA_SIGNER_TOKEN`, and `FIBRE_PRIVATE_TOKEN`. The signer URL must satisfy the production HTTPS/trust requirements; the local development signer cannot satisfy them.
+Remote configuration requires image-provider credentials, `C2PA_SIGNER_TOKEN`, and `FIBRE_PRIVATE_TOKEN` as secrets. `C2PA_SIGNER_URL` is non-secret runtime configuration supplied by the explicit cloud operator configuration flow. The signer URL must satisfy the production HTTPS/trust requirements; the local development signer cannot satisfy them.
 
 World uses the authenticated control endpoint to schedule and observe canonical visual-root jobs. World never needs Cloudflare Workflow or R2 credentials/bindings directly. Thread Presentation continues to bind the same Asset Generator Workflow for derived-media demand and remains the completion consumer and sole authority for `media.ready`.
 
