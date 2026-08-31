@@ -147,7 +147,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(inspection.threadPublished, true);
   assert.equal(inspection.manifest.manifest.threadId, first.threadId);
   assert.equal(inspection.worldSpec.record.worldSpecId, developmentRequest().worldSpec.worldSpecId);
-  assert.equal(inspection.historicalEnvelopePlan.record.envelopes.length, 14);
+  assert.equal(inspection.historicalEnvelopePlan.plan.envelopes.length, 14);
   assert.equal(genomeStore.listThreadGenomes(first.threadId).length, 1);
 
   runtime.close();
