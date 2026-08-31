@@ -17,7 +17,7 @@
     "C2PA_TRUST_POLICY": "development_signature_only"
   },
   "secrets": {
-    "required": ["OPENAI_API_KEY", "BFL_API_KEY"]
+    "required": ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]
   },
   "r2_buckets": [
     {
