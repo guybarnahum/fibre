@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { createActivityRecorder } from "#infra/telemetry";
 import { createLocalInfraDriver } from "#infra/providers/local";
+import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
 import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
 import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
@@ -89,7 +91,22 @@ function localStorage(databasePath, scopeId) {
   return Object.freeze({ infraDriver, stateScopeId: scopeId });
 }
 
-function developmentService(runtime) {
+function activityRecorders() {
+  const telemetry = createLocalActivityTelemetryPort();
+  let sequence = 0;
+  function recorder(service) {
+    return createActivityRecorder({
+      telemetry,
+      environment: "test",
+      service,
+      now: () => `2026-09-01T00:10:00.${String(++sequence).padStart(3, "0")}Z`,
+      activityIdFactory: () => `act_world_failure_${String(++sequence).padStart(4, "0")}`,
+    });
+  }
+  return Object.freeze({ telemetry, birth: recorder("birth-center"), world: recorder("world-kernel") });
+}
+
+function developmentService(runtime, activityRecorder = null) {
   const counter = { calls: 0, passA: 0, passB: 0 };
   const adapter = deterministicCognition(counter);
   return {
@@ -98,6 +115,7 @@ function developmentService(runtime) {
       runtime,
       creativeAdapter: adapter,
       repairAdapter: adapter,
+      activityRecorder,
       now: () => "2026-08-31T23:32:00Z",
       randomIntFn: () => 0,
     }),
@@ -158,6 +176,7 @@ test("failed authoritative World birth may retain prerequisites but never leaks 
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const birthStorage = localStorage(join(root, "birth.sqlite"), "birth");
   const worldStorage = localStorage(join(root, "world.sqlite"), "world");
+  const activity = activityRecorders();
   const genesisStore = new GenesisStore(worldStorage);
   const genomeStore = new SymbolicGenomeStore(worldStorage);
   const errors = [];
@@ -169,10 +188,12 @@ test("failed authoritative World birth may retain prerequisites but never leaks 
     },
     worldSpecAuthority: genesisStore,
     genomeAuthority: genomeStore,
+    activityRecorder: activity.world,
   });
   const runtime = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
+    activityRecorder: activity.birth,
     now: () => "2026-08-31T23:31:00Z",
     nowMs: () => 1_788_218_260_000,
     onError(error) { errors.push(error); },
@@ -182,7 +203,7 @@ test("failed authoritative World birth may retain prerequisites but never leaks 
   t.after(() => genesisStore.close());
 
   const request = developmentRequest("birth-development-failed-admission-001");
-  const { service, counter } = developmentService(runtime);
+  const { service, counter } = developmentService(runtime, activity.birth);
   const first = await service.develop(request);
   assert.equal(first.status, "pending");
   assert.equal(counter.calls, 20);
@@ -206,4 +227,27 @@ test("failed authoritative World birth may retain prerequisites but never leaks 
   t.after(() => world.close());
   assert.equal(world.getThread(first.threadId, { required: false }), null);
   assert.equal(world.listEvents(first.threadId).length, 0);
+
+  const records = await activity.telemetry.query({ requestId: request.requestId });
+  assert.equal(
+    records.some((record) => record.service === "world-kernel"
+      && record.stage === "world.thread.publication"
+      && record.status === "failed"),
+    true,
+  );
+  assert.equal(
+    records.some((record) => record.service === "birth-center"
+      && record.stage === "birth.publish.world_submit"
+      && record.status === "failed"),
+    true,
+  );
+  assert.equal(
+    records.some((record) => record.service === "birth-center"
+      && record.stage === "birth.publish.reconcile"
+      && record.status === "retrying"
+      && record.error?.retryable === true),
+    true,
+  );
+  assert.equal(records.every((record) => record.genesisId === first.genesisId), true);
+  assert.equal(records.every((record) => record.threadId === first.threadId), true);
 });
