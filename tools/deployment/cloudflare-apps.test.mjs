@@ -16,8 +16,8 @@ const state = {
 };
 
 const access = {
-  FIBRE_ACCESS_TEAM_DOMAIN: "https://fibre.cloudflareaccess.com",
-  FIBRE_ACCESS_AUD: "audience-tag",
+  teamDomain: "https://fibre.cloudflareaccess.com",
+  audience: "audience-tag",
 };
 
 test("admin and status domains get isolated staging hostnames", () => {
@@ -26,14 +26,18 @@ test("admin and status domains get isolated staging hostnames", () => {
   assert.equal(cloudflareAppDomain("status.insidefibre.com", "production"), "status.insidefibre.com");
 });
 
-test("admin config reuses provisioned Activity D1 and injects Access verification configuration", () => {
+test("admin config reuses provisioned Activity D1 and injects reconciled Access verification configuration", () => {
   const base = {
     name: "fibre-admin-dashboard",
     routes: [{ pattern: "admin.insidefibre.com", custom_domain: true }],
     vars: { FIBRE_ENVIRONMENT: "production" },
     d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
   };
-  const resolved = resolveCloudflareAppConfig("admin-dashboard", base, { environment: "staging", resourceState: state, operatorConfig: access });
+  const resolved = resolveCloudflareAppConfig("admin-dashboard", base, {
+    environment: "staging",
+    resourceState: state,
+    accessConfig: access,
+  });
   assert.equal(resolved.name, "fibre-admin-dashboard-staging");
   assert.equal(resolved.routes[0].pattern, "admin.staging.insidefibre.com");
   assert.equal(resolved.vars.FIBRE_ENVIRONMENT, "staging");
@@ -53,7 +57,11 @@ test("status config targets the staging runtime Workers through service bindings
       { binding: "WORLD_KERNEL", service: "fibre-world-kernel" },
     ],
   };
-  const resolved = resolveCloudflareAppConfig("status-page", base, { environment: "staging", resourceState: state, operatorConfig: access });
+  const resolved = resolveCloudflareAppConfig("status-page", base, {
+    environment: "staging",
+    resourceState: state,
+    accessConfig: access,
+  });
   assert.equal(resolved.name, "fibre-status-page-staging");
   assert.equal(resolved.routes[0].pattern, "status.staging.insidefibre.com");
   assert.equal(resolved.vars.VIEWER_ORIGIN, "https://staging.insidefibre.com");
@@ -61,7 +69,15 @@ test("status config targets the staging runtime Workers through service bindings
   assert.equal(resolved.services[1].service, "fibre-world-kernel-staging");
 });
 
-test("admin deployment resolution fails closed when Access configuration is absent", () => {
-  const base = { name:"fibre-admin-dashboard", routes:[{pattern:"admin.insidefibre.com",custom_domain:true}], vars:{}, d1_databases:[{binding:"ACTIVITY_LOG",database_name:"fibre-activity-log"}] };
-  assert.throws(() => resolveCloudflareAppConfig("admin-dashboard", base, { environment:"staging", resourceState:state, operatorConfig:{} }), /FIBRE_ACCESS_TEAM_DOMAIN/u);
+test("admin deployment resolution fails closed when reconciled Access configuration is absent", () => {
+  const base = {
+    name: "fibre-admin-dashboard",
+    routes: [{ pattern: "admin.insidefibre.com", custom_domain: true }],
+    vars: {},
+    d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
+  };
+  assert.throws(
+    () => resolveCloudflareAppConfig("admin-dashboard", base, { environment: "staging", resourceState: state }),
+    /Cloudflare Access team domain/u,
+  );
 });
