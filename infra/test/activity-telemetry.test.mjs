@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   ACTIVITY_RECORD_VERSION,
+  TELEMETRY_VERSION,
   ActivityTelemetryIdempotencyConflictError,
   createActivityRecorder,
   normalizeActivityRecord,
@@ -185,6 +186,45 @@ test("runStage records success and failure without swallowing operation results 
     code: "MODEL_TIMEOUT",
     retryable: true,
   });
+});
+
+test("telemetry storage outage cannot suppress a wrapped Fibre operation", async () => {
+  const observedErrors = [];
+  let operationCount = 0;
+  let id = 0;
+  const telemetry = Object.freeze({
+    telemetryVersion: TELEMETRY_VERSION,
+    async record() { throw new Error("telemetry unavailable"); },
+    async query() { return []; },
+  });
+  const recorder = createActivityRecorder({
+    telemetry,
+    environment: "test",
+    service: "world-kernel",
+    now: () => "2026-09-01T05:41:00.000Z",
+    activityIdFactory: () => `act_outage_${++id}`,
+    onTelemetryError(error, record) {
+      observedErrors.push([error.message, record.stage, record.status]);
+    },
+  });
+
+  const result = await recorder.runStage({
+    requestId: "req_outage_001",
+    genesisId: "gen_outage_001",
+    threadId: "thr_outage_001",
+    stage: "world.thread.publication",
+    attempt: 1,
+  }, async () => {
+    operationCount += 1;
+    return "published";
+  });
+
+  assert.equal(result, "published");
+  assert.equal(operationCount, 1);
+  assert.deepEqual(observedErrors, [
+    ["telemetry unavailable", "world.thread.publication", "started"],
+    ["telemetry unavailable", "world.thread.publication", "succeeded"],
+  ]);
 });
 
 test("local InfraDriver exposes telemetry only when explicitly enabled", async () => {
