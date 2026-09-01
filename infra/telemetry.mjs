@@ -267,6 +267,7 @@ export function createActivityRecorder({
   deploymentGitSha = null,
   now = defaultNow,
   activityIdFactory = defaultActivityIdFactory,
+  onTelemetryError = () => {},
 } = {}) {
   assertTelemetryPort(telemetry);
   assertInfraId("activity recorder environment", environment);
@@ -274,6 +275,7 @@ export function createActivityRecorder({
   normalizeDeploymentGitSha(deploymentGitSha);
   if (typeof now !== "function") throw new TypeError("activity recorder now must be a function");
   if (typeof activityIdFactory !== "function") throw new TypeError("activity recorder activityIdFactory must be a function");
+  if (typeof onTelemetryError !== "function") throw new TypeError("activity recorder onTelemetryError must be a function");
 
   async function record(candidate) {
     assertInfraPlainObject("activity recorder input", candidate);
@@ -302,13 +304,21 @@ export function createActivityRecorder({
       error: candidate.error ?? null,
       evidence: candidate.evidence ?? {},
     });
-    return telemetry.record(activity);
+    try {
+      return await telemetry.record(activity);
+    } catch (error) {
+      try { onTelemetryError(error, activity); } catch {}
+      return activity;
+    }
   }
 
   async function runStage(metadata, operation) {
     if (typeof operation !== "function") throw new TypeError("activity stage operation must be a function");
     assertInfraPlainObject("activity stage metadata", metadata);
     const common = { ...metadata };
+    delete common.activityId;
+    delete common.occurredAt;
+    delete common.recordedAt;
     delete common.status;
     delete common.error;
     await record({ ...common, status: "started", error: null });
