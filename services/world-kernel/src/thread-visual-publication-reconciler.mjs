@@ -27,6 +27,11 @@ function optionalActivityRecorder(value) {
   return value;
 }
 
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
+}
+
 async function runActivityStage(activity, metadata, operation) {
   if (activity === null) return operation();
   return activity.runStage(metadata, operation);
@@ -190,7 +195,7 @@ export function createThreadVisualPublicationReconciler({
       const projection = normalizePresentationResult(
         await runActivityStage(activity, {
           ...context,
-          stage: "world.reconciliation.complete",
+          stage: "world.reconciliation.presentation",
           attempt: 1,
           evidence: {
             embodimentId: embodiment.embodimentId,
@@ -213,6 +218,16 @@ export function createThreadVisualPublicationReconciler({
         });
       }
 
+      await bestEffortRecord(activity, {
+        ...context,
+        stage: "world.reconciliation.complete",
+        status: "succeeded",
+        attempt: 1,
+        evidence: {
+          embodimentId: embodiment.embodimentId,
+          objectRef: embodiment.asset.referenceObjectRef,
+        },
+      });
       return finished({
         threadId,
         embodimentId: embodiment.embodimentId,
