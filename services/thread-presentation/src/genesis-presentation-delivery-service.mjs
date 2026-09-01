@@ -15,6 +15,11 @@ function optionalActivityRecorder(value) {
   return value;
 }
 
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
+}
+
 async function runActivityStage(activity, metadata, operation) {
   if (activity === null) return operation();
   return activity.runStage(metadata, operation);
@@ -77,11 +82,21 @@ export function createGenesisPresentationDeliveryService({
     }
 
     const context = activityContext(entry);
+    const attempt = Math.max(1, entry.attemptCount + 1);
+    if (entry.attemptCount > 0) {
+      await bestEffortRecord(activity, {
+        ...context,
+        stage: "presentation.snapshot.publish",
+        status: "retrying",
+        attempt,
+        message: "Retrying Genesis presentation delivery",
+      });
+    }
     try {
       const bundle = await runActivityStage(activity, {
         ...context,
         stage: "presentation.world_authority.resolve",
-        attempt: Math.max(1, entry.attemptCount + 1),
+        attempt,
       }, async () => {
         const thread = world.getThread(entry.threadId);
         const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
@@ -94,7 +109,7 @@ export function createGenesisPresentationDeliveryService({
       const publication = await runActivityStage(activity, {
         ...context,
         stage: "presentation.snapshot.publish",
-        attempt: Math.max(1, entry.attemptCount + 1),
+        attempt,
       }, async () => publisher.publishGenesisPresentation({
         genesisId: entry.genesisId,
         publicationDigest: entry.publicationDigest,
