@@ -23,7 +23,7 @@ function infra() {
   });
 }
 
-function job() {
+function job(overrides = {}) {
   return {
     jobVersion: ASSET_GENERATION_JOB_VERSION,
     jobId: "job_activity_001",
@@ -45,6 +45,7 @@ function job() {
       genesisId: "gen_activity_001",
       threadId: "thr_activity_001",
     },
+    ...overrides,
   };
 }
 
@@ -111,4 +112,35 @@ test("asset activity log identifies a failed attempt followed by an explicit suc
     code: "ASSET_UNKNOWN",
     retryable: true,
   });
+});
+
+test("non-Thread asset scopes never become Thread activity identities by inference", async () => {
+  const telemetry = createLocalActivityTelemetryPort();
+  let id = 0;
+  const activityRecorder = createActivityRecorder({
+    telemetry,
+    environment: "test",
+    service: "asset-generator",
+    now: () => "2026-09-01T01:10:00.000Z",
+    activityIdFactory: () => `act_place_asset_${String(++id).padStart(3, "0")}`,
+  });
+  const runtime = createAssetGenerationRuntime({
+    infra: infra(),
+    provider: { providerId: "fixture" },
+    credentialSigner: { signerId: "fixture" },
+    activityRecorder,
+    executeJob: async ({ job: injectedJob }) => generatedResult(injectedJob),
+  });
+  const placeJob = job({
+    jobId: "job_place_activity_001",
+    context: {
+      requestId: "req_place_activity_001",
+      entityKind: "place",
+      entityRef: "place_market_001",
+    },
+  });
+  await runtime.execute(placeJob);
+  const records = await telemetry.query({ requestId: "req_place_activity_001" });
+  assert.equal(records.length, 2);
+  assert.equal(records.every((record) => record.threadId === null), true);
 });
