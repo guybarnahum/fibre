@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -50,12 +51,11 @@ import {
 } from "../../world-kernel/src/genesis-pass-c-prompts.mjs";
 import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../../world-kernel/src/genesis-pass-a-reliability-v3.mjs";
 
-const ROOT = new URL("../../../", import.meta.url);
-
-function sourceFiles(directory) {
+function sourceFiles(directoryUrl) {
+  const directory = fileURLToPath(directoryUrl);
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) return sourceFiles(path);
+    if (entry.isDirectory()) return sourceFiles(new URL(`${entry.name}/`, directoryUrl));
     return entry.isFile() && /\.mjs$/u.test(entry.name) ? [path] : [];
   });
 }
