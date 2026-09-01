@@ -1,4 +1,4 @@
-import { verifyCredentialedAssetForPublication } from "#services/asset-generator/src/index.mjs";
+import { verifyProvenancedAssetForPublication } from "#services/asset-generator/src/index.mjs";
 import { requireInfraCapabilities } from "#infra";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "./thread-presentation-stream-domain.mjs";
@@ -107,7 +107,7 @@ async function projectMediaReadySnapshot(presentationServer, current, event, pro
 
 export function createThreadPresentationAssetPublisher({
   infra,
-  credentialSigner,
+  credentialSigner = null,
   presentationServer,
   now = () => new Date().toISOString(),
 }) {
@@ -122,7 +122,7 @@ export function createThreadPresentationAssetPublisher({
   return Object.freeze({
     async publishReady({ receipt, channelId, expectedSequence } = {}) {
       assertId("channelId", channelId);
-      const proof = await verifyCredentialedAssetForPublication({
+      const proof = await verifyProvenancedAssetForPublication({
         infra,
         credentialSigner,
         receipt,
@@ -156,7 +156,7 @@ export function createThreadPresentationAssetPublisher({
         if (card === null || card.officialPhotoMediaRef !== context.mediaId) {
           throw new TypeError("official ID photo receipt is not referenced by the current identity card");
         }
-        identityCredentialMedia = true;
+        identityCredentialMedia = stored.credential !== null;
         publiclyVisible = card.visibility === "public";
       }
 
@@ -205,6 +205,7 @@ export function createThreadPresentationAssetPublisher({
         digest: stored.sha256,
         mediaType: stored.mediaType,
         provenanceClass: "generated_reconstruction",
+        contentCredentialMode: proof.credentialMode,
         eventId,
         eventSequence: accepted.event.sequence,
       });
