@@ -55,6 +55,32 @@ function assertAdapter(name, adapter) {
   return adapter;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Genesis development activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
+function activityContext(plan) {
+  return Object.freeze({
+    requestId: plan.requestId,
+    genesisId: plan.genesisId,
+    threadId: plan.threadId,
+  });
+}
+
 function currentCognition({ creativeAdapter, repairAdapter }) {
   return buildGenesisPublicationCognition({
     creativeAdapter,
@@ -93,12 +119,14 @@ export function createGenesisDevelopmentService({
   runtime,
   creativeAdapter,
   repairAdapter = creativeAdapter,
+  activityRecorder = null,
   now = () => new Date().toISOString(),
   randomIntFn,
 } = {}) {
   const birthRuntime = assertRuntime(runtime);
   const creativeBase = assertAdapter("Genesis creative adapter", creativeAdapter);
   const repairBase = assertAdapter("Genesis repair adapter", repairAdapter);
+  const activity = optionalActivityRecorder(activityRecorder);
   if (typeof now !== "function") throw new TypeError("Genesis development service now must be a function");
 
   return Object.freeze({
@@ -106,46 +134,94 @@ export function createGenesisDevelopmentService({
 
     async develop(developmentRequest) {
       const builtPlan = buildGenesisDevelopmentPlan(developmentRequest);
+      const context = activityContext(builtPlan);
+      await bestEffortRecord(activity, {
+        ...context,
+        stage: "birth.request.plan",
+        status: "succeeded",
+        attempt: 1,
+      });
+
       const serializedPlan = serializeGenesisDevelopmentPlan(builtPlan);
       const planDigest = digest(serializedPlan);
-      const reservation = birthRuntime.developmentRequestStore.reserve({
+      const reservation = await runActivityStage(activity, {
+        ...context,
+        stage: "birth.request.persist",
+        attempt: 1,
+        evidence: { digest: planDigest },
+      }, async () => birthRuntime.developmentRequestStore.reserve({
         requestId: builtPlan.requestId,
         requestDigest: builtPlan.requestDigest,
         plan: serializedPlan,
-      });
+      }));
       if (reservation.planDigest !== planDigest) {
         throw new Error(`durable Genesis development plan digest drift for ${builtPlan.requestId}`);
       }
       const plan = hydrateGenesisDevelopmentPlan(reservation.plan);
       const existingProvisional = birthRuntime.provisionalBirthStore.get(plan.genesisId);
       const replay = replayResult(reservation, existingProvisional);
-      if (replay !== null) return replay;
+      if (replay !== null) {
+        await bestEffortRecord(activity, {
+          ...context,
+          stage: "birth.request.resume",
+          status: "succeeded",
+          attempt: 1,
+          message: "Reused submitted Genesis development",
+        });
+        return replay;
+      }
 
       let admission = reservation.admission;
       if (admission === null) {
         const creative = birthRuntime.durableAdapter(creativeBase);
         const repair = birthRuntime.durableAdapter(repairBase);
-        const candidate = await generateGenesisLifeCandidate({
+        const candidate = await runActivityStage(activity, {
+          ...context,
+          stage: "birth.genesis.start",
+          attempt: 1,
+        }, async () => generateGenesisLifeCandidate({
           slotPlan: plan,
           adapter: creative,
           repairAdapter: repair,
           attemptStartedAt: reservation.createdAt,
+        }));
+        admission = await runActivityStage(activity, {
+          ...context,
+          stage: "birth.genesis.compile",
+          attempt: 1,
+          evidence: { digest: planDigest },
+        }, async () => {
+          const publicationAt = now();
+          let compiled = {
+            ...buildGenesisAdmissionPackage({
+              candidate,
+              slotPlan: plan,
+              cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
+              publicationAt,
+              randomIntFn,
+            }),
+            developmentPlanDigest: planDigest,
+          };
+          compiled = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, compiled).admission;
+          return compiled;
         });
-        const publicationAt = now();
-        admission = {
-          ...buildGenesisAdmissionPackage({
-            candidate,
-            slotPlan: plan,
-            cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
-            publicationAt,
-            randomIntFn,
-          }),
-          developmentPlanDigest: planDigest,
-        };
-        admission = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, admission).admission;
+      } else {
+        await bestEffortRecord(activity, {
+          ...context,
+          stage: "birth.genesis.compile",
+          status: "succeeded",
+          attempt: 1,
+          message: "Reused durable Genesis admission package",
+          evidence: { digest: planDigest },
+        });
       }
 
-      const accepted = await birthRuntime.submitBirth(admission);
+      const accepted = await runActivityStage(activity, {
+        ...context,
+        stage: "birth.publish.prepare",
+        attempt: 1,
+        evidence: { fibreIdentityNumber: admission.civilRegistration.fibreIdentityNumber },
+      }, async () => birthRuntime.submitBirth(admission, { activityContext: context }));
       const result = Object.freeze({
         serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
         requestId: plan.requestId,
@@ -158,7 +234,12 @@ export function createGenesisDevelopmentService({
         idempotent: accepted.idempotent === true,
         generated: reservation.admission === null,
       });
-      birthRuntime.developmentRequestStore.markSubmitted(plan.requestId, result);
+      await runActivityStage(activity, {
+        ...context,
+        stage: "birth.publish.complete",
+        attempt: 1,
+        evidence: { fibreIdentityNumber: result.fibreIdentityNumber },
+      }, async () => birthRuntime.developmentRequestStore.markSubmitted(plan.requestId, result));
       return result;
     },
   });
