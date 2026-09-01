@@ -27,12 +27,14 @@ function optionalContentCredentialsEnabled(values) {
 
 function withOptionalContentCredentialSecrets(baseSecrets, values) {
   const enabled = optionalContentCredentialsEnabled(values);
-  return Object.freeze(Object.fromEntries(Object.entries(baseSecrets).map(([serviceId, names]) => [
-    serviceId,
-    Object.freeze(enabled && CONTENT_CREDENTIAL_SERVICES.includes(serviceId)
-      ? [...new Set([...names, "C2PA_SIGNER_TOKEN"])]
-      : [...names]),
-  ])));
+  return Object.freeze(Object.fromEntries(Object.entries(baseSecrets).map(([serviceId, names]) => {
+    const selected = [...names];
+    if (enabled && CONTENT_CREDENTIAL_SERVICES.includes(serviceId) && !selected.includes("C2PA_SIGNER_TOKEN")) {
+      const privateTokenIndex = selected.indexOf("FIBRE_PRIVATE_TOKEN");
+      selected.splice(privateTokenIndex < 0 ? selected.length : privateTokenIndex, 0, "C2PA_SIGNER_TOKEN");
+    }
+    return [serviceId, Object.freeze(selected)];
+  })));
 }
 
 function contentCredentialsEnabled(secrets, serviceId) {

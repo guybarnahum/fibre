@@ -373,7 +373,7 @@ function assertUncredentialedFinalAssetMetadata(metadata, {
 
 async function finalizeUncredentialedAsset({ objects, job, staged, generation, now }) {
   const generated = staged.witnessed.result;
-  const providerOutputDigest = generation.providerOutputDigest;
+  const providerOutputDigest = generation.generationRecord.providerOutputDigest;
   const existing = await objects.get(job.outputObjectRef);
   if (existing !== null) {
     assertUncredentialedFinalAssetMetadata(existing.metadata, {
