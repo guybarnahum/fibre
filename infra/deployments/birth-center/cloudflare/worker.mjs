@@ -26,6 +26,14 @@ function createReasoningAdapters(env) {
   });
 }
 
+function reasoningProfileWitness(adapter) {
+  if (!adapter) return null;
+  return Object.freeze({
+    provider: adapter.provider,
+    modelId: adapter.modelId,
+  });
+}
+
 export class FibreBirthCenterDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -56,6 +64,10 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         capabilities: cloud.infraDriver.capabilities,
         pendingBirthCount: cloud.runtime.status().pendingBirthCount,
         genesisDevelopmentConfigured: cloud.developmentApi !== null,
+        genesisReasoningProfiles: {
+          creative: reasoningProfileWitness(cloud.creativeAdapter),
+          repair: reasoningProfileWitness(cloud.repairAdapter),
+        },
       });
     }
     if (cloud.developmentApi !== null) {
