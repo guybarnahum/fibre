@@ -135,6 +135,19 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
   const fetchImpl = async (input, init = {}) => {
     const url = new URL(input instanceof URL ? input : input.url ?? input);
     if (url.hostname === "birth.example.workers.dev") {
+      if (url.pathname === "/healthz") {
+        return json({
+          ok: true,
+          service: "birth-center",
+          provider: "cloudflare",
+          stateScopeId: "birth",
+          genesisDevelopmentConfigured: true,
+          genesisReasoningProfiles: {
+            creative: { provider: "openai", modelId: "gpt-5.1-2025-11-13" },
+            repair: { provider: "openai", modelId: "gpt-5.1-2025-11-13" },
+          },
+        });
+      }
       if (url.pathname.endsWith("/inspection")) {
         if (!submitted) return json({ error: { code: "DEVELOPMENT_NOT_FOUND" } }, 404);
         const invocations = Array.from({ length: 20 }, (_, index) => ({
@@ -257,6 +270,11 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
   assert.equal(result.evidence.contract, GENESIS_STAGING_EVIDENCE_VERSION);
   assert.equal(result.evidence.sourceGitSha, SHA);
   assert.equal(result.evidence.request.developmentPlanThreadId, plan.threadId);
+  assert.equal(result.evidence.birthCenter.deployedService.provider, "cloudflare");
+  assert.deepEqual(result.evidence.birthCenter.deployedService.genesisReasoningProfiles.creative, {
+    provider: "openai",
+    modelId: "gpt-5.1-2025-11-13",
+  });
   assert.equal(result.evidence.birthCenter.providerCalls.length, 20);
   assert.equal(result.evidence.world.authoritativeThread.exists, true);
   assert.equal(result.evidence.presentation.pointer.threadId, plan.threadId);
