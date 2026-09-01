@@ -14,6 +14,7 @@ import { provisionCloudflareResources } from "./provision-cloudflare.mjs";
 import { configureCloudflareSecrets, createWranglerSecretWriter } from "./configure-cloudflare-secrets.mjs";
 
 const sourceRoot = resolve(new URL("../..", import.meta.url).pathname);
+const SOURCE_SHA = "1234567890abcdef1234567890abcdef12345678";
 
 async function fixtureRepo() {
   const root = await mkdtemp(resolve(tmpdir(), "fibre-cloud-operator-"));
@@ -71,9 +72,9 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
 test("Slice E provision is idempotent and writes resolved D1/resource configuration outside Git", async () => {
   const repoRoot = await fixtureRepo();
   const client = fakeClient();
-  const first = await provisionCloudflareResources({ repoRoot, environment: "staging", client, now: () => "2026-08-31T20:20:00.000Z" });
+  const first = await provisionCloudflareResources({ repoRoot, environment: "staging", client, sourceGitSha: SOURCE_SHA, now: () => "2026-08-31T20:20:00.000Z" });
   const createdOnce = [...client.state.creates];
-  const second = await provisionCloudflareResources({ repoRoot, environment: "staging", client, now: () => "2026-08-31T20:21:00.000Z" });
+  const second = await provisionCloudflareResources({ repoRoot, environment: "staging", client, sourceGitSha: SOURCE_SHA, now: () => "2026-08-31T20:21:00.000Z" });
 
   assert.deepEqual(client.state.creates.filter(([kind]) => kind !== "d1-migrate"), createdOnce.filter(([kind]) => kind !== "d1-migrate"));
   assert.equal(client.state.creates.filter(([kind]) => kind === "d1-migrate").length, 4);
@@ -101,12 +102,16 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
   assert.equal(presentation.workflows[0].script_name, "fibre-asset-generator-staging");
   assert.equal(presentation.routes[0].pattern, "api.staging.insidefibre.com");
   assert.equal(presentation.vars.VIEWER_ORIGIN, "https://staging.insidefibre.com");
+  assert.equal(presentation.vars.FIBRE_ACTIVITY_ENV, "staging");
+  assert.equal(presentation.vars.FIBRE_DEPLOYMENT_GIT_SHA, SOURCE_SHA);
 
   for (const serviceId of ["asset-generator", "birth-center", "world-kernel"]) {
     const config = JSON.parse(await readFile(resolve(repoRoot, first.wranglerConfigs[serviceId]), "utf8"));
     const activity = config.d1_databases.find((database) => database.binding === "ACTIVITY_LOG");
     assert.equal(activity.database_name, "fibre-activity-log-staging");
     assert.equal(activity.database_id, "d1-2");
+    assert.equal(config.vars.FIBRE_ACTIVITY_ENV, "staging");
+    assert.equal(config.vars.FIBRE_DEPLOYMENT_GIT_SHA, SOURCE_SHA);
   }
 });
 
