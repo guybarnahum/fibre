@@ -3,13 +3,14 @@ import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { runGenesisDevelopmentE2E } from "./genesis-development-e2e.mjs";
+import { createWranglerGenesisE2EActivityRecorder } from "./genesis-development-e2e-activity.mjs";
 import {
   createWranglerActivityReader,
   inspectRuntimeActivity,
 } from "../inspect/inspect-runtime-activity.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
-export const E2E_ACTIVITY_REFERENCE_VERSION = "fibre-slice-g-activity-reference-v0.1";
+export const E2E_ACTIVITY_REFERENCE_VERSION = "fibre-slice-g-activity-reference-v0.2";
 
 function safeError(error) {
   return Object.freeze({
@@ -113,9 +114,41 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
   sourceResolver,
   repoRoot = REPO_ROOT,
   runCore = runGenesisDevelopmentE2E,
+  activityRecorder = undefined,
+  activityRecorderFactory = createWranglerGenesisE2EActivityRecorder,
   activityReader = null,
   inspect = inspectRuntimeActivity,
 } = {}) {
+  let recorder = activityRecorder;
+  if (recorder === undefined) {
+    try {
+      recorder = await activityRecorderFactory({
+        repoRoot,
+        environment: "staging",
+        onTelemetryError(error, activity) {
+          emit({
+            event: "genesis-development-staging-activity-write-failed",
+            stage: activity.stage,
+            status: activity.status,
+            errorName: error?.constructor?.name ?? "Error",
+          });
+        },
+      });
+      emit({
+        event: "genesis-development-staging-activity-writer-ready",
+        databaseName: recorder.databaseName,
+      });
+    } catch (error) {
+      recorder = null;
+      const diagnostic = safeError(error);
+      emit({
+        event: "genesis-development-staging-activity-writer-unavailable",
+        errorName: diagnostic.name,
+        message: diagnostic.message,
+      });
+    }
+  }
+
   const core = await runCore({
     mode: "staging",
     environment,
@@ -124,6 +157,7 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     emit,
     ...(sourceResolver ? { sourceResolver } : {}),
     repoRoot,
+    activityRecorder: recorder,
   });
   const reader = activityReader ?? createWranglerActivityReader({ cwd: repoRoot });
   return attachActivityLogEvidence({ e2eResult: core, repoRoot, activityReader: reader, inspect, emit });
