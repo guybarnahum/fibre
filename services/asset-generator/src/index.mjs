@@ -12,6 +12,15 @@ export * from "./asset-provenance-domain.mjs";
 export * from "./asset-generation-control-service.mjs";
 export * from "./fibre-short-id.mjs";
 export {
+  PROVENANCED_ASSET_PUBLICATION_PROOF_VERSION,
+  PROVENANCED_ASSET_RECEIPT_VERSION,
+  executeProvenancedAssetGenerationJob,
+  executeUncredentialedAssetGenerationJob,
+  normalizeProvenancedAssetReceipt,
+  normalizeStoredAssetReceipt,
+  verifyProvenancedAssetForPublication,
+} from "./provenanced-asset-generation.mjs";
+export {
   createAssetGenerationService,
   executeAssetGenerationJob,
 } from "./asset-generation-service.mjs";
