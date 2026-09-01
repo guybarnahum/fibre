@@ -13,6 +13,19 @@ function optionalRecordAuthority(name, authority, method) {
   return authority;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Genesis birth publication activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
 function sameJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -54,29 +67,57 @@ function prerequisiteGenomes(bundle) {
   return bundle.symbolicGenomes;
 }
 
+function activityIdentity(bundle, supplied = {}) {
+  const manifest = bundle?.manifest ?? {};
+  return Object.freeze({
+    requestId: supplied.requestId ?? null,
+    genesisId: supplied.genesisId ?? manifest.genesisId ?? null,
+    threadId: supplied.threadId ?? manifest.threadId ?? null,
+  });
+}
+
 export function createGenesisBirthPublicationService({
   authority,
   worldSpecAuthority = null,
   genomeAuthority = null,
+  activityRecorder = null,
 } = {}) {
   const target = assertAuthority(authority);
   const worlds = optionalRecordAuthority("Genesis WorldSpec authority", worldSpecAuthority, "recordWorldSpec");
   const genomes = optionalRecordAuthority("Genesis symbolic genome authority", genomeAuthority, "recordGenome");
+  const activity = optionalActivityRecorder(activityRecorder);
   return Object.freeze({
-    async publishBirth(bundle) {
+    async publishBirth(bundle, { activityContext = {} } = {}) {
       if (bundle === null || typeof bundle !== "object" || Array.isArray(bundle)) {
         throw new TypeError("Genesis birth publication bundle must be an object");
       }
+      const context = activityIdentity(bundle, activityContext);
       if (bundle.worldSpec !== undefined) {
         if (worlds === null) throw new TypeError("Genesis birth publication cannot admit worldSpec without a WorldSpec authority");
-        worlds.recordWorldSpec(bundle.worldSpec);
+        await runActivityStage(activity, {
+          ...context,
+          stage: "world.worldspec.admission",
+          attempt: 1,
+          evidence: { worldSpecId: bundle.worldSpec.worldSpecId },
+        }, async () => worlds.recordWorldSpec(bundle.worldSpec));
       }
       const symbolicGenomes = prerequisiteGenomes(bundle);
       if (symbolicGenomes.length > 0 && genomes === null) {
         throw new TypeError("Genesis birth publication cannot admit symbolicGenomes without a genome authority");
       }
-      for (const genome of symbolicGenomes) genomes.recordGenome(genome);
-      return target.publishBirth(attachCivilRegistration(bundle));
+      for (const genome of symbolicGenomes) {
+        await runActivityStage(activity, {
+          ...context,
+          stage: "world.genome.admission",
+          attempt: 1,
+          evidence: { genomeId: genome.header?.genomeId ?? null },
+        }, async () => genomes.recordGenome(genome));
+      }
+      return runActivityStage(activity, {
+        ...context,
+        stage: "world.thread.publication",
+        attempt: 1,
+      }, async () => target.publishBirth(attachCivilRegistration(bundle)));
     },
   });
 }
