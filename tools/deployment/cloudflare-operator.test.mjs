@@ -76,11 +76,14 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
   const second = await provisionCloudflareResources({ repoRoot, environment: "staging", client, now: () => "2026-08-31T20:21:00.000Z" });
 
   assert.deepEqual(client.state.creates.filter(([kind]) => kind !== "d1-migrate"), createdOnce.filter(([kind]) => kind !== "d1-migrate"));
-  assert.equal(client.state.creates.filter(([kind]) => kind === "d1-migrate").length, 2);
+  assert.equal(client.state.creates.filter(([kind]) => kind === "d1-migrate").length, 4);
   assert.equal(first.resources.d1[0].id, second.resources.d1[0].id);
+  assert.equal(first.resources.d1[1].id, second.resources.d1[1].id);
   assert.deepEqual(createdOnce, [
     ["d1", "fibre-presentation-catalog-staging"],
     ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
+    ["d1", "fibre-activity-log-staging"],
+    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
     ["r2", "fibre-presentation-assets-staging"],
     ["queue", "fibre-asset-completions-staging"],
     ["queue", "fibre-asset-completions-dlq-staging"],
@@ -90,11 +93,21 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
   assert.equal(presentation.name, "fibre-thread-presentation-staging");
   assert.equal(presentation.d1_databases[0].database_name, "fibre-presentation-catalog-staging");
   assert.equal(presentation.d1_databases[0].database_id, "d1-1");
+  assert.equal(presentation.d1_databases[1].binding, "ACTIVITY_LOG");
+  assert.equal(presentation.d1_databases[1].database_name, "fibre-activity-log-staging");
+  assert.equal(presentation.d1_databases[1].database_id, "d1-2");
   assert.equal(presentation.r2_buckets[0].bucket_name, "fibre-presentation-assets-staging");
   assert.equal(presentation.queues.consumers[0].queue, "fibre-asset-completions-staging");
   assert.equal(presentation.workflows[0].script_name, "fibre-asset-generator-staging");
   assert.equal(presentation.routes[0].pattern, "api.staging.insidefibre.com");
   assert.equal(presentation.vars.VIEWER_ORIGIN, "https://staging.insidefibre.com");
+
+  for (const serviceId of ["asset-generator", "birth-center", "world-kernel"]) {
+    const config = JSON.parse(await readFile(resolve(repoRoot, first.wranglerConfigs[serviceId]), "utf8"));
+    const activity = config.d1_databases.find((database) => database.binding === "ACTIVITY_LOG");
+    assert.equal(activity.database_name, "fibre-activity-log-staging");
+    assert.equal(activity.database_id, "d1-2");
+  }
 });
 
 test("explicit operator file parser does not infer or import any implicit environment", () => {
