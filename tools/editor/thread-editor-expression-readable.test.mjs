@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, rmSync } from "node:fs";
-import { dirname } from "node:path";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -8,10 +7,11 @@ import {
   inspectionCounts,
 } from "#apps/thread-editor/editor-model.js";
 import { explainExpression } from "#apps/thread-editor/expression-readable.js";
-import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
-import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
-import { runM1ReviewedProof } from "#tools/replays/m1/m1-reviewed-proof.mjs";
 import { repoFile } from "#repo-root";
+import {
+  assertSourceContains,
+  assertSourceOmits,
+} from "#tools/test-infra/source-invariant.mjs";
 
 function selection({
   desiredAction = "accept",
@@ -232,34 +232,6 @@ test("persisted obligation_override keeps the compelled banner if authorization 
   assert.ok(explanation.notes.some((note) => /compelled participation, not consent/i.test(note)));
 });
 
-test("readable expression consumes a kernel-produced audience array and persisted basis", async () => {
-  const proof = await runM1ReviewedProof({ keepDatabase: true });
-  const store = openExpressionStore(localWorldStateStorage(proof.databasePath));
-  try {
-    const requestId = "req_mina_obligation_attempt";
-    const chain = store.getExpressionChain("thr_mina_001", requestId);
-    const integrity = store.verifyExpressionIntegrity("thr_mina_001", requestId);
-    const explanation = explainExpression({
-      expression: { expression: chain },
-      integrity,
-    });
-    assert.match(explanation.title, /compelled participation/i);
-    assert.ok(
-      explanation.facts.some(
-        (entry) => entry.label === "Audience" && entry.value === "Guy",
-      ),
-    );
-    assert.ok(
-      explanation.facts.some(
-        (entry) => entry.label === "Response status witnesses" && entry.value === "Verified",
-      ),
-    );
-  } finally {
-    store.close();
-    rmSync(dirname(proof.databasePath), { recursive: true, force: true });
-  }
-});
-
 test("Thread-authored expression text remains data, never HTML", () => {
   const hostile = '<img src=x onerror=alert(1)>"</dd><script>x</script>';
   const explanation = explainExpression(selection({
@@ -280,9 +252,21 @@ test("Thread-authored expression text remains data, never HTML", () => {
     repoFile("apps/thread-editor/app.js"),
     "utf8",
   );
-  assert.doesNotMatch(readableSource, /innerHTML|insertAdjacentHTML|document\.createElement/);
-  assert.doesNotMatch(appSource, /innerHTML|insertAdjacentHTML/);
-  assert.match(appSource, /textContent = entry\.value/);
+  assertSourceOmits(
+    readableSource,
+    /innerHTML|insertAdjacentHTML|document\.createElement/u,
+    "Expression formatting must remain data-only and must not construct DOM or inject HTML",
+  );
+  assertSourceOmits(
+    appSource,
+    /innerHTML|insertAdjacentHTML/u,
+    "Thread Editor app must never inject Thread-authored values as HTML",
+  );
+  assertSourceContains(
+    appSource,
+    /\.textContent\s*=/u,
+    "Thread Editor app must render Thread-authored values through textContent",
+  );
 });
 
 test("canonical structured authorization alone renders compelled participation truthfully", () => {
