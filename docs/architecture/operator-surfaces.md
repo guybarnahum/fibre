@@ -63,4 +63,16 @@ The local editor credential/session design remains a development boundary and is
 
 These are applications, not Fibre semantic services. They therefore live under `apps/` with Cloudflare or local composition under `infra/deployments/`, rather than being added as World/Birth/Presentation/Asset semantic services in the deployment manifest.
 
-`cloud:deploy:apps` resolves staging/production domains, existing Activity D1 identity and runtime service-binding names from Fibre's checked Cloudflare topology. Admin Access team domain and audience are explicit operator configuration supplied with `--file`; they are not inferred or copied into source control.
+`cloud:deploy:apps` is the authoritative operator path for these surfaces. It resolves staging/production domains, existing Activity D1 identity and runtime service-binding names from Fibre's checked Cloudflare topology. For Admin it also reconciles the Cloudflare Access self-hosted application and Fibre-owned exact-email allow policy before deploying the Worker.
+
+The allowed human identities are explicit operator configuration in `FIBRE_ACCESS_ALLOWED_EMAILS`; they are never inferred from repository metadata or widened to an Everyone policy. The Access team domain and application JWT audience are discovered from Cloudflare after reconciliation and injected into the Admin Worker configuration, rather than copied manually into source control or `.env`.
+
+The Cloudflare operator token used by `cloud:deploy:apps` must have the normal deployment permissions plus Zero Trust `Access: Apps and Policies Write`. Fibre refuses to proceed if the protected Admin hostname has unmanaged Access policies, because an additional policy could widen the effective allow path beyond the declared operator identities.
+
+For staging, after the runtime topology has been provisioned, the operator command is:
+
+```sh
+npm run cloud:deploy:apps -- --file .env --env staging
+```
+
+The command writes SHA-bound operator evidence to `.fibre/cloudflare/staging/apps-deployment.json`, including the Access application/policy identities, JWT verification configuration, principal count and the deployed Admin/Status domains. It does not record the configured email addresses or any Cloudflare credential.

@@ -6,7 +6,7 @@ import {
   normalizeGenesisWorldSpec,
   sampleEventStructuresV3,
   sha256,
-} from "fibre/world-kernel/genesis-development-contracts";
+} from "./genesis-development-contracts.mjs";
 
 export const GENESIS_DEVELOPMENT_REQUEST_VERSION = "fibre-genesis-development-request-v1";
 const PLAN_VERSION = "fibre-genesis-development-plan-v2";
