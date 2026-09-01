@@ -7,172 +7,126 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="site-header">
-    <div>
-      <p class="eyebrow">Fibre world inspection</p>
-      <h1>Thread Editor</h1>
-      <p>Inspect a live Thread, its public history, private participation trace, expression boundary, temporary cognition, and lifecycle integrity.</p>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">F</span>
+      <div>
+        <p class="eyebrow">Fibre operator workspace</p>
+        <h1>Thread Editor</h1>
+      </div>
     </div>
     <div class="connection-status" id="connectionStatus" data-state="loading">Connecting…</div>
   </header>
 
-  <main>
-    <section class="notice">
-      <strong>Inspection boundary</strong>
-      <span>This editor cannot seed, accept commands, issue participation authority, write disclosure or response records, acquire runtime, run workers, freeze, abandon, repair, or mutate obligations. Self-model changes are previewed only.</span>
-    </section>
-
-    <section class="toolbar panel">
-      <label>Thread ID
-        <input id="threadId" value="thr_mina_001" autocomplete="off" spellcheck="false">
-      </label>
-      <button id="loadButton" type="button">Load Thread</button>
-      <button id="refreshButton" type="button">Refresh</button>
-      <span class="toolbar-note" id="lastLoaded">Not loaded</span>
-    </section>
-
-    <section id="errorPanel" class="error-panel" hidden></section>
-
-    <section class="overview-grid">
-      <article class="panel profile-panel">
-        <div class="avatar" id="avatar">—</div>
+  <main class="workspace">
+    <aside class="directory">
+      <div class="directory-heading">
         <div>
-          <p class="eyebrow" id="orientation">Thread</p>
-          <h2 id="name">No Thread loaded</h2>
-          <p id="description" class="muted"></p>
-          <div class="chips" id="culture"></div>
+          <p class="eyebrow">World inhabitants</p>
+          <h2>Threads</h2>
         </div>
-        <dl class="facts">
-          <div><dt>Status</dt><dd id="threadStatus">—</dd></div>
-          <div><dt>Version</dt><dd id="version">—</dd></div>
-          <div><dt>State hash</dt><dd id="stateHash" class="mono">—</dd></div>
-          <div><dt>Events</dt><dd id="eventCount">0</dd></div>
-          <div><dt>Requests</dt><dd id="requestCount">0</dd></div>
-          <div><dt>Expressions</dt><dd id="expressionCount">0</dd></div>
-          <div><dt>Runtimes</dt><dd id="runtimeCount">0</dd></div>
-        </dl>
-      </article>
+        <button id="refreshButton" class="icon-button" type="button" title="Refresh Thread directory" aria-label="Refresh Thread directory">↻</button>
+      </div>
+      <label class="search-field">
+        <span>Search</span>
+        <input id="threadSearch" type="search" placeholder="Name, FIN, Thread ID…" autocomplete="off" spellcheck="false">
+      </label>
+      <p class="directory-meta"><span id="threadCount">0</span> authoritative Threads</p>
+      <div id="threadList" class="thread-list" role="list"></div>
+    </aside>
 
-      <article class="panel integrity-panel">
-        <div class="section-heading">
-          <div><p class="eyebrow">Authoritative checks</p><h2>Integrity</h2></div>
-          <span class="badge" id="integrityBadge">Not checked</span>
-        </div>
-        <dl class="facts compact">
-          <div><dt>Projection/event agreement</dt><dd id="projectionIntegrity">—</dd></div>
-          <div><dt>Freeze-created memories</dt><dd id="memoryIntegrity">—</dd></div>
-          <div><dt>Private inspection</dt><dd id="privateAvailability">—</dd></div>
-        </dl>
-        <div id="integrityExplanation" class="explanation"></div>
-        <details class="technical-json">
-          <summary>Show exact integrity JSON</summary>
-          <pre id="integrityRaw">No integrity report.</pre>
-        </details>
-      </article>
-    </section>
+    <section class="inspector">
+      <div id="errorPanel" class="error-panel" hidden></div>
 
-    <nav class="tabs" aria-label="Thread Editor views">
-      <button class="tab active" data-view="state" type="button">Life state</button>
-      <button class="tab" data-view="events" type="button">Public events</button>
-      <button class="tab" data-view="requests" type="button">Private requests</button>
-      <button class="tab" data-view="expressions" type="button">Expression boundary</button>
-      <button class="tab" data-view="runtimes" type="button">Runtime episodes</button>
-      <button class="tab" data-view="preview" type="button">Preview</button>
-      <button class="tab" data-view="raw" type="button">Technical JSON</button>
-    </nav>
+      <section id="emptyState" class="empty-state panel">
+        <p class="eyebrow">Modern Fibre inspection</p>
+        <h2>Select a Thread</h2>
+        <p>Browse the World directory, then inspect the Thread through authoritative Fibre service contracts. The editor has no database or provider access.</p>
+      </section>
 
-    <section id="view-state" class="view-grid">
-      <article class="panel wide summary-panel"><div id="threadExplanation" class="explanation"></div></article>
-      <article class="panel"><h2>Current self-model</h2><p id="selfModel"></p></article>
-      <article class="panel"><h2>Needs</h2><ul id="needs"></ul></article>
-      <article class="panel"><h2>Feelings</h2><ul id="feelings"></ul></article>
-      <article class="panel"><h2>Unresolved intentions</h2><ul id="intentions"></ul><p class="boundary-note">Read-only in M1. No obligation or intention mutation is exposed.</p></article>
-      <article class="panel wide"><h2>Genetic personality</h2><div id="traits" class="trait-grid"></div></article>
-    </section>
+      <div id="threadWorkspace" hidden>
+        <section class="thread-hero panel">
+          <div class="avatar" id="avatar">T</div>
+          <div class="thread-heading">
+            <p class="eyebrow" id="orientation">Thread</p>
+            <h2 id="threadName">—</h2>
+            <p id="threadDescription" class="muted"></p>
+            <div class="chips" id="identityChips"></div>
+          </div>
+          <dl class="hero-facts" id="heroFacts"></dl>
+        </section>
 
-    <section id="view-events" class="view-grid" hidden>
-      <article class="panel list-panel"><h2>Public timeline</h2><div id="eventList" class="record-list"></div></article>
-      <article class="panel detail-panel">
-        <h2>Selected public event</h2>
-        <div id="eventExplanation" class="explanation"></div>
-        <details class="technical-json">
-          <summary>Show exact event JSON</summary>
-          <pre id="eventDetail">Select an event.</pre>
-        </details>
-      </article>
-    </section>
+        <nav class="tabs" aria-label="Thread inspection views">
+          <button class="tab active" data-view="overview" type="button">Overview</button>
+          <button class="tab" data-view="identity" type="button">Identity</button>
+          <button class="tab" data-view="memories" type="button">Memories</button>
+          <button class="tab" data-view="life" type="button">Relationships & places</button>
+          <button class="tab" data-view="genome" type="button">Genome</button>
+          <button class="tab" data-view="embodiment" type="button">Embodiment</button>
+          <button class="tab" data-view="history" type="button">History</button>
+          <button class="tab" data-view="integrity" type="button">Integrity</button>
+          <button class="tab" data-view="raw" type="button">Technical JSON</button>
+        </nav>
 
-    <section id="view-requests" class="view-grid" hidden>
-      <article class="panel list-panel"><h2>Request attempts</h2><div id="requestList" class="record-list"></div></article>
-      <article class="panel detail-panel">
-        <h2>Restricted request trace</h2>
-        <div id="requestExplanation" class="explanation"></div>
-        <details class="technical-json">
-          <summary>Show exact request JSON</summary>
-          <pre id="requestDetail">Select a request.</pre>
-        </details>
-      </article>
-    </section>
+        <section id="view-overview" class="view-grid">
+          <article class="panel wide">
+            <p class="eyebrow">Authoritative Thread projection</p>
+            <h2>Who this Thread is now</h2>
+            <p id="selfDescription" class="lead"></p>
+            <div id="overviewFacts" class="fact-grid"></div>
+          </article>
+          <article class="panel"><p class="eyebrow">Current self-model</p><h3>Self</h3><p id="selfModel"></p></article>
+          <article class="panel"><p class="eyebrow">Current state</p><h3>Needs</h3><ul id="needs" class="prose-list"></ul></article>
+          <article class="panel"><p class="eyebrow">Current state</p><h3>Feelings</h3><ul id="feelings" class="prose-list"></ul></article>
+          <article class="panel"><p class="eyebrow">Current state</p><h3>Unresolved intentions</h3><ul id="intentions" class="prose-list"></ul></article>
+          <article class="panel wide">
+            <p class="eyebrow">Authority inventory</p>
+            <h3>What Fibre knows about this person</h3>
+            <div id="authorityCounts" class="metric-grid"></div>
+          </article>
+        </section>
 
-    <section id="view-expressions" class="view-grid" hidden>
-      <article class="panel list-panel">
-        <h2>Participation expressions</h2>
-        <p class="muted">Authorizations may exist without a disclosure/response chain. Completed expressions are marked separately.</p>
-        <div id="expressionList" class="record-list"></div>
-      </article>
-      <article class="panel detail-panel">
-        <h2>Private-to-audience boundary</h2>
-        <div id="expressionExplanation" class="explanation"></div>
-        <details class="technical-json">
-          <summary>Show exact expression JSON</summary>
-          <pre id="expressionDetail">Select an expression.</pre>
-        </details>
-      </article>
-    </section>
+        <section id="view-identity" class="view-grid" hidden>
+          <article class="panel"><p class="eyebrow">Civil / canonical identity</p><h2>Thread Passport</h2><div id="passportView"></div></article>
+          <article class="panel"><p class="eyebrow">Identity provenance</p><h2>Current identity</h2><div id="identityView"></div></article>
+          <article class="panel wide"><p class="eyebrow">Visual obligations</p><h2>Memory visual companions</h2><div id="memoryVisualView" class="record-grid"></div></article>
+        </section>
 
-    <section id="view-runtimes" class="view-grid" hidden>
-      <article class="panel list-panel"><h2>Runtime episodes</h2><div id="runtimeList" class="record-list"></div></article>
-      <article class="panel detail-panel">
-        <div class="section-heading"><h2>Restricted runtime trace</h2><span id="lifecycleBadge" class="badge">Select a runtime</span></div>
-        <p id="lifecycleDetail" class="muted"></p>
-        <div id="runtimeExplanation" class="explanation"></div>
-        <details class="technical-json">
-          <summary>Show exact runtime JSON</summary>
-          <pre id="runtimeDetail">Select a runtime.</pre>
-        </details>
-      </article>
-    </section>
+        <section id="view-memories" class="view-grid" hidden>
+          <article class="panel wide"><p class="eyebrow">Autobiographical authority</p><h2>Memories</h2><div id="memoryView" class="record-grid"></div></article>
+        </section>
 
-    <section id="view-preview" class="view-grid" hidden>
-      <article class="panel">
-        <p class="eyebrow">Non-mutating simulation</p>
-        <h2>Preview self-model update</h2>
-        <label>Proposed self-model
-          <textarea id="previewSelfModel" rows="9"></textarea>
-        </label>
-        <label>Summary
-          <input id="previewSummary" value="Thread Editor non-mutating preview">
-        </label>
-        <button id="previewButton" type="button">Request kernel preview</button>
-        <p class="boundary-note">The editor cannot call the command-acceptance route. Preview receipts are not consent or authorization.</p>
-      </article>
-      <article class="panel detail-panel">
-        <h2>Kernel preview receipt</h2>
-        <div id="previewExplanation" class="explanation"></div>
-        <details class="technical-json">
-          <summary>Show exact preview JSON</summary>
-          <pre id="previewResult">No preview requested.</pre>
-        </details>
-      </article>
-    </section>
+        <section id="view-life" class="view-grid" hidden>
+          <article class="panel"><p class="eyebrow">Situated life</p><h2>Relationships</h2><div id="relationView" class="record-grid"></div></article>
+          <article class="panel"><p class="eyebrow">Situated life</p><h2>Places</h2><div id="placeView" class="record-grid"></div></article>
+        </section>
 
-    <section id="view-raw" class="view-grid" hidden>
-      <article class="panel wide">
-        <p class="eyebrow">Developer and audit view</p>
-        <h2>Aggregated inspection payload</h2>
-        <p class="muted">This is the exact payload returned by the editor API. Use the other views for explanation and this view for debugging or audit work.</p>
-        <pre id="rawInspection">No Thread loaded.</pre>
-      </article>
+        <section id="view-genome" class="view-grid" hidden>
+          <article class="panel wide"><p class="eyebrow">Inherited / generated material</p><h2>Symbolic genome</h2><div id="genomeView" class="record-grid"></div></article>
+        </section>
+
+        <section id="view-embodiment" class="view-grid" hidden>
+          <article class="panel wide"><p class="eyebrow">Embodiment authority</p><h2>Current embodiments</h2><div id="embodimentView" class="record-grid"></div></article>
+        </section>
+
+        <section id="view-history" class="view-grid" hidden>
+          <article class="panel wide"><p class="eyebrow">Authoritative World history</p><h2>Thread events</h2><div id="historyView" class="timeline"></div></article>
+        </section>
+
+        <section id="view-integrity" class="view-grid" hidden>
+          <article class="panel"><p class="eyebrow">World authority</p><h2>Projection & replay</h2><div id="worldIntegrityView"></div></article>
+          <article class="panel"><p class="eyebrow">Identity authority</p><h2>Identity integrity</h2><div id="identityIntegrityView"></div></article>
+        </section>
+
+        <section id="view-raw" class="view-grid" hidden>
+          <article class="panel wide">
+            <p class="eyebrow">Exact service response</p>
+            <h2>Technical JSON</h2>
+            <p class="muted">This is the inspection payload returned by the World Kernel contract. It is not reconstructed from storage by the editor.</p>
+            <pre id="rawInspection"></pre>
+          </article>
+        </section>
+      </div>
     </section>
   </main>
 
