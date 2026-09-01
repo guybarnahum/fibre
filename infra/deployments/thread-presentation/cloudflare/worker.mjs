@@ -67,9 +67,10 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 }
 
 function createCredentialSigner(env) {
-  return selectContentCredentialIntegration(serviceDeployment(env).integrations.contentCredentials, {
-    environment: env,
-  });
+  const selected = serviceDeployment(env).integrations.contentCredentials ?? null;
+  return selected === null
+    ? null
+    : selectContentCredentialIntegration(selected, { environment: env });
 }
 
 function createVisualReconciler(env, infra, presentationServer) {
@@ -214,10 +215,11 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
 }
 
 function createCompletionConsumer(env, infra, presentationServer) {
-  const publisher = createThreadPresentationAssetPublisher({ infra, credentialSigner: createCredentialSigner(env), presentationServer });
+  const credentialSigner = createCredentialSigner(env);
+  const publisher = createThreadPresentationAssetPublisher({ infra, credentialSigner, presentationServer });
   return createPresentationAssetCompletionService({
     infra,
-    credentialSigner: createCredentialSigner(env),
+    credentialSigner,
     async publishReady({ scope, receipt }) {
       if (scope.entityKind !== "thread") return null;
       return publisher.publishReady({ receipt, channelId: channelIdForThread(scope.entityRef) });
