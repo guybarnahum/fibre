@@ -16,3 +16,5 @@ jobs:
       - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc
       - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc
       - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc
+      - run: npm run deploy:admin-dashboard:cloudflare:dry
+      - run: npm run deploy:status-page:cloudflare:dry
