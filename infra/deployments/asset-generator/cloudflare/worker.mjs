@@ -13,6 +13,7 @@ import {
   createAssetGenerationRuntime,
 } from "#services/asset-generator/src/index.mjs";
 import { createAssetGenerationControlApi } from "#services/asset-generator/src/http/asset-generation-control-api.mjs";
+import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { shouldPublishPresentationAssetCompletion } from "../completion-routing.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
@@ -107,8 +108,9 @@ function createRuntime(env, job) {
     environment: env,
   });
   const credentialSigner = optionalCredentialSigner(deployment, env);
+  const activityRecorder = createCloudflareActivityRecorder({ env, service: "asset-generator" });
 
-  return createAssetGenerationRuntime({ infra, provider, credentialSigner });
+  return createAssetGenerationRuntime({ infra, provider, credentialSigner, activityRecorder });
 }
 
 function createControlApi(env) {
