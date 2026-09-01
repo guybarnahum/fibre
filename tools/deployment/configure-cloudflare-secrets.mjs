@@ -13,8 +13,26 @@ import {
   writeCloudflareRuntimeConfig,
 } from "./cloudflare-operator.mjs";
 
+const CONTENT_CREDENTIAL_SERVICES = Object.freeze(["asset-generator", "thread-presentation"]);
+const DEFAULT_C2PA_SIGNER_ID = "fibre-c2pa-production-v1";
+const DEFAULT_C2PA_TRUST_POLICY = "c2pa_trust_list";
+
 function present(value) {
   return typeof value === "string" && value.trim() !== "" && !/^<.*>$/u.test(value.trim());
+}
+
+function optionalContentCredentialsEnabled(values) {
+  return present(values?.C2PA_SIGNER_URL) && present(values?.C2PA_SIGNER_TOKEN);
+}
+
+function withOptionalContentCredentialSecrets(baseSecrets, values) {
+  const enabled = optionalContentCredentialsEnabled(values);
+  return Object.freeze(Object.fromEntries(Object.entries(baseSecrets).map(([serviceId, names]) => [
+    serviceId,
+    Object.freeze(enabled && CONTENT_CREDENTIAL_SERVICES.includes(serviceId)
+      ? [...new Set([...names, "C2PA_SIGNER_TOKEN"])]
+      : [...names]),
+  ])));
 }
 
 function contentCredentialsEnabled(secrets, serviceId) {
@@ -46,6 +64,10 @@ export function serviceConfiguration({ serviceId, values, runtimeConfig, secrets
     const value = present(values[name]) ? values[name] : runtimeConfig[serviceId].existing[name];
     if (present(value)) result[name] = value;
   }
+  if (contentCredentialsEnabled(secrets, serviceId)) {
+    result.C2PA_SIGNER_ID ??= DEFAULT_C2PA_SIGNER_ID;
+    result.C2PA_TRUST_POLICY ??= DEFAULT_C2PA_TRUST_POLICY;
+  }
   return Object.freeze(result);
 }
 
@@ -61,7 +83,7 @@ export async function configureCloudflareSecrets({
   const source = await readFile(resolve(process.cwd(), filePath), "utf8");
   const values = parseOperatorEnv(source);
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
-  const secrets = secretInventory(configs);
+  const secrets = withOptionalContentCredentialSecrets(secretInventory(configs), values);
   const runtimeConfig = runtimeConfigInventory(configs);
   const missing = validateOperatorConfiguration({ values, secrets, runtimeConfig });
   if (missing.length > 0) {
