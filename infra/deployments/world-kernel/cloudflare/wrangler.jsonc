@@ -10,6 +10,12 @@
   "secrets": {
     "required": ["FIBRE_PRIVATE_TOKEN"]
   },
+  "d1_databases": [
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
