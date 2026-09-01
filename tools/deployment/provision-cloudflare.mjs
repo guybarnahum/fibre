@@ -16,9 +16,30 @@ const D1_MIGRATION_BY_BINDING = Object.freeze({
   PRESENTATION_CATALOG: "infra/providers/cloudflare/d1/0001_fibre_catalog.sql",
   ACTIVITY_LOG: "infra/providers/cloudflare/d1/0001_activity_log.sql",
 });
+const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 
 function d1Id(database) {
   return database?.uuid ?? database?.id ?? database?.database_id ?? null;
+}
+
+function optionalGitSha(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string" || !GIT_SHA_PATTERN.test(value)) {
+    throw new TypeError("Cloudflare provision sourceGitSha must be a full lowercase 40-character Git SHA");
+  }
+  return value;
+}
+
+function activityRuntimeConfig(runtimeConfigByService, environment, sourceGitSha) {
+  const result = {};
+  for (const serviceId of Object.keys(runtimeConfigByService)) {
+    result[serviceId] = {
+      ...runtimeConfigByService[serviceId],
+      FIBRE_ACTIVITY_ENV: environment,
+      ...(sourceGitSha === null ? {} : { FIBRE_DEPLOYMENT_GIT_SHA: sourceGitSha }),
+    };
+  }
+  return Object.freeze(result);
 }
 
 function sharedActivityDatabase(configs, environment) {
@@ -106,9 +127,11 @@ export async function provisionCloudflareResources({
   repoRoot,
   environment,
   client,
+  sourceGitSha = null,
   now = () => new Date().toISOString(),
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
+  const source = optionalGitSha(sourceGitSha);
   if (!client) throw new TypeError("Cloudflare provision client is required");
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
   const plan = createCloudflareResourcePlan(configs, { environment: env });
@@ -141,7 +164,8 @@ export async function provisionCloudflareResources({
       externalRequired: plan.externalRequired,
     },
   };
-  const runtimeConfigByService = await readCloudflareRuntimeConfig({ repoRoot, environment: env });
+  const storedRuntimeConfig = await readCloudflareRuntimeConfig({ repoRoot, environment: env });
+  const runtimeConfigByService = activityRuntimeConfig(storedRuntimeConfig, env, source);
   state.wranglerConfigs = await writeResolvedWranglerConfigs({
     repoRoot, environment: env, configs, resourceState: state, runtimeConfigByService,
   });
