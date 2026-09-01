@@ -19,6 +19,27 @@ function requireBoundary(name, value, method) {
   return value;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Thread visual publication activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
+function activityIdentity(threadId, supplied = {}) {
+  return Object.freeze({
+    requestId: supplied.requestId ?? null,
+    genesisId: supplied.genesisId ?? null,
+    threadId,
+  });
+}
+
 function currentCanonicalPortrait(embodimentStore, threadId) {
   const current = embodimentStore.listCurrent(threadId).map(normalizeEmbodimentRepresentation);
   const portraits = current.filter((entry) => (
@@ -80,25 +101,12 @@ function normalizeMaterializationResult(result) {
   return { ...result, embodiment: normalizeEmbodimentRepresentation(result.embodiment) };
 }
 
-/**
- * World-owned convergent process for one Thread's canonical visual publication.
- *
- * This process owns no second durable workflow state. Recovery is derived from
- * authoritative Genesis/Embodiment state plus the durable downstream handoff
- * state. Re-running after a crash therefore resumes from the first incomplete
- * seam.
- *
- * Authority split:
- * - World owns the canonical Embodiment and admission of the generated root.
- * - canonicalRootBoundary executes/reconciles generation but cannot admit it.
- * - presentationBoundary projects already-admitted World truth and requests
- *   derived presentation media, but cannot redefine canonical identity.
- */
 export function createThreadVisualPublicationReconciler({
   embodimentStore,
   canonicalEmbodimentMaterializer = null,
   canonicalRootBoundary,
   presentationBoundary,
+  activityRecorder = null,
   now = () => new Date().toISOString(),
 } = {}) {
   if (!embodimentStore
@@ -111,15 +119,21 @@ export function createThreadVisualPublicationReconciler({
   }
   requireBoundary("canonicalRootBoundary", canonicalRootBoundary, "reconcile");
   requireBoundary("presentationBoundary", presentationBoundary, "reconcileAvailableEmbodiment");
+  const activity = optionalActivityRecorder(activityRecorder);
   if (typeof now !== "function") throw new TypeError("Thread visual publication reconciler now must be a function");
 
   return Object.freeze({
-    async reconcileThread({ threadId } = {}) {
+    async reconcileThread({ threadId, activityContext = {} } = {}) {
       assertId("threadId", threadId);
+      const context = activityIdentity(threadId, activityContext);
       let embodiment = currentCanonicalPortrait(embodimentStore, threadId);
       if (embodiment === null && canonicalEmbodimentMaterializer !== null) {
         const materialized = normalizeMaterializationResult(
-          await canonicalEmbodimentMaterializer.materialize({ threadId }),
+          await runActivityStage(activity, {
+            ...context,
+            stage: "world.embodiment.reconcile",
+            attempt: 1,
+          }, async () => canonicalEmbodimentMaterializer.materialize({ threadId })),
         );
         if (materialized.state === "pending") {
           return pending(materialized.reason ?? "awaiting_canonical_embodiment", { threadId });
@@ -133,12 +147,17 @@ export function createThreadVisualPublicationReconciler({
       if (embodiment.status === "pending_generation") {
         const requestedAt = assertIsoTimestamp("canonical visual root requestedAt", now());
         const job = planCanonicalVisualIdentityGeneration({ embodiment, requestedAt });
-        const root = normalizeRootResult(await canonicalRootBoundary.reconcile({
+        const root = normalizeRootResult(await runActivityStage(activity, {
+          ...context,
+          stage: "world.visual_identity.demand",
+          attempt: 1,
+          evidence: { embodimentId: embodiment.embodimentId },
+        }, async () => canonicalRootBoundary.reconcile({
           threadId,
           embodiment,
           job,
           requestedAt,
-        }));
+        })));
         if (root.state === "pending") {
           return pending("canonical_visual_root_pending", {
             threadId,
@@ -147,11 +166,16 @@ export function createThreadVisualPublicationReconciler({
           });
         }
 
-        embodiment = embodimentStore.record(bindVerifiedCanonicalVisualIdentityProof({
+        embodiment = await runActivityStage(activity, {
+          ...context,
+          stage: "world.embodiment.admission",
+          attempt: 1,
+          evidence: { embodimentId: embodiment.embodimentId },
+        }, async () => embodimentStore.record(bindVerifiedCanonicalVisualIdentityProof({
           embodiment,
           proof: root.proof,
           recordedAt: root.recordedAt,
-        }));
+        })));
       }
 
       if (embodiment.status !== "available" || !embodiment.asset?.referenceObjectRef) {
@@ -164,11 +188,20 @@ export function createThreadVisualPublicationReconciler({
 
       const observedAt = assertIsoTimestamp("visual publication observedAt", now());
       const projection = normalizePresentationResult(
-        await presentationBoundary.reconcileAvailableEmbodiment({
+        await runActivityStage(activity, {
+          ...context,
+          stage: "world.reconciliation.complete",
+          attempt: 1,
+          evidence: {
+            embodimentId: embodiment.embodimentId,
+            objectRef: embodiment.asset.referenceObjectRef,
+          },
+        }, async () => presentationBoundary.reconcileAvailableEmbodiment({
           threadId,
           embodiment,
           observedAt,
-        }),
+          activityContext: context,
+        })),
       );
 
       if (!projection.complete) {
