@@ -1,128 +1,122 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { readdir, readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 import {
-  GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT as birthPassARepairPrompt,
-  GENESIS_LIFE_PASS_A_PROMPT as birthPassAPrompt,
-  GENESIS_LIFE_PASS_A_RETRY_PROMPT as birthPassARetryPrompt,
-} from "../src/genesis-history-generation.mjs";
+  GENESIS_LIFE_PASS_A_PROMPT,
+  GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
+  GENESIS_PASS_C_INITIAL_PROMPT,
+  GENESIS_PASS_C_REINTERPRETATION_PROMPT,
+  GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
+  richPassAGenerationDecision,
+} from "fibre/birth-center/genesis-development";
 import {
-  GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA as birthPassARepairSchema,
-  richPassAGenerationDecision as birthPassAGenerationDecision,
-} from "../src/genesis-history-generation-policy.mjs";
-import {
-  GENESIS_LIFE_PASS_B_COGNITION_PROMPT as birthPassBPrompt,
-  GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT as birthPassBRetryPrompt,
-  GENESIS_LIFE_PASS_B_FORMATION_MODES as birthPassBFormationModes,
-  GENESIS_LIFE_PASS_B_HORIZONS as birthPassBHorizons,
-} from "../src/genesis-memory-generation.mjs";
-import { GENESIS_PASS_B_RESPONSE_SCHEMA as birthPassBSchema } from "../src/genesis-memory-prompts.mjs";
-import {
-  GENESIS_PASS_C_INITIAL_PROMPT as birthPassCInitialPrompt,
-  GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA as birthPassCInitialSchema,
-  GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT as birthPassCReinterpretationPrompt,
-  GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA as birthPassCReinterpretationSchema,
-} from "../src/genesis-meaning-prompts.mjs";
+  GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+  sha256,
+} from "fibre/world-kernel/genesis-authority-contracts";
 
-import {
-  GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT as worldPassARepairPrompt,
-  GENESIS_LIFE_PASS_A_PROMPT as worldPassAPrompt,
-  GENESIS_LIFE_PASS_A_RETRY_PROMPT as worldPassARetryPrompt,
-} from "../../world-kernel/src/genesis-life-pass-a.mjs";
-import {
-  GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA as worldPassARepairSchema,
-  richPassAGenerationDecision as worldPassAGenerationDecision,
-} from "../../world-kernel/src/genesis-rich-pass-a-runner.mjs";
-import {
-  GENESIS_LIFE_PASS_B_COGNITION_PROMPT as worldPassBPrompt,
-  GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT as worldPassBRetryPrompt,
-  GENESIS_LIFE_PASS_B_FORMATION_MODES as worldPassBFormationModes,
-  GENESIS_LIFE_PASS_B_HORIZONS as worldPassBHorizons,
-} from "../../world-kernel/src/genesis-life-pass-b.mjs";
-import { GENESIS_PASS_B_RESPONSE_SCHEMA as worldPassBSchema } from "../../world-kernel/src/genesis-pass-b-prompts.mjs";
-import {
-  GENESIS_PASS_C_INITIAL_PROMPT as worldPassCInitialPrompt,
-  GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA as worldPassCInitialSchema,
-  GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT as worldPassCReinterpretationPrompt,
-  GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA as worldPassCReinterpretationSchema,
-} from "../../world-kernel/src/genesis-pass-c-prompts.mjs";
-import { GENESIS_PASS_A_RELIABILITY_POLICY_V3 } from "../../world-kernel/src/genesis-pass-a-reliability-v3.mjs";
+const PACKAGE_JSON = new URL("../../../package.json", import.meta.url);
+const WORLD_SRC = new URL("../../world-kernel/src/", import.meta.url);
+const WORLD_PROMPTS = new URL("../../world-kernel/prompts/", import.meta.url);
 
-function sourceFiles(directoryUrl) {
-  const directory = fileURLToPath(directoryUrl);
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) return sourceFiles(new URL(`${entry.name}/`, directoryUrl));
-    return entry.isFile() && /\.mjs$/u.test(entry.name) ? [path] : [];
-  });
+const retiredWorldGenerationModules = Object.freeze([
+  "genesis-life-pass-a.mjs",
+  "genesis-life-pass-b-input.mjs",
+  "genesis-life-pass-b.mjs",
+  "genesis-life-pass-c.mjs",
+  "genesis-pass-a-runner.mjs",
+  "genesis-pass-b-admission.mjs",
+  "genesis-pass-b-prompts.mjs",
+  "genesis-pass-c-prompts.mjs",
+  "genesis-rich-pass-a-runner.mjs",
+]);
+
+async function exists(url) {
+  try {
+    await stat(url);
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw error;
+  }
 }
 
-test("Birth Center owns the live Genesis development surface", () => {
-  const packageJson = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8"));
-  assert.equal(packageJson.exports["./world-kernel/genesis-development-contracts"], undefined);
-  assert.equal(
-    packageJson.exports["./birth-center/genesis-development"],
-    "./services/birth-center/public/genesis-development.mjs",
-  );
-  assert.equal(
-    packageJson.exports["./world-kernel/genesis-authority-contracts"],
-    "./services/world-kernel/public/genesis-authority-contracts.mjs",
-  );
+const rawDigest = (value) => `sha256:${sha256(value)}`;
 
-  const birthSource = sourceFiles(new URL("../src/", import.meta.url));
-  for (const path of birthSource) {
-    const source = readFileSync(path, "utf8");
-    assert.doesNotMatch(source, /fibre\/world-kernel\/genesis-development-contracts/u, path);
-    assert.doesNotMatch(source, /#services\/world-kernel\/src\//u, path);
-    assert.doesNotMatch(source, /\.\.\/\.\.\/world-kernel\/src\//u, path);
+test("Birth Center is the sole provider-facing Genesis generation owner", async () => {
+  const pkg = JSON.parse(await readFile(PACKAGE_JSON, "utf8"));
+  assert.equal(pkg.exports["./world-kernel/genesis-development-contracts"], undefined);
+  assert.equal(pkg.exports["./birth-center/genesis-development"], "./services/birth-center/public/genesis-development.mjs");
+  assert.equal(pkg.exports["./world-kernel/genesis-authority-contracts"], "./services/world-kernel/public/genesis-authority-contracts.mjs");
+
+  for (const name of retiredWorldGenerationModules) {
+    assert.equal(await exists(new URL(name, WORLD_SRC)), false, `${name} must not survive as a World generation path`);
   }
 
-  const authority = readFileSync(new URL("../../world-kernel/public/genesis-authority-contracts.mjs", import.meta.url), "utf8");
-  assert.doesNotMatch(authority, /prompt-assets/u);
-  assert.doesNotMatch(authority, /adapter\.invoke/u);
-  assert.doesNotMatch(authority, /genesis-life-pass-[abc]\.mjs/u);
-  assert.doesNotMatch(authority, /GenesisPassBAdmissionError/u);
-  assert.doesNotMatch(authority, /normalizeAdmittedPassBModelOutput/u);
-  assert.doesNotMatch(authority, /assertPassBGenomeCopyBoundary/u);
+  for (const name of await readdir(WORLD_PROMPTS)) {
+    assert.equal(name.startsWith("genesis."), false, `Genesis provider prompt ${name} belongs to Birth Center, not World`);
+  }
 
-  const memoryGeneration = readFileSync(new URL("../src/genesis-memory-generation.mjs", import.meta.url), "utf8");
-  assert.match(memoryGeneration, /from "\.\/genesis-memory-admission\.mjs"/u);
+  for (const name of await readdir(WORLD_SRC)) {
+    if (!name.startsWith("genesis-") || !name.endsWith(".mjs")) continue;
+    const source = await readFile(new URL(name, WORLD_SRC), "utf8");
+    assert.doesNotMatch(source, /adapter\.invoke\s*\(/u, `${name} must remain provider-free`);
+    assert.doesNotMatch(source, /resolvePromptAsset/u, `${name} must not resolve provider prompts`);
+  }
 });
 
-test("Birth-owned Genesis prompts, schemas, schedules, and repair budget remain equivalent", () => {
-  assert.equal(birthPassAPrompt, worldPassAPrompt);
-  assert.equal(birthPassARetryPrompt, worldPassARetryPrompt);
-  assert.equal(birthPassARepairPrompt, worldPassARepairPrompt);
-  assert.deepEqual(birthPassARepairSchema, worldPassARepairSchema);
+test("current Birth Genesis prompts and generation budgets retain the promoted behavior", () => {
+  assert.match(GENESIS_LIFE_PASS_A_PROMPT, /priorEpisodes as continuity and anti-repetition context/iu);
+  assert.match(GENESIS_LIFE_PASS_A_PROMPT, /do not repeatedly default to the same subject matter/iu);
 
-  assert.equal(birthPassBPrompt, worldPassBPrompt);
-  assert.equal(birthPassBRetryPrompt, worldPassBRetryPrompt);
-  assert.deepEqual(birthPassBSchema, worldPassBSchema);
-  assert.deepEqual(birthPassBHorizons, worldPassBHorizons);
-  assert.deepEqual(birthPassBFormationModes, worldPassBFormationModes);
+  assert.equal(
+    rawDigest(GENESIS_LIFE_PASS_B_COGNITION_PROMPT),
+    "sha256:3ba80ac180b5140bc3710a33c78ed6e14bc666979e60223ca44bcba32399f26a",
+  );
+  assert.equal(
+    rawDigest(GENESIS_PASS_C_INITIAL_PROMPT),
+    "sha256:a631988658a66dab9262150f5b378443f71263f1671244a30cdac2618905a8d9",
+  );
+  assert.equal(
+    rawDigest(GENESIS_PASS_C_REINTERPRETATION_PROMPT),
+    "sha256:03e2790535fbe54156fac49d48fea2e1139fed29b9e634765658d6c14c58f0ae",
+  );
+  assert.equal(
+    rawDigest(GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT),
+    "sha256:79003bbc27920be774d372c0f19fc4a96567a550b0f7db3db51cb19a7a5327e4",
+  );
 
-  assert.equal(birthPassCInitialPrompt, worldPassCInitialPrompt);
-  assert.equal(birthPassCReinterpretationPrompt, worldPassCReinterpretationPrompt);
-  assert.deepEqual(birthPassCInitialSchema, worldPassCInitialSchema);
-  assert.deepEqual(birthPassCReinterpretationSchema, worldPassCReinterpretationSchema);
-
-  for (const nextKind of ["form_repair", "record_retry"]) {
-    for (const generatedVersions of [0, 1, 4, 5]) {
-      for (const formRepairs of [0, 1, 2]) {
-        for (const recordRetries of [0, 1, 2]) {
-          const args = {
-            generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
-            generatedVersions,
-            formRepairs,
-            recordRetries,
-            nextKind,
-          };
-          assert.deepEqual(birthPassAGenerationDecision(args), worldPassAGenerationDecision(args));
-        }
-      }
-    }
-  }
+  assert.deepEqual(richPassAGenerationDecision({
+    generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+    generatedVersions: 1,
+    formRepairs: 0,
+    recordRetries: 0,
+    nextKind: "form_repair",
+  }), {
+    allowed: true,
+    reason: null,
+    policyVersion: GENESIS_PASS_A_RELIABILITY_POLICY_V3.version,
+  });
+  assert.deepEqual(richPassAGenerationDecision({
+    generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+    generatedVersions: 3,
+    formRepairs: 2,
+    recordRetries: 0,
+    nextKind: "form_repair",
+  }), {
+    allowed: false,
+    reason: "form_repair_budget_exhausted",
+    policyVersion: GENESIS_PASS_A_RELIABILITY_POLICY_V3.version,
+  });
+  assert.deepEqual(richPassAGenerationDecision({
+    generationPolicy: GENESIS_PASS_A_RELIABILITY_POLICY_V3,
+    generatedVersions: 5,
+    formRepairs: 2,
+    recordRetries: 2,
+    nextKind: "record_retry",
+  }), {
+    allowed: false,
+    reason: "total_generated_version_budget_exhausted",
+    policyVersion: GENESIS_PASS_A_RELIABILITY_POLICY_V3.version,
+  });
 });

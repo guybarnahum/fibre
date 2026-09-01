@@ -1,6 +1,8 @@
 export {
   GENESIS_EVENT_STRUCTURE_POOL_V3,
   GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
+  GENESIS_PASS_B_INPUT_VERSION,
+  GENESIS_PASS_B_POLICY,
   GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,
   autobiographicalMemoryId,
@@ -28,7 +30,10 @@ export {
   buildGenesisLifePassACognitionInput,
   generateGenesisHistoricalEpisode,
 } from "./genesis-history-generation.mjs";
-export { GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA } from "./genesis-history-generation-policy.mjs";
+export {
+  GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
+  richPassAGenerationDecision,
+} from "./genesis-history-generation-policy.mjs";
 export {
   GENESIS_LIFE_PASS_B_COGNITION_PROMPT,
   GENESIS_LIFE_PASS_B_FORMATION_MODES,
@@ -41,13 +46,30 @@ export {
   generateGenesisPassBMemory,
 } from "./genesis-memory-generation.mjs";
 export { GENESIS_LIFE_GENOME_EXPOSURE_POLICY, buildGenesisPassBInput } from "./genesis-memory-input.mjs";
-export { GENESIS_PASS_B_RESPONSE_SCHEMA } from "./genesis-memory-prompts.mjs";
+export {
+  GENESIS_PASS_B_FORM_PROFILE,
+  GENESIS_PASS_B_MAX_MODEL_CHARACTERS,
+  GENESIS_PASS_B_MAX_UNCERTAINTY_CHARACTERS,
+  GENESIS_PASS_B_PROMPT,
+  GENESIS_PASS_B_PROMPT_VERSION,
+  GENESIS_PASS_B_RESPONSE_SCHEMA,
+  passBPromptHash,
+  passBResponseSchemaHash,
+} from "./genesis-memory-prompts.mjs";
 export { generateGenesisInitialMeaning, generateGenesisReinterpretation } from "./genesis-meaning-generation.mjs";
 export {
   GENESIS_PASS_C_INITIAL_PROMPT,
+  GENESIS_PASS_C_INITIAL_PROMPT_VERSION,
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
+  GENESIS_PASS_C_REINTERPRETATION_BASE_PROMPT_VERSION,
   GENESIS_PASS_C_REINTERPRETATION_PROMPT,
+  GENESIS_PASS_C_REINTERPRETATION_PROMPT_VERSION,
   GENESIS_PASS_C_REINTERPRETATION_RESTRAINT_AMENDMENT,
   GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
+  passCInitialPromptHash,
+  passCInitialResponseSchemaHash,
+  passCReinterpretationBaselinePromptHash,
+  passCReinterpretationPromptHash,
+  passCReinterpretationResponseSchemaHash,
 } from "./genesis-meaning-prompts.mjs";

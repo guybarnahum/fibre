@@ -8,20 +8,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { deriveGenesisLifeContinuity } from "#services/world-kernel/src/genesis-life-continuity-v1.mjs";
-import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import {
   GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
-} from "#services/world-kernel/src/genesis-historical-realization-v1.mjs";
-import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-pass-b-prompts.mjs";
-import {
+  GENESIS_PASS_B_RESPONSE_SCHEMA,
   GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA,
   GENESIS_PASS_C_REINTERPRETATION_RESPONSE_SCHEMA,
-} from "#services/world-kernel/src/genesis-pass-c-prompts.mjs";
-import { GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA } from "#services/world-kernel/src/genesis-rich-pass-a-runner.mjs";
+  GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
+} from "fibre/birth-center/genesis-development";
+import { deriveGenesisLifeContinuity } from "fibre/world-kernel/genesis-authority-contracts";
+import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
+import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 import { buildGenesisDevelopmentPlans } from "./genesis-life-plan.mjs";
 import { buildGenesisBirthBundle, buildGenesisPublicationCognition } from "./genesis-life-publication.mjs";
-import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 
 function cognition() {
   const adapter = Object.freeze({
@@ -101,8 +99,6 @@ test("GenesisStore refuses prior-life episodes without roster and life continuit
   try {
     store = new GenesisStore(localWorldStateStorage(databasePath, { driverId: "sqlite-genesis-birth-continuity-test" }));
     store.recordWorldSpec(slotPlan.worldSpec);
-    // The current compiler normally makes omission unreachable. Deliberately
-    // remove both inputs here to exercise GenesisStore's authority boundary.
     const birth = buildGenesisBirthBundle({
       candidate,
       slotPlan: shortenedPlan,

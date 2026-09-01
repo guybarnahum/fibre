@@ -1,6 +1,0 @@
-Reinterpretation is conservative because an existing durable meaning has already formed.
-The existence of an eligible later echo is not by itself a reason to replace that meaning.
-Return outcome=revised only when the supplied trigger introduces a material fact, relation, resolution, contradiction, or change of attribution that makes the prior durable meaning no longer adequate as the Thread's current durable interpretation.
-Mere recurrence, another instance of a pattern already named by the prior meaning, eventual follow-through already compatible with that meaning, added specificity, or a richer wording for the same tension is not enough to supersede it. In those cases return outcome=unchanged.
-Do not manufacture a more favorable, mature, coherent, explanatory, or resolved interpretation from neutral detail. If the prior meaning already accommodates the trigger, preserve it even when you could phrase the situation more richly.
-outcome=none remains available when the eligible echo yields no new durable meaning at all. No quota applies across calls.

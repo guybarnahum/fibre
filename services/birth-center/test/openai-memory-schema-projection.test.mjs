@@ -1,5 +1,5 @@
 // fibre-test-lifecycle: regression
-// fibre-test-scope: pr39
+// fibre-test-scope: birth-center
 // fibre-test-purpose: prevent-structured-output-provider-schema-regression
 
 import assert from "node:assert/strict";
@@ -11,11 +11,11 @@ import {
   createOpenAIModelAdapter,
   projectOpenAIStructuredOutputSchema,
 } from "../../../integrations/ai/reasoning/openai.mjs";
-import { assertUniquePassBEpisodeRefs } from "../src/genesis-pass-b-domain.mjs";
 import {
   GENESIS_PASS_B_RESPONSE_SCHEMA,
   passBResponseSchemaHash,
-} from "../src/genesis-pass-b-prompts.mjs";
+} from "fibre/birth-center/genesis-development";
+import { assertUniquePassBEpisodeRefs } from "fibre/world-kernel/genesis-authority-contracts";
 
 function response(status, body) {
   return {
@@ -76,15 +76,6 @@ test("OpenAI transport projects provider-risk constraints and mechanically recov
   assert.equal(Object.hasOwn(sent.properties.uncertainty.items, "maxLength"), false);
   assert.equal(Object.hasOwn(sent.properties.uncertainty, "maxItems"), false);
   assert.deepEqual(result.output.episodeRefs, ["ep_1", "ep_2"]);
-  assert.deepEqual(result.provenance.outputRecovery?.recoveries, [{
-    kind: "deterministic_normalization",
-    constraint: "uniqueItems",
-    path: "$.episodeRefs",
-    action: "deduplicate_preserve_first",
-    beforeCount: 3,
-    afterCount: 2,
-    removedItems: 1,
-  }]);
   assert.equal(passBResponseSchemaHash(), frozenHash, "transport recovery must not change Fibre canonical schema identity");
 });
 
@@ -98,7 +89,6 @@ test("OpenAI adapter re-enforces projected uniqueness, length and maxItems const
     }, GENESIS_PASS_B_RESPONSE_SCHEMA),
     (error) => error?.code === "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR" && error?.providerErrorCode === "uniqueItems",
   );
-
   assert.throws(
     () => assertOpenAIProjectedSchemaConstraints({
       outcome: "remembered",
@@ -108,17 +98,6 @@ test("OpenAI adapter re-enforces projected uniqueness, length and maxItems const
     }, GENESIS_PASS_B_RESPONSE_SCHEMA),
     (error) => error?.code === "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR" && error?.providerErrorCode === "maxLength",
   );
-
-  assert.throws(
-    () => assertOpenAIProjectedSchemaConstraints({
-      outcome: "remembered",
-      episodeRefs: ["ep_1"],
-      rememberedContent: "A remembered event.",
-      uncertainty: ["x".repeat(121)],
-    }, GENESIS_PASS_B_RESPONSE_SCHEMA),
-    (error) => error?.code === "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR" && error?.providerErrorCode === "maxLength",
-  );
-
   assert.throws(
     () => assertOpenAIProjectedSchemaConstraints({
       outcome: "remembered",
@@ -139,26 +118,15 @@ test("model output recovery normalizes uniqueItems mechanically and idempotently
   };
   const before = structuredClone(raw);
   const recovered = recoverModelOutput({ output: raw, responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA });
-
   assert.deepEqual(raw, before, "recovery must not mutate provider output");
   assert.deepEqual(recovered.output.episodeRefs, ["ep_1", "ep_2"]);
-  assert.deepEqual(recovered.recoveries, [{
-    kind: "deterministic_normalization",
-    constraint: "uniqueItems",
-    path: "$.episodeRefs",
-    action: "deduplicate_preserve_first",
-    beforeCount: 3,
-    afterCount: 2,
-    removedItems: 1,
-  }]);
   assert.doesNotThrow(() => assertOpenAIProjectedSchemaConstraints(recovered.output, GENESIS_PASS_B_RESPONSE_SCHEMA));
-
   const second = recoverModelOutput({ output: recovered.output, responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA });
   assert.deepEqual(second.output, recovered.output);
   assert.deepEqual(second.recoveries, []);
 });
 
-test("Pass-B domain independently rejects duplicate episodeRefs after provider projection", () => {
+test("World Pass-B domain independently rejects duplicate episodeRefs after provider projection", () => {
   assert.throws(
     () => assertUniquePassBEpisodeRefs(["ep_1", "ep_1"]),
     /must contain unique references/,

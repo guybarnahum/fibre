@@ -40,6 +40,7 @@ export {
 export {
   GENESIS_PASS_B_INPUT_VERSION,
   GENESIS_PASS_B_POLICY,
+  assertUniquePassBEpisodeRefs,
   normalizePassBInput,
   normalizePassBModelOutput,
 } from "../src/genesis-pass-b-domain.mjs";
@@ -47,6 +48,7 @@ export { projectPassBInputForCognition } from "../src/genesis-pass-b-cognition.m
 export {
   GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,
+  genesisMeaningPartId,
   normalizeInitialPassCModelOutput,
   normalizePassCInput,
   normalizeReinterpretationPassCModelOutput,

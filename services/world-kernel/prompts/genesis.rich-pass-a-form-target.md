@@ -1,1 +1,0 @@
-G4-v3 mechanical form control: target observableAction at no more than 800 UTF-8 bytes and no more than 100 words. This is generation guidance only; the unchanged authoritative admission ceiling remains 1200 UTF-8 bytes.
