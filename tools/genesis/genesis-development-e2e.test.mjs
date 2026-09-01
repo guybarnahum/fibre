@@ -40,12 +40,12 @@ function deploymentEvidence() {
   };
 }
 
-function absentWorld(plan) {
+function absentWorld({ genesisId, threadId }) {
   return {
     ok: true,
     inspection: {
-      genesisId: plan.genesisId,
-      threadId: plan.threadId,
+      genesisId,
+      threadId,
       authoritativeThread: { exists: false, version: null, status: null, eventCount: 0, lastEventId: null },
       genesis: { manifestExists: false, threadPublished: false, manifestDigest: null, worldSpecId: null, worldSpecDigest: null, historicalEnvelopePlanDigest: null },
       symbolicGenomes: { count: 0, genomes: [] },
@@ -186,8 +186,16 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
     }
 
     if (url.hostname === "world.example.workers.dev") {
-      assert.ok(plan, "World inspection should use the plan derived before submission");
-      return json(submitted ? liveWorld(plan) : absentWorld(plan));
+      if (!submitted) {
+        const match = /^\/internal\/genesis\/([^/]+)\/threads\/([^/]+)\/inspection$/u.exec(url.pathname);
+        assert.ok(match);
+        return json(absentWorld({
+          genesisId: decodeURIComponent(match[1]),
+          threadId: decodeURIComponent(match[2]),
+        }));
+      }
+      assert.ok(plan);
+      return json(liveWorld(plan));
     }
 
     if (url.hostname === "api.staging.insidefibre.com") {
