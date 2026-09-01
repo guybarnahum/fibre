@@ -154,8 +154,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genomeAuthority: symbolicGenomeStore,
   });
   const birthPublisher = Object.freeze({
-    async publishBirth(bundle) {
-      const result = await authoritativeBirthPublisher.publishBirth(bundle);
+    async publishBirth(bundle, options = {}) {
+      const result = await authoritativeBirthPublisher.publishBirth(bundle, options);
       await reconciliationRuntime.requestWake();
       return result;
     },
