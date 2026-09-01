@@ -198,6 +198,25 @@ test("Birth Center develops a narrow request and World atomically admits the res
   ]) {
     assert.equal(stages.has(expected), true, `missing successful activity stage ${expected}`);
   }
+
+  const cognitionCalls = requestActivity.filter((record) => (
+    record.service === "birth-center"
+    && record.status === "succeeded"
+    && record.stage.endsWith(".cognition_call")
+  ));
+  assert.equal(cognitionCalls.length, 20);
+  assert.equal(
+    cognitionCalls.filter((record) => record.stage === "birth.genesis.history.cognition_call").length,
+    14,
+  );
+  assert.equal(
+    cognitionCalls.filter((record) => record.stage === "birth.genesis.memory_selection.cognition_call").length,
+    6,
+  );
+  const providerCommits = requestActivity.filter((record) => record.stage.endsWith(".provider_commit"));
+  assert.equal(providerCommits.length, 20);
+  assert.equal(providerCommits.every((record) => typeof record.evidence.providerRequestId === "string"), true);
+
   assert.equal(requestActivity.every((record) => record.genesisId === first.genesisId), true);
   assert.equal(requestActivity.every((record) => record.threadId === first.threadId), true);
   assert.deepEqual(
