@@ -84,6 +84,7 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   assert.match(worker, /createAssetGenerationControlApi/);
   assert.match(worker, /selectImageIntegration/);
   assert.match(worker, /selectContentCredentialIntegration/);
+  assert.match(worker, /contentCredentials\s*\?\?\s*null/);
   assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
   assert.match(worker, /NonRetryableError/);
   assert.match(worker, /assetGenerationRetryDecision/);
@@ -174,7 +175,7 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.match(p3Proof, /queue_completion_handoff/);
 });
 
-test("remote Cloudflare composition shares generated assets and completion topology without moving publication authority", async () => {
+test("remote Cloudflare composition shares generated assets and completion topology without requiring C2PA", async () => {
   const manifest = await deployment(remoteDeploymentManifestUrl);
   const assetConfig = await json(assetRemoteConfigUrl);
   const presentationConfig = await json(presentationRemoteConfigUrl);
@@ -193,8 +194,8 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(presentationDeployment.infra.infraId, "cloudflare");
   assert.ok(presentationDeployment.infra.capabilities.includes("streams"));
   assert.ok(presentationDeployment.infra.capabilities.includes("realtime"));
-  assert.equal(assetDeployment.integrations.contentCredentials.provider, "c2pa-http");
-  assert.equal(presentationDeployment.integrations.contentCredentials.provider, "c2pa-http");
+  assert.equal(assetDeployment.integrations.contentCredentials, undefined);
+  assert.equal(presentationDeployment.integrations.contentCredentials, undefined);
 
   const assetBucket = assetConfig.r2_buckets.find((binding) => binding.binding === "ASSET_OBJECTS");
   const presentationBucket = presentationConfig.r2_buckets.find((binding) => binding.binding === "PRESENTATION_OBJECTS");
@@ -227,11 +228,11 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-dlq");
   assert.equal(presentationConfig.queues.producers, undefined);
   assert.equal(assetConfig.queues.consumers, undefined);
-  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
-  assert.deepEqual(presentationConfig.secrets.required, ["C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
-  assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, "fibre-c2pa-production-v1");
-  assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, "c2pa_trust_list");
-  assert.equal(assetConfig.vars.C2PA_SIGNER_ID, presentationConfig.vars.C2PA_SIGNER_ID);
-  assert.equal(assetConfig.vars.C2PA_TRUST_POLICY, presentationConfig.vars.C2PA_TRUST_POLICY);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
+  assert.deepEqual(presentationConfig.secrets.required, ["FIBRE_PRIVATE_TOKEN"]);
+  assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, undefined);
+  assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, undefined);
+  assert.equal(assetConfig.vars.C2PA_SIGNER_ID, undefined);
+  assert.equal(assetConfig.vars.C2PA_TRUST_POLICY, undefined);
   assert.equal(presentationConfig.vars?.P3_FIXTURE_MODE, undefined);
 });
