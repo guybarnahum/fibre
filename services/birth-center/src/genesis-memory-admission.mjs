@@ -1,4 +1,7 @@
-import { normalizePassBInput, normalizePassBModelOutput } from "./genesis-pass-b-domain.mjs";
+import {
+  normalizePassBInput,
+  normalizePassBModelOutput,
+} from "fibre/world-kernel/genesis-authority-contracts";
 
 export const GENESIS_PASS_B_GENOME_COPY_GATE = "pass_b_genome_verbatim_ngram";
 export const GENESIS_PASS_B_GENOME_COPY_MIN_TOKENS = 4;

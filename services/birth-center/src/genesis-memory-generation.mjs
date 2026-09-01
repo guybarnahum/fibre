@@ -1,14 +1,16 @@
 import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import {
-  GENESIS_PASS_B_GENOME_COPY_GATE,
   GENESIS_SPARSE_HISTORY_NOTICE,
-  GenesisPassBAdmissionError,
   canonicalJson,
-  normalizeAdmittedPassBModelOutput,
   normalizePassBInput,
   projectPassBInputForCognition,
   sha256,
 } from "fibre/world-kernel/genesis-authority-contracts";
+import {
+  GENESIS_PASS_B_GENOME_COPY_GATE,
+  GenesisPassBAdmissionError,
+  normalizeAdmittedPassBModelOutput,
+} from "./genesis-memory-admission.mjs";
 import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "./genesis-memory-prompts.mjs";
 
 const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);

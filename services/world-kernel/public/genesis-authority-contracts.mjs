@@ -41,17 +41,9 @@ export {
   GENESIS_PASS_B_INPUT_VERSION,
   GENESIS_PASS_B_POLICY,
   normalizePassBInput,
+  normalizePassBModelOutput,
 } from "../src/genesis-pass-b-domain.mjs";
 export { projectPassBInputForCognition } from "../src/genesis-pass-b-cognition.mjs";
-export {
-  GENESIS_PASS_B_GENOME_COPY_GATE,
-  GENESIS_PASS_B_GENOME_COPY_MIN_TOKENS,
-  GenesisPassBAdmissionError,
-  assertPassBGenomeCopyBoundary,
-  findVerbatimGenomeNgram,
-  normalizeAdmittedPassBModelOutput,
-  normalizedLexicalTokens,
-} from "../src/genesis-pass-b-validation.mjs";
 export {
   GENESIS_PASS_C_INPUT_VERSION,
   GENESIS_PASS_C_POLICY,

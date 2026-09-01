@@ -84,6 +84,12 @@ test("Birth Center owns the live Genesis development surface", () => {
   assert.doesNotMatch(authority, /prompt-assets/u);
   assert.doesNotMatch(authority, /adapter\.invoke/u);
   assert.doesNotMatch(authority, /genesis-life-pass-[abc]\.mjs/u);
+  assert.doesNotMatch(authority, /GenesisPassBAdmissionError/u);
+  assert.doesNotMatch(authority, /normalizeAdmittedPassBModelOutput/u);
+  assert.doesNotMatch(authority, /assertPassBGenomeCopyBoundary/u);
+
+  const memoryGeneration = readFileSync(new URL("../src/genesis-memory-generation.mjs", import.meta.url), "utf8");
+  assert.match(memoryGeneration, /from "\.\/genesis-memory-admission\.mjs"/u);
 });
 
 test("Birth-owned Genesis prompts, schemas, schedules, and repair budget remain equivalent", () => {
