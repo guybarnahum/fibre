@@ -1,5 +1,6 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createGenesisPresentationDeliveryService } from "#services/thread-presentation/src/index.mjs";
+import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { CivilRegistryStore } from "#services/world-kernel/src/civil-registry-store.mjs";
 import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
@@ -10,7 +11,9 @@ import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import { createGenesisThreadInspectionApi } from "#services/world-kernel/src/genesis-thread-inspection-api.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
+import { openSituatedLifeStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
+import { createThreadInspectionApi } from "#services/world-kernel/src/thread-inspection-api.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
 import {
@@ -81,6 +84,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const worldStorage = Object.freeze({ infraDriver, stateScopeId: WORLD_SCOPE_ID });
   const worldStore = openWorldStore(worldStorage);
   let identityStore;
+  let autobiographicalMemoryStore;
+  let situatedLifeStore;
   let embodimentStore;
   let genesisStore;
   let symbolicGenomeStore;
@@ -89,13 +94,25 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
 
   try {
     identityStore = openIdentityStore(worldStorage);
+    autobiographicalMemoryStore = openAutobiographicalMemoryStore(worldStorage);
+    situatedLifeStore = openSituatedLifeStore(worldStorage);
     embodimentStore = openEmbodimentStore(worldStorage);
     genesisStore = new GenesisStore(worldStorage);
     symbolicGenomeStore = new SymbolicGenomeStore(worldStorage);
     civilRegistryStore = new CivilRegistryStore(worldStorage);
     presentationOutboxStore = new GenesisPresentationOutboxStore(worldStorage);
   } catch (error) {
-    closeAll([presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
+    closeAll([
+      presentationOutboxStore,
+      civilRegistryStore,
+      symbolicGenomeStore,
+      genesisStore,
+      embodimentStore,
+      situatedLifeStore,
+      autobiographicalMemoryStore,
+      identityStore,
+      worldStore,
+    ]);
     throw error;
   }
 
@@ -167,9 +184,20 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     },
   });
   const birthApi = createGenesisBirthWriteApi({ birthPublisher, privateToken });
-  const inspectionApi = createGenesisThreadInspectionApi({
+  const genesisInspectionApi = createGenesisThreadInspectionApi({
     worldReader: worldStore,
     genesisReader: genesisStore,
+    genomeReader: symbolicGenomeStore,
+    civilRegistry: civilRegistryStore,
+    embodimentReader: embodimentStore,
+    privateToken,
+  });
+  const threadInspectionApi = createThreadInspectionApi({
+    worldReader: worldStore,
+    threadDirectory: identityStore,
+    identityReader: identityStore,
+    memoryReader: autobiographicalMemoryStore,
+    situatedLifeReader: situatedLifeStore,
     genomeReader: symbolicGenomeStore,
     civilRegistry: civilRegistryStore,
     embodimentReader: embodimentStore,
@@ -183,6 +211,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     activityRecorder,
     worldStore,
     identityStore,
+    autobiographicalMemoryStore,
+    situatedLifeStore,
     embodimentStore,
     genesisStore,
     symbolicGenomeStore,
@@ -194,12 +224,23 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     reconciliationRuntime,
     birthPublisher,
     birthApi,
-    inspectionApi,
+    genesisInspectionApi,
+    threadInspectionApi,
     async close({ cancelSchedule = false } = {}) {
       if (closed) return;
       closed = true;
       if (cancelSchedule) await reconciliationRuntime.stop();
-      closeAll([presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
+      closeAll([
+        presentationOutboxStore,
+        civilRegistryStore,
+        symbolicGenomeStore,
+        genesisStore,
+        embodimentStore,
+        situatedLifeStore,
+        autobiographicalMemoryStore,
+        identityStore,
+        worldStore,
+      ]);
     },
   });
 }
