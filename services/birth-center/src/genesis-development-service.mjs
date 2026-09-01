@@ -11,7 +11,7 @@ import {
   GENESIS_RICH_PASS_A_REPAIR_RESPONSE_SCHEMA,
   canonicalJson,
   sha256,
-} from "fibre/world-kernel/genesis-development-contracts";
+} from "./genesis-development-contracts.mjs";
 
 import { generateGenesisLifeCandidate } from "./genesis-life-development.mjs";
 import {
