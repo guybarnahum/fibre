@@ -195,7 +195,7 @@ test("Birth memory admission rejects verbatim genome text and retries once witho
   });
   assert.equal(result.calls.length, 2);
   assert.match(requests[1].clientRequestId, /mechanical-genome-copy-retry-1$/u);
-  assert.doesNotMatch(JSON.stringify(requests[1]), /practical routine quietly excludes someone nearby/u);
+  assert.equal(JSON.stringify(requests[1]).includes(leaking.rememberedContent), false);
   assert.equal(result.output.rememberedContent, safe.rememberedContent);
   assert.equal(result.output.formationMode, "life_plus_genome");
 });
