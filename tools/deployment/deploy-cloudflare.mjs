@@ -24,6 +24,8 @@ export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
 
 const HEALTH_RETRY_ATTEMPTS = 20;
 const HEALTH_RETRY_DELAY_MS = 1500;
+const DEFAULT_C2PA_SIGNER_ID = "fibre-c2pa-production-v1";
+const DEFAULT_C2PA_TRUST_POLICY = "c2pa_trust_list";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -189,12 +191,25 @@ export async function deployCloudflareStack({
     };
   }
 
+  for (const serviceId of ["asset-generator", "thread-presentation"]) {
+    const signerUrl = resolvedConfigs[serviceId].config.vars?.C2PA_SIGNER_URL;
+    if (typeof signerUrl !== "string" || signerUrl.trim() === "") continue;
+    const workerName = resourceState.resources.deployManaged.workers[serviceId];
+    const remote = await client.listSecretNames(workerName);
+    const missing = missingRequiredSecretNames(["C2PA_SIGNER_TOKEN"], remote);
+    if (missing.length > 0) throw new Error(`${serviceId} is missing required Cloudflare secrets: ${missing.join(", ")}`);
+  }
+
   const signerVars = resolvedConfigs["asset-generator"].config.vars ?? {};
   if (typeof signerVars.C2PA_SIGNER_URL === "string" && signerVars.C2PA_SIGNER_URL.trim() !== "") {
     await client.checkSignerHealth({
       baseUrl: signerVars.C2PA_SIGNER_URL,
-      signerId: signerVars.C2PA_SIGNER_ID,
-      trustPolicy: signerVars.C2PA_TRUST_POLICY,
+      signerId: typeof signerVars.C2PA_SIGNER_ID === "string" && signerVars.C2PA_SIGNER_ID.trim() !== ""
+        ? signerVars.C2PA_SIGNER_ID
+        : DEFAULT_C2PA_SIGNER_ID,
+      trustPolicy: typeof signerVars.C2PA_TRUST_POLICY === "string" && signerVars.C2PA_TRUST_POLICY.trim() !== ""
+        ? signerVars.C2PA_TRUST_POLICY
+        : DEFAULT_C2PA_TRUST_POLICY,
     });
   }
 
