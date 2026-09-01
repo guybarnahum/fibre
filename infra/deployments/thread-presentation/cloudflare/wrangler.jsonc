@@ -18,12 +18,10 @@
   ],
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
-    "VIEWER_ORIGIN": "https://insidefibre.com",
-    "C2PA_SIGNER_ID": "fibre-c2pa-production-v1",
-    "C2PA_TRUST_POLICY": "c2pa_trust_list"
+    "VIEWER_ORIGIN": "https://insidefibre.com"
   },
   "secrets": {
-    "required": ["C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]
+    "required": ["FIBRE_PRIVATE_TOKEN"]
   },
   "r2_buckets": [
     {
