@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { createActivityRecorder } from "#infra/telemetry";
+import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
 import { createGenesisPresentationDeliveryService } from "../src/genesis-presentation-delivery-service.mjs";
 
 function fixture() {
@@ -86,6 +88,15 @@ test("pending Genesis presentation delivery projects authoritative state then ma
 
 test("presentation failure is recorded durably and a later retry can deliver the same birth", async () => {
   const current = fixture();
+  const telemetry = createLocalActivityTelemetryPort();
+  let activityId = 0;
+  const activityRecorder = createActivityRecorder({
+    telemetry,
+    environment: "test",
+    service: "thread-presentation",
+    now: () => "2026-08-30T03:21:00.000Z",
+    activityIdFactory: () => `act_presentation_${String(++activityId).padStart(3, "0")}`,
+  });
   let failuresRemaining = 1;
   current.publisher.publishGenesisPresentation = async (input) => {
     current.calls.push(structuredClone(input));
@@ -102,6 +113,8 @@ test("presentation failure is recorded durably and a later retry can deliver the
     outbox: current.outbox,
     presentationPublisher: current.publisher,
     projector: current.projector,
+    activityRecorder,
+    activityContextForEntry: () => ({ requestId: "req_presentation_1" }),
     now: () => `2026-08-30T03:21:0${tick++}Z`,
   });
 
@@ -118,6 +131,22 @@ test("presentation failure is recorded durably and a later retry can deliver the
   assert.equal(current.entries.get("gen_1").state, "delivered");
   assert.equal(current.entries.get("gen_1").attemptCount, 2);
   assert.equal(current.calls.length, 2);
+
+  const activity = await telemetry.query({ requestId: "req_presentation_1" });
+  assert.deepEqual(
+    activity
+      .filter((record) => record.stage === "presentation.snapshot.publish")
+      .map((record) => [record.status, record.attempt]),
+    [
+      ["started", 1],
+      ["failed", 1],
+      ["retrying", 2],
+      ["started", 2],
+      ["succeeded", 2],
+    ],
+  );
+  assert.equal(activity.every((record) => record.genesisId === "gen_1"), true);
+  assert.equal(activity.every((record) => record.threadId === "thr_1"), true);
 });
 
 test("already delivered Genesis presentation is idempotent and does not republish", async () => {
