@@ -10,6 +10,7 @@ import {
   buildGenesisDevelopmentPlan,
 } from "#services/birth-center/src/genesis-development-plan.mjs";
 import {
+  GENESIS_STAGING_ACTIVITY_STAGES,
   GENESIS_STAGING_EVIDENCE_VERSION,
   runGenesisDevelopmentE2E,
 } from "./genesis-development-e2e.mjs";
@@ -275,6 +276,14 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
     throw new Error(`unexpected staging fixture URL ${url}`);
   };
 
+  const activityRecords = [];
+  const activityRecorder = {
+    async record(candidate) {
+      activityRecords.push(structuredClone(candidate));
+      return structuredClone(candidate);
+    },
+  };
+
   const result = await runGenesisDevelopmentE2E({
     mode: "staging",
     repoRoot: SOURCE_ROOT,
@@ -294,6 +303,7 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
     sleep: async () => {},
     emit: () => {},
     sourceResolver: () => ({ gitSha: SHA, workingTreeClean: true }),
+    activityRecorder,
   });
 
   assert.equal(result.evidence.contract, GENESIS_STAGING_EVIDENCE_VERSION);
@@ -313,6 +323,20 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
   assert.equal(result.evidence.runtimeParticipation.localFibreRuntimeParticipated, false);
   assert.equal(result.evidence.closureAssertions.length, 13);
   assert.ok(result.evidence.closureAssertions.every((entry) => entry.passed === true));
+
+  assert.deepEqual(
+    activityRecords.filter((record) => record.status === "succeeded").map((record) => record.stage),
+    GENESIS_STAGING_ACTIVITY_STAGES,
+  );
+  assert.deepEqual(
+    activityRecords.filter((record) => record.status === "started").map((record) => record.stage),
+    GENESIS_STAGING_ACTIVITY_STAGES,
+  );
+  assert.equal(activityRecords.some((record) => record.status === "failed"), false);
+  assert.ok(activityRecords.every((record) => record.requestId === REQUEST_ID));
+  assert.ok(activityRecords
+    .filter((record) => record.stage !== "e2e.start")
+    .every((record) => record.genesisId === expectedPlan.genesisId && record.threadId === expectedPlan.threadId));
 
   const retained = JSON.parse(readFileSync(result.evidencePath, "utf8"));
   assert.equal(retained.sourceGitSha, SHA);
