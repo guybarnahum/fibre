@@ -17,6 +17,7 @@ import {
   createWorldReconciliationProcess,
   createWorldReconciliationRuntime,
 } from "#services/world-kernel/src/world-reconciliation-process.mjs";
+import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import {
   createCanonicalVisualRootBoundary,
   createThreadPresentationPublisher,
@@ -71,6 +72,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const assetGeneratorBinding = serviceBinding(env, "ASSET_GENERATOR");
   const presentationFetch = bindingFetch(presentationBinding);
   const assetGeneratorFetch = bindingFetch(assetGeneratorBinding);
+  const activityRecorder = createCloudflareActivityRecorder({ env, service: "world-kernel" });
 
   const infraDriver = createCloudflareInfraDriver({
     stateScopes: { [WORLD_SCOPE_ID]: storage },
@@ -107,6 +109,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     civilRegistry: civilRegistryStore,
     outbox: presentationOutboxStore,
     presentationPublisher,
+    activityRecorder,
     now,
   });
   const canonicalRootBoundary = createCanonicalVisualRootBoundary({
@@ -128,6 +131,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     canonicalEmbodimentMaterializer,
     canonicalRootBoundary,
     presentationBoundary,
+    activityRecorder,
     now,
   });
   const visualPublicationProcess = createThreadVisualPublicationProcess({
@@ -137,6 +141,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
     visualPublicationProcess,
+    activityRecorder,
     onError(entry, error) {
       console.error(JSON.stringify({ event: "world-reconciliation-failed", ...entry, stack: error instanceof Error ? error.stack : null }));
     },
@@ -152,6 +157,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     authority: genesisStore,
     worldSpecAuthority: genesisStore,
     genomeAuthority: symbolicGenomeStore,
+    activityRecorder,
   });
   const birthPublisher = Object.freeze({
     async publishBirth(bundle, options = {}) {
@@ -174,6 +180,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   return Object.freeze({
     infraDriver,
     worldStorage,
+    activityRecorder,
     worldStore,
     identityStore,
     embodimentStore,
