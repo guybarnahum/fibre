@@ -18,7 +18,7 @@ import {
   sha256,
   sharedIntellectualSourceRefs,
   syntheticLineageWitnessFromRecombinedGenome,
-} from "fibre/world-kernel/genesis-development-contracts";
+} from "./genesis-development-contracts.mjs";
 
 // Keep the persisted version string stable while the implementation sheds its
 // replacement-era module names. Candidate bytes remain comparable across the
@@ -169,10 +169,6 @@ export async function generateGenesisLifeCandidate({
     if (!Array.isArray(offeredEntries) || offeredEntries.length < 8) {
       fail(`replacement slot ${slotPlan.slot} window ${window.windowId} lacks current EventStructure offers`);
     }
-    // The deterministic envelope, not the model, owns the episode's place and
-    // instant. Narrow the cognition world to that one place and instant so the
-    // admitted prose cannot acquire a different situated history than the
-    // canonical placeRef Fibre will later publish.
     const constrainedContext = constrainPassAContextToHistoricalEnvelope({
       worldSpec: slotPlan.worldSpec,
       envelope,
