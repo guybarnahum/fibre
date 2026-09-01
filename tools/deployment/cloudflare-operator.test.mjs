@@ -52,7 +52,10 @@ function fakeClient() {
 test("Slice E resource plan derives isolated staging names while deploy-managed resources remain explicit", async () => {
   const configs = await loadCloudflareWranglerConfigs(sourceRoot);
   const plan = createCloudflareResourcePlan(configs, { environment: "staging" });
-  assert.deepEqual(plan.create.d1, [{ binding: "PRESENTATION_CATALOG", name: "fibre-presentation-catalog-staging" }]);
+  assert.deepEqual(plan.create.d1, [
+    { binding: "PRESENTATION_CATALOG", name: "fibre-presentation-catalog-staging" },
+    { binding: "ACTIVITY_LOG", name: "fibre-activity-log-staging" },
+  ]);
   assert.deepEqual(plan.create.r2, [{ name: "fibre-presentation-assets-staging" }]);
   assert.deepEqual(plan.create.queues.map((queue) => queue.name), [
     "fibre-asset-completions-staging",
