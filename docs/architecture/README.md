@@ -21,6 +21,13 @@ Read it together with:
 
 The persistence rule applies to all services and generated production artifacts. Presentation is only the first vertical slice that implemented the pattern.
 
+## Recorded forward architecture
+
+- [`temporal-world-reuse.md`](temporal-world-reuse.md) records the M2 data-model optimization direction for reusable `PlaceSpec`, temporal `WorldSlice`, and Thread-specific `ThreadWorldContext` rather than repeatedly regenerating one monolithic World per Thread.
+- [`runtime-activity-log.md`](runtime-activity-log.md) proposes a small non-authoritative global Activity Log for success/failure/retry visibility across Genesis, World, media, Presentation, Viewer and later lived Experiences.
+
+These documents preserve forward architecture without claiming the deferred mechanisms are already implemented or authoritative.
+
 ## Naming and lifecycle
 
 The one current architecture document for a concept should have a semantic name such as `birth-center-runtime.md` or `identity-embodiment-contract.md`. Milestone labels (`m2`, `pr39`, slices, stages, passes) and implementation-version suffixes (`-v1`, `-v0.1`) do not belong in the permanent filename merely because that is when the design was introduced.
