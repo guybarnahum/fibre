@@ -138,6 +138,17 @@ function requireBinding(config, path, label) {
   return value;
 }
 
+function sharedD1Database(configs, binding, label) {
+  const declarations = SERVICE_ORDER.map((serviceId) => {
+    const database = (configs[serviceId].d1_databases ?? []).find((candidate) => candidate.binding === binding);
+    if (!database?.database_name) throw new TypeError(`${serviceId} must declare ${label}`);
+    return database.database_name;
+  });
+  const names = new Set(declarations);
+  if (names.size !== 1) throw new TypeError(`all Cloudflare Fibre services must share the declared ${label}`);
+  return declarations[0];
+}
+
 export function createCloudflareResourcePlan(configs, { environment }) {
   const env = normalizeCloudflareEnvironment(environment);
   for (const serviceId of SERVICE_ORDER) {
@@ -155,6 +166,7 @@ export function createCloudflareResourcePlan(configs, { environment }) {
 
   const catalogBinding = requireBinding(presentation, ["d1_databases", 0, "binding"], "Thread Presentation D1 binding");
   const catalogBaseName = presentation.d1_databases[0].database_name ?? "fibre-presentation-catalog";
+  const activityBaseName = sharedD1Database(configs, "ACTIVITY_LOG", "Activity Log D1 database");
   const completionQueue = requireBinding(asset, ["queues", "producers", 0, "queue"], "Asset completion queue");
   const presentationQueue = requireBinding(presentation, ["queues", "consumers", 0, "queue"], "Presentation completion queue");
   if (completionQueue !== presentationQueue) throw new TypeError("Asset Generator producer and Thread Presentation consumer must declare the same completion queue");
@@ -171,7 +183,10 @@ export function createCloudflareResourcePlan(configs, { environment }) {
   return Object.freeze({
     environment: env,
     create: Object.freeze({
-      d1: Object.freeze([{ binding: catalogBinding, name: environmentResourceName(catalogBaseName, env) }]),
+      d1: Object.freeze([
+        { binding: catalogBinding, name: environmentResourceName(catalogBaseName, env) },
+        { binding: "ACTIVITY_LOG", name: environmentResourceName(activityBaseName, env) },
+      ]),
       r2: Object.freeze([{ name: environmentResourceName(assetBucket, env) }]),
       queues: Object.freeze([
         { role: "completion", name: environmentResourceName(completionQueue, env) },
