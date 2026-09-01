@@ -4,7 +4,7 @@ import {
   AssetGenerationError,
   toAssetGenerationError,
 } from "./asset-generation-error.mjs";
-import { executeCredentialedAssetGenerationJob } from "./credentialed-asset-generation.mjs";
+import { executeProvenancedAssetGenerationJob } from "./provenanced-asset-generation.mjs";
 import { prepareResumableProviderExecution } from "./resumable-provider-operation.mjs";
 
 export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects"]);
@@ -14,11 +14,34 @@ function positiveAttemptNumber(value) {
   return value;
 }
 
+function runtimeResult(result, providerOperation = null) {
+  return Object.freeze({
+    receipt: result.receipt,
+    receiptObjectRef: result.receiptObjectRef,
+    receiptDigest: result.receiptDigest,
+    generationRecordObjectRef: result.generationRecordObjectRef,
+    generationRecordDigest: result.generationRecordDigest,
+    generationAttempt: result.generationAttempt,
+    generationAttemptObjectRef: result.generationAttemptObjectRef,
+    generationAttemptDigest: result.generationAttemptDigest,
+    providerOperation: providerOperation?.checkpoint ?? result.providerOperation ?? null,
+    providerOperationObjectRef: providerOperation?.objectRef ?? result.providerOperationObjectRef ?? null,
+    providerOperationDigest: providerOperation?.digest ?? result.providerOperationDigest ?? null,
+    providerOperationResumed: providerOperation?.resumed === true || result.providerOperationResumed === true,
+    providerOutputObjectRef: result.providerOutputObjectRef,
+    providerOutputDigest: result.providerOutputDigest,
+    providerOutputResumed: result.providerOutputResumed === true,
+    finalAssetDigest: result.finalAssetDigest,
+    finalAssetReused: result.finalAssetReused === true,
+    reuse: result.reuse ?? null,
+  });
+}
+
 export function createAssetGenerationRuntime({
   infra,
   provider,
-  credentialSigner,
-  executeJob = executeCredentialedAssetGenerationJob,
+  credentialSigner = null,
+  executeJob = executeProvenancedAssetGenerationJob,
 } = {}) {
   requireInfraCapabilities(infra, ASSET_GENERATION_RUNTIME_INFRA_PROFILE);
   if (typeof executeJob !== "function") throw new TypeError("executeJob must be a function");
@@ -27,6 +50,16 @@ export function createAssetGenerationRuntime({
     async execute(job, { attemptNumber = 1 } = {}) {
       try {
         const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
+        if (credentialSigner === null && executeJob === executeProvenancedAssetGenerationJob) {
+          return runtimeResult(await executeJob({
+            infra,
+            provider,
+            credentialSigner: null,
+            job,
+            attemptNumber: checkedAttemptNumber,
+          }));
+        }
+
         const prepared = await prepareResumableProviderExecution({
           infra,
           provider,
@@ -40,27 +73,7 @@ export function createAssetGenerationRuntime({
           job,
           attemptNumber: prepared.attemptNumber,
         });
-        const providerOperation = prepared.observation();
-        return Object.freeze({
-          receipt: result.receipt,
-          receiptObjectRef: result.receiptObjectRef,
-          receiptDigest: result.receiptDigest,
-          generationRecordObjectRef: result.generationRecordObjectRef,
-          generationRecordDigest: result.generationRecordDigest,
-          generationAttempt: result.generationAttempt,
-          generationAttemptObjectRef: result.generationAttemptObjectRef,
-          generationAttemptDigest: result.generationAttemptDigest,
-          providerOperation: providerOperation?.checkpoint ?? null,
-          providerOperationObjectRef: providerOperation?.objectRef ?? null,
-          providerOperationDigest: providerOperation?.digest ?? null,
-          providerOperationResumed: providerOperation?.resumed === true,
-          providerOutputObjectRef: result.providerOutputObjectRef,
-          providerOutputDigest: result.providerOutputDigest,
-          providerOutputResumed: result.providerOutputResumed === true,
-          finalAssetDigest: result.finalAssetDigest,
-          finalAssetReused: result.finalAssetReused === true,
-          reuse: result.reuse ?? null,
-        });
+        return runtimeResult(result, prepared.observation());
       } catch (error) {
         if (error instanceof AssetGenerationError) throw error;
         throw toAssetGenerationError(error, {
