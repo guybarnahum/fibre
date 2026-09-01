@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import {
@@ -90,6 +92,49 @@ class FakeD1Database {
   }
 }
 
+class SqliteD1Statement {
+  constructor(database, sql, bindings = []) {
+    this.database = database;
+    this.sql = sql;
+    this.bindings = bindings;
+  }
+
+  bind(...bindings) {
+    return new SqliteD1Statement(this.database, this.sql, bindings);
+  }
+
+  async run() {
+    const result = this.database.prepare(this.sql).run(...this.bindings);
+    return { success: true, meta: { changes: Number(result.changes ?? 0) } };
+  }
+
+  async first() {
+    return this.database.prepare(this.sql).get(...this.bindings) ?? null;
+  }
+
+  async all() {
+    return { success: true, results: this.database.prepare(this.sql).all(...this.bindings) };
+  }
+}
+
+class SqliteD1Database {
+  constructor() {
+    this.database = new DatabaseSync(":memory:");
+    this.database.exec(readFileSync(
+      new URL("../providers/cloudflare/d1/0001_activity_log.sql", import.meta.url),
+      "utf8",
+    ));
+  }
+
+  prepare(sql) {
+    return new SqliteD1Statement(this.database, sql);
+  }
+
+  close() {
+    this.database.close();
+  }
+}
+
 function activity(overrides = {}) {
   return {
     activityVersion: ACTIVITY_RECORD_VERSION,
@@ -151,6 +196,40 @@ test("Cloudflare Activity Log records idempotently, rejects divergent reuse, and
     ActivityTelemetryIdempotencyConflictError,
   );
   assert.equal(database.rows.size, 3);
+});
+
+test("Activity Log migration and provider execute against SQLite-compatible D1 semantics", async (t) => {
+  const database = new SqliteD1Database();
+  t.after(() => database.close());
+  const telemetry = createCloudflareActivityTelemetryPort({ database });
+
+  await telemetry.record(activity());
+  await telemetry.record(activity({
+    activityId: "act_cloud_sqlite_002",
+    occurredAt: "2026-09-01T06:20:02.000Z",
+    recordedAt: "2026-09-01T06:20:02.001Z",
+    service: "world-kernel",
+    stage: "world.genome.admission",
+    status: "started",
+  }));
+
+  const records = await telemetry.query({ genesisId: "gen_cloud_001" });
+  assert.deepEqual(records.map((record) => record.activityId), [
+    "act_cloud_001",
+    "act_cloud_sqlite_002",
+  ]);
+  assert.equal(records[0].deploymentGitSha, "9baa39c426496d0437a0760ec6f297e4d72a2d9b");
+  assert.equal(records[0].environment, "staging");
+  const indexes = database.database.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'fibre_activity_log' ORDER BY name",
+  ).all().map((row) => row.name);
+  assert.deepEqual(indexes, [
+    "fibre_activity_genesis_idx",
+    "fibre_activity_request_idx",
+    "fibre_activity_service_stage_idx",
+    "fibre_activity_thread_idx",
+    "sqlite_autoindex_fibre_activity_log_1",
+  ]);
 });
 
 test("Activity recorder remains best-effort when the Cloudflare D1 Activity Log is unavailable", async () => {
