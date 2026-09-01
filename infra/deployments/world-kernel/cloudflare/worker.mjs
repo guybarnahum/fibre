@@ -30,8 +30,10 @@ export class FibreWorldDurableObject extends DurableObject {
         capabilities: runtime.infraDriver.capabilities,
       });
     }
-    const inspectionResponse = await runtime.inspectionApi.fetch(request);
-    if (inspectionResponse !== null) return inspectionResponse;
+    const threadInspectionResponse = await runtime.threadInspectionApi.fetch(request);
+    if (threadInspectionResponse !== null) return threadInspectionResponse;
+    const genesisInspectionResponse = await runtime.genesisInspectionApi.fetch(request);
+    if (genesisInspectionResponse !== null) return genesisInspectionResponse;
     const birthResponse = await runtime.birthApi.fetch(request);
     if (birthResponse !== null) return birthResponse;
     return Response.json({ error: "not_found" }, { status: 404 });
