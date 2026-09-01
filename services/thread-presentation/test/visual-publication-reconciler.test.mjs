@@ -57,7 +57,15 @@ test("Presentation visual reconciliation projects admitted identity then schedul
       snapshotDigest: `sha256:${"b".repeat(64)}`,
     },
     snapshot: {
-      presentation: { manifest: { threadId: embodiment.threadId } },
+      presentation: {
+        manifest: {
+          threadId: embodiment.threadId,
+          generatedAt: "2026-08-30T20:03:00Z",
+        },
+        civilIdentity: {
+          registeredAt: "2026-08-30T20:04:00Z",
+        },
+      },
       media: { assets: [] },
       provenance: {},
     },
@@ -86,7 +94,8 @@ test("Presentation visual reconciliation projects admitted identity then schedul
     },
     createIdentityRewrite() {
       return {
-        async ensureOfficialIdentityMedia() {
+        async ensureOfficialIdentityMedia({ issuedAt }) {
+          assert.equal(issuedAt, "2026-08-30T20:04:00Z");
           calls.push("identity");
           return {
             reused: false,
@@ -107,10 +116,11 @@ test("Presentation visual reconciliation projects admitted identity then schedul
     },
     createDemandService() {
       return {
-        async reconcile({ scope, providerProfile, slots }) {
+        async reconcile({ scope, providerProfile, slots, requestedAt }) {
           calls.push("demand");
           assert.deepEqual(scope, { entityKind: "thread", entityRef: embodiment.threadId });
           assert.equal(providerProfile, "bfl-flux-2-pro-v1");
+          assert.equal(requestedAt, "2026-08-30T20:04:00Z");
           assert.deepEqual(slots[0].referenceObjectRefs, [embodiment.asset.referenceObjectRef]);
           return {
             projection: {

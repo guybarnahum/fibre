@@ -14,6 +14,16 @@ function assertIsoTimestamp(name, value) {
   return value;
 }
 
+function latestIsoTimestamp(name, values) {
+  const checked = values
+    .filter((value) => value !== null && value !== undefined)
+    .map((value, index) => assertIsoTimestamp(`${name}[${index}]`, value));
+  if (checked.length === 0) throw new TypeError(`${name} requires at least one ISO timestamp`);
+  return checked.reduce((latest, candidate) => (
+    Date.parse(candidate) > Date.parse(latest) ? candidate : latest
+  ));
+}
+
 function requireFunction(name, value) {
   if (typeof value !== "function") {
     throw new TypeError(`Thread Presentation visual reconciler requires ${name}()`);
@@ -109,9 +119,18 @@ export function createThreadPresentationVisualPublicationReconciler({
         channelId,
         embodimentId: embodiment.embodimentId,
       });
+      const projected = await presentationServer.getSnapshot(channelId);
+      if (projected === null) {
+        throw new Error(`Thread ${threadId} presentation disappeared during visual identity projection`);
+      }
+      const issuedAt = latestIsoTimestamp("identity media issuance authority time", [
+        observedAt,
+        projected.snapshot.presentation?.manifest?.generatedAt,
+        projected.snapshot.presentation?.civilIdentity?.registeredAt,
+      ]);
       const identity = await identityRewrite.ensureOfficialIdentityMedia({
         channelId,
-        issuedAt: observedAt,
+        issuedAt,
       });
       const current = await presentationServer.getSnapshot(channelId);
       if (current === null) throw new Error(`Thread ${threadId} presentation disappeared during visual reconciliation`);
@@ -150,7 +169,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       const demand = await demandService.reconcile({
         scope: { entityKind: "thread", entityRef: threadId },
         slots: [slot],
-        requestedAt: observedAt,
+        requestedAt: issuedAt,
         providerProfile,
       });
       const active = demand.projection.demands.find((entry) => (
