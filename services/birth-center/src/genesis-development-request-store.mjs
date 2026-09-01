@@ -93,6 +93,11 @@ export function createGenesisDevelopmentRequestStore(storage, {
            admission_digest,admission_json,status,submission_result_json,created_at,updated_at
     FROM genesis_development_requests WHERE request_id=?
   `);
+  const selectByGenesis = session.prepare(`
+    SELECT request_id,request_digest,plan_digest,genesis_id,thread_id,plan_json,
+           admission_digest,admission_json,status,submission_result_json,created_at,updated_at
+    FROM genesis_development_requests WHERE genesis_id=?
+  `);
   const selectByIdentity = session.prepare(`
     SELECT request_id,request_digest,plan_digest,genesis_id,thread_id,plan_json,
            admission_digest,admission_json,status,submission_result_json,created_at,updated_at
@@ -117,6 +122,10 @@ export function createGenesisDevelopmentRequestStore(storage, {
 
   function get(requestId) {
     return normalize(selectByRequest.get(nonEmpty("Genesis development requestId", requestId)));
+  }
+
+  function getByGenesisId(genesisId) {
+    return normalize(selectByGenesis.get(nonEmpty("Genesis development genesisId", genesisId)));
   }
 
   function reserve({ requestId, requestDigest, plan } = {}) {
@@ -215,6 +224,7 @@ export function createGenesisDevelopmentRequestStore(storage, {
     storeVersion: GENESIS_DEVELOPMENT_REQUEST_STORE_VERSION,
     stateScopeId: session.scopeId,
     get,
+    getByGenesisId,
     reserve,
     saveAdmission,
     markSubmitted,
