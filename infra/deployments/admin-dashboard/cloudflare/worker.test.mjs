@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  authorizeAdminPrincipal,
   buildAdminActivitySql,
   createAdminDashboardWorker,
+  normalizeAdminPrincipalEmail,
   parseAdminActivityQuery,
   validateAccessClaims,
 } from "./worker.mjs";
@@ -34,7 +36,7 @@ function activity(overrides = {}) {
   };
 }
 
-function fakeD1(records) {
+function fakeD1(records, { admins = {}, entitlementError = null } = {}) {
   const calls = [];
   return {
     calls,
@@ -42,6 +44,15 @@ function fakeD1(records) {
       return {
         bind(...bindings) {
           calls.push({ sql, bindings });
+          if (sql.startsWith("SELECT admin FROM fibre_admin_entitlements")) {
+            return {
+              all: async () => {
+                if (entitlementError) throw entitlementError;
+                const admin = admins[bindings[0]];
+                return { results: admin === undefined ? [] : [{ admin }] };
+              },
+            };
+          }
           return { all: async () => ({ results: records.map((record) => ({ record_json: JSON.stringify(record) })) }) };
         },
       };
@@ -76,9 +87,21 @@ test("admin SQL is parameterized and exact identity chains are chronological", (
   assert.match(failures.sql, /ORDER BY occurred_at DESC/u);
 });
 
-test("admin API reads normalized Activity records through the D1 binding", async () => {
-  const d1 = fakeD1([activity()]);
-  const worker = createAdminDashboardWorker({ authenticate: async () => ({ sub: "admin" }) });
+test("Admin principal email is normalized and authorized only by exact D1 admin=1", async () => {
+  assert.equal(normalizeAdminPrincipalEmail({ email: " Operator@Example.COM " }), "operator@example.com");
+  assert.equal(normalizeAdminPrincipalEmail({ email: "invalid" }), null);
+  assert.equal(normalizeAdminPrincipalEmail({}), null);
+
+  const d1 = fakeD1([], { admins: { "operator@example.com": 1, "disabled@example.com": 0 } });
+  assert.equal(await authorizeAdminPrincipal({ ACTIVITY_LOG: d1 }, { email: "Operator@Example.com" }), true);
+  assert.equal(await authorizeAdminPrincipal({ ACTIVITY_LOG: d1 }, { email: "disabled@example.com" }), false);
+  assert.equal(await authorizeAdminPrincipal({ ACTIVITY_LOG: d1 }, { email: "missing@example.com" }), false);
+  assert.deepEqual(d1.calls[0].bindings, ["operator@example.com"]);
+});
+
+test("admin API requires both Access authentication and D1 Admin entitlement", async () => {
+  const d1 = fakeD1([activity()], { admins: { "operator@example.com": 1 } });
+  const worker = createAdminDashboardWorker({ authenticate: async () => ({ sub: "admin", email: "Operator@Example.com" }) });
   const response = await worker.fetch(new Request("https://admin.insidefibre.com/api/activity?kind=request&value=req_1"), {
     FIBRE_ENVIRONMENT: "staging",
     ACTIVITY_LOG: d1,
@@ -89,10 +112,32 @@ test("admin API reads normalized Activity records through the D1 binding", async
   assert.equal(payload.records.length, 1);
   assert.equal(payload.records[0].activityId, "act_1");
   assert.equal(payload.summary.failures, 0);
-  assert.deepEqual(d1.calls[0].bindings, ["staging", "req_1", 100]);
+  assert.deepEqual(d1.calls[0].bindings, ["operator@example.com"]);
+  assert.deepEqual(d1.calls[1].bindings, ["staging", "req_1", 100]);
 });
 
-test("admin surface fails closed without an authenticated Access principal", async () => {
+test("authenticated non-admins and principals without email are denied", async () => {
+  const d1 = fakeD1([], { admins: { "reader@example.com": 0 } });
+  const nonAdmin = createAdminDashboardWorker({ authenticate: async () => ({ email: "reader@example.com" }) });
+  const denied = await nonAdmin.fetch(new Request("https://admin.insidefibre.com/"), { ACTIVITY_LOG: d1 });
+  assert.equal(denied.status, 403);
+  assert.deepEqual(await denied.json(), { error: "admin_required" });
+
+  const noEmail = createAdminDashboardWorker({ authenticate: async () => ({ sub: "user" }) });
+  const noEmailResponse = await noEmail.fetch(new Request("https://admin.insidefibre.com/"), { ACTIVITY_LOG: d1 });
+  assert.equal(noEmailResponse.status, 403);
+  assert.deepEqual(await noEmailResponse.json(), { error: "admin_required" });
+});
+
+test("Admin entitlement-store failure fails closed without impersonating non-admin", async () => {
+  const d1 = fakeD1([], { admins: {}, entitlementError: new Error("D1 unavailable") });
+  const worker = createAdminDashboardWorker({ authenticate: async () => ({ email: "operator@example.com" }) });
+  const response = await worker.fetch(new Request("https://admin.insidefibre.com/"), { ACTIVITY_LOG: d1 });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "admin_authorization_unavailable" });
+});
+
+test("admin surface fails closed without an authenticated Access principal while health stays public", async () => {
   const worker = createAdminDashboardWorker({ authenticate: async () => null });
   const denied = await worker.fetch(new Request("https://admin.insidefibre.com/"), {});
   assert.equal(denied.status, 403);

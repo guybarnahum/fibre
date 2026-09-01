@@ -13,11 +13,11 @@ import {
 } from "./cloudflare-operator.mjs";
 import {
   createCloudflareAccessClient,
-  reconcileAdminAccess,
+  inspectAdminAccess,
 } from "./cloudflare-access.mjs";
 import { resolveCleanGitDeploymentSource } from "./deploy-cloudflare-evidence.mjs";
 
-export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.2";
+export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.3";
 export const CLOUDFLARE_APP_CONFIGS = Object.freeze({
   "admin-dashboard": "infra/deployments/admin-dashboard/cloudflare/wrangler.jsonc",
   "status-page": "infra/deployments/status-page/cloudflare/wrangler.jsonc",
@@ -129,12 +129,7 @@ export async function deployCloudflareApps({
     accountId: operatorConfig?.CLOUDFLARE_ACCOUNT_ID,
     apiToken: operatorConfig?.CLOUDFLARE_API_TOKEN,
   });
-  const access = await reconcileAdminAccess({
-    environment: env,
-    operatorConfig,
-    client: cloudflareAccess,
-    apply: !dryRun,
-  });
+  const access = await inspectAdminAccess({ environment: env, client: cloudflareAccess });
   const written = await writeResolvedCloudflareAppConfigs({
     repoRoot,
     environment: env,
@@ -163,9 +158,8 @@ export async function deployCloudflareApps({
       teamDomain: access.teamDomain,
       audience: access.audience,
       appId: access.appId,
-      policyId: access.policyId,
-      principalCount: access.principalCount,
-      changed: access.changed,
+      policyCount: access.policyCount,
+      allowPolicyCount: access.allowPolicyCount,
     }),
     deployments: Object.freeze(deployments),
   });
@@ -196,7 +190,7 @@ async function main(argv) {
   const operatorConfig = parseOperatorEnv(await readFile(resolve(repoRoot, parsed.file), "utf8"));
   const client = createWranglerAppDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareApps({ repoRoot, environment: parsed.environment, operatorConfig, dryRun: parsed.dryRun, client });
-  console.log(`ACCESS ${result.evidence.access.domain} principals=${result.evidence.access.principalCount} changed=${result.evidence.access.changed}`);
+  console.log(`ACCESS ${result.evidence.access.domain} policies=${result.evidence.access.policyCount} allow=${result.evidence.access.allowPolicyCount}`);
   for (const deployment of result.evidence.deployments) console.log(`${parsed.dryRun ? "DRY" : "DEPLOY"} ${deployment.appId} https://${deployment.domain}`);
   console.log(`SOURCE ${result.evidence.sourceGitSha}`);
   console.log(`EVIDENCE ${result.evidencePath}`);
