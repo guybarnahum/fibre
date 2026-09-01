@@ -212,7 +212,7 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
     }
 
     if (url.hostname === "api.staging.insidefibre.com") {
-      assert.equal(init.headers?.Origin, "https://staging.insidefibre.com");
+      assert.equal(new Headers(init.headers ?? {}).get("origin"), "https://staging.insidefibre.com");
       if (url.pathname.endsWith("/snapshot")) {
         if (!submitted) return json({ error: "not_found" }, 404);
         return json(presentation(plan));
