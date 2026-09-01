@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { createActivityRecorder } from "#infra/telemetry";
 import { createLocalInfraDriver } from "#infra/providers/local";
+import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
 import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
@@ -89,11 +91,37 @@ function localStorage(databasePath, scopeId) {
   return Object.freeze({ infraDriver, stateScopeId: scopeId });
 }
 
+function activityRecorders() {
+  const telemetry = createLocalActivityTelemetryPort();
+  let sequence = 0;
+  function recorder(service) {
+    return createActivityRecorder({
+      telemetry,
+      environment: "test",
+      service,
+      now: () => `2026-09-01T00:00:00.${String(++sequence).padStart(3, "0")}Z`,
+      activityIdFactory: () => `act_local_genesis_${String(++sequence).padStart(4, "0")}`,
+    });
+  }
+  return Object.freeze({
+    telemetry,
+    birth: recorder("birth-center"),
+    world: recorder("world-kernel"),
+  });
+}
+
+function successfulStages(records) {
+  return new Set(records
+    .filter((record) => record.status === "succeeded")
+    .map((record) => `${record.service}:${record.stage}`));
+}
+
 test("Birth Center develops a narrow request and World atomically admits the resulting canonical Thread", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-genesis-development-world-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const birthStorage = localStorage(join(root, "birth.sqlite"), "birth");
   const worldStorage = localStorage(join(root, "world.sqlite"), "world");
+  const activity = activityRecorders();
 
   const genesisStore = new GenesisStore(worldStorage);
   const genomeStore = new SymbolicGenomeStore(worldStorage);
@@ -101,10 +129,12 @@ test("Birth Center develops a narrow request and World atomically admits the res
     authority: genesisStore,
     worldSpecAuthority: genesisStore,
     genomeAuthority: genomeStore,
+    activityRecorder: activity.world,
   });
   const runtime = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
+    activityRecorder: activity.birth,
     now: () => "2026-08-31T23:31:00Z",
     nowMs: () => 1_788_218_260_000,
   });
@@ -118,6 +148,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
     runtime,
     creativeAdapter: adapter,
     repairAdapter: adapter,
+    activityRecorder: activity.birth,
     now: () => "2026-08-31T23:32:00Z",
     randomIntFn: () => 0,
   });
@@ -150,17 +181,43 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(inspection.historicalEnvelopePlan.plan.envelopes.length, 14);
   assert.equal(genomeStore.listThreadGenomes(first.threadId).length, 1);
 
+  const requestActivity = await activity.telemetry.query({ requestId: first.requestId });
+  const stages = successfulStages(requestActivity);
+  for (const expected of [
+    "birth-center:birth.request.plan",
+    "birth-center:birth.request.persist",
+    "birth-center:birth.genesis.start",
+    "birth-center:birth.genesis.compile",
+    "birth-center:birth.publish.prepare",
+    "birth-center:birth.publish.complete",
+    "birth-center:birth.publish.world_submit",
+    "world-kernel:world.worldspec.admission",
+    "world-kernel:world.genome.admission",
+    "world-kernel:world.thread.publication",
+    "birth-center:birth.publish.world_ack",
+  ]) {
+    assert.equal(stages.has(expected), true, `missing successful activity stage ${expected}`);
+  }
+  assert.equal(requestActivity.every((record) => record.genesisId === first.genesisId), true);
+  assert.equal(requestActivity.every((record) => record.threadId === first.threadId), true);
+  assert.deepEqual(
+    (await activity.telemetry.query({ threadId: first.threadId })).map((record) => record.activityId),
+    requestActivity.map((record) => record.activityId),
+  );
+
   runtime.close();
   const replayCounter = { calls: 0, passA: 0, passB: 0 };
   const restarted = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
+    activityRecorder: activity.birth,
     now: () => "2026-08-31T23:33:00Z",
     nowMs: () => 1_788_218_380_000,
   });
   const replayService = createGenesisDevelopmentService({
     runtime: restarted,
     creativeAdapter: deterministicCognition(replayCounter),
+    activityRecorder: activity.birth,
     now: () => "2026-08-31T23:34:00Z",
     randomIntFn: () => 1,
   });
@@ -172,5 +229,10 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(replay.threadId, first.threadId);
   assert.equal(replay.fibreIdentityNumber, first.fibreIdentityNumber);
   assert.equal(replayCounter.calls, 0);
+  assert.equal(
+    (await activity.telemetry.query({ requestId: first.requestId }))
+      .some((record) => record.stage === "birth.request.resume" && record.status === "succeeded"),
+    true,
+  );
   restarted.close();
 });
