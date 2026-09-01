@@ -70,14 +70,6 @@ integrations:
       presentationReferenceDefault: true
     secrets:
       apiKey: BFL_API_KEY
-  c2pa-production-http:
-    kind: content-credentials
-    provider: c2pa-http
-    environment:
-      baseUrl: C2PA_SIGNER_URL
-      signerId: C2PA_SIGNER_ID
-      trustPolicy: C2PA_TRUST_POLICY
-      authorizationToken: C2PA_SIGNER_TOKEN
 
 services:
   world-kernel:
@@ -92,12 +84,9 @@ services:
   thread-presentation:
     runtime: cloudflare
     infra: cloudflare
-    integrations:
-      contentCredentials: c2pa-production-http
   asset-generator:
     runtime: cloudflare
     infra: cloudflare
     integrations:
       openai-gpt-image-2-medium-v1: asset-image-openai
       bfl-flux-2-pro-v1: asset-image-bfl
-      contentCredentials: c2pa-production-http
