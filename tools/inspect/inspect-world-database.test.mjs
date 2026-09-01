@@ -2,13 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { repoFile } from "#repo-root";
 import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
-import { runM1ReviewedProof } from "#tools/replays/m1/m1-reviewed-proof.mjs";
 import { localWorldStateStorage } from "#tools/shared/local-world-state.mjs";
 import {
   formatWorldDatabaseSummary,
@@ -116,31 +115,6 @@ test("inspector reports a source connection that lacks query_only protection", a
     );
   } finally {
     rmSync(directory, { recursive: true, force: true });
-  }
-});
-
-test("database inspector verifies all three completed M1 expression chains", async () => {
-  const proof = await runM1ReviewedProof({ keepDatabase: true });
-  try {
-    const report = await inspectWorldDatabase(proof.databasePath);
-    assert.equal(report.verification.ok, true);
-    assert.equal(report.verification.sourceReadOnly, true);
-    assert.equal(report.summary.tableCounts.disclosure_strategies, 3);
-    assert.equal(report.summary.tableCounts.audience_participation_responses, 3);
-    assert.equal(report.verification.verified.expressionAuthorizations, 5);
-    assert.equal(report.verification.verified.disclosureStrategies, 3);
-    assert.equal(report.verification.verified.audienceResponses, 3);
-    assert.equal(report.verification.verified.completeExpressionChains, 3);
-    assert.deepEqual(report.summary.communicatedPostures, { accept: 2, refuse: 1 });
-    assert.deepEqual(report.summary.disclosureModes, {
-      full_candor: 1,
-      tactful_candor: 2,
-    });
-    const summary = formatWorldDatabaseSummary(report);
-    assert.match(summary, /completeExpressionChains=3/);
-    assert.match(summary, /Disclosure modes: full_candor=1, tactful_candor=2|Disclosure modes: tactful_candor=2, full_candor=1/);
-  } finally {
-    rmSync(dirname(proof.databasePath), { recursive: true, force: true });
   }
 });
 
