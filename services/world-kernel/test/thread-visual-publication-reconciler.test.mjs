@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { createActivityRecorder } from "#infra/telemetry";
+import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
 import { STORED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
 import {
   embodimentId,
@@ -84,6 +86,15 @@ test("World visual reconciliation admits one root then converges through Present
   let current = pendingEmbodiment();
   let rootCalls = 0;
   let presentationCalls = 0;
+  const telemetry = createLocalActivityTelemetryPort();
+  let activityId = 0;
+  const activityRecorder = createActivityRecorder({
+    telemetry,
+    environment: "test",
+    service: "world-kernel",
+    now: () => "2026-08-30T20:00:00.000Z",
+    activityIdFactory: () => `act_visual_${String(++activityId).padStart(3, "0")}`,
+  });
   const embodimentStore = {
     listCurrent(threadId) {
       return threadId === current.threadId ? [structuredClone(current)] : [];
@@ -100,9 +111,11 @@ test("World visual reconciliation admits one root then converges through Present
     },
   };
   const presentationBoundary = {
-    async reconcileAvailableEmbodiment({ embodiment }) {
+    async reconcileAvailableEmbodiment({ embodiment, activityContext }) {
       presentationCalls += 1;
       assert.equal(embodiment.status, "available");
+      assert.equal(activityContext.requestId, "req_visual_process_001");
+      assert.equal(activityContext.genesisId, "gen_visual_process_001");
       return {
         complete: true,
         stage: "complete",
@@ -115,17 +128,38 @@ test("World visual reconciliation admits one root then converges through Present
     embodimentStore,
     canonicalRootBoundary,
     presentationBoundary,
+    activityRecorder,
     now: () => times.shift() ?? "2026-08-30T20:03:00Z",
   });
+  const activityContext = {
+    requestId: "req_visual_process_001",
+    genesisId: "gen_visual_process_001",
+  };
 
-  const first = await reconciler.reconcileThread({ threadId: current.threadId });
+  const first = await reconciler.reconcileThread({ threadId: current.threadId, activityContext });
   assert.equal(first.complete, true);
   assert.equal(current.status, "available");
   assert.equal(current.revision, 2);
   assert.equal(rootCalls, 1);
   assert.equal(presentationCalls, 1);
 
-  const replay = await reconciler.reconcileThread({ threadId: current.threadId });
+  const activity = await telemetry.query({ requestId: activityContext.requestId });
+  for (const expected of [
+    "world.visual_identity.demand",
+    "world.embodiment.admission",
+    "world.reconciliation.presentation",
+    "world.reconciliation.complete",
+  ]) {
+    assert.equal(
+      activity.some((record) => record.stage === expected && record.status === "succeeded"),
+      true,
+      `missing successful visual activity stage ${expected}`,
+    );
+  }
+  assert.equal(activity.every((record) => record.genesisId === activityContext.genesisId), true);
+  assert.equal(activity.every((record) => record.threadId === current.threadId), true);
+
+  const replay = await reconciler.reconcileThread({ threadId: current.threadId, activityContext });
   assert.equal(replay.complete, true);
   assert.equal(rootCalls, 1, "an admitted canonical root must never be generated twice");
   assert.equal(presentationCalls, 2, "Presentation reconciliation may replay idempotently");
