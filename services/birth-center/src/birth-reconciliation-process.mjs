@@ -15,11 +15,31 @@ function publisher(value) {
   return value;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Birth reconciliation activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
 export function createBirthReconciliationRuntime({
   infraDriver,
   stateScopeId = "birth",
   provisionalBirthStore,
   worldPublisher,
+  activityRecorder = null,
+  activityContextForBirth = null,
   retryMs = DEFAULT_RETRY_MS,
   nowMs = Date.now,
   onError = () => {},
@@ -30,6 +50,10 @@ export function createBirthReconciliationRuntime({
     throw new TypeError("Birth reconciliation requires a provisional birth store");
   }
   publisher(worldPublisher);
+  const activity = optionalActivityRecorder(activityRecorder);
+  if (activityContextForBirth !== null && typeof activityContextForBirth !== "function") {
+    throw new TypeError("Birth reconciliation activityContextForBirth must be a function or null");
+  }
   if (!Number.isSafeInteger(retryMs) || retryMs < 100 || retryMs > 3_600_000) {
     throw new TypeError("Birth reconciliation retryMs must be an integer from 100 through 3600000");
   }
@@ -54,15 +78,45 @@ export function createBirthReconciliationRuntime({
     return accepted;
   }
 
+  function activityContext(birth) {
+    const resolved = activityContextForBirth?.(birth) ?? {};
+    return Object.freeze({
+      requestId: resolved.requestId ?? null,
+      genesisId: birth.genesisId,
+      threadId: birth.threadId,
+    });
+  }
+
   async function reconcile() {
     const pending = provisionalBirthStore.pending();
     let published = 0;
     for (const birth of pending) {
+      const context = activityContext(birth);
       try {
-        const result = await worldPublisher.publishBirth(birth.bundle);
-        provisionalBirthStore.markPublished(birth.genesisId, result);
+        const result = await runActivityStage(activity, {
+          ...context,
+          stage: "birth.publish.world_submit",
+          attempt: 1,
+        }, async () => worldPublisher.publishBirth(birth.bundle, { activityContext: context }));
+        await runActivityStage(activity, {
+          ...context,
+          stage: "birth.publish.world_ack",
+          attempt: 1,
+        }, async () => provisionalBirthStore.markPublished(birth.genesisId, result));
         published += 1;
       } catch (error) {
+        await bestEffortRecord(activity, {
+          ...context,
+          stage: "birth.publish.reconcile",
+          status: "retrying",
+          attempt: 1,
+          message: "World publication will be retried after reconciliation failure",
+          error: {
+            category: "reconciliation",
+            code: "WORLD_PUBLICATION_RETRY",
+            retryable: true,
+          },
+        });
         try { onError(error, birth); } catch {}
         await scheduleAt(nowMs() + retryMs);
         throw error;
