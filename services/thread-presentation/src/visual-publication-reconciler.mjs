@@ -35,6 +35,27 @@ function requireProviderSelector(value) {
   return requireFunction("selectProviderProfile", value);
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Thread Presentation activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
+function activityIdentity(threadId, supplied = {}) {
+  return Object.freeze({
+    requestId: supplied.requestId ?? null,
+    genesisId: supplied.genesisId ?? null,
+    threadId,
+  });
+}
+
 function normalizeAdmittedCanonicalPortrait(candidate) {
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
     throw new TypeError("Thread Presentation visual reconciliation requires an admitted canonical portrait");
@@ -63,18 +84,6 @@ function suppliedEmbodimentReader(embodiment) {
   });
 }
 
-/**
- * Thread Presentation's idempotent half of automatic visual publication.
- *
- * The caller supplies an already-admitted canonical Embodiment projection from
- * World. Presentation may project it and request derived media, but this module
- * never writes World state and never decides canonical identity.
- *
- * Presentation-owned collaborators are injected explicitly. This keeps the
- * service independent of World Kernel private implementation modules; deployment
- * composition may wire current implementations while those presentation
- * capabilities finish migrating behind the stable service boundary.
- */
 export function createThreadPresentationVisualPublicationReconciler({
   presentationServer,
   infra,
@@ -83,6 +92,7 @@ export function createThreadPresentationVisualPublicationReconciler({
   createVisualRewrite,
   createIdentityRewrite,
   planSlots,
+  activityRecorder = null,
 } = {}) {
   if (!presentationServer
     || typeof presentationServer.getSnapshot !== "function"
@@ -95,13 +105,15 @@ export function createThreadPresentationVisualPublicationReconciler({
   requireFunction("createVisualRewrite", createVisualRewrite);
   requireFunction("createIdentityRewrite", createIdentityRewrite);
   requireFunction("planSlots", planSlots);
+  const activity = optionalActivityRecorder(activityRecorder);
   const demandService = createDemandService({ infra });
   const identityRewrite = createIdentityRewrite({ presentationServer });
 
   return Object.freeze({
-    async reconcileAvailableEmbodiment({ threadId, embodiment: candidate, observedAt } = {}) {
+    async reconcileAvailableEmbodiment({ threadId, embodiment: candidate, observedAt, activityContext = {} } = {}) {
       assertId("threadId", threadId);
       assertIsoTimestamp("observedAt", observedAt);
+      const context = activityIdentity(threadId, activityContext);
       const embodiment = normalizeAdmittedCanonicalPortrait(candidate);
       if (embodiment.threadId !== threadId) {
         throw new TypeError("supplied Embodiment belongs to a different Thread");
@@ -115,10 +127,15 @@ export function createThreadPresentationVisualPublicationReconciler({
         presentationServer,
         embodimentReader: suppliedEmbodimentReader(embodiment),
       });
-      const visual = await visualRewrite.project({
+      const visual = await runActivityStage(activity, {
+        ...context,
+        stage: "presentation.visual_identity.project",
+        attempt: 1,
+        evidence: { embodimentId: embodiment.embodimentId },
+      }, async () => visualRewrite.project({
         channelId,
         embodimentId: embodiment.embodimentId,
-      });
+      }));
       const projected = await presentationServer.getSnapshot(channelId);
       if (projected === null) {
         throw new Error(`Thread ${threadId} presentation disappeared during visual identity projection`);
@@ -128,10 +145,15 @@ export function createThreadPresentationVisualPublicationReconciler({
         projected.snapshot.presentation?.manifest?.generatedAt,
         projected.snapshot.presentation?.civilIdentity?.registeredAt,
       ]);
-      const identity = await identityRewrite.ensureOfficialIdentityMedia({
+      const identity = await runActivityStage(activity, {
+        ...context,
+        stage: "presentation.identity_media.ensure",
+        attempt: 1,
+        evidence: { embodimentId: embodiment.embodimentId },
+      }, async () => identityRewrite.ensureOfficialIdentityMedia({
         channelId,
         issuedAt,
-      });
+      }));
       const current = await presentationServer.getSnapshot(channelId);
       if (current === null) throw new Error(`Thread ${threadId} presentation disappeared during visual reconciliation`);
 
@@ -166,12 +188,17 @@ export function createThreadPresentationVisualPublicationReconciler({
       const providerProfile = selectProviderProfile({
         requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
       });
-      const demand = await demandService.reconcile({
+      const demand = await runActivityStage(activity, {
+        ...context,
+        stage: "presentation.media_demand.reconcile",
+        attempt: 1,
+        evidence: { embodimentId: embodiment.embodimentId },
+      }, async () => demandService.reconcile({
         scope: { entityKind: "thread", entityRef: threadId },
         slots: [slot],
         requestedAt: issuedAt,
         providerProfile,
-      });
+      }));
       const active = demand.projection.demands.find((entry) => (
         entry.demand.current
         && entry.demand.job.context?.kind === "thread_presentation_media"
