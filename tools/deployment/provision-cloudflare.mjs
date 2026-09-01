@@ -1,6 +1,7 @@
 import {
   CLOUDFLARE_OPERATOR_STATE_VERSION,
   createCloudflareResourcePlan,
+  environmentResourceName,
   isProviderNotFound,
   loadCloudflareWranglerConfigs,
   normalizeCloudflareEnvironment,
@@ -11,8 +12,34 @@ import {
   writeResolvedWranglerConfigs,
 } from "./cloudflare-operator.mjs";
 
+const D1_MIGRATION_BY_BINDING = Object.freeze({
+  PRESENTATION_CATALOG: "infra/providers/cloudflare/d1/0001_fibre_catalog.sql",
+  ACTIVITY_LOG: "infra/providers/cloudflare/d1/0001_activity_log.sql",
+});
+
 function d1Id(database) {
   return database?.uuid ?? database?.id ?? database?.database_id ?? null;
+}
+
+function sharedActivityDatabase(configs, environment) {
+  const declared = Object.entries(configs).map(([serviceId, config]) => {
+    const binding = (config.d1_databases ?? []).find((database) => database.binding === "ACTIVITY_LOG");
+    if (!binding?.database_name) throw new TypeError(`${serviceId} must declare ACTIVITY_LOG D1 database_name`);
+    return binding.database_name;
+  });
+  const names = new Set(declared);
+  if (names.size !== 1) throw new TypeError("all Cloudflare Fibre services must share one ACTIVITY_LOG D1 database");
+  const [baseName] = names;
+  return Object.freeze({
+    binding: "ACTIVITY_LOG",
+    name: environmentResourceName(baseName, environment),
+  });
+}
+
+function migrationFor(database) {
+  const migration = D1_MIGRATION_BY_BINDING[database.binding];
+  if (!migration) throw new TypeError(`no D1 migration registered for binding ${database.binding}`);
+  return migration;
 }
 
 export function createWranglerProvisionClient({ runner = runWrangler, cwd = process.cwd() } = {}) {
@@ -85,12 +112,17 @@ export async function provisionCloudflareResources({
   if (!client) throw new TypeError("Cloudflare provision client is required");
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
   const plan = createCloudflareResourcePlan(configs, { environment: env });
+  const d1Plan = Object.freeze([
+    ...plan.create.d1,
+    sharedActivityDatabase(configs, env),
+  ]);
 
   const d1 = [];
-  for (const database of plan.create.d1) {
+  for (const database of d1Plan) {
     const resolved = await ensureD1(client, database.name);
-    await client.applyD1Migration(database.name, "infra/providers/cloudflare/d1/0001_fibre_catalog.sql");
-    d1.push({ ...resolved, schema: "0001_fibre_catalog.sql" });
+    const migration = migrationFor(database);
+    await client.applyD1Migration(database.name, migration);
+    d1.push({ ...resolved, binding: database.binding, schema: migration.split("/").at(-1) });
   }
   const r2 = [];
   for (const bucket of plan.create.r2) r2.push(await ensureNamed(client, { kind: "r2", name: bucket.name }));
