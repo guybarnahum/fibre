@@ -7,6 +7,19 @@ function method(name, target, member) {
   return target;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Genesis presentation activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
 function errorResult(entry, error, recorded) {
   return Object.freeze({
     genesisId: entry.genesisId,
@@ -24,6 +37,8 @@ export function createGenesisPresentationDeliveryService({
   outbox,
   presentationPublisher,
   projector = projectNewbornThreadPresentation,
+  activityRecorder = null,
+  activityContextForEntry = null,
   now = () => new Date().toISOString(),
 } = {}) {
   const world = method("worldReader", worldReader, "getThread");
@@ -33,8 +48,21 @@ export function createGenesisPresentationDeliveryService({
   method("outbox", outbox, "recordFailure");
   method("outbox", outbox, "markDelivered");
   const publisher = method("presentationPublisher", presentationPublisher, "publishGenesisPresentation");
+  const activity = optionalActivityRecorder(activityRecorder);
+  if (activityContextForEntry !== null && typeof activityContextForEntry !== "function") {
+    throw new TypeError("Genesis presentation activityContextForEntry must be a function or null");
+  }
   if (typeof projector !== "function") throw new TypeError("projector must be a function");
   if (typeof now !== "function") throw new TypeError("now must be a function");
+
+  function activityContext(entry) {
+    const supplied = activityContextForEntry?.(entry) ?? {};
+    return Object.freeze({
+      requestId: supplied.requestId ?? null,
+      genesisId: entry.genesisId,
+      threadId: entry.threadId,
+    });
+  }
 
   async function deliverEntry(entry) {
     if (entry.state === "delivered") {
@@ -48,19 +76,30 @@ export function createGenesisPresentationDeliveryService({
       });
     }
 
+    const context = activityContext(entry);
     try {
-      const thread = world.getThread(entry.threadId);
-      const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
-      const bundle = projector({
-        thread,
-        manifest: entry.manifest,
-        civilRegistration,
+      const bundle = await runActivityStage(activity, {
+        ...context,
+        stage: "presentation.world_authority.resolve",
+        attempt: Math.max(1, entry.attemptCount + 1),
+      }, async () => {
+        const thread = world.getThread(entry.threadId);
+        const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
+        return projector({
+          thread,
+          manifest: entry.manifest,
+          civilRegistration,
+        });
       });
-      const publication = await publisher.publishGenesisPresentation({
+      const publication = await runActivityStage(activity, {
+        ...context,
+        stage: "presentation.snapshot.publish",
+        attempt: Math.max(1, entry.attemptCount + 1),
+      }, async () => publisher.publishGenesisPresentation({
         genesisId: entry.genesisId,
         publicationDigest: entry.publicationDigest,
         bundle,
-      });
+      }));
       const deliveredAt = now();
       const delivered = queue.markDelivered(entry.genesisId, { deliveredAt });
       return Object.freeze({
