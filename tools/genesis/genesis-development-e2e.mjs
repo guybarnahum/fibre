@@ -311,6 +311,40 @@ function presentationConverged(snapshot, world, threadId) {
   return typeof authoritative.referenceObjectRef === "string" && refs.includes(authoritative.referenceObjectRef);
 }
 
+function convergenceDiagnostic(world, presentation, { plan, fibreIdentityNumber }) {
+  const current = world?.embodiment?.current ?? [];
+  const manifest = presentation?.snapshot?.presentation?.manifest;
+  const visualIdentity = presentation?.snapshot?.presentation?.visualIdentity;
+  const authoritative = current.find((record) => record.embodimentId === visualIdentity?.embodimentId);
+  return Object.freeze({
+    world: {
+      authoritativeThreadPresent: world?.authoritativeThread?.exists === true,
+      genesisPublished: world?.genesis?.threadPublished === true,
+      worldSpecMatches: world?.genesis?.worldSpecId === plan.worldSpec.worldSpecId,
+      worldSpecDigestPresent: typeof world?.genesis?.worldSpecDigest === "string",
+      historicalEnvelopeDigestPresent: typeof world?.genesis?.historicalEnvelopePlanDigest === "string",
+      genomeCount: world?.symbolicGenomes?.count ?? null,
+      genomeIdMatches: world?.symbolicGenomes?.genomes?.[0]?.genomeId === plan.genome.header.genomeId,
+      genomeDigestMatches: world?.symbolicGenomes?.genomes?.[0]?.genomeDigest === plan.genomeDigest,
+      fibreIdentityNumberMatches: world?.civilRegistration?.fibreIdentityNumber === fibreIdentityNumber,
+      embodimentCount: current.length,
+      embodimentHasAsset: current.some((record) => typeof record.referenceObjectRef === "string" && record.referenceObjectRef !== ""),
+    },
+    presentation: {
+      present: presentation !== null,
+      pointerMatches: presentation?.pointer?.threadId === plan.threadId,
+      manifestMatches: manifest?.threadId === plan.threadId,
+      fixture: manifest?.fixture ?? null,
+      lifecycleStatus: manifest?.lifecycleStatus ?? null,
+      visualEmbodimentId: visualIdentity?.embodimentId ?? null,
+      authoritativeEmbodimentMatches: authoritative !== undefined,
+      canonicalReferenceMatches: authoritative !== undefined
+        && typeof authoritative.referenceObjectRef === "string"
+        && (visualIdentity?.referenceObjectRefs ?? []).includes(authoritative.referenceObjectRef),
+    },
+  });
+}
+
 async function pollConvergence({
   fetchImpl,
   worldBaseUrl,
@@ -349,7 +383,8 @@ async function pollConvergence({
     }
     await sleep(pollMs);
   }
-  throw new Error(`World/Presentation visual convergence did not complete within ${convergenceWaitMs}ms`);
+  const diagnostic = convergenceDiagnostic(world, presentation, { plan, fibreIdentityNumber });
+  throw new Error(`World/Presentation visual convergence did not complete within ${convergenceWaitMs}ms: ${JSON.stringify(diagnostic)}`);
 }
 
 function beforeIsEmpty({ birth, world, presentation }) {
