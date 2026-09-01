@@ -11,9 +11,14 @@ import {
   writeResolvedWranglerConfigs,
 } from "./cloudflare-operator.mjs";
 
-const D1_MIGRATION_BY_BINDING = Object.freeze({
-  PRESENTATION_CATALOG: "infra/providers/cloudflare/d1/0001_fibre_catalog.sql",
-  ACTIVITY_LOG: "infra/providers/cloudflare/d1/0001_activity_log.sql",
+const D1_MIGRATIONS_BY_BINDING = Object.freeze({
+  PRESENTATION_CATALOG: Object.freeze([
+    "infra/providers/cloudflare/d1/0001_fibre_catalog.sql",
+  ]),
+  ACTIVITY_LOG: Object.freeze([
+    "infra/providers/cloudflare/d1/0001_activity_log.sql",
+    "infra/providers/cloudflare/d1/0002_admin_entitlements.sql",
+  ]),
 });
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 
@@ -41,10 +46,10 @@ function activityRuntimeConfig(runtimeConfigByService, serviceIds, environment, 
   return Object.freeze(result);
 }
 
-function migrationFor(database) {
-  const migration = D1_MIGRATION_BY_BINDING[database.binding];
-  if (!migration) throw new TypeError(`no D1 migration registered for binding ${database.binding}`);
-  return migration;
+function migrationsFor(database) {
+  const migrations = D1_MIGRATIONS_BY_BINDING[database.binding];
+  if (!migrations?.length) throw new TypeError(`no D1 migrations registered for binding ${database.binding}`);
+  return migrations;
 }
 
 export function createWranglerProvisionClient({ runner = runWrangler, cwd = process.cwd() } = {}) {
@@ -123,9 +128,14 @@ export async function provisionCloudflareResources({
   const d1 = [];
   for (const database of plan.create.d1) {
     const resolved = await ensureD1(client, database.name);
-    const migration = migrationFor(database);
-    await client.applyD1Migration(database.name, migration);
-    d1.push({ ...resolved, binding: database.binding, schema: migration.split("/").at(-1) });
+    const migrations = migrationsFor(database);
+    for (const migration of migrations) await client.applyD1Migration(database.name, migration);
+    d1.push({
+      ...resolved,
+      binding: database.binding,
+      schema: migrations.at(-1).split("/").at(-1),
+      migrations: migrations.map((migration) => migration.split("/").at(-1)),
+    });
   }
   const r2 = [];
   for (const bucket of plan.create.r2) r2.push(await ensureNamed(client, { kind: "r2", name: bucket.name }));
