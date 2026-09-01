@@ -28,6 +28,7 @@ import {
   createWorldReconciliationRuntime,
 } from "#services/world-kernel/src/world-reconciliation-process.mjs";
 import { attachGenesisBirthPublicationHttpServer } from "#services/world-kernel/src/genesis-birth-http-server.mjs";
+import { createThreadInspectionApi } from "#services/world-kernel/src/thread-inspection-api.mjs";
 import { openObligationApplicabilityStore } from "#services/world-kernel/src/obligation-applicability-store.mjs";
 import { openStructuredAuthorityWithdrawalStore } from "#services/world-kernel/src/structured-authority-withdrawal-store.mjs";
 import { openStructuredObligationInspectionStore } from "#services/world-kernel/src/structured-obligation-inspection-store.mjs";
@@ -41,6 +42,7 @@ import { createStructuredObligationInspectionHttpServer } from "#services/world-
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createThreadPresentationPublisher } from "./thread-presentation-publisher.mjs";
+import { attachThreadInspectionHttpBoundary } from "./thread-inspection-http-boundary.mjs";
 
 const LOCAL_MANIFEST = parseDeploymentManifest(
   readFileSync(new URL("../../environments/local.yaml", import.meta.url), "utf8"),
@@ -271,6 +273,17 @@ export async function startWorldKernelFromEnvironment(
       return result;
     },
   });
+  const threadInspectionApi = privateToken === null ? null : createThreadInspectionApi({
+    worldReader: store,
+    threadDirectory: identityStore,
+    identityReader: identityStore,
+    memoryReader: autobiographicalMemoryStore,
+    situatedLifeReader: situatedLifeStore,
+    genomeReader: symbolicGenomeStore,
+    civilRegistry: civilRegistryStore,
+    embodimentReader: embodimentStore,
+    privateToken,
+  });
   const onRequestError = (error, context) => {
     process.stderr.write(`${JSON.stringify({
       level: "error",
@@ -296,6 +309,9 @@ export async function startWorldKernelFromEnvironment(
     privateToken,
     onError: onRequestError,
   });
+  if (threadInspectionApi !== null) {
+    attachThreadInspectionHttpBoundary({ server, inspectionApi: threadInspectionApi });
+  }
   const operationalService = attachOperationalService(server, service, {
     repairEnabled: adminToken !== null,
   });
@@ -356,6 +372,7 @@ export async function startWorldKernelFromEnvironment(
       presentationOutboxStore,
       presentationDelivery,
       birthPublisher,
+      threadInspectionApi,
       applicabilityStore,
       authorityWithdrawalStore,
       inspectionStore,
@@ -368,6 +385,7 @@ export async function startWorldKernelFromEnvironment(
       reconciliationRuntime,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
+      threadInspectionEnabled: threadInspectionApi !== null,
       genesisBirthPublicationEnabled: true,
       genesisPresentationDeliveryEnabled: presentationDelivery !== null,
       causalParticipationEnabled: true,
@@ -415,6 +433,7 @@ async function main() {
     reconciliationIntervalMs: runtime.reconciliationIntervalMs,
     repairEnabled: runtime.repairEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
+    threadInspectionEnabled: runtime.threadInspectionEnabled,
     genesisBirthPublicationEnabled: runtime.genesisBirthPublicationEnabled,
     genesisPresentationDeliveryEnabled: runtime.genesisPresentationDeliveryEnabled,
     causalParticipationEnabled: true,
