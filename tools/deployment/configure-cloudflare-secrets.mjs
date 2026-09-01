@@ -17,6 +17,14 @@ function present(value) {
   return typeof value === "string" && value.trim() !== "" && !/^<.*>$/u.test(value.trim());
 }
 
+function contentCredentialsEnabled(secrets, serviceId) {
+  return (secrets?.[serviceId] ?? []).includes("C2PA_SIGNER_TOKEN");
+}
+
+function runtimeRequirementApplies(secrets, serviceId, name) {
+  return !name.startsWith("C2PA_") || contentCredentialsEnabled(secrets, serviceId);
+}
+
 export function validateOperatorConfiguration({ values, secrets, runtimeConfig }) {
   const missing = [];
   for (const [serviceId, names] of Object.entries(secrets)) {
@@ -24,15 +32,17 @@ export function validateOperatorConfiguration({ values, secrets, runtimeConfig }
   }
   for (const [serviceId, inventory] of Object.entries(runtimeConfig)) {
     for (const name of inventory.required) {
+      if (!runtimeRequirementApplies(secrets, serviceId, name)) continue;
       if (!present(values[name]) && !present(inventory.existing[name])) missing.push({ serviceId, kind: "config", name });
     }
   }
   return Object.freeze(missing);
 }
 
-export function serviceConfiguration({ serviceId, values, runtimeConfig }) {
+export function serviceConfiguration({ serviceId, values, runtimeConfig, secrets = {} }) {
   const result = {};
   for (const name of runtimeConfig[serviceId].allowed) {
+    if (!runtimeRequirementApplies(secrets, serviceId, name)) continue;
     const value = present(values[name]) ? values[name] : runtimeConfig[serviceId].existing[name];
     if (present(value)) result[name] = value;
   }
@@ -73,7 +83,7 @@ export async function configureCloudflareSecrets({
   for (const serviceId of Object.keys(configs)) {
     const configPath = resolve(repoRoot, state.wranglerConfigs[serviceId]);
     const resolved = parseJsonc(await readFile(configPath, "utf8"), configPath);
-    runtimeConfigByService[serviceId] = serviceConfiguration({ serviceId, values, runtimeConfig });
+    runtimeConfigByService[serviceId] = serviceConfiguration({ serviceId, values, runtimeConfig, secrets });
     resolved.vars ??= {};
     Object.assign(resolved.vars, runtimeConfigByService[serviceId]);
     await writeFile(configPath, `${JSON.stringify(resolved, null, 2)}\n`, { mode: 0o600 });
