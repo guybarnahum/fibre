@@ -82,7 +82,14 @@ export async function deployCloudflareStackWithEvidence({
   ...deploymentOptions
 } = {}) {
   const source = await sourceResolver(repoRoot);
-  const deployment = await deploy({ repoRoot, environment, ...deploymentOptions });
+  const providedProvision = deploymentOptions.provision;
+  const options = providedProvision === undefined
+    ? deploymentOptions
+    : {
+        ...deploymentOptions,
+        provision: () => providedProvision({ sourceGitSha: source.gitSha }),
+      };
+  const deployment = await deploy({ repoRoot, environment, ...options });
   const evidence = createCloudflareDeploymentEvidence({
     environment,
     source,
@@ -112,10 +119,11 @@ async function main() {
     environment,
     client,
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
-    provision: () => provisionCloudflareResources({
+    provision: ({ sourceGitSha } = {}) => provisionCloudflareResources({
       repoRoot,
       environment,
       client: createWranglerProvisionClient({ cwd: repoRoot }),
+      sourceGitSha,
     }),
   });
   console.log(`Cloudflare deployment accepted: ${result.deployment.environment}`);
