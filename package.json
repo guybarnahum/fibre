@@ -84,7 +84,8 @@
     "inspect:obligations": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-structured-obligations.mjs",
     "inspect:identity": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-thread-identity.mjs",
     "inspect:genesis": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-genesis.mjs",
-    "inspect:genome": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-symbolic-genome.mjs"
+    "inspect:genome": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-symbolic-genome.mjs",
+    "inspect:activity": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-runtime-activity.mjs"
   },
   "engines": {
     "node": ">=22.13"
