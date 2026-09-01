@@ -86,6 +86,13 @@ function imageSelection(deployment, profile) {
   return selected;
 }
 
+function optionalCredentialSigner(deployment, env) {
+  const selected = deployment.integrations.contentCredentials ?? null;
+  return selected === null
+    ? null
+    : selectContentCredentialIntegration(selected, { environment: env });
+}
+
 function createRuntime(env, job) {
   if (!env || typeof env !== "object") throw new TypeError("Cloudflare asset generation env is required");
   if (!env.ASSET_OBJECTS) throw new TypeError("ASSET_OBJECTS binding is required");
@@ -99,9 +106,7 @@ function createRuntime(env, job) {
   const provider = selectImageIntegration(imageSelection(deployment, job?.providerProfile), {
     environment: env,
   });
-  const credentialSigner = selectContentCredentialIntegration(deployment.integrations.contentCredentials, {
-    environment: env,
-  });
+  const credentialSigner = optionalCredentialSigner(deployment, env);
 
   return createAssetGenerationRuntime({ infra, provider, credentialSigner });
 }
@@ -114,10 +119,10 @@ function createControlApi(env) {
     objectBucket: env.ASSET_OBJECTS,
     workflowBindings: { asset_generation_v1: env.ASSET_GENERATION },
   });
-  const credentialSigner = selectContentCredentialIntegration(deployment.integrations.contentCredentials, {
-    environment: env,
+  const controlService = createAssetGenerationControlService({
+    infra,
+    credentialSigner: optionalCredentialSigner(deployment, env),
   });
-  const controlService = createAssetGenerationControlService({ infra, credentialSigner });
   return createAssetGenerationControlApi({
     privateToken: env.FIBRE_PRIVATE_TOKEN,
     controlService,
@@ -129,7 +134,7 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
     const job = event.payload;
     const runtime = createRuntime(this.env, job);
     const generated = await step.do(
-      "generate credentialed asset",
+      "generate provenanced asset",
       {
         timeout: "10 minutes",
         retries: {
