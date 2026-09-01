@@ -8,9 +8,11 @@ The desired end state is semantic capability names. Version identifiers belong i
 
 None. The active non-Genesis runtime now uses semantic capability filenames; genuine version identity remains in policy/evidence values and historical artifacts rather than implementation paths.
 
-## Genesis naming debt — explicitly deferred until the birth seam is stable
+## Remaining Genesis authority naming debt
 
-The remaining Genesis filenames encode implementation chronology (`Pass A/B/C`, slice labels, or implementation versions) rather than enduring module responsibility:
+The Birth Center ownership seam is now stable: provider-facing Genesis generation, repair, memory formation, meaning formation, prompt ownership, and candidate orchestration live under semantic Birth Center runtime names. World Kernel retains only provider-free authority, validation, identity, continuity, and publication responsibilities.
+
+The remaining World Genesis filenames below still encode implementation chronology (`Pass A/B/C`, slice labels, or implementation versions) rather than enduring authority responsibility:
 
 - `world-kernel/src/genesis-event-structure-pool-v1.mjs`
 - `world-kernel/src/genesis-event-structure-pool-v2.mjs`
@@ -19,31 +21,22 @@ The remaining Genesis filenames encode implementation chronology (`Pass A/B/C`, 
 - `world-kernel/src/genesis-historical-realization-v1.mjs`
 - `world-kernel/src/genesis-life-continuity-v1.mjs`
 - `world-kernel/src/genesis-pass-a-reliability-v3.mjs`
-- `world-kernel/src/genesis-life-pass-a.mjs`
-- `world-kernel/src/genesis-life-pass-b-input.mjs`
-- `world-kernel/src/genesis-life-pass-b.mjs`
-- `world-kernel/src/genesis-life-pass-c.mjs`
 - `world-kernel/src/genesis-pass-a-cognition.mjs`
 - `world-kernel/src/genesis-pass-a-consistency.mjs`
 - `world-kernel/src/genesis-pass-a-domain.mjs`
-- `world-kernel/src/genesis-pass-a-runner.mjs`
-- `world-kernel/src/genesis-pass-b-admission.mjs`
 - `world-kernel/src/genesis-pass-b-cognition.mjs`
 - `world-kernel/src/genesis-pass-b-domain.mjs`
-- `world-kernel/src/genesis-pass-b-prompts.mjs`
 - `world-kernel/src/genesis-pass-c-cognition.mjs`
 - `world-kernel/src/genesis-pass-c-domain.mjs`
-- `world-kernel/src/genesis-pass-c-prompts.mjs`
 - `world-kernel/src/genesis-pass-c-reinterpretation.mjs`
-- `world-kernel/src/genesis-rich-pass-a-runner.mjs`
 - `world-kernel/src/genesis-slice-d-characterization.mjs`
 - `world-kernel/src/genesis-slice-e-characterization.mjs`
 
-Disposition: do not rename this graph while the #39 birth/publication seam is still being closed. Once the seam is stable, rename by enduring responsibility such as historical realization, memory formation, autobiographical meaning formation, admission, consistency, or orchestration. Move characterization-only machinery out of runtime. Preserve A/B/C, slice, and policy-version labels in historical evidence where useful.
+Disposition: this residual debt is a provider-free World authority naming cleanup, not an ownership ambiguity. Rename it separately by enduring responsibilities such as historical envelope authority, realization validation, cognition projection, memory validation, meaning validation, reinterpretation scheduling, continuity, or characterization. Move characterization-only machinery out of runtime. Preserve A/B/C, slice, and policy-version labels in serialized contracts and historical evidence where they identify exact semantics.
 
 ## Retired debt
 
-The following live runtime names have already been currentized:
+The following live runtime names have already been currentized or retired from active ownership paths:
 
 - `m2-identity-causal-wire.mjs` -> `identity-causal-influence.mjs`
 - `m1-deterministic-actor.mjs` -> `deterministic-actor.mjs`
@@ -51,8 +44,9 @@ The following live runtime names have already been currentized:
 - `identity-schema-v2-repair.mjs` -> `identity-schema-compatibility.mjs`
 - `identity-domain-registry-v2.mjs` -> `identity-domain-registry-definition.mjs`
 - `dignity-guardian-v4.mjs` -> `dignity-guardian-evaluation.mjs`
+- World-owned Genesis provider runners and prompts -> Birth Center semantic history, memory, and meaning generation modules
 
-These changes intentionally preserved serialized versions, evidence IDs, and policy witnesses where version identity remains meaningful.
+These changes intentionally preserve serialized versions, evidence IDs, prompt bytes, schemas, deterministic identities, and policy witnesses where version identity remains meaningful.
 
 ## What is not debt
 
