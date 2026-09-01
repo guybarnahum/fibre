@@ -16,15 +16,23 @@ function parsePort(value) {
   return port;
 }
 
+function privateToken(environment) {
+  const token = environment.FIBRE_PRIVATE_TOKEN;
+  if (typeof token !== "string" || token.length < 16) {
+    throw new TypeError("FIBRE_PRIVATE_TOKEN must be configured for modern Thread inspection");
+  }
+  return token;
+}
+
 export async function startThreadEditorFromEnvironment(environment = process.env) {
   const host = environment.FIBRE_EDITOR_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_EDITOR_PORT ?? "4173");
   const worldKernelUrl = environment.FIBRE_WORLD_URL ?? "http://127.0.0.1:8787";
-  const privateToken = environment.FIBRE_PRIVATE_TOKEN ?? null;
+  const fibrePrivateToken = privateToken(environment);
   const accessToken = environment.FIBRE_EDITOR_ACCESS_TOKEN ?? undefined;
   const server = createThreadEditorServer({
     worldKernelUrl,
-    privateToken,
+    privateToken: fibrePrivateToken,
     ...(accessToken === undefined ? {} : { accessToken }),
     onError(error, context) {
       process.stderr.write(`${JSON.stringify({
@@ -45,7 +53,7 @@ export async function startThreadEditorFromEnvironment(environment = process.env
     address,
     worldKernelUrl,
     accessToken: server.editorAccessToken,
-    privateInspection: privateToken !== null,
+    worldInspection: true,
     async close() {
       if (closed) return;
       closed = true;
@@ -62,8 +70,8 @@ async function main() {
     host: runtime.address.host,
     port: runtime.address.port,
     worldKernelUrl: runtime.worldKernelUrl,
-    mode: "inspection",
-    privateInspection: runtime.privateInspection,
+    mode: "modern-thread-inspection",
+    worldInspection: runtime.worldInspection,
     accessUrl,
   })}\n`);
   const shutdown = async (signal) => {
