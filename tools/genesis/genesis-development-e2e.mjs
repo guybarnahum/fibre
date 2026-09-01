@@ -8,7 +8,6 @@ import {
   GENESIS_DEVELOPMENT_REQUEST_VERSION,
   buildGenesisDevelopmentPlan,
 } from "#services/birth-center/src/genesis-development-plan.mjs";
-import { parseDeploymentManifest, resolveServiceDeployment } from "../../infra/deployments/manifest.mjs";
 
 export const GENESIS_STAGING_EVIDENCE_VERSION = "fibre-slice-g-cloud-e2e-evidence-v1";
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -94,20 +93,49 @@ export function loadStagingDeploymentEvidence({ repoRoot = REPO_ROOT, path = nul
   return Object.freeze({ path: evidencePath, record });
 }
 
-function approvedReasoningProfiles(repoRoot = REPO_ROOT) {
-  const manifest = parseDeploymentManifest(readFileSync(resolve(repoRoot, "infra/deployments/environments/cloudflare.yaml"), "utf8"));
-  const deployment = resolveServiceDeployment(manifest, "birth-center");
-  const profiles = [deployment.integrations?.creative, deployment.integrations?.repair];
-  if (profiles.some((profile) => !profile || profile.kind !== "ai.reasoning")) {
-    throw new Error("staging Birth Center deployment does not declare creative and repair reasoning integrations");
-  }
-  return Object.freeze(new Set(profiles.map((profile) => `${profile.provider}:${profile.config?.model}`)));
-}
-
 async function responseJson(response, label) {
   const payload = await response.json().catch(() => null);
   if (payload === null) throw new Error(`${label} returned non-JSON HTTP ${response.status}`);
   return payload;
+}
+
+async function birthHealth({ fetchImpl, baseUrl, requestTimeoutMs }) {
+  const response = await fetchImpl(endpoint(baseUrl, "/healthz"), {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(requestTimeoutMs),
+  });
+  const payload = await responseJson(response, "Birth Center health");
+  if (!response.ok || payload?.ok !== true || payload.service !== "birth-center" || payload.provider !== "cloudflare") {
+    throw new Error(`staging Birth Center health is not a deployed Cloudflare runtime: HTTP ${response.status} ${JSON.stringify(payload)}`);
+  }
+  if (payload.genesisDevelopmentConfigured !== true) {
+    throw new Error("staging Birth Center does not report Genesis development configured");
+  }
+  const creative = payload.genesisReasoningProfiles?.creative;
+  const repair = payload.genesisReasoningProfiles?.repair;
+  for (const [name, profile] of [["creative", creative], ["repair", repair]]) {
+    if (typeof profile?.provider !== "string" || profile.provider.trim() === "" || typeof profile?.modelId !== "string" || profile.modelId.trim() === "") {
+      throw new Error(`staging Birth Center health lacks ${name} reasoning profile witness`);
+    }
+  }
+  return Object.freeze({
+    service: payload.service,
+    provider: payload.provider,
+    stateScopeId: payload.stateScopeId ?? null,
+    genesisDevelopmentConfigured: true,
+    genesisReasoningProfiles: Object.freeze({
+      creative: Object.freeze({ provider: creative.provider, modelId: creative.modelId }),
+      repair: Object.freeze({ provider: repair.provider, modelId: repair.modelId }),
+    }),
+  });
+}
+
+function configuredReasoningProfiles(health) {
+  const profiles = [
+    health.genesisReasoningProfiles.creative,
+    health.genesisReasoningProfiles.repair,
+  ];
+  return Object.freeze(new Set(profiles.map((profile) => `${profile.provider}:${profile.modelId}`)));
 }
 
 async function submit({ fetchImpl, url, privateToken, body, requestTimeoutMs }) {
@@ -224,7 +252,7 @@ function assertSameIdentity(first, replay) {
   }
 }
 
-function providerWitnesses(inspection, { plan, approvedProfiles }) {
+function providerWitnesses(inspection, { plan, configuredProfiles }) {
   if (!Number.isSafeInteger(inspection?.invocationCount) || inspection.invocationCount < 20) {
     throw new Error("Birth Center inspection does not contain the minimum twenty durable Genesis model invocations");
   }
@@ -239,7 +267,7 @@ function providerWitnesses(inspection, { plan, approvedProfiles }) {
     if (seen.has(entry.clientRequestId)) throw new Error(`duplicate durable model witness ${entry.clientRequestId}`);
     seen.add(entry.clientRequestId);
     const profile = `${entry.provider}:${entry.modelId}`;
-    if (!approvedProfiles.has(profile)) throw new Error(`provider witness ${profile} is not an approved staging Birth Center integration`);
+    if (!configuredProfiles.has(profile)) throw new Error(`provider witness ${profile} does not match a deployed Birth Center reasoning profile`);
     if (typeof entry.providerRequestId !== "string" || entry.providerRequestId.trim() === "") {
       throw new Error(`provider witness ${entry.clientRequestId} lacks a real provider request ID`);
     }
@@ -340,6 +368,7 @@ function closureAssertions({
   first,
   replay,
   birth,
+  birthService,
   world,
   presentation,
   discovery,
@@ -352,11 +381,12 @@ function closureAssertions({
 }) {
   const visual = presentation.snapshot.presentation.visualIdentity;
   const authoritativeVisual = world.embodiment.current.find((record) => record.embodimentId === visual.embodimentId);
+  const configuredProfiles = configuredReasoningProfiles(birthService);
   return Object.freeze([
     { id: 1, criterion: "Thread absent before E2E", passed: beforeIsEmpty(before) },
-    { id: 2, criterion: "request hit deployed cloud Birth Center", passed: endpoints.birthCenter.startsWith("https://") && first.requestId === birth.requestId },
+    { id: 2, criterion: "request hit deployed cloud Birth Center", passed: birthService.provider === "cloudflare" && endpoints.birthCenter.startsWith("https://") && first.requestId === birth.requestId },
     { id: 3, criterion: "Birth Center ran genuine Genesis development", passed: first.generated === true && providerCalls.length >= 20 },
-    { id: 4, criterion: "real provider/model calls through approved integration adapter", passed: providerCalls.length >= 20 && providerCalls.every((call) => call.providerRequestId) },
+    { id: 4, criterion: "real provider/model calls through approved integration adapter", passed: providerCalls.length >= 20 && providerCalls.every((call) => call.providerRequestId && configuredProfiles.has(`${call.provider}:${call.modelId}`)) },
     { id: 5, criterion: "Birth Center durable recovery/reconciliation", passed: birth.requestStatus === "submitted" && birth.provisionalStatus === "published" && replay.idempotent === true && replay.generated === false },
     { id: 6, criterion: "WorldSpec/genome authority admitted", passed: world.genesis.worldSpecId !== null && world.symbolicGenomes.count === 1 },
     { id: 7, criterion: "exactly one authoritative Thread", passed: world.authoritativeThread.exists === true && world.authoritativeThread.eventCount >= 15 && world.civilRegistration?.fibreIdentityNumber === replay.fibreIdentityNumber },
@@ -493,7 +523,12 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
     threadPresentation: assertRemoteHttps("staging Thread Presentation URL", deploymentByService(deployment, "thread-presentation").baseUrl),
     viewer: assertRemoteHttps("staging Viewer origin", deployment.externalViewerOrigin),
   });
-  const approvedProfiles = approvedReasoningProfiles(repoRoot);
+  const birthService = await birthHealth({
+    fetchImpl,
+    baseUrl: endpoints.birthCenter,
+    requestTimeoutMs,
+  });
+  const configuredProfiles = configuredReasoningProfiles(birthService);
 
   const beforeBirth = await birthInspection({
     fetchImpl,
@@ -547,7 +582,7 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
   if (birth.genesisId !== plan.genesisId || birth.threadId !== plan.threadId) {
     throw new Error("Birth Center durable inspection identity disagrees with canonical request plan");
   }
-  const providerCalls = providerWitnesses(birth, { plan, approvedProfiles });
+  const providerCalls = providerWitnesses(birth, { plan, configuredProfiles });
   const converged = await pollConvergence({
     fetchImpl,
     worldBaseUrl: endpoints.worldKernel,
@@ -588,6 +623,7 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
     first: lifecycle.first,
     replay: lifecycle.replay,
     birth,
+    birthService,
     world,
     presentation,
     discovery,
@@ -634,6 +670,7 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
       publicPresentationAbsent: before.presentation === null,
     },
     birthCenter: {
+      deployedService: birthService,
       firstSubmission: structuredClone(lifecycle.first),
       finalReplay: structuredClone(lifecycle.replay),
       durableInspection: {
