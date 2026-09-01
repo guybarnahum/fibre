@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildGenesisDevelopmentPlan } from "#services/birth-center/src/genesis-development-plan.mjs";
+import {
+  GENESIS_DEVELOPMENT_REQUEST_VERSION,
+  buildGenesisDevelopmentPlan,
+} from "#services/birth-center/src/genesis-development-plan.mjs";
 import {
   GENESIS_STAGING_EVIDENCE_VERSION,
   runGenesisDevelopmentE2E,
@@ -15,6 +18,31 @@ const SOURCE_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SHA = "abcdef1234567890abcdef1234567890abcdef12";
 const TOKEN = "staging-private-token-12345";
 const FIN = "FIBRE-STAGING-TEST-001";
+const REQUEST_ID = "genesis-staging-e2e-test-001";
+const REQUESTED_AT = "2026-09-01T00:01:00.000Z";
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"));
+}
+
+function canonicalE2ERequest(slotOrdinal = 1) {
+  const cohort = readJson(resolve(SOURCE_ROOT, "fixtures/genesis/pr39/development-cohort-v1.json"));
+  const slot = cohort.slots[slotOrdinal - 1];
+  const worldSpec = readJson(resolve(SOURCE_ROOT, slot.worldSpecPath));
+  const genome = readJson(resolve(SOURCE_ROOT, slot.genomePath));
+  return {
+    requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
+    requestId: REQUEST_ID,
+    requestedAt: REQUESTED_AT,
+    worldSpec,
+    genomeValues: genome.loci.map((locus) => locus.value),
+    participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
+    placeAffordances: slot.placeAffordances,
+    bornAt: cohort.entry.bornAt,
+    chronologyEndsAt: cohort.entry.chronologyEndsAt,
+    timeZone: slot.timeZone,
+  };
+}
 
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -129,8 +157,8 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
   const evidenceRoot = resolve(directory, "evidence");
   writeFileSync(deploymentPath, JSON.stringify(deploymentEvidence()));
 
+  const expectedPlan = buildGenesisDevelopmentPlan(canonicalE2ERequest());
   let submitted = false;
-  let plan = null;
   let postCount = 0;
   const fetchImpl = async (input, init = {}) => {
     const url = new URL(input instanceof URL ? input : input.url ?? input);
@@ -151,7 +179,7 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
       if (url.pathname.endsWith("/inspection")) {
         if (!submitted) return json({ error: { code: "DEVELOPMENT_NOT_FOUND" } }, 404);
         const invocations = Array.from({ length: 20 }, (_, index) => ({
-          clientRequestId: `${plan.freshModelRequestDomain}:fixture-${String(index + 1).padStart(2, "0")}`,
+          clientRequestId: `${expectedPlan.freshModelRequestDomain}:fixture-${String(index + 1).padStart(2, "0")}`,
           provider: "openai",
           modelId: "gpt-5.1-2025-11-13",
           requestDigest: `sha256:${String(index % 10).repeat(64)}`,
@@ -162,12 +190,12 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
         return json({
           ok: true,
           inspection: {
-            requestId: plan.requestId,
-            requestDigest: plan.requestDigest,
+            requestId: expectedPlan.requestId,
+            requestDigest: expectedPlan.requestDigest,
             planDigest: `sha256:${"e".repeat(64)}`,
             admissionDigest: `sha256:${"f".repeat(64)}`,
-            genesisId: plan.genesisId,
-            threadId: plan.threadId,
+            genesisId: expectedPlan.genesisId,
+            threadId: expectedPlan.threadId,
             requestStatus: "submitted",
             provisionalStatus: "published",
             invocationCount: invocations.length,
@@ -177,19 +205,21 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
       }
       assert.equal(url.pathname, "/internal/births/develop");
       assert.equal(init.headers["x-fibre-private-token"], TOKEN);
-      const body = JSON.parse(init.body);
-      plan = buildGenesisDevelopmentPlan(body);
+      const postedPlan = buildGenesisDevelopmentPlan(JSON.parse(init.body));
+      assert.equal(postedPlan.requestDigest, expectedPlan.requestDigest);
+      assert.equal(postedPlan.genome.header.genomeId, expectedPlan.genome.header.genomeId);
+      assert.equal(postedPlan.genomeDigest, expectedPlan.genomeDigest);
       submitted = true;
       postCount += 1;
       return json({
         ok: true,
         development: {
           serviceVersion: "fibre-genesis-development-service-v3",
-          requestId: plan.requestId,
-          requestDigest: plan.requestDigest,
+          requestId: expectedPlan.requestId,
+          requestDigest: expectedPlan.requestDigest,
           developmentPlanDigest: `sha256:${"e".repeat(64)}`,
-          genesisId: plan.genesisId,
-          threadId: plan.threadId,
+          genesisId: expectedPlan.genesisId,
+          threadId: expectedPlan.threadId,
           fibreIdentityNumber: FIN,
           status: "published",
           idempotent: postCount > 1,
@@ -207,20 +237,19 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
           threadId: decodeURIComponent(match[2]),
         }));
       }
-      assert.ok(plan);
-      return json(liveWorld(plan));
+      return json(liveWorld(expectedPlan));
     }
 
     if (url.hostname === "api.staging.insidefibre.com") {
       assert.equal(new Headers(init.headers ?? {}).get("origin"), "https://staging.insidefibre.com");
       if (url.pathname.endsWith("/snapshot")) {
         if (!submitted) return json({ error: "not_found" }, 404);
-        return json(presentation(plan));
+        return json(presentation(expectedPlan));
       }
       if (url.pathname === "/api/threads") {
         return json({
           threads: [{
-            threadId: plan.threadId,
+            threadId: expectedPlan.threadId,
             lifecycleStatus: "active",
             snapshotVersion: "visual-identity-staging-test",
             snapshotDigest: `sha256:${"d".repeat(64)}`,
@@ -251,8 +280,8 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
     repoRoot: SOURCE_ROOT,
     environment: {
       FIBRE_PRIVATE_TOKEN: TOKEN,
-      FIBRE_GENESIS_REQUEST_ID: "genesis-staging-e2e-test-001",
-      FIBRE_GENESIS_REQUESTED_AT: "2026-09-01T00:01:00.000Z",
+      FIBRE_GENESIS_REQUEST_ID: REQUEST_ID,
+      FIBRE_GENESIS_REQUESTED_AT: REQUESTED_AT,
       FIBRE_GENESIS_E2E_SLOT: "1",
       FIBRE_GENESIS_E2E_REQUEST_TIMEOUT_MS: "5000",
       FIBRE_GENESIS_E2E_PUBLISH_WAIT_MS: "5000",
@@ -269,7 +298,8 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
 
   assert.equal(result.evidence.contract, GENESIS_STAGING_EVIDENCE_VERSION);
   assert.equal(result.evidence.sourceGitSha, SHA);
-  assert.equal(result.evidence.request.developmentPlanThreadId, plan.threadId);
+  assert.equal(result.evidence.request.developmentPlanThreadId, expectedPlan.threadId);
+  assert.equal(result.evidence.request.genomeDigest, expectedPlan.genomeDigest);
   assert.equal(result.evidence.birthCenter.deployedService.provider, "cloudflare");
   assert.deepEqual(result.evidence.birthCenter.deployedService.genesisReasoningProfiles.creative, {
     provider: "openai",
@@ -277,7 +307,8 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
   });
   assert.equal(result.evidence.birthCenter.providerCalls.length, 20);
   assert.equal(result.evidence.world.authoritativeThread.exists, true);
-  assert.equal(result.evidence.presentation.pointer.threadId, plan.threadId);
+  assert.equal(result.evidence.world.symbolicGenomes.genomes[0].genomeDigest, expectedPlan.genomeDigest);
+  assert.equal(result.evidence.presentation.pointer.threadId, expectedPlan.threadId);
   assert.equal(result.evidence.viewer.reachable, true);
   assert.equal(result.evidence.runtimeParticipation.localFibreRuntimeParticipated, false);
   assert.equal(result.evidence.closureAssertions.length, 13);
