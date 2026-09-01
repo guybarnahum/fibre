@@ -4,6 +4,9 @@ import { createGoogleModelAdapter } from "#integrations/ai/reasoning/google.mjs"
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { createHttpContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 
+const DEFAULT_C2PA_SIGNER_ID = "fibre-c2pa-production-v1";
+const DEFAULT_C2PA_TRUST_POLICY = "c2pa_trust_list";
+
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
   return value.trim();
@@ -130,6 +133,29 @@ export function selectImageIntegration(value, { environment = process.env, fetch
 }
 
 export function selectContentCredentialIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch } = {}) {
+  if (value === null || value === undefined) {
+    const baseUrl = environment?.C2PA_SIGNER_URL;
+    if (typeof baseUrl !== "string" || baseUrl.trim() === "") {
+      throw new TypeError("content credential integration selection is required");
+    }
+    const signerId = typeof environment?.C2PA_SIGNER_ID === "string" && environment.C2PA_SIGNER_ID.trim() !== ""
+      ? environment.C2PA_SIGNER_ID.trim()
+      : DEFAULT_C2PA_SIGNER_ID;
+    const trustPolicy = typeof environment?.C2PA_TRUST_POLICY === "string" && environment.C2PA_TRUST_POLICY.trim() !== ""
+      ? environment.C2PA_TRUST_POLICY.trim()
+      : DEFAULT_C2PA_TRUST_POLICY;
+    const authorizationToken = typeof environment?.C2PA_SIGNER_TOKEN === "string" && environment.C2PA_SIGNER_TOKEN.trim() !== ""
+      ? environment.C2PA_SIGNER_TOKEN.trim()
+      : null;
+    return createHttpContentCredentialSigner({
+      baseUrl: baseUrl.trim(),
+      signerId,
+      trustPolicy,
+      authorizationToken,
+      fetchImpl,
+    });
+  }
+
   const chosen = selection("content credential integration", value, "content-credentials");
   if (chosen.provider !== "c2pa-http") {
     throw new TypeError(`unsupported content credential integration provider ${chosen.provider}`);
