@@ -8,14 +8,15 @@ function nonEmpty(name, value) {
 
 export function createCloudflareActivityRecorder({ env, service } = {}) {
   if (!env || typeof env !== "object") throw new TypeError("Cloudflare activity recorder env is required");
-  if (!env.ACTIVITY_LOG || typeof env.ACTIVITY_LOG.prepare !== "function") {
-    throw new TypeError("ACTIVITY_LOG D1 binding is required");
+  const serviceId = nonEmpty("Cloudflare activity service", service);
+  if (env.ACTIVITY_LOG === undefined || env.ACTIVITY_LOG === null) return null;
+  if (typeof env.ACTIVITY_LOG.prepare !== "function") {
+    throw new TypeError("ACTIVITY_LOG D1 binding must expose prepare()");
   }
   const environment = nonEmpty(
     "Cloudflare activity environment",
     env.FIBRE_ACTIVITY_ENV ?? env.FIBRE_DEPLOYMENT_ENV,
   );
-  const serviceId = nonEmpty("Cloudflare activity service", service);
   const deploymentGitSha = typeof env.FIBRE_DEPLOYMENT_GIT_SHA === "string" && env.FIBRE_DEPLOYMENT_GIT_SHA !== ""
     ? env.FIBRE_DEPLOYMENT_GIT_SHA
     : null;
