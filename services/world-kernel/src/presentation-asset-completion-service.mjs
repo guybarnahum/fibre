@@ -1,7 +1,7 @@
 import {
   normalizeAssetGenerationCompletion,
   normalizeStoredAssetReceipt,
-  verifyCredentialedAssetForPublication,
+  verifyProvenancedAssetForPublication,
 } from "#services/asset-generator/src/index.mjs";
 import { requireInfraCapabilities } from "#infra";
 import {
@@ -54,9 +54,9 @@ function findDemandEntry(projection, jobId) {
 
 export function createPresentationAssetCompletionService({
   infra,
-  credentialSigner,
+  credentialSigner = null,
   publishReady = null,
-  verifyReceipt = verifyCredentialedAssetForPublication,
+  verifyReceipt = verifyProvenancedAssetForPublication,
   now = () => new Date().toISOString(),
 } = {}) {
   requireInfraCapabilities(infra, "objects", "catalog");
