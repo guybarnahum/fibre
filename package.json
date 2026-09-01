@@ -66,7 +66,7 @@
     "birth-center": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/birth-center/local/server.mjs",
     "content-credential-signer": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/content-credential-signer/local/server.mjs",
     "genesis:e2e": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-development-e2e.mjs",
-    "genesis:e2e:staging": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-development-e2e.mjs --mode staging",
+    "genesis:e2e:staging": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-development-e2e-staging.mjs",
     "genesis:d5-sealed-history": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-d5-sealed-history-diagnostic.mjs",
     "demo:m1": "node --disable-warning=ExperimentalWarning tools/replays/m1/m1-reviewed-proof.mjs",
     "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/replays/m1/m1-demo-editor.mjs",
