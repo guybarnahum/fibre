@@ -33,6 +33,10 @@
     {
       "binding": "PRESENTATION_CATALOG",
       "database_name": "fibre-presentation-catalog"
+    },
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log"
     }
   ],
   "durable_objects": {
