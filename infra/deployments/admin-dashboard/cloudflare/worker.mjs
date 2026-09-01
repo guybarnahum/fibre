@@ -1,4 +1,4 @@
-import { normalizeActivityRecord } from "../../../telemetry.mjs";
+import { normalizeActivityRecord } from "#infra/telemetry";
 
 export const ADMIN_DASHBOARD_VERSION = "fibre-admin-dashboard-v0.1";
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
