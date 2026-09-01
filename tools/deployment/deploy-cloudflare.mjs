@@ -190,11 +190,13 @@ export async function deployCloudflareStack({
   }
 
   const signerVars = resolvedConfigs["asset-generator"].config.vars ?? {};
-  await client.checkSignerHealth({
-    baseUrl: signerVars.C2PA_SIGNER_URL,
-    signerId: signerVars.C2PA_SIGNER_ID,
-    trustPolicy: signerVars.C2PA_TRUST_POLICY,
-  });
+  if (typeof signerVars.C2PA_SIGNER_URL === "string" && signerVars.C2PA_SIGNER_URL.trim() !== "") {
+    await client.checkSignerHealth({
+      baseUrl: signerVars.C2PA_SIGNER_URL,
+      signerId: signerVars.C2PA_SIGNER_ID,
+      trustPolicy: signerVars.C2PA_TRUST_POLICY,
+    });
+  }
 
   const deployments = [];
   for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
