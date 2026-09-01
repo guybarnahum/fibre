@@ -17,9 +17,18 @@ function assertPublisher(publisher) {
   }
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("Birth Center activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
 export function createBirthCenterRuntime({
   storage,
   worldPublisher = null,
+  activityRecorder = null,
   retryMs = 5_000,
   now = () => new Date().toISOString(),
   nowMs = Date.now,
@@ -34,6 +43,7 @@ export function createBirthCenterRuntime({
     throw new TypeError("Birth Center stateScopeId is required");
   }
   assertPublisher(worldPublisher);
+  const activity = optionalActivityRecorder(activityRecorder);
 
   const invocationJournal = createStateModelInvocationJournal(storage, { now });
   let provisionalBirthStore = null;
@@ -55,6 +65,11 @@ export function createBirthCenterRuntime({
         stateScopeId,
         provisionalBirthStore,
         worldPublisher,
+        activityRecorder: activity,
+        activityContextForBirth(birth) {
+          const request = developmentRequestStore.getByGenesisId(birth.genesisId);
+          return request === null ? {} : { requestId: request.requestId };
+        },
         retryMs,
         nowMs,
         onError,
