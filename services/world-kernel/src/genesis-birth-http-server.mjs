@@ -11,6 +11,10 @@ function requestId(value) {
     : `req_${randomUUID()}`;
 }
 
+function activityRequestId(value) {
+  return typeof value === "string" && REQUEST_ID_PATTERN.test(value) ? value : null;
+}
+
 function tokenEqual(actual, expected) {
   if (typeof actual !== "string" || typeof expected !== "string") return false;
   const left = Buffer.from(actual);
@@ -108,7 +112,10 @@ export function attachGenesisBirthPublicationHttpServer({
         throw httpError(403, "PRIVATE_TOKEN_REQUIRED", "A valid private-access token is required");
       }
       const bundle = await readJson(request, maxBodyBytes);
-      const result = await birthPublisher.publishBirth(bundle);
+      const correlation = activityRequestId(request.headers["x-fibre-activity-request-id"]);
+      const result = await birthPublisher.publishBirth(bundle, {
+        activityContext: correlation === null ? {} : { requestId: correlation },
+      });
       const idempotent = result?.idempotent === true;
       return writeJson(response, idempotent ? 200 : 201, result, id);
     } catch (error) {
