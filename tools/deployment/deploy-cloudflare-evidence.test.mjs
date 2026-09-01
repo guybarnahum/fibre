@@ -40,7 +40,7 @@ test("cloud deployment evidence binds accepted remote topology to an exact clean
   assert.equal(JSON.stringify(evidence).includes("API_KEY"), false);
 });
 
-test("cloud deployment evidence wrapper resolves source before deployment and retains the resulting record", async () => {
+test("cloud deployment evidence wrapper resolves source before provisioning and stamps that SHA into deployment config", async () => {
   const calls = [];
   let retained = null;
   const result = await deployCloudflareStackWithEvidence({
@@ -50,8 +50,13 @@ test("cloud deployment evidence wrapper resolves source before deployment and re
       calls.push(`source:${repoRoot}`);
       return { gitSha: SHA, workingTreeClean: true };
     },
-    deploy: async ({ repoRoot, environment, marker }) => {
+    provision: async ({ sourceGitSha }) => {
+      calls.push(`provision:${sourceGitSha}`);
+      return { environment: "staging" };
+    },
+    deploy: async ({ repoRoot, environment, marker, provision }) => {
       calls.push(`deploy:${repoRoot}:${environment}:${marker}`);
+      await provision();
       return deploymentResult();
     },
     writeEvidence: async ({ repoRoot, environment, evidence }) => {
@@ -65,6 +70,7 @@ test("cloud deployment evidence wrapper resolves source before deployment and re
   assert.deepEqual(calls, [
     "source:/repo",
     "deploy:/repo:staging:fixture",
+    `provision:${SHA}`,
     "write:/repo:staging",
   ]);
   assert.equal(retained.sourceGitSha, SHA);
