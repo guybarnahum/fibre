@@ -81,6 +81,63 @@ function activityContext(plan) {
   });
 }
 
+function cognitionStage(clientRequestId) {
+  if (typeof clientRequestId !== "string") return "birth.genesis.cognition_call";
+  if (clientRequestId.includes(":pass-a:")) {
+    return clientRequestId.includes("repair")
+      ? "birth.genesis.history.repair_call"
+      : "birth.genesis.history.cognition_call";
+  }
+  if (clientRequestId.includes(":pass-b:")) return "birth.genesis.memory_selection.cognition_call";
+  if (clientRequestId.includes(":pass-c:initial-")) return "birth.genesis.meaning_formation.cognition_call";
+  if (clientRequestId.includes(":pass-c:reinterpret:")) return "birth.genesis.meaning_reinterpretation.cognition_call";
+  return "birth.genesis.cognition_call";
+}
+
+function providerRequestId(result) {
+  const value = result?.provenance?.providerRequestId;
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+function instrumentDurableCognitionAdapter({
+  baseAdapter,
+  birthRuntime,
+  activity,
+  context,
+}) {
+  const observations = new Map();
+  const durable = birthRuntime.durableAdapter(baseAdapter, {
+    observer(event) {
+      if (typeof event?.clientRequestId === "string") observations.set(event.clientRequestId, event.type);
+    },
+  });
+  return Object.freeze({
+    provider: durable.provider,
+    modelId: durable.modelId,
+    configuration: structuredClone(durable.configuration),
+    async invoke(args) {
+      const stage = cognitionStage(args?.clientRequestId);
+      const result = await runActivityStage(activity, {
+        ...context,
+        stage,
+        attempt: 1,
+      }, async () => durable.invoke(args));
+      const observation = observations.get(args?.clientRequestId);
+      const replay = observation === "durable_model_replay";
+      const requestId = providerRequestId(result);
+      await bestEffortRecord(activity, {
+        ...context,
+        stage: replay ? `${stage}.durable_replay` : `${stage}.provider_commit`,
+        status: "succeeded",
+        attempt: 1,
+        message: replay ? "Reused durable model result" : "Committed durable provider result",
+        evidence: requestId === null ? {} : { providerRequestId: requestId },
+      });
+      return result;
+    },
+  });
+}
+
 function currentCognition({ creativeAdapter, repairAdapter }) {
   return buildGenesisPublicationCognition({
     creativeAdapter,
@@ -173,8 +230,18 @@ export function createGenesisDevelopmentService({
 
       let admission = reservation.admission;
       if (admission === null) {
-        const creative = birthRuntime.durableAdapter(creativeBase);
-        const repair = birthRuntime.durableAdapter(repairBase);
+        const creative = instrumentDurableCognitionAdapter({
+          baseAdapter: creativeBase,
+          birthRuntime,
+          activity,
+          context,
+        });
+        const repair = instrumentDurableCognitionAdapter({
+          baseAdapter: repairBase,
+          birthRuntime,
+          activity,
+          context,
+        });
         const candidate = await runActivityStage(activity, {
           ...context,
           stage: "birth.genesis.start",
