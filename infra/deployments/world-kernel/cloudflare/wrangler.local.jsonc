@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-world-kernel-local",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-08-31",
+  "vars": {
+    "FIBRE_DEPLOYMENT_ENV": "local",
+    "FIBRE_ACTIVITY_ENV": "local",
+    "FIBRE_WORLD_RECONCILIATION_MS": "5000"
+  },
+  "secrets": {
+    "required": ["FIBRE_PRIVATE_TOKEN"]
+  },
+  "d1_databases": [
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log-local",
+      "database_id": "00000000-0000-0000-0000-000000000002",
+      "preview_database_id": "fibre-activity-log-local"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WORLD_STATE",
+        "class_name": "FibreWorldDurableObject"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "THREAD_PRESENTATION",
+      "service": "fibre-presentation-local"
+    },
+    {
+      "binding": "ASSET_GENERATOR",
+      "service": "fibre-asset-generator-local"
+    }
+  ],
+  "exports": {
+    "FibreWorldDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}

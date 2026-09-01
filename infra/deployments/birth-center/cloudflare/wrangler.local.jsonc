@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-birth-center-local",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-08-31",
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.yaml"],
+      "fallthrough": true
+    }
+  ],
+  "vars": {
+    "FIBRE_DEPLOYMENT_ENV": "local",
+    "FIBRE_ACTIVITY_ENV": "local",
+    "FIBRE_BIRTH_RECONCILIATION_MS": "5000"
+  },
+  "secrets": {
+    "required": ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"]
+  },
+  "d1_databases": [
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log-local",
+      "database_id": "00000000-0000-0000-0000-000000000002",
+      "preview_database_id": "fibre-activity-log-local"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BIRTH_STATE",
+        "class_name": "FibreBirthCenterDurableObject"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "WORLD_KERNEL",
+      "service": "fibre-world-kernel-local"
+    }
+  ],
+  "exports": {
+    "FibreBirthCenterDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}

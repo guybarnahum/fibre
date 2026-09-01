@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-admin-dashboard-local",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "vars": {
+    "FIBRE_ENVIRONMENT": "local"
+  },
+  "d1_databases": [
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log-local",
+      "database_id": "00000000-0000-0000-0000-000000000002",
+      "preview_database_id": "fibre-activity-log-local"
+    }
+  ],
+  "assets": {
+    "directory": "../../../../apps/admin-dashboard",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true }
+}

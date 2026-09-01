@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-status-page-local",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "vars": {
+    "FIBRE_ENVIRONMENT": "local",
+    "VIEWER_ORIGIN": "http://127.0.0.1:5173"
+  },
+  "services": [
+    { "binding": "BIRTH_CENTER", "service": "fibre-birth-center-local" },
+    { "binding": "WORLD_KERNEL", "service": "fibre-world-kernel-local" },
+    { "binding": "THREAD_PRESENTATION", "service": "fibre-presentation-local" },
+    { "binding": "ASSET_GENERATOR", "service": "fibre-asset-generator-local" }
+  ],
+  "assets": {
+    "directory": "../../../../apps/status-page",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/healthz"],
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true }
+}

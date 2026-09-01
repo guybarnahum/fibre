@@ -12,6 +12,7 @@
   ],
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "local",
+    "FIBRE_ACTIVITY_ENV": "local",
     "VIEWER_ORIGIN": "http://localhost:5173",
     "P3_FIXTURE_MODE": "1",
     "C2PA_SIGNER_URL": "http://127.0.0.1:8791",
@@ -30,6 +31,12 @@
       "database_name": "fibre-presentation-local",
       "database_id": "00000000-0000-0000-0000-000000000001",
       "preview_database_id": "fibre-presentation-local"
+    },
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log-local",
+      "database_id": "00000000-0000-0000-0000-000000000002",
+      "preview_database_id": "fibre-activity-log-local"
     }
   ],
   "durable_objects": {

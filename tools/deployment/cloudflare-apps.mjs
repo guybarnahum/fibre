@@ -12,6 +12,7 @@ import {
   runWrangler,
 } from "./cloudflare-operator.mjs";
 import {
+  adminAccessDomain,
   createCloudflareAccessClient,
   inspectAdminAccess,
 } from "./cloudflare-access.mjs";
@@ -23,16 +24,29 @@ export const CLOUDFLARE_APP_CONFIGS = Object.freeze({
   "status-page": "infra/deployments/status-page/cloudflare/wrangler.jsonc",
 });
 export const CLOUDFLARE_APP_DEPLOY_ORDER = Object.freeze(["admin-dashboard", "status-page"]);
+const STATUS_SERVICE_TARGETS = Object.freeze({
+  BIRTH_CENTER: "fibre-birth-center",
+  WORLD_KERNEL: "fibre-world-kernel",
+  THREAD_PRESENTATION: "fibre-thread-presentation",
+  ASSET_GENERATOR: "fibre-asset-generator",
+});
+const UNRESOLVED_VALUE_PATTERN = /replace[-_ ]?with|placeholder|change[-_ ]?me|\btodo\b/iu;
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
   return value.trim();
 }
 
+function deployedValue(name, value) {
+  const normalized = nonEmpty(name, value);
+  if (UNRESOLVED_VALUE_PATTERN.test(normalized)) throw new TypeError(`${name} must not contain an unresolved placeholder`);
+  return normalized;
+}
+
 export function cloudflareAppDomain(pattern, environment) {
   const env = normalizeCloudflareEnvironment(environment);
+  if (pattern === "admin.insidefibre.com") return adminAccessDomain(env);
   if (env === "production") return pattern;
-  if (pattern === "admin.insidefibre.com") return "admin.staging.insidefibre.com";
   if (pattern === "status.insidefibre.com") return "status.staging.insidefibre.com";
   throw new TypeError(`staging domain mapping is not defined for ${pattern}`);
 }
@@ -81,6 +95,41 @@ export function resolveCloudflareAppConfig(appId, baseConfig, { environment, res
   return config;
 }
 
+export function validateResolvedCloudflareAppConfig(appId, config, { environment } = {}) {
+  const env = normalizeCloudflareEnvironment(environment);
+  if (!CLOUDFLARE_APP_DEPLOY_ORDER.includes(appId)) throw new TypeError(`unsupported Cloudflare app ${appId}`);
+  if (config?.vars?.FIBRE_ENVIRONMENT !== env) throw new TypeError(`${appId} FIBRE_ENVIRONMENT must be ${env}`);
+  const routes = (config?.routes ?? []).filter((route) => route?.custom_domain === true);
+  if (routes.length !== 1) throw new TypeError(`${appId} must declare exactly one custom domain`);
+  const expectedDomain = appId === "admin-dashboard"
+    ? adminAccessDomain(env)
+    : cloudflareAppDomain("status.insidefibre.com", env);
+  if (routes[0].pattern !== expectedDomain) throw new TypeError(`${appId} custom domain must be ${expectedDomain}`);
+
+  if (appId === "admin-dashboard") {
+    deployedValue("Admin Cloudflare Access team domain", config.vars?.FIBRE_ACCESS_TEAM_DOMAIN);
+    deployedValue("Admin Cloudflare Access audience", config.vars?.FIBRE_ACCESS_AUD);
+    const databases = (config.d1_databases ?? []).filter((database) => database?.binding === "ACTIVITY_LOG");
+    if (databases.length !== 1) throw new TypeError("admin-dashboard must resolve exactly one ACTIVITY_LOG D1 binding");
+    deployedValue("Admin ACTIVITY_LOG database name", databases[0].database_name);
+    deployedValue("Admin ACTIVITY_LOG database id", databases[0].database_id);
+  }
+
+  if (appId === "status-page") {
+    const expectedViewer = env === "production" ? "https://insidefibre.com" : "https://staging.insidefibre.com";
+    if (config.vars?.VIEWER_ORIGIN !== expectedViewer) throw new TypeError(`status-page VIEWER_ORIGIN must be ${expectedViewer}`);
+    const services = config.services ?? [];
+    if (services.length !== Object.keys(STATUS_SERVICE_TARGETS).length) throw new TypeError("status-page must resolve exactly the four Fibre runtime service bindings");
+    for (const [binding, baseService] of Object.entries(STATUS_SERVICE_TARGETS)) {
+      const matches = services.filter((service) => service?.binding === binding);
+      if (matches.length !== 1) throw new TypeError(`status-page must resolve exactly one ${binding} service binding`);
+      const expectedService = environmentResourceName(baseService, env);
+      if (matches[0].service !== expectedService) throw new TypeError(`status-page ${binding} must target ${expectedService}`);
+    }
+  }
+  return config;
+}
+
 export async function loadCloudflareAppConfigs(repoRoot) {
   const configs = {};
   for (const [appId, path] of Object.entries(CLOUDFLARE_APP_CONFIGS)) configs[appId] = parseJsonc(await readFile(resolve(repoRoot, path), "utf8"), path);
@@ -93,6 +142,7 @@ export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment,
   const written = {};
   for (const appId of CLOUDFLARE_APP_DEPLOY_ORDER) {
     const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig });
+    validateResolvedCloudflareAppConfig(appId, resolvedConfig, { environment });
     const path = resolve(baseDir, `${appId}.jsonc`);
     await writeFile(path, `${JSON.stringify(resolvedConfig, null, 2)}\n`, { mode: 0o600 });
     written[appId] = relative(repoRoot, path);

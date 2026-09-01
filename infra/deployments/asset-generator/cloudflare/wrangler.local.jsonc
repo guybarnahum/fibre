@@ -12,6 +12,7 @@
   ],
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "local",
+    "FIBRE_ACTIVITY_ENV": "local",
     "C2PA_SIGNER_URL": "http://127.0.0.1:8791",
     "C2PA_SIGNER_ID": "fibre-c2pa-node-local-v1",
     "C2PA_TRUST_POLICY": "development_signature_only"
@@ -23,6 +24,14 @@
     {
       "binding": "ASSET_OBJECTS",
       "bucket_name": "fibre-presentation-local"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log-local",
+      "database_id": "00000000-0000-0000-0000-000000000002",
+      "preview_database_id": "fibre-activity-log-local"
     }
   ],
   "workflows": [

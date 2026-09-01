@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  authenticateAccessRequest,
   authorizeAdminPrincipal,
   buildAdminActivitySql,
   createAdminDashboardWorker,
@@ -60,6 +61,22 @@ function fakeD1(records, { admins = {}, entitlementError = null } = {}) {
   };
 }
 
+function jwtPart(value) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+
+async function signedAccessToken({ privateKey, kid, claims }) {
+  const header = jwtPart({ alg: "RS256", kid, typ: "JWT" });
+  const payload = jwtPart(claims);
+  const input = `${header}.${payload}`;
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    privateKey,
+    new TextEncoder().encode(input),
+  );
+  return { token: `${input}.${Buffer.from(signature).toString("base64url")}`, input, signature: new Uint8Array(signature) };
+}
+
 test("activity query parser supports recent, failure, and exact identity views", () => {
   assert.equal(parseAdminActivityQuery(new URL("https://admin/activity?kind=recent&limit=50")).kind, "recent");
   assert.equal(parseAdminActivityQuery(new URL("https://admin/activity?kind=failures")).kind, "failures");
@@ -97,6 +114,43 @@ test("Admin principal email is normalized and authorized only by exact D1 admin=
   assert.equal(await authorizeAdminPrincipal({ ACTIVITY_LOG: d1 }, { email: "disabled@example.com" }), false);
   assert.equal(await authorizeAdminPrincipal({ ACTIVITY_LOG: d1 }, { email: "missing@example.com" }), false);
   assert.deepEqual(d1.calls[0].bindings, ["operator@example.com"]);
+});
+
+test("Admin Worker verifies a signed Cloudflare Access JWT and exposes its email claim to the D1 gate", async () => {
+  const teamDomain = "https://fibre-admin-test.cloudflareaccess.com";
+  const audience = "admin-audience-test";
+  const kid = "admin-test-key";
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+    true,
+    ["sign", "verify"],
+  );
+  const publicJwk = { ...(await crypto.subtle.exportKey("jwk", keyPair.publicKey)), kid, alg: "RS256", use: "sig" };
+  const now = Math.floor(Date.now() / 1000);
+  const signed = await signedAccessToken({
+    privateKey: keyPair.privateKey,
+    kid,
+    claims: { aud: audience, iss: teamDomain, exp: now + 300, nbf: now - 10, email: "Operator@Example.com", sub: "access-user" },
+  });
+  const fetchImpl = async (url) => {
+    assert.equal(url, `${teamDomain}/cdn-cgi/access/certs`);
+    return new Response(JSON.stringify({ keys: [publicJwk] }), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  const env = { FIBRE_ACCESS_TEAM_DOMAIN: teamDomain, FIBRE_ACCESS_AUD: audience };
+  const request = new Request("https://admin.staging.insidefibre.com/", { headers: { "Cf-Access-Jwt-Assertion": signed.token } });
+  const claims = await authenticateAccessRequest(request, env, { fetchImpl });
+  assert.equal(claims.email, "Operator@Example.com");
+  assert.equal(normalizeAdminPrincipalEmail(claims), "operator@example.com");
+
+  const tamperedSignature = Uint8Array.from(signed.signature);
+  tamperedSignature[0] ^= 1;
+  const tamperedToken = `${signed.input}.${Buffer.from(tamperedSignature).toString("base64url")}`;
+  const forged = await authenticateAccessRequest(
+    new Request("https://admin.staging.insidefibre.com/", { headers: { "Cf-Access-Jwt-Assertion": tamperedToken } }),
+    env,
+    { fetchImpl },
+  );
+  assert.equal(forged, null);
 });
 
 test("admin API requires both Access authentication and D1 Admin entitlement", async () => {

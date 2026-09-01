@@ -46,6 +46,36 @@ test("one failed component degrades public status without exposing its internal 
   assert.equal(JSON.stringify(result).includes("secret internal detail"), false);
 });
 
+test("viewer failure degrades public status without changing runtime component health", async () => {
+  const result = await currentPublicStatus(environment(), {
+    fetchImpl: async () => new Response("down", { status: 503 }),
+  });
+  assert.equal(result.status, "degraded");
+  const web = result.components.find((component) => component.key === "web");
+  assert.equal(web.status, "degraded");
+  assert.ok(result.components.filter((component) => component.key !== "web").every((component) => component.status === "operational"));
+});
+
+test("a hanging service binding is bounded and reported as an outage", async () => {
+  const hangingWorld = {
+    fetch(request) {
+      return new Promise((resolve, reject) => {
+        const abort = () => reject(request.signal.reason ?? new Error("aborted"));
+        if (request.signal.aborted) abort();
+        else request.signal.addEventListener("abort", abort, { once: true });
+      });
+    },
+  };
+  const started = Date.now();
+  const result = await currentPublicStatus(environment({ WORLD_KERNEL: hangingWorld }), {
+    fetchImpl: viewerOk,
+    bindingTimeoutMs: 10,
+  });
+  assert.ok(Date.now() - started < 1000);
+  assert.equal(result.status, "degraded");
+  assert.equal(result.components.find((component) => component.key === "world").status, "outage");
+});
+
 test("multiple outages produce an outage state", async () => {
   const result = await currentPublicStatus(environment({
     WORLD_KERNEL: { fetch: async () => { throw new Error("down"); } },
