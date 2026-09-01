@@ -42,6 +42,32 @@ function failures(records) {
     })));
 }
 
+function failOpenActivityRecorder(recorder, emit) {
+  if (recorder === null || recorder === undefined) return null;
+  if (typeof recorder.record !== "function") {
+    emit({
+      event: "genesis-development-staging-activity-recorder-invalid",
+      errorName: "TypeError",
+    });
+    return null;
+  }
+  return Object.freeze({
+    async record(candidate) {
+      try {
+        return await recorder.record(candidate);
+      } catch (error) {
+        emit({
+          event: "genesis-development-staging-activity-write-failed",
+          stage: candidate?.stage ?? null,
+          status: candidate?.status ?? null,
+          errorName: error?.constructor?.name ?? "Error",
+        });
+        return candidate;
+      }
+    },
+  });
+}
+
 export async function attachActivityLogEvidence({
   e2eResult,
   repoRoot,
@@ -134,6 +160,9 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
           });
         },
       });
+      if (!recorder || typeof recorder.record !== "function") {
+        throw new TypeError("staging Activity recorder factory must return record()");
+      }
       emit({
         event: "genesis-development-staging-activity-writer-ready",
         databaseName: recorder.databaseName,
@@ -157,7 +186,7 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     emit,
     ...(sourceResolver ? { sourceResolver } : {}),
     repoRoot,
-    activityRecorder: recorder,
+    activityRecorder: failOpenActivityRecorder(recorder, emit),
   });
   const reader = activityReader ?? createWranglerActivityReader({ cwd: repoRoot });
   return attachActivityLogEvidence({ e2eResult: core, repoRoot, activityReader: reader, inspect, emit });
