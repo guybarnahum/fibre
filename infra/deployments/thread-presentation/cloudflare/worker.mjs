@@ -19,6 +19,7 @@ import { createThreadPresentationAssetPublisher } from "#services/world-kernel/s
 import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
 import { createThreadPresentationIdentityMediaRewriteService } from "#services/world-kernel/src/thread-presentation-identity-media-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
+import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
 import {
@@ -73,7 +74,7 @@ function createCredentialSigner(env) {
     : selectContentCredentialIntegration(selected, { environment: env });
 }
 
-function createVisualReconciler(env, infra, presentationServer) {
+function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
   return createThreadPresentationVisualPublicationReconciler({
     presentationServer,
     infra,
@@ -85,6 +86,7 @@ function createVisualReconciler(env, infra, presentationServer) {
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
     createIdentityRewrite: createThreadPresentationIdentityMediaRewriteService,
     planSlots: planThreadPresentationAssetSlots,
+    activityRecorder,
   });
 }
 
@@ -233,13 +235,14 @@ export default {
     if (request.method === "GET" && url.pathname === "/healthz") return HTTP_SERVICE.fetch(request);
 
     const infra = createInfra(env);
+    const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const presentationServer = createThreadPresentationServer({ infra });
     const genesisWriteApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: env.FIBRE_PRIVATE_TOKEN ?? null });
     const genesisWriteResponse = await genesisWriteApi.fetch(request);
     if (genesisWriteResponse !== null) return genesisWriteResponse;
 
     const visualWriteApi = createVisualPublicationWriteApi({
-      reconciler: createVisualReconciler(env, infra, presentationServer),
+      reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder),
       privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
     });
     const visualWriteResponse = await visualWriteApi.fetch(request);
