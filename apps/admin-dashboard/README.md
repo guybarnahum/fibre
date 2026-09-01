@@ -4,7 +4,9 @@
 
 The dashboard is deliberately not a semantic authority. Activity remains non-authoritative and fail-open; World and service records decide Fibre truth. The browser never receives a Fibre private/admin token and the Worker exposes no mutation path.
 
-Access is enforced with Cloudflare Access. The Worker validates the Access JWT before serving application assets or `/api/*`; `/healthz` is the only unauthenticated route and exposes only the dashboard service/version identity.
+Admin uses two independent gates. Cloudflare Access authenticates the human and the Worker validates its signed JWT. Fibre then normalizes the JWT `email` claim and requires an exact `admin = 1` row in `fibre_admin_entitlements` on the shared `ACTIVITY_LOG` D1 database. Entitlements are changed only through trusted D1 operator tooling; there is no Admin web endpoint for granting privileges. Authorization-store failures fail closed.
+
+`/healthz` is the only unauthenticated route and exposes only the dashboard service/version identity.
 
 Production and staging hostnames are:
 
