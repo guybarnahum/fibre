@@ -15,9 +15,32 @@ Fibre has two cloud-facing operational web surfaces with deliberately different 
 
 The first Admin capability is Activity inspection. The Admin Worker has a read-only binding to the shared `ACTIVITY_LOG` D1 and exposes structured filters for recent activity, failures/retries, request ID, Genesis ID, Thread ID, service, stage and status. It must not become a new semantic authority or a generic database browser.
 
-Cloudflare Access protects the Worker. The Worker also validates the Access JWT audience, issuer, signature and expiry before serving its assets or API. Fibre private/admin service tokens are never delivered to browser JavaScript.
+Admin has two independent gates:
 
-Activity remains non-authoritative and fail-open. Admin may explain operational evidence but must not decide whether a birth, World mutation, Embodiment admission, publication or Thread state is true.
+1. Cloudflare Access authenticates the human and supplies the signed identity JWT.
+2. Fibre authorizes that identity from `fibre_admin_entitlements` in the shared `ACTIVITY_LOG` D1 database.
+
+The Worker validates the Access JWT audience, issuer, signature and expiry, normalizes the authenticated `email` claim to lower case, then requires an exact D1 row with `admin = 1`. A valid Access identity without that D1 entitlement receives `403`. If the entitlement store cannot be queried, Admin fails closed with `503`. `/healthz` remains the only unauthenticated Admin route.
+
+There is no browser or Worker mutation endpoint for Admin entitlements. Operators grant or revoke the flag directly through trusted D1 tooling, including the Cloudflare D1 dashboard. For example:
+
+```sql
+INSERT INTO fibre_admin_entitlements(email, admin)
+VALUES ('operator@example.com', 1)
+ON CONFLICT(email) DO UPDATE SET admin = excluded.admin;
+```
+
+To revoke while retaining an explicit row:
+
+```sql
+UPDATE fibre_admin_entitlements
+SET admin = 0
+WHERE email = 'operator@example.com';
+```
+
+The stored email should be lower-case and must match the email asserted by Cloudflare Access after normalization.
+
+Fibre private/admin service tokens are never delivered to browser JavaScript. Activity remains non-authoritative and fail-open. Admin entitlement controls access to an operator surface only; it must never decide whether a birth, World mutation, Embodiment admission, publication or Thread state is true.
 
 ## Public status
 
@@ -37,16 +60,16 @@ A later Admin Thread Inspector may reuse deterministic presentation concepts fro
 
 These are applications, not Fibre semantic services. They therefore live under `apps/` with Cloudflare composition under `infra/deployments/`, rather than being added as World/Birth/Presentation/Asset services in the deployment manifest.
 
-`cloud:deploy:apps` is the authoritative operator path for these surfaces. It resolves staging/production domains, existing Activity D1 identity and runtime service-binding names from Fibre's checked Cloudflare topology. For Admin it also reconciles the Cloudflare Access self-hosted application and Fibre-owned exact-email allow policy before deploying the Worker.
+`cloud:provision` applies the ordered D1 schemas, including `0002_admin_entitlements.sql`, so existing staging Activity databases acquire the entitlement table idempotently without creating any administrator rows.
 
-The allowed human identities are explicit operator configuration in `FIBRE_ACCESS_ALLOWED_EMAILS`; they are never inferred from repository metadata or widened to an Everyone policy. The Access team domain and application JWT audience are discovered from Cloudflare after reconciliation and injected into the Admin Worker configuration, rather than copied manually into source control or `.env`.
+The Cloudflare Access application and its authentication policy are external operator configuration. Fibre does not create or mutate Access policies and does not encode Admin identities in deployment configuration. `cloud:deploy:apps` verifies that exactly one self-hosted Access application protects the Admin hostname, verifies that it has an allow policy, reads the Zero Trust organization `auth_domain` and application JWT audience, and injects those values into the Admin Worker configuration.
 
-The Cloudflare operator token used by `cloud:deploy:apps` must have the normal deployment permissions plus Zero Trust `Access: Apps and Policies Write`. Fibre refuses to proceed if the protected Admin hostname has unmanaged Access policies, because an additional policy could widen the effective allow path beyond the declared operator identities.
+The Cloudflare operator token used by `cloud:deploy:apps` therefore needs read access to Zero Trust organization settings and Access applications/policies in addition to the permissions already required for Worker deployment. No human email addresses are written to deployment evidence.
 
-For staging, after the runtime topology has been provisioned, the operator command is:
+For staging, after the runtime topology has been provisioned and the Access application has been configured in the Cloudflare Zero Trust dashboard:
 
 ```sh
 npm run cloud:deploy:apps -- --file .env --env staging
 ```
 
-The command writes SHA-bound operator evidence to `.fibre/cloudflare/staging/apps-deployment.json`, including the Access application/policy identities, JWT verification configuration, principal count and the deployed Admin/Status domains. It does not record the configured email addresses or any Cloudflare credential.
+The command writes SHA-bound operator evidence to `.fibre/cloudflare/staging/apps-deployment.json`, including the Access application identity, JWT verification configuration, policy counts and the deployed Admin/Status domains.
