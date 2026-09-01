@@ -1,7 +1,6 @@
 import {
   CLOUDFLARE_OPERATOR_STATE_VERSION,
   createCloudflareResourcePlan,
-  environmentResourceName,
   isProviderNotFound,
   loadCloudflareWranglerConfigs,
   normalizeCloudflareEnvironment,
@@ -30,31 +29,16 @@ function optionalGitSha(value) {
   return value;
 }
 
-function activityRuntimeConfig(runtimeConfigByService, environment, sourceGitSha) {
+function activityRuntimeConfig(runtimeConfigByService, serviceIds, environment, sourceGitSha) {
   const result = {};
-  for (const serviceId of Object.keys(runtimeConfigByService)) {
+  for (const serviceId of serviceIds) {
     result[serviceId] = {
-      ...runtimeConfigByService[serviceId],
+      ...(runtimeConfigByService[serviceId] ?? {}),
       FIBRE_ACTIVITY_ENV: environment,
       ...(sourceGitSha === null ? {} : { FIBRE_DEPLOYMENT_GIT_SHA: sourceGitSha }),
     };
   }
   return Object.freeze(result);
-}
-
-function sharedActivityDatabase(configs, environment) {
-  const declared = Object.entries(configs).map(([serviceId, config]) => {
-    const binding = (config.d1_databases ?? []).find((database) => database.binding === "ACTIVITY_LOG");
-    if (!binding?.database_name) throw new TypeError(`${serviceId} must declare ACTIVITY_LOG D1 database_name`);
-    return binding.database_name;
-  });
-  const names = new Set(declared);
-  if (names.size !== 1) throw new TypeError("all Cloudflare Fibre services must share one ACTIVITY_LOG D1 database");
-  const [baseName] = names;
-  return Object.freeze({
-    binding: "ACTIVITY_LOG",
-    name: environmentResourceName(baseName, environment),
-  });
 }
 
 function migrationFor(database) {
@@ -135,13 +119,9 @@ export async function provisionCloudflareResources({
   if (!client) throw new TypeError("Cloudflare provision client is required");
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
   const plan = createCloudflareResourcePlan(configs, { environment: env });
-  const d1Plan = Object.freeze([
-    ...plan.create.d1,
-    sharedActivityDatabase(configs, env),
-  ]);
 
   const d1 = [];
-  for (const database of d1Plan) {
+  for (const database of plan.create.d1) {
     const resolved = await ensureD1(client, database.name);
     const migration = migrationFor(database);
     await client.applyD1Migration(database.name, migration);
@@ -165,7 +145,7 @@ export async function provisionCloudflareResources({
     },
   };
   const storedRuntimeConfig = await readCloudflareRuntimeConfig({ repoRoot, environment: env });
-  const runtimeConfigByService = activityRuntimeConfig(storedRuntimeConfig, env, source);
+  const runtimeConfigByService = activityRuntimeConfig(storedRuntimeConfig, Object.keys(configs), env, source);
   state.wranglerConfigs = await writeResolvedWranglerConfigs({
     repoRoot, environment: env, configs, resourceState: state, runtimeConfigByService,
   });
