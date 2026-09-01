@@ -194,7 +194,7 @@ export function createThreadPresentationAssetPublisher({
         ? currentSnapshot
         : await projectMediaReadySnapshot(presentationServer, currentSnapshot, accepted.event, proof);
 
-      await infra.catalog.upsert(`media:${stored.objectRef}`, {
+      const catalogEntry = {
         kind: "public_presentation_media",
         publiclyVisible,
         identityCredentialMedia,
@@ -205,10 +205,13 @@ export function createThreadPresentationAssetPublisher({
         digest: stored.sha256,
         mediaType: stored.mediaType,
         provenanceClass: "generated_reconstruction",
-        contentCredentialMode: proof.credentialMode,
         eventId,
         eventSequence: accepted.event.sequence,
-      });
+      };
+      if (proof.credentialMode !== "content_credential") {
+        catalogEntry.contentCredentialMode = proof.credentialMode;
+      }
+      await infra.catalog.upsert(`media:${stored.objectRef}`, catalogEntry);
 
       return { ...accepted, proof, snapshotProjection };
     },
