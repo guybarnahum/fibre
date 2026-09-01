@@ -1,7 +1,8 @@
 import { normalizeActivityRecord } from "#infra/telemetry";
 
-export const ADMIN_DASHBOARD_VERSION = "fibre-admin-dashboard-v0.1";
+export const ADMIN_DASHBOARD_VERSION = "fibre-admin-dashboard-v0.2";
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
+const ADMIN_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 const STATUSES = new Set(["started", "succeeded", "failed", "retrying"]);
 const ACCESS_CACHE = new Map();
 
@@ -68,6 +69,25 @@ async function queryActivity(env, environment, query) {
   }));
 }
 
+export function normalizeAdminPrincipalEmail(claims) {
+  if (typeof claims?.email !== "string") return null;
+  const email = claims.email.trim().toLocaleLowerCase("en-US");
+  if (email.length === 0 || email.length > 320 || !ADMIN_EMAIL_PATTERN.test(email)) return null;
+  return email;
+}
+
+export async function authorizeAdminPrincipal(env, claims) {
+  const email = normalizeAdminPrincipalEmail(claims);
+  if (email === null) return false;
+  if (!env.ACTIVITY_LOG?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable for Admin authorization");
+  const result = await env.ACTIVITY_LOG
+    .prepare("SELECT admin FROM fibre_admin_entitlements WHERE email = ? LIMIT 1")
+    .bind(email)
+    .all();
+  const rows = Array.isArray(result?.results) ? result.results : [];
+  return rows.length === 1 && rows[0]?.admin === 1;
+}
+
 function base64UrlBytes(value) { const padded = value.replace(/-/gu,"+").replace(/_/gu,"/").padEnd(Math.ceil(value.length / 4) * 4,"="); const raw = atob(padded); return Uint8Array.from(raw, (char) => char.charCodeAt(0)); }
 function base64UrlJson(value) { return JSON.parse(new TextDecoder().decode(base64UrlBytes(value))); }
 function normalizedTeamDomain(value) { if (typeof value !== "string" || value.trim() === "") return null; const url = new URL(value.startsWith("https://") ? value : `https://${value}`); return `${url.protocol}//${url.host}`; }
@@ -119,7 +139,7 @@ function secureAsset(response) {
   return new Response(response.body, { status:response.status, statusText:response.statusText, headers });
 }
 
-export function createAdminDashboardWorker({ authenticate = authenticateAccessRequest } = {}) {
+export function createAdminDashboardWorker({ authenticate = authenticateAccessRequest, authorize = authorizeAdminPrincipal } = {}) {
   return Object.freeze({
     async fetch(request, env) {
       const url = new URL(request.url);
@@ -127,6 +147,10 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
       let principal = null;
       try { principal = await authenticate(request, env); } catch { principal = null; }
       if (!principal) return json(403, { error:"access_required" });
+      let isAdmin = false;
+      try { isAdmin = await authorize(env, principal); }
+      catch { return json(503, { error:"admin_authorization_unavailable" }); }
+      if (!isAdmin) return json(403, { error:"admin_required" });
       if (url.pathname === "/api/activity" && request.method === "GET") {
         try {
           const query = parseAdminActivityQuery(url);
