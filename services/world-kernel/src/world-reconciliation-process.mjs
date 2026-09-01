@@ -10,6 +10,24 @@ function optionalMethod(name, value, method) {
   return value;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function" || typeof value.runStage !== "function") {
+    throw new TypeError("World reconciliation activityRecorder must expose record() and runStage()");
+  }
+  return value;
+}
+
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
 function errorRecord(error) {
   return Object.freeze({
     errorName: error?.constructor?.name ?? "Error",
@@ -27,20 +45,26 @@ function assertIntervalMs(value) {
 export function createWorldReconciliationProcess({
   presentationDelivery = null,
   visualPublicationProcess = null,
+  activityRecorder = null,
   onError = null,
 } = {}) {
   const delivery = optionalMethod("presentationDelivery", presentationDelivery, "deliverPending");
   let visual = optionalMethod("visualPublicationProcess", visualPublicationProcess, "runOnce");
+  const activity = optionalActivityRecorder(activityRecorder);
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("World reconciliation onError must be a function or null");
   }
 
   let running = false;
 
-  async function isolated(kind, operation) {
+  async function isolated(kind, stage, operation) {
     if (operation === null) return Object.freeze({ enabled: false, ok: true, result: null });
     try {
-      return Object.freeze({ enabled: true, ok: true, result: await operation() });
+      const result = await runActivityStage(activity, {
+        stage,
+        attempt: 1,
+      }, operation);
+      return Object.freeze({ enabled: true, ok: true, result });
     } catch (error) {
       const failure = errorRecord(error);
       await onError?.({ kind, ...failure }, error);
@@ -58,21 +82,41 @@ export function createWorldReconciliationProcess({
     async runOnce() {
       if (running) return Object.freeze({ skipped: true, reason: "already_running" });
       running = true;
+      await bestEffortRecord(activity, {
+        stage: "world.reconciliation.wake",
+        status: "started",
+        attempt: 1,
+      });
       try {
         const presentation = await isolated(
           "genesis_presentation_delivery",
+          "world.reconciliation.presentation_delivery",
           delivery === null ? null : () => delivery.deliverPending(),
         );
         const visualPublication = await isolated(
           "thread_visual_publication",
+          "world.reconciliation.visual_publication",
           visual === null ? null : () => visual.runOnce(),
         );
-        return Object.freeze({
+        const result = Object.freeze({
           skipped: false,
           reason: null,
           presentation,
           visualPublication,
         });
+        await bestEffortRecord(activity, {
+          stage: "world.reconciliation.wake",
+          status: presentation.ok && visualPublication.ok ? "succeeded" : "failed",
+          attempt: 1,
+          ...(presentation.ok && visualPublication.ok ? {} : {
+            error: {
+              category: "reconciliation",
+              code: "WORLD_RECONCILIATION_PARTIAL_FAILURE",
+              retryable: true,
+            },
+          }),
+        });
+        return result;
       } finally {
         running = false;
       }
