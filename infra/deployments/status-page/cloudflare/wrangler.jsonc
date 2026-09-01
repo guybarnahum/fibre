@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-status-page",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "status.insidefibre.com", "custom_domain": true }
+  ],
+  "vars": {
+    "FIBRE_ENVIRONMENT": "production",
+    "VIEWER_ORIGIN": "https://insidefibre.com"
+  },
+  "services": [
+    { "binding": "BIRTH_CENTER", "service": "fibre-birth-center" },
+    { "binding": "WORLD_KERNEL", "service": "fibre-world-kernel" },
+    { "binding": "THREAD_PRESENTATION", "service": "fibre-thread-presentation" },
+    { "binding": "ASSET_GENERATOR", "service": "fibre-asset-generator" }
+  ],
+  "assets": {
+    "directory": "../../../../apps/status-page",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/healthz"],
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true }
+}

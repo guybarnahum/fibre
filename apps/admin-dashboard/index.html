@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Fibre Admin · Activity</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Fibre Admin home"><span class="brand-mark">F</span><span><strong>Fibre</strong><small>Admin</small></span></a>
+      <nav class="nav" aria-label="Admin navigation">
+        <a href="/" class="nav-item"><span class="nav-icon">⌂</span>Overview</a>
+        <a href="/activity" class="nav-item active"><span class="nav-icon">≋</span>Activity</a>
+        <a id="status-link" href="https://status.insidefibre.com" class="nav-item"><span class="nav-icon">◉</span>System status<span class="external">↗</span></a>
+      </nav>
+      <div class="sidebar-note">
+        <strong>Operational only</strong>
+        <span>Activity is non-authoritative and fail-open. World and service records remain the source of truth.</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs"><span>Fibre</span><span>/</span><strong>Activity</strong></div>
+        <div class="topbar-actions"><span id="environment-pill" class="environment-pill">—</span><span class="admin-pill">Admin</span></div>
+      </header>
+
+      <section class="page-head">
+        <div><p class="eyebrow">Operations</p><h1>Activity</h1><p class="lede">Follow Birth, World, Asset Generator, Presentation, and E2E activity as one structured execution chain.</p></div>
+        <div class="page-actions"><label class="auto-refresh"><input id="auto-refresh" type="checkbox" checked> Auto refresh</label><button id="refresh-button" class="primary" type="button">Refresh</button></div>
+      </section>
+
+      <section class="metrics" aria-label="Activity summary">
+        <article><span>Records</span><strong id="metric-records">—</strong><small>matching current query</small></article>
+        <article><span>Failures</span><strong id="metric-failures">—</strong><small>failed stages</small></article>
+        <article><span>Retrying</span><strong id="metric-retries">—</strong><small>retry events</small></article>
+        <article><span>Recovered</span><strong id="metric-recovered">—</strong><small>failed stages later succeeded</small></article>
+      </section>
+
+      <section class="panel filters-panel">
+        <div class="panel-head"><div><h2>Filter activity</h2><p>Use an identity to reconstruct one chain, or inspect recent failures across Fibre.</p></div><kbd>/</kbd></div>
+        <form id="filters" class="filters">
+          <label><span>View</span><select id="kind" name="kind"><option value="recent">Recent activity</option><option value="failures">Failures & retries</option><option value="request">Request ID</option><option value="genesis">Genesis ID</option><option value="thread">Thread ID</option></select></label>
+          <label class="identity-filter"><span>Identity</span><input id="value" name="value" autocomplete="off" placeholder="req_… / gen_… / thr_…"></label>
+          <label><span>Service</span><input id="service" name="service" autocomplete="off" list="service-list" placeholder="All services"><datalist id="service-list"></datalist></label>
+          <label><span>Status</span><select id="status" name="status"><option value="">All statuses</option><option value="started">Started</option><option value="succeeded">Succeeded</option><option value="failed">Failed</option><option value="retrying">Retrying</option></select></label>
+          <label><span>Rows</span><select id="limit" name="limit"><option>50</option><option selected>100</option><option>200</option></select></label>
+          <button class="secondary" type="submit">Apply filters</button>
+        </form>
+      </section>
+
+      <section class="panel activity-panel">
+        <div class="panel-head"><div><h2 id="chain-title">Recent activity</h2><p id="chain-summary">Loading…</p></div><span id="updated-at" class="updated-at"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>Service</th><th>Stage</th><th>Status</th><th>Attempt</th><th>Correlation</th></tr></thead>
+            <tbody id="activity-rows"></tbody>
+          </table>
+          <div id="empty-state" class="empty" hidden><div class="empty-icon">≋</div><h3>No matching activity</h3><p>Adjust the filters or wait for new runtime activity.</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="record-dialog">
+    <div class="dialog-head"><div><p class="eyebrow">Activity record</p><h2 id="dialog-title">Details</h2></div><button id="dialog-close" class="icon-button" aria-label="Close">×</button></div>
+    <div id="dialog-body" class="dialog-body"></div>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

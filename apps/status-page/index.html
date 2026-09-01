@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Fibre Status</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-head"><a class="brand" href="https://insidefibre.com"><span>F</span><strong>Fibre</strong></a><a class="back" href="https://insidefibre.com">insidefibre.com ↗</a></header>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">System status</p>
+      <div class="overall"><span id="overall-dot" class="dot checking"></span><div><h1 id="overall-title">Checking Fibre…</h1><p id="overall-detail">Retrieving current service health.</p></div></div>
+      <div class="meta"><span id="environment">—</span><span>·</span><span id="checked-at">—</span></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><div><h2>Components</h2><p>Current availability across the public Fibre experience and runtime.</p></div><button id="refresh" type="button">Refresh</button></div>
+      <div id="components" class="components"></div>
+    </section>
+
+    <section class="note"><strong>About this page</strong><p>This page reports current health only. It intentionally exposes no Thread, Genesis, request, provider, or internal error details. Durable incident history will be added when Fibre has an incident record designed for public publication.</p></section>
+  </main>
+  <footer>Fibre · Persistent world for artificial persons</footer>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

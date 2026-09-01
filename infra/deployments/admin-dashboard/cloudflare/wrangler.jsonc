@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-admin-dashboard",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "admin.insidefibre.com", "custom_domain": true }
+  ],
+  "vars": {
+    "FIBRE_ENVIRONMENT": "production"
+  },
+  "d1_databases": [
+    { "binding": "ACTIVITY_LOG", "database_name": "fibre-activity-log" }
+  ],
+  "assets": {
+    "directory": "../../../../apps/admin-dashboard",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true }
+}
