@@ -7,9 +7,16 @@ export class WorldKernelBirthPublicationError extends Error {
   }
 }
 
+const ACTIVITY_REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
   return value;
+}
+
+function activityRequestId(activityContext) {
+  const value = activityContext?.requestId;
+  return typeof value === "string" && ACTIVITY_REQUEST_ID_PATTERN.test(value) ? value : null;
 }
 
 async function responseJson(response) {
@@ -35,13 +42,16 @@ export function createWorldKernelBirthPublisher({
   target.hash = "";
 
   return Object.freeze({
-    async publishBirth(bundle) {
+    async publishBirth(bundle, { activityContext = {} } = {}) {
+      const headers = {
+        "content-type": "application/json",
+        "x-fibre-private-token": token,
+      };
+      const correlation = activityRequestId(activityContext);
+      if (correlation !== null) headers["x-fibre-activity-request-id"] = correlation;
       const response = await fetchImpl(target, {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-fibre-private-token": token,
-        },
+        headers,
         body: JSON.stringify(bundle),
       });
       const body = await responseJson(response);
