@@ -11,9 +11,13 @@ import {
   repoRootFrom,
   runWrangler,
 } from "./cloudflare-operator.mjs";
+import {
+  createCloudflareAccessClient,
+  reconcileAdminAccess,
+} from "./cloudflare-access.mjs";
 import { resolveCleanGitDeploymentSource } from "./deploy-cloudflare-evidence.mjs";
 
-export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.1";
+export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.2";
 export const CLOUDFLARE_APP_CONFIGS = Object.freeze({
   "admin-dashboard": "infra/deployments/admin-dashboard/cloudflare/wrangler.jsonc",
   "status-page": "infra/deployments/status-page/cloudflare/wrangler.jsonc",
@@ -39,17 +43,17 @@ function activityDatabase(resourceState) {
   return matches[0];
 }
 
-function accessConfig(operatorConfig) {
-  const teamDomain = nonEmpty("FIBRE_ACCESS_TEAM_DOMAIN", operatorConfig.FIBRE_ACCESS_TEAM_DOMAIN);
-  const audience = nonEmpty("FIBRE_ACCESS_AUD", operatorConfig.FIBRE_ACCESS_AUD);
+function normalizedAccessConfig(accessConfig) {
+  const teamDomain = nonEmpty("Cloudflare Access team domain", accessConfig?.teamDomain);
+  const audience = nonEmpty("Cloudflare Access audience", accessConfig?.audience);
   let normalized;
   try { normalized = new URL(teamDomain.startsWith("https://") ? teamDomain : `https://${teamDomain}`).origin; }
-  catch { throw new TypeError("FIBRE_ACCESS_TEAM_DOMAIN must be a valid Cloudflare Access team domain"); }
-  if (!normalized.endsWith(".cloudflareaccess.com")) throw new TypeError("FIBRE_ACCESS_TEAM_DOMAIN must be a cloudflareaccess.com origin");
+  catch { throw new TypeError("Cloudflare Access team domain must be valid"); }
+  if (!normalized.endsWith(".cloudflareaccess.com")) throw new TypeError("Cloudflare Access team domain must be a cloudflareaccess.com origin");
   return Object.freeze({ teamDomain: normalized, audience });
 }
 
-export function resolveCloudflareAppConfig(appId, baseConfig, { environment, resourceState, operatorConfig = {} } = {}) {
+export function resolveCloudflareAppConfig(appId, baseConfig, { environment, resourceState, accessConfig = null } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (!CLOUDFLARE_APP_DEPLOY_ORDER.includes(appId)) throw new TypeError(`unsupported Cloudflare app ${appId}`);
   const config = structuredClone(baseConfig);
@@ -66,7 +70,7 @@ export function resolveCloudflareAppConfig(appId, baseConfig, { environment, res
     if (!database) throw new TypeError("admin-dashboard must bind ACTIVITY_LOG");
     database.database_name = activity.name;
     database.database_id = activity.id;
-    const access = accessConfig(operatorConfig);
+    const access = normalizedAccessConfig(accessConfig);
     config.vars.FIBRE_ACCESS_TEAM_DOMAIN = access.teamDomain;
     config.vars.FIBRE_ACCESS_AUD = access.audience;
   }
@@ -83,12 +87,12 @@ export async function loadCloudflareAppConfigs(repoRoot) {
   return configs;
 }
 
-export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, operatorConfig }) {
+export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig }) {
   const baseDir = resolve(repoRoot, ".fibre", "cloudflare", environment, "wrangler");
   await mkdir(baseDir, { recursive: true });
   const written = {};
   for (const appId of CLOUDFLARE_APP_DEPLOY_ORDER) {
-    const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, operatorConfig });
+    const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig });
     const path = resolve(baseDir, `${appId}.jsonc`);
     await writeFile(path, `${JSON.stringify(resolvedConfig, null, 2)}\n`, { mode: 0o600 });
     written[appId] = relative(repoRoot, path);
@@ -107,13 +111,37 @@ export function createWranglerAppDeploymentClient({ runner = runWrangler, cwd = 
   });
 }
 
-export async function deployCloudflareApps({ repoRoot, environment, operatorConfig, dryRun = false, client, sourceResolver = resolveCleanGitDeploymentSource } = {}) {
+export async function deployCloudflareApps({
+  repoRoot,
+  environment,
+  operatorConfig,
+  dryRun = false,
+  client,
+  accessClient = null,
+  sourceResolver = resolveCleanGitDeploymentSource,
+} = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (!client?.deploy) throw new TypeError("Cloudflare app deployment client is required");
   const source = await sourceResolver(repoRoot);
   const resourceState = await readCloudflareOperatorState({ repoRoot, environment: env });
   const configs = await loadCloudflareAppConfigs(repoRoot);
-  const written = await writeResolvedCloudflareAppConfigs({ repoRoot, environment: env, configs, resourceState, operatorConfig });
+  const cloudflareAccess = accessClient ?? createCloudflareAccessClient({
+    accountId: operatorConfig?.CLOUDFLARE_ACCOUNT_ID,
+    apiToken: operatorConfig?.CLOUDFLARE_API_TOKEN,
+  });
+  const access = await reconcileAdminAccess({
+    environment: env,
+    operatorConfig,
+    client: cloudflareAccess,
+    apply: !dryRun,
+  });
+  const written = await writeResolvedCloudflareAppConfigs({
+    repoRoot,
+    environment: env,
+    configs,
+    resourceState,
+    accessConfig: access,
+  });
   const deployments = [];
   for (const appId of CLOUDFLARE_APP_DEPLOY_ORDER) {
     const configPath = resolve(repoRoot, written[appId]);
@@ -129,6 +157,16 @@ export async function deployCloudflareApps({ repoRoot, environment, operatorConf
     sourceTreeClean: source.workingTreeClean,
     dryRun,
     recordedAt: new Date().toISOString(),
+    access: Object.freeze({
+      contract: access.contract,
+      domain: access.domain,
+      teamDomain: access.teamDomain,
+      audience: access.audience,
+      appId: access.appId,
+      policyId: access.policyId,
+      principalCount: access.principalCount,
+      changed: access.changed,
+    }),
     deployments: Object.freeze(deployments),
   });
   const evidencePath = resolve(repoRoot, ".fibre", "cloudflare", env, "apps-deployment.json");
@@ -158,6 +196,7 @@ async function main(argv) {
   const operatorConfig = parseOperatorEnv(await readFile(resolve(repoRoot, parsed.file), "utf8"));
   const client = createWranglerAppDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareApps({ repoRoot, environment: parsed.environment, operatorConfig, dryRun: parsed.dryRun, client });
+  console.log(`ACCESS ${result.evidence.access.domain} principals=${result.evidence.access.principalCount} changed=${result.evidence.access.changed}`);
   for (const deployment of result.evidence.deployments) console.log(`${parsed.dryRun ? "DRY" : "DEPLOY"} ${deployment.appId} https://${deployment.domain}`);
   console.log(`SOURCE ${result.evidence.sourceGitSha}`);
   console.log(`EVIDENCE ${result.evidencePath}`);
