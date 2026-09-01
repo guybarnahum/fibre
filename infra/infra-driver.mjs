@@ -1,6 +1,11 @@
 import { assertInfraNonEmpty, assertInfraPlainObject } from "./internal.mjs";
 import { assertSchedulerPort, SCHEDULER_VERSION } from "./scheduler.mjs";
 import {
+  ACTIVITY_RECORD_VERSION,
+  TELEMETRY_VERSION,
+  assertTelemetryPort,
+} from "./telemetry.mjs";
+import {
   FIBRE_BIRTH_STATE_REQUIREMENTS,
   FIBRE_WORLD_STATE_REQUIREMENTS,
   assertTransactionalStatePort,
@@ -8,9 +13,11 @@ import {
 } from "./transactional-state.mjs";
 
 export {
+  ACTIVITY_RECORD_VERSION,
   FIBRE_BIRTH_STATE_REQUIREMENTS,
   FIBRE_WORLD_STATE_REQUIREMENTS,
   SCHEDULER_VERSION,
+  TELEMETRY_VERSION,
   requireTransactionalStateGuarantees,
 };
 
@@ -66,6 +73,7 @@ export function assertInfraDriver(driver, { required = [] } = {}) {
   }
   if (declared.has("state")) assertTransactionalStatePort(driver.state);
   if (declared.has("scheduler")) assertSchedulerPort(driver.scheduler);
+  if (declared.has("telemetry")) assertTelemetryPort(driver.telemetry);
   for (const [capability, methods] of Object.entries(REQUIRED_METHODS)) {
     if (!declared.has(capability)) continue;
     assertInfraPlainObject(`infra driver.${capability}`, driver[capability]);
