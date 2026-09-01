@@ -4,10 +4,12 @@ import {
 } from "../../infra-driver.mjs";
 import { createLocalSchedulerPort } from "./scheduler.mjs";
 import { createSqliteTransactionalStatePort } from "./sqlite-state.mjs";
+import { createLocalActivityTelemetryPort } from "./telemetry.mjs";
 
 export function createLocalInfraDriver({
   stateScopes = {},
   schedulerScopes = {},
+  telemetry = false,
   busyTimeoutMs = 5_000,
 } = {}) {
   const driver = {
@@ -26,6 +28,12 @@ export function createLocalInfraDriver({
     driver.scheduler = createLocalSchedulerPort({ scopes: schedulerScopes });
     driver.capabilities.push("scheduler");
   }
+  if (telemetry === true) {
+    driver.telemetry = createLocalActivityTelemetryPort();
+    driver.capabilities.push("telemetry");
+  } else if (telemetry !== false) {
+    throw new TypeError("local infra telemetry must be true or false");
+  }
   return Object.freeze(assertInfraDriver(driver));
 }
 
@@ -35,3 +43,4 @@ export {
   createSqliteTransactionalStatePort,
 } from "./sqlite-state.mjs";
 export { createLocalSchedulerPort } from "./scheduler.mjs";
+export { createLocalActivityTelemetryPort } from "./telemetry.mjs";
