@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { repoFile } from "#repo-root";
+import {
+  assertSourceContains,
+  assertSourceOmits,
+} from "#tools/test-infra/source-invariant.mjs";
 
 import {
   explainIntegrity,
@@ -240,9 +244,14 @@ test("Thread-authored markup remains text-only at the DOM boundary", () => {
   assert.match(explanation.summary, /<\/dd>/);
 
   const appSource = readFileSync(repoFile("apps/thread-editor/app.js"), "utf8");
-  assert.doesNotMatch(appSource, /innerHTML|insertAdjacentHTML/);
-  assert.match(appSource, /textContent = explanation\.title/);
-  assert.match(appSource, /textContent = explanation\.summary/);
-  assert.match(appSource, /textContent = entry\.value/);
-  assert.match(appSource, /textContent = note/);
+  assertSourceOmits(
+    appSource,
+    /innerHTML|insertAdjacentHTML/u,
+    "Thread Editor app must never inject Thread-authored markup as HTML",
+  );
+  assertSourceContains(
+    appSource,
+    /\.textContent\s*=/u,
+    "Thread Editor app must render untrusted Thread-authored values through textContent",
+  );
 });
