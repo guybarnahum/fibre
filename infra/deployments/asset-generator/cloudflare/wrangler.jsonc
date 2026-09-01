@@ -11,12 +11,10 @@
     }
   ],
   "vars": {
-    "FIBRE_DEPLOYMENT_ENV": "cloudflare",
-    "C2PA_SIGNER_ID": "fibre-c2pa-production-v1",
-    "C2PA_TRUST_POLICY": "c2pa_trust_list"
+    "FIBRE_DEPLOYMENT_ENV": "cloudflare"
   },
   "secrets": {
-    "required": ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]
+    "required": ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]
   },
   "r2_buckets": [
     {
