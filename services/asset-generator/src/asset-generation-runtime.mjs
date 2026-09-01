@@ -60,7 +60,7 @@ function activityIdentity(job, supplied = {}) {
   return Object.freeze({
     requestId: supplied.requestId ?? context.requestId ?? null,
     genesisId: supplied.genesisId ?? context.genesisId ?? null,
-    threadId: supplied.threadId ?? context.threadId ?? context.entityRef ?? null,
+    threadId: supplied.threadId ?? context.threadId ?? null,
   });
 }
 
