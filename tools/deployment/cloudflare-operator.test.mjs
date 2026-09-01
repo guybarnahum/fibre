@@ -80,14 +80,34 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
   const second = await provisionCloudflareResources({ repoRoot, environment: "staging", client, sourceGitSha: SOURCE_SHA, now: () => "2026-08-31T20:21:00.000Z" });
 
   assert.deepEqual(client.state.creates.filter(([kind]) => kind !== "d1-migrate"), createdOnce.filter(([kind]) => kind !== "d1-migrate"));
-  assert.equal(client.state.creates.filter(([kind]) => kind === "d1-migrate").length, 4);
+  assert.deepEqual(client.state.creates.filter(([kind]) => kind === "d1-migrate"), [
+    ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
+    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
+    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
+    ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
+    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
+    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
+  ]);
   assert.equal(first.resources.d1[0].id, second.resources.d1[0].id);
   assert.equal(first.resources.d1[1].id, second.resources.d1[1].id);
+  assert.deepEqual(first.resources.d1.map(({ binding, schema, migrations }) => ({ binding, schema, migrations })), [
+    {
+      binding: "PRESENTATION_CATALOG",
+      schema: "0001_fibre_catalog.sql",
+      migrations: ["0001_fibre_catalog.sql"],
+    },
+    {
+      binding: "ACTIVITY_LOG",
+      schema: "0002_admin_entitlements.sql",
+      migrations: ["0001_activity_log.sql", "0002_admin_entitlements.sql"],
+    },
+  ]);
   assert.deepEqual(createdOnce, [
     ["d1", "fibre-presentation-catalog-staging"],
     ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
     ["d1", "fibre-activity-log-staging"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
+    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
     ["r2", "fibre-presentation-assets-staging"],
     ["queue", "fibre-asset-completions-staging"],
     ["queue", "fibre-asset-completions-dlq-staging"],
