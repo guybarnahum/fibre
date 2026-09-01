@@ -4,17 +4,12 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { repoFile } from "#repo-root";
 
-const relocatedEditorPath = fileURLToPath(
-  repoFile("tools/editor/serve-thread-editor.mjs"),
-);
+const relocatedEditorPath = fileURLToPath(repoFile("tools/editor/serve-thread-editor.mjs"));
 
 async function waitForEvent(child, expectedEvent, stderr, timeoutMs = 10_000) {
   return await new Promise((resolvePromise, reject) => {
     let buffer = "";
-    const timeout = setTimeout(
-      () => finish(new Error(`Timed out waiting for ${expectedEvent}: ${stderr()}`)),
-      timeoutMs,
-    );
+    const timeout = setTimeout(() => finish(new Error(`Timed out waiting for ${expectedEvent}: ${stderr()}`)), timeoutMs);
     const onData = (chunk) => {
       buffer += chunk.toString("utf8");
       while (buffer.includes("\n")) {
@@ -27,11 +22,7 @@ async function waitForEvent(child, expectedEvent, stderr, timeoutMs = 10_000) {
         } catch {}
       }
     };
-    const onExit = (code, signal) => {
-      finish(new Error(
-        `Process exited before ${expectedEvent}: code=${code} signal=${signal} ${stderr()}`,
-      ));
-    };
+    const onExit = (code, signal) => finish(new Error(`Process exited before ${expectedEvent}: code=${code} signal=${signal} ${stderr()}`));
     const finish = (error, value) => {
       clearTimeout(timeout);
       child.stdout.off("data", onData);
@@ -47,10 +38,7 @@ async function waitForEvent(child, expectedEvent, stderr, timeoutMs = 10_000) {
 async function stopProcess(child, stderr) {
   if (child.exitCode !== null) return;
   const exited = new Promise((resolvePromise, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error(`Thread editor did not stop: ${stderr()}`)),
-      10_000,
-    );
+    const timeout = setTimeout(() => reject(new Error(`Thread editor did not stop: ${stderr()}`)), 10_000);
     child.once("exit", (code, signal) => {
       clearTimeout(timeout);
       if (code === 0 || signal === "SIGTERM") resolvePromise();
@@ -61,35 +49,29 @@ async function stopProcess(child, stderr) {
   await exited;
 }
 
-test("thread editor starts when invoked through the relocated M1 symlink", async () => {
+test("modern Thread Editor entrypoint starts with server-side Fibre private access", async () => {
   let stderrText = "";
-  const child = spawn(
-    process.execPath,
-    ["--disable-warning=ExperimentalWarning", relocatedEditorPath],
-    {
-      env: {
-        ...process.env,
-        FIBRE_EDITOR_HOST: "127.0.0.1",
-        FIBRE_EDITOR_PORT: "0",
-        FIBRE_WORLD_URL: "http://127.0.0.1:1",
-        FIBRE_EDITOR_ACCESS_TOKEN: "entrypoint-regression-test",
-      },
-      stdio: ["ignore", "pipe", "pipe"],
+  const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", relocatedEditorPath], {
+    env: {
+      ...process.env,
+      FIBRE_EDITOR_HOST: "127.0.0.1",
+      FIBRE_EDITOR_PORT: "0",
+      FIBRE_WORLD_URL: "http://127.0.0.1:1",
+      FIBRE_PRIVATE_TOKEN: "entrypoint-private-token-123456",
+      FIBRE_EDITOR_ACCESS_TOKEN: "entrypoint-regression-test",
     },
-  );
-  child.stderr.on("data", (chunk) => {
-    stderrText += chunk.toString("utf8");
+    stdio: ["ignore", "pipe", "pipe"],
   });
+  child.stderr.on("data", (chunk) => { stderrText += chunk.toString("utf8"); });
 
   try {
-    const ready = await waitForEvent(
-      child,
-      "thread-editor-listening",
-      () => stderrText,
-    );
+    const ready = await waitForEvent(child, "thread-editor-listening", () => stderrText);
     assert.equal(ready.event, "thread-editor-listening");
     assert.equal(ready.host, "127.0.0.1");
+    assert.equal(ready.mode, "modern-thread-inspection");
+    assert.equal(ready.worldInspection, true);
     assert.ok(Number.isSafeInteger(ready.port) && ready.port > 0);
+    assert.equal(JSON.stringify(ready).includes("entrypoint-private-token"), false);
   } finally {
     await stopProcess(child, () => stderrText);
   }
