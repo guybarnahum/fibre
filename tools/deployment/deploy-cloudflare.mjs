@@ -14,6 +14,10 @@ import {
   createWranglerProvisionClient,
   provisionCloudflareResources,
 } from "./provision-cloudflare.mjs";
+import {
+  createCloudflareWorkerDomainClient,
+  ensureCloudflareWorkerDomain,
+} from "./cloudflare-worker-domains.mjs";
 
 export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
   "asset-generator",
@@ -23,6 +27,7 @@ export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
 ]);
 
 const HEALTH_RETRY_ATTEMPTS = 20;
+const CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS = 60;
 const HEALTH_RETRY_DELAY_MS = 1500;
 const DEFAULT_C2PA_SIGNER_ID = "fibre-c2pa-production-v1";
 const DEFAULT_C2PA_TRUST_POLICY = "c2pa_trust_list";
@@ -99,8 +104,20 @@ async function fetchJson(fetchImpl, url) {
   return payload;
 }
 
-export function createWranglerDeploymentClient({ runner = runWrangler, cwd = process.cwd(), fetchImpl = globalThis.fetch } = {}) {
+export function createWranglerDeploymentClient({
+  runner = runWrangler,
+  cwd = process.cwd(),
+  fetchImpl = globalThis.fetch,
+  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
+  apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  workerDomainClient = null,
+} = {}) {
   if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl must be a function");
+  let domains = workerDomainClient;
+  function domainClient() {
+    domains ??= createCloudflareWorkerDomainClient({ accountId, apiToken, fetchImpl });
+    return domains;
+  }
   return Object.freeze({
     async assertAuthenticated() {
       const { stdout } = await runner(["whoami", "--json"], { cwd });
@@ -116,14 +133,18 @@ export function createWranglerDeploymentClient({ runner = runWrangler, cwd = pro
       const payload = await fetchJson(fetchImpl, `${nonEmpty("C2PA signer URL", baseUrl).replace(/\/$/u, "")}/healthz`);
       return assertProductionSignerHealth(payload, { signerId, trustPolicy });
     },
-    async deployService({ configPath }) {
+    async deployService({ configPath, workerName, resolvedConfig = null }) {
       const result = await runner([
         "deploy",
         "--config", configPath,
         "--experimental-provision=false",
         "--experimental-auto-create=false",
       ], { cwd });
-      return Object.freeze({ ...result, output: `${result.stdout ?? ""}\n${result.stderr ?? ""}` });
+      const customRoute = (resolvedConfig?.routes ?? []).find((route) => route?.custom_domain === true);
+      const customDomain = customRoute?.pattern
+        ? await ensureCloudflareWorkerDomain({ client: domainClient(), hostname: customRoute.pattern, service: workerName })
+        : null;
+      return Object.freeze({ ...result, customDomain, output: `${result.stdout ?? ""}\n${result.stderr ?? ""}` });
     },
     async checkServiceHealth({ serviceId, baseUrl }) {
       return assertHealthPayload(await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/healthz`), serviceId);
@@ -217,10 +238,22 @@ export async function deployCloudflareStack({
   for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const resolved = resolvedConfigs[serviceId];
-    const deployed = await client.deployService({ serviceId, workerName, configPath: resolved.path });
+    const deployed = await client.deployService({
+      serviceId,
+      workerName,
+      configPath: resolved.path,
+      resolvedConfig: resolved.config,
+    });
     const baseUrl = healthBaseUrlForDeployment({ serviceId, resolvedConfig: resolved.config, deploymentOutput: deployed.output });
-    const health = await retryServiceHealth({ client, serviceId, baseUrl, wait });
-    deployments.push(Object.freeze({ serviceId, workerName, baseUrl, health }));
+    const customDomain = deployed.customDomain ?? null;
+    const health = await retryServiceHealth({
+      client,
+      serviceId,
+      baseUrl,
+      attempts: customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS,
+      wait,
+    });
+    deployments.push(Object.freeze({ serviceId, workerName, baseUrl, health, customDomain }));
   }
 
   const presentation = deployments.find((item) => item.serviceId === "thread-presentation");

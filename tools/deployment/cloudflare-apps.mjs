@@ -17,6 +17,10 @@ import {
   inspectAdminAccess,
 } from "./cloudflare-access.mjs";
 import { resolveCleanGitDeploymentSource } from "./deploy-cloudflare-evidence.mjs";
+import {
+  createCloudflareWorkerDomainClient,
+  ensureCloudflareWorkerDomain,
+} from "./cloudflare-worker-domains.mjs";
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 
 export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.3";
@@ -156,13 +160,34 @@ export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment,
   return Object.freeze(written);
 }
 
-export function createWranglerAppDeploymentClient({ runner = runWrangler, cwd = process.cwd() } = {}) {
+export function createWranglerAppDeploymentClient({
+  runner = runWrangler,
+  cwd = process.cwd(),
+  fetchImpl = globalThis.fetch,
+  accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
+  apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  workerDomainClient = null,
+} = {}) {
+  let domains = workerDomainClient;
+  function domainClient() {
+    domains ??= createCloudflareWorkerDomainClient({ accountId, apiToken, fetchImpl });
+    return domains;
+  }
   return Object.freeze({
-    async deploy({ configPath, dryRun = false }) {
+    async deploy({ configPath, dryRun = false, resolvedConfig = null }) {
       const args = ["deploy"];
       if (dryRun) args.push("--dry-run");
       args.push("--config", configPath, "--experimental-provision=false", "--experimental-auto-create=false");
-      return runner(args, { cwd });
+      const result = await runner(args, { cwd });
+      const customRoute = (resolvedConfig?.routes ?? []).find((route) => route?.custom_domain === true);
+      if (!dryRun && customRoute?.pattern) {
+        await ensureCloudflareWorkerDomain({
+          client: domainClient(),
+          hostname: customRoute.pattern,
+          service: resolvedConfig.name,
+        });
+      }
+      return result;
     },
   });
 }
@@ -196,8 +221,8 @@ export async function deployCloudflareApps({
   const deployments = [];
   for (const appId of CLOUDFLARE_APP_DEPLOY_ORDER) {
     const configPath = resolve(repoRoot, written[appId]);
-    await client.deploy({ appId, configPath, dryRun });
     const resolved = parseJsonc(await readFile(configPath, "utf8"), configPath);
+    await client.deploy({ appId, configPath, dryRun, resolvedConfig: resolved });
     const route = (resolved.routes ?? []).find((item) => item.custom_domain === true);
     deployments.push(Object.freeze({ appId, workerName: resolved.name, domain: route?.pattern ?? null }));
   }
@@ -244,7 +269,11 @@ async function main(argv) {
   const parsed = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
   const operatorConfig = parseOperatorEnv(await readFile(resolve(repoRoot, parsed.file), "utf8"));
-  const client = createWranglerAppDeploymentClient({ cwd: repoRoot });
+  const client = createWranglerAppDeploymentClient({
+    cwd: repoRoot,
+    accountId: operatorConfig.CLOUDFLARE_ACCOUNT_ID,
+    apiToken: operatorConfig.CLOUDFLARE_API_TOKEN,
+  });
   const result = await deployCloudflareApps({ repoRoot, environment: parsed.environment, operatorConfig, dryRun: parsed.dryRun, client });
   console.log(`ACCESS ${result.evidence.access.domain} policies=${result.evidence.access.policyCount} allow=${result.evidence.access.allowPolicyCount}`);
   for (const deployment of result.evidence.deployments) console.log(`${parsed.dryRun ? "DRY" : "DEPLOY"} ${deployment.appId} https://${deployment.domain}`);
