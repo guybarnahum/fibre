@@ -10,11 +10,24 @@ const COMPONENTS = Object.freeze([
 ]);
 function json(status, payload, cache = "public, max-age=15, stale-while-revalidate=30") { return new Response(JSON.stringify(payload), { status, headers:{ "Content-Type":"application/json; charset=utf-8", "Cache-Control":cache, "X-Content-Type-Options":"nosniff", "Referrer-Policy":"no-referrer" } }); }
 function probeTimeout(name, value, fallback) { const timeout = value ?? fallback; if (!Number.isInteger(timeout) || timeout < 1 || timeout > MAX_PROBE_TIMEOUT_MS) throw new TypeError(`${name} must be an integer between 1 and ${MAX_PROBE_TIMEOUT_MS}`); return timeout; }
+async function withProbeTimeout(operation, timeoutMs) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error("probe_timeout");
+      controller.abort(error);
+      reject(error);
+    }, timeoutMs);
+  });
+  try { return await Promise.race([Promise.resolve().then(() => operation(controller.signal)), timeout]); }
+  finally { clearTimeout(timer); }
+}
 async function probeBinding(env, component, timeoutMs) {
   const binding = env[component.binding];
   if (!binding?.fetch) return { key:component.key, name:component.name, description:component.description, status:"outage" };
   try {
-    const response = await binding.fetch(new Request("https://fibre.internal/healthz", { headers:{ Accept:"application/json" }, signal:AbortSignal.timeout(timeoutMs) }));
+    const response = await withProbeTimeout((signal) => binding.fetch(new Request("https://fibre.internal/healthz", { headers:{ Accept:"application/json" }, signal })), timeoutMs);
     const payload = await response.json();
     const status = response.ok && payload?.ok === true && payload?.service === component.expected ? "operational" : "degraded";
     return { key:component.key, name:component.name, description:component.description, status };
@@ -23,7 +36,7 @@ async function probeBinding(env, component, timeoutMs) {
 async function probeViewer(env, fetchImpl, timeoutMs) {
   try {
     const origin = new URL(env.VIEWER_ORIGIN);
-    const response = await fetchImpl(origin, { redirect:"follow", signal:AbortSignal.timeout(timeoutMs) });
+    const response = await withProbeTimeout((signal) => fetchImpl(origin, { redirect:"follow", signal }), timeoutMs);
     return { key:"web", name:"Website", description:"insidefibre.com public experience", status:response.ok ? "operational" : "degraded" };
   } catch { return { key:"web", name:"Website", description:"insidefibre.com public experience", status:"outage" }; }
 }

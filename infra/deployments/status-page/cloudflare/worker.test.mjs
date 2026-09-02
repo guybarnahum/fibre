@@ -57,15 +57,7 @@ test("viewer failure degrades public status without changing runtime component h
 });
 
 test("a hanging service binding is bounded and reported as an outage", async () => {
-  const hangingWorld = {
-    fetch(request) {
-      return new Promise((resolve, reject) => {
-        const abort = () => reject(request.signal.reason ?? new Error("aborted"));
-        if (request.signal.aborted) abort();
-        else request.signal.addEventListener("abort", abort, { once: true });
-      });
-    },
-  };
+  const hangingWorld = { fetch() { return new Promise(() => {}); } };
   const started = Date.now();
   const result = await currentPublicStatus(environment({ WORLD_KERNEL: hangingWorld }), {
     fetchImpl: viewerOk,
