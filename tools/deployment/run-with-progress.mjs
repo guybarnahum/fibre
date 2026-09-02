@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 const DEFAULT_PROGRESS_INTERVAL_MS = 5_000;
 const MIN_PROGRESS_INTERVAL_MS = 100;
 const MAX_PROGRESS_INTERVAL_MS = 60_000;
+const CLEAR_LINE = "\r\u001b[2K";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -36,7 +37,9 @@ export async function runWithProgress({
   intervalMs = progressInterval(process.env.FIBRE_PROGRESS_INTERVAL_MS),
   spawnImpl = spawn,
   now = Date.now,
-  write = (line) => process.stdout.write(line),
+  interactive = process.stdout.isTTY === true,
+  write = (text) => process.stdout.write(text),
+  writeError = (text) => process.stderr.write(text),
 } = {}) {
   const step = nonEmpty("progress label", label);
   const executable = nonEmpty("progress command", command);
@@ -46,19 +49,53 @@ export async function runWithProgress({
   }
   if (typeof spawnImpl !== "function") throw new TypeError("spawnImpl must be a function");
   if (typeof now !== "function") throw new TypeError("now must be a function");
+  if (typeof interactive !== "boolean") throw new TypeError("interactive must be a boolean");
   if (typeof write !== "function") throw new TypeError("write must be a function");
+  if (typeof writeError !== "function") throw new TypeError("writeError must be a function");
 
   const startedAt = now();
-  write(`PROGRESS ${step} started\n`);
 
   return await new Promise((resolvePromise, rejectPromise) => {
     let settled = false;
+    let transientVisible = false;
+    let atLineBoundary = true;
+    let currentStatus = `PROGRESS ${step} started`;
+
+    const clearTransient = () => {
+      if (!interactive || !transientVisible) return;
+      write(CLEAR_LINE);
+      transientVisible = false;
+    };
+    const renderTransient = () => {
+      if (!interactive) {
+        write(`${currentStatus}\n`);
+        return;
+      }
+      if (!atLineBoundary) return;
+      write(`${CLEAR_LINE}${currentStatus}`);
+      transientVisible = true;
+    };
+    const forward = (target) => (chunk) => {
+      clearTransient();
+      const text = chunk.toString();
+      target(text);
+      atLineBoundary = /(?:\r?\n)$/u.test(text);
+      if (!settled && atLineBoundary) renderTransient();
+    };
+
+    renderTransient();
     const child = spawnImpl(executable, args, {
       env: process.env,
-      stdio: "inherit",
+      stdio: interactive ? ["inherit", "pipe", "pipe"] : "inherit",
     });
+    if (interactive) {
+      child.stdout?.on("data", forward(write));
+      child.stderr?.on("data", forward(writeError));
+    }
+
     const timer = setInterval(() => {
-      write(`PROGRESS ${step} still working (${elapsedLabel(now() - startedAt)})\n`);
+      currentStatus = `PROGRESS ${step} still working (${elapsedLabel(now() - startedAt)})`;
+      renderTransient();
     }, intervalMs);
     timer.unref?.();
 
@@ -66,6 +103,8 @@ export async function runWithProgress({
       if (settled) return;
       settled = true;
       clearInterval(timer);
+      clearTransient();
+      if (interactive && !atLineBoundary) write("\n");
       const elapsed = elapsedLabel(now() - startedAt);
       if (error === null && code === 0) {
         write(`PROGRESS ${step} completed (${elapsed})\n`);
