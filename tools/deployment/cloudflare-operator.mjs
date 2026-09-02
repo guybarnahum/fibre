@@ -3,6 +3,8 @@ import { dirname, relative, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
+
 export const CLOUDFLARE_WRANGLER_VERSION = "4.126.0";
 export const CLOUDFLARE_OPERATOR_STATE_VERSION = "fibre-cloudflare-operator-state-v0.1";
 export const CLOUDFLARE_ENVIRONMENTS = Object.freeze(["staging", "production"]);
@@ -300,6 +302,11 @@ export async function writeResolvedWranglerConfigs({ repoRoot, environment, conf
       runtimeConfig: runtimeConfigByService[serviceId] ?? {},
     });
     const path = resolve(baseDir, `${serviceId}.jsonc`);
+    relocateWranglerMain(resolvedConfig, {
+      repoRoot,
+      sourceConfigPath: CLOUDFLARE_SERVICE_CONFIGS[serviceId],
+      generatedConfigPath: path,
+    });
     await writeFile(path, `${JSON.stringify(resolvedConfig, null, 2)}\n`, { mode: 0o600 });
     written[serviceId] = relative(repoRoot, path);
   }
