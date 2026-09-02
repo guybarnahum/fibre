@@ -171,7 +171,7 @@ export function createCloudflareResourcePlan(configs, { environment }) {
   const activityBaseName = sharedD1Database(configs, "ACTIVITY_LOG", "Activity Log D1 database");
   const completionQueue = requireBinding(asset, ["queues", "producers", 0, "queue"], "Asset completion queue");
   const presentationQueue = requireBinding(presentation, ["queues", "consumers", 0, "queue"], "Presentation completion queue");
-  if (completionQueue !== presentationQueue) throw new TypeError("Asset Generator producer and Thread Presentation consumer must declare the same completion queue");
+  if (completionQueue !== presentationQueue) throw new TypeError("Asset Generator producer and Thread Presentation must declare the same completion queue");
   const completionDlq = requireBinding(presentation, ["queues", "consumers", 0, "dead_letter_queue"], "Asset completion DLQ");
   const assetWorkflow = requireBinding(asset, ["workflows", 0, "name"], "Asset Generation Workflow");
   const presentationWorkflow = requireBinding(presentation, ["workflows", 0, "name"], "Presentation Workflow binding");
@@ -240,9 +240,9 @@ export function resolveWranglerConfig(baseConfig, { environment, resourceState, 
   }
   for (const service of config.services ?? []) service.service = environmentResourceName(service.service, env);
   for (const route of config.routes ?? []) route.pattern = environmentDomain(route.pattern, env);
-  if (config.vars?.VIEWER_ORIGIN && env === "staging") config.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
   config.vars ??= {};
   for (const [key, value] of Object.entries(runtimeConfig)) config.vars[key] = value;
+  if (config.vars?.VIEWER_ORIGIN && env === "staging") config.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
   return config;
 }
 
