@@ -57,13 +57,28 @@ function deploymentProviderDetail(error) {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
+function deploymentErrorDetail(error) {
+  const details = [];
+  const seen = new Set();
+  let current = error;
+  while (current !== null && current !== undefined && !seen.has(current)) {
+    if ((typeof current === "object" || typeof current === "function")) seen.add(current);
+    const detail = deploymentProviderDetail(current)
+      ?? (current instanceof Error ? current.message : String(current));
+    if (typeof detail === "string" && detail.trim() !== "" && details.at(-1) !== detail.trim()) {
+      details.push(detail.trim());
+    }
+    current = current?.cause ?? null;
+  }
+  return details.join("\nCaused by: ");
+}
+
 export function formatCloudflareDeploymentFailure(error, { environment } = {}) {
   const env = typeof environment === "string" && environment.trim() !== ""
     ? environment.trim()
     : "requested environment";
   const serviceId = deploymentService(error);
-  const detail = deploymentProviderDetail(error)
-    ?? (error instanceof Error ? error.message : String(error));
+  const detail = deploymentErrorDetail(error);
   const target = serviceId ? ` while deploying ${serviceId}` : "";
   return `Cloudflare deployment failed for ${env}${target}.\n${detail}\nRetry: npm run cloud:deploy -- --env ${env}`;
 }
