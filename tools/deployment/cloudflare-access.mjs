@@ -1,6 +1,6 @@
 import { normalizeCloudflareEnvironment } from "./cloudflare-operator.mjs";
 
-export const CLOUDFLARE_ACCESS_CONFIGURATION_VERSION = "fibre-cloudflare-access-configuration-v0.2";
+export const CLOUDFLARE_ACCESS_CONFIGURATION_VERSION = "fibre-cloudflare-access-configuration-v0.3";
 
 const CLOUDFLARE_API_ORIGIN = "https://api.cloudflare.com/client/v4";
 
@@ -69,6 +69,18 @@ function asArray(name, value) {
   return value;
 }
 
+function includesEveryone(policy) {
+  return Array.isArray(policy?.include) && policy.include.some((selector) => (
+    selector !== null
+    && typeof selector === "object"
+    && Object.prototype.hasOwnProperty.call(selector, "everyone")
+  ));
+}
+
+function isUnrestrictedPolicy(policy) {
+  return (policy?.decision === "allow" || policy?.decision === "bypass") && includesEveryone(policy);
+}
+
 export async function inspectAdminAccess({ environment, client } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (!client) throw new TypeError("Cloudflare Access client is required");
@@ -86,6 +98,9 @@ export async function inspectAdminAccess({ environment, client } = {}) {
   const audience = nonEmpty("Cloudflare Access application audience", application.aud);
 
   const policies = asArray("Cloudflare Access application policies", await client.listPolicies(appId));
+  if (policies.some(isUnrestrictedPolicy)) {
+    throw new Error(`Cloudflare Access application for ${domain} must not contain an unrestricted Everyone allow or bypass policy`);
+  }
   const allowPolicies = policies.filter((policy) => policy?.decision === "allow");
   if (allowPolicies.length === 0) {
     throw new Error(`Cloudflare Access application for ${domain} must have at least one allow policy so authenticated users can reach the Fibre D1 authorization gate`);

@@ -24,7 +24,6 @@ test("Admin Access inspection discovers JWT verification configuration without m
       calls.push(["policies", appId]);
       return [
         { id: "policy-allow", decision: "allow", include: [{ email_domain: { domain: "example.com" } }] },
-        { id: "policy-bypass", decision: "bypass", include: [{ everyone: {} }] },
       ];
     },
   };
@@ -34,7 +33,7 @@ test("Admin Access inspection discovers JWT verification configuration without m
   assert.equal(result.teamDomain, "https://fibre.cloudflareaccess.com");
   assert.equal(result.audience, "aud-staging");
   assert.equal(result.appId, "app-staging");
-  assert.equal(result.policyCount, 2);
+  assert.equal(result.policyCount, 1);
   assert.equal(result.allowPolicyCount, 1);
   assert.deepEqual(calls, [
     ["organization"],
@@ -77,6 +76,43 @@ test("Admin Access inspection requires one self-hosted application and an allow 
       },
     }),
     /at least one allow policy/u,
+  );
+});
+
+test("Admin Access inspection rejects unrestricted Everyone allow and bypass policies", async () => {
+  const base = {
+    async getOrganization() { return { auth_domain: "fibre.cloudflareaccess.com" }; },
+    async listApplications() { return [{ id: "app", aud: "aud", type: "self_hosted" }]; },
+  };
+  const unrestricted = /must not contain an unrestricted Everyone allow or bypass policy/u;
+
+  await assert.rejects(
+    inspectAdminAccess({
+      environment: "staging",
+      client: {
+        ...base,
+        async listPolicies() {
+          return [{ id: "unsafe-everyone", decision: "allow", include: [{ everyone: {} }] }];
+        },
+      },
+    }),
+    unrestricted,
+  );
+
+  await assert.rejects(
+    inspectAdminAccess({
+      environment: "staging",
+      client: {
+        ...base,
+        async listPolicies() {
+          return [
+            { id: "restricted-allow", decision: "allow", include: [{ email_domain: { domain: "example.com" } }] },
+            { id: "unsafe-bypass", decision: "bypass", include: [{ everyone: {} }] },
+          ];
+        },
+      },
+    }),
+    unrestricted,
   );
 });
 
