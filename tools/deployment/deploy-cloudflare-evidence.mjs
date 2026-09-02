@@ -1,6 +1,6 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
@@ -18,6 +18,7 @@ import { repoRootFrom } from "./cloudflare-operator.mjs";
 const execFile = promisify(execFileCallback);
 export const CLOUDFLARE_DEPLOYMENT_EVIDENCE_VERSION = "fibre-cloudflare-deployment-evidence-v1";
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
+const ANSI_ESCAPE_PATTERN = /\u001b\[[0-9;]*m/gu;
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -28,6 +29,43 @@ function gitSha(value) {
   const normalized = nonEmpty("Git SHA", value).toLowerCase();
   if (!GIT_SHA_PATTERN.test(normalized)) throw new TypeError("Git SHA must be a full 40-character hexadecimal commit SHA");
   return normalized;
+}
+
+function deploymentService(error) {
+  const args = Array.isArray(error?.args) ? error.args : [];
+  const configIndex = args.indexOf("--config");
+  if (configIndex < 0 || typeof args[configIndex + 1] !== "string") return null;
+  const name = basename(args[configIndex + 1], ".jsonc").trim();
+  return name || null;
+}
+
+function deploymentProviderDetail(error) {
+  const raw = [error?.stderr, error?.stdout]
+    .filter((value) => typeof value === "string" && value.trim() !== "")
+    .join("\n")
+    .replace(ANSI_ESCAPE_PATTERN, "");
+  if (!raw.trim()) return null;
+  const lines = raw
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^⛅️?\s*wrangler\b/iu.test(line))
+    .filter((line) => !/^─+$/u.test(line))
+    .filter((line) => !/^If you think this is a bug/iu.test(line))
+    .filter((line) => !/github\.com\/cloudflare\/workers-sdk\/issues/iu.test(line))
+    .filter((line) => !/^🪵?\s*Logs were written to/iu.test(line));
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
+export function formatCloudflareDeploymentFailure(error, { environment } = {}) {
+  const env = typeof environment === "string" && environment.trim() !== ""
+    ? environment.trim()
+    : "requested environment";
+  const serviceId = deploymentService(error);
+  const detail = deploymentProviderDetail(error)
+    ?? (error instanceof Error ? error.message : String(error));
+  const target = serviceId ? ` while deploying ${serviceId}` : "";
+  return `Cloudflare deployment failed for ${env}${target}.\n${detail}\nRetry: npm run cloud:deploy -- --env ${env}`;
 }
 
 export async function resolveCleanGitDeploymentSource(repoRoot) {
@@ -134,8 +172,9 @@ async function main() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const { environment } = parseArgs(process.argv.slice(2));
   main().catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
+    console.error(formatCloudflareDeploymentFailure(error, { environment }));
     process.exitCode = 1;
   });
 }
