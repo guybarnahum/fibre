@@ -13,7 +13,7 @@ const fixture = JSON.parse(
   readFileSync(repoFile("fixtures/threads/mina.thread.json"), "utf8"),
 );
 const kernelProcessPath = fileURLToPath(new URL("./m1-demo-world-kernel.mjs", import.meta.url));
-const editorProcessPath = fileURLToPath(repoFile("tools/editor/serve-thread-editor.mjs"));
+const editorProcessPath = fileURLToPath(new URL("./m1-demo-thread-editor.mjs", import.meta.url));
 const OBLIGATION = fixture.currentState.unresolvedIntentions[0];
 
 function token(label) {
