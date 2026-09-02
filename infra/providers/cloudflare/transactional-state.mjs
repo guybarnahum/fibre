@@ -12,6 +12,11 @@ import {
   assertTransactionalStateSession,
 } from "../../transactional-state.mjs";
 
+const FIBRE_SQLITE_META_TABLE = "_fibre_sqlite_meta";
+const USER_VERSION_KEY = "user_version";
+const USER_VERSION_READ_PATTERN = /^\s*PRAGMA\s+user_version\s*;?\s*$/iu;
+const USER_VERSION_WRITE_PATTERN = /^\s*PRAGMA\s+user_version\s*=\s*(\d+)\s*;?\s*$/iu;
+
 function assertDurableObjectStorage(storage, scopeId) {
   if (!storage || typeof storage !== "object") {
     throw new TypeError(`Cloudflare transactional state scope ${scopeId} requires Durable Object storage`);
@@ -70,10 +75,72 @@ function normalizeRows(cursor) {
   return cursor.toArray().map((row) => Object.fromEntries(Object.entries(row)));
 }
 
+function syntheticCursor(rows, { rowsWritten = 0 } = {}) {
+  const snapshot = rows.map((row) => Object.freeze({ ...row }));
+  return Object.freeze({
+    rowsWritten,
+    toArray() { return snapshot.map((row) => ({ ...row })); },
+  });
+}
+
 function runResult(cursor) {
   return {
     changes: Number.isSafeInteger(cursor?.rowsWritten) ? cursor.rowsWritten : 0,
   };
+}
+
+function classifyUserVersionPragma(sql) {
+  if (typeof sql !== "string") return null;
+  if (USER_VERSION_READ_PATTERN.test(sql)) return Object.freeze({ kind: "read" });
+  const write = sql.match(USER_VERSION_WRITE_PATTERN);
+  if (!write) return null;
+  const version = Number(write[1]);
+  if (!Number.isSafeInteger(version)) throw new TypeError("PRAGMA user_version must be a safe non-negative integer");
+  return Object.freeze({ kind: "write", version });
+}
+
+function readCloudflareUserVersion(storage) {
+  const table = normalizeRows(storage.sql.exec(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+    FIBRE_SQLITE_META_TABLE,
+  ))[0];
+  if (table === undefined) return syntheticCursor([{ user_version: 0 }]);
+  const row = normalizeRows(storage.sql.exec(
+    `SELECT integer_value AS user_version FROM ${FIBRE_SQLITE_META_TABLE} WHERE key = ? LIMIT 1`,
+    USER_VERSION_KEY,
+  ))[0];
+  const version = Number(row?.user_version ?? 0);
+  if (!Number.isSafeInteger(version) || version < 0) throw new Error("Cloudflare Fibre SQLite user_version metadata is invalid");
+  return syntheticCursor([{ user_version: version }]);
+}
+
+function writeCloudflareUserVersion(storage, version) {
+  storage.sql.exec(`
+    CREATE TABLE IF NOT EXISTS ${FIBRE_SQLITE_META_TABLE} (
+      key TEXT PRIMARY KEY,
+      integer_value INTEGER NOT NULL CHECK (integer_value >= 0)
+    ) STRICT
+  `);
+  return storage.sql.exec(
+    `INSERT INTO ${FIBRE_SQLITE_META_TABLE}(key, integer_value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET integer_value = excluded.integer_value`,
+    USER_VERSION_KEY,
+    version,
+  );
+}
+
+function executeCloudflareSql(storage, sql, params, { readOnly }) {
+  const pragma = classifyUserVersionPragma(sql);
+  if (pragma?.kind === "read") {
+    if (params.length !== 0) throw new TypeError("PRAGMA user_version does not accept bound parameters");
+    return readCloudflareUserVersion(storage);
+  }
+  if (pragma?.kind === "write") {
+    if (params.length !== 0) throw new TypeError("PRAGMA user_version does not accept bound parameters");
+    if (readOnly) throw new Error("transactional state session is read-only");
+    return writeCloudflareUserVersion(storage, pragma.version);
+  }
+  return storage.sql.exec(sql, ...params);
 }
 
 function createSession(scopeId, storage, { readOnly }) {
@@ -88,7 +155,7 @@ function createSession(scopeId, storage, { readOnly }) {
     assertOpen();
     if (readOnly && mutation) throw new Error(`transactional state scope ${scopeId} is read-only`);
     if (readOnly) assertReadOnlySql(sql);
-    return storage.sql.exec(sql, ...params);
+    return executeCloudflareSql(storage, sql, params, { readOnly });
   }
 
   const session = {

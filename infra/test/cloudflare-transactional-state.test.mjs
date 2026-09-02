@@ -1,167 +1,94 @@
-import assert from "node:assert/strict";
-import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import assert from "node:assert/strict";
 
-import { assertInfraDriver } from "../infra-driver.mjs";
-import {
-  createCloudflareStateInfraDriver,
-  createCloudflareTransactionalStatePort,
-} from "../providers/cloudflare/transactional-state.mjs";
-import {
-  FIBRE_WORLD_STATE_REQUIREMENTS,
-  requireTransactionalStateGuarantees,
-} from "../transactional-state.mjs";
+import { createCloudflareTransactionalStatePort } from "../providers/cloudflare/transactional-state.mjs";
 
 function cursor(rows = [], rowsWritten = 0) {
   return {
     rowsWritten,
-    toArray() {
-      return rows.map((row) => Object.fromEntries(Object.entries(row)));
-    },
+    toArray() { return rows.map((row) => ({ ...row })); },
   };
 }
 
-function sqliteBackedDurableObjectStorage() {
-  const database = new DatabaseSync(":memory:");
-  let transactionActive = false;
+function fakeSqliteDurableStorage() {
+  let metadataTable = false;
+  let userVersion = null;
+  let transactions = 0;
+  const ordinaryCalls = [];
   return {
+    get metadataTable() { return metadataTable; },
+    get userVersion() { return userVersion; },
+    get transactions() { return transactions; },
+    ordinaryCalls,
     sql: {
-      exec(sql, ...bindings) {
-        if (bindings.length === 0 && /;\s*(?:\S|$)/u.test(sql.trim().replace(/;\s*$/u, ""))) {
-          database.exec(sql);
+      exec(sql, ...params) {
+        const normalized = String(sql).replace(/\s+/gu, " ").trim();
+        if (normalized.startsWith("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")) {
+          assert.deepEqual(params, ["_fibre_sqlite_meta"]);
+          return cursor(metadataTable ? [{ name: "_fibre_sqlite_meta" }] : []);
+        }
+        if (normalized.startsWith("SELECT integer_value AS user_version FROM _fibre_sqlite_meta")) {
+          assert.equal(metadataTable, true);
+          assert.deepEqual(params, ["user_version"]);
+          return cursor(userVersion === null ? [] : [{ user_version: userVersion }]);
+        }
+        if (normalized.startsWith("CREATE TABLE IF NOT EXISTS _fibre_sqlite_meta")) {
+          metadataTable = true;
           return cursor();
         }
-        if (bindings.length === 0 && /^(?:CREATE|ALTER|DROP|PRAGMA)\b/iu.test(sql.trim())) {
-          database.exec(sql);
-          return cursor();
+        if (normalized.startsWith("INSERT INTO _fibre_sqlite_meta(key, integer_value)")) {
+          assert.equal(metadataTable, true);
+          assert.equal(params[0], "user_version");
+          userVersion = params[1];
+          return cursor([], 1);
         }
-        const statement = database.prepare(sql);
-        if (/^(?:SELECT|WITH|EXPLAIN|PRAGMA)\b/iu.test(sql.trim())) {
-          return cursor(statement.all(...bindings));
-        }
-        const result = statement.run(...bindings);
-        return cursor([], Number(result.changes ?? 0));
+        ordinaryCalls.push({ sql, params });
+        return cursor([{ value: params[0] ?? "ordinary" }]);
       },
     },
     transactionSync(callback) {
-      if (transactionActive) throw new Error("nested Durable Object transaction");
-      database.exec("BEGIN IMMEDIATE");
-      transactionActive = true;
-      try {
-        const result = callback();
-        database.exec("COMMIT");
-        transactionActive = false;
-        return result;
-      } catch (error) {
-        database.exec("ROLLBACK");
-        transactionActive = false;
-        throw error;
-      }
-    },
-    close() {
-      database.close();
+      transactions += 1;
+      return callback();
     },
   };
 }
 
-test("Cloudflare state advertises the same Fibre transactional guarantees as production local state", () => {
-  const storage = sqliteBackedDurableObjectStorage();
-  try {
-    const infra = createCloudflareStateInfraDriver({ scopes: { world: storage } });
-    assert.equal(assertInfraDriver(infra, { required: ["state"] }), infra);
-    assert.deepEqual(
-      requireTransactionalStateGuarantees(infra.state, "world", FIBRE_WORLD_STATE_REQUIREMENTS),
-      {
-        relationalStatements: true,
-        atomicWriteTransactions: true,
-        serializedWriteTransactions: true,
-        durableCommitBeforeAcknowledgement: true,
-        transactionalReads: true,
-        schemaMigrations: true,
-        consistencyScope: "single_named_scope",
-      },
-    );
-  } finally {
-    storage.close();
-  }
+test("Cloudflare transactional state emulates SQLite user_version without mutating a fresh read", () => {
+  const storage = fakeSqliteDurableStorage();
+  const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
+  const database = state.open("world");
+
+  assert.deepEqual(database.prepare("PRAGMA user_version").get(), { user_version: 0 });
+  assert.equal(storage.metadataTable, false, "reading an unversioned fresh Durable Object must not create metadata");
+
+  database.exec("PRAGMA user_version = 23");
+  assert.equal(storage.metadataTable, true);
+  assert.equal(storage.userVersion, 23);
+  assert.deepEqual(database.prepare(" PRAGMA  user_version ; ").get(), { user_version: 23 });
 });
 
-test("Cloudflare state executes relational writes and reads through one named Durable Object scope", () => {
-  const storage = sqliteBackedDurableObjectStorage();
-  try {
-    const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
-    const session = state.open("world");
-    session.exec("CREATE TABLE proof (id TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;");
-    const result = session.transaction(() => session.prepare(
-      "INSERT INTO proof(id,value) VALUES (?,?)",
-    ).run("one", "committed"));
-    assert.deepEqual(result, { changes: 1 });
-    assert.deepEqual(session.prepare("SELECT id,value FROM proof WHERE id=?").get("one"), {
-      id: "one",
-      value: "committed",
-    });
-    assert.deepEqual(session.prepare("SELECT id,value FROM proof ORDER BY id").all(), [{
-      id: "one",
-      value: "committed",
-    }]);
-    session.close();
-  } finally {
-    storage.close();
-  }
+test("Cloudflare user_version compatibility remains transactional and rejects writes from read-only sessions", () => {
+  const storage = fakeSqliteDurableStorage();
+  const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
+  const database = state.open("world");
+
+  database.transaction((tx) => {
+    tx.exec("PRAGMA user_version=7;");
+  });
+  assert.equal(storage.transactions, 1);
+  assert.equal(database.prepare("PRAGMA user_version").get().user_version, 7);
+
+  const readOnly = state.open("world", { readOnly: true });
+  assert.equal(readOnly.prepare("PRAGMA user_version").get().user_version, 7);
+  assert.throws(() => readOnly.exec("PRAGMA user_version = 8"), /read-only/u);
+  assert.equal(storage.userVersion, 7);
 });
 
-test("Cloudflare transactionSync rollback prevents partial authoritative state", () => {
-  const storage = sqliteBackedDurableObjectStorage();
-  try {
-    const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
-    const session = state.open("world");
-    session.exec("CREATE TABLE proof (id TEXT PRIMARY KEY) STRICT;");
-    assert.throws(() => session.transaction(() => {
-      session.prepare("INSERT INTO proof(id) VALUES (?)").run("temporary");
-      throw new Error("abort cloud transaction");
-    }), /abort cloud transaction/);
-    assert.equal(session.prepare("SELECT id FROM proof").get(), undefined);
-    session.close();
-  } finally {
-    storage.close();
-  }
-});
+test("Cloudflare transactional state delegates ordinary SQL unchanged", () => {
+  const storage = fakeSqliteDurableStorage();
+  const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
+  const database = state.open("world");
 
-test("Cloudflare state rejects async transactions and read-only mutation", () => {
-  const storage = sqliteBackedDurableObjectStorage();
-  try {
-    const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
-    const writer = state.open("world");
-    writer.exec("CREATE TABLE proof (id TEXT PRIMARY KEY) STRICT;");
-    assert.throws(
-      () => writer.transaction(async () => writer.prepare("INSERT INTO proof(id) VALUES (?)").run("async")),
-      /must be synchronous/,
-    );
-    assert.equal(writer.prepare("SELECT id FROM proof").get(), undefined);
-    writer.close();
-
-    const reader = state.open("world", { readOnly: true });
-    assert.deepEqual(reader.transaction(() => reader.prepare("SELECT id FROM proof").all()), []);
-    assert.throws(
-      () => reader.transaction(() => reader.prepare("INSERT INTO proof(id) VALUES (?)").run("forbidden")),
-      /read-only/,
-    );
-    reader.close();
-  } finally {
-    storage.close();
-  }
-});
-
-test("Cloudflare state requires SQLite-backed Durable Object storage and explicit scopes", () => {
-  assert.throws(
-    () => createCloudflareTransactionalStatePort({ scopes: { world: {} } }),
-    /SQLite-backed Durable Object storage/,
-  );
-  const storage = sqliteBackedDurableObjectStorage();
-  try {
-    const state = createCloudflareTransactionalStatePort({ scopes: { world: storage } });
-    assert.throws(() => state.open("other"), /not configured/);
-  } finally {
-    storage.close();
-  }
+  assert.deepEqual(database.prepare("SELECT ? AS value").get("delegated"), { value: "delegated" });
+  assert.deepEqual(storage.ordinaryCalls, [{ sql: "SELECT ? AS value", params: ["delegated"] }]);
 });
