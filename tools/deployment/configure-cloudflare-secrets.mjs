@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
+  isProviderNotFound,
   loadCloudflareWranglerConfigs,
   normalizeCloudflareEnvironment,
   parseJsonc,
@@ -117,9 +118,25 @@ export async function configureCloudflareSecrets({
   return Object.freeze({ environment: env, secrets, runtimeConfigByService });
 }
 
-export function createWranglerSecretWriter({ runner = runWrangler, cwd = process.cwd() } = {}) {
-  return async ({ workerName, values }) => {
-    await runner(["versions", "secret", "bulk", "--name", workerName, "--message", "Fibre operator secret configuration"], { input: JSON.stringify(values), cwd });
+export function createWranglerSecretWriter({
+  runner = runWrangler,
+  cwd = process.cwd(),
+  onBootstrap = () => {},
+} = {}) {
+  if (typeof onBootstrap !== "function") throw new TypeError("onBootstrap callback is required");
+  return async ({ serviceId, workerName, values }) => {
+    const input = JSON.stringify(values);
+    const versionArgs = [
+      "versions", "secret", "bulk", "--name", workerName,
+      "--message", "Fibre operator secret configuration",
+    ];
+    try {
+      await runner(versionArgs, { input, cwd });
+    } catch (error) {
+      if (!isProviderNotFound(error)) throw error;
+      onBootstrap({ serviceId, workerName });
+      await runner(["secret", "bulk", "--name", workerName], { input, cwd });
+    }
   };
 }
 
@@ -136,14 +153,19 @@ function parseArgs(argv) {
   return { environment, filePath };
 }
 
-if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
-  const { environment, filePath } = parseArgs(process.argv.slice(2));
+async function main(argv) {
+  const { environment, filePath } = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
   const result = await configureCloudflareSecrets({
     repoRoot,
     environment,
     filePath,
-    putSecrets: createWranglerSecretWriter({ cwd: repoRoot }),
+    putSecrets: createWranglerSecretWriter({
+      cwd: repoRoot,
+      onBootstrap: ({ serviceId, workerName }) => {
+        console.log(`BOOTSTRAP ${serviceId} -> ${workerName} (first Worker draft + secrets)`);
+      },
+    }),
   });
   console.log(`Cloudflare service configuration ready: ${result.environment}`);
   for (const [serviceId, names] of Object.entries(result.secrets)) {
@@ -151,4 +173,11 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
     for (const name of names) console.log(`  OK      ${name}`);
     for (const name of Object.keys(result.runtimeConfigByService[serviceId])) console.log(`  CONFIG  ${name}`);
   }
+}
+
+if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(`Cloudflare service configuration failed: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
+  });
 }
