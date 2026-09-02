@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
+import { birthCenterPromptText } from "./genesis-prompt-bundle.mjs";
 import { canonicalJson, sha256 } from "fibre/world-kernel/genesis-authority-contracts";
 
 export const GENESIS_PASS_B_PROMPT_VERSION = "genesis-pass-b-memory-formation-prompt-v1";
@@ -6,12 +6,7 @@ export const GENESIS_PASS_B_FORM_PROFILE = "genesis-pass-b-bounded-memory-v1";
 export const GENESIS_PASS_B_MAX_MODEL_CHARACTERS = 600;
 export const GENESIS_PASS_B_MAX_UNCERTAINTY_CHARACTERS = 120;
 
-const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
-
-export const GENESIS_PASS_B_PROMPT = resolvePromptAsset({
-  directory: GENESIS_PROMPT_DIRECTORY,
-  id: "genesis.memory-formation.base",
-}).text;
+export const GENESIS_PASS_B_PROMPT = birthCenterPromptText("genesis.memory-formation.base");
 
 export const GENESIS_PASS_B_RESPONSE_SCHEMA = Object.freeze({
   type: "object",

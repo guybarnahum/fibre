@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
+import { birthCenterPromptText } from "./genesis-prompt-bundle.mjs";
 import {
   GENESIS_HISTORICAL_REALIZATION_RESPONSE_SCHEMA,
   GENESIS_PASS_A_RELIABILITY_POLICY_V3,
@@ -14,22 +14,9 @@ import {
   richPassAGenerationDecision,
 } from "./genesis-history-generation-policy.mjs";
 
-const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
-
-export const GENESIS_LIFE_PASS_A_PROMPT = resolvePromptAsset({
-  directory: GENESIS_PROMPT_DIRECTORY,
-  id: "genesis.historical-realization",
-}).text;
-
-export const GENESIS_LIFE_PASS_A_RETRY_PROMPT = resolvePromptAsset({
-  directory: GENESIS_PROMPT_DIRECTORY,
-  id: "genesis.historical-realization-retry",
-}).text;
-
-export const GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT = resolvePromptAsset({
-  directory: GENESIS_PROMPT_DIRECTORY,
-  id: "genesis.observable-action-repair",
-}).text;
+export const GENESIS_LIFE_PASS_A_PROMPT = birthCenterPromptText("genesis.historical-realization");
+export const GENESIS_LIFE_PASS_A_RETRY_PROMPT = birthCenterPromptText("genesis.historical-realization-retry");
+export const GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT = birthCenterPromptText("genesis.observable-action-repair");
 
 const FORM_REPAIRABLE_GATES = new Set([
   "pass_a_interiority_form",

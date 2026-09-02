@@ -1,16 +1,14 @@
-import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
+import { birthCenterPromptText } from "./genesis-prompt-bundle.mjs";
 import { canonicalJson, sha256 } from "fibre/world-kernel/genesis-authority-contracts";
 
 export const GENESIS_PASS_C_INITIAL_PROMPT_VERSION = "genesis-pass-c-initial-prompt-v1";
 export const GENESIS_PASS_C_REINTERPRETATION_BASE_PROMPT_VERSION = "genesis-pass-c-reinterpretation-prompt-v1";
 export const GENESIS_PASS_C_REINTERPRETATION_PROMPT_VERSION = "genesis-pass-c-reinterpretation-prompt-v2";
 
-const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
-
-export const GENESIS_PASS_C_INITIAL_PROMPT = resolvePromptAsset({ directory: GENESIS_PROMPT_DIRECTORY, id: "genesis.meaning-initial" }).text;
-export const GENESIS_PASS_C_REINTERPRETATION_PROMPT = resolvePromptAsset({ directory: GENESIS_PROMPT_DIRECTORY, id: "genesis.meaning-reinterpretation.base" }).text;
-export const GENESIS_PASS_C_REINTERPRETATION_RESTRAINT_AMENDMENT = resolvePromptAsset({ directory: GENESIS_PROMPT_DIRECTORY, id: "genesis.meaning-reinterpretation-restraint" }).text;
-export const GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT = resolvePromptAsset({ directory: GENESIS_PROMPT_DIRECTORY, id: "genesis.meaning-reinterpretation" }).text;
+export const GENESIS_PASS_C_INITIAL_PROMPT = birthCenterPromptText("genesis.meaning-initial");
+export const GENESIS_PASS_C_REINTERPRETATION_PROMPT = birthCenterPromptText("genesis.meaning-reinterpretation.base");
+export const GENESIS_PASS_C_REINTERPRETATION_RESTRAINT_AMENDMENT = birthCenterPromptText("genesis.meaning-reinterpretation-restraint");
+export const GENESIS_PASS_C_REINTERPRETATION_RUNTIME_PROMPT = birthCenterPromptText("genesis.meaning-reinterpretation");
 
 export const GENESIS_PASS_C_INITIAL_RESPONSE_SCHEMA = Object.freeze({
   type: "object",

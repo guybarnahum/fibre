@@ -1,4 +1,4 @@
-import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
+import { birthCenterPromptResolution, birthCenterPromptText } from "./genesis-prompt-bundle.mjs";
 import {
   GENESIS_SPARSE_HISTORY_NOTICE,
   canonicalJson,
@@ -13,8 +13,6 @@ import {
 } from "./genesis-memory-admission.mjs";
 import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "./genesis-memory-prompts.mjs";
 
-const GENESIS_PROMPT_DIRECTORY = new URL("../prompts/", import.meta.url);
-
 export const GENESIS_LIFE_SPARSE_HISTORY_NOTICE = GENESIS_SPARSE_HISTORY_NOTICE;
 export const GENESIS_LIFE_PASS_B_HORIZONS = Object.freeze([4, 6, 8, 10, 12, 14]);
 export const GENESIS_LIFE_PASS_B_FORMATION_MODES = Object.freeze([
@@ -22,12 +20,9 @@ export const GENESIS_LIFE_PASS_B_FORMATION_MODES = Object.freeze([
 ]);
 
 export const GENESIS_LIFE_PASS_B_PROMPT_ID = "genesis.memory-formation";
-export const GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION = resolvePromptAsset({ directory: GENESIS_PROMPT_DIRECTORY, id: GENESIS_LIFE_PASS_B_PROMPT_ID });
+export const GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION = birthCenterPromptResolution(GENESIS_LIFE_PASS_B_PROMPT_ID);
 export const GENESIS_LIFE_PASS_B_COGNITION_PROMPT = GENESIS_LIFE_PASS_B_PROMPT_RESOLUTION.text;
-export const GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT = resolvePromptAsset({
-  directory: GENESIS_PROMPT_DIRECTORY,
-  id: "genesis.memory-formation-genome-copy-retry",
-}).text;
+export const GENESIS_LIFE_PASS_B_GENOME_COPY_RETRY_PROMPT = birthCenterPromptText("genesis.memory-formation-genome-copy-retry");
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 
