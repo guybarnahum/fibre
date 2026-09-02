@@ -39,3 +39,14 @@ test("cloud deployment diagnostics retain useful non-Wrangler failures", () => {
   assert.match(message, /Cloud deployment requires a clean Git working tree/u);
   assert.doesNotMatch(message, /while deploying/u);
 });
+
+test("cloud deployment diagnostics retain nested health failure causes", () => {
+  const dns = new Error("getaddrinfo ENOTFOUND api.staging.insidefibre.com");
+  const fetch = new TypeError("fetch failed", { cause: dns });
+  const health = new Error("thread-presentation did not become healthy after deployment", { cause: fetch });
+
+  const message = formatCloudflareDeploymentFailure(health, { environment: "staging" });
+  assert.match(message, /thread-presentation did not become healthy after deployment/u);
+  assert.match(message, /Caused by: fetch failed/u);
+  assert.match(message, /Caused by: getaddrinfo ENOTFOUND api\.staging\.insidefibre\.com/u);
+});
