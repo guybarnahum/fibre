@@ -16,19 +16,38 @@ function response(payload, { status = 200 } = {}) {
   };
 }
 
-test("Workers Domain API lists by hostname and attaches missing custom domain to exact Worker", async () => {
+function domainResult({ hostname = "api.staging.insidefibre.com", service = "fibre-thread-presentation-staging" } = {}) {
+  return {
+    id: "domain-id",
+    cert_id: "cert-id",
+    hostname,
+    service,
+    zone_id: "zone-id",
+    zone_name: "insidefibre.com",
+    environment: "production",
+  };
+}
+
+function cloudflareNsResponse() {
+  return response({
+    Status: 0,
+    Answer: [
+      { name: "insidefibre.com.", type: 2, TTL: 300, data: "ada.ns.cloudflare.com." },
+      { name: "insidefibre.com.", type: 2, TTL: 300, data: "bob.ns.cloudflare.com." },
+    ],
+  });
+}
+
+test("Workers Domain API attaches missing custom domain and verifies public Cloudflare delegation", async () => {
   const requests = [];
   const client = createCloudflareWorkerDomainClient({
     accountId: "account-id",
     apiToken: "secret-token",
     fetchImpl: async (url, options = {}) => {
       requests.push({ url: String(url), options });
+      if (String(url).startsWith("https://dns.google/")) return cloudflareNsResponse();
       if ((options.method ?? "GET") === "GET") return response({ success: true, errors: [], result: [] });
-      return response({
-        success: true,
-        errors: [],
-        result: { id: "domain-id", hostname: "api.staging.insidefibre.com", service: "fibre-thread-presentation-staging" },
-      });
+      return response({ success: true, errors: [], result: domainResult() });
     },
   });
   const result = await ensureCloudflareWorkerDomain({
@@ -37,6 +56,9 @@ test("Workers Domain API lists by hostname and attaches missing custom domain to
     service: "fibre-thread-presentation-staging",
   });
   assert.equal(result.status, "attached");
+  assert.equal(result.zoneName, "insidefibre.com");
+  assert.equal(result.certId, "cert-id");
+  assert.deepEqual(result.delegation.nameservers, ["ada.ns.cloudflare.com", "bob.ns.cloudflare.com"]);
   assert.match(requests[0].url, /workers\/domains\?hostname=api\.staging\.insidefibre\.com/u);
   assert.equal(requests[1].options.method, "PUT");
   assert.deepEqual(JSON.parse(requests[1].options.body), {
@@ -44,15 +66,15 @@ test("Workers Domain API lists by hostname and attaches missing custom domain to
     service: "fibre-thread-presentation-staging",
   });
   assert.equal(requests[1].options.headers.Authorization, "Bearer secret-token");
+  assert.match(requests[2].url, /^https:\/\/dns\.google\/resolve\?.*name=insidefibre\.com.*type=NS/u);
 });
 
 test("Workers Domain convergence reuses expected ownership and fails closed on a foreign Worker", async () => {
   let attachCalls = 0;
   const existing = {
-    async listDomains() {
-      return [{ id: "domain-id", hostname: "api.staging.insidefibre.com", service: "fibre-thread-presentation-staging" }];
-    },
+    async listDomains() { return [domainResult()]; },
     async attachDomain() { attachCalls += 1; },
+    async assertPublicDelegation({ zoneName }) { return { zoneName, nameservers: ["ada.ns.cloudflare.com"] }; },
   };
   assert.equal((await ensureCloudflareWorkerDomain({
     client: existing,
@@ -62,10 +84,9 @@ test("Workers Domain convergence reuses expected ownership and fails closed on a
   assert.equal(attachCalls, 0);
 
   const foreign = {
-    async listDomains() {
-      return [{ id: "domain-id", hostname: "api.staging.insidefibre.com", service: "other-worker" }];
-    },
+    async listDomains() { return [domainResult({ service: "other-worker" })]; },
     async attachDomain() { throw new Error("must not reassign foreign domain"); },
+    async assertPublicDelegation() { throw new Error("must not inspect foreign domain"); },
   };
   await assert.rejects(ensureCloudflareWorkerDomain({
     client: foreign,
@@ -74,13 +95,38 @@ test("Workers Domain convergence reuses expected ownership and fails closed on a
   }), /already attached to other-worker/u);
 });
 
+test("Workers Domain convergence fails fast when registrar delegation is not Cloudflare", async () => {
+  const client = createCloudflareWorkerDomainClient({
+    accountId: "account-id",
+    apiToken: "secret-token",
+    fetchImpl: async (url) => {
+      if (String(url).startsWith("https://dns.google/")) {
+        return response({ Status: 0, Answer: [
+          { name: "insidefibre.com.", type: 2, TTL: 300, data: "ns1.registrar.example." },
+          { name: "insidefibre.com.", type: 2, TTL: 300, data: "ns2.registrar.example." },
+        ] });
+      }
+      return response({ success: true, errors: [], result: [domainResult()] });
+    },
+  });
+  await assert.rejects(ensureCloudflareWorkerDomain({
+    client,
+    hostname: "api.staging.insidefibre.com",
+    service: "fibre-thread-presentation-staging",
+  }), /not delegated to Cloudflare nameservers.*ns1\.registrar\.example.*registrar nameservers/iu);
+});
+
 test("runtime deployment explicitly converges a generated custom domain after Worker upload", async () => {
   const calls = [];
   const domainClient = {
     async listDomains({ hostname }) { calls.push(`domain:list:${hostname}`); return []; },
     async attachDomain({ hostname, service }) {
       calls.push(`domain:attach:${hostname}:${service}`);
-      return { id: "domain-id", hostname, service };
+      return domainResult({ hostname, service });
+    },
+    async assertPublicDelegation({ zoneName }) {
+      calls.push(`domain:dns:${zoneName}`);
+      return { zoneName, nameservers: ["ada.ns.cloudflare.com"] };
     },
   };
   const client = createWranglerDeploymentClient({
@@ -101,6 +147,7 @@ test("runtime deployment explicitly converges a generated custom domain after Wo
     "wrangler:deploy",
     "domain:list:api.staging.insidefibre.com",
     "domain:attach:api.staging.insidefibre.com:fibre-thread-presentation-staging",
+    "domain:dns:insidefibre.com",
   ]);
 });
 
@@ -110,7 +157,11 @@ test("app deployment attaches custom domain only for a live deployment, never a 
     async listDomains({ hostname }) { calls.push(`domain:list:${hostname}`); return []; },
     async attachDomain({ hostname, service }) {
       calls.push(`domain:attach:${hostname}:${service}`);
-      return { id: "domain-id", hostname, service };
+      return domainResult({ hostname, service });
+    },
+    async assertPublicDelegation({ zoneName }) {
+      calls.push(`domain:dns:${zoneName}`);
+      return { zoneName, nameservers: ["ada.ns.cloudflare.com"] };
     },
   };
   const client = createWranglerAppDeploymentClient({
@@ -128,5 +179,6 @@ test("app deployment attaches custom domain only for a live deployment, never a 
     "wrangler:live",
     "domain:list:status.staging.insidefibre.com",
     "domain:attach:status.staging.insidefibre.com:fibre-status-page-staging",
+    "domain:dns:insidefibre.com",
   ]);
 });
