@@ -21,6 +21,7 @@ const D1_MIGRATIONS_BY_BINDING = Object.freeze({
   ]),
 });
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
+const ANSI_ESCAPE_PATTERN = /\u001b\[[0-9;]*m/gu;
 
 function d1Id(database) {
   return database?.uuid ?? database?.id ?? database?.database_id ?? null;
@@ -50,6 +51,30 @@ function migrationsFor(database) {
   const migrations = D1_MIGRATIONS_BY_BINDING[database.binding];
   if (!migrations?.length) throw new TypeError(`no D1 migrations registered for binding ${database.binding}`);
   return migrations;
+}
+
+function cloudflareFailureText(error) {
+  return [error?.message, error?.stdout, error?.stderr]
+    .filter((value) => typeof value === "string" && value.trim() !== "")
+    .join("\n")
+    .replace(ANSI_ESCAPE_PATTERN, "");
+}
+
+export function formatCloudflareProvisionFailure(error, { environment } = {}) {
+  const env = typeof environment === "string" && environment.trim() !== "" ? environment.trim() : "requested environment";
+  const retry = `npm run cloud:provision -- --env ${env}`;
+  const detail = cloudflareFailureText(error);
+  if (/invalid (?:api|access) token|code:\s*9109/iu.test(detail)) {
+    return `Cloudflare provisioning failed for ${env}: CLOUDFLARE_API_TOKEN is invalid or expired.\nUpdate CLOUDFLARE_API_TOKEN in .env, then rerun: ${retry}`;
+  }
+  if (/necessary to set a CLOUDFLARE_API_TOKEN|CLOUDFLARE_API_TOKEN environment variable/iu.test(detail)) {
+    return `Cloudflare provisioning failed for ${env}: CLOUDFLARE_API_TOKEN is missing.\nAdd CLOUDFLARE_API_TOKEN to .env, then rerun: ${retry}`;
+  }
+  if (/authentication error|code:\s*10000/iu.test(detail)) {
+    return `Cloudflare provisioning failed for ${env}: the API token was rejected for the requested Cloudflare resources.\nVerify the token permissions and account scope, then rerun: ${retry}`;
+  }
+  const summary = error instanceof Error ? error.message : String(error);
+  return `Cloudflare provisioning failed for ${env}: ${summary}\nFix the reported problem, then rerun: ${retry}`;
 }
 
 export function createWranglerProvisionClient({ runner = runWrangler, cwd = process.cwd() } = {}) {
@@ -173,14 +198,25 @@ function parseArgs(argv) {
   return { environment };
 }
 
-if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
-  const { environment } = parseArgs(process.argv.slice(2));
+async function main(argv) {
+  const { environment } = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
   const client = createWranglerProvisionClient({ cwd: repoRoot });
-  const state = await provisionCloudflareResources({ repoRoot, environment, client });
-  console.log(`Cloudflare resources ready: ${state.environment}`);
-  for (const database of state.resources.d1) console.log(`D1      ${database.name} ${database.id}`);
-  for (const bucket of state.resources.r2) console.log(`R2      ${bucket.name} ${bucket.status}`);
-  for (const queue of state.resources.queues) console.log(`QUEUE   ${queue.name} ${queue.status}`);
-  for (const [serviceId, worker] of Object.entries(state.resources.deployManaged.workers)) console.log(`DEPLOY  ${serviceId} -> ${worker}`);
+  try {
+    const state = await provisionCloudflareResources({ repoRoot, environment, client });
+    console.log(`Cloudflare resources ready: ${state.environment}`);
+    for (const database of state.resources.d1) console.log(`D1      ${database.name} ${database.id}`);
+    for (const bucket of state.resources.r2) console.log(`R2      ${bucket.name} ${bucket.status}`);
+    for (const queue of state.resources.queues) console.log(`QUEUE   ${queue.name} ${queue.status}`);
+    for (const [serviceId, worker] of Object.entries(state.resources.deployManaged.workers)) console.log(`DEPLOY  ${serviceId} -> ${worker}`);
+  } catch (error) {
+    throw new Error(formatCloudflareProvisionFailure(error, { environment }), { cause: error });
+  }
+}
+
+if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
 }
