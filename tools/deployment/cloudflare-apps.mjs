@@ -17,6 +17,7 @@ import {
   inspectAdminAccess,
 } from "./cloudflare-access.mjs";
 import { resolveCleanGitDeploymentSource } from "./deploy-cloudflare-evidence.mjs";
+import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 
 export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.3";
 export const CLOUDFLARE_APP_CONFIGS = Object.freeze({
@@ -109,7 +110,7 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
   if (appId === "admin-dashboard") {
     deployedValue("Admin Cloudflare Access team domain", config.vars?.FIBRE_ACCESS_TEAM_DOMAIN);
     deployedValue("Admin Cloudflare Access audience", config.vars?.FIBRE_ACCESS_AUD);
-    const databases = (config.d1_databases ?? []).filter((database) => database?.binding === "ACTIVITY_LOG");
+    const databases = (config?.d1_databases ?? []).filter((database) => database?.binding === "ACTIVITY_LOG");
     if (databases.length !== 1) throw new TypeError("admin-dashboard must resolve exactly one ACTIVITY_LOG D1 binding");
     deployedValue("Admin ACTIVITY_LOG database name", databases[0].database_name);
     deployedValue("Admin ACTIVITY_LOG database id", databases[0].database_id);
@@ -144,6 +145,11 @@ export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment,
     const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig });
     validateResolvedCloudflareAppConfig(appId, resolvedConfig, { environment });
     const path = resolve(baseDir, `${appId}.jsonc`);
+    relocateWranglerMain(resolvedConfig, {
+      repoRoot,
+      sourceConfigPath: CLOUDFLARE_APP_CONFIGS[appId],
+      generatedConfigPath: path,
+    });
     await writeFile(path, `${JSON.stringify(resolvedConfig, null, 2)}\n`, { mode: 0o600 });
     written[appId] = relative(repoRoot, path);
   }
