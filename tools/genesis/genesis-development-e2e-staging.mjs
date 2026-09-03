@@ -154,11 +154,13 @@ function failFastSleep({
     }
   }
 
-  return async (milliseconds) => {
+  const wait = async (milliseconds) => {
     await probe();
     await sleep(milliseconds);
     await probe();
   };
+  wait.probe = probe;
+  return wait;
 }
 
 export async function attachActivityLogEvidence({
@@ -298,7 +300,17 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     repoRoot,
     activityRecorder: failOpenActivityRecorder(recorder, emitWithIdentity),
   });
-  return attachActivityLogEvidence({ e2eResult: core, repoRoot, activityReader: reader, inspect, emit: emitWithIdentity });
+  const attached = await attachActivityLogEvidence({
+    e2eResult: core,
+    repoRoot,
+    activityReader: reader,
+    inspect,
+    emit: emitWithIdentity,
+  });
+  return Object.freeze({
+    ...attached,
+    checkTerminalFailure: wrappedSleep.probe,
+  });
 }
 
 async function main() {
