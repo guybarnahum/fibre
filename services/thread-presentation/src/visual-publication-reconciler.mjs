@@ -59,11 +59,6 @@ async function bestEffortRecord(activity, record) {
   try { await activity.record(record); } catch {}
 }
 
-async function runActivityStage(activity, metadata, operation) {
-  if (activity === null) return operation();
-  return activity.runStage(metadata, operation);
-}
-
 async function runChangedStage(activity, metadata, operation, changed) {
   try {
     const result = await operation();
@@ -140,6 +135,17 @@ async function terminalWorkflowError({ infra, threadId, mediaId, active }) {
   error.jobId = active.demand.job.jobId;
   error.workflowStatus = status;
   return error;
+}
+
+function reconciliationFailure(error) {
+  const code = typeof error?.code === "string" && error.code !== ""
+    ? error.code
+    : "PRESENTATION_RECONCILIATION_FAILED";
+  return Object.freeze({
+    category: "reconciliation",
+    code,
+    retryable: error?.retryable === true,
+  });
 }
 
 export function createThreadPresentationVisualPublicationReconciler({
@@ -254,20 +260,23 @@ export function createThreadPresentationVisualPublicationReconciler({
       const providerProfile = selectProviderProfile({
         requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
       });
-      const demandStage = await runActivityStage(activity, {
+      const activityMetadata = {
         ...context,
         stage: "presentation.media_demand.reconcile",
         attempt: 1,
         evidence: { embodimentId: embodiment.embodimentId, regenerationKey: normalizedRegenerationKey },
-      }, async () => {
-        const demand = await demandService.reconcile({
+      };
+      let demand;
+      let active;
+      try {
+        demand = await demandService.reconcile({
           scope: { entityKind: "thread", entityRef: threadId },
           slots: [slot],
           requestedAt: issuedAt,
           providerProfile,
           regenerationKey: normalizedRegenerationKey,
         });
-        const active = demand.projection.demands.find((entry) => (
+        active = demand.projection.demands.find((entry) => (
           entry.demand.current
           && entry.demand.job.context?.kind === "thread_presentation_media"
           && entry.demand.job.context.mediaId === mediaId
@@ -275,9 +284,20 @@ export function createThreadPresentationVisualPublicationReconciler({
         if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
         const terminal = await terminalWorkflowError({ infra, threadId, mediaId, active });
         if (terminal !== null) throw terminal;
-        return Object.freeze({ demand, active });
-      });
-      const { active } = demandStage;
+        if (demand.changed === true) {
+          await bestEffortRecord(activity, { ...activityMetadata, status: "succeeded" });
+        }
+      } catch (error) {
+        if (demand?.changed === true || demand === undefined) {
+          await bestEffortRecord(activity, {
+            ...activityMetadata,
+            status: "failed",
+            message: error instanceof Error ? error.message : String(error),
+            error: reconciliationFailure(error),
+          });
+        }
+        throw error;
+      }
 
       return result(false, "official_photo_pending", {
         ...common,
