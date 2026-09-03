@@ -14,6 +14,14 @@ async function jsonBody(request) {
   }
 }
 
+function optionalRegenerationKey(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError("regenerationKey must be a non-empty string when supplied");
+  }
+  return value.trim();
+}
+
 function failureResponse(error) {
   const detail = error instanceof Error ? error.message : String(error);
   if (error instanceof TypeError) {
@@ -53,6 +61,7 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
           threadId: body.threadId,
           embodiment: body.embodiment,
           observedAt: body.observedAt,
+          regenerationKey: optionalRegenerationKey(body.regenerationKey),
         });
         return Response.json({ ok: true, result });
       } catch (error) {
