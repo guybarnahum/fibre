@@ -133,38 +133,53 @@ export async function verifySliceGPublicClosure({
   pollMs = 2_000,
   sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
   nowMs = Date.now,
+  checkTerminalFailure = async () => {},
+  onProgress = () => {},
 } = {}) {
   if (typeof fetchImpl !== "function") throw new TypeError("Slice G fetchImpl must be a function");
   if (typeof sleep !== "function") throw new TypeError("Slice G sleep must be a function");
   if (typeof nowMs !== "function") throw new TypeError("Slice G nowMs must be a function");
+  if (typeof checkTerminalFailure !== "function") throw new TypeError("Slice G checkTerminalFailure must be a function");
+  if (typeof onProgress !== "function") throw new TypeError("Slice G onProgress must be a function");
   positiveInteger("Slice G requestTimeoutMs", requestTimeoutMs);
   positiveInteger("Slice G convergenceWaitMs", convergenceWaitMs);
   positiveInteger("Slice G pollMs", pollMs);
   const presentationBaseUrl = nonEmpty("Slice G Thread Presentation endpoint", evidence?.endpoints?.threadPresentation);
   const viewerOrigin = nonEmpty("Slice G Viewer endpoint", evidence?.endpoints?.viewer);
   const threadId = nonEmpty("Slice G threadId", evidence?.request?.developmentPlanThreadId);
-  const deadline = nowMs() + convergenceWaitMs;
+  const startedAt = nowMs();
+  const deadline = startedAt + convergenceWaitMs;
   let snapshot;
   let closure;
   let lastPendingStatus = null;
+  let lastProgressAt = -Infinity;
 
   for (;;) {
+    await checkTerminalFailure();
     snapshot = await fetchSnapshot({ fetchImpl, presentationBaseUrl, viewerOrigin, threadId, requestTimeoutMs });
     try {
       closure = inspectSliceGPublicClosure(snapshot, evidence);
+      onProgress({ stage: "official_photo_ready", status: "ready", elapsedMs: nowMs() - startedAt });
       break;
     } catch (error) {
       if (!(error instanceof SliceGOfficialPhotoPendingError)) throw error;
       lastPendingStatus = error.status;
-      if (nowMs() >= deadline) {
+      const now = nowMs();
+      if (lastPendingStatus !== null && (now - lastProgressAt >= 30_000 || lastProgressAt === -Infinity)) {
+        onProgress({ stage: "official_photo_pending", status: lastPendingStatus, elapsedMs: now - startedAt });
+        lastProgressAt = now;
+      }
+      if (now >= deadline) {
         throw new Error(
           `Slice G official ID photo did not become ready within ${convergenceWaitMs}ms; last status ${String(lastPendingStatus)}`,
         );
       }
+      await checkTerminalFailure();
       await sleep(pollMs);
     }
   }
 
+  await checkTerminalFailure();
   const officialPhotoAsset = await fetchPublicAsset({
     fetchImpl,
     presentationBaseUrl,
@@ -172,5 +187,6 @@ export async function verifySliceGPublicClosure({
     objectRef: closure.objectRef,
     requestTimeoutMs,
   });
+  onProgress({ stage: "official_photo_public_asset_verified", status: "ready", elapsedMs: nowMs() - startedAt });
   return Object.freeze({ closure, officialPhotoAsset, snapshot });
 }
