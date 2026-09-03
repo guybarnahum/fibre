@@ -12,6 +12,14 @@ function assertIsoTimestamp(name, value) {
   return value;
 }
 
+function optionalRegenerationKey(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError("regenerationKey must be a non-empty string when supplied");
+  }
+  return value.trim();
+}
+
 function requireBoundary(name, value, method) {
   if (!value || typeof value[method] !== "function") {
     throw new TypeError(`${name} must expose ${method}()`);
@@ -123,8 +131,9 @@ export function createThreadVisualPublicationReconciler({
   if (typeof now !== "function") throw new TypeError("Thread visual publication reconciler now must be a function");
 
   return Object.freeze({
-    async reconcileThread({ threadId, activityContext = {} } = {}) {
+    async reconcileThread({ threadId, activityContext = {}, regenerationKey = null } = {}) {
       assertId("threadId", threadId);
+      const normalizedRegenerationKey = optionalRegenerationKey(regenerationKey);
       const context = activityIdentity(threadId, activityContext);
       let embodiment = currentCanonicalPortrait(embodimentStore, threadId);
       if (embodiment === null && canonicalEmbodimentMaterializer !== null) {
@@ -193,6 +202,7 @@ export function createThreadVisualPublicationReconciler({
           embodiment,
           observedAt,
           activityContext: context,
+          regenerationKey: normalizedRegenerationKey,
         }),
       );
 
