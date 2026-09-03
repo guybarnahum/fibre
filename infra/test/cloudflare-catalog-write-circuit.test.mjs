@@ -52,7 +52,7 @@ test("Cloudflare catalog D1 quota failure opens one shared write circuit", async
   await assert.rejects(
     () => second.upsert("catalog_test_2", { value: 2 }),
     (error) => {
-      assert.equal(error.code, "D1_WRITE_CIRCUIT_OPEN");
+      assert.equal(error.code, "D1_WRITE_QUOTA_CIRCUIT_OPEN");
       assert.equal(error.retryable, true);
       assert.equal(error.suppressActivity, true);
       return true;
@@ -63,7 +63,7 @@ test("Cloudflare catalog D1 quota failure opens one shared write circuit", async
   await assert.rejects(
     () => second.remove("catalog_test_1"),
     (error) => {
-      assert.equal(error.code, "D1_WRITE_CIRCUIT_OPEN");
+      assert.equal(error.code, "D1_WRITE_QUOTA_CIRCUIT_OPEN");
       assert.equal(error.suppressActivity, true);
       return true;
     },
