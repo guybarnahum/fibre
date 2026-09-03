@@ -6,6 +6,7 @@ import { runStagingGenesisDevelopmentE2EWithActivity } from "../genesis/genesis-
 import { verifySliceGPublicClosure } from "./cloudflare-e2e-slice-g.mjs";
 
 const SUPPORTED_ENVIRONMENTS = Object.freeze(new Set(["staging"]));
+const DEFAULT_REPLAY_REQUEST_TIMEOUT_MS = 30_000;
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -28,6 +29,47 @@ export function parseCloudE2EArgs(argv) {
   }
   if (!environment) throw new TypeError("--env staging is required");
   return Object.freeze({ environment: normalizeCloudE2EEnvironment(environment) });
+}
+
+export function cloudE2EProgress(event) {
+  switch (event?.event) {
+    case "genesis-development-staging-activity-writer-ready":
+      return "preflighting staging and Activity evidence";
+    case "genesis-development-e2e-start":
+      return "running Genesis development";
+    case "genesis-development-e2e-submitted":
+      return event.status === "published"
+        ? "Genesis published; verifying idempotent replay"
+        : "Genesis generated; waiting for authoritative birth publication";
+    case "genesis-development-staging-activity-inspected":
+      return "collecting Activity evidence";
+    case "genesis-development-staging-e2e-complete":
+      return "verifying Identity Card and official photo";
+    default:
+      return null;
+  }
+}
+
+export function createCloudE2EFetch({
+  fetchImpl = globalThis.fetch,
+  replayRequestTimeoutMs = DEFAULT_REPLAY_REQUEST_TIMEOUT_MS,
+} = {}) {
+  if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl must be a function");
+  if (!Number.isSafeInteger(replayRequestTimeoutMs) || replayRequestTimeoutMs < 1) {
+    throw new TypeError("replayRequestTimeoutMs must be a positive integer");
+  }
+  let birthDevelopmentPosts = 0;
+  return async (input, init = {}) => {
+    const url = new URL(typeof input === "string" ? input : input.url);
+    const isBirthDevelopmentPost = String(init.method ?? "GET").toUpperCase() === "POST"
+      && url.pathname === "/internal/births/develop";
+    if (!isBirthDevelopmentPost) return fetchImpl(input, init);
+    birthDevelopmentPosts += 1;
+    if (birthDevelopmentPosts === 1) return fetchImpl(input, init);
+    const boundedSignal = AbortSignal.timeout(replayRequestTimeoutMs);
+    const signal = init.signal ? AbortSignal.any([init.signal, boundedSignal]) : boundedSignal;
+    return fetchImpl(input, { ...init, signal });
+  };
 }
 
 function retainSliceGClosure(result, verified) {
@@ -56,11 +98,23 @@ export async function runCloudflareE2E({
   environment,
   runStaging = runStagingGenesisDevelopmentE2EWithActivity,
   verifySliceG = verifySliceGPublicClosure,
+  fetchImpl = globalThis.fetch,
+  emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
 } = {}) {
   const env = normalizeCloudE2EEnvironment(environment);
   if (typeof runStaging !== "function") throw new TypeError("runStaging must be a function");
   if (typeof verifySliceG !== "function") throw new TypeError("verifySliceG must be a function");
-  const result = await runStaging();
+  if (typeof emit !== "function") throw new TypeError("emit must be a function");
+  const emitWithProgress = (event) => {
+    const progress = cloudE2EProgress(event);
+    emit(progress === null ? event : { ...event, progress });
+  };
+  emitWithProgress({ event: "cloudflare-e2e-preflight", progress: "preflighting deployed staging services" });
+  const result = await runStaging({
+    fetchImpl: createCloudE2EFetch({ fetchImpl }),
+    emit: emitWithProgress,
+  });
+  emitWithProgress({ event: "cloudflare-e2e-slice-g-verification", progress: "verifying Identity Card and official photo" });
   const verified = await verifySliceG({ evidence: result.evidence });
   const sliceGClosure = result.evidencePath ? retainSliceGClosure(result, verified) : Object.freeze({
     contract: "fibre-cloudflare-slice-g-public-closure-v0.1",
