@@ -2,7 +2,7 @@ import {
   buildFibreCivilRegistration,
   mintFibreIdentityNumber,
 } from "#core/src/fibre-civil-identity.mjs";
-import { attachGenesisCanonicalVisualIdentity } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
+import { attachGenesisCanonicalVisualIdentity } from "fibre/world-kernel/genesis-authority-contracts";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
