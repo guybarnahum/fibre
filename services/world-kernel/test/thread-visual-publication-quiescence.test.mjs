@@ -11,7 +11,10 @@ import { createThreadVisualPublicationReconciler } from "../src/thread-visual-pu
 
 function pendingEmbodiment(threadId) {
   const specification = {
-    subject: { partyId: threadId, description: "Stable canonical likeness fixture." },
+    subject: {
+      partyId: threadId,
+      description: "Stable canonical likeness fixture with enough facial detail to satisfy the Embodiment domain minimum length.",
+    },
     method: "canonical synthetic portrait specification",
     description: "Neutral canonical portrait fixture.",
     model: "replaceable-renderer",
