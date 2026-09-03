@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
@@ -45,33 +48,39 @@ test("service deploy preserves resolved bindings and stamps the exact source SHA
 });
 
 test("service deploy uses the resolved environment config without provisioning", async () => {
+  const repoRoot = mkdtempSync(join(tmpdir(), "fibre-service-deploy-"));
   const calls = [];
   const writes = [];
-  const result = await deployCloudflareService({
-    repoRoot: "/repo",
-    environment: "staging",
-    service: "world-kernel",
-    async resolveSource() { return SHA; },
-    async readFileImpl(path) {
-      calls.push(["read", path]);
-      return JSON.stringify(resolvedConfig());
-    },
-    async writeFileImpl(path, content) {
-      writes.push([path, JSON.parse(content)]);
-    },
-    async runner(args, options) {
-      calls.push(["wrangler", args, options]);
-      return { stdout: "deployed", stderr: "" };
-    },
-  });
 
-  assert.equal(result.sourceGitSha, SHA);
-  assert.equal(result.workerName, "fibre-world-kernel-staging");
-  assert.match(calls[0][1], /\.fibre\/cloudflare\/staging\/wrangler\/world-kernel\.jsonc$/);
-  assert.equal(writes.length, 1);
-  assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
-  const wrangler = calls.find((entry) => entry[0] === "wrangler");
-  assert.deepEqual(wrangler[1].slice(0, 1), ["deploy"]);
-  assert.ok(wrangler[1].includes("--experimental-provision=false"));
-  assert.ok(wrangler[1].includes("--experimental-auto-create=false"));
+  try {
+    const result = await deployCloudflareService({
+      repoRoot,
+      environment: "staging",
+      service: "world-kernel",
+      async resolveSource() { return SHA; },
+      async readFileImpl(path) {
+        calls.push(["read", path]);
+        return JSON.stringify(resolvedConfig());
+      },
+      async writeFileImpl(path, content) {
+        writes.push([path, JSON.parse(content)]);
+      },
+      async runner(args, options) {
+        calls.push(["wrangler", args, options]);
+        return { stdout: "deployed", stderr: "" };
+      },
+    });
+
+    assert.equal(result.sourceGitSha, SHA);
+    assert.equal(result.workerName, "fibre-world-kernel-staging");
+    assert.match(calls[0][1], /\.fibre\/cloudflare\/staging\/wrangler\/world-kernel\.jsonc$/);
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
+    const wrangler = calls.find((entry) => entry[0] === "wrangler");
+    assert.deepEqual(wrangler[1].slice(0, 1), ["deploy"]);
+    assert.ok(wrangler[1].includes("--experimental-provision=false"));
+    assert.ok(wrangler[1].includes("--experimental-auto-create=false"));
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
 });
