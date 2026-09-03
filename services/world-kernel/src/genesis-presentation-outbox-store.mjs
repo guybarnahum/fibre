@@ -65,6 +65,7 @@ export class GenesisPresentationOutboxStore {
       name: error?.constructor?.name ?? "Error",
       code: error?.code ?? null,
       message: error?.message ?? String(error),
+      retryable: error?.retryable !== false,
     };
     const result = this.#database.prepare(`
       UPDATE ${OUTBOX_TABLE}
