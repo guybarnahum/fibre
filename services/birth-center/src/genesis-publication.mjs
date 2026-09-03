@@ -2,6 +2,7 @@ import {
   buildFibreCivilRegistration,
   mintFibreIdentityNumber,
 } from "#core/src/fibre-civil-identity.mjs";
+import { attachGenesisCanonicalVisualIdentity } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -17,6 +18,7 @@ import {
   sha256,
   validateThreadSnapshot,
 } from "fibre/world-kernel/genesis-publication-contracts";
+import { buildDeNovoCanonicalVisualIdentity } from "./genesis-visual-phenotype.mjs";
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 const fail = (message) => { throw new Error(message); };
@@ -242,10 +244,15 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
   if (!Array.isArray(slotPlan.roster?.participants) || slotPlan.roster.participants.length === 0) fail("current Genesis birth requires the authoritative initial roster");
   if (!candidate.lifeContinuity || candidate.episodes.length === 0) fail("current Genesis birth requires admitted history plus derived life continuity");
 
-  const thread = buildNeutralGenesisThreadSeed({
+  const seedThread = buildNeutralGenesisThreadSeed({
     threadId: candidate.threadId,
     createdAt: candidate.attemptStartedAt,
   });
+  const thread = attachGenesisCanonicalVisualIdentity(
+    { thread: seedThread },
+    buildDeNovoCanonicalVisualIdentity({ threadId: candidate.threadId }),
+  ).thread;
+  validateThreadSnapshot(thread);
   const memories = materializeGenesisMemoryRecords(candidate, publicationAt);
   const manifest = buildManifest({ candidate, slotPlan, thread, memories, cognition, publicationAt });
   const lifeRelations = buildSyntheticLineageRelations({ candidate, slotPlan, thread, publicationAt });
