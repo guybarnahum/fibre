@@ -18,7 +18,7 @@ import {
   sha256,
   validateThreadSnapshot,
 } from "fibre/world-kernel/genesis-publication-contracts";
-import { buildDeNovoCanonicalVisualIdentity } from "./genesis-visual-phenotype.mjs";
+import { buildGenesisCanonicalVisualIdentity } from "./genesis-visual-phenotype.mjs";
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 const fail = (message) => { throw new Error(message); };
@@ -248,9 +248,14 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     threadId: candidate.threadId,
     createdAt: candidate.attemptStartedAt,
   });
+  const parentIds = (slotPlan.genome.header.sourceEligibility?.sourceOwners ?? []).map((owner) => owner.ownerId);
   const thread = attachGenesisCanonicalVisualIdentity(
     { thread: seedThread },
-    buildDeNovoCanonicalVisualIdentity({ threadId: candidate.threadId }),
+    buildGenesisCanonicalVisualIdentity({
+      threadId: candidate.threadId,
+      originMode: candidate.originMode,
+      parentIds,
+    }),
   ).thread;
   validateThreadSnapshot(thread);
   const memories = materializeGenesisMemoryRecords(candidate, publicationAt);
