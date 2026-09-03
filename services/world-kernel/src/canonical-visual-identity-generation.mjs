@@ -36,6 +36,22 @@ function richEnough(embodiment) {
   }
 }
 
+function assertVerifiedGenerationProof(proof) {
+  if (proof?.credentialMode === "content_credential") {
+    if (proof.verification?.valid !== true) {
+      throw new TypeError("canonical visual identity completion requires valid content-credential verification");
+    }
+    return;
+  }
+  if (proof?.credentialMode === "disabled") {
+    if (proof.verification !== null) {
+      throw new TypeError("canonical visual identity uncredentialed provenance proof must not claim credential verification");
+    }
+    return;
+  }
+  throw new TypeError("canonical visual identity completion requires a recognized verified generation proof mode");
+}
+
 export function canonicalVisualIdentityBrief(embodimentCandidate) {
   const embodiment = normalizeEmbodimentRepresentation(embodimentCandidate);
   if (embodiment.kind !== "portrait") throw new TypeError("canonical visual identity generation requires portrait embodiment");
@@ -124,9 +140,7 @@ export function bindVerifiedCanonicalVisualIdentityProof({
   const receipt = normalizeStoredAssetReceipt(proof?.receipt);
   const job = normalizeAssetGenerationJob(proof?.generationRecord?.job);
   assertIsoTimestamp("recordedAt", recordedAt);
-  if (proof?.verification?.valid !== true) {
-    throw new TypeError("canonical visual identity completion requires verified credentialed generation proof");
-  }
+  assertVerifiedGenerationProof(proof);
   if (embodiment.kind !== "portrait" || embodiment.status !== "pending_generation" || embodiment.asset !== null) {
     throw new TypeError("canonical visual identity completion requires pending portrait embodiment");
   }
