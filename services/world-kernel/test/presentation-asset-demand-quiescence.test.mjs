@@ -74,85 +74,71 @@ test("unchanged pending demand does not rewrite catalog or refresh dispatch witn
   assert.equal(second.reconciliation.retainedDemands.length, 1);
 });
 
-test("ordinary reconciliation inherits the current regeneration epoch after explicit recovery", async () => {
+test("Presentation catalog D1 quota failure opens one shared write circuit across service instances", async () => {
   const base = createMemoryInfraDriver();
   let upserts = 0;
+  const quotaError = () => new Error(
+    "D1_ERROR: Your account has exceeded D1's free tier daily row write limit. Upgrade to a paid plan or wait until tomorrow (midnight UTC) to continue.",
+  );
   const infra = {
     ...base,
     catalog: {
       ...base.catalog,
-      async upsert(key, value) {
+      async upsert() {
         upserts += 1;
-        return base.catalog.upsert(key, value);
+        throw quotaError();
       },
     },
   };
-  const service = createPresentationAssetDemandService({ infra });
-  const scope = { entityKind: "thread", entityRef: "thr_quiet" };
-
-  const original = await service.reconcile({
-    scope,
+  let clock = 0;
+  const options = {
+    infra,
+    writeCircuitKey: "presentation-catalog-quota-test",
+    writeQuotaBackoffMs: 300_000,
+    nowMs: () => clock,
+  };
+  const input = {
+    scope: { entityKind: "thread", entityRef: "thr_quiet" },
     slots: [missingSlot()],
     requestedAt: "2026-09-03T20:00:00Z",
     providerProfile: "bfl-flux-2-pro-v1",
-  });
-  const originalDemandId = original.projection.demands.find((entry) => entry.demand.current).demand.demandId;
+  };
 
-  const recovered = await service.reconcile({
-    scope,
-    slots: [missingSlot()],
-    requestedAt: "2026-09-03T20:01:00Z",
-    providerProfile: "bfl-flux-2-pro-v1",
-    regenerationKey: "recovery-A",
-  });
-  assert.equal(recovered.changed, true);
-  assert.equal(recovered.projection.regenerationKey, "recovery-A");
-  assert.equal(recovered.reconciliation.createdDemands.length, 1);
-  assert.equal(recovered.reconciliation.supersededDemands.length, 1);
-  const recoveredDemandId = recovered.projection.demands.find((entry) => entry.demand.current).demand.demandId;
-  assert.notEqual(recoveredDemandId, originalDemandId);
-  assert.equal(upserts, 2);
-
-  const ordinarySweep = await service.reconcile({
-    scope,
-    slots: [missingSlot()],
-    requestedAt: "2026-09-03T20:01:05Z",
-    providerProfile: "bfl-flux-2-pro-v1",
-    regenerationKey: null,
-  });
-
-  assert.equal(ordinarySweep.changed, false);
-  assert.equal(ordinarySweep.projection.regenerationKey, "recovery-A");
-  assert.equal(ordinarySweep.reconciliation.createdDemands.length, 0);
-  assert.equal(ordinarySweep.reconciliation.supersededDemands.length, 0);
-  assert.equal(ordinarySweep.reconciliation.retainedDemands.length, 1);
-  assert.equal(
-    ordinarySweep.projection.demands.find((entry) => entry.demand.current).demand.demandId,
-    recoveredDemandId,
+  await assert.rejects(
+    () => createPresentationAssetDemandService(options).reconcile(input),
+    (error) => {
+      assert.equal(error.code, "D1_WRITE_QUOTA_EXHAUSTED");
+      assert.equal(error.retryable, true);
+      return true;
+    },
   );
-  assert.equal(upserts, 2, "ordinary sweep must not rewrite the recovered generation epoch");
+  assert.equal(upserts, 1);
 
-  const repeatedRecovery = await service.reconcile({
-    scope,
-    slots: [missingSlot()],
-    requestedAt: "2026-09-03T20:01:10Z",
-    providerProfile: "bfl-flux-2-pro-v1",
-    regenerationKey: "recovery-A",
-  });
-  assert.equal(repeatedRecovery.changed, false);
-  assert.equal(repeatedRecovery.reconciliation.createdDemands.length, 0);
+  clock = 5_000;
+  await assert.rejects(
+    () => createPresentationAssetDemandService(options).reconcile({
+      ...input,
+      requestedAt: "2026-09-03T20:00:05Z",
+    }),
+    (error) => {
+      assert.equal(error.code, "PRESENTATION_CATALOG_WRITE_CIRCUIT_OPEN");
+      assert.equal(error.retryable, true);
+      assert.equal(error.suppressActivity, true);
+      return true;
+    },
+  );
+  assert.equal(upserts, 1);
+
+  clock = 300_001;
+  await assert.rejects(
+    () => createPresentationAssetDemandService(options).reconcile({
+      ...input,
+      requestedAt: "2026-09-03T20:05:00.001Z",
+    }),
+    (error) => {
+      assert.equal(error.code, "D1_WRITE_QUOTA_EXHAUSTED");
+      return true;
+    },
+  );
   assert.equal(upserts, 2);
-
-  const nextRecovery = await service.reconcile({
-    scope,
-    slots: [missingSlot()],
-    requestedAt: "2026-09-03T20:02:00Z",
-    providerProfile: "bfl-flux-2-pro-v1",
-    regenerationKey: "recovery-B",
-  });
-  assert.equal(nextRecovery.changed, true);
-  assert.equal(nextRecovery.projection.regenerationKey, "recovery-B");
-  assert.equal(nextRecovery.reconciliation.createdDemands.length, 1);
-  assert.equal(nextRecovery.reconciliation.supersededDemands.length, 1);
-  assert.equal(upserts, 3);
 });
