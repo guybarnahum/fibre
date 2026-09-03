@@ -24,6 +24,17 @@ function job() {
   };
 }
 
+function request(token = "shared-private-token") {
+  return new Request("https://asset.example/internal/generation/reconcile", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(token === null ? {} : { "x-fibre-private-token": token }),
+    },
+    body: JSON.stringify({ job: job() }),
+  });
+}
+
 function apiFixture() {
   const infra = createMemoryInfraDriver();
   const controlService = createAssetGenerationControlService({
@@ -41,14 +52,6 @@ function apiFixture() {
 
 test("Asset Generator control API authenticates and schedules one durable workflow", async () => {
   const { infra, api } = apiFixture();
-  const request = () => new Request("https://asset.example/internal/generation/reconcile", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-fibre-private-token": "shared-private-token",
-    },
-    body: JSON.stringify({ job: job() }),
-  });
 
   const first = await (await api.fetch(request())).json();
   const second = await (await api.fetch(request())).json();
@@ -67,11 +70,30 @@ test("Asset Generator control API authenticates and schedules one durable workfl
 
 test("Asset Generator control API rejects unauthenticated requests", async () => {
   const { api } = apiFixture();
-  const response = await api.fetch(new Request("https://asset.example/internal/generation/reconcile", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ job: job() }),
-  }));
+  const response = await api.fetch(request(null));
   assert.equal(response.status, 403);
   assert.deepEqual(await response.json(), { ok: false, error: "private_token_required" });
+});
+
+test("Asset Generator control API preserves terminal workflow classification", async () => {
+  const api = createAssetGenerationControlApi({
+    privateToken: "shared-private-token",
+    controlService: {
+      async reconcile() {
+        const error = new Error("asset generation workflow asset_control_job_1 ended as errored: provider rejected request");
+        error.code = "ASSET_GENERATION_WORKFLOW_TERMINAL";
+        error.retryable = false;
+        throw error;
+      },
+    },
+  });
+  const response = await api.fetch(request());
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), {
+    ok: false,
+    error: "asset_generation_control_failed",
+    code: "ASSET_GENERATION_WORKFLOW_TERMINAL",
+    detail: "asset generation workflow asset_control_job_1 ended as errored: provider rejected request",
+    retryable: false,
+  });
 });
