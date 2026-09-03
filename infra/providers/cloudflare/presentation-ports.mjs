@@ -10,6 +10,9 @@ import {
   infraCanonicalJson,
 } from "../../internal.mjs";
 
+const D1_WRITE_QUOTA_BACKOFF_MS = 300_000;
+const d1WriteCircuitByDatabase = new WeakMap();
+
 function assertChannelNamespace(namespace) {
   if (!namespace || typeof namespace.getByName !== "function") {
     throw new TypeError("Cloudflare presentation channel namespace must provide getByName");
@@ -131,6 +134,53 @@ function likePrefix(prefix) {
   return `${prefix.replace(/[\\%_]/g, (value) => `\\${value}`)}%`;
 }
 
+function isD1WriteQuotaError(error) {
+  const message = error?.message ?? String(error);
+  return Number(error?.code) === 7500
+    || message.includes("exceeded D1's free tier daily row write limit");
+}
+
+function quotaCircuitError(openUntilMs) {
+  const error = new Error(`Cloudflare D1 catalog write circuit is open until ${new Date(openUntilMs).toISOString()}`);
+  error.name = "CloudflareD1CatalogWriteCircuitOpenError";
+  error.code = "D1_WRITE_QUOTA_CIRCUIT_OPEN";
+  error.retryable = true;
+  error.suppressActivity = true;
+  error.retryAfterAt = new Date(openUntilMs).toISOString();
+  return error;
+}
+
+function assertD1WriteCircuitClosed(database) {
+  const openUntilMs = d1WriteCircuitByDatabase.get(database) ?? null;
+  if (openUntilMs === null) return;
+  if (Date.now() >= openUntilMs) {
+    d1WriteCircuitByDatabase.delete(database);
+    return;
+  }
+  throw quotaCircuitError(openUntilMs);
+}
+
+function classifyD1WriteFailure(database, error) {
+  if (!isD1WriteQuotaError(error)) throw error;
+  const openUntilMs = Date.now() + D1_WRITE_QUOTA_BACKOFF_MS;
+  d1WriteCircuitByDatabase.set(database, openUntilMs);
+  error.code = "D1_WRITE_QUOTA_EXHAUSTED";
+  error.retryable = true;
+  error.retryAfterAt = new Date(openUntilMs).toISOString();
+  throw error;
+}
+
+async function runD1Write(database, operation) {
+  assertD1WriteCircuitClosed(database);
+  try {
+    const result = await operation();
+    d1WriteCircuitByDatabase.delete(database);
+    return result;
+  } catch (error) {
+    return classifyD1WriteFailure(database, error);
+  }
+}
+
 export function createCloudflareCatalogPort(databaseBinding) {
   const database = assertD1Database(databaseBinding);
   return Object.freeze({
@@ -139,13 +189,13 @@ export function createCloudflareCatalogPort(databaseBinding) {
       assertInfraPlainObject("catalog value", value);
       assertInfraJsonValue("catalog value", value);
       const valueJson = infraCanonicalJson(value);
-      await database.prepare(`
+      await runD1Write(database, () => database.prepare(`
         INSERT INTO fibre_catalog (catalog_key, value_json, updated_at)
         VALUES (?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(catalog_key) DO UPDATE SET
           value_json = excluded.value_json,
           updated_at = CURRENT_TIMESTAMP
-      `).bind(key, valueJson).run();
+      `).bind(key, valueJson).run());
       return structuredClone(value);
     },
     async get(key) {
@@ -156,7 +206,7 @@ export function createCloudflareCatalogPort(databaseBinding) {
     },
     async remove(key) {
       assertInfraId("catalog key", key);
-      const result = await database.prepare("DELETE FROM fibre_catalog WHERE catalog_key = ?").bind(key).run();
+      const result = await runD1Write(database, () => database.prepare("DELETE FROM fibre_catalog WHERE catalog_key = ?").bind(key).run());
       return d1Changes(result) > 0;
     },
     async list(options = {}) {
