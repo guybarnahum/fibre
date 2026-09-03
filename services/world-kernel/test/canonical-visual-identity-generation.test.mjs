@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { STORED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
+import {
+  PROVENANCED_ASSET_RECEIPT_VERSION,
+  STORED_ASSET_RECEIPT_VERSION,
+} from "#services/asset-generator/src/index.mjs";
 import {
   embodimentId,
   embodimentSpecificationDigest,
@@ -84,6 +87,30 @@ function storedReceipt(job) {
   };
 }
 
+function provenancedReceipt(job) {
+  return {
+    receiptVersion: PROVENANCED_ASSET_RECEIPT_VERSION,
+    jobId: job.jobId,
+    status: "ready",
+    assetKind: "image",
+    role: job.role,
+    variant: job.variant,
+    objectRef: job.outputObjectRef,
+    sha256: DIGEST_A,
+    mediaType: "image/webp",
+    width: 1024,
+    height: 1024,
+    durationMs: null,
+    completedAt: "2026-08-30T05:06:00Z",
+    generationRecordObjectRef: "generation_record_visual_identity_001",
+    generationRecordDigest: DIGEST_B,
+    providerOutputDigest: DIGEST_A,
+    credential: null,
+    inputReferences: job.inputReferences,
+    context: job.context,
+  };
+}
+
 test("canonical visual identity root image is planned once from rich text with no reference image", () => {
   const embodiment = pendingEmbodiment();
   const job = planCanonicalVisualIdentityGeneration({
@@ -128,7 +155,7 @@ test("canonical generation requires a sufficiently rich identity specification",
   }), /concrete appearance detail/);
 });
 
-test("verified root-image proof binds immutable reference object into Embodiment and unlocks public visual identity", () => {
+test("verified credentialed root-image proof binds immutable reference object into Embodiment", () => {
   const pending = pendingEmbodiment();
   const job = planCanonicalVisualIdentityGeneration({
     embodiment: pending,
@@ -141,6 +168,7 @@ test("verified root-image proof binds immutable reference object into Embodiment
       receipt,
       generationRecord: { job },
       verification: { valid: true },
+      credentialMode: "content_credential",
     },
     recordedAt: "2026-08-30T05:06:01Z",
   });
@@ -156,4 +184,51 @@ test("verified root-image proof binds immutable reference object into Embodiment
   });
   assert.ok(visualIdentity);
   assert.deepEqual(visualIdentity.referenceObjectRefs, [job.outputObjectRef]);
+});
+
+test("verified durable provenance admits canonical root when content credentials are disabled", () => {
+  const pending = pendingEmbodiment();
+  const job = planCanonicalVisualIdentityGeneration({
+    embodiment: pending,
+    requestedAt: "2026-08-30T05:05:10Z",
+  });
+  const available = bindVerifiedCanonicalVisualIdentityProof({
+    embodiment: pending,
+    proof: {
+      receipt: provenancedReceipt(job),
+      generationRecord: { job },
+      verification: null,
+      credentialMode: "disabled",
+    },
+    recordedAt: "2026-08-30T05:06:01Z",
+  });
+  assert.equal(available.status, "available");
+  assert.equal(available.asset.referenceObjectRef, job.outputObjectRef);
+});
+
+test("canonical root admission rejects ambiguous or dishonest proof modes", () => {
+  const pending = pendingEmbodiment();
+  const job = planCanonicalVisualIdentityGeneration({
+    embodiment: pending,
+    requestedAt: "2026-08-30T05:05:10Z",
+  });
+  assert.throws(() => bindVerifiedCanonicalVisualIdentityProof({
+    embodiment: pending,
+    proof: {
+      receipt: provenancedReceipt(job),
+      generationRecord: { job },
+      verification: { valid: true },
+      credentialMode: "disabled",
+    },
+    recordedAt: "2026-08-30T05:06:01Z",
+  }), /must not claim credential verification/);
+  assert.throws(() => bindVerifiedCanonicalVisualIdentityProof({
+    embodiment: pending,
+    proof: {
+      receipt: storedReceipt(job),
+      generationRecord: { job },
+      verification: { valid: true },
+    },
+    recordedAt: "2026-08-30T05:06:01Z",
+  }), /recognized verified generation proof mode/);
 });
