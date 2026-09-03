@@ -1,5 +1,8 @@
 import { projectNewbornThreadPresentation } from "./newborn-presentation-projector.mjs";
 
+const RETRY_BASE_MS = 5_000;
+const RETRY_MAX_MS = 300_000;
+
 function method(name, target, member) {
   if (target === null || typeof target !== "object" || typeof target[member] !== "function") {
     throw new TypeError(`${name} must implement ${member}()`);
@@ -25,7 +28,21 @@ async function runActivityStage(activity, metadata, operation) {
   return activity.runStage(metadata, operation);
 }
 
-function errorResult(entry, error, recorded) {
+function retryDelayMs(attemptCount) {
+  if (!Number.isSafeInteger(attemptCount) || attemptCount <= 0) return 0;
+  return Math.min(RETRY_MAX_MS, RETRY_BASE_MS * (2 ** Math.min(16, attemptCount - 1)));
+}
+
+function retryEligible(entry, observedAt) {
+  if (entry.lastError?.retryable === false) return false;
+  if (entry.attemptCount <= 0 || entry.lastAttemptAt === null) return true;
+  const observedMs = Date.parse(observedAt);
+  const lastAttemptMs = Date.parse(entry.lastAttemptAt);
+  if (!Number.isFinite(observedMs) || !Number.isFinite(lastAttemptMs)) return true;
+  return observedMs - lastAttemptMs >= retryDelayMs(entry.attemptCount);
+}
+
+function errorResult(entry, recorded) {
   return Object.freeze({
     genesisId: entry.genesisId,
     threadId: entry.threadId,
@@ -93,18 +110,12 @@ export function createGenesisPresentationDeliveryService({
       });
     }
     try {
-      const bundle = await runActivityStage(activity, {
-        ...context,
-        stage: "presentation.world_authority.resolve",
-        attempt,
-      }, async () => {
-        const thread = world.getThread(entry.threadId);
-        const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
-        return projector({
-          thread,
-          manifest: entry.manifest,
-          civilRegistration,
-        });
+      const thread = world.getThread(entry.threadId);
+      const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
+      const bundle = projector({
+        thread,
+        manifest: entry.manifest,
+        civilRegistration,
       });
       const publication = await runActivityStage(activity, {
         ...context,
@@ -129,7 +140,7 @@ export function createGenesisPresentationDeliveryService({
     } catch (error) {
       const attemptedAt = now();
       const recorded = queue.recordFailure(entry.genesisId, error, { attemptedAt });
-      return errorResult(entry, error, recorded);
+      return errorResult(entry, recorded);
     }
   }
 
@@ -141,7 +152,8 @@ export function createGenesisPresentationDeliveryService({
     },
 
     async deliverPending({ limit = 100 } = {}) {
-      const pending = queue.listPending({ limit });
+      const observedAt = now();
+      const pending = queue.listPending({ limit }).filter((entry) => retryEligible(entry, observedAt));
       const results = [];
       for (const entry of pending) results.push(await deliverEntry(entry));
       return Object.freeze({
