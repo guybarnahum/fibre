@@ -82,7 +82,7 @@ function readyRoot(job) {
   };
 }
 
-test("World visual reconciliation admits one root then converges through Presentation without regenerating", async () => {
+test("World visual reconciliation records state-changing work but stays silent when already converged", async () => {
   let current = pendingEmbodiment();
   let rootCalls = 0;
   let presentationCalls = 0;
@@ -147,8 +147,6 @@ test("World visual reconciliation admits one root then converges through Present
   for (const expected of [
     "world.visual_identity.demand",
     "world.embodiment.admission",
-    "world.reconciliation.presentation",
-    "world.reconciliation.complete",
   ]) {
     assert.equal(
       activity.some((record) => record.stage === expected && record.status === "succeeded"),
@@ -158,11 +156,14 @@ test("World visual reconciliation admits one root then converges through Present
   }
   assert.equal(activity.every((record) => record.genesisId === activityContext.genesisId), true);
   assert.equal(activity.every((record) => record.threadId === current.threadId), true);
+  const countAfterWork = activity.length;
 
   const replay = await reconciler.reconcileThread({ threadId: current.threadId, activityContext });
   assert.equal(replay.complete, true);
   assert.equal(rootCalls, 1, "an admitted canonical root must never be generated twice");
   assert.equal(presentationCalls, 2, "Presentation reconciliation may replay idempotently");
+  const replayActivity = await telemetry.query({ requestId: activityContext.requestId });
+  assert.equal(replayActivity.length, countAfterWork, "an already-converged replay must emit no activity");
 });
 
 test("World visual reconciliation waits without mutating when root generation is still pending", async () => {

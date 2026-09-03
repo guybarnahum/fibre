@@ -179,3 +179,69 @@ test("Presentation visual reconciliation waits for the newborn projection before
   assert.equal(result.stage, "awaiting_genesis_projection");
   assert.equal(touched, false);
 });
+
+test("Presentation visual reconciliation emits no Activity when projection is already converged", async () => {
+  const embodiment = availableEmbodiment("thr_presentation_visual_converged_001");
+  const mediaId = "media_official_id_photo_converged";
+  const activity = [];
+  const currentSnapshot = {
+    pointer: {
+      objectRef: "snapshot_identity_converged",
+      snapshotDigest: `sha256:${"c".repeat(64)}`,
+    },
+    snapshot: {
+      presentation: {
+        manifest: {
+          threadId: embodiment.threadId,
+          generatedAt: "2026-08-30T20:03:00Z",
+        },
+        civilIdentity: {
+          registeredAt: "2026-08-30T20:04:00Z",
+        },
+      },
+      media: { assets: [] },
+      provenance: {},
+    },
+  };
+  const reconciler = createThreadPresentationVisualPublicationReconciler({
+    presentationServer: {
+      async getSnapshot() { return currentSnapshot; },
+      async publishSnapshot() { throw new Error("already converged"); },
+    },
+    infra: {},
+    selectProviderProfile() { throw new Error("ready slot must not demand media"); },
+    createDemandService() { return { async reconcile() { throw new Error("not reached"); } }; },
+    createVisualRewrite() {
+      return {
+        async project() { return { reused: true }; },
+      };
+    },
+    createIdentityRewrite() {
+      return {
+        async ensureOfficialIdentityMedia() {
+          return { reused: true, identityCard: { officialPhotoMediaRef: mediaId } };
+        },
+      };
+    },
+    planSlots() {
+      return { slots: [{ mediaId, status: "ready", referenceObjectRefs: [] }] };
+    },
+    activityRecorder: {
+      async record(record) { activity.push(record); },
+      async runStage(metadata, operation) {
+        activity.push({ ...metadata, status: "started" });
+        return operation();
+      },
+    },
+  });
+
+  const result = await reconciler.reconcileAvailableEmbodiment({
+    threadId: embodiment.threadId,
+    embodiment,
+    observedAt: "2026-08-30T20:02:00Z",
+  });
+  assert.equal(result.complete, true);
+  assert.equal(result.detail.visualReused, true);
+  assert.equal(result.detail.identityReused, true);
+  assert.deepEqual(activity, []);
+});

@@ -43,9 +43,32 @@ function optionalActivityRecorder(value) {
   return value;
 }
 
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
+}
+
 async function runActivityStage(activity, metadata, operation) {
   if (activity === null) return operation();
   return activity.runStage(metadata, operation);
+}
+
+async function runChangedStage(activity, metadata, operation, changed) {
+  try {
+    const result = await operation();
+    if (changed(result)) {
+      await bestEffortRecord(activity, { ...metadata, status: "succeeded" });
+    }
+    return result;
+  } catch (error) {
+    await bestEffortRecord(activity, {
+      ...metadata,
+      status: "failed",
+      message: error instanceof Error ? error.message : String(error),
+      error: { category: "reconciliation", code: "PRESENTATION_RECONCILIATION_FAILED", retryable: true },
+    });
+    throw error;
+  }
 }
 
 function activityIdentity(threadId, supplied = {}) {
@@ -127,7 +150,7 @@ export function createThreadPresentationVisualPublicationReconciler({
         presentationServer,
         embodimentReader: suppliedEmbodimentReader(embodiment),
       });
-      const visual = await runActivityStage(activity, {
+      const visual = await runChangedStage(activity, {
         ...context,
         stage: "presentation.visual_identity.project",
         attempt: 1,
@@ -135,7 +158,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       }, async () => visualRewrite.project({
         channelId,
         embodimentId: embodiment.embodimentId,
-      }));
+      }), (entry) => entry?.reused !== true);
       const projected = await presentationServer.getSnapshot(channelId);
       if (projected === null) {
         throw new Error(`Thread ${threadId} presentation disappeared during visual identity projection`);
@@ -145,7 +168,7 @@ export function createThreadPresentationVisualPublicationReconciler({
         projected.snapshot.presentation?.manifest?.generatedAt,
         projected.snapshot.presentation?.civilIdentity?.registeredAt,
       ]);
-      const identity = await runActivityStage(activity, {
+      const identity = await runChangedStage(activity, {
         ...context,
         stage: "presentation.identity_media.ensure",
         attempt: 1,
@@ -153,7 +176,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       }, async () => identityRewrite.ensureOfficialIdentityMedia({
         channelId,
         issuedAt,
-      }));
+      }), (entry) => entry?.reused !== true);
       const current = await presentationServer.getSnapshot(channelId);
       if (current === null) throw new Error(`Thread ${threadId} presentation disappeared during visual reconciliation`);
 

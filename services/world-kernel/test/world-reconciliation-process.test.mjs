@@ -61,6 +61,33 @@ test("World reconciliation isolates Genesis delivery from visual publication", a
   assert.equal(worldReconciliationNeedsRetry(result), true);
 });
 
+test("World reconciliation scheduler emits no Activity for an idle sweep", async () => {
+  const activityCalls = [];
+  const process = createWorldReconciliationProcess({
+    presentationDelivery: {
+      async deliverPending() {
+        return { attempted: 0, delivered: 0, failed: 0, results: [] };
+      },
+    },
+    visualPublicationProcess: {
+      async runOnce() {
+        return { skipped: false, reason: null, results: [] };
+      },
+    },
+    activityRecorder: {
+      async record(record) { activityCalls.push(["record", record]); },
+      async runStage(metadata, operation) {
+        activityCalls.push(["runStage", metadata]);
+        return operation();
+      },
+    },
+  });
+
+  const result = await process.runOnce();
+  assert.equal(worldReconciliationNeedsRetry(result), false);
+  assert.deepEqual(activityCalls, []);
+});
+
 test("World reconciliation retry classification distinguishes pending work from convergence", () => {
   assert.equal(worldReconciliationNeedsRetry({
     skipped: false,

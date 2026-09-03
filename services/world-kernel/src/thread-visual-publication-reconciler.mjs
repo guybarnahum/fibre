@@ -27,11 +27,6 @@ function optionalActivityRecorder(value) {
   return value;
 }
 
-async function bestEffortRecord(activity, record) {
-  if (activity === null) return;
-  try { await activity.record(record); } catch {}
-}
-
 async function runActivityStage(activity, metadata, operation) {
   if (activity === null) return operation();
   return activity.runStage(metadata, operation);
@@ -193,20 +188,12 @@ export function createThreadVisualPublicationReconciler({
 
       const observedAt = assertIsoTimestamp("visual publication observedAt", now());
       const projection = normalizePresentationResult(
-        await runActivityStage(activity, {
-          ...context,
-          stage: "world.reconciliation.presentation",
-          attempt: 1,
-          evidence: {
-            embodimentId: embodiment.embodimentId,
-            objectRef: embodiment.asset.referenceObjectRef,
-          },
-        }, async () => presentationBoundary.reconcileAvailableEmbodiment({
+        await presentationBoundary.reconcileAvailableEmbodiment({
           threadId,
           embodiment,
           observedAt,
           activityContext: context,
-        })),
+        }),
       );
 
       if (!projection.complete) {
@@ -218,16 +205,6 @@ export function createThreadVisualPublicationReconciler({
         });
       }
 
-      await bestEffortRecord(activity, {
-        ...context,
-        stage: "world.reconciliation.complete",
-        status: "succeeded",
-        attempt: 1,
-        evidence: {
-          embodimentId: embodiment.embodimentId,
-          objectRef: embodiment.asset.referenceObjectRef,
-        },
-      });
       return finished({
         threadId,
         embodimentId: embodiment.embodimentId,
