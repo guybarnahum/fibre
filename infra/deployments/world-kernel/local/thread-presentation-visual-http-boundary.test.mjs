@@ -95,6 +95,35 @@ test("World visual HTTP boundary marks transient Presentation failures retryable
   }
 });
 
+test("World visual HTTP boundary preserves explicit terminal Presentation failure", async () => {
+  const boundary = createThreadPresentationVisualHttpBoundary({
+    baseUrl: "https://presentation.example",
+    privateToken: "shared-private-token",
+    async fetchImpl() {
+      return new Response(JSON.stringify({
+        error: "visual_publication_reconciliation_failed",
+        code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL",
+        detail: "official photo Workflow ended as errored",
+        retryable: false,
+      }), {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  });
+
+  await assert.rejects(
+    () => boundary.reconcileAvailableEmbodiment(HANDOFF),
+    (error) => {
+      assert.equal(error.code, "PRESENTATION_ASSET_WORKFLOW_TERMINAL");
+      assert.equal(error.httpStatus, 503);
+      assert.equal(error.retryable, false);
+      assert.match(error.message, /official photo Workflow ended as errored/);
+      return true;
+    },
+  );
+});
+
 test("World visual HTTP boundary retries malformed successful Presentation responses", async () => {
   const boundary = createThreadPresentationVisualHttpBoundary({
     baseUrl: "https://presentation.example",
