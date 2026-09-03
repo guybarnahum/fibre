@@ -186,6 +186,24 @@ test("verified credentialed root-image proof binds immutable reference object in
   assert.deepEqual(visualIdentity.referenceObjectRefs, [job.outputObjectRef]);
 });
 
+test("legacy credentialed proof remains recognizable from credentialed receipt plus valid verification", () => {
+  const pending = pendingEmbodiment();
+  const job = planCanonicalVisualIdentityGeneration({
+    embodiment: pending,
+    requestedAt: "2026-08-30T05:05:10Z",
+  });
+  const available = bindVerifiedCanonicalVisualIdentityProof({
+    embodiment: pending,
+    proof: {
+      receipt: storedReceipt(job),
+      generationRecord: { job },
+      verification: { valid: true },
+    },
+    recordedAt: "2026-08-30T05:06:01Z",
+  });
+  assert.equal(available.status, "available");
+});
+
 test("verified durable provenance admits canonical root when content credentials are disabled", () => {
   const pending = pendingEmbodiment();
   const job = planCanonicalVisualIdentityGeneration({
@@ -225,9 +243,9 @@ test("canonical root admission rejects ambiguous or dishonest proof modes", () =
   assert.throws(() => bindVerifiedCanonicalVisualIdentityProof({
     embodiment: pending,
     proof: {
-      receipt: storedReceipt(job),
+      receipt: provenancedReceipt(job),
       generationRecord: { job },
-      verification: { valid: true },
+      verification: null,
     },
     recordedAt: "2026-08-30T05:06:01Z",
   }), /recognized verified generation proof mode/);
