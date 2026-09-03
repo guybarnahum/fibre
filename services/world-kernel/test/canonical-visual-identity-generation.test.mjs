@@ -107,6 +107,20 @@ test("canonical visual identity root image is planned once from rich text with n
   assert.deepEqual(replay, job);
 });
 
+test("canonical visual identity planning does not depend on Node Buffer globals", () => {
+  const previous = globalThis.Buffer;
+  try {
+    globalThis.Buffer = undefined;
+    const job = planCanonicalVisualIdentityGeneration({
+      embodiment: pendingEmbodiment(),
+      requestedAt: "2026-08-30T05:05:10Z",
+    });
+    assert.equal(job.role, "canonical_visual_identity_reference");
+  } finally {
+    globalThis.Buffer = previous;
+  }
+});
+
 test("canonical generation requires a sufficiently rich identity specification", () => {
   assert.throws(() => planCanonicalVisualIdentityGeneration({
     embodiment: pendingEmbodiment({ rich: false }),
