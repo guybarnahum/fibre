@@ -112,35 +112,53 @@ function normalizeAsset(value, kind, status) {
     return null;
   }
   assertPlainObject("embodiment.asset", value);
-  assertExactKeys("embodiment.asset", value, ["assetRef", "referenceObjectRef", "sha256", "mediaType", "width", "height", "durationMs"]);
-  if (status !== "available") throw new TypeError("only available embodiment may carry an asset");
+  assertExactKeys("embodiment.asset", value, [
+    "assetRef", "referenceObjectRef", "sha256", "mediaType", "width", "height", "durationMs",
+  ]);
   assertNonEmpty("embodiment.asset.assetRef", value.assetRef);
-  if (!ASSET_REF_PATTERN.test(value.assetRef)) throw new TypeError("embodiment.asset.assetRef is invalid");
-  assertId("embodiment.asset.referenceObjectRef", value.referenceObjectRef);
+  if (!ASSET_REF_PATTERN.test(value.assetRef)) throw new TypeError("embodiment.asset.assetRef must be an opaque cache:// or asset:// locator");
+  const referenceObjectRef = value.referenceObjectRef ?? null;
+  if (referenceObjectRef !== null) assertId("embodiment.asset.referenceObjectRef", referenceObjectRef);
   if (!/^sha256:[0-9a-f]{64}$/.test(value.sha256)) throw new TypeError("embodiment.asset.sha256 is invalid");
   assertNonEmpty("embodiment.asset.mediaType", value.mediaType);
-  assertFiniteNumber("embodiment.asset.width", value.width);
-  assertFiniteNumber("embodiment.asset.height", value.height);
+  const normalized = {
+    assetRef: value.assetRef,
+    referenceObjectRef,
+    sha256: value.sha256,
+    mediaType: value.mediaType,
+  };
   if (kind === "portrait") {
-    if (value.durationMs !== null) throw new TypeError("portrait asset durationMs must be null");
-    if (!value.mediaType.startsWith("image/")) throw new TypeError("portrait asset mediaType must be image/*");
+    if (!value.mediaType.startsWith("image/")) throw new TypeError("portrait embodiment asset must use an image media type");
+    assertFiniteNumber("embodiment.asset.width", value.width, { integer: true, minimum: 1 });
+    assertFiniteNumber("embodiment.asset.height", value.height, { integer: true, minimum: 1 });
+    if (value.durationMs !== null) throw new TypeError("portrait embodiment cannot have durationMs");
+    normalized.width = value.width;
+    normalized.height = value.height;
+    normalized.durationMs = null;
+  } else {
+    if (!value.mediaType.startsWith("audio/")) throw new TypeError("voice embodiment asset must use an audio media type");
+    assertFiniteNumber("embodiment.asset.durationMs", value.durationMs, { integer: true, minimum: 1 });
+    if (value.width !== null || value.height !== null) throw new TypeError("voice embodiment cannot have image dimensions");
+    normalized.width = null;
+    normalized.height = null;
+    normalized.durationMs = value.durationMs;
   }
-  if (kind === "voice") {
-    assertFiniteNumber("embodiment.asset.durationMs", value.durationMs);
-    if (!value.mediaType.startsWith("audio/")) throw new TypeError("voice asset mediaType must be audio/*");
-  }
-  return { ...value };
+  return normalized;
+}
+
+export function embodimentId(seed) {
+  return `emb_${sha256(canonicalJson(seed))}`;
 }
 
 export function embodimentSpecificationDigest(specification) {
+  assertPlainObject("embodiment.specification", specification);
   return `sha256:${sha256(canonicalJson(specification))}`;
 }
 
-export function embodimentId({ threadId, kind, lineage }) {
-  assertId("threadId", threadId);
-  assertEnum("kind", kind, EMBODIMENT_KINDS);
-  assertNonEmpty("lineage", lineage);
-  return `emb_${sha256(canonicalJson({ threadId, kind, lineage })).slice(0, 32)}`;
+export function embodimentSubjectDigest(specification) {
+  assertPlainObject("embodiment.specification", specification);
+  assertPlainObject("embodiment.specification.subject", specification.subject);
+  return `sha256:${sha256(canonicalJson(specification.subject))}`;
 }
 
 export function normalizeEmbodimentRepresentation(value) {
@@ -149,32 +167,64 @@ export function normalizeEmbodimentRepresentation(value) {
     "embodimentId", "revision", "threadId", "kind", "representationKind", "truthStatus", "rightsBasis",
     "permissionReferences", "sourceReferences", "specification", "specificationDigest", "respecification",
     "status", "unavailableReason", "asset", "visibility", "recordedAt", "supersedesRevision",
-  ], { optional: ["supersedesRevision"] });
+  ]);
   assertId("embodiment.embodimentId", value.embodimentId);
-  if (!Number.isSafeInteger(value.revision) || value.revision < 1) throw new TypeError("embodiment.revision must be a positive integer");
+  assertFiniteNumber("embodiment.revision", value.revision, { integer: true, minimum: 1 });
   assertId("embodiment.threadId", value.threadId);
   assertEnum("embodiment.kind", value.kind, EMBODIMENT_KINDS);
   assertEnum("embodiment.representationKind", value.representationKind, EMBODIMENT_REPRESENTATION_KINDS);
   assertEnum("embodiment.truthStatus", value.truthStatus, EMBODIMENT_TRUTH_STATUSES);
   assertEnum("embodiment.rightsBasis", value.rightsBasis, EMBODIMENT_RIGHTS_BASES);
+  assertEnum("embodiment.status", value.status, EMBODIMENT_STATUSES);
+  assertEnum("embodiment.visibility", value.visibility, EMBODIMENT_VISIBILITIES);
+
   const permissionReferences = normalizeRefs("embodiment.permissionReferences", value.permissionReferences, { allowEmpty: true });
   const sourceReferences = normalizeRefs("embodiment.sourceReferences", value.sourceReferences);
-  const specification = normalizeSpecification(value.specification, value.kind);
-  const specificationDigest = embodimentSpecificationDigest(specification);
-  if (value.specificationDigest !== specificationDigest) throw new TypeError("embodiment.specificationDigest does not match specification");
-  const respecification = normalizeRespecification(value.respecification, value.revision);
-  assertEnum("embodiment.status", value.status, EMBODIMENT_STATUSES);
-  if (value.status === "unavailable_with_reason") assertNonEmpty("embodiment.unavailableReason", value.unavailableReason);
-  else if (value.unavailableReason !== null) throw new TypeError("embodiment.unavailableReason is only valid for unavailable_with_reason");
-  const asset = normalizeAsset(value.asset, value.kind, value.status);
-  assertEnum("embodiment.visibility", value.visibility, EMBODIMENT_VISIBILITIES);
-  assertIsoTimestamp("embodiment.recordedAt", value.recordedAt);
-  if (value.revision === 1) {
-    if (value.supersedesRevision !== undefined) throw new TypeError("embodiment revision 1 cannot supersede a prior revision");
-  } else if (value.supersedesRevision !== value.revision - 1) {
-    throw new TypeError("embodiment.supersedesRevision must identify the immediately prior revision");
+  if (["explicit_consent", "public_domain_source"].includes(value.rightsBasis) && permissionReferences.length === 0) {
+    throw new TypeError(`${value.rightsBasis} embodiment requires durable rights authority references`);
   }
-  return Object.freeze({
+  if (value.representationKind === "human_source_derivative" && !["explicit_consent", "public_domain_source"].includes(value.rightsBasis)) {
+    throw new TypeError("human_source_derivative embodiment requires consent or public-domain rights basis");
+  }
+  if (value.representationKind === "synthetic_generation" && value.truthStatus !== "synthetic_representation_not_historical_evidence") {
+    throw new TypeError("synthetic embodiment cannot claim captured historical truth");
+  }
+  if (value.representationKind === "captured_source" && value.truthStatus !== "captured_source_evidence") {
+    throw new TypeError("captured embodiment must retain captured_source_evidence truth status");
+  }
+  if (value.representationKind === "human_source_derivative" && value.truthStatus !== "source_derivative_not_historical_evidence") {
+    throw new TypeError("human-source derivative cannot claim captured historical truth");
+  }
+
+  const specification = normalizeSpecification(value.specification, value.kind);
+  if (["generated_no_human_source", "thread_self_owned"].includes(value.rightsBasis) && specification.subject.partyId !== value.threadId) {
+    throw new TypeError(`${value.rightsBasis} embodiment must depict its own Thread`);
+  }
+  const specificationDigest = embodimentSpecificationDigest(specification);
+  if (value.specificationDigest !== specificationDigest) {
+    throw new TypeError("embodiment.specificationDigest does not match canonical specification");
+  }
+  const respecification = normalizeRespecification(value.respecification, value.revision);
+
+  if (value.status === "unavailable_with_reason") {
+    assertNonEmpty("embodiment.unavailableReason", value.unavailableReason);
+  } else if (value.unavailableReason !== null) {
+    throw new TypeError("embodiment.unavailableReason is only valid when unavailable");
+  }
+  const asset = normalizeAsset(value.asset, value.kind, value.status);
+  if (value.status !== "available" && asset !== null) throw new TypeError("non-available embodiment cannot carry an asset");
+  assertIsoTimestamp("embodiment.recordedAt", value.recordedAt);
+
+  let supersedesRevision;
+  if (value.revision === 1) {
+    if (value.supersedesRevision !== undefined) throw new TypeError("embodiment revision 1 cannot supersede a revision");
+  } else {
+    assertFiniteNumber("embodiment.supersedesRevision", value.supersedesRevision, { integer: true, minimum: 1 });
+    if (value.supersedesRevision !== value.revision - 1) throw new TypeError("embodiment must supersede the immediate revision");
+    supersedesRevision = value.supersedesRevision;
+  }
+
+  return {
     embodimentId: value.embodimentId,
     revision: value.revision,
     threadId: value.threadId,
@@ -192,6 +242,6 @@ export function normalizeEmbodimentRepresentation(value) {
     asset,
     visibility: value.visibility,
     recordedAt: value.recordedAt,
-    ...(value.revision === 1 ? {} : { supersedesRevision: value.supersedesRevision }),
-  });
+    ...(supersedesRevision === undefined ? {} : { supersedesRevision }),
+  };
 }
