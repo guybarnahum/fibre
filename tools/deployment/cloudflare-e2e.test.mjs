@@ -46,6 +46,21 @@ test("Cloudflare E2E bounds repeated birth-development requests without shorteni
   assert.notEqual(calls[1].init.signal, originalSignal);
 });
 
+test("Cloudflare E2E fetch wrapper accepts native URL inputs", async () => {
+  const calls = [];
+  const fetchImpl = async (input, init) => {
+    calls.push({ input, init });
+    return { ok: true, status: 200 };
+  };
+  const bounded = createCloudE2EFetch({ fetchImpl, replayRequestTimeoutMs: 25 });
+  const url = new URL("https://birth.example.test/internal/births/develop");
+  await bounded(url, { method: "POST" });
+  await bounded(url, { method: "POST" });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].input, url);
+  assert.ok(calls[1].init.signal instanceof AbortSignal);
+});
+
 test("Cloudflare E2E dispatches to staging and requires Slice G public closure", async () => {
   let stagingCalls = 0;
   let verifyCalls = 0;
