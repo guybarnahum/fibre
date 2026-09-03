@@ -216,7 +216,21 @@ test("Cloudflare Birth Center survives lost World acknowledgement and converges 
   assert.equal(await first.infraDriver.scheduler.get("birth"), 10_000);
   assert.equal(world.worldStore.getThread(THREAD_ID, { required: false }), null);
 
-  await assert.rejects(first.runtime.handleWake(), /simulated World acknowledgement loss/);
+  const diagnostics = [];
+  const originalConsoleError = console.error;
+  console.error = (...args) => { diagnostics.push(args.join(" ")); };
+  try {
+    await assert.rejects(first.runtime.handleWake(), /simulated World acknowledgement loss/);
+  } finally {
+    console.error = originalConsoleError;
+  }
+  assert.equal(diagnostics.length, 1);
+  assert.deepEqual(JSON.parse(diagnostics[0]), {
+    event: "birth-center-reconciliation-failed",
+    genesisId: GENESIS_ID,
+    threadId: THREAD_ID,
+    message: "simulated World acknowledgement loss",
+  });
   assert.equal(worldCalls, 1);
   assert.equal(world.worldStore.getThread(THREAD_ID).threadId, THREAD_ID);
   assert.equal(first.runtime.provisionalBirthStore.get(GENESIS_ID).status, "pending");
