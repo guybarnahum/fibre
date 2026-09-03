@@ -1,5 +1,7 @@
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
+const TERMINAL_WORKFLOW_STATUSES = new Set(["errored", "terminated"]);
+
 function assertId(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
     throw new TypeError(`${name} must be a non-empty string`);
@@ -65,7 +67,7 @@ async function runChangedStage(activity, metadata, operation, changed) {
       ...metadata,
       status: "failed",
       message: error instanceof Error ? error.message : String(error),
-      error: { category: "reconciliation", code: "PRESENTATION_RECONCILIATION_FAILED", retryable: true },
+      error: { category: "reconciliation", code: "PRESENTATION_RECONCILIATION_FAILED", retryable: error?.retryable === true },
     });
     throw error;
   }
@@ -105,6 +107,25 @@ function suppliedEmbodimentReader(embodiment) {
       return threadId === embodiment.threadId ? [embodiment] : [];
     },
   });
+}
+
+function terminalWorkflowError({ threadId, mediaId, active }) {
+  const status = active?.dispatch?.workflowStatus;
+  if (!TERMINAL_WORKFLOW_STATUSES.has(status)) return null;
+  const workflowError = active?.dispatch?.workflowError ?? null;
+  const detail = workflowError?.message ?? "no workflow failure detail reported";
+  const error = new Error(
+    `Thread ${threadId} official identity-photo workflow ${active.demand.job.jobId} ended as ${status}: ${detail}`,
+  );
+  error.name = "PresentationAssetWorkflowTerminalError";
+  error.code = "PRESENTATION_ASSET_WORKFLOW_TERMINAL";
+  error.activityCategory = "reconciliation";
+  error.retryable = false;
+  error.threadId = threadId;
+  error.mediaId = mediaId;
+  error.jobId = active.demand.job.jobId;
+  error.workflowStatus = status;
+  return error;
 }
 
 export function createThreadPresentationVisualPublicationReconciler({
@@ -211,29 +232,36 @@ export function createThreadPresentationVisualPublicationReconciler({
       const providerProfile = selectProviderProfile({
         requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
       });
-      const demand = await runActivityStage(activity, {
+      const demandStage = await runActivityStage(activity, {
         ...context,
         stage: "presentation.media_demand.reconcile",
         attempt: 1,
         evidence: { embodimentId: embodiment.embodimentId },
-      }, async () => demandService.reconcile({
-        scope: { entityKind: "thread", entityRef: threadId },
-        slots: [slot],
-        requestedAt: issuedAt,
-        providerProfile,
-      }));
-      const active = demand.projection.demands.find((entry) => (
-        entry.demand.current
-        && entry.demand.job.context?.kind === "thread_presentation_media"
-        && entry.demand.job.context.mediaId === mediaId
-      ));
-      if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
+      }, async () => {
+        const demand = await demandService.reconcile({
+          scope: { entityKind: "thread", entityRef: threadId },
+          slots: [slot],
+          requestedAt: issuedAt,
+          providerProfile,
+        });
+        const active = demand.projection.demands.find((entry) => (
+          entry.demand.current
+          && entry.demand.job.context?.kind === "thread_presentation_media"
+          && entry.demand.job.context.mediaId === mediaId
+        ));
+        if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
+        const terminal = terminalWorkflowError({ threadId, mediaId, active });
+        if (terminal !== null) throw terminal;
+        return Object.freeze({ demand, active });
+      });
+      const { active } = demandStage;
 
       return result(false, "official_photo_pending", {
         ...common,
         providerProfile,
         demandId: active.demand.demandId,
         jobId: active.demand.job.jobId,
+        workflowStatus: active.dispatch?.workflowStatus ?? null,
       });
     },
   });
