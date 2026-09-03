@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { completionQueueFailureDisposition } from "../worker.mjs";
+import { completionQueueFailureDisposition } from "../completion-queue-policy.mjs";
 
 test("completion queue remains retryable before the configured retry limit", () => {
   assert.deepEqual(completionQueueFailureDisposition({ attempts: 1 }), {
