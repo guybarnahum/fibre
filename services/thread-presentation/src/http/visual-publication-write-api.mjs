@@ -17,9 +17,18 @@ async function jsonBody(request) {
 function failureResponse(error) {
   const detail = error instanceof Error ? error.message : String(error);
   if (error instanceof TypeError) {
-    return Response.json({ error: "invalid_visual_publication_handoff", detail }, { status: 400 });
+    return Response.json({ error: "invalid_visual_publication_handoff", detail, retryable: false }, { status: 400 });
   }
-  return Response.json({ error: "visual_publication_reconciliation_failed", detail }, { status: 503 });
+  const retryable = error?.retryable === true;
+  const code = typeof error?.code === "string" && error.code !== ""
+    ? error.code
+    : "VISUAL_PUBLICATION_RECONCILIATION_FAILED";
+  return Response.json({
+    error: "visual_publication_reconciliation_failed",
+    code,
+    detail,
+    retryable,
+  }, { status: 503 });
 }
 
 export function createVisualPublicationWriteApi({ reconciler, privateToken } = {}) {
