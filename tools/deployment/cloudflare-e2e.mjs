@@ -45,6 +45,15 @@ export function cloudE2EProgress(event) {
       return "collecting Activity evidence";
     case "genesis-development-staging-e2e-complete":
       return "verifying Identity Card and official photo";
+    case "cloudflare-e2e-slice-g-progress": {
+      const elapsed = Number.isFinite(event.elapsedMs) ? `${Math.round(event.elapsedMs / 1000)}s` : "";
+      if (event.stage === "official_photo_pending") {
+        return `official photo ${event.status ?? "pending"}${elapsed ? `; ${elapsed} elapsed` : ""}`;
+      }
+      if (event.stage === "official_photo_ready") return "official photo ready; verifying public asset";
+      if (event.stage === "official_photo_public_asset_verified") return "official photo public bytes and provenance verified";
+      return null;
+    }
     default:
       return null;
   }
@@ -122,7 +131,16 @@ export async function runCloudflareE2E({
     emit: emitWithProgress,
   });
   emitWithProgress({ event: "cloudflare-e2e-slice-g-verification", progress: "verifying Identity Card and official photo" });
-  const verified = await verifySliceG({ evidence: result.evidence });
+  const verified = await verifySliceG({
+    evidence: result.evidence,
+    fetchImpl,
+    checkTerminalFailure: typeof result.checkTerminalFailure === "function"
+      ? result.checkTerminalFailure
+      : async () => {},
+    onProgress(progress) {
+      emitWithProgress({ event: "cloudflare-e2e-slice-g-progress", ...progress });
+    },
+  });
   const sliceGClosure = result.evidencePath ? retainSliceGClosure(result, verified) : Object.freeze({
     contract: "fibre-cloudflare-slice-g-public-closure-v0.1",
     identityCard: {
