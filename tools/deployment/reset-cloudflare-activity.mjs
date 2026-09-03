@@ -34,14 +34,36 @@ const database = databases[environment];
 const repoRoot = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const migrationPath = resolve(repoRoot, "infra/providers/cloudflare/d1/0001_activity_log.sql");
 
-function wranglerSql(sql) {
+function quotaExhausted(output) {
+  return output.includes("code: 7500")
+    || output.includes("exceeded D1's free tier daily row write limit");
+}
+
+function wranglerSql(sql, { write = false } = {}) {
   const result = spawnSync(
     "npx",
     ["wrangler@latest", "d1", "execute", database, "--remote", "--command", sql],
-    { stdio: "inherit" },
+    { encoding: "utf8" },
   );
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
+
+  const stdout = result.stdout ?? "";
+  const stderr = result.stderr ?? "";
+  if (stdout) process.stdout.write(stdout);
+
+  if (result.status !== 0) {
+    const combined = `${stdout}\n${stderr}`;
+    if (write && quotaExhausted(combined)) {
+      console.error(
+        "ACTIVITY RESET BLOCKED: Cloudflare D1 daily write quota is exhausted. "
+        + "The Activity schema was not reset. Retry after the quota resets at 00:00 UTC. "
+        + "Resetting Activity does not reset the quota itself.",
+      );
+      process.exit(2);
+    }
+    if (stderr) process.stderr.write(stderr);
+    process.exit(result.status ?? 1);
+  }
 }
 
 console.log(`ACTIVITY RESET env=${environment} database=${database}`);
@@ -56,7 +78,7 @@ if (!execute) {
 
 const migrationSql = readFileSync(migrationPath, "utf8");
 console.log(`RESET schema=${migrationPath}`);
-wranglerSql(`DROP TABLE IF EXISTS fibre_activity_log;\n${migrationSql}`);
+wranglerSql(`DROP TABLE IF EXISTS fibre_activity_log;\n${migrationSql}`, { write: true });
 
 console.log("AFTER");
 wranglerSql("SELECT COUNT(*) AS rows FROM fibre_activity_log;");
