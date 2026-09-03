@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 47,
+  "version": 48,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -36,6 +36,7 @@
         "docs/architecture/developmental-continuity-and-past-selves.md",
         "docs/architecture/thread-passport-identity-provenance.md",
         "docs/architecture/thread-genesis-childhood-birth.md",
+        "docs/architecture/thread-lifecycle-accounting.md",
         "docs/architecture/genesis-compiler-contract.md",
         "docs/architecture/genesis-durable-development.md",
         "docs/architecture/model-output-recovery.md",
