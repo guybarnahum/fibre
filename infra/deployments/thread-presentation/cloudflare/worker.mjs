@@ -31,6 +31,10 @@ import {
   selectImageProviderProfile,
 } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
+import {
+  COMPLETION_QUEUE_MAX_RETRIES,
+  completionQueueFailureDisposition,
+} from "./completion-queue-policy.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
@@ -40,7 +44,6 @@ const HTTP_SERVICE = createService({
 });
 const P3_CAN_THO_THREAD_ID = "thr_pr39_g2_04";
 const P3_MARKET_MEDIA_ID = "media_place_market";
-const COMPLETION_QUEUE_MAX_RETRIES = 10;
 const DEPLOYMENTS = Object.freeze({
   local: parseDeploymentManifest(localDeploymentYaml),
   cloudflare: parseDeploymentManifest(cloudflareDeploymentYaml),
@@ -264,18 +267,6 @@ async function completionActivityIdentity(infra, rawCompletion) {
   } catch {
     return Object.freeze({ threadId: null, mediaId: null, jobId });
   }
-}
-
-export function completionQueueFailureDisposition({ attempts, maxRetries = COMPLETION_QUEUE_MAX_RETRIES } = {}) {
-  if (!Number.isSafeInteger(attempts) || attempts < 1) throw new TypeError("completion queue attempts must be a positive integer");
-  if (!Number.isSafeInteger(maxRetries) || maxRetries < 1) throw new TypeError("completion queue maxRetries must be a positive integer");
-  const terminal = attempts >= maxRetries;
-  return Object.freeze({
-    terminal,
-    status: terminal ? "failed" : "retrying",
-    code: terminal ? "PRESENTATION_ASSET_COMPLETION_RETRIES_EXHAUSTED" : "PRESENTATION_ASSET_COMPLETION_RETRY",
-    retryable: !terminal,
-  });
 }
 
 export default {
