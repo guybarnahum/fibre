@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import {
   E2E_ACTIVITY_REFERENCE_VERSION,
   runStagingGenesisDevelopmentE2EWithActivity,
+  terminalWorldFailure,
 } from "./genesis-development-e2e-staging.mjs";
 
 const REQUEST_ID = "genesis-staging-wrapper-test";
@@ -28,6 +29,93 @@ function coreResult(directory) {
   writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
   return { evidence, evidencePath };
 }
+
+test("terminal World failure classifier ignores retryable failures and selects non-retryable World failure", () => {
+  const records = [
+    {
+      activityId: "act_provider_retry",
+      occurredAt: "2026-09-03T17:00:00.000Z",
+      service: "world-kernel",
+      stage: "world.visual_identity.demand",
+      status: "failed",
+      message: "provider unavailable",
+      error: { category: "provider", code: "UPSTREAM_503", retryable: true },
+    },
+    {
+      activityId: "act_other_terminal",
+      occurredAt: "2026-09-03T17:00:01.000Z",
+      service: "birth-center",
+      stage: "birth.compile",
+      status: "failed",
+      message: "not relevant to World convergence",
+      error: { category: "invariant", code: "OTHER", retryable: false },
+    },
+    {
+      activityId: "act_world_terminal",
+      occurredAt: "2026-09-03T17:00:02.000Z",
+      service: "world-kernel",
+      stage: "world.visual_identity.demand",
+      status: "failed",
+      message: "Buffer is not defined",
+      error: { category: "unknown", code: "ERROR", retryable: false },
+    },
+  ];
+
+  assert.deepEqual(terminalWorldFailure(records), {
+    activityId: "act_world_terminal",
+    occurredAt: "2026-09-03T17:00:02.000Z",
+    stage: "world.visual_identity.demand",
+    code: "ERROR",
+    message: "Buffer is not defined",
+  });
+  assert.equal(terminalWorldFailure(records.slice(0, 2)), null);
+});
+
+test("staging wrapper fails fast when active Thread has terminal World reconciliation activity", async () => {
+  const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-fast-fail-"));
+  let underlyingSleeps = 0;
+  const inspect = async ({ selector }) => {
+    assert.deepEqual(selector, { kind: "threadId", value: THREAD_ID });
+    return {
+      databaseName: "fibre-activity-log-staging",
+      records: [{
+        activityId: "act_terminal",
+        occurredAt: "2026-09-03T17:00:00.000Z",
+        service: "world-kernel",
+        stage: "world.visual_identity.demand",
+        status: "failed",
+        message: "canonical visual planner invariant failed",
+        error: { category: "invariant", code: "VISUAL_PLAN_INVALID", retryable: false },
+      }],
+      summary: "terminal failure",
+    };
+  };
+
+  await assert.rejects(
+    runStagingGenesisDevelopmentE2EWithActivity({
+      repoRoot: directory,
+      environment: {},
+      activityRecorder: null,
+      activityReader: {},
+      inspect,
+      sleep: async () => { underlyingSleeps += 1; },
+      emit: () => {},
+      runCore: async ({ emit, sleep }) => {
+        emit({
+          event: "genesis-development-e2e-submitted",
+          requestId: REQUEST_ID,
+          genesisId: GENESIS_ID,
+          threadId: THREAD_ID,
+          status: "published",
+        });
+        await sleep(2_000);
+        throw new Error("polling should have stopped before this point");
+      },
+    }),
+    /World reconciliation failed terminally at world\.visual_identity\.demand \(VISUAL_PLAN_INVALID\)/,
+  );
+  assert.equal(underlyingSleeps, 0, "terminal failure is detected before another convergence sleep");
+});
 
 test("staging wrapper retains request/genesis/thread Activity references without replacing closure assertions", async () => {
   const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-activity-wrapper-"));
