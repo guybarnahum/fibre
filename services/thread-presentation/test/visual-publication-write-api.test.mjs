@@ -86,3 +86,22 @@ test("visual publication write API preserves terminal reconciliation classificat
     retryable: false,
   });
 });
+
+test("visual publication write API keeps unknown server reconciliation failures retryable", async () => {
+  const api = createVisualPublicationWriteApi({
+    privateToken: "secret",
+    reconciler: {
+      async reconcileAvailableEmbodiment() {
+        throw new Error("temporary internal failure");
+      },
+    },
+  });
+  const response = await api.fetch(request());
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "visual_publication_reconciliation_failed",
+    code: "VISUAL_PUBLICATION_RECONCILIATION_FAILED",
+    detail: "temporary internal failure",
+    retryable: true,
+  });
+});
