@@ -1,7 +1,11 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
 import { createService } from "#infra/service";
-import { createAssetGenerationService } from "#services/asset-generator/src/index.mjs";
+import {
+  createAssetGenerationService,
+  normalizeAssetGenerationCompletion,
+  normalizeStoredAssetReceipt,
+} from "#services/asset-generator/src/index.mjs";
 import {
   createThreadPresentationVisualPublicationReconciler,
   normalizeThreadPresentationBundle,
@@ -36,6 +40,7 @@ const HTTP_SERVICE = createService({
 });
 const P3_CAN_THO_THREAD_ID = "thr_pr39_g2_04";
 const P3_MARKET_MEDIA_ID = "media_place_market";
+const COMPLETION_QUEUE_MAX_RETRIES = 10;
 const DEPLOYMENTS = Object.freeze({
   local: parseDeploymentManifest(localDeploymentYaml),
   cloudflare: parseDeploymentManifest(cloudflareDeploymentYaml),
@@ -229,6 +234,50 @@ function createCompletionConsumer(env, infra, presentationServer) {
   });
 }
 
+function decodeStoredJson(stored) {
+  try {
+    return JSON.parse(new TextDecoder().decode(stored.bytes));
+  } catch {
+    return null;
+  }
+}
+
+async function completionActivityIdentity(infra, rawCompletion) {
+  let jobId = typeof rawCompletion?.jobId === "string" ? rawCompletion.jobId : null;
+  try {
+    const completion = normalizeAssetGenerationCompletion(rawCompletion);
+    jobId = completion.jobId;
+    const stored = await infra.objects.get(completion.receiptObjectRef);
+    if (stored === null) return Object.freeze({ threadId: null, mediaId: null, jobId });
+    const parsed = decodeStoredJson(stored);
+    if (parsed === null) return Object.freeze({ threadId: null, mediaId: null, jobId });
+    const receipt = normalizeStoredAssetReceipt(parsed);
+    const context = receipt.context;
+    if (context?.kind !== "thread_presentation_media") {
+      return Object.freeze({ threadId: null, mediaId: null, jobId });
+    }
+    return Object.freeze({
+      threadId: typeof context.threadId === "string" ? context.threadId : null,
+      mediaId: typeof context.mediaId === "string" ? context.mediaId : null,
+      jobId,
+    });
+  } catch {
+    return Object.freeze({ threadId: null, mediaId: null, jobId });
+  }
+}
+
+export function completionQueueFailureDisposition({ attempts, maxRetries = COMPLETION_QUEUE_MAX_RETRIES } = {}) {
+  if (!Number.isSafeInteger(attempts) || attempts < 1) throw new TypeError("completion queue attempts must be a positive integer");
+  if (!Number.isSafeInteger(maxRetries) || maxRetries < 1) throw new TypeError("completion queue maxRetries must be a positive integer");
+  const terminal = attempts >= maxRetries;
+  return Object.freeze({
+    terminal,
+    status: terminal ? "failed" : "retrying",
+    code: terminal ? "PRESENTATION_ASSET_COMPLETION_RETRIES_EXHAUSTED" : "PRESENTATION_ASSET_COMPLETION_RETRY",
+    retryable: !terminal,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -262,6 +311,7 @@ export default {
 
   async queue(batch, env) {
     const infra = createInfra(env);
+    const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const presentationServer = createThreadPresentationServer({ infra });
     const completions = createCompletionConsumer(env, infra, presentationServer);
     for (const message of batch.messages) {
@@ -270,7 +320,39 @@ export default {
         message.ack();
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        console.error(JSON.stringify({ event: "presentation_asset_completion_retry", queue: batch.queue, messageId: message.id, attempts: message.attempts, error: detail }));
+        const disposition = completionQueueFailureDisposition({ attempts: message.attempts });
+        const identity = await completionActivityIdentity(infra, message.body);
+        if (activityRecorder !== null) {
+          await activityRecorder.record({
+            threadId: identity.threadId,
+            stage: "presentation.asset_completion.consume",
+            status: disposition.status,
+            attempt: message.attempts,
+            message: detail,
+            error: {
+              category: "reconciliation",
+              code: disposition.code,
+              retryable: disposition.retryable,
+            },
+            evidence: {
+              queue: batch.queue,
+              messageId: message.id,
+              jobId: identity.jobId,
+              mediaId: identity.mediaId,
+              maxRetries: COMPLETION_QUEUE_MAX_RETRIES,
+            },
+          });
+        }
+        console.error(JSON.stringify({
+          event: disposition.terminal ? "presentation_asset_completion_exhausted" : "presentation_asset_completion_retry",
+          queue: batch.queue,
+          messageId: message.id,
+          attempts: message.attempts,
+          jobId: identity.jobId,
+          threadId: identity.threadId,
+          mediaId: identity.mediaId,
+          error: detail,
+        }));
         const exponent = Math.min(Math.max(message.attempts - 1, 0), 6);
         message.retry({ delaySeconds: Math.min(300, 5 * (2 ** exponent)) });
       }
