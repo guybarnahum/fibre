@@ -10,6 +10,7 @@ import { CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS } from "./visual-identity
 export const CANONICAL_VISUAL_IDENTITY_PROVIDER_PROFILE = "openai-gpt-image-2-medium-v1";
 export const CANONICAL_VISUAL_IDENTITY_ROLE = "canonical_visual_identity_reference";
 const MIN_CANONICAL_IDENTITY_BRIEF_BYTES = 240;
+const UTF8 = new TextEncoder();
 
 function assertIsoTimestamp(name, value) {
   if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) {
@@ -22,9 +23,13 @@ function unique(values) {
   return [...new Set(values)];
 }
 
+function utf8ByteLength(value) {
+  return UTF8.encode(value).byteLength;
+}
+
 function richEnough(embodiment) {
   const text = `${embodiment.specification.subject.description}\n${embodiment.specification.description}`;
-  if (Buffer.byteLength(text, "utf8") < MIN_CANONICAL_IDENTITY_BRIEF_BYTES) {
+  if (utf8ByteLength(text) < MIN_CANONICAL_IDENTITY_BRIEF_BYTES) {
     throw new TypeError(
       `canonical visual identity specification must contain at least ${MIN_CANONICAL_IDENTITY_BRIEF_BYTES} UTF-8 bytes of concrete appearance detail`,
     );
