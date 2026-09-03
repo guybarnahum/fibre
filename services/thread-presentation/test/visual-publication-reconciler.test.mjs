@@ -133,6 +133,7 @@ test("Presentation visual reconciliation projects admitted identity then schedul
                     context: { kind: "thread_presentation_media", mediaId },
                   },
                 },
+                dispatch: { workflowStatus: "queued" },
               }],
             },
           };
@@ -150,6 +151,7 @@ test("Presentation visual reconciliation projects admitted identity then schedul
   assert.equal(result.stage, "official_photo_pending");
   assert.equal(result.detail.providerProfile, "bfl-flux-2-pro-v1");
   assert.equal(result.detail.jobId, "asset_job_official_fixture");
+  assert.equal(result.detail.workflowStatus, "queued");
   assert.deepEqual(calls, ["visual", "identity", "plan", "demand"]);
 });
 
@@ -244,4 +246,87 @@ test("Presentation visual reconciliation emits no Activity when projection is al
   assert.equal(result.detail.visualReused, true);
   assert.equal(result.detail.identityReused, true);
   assert.deepEqual(activity, []);
+});
+
+test("Presentation visual reconciliation fails immediately when official-photo Workflow is terminal", async () => {
+  const embodiment = availableEmbodiment("thr_presentation_visual_terminal_001");
+  const mediaId = "media_official_id_photo_terminal";
+  const currentSnapshot = {
+    pointer: { objectRef: "snapshot_terminal", snapshotDigest: `sha256:${"d".repeat(64)}` },
+    snapshot: {
+      presentation: {
+        manifest: { threadId: embodiment.threadId, generatedAt: "2026-08-30T20:03:00Z" },
+        civilIdentity: { registeredAt: "2026-08-30T20:04:00Z" },
+      },
+      media: { assets: [] },
+      provenance: {},
+    },
+  };
+  const activity = [];
+  const reconciler = createThreadPresentationVisualPublicationReconciler({
+    presentationServer: {
+      async getSnapshot() { return currentSnapshot; },
+      async publishSnapshot() { throw new Error("not reached"); },
+    },
+    infra: {},
+    selectProviderProfile() { return "bfl-flux-2-pro-v1"; },
+    createVisualRewrite() { return { async project() { return { reused: true }; } }; },
+    createIdentityRewrite() {
+      return { async ensureOfficialIdentityMedia() { return { reused: true, identityCard: { officialPhotoMediaRef: mediaId } }; } };
+    },
+    planSlots() { return { slots: [{ mediaId, status: "missing", referenceObjectRefs: [embodiment.asset.referenceObjectRef] }] }; },
+    createDemandService() {
+      return {
+        async reconcile() {
+          return {
+            projection: {
+              demands: [{
+                demand: {
+                  current: true,
+                  demandId: "demand_terminal",
+                  job: {
+                    jobId: "asset_job_terminal",
+                    context: { kind: "thread_presentation_media", mediaId },
+                  },
+                },
+                dispatch: { workflowStatus: "errored" },
+              }],
+            },
+          };
+        },
+      };
+    },
+    activityRecorder: {
+      async record(record) { activity.push(record); return record; },
+      async runStage(metadata, operation) {
+        try {
+          const value = await operation();
+          activity.push({ ...metadata, status: "succeeded" });
+          return value;
+        } catch (error) {
+          activity.push({
+            ...metadata,
+            status: "failed",
+            message: error.message,
+            error: { code: error.code, retryable: error.retryable },
+          });
+          throw error;
+        }
+      },
+    },
+  });
+
+  await assert.rejects(
+    () => reconciler.reconcileAvailableEmbodiment({
+      threadId: embodiment.threadId,
+      embodiment,
+      observedAt: "2026-08-30T20:02:00Z",
+    }),
+    (error) => error.code === "PRESENTATION_ASSET_WORKFLOW_TERMINAL" && error.retryable === false,
+  );
+  assert.equal(activity.some((record) => (
+    record.stage === "presentation.media_demand.reconcile"
+    && record.status === "failed"
+    && record.error.retryable === false
+  )), true);
 });
