@@ -50,6 +50,13 @@ export function cloudE2EProgress(event) {
   }
 }
 
+function fetchInputUrl(input) {
+  if (input instanceof URL) return input;
+  if (typeof input === "string") return new URL(input);
+  if (input && typeof input.url === "string") return new URL(input.url);
+  throw new TypeError("Cloudflare E2E fetch input must be a string, URL, or Request-like object");
+}
+
 export function createCloudE2EFetch({
   fetchImpl = globalThis.fetch,
   replayRequestTimeoutMs = DEFAULT_REPLAY_REQUEST_TIMEOUT_MS,
@@ -60,7 +67,7 @@ export function createCloudE2EFetch({
   }
   let birthDevelopmentPosts = 0;
   return async (input, init = {}) => {
-    const url = new URL(typeof input === "string" ? input : input.url);
+    const url = fetchInputUrl(input);
     const isBirthDevelopmentPost = String(init.method ?? "GET").toUpperCase() === "POST"
       && url.pathname === "/internal/births/develop";
     if (!isBirthDevelopmentPost) return fetchImpl(input, init);
