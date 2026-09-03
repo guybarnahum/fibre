@@ -17,7 +17,8 @@ The accepted production persistence rule is [`production-persistence.md`](produc
 Read it together with:
 
 - [`storage-model.md`](storage-model.md) — semantic storage authorities, replay, atomicity, and repository/world separation;
-- [`infrastructure-driver.md`](infrastructure-driver.md) — the evolving provider-neutral capability bundle and concrete port designs.
+- [`infrastructure-driver.md`](infrastructure-driver.md) — the evolving provider-neutral capability bundle and concrete port designs;
+- [`cloud-e2e-closure-plan.md`](cloud-e2e-closure-plan.md) — the active live-Cloudflare acceptance slices from one genuine cloud birth through public media, retry/restart hardening, and empty-environment rebuild.
 
 The persistence rule applies to all services and generated production artifacts. Presentation is only the first vertical slice that implemented the pattern.
 
