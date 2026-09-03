@@ -3,12 +3,25 @@ function nonEmpty(name, value) {
   return value.trim();
 }
 
+function positiveInteger(name, value) {
+  if (!Number.isSafeInteger(value) || value < 1) throw new TypeError(`${name} must be a positive integer`);
+  return value;
+}
+
 function endpoint(baseUrl, pathname) {
   const url = new URL(nonEmpty("service base URL", baseUrl));
   url.pathname = pathname;
   url.search = "";
   url.hash = "";
   return url;
+}
+
+class SliceGOfficialPhotoPendingError extends Error {
+  constructor(status) {
+    super(`Slice G official ID photo is not ready: ${String(status)}`);
+    this.name = "SliceGOfficialPhotoPendingError";
+    this.status = status;
+  }
 }
 
 async function responseJson(response, label) {
@@ -70,7 +83,13 @@ export function inspectSliceGPublicClosure(snapshot, evidence) {
   const matches = mediaAssets.filter((asset) => asset?.mediaId === mediaId && asset?.role === "official_id_photo");
   if (matches.length !== 1) throw new Error(`Slice G expected exactly one official ID photo slot, found ${matches.length}`);
   const officialPhoto = matches[0];
-  if (officialPhoto.kind !== "image" || officialPhoto.status !== "ready") {
+  if (officialPhoto.kind !== "image") {
+    throw new Error(`Slice G official ID photo has invalid kind: ${String(officialPhoto.kind)}`);
+  }
+  if (officialPhoto.status !== "ready") {
+    if (officialPhoto.status === "placeholder" || officialPhoto.status === "pending") {
+      throw new SliceGOfficialPhotoPendingError(officialPhoto.status);
+    }
     throw new Error(`Slice G official ID photo is not ready: ${String(officialPhoto.status)}`);
   }
   const objectRef = nonEmpty("Slice G official-photo locator", officialPhoto.locator);
@@ -110,13 +129,42 @@ export async function verifySliceGPublicClosure({
   evidence,
   fetchImpl = globalThis.fetch,
   requestTimeoutMs = 120_000,
+  convergenceWaitMs = 300_000,
+  pollMs = 2_000,
+  sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+  nowMs = Date.now,
 } = {}) {
   if (typeof fetchImpl !== "function") throw new TypeError("Slice G fetchImpl must be a function");
+  if (typeof sleep !== "function") throw new TypeError("Slice G sleep must be a function");
+  if (typeof nowMs !== "function") throw new TypeError("Slice G nowMs must be a function");
+  positiveInteger("Slice G requestTimeoutMs", requestTimeoutMs);
+  positiveInteger("Slice G convergenceWaitMs", convergenceWaitMs);
+  positiveInteger("Slice G pollMs", pollMs);
   const presentationBaseUrl = nonEmpty("Slice G Thread Presentation endpoint", evidence?.endpoints?.threadPresentation);
   const viewerOrigin = nonEmpty("Slice G Viewer endpoint", evidence?.endpoints?.viewer);
   const threadId = nonEmpty("Slice G threadId", evidence?.request?.developmentPlanThreadId);
-  const snapshot = await fetchSnapshot({ fetchImpl, presentationBaseUrl, viewerOrigin, threadId, requestTimeoutMs });
-  const closure = inspectSliceGPublicClosure(snapshot, evidence);
+  const deadline = nowMs() + convergenceWaitMs;
+  let snapshot;
+  let closure;
+  let lastPendingStatus = null;
+
+  for (;;) {
+    snapshot = await fetchSnapshot({ fetchImpl, presentationBaseUrl, viewerOrigin, threadId, requestTimeoutMs });
+    try {
+      closure = inspectSliceGPublicClosure(snapshot, evidence);
+      break;
+    } catch (error) {
+      if (!(error instanceof SliceGOfficialPhotoPendingError)) throw error;
+      lastPendingStatus = error.status;
+      if (nowMs() >= deadline) {
+        throw new Error(
+          `Slice G official ID photo did not become ready within ${convergenceWaitMs}ms; last status ${String(lastPendingStatus)}`,
+        );
+      }
+      await sleep(pollMs);
+    }
+  }
+
   const officialPhotoAsset = await fetchPublicAsset({
     fetchImpl,
     presentationBaseUrl,
