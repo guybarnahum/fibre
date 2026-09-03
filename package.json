@@ -56,6 +56,7 @@
     "cloud:deploy": "node tools/deployment/run-with-progress.mjs cloud:deploy node --env-file-if-exists=.env tools/deployment/deploy-cloudflare-evidence.mjs",
     "cloud:deploy:service": "node tools/deployment/run-with-progress.mjs cloud:deploy:service node --env-file-if-exists=.env tools/deployment/deploy-cloudflare-service.mjs",
     "cloud:deploy:apps": "node tools/deployment/run-with-progress.mjs cloud:deploy:apps node --env-file-if-exists=.env tools/deployment/cloudflare-apps.mjs",
+    "cloud:e2e": "node tools/deployment/run-with-progress.mjs cloud:e2e node --env-file-if-exists=.env tools/deployment/cloudflare-e2e.mjs",
     "cloud:prepare:staging": "npm run cloud:provision -- --env staging && npm run cloud:configure-secrets -- --env staging --file .env && npm run cloud:deploy -- --env staging && npm run cloud:deploy:apps -- --env staging --file .env",
     "test:audit": "node tools/test-infra/test-value-audit.mjs",
     "deployment:validate": "node tools/deployment/validate-deployment-manifest.mjs",
