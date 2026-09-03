@@ -37,7 +37,7 @@ test("World visual HTTP boundary crosses the authenticated Presentation API cont
   });
 
   const result = await boundary.reconcileAvailableEmbodiment(HANDOFF);
-  assert.deepEqual(calls, [HANDOFF]);
+  assert.deepEqual(calls, [{ ...HANDOFF, regenerationKey: null }]);
   assert.deepEqual(result, {
     complete: true,
     stage: "complete",
