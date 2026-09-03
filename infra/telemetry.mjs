@@ -43,6 +43,7 @@ export const ACTIVITY_EVIDENCE_KEYS = Object.freeze([
   "fibreIdentityNumber",
   "queueMessageId",
   "workflowInstanceId",
+  "regenerationKey",
 ]);
 
 const ACTIVITY_STATUS_SET = new Set(ACTIVITY_STATUSES);
