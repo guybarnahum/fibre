@@ -10,6 +10,15 @@ import {
 } from "./persistence-common.mjs";
 
 export const GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY = "fibre_genesis_canonical_visual_identity_v1";
+export class MissingCanonicalVisualIdentityError extends Error {
+  constructor(threadId) {
+    super(`authoritative Thread ${threadId} is missing required canonical visual identity`);
+    this.name = "MissingCanonicalVisualIdentityError";
+    this.code = "INVALID_BIRTH_MISSING_CANONICAL_VISUAL_IDENTITY";
+    this.retryable = false;
+    this.threadId = threadId;
+  }
+}
 
 function normalizeSpecificationForThread(specification, threadId) {
   const candidate = normalizeEmbodimentRepresentation({
@@ -47,11 +56,6 @@ export function normalizeGenesisCanonicalVisualIdentity(candidate, { threadId } 
   });
 }
 
-/**
- * Makes canonical visual identity an explicit immutable birth input. Because the
- * value becomes part of the seed Thread snapshot it is covered by the Thread
- * state hash, seed event, and replay authority without a parallel visual store.
- */
 export function attachGenesisCanonicalVisualIdentity(bundle, canonicalVisualIdentity) {
   assertPlainObject("Genesis birth bundle", bundle);
   assertPlainObject("Genesis birth bundle.thread", bundle.thread);
@@ -144,9 +148,7 @@ export function createGenesisCanonicalEmbodimentMaterializer({
       const thread = worldStore.getThread(threadId, { required: false });
       if (thread === null) return Object.freeze({ state: "pending", reason: "awaiting_published_genesis" });
       const canonicalVisualIdentity = thread.identity?.canonicalVisualIdentity;
-      if (canonicalVisualIdentity === undefined) {
-        return Object.freeze({ state: "pending", reason: "awaiting_canonical_visual_identity" });
-      }
+      if (canonicalVisualIdentity === undefined) throw new MissingCanonicalVisualIdentityError(threadId);
       const originEvent = worldStore.listEvents(threadId)[0];
       if (!originEvent) return Object.freeze({ state: "pending", reason: "awaiting_origin_event" });
 
