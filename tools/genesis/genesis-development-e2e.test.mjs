@@ -340,7 +340,7 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
 
   const retained = JSON.parse(readFileSync(result.evidencePath, "utf8"));
   assert.equal(retained.sourceGitSha, SHA);
-  assert.equal(retained.presentation.canonicalPublicAsset.objectRef, "asset_staging_canonical_root");
+  assert.equal(retained.presentation.canonicalReferenceObjectRef, "asset_staging_canonical_root");
   const serialized = JSON.stringify(retained);
   assert.equal(serialized.includes(TOKEN), false);
   assert.equal(serialized.includes("OPENAI_API_KEY"), false);
