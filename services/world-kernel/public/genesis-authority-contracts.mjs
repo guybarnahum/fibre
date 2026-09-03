@@ -53,7 +53,7 @@ export {
   normalizePassCInput,
   normalizeReinterpretationPassCModelOutput,
 } from "../src/genesis-pass-c-domain.mjs";
-export { projectPassCInputForCognition } from "../src/genesis-pass-c-cognition.mjs";
+export { projectPassCInputForCognition } from "../src/genesis-pass-b-cognition.mjs";
 export {
   buildScheduledReinterpretationPassCInput,
   scheduleReinterpretationOpportunities,
@@ -62,3 +62,8 @@ export { sharedIntellectualSourceRefs } from "../src/genesis-intellectual-encoun
 export { autobiographicalMemoryId } from "../src/autobiographical-memory-domain.mjs";
 export { genesisLifeEpisodeEventId } from "../src/genesis-life-episode.mjs";
 export { deriveGenesisLifeContinuity } from "../src/genesis-life-continuity-v1.mjs";
+export {
+  GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
+  attachGenesisCanonicalVisualIdentity,
+  normalizeGenesisCanonicalVisualIdentity,
+} from "../src/genesis-canonical-visual-identity.mjs";
