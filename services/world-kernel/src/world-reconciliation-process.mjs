@@ -1,6 +1,7 @@
 import { requireInfraCapabilities } from "#infra";
 
 export const WORLD_RECONCILIATION_SCOPE_ID = "world";
+const DEFAULT_IDLE_INTERVAL_MS = 3_600_000;
 
 function optionalMethod(name, value, method) {
   if (value === null) return null;
@@ -35,11 +36,40 @@ function errorRecord(error) {
   });
 }
 
-function assertIntervalMs(value) {
+function assertIntervalMs(name, value) {
   if (!Number.isSafeInteger(value) || value < 100 || value > 3_600_000) {
-    throw new TypeError("World reconciliation intervalMs must be an integer from 100 through 3600000");
+    throw new TypeError(`${name} must be an integer from 100 through 3600000`);
   }
   return value;
+}
+
+function presentationNeedsRetry(presentation) {
+  if (!presentation?.enabled) return false;
+  if (presentation.ok !== true) return true;
+  const result = presentation.result;
+  if (!result || typeof result !== "object") return false;
+  if (Number.isSafeInteger(result.failed) && result.failed > 0) return true;
+  return false;
+}
+
+function visualPublicationNeedsRetry(visualPublication) {
+  if (!visualPublication?.enabled) return false;
+  if (visualPublication.ok !== true) return true;
+  const result = visualPublication.result;
+  if (!result || typeof result !== "object") return false;
+  if (result.complete === false) return true;
+  const results = result.results;
+  if (!Array.isArray(results)) return false;
+  return results.some((entry) => (
+    entry?.ok !== true
+    || entry?.reconciliation?.complete !== true
+  ));
+}
+
+export function worldReconciliationNeedsRetry(result) {
+  if (!result || typeof result !== "object" || result.skipped === true) return false;
+  return presentationNeedsRetry(result.presentation)
+    || visualPublicationNeedsRetry(result.visualPublication);
 }
 
 export function createWorldReconciliationProcess({
@@ -129,6 +159,7 @@ export function createWorldReconciliationRuntime({
   process,
   scopeId = WORLD_RECONCILIATION_SCOPE_ID,
   intervalMs = 5_000,
+  idleIntervalMs = DEFAULT_IDLE_INTERVAL_MS,
   now = Date.now,
 } = {}) {
   if (!process || typeof process.runOnce !== "function") {
@@ -137,12 +168,16 @@ export function createWorldReconciliationRuntime({
   if (typeof scopeId !== "string" || scopeId.trim() === "") {
     throw new TypeError("World reconciliation scopeId is required");
   }
-  assertIntervalMs(intervalMs);
+  assertIntervalMs("World reconciliation intervalMs", intervalMs);
+  assertIntervalMs("World reconciliation idleIntervalMs", idleIntervalMs);
+  if (idleIntervalMs < intervalMs) {
+    throw new TypeError("World reconciliation idleIntervalMs must be greater than or equal to intervalMs");
+  }
   if (typeof now !== "function") throw new TypeError("World reconciliation now must be a function");
   const infra = requireInfraCapabilities(infraDriver, "scheduler");
 
-  async function scheduleNext() {
-    const scheduledTimeMs = now() + intervalMs;
+  async function scheduleNext(delayMs = intervalMs) {
+    const scheduledTimeMs = now() + delayMs;
     return infra.scheduler.schedule(scopeId, scheduledTimeMs);
   }
 
@@ -154,10 +189,13 @@ export function createWorldReconciliationRuntime({
   }
 
   async function runAndReschedule() {
+    let retrySoon = true;
     try {
-      return await process.runOnce();
+      const result = await process.runOnce();
+      retrySoon = worldReconciliationNeedsRetry(result);
+      return result;
     } finally {
-      await scheduleNext();
+      await scheduleNext(retrySoon ? intervalMs : idleIntervalMs);
     }
   }
 
