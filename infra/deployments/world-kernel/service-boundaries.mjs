@@ -21,6 +21,16 @@ async function responseJson(response) {
   catch { return null; }
 }
 
+function downstreamRetryable(response, body) {
+  return typeof body?.retryable === "boolean"
+    ? body.retryable
+    : response.status === 429 || response.status >= 500;
+}
+
+function downstreamCode(body, fallback) {
+  return typeof body?.code === "string" && body.code !== "" ? body.code : fallback;
+}
+
 export function createCanonicalVisualRootBoundary({
   baseUrl,
   privateToken,
@@ -44,9 +54,10 @@ export function createCanonicalVisualRootBoundary({
       if (!response.ok) {
         const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
         const error = new Error(`Asset Generator rejected canonical root handoff: ${detail}`);
-        error.code = "CANONICAL_VISUAL_ROOT_HANDOFF_FAILED";
+        error.code = downstreamCode(body, "CANONICAL_VISUAL_ROOT_HANDOFF_FAILED");
+        error.activityCategory = "reconciliation";
         error.httpStatus = response.status;
-        error.retryable = response.status === 429 || response.status >= 500;
+        error.retryable = downstreamRetryable(response, body);
         throw error;
       }
       if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
@@ -83,14 +94,10 @@ export function createThreadPresentationVisualBoundary({
       if (!response.ok) {
         const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
         const error = new Error(`Thread Presentation rejected visual publication handoff: ${detail}`);
-        error.code = typeof body?.code === "string" && body.code !== ""
-          ? body.code
-          : "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED";
+        error.code = downstreamCode(body, "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED");
         error.activityCategory = "reconciliation";
         error.httpStatus = response.status;
-        error.retryable = typeof body?.retryable === "boolean"
-          ? body.retryable
-          : response.status === 429 || response.status >= 500;
+        error.retryable = downstreamRetryable(response, body);
         throw error;
       }
       if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
@@ -127,8 +134,10 @@ export function createThreadPresentationPublisher({
       if (!response.ok) {
         const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
         const error = new Error(`Thread Presentation rejected Genesis projection: ${detail}`);
-        error.code = "THREAD_PRESENTATION_PUBLICATION_FAILED";
+        error.code = downstreamCode(body, "THREAD_PRESENTATION_PUBLICATION_FAILED");
+        error.activityCategory = "reconciliation";
         error.httpStatus = response.status;
+        error.retryable = downstreamRetryable(response, body);
         throw error;
       }
       return body;
