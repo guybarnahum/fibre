@@ -130,6 +130,13 @@ function dispatchWitness(instance, observedAt) {
 
 function refreshWitness(status, prior, observedAt) {
   if (status === null) return prior;
+  if (prior !== null
+    && prior !== undefined
+    && prior.workflowName === status.workflowName
+    && prior.instanceId === status.instanceId
+    && prior.workflowStatus === status.status) {
+    return prior;
+  }
   return normalizeDispatch({
     workflowName: status.workflowName,
     instanceId: status.instanceId,
@@ -141,6 +148,20 @@ function refreshWitness(status, prior, observedAt) {
 
 function transitionedDemand(demand, patch) {
   return normalizePresentationAssetDemand({ ...demand, state: patch.state, current: patch.current });
+}
+
+function projectionSemanticValue(value) {
+  return {
+    projectionVersion: value.projectionVersion,
+    scope: value.scope,
+    providerProfile: value.providerProfile,
+    regenerationKey: value.regenerationKey,
+    demands: value.demands,
+  };
+}
+
+function projectionSemanticallyEqual(left, right) {
+  return canonicalJson(projectionSemanticValue(left)) === canonicalJson(projectionSemanticValue(right));
 }
 
 function buildNextProjection({ priorProjection, reconciliation, dispatchByDemandId, observedAt, scope, providerProfile, regenerationKey }) {
@@ -272,7 +293,7 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
         }
       }
 
-      const projection = buildNextProjection({
+      const candidateProjection = buildNextProjection({
         priorProjection,
         reconciliation,
         dispatchByDemandId,
@@ -281,10 +302,13 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
         providerProfile,
         regenerationKey,
       });
-      await infra.catalog.upsert(catalogKey, projection);
+      const changed = stored === null || !projectionSemanticallyEqual(priorProjection, candidateProjection);
+      const projection = changed ? candidateProjection : priorProjection;
+      if (changed) await infra.catalog.upsert(catalogKey, projection);
       return Object.freeze({
         projection,
         catalogKey,
+        changed,
         reconciliation,
         dispatches: Object.freeze([...dispatchByDemandId.entries()].map(([demandId, dispatch]) => ({ demandId, dispatch }))),
       });
