@@ -284,11 +284,11 @@ export function createThreadPresentationVisualPublicationReconciler({
         if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
         const terminal = await terminalWorkflowError({ infra, threadId, mediaId, active });
         if (terminal !== null) throw terminal;
-        if (demand.changed === true) {
+        if (demand.changed !== false) {
           await bestEffortRecord(activity, { ...activityMetadata, status: "succeeded" });
         }
       } catch (error) {
-        if (demand?.changed === true || demand === undefined) {
+        if (demand?.changed !== false) {
           await bestEffortRecord(activity, {
             ...activityMetadata,
             status: "failed",
