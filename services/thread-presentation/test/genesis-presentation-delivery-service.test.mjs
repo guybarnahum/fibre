@@ -33,7 +33,12 @@ function fixture() {
       const entry = entries.get(genesisId);
       entry.attemptCount += 1;
       entry.lastAttemptAt = attemptedAt;
-      entry.lastError = { name: error.constructor.name, code: error.code ?? null, message: error.message };
+      entry.lastError = {
+        name: error.constructor.name,
+        code: error.code ?? null,
+        message: error.message,
+        retryable: error.retryable !== false,
+      };
       return structuredClone(entry);
     },
     markDelivered(genesisId, { deliveredAt }) {
@@ -106,7 +111,11 @@ test("presentation failure is recorded durably and a later retry can deliver the
     }
     return { reused: true, presentationId: "presentation_gen_1" };
   };
-  let tick = 0;
+  const times = [
+    "2026-08-30T03:21:00Z",
+    "2026-08-30T03:21:06Z",
+    "2026-08-30T03:21:07Z",
+  ];
   const service = createGenesisPresentationDeliveryService({
     worldReader: current.worldReader,
     civilRegistry: current.civilRegistry,
@@ -115,7 +124,7 @@ test("presentation failure is recorded durably and a later retry can deliver the
     projector: current.projector,
     activityRecorder,
     activityContextForEntry: () => ({ requestId: "req_presentation_1" }),
-    now: () => `2026-08-30T03:21:0${tick++}Z`,
+    now: () => times.shift() ?? "2026-08-30T03:21:08Z",
   });
 
   const failed = await service.deliverGenesis("gen_1");
@@ -123,6 +132,7 @@ test("presentation failure is recorded durably and a later retry can deliver the
   assert.equal(current.entries.get("gen_1").state, "pending");
   assert.equal(current.entries.get("gen_1").attemptCount, 1);
   assert.equal(current.entries.get("gen_1").lastError.message, "presentation unavailable");
+  assert.equal(current.entries.get("gen_1").lastError.retryable, true);
 
   const retried = await service.deliverPending();
   assert.equal(retried.attempted, 1);
@@ -145,8 +155,63 @@ test("presentation failure is recorded durably and a later retry can deliver the
       ["succeeded", 2],
     ],
   );
+  assert.equal(activity.some((record) => record.stage === "presentation.world_authority.resolve"), false);
   assert.equal(activity.every((record) => record.genesisId === "gen_1"), true);
   assert.equal(activity.every((record) => record.threadId === "thr_1"), true);
+});
+
+test("automatic Genesis presentation delivery backs off instead of retrying every World sweep", async () => {
+  const current = fixture();
+  current.publisher.publishGenesisPresentation = async (input) => {
+    current.calls.push(structuredClone(input));
+    throw new Error("presentation unavailable");
+  };
+  const times = [
+    "2026-08-30T03:21:00Z",
+    "2026-08-30T03:21:01Z",
+  ];
+  const service = createGenesisPresentationDeliveryService({
+    worldReader: current.worldReader,
+    civilRegistry: current.civilRegistry,
+    outbox: current.outbox,
+    presentationPublisher: current.publisher,
+    projector: current.projector,
+    now: () => times.shift() ?? "2026-08-30T03:21:01Z",
+  });
+
+  await service.deliverGenesis("gen_1");
+  const replay = await service.deliverPending();
+  assert.equal(replay.attempted, 0);
+  assert.equal(current.calls.length, 1);
+  assert.equal(current.entries.get("gen_1").attemptCount, 1);
+});
+
+test("automatic Genesis presentation delivery quiesces terminal failures", async () => {
+  const current = fixture();
+  current.publisher.publishGenesisPresentation = async (input) => {
+    current.calls.push(structuredClone(input));
+    const error = new Error("invalid immutable presentation payload");
+    error.retryable = false;
+    throw error;
+  };
+  const times = [
+    "2026-08-30T03:21:00Z",
+    "2026-08-30T04:21:00Z",
+  ];
+  const service = createGenesisPresentationDeliveryService({
+    worldReader: current.worldReader,
+    civilRegistry: current.civilRegistry,
+    outbox: current.outbox,
+    presentationPublisher: current.publisher,
+    projector: current.projector,
+    now: () => times.shift() ?? "2026-08-30T04:21:00Z",
+  });
+
+  await service.deliverGenesis("gen_1");
+  assert.equal(current.entries.get("gen_1").lastError.retryable, false);
+  const replay = await service.deliverPending();
+  assert.equal(replay.attempted, 0);
+  assert.equal(current.calls.length, 1);
 });
 
 test("already delivered Genesis presentation is idempotent and does not republish", async () => {
