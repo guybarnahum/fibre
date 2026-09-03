@@ -1,6 +1,7 @@
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
 const TERMINAL_WORKFLOW_STATUSES = new Set(["errored", "terminated"]);
+const ASSET_GENERATION_WORKFLOW = "asset_generation_v1";
 
 function assertId(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -67,7 +68,7 @@ async function runChangedStage(activity, metadata, operation, changed) {
       ...metadata,
       status: "failed",
       message: error instanceof Error ? error.message : String(error),
-      error: { category: "reconciliation", code: "PRESENTATION_RECONCILIATION_FAILED", retryable: error?.retryable === true },
+      error: { category: "reconciliation", code: "PRESENTATION_RECONCILIATION_FAILED", retryable: true },
     });
     throw error;
   }
@@ -109,11 +110,16 @@ function suppliedEmbodimentReader(embodiment) {
   });
 }
 
-function terminalWorkflowError({ threadId, mediaId, active }) {
+async function terminalWorkflowError({ infra, threadId, mediaId, active }) {
   const status = active?.dispatch?.workflowStatus;
   if (!TERMINAL_WORKFLOW_STATUSES.has(status)) return null;
-  const workflowError = active?.dispatch?.workflowError ?? null;
-  const detail = workflowError?.message ?? "no workflow failure detail reported";
+  let workflow = null;
+  if (typeof infra?.workflows?.get === "function") {
+    try {
+      workflow = await infra.workflows.get(ASSET_GENERATION_WORKFLOW, active.demand.job.jobId);
+    } catch {}
+  }
+  const detail = workflow?.error?.message ?? "no workflow failure detail reported";
   const error = new Error(
     `Thread ${threadId} official identity-photo workflow ${active.demand.job.jobId} ended as ${status}: ${detail}`,
   );
@@ -250,7 +256,7 @@ export function createThreadPresentationVisualPublicationReconciler({
           && entry.demand.job.context.mediaId === mediaId
         ));
         if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
-        const terminal = terminalWorkflowError({ threadId, mediaId, active });
+        const terminal = await terminalWorkflowError({ infra, threadId, mediaId, active });
         if (terminal !== null) throw terminal;
         return Object.freeze({ demand, active });
       });
