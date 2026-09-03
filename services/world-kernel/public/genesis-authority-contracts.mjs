@@ -53,7 +53,7 @@ export {
   normalizePassCInput,
   normalizeReinterpretationPassCModelOutput,
 } from "../src/genesis-pass-c-domain.mjs";
-export { projectPassCInputForCognition } from "../src/genesis-pass-b-cognition.mjs";
+export { projectPassCInputForCognition } from "../src/genesis-pass-c-cognition.mjs";
 export {
   buildScheduledReinterpretationPassCInput,
   scheduleReinterpretationOpportunities,
