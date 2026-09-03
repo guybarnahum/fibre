@@ -71,6 +71,7 @@ const LOCI = Object.freeze({
 });
 
 const ORDER = Object.freeze(Object.keys(LOCI));
+const encoder = new TextEncoder();
 
 function indexFor(seed, domain, length) {
   const digest = sha256(`${seed}:${domain}`);
@@ -89,7 +90,7 @@ export function deNovoVisualPhenotypeLoci({ threadId } = {}) {
 export function buildDeNovoCanonicalVisualIdentity({ threadId } = {}) {
   const loci = deNovoVisualPhenotypeLoci({ threadId });
   const subjectDescription = loci.map((locus) => locus.value).join("; ");
-  if (Buffer.byteLength(subjectDescription, "utf8") < 500) {
+  if (encoder.encode(subjectDescription).byteLength < 500) {
     throw new Error("canonical visual phenotype is too thin for durable cross-age identity");
   }
   return Object.freeze({
