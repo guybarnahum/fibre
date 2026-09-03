@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import {
   E2E_ACTIVITY_REFERENCE_VERSION,
   runStagingGenesisDevelopmentE2EWithActivity,
+  terminalRuntimeFailure,
   terminalWorldFailure,
 } from "./genesis-development-e2e-staging.mjs";
 
@@ -71,6 +72,37 @@ test("terminal World failure classifier ignores retryable failures and selects n
   assert.equal(terminalWorldFailure(records.slice(0, 2)), null);
 });
 
+test("terminal runtime classifier selects the latest non-retryable failure across Fibre services", () => {
+  const records = [
+    {
+      activityId: "act_world_retry",
+      occurredAt: "2026-09-03T17:00:00.000Z",
+      service: "world-kernel",
+      stage: "world.visual_identity.demand",
+      status: "failed",
+      message: "temporary provider failure",
+      error: { category: "provider", code: "UPSTREAM_503", retryable: true },
+    },
+    {
+      activityId: "act_presentation_terminal",
+      occurredAt: "2026-09-03T17:00:02.000Z",
+      service: "thread-presentation",
+      stage: "presentation.media_demand.reconcile",
+      status: "failed",
+      message: "official photo workflow ended as errored",
+      error: { category: "reconciliation", code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL", retryable: false },
+    },
+  ];
+  assert.deepEqual(terminalRuntimeFailure(records), {
+    activityId: "act_presentation_terminal",
+    occurredAt: "2026-09-03T17:00:02.000Z",
+    service: "thread-presentation",
+    stage: "presentation.media_demand.reconcile",
+    code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL",
+    message: "official photo workflow ended as errored",
+  });
+});
+
 test("staging wrapper fails fast when active Thread has terminal World reconciliation activity", async () => {
   const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-fast-fail-"));
   let underlyingSleeps = 0;
@@ -112,9 +144,43 @@ test("staging wrapper fails fast when active Thread has terminal World reconcili
         throw new Error("polling should have stopped before this point");
       },
     }),
-    /World reconciliation failed terminally at world\.visual_identity\.demand \(VISUAL_PLAN_INVALID\)/,
+    /world-kernel failed terminally at world\.visual_identity\.demand \(VISUAL_PLAN_INVALID\)/,
   );
   assert.equal(underlyingSleeps, 0, "terminal failure is detected before another convergence sleep");
+});
+
+test("staging wrapper fails fast on terminal Presentation activity for the active Thread", async () => {
+  const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-presentation-fast-fail-"));
+  let underlyingSleeps = 0;
+  await assert.rejects(
+    runStagingGenesisDevelopmentE2EWithActivity({
+      repoRoot: directory,
+      environment: {},
+      activityRecorder: null,
+      activityReader: {},
+      inspect: async () => ({
+        databaseName: "fibre-activity-log-staging",
+        records: [{
+          activityId: "act_presentation_terminal",
+          occurredAt: "2026-09-03T17:00:00.000Z",
+          service: "thread-presentation",
+          stage: "presentation.media_demand.reconcile",
+          status: "failed",
+          message: "official photo workflow ended as errored",
+          error: { category: "reconciliation", code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL", retryable: false },
+        }],
+        summary: "terminal presentation failure",
+      }),
+      sleep: async () => { underlyingSleeps += 1; },
+      emit: () => {},
+      runCore: async ({ emit, sleep }) => {
+        emit({ event: "genesis-development-e2e-submitted", requestId: REQUEST_ID, genesisId: GENESIS_ID, threadId: THREAD_ID });
+        await sleep(2_000);
+      },
+    }),
+    /thread-presentation failed terminally at presentation\.media_demand\.reconcile \(PRESENTATION_ASSET_WORKFLOW_TERMINAL\)/,
+  );
+  assert.equal(underlyingSleeps, 0);
 });
 
 test("staging wrapper retains request/genesis/thread Activity references without replacing closure assertions", async () => {
