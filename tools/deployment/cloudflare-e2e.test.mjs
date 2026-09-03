@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  cloudE2EProgress,
+  createCloudE2EFetch,
   normalizeCloudE2EEnvironment,
   parseCloudE2EArgs,
   runCloudflareE2E,
@@ -19,13 +21,41 @@ test("Cloudflare E2E CLI requires an explicit environment", () => {
   assert.throws(() => parseCloudE2EArgs(["--mode", "staging"]), /unsupported argument --mode/);
 });
 
+test("Cloudflare E2E maps lifecycle events to operator progress", () => {
+  assert.equal(cloudE2EProgress({ event: "genesis-development-e2e-start" }), "running Genesis development");
+  assert.equal(
+    cloudE2EProgress({ event: "genesis-development-e2e-submitted", status: "pending" }),
+    "Genesis generated; waiting for authoritative birth publication",
+  );
+  assert.equal(cloudE2EProgress({ event: "unrelated" }), null);
+});
+
+test("Cloudflare E2E bounds repeated birth-development requests without shortening the initial Genesis request", async () => {
+  const calls = [];
+  const originalSignal = AbortSignal.timeout(60_000);
+  const fetchImpl = async (input, init) => {
+    calls.push({ input, init });
+    return { ok: true, status: 200 };
+  };
+  const bounded = createCloudE2EFetch({ fetchImpl, replayRequestTimeoutMs: 25 });
+  const url = "https://birth.example.test/internal/births/develop";
+  await bounded(url, { method: "POST", signal: originalSignal });
+  await bounded(url, { method: "POST", signal: originalSignal });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].init.signal, originalSignal);
+  assert.notEqual(calls[1].init.signal, originalSignal);
+});
+
 test("Cloudflare E2E dispatches to staging and requires Slice G public closure", async () => {
   let stagingCalls = 0;
   let verifyCalls = 0;
+  const emitted = [];
   const result = await runCloudflareE2E({
     environment: "staging",
-    async runStaging() {
+    emit(event) { emitted.push(event); },
+    async runStaging({ emit }) {
       stagingCalls += 1;
+      emit({ event: "genesis-development-e2e-start" });
       return Object.freeze({
         evidence: Object.freeze({
           contract: "fibre-slice-g-cloud-e2e-evidence-v1",
@@ -69,4 +99,6 @@ test("Cloudflare E2E dispatches to staging and requires Slice G public closure",
   assert.equal(result.evidence.contract, "fibre-slice-g-cloud-e2e-evidence-v1");
   assert.equal(result.sliceGClosure.canonicalRootObjectRef, "asset_root_test");
   assert.equal(result.sliceGClosure.officialPhoto.objectRef, "asset_official_test");
+  assert.ok(emitted.some((event) => event.progress === "running Genesis development"));
+  assert.ok(emitted.some((event) => event.progress === "verifying Identity Card and official photo"));
 });
