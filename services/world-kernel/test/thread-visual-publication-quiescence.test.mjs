@@ -13,10 +13,10 @@ function pendingEmbodiment(threadId) {
   const specification = {
     subject: {
       partyId: threadId,
-      description: "Stable canonical likeness fixture with enough facial detail to satisfy the Embodiment domain minimum length.",
+      description: "A person with a softly angular oval face; medium warm-brown skin with ordinary visible texture; wide-set dark brown almond-shaped eyes; straight medium-width brows with a subtly higher left arch; a narrow straight nose with rounded tip; a defined cupid's bow and fuller lower lip; a tapered jaw and rounded chin; attached earlobes; thick dark-brown wavy hair with a subtly uneven natural hairline; and a small pale diagonal scar above the outer left eyebrow. These proportions, landmarks, asymmetries, and the scar remain stable identity cues across age transformations.",
     },
     method: "canonical synthetic portrait specification",
-    description: "Neutral canonical portrait fixture.",
+    description: "Preserve ordinary asymmetry and skin detail instead of idealizing the face. Build is lean-to-average with relaxed shoulders and a long neck. The normalized reference composition is head-and-shoulders, mostly frontal, both ears and hairline visible, neutral mouth and relaxed eyes, no eyewear or jewelry obscuring landmarks, even daylight-balanced illumination, and ordinary perspective without wide-angle distortion.",
     model: "replaceable-renderer",
   };
   return {
