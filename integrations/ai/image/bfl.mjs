@@ -86,11 +86,17 @@ function endpointPath(baseEndpoint, model) {
   return `${baseEndpoint.replace(/\/$/, "")}/${encodeURIComponent(model)}`;
 }
 
+function isBflSubdomain(hostname) {
+  return hostname === "bfl.ai" || hostname.endsWith(".bfl.ai");
+}
+
 function isAllowedPollingUrl(value) {
   try {
     const url = new URL(value);
     return url.protocol === "https:"
-      && ["api.bfl.ai", "api.eu.bfl.ai", "api.us.bfl.ai"].includes(url.hostname);
+      && isBflSubdomain(url.hostname)
+      && (url.hostname === "api.bfl.ai" || url.hostname.startsWith("api."))
+      && url.pathname === "/v1/get_result";
   } catch {
     return false;
   }
@@ -100,8 +106,8 @@ function isAllowedDeliveryUrl(value) {
   try {
     const url = new URL(value);
     return url.protocol === "https:"
-      && url.hostname.startsWith("delivery.")
-      && url.hostname.endsWith(".bfl.ai");
+      && isBflSubdomain(url.hostname)
+      && url.hostname.startsWith("delivery.");
   } catch {
     return false;
   }
@@ -344,6 +350,18 @@ export function createBflFluxImageProvider({
       const providerRequestId = typeof submissionPayload?.id === "string" ? submissionPayload.id : null;
       const pollingUrl = typeof submissionPayload?.polling_url === "string" ? submissionPayload.polling_url : null;
       if (providerRequestId === null || pollingUrl === null || !isAllowedPollingUrl(pollingUrl)) {
+        let pollingShape = "missing";
+        if (pollingUrl !== null) {
+          try {
+            const parsed = new URL(pollingUrl);
+            pollingShape = `${parsed.protocol}//${parsed.hostname}${parsed.pathname}`;
+          } catch {
+            pollingShape = "malformed";
+          }
+        }
+        const topLevelKeys = submissionPayload && typeof submissionPayload === "object" && !Array.isArray(submissionPayload)
+          ? Object.keys(submissionPayload).sort().join(",")
+          : "non-object";
         throw new AssetGenerationError("BFL FLUX submission returned an invalid task identity or polling URL", {
           phase: "provider_generation",
           category: "unknown",
@@ -352,6 +370,7 @@ export function createBflFluxImageProvider({
           model,
           httpStatus: submission.status,
           providerRequestId,
+          safeDetail: `BFL FLUX submission shape invalid: keys=[${topLevelKeys}] polling=${pollingShape}`,
         });
       }
 
