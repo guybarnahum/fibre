@@ -12,7 +12,13 @@ import {
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 export const E2E_ACTIVITY_REFERENCE_VERSION = "fibre-slice-g-activity-reference-v0.2";
-const TERMINAL_FAILURE_PROBE_INTERVAL_MS = 5_000;
+const TERMINAL_FAILURE_PROBE_INTERVAL_MS = 2_000;
+const TERMINAL_RUNTIME_SERVICES = new Set([
+  "birth-center",
+  "world-kernel",
+  "thread-presentation",
+  "asset-generator",
+]);
 
 function safeError(error) {
   return Object.freeze({
@@ -44,10 +50,10 @@ function failures(records) {
     })));
 }
 
-export function terminalWorldFailure(records) {
+function terminalFailure(records, predicate) {
   if (!Array.isArray(records)) throw new TypeError("Activity records must be an array");
   const terminal = records.filter((record) => (
-    record?.service === "world-kernel"
+    predicate(record)
     && record?.status === "failed"
     && record?.error?.retryable === false
   ));
@@ -57,10 +63,22 @@ export function terminalWorldFailure(records) {
   return Object.freeze({
     activityId: record.activityId ?? null,
     occurredAt: record.occurredAt ?? null,
+    service: record.service ?? "unknown",
     stage: record.stage ?? "unknown",
     code: record.error?.code ?? "ERROR",
-    message: record.message ?? "World reconciliation failed",
+    message: record.message ?? "Runtime stage failed",
   });
+}
+
+export function terminalRuntimeFailure(records) {
+  return terminalFailure(records, (record) => TERMINAL_RUNTIME_SERVICES.has(record?.service));
+}
+
+export function terminalWorldFailure(records) {
+  const failure = terminalFailure(records, (record) => record?.service === "world-kernel");
+  if (failure === null) return null;
+  const { service: _service, ...worldFailure } = failure;
+  return Object.freeze(worldFailure);
 }
 
 function failOpenActivityRecorder(recorder, emit) {
@@ -115,10 +133,10 @@ function failFastSleep({
         selector: { kind: "threadId", value: threadId },
         reader,
       });
-      const failure = terminalWorldFailure(result.records);
+      const failure = terminalRuntimeFailure(result.records);
       if (failure === null) return;
       const error = new Error(
-        `World reconciliation failed terminally at ${failure.stage} (${failure.code}): ${failure.message}`,
+        `${failure.service} failed terminally at ${failure.stage} (${failure.code}): ${failure.message}`,
       );
       error.code = failure.code;
       error.retryable = false;
