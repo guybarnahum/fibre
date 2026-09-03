@@ -26,11 +26,55 @@ import {
 
 export const PRESENTATION_ASSET_DEMAND_PROJECTION_VERSION = "presentation-asset-demand-projection-v0.1";
 export const PRESENTATION_ASSET_DEMAND_SCOPE_KINDS = Object.freeze(["thread", "world", "experience"]);
+export const PRESENTATION_CATALOG_WRITE_CIRCUIT_BACKOFF_MS = 300_000;
+
+const presentationCatalogWriteCircuits = new Map();
 
 function nullableText(name, value) {
   if (value === null) return null;
   assertNonEmpty(name, value);
   return value;
+}
+
+function isD1DailyWriteQuotaError(error) {
+  const message = error?.message ?? String(error);
+  return Number(error?.code) === 7500
+    || message.includes("exceeded D1's free tier daily row write limit");
+}
+
+function openCatalogWriteCircuit(key, nowMs, backoffMs) {
+  const openUntilMs = nowMs + backoffMs;
+  presentationCatalogWriteCircuits.set(key, openUntilMs);
+  return openUntilMs;
+}
+
+function clearCatalogWriteCircuit(key) {
+  presentationCatalogWriteCircuits.delete(key);
+}
+
+function assertCatalogWriteCircuitClosed(key, nowMs) {
+  const openUntilMs = presentationCatalogWriteCircuits.get(key) ?? null;
+  if (openUntilMs === null) return;
+  if (nowMs >= openUntilMs) {
+    presentationCatalogWriteCircuits.delete(key);
+    return;
+  }
+  const error = new Error(
+    `Presentation catalog D1 write circuit is open until ${new Date(openUntilMs).toISOString()}`,
+  );
+  error.name = "PresentationCatalogWriteCircuitOpenError";
+  error.code = "PRESENTATION_CATALOG_WRITE_CIRCUIT_OPEN";
+  error.retryable = true;
+  error.suppressActivity = true;
+  error.retryAfterAt = new Date(openUntilMs).toISOString();
+  throw error;
+}
+
+function quotaFailure(error, openUntilMs) {
+  error.code = "D1_WRITE_QUOTA_EXHAUSTED";
+  error.retryable = true;
+  error.retryAfterAt = new Date(openUntilMs).toISOString();
+  return error;
 }
 
 export function normalizePresentationAssetDemandScope(value) {
@@ -229,9 +273,20 @@ async function reserveShortGenerationId({ infra, slot, providerProfile, regenera
   throw new Error(`unable to reserve a collision-free 12-hex asset generation id for ${slot.slotKey}`);
 }
 
-export function createPresentationAssetDemandService({ infra, workflowName = "asset_generation_v1" } = {}) {
+export function createPresentationAssetDemandService({
+  infra,
+  workflowName = "asset_generation_v1",
+  writeCircuitKey = "presentation-catalog",
+  writeQuotaBackoffMs = PRESENTATION_CATALOG_WRITE_CIRCUIT_BACKOFF_MS,
+  nowMs = () => Date.now(),
+} = {}) {
   requireInfraCapabilities(infra, "catalog", "objects", "workflows");
   assertNonEmpty("workflowName", workflowName);
+  assertNonEmpty("writeCircuitKey", writeCircuitKey);
+  if (!Number.isSafeInteger(writeQuotaBackoffMs) || writeQuotaBackoffMs < 1) {
+    throw new TypeError("writeQuotaBackoffMs must be a positive integer");
+  }
+  if (typeof nowMs !== "function") throw new TypeError("nowMs must be a function");
   const assetGeneration = createAssetGenerationService({ infra, workflowName });
 
   return Object.freeze({
@@ -242,6 +297,7 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
     },
 
     async reconcile({ scope: rawScope, slots, requestedAt, providerProfile = "presentation-image-default-v1", regenerationKey = null }) {
+      assertCatalogWriteCircuitClosed(writeCircuitKey, nowMs());
       const scope = normalizePresentationAssetDemandScope(rawScope);
       assertIsoTimestamp("requestedAt", requestedAt);
       assertNonEmpty("providerProfile", providerProfile);
@@ -310,7 +366,16 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
       });
       const changed = stored === null || !projectionSemanticallyEqual(priorProjection, candidateProjection);
       const projection = changed ? candidateProjection : priorProjection;
-      if (changed) await infra.catalog.upsert(catalogKey, projection);
+      if (changed) {
+        try {
+          await infra.catalog.upsert(catalogKey, projection);
+          clearCatalogWriteCircuit(writeCircuitKey);
+        } catch (error) {
+          if (!isD1DailyWriteQuotaError(error)) throw error;
+          const openUntilMs = openCatalogWriteCircuit(writeCircuitKey, nowMs(), writeQuotaBackoffMs);
+          throw quotaFailure(error, openUntilMs);
+        }
+      }
       return Object.freeze({
         projection,
         catalogKey,
