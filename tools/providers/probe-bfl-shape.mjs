@@ -12,7 +12,7 @@ const MAX_POLLS = 180;
 const TERMINAL = new Set(["Ready", "Error", "Request Moderated", "Content Moderated"]);
 
 function parseArgs(argv) {
-  const parsed = { referenceFile: null };
+  const parsed = { referenceFile: null, printSampleUrl: false };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === "--reference-file") {
@@ -20,6 +20,10 @@ function parseArgs(argv) {
       if (!path || path.startsWith("--")) throw new TypeError("--reference-file requires a path");
       parsed.referenceFile = path;
       index += 1;
+      continue;
+    }
+    if (value === "--print-sample-url") {
+      parsed.printSampleUrl = true;
       continue;
     }
     throw new TypeError(`unsupported argument ${value}`);
@@ -63,6 +67,9 @@ async function main() {
 
   console.log(`BFL PROBE endpoint=${ENDPOINT} reference=${args.referenceFile === null ? "none" : "present"}`);
   console.log("BFL PROBE NOTE this creates one real flux-2-pro generation task; no generated image bytes are downloaded or persisted");
+  if (args.printSampleUrl) {
+    console.log("BFL PROBE WARNING --print-sample-url will print the full signed delivery URL; treat it as temporary credential material");
+  }
 
   const submission = await fetch(ENDPOINT, {
     method: "POST",
@@ -99,6 +106,15 @@ async function main() {
       emit(`POLL attempt=${attempt}`, shape);
     }
     if (TERMINAL.has(shape.status)) {
+      if (shape.status === "Ready" && args.printSampleUrl) {
+        const sampleUrl = typeof payload?.result?.sample === "string" ? payload.result.sample : null;
+        if (sampleUrl === null) {
+          console.error("BFL PROBE Ready response did not contain result.sample");
+          process.exitCode = 5;
+          return;
+        }
+        console.log(`SAMPLE_URL ${sampleUrl}`);
+      }
       process.exitCode = shape.status === "Ready" ? 0 : 3;
       return;
     }
