@@ -13,6 +13,7 @@ import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
+import { createThreadVisualPublicationRecoveryApi } from "#services/world-kernel/src/thread-visual-publication-recovery-api.mjs";
 import {
   createWorldReconciliationProcess,
   createWorldReconciliationRuntime,
@@ -134,6 +135,10 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     activityRecorder,
     now,
   });
+  const visualRecoveryApi = createThreadVisualPublicationRecoveryApi({
+    reconciler: visualReconciler,
+    privateToken,
+  });
   const visualPublicationProcess = createThreadVisualPublicationProcess({
     threadSource: createDurableThreadSource(identityStore),
     reconciler: visualReconciler,
@@ -190,6 +195,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     presentationOutboxStore,
     presentationDelivery,
     visualPublicationProcess,
+    visualReconciler,
+    visualRecoveryApi,
     reconciliationProcess,
     reconciliationRuntime,
     birthPublisher,
