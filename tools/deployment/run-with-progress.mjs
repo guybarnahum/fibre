@@ -30,6 +30,17 @@ function elapsedLabel(milliseconds) {
   return `${(milliseconds / 1_000).toFixed(1)}s`;
 }
 
+export function progressDetailFromLine(line) {
+  if (typeof line !== "string" || line.trim() === "") return null;
+  try {
+    const parsed = JSON.parse(line);
+    if (typeof parsed?.progress !== "string" || parsed.progress.trim() === "") return null;
+    return parsed.progress.trim();
+  } catch {
+    return null;
+  }
+}
+
 export async function runWithProgress({
   label,
   command,
@@ -59,8 +70,16 @@ export async function runWithProgress({
     let settled = false;
     let transientVisible = false;
     let atLineBoundary = true;
+    let progressDetail = null;
     let currentStatus = `PROGRESS ${step} started`;
+    let stdoutPending = "";
 
+    const statusForElapsed = () => {
+      const elapsed = elapsedLabel(now() - startedAt);
+      return progressDetail === null
+        ? `PROGRESS ${step} still working (${elapsed})`
+        : `PROGRESS ${step} — ${progressDetail} (${elapsed})`;
+    };
     const clearTransient = () => {
       if (!interactive || !transientVisible) return;
       write(CLEAR_LINE);
@@ -82,6 +101,31 @@ export async function runWithProgress({
       atLineBoundary = /(?:\r?\n)$/u.test(text);
       if (!settled && atLineBoundary) renderTransient();
     };
+    const forwardStdoutLine = (lineWithNewline) => {
+      const line = lineWithNewline.replace(/\r?\n$/u, "");
+      const detail = progressDetailFromLine(line);
+      if (detail !== null) {
+        progressDetail = detail;
+        currentStatus = statusForElapsed();
+        if (!interactive) write(lineWithNewline);
+        if (!settled) renderTransient();
+        return;
+      }
+      clearTransient();
+      write(lineWithNewline);
+      atLineBoundary = true;
+      if (!settled) renderTransient();
+    };
+    const forwardStdout = (chunk) => {
+      stdoutPending += chunk.toString();
+      let newlineIndex = stdoutPending.indexOf("\n");
+      while (newlineIndex >= 0) {
+        const line = stdoutPending.slice(0, newlineIndex + 1);
+        stdoutPending = stdoutPending.slice(newlineIndex + 1);
+        forwardStdoutLine(line);
+        newlineIndex = stdoutPending.indexOf("\n");
+      }
+    };
 
     renderTransient();
     const child = spawnImpl(executable, args, {
@@ -89,12 +133,12 @@ export async function runWithProgress({
       stdio: interactive ? ["inherit", "pipe", "pipe"] : "inherit",
     });
     if (interactive) {
-      child.stdout?.on("data", forward(write));
+      child.stdout?.on("data", forwardStdout);
       child.stderr?.on("data", forward(writeError));
     }
 
     const timer = setInterval(() => {
-      currentStatus = `PROGRESS ${step} still working (${elapsedLabel(now() - startedAt)})`;
+      currentStatus = statusForElapsed();
       renderTransient();
     }, intervalMs);
     timer.unref?.();
@@ -104,6 +148,11 @@ export async function runWithProgress({
       settled = true;
       clearInterval(timer);
       clearTransient();
+      if (interactive && stdoutPending !== "") {
+        write(stdoutPending);
+        atLineBoundary = /(?:\r?\n)$/u.test(stdoutPending);
+        stdoutPending = "";
+      }
       if (interactive && !atLineBoundary) write("\n");
       const elapsed = elapsedLabel(now() - startedAt);
       if (error === null && code === 0) {
