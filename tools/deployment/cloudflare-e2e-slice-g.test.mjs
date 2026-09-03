@@ -94,16 +94,20 @@ test("Slice G verifies final official-photo bytes and provenance", async () => {
   assert.equal(calls.length, 2);
 });
 
-test("Slice G waits through an official-photo placeholder until media.ready arrives", async () => {
+test("Slice G waits through an official-photo placeholder while probing terminal failure and reporting progress", async () => {
   const calls = [];
+  const progress = [];
   let snapshotReads = 0;
   let clock = 10_000;
   let sleeps = 0;
+  let probes = 0;
   const result = await verifySliceGPublicClosure({
     evidence: evidence(),
     convergenceWaitMs: 10_000,
     pollMs: 2_000,
     nowMs: () => clock,
+    async checkTerminalFailure() { probes += 1; },
+    onProgress(event) { progress.push(event); },
     async sleep(milliseconds) {
       sleeps += 1;
       clock += milliseconds;
@@ -124,7 +128,43 @@ test("Slice G waits through an official-photo placeholder until media.ready arri
   });
   assert.equal(snapshotReads, 2);
   assert.equal(sleeps, 1);
+  assert.ok(probes >= 4, "terminal failure is checked before waiting and before public verification");
+  assert.equal(progress[0].stage, "official_photo_pending");
+  assert.equal(progress.some((event) => event.stage === "official_photo_ready"), true);
+  assert.equal(progress.at(-1).stage, "official_photo_public_asset_verified");
   assert.equal(result.closure.objectRef, PHOTO);
   assert.equal(result.officialPhotoAsset.byteLength, 3);
   assert.equal(calls.length, 3);
+});
+
+test("Slice G aborts a pending photo before another sleep when terminal probe fails", async () => {
+  let sleeps = 0;
+  let probes = 0;
+  await assert.rejects(
+    verifySliceGPublicClosure({
+      evidence: evidence(),
+      convergenceWaitMs: 10_000,
+      pollMs: 2_000,
+      async checkTerminalFailure() {
+        probes += 1;
+        if (probes >= 2) {
+          const error = new Error("thread-presentation failed terminally");
+          error.retryable = false;
+          throw error;
+        }
+      },
+      async sleep() { sleeps += 1; },
+      async fetchImpl(url) {
+        if (String(url).includes("/snapshot")) {
+          return new Response(JSON.stringify(snapshot({ status: "placeholder" })), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        throw new Error(`unexpected URL ${url}`);
+      },
+    }),
+    /thread-presentation failed terminally/,
+  );
+  assert.equal(sleeps, 0);
 });
