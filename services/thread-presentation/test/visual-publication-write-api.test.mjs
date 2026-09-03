@@ -34,11 +34,27 @@ test("visual publication write API authenticates and forwards admitted Embodimen
 
   const response = await api.fetch(request());
   assert.equal(response.status, 200);
-  assert.deepEqual(calls, [BODY]);
+  assert.deepEqual(calls, [{ ...BODY, regenerationKey: null }]);
   assert.deepEqual(await response.json(), {
     ok: true,
     result: { complete: false, stage: "official_photo_pending", detail: { jobId: "assetjob_photo" } },
   });
+});
+
+test("visual publication write API forwards explicit regeneration key", async () => {
+  const calls = [];
+  const api = createVisualPublicationWriteApi({
+    privateToken: "secret",
+    reconciler: {
+      async reconcileAvailableEmbodiment(input) {
+        calls.push(input);
+        return { complete: false, stage: "official_photo_pending", detail: { jobId: "assetjob_photo_retry" } };
+      },
+    },
+  });
+  const response = await api.fetch(request({ body: { ...BODY, regenerationKey: "recover-bfl-shard-20260903" } }));
+  assert.equal(response.status, 200);
+  assert.equal(calls[0].regenerationKey, "recover-bfl-shard-20260903");
 });
 
 test("visual publication write API rejects unauthenticated handoff", async () => {
