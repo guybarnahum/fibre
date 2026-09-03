@@ -27,6 +27,19 @@ test("Cloudflare E2E maps lifecycle events to operator progress", () => {
     cloudE2EProgress({ event: "genesis-development-e2e-submitted", status: "pending" }),
     "Genesis generated; waiting for authoritative birth publication",
   );
+  assert.equal(
+    cloudE2EProgress({
+      event: "cloudflare-e2e-slice-g-progress",
+      stage: "official_photo_pending",
+      status: "placeholder",
+      elapsedMs: 31_000,
+    }),
+    "official photo placeholder; 31s elapsed",
+  );
+  assert.equal(
+    cloudE2EProgress({ event: "cloudflare-e2e-slice-g-progress", stage: "official_photo_ready", status: "ready" }),
+    "official photo ready; verifying public asset",
+  );
   assert.equal(cloudE2EProgress({ event: "unrelated" }), null);
 });
 
@@ -61,9 +74,10 @@ test("Cloudflare E2E fetch wrapper accepts native URL inputs", async () => {
   assert.ok(calls[1].init.signal instanceof AbortSignal);
 });
 
-test("Cloudflare E2E dispatches to staging and requires Slice G public closure", async () => {
+test("Cloudflare E2E dispatches to staging and carries fail-fast probe into Slice G public closure", async () => {
   let stagingCalls = 0;
   let verifyCalls = 0;
+  let terminalProbeCalls = 0;
   const emitted = [];
   const result = await runCloudflareE2E({
     environment: "staging",
@@ -76,11 +90,15 @@ test("Cloudflare E2E dispatches to staging and requires Slice G public closure",
           contract: "fibre-slice-g-cloud-e2e-evidence-v1",
           request: Object.freeze({ developmentPlanThreadId: "thr_cloud_e2e_test" }),
         }),
+        async checkTerminalFailure() { terminalProbeCalls += 1; },
       });
     },
-    async verifySliceG({ evidence }) {
+    async verifySliceG({ evidence, checkTerminalFailure, onProgress }) {
       verifyCalls += 1;
       assert.equal(evidence.contract, "fibre-slice-g-cloud-e2e-evidence-v1");
+      await checkTerminalFailure();
+      onProgress({ stage: "official_photo_pending", status: "placeholder", elapsedMs: 30_000 });
+      onProgress({ stage: "official_photo_ready", status: "ready", elapsedMs: 32_000 });
       return Object.freeze({
         closure: Object.freeze({
           credentialId: "fibre_card_test",
@@ -110,10 +128,13 @@ test("Cloudflare E2E dispatches to staging and requires Slice G public closure",
 
   assert.equal(stagingCalls, 1);
   assert.equal(verifyCalls, 1);
+  assert.equal(terminalProbeCalls, 1);
   assert.equal(result.environment, "staging");
   assert.equal(result.evidence.contract, "fibre-slice-g-cloud-e2e-evidence-v1");
   assert.equal(result.sliceGClosure.canonicalRootObjectRef, "asset_root_test");
   assert.equal(result.sliceGClosure.officialPhoto.objectRef, "asset_official_test");
   assert.ok(emitted.some((event) => event.progress === "running Genesis development"));
   assert.ok(emitted.some((event) => event.progress === "verifying Identity Card and official photo"));
+  assert.ok(emitted.some((event) => event.progress === "official photo placeholder; 30s elapsed"));
+  assert.ok(emitted.some((event) => event.progress === "official photo ready; verifying public asset"));
 });
