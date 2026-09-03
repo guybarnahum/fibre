@@ -35,9 +35,9 @@ function optionalActivityRecorder(value) {
   return value;
 }
 
-async function runActivityStage(activity, metadata, operation) {
-  if (activity === null) return operation();
-  return activity.runStage(metadata, operation);
+async function bestEffortRecord(activity, record) {
+  if (activity === null) return;
+  try { await activity.record(record); } catch {}
 }
 
 function activityIdentity(threadId, supplied = {}) {
@@ -138,16 +138,21 @@ export function createThreadVisualPublicationReconciler({
       let embodiment = currentCanonicalPortrait(embodimentStore, threadId);
       if (embodiment === null && canonicalEmbodimentMaterializer !== null) {
         const materialized = normalizeMaterializationResult(
-          await runActivityStage(activity, {
-            ...context,
-            stage: "world.embodiment.reconcile",
-            attempt: 1,
-          }, async () => canonicalEmbodimentMaterializer.materialize({ threadId })),
+          await canonicalEmbodimentMaterializer.materialize({ threadId }),
         );
         if (materialized.state === "pending") {
           return pending(materialized.reason ?? "awaiting_canonical_embodiment", { threadId });
         }
         embodiment = materialized.embodiment;
+        if (materialized.created === true) {
+          await bestEffortRecord(activity, {
+            ...context,
+            stage: "world.embodiment.reconcile",
+            status: "succeeded",
+            attempt: 1,
+            evidence: { embodimentId: embodiment.embodimentId },
+          });
+        }
       }
       if (embodiment === null) {
         return pending("awaiting_canonical_embodiment", { threadId });
@@ -156,17 +161,12 @@ export function createThreadVisualPublicationReconciler({
       if (embodiment.status === "pending_generation") {
         const requestedAt = assertIsoTimestamp("canonical visual root requestedAt", now());
         const job = planCanonicalVisualIdentityGeneration({ embodiment, requestedAt });
-        const root = normalizeRootResult(await runActivityStage(activity, {
-          ...context,
-          stage: "world.visual_identity.demand",
-          attempt: 1,
-          evidence: { embodimentId: embodiment.embodimentId },
-        }, async () => canonicalRootBoundary.reconcile({
+        const root = normalizeRootResult(await canonicalRootBoundary.reconcile({
           threadId,
           embodiment,
           job,
           requestedAt,
-        })));
+        }));
         if (root.state === "pending") {
           return pending("canonical_visual_root_pending", {
             threadId,
@@ -174,17 +174,26 @@ export function createThreadVisualPublicationReconciler({
             jobId: job.jobId,
           });
         }
-
-        embodiment = await runActivityStage(activity, {
+        await bestEffortRecord(activity, {
           ...context,
-          stage: "world.embodiment.admission",
+          stage: "world.visual_identity.demand",
+          status: "succeeded",
           attempt: 1,
           evidence: { embodimentId: embodiment.embodimentId },
-        }, async () => embodimentStore.record(bindVerifiedCanonicalVisualIdentityProof({
+        });
+
+        embodiment = await embodimentStore.record(bindVerifiedCanonicalVisualIdentityProof({
           embodiment,
           proof: root.proof,
           recordedAt: root.recordedAt,
-        })));
+        }));
+        await bestEffortRecord(activity, {
+          ...context,
+          stage: "world.embodiment.admission",
+          status: "succeeded",
+          attempt: 1,
+          evidence: { embodimentId: embodiment.embodimentId },
+        });
       }
 
       if (embodiment.status !== "available" || !embodiment.asset?.referenceObjectRef) {
