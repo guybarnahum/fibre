@@ -41,14 +41,27 @@ export function createAssetGenerationControlApi({
         return json(200, { ok: true, result });
       } catch (error) {
         if (error instanceof TypeError) {
-          return json(400, { ok: false, error: "invalid_request", detail: error.message });
+          return json(400, { ok: false, error: "invalid_request", detail: error.message, retryable: false });
         }
+        const detail = error instanceof Error ? error.message : String(error);
+        const retryable = error?.retryable !== false;
+        const code = typeof error?.code === "string" && error.code !== ""
+          ? error.code
+          : "ASSET_GENERATION_CONTROL_FAILED";
         console.error(JSON.stringify({
           event: "asset_generation_control_failed",
           errorName: error?.constructor?.name ?? "Error",
-          message: error?.message ?? String(error),
+          code,
+          retryable,
+          message: detail,
         }));
-        return json(500, { ok: false, error: "asset_generation_control_failed" });
+        return json(retryable ? 500 : 409, {
+          ok: false,
+          error: "asset_generation_control_failed",
+          code,
+          detail,
+          retryable,
+        });
       }
     },
   });
