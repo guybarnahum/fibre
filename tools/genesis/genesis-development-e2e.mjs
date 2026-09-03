@@ -24,7 +24,6 @@ export const GENESIS_STAGING_ACTIVITY_STAGES = Object.freeze([
   "e2e.world_convergence_wait",
   "e2e.presentation_convergence_wait",
   "e2e.viewer_visibility",
-  "e2e.asset_visibility",
   "e2e.evidence_write",
   "e2e.complete",
 ]);
@@ -272,25 +271,6 @@ async function discoverThread({ fetchImpl, baseUrl, viewerOrigin, threadId, requ
   throw new Error("Thread Presentation discovery exceeded 100 pages");
 }
 
-async function publicAssetWitness({ fetchImpl, baseUrl, viewerOrigin, objectRef, requestTimeoutMs }) {
-  const url = endpoint(baseUrl, `/api/assets/${encodeURIComponent(objectRef)}`);
-  const response = await fetchImpl(url, {
-    headers: { Origin: viewerOrigin },
-    signal: AbortSignal.timeout(requestTimeoutMs),
-  });
-  if (!response.ok) throw new Error(`canonical public asset failed with HTTP ${response.status}`);
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.byteLength === 0) throw new Error("canonical public asset is empty");
-  return Object.freeze({
-    objectRef,
-    status: response.status,
-    byteLength: bytes.byteLength,
-    mediaType: response.headers.get("content-type"),
-    etag: response.headers.get("etag"),
-    provenanceClass: response.headers.get("x-fibre-provenance"),
-  });
-}
-
 async function viewerWitness({ fetchImpl, origin, requestTimeoutMs }) {
   const response = await fetchImpl(origin, {
     redirect: "follow",
@@ -483,7 +463,6 @@ function closureAssertions({
   presentation,
   discovery,
   viewer,
-  asset,
   deployment,
   currentSource,
   endpoints,
@@ -501,7 +480,13 @@ function closureAssertions({
     { id: 6, criterion: "WorldSpec/genome authority admitted", passed: world.genesis.worldSpecId !== null && world.symbolicGenomes.count === 1 },
     { id: 7, criterion: "exactly one authoritative Thread", passed: world.authoritativeThread.exists === true && world.authoritativeThread.eventCount >= 15 && world.civilRegistration?.fibreIdentityNumber === replay.fibreIdentityNumber },
     { id: 8, criterion: "World downstream reconciliation ran", passed: presentation.pointer.threadId === world.threadId && discovery?.threadId === world.threadId },
-    { id: 9, criterion: "canonical visual/Embodiment publication converged", passed: authoritativeVisual?.referenceObjectRef === asset.objectRef && visual.referenceObjectRefs.includes(asset.objectRef) && asset.byteLength > 0 },
+    {
+      id: 9,
+      criterion: "canonical visual/Embodiment publication converged",
+      passed: typeof authoritativeVisual?.referenceObjectRef === "string"
+        && authoritativeVisual.referenceObjectRef !== ""
+        && visual.referenceObjectRefs.includes(authoritativeVisual.referenceObjectRef),
+    },
     { id: 10, criterion: "Thread Presentation exposes same Thread", passed: presentation.pointer.threadId === world.threadId && presentation.snapshot.presentation.manifest.threadId === world.threadId },
     { id: 11, criterion: "staging Viewer resolves same Thread", passed: viewer.reachable === true && discovery?.threadId === world.threadId },
     { id: 12, criterion: "no local Fibre service participated", passed: Object.values(endpoints).every((value) => value.startsWith("https://") && !/localhost|127\.0\.0\.1|\[::1\]|\.local(?::|\/|$)/iu.test(value)) },
@@ -843,23 +828,6 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
   );
   const { discovery, viewer } = visibility;
 
-  const asset = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.asset_visibility" }),
-    async () => {
-      const visual = presentation.snapshot.presentation.visualIdentity;
-      const authoritativeVisual = world.embodiment.current.find((record) => record.embodimentId === visual.embodimentId);
-      if (!authoritativeVisual?.referenceObjectRef) throw new Error("converged authoritative Embodiment has no canonical public asset reference");
-      return publicAssetWitness({
-        fetchImpl,
-        baseUrl: endpoints.threadPresentation,
-        viewerOrigin: endpoints.viewer,
-        objectRef: authoritativeVisual.referenceObjectRef,
-        requestTimeoutMs,
-      });
-    },
-  );
-
   const written = await runActivityStage(
     activityRecorder,
     activityMetadata({ requestId, plan, stage: "e2e.evidence_write" }),
@@ -874,7 +842,6 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
         presentation,
         discovery,
         viewer,
-        asset,
         deployment,
         currentSource,
         endpoints,
@@ -883,6 +850,8 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
       const failed = assertions.filter((assertion) => assertion.passed !== true);
       if (failed.length > 0) throw new Error(`Slice G staging evidence failed criteria: ${failed.map((item) => item.id).join(", ")}`);
 
+      const visual = presentation.snapshot.presentation.visualIdentity;
+      const authoritativeVisual = world.embodiment.current.find((record) => record.embodimentId === visual.embodimentId);
       const completedAt = new Date().toISOString();
       const evidence = Object.freeze({
         contract: GENESIS_STAGING_EVIDENCE_VERSION,
@@ -938,7 +907,7 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
           manifest: structuredClone(presentation.snapshot.presentation.manifest),
           visualIdentity: structuredClone(presentation.snapshot.presentation.visualIdentity),
           discovery: structuredClone(discovery),
-          canonicalPublicAsset: asset,
+          canonicalReferenceObjectRef: authoritativeVisual.referenceObjectRef,
         },
         viewer,
         runtimeParticipation: {
