@@ -19,7 +19,7 @@ function failureResponse(error) {
   if (error instanceof TypeError) {
     return Response.json({ error: "invalid_visual_publication_handoff", detail, retryable: false }, { status: 400 });
   }
-  const retryable = error?.retryable === true;
+  const retryable = error?.retryable !== false;
   const code = typeof error?.code === "string" && error.code !== ""
     ? error.code
     : "VISUAL_PUBLICATION_RECONCILIATION_FAILED";
