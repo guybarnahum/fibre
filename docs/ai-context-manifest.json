@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": 46,
+  "version": 47,
   "canonical": true,
   "description": "Machine-readable source of truth for bounded Fibre context packs used by humans and LLM workers.",
   "profiles": {
@@ -49,6 +49,7 @@
         "docs/architecture/runtime-structure.md",
         "docs/architecture/thread-birth-presentation-data-flow.md",
         "docs/architecture/cloud-runtime-infradriver-plan.md",
+        "docs/architecture/cloud-e2e-closure-plan.md",
         "docs/architecture/operator-surfaces.md",
         "docs/decisions/ADR-0011-memory-photo-obligation.md",
         "docs/decisions/ADR-0012-semantic-meaning-over-derived-categories.md",
