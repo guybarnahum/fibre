@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
 
-import { runWithProgress } from "./run-with-progress.mjs";
+import { progressDetailFromLine, runWithProgress } from "./run-with-progress.mjs";
 
 function fakeChild({ streams = false } = {}) {
   const child = new EventEmitter();
@@ -12,6 +12,15 @@ function fakeChild({ streams = false } = {}) {
   }
   return child;
 }
+
+test("progress runner recognizes generic structured progress events", () => {
+  assert.equal(
+    progressDetailFromLine(JSON.stringify({ event: "anything", progress: "waiting for authoritative publication" })),
+    "waiting for authoritative publication",
+  );
+  assert.equal(progressDetailFromLine(JSON.stringify({ event: "anything" })), null);
+  assert.equal(progressDetailFromLine("ordinary child output"), null);
+});
 
 test("cloud operator progress emits line-oriented start, heartbeat, and completion outside a TTY", async () => {
   const child = fakeChild();
@@ -64,6 +73,7 @@ test("interactive cloud operator progress reuses one transient terminal line and
   assert.equal(stdout[0], "\r\u001b[2KPROGRESS cloud:configure-secrets started");
   assert.equal(stdout[0].includes("\n"), false);
 
+  child.stdout.emit("data", Buffer.from(`${JSON.stringify({ event: "phase", progress: "waiting for publication" })}\n`));
   child.stdout.emit("data", Buffer.from("BOOTSTRAP asset-generator\n"));
   child.stderr.emit("data", Buffer.from("wrangler note\n"));
   child.emit("close", 0, null);
@@ -71,6 +81,8 @@ test("interactive cloud operator progress reuses one transient terminal line and
 
   assert.equal(stdout.includes("BOOTSTRAP asset-generator\n"), true);
   assert.equal(stderr.includes("wrangler note\n"), true);
+  assert.equal(stdout.some((text) => text.includes("waiting for publication")), true);
+  assert.equal(stdout.some((text) => text.includes('"progress":"waiting for publication"')), false);
   assert.equal(stdout.some((text) => text === "\r\u001b[2K"), true);
   assert.match(stdout.at(-1), /^PROGRESS cloud:configure-secrets completed/u);
   assert.equal(stdout.at(-1).endsWith("\n"), true);
