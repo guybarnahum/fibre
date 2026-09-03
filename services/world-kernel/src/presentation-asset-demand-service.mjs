@@ -253,6 +253,12 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
         : normalizePresentationAssetDemandProjection(stored);
       if (canonicalJson(priorProjection.scope) !== canonicalJson(scope)) throw new Error("presentation asset demand catalog key resolved to a different scope");
 
+      // A non-null regeneration key is an explicit generation-epoch advance.
+      // Ordinary reconciliation passes null and must inherit the currently persisted
+      // epoch; otherwise the next World sweep would supersede a recovered demand
+      // back to the pre-recovery null identity and churn forever.
+      const effectiveRegenerationKey = regenerationKey ?? priorProjection.regenerationKey;
+
       const normalizedSlots = slots.map(normalizePresentationAssetSlot);
       const identitySuffixBySlot = new Map();
       for (const slot of normalizedSlots) {
@@ -261,7 +267,7 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
           infra,
           slot,
           providerProfile,
-          regenerationKey,
+          regenerationKey: effectiveRegenerationKey,
         }));
       }
 
@@ -270,7 +276,7 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
         existingDemands: priorProjection.demands.map((entry) => entry.demand),
         requestedAt,
         providerProfile,
-        regenerationKey,
+        regenerationKey: effectiveRegenerationKey,
         identitySuffixBySlot,
       });
       const dispatchByDemandId = new Map();
@@ -300,7 +306,7 @@ export function createPresentationAssetDemandService({ infra, workflowName = "as
         observedAt: requestedAt,
         scope,
         providerProfile,
-        regenerationKey,
+        regenerationKey: effectiveRegenerationKey,
       });
       const changed = stored === null || !projectionSemanticallyEqual(priorProjection, candidateProjection);
       const projection = changed ? candidateProjection : priorProjection;
