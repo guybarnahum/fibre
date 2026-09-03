@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { runGenesisDevelopmentE2E } from "./genesis-development-e2e.mjs";
@@ -11,6 +12,7 @@ import {
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 export const E2E_ACTIVITY_REFERENCE_VERSION = "fibre-slice-g-activity-reference-v0.2";
+const TERMINAL_FAILURE_PROBE_INTERVAL_MS = 5_000;
 
 function safeError(error) {
   return Object.freeze({
@@ -42,6 +44,25 @@ function failures(records) {
     })));
 }
 
+export function terminalWorldFailure(records) {
+  if (!Array.isArray(records)) throw new TypeError("Activity records must be an array");
+  const terminal = records.filter((record) => (
+    record?.service === "world-kernel"
+    && record?.status === "failed"
+    && record?.error?.retryable === false
+  ));
+  if (terminal.length === 0) return null;
+  terminal.sort((left, right) => String(left.occurredAt ?? "").localeCompare(String(right.occurredAt ?? "")));
+  const record = terminal[terminal.length - 1];
+  return Object.freeze({
+    activityId: record.activityId ?? null,
+    occurredAt: record.occurredAt ?? null,
+    stage: record.stage ?? "unknown",
+    code: record.error?.code ?? "ERROR",
+    message: record.message ?? "World reconciliation failed",
+  });
+}
+
 function failOpenActivityRecorder(recorder, emit) {
   if (recorder === null || recorder === undefined) return null;
   if (typeof recorder.record !== "function") {
@@ -66,6 +87,60 @@ function failOpenActivityRecorder(recorder, emit) {
       }
     },
   });
+}
+
+function failFastSleep({
+  sleep,
+  reader,
+  inspect,
+  repoRoot,
+  emit,
+  activeIdentity,
+  nowMs = Date.now,
+  probeIntervalMs = TERMINAL_FAILURE_PROBE_INTERVAL_MS,
+}) {
+  let lastProbeAt = 0;
+  let activityUnavailableReported = false;
+
+  async function probe() {
+    const threadId = activeIdentity.threadId;
+    if (!threadId) return;
+    const now = nowMs();
+    if (lastProbeAt !== 0 && now - lastProbeAt < probeIntervalMs) return;
+    lastProbeAt = now;
+    try {
+      const result = await inspect({
+        repoRoot,
+        environment: "staging",
+        selector: { kind: "threadId", value: threadId },
+        reader,
+      });
+      const failure = terminalWorldFailure(result.records);
+      if (failure === null) return;
+      const error = new Error(
+        `World reconciliation failed terminally at ${failure.stage} (${failure.code}): ${failure.message}`,
+      );
+      error.code = failure.code;
+      error.retryable = false;
+      throw error;
+    } catch (error) {
+      if (error?.retryable === false) throw error;
+      if (!activityUnavailableReported) {
+        activityUnavailableReported = true;
+        emit({
+          event: "genesis-development-staging-terminal-failure-probe-unavailable",
+          errorName: error?.constructor?.name ?? "Error",
+          message: String(error?.message ?? error).slice(0, 512),
+        });
+      }
+    }
+  }
+
+  return async (milliseconds) => {
+    await probe();
+    await sleep(milliseconds);
+    await probe();
+  };
 }
 
 export async function attachActivityLogEvidence({
@@ -178,18 +253,34 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     }
   }
 
+  const reader = activityReader ?? createWranglerActivityReader({ cwd: repoRoot });
+  const activeIdentity = { requestId: null, genesisId: null, threadId: null };
+  const emitWithIdentity = (event) => {
+    if (event?.requestId) activeIdentity.requestId = event.requestId;
+    if (event?.genesisId) activeIdentity.genesisId = event.genesisId;
+    if (event?.threadId) activeIdentity.threadId = event.threadId;
+    emit(event);
+  };
+  const wrappedSleep = failFastSleep({
+    sleep: sleep ?? delay,
+    reader,
+    inspect,
+    repoRoot,
+    emit: emitWithIdentity,
+    activeIdentity,
+  });
+
   const core = await runCore({
     mode: "staging",
     environment,
     fetchImpl,
-    ...(sleep ? { sleep } : {}),
-    emit,
+    sleep: wrappedSleep,
+    emit: emitWithIdentity,
     ...(sourceResolver ? { sourceResolver } : {}),
     repoRoot,
-    activityRecorder: failOpenActivityRecorder(recorder, emit),
+    activityRecorder: failOpenActivityRecorder(recorder, emitWithIdentity),
   });
-  const reader = activityReader ?? createWranglerActivityReader({ cwd: repoRoot });
-  return attachActivityLogEvidence({ e2eResult: core, repoRoot, activityReader: reader, inspect, emit });
+  return attachActivityLogEvidence({ e2eResult: core, repoRoot, activityReader: reader, inspect, emit: emitWithIdentity });
 }
 
 async function main() {
