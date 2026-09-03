@@ -17,6 +17,14 @@ function assertIsoTimestamp(name, value) {
   return value;
 }
 
+function optionalRegenerationKey(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new TypeError("regenerationKey must be a non-empty string when supplied");
+  }
+  return value.trim();
+}
+
 function latestIsoTimestamp(name, values) {
   const checked = values
     .filter((value) => value !== null && value !== undefined)
@@ -160,9 +168,16 @@ export function createThreadPresentationVisualPublicationReconciler({
   const identityRewrite = createIdentityRewrite({ presentationServer });
 
   return Object.freeze({
-    async reconcileAvailableEmbodiment({ threadId, embodiment: candidate, observedAt, activityContext = {} } = {}) {
+    async reconcileAvailableEmbodiment({
+      threadId,
+      embodiment: candidate,
+      observedAt,
+      activityContext = {},
+      regenerationKey = null,
+    } = {}) {
       assertId("threadId", threadId);
       assertIsoTimestamp("observedAt", observedAt);
+      const normalizedRegenerationKey = optionalRegenerationKey(regenerationKey);
       const context = activityIdentity(threadId, activityContext);
       const embodiment = normalizeAdmittedCanonicalPortrait(candidate);
       if (embodiment.threadId !== threadId) {
@@ -224,6 +239,7 @@ export function createThreadPresentationVisualPublicationReconciler({
         officialPhotoMediaId: mediaId,
         visualReused: visual.reused === true,
         identityReused: identity.reused === true,
+        regenerationKey: normalizedRegenerationKey,
       };
       if (slot.status === "ready") {
         return result(true, "complete", common);
@@ -242,13 +258,14 @@ export function createThreadPresentationVisualPublicationReconciler({
         ...context,
         stage: "presentation.media_demand.reconcile",
         attempt: 1,
-        evidence: { embodimentId: embodiment.embodimentId },
+        evidence: { embodimentId: embodiment.embodimentId, regenerationKey: normalizedRegenerationKey },
       }, async () => {
         const demand = await demandService.reconcile({
           scope: { entityKind: "thread", entityRef: threadId },
           slots: [slot],
           requestedAt: issuedAt,
           providerProfile,
+          regenerationKey: normalizedRegenerationKey,
         });
         const active = demand.projection.demands.find((entry) => (
           entry.demand.current
