@@ -107,6 +107,14 @@ No local Fibre runtime, manual state mutation, manual R2 write, manual queue inj
 
 Gate: one fresh staging Thread satisfies every terminal assertion and produces retained machine-readable evidence.
 
+### Slice G1a — canonical textual visual phenotype at birth
+
+A genuine native/synthetic birth must carry a rich, enduring canonical textual visual phenotype before it crosses into World authority. This is required semantic input for canonical-root generation, not a later Presentation repair step.
+
+The phenotype should preserve identity across age transformation by separating stable identity features from time-local appearance. Stable material includes facial geometry/proportions, eye/brow/nose/mouth/jaw/chin structure, skin, hair/hairline, ears, body frame, stable marks and characteristic asymmetries. Hairstyle, grooming, clothing, expression, weight variation, temporary injury and ordinary aging are time-local appearance rather than replacement identity.
+
+A born authoritative Thread that lacks this required canonical visual identity is an invalid birth invariant and must fail fast as non-retryable rather than remain indefinitely pending in reconciliation. Legitimate provider, credential, queue and asset-completion delays remain retryable.
+
 ## Slice G2 — live Slice G closeout
 
 Run `cloud:e2e` against the exact deployed staging SHA and retain the evidence record.
@@ -125,6 +133,42 @@ npm run cloud:e2e -- --env staging
 ```
 
 Close G only from the evidence record, not from manual Viewer inspection alone.
+
+## Post-G visual-genetics follow-on — two-parent phenotype recombination
+
+Do this immediately after Slice G is green, while the visual phenotype representation is still active work. It is not required to prove the one de-novo cloud birth for G, but it must be completed before the Thread genetics/data model is treated as finished.
+
+The two-parent path must use parental **textual visual phenotype loci** as inheritance authority. Parent canonical photographs remain operational likeness anchors/evidence for the parents and must not be blended or passed as the child's genetic visual input.
+
+Required model:
+
+```text
+parent A atomic textual visual loci
+parent B atomic textual visual loci
+        + persisted random recombination seed
+        -> deterministic replayable recombination
+        -> explicit per-locus parent-source witness
+        -> explicit mutation witness where applicable
+        -> child atomic textual visual phenotype
+        -> optional constrained prose assembly
+        -> text-only child canonical-root generation
+        -> World verification/admission
+```
+
+Non-negotiable properties:
+
+- visual loci become sufficiently atomic to allow meaningful mixed inheritance rather than selecting an entire face/eye paragraph from one parent;
+- values remain semantic text rather than numeric face vectors;
+- randomness is introduced through a seed minted for the reproductive event and persisted durably, then replayed through deterministic PRNG logic;
+- each inherited locus records parent/source-locus provenance;
+- mutations are explicit, bounded and witnessed;
+- siblings with different recombination seeds can receive different inherited combinations;
+- the LLM, if used, may assemble authoritative inherited atoms into coherent descriptive prose but may not choose inheritance, average parental traits, or silently invent phenotype facts;
+- parent images are never pixel-blended and are not supplied as the native child's canonical-root references;
+- the child receives one independent canonical root generated from its own recombined phenotype text;
+- all later child depictions and age transformations use the child's admitted root, not either parent's image.
+
+This follow-on should replace any provisional Thread-ID-derived lineage selection used during G1a with persisted reproductive randomness plus an auditable recombination witness.
 
 ## Slice H — in-vivo retry/restart hardening
 
