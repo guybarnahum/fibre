@@ -5,6 +5,8 @@ import {
   verifyProvenancedAssetForPublication,
 } from "./provenanced-asset-generation.mjs";
 
+const TERMINAL_WORKFLOW_STATUSES = new Set(["errored", "terminated"]);
+
 function parseJsonObject(bytes, label) {
   const text = new TextDecoder().decode(bytes);
   let parsed;
@@ -17,6 +19,21 @@ function parseJsonObject(bytes, label) {
     throw new Error(`${label} must contain a JSON object`);
   }
   return parsed;
+}
+
+function terminalWorkflowError(job, instance) {
+  if (!TERMINAL_WORKFLOW_STATUSES.has(instance?.status)) return null;
+  const detail = instance?.error?.message ?? "no workflow failure detail reported";
+  const error = new Error(
+    `asset generation workflow ${job.jobId} ended as ${instance.status}: ${detail}`,
+  );
+  error.name = "AssetGenerationControlWorkflowTerminalError";
+  error.code = "ASSET_GENERATION_WORKFLOW_TERMINAL";
+  error.activityCategory = "reconciliation";
+  error.retryable = false;
+  error.jobId = job.jobId;
+  error.workflowStatus = instance.status;
+  return error;
 }
 
 /**
@@ -47,6 +64,8 @@ export function createAssetGenerationControlService({
       const receiptStored = await infra.objects.get(job.receiptObjectRef);
       if (receiptStored === null) {
         const scheduled = await assetGeneration.request(job);
+        const terminal = terminalWorkflowError(job, scheduled.instance);
+        if (terminal !== null) throw terminal;
         return Object.freeze({
           state: "pending",
           retryable: true,
