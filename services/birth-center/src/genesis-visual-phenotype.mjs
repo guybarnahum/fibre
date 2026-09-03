@@ -73,22 +73,52 @@ const LOCI = Object.freeze({
 const ORDER = Object.freeze(Object.keys(LOCI));
 const encoder = new TextEncoder();
 
+function nonEmpty(name, value) {
+  if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
+  return value.trim();
+}
+
 function indexFor(seed, domain, length) {
   const digest = sha256(`${seed}:${domain}`);
   return Number.parseInt(digest.slice(0, 8), 16) % length;
 }
 
+function locusForOwner(ownerId, domain) {
+  return LOCI[domain][indexFor(ownerId, domain, LOCI[domain].length)];
+}
+
 export function deNovoVisualPhenotypeLoci({ threadId } = {}) {
-  if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("threadId is required");
+  const ownerId = nonEmpty("threadId", threadId);
   return Object.freeze(ORDER.map((domain) => Object.freeze({
     domain,
-    value: LOCI[domain][indexFor(threadId, domain, LOCI[domain].length)],
-    provenance: Object.freeze({ kind: "de_novo", sourceLocusRef: null, mutationRef: null }),
+    value: locusForOwner(ownerId, domain),
+    provenance: Object.freeze({ kind: "de_novo", sourceOwnerId: null, mutationRef: null }),
   })));
 }
 
-export function buildDeNovoCanonicalVisualIdentity({ threadId } = {}) {
-  const loci = deNovoVisualPhenotypeLoci({ threadId });
+export function recombineVisualPhenotypeLoci({ threadId, parentIds } = {}) {
+  const childId = nonEmpty("threadId", threadId);
+  if (!Array.isArray(parentIds) || parentIds.length < 2) {
+    throw new TypeError("synthetic lineage visual phenotype requires at least two parent Thread IDs");
+  }
+  const parents = parentIds.map((parentId, index) => nonEmpty(`parentIds[${index}]`, parentId));
+  return Object.freeze(ORDER.map((domain) => {
+    const sourceOwnerId = parents[indexFor(childId, `parent:${domain}`, parents.length)];
+    return Object.freeze({
+      domain,
+      value: locusForOwner(sourceOwnerId, domain),
+      provenance: Object.freeze({ kind: "inherited", sourceOwnerId, mutationRef: null }),
+    });
+  }));
+}
+
+export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = [] } = {}) {
+  if (originMode === "de_novo") return deNovoVisualPhenotypeLoci({ threadId });
+  if (originMode === "synthetic_lineage") return recombineVisualPhenotypeLoci({ threadId, parentIds });
+  throw new TypeError(`unsupported Genesis visual phenotype origin mode ${String(originMode)}`);
+}
+
+function canonicalVisualIdentityFromLoci({ threadId, loci }) {
   const subjectDescription = loci.map((locus) => locus.value).join("; ");
   if (encoder.encode(subjectDescription).byteLength < 500) {
     throw new Error("canonical visual phenotype is too thin for durable cross-age identity");
@@ -102,4 +132,13 @@ export function buildDeNovoCanonicalVisualIdentity({ threadId } = {}) {
       model: "replaceable-renderer",
     }),
   });
+}
+
+export function buildGenesisCanonicalVisualIdentity({ threadId, originMode, parentIds = [] } = {}) {
+  const loci = visualPhenotypeLociForBirth({ threadId, originMode, parentIds });
+  return canonicalVisualIdentityFromLoci({ threadId, loci });
+}
+
+export function buildDeNovoCanonicalVisualIdentity({ threadId } = {}) {
+  return buildGenesisCanonicalVisualIdentity({ threadId, originMode: "de_novo" });
 }
