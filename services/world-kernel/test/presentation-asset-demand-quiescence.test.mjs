@@ -84,7 +84,10 @@ test("Presentation catalog D1 quota failure opens one shared write circuit acros
     ...base,
     catalog: {
       ...base.catalog,
-      async upsert() {
+      async upsert(key, value) {
+        if (!key.startsWith("presentationassetdemand_")) {
+          return base.catalog.upsert(key, value);
+        }
         upserts += 1;
         throw quotaError();
       },
