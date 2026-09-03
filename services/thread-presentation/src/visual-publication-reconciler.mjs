@@ -288,7 +288,7 @@ export function createThreadPresentationVisualPublicationReconciler({
           await bestEffortRecord(activity, { ...activityMetadata, status: "succeeded" });
         }
       } catch (error) {
-        if (demand?.changed !== false) {
+        if (demand?.changed !== false && error?.suppressActivity !== true) {
           await bestEffortRecord(activity, {
             ...activityMetadata,
             status: "failed",
