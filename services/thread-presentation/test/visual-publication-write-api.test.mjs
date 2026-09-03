@@ -61,5 +61,28 @@ test("visual publication write API isolates invalid reconciliation input", async
   assert.deepEqual(await response.json(), {
     error: "invalid_visual_publication_handoff",
     detail: "bad embodiment",
+    retryable: false,
+  });
+});
+
+test("visual publication write API preserves terminal reconciliation classification", async () => {
+  const api = createVisualPublicationWriteApi({
+    privateToken: "secret",
+    reconciler: {
+      async reconcileAvailableEmbodiment() {
+        const error = new Error("official photo workflow ended as errored");
+        error.code = "PRESENTATION_ASSET_WORKFLOW_TERMINAL";
+        error.retryable = false;
+        throw error;
+      },
+    },
+  });
+  const response = await api.fetch(request());
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "visual_publication_reconciliation_failed",
+    code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL",
+    detail: "official photo workflow ended as errored",
+    retryable: false,
   });
 });
