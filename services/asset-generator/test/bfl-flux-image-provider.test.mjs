@@ -95,6 +95,51 @@ test("BFL FLUX provider submits, polls and downloads one fixed-model image witho
   assert.equal(new TextDecoder().decode(generated.result.bytes), "flux-image");
 });
 
+test("BFL FLUX accepts live routed api.us7 and delivery.us7 BFL shard URLs", async () => {
+  const provider = createBflFluxImageProvider({
+    apiKey: "bfl-fixture",
+    sleep: async () => {},
+    fetchImpl: async (url, init = {}) => {
+      if (init.method === "POST") {
+        return jsonResponse({
+          payload: {
+            cost: 0.1,
+            id: "6a222191-2846-4a59-846e-796290ffaf0e",
+            input_mp: 1,
+            output_mp: 1,
+            polling_url: "https://api.us7.bfl.ai/v1/get_result?id=6a222191-2846-4a59-846e-796290ffaf0e",
+          },
+        });
+      }
+      if (url.startsWith("https://api.us7.bfl.ai/v1/get_result")) {
+        return jsonResponse({
+          payload: {
+            details: {},
+            id: "6a222191-2846-4a59-846e-796290ffaf0e",
+            preview: null,
+            progress: 1,
+            status: "Ready",
+            result: {
+              prompt: "omitted",
+              sample: "https://delivery.us7.bfl.ai/durable/example/sample.png?token=opaque",
+              seed: 1,
+              start_time: 1,
+            },
+          },
+        });
+      }
+      if (url.startsWith("https://delivery.us7.bfl.ai/durable/example/sample.png")) {
+        return binaryResponse({ bytes: "routed-shard-image" });
+      }
+      throw new Error(`unexpected URL ${url}`);
+    },
+  });
+
+  const generated = await provider.generate(imageRequest());
+  assert.equal(generated.result.providerRequestId, "6a222191-2846-4a59-846e-796290ffaf0e");
+  assert.equal(new TextDecoder().decode(generated.result.bytes), "routed-shard-image");
+});
+
 test("BFL FLUX explicit rate limiting is retryable and preserves Retry-After", async () => {
   const provider = createBflFluxImageProvider({
     apiKey: "bfl-fixture",
