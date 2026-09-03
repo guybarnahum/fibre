@@ -1,5 +1,5 @@
 import { sha256 } from "./genesis-development-contracts.mjs";
-import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
+import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
 
 const LOCI = Object.freeze({
   face: Object.freeze([
