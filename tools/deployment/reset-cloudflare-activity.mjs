@@ -21,12 +21,16 @@ function fail(message) {
 
 const environment = option("--env");
 const execute = has("--execute");
+const databases = Object.freeze({
+  staging: "fibre-activity-log-staging",
+  production: "fibre-activity-log",
+});
 
-if (environment !== "staging") {
-  fail("Activity reset is intentionally restricted to --env staging");
+if (!(environment in databases)) {
+  fail("--env <staging|production> is required");
 }
 
-const database = "fibre-activity-log-staging";
+const database = databases[environment];
 const repoRoot = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const migrationPath = resolve(repoRoot, "infra/providers/cloudflare/d1/0001_activity_log.sql");
 
@@ -46,7 +50,7 @@ console.log("BEFORE");
 wranglerSql("SELECT COUNT(*) AS rows FROM fibre_activity_log;");
 
 if (!execute) {
-  console.log("DRY RUN only. Re-run with --execute to drop and recreate the staging Activity schema.");
+  console.log(`DRY RUN only. Re-run with --env ${environment} --execute to drop and recreate this Activity schema.`);
   process.exit(0);
 }
 
