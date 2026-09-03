@@ -1,4 +1,7 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
 
@@ -24,6 +27,8 @@ if (environment !== "staging") {
 }
 
 const database = "fibre-activity-log-staging";
+const repoRoot = resolve(fileURLToPath(new URL("../../", import.meta.url)));
+const migrationPath = resolve(repoRoot, "infra/providers/cloudflare/d1/0001_activity_log.sql");
 
 function wranglerSql(sql) {
   const result = spawnSync(
@@ -36,17 +41,18 @@ function wranglerSql(sql) {
 }
 
 console.log(`ACTIVITY RESET env=${environment} database=${database}`);
-console.log("NOTE deleting Activity rows consumes D1 row writes and does not reset Cloudflare daily write quota.");
+console.log("NOTE this resets telemetry only; it does not reset Cloudflare's daily D1 usage counters.");
 console.log("BEFORE");
 wranglerSql("SELECT COUNT(*) AS rows FROM fibre_activity_log;");
 
 if (!execute) {
-  console.log("DRY RUN only. Re-run with --execute to delete all staging Activity rows.");
+  console.log("DRY RUN only. Re-run with --execute to drop and recreate the staging Activity schema.");
   process.exit(0);
 }
 
-console.log("DELETE");
-wranglerSql("DELETE FROM fibre_activity_log;");
+const migrationSql = readFileSync(migrationPath, "utf8");
+console.log(`RESET schema=${migrationPath}`);
+wranglerSql(`DROP TABLE IF EXISTS fibre_activity_log;\n${migrationSql}`);
 
 console.log("AFTER");
 wranglerSql("SELECT COUNT(*) AS rows FROM fibre_activity_log;");
