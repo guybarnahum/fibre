@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
@@ -38,6 +39,9 @@ export class FibreBirthCenterDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
+    this.ctx.blockConcurrencyWhile(async () => {
+      await this.runtimeForRequest().runtime.ensureScheduled();
+    });
   }
 
   runtimeForRequest() {
@@ -53,14 +57,14 @@ export class FibreBirthCenterDurableObject extends DurableObject {
 
   async fetch(request) {
     const cloud = this.runtimeForRequest();
-    await cloud.runtime.ensureScheduled();
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/healthz") {
+    if (request.method === "GET" && url.pathname === "/internal/health/state") {
       return Response.json({
         ok: true,
         service: "birth-center",
         provider: "cloudflare",
         stateScopeId: BIRTH_SCOPE_ID,
+        stateChecked: true,
         capabilities: cloud.infraDriver.capabilities,
         pendingBirthCount: cloud.runtime.status().pendingBirthCount,
         genesisDevelopmentConfigured: cloud.developmentApi !== null,
@@ -84,11 +88,8 @@ export class FibreBirthCenterDurableObject extends DurableObject {
   }
 }
 
-export default {
-  async fetch(request, env) {
-    if (!env?.BIRTH_STATE || typeof env.BIRTH_STATE.getByName !== "function") {
-      throw new TypeError("birth-center Worker requires BIRTH_STATE Durable Object binding");
-    }
-    return env.BIRTH_STATE.getByName(BIRTH_SCOPE_ID).fetch(request);
-  },
-};
+export default createCloudflareDurableObjectServiceRouter({
+  service: "birth-center",
+  bindingName: "BIRTH_STATE",
+  stateScopeId: BIRTH_SCOPE_ID,
+});
