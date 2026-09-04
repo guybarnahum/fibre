@@ -97,16 +97,20 @@ test("World reconciliation classifier keeps incomplete visual work active", () =
 test("World reconciliation requestWake schedules immediate work without periodic bootstrap", async () => {
   const process = createWorldReconciliationProcess();
   const { infraDriver, runtime } = createRuntimeFixture({ process });
-  assert.equal(runtime.scopeId, WORLD_RECONCILIATION_SCOPE_ID);
+  try {
+    assert.equal(runtime.scopeId, WORLD_RECONCILIATION_SCOPE_ID);
 
-  assert.deepEqual(await runtime.ensureScheduled(), {
-    scopeId: "world",
-    scheduledTimeMs: null,
-    existing: false,
-    quiescent: true,
-  });
-  await runtime.requestWake();
-  assert.equal(await infraDriver.scheduler.get("world"), 1_000);
+    assert.deepEqual(await runtime.ensureScheduled(), {
+      scopeId: "world",
+      scheduledTimeMs: null,
+      existing: false,
+      quiescent: true,
+    });
+    await runtime.requestWake();
+    assert.equal(await infraDriver.scheduler.get("world"), 1_000);
+  } finally {
+    await runtime.stop();
+  }
 });
 
 test("World reconciliation converged sweep cancels alarm and becomes quiescent", async () => {
@@ -148,25 +152,29 @@ test("World reconciliation pending work backs off exponentially and caps retry d
     maxRetryMs: 400,
   });
 
-  await runtime.requestWake();
-  let result = await runtime.handleWake();
-  assert.equal(result.retryDelayMs, 100);
-  assert.equal(await infraDriver.scheduler.get("world"), 2_100);
+  try {
+    await runtime.requestWake();
+    let result = await runtime.handleWake();
+    assert.equal(result.retryDelayMs, 100);
+    assert.equal(await infraDriver.scheduler.get("world"), 2_100);
 
-  clock = 3_000;
-  result = await runtime.handleWake();
-  assert.equal(result.retryDelayMs, 200);
-  assert.equal(await infraDriver.scheduler.get("world"), 3_200);
+    clock = 3_000;
+    result = await runtime.handleWake();
+    assert.equal(result.retryDelayMs, 200);
+    assert.equal(await infraDriver.scheduler.get("world"), 3_200);
 
-  clock = 4_000;
-  result = await runtime.handleWake();
-  assert.equal(result.retryDelayMs, 400);
-  assert.equal(await infraDriver.scheduler.get("world"), 4_400);
+    clock = 4_000;
+    result = await runtime.handleWake();
+    assert.equal(result.retryDelayMs, 400);
+    assert.equal(await infraDriver.scheduler.get("world"), 4_400);
 
-  clock = 5_000;
-  result = await runtime.handleWake();
-  assert.equal(result.retryDelayMs, 400);
-  assert.equal(await infraDriver.scheduler.get("world"), 5_400);
+    clock = 5_000;
+    result = await runtime.handleWake();
+    assert.equal(result.retryDelayMs, 400);
+    assert.equal(await infraDriver.scheduler.get("world"), 5_400);
+  } finally {
+    await runtime.stop();
+  }
 });
 
 test("new authoritative wake resets World reconciliation backoff", async () => {
@@ -183,14 +191,18 @@ test("new authoritative wake resets World reconciliation backoff", async () => {
     },
   });
   const { runtime } = createRuntimeFixture({ process, now: () => clock, intervalMs: 100, maxRetryMs: 800 });
-  await runtime.requestWake();
-  await runtime.handleWake();
-  clock = 11_000;
-  const second = await runtime.handleWake();
-  assert.equal(second.retryDelayMs, 200);
+  try {
+    await runtime.requestWake();
+    await runtime.handleWake();
+    clock = 11_000;
+    const second = await runtime.handleWake();
+    assert.equal(second.retryDelayMs, 200);
 
-  clock = 12_000;
-  await runtime.requestWake();
-  const afterNewWork = await runtime.handleWake();
-  assert.equal(afterNewWork.retryDelayMs, 100);
+    clock = 12_000;
+    await runtime.requestWake();
+    const afterNewWork = await runtime.handleWake();
+    assert.equal(afterNewWork.retryDelayMs, 100);
+  } finally {
+    await runtime.stop();
+  }
 });
