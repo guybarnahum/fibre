@@ -9,7 +9,6 @@ export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
-    this.schedulerBootstrapped = false;
   }
 
   runtimeForRequest() {
@@ -17,12 +16,6 @@ export class FibreWorldDurableObject extends DurableObject {
       this.runtime = createWorldCloudflareRuntime({ storage: this.ctx.storage, env: this.env });
     }
     return this.runtime;
-  }
-
-  async ensureSchedulerForStatefulRequest(runtime) {
-    if (this.schedulerBootstrapped) return;
-    await runtime.reconciliationRuntime.ensureScheduled();
-    this.schedulerBootstrapped = true;
   }
 
   async fetch(request) {
@@ -38,7 +31,6 @@ export class FibreWorldDurableObject extends DurableObject {
         capabilities: runtime.infraDriver.capabilities,
       });
     }
-    await this.ensureSchedulerForStatefulRequest(runtime);
     const recoveryResponse = await runtime.visualRecoveryApi.fetch(request);
     if (recoveryResponse !== null) return recoveryResponse;
     const inspectionResponse = await runtime.inspectionApi.fetch(request);
