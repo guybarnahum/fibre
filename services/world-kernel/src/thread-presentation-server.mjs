@@ -46,15 +46,18 @@ export function createThreadPresentationServer({ infra }) {
       assertId("objectRef", objectRef);
       assertNonEmpty("snapshotVersion", snapshotVersion);
       const normalized = normalizeThreadPresentationBundle(bundle);
-      const head = await infra.streams.getHead(channelId);
-      if (expectedSequence !== undefined && head.sequence !== expectedSequence) {
-        throw new PresentationSnapshotSequenceConflictError(
-          `snapshot expected sequence ${expectedSequence}, current ${head.sequence}`,
-        );
-      }
+
+      // A caller that supplies expectedSequence already has the authoritative
+      // stream position it intends to compare-and-set. Do not pay for a separate
+      // Durable Object getHead() round trip just to read the same value again;
+      // publishSnapshot() performs the actual atomic sequence check in the DO.
+      const sequence = expectedSequence === undefined
+        ? (await infra.streams.getHead(channelId)).sequence
+        : expectedSequence;
+
       const snapshot = {
         snapshotVersion,
-        cursor: head.sequence,
+        cursor: sequence,
         presentation: normalized.presentation,
         media: normalized.media,
         provenance: normalized.provenance,
@@ -66,14 +69,14 @@ export function createThreadPresentationServer({ infra }) {
         channelId,
         threadId: normalized.presentation.manifest.threadId,
         snapshotVersion,
-        cursor: head.sequence,
+        cursor: sequence,
       });
       const pointer = await infra.streams.publishSnapshot(channelId, {
         objectRef,
         snapshotVersion,
         snapshotDigest: digest,
         threadId: normalized.presentation.manifest.threadId,
-      }, { expectedSequence: head.sequence });
+      }, { expectedSequence: sequence });
       const priorCatalog = await infra.catalog.get(channelId);
       await infra.catalog.upsert(channelId, {
         ...(priorCatalog ?? {}),
