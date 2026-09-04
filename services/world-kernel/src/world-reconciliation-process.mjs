@@ -144,17 +144,28 @@ export function createWorldReconciliationRuntime({
     return Object.freeze({ scopeId, scheduledTimeMs: current, existing: true });
   }
 
+  async function scheduleRetry() {
+    const delayMs = retryDelayMs();
+    retryStreak += 1;
+    await infra.scheduler.schedule(scopeId, now() + delayMs);
+    return delayMs;
+  }
+
   async function requestWake() {
     retryStreak = 0;
     return scheduleAt(now());
   }
 
   async function runAndSettle() {
-    const result = await process.runOnce();
+    let result;
+    try {
+      result = await process.runOnce();
+    } catch (error) {
+      await scheduleRetry();
+      throw error;
+    }
     if (worldReconciliationNeedsRetry(result)) {
-      const delayMs = retryDelayMs();
-      retryStreak += 1;
-      await infra.scheduler.schedule(scopeId, now() + delayMs);
+      const delayMs = await scheduleRetry();
       return Object.freeze({ ...result, reconciliationPending: true, retryDelayMs: delayMs });
     }
     retryStreak = 0;
