@@ -26,6 +26,7 @@ export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
   "birth-center",
 ]);
 
+const STATEFUL_DO_SERVICES = new Set(["world-kernel", "birth-center"]);
 const HEALTH_RETRY_ATTEMPTS = 20;
 const CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS = 60;
 const HEALTH_RETRY_DELAY_MS = 1500;
@@ -83,6 +84,12 @@ function assertHealthPayload(payload, serviceId) {
     throw new Error(`${serviceId} health response did not confirm the expected service`);
   }
   return payload;
+}
+
+function assertStateHealthPayload(payload, serviceId) {
+  const checked = assertHealthPayload(payload, serviceId);
+  if (checked.stateChecked !== true) throw new Error(`${serviceId} state health did not confirm Durable Object state`);
+  return checked;
 }
 
 export function assertProductionSignerHealth(payload, expected) {
@@ -148,6 +155,12 @@ export function createWranglerDeploymentClient({
     },
     async checkServiceHealth({ serviceId, baseUrl }) {
       return assertHealthPayload(await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/healthz`), serviceId);
+    },
+    async checkStateHealth({ serviceId, baseUrl }) {
+      return assertStateHealthPayload(
+        await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/internal/health/state`),
+        serviceId,
+      );
     },
     async checkPresentationAcceptance({ baseUrl }) {
       const payload = await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/api/threads?limit=1`);
@@ -253,7 +266,10 @@ export async function deployCloudflareStack({
       attempts: customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS,
       wait,
     });
-    deployments.push(Object.freeze({ serviceId, workerName, baseUrl, health, customDomain }));
+    const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
+      ? await client.checkStateHealth({ serviceId, baseUrl })
+      : null;
+    deployments.push(Object.freeze({ serviceId, workerName, baseUrl, health, stateHealth, customDomain }));
   }
 
   const presentation = deployments.find((item) => item.serviceId === "thread-presentation");
