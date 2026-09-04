@@ -238,6 +238,9 @@ export function createThreadPresentationVisualPublicationReconciler({
         snapshotDigest: current.pointer.snapshotDigest,
       });
       const mediaId = identity.identityCard.officialPhotoMediaRef;
+      const stableDemandRequestedAt = identity.identityCard.issuedAt === undefined
+        ? issuedAt
+        : assertIsoTimestamp("official identity-photo demand requestedAt", identity.identityCard.issuedAt);
       const slot = slots.slots.find((entry) => entry.mediaId === mediaId);
       if (!slot) throw new Error(`Thread ${threadId} official identity-photo slot was not planned`);
 
@@ -272,7 +275,7 @@ export function createThreadPresentationVisualPublicationReconciler({
         demand = await demandService.reconcile({
           scope: { entityKind: "thread", entityRef: threadId },
           slots: [slot],
-          requestedAt: issuedAt,
+          requestedAt: stableDemandRequestedAt,
           providerProfile,
           regenerationKey: normalizedRegenerationKey,
         });
