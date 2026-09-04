@@ -7,6 +7,7 @@ const THREAD_ID = "thr_h1_ready_slot";
 const MEDIA_ID = "media_h1_ready_slot";
 const ISSUED_AT = "2026-09-04T03:00:00Z";
 const H1_KEY = "slice-h1-fault-after-workflow-before-demand:h1-test";
+const H2_KEY = "slice-h2-provider-transient:h2-test";
 
 function readyAsset() {
   return {
@@ -111,13 +112,14 @@ function harness(reconcileCalls) {
           mediaId: MEDIA_ID,
           status: asset.status === "placeholder" ? "missing" : "ready",
           referenceObjectRefs: ["visual_identity_reference_h1_ready_slot"],
+          context: { kind: "thread_presentation_media", threadId: THREAD_ID, mediaId: MEDIA_ID },
         }],
       };
     },
     createDemandService() {
       return {
-        async reconcile() {
-          reconcileCalls.push(true);
+        async reconcile({ slots }) {
+          reconcileCalls.push(structuredClone(slots));
           return {
             changed: true,
             projection: {
@@ -127,7 +129,7 @@ function harness(reconcileCalls) {
                   demandId: "presassetdemand_h1_ready_slot",
                   job: {
                     jobId: "assetjob_h1_ready_slot",
-                    context: { kind: "thread_presentation_media", mediaId: MEDIA_ID },
+                    context: slots[0].context,
                   },
                 },
                 dispatch: { workflowStatus: "queued" },
@@ -189,6 +191,7 @@ test("H1 precondition uses current stream head and is durable across reconciler 
   assert.deepEqual(h.publishedExpectedSequences, [4]);
   assert.equal(h.current().snapshot.media.assets[0].status, "placeholder");
   assert.equal(h.catalogValues.get("sliceh1precondition_h1-test")?.applied, true);
+  assert.equal(calls[0][0].context.sliceH2ProviderTransientFailure, undefined);
 
   h.setReady();
   const second = await createThreadPresentationVisualPublicationReconciler(h.options)
@@ -197,4 +200,25 @@ test("H1 precondition uses current stream head and is durable across reconciler 
   assert.equal(second.stage, "complete");
   assert.equal(calls.length, 1);
   assert.equal(h.current().snapshot.media.assets[0].status, "ready");
+});
+
+test("H2 precondition makes the photo pending and adds the transient-provider witness only to the generated job context", async () => {
+  const calls = [];
+  const h = harness(calls);
+  const result = await createThreadPresentationVisualPublicationReconciler(h.options)
+    .reconcileAvailableEmbodiment({
+      threadId: THREAD_ID,
+      embodiment: embodiment(),
+      observedAt: ISSUED_AT,
+      regenerationKey: H2_KEY,
+    });
+
+  assert.equal(result.complete, false);
+  assert.equal(result.stage, "official_photo_pending");
+  assert.equal(calls.length, 1);
+  assert.equal(h.current().snapshot.media.assets[0].status, "placeholder");
+  assert.equal(h.catalogValues.get("sliceh2precondition_h2-test")?.applied, true);
+  assert.equal(calls[0][0].context.sliceH2ProviderTransientFailure, true);
+  assert.equal(calls[0][0].context.threadId, THREAD_ID);
+  assert.equal(calls[0][0].context.mediaId, MEDIA_ID);
 });
