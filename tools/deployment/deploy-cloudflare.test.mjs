@@ -58,7 +58,7 @@ function allSecrets() {
   return new Set(["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
 }
 
-test("Slice F deployment runs validation, auth, secret/signer gates, dependency-ordered deploys, health and acceptance", async () => {
+test("Slice F deployment runs validation, auth, secret/signer gates, dependency-ordered deploys, shallow health, state health and acceptance", async () => {
   const { root, state } = await fixtureRepo();
   const calls = [];
   const client = {
@@ -76,7 +76,11 @@ test("Slice F deployment runs validation, auth, secret/signer gates, dependency-
     },
     async checkServiceHealth({ serviceId, baseUrl }) {
       calls.push(`health:${serviceId}:${baseUrl}`);
-      return { ok: true, service: serviceId };
+      return { ok: true, service: serviceId, stateChecked: false };
+    },
+    async checkStateHealth({ serviceId, baseUrl }) {
+      calls.push(`state-health:${serviceId}:${baseUrl}`);
+      return { ok: true, service: serviceId, stateChecked: true };
     },
     async checkPresentationAcceptance({ baseUrl }) { calls.push(`accept:${baseUrl}`); return { threads: [] }; },
     async checkViewer({ origin }) { calls.push(`viewer:${origin}`); return { ok: true }; },
@@ -100,6 +104,13 @@ test("Slice F deployment runs validation, auth, secret/signer gates, dependency-
     "deploy:world-kernel",
     "deploy:birth-center",
   ]);
+  assert.deepEqual(calls.filter((call) => call.startsWith("state-health:")), [
+    "state-health:world-kernel:https://world-kernel.account.workers.dev",
+    "state-health:birth-center:https://birth-center.account.workers.dev",
+  ]);
+  assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
+  assert.equal(result.deployments.find((item) => item.serviceId === "birth-center").stateHealth.stateChecked, true);
+  assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
   assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);
   assert.ok(calls.indexOf("signer:https://signer.staging.example") > calls.findLastIndex((call) => call.startsWith("secrets:")));
   assert.ok(calls.indexOf("deploy:asset-generator") > calls.indexOf("signer:https://signer.staging.example"));
@@ -154,7 +165,7 @@ test("Slice F signer health requires exact production signer identity and trust-
   }), /unexpected signerId/);
 });
 
-test("Slice F Wrangler client verifies secret names and deploys with automatic provisioning disabled", async () => {
+test("Slice F Wrangler client verifies secret names, shallow health and deep state health", async () => {
   const calls = [];
   const runner = async (args) => {
     calls.push(args);
@@ -167,7 +178,12 @@ test("Slice F Wrangler client verifies secret names and deploys with automatic p
     ok: true,
     status: 200,
     async json() {
-      if (String(url).endsWith("/healthz")) return { ok: true, service: "world-kernel" };
+      if (String(url).endsWith("/internal/health/state")) {
+        return { ok: true, service: "world-kernel", stateChecked: true };
+      }
+      if (String(url).endsWith("/healthz")) {
+        return { ok: true, service: "world-kernel", stateChecked: false };
+      }
       return { threads: [] };
     },
   });
@@ -180,6 +196,14 @@ test("Slice F Wrangler client verifies secret names and deploys with automatic p
     "--experimental-provision=false",
     "--experimental-auto-create=false",
   ]);
+  assert.equal((await client.checkServiceHealth({
+    serviceId: "world-kernel",
+    baseUrl: "https://world.example",
+  })).stateChecked, false);
+  assert.equal((await client.checkStateHealth({
+    serviceId: "world-kernel",
+    baseUrl: "https://world.example",
+  })).stateChecked, true);
   assert.deepEqual(missingRequiredSecretNames(["FIBRE_PRIVATE_TOKEN", "OTHER"], new Set(["FIBRE_PRIVATE_TOKEN"])), ["OTHER"]);
   assert.equal(healthBaseUrlForDeployment({
     serviceId: "world-kernel",
