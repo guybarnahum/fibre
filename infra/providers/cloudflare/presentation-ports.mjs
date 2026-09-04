@@ -12,6 +12,8 @@ import {
 
 const D1_WRITE_QUOTA_BACKOFF_MS = 300_000;
 const d1WriteCircuitByDatabase = new WeakMap();
+const SLICE_H1_FAULT_PREFIX = "slice-h1-fault-after-workflow-before-demand:";
+const SLICE_H1_FAULT_MARKER_PREFIX = "sliceh1fault_";
 
 function assertChannelNamespace(namespace) {
   if (!namespace || typeof namespace.getByName !== "function") {
@@ -181,6 +183,37 @@ async function runD1Write(database, operation) {
   }
 }
 
+function sliceH1FaultKey(value) {
+  const regenerationKey = value?.regenerationKey;
+  if (typeof regenerationKey !== "string" || !regenerationKey.startsWith(SLICE_H1_FAULT_PREFIX)) return null;
+  const suffix = regenerationKey.slice(SLICE_H1_FAULT_PREFIX.length);
+  if (!/^[A-Za-z0-9._:-]+$/.test(suffix) || suffix.length === 0) {
+    throw new TypeError("Slice H1 fault regeneration key suffix must be a non-empty Fibre-safe id");
+  }
+  return `${SLICE_H1_FAULT_MARKER_PREFIX}${suffix}`;
+}
+
+async function maybeInjectSliceH1Fault(database, key, value) {
+  if (!key.startsWith("presentationassetdemand_")) return;
+  const markerKey = sliceH1FaultKey(value);
+  if (markerKey === null) return;
+  const existing = await database.prepare("SELECT catalog_key FROM fibre_catalog WHERE catalog_key = ? LIMIT 1").bind(markerKey).first();
+  if (existing !== null) return;
+  await runD1Write(database, () => database.prepare(`
+    INSERT INTO fibre_catalog (catalog_key, value_json, updated_at)
+    VALUES (?, ?, CURRENT_TIMESTAMP)
+  `).bind(markerKey, infraCanonicalJson({
+    kind: "slice_h1_fault_marker",
+    fault: "after_workflow_before_demand_persistence",
+    regenerationKey: value.regenerationKey,
+  })).run());
+  const error = new Error("Slice H1 injected failure after Workflow start and before demand persistence");
+  error.name = "SliceH1InjectedDemandPersistenceFailure";
+  error.code = "SLICE_H1_INJECTED_AFTER_WORKFLOW_BEFORE_DEMAND";
+  error.retryable = true;
+  throw error;
+}
+
 export function createCloudflareCatalogPort(databaseBinding) {
   const database = assertD1Database(databaseBinding);
   return Object.freeze({
@@ -188,6 +221,7 @@ export function createCloudflareCatalogPort(databaseBinding) {
       assertInfraId("catalog key", key);
       assertInfraPlainObject("catalog value", value);
       assertInfraJsonValue("catalog value", value);
+      await maybeInjectSliceH1Fault(database, key, value);
       const valueJson = infraCanonicalJson(value);
       await runD1Write(database, () => database.prepare(`
         INSERT INTO fibre_catalog (catalog_key, value_json, updated_at)
