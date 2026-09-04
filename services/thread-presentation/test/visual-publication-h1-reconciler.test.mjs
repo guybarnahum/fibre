@@ -112,15 +112,23 @@ test("ordinary recovery key keeps an already-ready official photo complete", asy
   assert.equal(calls.length, 0);
 });
 
-test("H1 fault key forces an already-ready official photo through demand reconciliation", async () => {
+test("H1 fault key forces ready media only once so recovery verification can observe complete", async () => {
   const calls = [];
-  const result = await reconciler(calls).reconcileAvailableEmbodiment({
+  const subject = reconciler(calls);
+  const input = {
     threadId: THREAD_ID,
     embodiment: embodiment(),
     observedAt: ISSUED_AT,
     regenerationKey: "slice-h1-fault-after-workflow-before-demand:h1-test",
-  });
-  assert.equal(result.complete, false);
-  assert.equal(result.stage, "official_photo_pending");
+  };
+
+  const first = await subject.reconcileAvailableEmbodiment(input);
+  assert.equal(first.complete, false);
+  assert.equal(first.stage, "official_photo_pending");
+  assert.equal(calls.length, 1);
+
+  const second = await subject.reconcileAvailableEmbodiment(input);
+  assert.equal(second.complete, true);
+  assert.equal(second.stage, "complete");
   assert.equal(calls.length, 1);
 });
