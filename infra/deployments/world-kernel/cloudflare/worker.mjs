@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
 const WORLD_SCOPE_ID = "world";
@@ -8,6 +9,9 @@ export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
+    this.ctx.blockConcurrencyWhile(async () => {
+      await this.runtimeForRequest().reconciliationRuntime.ensureScheduled();
+    });
   }
 
   runtimeForRequest() {
@@ -19,14 +23,14 @@ export class FibreWorldDurableObject extends DurableObject {
 
   async fetch(request) {
     const runtime = this.runtimeForRequest();
-    await runtime.reconciliationRuntime.ensureScheduled();
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/healthz") {
+    if (request.method === "GET" && url.pathname === "/internal/health/state") {
       return Response.json({
         ok: true,
         service: "world-kernel",
         provider: "cloudflare",
         stateScopeId: WORLD_SCOPE_ID,
+        stateChecked: true,
         capabilities: runtime.infraDriver.capabilities,
       });
     }
@@ -44,11 +48,8 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 }
 
-export default {
-  async fetch(request, env) {
-    if (!env?.WORLD_STATE || typeof env.WORLD_STATE.getByName !== "function") {
-      throw new TypeError("world-kernel Worker requires WORLD_STATE Durable Object binding");
-    }
-    return env.WORLD_STATE.getByName(WORLD_SCOPE_ID).fetch(request);
-  },
-};
+export default createCloudflareDurableObjectServiceRouter({
+  service: "world-kernel",
+  bindingName: "WORLD_STATE",
+  stateScopeId: WORLD_SCOPE_ID,
+});
