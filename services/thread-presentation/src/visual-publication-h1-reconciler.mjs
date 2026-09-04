@@ -54,8 +54,9 @@ async function ensureDurableH1Precondition(options, args) {
   }
   if (!presentationServer
     || typeof presentationServer.getSnapshot !== "function"
+    || typeof presentationServer.getHead !== "function"
     || typeof presentationServer.publishSnapshot !== "function") {
-    throw new TypeError("Slice H1 precondition requires presentation snapshot read/write");
+    throw new TypeError("Slice H1 precondition requires presentation snapshot/head read and snapshot write");
   }
 
   const markerKey = `${SLICE_H1_PRECONDITION_PREFIX}${suffix}`;
@@ -73,11 +74,12 @@ async function ensureDurableH1Precondition(options, args) {
   const pendingBundle = forceOfficialPhotoMissing(bundle);
   if (pendingBundle !== bundle) {
     const safeSuffix = suffix.replace(/[^A-Za-z0-9_-]/g, "_");
+    const head = await presentationServer.getHead(channelId);
     await presentationServer.publishSnapshot({
       channelId,
       objectRef: `snapshot_h1_pending_${safeSuffix}`,
       snapshotVersion: `h1-pending-${safeSuffix}`,
-      expectedSequence: current.pointer.sequence,
+      expectedSequence: head.sequence,
       bundle: pendingBundle,
       catalog: {
         projectionKind: "slice_h1_precondition",
