@@ -25,6 +25,7 @@ import {
   selectContentCredentialIntegration,
   selectImageIntegration,
 } from "../../integration-selection.mjs";
+import { maybeInjectSliceH2ProviderTransientFailure } from "./slice-h2-provider-fault.mjs";
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
@@ -146,6 +147,7 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
       },
       async (ctx) => {
         try {
+          maybeInjectSliceH2ProviderTransientFailure(job, ctx.attempt);
           return await runtime.execute(job, { attemptNumber: ctx.attempt });
         } catch (error) {
           const decision = assetGenerationRetryDecision(error, { attempt: ctx.attempt });
