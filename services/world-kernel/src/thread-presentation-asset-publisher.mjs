@@ -109,7 +109,6 @@ export function createThreadPresentationAssetPublisher({
   infra,
   credentialSigner = null,
   presentationServer,
-  now = () => new Date().toISOString(),
 }) {
   requireInfraCapabilities(infra, "catalog");
   if (!presentationServer
@@ -160,10 +159,10 @@ export function createThreadPresentationAssetPublisher({
         publiclyVisible = card.visibility === "public";
       }
 
-      const emittedAt = now();
-      if (Date.parse(emittedAt) < Date.parse(stored.completedAt)) {
-        throw new TypeError("presentation asset event cannot be emitted before asset completion");
-      }
+      // media.ready is a durable fact about this immutable completion. Replay must
+      // reconstruct byte-identical stream input, so do not bind event identity to
+      // the wall clock of whichever consumer/recovery attempt happens to publish it.
+      const emittedAt = stored.completedAt;
       const eventId = `presasset_${sha256(canonicalJson({
         jobId: stored.jobId,
         finalAssetDigest: stored.sha256,
