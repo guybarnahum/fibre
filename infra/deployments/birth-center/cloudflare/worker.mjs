@@ -39,9 +39,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
-    this.ctx.blockConcurrencyWhile(async () => {
-      await this.runtimeForRequest().runtime.ensureScheduled();
-    });
+    this.schedulerBootstrapped = false;
   }
 
   runtimeForRequest() {
@@ -53,6 +51,12 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       });
     }
     return this.runtime;
+  }
+
+  async ensureSchedulerForStatefulRequest(cloud) {
+    if (this.schedulerBootstrapped) return;
+    await cloud.runtime.ensureScheduled();
+    this.schedulerBootstrapped = true;
   }
 
   async fetch(request) {
@@ -74,6 +78,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         },
       });
     }
+    await this.ensureSchedulerForStatefulRequest(cloud);
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
       if (developmentResponse !== null) return developmentResponse;
