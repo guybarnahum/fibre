@@ -61,6 +61,50 @@ test("non-health requests resolve exactly one named Durable Object and forward",
   ]);
 });
 
+test("deep state health converts Durable Object call failures into bounded diagnostics", async () => {
+  const response = await router().fetch(new Request("https://fixture.example/internal/health/state"), {
+    FIXTURE_STATE: {
+      getByName() {
+        return {
+          async fetch() {
+            const error = new Error("fixture Durable Object failed during activation");
+            error.retryable = true;
+            throw error;
+          },
+        };
+      },
+    },
+  });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    ok: false,
+    service: "fixture-service",
+    provider: "cloudflare",
+    stateScopeId: "fixture",
+    stateChecked: false,
+    error: {
+      code: "DURABLE_OBJECT_STATE_HEALTH_FAILED",
+      name: "Error",
+      detail: "fixture Durable Object failed during activation",
+      retryable: true,
+      overloaded: false,
+    },
+  });
+});
+
+test("ordinary non-health Durable Object failures still propagate", async () => {
+  await assert.rejects(
+    () => router().fetch(new Request("https://fixture.example/internal/value"), {
+      FIXTURE_STATE: {
+        getByName() {
+          return { async fetch() { throw new Error("ordinary failure"); } };
+        },
+      },
+    }),
+    /ordinary failure/,
+  );
+});
+
 test("non-health requests fail closed when Durable Object binding is absent", async () => {
   await assert.rejects(
     () => router().fetch(new Request("https://fixture.example/internal/value"), {}),
