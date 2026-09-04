@@ -13,7 +13,18 @@ function forceOfficialPhotoMissing(bundle) {
   const assets = media.assets.map((asset) => {
     if (asset?.role !== "official_id_photo" || asset.status !== "ready") return asset;
     changed = true;
-    return { ...asset, status: "placeholder" };
+    return {
+      ...asset,
+      status: "placeholder",
+      locator: null,
+      mediaType: null,
+      sha256: null,
+      width: null,
+      height: null,
+      durationMs: null,
+      posterRef: null,
+      unavailableReason: null,
+    };
   });
   if (!changed) return bundle;
   return {
