@@ -33,7 +33,7 @@ function snapshot() {
     pointer: {
       objectRef: "snapshot_h1_ready_slot",
       snapshotDigest: `sha256:${"a".repeat(64)}`,
-      sequence: 0,
+      sequence: 1,
     },
     snapshot: {
       presentation: {
@@ -59,17 +59,22 @@ function embodiment() {
 
 function harness(reconcileCalls) {
   let current = snapshot();
+  let headSequence = 4;
   const catalogValues = new Map();
+  const publishedExpectedSequences = [];
   const options = {
     presentationServer: {
       async getSnapshot() { return current; },
-      async publishSnapshot({ bundle, objectRef, snapshotVersion }) {
+      async getHead() { return { sequence: headSequence }; },
+      async publishSnapshot({ bundle, objectRef, snapshotVersion, expectedSequence }) {
+        publishedExpectedSequences.push(expectedSequence);
+        assert.equal(expectedSequence, headSequence);
         current = {
           pointer: {
             objectRef,
             snapshotVersion,
             snapshotDigest: `sha256:${"c".repeat(64)}`,
-            sequence: 0,
+            sequence: headSequence,
           },
           snapshot: bundle,
         };
@@ -136,6 +141,7 @@ function harness(reconcileCalls) {
   return {
     options,
     catalogValues,
+    publishedExpectedSequences,
     setReady() {
       current = {
         ...current,
@@ -165,7 +171,7 @@ test("ordinary recovery key keeps an already-ready official photo complete", asy
   assert.equal(h.current().snapshot.media.assets[0].status, "ready");
 });
 
-test("H1 precondition is durable across reconciler instances and does not hide recovered ready media", async () => {
+test("H1 precondition uses current stream head and is durable across reconciler instances", async () => {
   const calls = [];
   const h = harness(calls);
   const input = {
@@ -180,6 +186,7 @@ test("H1 precondition is durable across reconciler instances and does not hide r
   assert.equal(first.complete, false);
   assert.equal(first.stage, "official_photo_pending");
   assert.equal(calls.length, 1);
+  assert.deepEqual(h.publishedExpectedSequences, [4]);
   assert.equal(h.current().snapshot.media.assets[0].status, "placeholder");
   assert.equal(h.catalogValues.get("sliceh1precondition_h1-test")?.applied, true);
 
