@@ -43,6 +43,7 @@ export function createThreadPresentationVisualPublicationReconciler(options = {}
   }
 
   let forceH1Generation = false;
+  let h1ForcedForRequest = false;
   const core = createCoreReconciler({
     ...options,
     planSlots(input) {
@@ -56,7 +57,9 @@ export function createThreadPresentationVisualPublicationReconciler(options = {}
 
   return Object.freeze({
     async reconcileAvailableEmbodiment(args = {}) {
-      forceH1Generation = h1FaultKey(args.regenerationKey);
+      const shouldForce = h1FaultKey(args.regenerationKey) && !h1ForcedForRequest;
+      forceH1Generation = shouldForce;
+      if (shouldForce) h1ForcedForRequest = true;
       try {
         return await core.reconcileAvailableEmbodiment(args);
       } finally {
