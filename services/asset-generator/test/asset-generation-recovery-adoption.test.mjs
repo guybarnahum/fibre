@@ -5,12 +5,15 @@ import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   createAssetGenerationJobFromIdentity,
   createAssetGenerationService,
+  fibreShortIdSuffix,
 } from "../src/index.mjs";
+
+const IDENTITY_DIGEST = `sha256:${"a".repeat(64)}`;
 
 function job(requestedAt, overrides = {}) {
   return createAssetGenerationJobFromIdentity({
-    identityDigest: `sha256:${"a".repeat(64)}`,
-    idSuffix: "abcdef123456",
+    identityDigest: IDENTITY_DIGEST,
+    idSuffix: fibreShortIdSuffix(IDENTITY_DIGEST),
     assetKind: "image",
     role: "official_id_photo",
     variant: "identity-card",
