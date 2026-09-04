@@ -1,4 +1,7 @@
-import { requireInfraCapabilities } from "#infra";
+import {
+  InfraWorkflowConflictError,
+  requireInfraCapabilities,
+} from "#infra";
 import {
   ASSET_GENERATION_RECEIPT_VERSION,
   assertMediaGenerationProvider,
@@ -16,6 +19,25 @@ function canonicalize(value) {
   if (value === null || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map(canonicalize);
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
+}
+
+function jobReplayIdentity(job) {
+  const normalized = normalizeAssetGenerationJob(job);
+  return canonicalize({ ...normalized, requestedAt: null });
+}
+
+function sameJobExceptRequestedAt(left, right) {
+  return JSON.stringify(jobReplayIdentity(left)) === JSON.stringify(jobReplayIdentity(right));
+}
+
+function adoptedWorkflowInstance(existing) {
+  return {
+    workflowName: existing.workflowName,
+    instanceId: existing.instanceId,
+    status: existing.status,
+    error: existing.error ?? null,
+    duplicate: true,
+  };
 }
 
 async function persistReceipt(objects, job, receipt) {
@@ -37,8 +59,24 @@ export function createAssetGenerationService({ infra, workflowName = "asset_gene
   return Object.freeze({
     async request(rawJob) {
       const job = normalizeAssetGenerationJob(rawJob);
-      const instance = await workflows.start(workflowName, job.jobId, job);
-      return { job, instance };
+      try {
+        const instance = await workflows.start(workflowName, job.jobId, job);
+        return { job, instance };
+      } catch (error) {
+        if (!(error instanceof InfraWorkflowConflictError)) throw error;
+        const existing = await workflows.get(workflowName, job.jobId);
+        if (existing === null || existing.input === undefined) throw error;
+        const existingJob = normalizeAssetGenerationJob(existing.input);
+        if (!sameJobExceptRequestedAt(job, existingJob)) throw error;
+
+        // The Workflow input witness is authoritative for a start that committed
+        // before its calling projection persisted. Adopt the exact durable input so
+        // the caller can persist it and all future retries become byte-identical.
+        if (rawJob && typeof rawJob === "object" && !Object.isFrozen(rawJob)) {
+          rawJob.requestedAt = existingJob.requestedAt;
+        }
+        return { job: existingJob, instance: adoptedWorkflowInstance(existing), adopted: true };
+      }
     },
     async status(jobId) {
       return workflows.get(workflowName, jobId);
