@@ -266,7 +266,7 @@ test("Cloudflare World restart resumes the durable wake without duplicate semant
   assert.equal(embodiments.length, 1);
   assert.equal(embodiments[0].status, "available");
   assert.equal(recovered.embodimentStore.history(THREAD_ID, embodiments[0].embodimentId).length, 2);
-  assert.equal(await recovered.infraDriver.scheduler.get("world"), 21_000);
+  assert.equal(await recovered.infraDriver.scheduler.get("world"), null, "converged restart recovery must become quiescent");
   await recovered.close();
   recovered = null;
 
