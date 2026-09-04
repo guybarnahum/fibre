@@ -35,6 +35,7 @@ import {
   COMPLETION_QUEUE_MAX_RETRIES,
   completionQueueFailureDisposition,
 } from "./completion-queue-policy.mjs";
+import { createCompletedWorkflowRecoveryReconciler } from "./completed-workflow-recovery.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
@@ -83,7 +84,7 @@ function createCredentialSigner(env) {
 }
 
 function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
-  return createThreadPresentationVisualPublicationReconciler({
+  const reconciler = createThreadPresentationVisualPublicationReconciler({
     presentationServer,
     infra,
     selectProviderProfile: ({ requiresReferenceObjects }) => selectImageProviderProfile(
@@ -95,6 +96,11 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     createIdentityRewrite: createThreadPresentationIdentityMediaRewriteService,
     planSlots: planThreadPresentationAssetSlots,
     activityRecorder,
+  });
+  return createCompletedWorkflowRecoveryReconciler({
+    reconciler,
+    infra,
+    completionConsumer: createCompletionConsumer(env, infra, presentationServer),
   });
 }
 
