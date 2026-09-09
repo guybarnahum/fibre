@@ -77,12 +77,22 @@ function withHarness(run) {
   let candidate = source();
   let examined = inspection();
   let tick = 0;
+  const generationJobs = new Map();
   const authority = createFibreIdentityAuthority({
     civilRegistry,
     issuanceStore,
     photoAdmissionStore: admissions,
     photoSource: { resolveCandidate: async () => candidate },
     photoExaminer: { inspect: async () => examined },
+    photoGeneration: {
+      async request(job) {
+        const existing = generationJobs.get(job.jobId);
+        if (existing !== undefined) return { job: existing, instance: { duplicate: true } };
+        generationJobs.set(job.jobId, job);
+        return { job, instance: { duplicate: false } };
+      },
+    },
+    photoGenerationProviderProfile: "fid-photo-test",
     now: () => `2026-09-09T19:${String(10 + tick++).padStart(2, "0")}:00.000Z`,
   });
   const workflow = authority.issueFidCard({
@@ -96,6 +106,7 @@ function withHarness(run) {
     admissions,
     workflow,
     path,
+    generationJobs,
     setSource: (value) => { candidate = value; },
     setInspection: (value) => { examined = value; },
   })).finally(() => {
@@ -158,4 +169,56 @@ test("B1 rejects wrong provenance and unusable identity photos without opening t
   assert.ok(rejected.receipt.reasons.includes("visual_identity_inconsistent"));
   assert.ok(rejected.receipt.reasons.includes("age_inconsistent"));
   assert.equal(admissions.getAcceptedByWorkflowId(workflow.workflowId), null);
+}));
+
+test("B2 reuses a valid photo or requests one canonical derivation that still must pass B1", async () => withHarness(async ({ authority, generationJobs, workflow, setSource, setInspection }) => {
+  const existing = await authority.ensureFidPhoto({ workflowId: workflow.workflowId });
+  assert.equal(existing.state, "accepted");
+  assert.equal(existing.progressionAllowed, true);
+  assert.equal(generationJobs.size, 0);
+
+  const fallbackWorkflow = authority.issueFidCard({
+    threadId: "thr_mira",
+    reason: "correction",
+    idempotencyKey: "b2_mira",
+  }).workflow;
+  setSource(source({ candidatePhotoRef: null, candidatePhotoDigest: null, derivationReceiptRef: null }));
+
+  const requested = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
+  assert.equal(requested.state, "derivation_requested");
+  assert.equal(requested.progressionAllowed, false);
+  assert.equal(requested.derivation.job.role, "official_id_photo");
+  assert.deepEqual(requested.derivation.job.referenceObjectRefs, ["obj_visual_mira"]);
+  assert.match(requested.derivation.job.brief.description, /34 years old/);
+  assert.ok(requested.derivation.job.brief.constraints.some((line) => /muted natural color/.test(line)));
+  assert.equal(generationJobs.size, 1);
+
+  const repeated = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
+  assert.equal(repeated.derivation.job.jobId, requested.derivation.job.jobId);
+  assert.equal(generationJobs.size, 1, "same canonical source/policy must not create another generation identity");
+
+  setSource(source({
+    candidatePhotoRef: requested.derivation.job.outputObjectRef,
+    candidatePhotoDigest: `sha256:${"c".repeat(64)}`,
+    derivationReceiptRef: requested.derivation.job.receiptObjectRef,
+    sourceReferences: ["obj_visual_mira", "emb_mira", requested.derivation.job.receiptObjectRef],
+  }));
+  setInspection(inspection({ faceCount: 2 }));
+  const blocked = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
+  assert.equal(blocked.state, "derivation_requested");
+  assert.equal(blocked.progressionAllowed, false);
+  assert.ok(blocked.admission.receipt.reasons.includes("face_count_not_one"));
+  assert.equal(generationJobs.size, 1);
+
+  setInspection(inspection());
+  const admitted = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
+  assert.equal(admitted.state, "accepted");
+  assert.equal(admitted.progressionAllowed, true);
+  assert.equal(admitted.admission.receipt.candidatePhotoRef, requested.derivation.job.outputObjectRef);
+  assert.equal(generationJobs.size, 1);
+
+  const reused = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
+  assert.equal(reused.reused, true);
+  assert.equal(reused.admission.receipt.admissionId, admitted.admission.receipt.admissionId);
+  assert.equal(generationJobs.size, 1);
 }));
