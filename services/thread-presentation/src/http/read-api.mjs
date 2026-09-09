@@ -3,10 +3,16 @@ import {
   createPublicPresentationAssetResolver,
   threadPresentationChannelId,
 } from "#services/thread-presentation/src/index.mjs";
+import {
+  chooseThreadDirectoryEntry,
+  matchesThreadDirectoryEntry,
+  publicThreadDirectoryEntry,
+} from "#services/thread-presentation/src/thread-directory.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const PRESENTATION_CHANNEL_PREFIX = "presentation:";
 const DISCOVERY_SCAN_PAGE_SIZE = 100;
+const DIRECTORY_SCAN_LIMIT = 5000;
 
 function assertId(name, value) {
   if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new TypeError(`${name} is invalid`);
@@ -52,6 +58,8 @@ function publicIdentityCredentialAllowed(snapshot) {
 }
 
 function route(pathname) {
+  if (pathname === "/api/threads/search") return { kind: "search" };
+  if (pathname === "/api/threads/meet") return { kind: "meet" };
   if (pathname === "/api/threads") return { kind: "threads" };
   const asset = pathname.match(/^\/api\/assets\/([^/]+)$/);
   if (asset) return { kind: "asset", objectRef: decodeURIComponent(asset[1]) };
@@ -80,6 +88,34 @@ function discoveryPage(url) {
   return { limit, cursor };
 }
 
+function boundedParameter(url, name, maxLength) {
+  const value = url.searchParams.get(name);
+  if (value === null || value.trim() === "") return null;
+  if (value.length > maxLength) throw new TypeError(`${name} is too long`);
+  return value.trim();
+}
+
+function directoryRequest(url, { meet = false } = {}) {
+  const allowed = new Set(meet
+    ? ["q", "fin", "language", "seed"]
+    : ["q", "fin", "language", "limit"]);
+  for (const key of url.searchParams.keys()) {
+    if (!allowed.has(key)) throw new TypeError(`unsupported Thread directory parameter ${key}`);
+  }
+  const limitText = meet ? null : (url.searchParams.get("limit") ?? "50");
+  const limit = meet ? 1 : Number(limitText);
+  if (!meet && (!/^\d+$/.test(limitText) || !Number.isSafeInteger(limit) || limit < 1 || limit > 200)) {
+    throw new TypeError("Thread directory limit is invalid");
+  }
+  return {
+    query: boundedParameter(url, "q", 240),
+    fin: boundedParameter(url, "fin", 64),
+    language: boundedParameter(url, "language", 80),
+    seed: meet ? boundedParameter(url, "seed", 200) : null,
+    limit,
+  };
+}
+
 function publicDiscoveryEntry({ key, value, current }) {
   if (value?.publiclyVisible !== true || value?.channelId !== key) return null;
   try {
@@ -99,6 +135,11 @@ function publicDiscoveryEntry({ key, value, current }) {
     snapshotVersion: current.pointer.snapshotVersion,
     snapshotDigest: current.pointer.snapshotDigest,
   };
+}
+
+function publicDirectoryEntry({ key, value, current }) {
+  if (publicDiscoveryEntry({ key, value, current }) === null) return null;
+  return publicThreadDirectoryEntry({ current, catalogRecord: value });
 }
 
 async function discoverPublicThreads({ infra, presentationServer, url }) {
@@ -130,6 +171,49 @@ async function discoverPublicThreads({ infra, presentationServer, url }) {
   }
 
   return { threads, nextCursor: after };
+}
+
+async function scanPublicDirectory({ infra, presentationServer }) {
+  const threads = [];
+  let after = null;
+  let scanned = 0;
+  while (scanned < DIRECTORY_SCAN_LIMIT) {
+    const page = await infra.catalog.list({
+      prefix: PRESENTATION_CHANNEL_PREFIX,
+      after,
+      limit: DISCOVERY_SCAN_PAGE_SIZE,
+    });
+    if (page.entries.length === 0) break;
+    for (const { key, value } of page.entries) {
+      scanned += 1;
+      const current = await presentationServer.getSnapshot(key);
+      const entry = publicDirectoryEntry({ key, value, current });
+      if (entry !== null) threads.push(entry);
+      if (scanned >= DIRECTORY_SCAN_LIMIT) break;
+    }
+    if (page.nextCursor === null || scanned >= DIRECTORY_SCAN_LIMIT) break;
+    after = page.nextCursor;
+  }
+  return threads;
+}
+
+async function searchPublicDirectory({ infra, presentationServer, url }) {
+  const request = directoryRequest(url);
+  const threads = (await scanPublicDirectory({ infra, presentationServer }))
+    .filter((entry) => matchesThreadDirectoryEntry(entry, request))
+    .slice(0, request.limit);
+  return { threads };
+}
+
+async function meetPublicThread({ infra, presentationServer, url }) {
+  const request = directoryRequest(url, { meet: true });
+  const eligible = (await scanPublicDirectory({ infra, presentationServer }))
+    .filter((entry) => matchesThreadDirectoryEntry(entry, request));
+  return {
+    thread: chooseThreadDirectoryEntry(eligible, { seed: request.seed }),
+    eligibleCount: eligible.length,
+    seed: request.seed,
+  };
 }
 
 export function createPresentationReadApi({
@@ -184,6 +268,16 @@ export function createPresentationReadApi({
         if (matched.kind === "threads") {
           return json(await discoverPublicThreads({ infra, presentationServer, url }), {
             headers: { ...cors, "Cache-Control": "no-cache" },
+          });
+        }
+        if (matched.kind === "search") {
+          return json(await searchPublicDirectory({ infra, presentationServer, url }), {
+            headers: { ...cors, "Cache-Control": "no-cache" },
+          });
+        }
+        if (matched.kind === "meet") {
+          return json(await meetPublicThread({ infra, presentationServer, url }), {
+            headers: { ...cors, "Cache-Control": "no-store" },
           });
         }
 
