@@ -41,7 +41,9 @@ export async function startThreadEditorDirectoryFromEnvironment(environment = pr
     onError: report("thread-editor-request-failed"),
   });
   const directory = attachThreadDirectoryBoundary(server, {
+    worldKernelBaseUrl: worldKernelUrl,
     presentationBaseUrl,
+    privateToken,
     onError: report("thread-editor-directory-failed"),
   });
   const address = await listenThreadEditorServer(server, { host, port });
@@ -49,7 +51,7 @@ export async function startThreadEditorDirectoryFromEnvironment(environment = pr
   return {
     server,
     address,
-    worldKernelUrl,
+    worldKernelUrl: directory.worldKernelBaseUrl,
     presentationBaseUrl: directory.presentationBaseUrl,
     accessToken: server.editorAccessToken,
     privateInspection: privateToken !== null,
