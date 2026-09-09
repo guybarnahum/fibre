@@ -3,13 +3,7 @@ import {
   normalizeFidIssuanceRequest,
 } from "./fid-card-issuance-domain.mjs";
 import { FidIssuanceIdempotencyConflictError } from "./fid-card-issuance-store.mjs";
-import {
-  FID_PHOTO_POLICY_VERSION,
-  buildFidPhotoAdmissionReceipt,
-  fidPhotoAdmissionIdentity,
-  normalizeFidPhotoInspection,
-  normalizeFidPhotoSource,
-} from "./fid-photo-admission.mjs";
+import { FID_PHOTO_POLICY_VERSION, buildFidPhotoAdmission } from "./fid-photo-admission.mjs";
 
 export class FidCivilRegistrationNotFoundError extends Error {}
 
@@ -28,35 +22,15 @@ function assertIssuanceStore(issuanceStore) {
     throw new TypeError("Fibre Identity Authority requires a FidCardIssuanceStore");
   }
   for (const method of ["beginIssuanceWorkflow", "getByIdempotencyKey", "getByWorkflowId"]) {
-    if (typeof issuanceStore[method] !== "function") {
-      throw new TypeError(`FidCardIssuanceStore must implement ${method}()`);
-    }
+    if (typeof issuanceStore[method] !== "function") throw new TypeError(`FidCardIssuanceStore must implement ${method}()`);
   }
   return issuanceStore;
 }
 
-function assertPhotoAdmissionDependencies({ photoSource, photoExaminer, photoAdmissionStore }) {
-  if (!photoSource || typeof photoSource.resolveCandidate !== "function") {
-    throw new TypeError("FID photo admission requires photoSource.resolveCandidate()");
-  }
-  if (!photoExaminer || typeof photoExaminer.inspect !== "function") {
-    throw new TypeError("FID photo admission requires photoExaminer.inspect()");
-  }
-  if (!photoAdmissionStore
-    || typeof photoAdmissionStore.record !== "function"
-    || typeof photoAdmissionStore.getByAdmissionId !== "function") {
-    throw new TypeError("FID photo admission requires a FidPhotoAdmissionStore");
-  }
-  return { photoSource, photoExaminer, photoAdmissionStore };
-}
-
-function photoAdmissionRequest(value) {
+function workflowIdOnly(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
-    || Object.keys(value).length !== 1 || Object.keys(value)[0] !== "workflowId") {
+    || Object.keys(value).length !== 1 || typeof value.workflowId !== "string" || value.workflowId.trim() === "") {
     throw new TypeError("FID photo admission request must contain exactly: workflowId");
-  }
-  if (typeof value.workflowId !== "string" || value.workflowId.trim() === "") {
-    throw new TypeError("FID photo admission workflowId is required");
   }
   return value.workflowId;
 }
@@ -87,11 +61,8 @@ export function createFibreIdentityAuthority({
 
     const registration = civil.lookupByThreadId(normalizedRequest.threadId);
     if (registration === null) {
-      throw new FidCivilRegistrationNotFoundError(
-        `Thread ${normalizedRequest.threadId} has no Fibre civil registration`,
-      );
+      throw new FidCivilRegistrationNotFoundError(`Thread ${normalizedRequest.threadId} has no Fibre civil registration`);
     }
-
     return workflows.beginIssuanceWorkflow({
       request: normalizedRequest,
       civilRegistration: registration,
@@ -100,42 +71,24 @@ export function createFibreIdentityAuthority({
   }
 
   async function admitFidPhoto(request) {
-    const workflowId = photoAdmissionRequest(request);
-    const { photoSource: sourceProvider, photoExaminer: examiner, photoAdmissionStore: admissions } =
-      assertPhotoAdmissionDependencies({ photoSource, photoExaminer, photoAdmissionStore });
-    const workflow = workflows.getByWorkflowId(workflowId).workflow;
-    const source = normalizeFidPhotoSource(await sourceProvider.resolveCandidate({
-      threadId: workflow.threadId,
-      at: workflow.requestedAt,
-    }));
-    const inspection = source.candidatePhotoRef === null
-      ? null
-      : normalizeFidPhotoInspection(await examiner.inspect({
-          source,
-          threadId: workflow.threadId,
-          at: workflow.requestedAt,
-          policyVersion: FID_PHOTO_POLICY_VERSION,
-        }));
-    const identity = fidPhotoAdmissionIdentity({ workflow, source, inspection });
-    const existing = admissions.getByAdmissionId(identity.admissionId, { required: false });
-    if (existing !== null) {
-      return Object.freeze({
-        ...existing,
-        created: false,
-        progressionAllowed: existing.receipt.decision === "accepted",
-      });
+    const workflow = workflows.getByWorkflowId(workflowIdOnly(request)).workflow;
+    if (!photoSource?.resolveCandidate || !photoExaminer?.inspect || !photoAdmissionStore?.record) {
+      throw new TypeError("FID photo admission dependencies are not configured");
     }
 
-    const stored = admissions.record(buildFidPhotoAdmissionReceipt({
-      workflow,
+    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt });
+    const inspection = source?.candidatePhotoRef == null ? null : await photoExaminer.inspect({
       source,
-      inspection,
-      admittedAt: now(),
-    }));
-    return Object.freeze({
-      ...stored,
-      progressionAllowed: stored.receipt.decision === "accepted",
+      threadId: workflow.threadId,
+      at: workflow.requestedAt,
+      policyVersion: FID_PHOTO_POLICY_VERSION,
     });
+    const receipt = buildFidPhotoAdmission({ workflow, source, inspection, admittedAt: now() });
+    const existing = photoAdmissionStore.getByAdmissionId?.(receipt.admissionId, { required: false }) ?? null;
+    const stored = existing === null
+      ? photoAdmissionStore.record(receipt)
+      : Object.freeze({ ...existing, created: false });
+    return Object.freeze({ ...stored, progressionAllowed: stored.receipt.decision === "accepted" });
   }
 
   return Object.freeze({ issueFidCard, admitFidPhoto });
