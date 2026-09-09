@@ -11,6 +11,11 @@ import {
 
 export class FidCivilRegistrationNotFoundError extends Error {}
 
+function nonEmpty(name, value) {
+  if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
+  return value.trim();
+}
+
 function assertCivilRegistry(civilRegistry) {
   if (civilRegistry === null || typeof civilRegistry !== "object" || Array.isArray(civilRegistry)) {
     throw new TypeError("Fibre Identity Authority requires a Civil Registry service");
@@ -39,9 +44,21 @@ function workflowIdOnly(value) {
   return value.workflowId;
 }
 
+function revocationRequest(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)
+    || Object.keys(value).sort().join(",") !== "credentialId,reason") {
+    throw new TypeError("FID revocation request must contain exactly: credentialId, reason");
+  }
+  return {
+    credentialId: nonEmpty("FID revocation credentialId", value.credentialId),
+    reason: nonEmpty("FID revocation reason", value.reason),
+  };
+}
+
 export function createFibreIdentityAuthority({
   civilRegistry,
   issuanceStore,
+  registry = null,
   photoSource = null,
   photoExaminer = null,
   photoAdmissionStore = null,
@@ -74,6 +91,14 @@ export function createFibreIdentityAuthority({
       civilRegistration: registration,
       requestedAt: now(),
     });
+  }
+
+  function revokeFidCard(request) {
+    if (typeof registry?.revokeCredential !== "function") {
+      throw new TypeError("FID credential registry is not configured for revocation");
+    }
+    const normalized = revocationRequest(request);
+    return registry.revokeCredential({ ...normalized, occurredAt: now() });
   }
 
   function requirePhotoAdmission() {
@@ -176,5 +201,5 @@ export function createFibreIdentityAuthority({
     });
   }
 
-  return Object.freeze({ issueFidCard, admitFidPhoto, ensureFidPhoto });
+  return Object.freeze({ issueFidCard, revokeFidCard, admitFidPhoto, ensureFidPhoto });
 }
