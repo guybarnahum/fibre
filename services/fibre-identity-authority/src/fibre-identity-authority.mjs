@@ -2,7 +2,7 @@ import {
   fidIssuanceRequestMatchesWorkflow,
   normalizeFidIssuanceRequest,
 } from "./fid-card-issuance-domain.mjs";
-import { FidIssuanceIdempotencyConflictError } from "./fid-card-registry.mjs";
+import { FidIssuanceIdempotencyConflictError } from "./fid-card-issuance-store.mjs";
 
 export class FidCivilRegistrationNotFoundError extends Error {}
 
@@ -16,33 +16,30 @@ function assertCivilRegistry(civilRegistry) {
   return civilRegistry;
 }
 
-function assertFidRegistry(fidRegistry) {
-  if (fidRegistry === null || typeof fidRegistry !== "object" || Array.isArray(fidRegistry)) {
-    throw new TypeError("Fibre Identity Authority requires a FidCardRegistry");
+function assertIssuanceStore(issuanceStore) {
+  if (issuanceStore === null || typeof issuanceStore !== "object" || Array.isArray(issuanceStore)) {
+    throw new TypeError("Fibre Identity Authority requires a FidCardIssuanceStore");
   }
-  for (const method of ["beginIssuanceWorkflow", "getIssuanceWorkflowByIdempotencyKey"]) {
-    if (typeof fidRegistry[method] !== "function") {
-      throw new TypeError(`FidCardRegistry must implement ${method}()`);
+  for (const method of ["beginIssuanceWorkflow", "getByIdempotencyKey"]) {
+    if (typeof issuanceStore[method] !== "function") {
+      throw new TypeError(`FidCardIssuanceStore must implement ${method}()`);
     }
   }
-  return fidRegistry;
+  return issuanceStore;
 }
 
 export function createFibreIdentityAuthority({
   civilRegistry,
-  fidRegistry,
+  issuanceStore,
   now = () => new Date().toISOString(),
 } = {}) {
   const civil = assertCivilRegistry(civilRegistry);
-  const registry = assertFidRegistry(fidRegistry);
+  const workflows = assertIssuanceStore(issuanceStore);
   if (typeof now !== "function") throw new TypeError("Fibre Identity Authority now must be a function");
 
   function issueFidCard(request) {
     const normalizedRequest = normalizeFidIssuanceRequest(request);
-    const existing = registry.getIssuanceWorkflowByIdempotencyKey(
-      normalizedRequest.idempotencyKey,
-      { required: false },
-    );
+    const existing = workflows.getByIdempotencyKey(normalizedRequest.idempotencyKey, { required: false });
     if (existing !== null) {
       if (!fidIssuanceRequestMatchesWorkflow(normalizedRequest, existing.workflow)) {
         throw new FidIssuanceIdempotencyConflictError(
@@ -59,7 +56,7 @@ export function createFibreIdentityAuthority({
       );
     }
 
-    return registry.beginIssuanceWorkflow({
+    return workflows.beginIssuanceWorkflow({
       request: normalizedRequest,
       civilRegistration: registration,
       requestedAt: now(),
