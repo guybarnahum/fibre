@@ -55,6 +55,13 @@ export {
 } from "./fid-card-renderer.mjs";
 
 export {
+  FID_C2PA_ASSERTION_LABEL,
+  buildFidC2paAssertion,
+  credentialAndStoreFidCard,
+  verifyFidC2paSide,
+} from "./fid-card-credentialing.mjs";
+
+export {
   FIBRE_IDENTITY_AUTHORITY_ID,
   FID_MACHINE_CREDENTIAL_SCHEMA,
   FID_MACHINE_ENVELOPE_VERSION,
