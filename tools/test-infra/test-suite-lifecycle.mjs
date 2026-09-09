@@ -48,6 +48,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const deployments = walkTests(join(root, "infra/deployments"));
   const assetGenerator = walkTests(join(root, "services/asset-generator/test"));
   const birthCenter = walkTests(join(root, "services/birth-center/test"));
+  const fibreIdentityAuthority = walkTests(join(root, "services/fibre-identity-authority/test"));
   const threadPresentation = walkTests(join(root, "services/thread-presentation/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
@@ -57,6 +58,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
     ...deployments,
     ...assetGenerator,
     ...birthCenter,
+    ...fibreIdentityAuthority,
     ...threadPresentation,
     ...worldKernel,
     ...tools,
