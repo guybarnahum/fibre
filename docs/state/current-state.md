@@ -1,253 +1,184 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-08-31
+last-reviewed: 2026-09-09
 canonical: true
 ---
 
 # Current state of Fibre
 
-Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, resources, permissions and a life trajectory spanning temporary model executions.
+Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, embodiment, permissions and a life trajectory spanning temporary model executions.
 
-Live Threads are world data, not source code stored in Git. Models provide temporary cognition; Fibre owns continuity, authoritative state, validation, authorization, persistence, replay and consequences.
+Models provide temporary cognition. Fibre owns continuity, authoritative state, validation, persistence, replay and consequence.
 
 ## Accepted foundation
 
 - A Thread is a persistent life, not a temporary task process or model session.
 - Difference must change what happens; representational difference alone is not causal individuality.
-- History must be able to bend future judgment and possibility.
-- Consent matters independently of safety, feasibility, capability, requester need or politeness.
-- Private stance, desired action, authorization, disclosure strategy, external expression and performed action are distinct authorities.
-- Private context selection belongs to Fibre/Thread cognition rather than the requester.
-- Meaning-bearing identity, memory, need, emotion, relationship and self-understanding are natural-language-first; derived categories may measure or control but may not replace semantic authority.
+- History can bend future judgment and possibility.
 - Historical state is append-only or explicitly superseding rather than silently rewritten.
-- Mechanical/substrate conditions may become versioned causal machinery, but they are not semantic evidence for identity, memory, meaning, character, needs, emotions or values.
-- Model output is candidate cognition. Provider structured-output guarantees never replace Fibre canonical validation or domain admission.
-- Visual identity follows one root-anchor invariant: rich canonical visual identity text establishes semantic appearance authority; one admitted canonical reference image supplies operational likeness continuity; every later Thread-depicting generated image uses that root plus chronology-supported target age, time-local appearance and scene/context and remains derived media.
-- Age is not visual identity. Synthetic canonical roots normalize at reference age 25; chronology selects later target age without replacing the root.
+- Meaning-bearing identity, memory, relationship, need, emotion and self-understanding are natural-language-first.
+- Model output is candidate cognition; providers do not own Thread identity or life state.
 - Identity is authoritative. Presentation is projection. Publication is a permission decision.
+- Visual identity uses one semantic/root-anchor chain: canonical visual identity text -> one admitted canonical reference image -> later Thread-depicting imagery using that root plus chronology, time-local appearance and scene/context.
 
 ## Milestone posture
 
-The stable continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). Completed milestone outcomes are retained in [`../history/milestones/`](../history/milestones/), including [`../history/milestones/pr40.md`](../history/milestones/pr40.md).
+The continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md).
 
 ```text
 M1    Persistent Thread Round Trip                         CLOSED
-#33   Semantic Guardian                                    EARNED / SEALED
-#34   History bends judgment                               EARNED / SEALED / MERGED
-#35   Structured Obligation                                MERGED / REVIEWED
-#36   Identity & Embodiment                                MERGED / FROZEN
-#37   Thread Passport & Identity Provenance                MERGED / FROZEN
-#38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
-#39   Genesis, Childhood & Thread Birth                    CLOSED
-      Genesis selectivity/scientific hardening bridge      CLOSED
-#40   Identity Projection & Causal Consumption             CLOSED / CLEAR
-      A-H visual/deployment integration vertical           CLOSED / GREEN
-#41   M2 Standing Gate / M2 closure                        ACTIVE
+#33-#40 identity/history/birth/causal foundations          CLOSED / RETAINED
+G     deployed visual/public path                          CLOSED
+H     minimum cloud failure/restart acceptance             CLOSED
 
-post-M2
-#42   Self-authored Development
-#43   Reciprocal Relationships
-#44   Economic Consequence / M3 foundation
+M2-A  Meet a Thread                                        CURRENT
+M2-B  Experience internalization                           NEXT
+M2-C  Whole-person Thread consolidation                    NEXT
 ```
 
-Planning identifiers such as `#40` are Fibre milestone identifiers, not GitHub transport numbering. The A-H visual/deployment sequence is an implementation vertical, not a planning milestone.
+The old #41 standing-gate program is retained as an evaluation/hardening asset, not the active product-development gate.
 
-> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection and its measurement credible enough to amplify. #40 made selected parts of that life causally matter in real cognition and carried authoritative identity through a production-shaped public visual path. #41 now decides whether the integrated evidence is enough to call the Thread a persistent, non-interchangeable individual.**
+## What has been established
 
-## #39 and bridge outcome carried forward
+### Persistent identity and prior life
 
-The fixed five-Thread #39 cohort was generated once under the frozen World/genome/model assignment, preserved rather than quality-resampled, atomically published one Thread at a time into a canonical local validation World, issued five unique FINs, replayed with provider access disabled and independently rehydrated from canonical World authorities.
+Fibre can publish a born Thread with one canonical machine identity, one FIN/civil registration, provenance-bearing prior life, situated history, autobiographical memory/meaning lineage, lineage/genome inputs and visual obligations.
 
-The bridge then hardened the Genesis substrate without replacing that cohort:
-
-- **Memory selectivity:** fresh matched controls exercised warranted remembering and legitimate non-selection without quotas.
-- **Meaning fidelity:** mundane memory can remain without durable meaning; negative and ambiguous meanings remain negative/ambiguous.
-- **Reinterpretation restraint:** the promoted Pass-C correction preserved unchanged meaning when warranted and revised it when warranted.
-- **Genome standing:** the tested Pass-B genome mechanism remains **Context-only** rather than being promoted to causal standing.
-- **D5:** prospective sealed-history provenance exclusion, exposure manifests, deliberate-leak refusal and the four-condition diagnostic remain permanent machinery.
-- **Runner hygiene:** durable-invocation/provider-runtime tests prove restart of unfinished work, immutable committed judgments, bounded transient retry, fail-fast terminal errors and provider-free replay.
-
-The bridge earns no Whole-Person or M2 score movement.
-
-## #40 causal-consumption outcome carried forward
-
-#40 is **closed / CLEAR**. It established one bounded Fibre-owned Identity Context projection into the real participation/Dignity Guardian consumer with exact provenance and no second semantic authority.
-
-The fixed five-Thread prospective differential changed exactly one admissible autobiographical-memory source per pair and produced:
-
-```text
-completed conditions           10 / 10
-attributable pairs              5 / 5
-structured effects              5 / 5
-memory-grounded effects         5 / 5
-top-level action/fit changes    3 / 5
-band                            CLEAR
-```
-
-The provider-free hostile closeout reproduced the sealed result offline, rejected order/digest/provider/private-prose tampering, preserved the compact privacy surface, and verified the canonical World remained query-only.
-
-The permanent claim remains narrow: bounded provenance-bearing identity/autobiographical context is demonstrably load-bearing in one real cognition consumer and survives sealed offline replay, privacy, provenance and source-substitution closeout. #40 does not by itself establish Whole-Person/M2 standing, mature self-authorship, reciprocal social continuity or symbolic-genome causality.
-
-## Genesis authority
-
-### Candidate versus live reality
-
-The Birth Center owns provisional development and durable provider-call recovery. The World Kernel owns authoritative Thread/world reality and atomic publication. A failed or interrupted development run may preserve provisional state and negative evidence, but it does not create a partially born Thread.
-
-### History, memory and meaning
-
-Genesis preserves three distinct authorities:
+History, memory and meaning remain distinct authorities:
 
 ```text
 historical life        what Fibre says happened
-memory formation       what was retained autobiographically
-meaning formation      what that remembered experience came to mean
+memory formation       what the Thread retained autobiographically
+meaning formation      what the retained experience came to mean
 ```
 
-History may exist without memory. Memory may exist without durable meaning. Meaning may remain negative, ambiguous, mundane or unchanged. Historical realization and meaning formation remain genome blind; permitted genome exposure is limited to the intended memory-formation seam.
+History may exist without memory. Memory may exist without durable meaning. Meaning may remain mundane, negative, ambiguous or unchanged.
 
-### Symbolic genome and lineage
+### Causal individuality substrate
 
-The symbolic genome is an ordered sequence of natural-language loci with exact source provenance, deterministic textual recombination and explicit mutation witnesses. It is an immutable pre-birth input, not a hidden numeric personality vector and not mature character.
+#40 established that bounded Fibre-owned autobiographical context can materially change structured cognition in a real consumer. This does not prove every aspect of the Thread is causally load-bearing, but it establishes the critical direction: lived difference can matter to later judgment.
 
-The bridge's controlled Pass-B experiment classified the current tested seam as **Context-only**, not behaviorally causal. That result is retained rather than tuned away.
+### Canonical embodiment and public presentation
 
-Visual phenotype inheritance may reuse the same natural-language recombination principles while remaining a distinct semantic domain. A Thread-parent child may inherit atomic parental appearance loci and explicit mutations to form the child's canonical visual identity text. This does not make visual phenotype evidence for personality/disposition genome effects, and parent images are not pixel-blended into the child's identity.
-
-### Civil identity
-
-Every successfully published Genesis Thread receives one permanent Fibre Identity Number and one canonical civil registration in the same birth transaction. `threadId` remains the canonical machine identity/reference anchor; the FIN is the human-facing civil identifier.
-
-## Canonical visual identity and completed A-H vertical
-
-[`../decisions/ADR-0021-canonical-visual-identity-reference.md`](../decisions/ADR-0021-canonical-visual-identity-reference.md) and [`../architecture/canonical-visual-identity.md`](../architecture/canonical-visual-identity.md) are the standing visual-identity authority.
-
-For native/de-novo/inherited Threads:
+Fibre now has:
 
 ```text
 rich canonical visual identity text
-  -> text-only root generation with zero prior image references
-  -> normalized reference age 25
-  -> immutable verified root asset
-  -> explicit Embodiment admission
-  -> ONE canonical reference image
-  -> every later Thread-depicting image uses that root
-       + target age when chronology supports it
+  -> one verified/admitted canonical reference image
+  -> later reference-conditioned Thread imagery
+       + target age when supported
        + time-local appearance
        + scene/context
 ```
 
-A pending text specification does not constitute an operational public visual reference. Generated bytes become canonical only through explicit Embodiment admission. The production admission chronology remains strict: `bindVerifiedCanonicalVisualIdentityProof(...)` requires the admission `recordedAt` to be at or after the stored receipt `completedAt`.
+Thread Presentation publishes derived public state and media without becoming a second semantic authority. insidefibre.com consumes the public Presentation boundary rather than raw World/Embodiment stores.
 
-The completed A-H visual/deployment vertical now proves:
+### Cloud/runtime foundation
 
-- newborn public Thread Presentation is projected from authoritative birth/civil identity;
-- one canonical native root is generated text-only with no prior reference image;
-- generic/thin appearance text cannot establish that root;
-- the credentialed root is verified and explicitly admitted into Embodiment;
-- World restart recovers the same civil identity, Embodiment lineage and root object reference;
-- public visual identity is rewritten from admitted World authority rather than caller-injected Embodiment content;
-- Fibre Identity Card issuance creates one official-photo media binding without creating a second identity authority;
-- official-photo and self-depicting memory demand use the same root with chronology-derived age when supported;
-- memory ownership alone does not imply depiction, ambiguous chronology does not invent an exact age, and place-only imagery remains reference-free;
-- deployment composition chooses a provider by explicit reference-object capability; reference-bearing demand cannot silently fall back to text-only likeness generation;
-- the configured BFL FLUX 2 Pro adapter consumes the canonical root through `input_image` while World/domain semantics remain provider-neutral;
-- generated output passes credential embedding and verification before public completion is admitted;
-- C2PA authorization tokens remain HTTP-header-only and do not enter request bodies or persisted provenance;
-- Thread Presentation publishes exactly one `media.ready` result and serves the final credentialed bytes through its public asset boundary;
-- insidefibre.com Viewer deployment is bound to the Thread Presentation public API origin and does not read raw World/Embodiment state;
-- duplicate/recovery replay does not create a second root, second identity card, second provider operation or second `media.ready` publication.
+The production-shaped path is live in staging. World/Birth durable state, scheduler semantics, Presentation, Asset Generator, Workflows, queues and public Viewer integration are sufficiently proven to continue product development.
 
-The final code-bearing H checkpoint is `e41742135cb577a989963d738fc7515f16177a12`. On that exact SHA the focused one-birth recovery E2E passed locally, the user's full final local gates passed (`983/983` all tests, `978/978` active tests, repository/world/deployment validation, and test-value audit), and the exact-sha GitHub Actions `validate` workflow completed successfully. That workflow also includes both Cloudflare deployment dry-runs.
-
-This closes the representative visual/deployment stop condition. Unrelated media/provider polish and exhaustive provider parity return to backlog. Visual continuity remains derived presentation evidence and does not itself earn causal-individuality standing.
-
-Echo/Homage remains the explicit source-grounded creation exception. Authorized source images may participate in forming the transformed Fibre canonical root under the established consent/source-rights rules. Once admitted, later images use the Fibre root rather than reopening the original source on every generation call.
-
-## Scientific-method posture
-
-The enduring methodology for provider-backed generative diagnostics is [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md).
-
-Current rules include:
-
-- state the estimand, unit, controls, confounds and sensitivity before provider output;
-- use meaningful positive/failure controls where practical;
-- repeated deterministic calls are robustness checks unless the design supports independence;
-- post-hoc findings remain post-hoc;
-- confounding blocks both positive causal claims and absence-of-effect claims;
-- prospective holdouts are excluded structurally through transitive provenance, not by prompt instruction;
-- preferential factual matching to forbidden holdouts is a provenance-audit trigger, never personhood evidence;
-- transient provider retries may resume only unfinished judgments and may never become quality resampling;
-- diagnostics must remain able to fail.
-
-## Current next work — #41 M2 Standing Gate
-
-The next already-planned workstream is #41, not another visual/provider slice and not a new numbered milestone.
-
-Start #41 by freezing the **M2 Standing Gate rubric and evidence map before any new provider use**. Reuse closed #33-#40 evidence where it genuinely answers a standing criterion and identify actual gaps rather than generating stronger-looking demonstrations by default.
-
-The gate must adjudicate the accumulated evidence across:
-
-- identity/history particularity;
-- causal individuality;
-- dignity/consent;
-- memory epistemics;
-- relationship/social continuity;
-- development;
-- persistence/restart;
-- cognition-provider boundary.
-
-It must distinguish semantic/personhood evidence from substrate/mechanical evidence and preserve the possibility of **M2 NOT YET EARNED**.
-
-The required #41 output is an auditable standing record that freezes criteria first, maps admissible evidence, identifies genuine gaps, uses prospective tests only where existing evidence is insufficient, reports the Whole-Person score under rubric v2 without rewriting prior milestone claims, and concludes clearly whether M2 is **EARNED**, **PARTIAL / NOT YET EARNED**, or otherwise fails the frozen gate.
-
-## Current score posture
-
-Historical M1 remains **11/26**. The live Whole-Person checkpoint remains **15/26 under rubric v2** until #41 adjudicates it.
+The accepted cloud checkpoint is source:
 
 ```text
-Non-interchangeability        1
-Dignity and consent           2
-Social/relationship memory    1
-Development                   1
-Economic consequence          0
+ee749e07b58c2580e967c7ed62cda5ddc91021cd
 ```
 
-#39 and the completed bridge deliberately earned no score movement. #40 established load-bearing causal consumption but did not itself award Whole-Person score movement. Visual continuity itself also does not earn causal individuality standing.
+At that source the full local active suite passed `1168/1168`, staging deployment was accepted, and World deep state health returned healthy state/scheduler capabilities.
 
-## Persistence and repository posture
+Minimum Slice H acceptance is closed:
 
-The #39 birth proof used canonical semantic authorities in a local `.fibre` validation World. The completed A-H visual/deployment vertical added production-shaped provider selection, credentialing, public presentation, Viewer-boundary and recovery proofs. The cloud portability work then moved authoritative World/Genesis stores and Birth Center provisional/provider-call durability onto executable `InfraDriver.state`, with provider-neutral scheduling and Cloudflare World/Birth runtimes that preserve the same authority boundaries.
+- **H1:** restart/persistence-gap recovery converges without creating a new semantic recovery epoch;
+- **H2:** a controlled transient provider failure retries within the same Workflow/job identity and converges to one completed official-photo result.
 
-The accepted production architecture is now executable for authoritative World relational state and reconciliation:
+Broader H3-H9 resilience scenarios are hardening backlog, not current development blockers.
+
+## Active goal — lived Thread
+
+> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
+
+The intended insidefibre.com experience is:
 
 ```text
-semantic domain store/process -> InfraDriver capability -> provider implementation
+select Thread
+  -> find her where she is now
+  -> see current embodiment, place, activity and recent context
+  -> talk with her in that exact situation
+  -> encounter becomes a life event
+  -> Thread interprets significance
+  -> remember / weakly retain / reinterpret / forget
+  -> warranted changes persist
+  -> life continues after the visitor leaves
 ```
 
-Authoritative World Kernel/Genesis stores open the same logical `world` scope through `InfraDriver.state`. The local provider maps that scope to SQLite; the Cloudflare provider maps it to one SQLite-backed Durable Object scope. `InfraDriver.scheduler` now has the same `get/schedule/cancel` surface in both environments: local maps it to the timer mechanism, Cloudflare maps it to the Durable Object alarm, and the World reconciliation process owns the semantic work performed on each wake. The canonical local World runtime uses this scheduler rather than a separate semantic `setInterval` loop.
+A Thread is not summoned by opening a chat. She is already somewhere, doing something, with a recent past and immediate intentions.
 
-A Cloudflare World Worker/SQLite-backed Durable Object composition now exists for authoritative Genesis birth publication and durable reconciliation. A matching Cloudflare Birth Center Worker/Durable Object composition owns provisional Birth state and durable model-invocation witnesses through the same `state + scheduler` capability shape used locally. Birth publication uses a private fetch-shaped World boundary/service binding. Recovery tests prove that World reconciliation survives runtime loss without duplicate semantic admission and that Birth Center survives a lost World acknowledgement, retries exact publication after restart, and converges on one authoritative Thread; divergent birth replay still fails closed. Both World and Birth Center deployments are included in the canonical Wrangler dry-run gate.
+## Data posture for M2
 
-The repository now also has an explicit Cloudflare operator preparation layer. `cloud:provision` idempotently resolves/creates the independently managed Presentation D1, shared R2 bucket, completion Queue and DLQ, applies the idempotent catalog schema, and emits environment-specific resolved Wrangler configuration plus provider IDs only under ignored `.fibre` state. `cloud:configure-secrets` requires a caller-selected file, validates required values before upload, exposes only each Worker's secret subset, and keeps non-secret C2PA/Viewer configuration separate from credentials. Durable Object namespaces, Workflows, service bindings, Workers and API custom domains remain deploy-managed by Wrangler; the separate Viewer repository remains owner of `insidefibre.com`.
+M2 should be driven by this vertical slice rather than by filling every possible Thread field in isolation.
 
-This does **not** claim that these commands have provisioned a live Cloudflare environment, that production secrets are already configured remotely, that the Workers are live-deployed, or that the full cloud birth-to-Viewer E2E is complete. Those are the next cloud deployment/acceptance slices.
+### Historical / immutable or append-only
 
-`HEAD` describes current Fibre. Git history is the default development archive. Completed milestones retain concise permanent outcomes while permanent runtime behavior is protected by enduring tests.
+- birth and civil identity;
+- lineage and genome;
+- events and places already lived;
+- past relationship states;
+- autobiographical memories and their provenance;
+- previous interpretations and superseding reinterpretations.
 
-## Explicitly deferred, not erased
+### Current / evolving
 
-The following remain part of Fibre's intended architecture:
+- present location and situated context;
+- current activity;
+- immediate intentions;
+- active relationships;
+- current interests and concerns;
+- dispositions and self-understanding derived from lived history;
+- current appearance/embodiment appropriate to time and place.
 
-- #41 Whole-Person/M2 standing closure;
-- richer Thread-authored development and self-model change (#42);
-- reciprocal/shared relationship structures, repair, expectations and permissions (#43);
-- budgets, contracts, reputation and durable opportunity/economic consequence (#44/M3 foundation);
-- richer visual appearance timelines beyond the canonical root + target-age model where later lived embodiment requires them;
-- endogenous motivation using clearly separated mechanical conditions plus Thread-authored semantic interpretation;
-- general isolated worker/tool/model gateway and model-capable Actor;
-- demonstrated cognition-provider/runtime replacement continuity;
-- production authentication, encryption, stronger tamper anchors and distributed/cloud topology;
-- real message delivery and performed-action evidence;
-- task markets, families/reproduction, institutions and broader society.
+Rich differentiated text remains the primary semantic representation. Hereditary/personality material should not collapse into generic numeric vectors; textual loci may remain recombinable as semicolon-separated atoms where that preserves semantic inheritance.
+
+## Experience internalization
+
+A conversation or encounter is not automatically a memory.
+
+```text
+experience
+  -> interpretation
+  -> significance
+     -> benign: forgotten
+     -> weak: transient trace
+     -> meaningful: durable memory
+     -> relational: relationship changes
+     -> formative: belief/intention/self change
+```
+
+Fibre may author the circumstances and opportunities of the world. It must not pre-author what an experience means to the Thread.
+
+## Development discipline
+
+The critical path is now the Fibre organism, not infrastructure completeness.
+
+Infrastructure, validation and tests enter the critical path only when they:
+
+- enable the active Meet-a-Thread capability;
+- preserve a semantic invariant;
+- remove a demonstrated blocker;
+- provide the smallest representative proof needed to proceed safely.
+
+Do not spend the current cycle on exhaustive provider parity, broad failure matrices, score optimization or standing-gate ceremony while the lived Thread loop itself is incomplete.
+
+## Later, not erased
+
+After a convincing single-Thread lived loop:
+
+- richer self-authored development;
+- reciprocal relationships and shared history;
+- work, budgets, contracts, reputation and economic consequence;
+- reproduction, inheritance and mutation between live Threads;
+- institutions, communities and a broader Thread society;
+- stronger security/distributed-runtime hardening as scale demands it.
+
+The north star remains the lived-world principle:
+
+> **Someone was here yesterday. Something happened. It mattered. And today, she is not quite the same.**
