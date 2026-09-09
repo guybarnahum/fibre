@@ -41,6 +41,10 @@ export {
   fidPhotoAdmissionDigest,
 } from "./fid-photo-admission.mjs";
 export { FidPhotoAdmissionStore } from "./fid-photo-admission-store.mjs";
+export {
+  FidPhotoDerivationUnavailableError,
+  buildFidPhotoDerivationJob,
+} from "./fid-photo-derivation.mjs";
 
 export {
   FidCivilRegistrationNotFoundError,
