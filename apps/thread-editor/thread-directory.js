@@ -52,7 +52,8 @@ function resultButton(entry) {
   meta.textContent = [
     entry.fibreIdentityNumber,
     entry.languages?.join(", "),
-    entry.lifecycleStatus,
+    entry.culture?.join(", "),
+    entry.lifecycleStatus ?? entry.status,
   ].filter(Boolean).join(" · ");
   const summary = document.createElement("span");
   summary.textContent = entry.summary ?? entry.visualDescription ?? entry.threadId;
@@ -70,20 +71,20 @@ function renderResults(entries, note) {
   if (entries.length === 0) {
     const empty = document.createElement("p");
     empty.className = "muted";
-    empty.textContent = "No matching discoverable Threads.";
+    empty.textContent = "No matching Threads.";
     results.append(empty);
   }
 }
 
-function filters({ includeSeed = false } = {}) {
+function filters({ meet = false } = {}) {
   const params = new URLSearchParams();
   const query = $("directoryQuery").value.trim();
   const fin = $("directoryFin").value.trim();
   const language = $("directoryLanguage").value.trim();
   if (query) params.set("q", query);
   if (fin) params.set("fin", fin);
-  if (language) params.set("language", language);
-  if (includeSeed) {
+  if (meet && language) params.set("language", language);
+  if (meet) {
     const seed = $("directorySeed").value.trim();
     if (seed) params.set("seed", seed);
   } else {
@@ -97,7 +98,7 @@ async function search() {
   searchButton.disabled = true;
   try {
     const payload = await directoryFetch(`/api/editor/directory/search?${filters()}`);
-    renderResults(payload.threads ?? [], `${payload.threads?.length ?? 0} discoverable Thread(s)`);
+    renderResults(payload.threads ?? [], `${payload.threads?.length ?? 0} Thread(s) found in World`);
   } catch (error) {
     renderResults([], error.message);
   } finally {
@@ -109,11 +110,11 @@ async function meet() {
   const meetButton = $("directoryMeetButton");
   meetButton.disabled = true;
   try {
-    const payload = await directoryFetch(`/api/editor/directory/meet?${filters({ includeSeed: true })}`);
+    const payload = await directoryFetch(`/api/editor/directory/meet?${filters({ meet: true })}`);
     const entries = payload.thread ? [payload.thread] : [];
     renderResults(entries, payload.thread
-      ? `Met 1 of ${payload.eligibleCount} eligible Thread(s)`
-      : "No eligible Thread to meet");
+      ? `Met 1 of ${payload.eligibleCount} public eligible Thread(s)`
+      : "No public eligible Thread to meet");
     if (payload.thread) openThread(payload.thread);
   } catch (error) {
     renderResults([], error.message);
@@ -137,14 +138,14 @@ function installDirectory() {
   heading.textContent = "Find or meet a Thread";
   const description = document.createElement("p");
   description.className = "muted";
-  description.textContent = "Search the admitted public Thread presentation by name, FIN, or visible attributes, or select an eligible Thread for a reproducible encounter.";
+  description.textContent = "Search World/Civil identity by name, FIN, or Thread-owned attributes. Meet a Thread selects from the admitted public Presentation set; an optional seed makes the encounter reproducible.";
 
   const controls = document.createElement("div");
   controls.className = "toolbar";
   controls.append(
-    field("Name / attributes", "directoryQuery", "Mira, tide pools, warm brown eyes…"),
+    field("Name / attributes", "directoryQuery", "Mira, patient, tide pools…"),
     field("FIN", "directoryFin", "XXXX-XX-XXXX"),
-    field("Language", "directoryLanguage", "English"),
+    field("Meet language", "directoryLanguage", "English"),
     field("Meet seed", "directorySeed", "optional reproducible seed"),
     button("Search", "directorySearchButton"),
     button("Meet a Thread", "directoryMeetButton"),
