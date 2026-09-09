@@ -2,9 +2,9 @@
 
 The Fibre Identity Authority owns replaceable FID Card credentials for already-born Threads, including whether a Thread image is admissible for FID use.
 
-It does **not** mint FINs, change civil registration, create visual identity, render cards, generate fallback photos, or perform C2PA signing. Those responsibilities remain with their owning Fibre boundaries.
+It does **not** mint FINs, change civil registration, create visual identity, execute image generation, render cards, or perform C2PA signing. Those responsibilities remain with their owning Fibre boundaries.
 
-Current A1/A2/B1 surface:
+Current A1/A2/B1/B2 surface:
 
 ```text
 services/fibre-identity-authority/src/index.mjs
@@ -36,4 +36,14 @@ B1 adds:
 admitFidPhoto({ workflowId })
 ```
 
-The caller still cannot supply image bytes or an image reference. The authority resolves an `official_id_photo` candidate through its trusted Thread visual-source boundary, checks canonical visual-reference continuity plus the small FID face/framing/continuity/age policy, and records an immutable admission receipt. Only an accepted receipt opens the photo gate for later issuance slices; rejection leaves the workflow unadvanced so B2 may derive a better candidate.
+The caller still cannot supply image bytes or an image reference. The authority resolves an `official_id_photo` candidate through its trusted Thread visual-source boundary, checks canonical visual-reference continuity plus the small FID face/framing/continuity/age policy, and records an immutable admission receipt. Only an accepted receipt opens the photo gate.
+
+B2 adds:
+
+```text
+ensureFidPhoto({ workflowId })
+```
+
+A currently valid admitted official photo is reused. Otherwise the authority creates one deterministic `official_id_photo` Asset Generation demand from the Thread's admitted canonical visual reference, target age, and FID photo policy. Asset Generator remains the executor. The generated result must return through the same trusted photo-source boundary and pass B1 admission before issuance can progress.
+
+The derivation identity is deliberately independent of FID credential/workflow identity. Equivalent source + policy + target age therefore reuses the same generation demand instead of manufacturing redundant portraits of the same persistent Thread.
