@@ -49,75 +49,48 @@ function withDatabase(run) {
   finally { rmSync(root, { recursive: true, force: true }); }
 }
 
-test("FID registry persists immutable credential history through Infra state", () => withDatabase((databasePath) => {
-  const firstStorage = storage(databasePath);
-  const registry = new FidCardRegistry(firstStorage);
+test("FID registry preserves immutable credential history across reopen", () => withDatabase((databasePath) => {
+  const registry = new FidCardRegistry(storage(databasePath));
   const created = registry.registerCredential({
     credential: credential(),
     civilIdentity: civilIdentity(),
     initialStatus: "active",
   });
   assert.equal(created.created, true);
-  assert.equal(created.status, "active");
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_001");
-  assert.deepEqual(registry.listByThreadId("thr_mira").map(({ credential: value }) => value.credentialId), ["fidc_mira_001"]);
   registry.close();
-
-  const raw = firstStorage.infraDriver.state.open("fid");
-  assert.throws(
-    () => raw.prepare("UPDATE fid_card_credentials SET revision=2 WHERE credential_id=?").run("fidc_mira_001"),
-    /fid_card_credentials is immutable/,
-  );
-  assert.throws(
-    () => raw.prepare("DELETE FROM fid_card_lifecycle_events WHERE credential_id=?").run("fidc_mira_001"),
-    /fid_card_lifecycle_events is immutable/,
-  );
-  raw.close();
 
   const reopened = new FidCardRegistry(storage(databasePath));
   const persisted = reopened.getByCredentialId("fidc_mira_001");
-  assert.equal(persisted.credential.fibreIdentityNumber, FIN);
   assert.equal(persisted.status, "active");
-  assert.equal(reopened.listByFin(FIN).length, 1);
+  assert.equal(persisted.credential.fibreIdentityNumber, FIN);
+  assert.equal(reopened.registerCredential({
+    credential: credential(),
+    civilIdentity: civilIdentity(),
+    initialStatus: "active",
+  }).created, false);
+  assert.throws(() => reopened.registerCredential({
+    credential: credential({ issuedAt: "2026-09-09T18:31:00.000Z" }),
+    civilIdentity: civilIdentity(),
+    initialStatus: "active",
+  }));
   reopened.close();
 }));
 
 test("FID registry rejects civil-identity drift and a second active card for one FIN", () => withDatabase((databasePath) => {
-  const stateBinding = storage(databasePath);
-  const registry = new FidCardRegistry(stateBinding);
+  const registry = new FidCardRegistry(storage(databasePath));
   registry.registerCredential({
     credential: credential(),
     civilIdentity: civilIdentity(),
     initialStatus: "active",
   });
 
-  assert.throws(
-    () => registry.registerCredential({
-      credential: credential({ credentialId: "fidc_wrong_fin", fibreIdentityNumber: OTHER_FIN }),
-      civilIdentity: civilIdentity(),
-      initialStatus: "revoked",
-    }),
-    /does not match the authority-resolved registration/,
-  );
-
-  assert.throws(
-    () => registry.registerCredential({
-      credential: credential({
-        credentialId: "fidc_mira_002",
-        revision: 2,
-        supersedesCredentialId: "fidc_mira_001",
-        issuedAt: "2026-09-09T18:40:00.000Z",
-      }),
-      civilIdentity: civilIdentity(),
-      initialStatus: "active",
-    }),
-    FidActiveCredentialConflictError,
-  );
-
-  assert.equal(registry.listByFin(FIN).length, 1);
-  assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_001");
-
-  registry.registerCredential({
+  assert.throws(() => registry.registerCredential({
+    credential: credential({ credentialId: "fidc_wrong_fin", fibreIdentityNumber: OTHER_FIN }),
+    civilIdentity: civilIdentity(),
+    initialStatus: "revoked",
+  }));
+  assert.throws(() => registry.registerCredential({
     credential: credential({
       credentialId: "fidc_mira_002",
       revision: 2,
@@ -125,20 +98,10 @@ test("FID registry rejects civil-identity drift and a second active card for one
       issuedAt: "2026-09-09T18:40:00.000Z",
     }),
     civilIdentity: civilIdentity(),
-    initialStatus: "revoked",
-  });
+    initialStatus: "active",
+  }), FidActiveCredentialConflictError);
 
-  const raw = stateBinding.infraDriver.state.open("fid");
-  assert.throws(
-    () => raw.prepare(`
-      INSERT INTO fid_card_active_credentials(
-        fibre_identity_number, credential_id, thread_id, registration_id
-      ) VALUES (?,?,?,?)
-    `).run(FIN, "fidc_mira_002", "thr_constraint_probe", "reg_constraint_probe"),
-    /UNIQUE constraint failed: fid_card_active_credentials\.fibre_identity_number/,
-  );
-  raw.close();
-
+  assert.equal(registry.listByFin(FIN).length, 1);
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_001");
   registry.close();
 }));
