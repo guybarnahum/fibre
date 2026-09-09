@@ -1,3 +1,4 @@
+import { normalizeFibreIdentityNumber } from "#core/src/fibre-civil-identity.mjs";
 import {
   requireInfraCapabilities,
   requireTransactionalStateGuarantees,
@@ -196,7 +197,11 @@ export class FidCardRegistry {
         if (existing.record_json !== recordJson || existing.record_digest !== recordDigest) {
           throw new TypeError(`FID credential ${record.credentialId} already exists with different content`);
         }
-        return { ...this.getByCredentialId(record.credentialId), created: false };
+        const current = this.getByCredentialId(record.credentialId);
+        if (current.status !== status) {
+          throw new TypeError(`FID credential ${record.credentialId} already exists with lifecycle ${current.status}`);
+        }
+        return { ...current, created: false };
       }
 
       assertHistoricalLinkage(this.#database, record);
@@ -269,11 +274,7 @@ export class FidCardRegistry {
   }
 
   listByFin(fin) {
-    const normalized = normalizeFidCivilIdentity({
-      threadId: "lookup",
-      fibreIdentityNumber: fin,
-      registrationId: "lookup",
-    }).fibreIdentityNumber;
+    const normalized = normalizeFibreIdentityNumber(fin);
     return this.#database.prepare(`${READ_SELECT} WHERE c.fibre_identity_number=? ORDER BY c.revision ASC`)
       .all(normalized)
       .map(parseCredential);
@@ -287,11 +288,7 @@ export class FidCardRegistry {
   }
 
   getActiveByFin(fin, { required = false } = {}) {
-    const normalized = normalizeFidCivilIdentity({
-      threadId: "lookup",
-      fibreIdentityNumber: fin,
-      registrationId: "lookup",
-    }).fibreIdentityNumber;
+    const normalized = normalizeFibreIdentityNumber(fin);
     const pointer = this.#database.prepare(
       "SELECT credential_id FROM fid_card_active_credentials WHERE fibre_identity_number=?",
     ).get(normalized);
