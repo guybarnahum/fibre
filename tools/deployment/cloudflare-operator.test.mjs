@@ -16,6 +16,14 @@ import { configureCloudflareSecrets, createWranglerSecretWriter } from "./config
 const sourceRoot = resolve(new URL("../..", import.meta.url).pathname);
 const SOURCE_SHA = "1234567890abcdef1234567890abcdef12345678";
 
+function assertTextMatches(text, pattern, label) {
+  assert.equal(pattern.test(text), true, `${label}: missing pattern ${pattern}`);
+}
+
+function assertTextDoesNotMatch(text, pattern, label) {
+  assert.equal(pattern.test(text), false, `${label}: forbidden pattern ${pattern}`);
+}
+
 async function fixtureRepo() {
   const root = await mkdtemp(resolve(tmpdir(), "fibre-cloud-operator-"));
   for (const path of Object.values(CLOUDFLARE_SERVICE_CONFIGS)) {
@@ -172,16 +180,16 @@ test("Slice E secret configuration uploads only each service subset and persists
   ]);
   assert.equal(result.runtimeConfigByService["asset-generator"].C2PA_SIGNER_URL, "https://signer.staging.example");
   const asset = await readFile(resolve(repoRoot, state.wranglerConfigs["asset-generator"]), "utf8");
-  assert.match(asset, /https:\/\/signer\.staging\.example/);
-  assert.doesNotMatch(asset, /secret-openai|secret-bfl|secret-private|secret-signer/);
+  assertTextMatches(asset, /https:\/\/signer\.staging\.example/, "generated asset-generator Wrangler config");
+  assertTextDoesNotMatch(asset, /secret-openai|secret-bfl|secret-private|secret-signer/, "generated asset-generator Wrangler config");
 
   const runtimeConfigText = await readFile(resolve(repoRoot, ".fibre/cloudflare/staging/runtime-config.json"), "utf8");
-  assert.match(runtimeConfigText, /https:\/\/signer\.staging\.example/);
-  assert.doesNotMatch(runtimeConfigText, /secret-openai|secret-bfl|secret-private|secret-signer/);
+  assertTextMatches(runtimeConfigText, /https:\/\/signer\.staging\.example/, "persisted runtime config");
+  assertTextDoesNotMatch(runtimeConfigText, /secret-openai|secret-bfl|secret-private|secret-signer/, "persisted runtime config");
 
   await provisionCloudflareResources({ repoRoot, environment: "staging", client });
   const regeneratedAsset = await readFile(resolve(repoRoot, state.wranglerConfigs["asset-generator"]), "utf8");
-  assert.match(regeneratedAsset, /https:\/\/signer\.staging\.example/);
+  assertTextMatches(regeneratedAsset, /https:\/\/signer\.staging\.example/, "regenerated asset-generator Wrangler config");
 });
 
 
