@@ -187,7 +187,7 @@ test("D2 rejects tampering, cross-issuance pairing, and stores nothing before bo
   const stored = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, ...first });
   const front = await infra.objects.get(stored.front.objectRef);
 
-  const tampered = front.bytes.slice();
+  const tampered = Buffer.from(front.bytes);
   tampered[0] ^= 1;
   await assert.rejects(() => verifyFidC2paSide({
     contentCredentialSigner: signer,
