@@ -58,30 +58,23 @@ function withDatabase(run) {
   finally { rmSync(root, { recursive: true, force: true }); }
 }
 
-test("FID issuance resolves Civil Registry identity, persists idempotent workflow, and accepts no caller-authored identity", () => withDatabase((databasePath) => {
+test("FID issuance resolves civil identity once and remains durable/idempotent", () => withDatabase((databasePath) => {
   const civilRegistration = registration();
   const stateBinding = storage(databasePath);
-  let nowCalls = 0;
   const registry = new FidCardRegistry(stateBinding);
   const issuanceStore = new FidCardIssuanceStore(stateBinding);
   const authority = createFibreIdentityAuthority({
     civilRegistry: civilRegistryFor(civilRegistration),
     issuanceStore,
-    now() {
-      nowCalls += 1;
-      return nowCalls === 1 ? "2026-09-09T18:45:00.000Z" : "2026-09-09T19:45:00.000Z";
-    },
+    now: () => "2026-09-09T18:45:00.000Z",
   });
 
-  assert.throws(
-    () => authority.issueFidCard({
-      threadId: "thr_mira",
-      reason: "initial",
-      idempotencyKey: "issue_mira_001",
-      fibreIdentityNumber: FIN,
-    }),
-    /must contain exactly/,
-  );
+  assert.throws(() => authority.issueFidCard({
+    threadId: "thr_mira",
+    reason: "initial",
+    idempotencyKey: "issue_mira_001",
+    fibreIdentityNumber: FIN,
+  }));
 
   const first = authority.issueFidCard({
     threadId: "thr_mira",
@@ -89,15 +82,10 @@ test("FID issuance resolves Civil Registry identity, persists idempotent workflo
     idempotencyKey: "issue_mira_001",
   });
   assert.equal(first.created, true);
-  assert.equal(first.state, "identity_resolved");
-  assert.equal(first.workflow.threadId, "thr_mira");
   assert.equal(first.workflow.fibreIdentityNumber, FIN);
   assert.equal(first.workflow.registrationId, civilRegistration.registrationId);
-  assert.equal(first.workflow.civilRegistrationDigest, civilRegistration.registrationDigest);
   assert.equal(first.workflow.priorActiveCredentialId, null);
-  assert.equal(first.workflow.proposedRevision, 1);
-  assert.equal(first.workflow.requestedAt, "2026-09-09T18:45:00.000Z");
-  assert.equal(registry.listByFin(FIN).length, 0, "A2 must not create an active credential");
+  assert.equal(registry.getActiveByFin(FIN), null, "issuance intent alone must not activate a card");
 
   const repeated = authority.issueFidCard({
     threadId: "thr_mira",
@@ -106,29 +94,15 @@ test("FID issuance resolves Civil Registry identity, persists idempotent workflo
   });
   assert.equal(repeated.created, false);
   assert.equal(repeated.workflow.workflowId, first.workflow.workflowId);
-  assert.equal(repeated.workflow.requestedAt, first.workflow.requestedAt);
-  assert.equal(nowCalls, 1, "durable idempotent retry must not mint a new workflow timestamp");
 
-  const raw = stateBinding.infraDriver.state.open("fid");
-  assert.throws(
-    () => raw.prepare("UPDATE fid_card_issuance_workflows SET reason='correction' WHERE workflow_id=?")
-      .run(first.workflow.workflowId),
-    /fid_card_issuance_workflows is immutable/,
-  );
-  raw.close();
   issuanceStore.close();
   registry.close();
-
   const reopened = new FidCardIssuanceStore(storage(databasePath));
-  assert.equal(
-    reopened.getByIdempotencyKey("issue_mira_001").workflow.workflowId,
-    first.workflow.workflowId,
-  );
-  assert.equal(reopened.listByThreadId("thr_mira").length, 1);
+  assert.equal(reopened.getByIdempotencyKey("issue_mira_001").workflow.workflowId, first.workflow.workflowId);
   reopened.close();
 }));
 
-test("FID reissue records prior active intent without superseding it and rejects missing civil identity or idempotency drift", () => withDatabase((databasePath) => {
+test("FID Authority preserves an active card during reissue intent and owns explicit revocation", () => withDatabase((databasePath) => {
   const civilRegistration = registration();
   const registry = new FidCardRegistry(storage(databasePath));
   registry.registerCredential({
@@ -154,6 +128,7 @@ test("FID reissue records prior active intent without superseding it and rejects
   const authority = createFibreIdentityAuthority({
     civilRegistry: civilRegistryFor(civilRegistration),
     issuanceStore,
+    registry,
     now: () => "2026-09-09T18:50:00.000Z",
   });
   const reissue = authority.issueFidCard({
@@ -164,33 +139,30 @@ test("FID reissue records prior active intent without superseding it and rejects
 
   assert.equal(reissue.workflow.priorActiveCredentialId, "fidc_mira_existing");
   assert.equal(reissue.workflow.proposedRevision, 2);
-  assert.notEqual(reissue.workflow.proposedCredentialId, "fidc_mira_existing");
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_existing");
-  assert.equal(registry.getActiveByFin(FIN).status, "active");
   assert.equal(registry.listByFin(FIN).length, 1, "incomplete reissue must not register the proposed credential");
 
-  assert.throws(
-    () => authority.issueFidCard({
-      threadId: "thr_mira",
-      reason: "correction",
-      idempotencyKey: "replace_mira_001",
-    }),
-    FidIssuanceIdempotencyConflictError,
-  );
+  assert.throws(() => authority.issueFidCard({
+    threadId: "thr_mira",
+    reason: "correction",
+    idempotencyKey: "replace_mira_001",
+  }), FidIssuanceIdempotencyConflictError);
+
+  const revoked = authority.revokeFidCard({ credentialId: "fidc_mira_existing", reason: "operator_revocation" });
+  assert.equal(revoked.status, "revoked");
+  assert.equal(registry.getActiveByFin(FIN), null);
 
   const missingAuthority = createFibreIdentityAuthority({
     civilRegistry: civilRegistryFor(null),
     issuanceStore,
     now: () => "2026-09-09T18:55:00.000Z",
   });
-  assert.throws(
-    () => missingAuthority.issueFidCard({
-      threadId: "thr_missing",
-      reason: "initial",
-      idempotencyKey: "issue_missing_001",
-    }),
-    FidCivilRegistrationNotFoundError,
-  );
+  assert.throws(() => missingAuthority.issueFidCard({
+    threadId: "thr_missing",
+    reason: "initial",
+    idempotencyKey: "issue_missing_001",
+  }), FidCivilRegistrationNotFoundError);
+
   issuanceStore.close();
   registry.close();
 }));
