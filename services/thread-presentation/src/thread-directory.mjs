@@ -62,7 +62,7 @@ export function matchesThreadDirectoryEntry(entry, {
     entry.visualDescription,
     entry.lifecycleStatus,
   ].filter((value) => value !== null).join("\n").toLocaleLowerCase("en-US");
-  return searchable.includes(wantedQuery);
+  return wantedQuery.split(/\s+/).filter(Boolean).every((term) => searchable.includes(term));
 }
 
 function seededIndex(seed, length) {
