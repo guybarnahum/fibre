@@ -8,13 +8,17 @@ import {
   findC2paAssertion,
 } from "./assertion-finder.mjs";
 
-const ASSERTION_LABEL = "com.insidefibre.asset-generation";
+const DEFAULT_ASSERTION_LABEL = "com.insidefibre.asset-generation";
 const FORMAT = "c2pa";
 const SELF_TEST_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlNfWQAAAAASUVORK5CYII=";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
   return value.trim();
+}
+
+function assertionLabel(value) {
+  return value === null || value === undefined ? DEFAULT_ASSERTION_LABEL : nonEmpty("C2PA assertionLabel", value);
 }
 
 function canonicalize(value) {
@@ -33,7 +37,7 @@ function bytesFromBase64(value) {
   return Buffer.from(value, "base64");
 }
 
-async function inspect(bytes, mediaType) {
+async function inspect(bytes, mediaType, label = DEFAULT_ASSERTION_LABEL) {
   const reader = await Reader.fromAsset(
     { buffer: Buffer.from(bytes), mimeType: mediaType },
     {
@@ -51,13 +55,13 @@ async function inspect(bytes, mediaType) {
   const readerActive = typeof reader.getActive === "function" ? await reader.getActive() : null;
   const active = readerActive ?? activeManifestFromStore(store);
   const scope = active ?? store;
-  const assertion = findC2paAssertion(scope, ASSERTION_LABEL);
+  const assertion = findC2paAssertion(scope, label);
   if (assertion === null || typeof assertion !== "object" || Array.isArray(assertion)) {
     const observed = describeC2paAssertions(scope);
     const suffix = observed.length === 0
       ? "no assertions were exposed by the active manifest"
       : `observed assertions: ${observed.join(", ")}`;
-    throw new Error(`missing or invalid ${ASSERTION_LABEL} assertion; ${suffix}`);
+    throw new Error(`missing or invalid ${label} assertion; ${suffix}`);
   }
   return {
     assertion,
@@ -92,27 +96,31 @@ export async function createC2paNodeSigner({
 
   async function embed(body) {
     const bytes = bytesFromBase64(body.bytesBase64);
+    const label = assertionLabel(body.assertionLabel);
     if (typeof body.mediaType !== "string" || !body.mediaType.startsWith("image/")) {
       throw new TypeError("C2PA signer currently accepts image media types only");
     }
     if (!body.assertion || typeof body.assertion !== "object" || Array.isArray(body.assertion)) {
       throw new TypeError("assertion must be an object");
     }
+    const generatedMedia = label === DEFAULT_ASSERTION_LABEL;
     const builder = Builder.withJson({
       claim_generator_info: [{ name: "Fibre", version: "0.1.0" }],
-      title: "Fibre generated reconstruction",
+      title: generatedMedia ? "Fibre generated reconstruction" : "Fibre credentialed asset",
       format: body.mediaType,
     }, {
       verify: { verify_after_sign: true, verify_trust: false },
     });
-    builder.setIntent({
-      create: "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
-    });
-    builder.addAssertion(ASSERTION_LABEL, JSON.stringify(body.assertion), "Json");
+    if (generatedMedia) {
+      builder.setIntent({
+        create: "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+      });
+    }
+    builder.addAssertion(label, JSON.stringify(body.assertion), "Json");
     const output = { buffer: null };
     builder.sign(localSigner, { buffer: bytes, mimeType: body.mediaType }, output);
     if (!Buffer.isBuffer(output.buffer)) throw new Error("C2PA SDK did not produce an output buffer");
-    const inspection = await inspect(output.buffer, body.mediaType);
+    const inspection = await inspect(output.buffer, body.mediaType, label);
     if (canonicalJson(inspection.assertion) !== canonicalJson(body.assertion)) {
       throw new Error("embedded C2PA assertion does not match requested assertion");
     }
@@ -129,7 +137,7 @@ export async function createC2paNodeSigner({
     const verifiedAt = now();
     try {
       const bytes = bytesFromBase64(body.bytesBase64);
-      const inspection = await inspect(bytes, body.mediaType);
+      const inspection = await inspect(bytes, body.mediaType, assertionLabel(body.assertionLabel));
       return {
         valid: true,
         format: FORMAT,
