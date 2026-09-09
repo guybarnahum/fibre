@@ -169,7 +169,7 @@ test("B1 rejects wrong provenance and unusable identity photos without opening t
   assert.equal(admissions.getAcceptedByWorkflowId(workflow.workflowId), null);
 }));
 
-test("B2 derives only when no usable photo exists and sends the generated result through B1", async () => withHarness(async ({ authority, workflow, setSource, setInspection }) => {
+test("B2 derives when the current photo is absent or unsuitable, but never bypasses B1", async () => withHarness(async ({ authority, workflow, setSource, setInspection }) => {
   const existing = await authority.ensureFidPhoto({ workflowId: workflow.workflowId });
   assert.equal(existing.state, "accepted");
   assert.equal(existing.derivation, null);
@@ -207,20 +207,32 @@ test("B2 derives only when no usable photo exists and sends the generated result
   assert.equal(reused.reused, true);
   assert.equal(reused.admission.receipt.admissionId, admitted.admission.receipt.admissionId);
 
-  const rejectedWorkflow = authority.issueFidCard({
+  const unsuitableWorkflow = authority.issueFidCard({
     threadId: "thr_mira",
     reason: "replacement",
-    idempotencyKey: "b2_mira_rejected",
+    idempotencyKey: "b2_mira_unsuitable",
   }).workflow;
   setSource(source({
-    candidatePhotoRef: "obj_bad_present",
+    candidatePhotoRef: "obj_old_unsuitable",
     candidatePhotoDigest: `sha256:${"d".repeat(64)}`,
-    derivationReceiptRef: "gen_bad_present",
+    derivationReceiptRef: "gen_old_unsuitable",
+    targetAgeYears: 35,
   }));
   setInspection(inspection({ faceCount: 2 }));
-  const rejected = await authority.ensureFidPhoto({ workflowId: rejectedWorkflow.workflowId });
-  assert.equal(rejected.state, "rejected");
-  assert.equal(rejected.progressionAllowed, false);
-  assert.equal(rejected.derivation, null);
-  assert.ok(rejected.admission.receipt.reasons.includes("face_count_not_one"));
+  const replacement = await authority.ensureFidPhoto({ workflowId: unsuitableWorkflow.workflowId });
+  assert.equal(replacement.state, "derivation_requested");
+  assert.ok(replacement.admission.receipt.reasons.includes("face_count_not_one"));
+
+  setSource(source({
+    candidatePhotoRef: replacement.derivation.job.outputObjectRef,
+    candidatePhotoDigest: `sha256:${"e".repeat(64)}`,
+    derivationReceiptRef: replacement.derivation.job.receiptObjectRef,
+    sourceReferences: ["obj_visual_mira", "emb_mira", replacement.derivation.job.receiptObjectRef],
+    targetAgeYears: 35,
+  }));
+  const rejectedDerived = await authority.ensureFidPhoto({ workflowId: unsuitableWorkflow.workflowId });
+  assert.equal(rejectedDerived.state, "rejected");
+  assert.equal(rejectedDerived.progressionAllowed, false);
+  assert.equal(rejectedDerived.derivation, null);
+  assert.ok(rejectedDerived.admission.receipt.reasons.includes("face_count_not_one"));
 }));
