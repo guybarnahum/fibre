@@ -33,6 +33,10 @@ function nonEmpty(name, value) {
   return value;
 }
 
+function assertSourceMatches(source, pattern, label) {
+  assert.equal(pattern.test(source), true, `${label}: missing pattern ${pattern}`);
+}
+
 async function fixturePublisherFromWorker() {
   const source = await readFile(workerUrl, "utf8");
   const digestStart = source.indexOf("function fixtureBundleDigests(bundle)");
@@ -82,23 +86,24 @@ function streamAdvanceEvent({ threadId, channelId }) {
 
 test("Cloudflare live fixture harness is generic, repeatable and remains explicitly dev-only", async () => {
   const source = await readFile(workerUrl, "utf8");
+  const label = "thread-presentation Cloudflare worker fixture harness";
 
-  assert.match(source, /env\.P3_FIXTURE_MODE !== "1"/);
-  assert.match(source, /\/__p3\/fixtures\/thread/);
-  assert.match(source, /\/__p3\/fixtures\/generate/);
-  assert.match(source, /body\.threadId/);
-  assert.match(source, /body\.mediaId/);
-  assert.match(source, /presentation\?\.manifest\?\.fixture !== true/);
-  assert.match(source, /normalizeThreadPresentationBundle/);
-  assert.match(source, /threadPresentationPacketDigest/);
-  assert.match(source, /threadMediaPacketDigest/);
-  assert.match(source, /presentationProvenanceDigest/);
-  assert.match(source, /presentationServer\.getSnapshot\(channelId\)/);
-  assert.match(source, /reused: true/,
+  assertSourceMatches(source, /env\.P3_FIXTURE_MODE !== "1"/, label);
+  assertSourceMatches(source, /\/__p3\/fixtures\/thread/, label);
+  assertSourceMatches(source, /\/__p3\/fixtures\/generate/, label);
+  assertSourceMatches(source, /body\.threadId/, label);
+  assertSourceMatches(source, /body\.mediaId/, label);
+  assertSourceMatches(source, /presentation\?\.manifest\?\.fixture !== true/, label);
+  assertSourceMatches(source, /normalizeThreadPresentationBundle/, label);
+  assertSourceMatches(source, /threadPresentationPacketDigest/, label);
+  assertSourceMatches(source, /threadMediaPacketDigest/, label);
+  assertSourceMatches(source, /presentationProvenanceDigest/, label);
+  assertSourceMatches(source, /presentationServer\.getSnapshot\(channelId\)/, label);
+  assertSourceMatches(source, /reused: true/,
     "re-seeding an identical fixture must reuse the existing immutable snapshot even after stream events advance");
-  assert.match(source, /already seeded with different content/,
+  assertSourceMatches(source, /already seeded with different content/,
     "the repeatable fixture seam must still reject a different bundle under the same fixture Thread");
-  assert.match(source, /\/__p3\/fixtures\/can-tho\/generate-market/,
+  assertSourceMatches(source, /\/__p3\/fixtures\/can-tho\/generate-market/,
     "existing Cần Thơ P3 endpoint should remain as a compatibility alias");
 });
 
