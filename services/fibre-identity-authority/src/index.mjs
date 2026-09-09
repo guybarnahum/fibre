@@ -35,6 +35,22 @@ export {
 } from "./fid-card-registry.mjs";
 
 export {
+  FID_PHOTO_ADMISSION_VERSION,
+  FID_PHOTO_POLICY_VERSION,
+  buildFidPhotoAdmissionReceipt,
+  fidPhotoAdmissionDigest,
+  fidPhotoAdmissionIdentity,
+  normalizeFidPhotoAdmissionReceipt,
+  normalizeFidPhotoInspection,
+  normalizeFidPhotoSource,
+} from "./fid-photo-admission.mjs";
+
+export {
+  FidPhotoAdmissionIntegrityError,
+  FidPhotoAdmissionStore,
+} from "./fid-photo-admission-store.mjs";
+
+export {
   FidCivilRegistrationNotFoundError,
   createFibreIdentityAuthority,
 } from "./fibre-identity-authority.mjs";
