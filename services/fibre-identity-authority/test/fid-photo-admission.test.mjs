@@ -24,6 +24,7 @@ function storage(path) {
 
 function source(overrides = {}) {
   return {
+    role: "official_id_photo",
     threadId: "thr_mira",
     candidatePhotoRef: "obj_photo_mira",
     candidatePhotoDigest: PHOTO_DIGEST,
