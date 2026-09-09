@@ -47,6 +47,14 @@ export {
 } from "./fid-photo-derivation.mjs";
 
 export {
+  FID_CARD_SIZE,
+  FID_CARD_TEMPLATE_VERSION,
+  createFidCardTemplate,
+  fidRenderPhotoDigest,
+  renderFidCard,
+} from "./fid-card-renderer.mjs";
+
+export {
   FidCivilRegistrationNotFoundError,
   createFibreIdentityAuthority,
 } from "./fibre-identity-authority.mjs";
