@@ -4,6 +4,10 @@ import {
 } from "./fid-card-issuance-domain.mjs";
 import { FidIssuanceIdempotencyConflictError } from "./fid-card-issuance-store.mjs";
 import { FID_PHOTO_POLICY_VERSION, buildFidPhotoAdmission } from "./fid-photo-admission.mjs";
+import {
+  FidPhotoDerivationUnavailableError,
+  buildFidPhotoDerivationJob,
+} from "./fid-photo-derivation.mjs";
 
 export class FidCivilRegistrationNotFoundError extends Error {}
 
@@ -30,7 +34,7 @@ function assertIssuanceStore(issuanceStore) {
 function workflowIdOnly(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
     || Object.keys(value).length !== 1 || typeof value.workflowId !== "string" || value.workflowId.trim() === "") {
-    throw new TypeError("FID photo admission request must contain exactly: workflowId");
+    throw new TypeError("FID photo request must contain exactly: workflowId");
   }
   return value.workflowId;
 }
@@ -41,6 +45,8 @@ export function createFibreIdentityAuthority({
   photoSource = null,
   photoExaminer = null,
   photoAdmissionStore = null,
+  photoGeneration = null,
+  photoGenerationProviderProfile = null,
   now = () => new Date().toISOString(),
 } = {}) {
   const civil = assertCivilRegistry(civilRegistry);
@@ -70,13 +76,13 @@ export function createFibreIdentityAuthority({
     });
   }
 
-  async function admitFidPhoto(request) {
-    const workflow = workflows.getByWorkflowId(workflowIdOnly(request)).workflow;
+  function requirePhotoAdmission() {
     if (!photoSource?.resolveCandidate || !photoExaminer?.inspect || !photoAdmissionStore?.record) {
       throw new TypeError("FID photo admission dependencies are not configured");
     }
+  }
 
-    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt });
+  async function admitResolvedPhoto(workflow, source) {
     const inspection = source?.candidatePhotoRef == null ? null : await photoExaminer.inspect({
       source,
       threadId: workflow.threadId,
@@ -91,5 +97,73 @@ export function createFibreIdentityAuthority({
     return Object.freeze({ ...stored, progressionAllowed: stored.receipt.decision === "accepted" });
   }
 
-  return Object.freeze({ issueFidCard, admitFidPhoto });
+  async function admitFidPhoto(request) {
+    const workflow = workflows.getByWorkflowId(workflowIdOnly(request)).workflow;
+    requirePhotoAdmission();
+    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt });
+    return admitResolvedPhoto(workflow, source);
+  }
+
+  async function ensureFidPhoto(request) {
+    const workflow = workflows.getByWorkflowId(workflowIdOnly(request)).workflow;
+    if (typeof photoAdmissionStore?.getAcceptedByWorkflowId !== "function") {
+      throw new TypeError("FID photo admission store is not configured for fallback derivation");
+    }
+    const accepted = photoAdmissionStore.getAcceptedByWorkflowId(workflow.workflowId, { required: false });
+    if (accepted !== null) {
+      return Object.freeze({
+        state: "accepted",
+        progressionAllowed: true,
+        reused: true,
+        admission: accepted,
+        derivation: null,
+      });
+    }
+
+    requirePhotoAdmission();
+    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt });
+    const admission = await admitResolvedPhoto(workflow, source);
+    if (admission.progressionAllowed) {
+      return Object.freeze({
+        state: "accepted",
+        progressionAllowed: true,
+        reused: false,
+        admission,
+        derivation: null,
+      });
+    }
+    if (typeof photoGeneration?.request !== "function") {
+      throw new TypeError("FID photo fallback requires the Asset Generation service");
+    }
+
+    let job;
+    try {
+      job = buildFidPhotoDerivationJob({
+        workflow,
+        source,
+        requestedAt: now(),
+        providerProfile: photoGenerationProviderProfile,
+      });
+    } catch (error) {
+      if (!(error instanceof FidPhotoDerivationUnavailableError)) throw error;
+      return Object.freeze({
+        state: "rejected",
+        progressionAllowed: false,
+        reused: false,
+        admission,
+        derivation: null,
+      });
+    }
+
+    const derivation = await photoGeneration.request(job);
+    return Object.freeze({
+      state: "derivation_requested",
+      progressionAllowed: false,
+      reused: false,
+      admission,
+      derivation,
+    });
+  }
+
+  return Object.freeze({ issueFidCard, admitFidPhoto, ensureFidPhoto });
 }
