@@ -57,8 +57,9 @@ function machineEnvelope(value) {
   if (!Number.isSafeInteger(value.routing.revision) || value.routing.revision < 1) throw new TypeError("FID credential revision is invalid");
   digest("FID front render digest", value.routing.frontRenderDigest);
   digest("FID back render digest", value.routing.backRenderDigest);
-  digest("FID encrypted credential digest", value.encryptedCredentialDigest);
-  nonEmpty("FID encrypted credential", value.encryptedCredentialBase64);
+  const encryptedDigest = digest("FID encrypted credential digest", value.encryptedCredentialDigest);
+  const encryptedBytes = Buffer.from(nonEmpty("FID encrypted credential", value.encryptedCredentialBase64), "base64");
+  if (sha256(encryptedBytes) !== encryptedDigest) throw new TypeError("FID encrypted credential digest mismatch");
   return value;
 }
 
