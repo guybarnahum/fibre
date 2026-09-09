@@ -55,6 +55,18 @@ export {
 } from "./fid-card-renderer.mjs";
 
 export {
+  FIBRE_IDENTITY_AUTHORITY_ID,
+  FID_MACHINE_CREDENTIAL_SCHEMA,
+  FID_MACHINE_ENVELOPE_VERSION,
+  buildFidMachineCredentialPayload,
+  fidMachineCredentialBytes,
+  openFidMachineCredential,
+  sealFidMachineCredential,
+  signFidMachineCredentialPayload,
+  verifyFidMachineCredentialSignature,
+} from "./fid-machine-credential.mjs";
+
+export {
   FidCivilRegistrationNotFoundError,
   createFibreIdentityAuthority,
 } from "./fibre-identity-authority.mjs";
