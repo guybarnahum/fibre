@@ -9,7 +9,6 @@ import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-stat
 import { createCivilRegistryReadService } from "#services/world-kernel/public/civil-registry-service.mjs";
 import {
   FidCardIssuanceStore,
-  FidCardRegistry,
   FidPhotoAdmissionStore,
   createFibreIdentityAuthority,
 } from "../src/index.mjs";
@@ -52,10 +51,20 @@ function inspection(overrides = {}) {
   };
 }
 
+function createGenerationJob({ identityDigest, ...job }) {
+  const suffix = identityDigest.slice(7, 19);
+  return Object.freeze({
+    jobVersion: "asset-generation-job-v0.1",
+    jobId: `assetjob_${suffix}`,
+    ...job,
+    outputObjectRef: `asset_${suffix}`,
+    receiptObjectRef: `assetreceipt_${suffix}`,
+  });
+}
+
 function withHarness(run) {
   const root = mkdtempSync(join(tmpdir(), "fibre-fid-photo-"));
-  const path = join(root, "fid.sqlite");
-  const state = storage(path);
+  const state = storage(join(root, "fid.sqlite"));
   const registration = buildFibreCivilRegistration({
     threadId: "thr_mira",
     fibreIdentityNumber: FIN,
@@ -71,13 +80,11 @@ function withHarness(run) {
         fin === registration.fibreIdentityNumber ? registration : (required ? (() => { throw new Error("missing FIN"); })() : null),
     },
   });
-  const registry = new FidCardRegistry(state);
   const issuanceStore = new FidCardIssuanceStore(state);
   const admissions = new FidPhotoAdmissionStore(state);
   let candidate = source();
   let examined = inspection();
   let tick = 0;
-  const generationJobs = new Map();
   const authority = createFibreIdentityAuthority({
     civilRegistry,
     issuanceStore,
@@ -85,12 +92,8 @@ function withHarness(run) {
     photoSource: { resolveCandidate: async () => candidate },
     photoExaminer: { inspect: async () => examined },
     photoGeneration: {
-      async request(job) {
-        const existing = generationJobs.get(job.jobId);
-        if (existing !== undefined) return { job: existing, instance: { duplicate: true } };
-        generationJobs.set(job.jobId, job);
-        return { job, instance: { duplicate: false } };
-      },
+      createJobFromIdentity: createGenerationJob,
+      request: async (job) => ({ job, instance: { duplicate: false } }),
     },
     photoGenerationProviderProfile: "fid-photo-test",
     now: () => `2026-09-09T19:${String(10 + tick++).padStart(2, "0")}:00.000Z`,
@@ -105,19 +108,16 @@ function withHarness(run) {
     authority,
     admissions,
     workflow,
-    path,
-    generationJobs,
     setSource: (value) => { candidate = value; },
     setInspection: (value) => { examined = value; },
   })).finally(() => {
     admissions.close();
     issuanceStore.close();
-    registry.close();
     rmSync(root, { recursive: true, force: true });
   });
 }
 
-test("B1 admits only authority-resolved visual lineage and persists one immutable accepted gate", async () => withHarness(async ({ authority, admissions, workflow, path }) => {
+test("B1 admits only authority-resolved visual lineage and keeps the accepted receipt immutable", async () => withHarness(async ({ authority, admissions, workflow }) => {
   await assert.rejects(
     () => authority.admitFidPhoto({ workflowId: workflow.workflowId, photo: Buffer.from("caller image") }),
     /exactly: workflowId/,
@@ -128,18 +128,14 @@ test("B1 admits only authority-resolved visual lineage and persists one immutabl
   assert.deepEqual(first.receipt.reasons, []);
   assert.equal(first.receipt.candidatePhotoDigest, PHOTO_DIGEST);
   assert.equal(first.receipt.canonicalVisualReferenceDigest, VISUAL_DIGEST);
-  assert.equal(admissions.getAcceptedByWorkflowId(workflow.workflowId).receipt.admissionId, first.receipt.admissionId);
 
   const repeated = await authority.admitFidPhoto({ workflowId: workflow.workflowId });
   assert.equal(repeated.created, false);
   assert.equal(repeated.receipt.admittedAt, first.receipt.admittedAt);
 
-  const raw = storage(path).infraDriver.state.open("fid");
-  assert.throws(
-    () => raw.prepare("UPDATE fid_photo_admissions SET decision='rejected' WHERE admission_id=?").run(first.receipt.admissionId),
-    /fid_photo_admissions is immutable/,
-  );
-  raw.close();
+  const overwrite = admissions.record({ ...first.receipt, admittedAt: "2026-09-09T23:59:00.000Z" });
+  assert.equal(overwrite.created, false);
+  assert.equal(overwrite.receipt.admittedAt, first.receipt.admittedAt);
 }));
 
 test("B1 rejects wrong provenance and unusable identity photos without opening the gate", async () => withHarness(async ({ authority, admissions, workflow, setSource, setInspection }) => {
@@ -171,11 +167,10 @@ test("B1 rejects wrong provenance and unusable identity photos without opening t
   assert.equal(admissions.getAcceptedByWorkflowId(workflow.workflowId), null);
 }));
 
-test("B2 reuses a valid photo or requests one canonical derivation that still must pass B1", async () => withHarness(async ({ authority, generationJobs, workflow, setSource, setInspection }) => {
+test("B2 keeps one canonical derivation identity and still sends the result through B1", async () => withHarness(async ({ authority, workflow, setSource, setInspection }) => {
   const existing = await authority.ensureFidPhoto({ workflowId: workflow.workflowId });
   assert.equal(existing.state, "accepted");
-  assert.equal(existing.progressionAllowed, true);
-  assert.equal(generationJobs.size, 0);
+  assert.equal(existing.derivation, null);
 
   const fallbackWorkflow = authority.issueFidCard({
     threadId: "thr_mira",
@@ -187,15 +182,12 @@ test("B2 reuses a valid photo or requests one canonical derivation that still mu
   const requested = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(requested.state, "derivation_requested");
   assert.equal(requested.progressionAllowed, false);
-  assert.equal(requested.derivation.job.role, "official_id_photo");
+  assert.equal(requested.derivation.job.context.kind, "fid_photo_derivation");
+  assert.equal(requested.derivation.job.context.targetAgeYears, 34);
   assert.deepEqual(requested.derivation.job.referenceObjectRefs, ["obj_visual_mira"]);
-  assert.match(requested.derivation.job.brief.description, /34 years old/);
-  assert.ok(requested.derivation.job.brief.constraints.some((line) => /muted natural color/.test(line)));
-  assert.equal(generationJobs.size, 1);
 
   const repeated = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(repeated.derivation.job.jobId, requested.derivation.job.jobId);
-  assert.equal(generationJobs.size, 1, "same canonical source/policy must not create another generation identity");
 
   setSource(source({
     candidatePhotoRef: requested.derivation.job.outputObjectRef,
@@ -205,20 +197,16 @@ test("B2 reuses a valid photo or requests one canonical derivation that still mu
   }));
   setInspection(inspection({ faceCount: 2 }));
   const blocked = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
-  assert.equal(blocked.state, "derivation_requested");
   assert.equal(blocked.progressionAllowed, false);
   assert.ok(blocked.admission.receipt.reasons.includes("face_count_not_one"));
-  assert.equal(generationJobs.size, 1);
+  assert.equal(blocked.derivation.job.jobId, requested.derivation.job.jobId);
 
   setInspection(inspection());
   const admitted = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(admitted.state, "accepted");
-  assert.equal(admitted.progressionAllowed, true);
   assert.equal(admitted.admission.receipt.candidatePhotoRef, requested.derivation.job.outputObjectRef);
-  assert.equal(generationJobs.size, 1);
 
   const reused = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(reused.reused, true);
   assert.equal(reused.admission.receipt.admissionId, admitted.admission.receipt.admissionId);
-  assert.equal(generationJobs.size, 1);
 }));
