@@ -18,6 +18,14 @@ const EXPECTED_MEMORY =
 const EXPECTED_REQUEST_FINGERPRINT =
   "sha256:7d57002e7740d87607bcd6dba441009a059fa3af4fddc173337e951bd417fba2";
 
+function assertSourceMatches(source, pattern, label) {
+  assert.equal(pattern.test(source), true, `${label}: missing pattern ${pattern}`);
+}
+
+function assertSourceDoesNotMatch(source, pattern, label) {
+  assert.equal(pattern.test(source), false, `${label}: forbidden pattern ${pattern}`);
+}
+
 test("sealed history evidence is committed and self-consistent with Candidate 4 and standing v4", () => {
   const bundle = readSealedHistoryStandingEvidence();
   assert.equal(bundle.cycleSealed, true);
@@ -91,9 +99,17 @@ test("history standing inspector is structurally read-only and has no provider r
     new URL("./history-bends-judgment-sealed-inspector.mjs", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(source, /createModelRuntime|semanticDignityGuardian|model-runtime|OPENAI_API_KEY/);
-  assert.doesNotMatch(source, /runHistoryStandingProof|runSealedHistoryStandingGate/);
-  assert.match(source, /READ-ONLY/);
+  assertSourceDoesNotMatch(
+    source,
+    /createModelRuntime|semanticDignityGuardian|model-runtime|OPENAI_API_KEY/,
+    "history standing inspector",
+  );
+  assertSourceDoesNotMatch(
+    source,
+    /runHistoryStandingProof|runSealedHistoryStandingGate/,
+    "history standing inspector",
+  );
+  assertSourceMatches(source, /READ-ONLY/, "history standing inspector");
 });
 
 test("history standing inspector CLI defaults to summary and rejects unknown options", () => {
