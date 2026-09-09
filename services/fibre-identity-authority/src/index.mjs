@@ -8,7 +8,33 @@ export {
 } from "./fid-card-domain.mjs";
 
 export {
+  FID_ISSUANCE_REASONS,
+  FID_ISSUANCE_WORKFLOW_STATES,
+  FID_ISSUANCE_WORKFLOW_VERSION,
+  fidIssuanceRequestDigest,
+  fidIssuanceRequestMatchesWorkflow,
+  fidIssuanceWorkflowDigest,
+  fidIssuanceWorkflowId,
+  fidProposedCredentialId,
+  normalizeFidIssuanceReason,
+  normalizeFidIssuanceRequest,
+  normalizeFidIssuanceWorkflowRecord,
+  normalizeFidIssuanceWorkflowState,
+} from "./fid-card-issuance-domain.mjs";
+
+export {
+  FidCardIssuanceStore,
+  FidIssuanceIdempotencyConflictError,
+  FidIssuanceWorkflowIntegrityError,
+} from "./fid-card-issuance-store.mjs";
+
+export {
   FidActiveCredentialConflictError,
   FidCardRegistry,
   FidCredentialIntegrityError,
 } from "./fid-card-registry.mjs";
+
+export {
+  FidCivilRegistrationNotFoundError,
+  createFibreIdentityAuthority,
+} from "./fibre-identity-authority.mjs";
