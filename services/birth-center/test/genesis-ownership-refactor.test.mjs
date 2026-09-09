@@ -41,6 +41,10 @@ async function exists(url) {
   }
 }
 
+function assertSourceDoesNotMatch(source, pattern, label) {
+  assert.equal(pattern.test(source), false, `${label}: forbidden pattern ${pattern}`);
+}
+
 const rawDigest = (value) => `sha256:${sha256(value)}`;
 
 test("Birth Center is the sole provider-facing Genesis generation owner", async () => {
@@ -60,8 +64,8 @@ test("Birth Center is the sole provider-facing Genesis generation owner", async 
   for (const name of await readdir(WORLD_SRC)) {
     if (!name.startsWith("genesis-") || !name.endsWith(".mjs")) continue;
     const source = await readFile(new URL(name, WORLD_SRC), "utf8");
-    assert.doesNotMatch(source, /adapter\.invoke\s*\(/u, `${name} must remain provider-free`);
-    assert.doesNotMatch(source, /resolvePromptAsset/u, `${name} must not resolve provider prompts`);
+    assertSourceDoesNotMatch(source, /adapter\.invoke\s*\(/u, `${name} must remain provider-free`);
+    assertSourceDoesNotMatch(source, /resolvePromptAsset/u, `${name} must not resolve provider prompts`);
   }
 });
 
