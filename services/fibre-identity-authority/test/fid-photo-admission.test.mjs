@@ -9,6 +9,7 @@ import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-stat
 import { createCivilRegistryReadService } from "#services/world-kernel/public/civil-registry-service.mjs";
 import {
   FidCardIssuanceStore,
+  FidCardRegistry,
   FidPhotoAdmissionStore,
   createFibreIdentityAuthority,
 } from "../src/index.mjs";
@@ -80,11 +81,13 @@ function withHarness(run) {
         fin === registration.fibreIdentityNumber ? registration : (required ? (() => { throw new Error("missing FIN"); })() : null),
     },
   });
+  const registry = new FidCardRegistry(state);
   const issuanceStore = new FidCardIssuanceStore(state);
   const admissions = new FidPhotoAdmissionStore(state);
   let candidate = source();
   let examined = inspection();
   let tick = 0;
+  const generationJobs = new Map();
   const authority = createFibreIdentityAuthority({
     civilRegistry,
     issuanceStore,
@@ -93,7 +96,12 @@ function withHarness(run) {
     photoExaminer: { inspect: async () => examined },
     photoGeneration: {
       createJobFromIdentity: createGenerationJob,
-      request: async (job) => ({ job, instance: { duplicate: false } }),
+      async request(job) {
+        const existing = generationJobs.get(job.jobId);
+        if (existing !== undefined) return { job: existing, instance: { duplicate: true } };
+        generationJobs.set(job.jobId, job);
+        return { job, instance: { duplicate: false } };
+      },
     },
     photoGenerationProviderProfile: "fid-photo-test",
     now: () => `2026-09-09T19:${String(10 + tick++).padStart(2, "0")}:00.000Z`,
@@ -108,11 +116,13 @@ function withHarness(run) {
     authority,
     admissions,
     workflow,
+    generationJobs,
     setSource: (value) => { candidate = value; },
     setInspection: (value) => { examined = value; },
   })).finally(() => {
     admissions.close();
     issuanceStore.close();
+    registry.close();
     rmSync(root, { recursive: true, force: true });
   });
 }
@@ -167,10 +177,11 @@ test("B1 rejects wrong provenance and unusable identity photos without opening t
   assert.equal(admissions.getAcceptedByWorkflowId(workflow.workflowId), null);
 }));
 
-test("B2 keeps one canonical derivation identity and still sends the result through B1", async () => withHarness(async ({ authority, workflow, setSource, setInspection }) => {
+test("B2 derives only when no usable photo exists and sends the generated result through B1", async () => withHarness(async ({ authority, generationJobs, workflow, setSource, setInspection }) => {
   const existing = await authority.ensureFidPhoto({ workflowId: workflow.workflowId });
   assert.equal(existing.state, "accepted");
   assert.equal(existing.derivation, null);
+  assert.equal(generationJobs.size, 0);
 
   const fallbackWorkflow = authority.issueFidCard({
     threadId: "thr_mira",
@@ -185,9 +196,11 @@ test("B2 keeps one canonical derivation identity and still sends the result thro
   assert.equal(requested.derivation.job.context.kind, "fid_photo_derivation");
   assert.equal(requested.derivation.job.context.targetAgeYears, 34);
   assert.deepEqual(requested.derivation.job.referenceObjectRefs, ["obj_visual_mira"]);
+  assert.equal(generationJobs.size, 1);
 
   const repeated = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(repeated.derivation.job.jobId, requested.derivation.job.jobId);
+  assert.equal(generationJobs.size, 1);
 
   setSource(source({
     candidatePhotoRef: requested.derivation.job.outputObjectRef,
@@ -195,18 +208,32 @@ test("B2 keeps one canonical derivation identity and still sends the result thro
     derivationReceiptRef: requested.derivation.job.receiptObjectRef,
     sourceReferences: ["obj_visual_mira", "emb_mira", requested.derivation.job.receiptObjectRef],
   }));
-  setInspection(inspection({ faceCount: 2 }));
-  const blocked = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
-  assert.equal(blocked.progressionAllowed, false);
-  assert.ok(blocked.admission.receipt.reasons.includes("face_count_not_one"));
-  assert.equal(blocked.derivation.job.jobId, requested.derivation.job.jobId);
-
   setInspection(inspection());
   const admitted = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(admitted.state, "accepted");
+  assert.equal(admitted.progressionAllowed, true);
   assert.equal(admitted.admission.receipt.candidatePhotoRef, requested.derivation.job.outputObjectRef);
+  assert.equal(generationJobs.size, 1);
 
   const reused = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(reused.reused, true);
   assert.equal(reused.admission.receipt.admissionId, admitted.admission.receipt.admissionId);
+
+  const rejectedWorkflow = authority.issueFidCard({
+    threadId: "thr_mira",
+    reason: "replacement",
+    idempotencyKey: "b2_mira_rejected",
+  }).workflow;
+  setSource(source({
+    candidatePhotoRef: "obj_bad_present",
+    candidatePhotoDigest: `sha256:${"d".repeat(64)}`,
+    derivationReceiptRef: "gen_bad_present",
+  }));
+  setInspection(inspection({ faceCount: 2 }));
+  const rejected = await authority.ensureFidPhoto({ workflowId: rejectedWorkflow.workflowId });
+  assert.equal(rejected.state, "rejected");
+  assert.equal(rejected.progressionAllowed, false);
+  assert.equal(rejected.derivation, null);
+  assert.ok(rejected.admission.receipt.reasons.includes("face_count_not_one"));
+  assert.equal(generationJobs.size, 1, "a present rejected candidate must not trigger another portrait derivation");
 }));
