@@ -42,6 +42,14 @@ function issuerProfile(value) {
   });
 }
 
+function issuerProfileMatches(value, expected) {
+  try {
+    return JSON.stringify(canonical(issuerProfile(value))) === JSON.stringify(canonical(expected));
+  } catch {
+    return false;
+  }
+}
+
 function signer(value) {
   if (!value || typeof value.sign !== "function" || typeof value.verify !== "function") {
     throw new TypeError("FID issuer signer must expose sign() and verify()");
@@ -140,6 +148,9 @@ export function fidMachineCredentialBytes(payload) { return bytes(payload); }
 
 export async function signFidMachineCredentialPayload(payload, issuerSigner) {
   const checkedSigner = signer(issuerSigner);
+  if (!issuerProfileMatches(payload?.issuer, checkedSigner.profile)) {
+    throw new TypeError("FID payload issuer profile does not match signer profile");
+  }
   const canonicalBytes = fidMachineCredentialBytes(payload);
   const signatureBytes = await checkedSigner.sign(canonicalBytes);
   if (!(signatureBytes instanceof Uint8Array)) throw new TypeError("FID issuer sign() must return Uint8Array");
@@ -157,8 +168,7 @@ export async function signFidMachineCredentialPayload(payload, issuerSigner) {
 export async function verifyFidMachineCredentialSignature(signedCredential, issuerSigner) {
   const checkedSigner = signer(issuerSigner);
   if (!signedCredential?.payload || !signedCredential?.signature) return false;
-  if (signedCredential.payload.issuer?.authorityId !== checkedSigner.profile.authorityId
-    || signedCredential.payload.issuer?.keyId !== checkedSigner.profile.keyId
+  if (!issuerProfileMatches(signedCredential.payload.issuer, checkedSigner.profile)
     || signedCredential.signature.authorityId !== checkedSigner.profile.authorityId
     || signedCredential.signature.keyId !== checkedSigner.profile.keyId) return false;
   const canonicalBytes = fidMachineCredentialBytes(signedCredential.payload);
@@ -186,8 +196,8 @@ function aadFor(envelope) {
 export async function sealFidMachineCredential({ payload, issuerSigner, credentialProtector }) {
   const checkedSigner = signer(issuerSigner);
   const checkedProtector = protector(credentialProtector);
-  if (payload?.issuer?.authorityId !== checkedSigner.profile.authorityId || payload?.issuer?.keyId !== checkedSigner.profile.keyId) {
-    throw new TypeError("FID payload issuer does not match signer profile");
+  if (!issuerProfileMatches(payload?.issuer, checkedSigner.profile)) {
+    throw new TypeError("FID payload issuer profile does not match signer profile");
   }
   const signed = await signFidMachineCredentialPayload(payload, checkedSigner);
   const envelope = {
