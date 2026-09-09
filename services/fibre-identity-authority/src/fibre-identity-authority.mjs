@@ -132,7 +132,7 @@ export function createFibreIdentityAuthority({
         derivation: null,
       });
     }
-    if (typeof photoGeneration?.request !== "function") {
+    if (typeof photoGeneration?.request !== "function" || typeof photoGeneration?.createJobFromIdentity !== "function") {
       throw new TypeError("FID photo fallback requires the Asset Generation service");
     }
 
@@ -143,6 +143,7 @@ export function createFibreIdentityAuthority({
         source,
         requestedAt: now(),
         providerProfile: photoGenerationProviderProfile,
+        createGenerationJob: (options) => photoGeneration.createJobFromIdentity(options),
       });
     } catch (error) {
       if (!(error instanceof FidPhotoDerivationUnavailableError)) throw error;
