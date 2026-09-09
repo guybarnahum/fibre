@@ -4,10 +4,10 @@ import test from "node:test";
 
 import { buildFibreCivilRegistration } from "#core/src/fibre-civil-identity.mjs";
 import { createMemoryInfraDriver } from "#infra/providers/local";
+import { buildFidIssuanceWorkflowRecord } from "../src/fid-card-issuance-domain.mjs";
 import {
   FIBRE_IDENTITY_AUTHORITY_ID,
   FID_C2PA_ASSERTION_LABEL,
-  buildFidIssuanceWorkflowRecord,
   buildFidMachineCredentialPayload,
   buildFidPhotoAdmission,
   credentialAndStoreFidCard,
