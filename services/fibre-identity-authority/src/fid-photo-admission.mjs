@@ -86,6 +86,17 @@ export function normalizeFidPhotoSource(value) {
   if ((sourceKind === null) !== (candidatePhotoRef === null) || (candidatePhotoRef === null) !== (candidatePhotoDigest === null)) {
     throw new TypeError("FID photo source candidate identity must be entirely present or absent");
   }
+  const canonicalVisualReferenceRef = nullableId(
+    "FID photo source.canonicalVisualReferenceRef",
+    value.canonicalVisualReferenceRef,
+  );
+  const canonicalVisualReferenceDigest = nullableDigest(
+    "FID photo source.canonicalVisualReferenceDigest",
+    value.canonicalVisualReferenceDigest,
+  );
+  if ((canonicalVisualReferenceRef === null) !== (canonicalVisualReferenceDigest === null)) {
+    throw new TypeError("FID photo source canonical visual reference must be entirely present or absent");
+  }
   const targetAgeYears = value.targetAgeYears;
   if (targetAgeYears !== null && (!Number.isSafeInteger(targetAgeYears) || targetAgeYears < 0)) {
     throw new TypeError("FID photo source.targetAgeYears must be a non-negative integer or null");
@@ -95,8 +106,8 @@ export function normalizeFidPhotoSource(value) {
     threadId: id("FID photo source.threadId", value.threadId),
     candidatePhotoRef,
     candidatePhotoDigest,
-    canonicalVisualReferenceRef: nullableId("FID photo source.canonicalVisualReferenceRef", value.canonicalVisualReferenceRef),
-    canonicalVisualReferenceDigest: nullableDigest("FID photo source.canonicalVisualReferenceDigest", value.canonicalVisualReferenceDigest),
+    canonicalVisualReferenceRef,
+    canonicalVisualReferenceDigest,
     derivationReceiptRef: nullableId("FID photo source.derivationReceiptRef", value.derivationReceiptRef),
     sourceReferences: refs("FID photo source.sourceReferences", value.sourceReferences),
     targetAgeYears,
@@ -239,24 +250,49 @@ export function normalizeFidPhotoAdmissionReceipt(value) {
   if (!Array.isArray(value.reasons) || !value.reasons.every((reason) => typeof reason === "string" && reason.length > 0)) {
     throw new TypeError("FID photo admission.reasons is invalid");
   }
-  if (!new Set(value.reasons).size === value.reasons.length) throw new TypeError("FID photo admission.reasons must be unique");
+  if (new Set(value.reasons).size !== value.reasons.length) throw new TypeError("FID photo admission.reasons must be unique");
+
+  const admissionId = id("FID photo admission.admissionId", value.admissionId);
+  const candidatePhotoRef = nullableId("FID photo admission.candidatePhotoRef", value.candidatePhotoRef);
+  const candidatePhotoDigest = nullableDigest("FID photo admission.candidatePhotoDigest", value.candidatePhotoDigest);
+  const canonicalVisualReferenceRef = nullableId("FID photo admission.canonicalVisualReferenceRef", value.canonicalVisualReferenceRef);
+  const canonicalVisualReferenceDigest = nullableDigest("FID photo admission.canonicalVisualReferenceDigest", value.canonicalVisualReferenceDigest);
+  const decision = enumValue("FID photo admission.decision", value.decision, ["accepted", "rejected"]);
+  const provenanceDigest = digest("FID photo admission.provenanceDigest", value.provenanceDigest);
+
+  if ((candidatePhotoRef === null) !== (candidatePhotoDigest === null)) {
+    throw new TypeError("FID photo admission candidate identity must be entirely present or absent");
+  }
+  if ((canonicalVisualReferenceRef === null) !== (canonicalVisualReferenceDigest === null)) {
+    throw new TypeError("FID photo admission canonical visual reference must be entirely present or absent");
+  }
+  if ((decision === "accepted") !== (value.reasons.length === 0)) {
+    throw new TypeError("FID photo admission decision does not match rejection reasons");
+  }
+  if (decision === "accepted" && candidatePhotoRef === null) {
+    throw new TypeError("accepted FID photo admission requires a candidate photo");
+  }
+  if (admissionId !== `fidadm_${provenanceDigest.slice("sha256:".length)}`) {
+    throw new TypeError("FID photo admissionId does not match provenance digest");
+  }
+
   return Object.freeze({
     receiptVersion: value.receiptVersion,
-    admissionId: id("FID photo admission.admissionId", value.admissionId),
+    admissionId,
     workflowId: id("FID photo admission.workflowId", value.workflowId),
     threadId: id("FID photo admission.threadId", value.threadId),
-    candidatePhotoRef: nullableId("FID photo admission.candidatePhotoRef", value.candidatePhotoRef),
-    candidatePhotoDigest: nullableDigest("FID photo admission.candidatePhotoDigest", value.candidatePhotoDigest),
-    canonicalVisualReferenceRef: nullableId("FID photo admission.canonicalVisualReferenceRef", value.canonicalVisualReferenceRef),
-    canonicalVisualReferenceDigest: nullableDigest("FID photo admission.canonicalVisualReferenceDigest", value.canonicalVisualReferenceDigest),
+    candidatePhotoRef,
+    candidatePhotoDigest,
+    canonicalVisualReferenceRef,
+    canonicalVisualReferenceDigest,
     derivationReceiptRef: nullableId("FID photo admission.derivationReceiptRef", value.derivationReceiptRef),
     targetAgeYears: value.targetAgeYears,
     faceCount: value.faceCount,
     policyVersion: value.policyVersion,
-    decision: enumValue("FID photo admission.decision", value.decision, ["accepted", "rejected"]),
+    decision,
     reasons: [...value.reasons],
     admittedAt: iso("FID photo admission.admittedAt", value.admittedAt),
-    provenanceDigest: digest("FID photo admission.provenanceDigest", value.provenanceDigest),
+    provenanceDigest,
   });
 }
 
