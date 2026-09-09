@@ -132,6 +132,15 @@ export function createFibreIdentityAuthority({
         derivation: null,
       });
     }
+    if (source?.candidatePhotoRef != null) {
+      return Object.freeze({
+        state: "rejected",
+        progressionAllowed: false,
+        reused: false,
+        admission,
+        derivation: null,
+      });
+    }
     if (typeof photoGeneration?.request !== "function" || typeof photoGeneration?.createJobFromIdentity !== "function") {
       throw new TypeError("FID photo fallback requires the Asset Generation service");
     }
