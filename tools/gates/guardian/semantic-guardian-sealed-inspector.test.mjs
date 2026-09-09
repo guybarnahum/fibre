@@ -12,6 +12,14 @@ import {
 const EXPECTED_PROMPT_HASH =
   "sha256:587c6c04d933cdc052ea08057ee16236883a9c8af44e055a19413fa0ee44acb3";
 
+function assertSourceMatches(source, pattern, label) {
+  assert.equal(pattern.test(source), true, `${label}: missing pattern ${pattern}`);
+}
+
+function assertSourceDoesNotMatch(source, pattern, label) {
+  assert.equal(pattern.test(source), false, `${label}: forbidden pattern ${pattern}`);
+}
+
 test("Semantic Guardian v4 sealed evidence is committed and authoritative", () => {
   const bundle = readSealedSemanticGuardianEvidence();
   assert.equal(bundle.cycleSealed, true);
@@ -31,9 +39,13 @@ test("Semantic Guardian v4 sealed evidence is committed and authoritative", () =
 
 test("Semantic Guardian inspector is structurally read-only", () => {
   const source = readFileSync(new URL("./semantic-guardian-sealed-inspector.mjs", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /createModelRuntime|semanticDignityGuardian|model-runtime|OPENAI_API_KEY/);
-  assert.doesNotMatch(source, /invoke\(|runStanding|runGate/);
-  assert.match(source, /READ-ONLY/);
+  assertSourceDoesNotMatch(
+    source,
+    /createModelRuntime|semanticDignityGuardian|model-runtime|OPENAI_API_KEY/,
+    "Semantic Guardian inspector",
+  );
+  assertSourceDoesNotMatch(source, /invoke\(|runStanding|runGate/, "Semantic Guardian inspector");
+  assertSourceMatches(source, /READ-ONLY/, "Semantic Guardian inspector");
 });
 
 test("Semantic Guardian inspector CLI defaults to summary", () => {
