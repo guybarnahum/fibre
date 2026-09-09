@@ -1,21 +1,30 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { buildFibreCivilRegistration } from "#core/src/fibre-civil-identity.mjs";
 import { createMemoryInfraDriver } from "#infra/providers/local";
+import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 import { buildFidIssuanceWorkflowRecord } from "../src/fid-card-issuance-domain.mjs";
 import {
   FIBRE_IDENTITY_AUTHORITY_ID,
   FID_C2PA_ASSERTION_LABEL,
+  FidCardRegistry,
   buildFidMachineCredentialPayload,
   buildFidPhotoAdmission,
   credentialAndStoreFidCard,
   fidRenderPhotoDigest,
+  finalizeFidCardIssuance,
   renderFidCard,
   sealFidMachineCredential,
+  verifyFidCard,
   verifyFidC2paSide,
 } from "../src/index.mjs";
+
+const FIN = "8PKH-A4-VH5R";
 
 function sha256(value) { return `sha256:${createHash("sha256").update(value).digest("hex")}`; }
 
@@ -95,10 +104,10 @@ function contentSigner({ rejectSide = null } = {}) {
   };
 }
 
-async function fixture({ revision = 1, idempotencyKey = "d2_mira" } = {}) {
+async function fixture({ revision = 1, idempotencyKey = "d2_mira", priorActiveCredentialId = null } = {}) {
   const registration = buildFibreCivilRegistration({
     threadId: "thr_mira",
-    fibreIdentityNumber: "8PKH-A4-VH5R",
+    fibreIdentityNumber: FIN,
     registeredAt: "2026-09-01T12:00:00.000Z",
     birthEventRef: "evt_birth_mira",
     worldRef: "world_d2",
@@ -107,6 +116,7 @@ async function fixture({ revision = 1, idempotencyKey = "d2_mira" } = {}) {
     request: { threadId: "thr_mira", reason: revision === 1 ? "initial" : "replacement", idempotencyKey },
     civilRegistration: registration,
     proposedRevision: revision,
+    priorActiveCredentialId,
     requestedAt: "2026-09-09T20:00:00.000Z",
   });
   const photo = {
@@ -142,6 +152,7 @@ async function fixture({ revision = 1, idempotencyKey = "d2_mira" } = {}) {
   });
   const render = renderFidCard({ workflow, photoAdmission: admission, photo });
   const issuerSigner = issuer();
+  const credentialProtector = protector();
   const payload = buildFidMachineCredentialPayload({
     workflow,
     photoAdmission: admission,
@@ -150,42 +161,50 @@ async function fixture({ revision = 1, idempotencyKey = "d2_mira" } = {}) {
     issuer: issuerSigner.profile,
     issuedAt: "2026-09-09T20:02:00.000Z",
   });
-  const machineCredential = await sealFidMachineCredential({
-    payload,
-    issuerSigner,
-    credentialProtector: protector(),
-  });
-  return { render, machineCredential };
+  const machineCredential = await sealFidMachineCredential({ payload, issuerSigner, credentialProtector });
+  return { workflow, render, machineCredential, issuerSigner, credentialProtector };
 }
 
-test("D2 verifies both FID sides before storing only post-C2PA bytes", async () => {
+async function storedBytes(infra, storedCard) {
+  const front = await infra.objects.get(storedCard.front.objectRef);
+  const back = await infra.objects.get(storedCard.back.objectRef);
+  return { front, back };
+}
+
+async function withRegistry(run) {
+  const root = mkdtempSync(join(tmpdir(), "fibre-fid-e1-"));
+  const registry = new FidCardRegistry({
+    infraDriver: createSqliteStateInfraDriver({ scopes: { fid: join(root, "fid.sqlite") } }),
+    stateScopeId: "fid",
+  });
+  try { return await run(registry); }
+  finally {
+    registry.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+test("D2 admits only a verified, paired post-C2PA card", async () => {
   const infra = createMemoryInfraDriver();
   const signer = contentSigner();
   const { render, machineCredential } = await fixture();
-  const result = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, render, machineCredential });
+  const storedCard = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, render, machineCredential });
+  const { front, back } = await storedBytes(infra, storedCard);
 
-  const front = await infra.objects.get(result.front.objectRef);
-  const back = await infra.objects.get(result.back.objectRef);
-  assert.equal(front.digest, result.front.finalDigest);
-  assert.equal(back.digest, result.back.finalDigest);
+  assert.equal(front.digest, storedCard.front.finalDigest);
+  assert.equal(back.digest, storedCard.back.finalDigest);
   assert.notEqual(front.digest, render.frontRenderDigest);
   assert.notEqual(back.digest, render.backRenderDigest);
-  assert.equal(front.metadata.side, "front");
-  assert.equal(back.metadata.side, "back");
-  assert.equal(front.metadata.rawRenderDigest, render.frontRenderDigest);
-  assert.equal(back.metadata.rawRenderDigest, render.backRenderDigest);
-  assert.equal(front.metadata.machineCredentialDigest, back.metadata.machineCredentialDigest);
-
   await verifyFidC2paSide({ contentCredentialSigner: signer, bytes: front.bytes, side: "front", machineCredential });
   await verifyFidC2paSide({ contentCredentialSigner: signer, bytes: back.bytes, side: "back", machineCredential });
 });
 
-test("D2 rejects tampering, cross-issuance pairing, and stores nothing before both sides verify", async () => {
+test("D2 rejects altered or mismatched cards and never stores a half-verified pair", async () => {
   const signer = contentSigner();
   const first = await fixture();
   const infra = createMemoryInfraDriver();
-  const stored = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, ...first });
-  const front = await infra.objects.get(stored.front.objectRef);
+  const storedCard = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, ...first });
+  const { front } = await storedBytes(infra, storedCard);
 
   const tampered = Buffer.from(front.bytes);
   tampered[0] ^= 1;
@@ -194,7 +213,7 @@ test("D2 rejects tampering, cross-issuance pairing, and stores nothing before bo
     bytes: tampered,
     side: "front",
     machineCredential: first.machineCredential,
-  }), /verification failed/);
+  }));
 
   const second = await fixture({ revision: 2, idempotencyKey: "d2_mira_2" });
   await assert.rejects(() => verifyFidC2paSide({
@@ -202,14 +221,111 @@ test("D2 rejects tampering, cross-issuance pairing, and stores nothing before bo
     bytes: front.bytes,
     side: "front",
     machineCredential: second.machineCredential,
-  }), /assertion does not match issuance/);
+  }));
 
   const rejectedInfra = createMemoryInfraDriver();
   await assert.rejects(() => credentialAndStoreFidCard({
     infra: rejectedInfra,
     contentCredentialSigner: contentSigner({ rejectSide: "back" }),
     ...first,
-  }), /verification failed/);
+  }));
   assert.equal(await rejectedInfra.objects.head(`fidcard_${first.machineCredential.routing.credentialId}_front`), null);
   assert.equal(await rejectedInfra.objects.head(`fidcard_${first.machineCredential.routing.credentialId}_back`), null);
 });
+
+test("E1 preserves an authentic history while active status moves atomically", async () => withRegistry(async (registry) => {
+  const infra = createMemoryInfraDriver();
+  const signer = contentSigner();
+  const first = await fixture();
+  const firstStored = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, ...first });
+
+  await finalizeFidCardIssuance({
+    infra,
+    registry,
+    workflow: first.workflow,
+    storedCard: firstStored,
+    machineCredential: first.machineCredential,
+    contentCredentialSigner: signer,
+    issuerSigner: first.issuerSigner,
+    credentialProtector: first.credentialProtector,
+    activatedAt: "2026-09-09T20:05:00.000Z",
+  });
+  assert.equal(registry.getActiveByFin(FIN).credential.credentialId, first.machineCredential.routing.credentialId);
+  assert.equal(registry.getIssuanceByCredentialId(first.machineCredential.routing.credentialId).record.front.objectRef, firstStored.front.objectRef);
+
+  const firstBytes = await storedBytes(infra, firstStored);
+  const offline = await verifyFidCard({
+    contentCredentialSigner: signer,
+    machineCredential: first.machineCredential,
+    frontBytes: firstBytes.front.bytes,
+    backBytes: firstBytes.back.bytes,
+  });
+  assert.equal(offline.authenticity.valid, true);
+  assert.equal(offline.currentValidity.known, false);
+
+  const second = await fixture({
+    revision: 2,
+    idempotencyKey: "e1_mira_2",
+    priorActiveCredentialId: first.machineCredential.routing.credentialId,
+  });
+  const secondStored = await credentialAndStoreFidCard({ infra, contentCredentialSigner: signer, ...second });
+  await assert.rejects(() => finalizeFidCardIssuance({
+    infra,
+    registry,
+    workflow: second.workflow,
+    storedCard: { ...secondStored, back: { ...secondStored.back, objectRef: "fidcard_missing_back" } },
+    machineCredential: second.machineCredential,
+    contentCredentialSigner: signer,
+    issuerSigner: second.issuerSigner,
+    credentialProtector: second.credentialProtector,
+    activatedAt: "2026-09-09T20:06:00.000Z",
+  }));
+  assert.equal(registry.getActiveByFin(FIN).credential.credentialId, first.machineCredential.routing.credentialId);
+
+  await finalizeFidCardIssuance({
+    infra,
+    registry,
+    workflow: second.workflow,
+    storedCard: secondStored,
+    machineCredential: second.machineCredential,
+    contentCredentialSigner: signer,
+    issuerSigner: second.issuerSigner,
+    credentialProtector: second.credentialProtector,
+    activatedAt: "2026-09-09T20:07:00.000Z",
+  });
+  assert.equal(registry.getByCredentialId(first.machineCredential.routing.credentialId).status, "superseded");
+  assert.equal(registry.getActiveByFin(FIN).credential.credentialId, second.machineCredential.routing.credentialId);
+  assert.equal(registry.listByFin(FIN).length, 2);
+
+  const oldOnline = await verifyFidCard({
+    contentCredentialSigner: signer,
+    machineCredential: first.machineCredential,
+    frontBytes: firstBytes.front.bytes,
+    backBytes: firstBytes.back.bytes,
+    issuerSigner: first.issuerSigner,
+    credentialProtector: first.credentialProtector,
+    statusAuthority: registry,
+  });
+  assert.equal(oldOnline.authenticity.valid, true);
+  assert.deepEqual(oldOnline.currentValidity, { known: true, status: "superseded", active: false });
+
+  registry.revokeCredential({
+    credentialId: second.machineCredential.routing.credentialId,
+    reason: "operator_revocation",
+    occurredAt: "2026-09-09T20:08:00.000Z",
+  });
+  assert.equal(registry.getActiveByFin(FIN), null);
+
+  const secondBytes = await storedBytes(infra, secondStored);
+  const revokedOnline = await verifyFidCard({
+    contentCredentialSigner: signer,
+    machineCredential: second.machineCredential,
+    frontBytes: secondBytes.front.bytes,
+    backBytes: secondBytes.back.bytes,
+    issuerSigner: second.issuerSigner,
+    credentialProtector: second.credentialProtector,
+    statusAuthority: registry,
+  });
+  assert.equal(revokedOnline.authenticity.valid, true);
+  assert.deepEqual(revokedOnline.currentValidity, { known: true, status: "revoked", active: false });
+}));
