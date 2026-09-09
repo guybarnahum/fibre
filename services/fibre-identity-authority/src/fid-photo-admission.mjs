@@ -34,7 +34,9 @@ function sha(value) {
 
 function normalizeSource(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("FID photo source is required");
+  if (value.role !== "official_id_photo") throw new TypeError("FID photo source must be official_id_photo");
   const source = {
+    role: value.role,
     threadId: requireId("FID photo source.threadId", value.threadId),
     candidatePhotoRef: value.candidatePhotoRef ?? null,
     candidatePhotoDigest: value.candidatePhotoDigest ?? null,
@@ -148,9 +150,17 @@ export function assertFidPhotoAdmissionReceipt(receipt) {
   requireDigest("FID photo admission.provenanceDigest", receipt.provenanceDigest);
   requireIso("FID photo admission.admittedAt", receipt.admittedAt);
   if (receipt.policyVersion !== FID_PHOTO_POLICY_VERSION) throw new TypeError("FID photo admission policyVersion is unsupported");
+  if (!Number.isSafeInteger(receipt.faceCount) || receipt.faceCount < 0) throw new TypeError("FID photo admission faceCount is invalid");
   if (!['accepted', 'rejected'].includes(receipt.decision)) throw new TypeError("FID photo admission decision is invalid");
   if (!Array.isArray(receipt.reasons) || !receipt.reasons.every((reason) => typeof reason === "string")) throw new TypeError("FID photo admission reasons are invalid");
   if ((receipt.decision === "accepted") !== (receipt.reasons.length === 0)) throw new TypeError("FID photo admission decision conflicts with reasons");
+  if (receipt.decision === "accepted") {
+    requireId("FID photo admission.candidatePhotoRef", receipt.candidatePhotoRef);
+    requireDigest("FID photo admission.candidatePhotoDigest", receipt.candidatePhotoDigest);
+    requireId("FID photo admission.canonicalVisualReferenceRef", receipt.canonicalVisualReferenceRef);
+    requireDigest("FID photo admission.canonicalVisualReferenceDigest", receipt.canonicalVisualReferenceDigest);
+    requireId("FID photo admission.derivationReceiptRef", receipt.derivationReceiptRef);
+  }
   if (receipt.admissionId !== `fidadm_${receipt.provenanceDigest.slice(7)}`) throw new TypeError("FID photo admission identity is invalid");
   return receipt;
 }
