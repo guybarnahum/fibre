@@ -116,7 +116,7 @@ function fixture(issuer) {
   return { admission, payload, photo };
 }
 
-test("D1 canonical credential bytes are stable and issuer signature rejects payload tampering", async () => {
+test("D1 canonical credential bytes are stable and issuer signature rejects payload or issuer-profile tampering", async () => {
   const issuer = signer();
   const { payload } = fixture(issuer);
   const reordered = Object.fromEntries(Object.entries(payload).reverse());
@@ -130,9 +130,16 @@ test("D1 canonical credential bytes are stable and issuer signature rejects payl
   const tampered = structuredClone(signed);
   tampered.payload.threadId = "thr_other";
   assert.equal(await verifyFidMachineCredentialSignature(tampered, issuer), false);
+
+  const driftedIssuer = structuredClone(payload);
+  driftedIssuer.issuer.trustPolicy = "fid-other-trust-v1";
+  await assert.rejects(
+    () => signFidMachineCredentialPayload(driftedIssuer, issuer),
+    /issuer profile does not match signer profile/,
+  );
 });
 
-test("D1 envelope hides private identity and authorized open recovers the exact admitted portrait", async () => {
+test("D1 envelope hides private identity and authenticates its public routing", async () => {
   const issuer = signer();
   const reader = protector();
   const { admission, payload, photo } = fixture(issuer);
@@ -152,5 +159,12 @@ test("D1 envelope hides private identity and authorized open recovers the exact 
   await assert.rejects(() => openFidMachineCredential(envelope, {
     issuerSigner: issuer,
     credentialProtector: protector(),
+  }));
+
+  const rerouted = structuredClone(envelope);
+  rerouted.routing.revision += 1;
+  await assert.rejects(() => openFidMachineCredential(rerouted, {
+    issuerSigner: issuer,
+    credentialProtector: reader,
   }));
 });
