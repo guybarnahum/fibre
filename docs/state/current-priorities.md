@@ -88,7 +88,7 @@ A conversation may be forgotten. A meaningful encounter may alter a relationship
 
 ## Related active work — Fibre Identity Card
 
-The `agent/fid-card-issuance` branch contains the active Fibre Identity Card vertical described by [`../architecture/fibre-identity-card-implementation-plan.md`](../architecture/fibre-identity-card-implementation-plan.md) on that branch.
+The `agent/fid-card-issuance` branch contains the active Fibre Identity Card vertical at `docs/architecture/fibre-identity-card-implementation-plan.md` on that branch.
 
 That work is complementary to M2-A:
 
