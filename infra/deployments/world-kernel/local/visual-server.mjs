@@ -5,6 +5,9 @@ import { attachWorldVisualPublicationRuntime } from "./visual-publication-runtim
 import { startWorldKernelFromEnvironment } from "./server.mjs";
 import { createCanonicalVisualRootHttpBoundary } from "./canonical-visual-root-http-boundary.mjs";
 import { createThreadPresentationVisualHttpBoundary } from "./thread-presentation-visual-http-boundary.mjs";
+import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
+import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
+import { attachThreadDirectoryHttpServer } from "#services/world-kernel/src/thread-directory-http-server.mjs";
 
 function defaultVisualPublicationErrorReporter(entry, error) {
   process.stderr.write(`${JSON.stringify({
@@ -13,6 +16,17 @@ function defaultVisualPublicationErrorReporter(entry, error) {
     errorName: entry.errorName,
     message: entry.message,
     stack: error instanceof Error ? error.stack : null,
+  })}\n`);
+}
+
+function defaultThreadDirectoryErrorReporter(error, context) {
+  process.stderr.write(`${JSON.stringify({
+    event: "world_thread_directory_failed",
+    requestId: context.requestId,
+    method: context.method,
+    url: context.url,
+    errorName: error?.constructor?.name ?? "Error",
+    message: error?.message ?? "Unknown error",
   })}\n`);
 }
 
@@ -45,6 +59,19 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
   visualOptions = {},
 ) {
   const worldRuntime = await startWorldKernelFromEnvironment(environment, serviceOptions);
+  const directoryStore = new ThreadDirectoryStore(worldRuntime.worldStorage);
+  const threadDirectory = createThreadDirectoryService({
+    worldReader: worldRuntime.store,
+    civilRegistry: worldRuntime.civilRegistryStore,
+    directoryStore,
+  });
+  attachThreadDirectoryHttpServer({
+    server: worldRuntime.server,
+    directory: threadDirectory,
+    privateToken: environment.FIBRE_PRIVATE_TOKEN ?? null,
+    onError: defaultThreadDirectoryErrorReporter,
+  });
+
   let visualRuntime;
   try {
     const canonicalRootBoundary = visualOptions.canonicalRootBoundary
@@ -59,6 +86,7 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
       presentationBoundary,
     });
   } catch (error) {
+    directoryStore.close();
     await worldRuntime.close();
     throw error;
   }
@@ -68,13 +96,16 @@ export async function startWorldKernelVisualPublicationFromEnvironment(
     if (closed) return;
     closed = true;
     visualRuntime.stop();
+    directoryStore.close();
     await worldRuntime.close();
   };
 
   return Object.freeze({
     ...worldRuntime,
     visualRuntime,
+    threadDirectory,
     visualPublicationEnabled: true,
+    threadDirectoryEnabled: true,
     assetGeneratorBaseUrl: environment.FIBRE_ASSET_GENERATOR_URL ?? "http://127.0.0.1:8789",
     close,
   });
@@ -90,6 +121,7 @@ async function main() {
     presentationBaseUrl: runtime.presentationBaseUrl,
     assetGeneratorBaseUrl: runtime.assetGeneratorBaseUrl,
     visualPublicationEnabled: runtime.visualPublicationEnabled,
+    threadDirectoryEnabled: runtime.threadDirectoryEnabled,
     privateAccessEnabled: runtime.privateAccessEnabled,
   })}\n`);
 
