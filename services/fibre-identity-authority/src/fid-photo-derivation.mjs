@@ -1,7 +1,5 @@
 import { createHash } from "node:crypto";
 
-import { createAssetGenerationJobFromIdentity } from "#services/asset-generator/src/index.mjs";
-
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
 import { FID_PHOTO_POLICY_VERSION } from "./fid-photo-admission.mjs";
 
@@ -26,6 +24,7 @@ export function buildFidPhotoDerivationJob({
   source,
   requestedAt,
   providerProfile,
+  createGenerationJob,
 }) {
   const workflow = normalizeFidIssuanceWorkflowRecord(candidateWorkflow);
   if (source?.threadId !== workflow.threadId) {
@@ -40,19 +39,20 @@ export function buildFidPhotoDerivationJob({
   if (typeof providerProfile !== "string" || providerProfile.trim() === "") {
     throw new TypeError("FID photo derivation providerProfile is required");
   }
+  if (typeof createGenerationJob !== "function") {
+    throw new TypeError("FID photo derivation requires an Asset Generation job factory");
+  }
 
-  const sourceReferences = [...source.sourceReferences].sort();
   const identityDigest = digest({
     kind: "fid_photo_derivation",
     policyVersion: FID_PHOTO_POLICY_VERSION,
     threadId: workflow.threadId,
     canonicalVisualReferenceRef: source.canonicalVisualReferenceRef,
     canonicalVisualReferenceDigest: source.canonicalVisualReferenceDigest,
-    sourceReferences,
     targetAgeYears: source.targetAgeYears ?? null,
   });
 
-  return createAssetGenerationJobFromIdentity({
+  return createGenerationJob({
     identityDigest,
     assetKind: "image",
     role: "official_id_photo",
@@ -74,7 +74,7 @@ export function buildFidPhotoDerivationJob({
     inputReferences: unique([
       source.canonicalVisualReferenceRef,
       source.canonicalVisualReferenceDigest,
-      ...sourceReferences,
+      ...source.sourceReferences,
     ]),
     referenceObjectRefs: [source.canonicalVisualReferenceRef],
     requestedAt,
