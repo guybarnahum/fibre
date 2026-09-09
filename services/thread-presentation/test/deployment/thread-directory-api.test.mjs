@@ -89,9 +89,9 @@ async function directoryApi() {
 test("Thread directory searches only admitted public presentation attributes", async () => {
   const api = await directoryApi();
 
-  const byName = await api.fetch(new Request("https://api.insidefibre.com/api/threads/search?q=mira"));
-  assert.equal(byName.status, 200);
-  const nameBody = await byName.json();
+  const byNameAndAttribute = await api.fetch(new Request("https://api.insidefibre.com/api/threads/search?q=mira%20patient"));
+  assert.equal(byNameAndAttribute.status, 200);
+  const nameBody = await byNameAndAttribute.json();
   assert.deepEqual(nameBody.threads.map(({ threadId }) => threadId), ["thr_mira"]);
   assert.equal(nameBody.threads[0].displayName, "Mira Vale");
   assert.equal(nameBody.threads[0].fibreIdentityNumber, "7K3M-2Q-8W5R");
@@ -106,17 +106,27 @@ test("Thread directory searches only admitted public presentation attributes", a
   assert.deepEqual(await hidden.json(), { threads: [] });
 });
 
-test("Meet a Thread is deterministic when seeded and respects discovery filters", async () => {
+test("Meet a Thread is seeded, filterable, and returns a compact selection receipt", async () => {
   const api = await directoryApi();
   const url = "https://api.insidefibre.com/api/threads/meet?seed=experience-42";
   const first = await (await api.fetch(new Request(url))).json();
   const second = await (await api.fetch(new Request(url))).json();
   assert.equal(first.thread.threadId, second.thread.threadId);
-  assert.equal(first.eligibleCount, 2);
+  assert.deepEqual(first.selection, {
+    policyVersion: "thread-meet-v0.1",
+    seed: "experience-42",
+    eligibleCount: 2,
+  });
 
   const filtered = await (await api.fetch(new Request(
     "https://api.insidefibre.com/api/threads/meet?seed=experience-42&q=weather",
   ))).json();
   assert.equal(filtered.thread.threadId, "thr_mira");
-  assert.equal(filtered.eligibleCount, 1);
+  assert.equal(filtered.selection.eligibleCount, 1);
+
+  const excluded = await (await api.fetch(new Request(
+    "https://api.insidefibre.com/api/threads/meet?seed=experience-42&exclude=thr_mira",
+  ))).json();
+  assert.equal(excluded.thread.threadId, "thr_nilo");
+  assert.equal(excluded.selection.eligibleCount, 1);
 });
