@@ -86,6 +86,43 @@ encounter happened
 
 A conversation may be forgotten. A meaningful encounter may alter a relationship, belief, intention, interest or self-understanding. Fibre must not force a memory simply because a transcript exists.
 
+## Related active work — Fibre Identity Card
+
+The `agent/fid-card-issuance` branch contains the active Fibre Identity Card vertical described by [`../architecture/fibre-identity-card-implementation-plan.md`](../architecture/fibre-identity-card-implementation-plan.md) on that branch.
+
+That work is complementary to M2-A:
+
+- FIN/civil identity remains the canonical civil foundation;
+- Fibre Identity Authority owns issuance/lifecycle rather than the Viewer or Presentation;
+- Thread Presentation may project an admitted active FID without becoming an issuance authority;
+- insidefibre.com consumes presentation/media references only;
+- the FID photo derives from admitted Thread visual identity rather than arbitrary caller bytes.
+
+Do not duplicate FID issuance machinery inside Meet-a-Thread work. Reuse the resulting service/projection boundary when it becomes available.
+
+## Lite development rule
+
+Fibre development should be **lite, elegant and capability-driven**.
+
+Default implementation posture:
+
+```text
+smallest real Fibre capability
+  -> smallest clean implementation
+  -> focused invariant tests
+  -> existing repository check
+  -> stop
+  -> move the Fibre vision forward
+```
+
+Avoid generic boilerplate, speculative abstractions, exhaustive matrices, broad provider parity and infrastructure-for-infrastructure's-sake.
+
+Tests exist to protect the organism, not to become the organism. Add just enough coverage for the semantic success path, important authority boundary and concrete regressions discovered in development.
+
+Test failures must be developer-friendly: never dump whole files or giant serialized objects. Print a bounded expected/actual fragment, relevant field/path/key/digest or concise diff, and point to the full artifact when deeper inspection is needed.
+
+[`../decisions/ADR-0020-vision-led-development-discipline.md`](../decisions/ADR-0020-vision-led-development-discipline.md) is the standing authority for this rule. [`../validation/test-lifecycle-best-practice.md`](../validation/test-lifecycle-best-practice.md) defines the corresponding lean test discipline.
+
 ## Infrastructure stop rule
 
 The cloud/runtime investment has reached its intended enabling threshold:
@@ -124,6 +161,7 @@ Current situated imagery must reuse this root. A place/activity image is derived
 - Experience may be forgotten; transcript persistence is not autobiographical memory.
 - Fibre may create circumstances; it may not pre-author what those circumstances mean to the Thread.
 - Capability before abstraction: tests and infrastructure protect the organism; they are not the organism.
+- Prefer concise actionable diagnostics over raw state dumps.
 
 ## Later
 
