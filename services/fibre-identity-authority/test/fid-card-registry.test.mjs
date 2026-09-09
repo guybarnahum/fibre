@@ -10,8 +10,8 @@ import {
   FidCardRegistry,
 } from "../src/index.mjs";
 
-const FIN = "7K3M-2Q-8W5R";
-const OTHER_FIN = "8PKH-A4-VH5R";
+const FIN = "8PKH-A4-VH5R";
+const OTHER_FIN = "7K3M-2Q-8W5M";
 
 function storage(databasePath) {
   return {
