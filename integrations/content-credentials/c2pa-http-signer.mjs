@@ -26,6 +26,16 @@ function optionalToken(name, value) {
   return nonEmpty(name, value);
 }
 
+function optionalLabel(value) {
+  return value === null || value === undefined ? null : nonEmpty("C2PA assertionLabel", value);
+}
+
+function genericAssertion(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("C2PA assertion must be an object");
+  JSON.stringify(value);
+  return structuredClone(value);
+}
+
 function normalizeTrustPolicy(value = "development_signature_only") {
   if (!C2PA_HTTP_TRUST_POLICIES.includes(value)) {
     throw new TypeError(`unsupported C2PA trust policy ${value}`);
@@ -128,6 +138,23 @@ function assertProductionTrust(payload, { trustPolicy }) {
   }
 }
 
+function normalizeLabeledVerification(payload) {
+  if (typeof payload?.valid !== "boolean") throw new TypeError("content credential verification.valid must be boolean");
+  nonEmpty("content credential verification.format", payload.format);
+  nonEmpty("content credential verification.signerId", payload.signerId);
+  nonEmpty("content credential verification.verifiedAt", payload.verifiedAt);
+  if (payload.valid) {
+    if (typeof payload.manifestDigest !== "string" || !/^sha256:[0-9a-f]{64}$/.test(payload.manifestDigest)) {
+      throw new TypeError("content credential verification.manifestDigest is invalid");
+    }
+    genericAssertion(payload.assertion);
+    if (payload.failureReason !== null) throw new TypeError("content credential verification.failureReason must be null when valid");
+  } else if (typeof payload.failureReason !== "string" || payload.failureReason.length === 0) {
+    throw new TypeError("content credential verification.failureReason is required when invalid");
+  }
+  return structuredClone(payload);
+}
+
 async function postJson(fetchImpl, url, body, { phase, authorizationToken }) {
   let response;
   const headers = { "Content-Type": "application/json" };
@@ -202,12 +229,14 @@ export function createHttpContentCredentialSigner({
     format: "c2pa",
     trustPolicy: normalizedTrustPolicy,
 
-    async embed({ bytes, mediaType, assertion }) {
-      const normalizedAssertion = normalizeEmbeddedAssetProvenance(assertion);
+    async embed({ bytes, mediaType, assertion, assertionLabel = null }) {
+      const label = optionalLabel(assertionLabel);
+      const normalizedAssertion = label === null ? normalizeEmbeddedAssetProvenance(assertion) : genericAssertion(assertion);
       const payload = await postJson(fetchImpl, `${normalizedBase}/embed`, {
         bytesBase64: bytesToBase64(bytes),
         mediaType: nonEmpty("mediaType", mediaType),
         assertion: normalizedAssertion,
+        ...(label === null ? {} : { assertionLabel: label }),
       }, {
         phase: "credential_signing",
         authorizationToken: normalizedAuthorizationToken,
@@ -222,17 +251,19 @@ export function createHttpContentCredentialSigner({
       });
     },
 
-    async verify({ bytes, mediaType }) {
+    async verify({ bytes, mediaType, assertionLabel = null }) {
+      const label = optionalLabel(assertionLabel);
       const payload = await postJson(fetchImpl, `${normalizedBase}/verify`, {
         bytesBase64: bytesToBase64(bytes),
         mediaType: nonEmpty("mediaType", mediaType),
+        ...(label === null ? {} : { assertionLabel: label }),
       }, {
         phase: "credential_verification",
         authorizationToken: normalizedAuthorizationToken,
       });
       assertExpectedSignerId(payload?.signerId, normalizedSignerId, { phase: "credential_verification" });
       assertProductionTrust(payload, { trustPolicy: normalizedTrustPolicy });
-      return normalizeCredentialVerification({
+      const verification = {
         valid: payload.valid,
         format: payload.format,
         signerId: payload.signerId,
@@ -240,7 +271,8 @@ export function createHttpContentCredentialSigner({
         assertion: payload.assertion,
         verifiedAt: payload.verifiedAt,
         failureReason: payload.failureReason,
-      });
+      };
+      return label === null ? normalizeCredentialVerification(verification) : normalizeLabeledVerification(verification);
     },
   });
 }
