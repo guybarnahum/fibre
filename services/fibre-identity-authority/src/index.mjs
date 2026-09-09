@@ -74,6 +74,11 @@ export {
 } from "./fid-machine-credential.mjs";
 
 export {
+  finalizeFidCardIssuance,
+  verifyFidCard,
+} from "./fid-card-verification.mjs";
+
+export {
   FidCivilRegistrationNotFoundError,
   createFibreIdentityAuthority,
 } from "./fibre-identity-authority.mjs";
