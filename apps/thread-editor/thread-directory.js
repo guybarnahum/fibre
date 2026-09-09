@@ -112,8 +112,9 @@ async function meet() {
   try {
     const payload = await directoryFetch(`/api/editor/directory/meet?${filters({ meet: true })}`);
     const entries = payload.thread ? [payload.thread] : [];
+    const selection = payload.selection ?? {};
     renderResults(entries, payload.thread
-      ? `Met 1 of ${payload.eligibleCount} public eligible Thread(s)`
+      ? `Met 1 of ${selection.eligibleCount ?? "?"} public eligible Thread(s) · ${selection.policyVersion ?? "meet"}`
       : "No public eligible Thread to meet");
     if (payload.thread) openThread(payload.thread);
   } catch (error) {
