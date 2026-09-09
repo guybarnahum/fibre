@@ -2,6 +2,11 @@ function clean(value) {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
+function queryTerms(value) {
+  const query = clean(value)?.toLocaleLowerCase("en-US") ?? null;
+  return query === null ? [] : query.split(/\s+/).filter(Boolean);
+}
+
 function entryFor(thread, registration) {
   return Object.freeze({
     threadId: thread.threadId,
@@ -24,6 +29,13 @@ function searchable(thread, registration) {
     ...(Array.isArray(thread.identity?.culture) ? thread.identity.culture : []),
     ...Object.values(thread.genome?.textualTraits ?? {}),
   ].filter((value) => typeof value === "string").join("\n").toLocaleLowerCase("en-US");
+}
+
+function matchesQuery(thread, registration, query) {
+  const terms = queryTerms(query);
+  if (terms.length === 0) return true;
+  const haystack = searchable(thread, registration);
+  return terms.every((term) => haystack.includes(term));
 }
 
 export function createThreadDirectoryService({
@@ -58,20 +70,14 @@ export function createThreadDirectoryService({
         const registration = civilRegistry.getCivilRegistrationByFin(normalizedFin, { required: false });
         if (registration === null) return { threads: [] };
         const resolved = readEntry(registration.threadId);
-        if (resolved === null) return { threads: [] };
-        const wanted = clean(query)?.toLocaleLowerCase("en-US") ?? null;
-        if (wanted !== null && !searchable(resolved.thread, resolved.registration).includes(wanted)) {
-          return { threads: [] };
-        }
+        if (resolved === null || !matchesQuery(resolved.thread, resolved.registration, query)) return { threads: [] };
         return { threads: [resolved.entry] };
       }
 
-      const wanted = clean(query)?.toLocaleLowerCase("en-US") ?? null;
       const threads = [];
       for (const threadId of directoryStore.listThreadIds()) {
         const resolved = readEntry(threadId);
-        if (resolved === null) continue;
-        if (wanted !== null && !searchable(resolved.thread, resolved.registration).includes(wanted)) continue;
+        if (resolved === null || !matchesQuery(resolved.thread, resolved.registration, query)) continue;
         threads.push(resolved.entry);
         if (threads.length >= limit) break;
       }
