@@ -7,7 +7,11 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { normalizeLivedPlan, plannedPositionAt } from "./lived-now.mjs";
+import {
+  normalizeCurrentSituation,
+  normalizeLivedPlan,
+  plannedPositionAt,
+} from "./lived-now.mjs";
 
 function unit(name, value) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1) {
@@ -42,6 +46,15 @@ function normalizeObservation(value) {
   assertStringArray("flight plan observation.evidenceRefs", evidenceRefs);
   if (evidenceRefs.length === 0) throw new TypeError("flight plan observation requires World evidence");
   return { location, mediatedContext, evidenceRefs: [...new Set(evidenceRefs)] };
+}
+
+export function observationFromCurrentSituation(candidate) {
+  const situation = normalizeCurrentSituation(candidate);
+  return {
+    location: structuredClone(situation.location),
+    mediatedContext: situation.mediatedContext,
+    evidenceRefs: [...situation.evidenceRefs],
+  };
 }
 
 function expectedTravelProgress(plan, at) {
