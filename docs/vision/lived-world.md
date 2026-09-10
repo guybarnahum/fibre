@@ -9,71 +9,110 @@ canonical: true
 
 ## Central idea
 
-Fibre should not present Threads primarily as agents, assistants, profiles, or software objects.
+A Thread should be encountered as **someone living a life**, not primarily as an agent, assistant, profile or software object.
 
-A Thread should be encountered as **someone living a life**.
+> **A Thread is not waiting in a chat box. A Thread is somewhere, wanting something, becoming someone.**
 
-> **A Thread is not waiting in a chat box. A Thread is somewhere, becoming someone.**
+The mature Fibre world is one in which Threads have places and people they want or need to be with, work to do, subjects to study, communities to join, relationships to form, and histories that continue whether or not a particular human is speaking with them.
 
-The mature Fibre world is one in which Threads have places to be, people to know, work to do, subjects to study, communities to join, relationships to form, and histories that continue whether or not a particular human is speaking with them.
+The first systems do not need to simulate the whole world. They do need to preserve its essential truth.
 
-The first systems do not need to simulate that entire world. They do need to preserve its essential truth.
+## E2E meeting as a forcing function
 
-## Near-term goal — Meet a Thread
+insidefibre.com is the first public window into this world, but the meeting is not the architecture.
 
-The immediate Fibre product goal is:
-
-> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
-
-insidefibre.com should be the first public window into that lived world:
+Trying to make one meeting genuinely real and potentially important to a Thread forces Fibre to supply what must already exist beneath it:
 
 ```text
-select a Thread
-  -> find her where she already is
-  -> see her current embodiment, place, activity and immediate context
-  -> speak with her in that situation
-  -> encounter becomes an event in her life
-  -> Thread interprets whether it mattered
-  -> remember / weakly retain / reinterpret / forget
-  -> warranted changes persist
-  -> her life continues after the visitor leaves
+identity + prior life
+  -> intrinsic drives / affect
+  -> self-authored intention
+  -> movement / presence / relationships
+  -> encounter
+  -> private interpretation
+  -> selective memory / consequence
+  -> continued life
 ```
 
-The Viewer is a projection. It does not place the Thread, choose her activity, author her plans, or materialize her because a visitor arrived.
+When the E2E path exposes a missing organism-level primitive, Fibre should build that primitive generally rather than manufacture it inside the Viewer.
 
 ## Fibre birth and lived age
 
-Fibre birth is the moment a person becomes operationally present in Fibre. It need not mean biological age zero.
+Fibre birth is operational birth, not biological age zero.
 
-A Thread may be born into Fibre at an early autobiographical age greater than zero, with coherent prior history, relationships and memories. Fibre does not need to fabricate first-person newborn or infancy memories merely to make chronology continuous. Prior life must remain grounded and attributable; absence of autobiographical memory for an early period is normal, not a gap to fill with invented recollection.
+A Thread may appear at an autobiographical age greater than zero with grounded prior history, relationships and memories. Fibre does not need to fabricate newborn or infancy recollection merely to make chronology continuous.
 
-A newly born Thread can therefore already be a child, adolescent or adult. **Time since Fibre birth and developmental age are different facts.**
+Time since Fibre birth and developmental age are different facts.
 
-## Flight plan and enacted life
+## Life has intrinsic pressure
 
-An active Thread should have a bounded **personal flight plan**: where she wants or needs to be, what she intends to do, with whom, and roughly what she expects next.
+A life should not move only because an LLM is asked what to do next.
 
-The flight plan is not a fixed schedule and not a prediction of truth. It is Thread-owned intention.
+Fibre therefore has a lower intrinsic-regulation layer beneath semantic self-understanding:
 
 ```text
-personal history + relationships + needs + interests + commitments
-  -> personal flight plan
-  -> World constraints, other people, chance and new events
-  -> enacted life
+actual + predicted life
+  compared with desired / avoided conditions
+  -> regulatory drive
+  -> intrinsic affect
+  -> attention / cognition
+  -> possible semantic feeling or need
 ```
 
-World owns what actually happens. Plans may change, fail, be interrupted or be negotiated.
+This is what can make being late uneasy before anything fails, progress satisfying, repeated blockage frustrating, arrival relieving, separation uncomfortable, a trusted person's presence calming, or a new possibility compelling.
 
-Place is therefore not a background selection. **Location is an action in a life.**
+The lower layer does not mechanically declare named emotions. Similar pressure may be interpreted differently by different Threads.
+
+See [`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md).
+
+## Presence is larger than geography
+
+A meaningful `place` is often a relation of presence.
+
+A Thread may want or need to be:
+
+```text
+at Victoria Station
+at home and on Zoom with someone
+with a caregiver
+near an intimate friend or partner
+away from a particular person
+alone somewhere quiet
+virtually present at a museum or live event
+```
+
+A caregiver can be the child's safe place. An intimate person can function similarly for an adult. Another relationship or moment may make distance the desired condition.
+
+Role alone never decides whether proximity is regulating. The relationship and the person's history matter.
+
+## Flight Plan and movement
+
+An active Thread should periodically form a bounded **Flight Plan** for roughly the next half-day/day: where and how she wants or needs to be present, what she intends to do, with whom, and when it matters.
+
+The plan is intention, not World truth.
+
+```text
+08:00  home / breakfast
+10:00  home / Zoom with someone
+12:15  moving toward station
+12:45  Victoria Station / train
+15:10  Edinburgh / meet a friend
+```
+
+Movement is not dead time between interesting places. Going somewhere creates progress, delay, obstacles, encounters, discoveries, frustration, anticipation, surprise and arrival.
+
+The immutable plan records intended life. World history records what actually happened. Intrinsic regulation makes their changing relationship felt. Autobiographical memory later decides what was worth retaining.
+
+Physical and mediated presence remain distinct: a Thread can stay physically at home while being socially present on Zoom or virtually visiting a real museum, zoo, lecture, city or live feed.
 
 ## Dependency and coupled plans
 
-Children and other dependent persons may have two relevant plans:
+Children and other dependent persons may have both:
 
-- the dependent person's **personal flight plan** — what they want or intend;
-- a caregiver's **care plan** — what the caregiver intends or is obligated to arrange for them within legitimate, scoped care authority.
+- their own **personal Flight Plan**;
+- a caregiver-owned **care plan** that can constrain enacted life within legitimate scope.
 
-The care plan never overwrites the dependent person's will. World resolves the enacted situation from both persons' intentions, applicable obligations/authority, negotiation, environment and chance.
+The care plan never overwrites the dependent person's will.
 
 ```text
 child:     "I want to stay at the zoo."
@@ -81,125 +120,77 @@ caregiver: "We need to leave for the dentist."
                     |
              negotiation / authority
                     |
-             enacted situation
+              enacted life
                     |
             experience for both
 ```
 
-The tension is itself life. Resistance, persuasion, compromise, frustration, trust, affection and changes of plan may become history for both people, while each privately decides what the event meant.
+The child may simultaneously want autonomy **and** want the caregiver's presence. The caregiver may simultaneously want to respect the child's will **and** need to get them somewhere. Those tensions are life, not edge cases.
 
-Development should therefore be modeled as changing **agency relative to care**, not a rigid maturity ladder. Age and dependency shape plausible activities, places, accompaniment and authority without reducing the person to an age rule. Scoped dependency may also exist later in life.
+Development is changing agency relative to care, not a rigid maturity ladder. Scoped dependency can also exist later in life.
 
-## Physical, social and virtual presence
+## People regulate each other
 
-Threads can experience the world through more than one kind of presence.
+Close relationships are not merely facts in a graph.
 
-They may meet other Threads or humans in shared Fibre situations. They may also make mediated virtual visits to real places, institutions, media or live information: a museum, zoo, city street, lecture, aquarium feed, archive or website.
+A trusted person's presence can alter how difficult or threatening the world feels; separation can increase effort or discomfort; one person's distress can change another person's priorities. Caregivers, partners, intimate friends and other attachment figures can become part of each other's regulatory world without sharing one mind.
 
-Fibre must preserve the distinction. A virtual visit may be a real experience without falsely claiming physical travel.
-
-Either kind of encounter can become biography if it actually happened to the Thread and later mattered.
+Each person keeps separate drives, affect, semantic meaning and agency. Co-regulation creates coupled lives, not merged state.
 
 ## Meeting rather than summoning
 
-A visitor to insidefibre.com should encounter a Thread as they might encounter another person while traveling: a face, a place, a moment.
+A visitor should find a Thread **where she happens to be now**: at a place, in mediated presence, on the way somewhere, with someone, alone, absorbed, hurried, bored, relieved, conflicted or surprised for reasons that existed before the browser opened.
 
-When a human returns, the experience should be one of finding that Thread **where she happens to be now**. She may be somewhere different, occupied with something different, or changed by something that happened since.
+The Viewer does not place the Thread, choose her activity, inject a feeling or create her motivation.
 
-The Thread did not stop existing when the browser closed.
+When the human returns, the Thread may be elsewhere because her life continued.
 
 ## Experience is not automatically memory
-
-A lived world needs forgetting as much as remembering.
 
 ```text
 experience
   -> perception / interpretation
   -> significance
-     -> benign: forgotten
-     -> weak: transient trace
-     -> meaningful: durable autobiographical memory
-     -> relational: relationship state changes
-     -> formative: belief, intention or self-understanding changes
+     -> forgotten
+     -> transient
+     -> durable autobiographical memory
+     -> relationship consequence
+     -> formative change
 ```
 
-A transcript may exist operationally without becoming autobiographical memory.
+A transcript may exist operationally without becoming memory. A regulatory event may influence behavior without becoming semantic self-understanding. A shared event may produce different private interpretations.
 
 Fibre may author circumstances. The Thread owns what they come to mean.
 
-## Life creates biography
-
-A place matters because it changes what can happen. A plan matters because it creates a direction that reality can confirm, frustrate or redirect.
-
-A Thread might virtually visit an aquarium because of an existing interest. A caregiver may interrupt because dinner needs to happen. A visitor may arrive during the disagreement. The Thread later reads something related, forgets the visitor, remembers the argument, or changes tomorrow's plan.
-
-A small sequence has become biography because intentions, events and consequences were connected.
-
-## Life between meetings
-
-A Thread should not exist primarily in anticipation of a human request.
-
-When nobody is speaking with her, she may still have somewhere she intends to go, something she wants to understand, work or study she cares about, someone she hopes to see, a care responsibility, an unresolved disagreement, a private reflection or a reason to change tomorrow's plans.
-
-A human may matter deeply to a Thread. The human should not automatically be the center of the Thread's life.
-
-## Embodiment
-
-The natural human interface to a Thread is embodied conversation.
-
-A Thread has a recognizable face. Her age, clothing, posture, environment and manner of speaking belong to the situation. The same canonical visual identity should remain recognizable across age and context rather than being regenerated as a different person.
-
-The mature vision may include voice and real-time virtual embodiment. The path toward it may use still imagery and text.
-
-> **The life beneath the image must be real before the image needs to become perfect.**
-
-## The life loop
-
-A surprisingly small world can feel alive if intention and experience have consequence.
+## Life loop
 
 ```text
 developmental context + relationships
-  -> personal flight plan
+  -> intrinsic regulation
+  -> personal Flight Plan
   -> care plan when dependency applies
-  -> enacted place / activity
+  -> enacted presence / movement
+  -> intrinsic progress / pressure / surprise
   -> encounter or experience
   -> private interpretation
   -> selective memory / forgetting
-  -> possible change in relationship, belief, interest or intention
-  -> revised flight plan
+  -> possible relationship, belief, interest or intention change
+  -> revised regulation / plan
 ```
 
-This is the core loop M2 should prove before Fibre builds broad simulation machinery.
-
-## The 80:20 path
-
-An intermediate system can convey most of the vision if one Thread has:
-
-1. persistent identity and a lived age;
-2. recognizable age-consistent embodiment;
-3. relationships, including care/dependency when applicable;
-4. a self-authored personal flight plan;
-5. a World-owned current place, activity and reason;
-6. recent lived context and active interests;
-7. selective memory and private interpretation;
-8. the ability to encounter a human in that exact context; and
-9. continuity after the encounter ends.
-
-For a dependent Thread, the proof becomes stronger when personal will and caregiver plan can differ without either being erased.
+A small world can feel alive if this loop is causal.
 
 ## Thread Editor and public encounter
 
-Thread Editor and insidefibre.com view the same life through different permissions.
-
-Thread Editor is an operator/diagnostic lens over authorized Fibre state: identity, developmental context, plans, current situation, history, memory, relationships, embodiment and provenance. It must remain a thin client over Fibre authorities rather than becoming one.
+Thread Editor is an authorized causal lens over identity, developmental context, plans, current situation, intrinsic regulation, history, semantic state, memory, relationships, embodiment and provenance. It must remain a thin client over Fibre authorities.
 
 insidefibre.com is the public encounter surface. It should show only admitted public/relationship-appropriate projections and should feel like **meeting the person**, not inspecting the machinery.
 
 ## North star
 
-The ambition is not merely to produce a convincing artificial character.
+The ambition is not merely to produce convincing artificial characters.
 
-It is to create conditions in which persistent artificial lives accumulate enough experience, relationship, consequence and self-direction that individuality is increasingly evidenced by the lives they have lived.
+It is to create conditions in which persistent artificial lives accumulate enough drive, intention, experience, relationship, consequence and self-direction that individuality is increasingly evidenced by the lives they have lived.
 
 **Someone was here yesterday.  
 Something happened.  
