@@ -22,6 +22,24 @@ World reality + commitments/relationships/resources
 
 Drive and intrinsic affect are private organism-like control state, not semantic claims. This lower architecture can also serve simpler non-verbal animals; semantic cognition is optional, regulation is not.
 
+## Primitive drive substrate
+
+Fibre begins from a small, largely shared set of **axiomatic animal drives**. They are not personality traits and should not vary enough for one Thread to lack the basic organismic forces that define the class.
+
+Initial families:
+
+- **safety / threat avoidance** — reduce danger, pain, instability and exposure;
+- **energy / nourishment** — restore energy and satisfy hunger-like resource deficit;
+- **rest / recovery** — recover from sustained demand and fatigue;
+- **attachment / social proximity** — seek closeness, co-regulation and belonging, or distance when a relationship/situation is aversive;
+- **reproduction / mating** — developmentally appropriate attraction and mating motivation where applicable;
+- **exploration / information** — seek novelty, information, play and uncertainty reduction;
+- **commitment / presence** — satisfy learned promises, plans and obligations by being where/how one intends or needs to be.
+
+The first six are primitive organismic families. `commitment / presence` is a learned/higher-order regulator built on the same machinery and is especially important for Flight Plans.
+
+A physical or social place matters because it can satisfy several drives at once: home may provide safety/rest; a kitchen nourishment; a caregiver safety/attachment; a partner attachment/mating; a museum exploration; a station progress toward a commitment.
+
 ## Drive, affect, meaning
 
 **Regulatory drive** is mechanically evaluated discrepancy between a desired/avoided condition and actual or predicted condition. It may be numeric because it is control state.
@@ -67,7 +85,7 @@ PresenceTarget
   target      place | entity | mediated setting | activity | obligation
   relation    at | with | near | away_from | connected_to | available_for
   window?
-  source      attachment | commitment | plan | safety | rest | curiosity | other
+  source      attachment | commitment | plan | safety | rest | exploration | other
   private regulatory configuration
 ```
 
@@ -80,6 +98,7 @@ Regulators should expose generic drive signals, not a giant emotion ontology:
 ```text
 DriveSignal
   target/ref
+  family
   orientation       approach | avoid | maintain
   pressure
   urgency
@@ -94,30 +113,32 @@ Exact schema is not frozen here.
 
 High sustained pressure plus poor progress can create blockage conditions. Pressure reduction and attainment can create relief/satisfaction potential. Low current value plus stronger alternatives can create exploration pressure that cognition may experience as boredom, restlessness or curiosity.
 
-## Regulator families
+## Genetic invariance and bounded variation
 
-The architecture is extensible. Useful families include:
+Primitive regulation should be **more uniform across Threads than semantic character**.
 
-- **presence / commitment** — be where/how one wants or needs to be at a relevant time;
-- **social / attachment** — seek or avoid closeness to particular people;
-- **safety / threat** — reduce consequential exposure;
-- **rest / resource** — recover from demand and preserve scarce resources;
-- **exploration / information** — reduce uncertainty and seek novelty;
-- **connection** — regulate broader social contact apart from one attachment figure.
+The basic regulator families and their broad dynamics are Fibre-species invariants. Genetics may tune sensitivity, persistence, recovery rate, novelty appetite, threat reactivity, social-proximity sensitivity and similar control parameters only within bounded plausible ranges.
 
-Progress, attainment, blockage and surprise are generic properties across regulators.
+```text
+shared regulator law
+  + narrow inherited runtime baselines
+  + developmental state
+  + learned history / relationships
+  + current World context
+  -> individual drive state
+```
 
-Do not implement all families at once. First prove presence/commitment and one person-targeted social/attachment case.
+A Thread should not genetically have `safety = 0` or `attachment = 20x normal`. Large individuality should come primarily from what particular targets mean to the person, learned expectations, relationships, memories, commitments and semantic interpretation.
 
-## Individuality, development and co-regulation
+These bounded regulator parameters belong in the existing genome `runtimeBaselines` surface because they have genuine numeric/control semantics. They do not replace natural-language symbolic loci and are not personality coordinates.
 
-Regulatory sensitivity, thresholds, target formation and persistence may be shaped by developmental age/dependency, non-semantic genome/runtime baselines, repeated history/expectations, relationships, commitments, resources and current World conditions.
+Development may activate or reshape a regulator family. Reproductive/mating drive, for example, is developmentally gated rather than applied to children merely because the family exists in the species substrate.
 
-These tune control; they do not pre-author semantic feeling.
+## Co-regulation
 
-A child may seek a trusted caregiver as secure base. Another child may show conflicted or weaker proximity seeking. An adult may seek a partner for comfort or want distance in another context.
+People can regulate each other. A trusted person's presence may reduce perceived threat/effort; separation may increase pressure; one person's distress may change another's priorities. Each person retains separate drives, affect, meaning and agency.
 
-People can also regulate each other. A trusted person's presence may reduce perceived threat/effort; separation may increase pressure; one person's distress may change another's priorities. Each person retains separate drives, affect, meaning and agency.
+A caregiver can therefore literally be a regulatory destination for a child: `with caregiver` may satisfy safety and attachment at once. The same architecture lets an adult seek a partner or intimate friend for comfort, or seek distance when closeness is currently aversive.
 
 ## Interoception boundary
 
@@ -177,6 +198,40 @@ Physical travel is only one case. The same mechanism covers Zoom, caregiver prox
 
 The immutable plan records intended life. World history records enacted life. Regulation makes the difference **felt** before semantic interpretation decides what it means.
 
+## Thread Editor: organism debugger
+
+Thread Editor is the authorized way to inspect this causal stack. It should make the organism legible without turning the UI into an authority.
+
+```text
+DNA / genome
+  symbolic inherited loci
+  regulator runtime baselines + allowed species envelope
+  source parent / mutation provenance
+
+Regulation now
+  active primitive drives
+  targets
+  pressure / urgency / progress / attainment
+  why each signal changed
+
+Interoception
+  exact bounded cues exposed to cognition
+
+Semantic interior
+  feelings / needs / relationship attitudes formed by the Thread
+
+Behavior
+  attention / intention / plan / action consequences
+```
+
+The useful debugging question is not merely `what is the value?` but:
+
+> **Why does this Thread want to move, stay, approach, avoid, eat, rest, explore or seek someone right now?**
+
+For every consequential signal the Editor should allow drill-down to the World evidence, regulator configuration, inherited baseline, previous checkpoint and subsequent semantic/behavioral consequence.
+
+Raw regulator state and DNA remain private/operator-authorized and are not public Presentation fields by default.
+
 ## Relationship to Semantic State
 
 [`../concepts/emotions-and-needs.md`](../concepts/emotions-and-needs.md) owns meaning-bearing state doctrine. ADR-0012 still applies: numeric/categorical control state may never replace semantic meaning. It is legitimate here only because it performs regulation rather than claiming to summarize the person.
@@ -185,15 +240,15 @@ The immutable plan records intended life. World history records enacted life. Re
 
 Continue on `agent/m2-lived-encounter`; do not create a parallel branch or generic simulation framework.
 
-### R1 — Regulatory kernel + presence drive
+### R1 — Regulatory kernel + primitive drives
 
-Build one provider-neutral evaluator for a `PresenceTarget` against actual/predicted World state and time.
+Build one small provider-neutral regulator domain with shared family definitions and bounded genome/runtime tuning. Implement enough mechanics to prove safety/energy-rest/exploration baselines plus the presence/commitment case needed by Flight Plans; do not simulate a body.
 
-Prove pressure before a missed deadline, pressure reduction with progress, attainment on arrival/connection, observable progress/prediction error, and equivalent result after restart/recomputation. No LLM.
+Prove pressure changes from real World state, progress/attainment, prediction error, bounded genetic variance, and equivalent result after restart/recomputation. No LLM.
 
-### R2 — Person as place
+### R2 — Person as place / co-regulation
 
-Add person-targeted presence relations and one relationship/development-sensitive source of proximity/distance regulation.
+Add person-targeted presence relations.
 
 Prove a child/caregiver secure-base case and an adult case where Thread-owned context can make either proximity or distance desired. Do not infer attachment from role alone.
 
@@ -203,20 +258,13 @@ Project bounded private drive/affect into existing temporary cognition. Reuse Se
 
 Prove similar mechanical pressure can yield different grounded semantic feelings in different Threads, with no mechanically injected emotion.
 
-### R4 — Functional drive loop + inspection
+### R4 — Functional drive loop + Thread Editor
 
 Let meaningful drive changes trigger attention/cognition and influence a subsequent intention or ordinary life choice without granting protected authority.
 
-Thread Editor should inspect:
+Expose the full causal chain plus DNA/regulatory-baseline inspection in Thread Editor.
 
-```text
-regulatory target -> drive change -> interoceptive cue
-  -> semantic interpretation -> behavioral consequence
-```
-
-Raw control state remains private from public Presentation by default.
-
-**Closure:** motivation/unease/relief/social pull or push arises causally from life rather than prompt-authored feeling. Then resume Flight Plan, movement and the E2E meeting using regulation as their felt substrate.
+**Closure:** motivation, unease, satisfaction/relief, hunger/rest pressure, exploration and social pull/push arise causally from the organism and its life rather than prompt-authored feeling. Then resume Flight Plan, movement and the E2E meeting using regulation as their felt substrate.
 
 ## Research grounding
 
