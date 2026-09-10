@@ -15,6 +15,8 @@ import { openLifecycleHardeningStore } from "#services/world-kernel/src/lifecycl
 import { openExpressionStore } from "#services/world-kernel/src/expression-store.mjs";
 import { openCausalContextStore } from "#services/world-kernel/src/causal-context-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
+import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
@@ -145,6 +147,7 @@ export async function startWorldKernelFromEnvironment(
   let expressionStore;
   let causalContextStore;
   let semanticStateStore;
+  let livedNowStore;
   let guardianCognitionStore;
   let identityStore;
   let autobiographicalMemoryStore;
@@ -164,6 +167,7 @@ export async function startWorldKernelFromEnvironment(
     expressionStore = openExpressionStore(worldStorage);
     causalContextStore = openCausalContextStore(worldStorage);
     semanticStateStore = openSemanticStateStore(worldStorage);
+    livedNowStore = openLivedNowStore(worldStorage);
     guardianCognitionStore = openGuardianCognitionStore(worldStorage);
     identityStore = openIdentityStore(worldStorage);
     autobiographicalMemoryStore = openAutobiographicalMemoryStore(worldStorage);
@@ -189,6 +193,7 @@ export async function startWorldKernelFromEnvironment(
     autobiographicalMemoryStore?.close();
     identityStore?.close();
     guardianCognitionStore?.close();
+    livedNowStore?.close();
     semanticStateStore?.close();
     causalContextStore?.close();
     expressionStore?.close();
@@ -286,6 +291,11 @@ export async function startWorldKernelFromEnvironment(
   const server = createStructuredObligationInspectionHttpServer({
     service,
     inspectionStore,
+    currentLifeReader: (threadId) => projectCurrentLife({
+      threadId,
+      livedNowStore,
+      semanticStateStore,
+    }),
     adminToken,
     privateToken,
     onError: onRequestError,
@@ -324,6 +334,7 @@ export async function startWorldKernelFromEnvironment(
         autobiographicalMemoryStore.close();
         identityStore.close();
         guardianCognitionStore.close();
+        livedNowStore.close();
         semanticStateStore.close();
         causalContextStore.close();
         expressionStore.close();
@@ -345,6 +356,7 @@ export async function startWorldKernelFromEnvironment(
       expressionStore,
       causalContextStore,
       semanticStateStore,
+      livedNowStore,
       guardianCognitionStore,
       identityStore,
       autobiographicalMemoryStore,
@@ -393,6 +405,7 @@ export async function startWorldKernelFromEnvironment(
     autobiographicalMemoryStore.close();
     identityStore.close();
     guardianCognitionStore.close();
+    livedNowStore.close();
     semanticStateStore.close();
     causalContextStore.close();
     expressionStore.close();
