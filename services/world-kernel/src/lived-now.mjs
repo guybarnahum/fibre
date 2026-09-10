@@ -31,6 +31,13 @@ function nullableText(name, value) {
   return value;
 }
 
+function unit(name, value) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1) {
+    throw new TypeError(`${name} must be between 0 and 1`);
+  }
+  return value;
+}
+
 function normalizeOwner(value) {
   assertPlainObject("lived plan.owner", value);
   assertExactKeys("lived plan.owner", value, ["partyId", "kind"]);
@@ -101,7 +108,7 @@ function normalizeStop(value, index) {
   };
 }
 
-function normalizeLocation(value) {
+function normalizeObservedLocation(value) {
   assertPlainObject("current situation.location", value);
   assertNonEmpty("current situation.location.kind", value.kind);
   if (value.kind === "place") {
@@ -110,7 +117,7 @@ function normalizeLocation(value) {
     return { kind: "place", placeRef: value.placeRef };
   }
   if (value.kind === "transit") {
-    assertExactKeys("current situation.location", value, ["kind", "fromPlaceRef", "toPlaceRef"]);
+    assertExactKeys("current situation.location", value, ["kind", "fromPlaceRef", "toPlaceRef", "progress"]);
     assertId("current situation.location.fromPlaceRef", value.fromPlaceRef);
     assertId("current situation.location.toPlaceRef", value.toPlaceRef);
     if (value.fromPlaceRef === value.toPlaceRef) {
@@ -120,6 +127,7 @@ function normalizeLocation(value) {
       kind: "transit",
       fromPlaceRef: value.fromPlaceRef,
       toPlaceRef: value.toPlaceRef,
+      progress: unit("current situation.location.progress", value.progress),
     };
   }
   throw new TypeError("current situation.location.kind is invalid");
@@ -313,6 +321,41 @@ export function plannedPositionAt(planCandidate, at) {
   };
 }
 
+export function normalizeWorldObservation(value) {
+  assertPlainObject("World observation", value);
+  assertExactKeys("World observation", value, [
+    "phase",
+    "location",
+    "mediatedContext",
+    "activity",
+    "reason",
+    "participantRefs",
+    "evidenceRefs",
+  ]);
+  assertEnum("World observation.phase", value.phase, ["at_place", "in_transit"]);
+  const location = normalizeObservedLocation(value.location);
+  if (value.phase === "at_place" && location.kind !== "place") {
+    throw new TypeError("at-place World observation requires a place location");
+  }
+  if (value.phase === "in_transit" && location.kind !== "transit") {
+    throw new TypeError("in-transit World observation requires a transit location");
+  }
+  const mediatedContext = nullableText("World observation.mediatedContext", value.mediatedContext);
+  assertNonEmpty("World observation.activity", value.activity);
+  assertNonEmpty("World observation.reason", value.reason);
+  const participantRefs = normalizeIds("World observation.participantRefs", value.participantRefs);
+  const evidenceRefs = normalizeIds("World observation.evidenceRefs", value.evidenceRefs, { required: true });
+  return {
+    phase: value.phase,
+    location,
+    mediatedContext,
+    activity: value.activity,
+    reason: value.reason,
+    participantRefs,
+    evidenceRefs,
+  };
+}
+
 export function normalizeCurrentSituation(value) {
   assertPlainObject("current situation", value);
   assertExactKeys("current situation", value, [
@@ -325,6 +368,7 @@ export function normalizeCurrentSituation(value) {
     "activity",
     "reason",
     "participantRefs",
+    "evidenceRefs",
     "sourcePlanRefs",
     "resolution",
     "provenance",
@@ -332,30 +376,31 @@ export function normalizeCurrentSituation(value) {
   assertId("current situation.situationId", value.situationId);
   assertId("current situation.threadId", value.threadId);
   assertIsoTimestamp("current situation.establishedAt", value.establishedAt);
-  assertEnum("current situation.phase", value.phase, ["at_place", "in_transit"]);
-  const location = normalizeLocation(value.location);
-  if (value.phase === "at_place" && location.kind !== "place") {
-    throw new TypeError("at-place situation requires a place location");
-  }
-  if (value.phase === "in_transit" && location.kind !== "transit") {
-    throw new TypeError("in-transit situation requires a transit location");
-  }
-  const mediatedContext = nullableText("current situation.mediatedContext", value.mediatedContext);
-  assertNonEmpty("current situation.activity", value.activity);
-  assertNonEmpty("current situation.reason", value.reason);
-  const participantRefs = normalizeIds("current situation.participantRefs", value.participantRefs);
+  const observation = normalizeWorldObservation({
+    phase: value.phase,
+    location: value.location,
+    mediatedContext: value.mediatedContext,
+    activity: value.activity,
+    reason: value.reason,
+    participantRefs: value.participantRefs,
+    evidenceRefs: value.evidenceRefs,
+  });
   const sourcePlanRefs = normalizeIds("current situation.sourcePlanRefs", value.sourcePlanRefs, { required: true });
   assertPlainObject("current situation.resolution", value.resolution);
   assertExactKeys("current situation.resolution", value.resolution, [
     "kind",
     "conflict",
-    "enactedPlanRef",
+    "observedDivergence",
+    "governingPlanRef",
     "constrainedPlanRef",
     "summary",
   ]);
   assertEnum("current situation.resolution.kind", value.resolution.kind, ["personal_plan", "care_constraint"]);
   if (typeof value.resolution.conflict !== "boolean") throw new TypeError("current situation.resolution.conflict must be boolean");
-  assertId("current situation.resolution.enactedPlanRef", value.resolution.enactedPlanRef);
+  if (typeof value.resolution.observedDivergence !== "boolean") {
+    throw new TypeError("current situation.resolution.observedDivergence must be boolean");
+  }
+  assertId("current situation.resolution.governingPlanRef", value.resolution.governingPlanRef);
   if (value.resolution.constrainedPlanRef !== null) {
     assertId("current situation.resolution.constrainedPlanRef", value.resolution.constrainedPlanRef);
   }
@@ -368,17 +413,13 @@ export function normalizeCurrentSituation(value) {
     situationId: value.situationId,
     threadId: value.threadId,
     establishedAt: value.establishedAt,
-    phase: value.phase,
-    location,
-    mediatedContext,
-    activity: value.activity,
-    reason: value.reason,
-    participantRefs,
+    ...observation,
     sourcePlanRefs,
     resolution: {
       kind: value.resolution.kind,
       conflict: value.resolution.conflict,
-      enactedPlanRef: value.resolution.enactedPlanRef,
+      observedDivergence: value.resolution.observedDivergence,
+      governingPlanRef: value.resolution.governingPlanRef,
       constrainedPlanRef: value.resolution.constrainedPlanRef,
       summary: value.resolution.summary,
     },
@@ -400,6 +441,19 @@ function positionsConflict(left, right) {
   });
 }
 
+function observationDivergesFrom(position, observation) {
+  if (position.kind !== observation.phase) return true;
+  if (position.kind === "at_place") {
+    return position.location.placeRef !== observation.location.placeRef ||
+      position.mediatedContext !== observation.mediatedContext ||
+      position.activity !== observation.activity ||
+      canonicalJson(position.participantRefs) !== canonicalJson(observation.participantRefs);
+  }
+  return observation.location.kind !== "transit" ||
+    position.location.fromPlaceRef !== observation.location.fromPlaceRef ||
+    position.location.toPlaceRef !== observation.location.toPlaceRef;
+}
+
 export function resolveCurrentSituation(input) {
   assertPlainObject("current situation resolution input", input);
   assertExactKeys("current situation resolution input", input, [
@@ -407,6 +461,7 @@ export function resolveCurrentSituation(input) {
     "establishedAt",
     "personalPlan",
     "carePlan",
+    "observation",
   ]);
   assertId("current situation resolution input.situationId", input.situationId);
   assertIsoTimestamp("current situation resolution input.establishedAt", input.establishedAt);
@@ -422,38 +477,42 @@ export function resolveCurrentSituation(input) {
   const carePosition = care === null ? null : plannedPositionAt(care, input.establishedAt);
   const conflict = carePosition !== null && positionsConflict(personalPosition, carePosition);
   const careConstrains = conflict && care.authority.constraint === "required";
-  const enacted = careConstrains ? carePosition : personalPosition;
+  const governingPosition = careConstrains ? carePosition : personalPosition;
+  const governingPlan = careConstrains ? care : personal;
+  const observation = normalizeWorldObservation(input.observation);
   const sourcePlanRefs = carePosition === null ? [personal.planId] : [personal.planId, care.planId];
+  const observedDivergence = observationDivergesFrom(governingPosition, observation);
 
   return normalizeCurrentSituation({
     situationId: input.situationId,
     threadId: personal.subjectThreadId,
     establishedAt: input.establishedAt,
-    phase: enacted.kind,
-    location: enacted.location,
-    mediatedContext: enacted.mediatedContext,
-    activity: enacted.activity,
-    reason: enacted.reason,
-    participantRefs: enacted.participantRefs,
+    ...observation,
     sourcePlanRefs,
     resolution: careConstrains
       ? {
           kind: "care_constraint",
           conflict: true,
-          enactedPlanRef: care.planId,
+          observedDivergence,
+          governingPlanRef: governingPlan.planId,
           constrainedPlanRef: personal.planId,
-          summary: "A required caregiver plan constrained the enacted itinerary without replacing the Thread's own flight plan.",
+          summary: observedDivergence
+            ? "A required caregiver plan governs this moment, while observed life has not yet matched it; the Thread's own flight plan remains intact."
+            : "A required caregiver plan governs this moment without replacing the Thread's own flight plan."
         }
       : {
           kind: "personal_plan",
           conflict,
-          enactedPlanRef: personal.planId,
+          observedDivergence,
+          governingPlanRef: personal.planId,
           constrainedPlanRef: null,
-          summary: carePosition === null
-            ? "The World enacted the Thread's current flight-plan position."
-            : conflict
-              ? "The caregiver itinerary differed but did not have required authority to constrain this moment."
-              : "The personal and caregiver itineraries were compatible at this moment.",
+          summary: observedDivergence
+            ? "Observed life currently differs from the Thread's governing flight-plan position."
+            : carePosition === null
+              ? "Observed life currently matches the Thread's governing flight-plan position."
+              : conflict
+                ? "A caregiver itinerary differs but lacks required authority; the Thread's personal flight plan still governs this moment."
+                : "The personal and caregiver itineraries are compatible and observed life matches the governing position."
         },
     provenance: "world_enacted",
   });
