@@ -237,8 +237,16 @@ function createCompletionConsumer(env, infra, presentationServer) {
     infra,
     credentialSigner,
     async publishReady({ scope, receipt }) {
-      if (scope.entityKind !== "thread") return null;
-      return publisher.publishReady({ receipt, channelId: channelIdForThread(scope.entityRef) });
+      if (scope.entityKind === "thread") {
+        return publisher.publishReady({ receipt, channelId: channelIdForThread(scope.entityRef) });
+      }
+      if (scope.entityKind === "experience" && receipt.context?.currentPresent === true) {
+        return publisher.publishReady({
+          receipt,
+          channelId: channelIdForThread(receipt.context.threadId),
+        });
+      }
+      return null;
     },
   });
 }
@@ -262,7 +270,8 @@ async function completionActivityIdentity(infra, rawCompletion) {
     if (parsed === null) return Object.freeze({ threadId: null, mediaId: null, jobId });
     const receipt = normalizeStoredAssetReceipt(parsed);
     const context = receipt.context;
-    if (context?.kind !== "thread_presentation_media") {
+    if (context?.kind !== "thread_presentation_media"
+      && !(context?.kind === "experience_presentation_media" && context.currentPresent === true)) {
       return Object.freeze({ threadId: null, mediaId: null, jobId });
     }
     return Object.freeze({
