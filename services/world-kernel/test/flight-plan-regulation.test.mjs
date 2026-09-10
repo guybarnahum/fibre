@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { evaluateIntrinsicRegulation } from "../../../core/src/intrinsic-regulation.mjs";
-import { assessFlightPlanPresence } from "../src/flight-plan-regulation.mjs";
+import {
+  assessFlightPlanPresence,
+  observationFromCurrentSituation,
+} from "../src/flight-plan-regulation.mjs";
 import { livedPlanId } from "../src/lived-now.mjs";
 
 function plan() {
@@ -158,4 +161,46 @@ test("A1 mediated presence is a real destination even when physical place does n
   assert.equal(connected.presenceTarget.actualSatisfaction, 1);
   assert.ok(presence(regulate(disconnected)).pressure > presence(regulate(connected)).pressure);
   assert.equal(presence(regulate(connected)).attained, true);
+});
+
+test("A1 a persisted CurrentSituation can become the regulator's World observation", () => {
+  const flightPlan = plan();
+  const currentSituation = {
+    situationId: "sit_flight_persisted_1015",
+    threadId: flightPlan.subjectThreadId,
+    establishedAt: "2026-09-10T10:15:00Z",
+    phase: "in_transit",
+    location: {
+      kind: "transit",
+      fromPlaceRef: "place_home",
+      toPlaceRef: "place_park",
+      progress: 0.2,
+    },
+    mediatedContext: null,
+    activity: "Walking toward the park, but slower than expected.",
+    reason: "World observation shows movement toward the intended park visit.",
+    participantRefs: [],
+    evidenceRefs: ["world:persisted-walk-1015"],
+    sourcePlanRefs: [flightPlan.planId],
+    resolution: {
+      kind: "personal_plan",
+      conflict: false,
+      observedDivergence: false,
+      governingPlanRef: flightPlan.planId,
+      constrainedPlanRef: null,
+      summary: "Observed life currently follows the Thread's governing flight plan.",
+    },
+    provenance: "world_enacted",
+  };
+
+  const assessment = assessFlightPlanPresence({
+    plan: flightPlan,
+    at: currentSituation.establishedAt,
+    observation: observationFromCurrentSituation(currentSituation),
+  });
+
+  assert.equal(assessment.status, "delayed");
+  assert.equal(assessment.observed.location.progress, 0.2);
+  assert.ok(assessment.presenceTarget.expectedSatisfaction > assessment.presenceTarget.actualSatisfaction);
+  assert.ok(presence(regulate(assessment)).pressure > 0);
 });
