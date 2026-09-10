@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { requireInfraCapabilities } from "#infra";
-import { assertContentCredentialSigner } from "#services/asset-generator/src/index.mjs";
+import { assertContentCredentialSigner } from "fibre/asset-generator/content-credential-signer";
 import {
   FID_MACHINE_CREDENTIAL_SCHEMA,
   FID_MACHINE_ENVELOPE_VERSION,
