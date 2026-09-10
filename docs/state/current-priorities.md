@@ -7,93 +7,103 @@ canonical: true
 
 # Current priorities
 
-[`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) is the continuation authority.
+Fibre is taking a deliberate intrinsic-regulation detour before continuing the lived-world meeting loop.
+
+[`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md) is the current implementation authority. [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) remains the M2 continuation authority.
 
 ## Active sequence
 
 ```text
-A1 Lived Now authority                                  CURRENT
-A2 Care plan + conflicting wills                       NEXT
-A3 Current-life projection + Thread Editor             NEXT
-A4 Public present + insidefibre.com scene              NEXT
-A5 Situated encounter                                  NEXT
-B1 Encounter -> selective experience                   NEXT
-B2 Life continues + second meeting                     TRUE-E2E CLOSURE
-C1 Aging/mobility/developmental generalization         AFTER FIRST LOOP
+R1 Regulatory kernel + presence drive                   CURRENT
+R2 Person-as-place / social-attachment regulation       NEXT
+R3 Interoception -> semantic feeling                    NEXT
+R4 Functional drive loop + Thread Editor inspection     NEXT
+
+resume A1/A2 Flight Plan + movement                     AFTER R4
+A3 Current-life projection + Thread Editor
+A4 Public present + insidefibre.com scene
+A5 Situated encounter
+B1 Encounter -> selective experience
+B2 Life continues + second meeting                      TRUE-E2E CLOSURE
 ```
 
-The product goal is one Thread who is already living before the visitor arrives.
+All work remains on `agent/m2-lived-encounter`; do not create per-slice branches.
 
-## A1 now
+## Why the detour
 
-Implement the smallest authoritative chain:
+The E2E meeting is an architectural forcing function, not merely a demo. Making one meeting genuinely valuable exposed missing Fibre capabilities: self-authored life, care/dependency, movement/presence, and now a lower motivational substrate that makes success, lateness, proximity, separation, obstacles and arrival actually matter to the Thread.
+
+A convincing meeting should become a potentially high-value experience **because of the life already under it**, not because the Viewer writes dramatic context into a prompt.
+
+## R1 now
+
+Build the smallest general loop:
 
 ```text
-developmental context
-  -> Thread-authored personal flight plan
-  -> World-enacted current situation
+desired/avoided condition
+  + actual/predicted World state
+  -> drive pressure / progress / surprise / attainment
+  -> private intrinsic affect
 ```
 
-The current situation must answer where the Thread actually is, what they are doing, why, with whom, and which plan led there. It exists and survives restart before Thread Editor, Presentation or insidefibre.com reads it.
+Start with **presence** because it is general and immediately useful to Flight Plans:
 
-Reuse existing situated-life/place authority. Do not add a second location system or generic scheduler.
+- physically at a place;
+- connected to a mediated meeting;
+- with/near/away from a person;
+- available for an obligation/activity.
 
-Model physical presence separately from mediated/virtual experience so a Thread can later visit a real place online without recording false physical travel.
+R1 is deterministic and provider-neutral. It should not generate named emotions.
 
-## UI path
+## Person as place
 
-Thread Editor and insidefibre.com are two views of the same life:
+A caregiver, partner or intimate friend can be a desired presence target just as a station or room can. Conversely, distance from a person may be desired.
 
 ```text
-World / Thread authorities
-       |
-current-life semantic projection
-       |---------------------------|
-authorized operator view      public Presentation
-       |                           |
-Thread Editor              insidefibre.com /meet
+with caregiver
+near partner
+away from person
+connected to friend
+alone somewhere quiet
 ```
 
-Thread Editor should expose the causal chain and provenance. insidefibre.com should expose the human encounter: current scene, activity/context and a natural entry to conversation.
+Role never determines polarity. Relationship/developmental history must remain capable of changing whether proximity feels regulating, neutral, conflicted or aversive.
 
-Neither UI owns life state.
-
-## Child/caregiver proof
-
-A2 should add one care-plan conflict without creating a child-specific runtime:
+## Semantic boundary
 
 ```text
-child's plan       caregiver's care plan
-       \             /
-        World resolution
-              |
-       enacted situation
+regulatory drive  != semantic need
+intrinsic affect  != semantic emotion
+mechanical signal != autobiographical meaning
 ```
 
-The caregiver may legitimately constrain the enacted day while the child's intention remains intact and attributable. Negotiation can become shared history; private meaning remains participant-specific.
+Drive state can be numeric. Meaning-bearing emotion/need/relationship state remains natural-language-first and Thread-owned.
+
+R3 may expose bounded regulator output to cognition through an explicit private interoceptive channel. It must never inject conclusions such as `you are anxious`, `you love her`, or `you should leave`.
 
 ## Stop rules
 
-- No broad planning framework before A1 works.
-- No childcare policy engine before one real care conflict works.
-- No public chat abstraction before the situated encounter works.
-- No transcript-as-memory shortcut.
-- No new place, identity, relationship or memory authority for UI convenience.
-- No broad aging/travel simulator before B2 closes true E2E.
-- Keep tests focused on semantic invariants and demonstrated regressions.
+- No general emotion simulator.
+- No giant drive ontology; prove presence first.
+- No fixed mapping from drive values to named emotions.
+- No `parent/partner => seek proximity` shortcut.
+- No high-frequency ticking; evaluate on meaningful events/time boundaries and recompute lazily.
+- No regulator may mint consent, permission or protected action.
+- Persist consequential targets/transitions, not every numeric sample.
+- Keep tests focused on causal invariants and one or two lived examples.
 
-## Existing foundations to reuse
+## Flight Plan work already earned
 
-- rich Genesis childhood and autobiographical prior life;
-- SituatedLifeStore and existing World place authority;
-- identity-context selection/cognition boundary;
-- canonical visual identity + reference-conditioned media;
-- Thread Directory/Meet;
-- Thread Presentation public snapshots/events/assets;
-- existing request-participation/runtime cognition;
-- Thread Editor Directory and inspection surface;
-- separate `guybarnahum/insidefibre.com` React/Vite Viewer.
+The current branch has already established useful A1/A2 authority boundaries: Thread personal plan and caregiver care plan are distinct from World-enacted situation, care does not overwrite the dependent person's will, and Viewer/caller input cannot author current reality.
+
+The current narrow one-step plan representation is **not the final Flight Plan design**. After R4 it will be reshaped into a half-day/day mental itinerary of desired presence states, movement and commitments, using intrinsic regulation as the felt substrate.
 
 ## Branch
 
-Implementation should begin from current `main` on `agent/m2-lived-encounter`. Planning identifiers are Fibre milestones, not GitHub PR numbers.
+Continue on:
+
+```text
+agent/m2-lived-encounter
+```
+
+Planning slice identifiers are Fibre milestones, not GitHub PR numbers.
