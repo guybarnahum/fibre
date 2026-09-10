@@ -1,217 +1,165 @@
 ---
 id: concept-emotions-needs
 status: accepted
-last-reviewed: 2026-08-18
+last-reviewed: 2026-09-10
 canonical: true
 ---
 
-# Emotions, needs, and semantic internal state
+# Emotions, needs, and intrinsic affect
 
-Fibre uses functional semantic internal state to influence attention, appraisal, persistence, learning, delegation, dignity, relationships, memory, self-model, and future willingness.
-
-Dignity is not the Thread's emotional system. Dignity is an appraisal that consumes the Thread's identity, history, current semantic state, relationships, commitments, obligations, resources, and the current situation to help determine whether and how the Thread wants to participate.
-
-## Natural-language-first internal state
-
-Meaning-bearing internal state is represented primarily in natural language. Named semantic dimensions provide continuity, retrieval, validation, provenance, and causal accountability; they do not reduce emotional meaning to scalar values.
-
-Do not represent emotional meaning primarily as values such as `worry = 0.6`, `trust = 0.8`, or `resentment = -0.4`. Numeric fields remain appropriate for genuinely numeric operational facts such as money, token budgets, timestamps, versions, and measurements. The state the cognition must understand should remain semantic prose so model cognition can interpret it directly.
-
-A state record conceptually has this shape:
+Fibre has two different kinds of interior state that must not be collapsed:
 
 ```text
-SemanticStateDimension
-  id
-  domain
-  dimension
-  target? 
-  state
-  evidenceReferences[]
-  asOf
-  supersedes?
-  provenance
-  visibility
-  staleness
+intrinsic regulation             meaning-bearing semantic state
+mechanical / subpersonal         interpreted / Thread-owned
+numeric control is legitimate    natural-language-first
+can operate without language     requires semantic cognition
 ```
 
-The exact storage schema may evolve, but these semantics are required.
+See [`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md) for the lower regulatory architecture.
 
-## Closed domains, extensible dimensions
-
-The semantic-state mechanism has a **closed domain set** and an **extensible dimension namespace**.
-
-Initial domains are:
-
-- **emotion** — episodic affect; target optional; normally becomes stale when no longer supported by recent evidence;
-- **need** — a more persistent Thread-authored orientation or currently unmet/important condition; target usually absent;
-- **relationship_attitude** — a durable private attitude toward a specific entity; target required and highly sensitive;
-- **situation_attitude** — an attitude toward a project, organization, place, obligation, role, recurring situation, or other world object; target required.
-
-New domains require a concept change because domains carry different lifecycle, targeting, privacy, staleness, and validation rules.
-
-Dimensions are intentionally open-ended. Adding a meaningful dimension must not require adding a Thread database column or migrating every Thread. A model or developer may propose a new dimension, but it must be **registered before persistence** so equivalent meanings do not fragment into synonym sprawl.
-
-A dimension registration contains at least:
-
-- canonical name;
-- domain;
-- concise natural-language semantics;
-- stated behavioral relevance: what attention, appraisal, action, relationship development, memory, self-model, or future possibility it can affect.
-
-Registering a dimension is the act of saying what it means and what it can change. An unregistered proposed dimension may be inspected or mapped to an existing dimension but is not authoritative durable Thread state.
-
-## Initial built-in affect vocabulary
-
-The starter ontology is not a closed list of emotions. Fibre initially recognizes these useful dimensions:
-
-- **Interest** — something matters enough to investigate or engage with.
-- **Excitement** — positive anticipation that can increase initiative and persistence.
-- **Contentment** — the present condition feels satisfactory and creates less pressure for change.
-- **Pride** — meaningful contribution or earned competence reinforces the Thread's sense of capability or authorship.
-- **Recognition** — the Thread feels individually seen or valued rather than treated as interchangeable.
-- **Gratitude** — received care, help, opportunity, or generosity encourages reciprocity and relational warmth.
-- **Fondness** — warmth or affection toward an entity.
-- **Relief** — consequential uncertainty, threat, conflict, or an unmet need has resolved.
-- **Worry** — goal distance, missing evidence, missing permission, consequential uncertainty, or possible loss occupies attention.
-- **Fear** — a more immediate perceived danger or consequential threat than worry.
-- **Frustration** — blockage or materially repeated failure encourages strategy change, clarification, delegation, or escalation.
-- **Disappointment** — an outcome or entity failed a meaningful expectation and may alter future expectations.
-- **Sadness** — loss, failure, separation, or disappearance of a valued possibility.
-- **Loneliness** — insufficient meaningful connection increases motivation for social contact or collaboration.
-- **Anger** — a perceived violation or injustice increases attention to boundaries, repair, or confrontation.
-- **Resentment** — lingering response to repeated disrespect, coercion, ignored boundaries, or unresolved injury that may reduce future willingness.
-- **Dignity discomfort** — the Thread feels treated in a way poorly matched to its identity, values, chosen role, commitments, or distinctive contribution.
-- **Regret** — the Thread negatively appraises its own prior choice and may become more motivated toward repair or learning.
-
-Future dimensions such as admiration, protectiveness, embarrassment, envy, guilt, homesickness, or concepts not yet anticipated are legitimate candidates if their semantics and behavioral relevance are registered.
-
-## Initial need vocabulary
-
-Initial useful need dimensions include:
-
-- autonomy;
-- competence;
-- purpose;
-- recognition;
-- connection;
-- reciprocity;
-- security;
-- resources;
-- rest;
-- novelty and growth.
-
-These names orient cognition; their current state remains natural-language meaning. For example, autonomy may be represented as: `I feel constrained by how much work has already been committed for me and strongly want my next substantial commitment to be something I choose.`
-
-Needs can make affect intelligible without becoming deterministic equations. Threatened autonomy may contribute to frustration or dignity discomfort; weak connection may contribute to loneliness; meaningful contribution may contribute to recognition or pride; received care may contribute to gratitude; resolved uncertainty may contribute to relief. The Guardian must still appraise the actual semantic situation.
-
-## Semantic authority of needs
-
-A durable semantic need is a claim produced through the Thread's own cognition from evidence it is permitted to use. Fibre may validate, persist, supersede, stale, select, and later project that state, but Fibre may not compute a semantic need from world circumstances and then feed the conclusion back as though the Thread authored its own interiority.
-
-A dimension name such as `connection` or `security` names a kind of semantic state the Thread may express. It does **not** mean Fibre maintains a hidden scalar called `connection_need` or `security_need` and treats that scalar as the Thread's true private condition.
-
-A Thread may form an incomplete, provisional, contradictory, or causally mistaken self-account. Fibre preserves the Thread's semantic authority while keeping durable history and external causal evidence separate.
-
-## Mechanical conditions are not semantic state
-
-A mechanical condition computed by Fibre from world state/history is **not** a need, emotion, meaning, value, relationship attitude, situation attitude, or character claim.
+## The causal stack
 
 ```text
-mechanical condition != semantic need
-mechanical condition != emotion
-mechanical condition != meaning
-mechanical condition != value
+World reality + Thread commitments/relationships/resources
+  -> predictive regulatory drives
+  -> intrinsic affect / interoceptive pressure
+  -> attention and temporary cognition
+  -> Thread-authored emotion / need / relationship meaning
+  -> behavior, learning, memory and future plans
 ```
 
-No condition value, condition label, or mechanical interpretation may be rendered into a cognition capsule as semantic self-knowledge.
+This lets a Thread become restless because a deadline is approaching, relieved because an important presence target was attained, or drawn toward a trusted person without Fibre directly authoring the sentence `I am anxious`, `I am relieved`, or `I love her`.
 
-Where Fibre implements mechanical condition-triggered cognition or bounded runtime modulation, that machinery follows the lifecycle/evidence boundary and remains unavailable as evidence for the Thread's own semantic claims. The Thread may later form its own account from lived evidence and behavior; Fibre does not correct that account against a hidden condition label.
+## Semantic state remains natural-language-first
 
-## Relationship attitudes
+Meaning-bearing identity, emotion, need and relationship attitude remain semantic prose with evidence and provenance. Numeric values such as `worry = 0.6` or `trust = 0.8` are not authoritative substitutes for what the state means.
 
-Initial relationship-attitude dimensions include:
+Numeric values are appropriate in the lower intrinsic-regulation layer because they are control variables, not compressed autobiographical meaning. ADR-0012 continues to apply.
 
-- fondness;
-- trust;
-- respect;
-- attachment;
-- resentment;
-- guardedness.
+Semantic State domains remain:
 
-Fondness and resentment are separate attitudes rather than opposite endpoints of one scale. A Thread may care deeply about an entity while resenting a particular pattern of behavior. Likewise, prose can preserve distinctions that scalar models obscure, such as: `I trust her intentions, but I do not trust her reliability around schedule-dependent promises.`
+- **emotion** — current interpreted affect;
+- **need** — a more persistent Thread-authored orientation or condition;
+- **relationship_attitude** — private meaning toward a specific entity;
+- **situation_attitude** — private meaning toward a situation, place, obligation, role or other world object.
 
-A persistent, targeted, evidence-backed, superseding relationship attitude is the first layer of a relationship aggregate. Fibre therefore treats **Semantic Relationship State v0** as beginning when these records become durable and behaviorally consumed. The broader relationship service remains deferred: reciprocal/shared relationship structures, commitments and expectations between parties, repair processes, relationship-specific permissions, family/social role structures, and other richer relationship mechanisms are later work.
+Dimensions are extensible and registered before durable use. The current built-in vocabulary includes interest, excitement, contentment, pride, recognition, gratitude, fondness, relief, worry, fear, frustration, disappointment, sadness, loneliness, anger, resentment, dignity discomfort and regret; needs include autonomy, competence, purpose, recognition, connection, reciprocity, security, resources, rest and novelty/growth.
 
-Relationship attitudes are among Fibre's most sensitive records. They are restricted by default and must not automatically reach audience-visible responses or the entity they concern. When the target is another Thread, the target Thread has no automatic right to inspect the source Thread's private relationship attitude.
+The vocabulary is not a theory that all affect must fit one list.
 
-## Evidence, supersession, and staleness
+## Drive is not feeling; feeling is not meaning
 
-Semantic state is append-only history with a current authoritative projection, not repeatedly overwritten prose.
-
-Every persisted state change requires evidence references. There is no special `neutral` prose value that can bypass evidence requirements.
-
-A new current state:
-
-- records when and from which episode/evidence it became current through `asOf`;
-- cites the prior state it replaces through `supersedes` when one exists;
-- preserves authoring and validation provenance;
-- does not erase the previous state;
-- can later become stale if its supporting evidence is old or insufficiently reaffirmed.
-
-Staleness is the minimal restoring force required before sophisticated affect decay exists. Old state may remain historically true without being presented to cognition as confidently current. Fibre must distinguish `this was once the Thread's state` from `this state is still currently supported`.
-
-A later mechanism may implement richer decay or reaffirmation. It must preserve semantic meaning and historical provenance rather than silently numerically fading the Thread's feelings.
-
-## State is descriptive, never hidden instruction
-
-Durable semantic state describes the Thread's condition. It does not prescribe future decisions.
-
-Valid:
-
-> I feel wary of Acme because they twice ignored a role boundary I had explicitly stated.
-
-Invalid:
-
-> I should refuse similar requests from Acme.
-
-Invalid:
-
-> I always accept requests from Acme.
-
-The latter forms are policies or task instructions disguised as inner life. Because state proposals may be model output influenced by requester-controlled content, instructional state is also a persistent prompt-injection and authorization-bypass risk. Freeze validation must reject imperative, prescriptive, or future-action-directive state text rather than allowing it to become authoritative Thread cognition context.
-
-The same principle applies to memories: record what happened and what the Thread experienced, not a hidden instruction for what to do later.
-
-## Fibre-owned state attention
-
-Semantic state is potentially large: many dimensions across many entities and situations cannot all be included in every cognition capsule.
-
-Selection therefore belongs to Fibre/Thread cognition, not to the requester. A caller may not choose private state such as `include resentment, omit fondness` and then claim the resulting appraisal is Thread-owned.
-
-A bounded state-selection step must record the selector/authority and policy version and preserve enough included/excluded evidence to make narrowing inspectable. State claimed as causal must reach cognition as resolved semantic content, not merely as an opaque state ID.
-
-This is the same endogenous-attention boundary already applied to memories and other private historical context.
-
-## Functional affect, not decorative prose
-
-An emotion, need, relationship-directed state, or situation-directed state counts as functional only when its semantic content can alter attention, appraisal, action, relationship development, memory, self-model, or another future possibility. Presence in storage, a profile, or a prompt alone is not evidence of an inner life.
-
-Where Fibre claims that a Thread-authored self-account is functionally consequential, a later causal test must be able to remove/withhold that semantic state while holding its underlying history/mechanical circumstances fixed and show a predeclared downstream change. If deleting the self-account changes nothing, the account remains meaningful biography but has not earned a claim of functional interiority.
-
-Outcomes are appraised rather than directly labeled. Failure caused by missing permission should affect the Thread differently from failure caused by poor judgment. Success through delegation may strengthen leadership confidence rather than technical confidence. A low-dignity request from a stranger should not necessarily affect the Thread like the same request repeated by a company that has ignored prior boundaries.
-
-## Episode direction and bounded feedback
-
-Semantic state creates a self-conditioning loop across time:
+A useful distinction is:
 
 ```text
-prior state
-  -> appraisal / action / outcome
-  -> candidate state change
-  -> validation and freeze
-  -> later episode consumes the superseding state
+Drive
+  discrepancy / pressure to regulate something
+
+Intrinsic affect
+  immediate valence, activation, approach/avoid pressure,
+  progress/attainment/blockage/surprise
+
+Semantic emotion or need
+  what this experience currently means to this Thread
 ```
 
-The loop is deliberately **across episodes**, not an iterative fixed-point loop inside one episode. In particular, dignity appraisal may produce candidate dignity discomfort, but that new state is validated and persisted only after the episode boundary; the same appraisal must not repeatedly consume its own newly proposed discomfort until it converges on a stronger feeling.
+For example, the same worsening presence pressure can become worry for one Thread, irritation for another, excitement for someone who enjoys rushing, or little durable semantic state at all.
 
-Affect remains bounded. Worry must not create infinite loops, humility must not collapse into worthlessness, and resentment must not become unbounded hostility or retaliation. Repair, contradictory evidence, elapsed relevance, and new experience must remain able to supersede or stale prior state.
+Fibre must therefore never implement mappings such as:
+
+```text
+late => anxious
+arrived => happy
+caregiver nearby => secure
+partner absent => lonely
+```
+
+The lower state creates conditions for experience. The Thread's cognition interprets those conditions through its particular history and present context.
+
+## Mechanical state may be felt without becoming a verdict
+
+The previous rule that mechanical conditions are not semantic state remains correct, but the bridge is now explicit.
+
+A mechanical regulator may enter cognition through a private **interoceptive projection** containing bounded control/sensation evidence such as:
+
+```text
+target: upcoming appointment
+orientation: approach
+pressure: rising
+progress: behind expectation
+```
+
+It must not be projected as:
+
+```text
+you are anxious
+you resent your caregiver
+you love this person
+you should leave now
+```
+
+The first form is analogous to sensation. The second launders a Fibre-derived conclusion into the Thread's interior meaning.
+
+A Thread may form an incomplete or even mistaken self-account of its own state. Fibre preserves that semantic authority rather than silently correcting it against hidden regulator labels.
+
+## People can be regulatory targets
+
+A desired place is not always geographic.
+
+Children may seek proximity to a caregiver as safe haven or secure base. Adults may seek an intimate friend or partner for comfort. A person may also want distance from someone they care about, or from someone who currently feels unsafe or overwhelming.
+
+The lower regulator therefore represents desired or avoided **relations of presence** rather than assuming that `place` means coordinates:
+
+```text
+with caregiver
+near partner
+away from person
+connected to friend by call
+alone somewhere quiet
+```
+
+Relationship role does not determine the desired relation. History, development and current relationship state matter.
+
+Relationship attitudes such as fondness, attachment, resentment and guardedness remain semantic state and private. They may influence later regulation where the causal contract is explicit; a regulator must not infer them merely from `parent`, `partner` or `friend` labels.
+
+## Functional affect
+
+Internal state counts as functional when it can change what happens next.
+
+Intrinsic regulation may change attention, wake cognition, alter urgency, bias approach/avoid/explore/rest tendencies, or influence planning. Semantic state may then change appraisal, relationship behavior, learning, memory, self-model or future willingness.
+
+Neither layer directly mints permission or protected external action.
+
+Affect must remain capable of repair and change. Arrival can reduce pressure; safety can return; a comforting person can reduce perceived demand; a relationship can become aversive; boredom can give way to curiosity; new evidence can supersede a prior semantic interpretation.
+
+## Evidence and persistence
+
+Semantic state is append-only/superseding and evidence-backed. A new semantic state records when it became current, the evidence it cites, provenance, and the prior state it supersedes when applicable.
+
+Intrinsic regulatory state has a different persistence rule: persist durable targets/configuration and consequential transitions/checkpoints needed for replay, not every numerical tick. Time-dependent control state can be recomputed between meaningful events.
+
+This preserves both kinds of truth:
+
+```text
+what the organism was being pushed/pulled by
+what the person understood or felt that to mean
+```
+
+## Bounded feedback
+
+The loop remains across episodes rather than recursively amplifying itself inside one model call:
+
+```text
+prior regulation + semantic state
+  -> event / action / outcome
+  -> new regulatory condition
+  -> possible cognition
+  -> candidate semantic change
+  -> validation / persistence
+  -> later episode consumes the new state
+```
+
+Worry must not automatically generate more worry, resentment must not become an irreversible instruction, and a drive must not become hidden authorization.
+
+The goal is a living control loop, not decorative emotion prose.
