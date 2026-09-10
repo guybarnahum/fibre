@@ -123,8 +123,14 @@ function situationFromRow(row) {
 }
 
 function isActiveAt(plan, at) {
-  return Date.parse(plan.authoredAt) <= Date.parse(at) &&
-    (plan.validUntil === null || Date.parse(plan.validUntil) >= Date.parse(at));
+  const instant = Date.parse(at);
+  return Date.parse(plan.authoredAt) <= instant &&
+    Date.parse(plan.horizonStart) <= instant &&
+    Date.parse(plan.horizonEnd) >= instant;
+}
+
+function physicalPlaceRefs(plan) {
+  return [...new Set(plan.stops.map((stop) => stop.physicalPlaceRef))];
 }
 
 export class LivedNowStore {
@@ -226,14 +232,17 @@ export class LivedNowStore {
           throw new LivedNowConflictError(`lived plan ${record.planId} already exists differently`);
         }
 
-        this.#requirePlace(record.subjectThreadId, record.physicalPlaceRef);
+        const placeRefs = physicalPlaceRefs(record);
+        placeRefs.forEach((reference) => this.#requirePlace(record.subjectThreadId, reference));
         const resolved = assertAllSituatedReferencesResolve(
           this.#database,
           record.subjectThreadId,
           record.sourceReferences,
         );
-        if (!record.sourceReferences.includes(record.physicalPlaceRef)) {
-          throw new LivedNowConflictError("lived plan must cite its physical place authority");
+        for (const reference of placeRefs) {
+          if (!record.sourceReferences.includes(reference)) {
+            throw new LivedNowConflictError("lived plan must cite each physical place authority");
+          }
         }
         if (record.kind === "personal") {
           if (!resolved.some((item) => item.kind === "thread_event")) {
@@ -344,7 +353,12 @@ export class LivedNowStore {
           personalPlan,
           carePlan,
         });
-        this.#requirePlace(input.threadId, situation.physicalPlaceRef);
+        if (situation.location.kind === "place") {
+          this.#requirePlace(input.threadId, situation.location.placeRef);
+        } else {
+          this.#requirePlace(input.threadId, situation.location.fromPlaceRef);
+          this.#requirePlace(input.threadId, situation.location.toPlaceRef);
+        }
 
         const recordJson = canonicalJson(situation);
         this.#database.prepare(`
