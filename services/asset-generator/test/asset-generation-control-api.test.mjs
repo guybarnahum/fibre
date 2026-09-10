@@ -87,7 +87,15 @@ test("Asset Generator control API preserves terminal workflow classification", a
       },
     },
   });
-  const response = await api.fetch(request());
+  const logged = [];
+  const originalError = console.error;
+  console.error = (message) => logged.push(message);
+  let response;
+  try {
+    response = await api.fetch(request());
+  } finally {
+    console.error = originalError;
+  }
   assert.equal(response.status, 409);
   assert.deepEqual(await response.json(), {
     ok: false,
@@ -95,5 +103,13 @@ test("Asset Generator control API preserves terminal workflow classification", a
     code: "ASSET_GENERATION_WORKFLOW_TERMINAL",
     detail: "asset generation workflow asset_control_job_1 ended as errored: provider rejected request",
     retryable: false,
+  });
+  assert.equal(logged.length, 1);
+  assert.deepEqual(JSON.parse(logged[0]), {
+    event: "asset_generation_control_failed",
+    errorName: "Error",
+    code: "ASSET_GENERATION_WORKFLOW_TERMINAL",
+    retryable: false,
+    message: "asset generation workflow asset_control_job_1 ended as errored: provider rejected request",
   });
 });
