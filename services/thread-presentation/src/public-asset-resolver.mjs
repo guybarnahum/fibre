@@ -66,20 +66,15 @@ function normalizePublicMediaRecord(value, objectRef) {
 
 function identityCredentialVisible(snapshot, media) {
   const card = snapshot?.presentation?.identityCard ?? null;
-
-  if (card !== null
-    && card.officialPhotoMediaRef === media.mediaId
-    && card.visibility !== "public") {
-    return false;
-  }
-
-  if (media.role === "official_id_photo" || media.identityCredentialMedia) {
-    return card !== null
-      && card.officialPhotoMediaRef === media.mediaId
-      && card.visibility === "public";
-  }
-
-  return true;
+  const credentialMedia = media.role === "official_id_photo"
+    || media.role === "fibre_identity_card_front"
+    || media.role === "fibre_identity_card_back"
+    || media.identityCredentialMedia;
+  if (!credentialMedia) return true;
+  if (card === null || card.visibility !== "public" || card.status !== "active") return false;
+  return [card.officialPhotoMediaRef, card.frontMediaRef, card.backMediaRef]
+    .filter(Boolean)
+    .includes(media.mediaId);
 }
 
 export function createPublicPresentationAssetResolver({
