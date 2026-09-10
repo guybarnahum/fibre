@@ -18,6 +18,7 @@ import {
   integrityBadgeModel,
 } from "./human-readable.js";
 import { explainExpression } from "./expression-readable.js";
+import { explainCurrentLife } from "./current-life-readable.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -167,6 +168,36 @@ function recordButton(title, meta, onClick) {
   button.append(strong, span);
   button.addEventListener("click", onClick);
   return button;
+}
+
+function ensureCurrentLifePanel() {
+  if ($("currentLifeExplanation")) return;
+  const panel = document.createElement("article");
+  panel.className = "panel wide";
+  panel.id = "currentLifePanel";
+  const explanation = document.createElement("div");
+  explanation.id = "currentLifeExplanation";
+  explanation.className = "explanation";
+  panel.append(explanation);
+  $("threadExplanation").parentElement.insertAdjacentElement("afterend", panel);
+}
+
+function renderCurrentLife() {
+  ensureCurrentLifePanel();
+  if (!state.inspection.private?.available) {
+    renderExplanation("currentLifeExplanation", {
+      eyebrow: "Lived now",
+      title: "Current-life inspection unavailable",
+      summary: "Private World inspection is not configured for this Editor run.",
+      facts: [],
+      notes: [],
+    });
+    return;
+  }
+  renderExplanation(
+    "currentLifeExplanation",
+    explainCurrentLife(state.inspection.private.currentLife),
+  );
 }
 
 function renderThread() {
@@ -366,6 +397,7 @@ function renderRuntimes() {
 
 function renderAll() {
   renderThread();
+  renderCurrentLife();
   renderFid();
   renderEvents();
   renderRequests();
