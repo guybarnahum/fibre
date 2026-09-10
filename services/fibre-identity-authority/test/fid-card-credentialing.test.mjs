@@ -55,6 +55,7 @@ function protector() {
 
 function contentSigner({ rejectSide = null } = {}) {
   return {
+    signerVersion: "content-credential-signer-v0.1",
     signerId: "fid-c2pa-test",
     format: "c2pa",
     trustPolicy: "fid-test-trust-v1",
