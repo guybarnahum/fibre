@@ -151,20 +151,38 @@ function cognition(homeRef) {
   };
 }
 
-function personalPlanFixture({ threadId, sourceEvent, homeRef }) {
+function stop({ startAt, endAt, homeRef, mediatedContext, activity, purpose, companionRefs = [] }) {
   return {
-    planId: livedPlanId({ threadId, kind: "personal", authoredAt: "2026-09-10T05:03:00Z" }),
+    startAt,
+    endAt,
+    physicalPlaceRef: homeRef,
+    mediatedContext,
+    activity,
+    purpose,
+    companionRefs,
+    travelFromPrevious: null,
+  };
+}
+
+function personalPlanFixture({ threadId, sourceEvent, homeRef }) {
+  const authoredAt = "2026-09-10T05:03:00Z";
+  const horizonEnd = "2026-09-10T06:00:00Z";
+  return {
+    planId: livedPlanId({ threadId, kind: "personal", authoredAt }),
     kind: "personal",
     subjectThreadId: threadId,
     owner: { partyId: threadId, kind: "thread" },
-    authoredAt: "2026-09-10T05:03:00Z",
-    validUntil: "2026-09-10T06:00:00Z",
-    physicalPlaceRef: homeRef,
-    presenceMode: "mediated",
-    mediatedContext: "Monterey Bay Aquarium live octopus feed",
-    activity: "Watch the octopus livestream closely and sketch the changes I notice.",
-    purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
-    companionRefs: [],
+    authoredAt,
+    horizonStart: authoredAt,
+    horizonEnd,
+    stops: [stop({
+      startAt: authoredAt,
+      endAt: horizonEnd,
+      homeRef,
+      mediatedContext: "Monterey Bay Aquarium live octopus feed",
+      activity: "Watch the octopus livestream closely and sketch the changes I notice.",
+      purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
+    })],
     sourceReferences: [sourceEvent, homeRef],
     cognition: {
       provider: "fixture",
@@ -175,19 +193,25 @@ function personalPlanFixture({ threadId, sourceEvent, homeRef }) {
 }
 
 function carePlan({ threadId, homeRef, parentRef, ownerId = "human_maya_mother" }) {
+  const authoredAt = "2026-09-10T05:05:00Z";
+  const horizonEnd = "2026-09-10T05:30:00Z";
   return {
-    planId: livedPlanId({ threadId, kind: "care", authoredAt: "2026-09-10T05:05:00Z", ownerId }),
+    planId: livedPlanId({ threadId, kind: "care", authoredAt, ownerId }),
     kind: "care",
     subjectThreadId: threadId,
     owner: { partyId: ownerId, kind: "human_source" },
-    authoredAt: "2026-09-10T05:05:00Z",
-    validUntil: "2026-09-10T05:30:00Z",
-    physicalPlaceRef: homeRef,
-    presenceMode: "physical",
-    mediatedContext: null,
-    activity: "Put the tablet away and get ready to leave for the dental appointment.",
-    purpose: "Keep the scheduled appointment and leave enough time for the household to get there.",
-    companionRefs: ["human_maya_mother"],
+    authoredAt,
+    horizonStart: authoredAt,
+    horizonEnd,
+    stops: [stop({
+      startAt: authoredAt,
+      endAt: horizonEnd,
+      homeRef,
+      mediatedContext: null,
+      activity: "Put the tablet away and get ready to leave for the dental appointment.",
+      purpose: "Keep the scheduled appointment and leave enough time for the household to get there.",
+      companionRefs: ["human_maya_mother"],
+    })],
     sourceReferences: [parentRef, homeRef],
     authority: {
       relationRef: parentRef,
@@ -221,7 +245,8 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
     ]);
     assert.equal(formed.owner.partyId, life.thread.threadId);
     assert.equal(formed.cognition.modelId, "fixture-lived-plan-v1");
-    assert.equal(formed.presenceMode, "mediated");
+    assert.equal(formed.stops.length, 1);
+    assert.equal(formed.stops[0].mediatedContext, "Monterey Bay Aquarium live octopus feed");
 
     let lived = openLivedNowStore(localWorldStateStorage(databasePath));
     const personal = lived.recordPlan(formed);
@@ -233,8 +258,8 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
     assert.equal(first.resolution.kind, "personal_plan");
     assert.equal(first.resolution.conflict, false);
     assert.equal(first.resolution.enactedPlanRef, personal.planId);
-    assert.equal(first.presenceMode, "mediated");
-    assert.equal(first.physicalPlaceRef, life.homeRef);
+    assert.equal(first.phase, "at_place");
+    assert.deepEqual(first.location, { kind: "place", placeRef: life.homeRef });
     assert.equal(first.mediatedContext, "Monterey Bay Aquarium live octopus feed");
     assert.deepEqual(first.sourcePlanRefs, [personal.planId]);
     lived.close();
@@ -258,10 +283,12 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
     assert.equal(second.resolution.enactedPlanRef, care.planId);
     assert.equal(second.resolution.constrainedPlanRef, personal.planId);
     assert.match(second.activity, /dental appointment/);
-    assert.equal(second.presenceMode, "physical");
+    assert.equal(second.phase, "at_place");
+    assert.deepEqual(second.location, { kind: "place", placeRef: life.homeRef });
+    assert.equal(second.mediatedContext, null);
     assert.deepEqual(second.sourcePlanRefs, [personal.planId, care.planId]);
     assert.deepEqual(lived.latestPlan(life.thread.threadId, "personal", { at: second.establishedAt }), personal);
-    assert.match(personal.activity, /octopus livestream/);
+    assert.match(personal.stops[0].activity, /octopus livestream/);
     lived.close();
 
     lived = openLivedNowStore(localWorldStateStorage(databasePath));
