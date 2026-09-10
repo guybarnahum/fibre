@@ -127,7 +127,7 @@ function inspectPersistedEvidence(action) {
       error.httpStatus === undefined &&
       error.httpCode === undefined
     ) {
-      throw new IntegrityError(`Persisted inspection evidence is invalid: ${error.message}`);
+      throw new IntegrityError(`Structured Obligation persisted evidence is invalid: ${error.message}`);
     }
     throw error;
   }
@@ -138,7 +138,7 @@ function problem(error) {
     return [404, "STRUCTURED_OBLIGATION_INSPECTION_NOT_FOUND", error.message, {}];
   }
   if (error instanceof IntegrityError) {
-    return [503, "INTEGRITY_FAILURE", "Persisted inspection evidence failed integrity validation", {}];
+    return [503, "INTEGRITY_FAILURE", "Structured Obligation evidence failed integrity validation", {}];
   }
   if (error instanceof TypeError) {
     return [error.httpStatus ?? 400, error.httpCode ?? "INVALID_REQUEST", error.message, error.httpHeaders ?? {}];
