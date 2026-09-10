@@ -44,7 +44,7 @@ function normalizeObservation(value) {
   return { location, mediatedContext, evidenceRefs: [...new Set(evidenceRefs)] };
 }
 
-function travelWindow(plan, at) {
+function expectedTravelProgress(plan, at) {
   const instant = Date.parse(at);
   for (let index = 1; index < plan.stops.length; index += 1) {
     const previous = plan.stops[index - 1];
@@ -52,14 +52,10 @@ function travelWindow(plan, at) {
     const start = Date.parse(previous.endAt);
     const end = Date.parse(next.startAt);
     if (start <= instant && instant < end && previous.physicalPlaceRef !== next.physicalPlaceRef) {
-      return {
-        previous,
-        next,
-        expectedProgress: end === start ? 1 : Math.max(0, Math.min(1, (instant - start) / (end - start))),
-      };
+      return end === start ? 1 : Math.max(0, Math.min(1, (instant - start) / (end - start)));
     }
   }
-  return null;
+  return 0;
 }
 
 function actualForPlace(observation, placeRef) {
@@ -73,7 +69,7 @@ function actualForMediated(observation, planned) {
   return observation.mediatedContext === planned.mediatedContext ? 1 : 0;
 }
 
-function movementStatus(planned, travel, observation, actual, expected) {
+function movementStatus(planned, observation, actual, expected) {
   if (planned.kind === "at_place") {
     if (actual >= 0.95) return "dwelling";
     if (observation.location.kind === "transit" && observation.location.toPlaceRef === planned.location.placeRef) {
@@ -104,19 +100,16 @@ export function assessFlightPlanPresence({ plan: candidate, at, observation: can
   const planned = plannedPositionAt(plan, at);
   if (planned === null) return null;
 
-  const travel = planned.kind === "in_transit" ? travelWindow(plan, at) : null;
   const mediated = planned.kind === "at_place" && planned.mediatedContext !== null;
   const targetKind = mediated ? "mediated" : "place";
   const targetRef = mediated ? planned.mediatedContext :
     planned.kind === "at_place" ? planned.location.placeRef : planned.location.toPlaceRef;
   const relation = mediated ? "connected_to" : "at";
-  const expectedSatisfaction = planned.kind === "in_transit"
-    ? travel?.expectedProgress ?? 0
-    : 1;
+  const expectedSatisfaction = planned.kind === "in_transit" ? expectedTravelProgress(plan, at) : 1;
   const actualSatisfaction = mediated
     ? actualForMediated(observation, planned)
     : actualForPlace(observation, targetRef);
-  const status = movementStatus(planned, travel, observation, actualSatisfaction, expectedSatisfaction);
+  const status = movementStatus(planned, observation, actualSatisfaction, expectedSatisfaction);
   const evidenceRefs = [...new Set([...plan.sourceReferences, ...observation.evidenceRefs])];
 
   return {
