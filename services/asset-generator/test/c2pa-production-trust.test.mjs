@@ -53,6 +53,14 @@ function validVerification(overrides = {}) {
   };
 }
 
+function assertSourceMatches(source, pattern, label) {
+  assert.equal(pattern.test(source), true, `${label}: missing pattern ${pattern}`);
+}
+
+function assertSourceDoesNotMatch(source, pattern, label) {
+  assert.equal(pattern.test(source), false, `${label}: forbidden pattern ${pattern}`);
+}
+
 test("production HTTP C2PA signer requires HTTPS and an authorization token", () => {
   assert.throws(
     () => createHttpContentCredentialSigner({ baseUrl: "http://signer.example.test", signerId: productionSignerId, trustPolicy: "c2pa_trust_list", authorizationToken: "secret" }),
@@ -166,11 +174,11 @@ test("Cloudflare deployment may disable C2PA while retaining the C2PA integratio
   assert.equal(remoteAsset.integrations.contentCredentials, undefined);
   assert.equal(remotePresentation.integrations.contentCredentials, undefined);
 
-  for (const worker of [assetWorker, presentationWorker]) {
-    assert.match(worker, /integration-selection\.mjs/);
-    assert.match(worker, /selectContentCredentialIntegration/);
-    assert.match(worker, /contentCredentials\s*\?\?\s*null/);
-    assert.doesNotMatch(worker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/);
-    assert.doesNotMatch(worker, /fibre-c2pa-node-local-v1/);
+  for (const [label, worker] of [["asset-generator Cloudflare worker", assetWorker], ["thread-presentation Cloudflare worker", presentationWorker]]) {
+    assertSourceMatches(worker, /integration-selection\.mjs/, label);
+    assertSourceMatches(worker, /selectContentCredentialIntegration/, label);
+    assertSourceMatches(worker, /contentCredentials\s*\?\?\s*null/, label);
+    assertSourceDoesNotMatch(worker, /#integrations\/content-credentials\/c2pa-http-signer\.mjs/, label);
+    assertSourceDoesNotMatch(worker, /fibre-c2pa-node-local-v1/, label);
   }
 });

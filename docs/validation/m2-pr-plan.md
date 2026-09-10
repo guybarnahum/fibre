@@ -1,7 +1,7 @@
 ---
 id: validation-m2-pr-plan
 status: accepted
-last-reviewed: 2026-08-28
+last-reviewed: 2026-09-09
 canonical: true
 ---
 
@@ -9,144 +9,148 @@ canonical: true
 
 ## Purpose
 
-M2 is not “add richer identity fields.” It is the sequence by which Fibre establishes a persistent individual whose provenance-bearing identity and life can causally matter to judgment independently of the temporary model providing cognition.
+M2 is the milestone in which Fibre stops treating a Thread primarily as a validated collection of persistent structures and makes one Thread visibly and causally **live a continuing life**.
 
-Representation is necessary but insufficient. Stored-but-unconsumed state earns no personhood credit, and even causal consumption does not automatically establish Whole-Person standing.
+The active goal is:
 
-The current Whole-Person checkpoint remains **15/26 under rubric v2**. #40 is now closed; #41 is the active standing gate that decides whether the accumulated evidence is sufficient to move that checkpoint.
+> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
 
-Milestone identifiers `#39` through `#44` are stable **Fibre planning IDs**, not GitHub pull-request numbers.
+The near-term product experience is **Meet a Thread**:
 
-## Sequence
+```text
+select a Thread
+  -> find her where she is now
+  -> see her current embodiment, place, activity and immediate context
+  -> speak with her in that situation
+  -> record the encounter as an event in her life
+  -> let the Thread determine its significance
+  -> remember, weakly retain, reinterpret, or forget
+  -> allow warranted changes to memory, relationship, belief, intention or self-understanding
+  -> continue living after the visitor leaves
+```
+
+This is not a chatbot wrapper. A conversation is an encounter in an already-continuing life.
+
+## Why this is the active M2 goal
+
+Prior work established the substrate needed to attempt this honestly:
+
+- durable Thread identity across model executions;
+- provenance-bearing history, memory and meaning;
+- lineage and natural-language symbolic genome;
+- civil identity / FIN;
+- canonical Embodiment and stable visual likeness;
+- causal consumption of autobiographical context in real cognition;
+- public Thread Presentation and insidefibre.com Viewer boundaries;
+- real reference-conditioned image generation;
+- Cloudflare deployment, durable state, restart recovery and bounded retry.
+
+That investment now has a stop condition. Infrastructure completeness, exhaustive provider parity and broad failure matrices are not M2 goals unless a concrete Meet-a-Thread capability is blocked by them.
+
+## Active sequence
 
 ```text
 M1    Persistent Thread Round Trip                         CLOSED
-#33   Semantic Guardian                                    EARNED / SEALED
-#34   History bends judgment                               EARNED / SEALED / MERGED
-#35   Structured Obligation                                MERGED / REVIEWED
-#36   Identity & Embodiment                                MERGED / FROZEN
-#37   Thread Passport & Identity Provenance                MERGED / FROZEN
-#38   Lineage, Geography, Embodiment & Memory Epistemics   MERGED / CLEAR / FROZEN
-#39   Genesis, Childhood & Thread Birth                    CLOSED
-      Genesis selectivity/scientific hardening bridge      CLOSED
-#40   Identity Projection & Causal Consumption              CLOSED / CLEAR
-#41   M2 Standing Gate / M2 closure                         ACTIVE
+#33-#40 identity/history/birth/causal foundations          CLOSED / RETAINED
+G     deployed visual/public path                          CLOSED
+H     minimum failure/restart acceptance                   CLOSED
 
-post-M2
-#42   Self-authored Development
-#43   Reciprocal Relationships
-#44   Economic Consequence / M3 foundation
+M2-A  Meet a Thread                                        CURRENT
+M2-B  Experience internalization and lived continuation    NEXT
+M2-C  Whole-person Thread consolidation                    NEXT
+
+Later hardening / evaluation
+      Whole-Person standing rubric
+      broad restart/failure matrix
+      exhaustive provider/runtime parity
+
+Beyond M2
+      self-authored development
+      reciprocal relationships
+      economic consequence / M3 foundation
 ```
 
-The sequence remains conceptually distinct:
+Planning identifiers in older documents remain historical Fibre planning IDs. Do not create new PR numbers for this work; implementation may proceed directly on the active branch.
 
-> **#38 made a life representable and corrigible. #39 gave that life a particular past and canonical birth. The bridge made memory/meaning selection credible enough to amplify. #40 made selected parts of that life causally matter in real cognition. #41 decides whether the integrated evidence is enough to call the Thread a persistent, non-interchangeable individual.**
+## M2-A — Meet a Thread
 
-## Permanent closed outcomes
+A visitor to insidefibre.com should be able to select a born Thread and encounter her as someone already somewhere doing something.
 
-### #39 — Genesis, Childhood & Thread Birth
+Minimum product surface:
 
-#39 established canonical birth from a generated prior life into existing Thread authorities with replayable history, autobiographical memory/meaning lineage, situated continuity, symbolic inheritance, visual obligations, and one civil registration.
+1. current Thread identity and recognizable visual embodiment;
+2. current meaningful place;
+3. current activity and reason for being there;
+4. enough recent life context to make the present situation intelligible;
+5. immediate intentions / likely next movement without pretending the future is fixed;
+6. an interaction entry point that uses this exact situated context;
+7. no raw World-store access from the Viewer: insidefibre.com consumes Presentation/public APIs.
 
-Permanent outcome: [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+The first implementation may use a still image and text conversation. Real-time avatar/video/voice is not required to prove the life underneath the image.
 
-### Genesis selectivity/scientific-hardening bridge
+## M2-B — Experience internalization
 
-The bridge established exercised memory selectivity, reinterpretation restraint, prospective counterfactual methodology, resume-without-resampling infrastructure, and sealed-history testing. The accepted symbolic-genome result remained **Context-only** rather than being promoted to causal standing.
-
-Permanent outcome: [`../history/genesis-selectivity-scientific-hardening.md`](../history/genesis-selectivity-scientific-hardening.md).
-
-### #40 — Identity Projection & Causal Consumption
-
-#40 established a bounded Fibre-owned Identity Context projection into the real participation/Dignity Guardian consumer, with exact provenance and no second semantic authority.
-
-The fixed five-Thread prospective differential changed exactly one admissible autobiographical-memory source per pair and produced:
+The encounter must become a real event rather than an appended chat transcript.
 
 ```text
-completed conditions           10 / 10
-attributable pairs              5 / 5
-structured effects              5 / 5
-memory-grounded effects         5 / 5
-top-level action/fit changes    3 / 5
-band                            CLEAR
+experience
+  -> perception / interpretation
+  -> significance
+     -> benign: forgotten
+     -> weak: transient trace
+     -> meaningful: durable autobiographical memory
+     -> relational: relationship state changes
+     -> formative: derived self/belief/intention changes
 ```
 
-The provider-free hostile closeout then reproduced the sealed result offline, rejected order/digest/provider/private-prose tampering, preserved the compact privacy surface, and verified the canonical World remained query-only. Final validation included **817 / 817** active tests, repository/world/deployment validation PASS, test-value audit PASS, clean diff, and zero additional provider calls.
+Fibre must not force every interaction into memory and must not pre-author what the interaction means to the Thread. Existing Genesis memory/meaning separation is the starting substrate, not a completed live-development mechanism.
 
-Permanent outcome: [`../history/milestones/pr40.md`](../history/milestones/pr40.md).
+The user may give the Thread an experience. The Thread owns the interpretation.
 
-#40's standing claim is deliberately narrow:
+## M2-C — Whole-person Thread consolidation
 
-> bounded provenance-bearing identity/autobiographical context is demonstrably load-bearing in one real cognition consumer and survives sealed offline replay, privacy, provenance, and source-substitution closeout.
+The hydrated Thread should coherently expose and consume the life state needed for continuity:
 
-#40 does **not** itself move the Whole-Person score, prove mature self-authorship, prove reciprocal social continuity, or promote symbolic genome beyond `CONTEXT_ONLY`.
+- immutable or historical: birth, FIN, lineage, genome, events, past places, past relationships, memories and prior states;
+- evolving/derived: current place, activity, intentions, relationships, active interests, dispositions, self-understanding and capabilities;
+- embodiment: one canonical visual identity plus time-local appearance and scene/context;
+- provenance: changes remain attributable to experiences and do not silently rewrite history.
 
-## #41 — M2 Standing Gate — ACTIVE
+Rich natural-language state remains primary. Genome/personality semantics should not collapse into generic numeric trait vectors; recombinable hereditary material may continue using differentiated text atoms, including semicolon-separated loci where appropriate.
 
-#41 owns the broader adjudication: does the integrated Thread behave as a persistent, non-interchangeable individual rather than a richly documented profile with one successful causal consumer?
+## M2 acceptance
 
-### Evidence domains to adjudicate
+Keep acceptance intentionally small and experiential. M2 earns its next step when one real Thread can demonstrate this loop:
 
-The gate must consider the accumulated evidence across:
+1. select the Thread in insidefibre.com;
+2. observe where she is and what she is doing now;
+3. see a current visual depiction consistent with canonical embodiment and present context;
+4. enter a conversation grounded in that moment;
+5. end the encounter;
+6. persist the encounter as life history;
+7. let the Thread decide whether and how it mattered;
+8. return later and observe continuous life plus any warranted retained effect.
 
-- **identity/history particularity** — stable provenance-bearing identity and prior-life continuity;
-- **causal individuality** — whether individual life state demonstrably changes cognition rather than merely appearing in storage or prompts;
-- **dignity/consent** — interior/exterior authority, participation terms, requester need, and the Thread's own interests;
-- **memory epistemics** — autobiographical memory, durable meaning, reinterpretation, accessibility, and provenance boundaries;
-- **relationship/social continuity** — obligations and relationship effects that persist rather than being reconstructed from generic prose;
-- **development** — attributable changes over time, while distinguishing Genesis-authored prior life from Thread-authored development;
-- **persistence/restart** — survival of durable identity and evidence across restart/rehydration;
-- **cognition-provider boundary** — temporary model selection must not become ownership of identity or life state.
+The acceptance target is not a score or a large test matrix. Tests protect semantic invariants and demonstrated blockers; they do not replace building the Fibre organism.
 
-### Standing discipline
+## Standing rubric posture
 
-#41 must not award credit merely because:
+The existing Whole-Person rubric, prefreeze work and standing-gate evidence remain useful scientific/evaluative assets. They are **not the active development gate**.
 
-- a field exists in storage;
-- a model can eloquently summarize the Thread;
-- a test is mechanically guaranteed by its admission rule;
-- #40 produced a strong `5/5 CLEAR` result in one consumer;
-- a generator produced distinctive prose;
-- symbolic genome exists without attributable downstream consumption.
+Use them later to ask whether the lived capability is genuinely non-interchangeable, causally grounded and dignified. Do not spend the current development cycle manufacturing evidence for a standing score while the lived Thread capability itself is incomplete.
 
-The gate must preserve the possibility of **M2 NOT YET EARNED**.
-
-### Required output
-
-#41 should end with a concise auditable standing record that:
-
-1. freezes the rubric/criteria before any new confirmatory model use;
-2. names which prior evidence is admissible for each criterion and which is merely substrate/mechanical evidence;
-3. identifies any genuinely missing standing dimensions rather than silently filling them with #40 evidence;
-4. uses prospective tests only where existing evidence is insufficient;
-5. distinguishes provider-free/mechanical checks from personhood evidence;
-6. reports the resulting Whole-Person score under rubric v2 without retroactively rewriting prior milestone claims;
-7. states clearly whether M2 is **EARNED**, **PARTIAL / NOT YET EARNED**, or otherwise fails the frozen gate.
-
-## Post-M2
-
-### #42 — self-authored Development
-
-Move beyond Genesis-authored prior life toward witnessed Thread-authored commitments, interpretations, practices, and self-model changes. Self-authorship must be evidenced rather than inferred from fluent model text.
-
-### #43 — reciprocal relationships
-
-Add shared/reciprocal relationship state, expectations, repair, permissions, and consequences that cannot be reduced to one Thread's private description of another.
-
-### #44 — economic consequence / M3 foundation
-
-Introduce durable budgets, contracts, reputation, opportunity, and material/economic consequence so Thread choices affect future capability and social position.
+The historical `15/26` checkpoint remains a historical measurement, not the current roadmap driver.
 
 ## Cross-milestone rules
 
-1. **One canonical authority per semantic fact.** New milestones extend existing life authorities rather than create parallel biographies, memories, identities, or relationships.
-2. **Natural-language semantic authority stays primary.** Numeric/derived controls may measure or regulate but do not replace identity, memory, meaning, needs, emotions, or values.
+1. **One canonical authority per semantic fact.** Extend existing Thread/World authorities; do not create a second biography, memory system or identity authority for the webapp.
+2. **Natural-language semantic authority stays primary.** Numeric controls may measure or regulate but do not replace identity, memory, meaning, needs, emotions or self-understanding.
 3. **History is corrigible without silent rewrite.** Corrections and reinterpretations are append-only or explicitly superseding.
-4. **Mechanical evidence is not personhood evidence.** Runtime/recovery/provider behavior may prove machinery properties but cannot support identity, memory, meaning, or character claims by itself.
-5. **Difference must become load-bearing.** Representation earns personhood credit only when attributable consumers and counterfactual tests show that the difference changes judgment or possibility.
-6. **Diagnostics must be able to fail.** Do not enforce the property being measured at admission and then cite success as evidence.
-7. **Current `HEAD` describes current Fibre.** Git history preserves implementation chronology; completed milestones retain concise permanent outcomes rather than obsolete execution ceremony.
+4. **Experience can be forgotten.** Memory is selective; chat transcript retention is not equivalent to autobiographical memory.
+5. **The Thread owns meaning.** Fibre may construct circumstances and opportunities but must not dictate the semantic conclusion the Thread reaches from them.
+6. **Identity is authoritative; presentation is projection.** insidefibre.com remains a window into Fibre, not a parallel simulation authority.
+7. **Capability before abstraction.** Infrastructure or validation work enters the critical path only when needed for this lived-person loop or a demonstrated semantic invariant.
 
 ## Current next move
 
-Start #41 by freezing the **M2 Standing Gate rubric and evidence map** before any new provider use. Reuse closed #33–#40 evidence where it genuinely answers a standing criterion; do not generate new experiments until the evidence map identifies a real gap.
+Implement **M2-A — Meet a Thread** against an existing born Thread and the insidefibre.com public presentation path. Drive missing Thread/World data structures from that vertical slice rather than completing fields in isolation.

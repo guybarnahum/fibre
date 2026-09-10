@@ -1,13 +1,45 @@
 ---
 id: fibre-test-lifecycle-best-practice
 status: accepted
-last-reviewed: 2026-08-23
+last-reviewed: 2026-09-09
 canonical: true
 ---
 
 # Test lifecycle best practice
 
 Fibre should preserve strong regression coverage without allowing milestone-specific validation scaffolding to accumulate indefinitely in the ordinary active test suite.
+
+The purpose of testing is to protect Fibre semantics while keeping development fast. Tests are not a parallel product and test count is not progress.
+
+## Test only what earns confidence
+
+For a new Fibre capability, prefer the minimum focused set that establishes:
+
+- the semantic success path;
+- the important authority or invariant boundary;
+- a concrete regression or demonstrated failure mode when one exists.
+
+Do not build exhaustive matrices, speculative edge-case suites, provider-parity grids or broad boilerplate unless a real production risk or Fibre invariant requires them.
+
+A small test that clearly protects a durable semantic rule is more valuable than many near-duplicate cases.
+
+## Developer-friendly failure output
+
+A failing test should tell a developer what broke without flooding the terminal.
+
+Rules:
+
+- **Never print an entire source file, generated file, document, large payload or large serialized object in an error.**
+- Show the smallest useful expected/actual fragment.
+- Include the relevant field, path, key, identifier, digest, line or bounded diff.
+- Truncate long strings and collections.
+- When the full artifact is useful, print its path/reference so the developer can inspect it deliberately.
+- Prefer a direct semantic message such as `expected active FID credential, got superseded` over a raw deep-object dump.
+- Stack traces should identify the failing path; diagnostics should not repeat unrelated state.
+
+The goal is **one actionable diagnostic, not pages of incidental output**.
+
+## Lifecycle classes
 
 Every non-trivial test should be understood as belonging to one of three lifecycle classes:
 
@@ -85,20 +117,8 @@ The goal is not to minimize test count for its own sake. The goal is to maximize
 - Do not delete hostile-review regressions merely because the original review is complete; first identify the durable invariant or exploit class they protect.
 - Exact protocol/witness tests may remain in validation tooling or frozen verifiers after they leave the ordinary active suite when historical reproducibility still matters.
 - When a milestone produces many related tests, prefer a later consolidation pass over continuously adding near-duplicate assertions.
+- Fix noisy assertions when encountered; do not launch a repository-wide cleanup unless noisy output is blocking development.
 
 ## Future automation
 
-A lightweight repository checker may eventually inventory lifecycle metadata and report counts such as:
-
-```text
-permanent    412
-regression   173
-milestone    136
-
-milestone by scope:
-  pr37        18
-  pr38        11
-  pr39       107
-```
-
-Such tooling should report lifecycle debt and missing closeout review; it should not silently change which tests execute.
+A lightweight repository checker may eventually inventory lifecycle metadata and report counts. Such tooling should report lifecycle debt and missing closeout review; it should not silently change which tests execute or become another critical-path project.

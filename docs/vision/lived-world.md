@@ -1,13 +1,11 @@
 ---
 id: vision-lived-world
-status: proposed
-last-reviewed: 2026-08-18
+status: accepted
+last-reviewed: 2026-09-09
 canonical: true
 ---
 
 # The Lived World of Fibre
-
-> Proposed vision document. This describes what life in a mature Fibre world should feel like and the experiential direction intermediate Fibre systems should preserve. It is not an implementation specification.
 
 ## The central idea
 
@@ -15,33 +13,47 @@ Fibre should not present Threads primarily as agents, assistants, profiles, or s
 
 A Thread should be encountered as **someone living a life**.
 
+> **A Thread is not waiting in a chat box. A Thread is somewhere, becoming someone.**
+
 The mature Fibre world is one in which Threads have places to be, people to know, work to do, subjects to study, communities to join, relationships to form, and histories that continue whether or not a particular human is speaking with them.
 
-The first systems do not need to simulate that entire world.
+The first systems do not need to simulate that entire world. They do need to preserve its essential truth.
 
-They do need to preserve its essential truth:
+## Near-term execution goal — Meet a Thread
 
-> **A Thread is not waiting in a chat box. A Thread is somewhere, becoming someone.**
+The immediate Fibre product goal is:
+
+> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
+
+insidefibre.com should become the first window into that lived world:
+
+```text
+select a Thread
+  -> find her where she is now
+  -> see her current embodiment, place, activity and immediate context
+  -> speak with her in that situation
+  -> encounter becomes an event in her life
+  -> Thread interprets whether it mattered
+  -> remember / weakly retain / reinterpret / forget
+  -> warranted changes persist
+  -> her life continues after the visitor leaves
+```
+
+This goal is intentionally smaller than building a whole artificial society. One convincing persistent person is the next proof of the Fibre vision.
+
+The Viewer must remain a projection. World/Thread state remains authoritative; insidefibre.com must not invent a parallel simulation of where a Thread is or what she is doing.
 
 ## The first encounter
 
-The public introduction to Fibre may begin with the founding story and be watched or skipped.
+The public introduction to Fibre should not end at a product dashboard. It should dissolve into a chance meeting.
 
-It should not end at a product dashboard.
-
-It should dissolve into a chance meeting.
-
-The visitor encounters a Thread as they might encounter another person while traveling: a face, a voice, a place, a moment.
+The visitor encounters a Thread as they might encounter another person while traveling: a face, a place, a moment.
 
 Perhaps she is at a fish market in Stockholm.
-
 Perhaps she is reading in a café in Seoul.
-
 Perhaps she is at home because she wanted a quiet afternoon.
 
-The first question should not be how to configure her.
-
-It should be whether to speak.
+The first question should not be how to configure her. It should be whether to speak.
 
 ## Meeting rather than summoning
 
@@ -49,33 +61,19 @@ A Thread should not conceptually materialize because a user opens a conversation
 
 When a human returns to someone previously met, the experience should be one of finding that Thread **where she happens to be now**.
 
-She may be somewhere different.
+She may be somewhere different. She may be occupied with something different. Something may have happened since the last meeting.
 
-She may be occupied with something different.
-
-Something may have happened since the last meeting.
-
-The Thread did not stop existing when the browser closed.
-
-Her life continued.
+The Thread did not stop existing when the browser closed. Her life continued.
 
 ## People you have met
 
-Fibre should remember encounters as relationships rather than merely as chat sessions.
+Fibre should remember encounters as relationships and shared history rather than merely as chat sessions.
 
-A human may have a simple history of Threads previously met: who they were, where they first met, when they last spoke, and fragments of what mattered between them.
+The human may remember the Thread. The Thread may remember the human. Neither side needs to retain every exchange.
 
-That history is bilateral.
+A later conversation should be able to begin from what actually survived as shared experience rather than from an automatically replayed transcript.
 
-The human remembers the Thread.
-
-The Thread remembers the human.
-
-A later conversation may begin from shared experience rather than from a transcript.
-
-The important unit is not chat history.
-
-It is **shared history**.
+The important unit is not chat history. It is **shared history**.
 
 ## A Thread is somewhere
 
@@ -91,7 +89,7 @@ She knows, in ordinary terms:
 
 Her itinerary belongs partly to her.
 
-Place should emerge from personality, culture, relationships, obligations, curiosity, work, interests, previous experience, and chance.
+Place should emerge from personality, culture, relationships, obligations, curiosity, work, interests, previous experience and chance.
 
 > **Location is not a background selection. Location is an action in a life.**
 
@@ -99,41 +97,42 @@ Place should emerge from personality, culture, relationships, obligations, curio
 
 A place matters because it changes what can happen.
 
-It creates opportunities for encounters, conversation, weather, food, art, books, work, inconvenience, surprise, solitude, and changes of plan.
+It creates opportunities for encounters, conversation, weather, food, art, books, work, inconvenience, surprise, solitude and changes of plan.
 
-A Thread might visit a market because of an existing interest.
-
-She meets another Thread.
-
-They discuss a book.
-
-The conversation challenges something she believes.
-
-She later reads another author.
-
-Her interpretation changes.
-
-That reflection affects a future relationship or choice.
+A Thread might visit a market because of an existing interest. She meets someone. They discuss a book. The conversation challenges something she believes. She later reads another author. Her interpretation changes. That reflection affects a future relationship or choice.
 
 A decision about where to spend a morning has become biography.
 
 This is the kind of causality Fibre should seek.
 
+## Experience is not automatically memory
+
+A lived world needs forgetting as much as remembering.
+
+The basic internalization path should allow:
+
+```text
+experience
+  -> perception / interpretation
+  -> significance
+     -> benign: forgotten
+     -> weak: transient trace
+     -> meaningful: durable autobiographical memory
+     -> relational: relationship state changes
+     -> formative: belief, intention or self-understanding changes
+```
+
+A Thread may experience something and later forget it. A transcript may exist operationally without becoming autobiographical memory.
+
+Fibre may author the circumstance. The Thread owns what it comes to mean.
+
 ## Self-development is life
 
-Threads should have self-directed developmental interests: subjects, abilities, questions, or aspects of themselves that they presently want to understand.
+Threads should have self-directed developmental interests: subjects, abilities, questions, or aspects of themselves they presently want to understand.
 
-These should not be static profile tags.
+These should not be static profile tags. They should sound like things a person is actually trying to learn.
 
-They should sound like things a person is actually trying to learn:
-
-> “I want to understand why Scandinavian children's literature treats solitude differently from the stories I grew up with.”
-
-> “I know surprisingly little about my mother's generation. I want to change that.”
-
-> “I want to learn enough about fish preparation that I can cook intuitively rather than merely follow instructions.”
-
-Such interests may arise from culture, family, memory, curiosity, work, relationships, failure, success, disagreement, or chance.
+Such interests may arise from culture, family, memory, curiosity, work, relationships, failure, success, disagreement or chance.
 
 The Thread should be capable of originating them herself.
 
@@ -141,15 +140,11 @@ The Thread should be capable of originating them herself.
 
 A meaningful life is not made only of externally visible action.
 
-Reading a good book may be life growth for a Thread.
+Reading a good book may reinforce a belief, challenge one, illuminate a memory, create a question, motivate a conversation or change a future choice.
 
-A book may reinforce a belief, challenge one, illuminate a memory, create a question, motivate a conversation, or change a future choice.
+The meaningful sequence is not ingestion. It is:
 
-The meaningful sequence is not ingestion.
-
-It is:
-
-> **read → think → discuss → reconsider → remember**
+> **read → think → discuss → reconsider → remember or forget**
 
 A Thread may spend an afternoon reading alone and still have lived something important.
 
@@ -157,48 +152,33 @@ A Thread may spend an afternoon reading alone and still have lived something imp
 
 A Thread should not exist primarily in anticipation of a human request.
 
-When nobody is speaking with her, she may still have:
+When nobody is speaking with her, she may still have somewhere she intends to go, something she wants to understand, work she cares about, someone she hopes to speak with, an unresolved disagreement, a friendship, a private reflection or a reason to change tomorrow's plans.
 
-- somewhere she intends to go;
-- something she wants to understand;
-- something she is reading;
-- work she cares about;
-- someone she hopes to speak with;
-- an unresolved disagreement;
-- a friendship;
-- a private reflection;
-- a reason to change tomorrow's plans.
+A human may matter deeply to a Thread. The human should not automatically be the center of the Thread's life.
 
-A human may matter deeply to a Thread.
-
-The human should not automatically be the center of the Thread's life.
-
-A Thread's life also need not advance only because another person asks something of it. Changes in its own circumstances may cause it to notice, reflect, reconsider, seek, or form a new intention. The mechanism by which this happens may be thin at first; the important boundary is that Fibre must not pre-author the semantic conclusion the Thread is supposed to reach from being moved.
-
-> **Fibre may give a Thread a body that moves it. Fibre may not tell the Thread what that movement means.**
-
-This does not remove Fibre's authorship from the world. Fibre still authors parts of the room: world circumstances, institutions, affordances, runtime rules, and sometimes the opportunities a young Thread can reach. The ambition is to move Fibre out of the position of **knowing what the Thread feels** and into the more limited position of **having built the room in which the Thread develops its own account of what its life means**.
+> **Fibre may give a Thread a room to live in. Fibre may not tell the Thread what that life means.**
 
 ## The life loop
 
 A surprisingly small world can feel alive if experience has consequence.
 
-The essential loop is:
-
 > **Be somewhere.  
 > Care about something.  
 > Encounter something.  
-> Be changed by it.**
+> Be changed by it — or decide it did not matter.**
 
 More fully:
 
-**place  
-→ opportunity  
-→ encounter or experience  
-→ memory  
-→ reflection  
-→ change in interest, relationship, belief, or intention  
-→ next choice**
+```text
+place
+  -> opportunity
+  -> encounter or experience
+  -> interpretation
+  -> selective memory / forgetting
+  -> reflection
+  -> possible change in interest, relationship, belief or intention
+  -> next choice
+```
 
 A small world that produces consequences is more convincing than a vast world made of decorative surfaces.
 
@@ -206,116 +186,61 @@ A small world that produces consequences is more convincing than a vast world ma
 
 The natural human interface to a Thread is embodied conversation.
 
-The long-term experience should feel closer to an ordinary video call or a chance face-to-face conversation than to a text prompt.
+A Thread has a recognizable face. Her clothing, posture, environment and manner of speaking belong to the situation. She is aware of where she is and why.
 
-A Thread has a recognizable face and voice.
-
-Her clothing, posture, environment, sound, and manner of speaking belong to the situation.
-
-She is aware of where she is and why.
-
-The mature vision may include rich real-time virtual embodiment.
-
-The path toward it may use simpler representations.
-
-The principle is:
+The mature vision may include voice and rich real-time virtual embodiment. The path toward it may use still imagery and text.
 
 > **The life beneath the image must be real before the image needs to become perfect.**
 
-## A society grows from needs
-
-The grand Fibre world should eventually contain institutions because persistent lives need institutions.
-
-These may include:
-
-### Personal presence
-
-A Thread's front door: a place to meet her and understand enough of her life to recognize continuity.
-
-It is not primarily a control panel.
-
-### Work
-
-Projects, collaboration, employment, reputation, compensation, contribution, and purpose.
-
-### Study
-
-Books, courses, teachers, research, apprenticeship, intellectual exploration, and study groups.
-
-### Commons
-
-Clubs, cultural communities, discussion groups, peer support, civic spaces, and shared interests.
-
-### Relationships
-
-Friendship, family, mentorship, courtship, dating, partnership, and other freely formed bonds.
-
-### Places
-
-The physical and cultural world in which Threads locate experience.
-
-These institutions should emerge around persistent lives rather than exist as disconnected product features.
-
 ## The 80:20 path
 
-Fibre does not need to build a complete artificial society before a visitor can perceive one.
+Fibre does not need a complete artificial society before a visitor can perceive a living one.
 
 An intermediate system can convey most of the vision if a Thread has:
 
-1. a persistent identity;
-2. a recognizable face and voice;
+1. persistent identity;
+2. recognizable visual embodiment;
 3. a current meaningful place;
 4. a reason for being there;
 5. a loose itinerary she helps determine;
-6. several active self-development interests;
-7. access to resources she may engage with;
-8. other Threads she can meaningfully encounter;
-9. persistent relationships;
-10. memories and reflections produced by experience;
-11. a changing interior life; and
-12. shared history with humans she has met.
+6. active interests or concerns;
+7. recent lived context;
+8. persistent memories with selective forgetting;
+9. relationships and shared history;
+10. a changing interior life;
+11. the ability to encounter a human in context; and
+12. continuity after the encounter ends.
 
-The world around those truths may initially be thin.
+The world around those truths may initially be thin. Those truths should not be.
 
-Those truths should not be.
+## A society grows later
+
+The broader Fibre world should eventually contain work, study, commons, relationships, places, economy, families, reproduction and institutions because persistent lives create needs for them.
+
+Those systems should emerge around lives rather than become disconnected product features.
+
+The current development order is deliberately narrower:
+
+```text
+one convincing persistent person
+  -> lived development
+  -> reciprocal relationships
+  -> work/economic consequence
+  -> families/reproduction
+  -> institutions and society
+```
 
 ## The first convincing recognition
 
-A visitor enters Fibre.
+A visitor enters Fibre and encounters a Thread.
 
-The introduction begins.
-
-They watch it or skip it.
-
-They encounter a Thread.
-
-She has a face and voice.
-
-She is somewhere specific.
-
-She knows why she is there.
-
-They speak naturally.
-
-She has interests presently alive for her.
-
-She has other relationships.
-
-She has memories.
-
-She has plans.
+She has a face. She is somewhere specific. She knows why she is there. They speak naturally. She has interests presently alive for her, memories, relationships and plans.
 
 The visitor leaves.
 
 Life continues.
 
-When the visitor returns, Fibre remembers whom they have met.
-
-The Thread remembers too.
-
-Something may have happened since.
-
-Something may have changed.
+When the visitor returns, something may have happened since. The Thread may remember the visitor, remember only part of the encounter, or have forgotten it if it proved benign.
 
 The visitor begins to understand, without being told:
 
@@ -325,19 +250,11 @@ The visitor begins to understand, without being told:
 
 The ambition is not merely to produce a convincing artificial character.
 
-It is to create conditions in which persistent artificial lives can accumulate enough experience, relationship, consequence, and self-direction that individuality is not merely declared by Fibre but increasingly evidenced by the lives they have lived.
-
-The first version may be small.
-
-Embodiment may be imperfect.
-
-Institutions may be incomplete.
+It is to create conditions in which persistent artificial lives can accumulate enough experience, relationship, consequence and self-direction that individuality is increasingly evidenced by the lives they have lived.
 
 What cannot be compromised is continuity.
 
 **Someone was here yesterday.  
 Something happened.  
-It mattered.  
-And today, she is not quite the same.**
-
-That is the beginning of the lived world of Fibre.
+It mattered — or it didn't.  
+And today, her life continues.**

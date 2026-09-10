@@ -33,6 +33,14 @@ async function text(url) { return readFile(url, "utf8"); }
 async function json(url) { return JSON.parse(await text(url)); }
 async function deployment(url) { return parseDeploymentManifest(await text(url)); }
 
+function assertSourceMatches(source, pattern, label) {
+  assert.equal(pattern.test(source), true, `${label}: missing pattern ${pattern}`);
+}
+
+function assertSourceDoesNotMatch(source, pattern, label) {
+  assert.equal(pattern.test(source), false, `${label}: forbidden pattern ${pattern}`);
+}
+
 test("Asset Generator runtime stages provider attempts portably and Cloudflare only translates retry policy", async () => {
   const runtime = await text(runtimeUrl);
   const errors = await text(errorUrl);
@@ -42,76 +50,87 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   const integrationSelection = await text(integrationSelectionUrl);
 
   await assert.rejects(() => stat(oldCloudflareDirUrl), (error) => error?.code === "ENOENT");
-  assert.match(runtime, /createAssetGenerationRuntime/);
-  assert.match(runtime, /requireInfraCapabilities/);
-  assert.match(runtime, /prepareResumableProviderExecution/);
-  assert.match(runtime, /publishAssetGenerationCompletion/);
-  assert.match(runtime, /attemptNumber/);
-  assert.match(runtime, /providerOperationResumed/);
-  assert.match(runtime, /providerOutputResumed/);
-  assert.doesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/);
-  assert.doesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+  for (const pattern of [
+    /createAssetGenerationRuntime/,
+    /requireInfraCapabilities/,
+    /prepareResumableProviderExecution/,
+    /publishAssetGenerationCompletion/,
+    /attemptNumber/,
+    /providerOperationResumed/,
+    /providerOutputResumed/,
+  ]) assertSourceMatches(runtime, pattern, "asset generation runtime");
+  assertSourceDoesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/, "asset generation runtime");
+  assertSourceDoesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/, "asset generation runtime");
 
-  assert.match(providerOperations, /provider_operation_checkpoint/);
-  assert.match(providerOperations, /startOperation/);
-  assert.match(providerOperations, /resumeOperation/);
-  assert.match(providerOperations, /providerOperationObjectRef/);
-  assert.doesNotMatch(providerOperations, /cloudflare|R2|WorkflowEntrypoint|OPENAI_API_KEY|BFL_API_KEY/);
+  for (const pattern of [
+    /provider_operation_checkpoint/,
+    /startOperation/,
+    /resumeOperation/,
+    /providerOperationObjectRef/,
+  ]) assertSourceMatches(providerOperations, pattern, "resumable provider operation");
+  assertSourceDoesNotMatch(providerOperations, /cloudflare|R2|WorkflowEntrypoint|OPENAI_API_KEY|BFL_API_KEY/, "resumable provider operation");
 
-  assert.match(attempts, /generation-attempt-v0\.1/);
-  assert.match(attempts, /assetGenerationJobDigest/);
-  assert.match(attempts, /generationAttemptObjectRef/);
-  assert.match(attempts, /stagedProviderOutputObjectRef/);
-  assert.doesNotMatch(attempts, /cloudflare|R2|WorkflowEntrypoint/);
+  for (const pattern of [
+    /generation-attempt-v0\.1/,
+    /assetGenerationJobDigest/,
+    /generationAttemptObjectRef/,
+    /stagedProviderOutputObjectRef/,
+  ]) assertSourceMatches(attempts, pattern, "asset generation attempt");
+  assertSourceDoesNotMatch(attempts, /cloudflare|R2|WorkflowEntrypoint/, "asset generation attempt");
 
-  assert.match(errors, /assetGenerationRetryDecision/);
-  assert.match(errors, /provider_operation_staging/);
-  assert.match(errors, /provider_operation_not_staged/);
-  assert.match(errors, /providerOperationDurable/);
-  assert.match(errors, /provider_output_staging/);
-  assert.match(errors, /provider_output_not_staged/);
-  assert.match(errors, /providerOperationDurable/);
-  assert.match(errors, /providerOutputDurable/);
-  assert.match(errors, /rate_limited/);
-  assert.match(errors, /quota_exhausted/);
-  assert.match(errors, /immutable_conflict/);
-  assert.doesNotMatch(errors, /cloudflare|WorkflowEntrypoint|NonRetryableError/);
+  for (const pattern of [
+    /assetGenerationRetryDecision/,
+    /provider_operation_staging/,
+    /provider_operation_not_staged/,
+    /providerOperationDurable/,
+    /provider_output_staging/,
+    /provider_output_not_staged/,
+    /providerOutputDurable/,
+    /rate_limited/,
+    /quota_exhausted/,
+    /immutable_conflict/,
+  ]) assertSourceMatches(errors, pattern, "asset generation errors");
+  assertSourceDoesNotMatch(errors, /cloudflare|WorkflowEntrypoint|NonRetryableError/, "asset generation errors");
 
-  assert.match(worker, /createCloudflareInfraDriver/);
-  assert.match(worker, /withCloudflareQueueBindings/);
-  assert.match(worker, /createAssetGenerationRuntime/);
-  assert.match(worker, /createAssetGenerationControlService/);
-  assert.match(worker, /createAssetGenerationControlApi/);
-  assert.match(worker, /selectImageIntegration/);
-  assert.match(worker, /selectContentCredentialIntegration/);
-  assert.match(worker, /contentCredentials\s*\?\?\s*null/);
-  assert.match(worker, /class AssetGenerationWorkflow extends WorkflowEntrypoint/);
-  assert.match(worker, /NonRetryableError/);
-  assert.match(worker, /assetGenerationRetryDecision/);
-  assert.match(worker, /attemptNumber: ctx\.attempt/);
-  assert.match(worker, /providerOperationDurable: error\?\.providerOperationDurable === true/);
-  assert.match(worker, /providerOutputDurable: error\?\.providerOutputDurable === true/);
-  assert.match(worker, /ASSET_OBJECTS/);
-  assert.match(worker, /ASSET_COMPLETIONS/);
-  assert.match(worker, /ASSET_GENERATION/);
-  assert.match(worker, /FIBRE_PRIVATE_TOKEN/);
-  assert.match(worker, /asset-generation-failure-observation-v0\.2/);
-  assert.match(worker, /category: error\?\.category/);
-  assert.match(worker, /retryDecision: decision\.reason/);
-  assert.match(worker, /providerRequestId/);
-  assert.match(worker, /retryAfterMs/);
-  assert.match(worker, /JSON\.stringify\(observation\)/);
-  assert.match(worker, /export default\s*\{/);
-  assert.match(worker, /createService\(\{/);
-  assert.match(worker, /HTTP_SERVICE\.fetch\(request\)/);
-  assert.doesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/);
-  assert.doesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/);
-  assert.doesNotMatch(worker, /#integrations\/ai\/image|#integrations\/content-credentials/);
+  for (const pattern of [
+    /createCloudflareInfraDriver/,
+    /withCloudflareQueueBindings/,
+    /createAssetGenerationRuntime/,
+    /createAssetGenerationControlService/,
+    /createAssetGenerationControlApi/,
+    /selectImageIntegration/,
+    /selectContentCredentialIntegration/,
+    /contentCredentials\s*\?\?\s*null/,
+    /class AssetGenerationWorkflow extends WorkflowEntrypoint/,
+    /NonRetryableError/,
+    /assetGenerationRetryDecision/,
+    /attemptNumber: ctx\.attempt/,
+    /providerOperationDurable: error\?\.providerOperationDurable === true/,
+    /providerOutputDurable: error\?\.providerOutputDurable === true/,
+    /ASSET_OBJECTS/,
+    /ASSET_COMPLETIONS/,
+    /ASSET_GENERATION/,
+    /FIBRE_PRIVATE_TOKEN/,
+    /asset-generation-failure-observation-v0\.2/,
+    /category: error\?\.category/,
+    /retryDecision: decision\.reason/,
+    /providerRequestId/,
+    /retryAfterMs/,
+    /JSON\.stringify\(observation\)/,
+    /export default\s*\{/,
+    /createService\(\{/,
+    /HTTP_SERVICE\.fetch\(request\)/,
+  ]) assertSourceMatches(worker, pattern, "asset-generator Cloudflare worker");
+  assertSourceDoesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/, "asset-generator Cloudflare worker");
+  assertSourceDoesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/, "asset-generator Cloudflare worker");
+  assertSourceDoesNotMatch(worker, /#integrations\/ai\/image|#integrations\/content-credentials/, "asset-generator Cloudflare worker");
 
-  assert.match(integrationSelection, /createOpenAIImageProvider/);
-  assert.match(integrationSelection, /createBflFluxImageProvider/);
-  assert.match(integrationSelection, /createHttpContentCredentialSigner/);
-  assert.doesNotMatch(integrationSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/);
+  for (const pattern of [
+    /createOpenAIImageProvider/,
+    /createBflFluxImageProvider/,
+    /createHttpContentCredentialSigner/,
+  ]) assertSourceMatches(integrationSelection, pattern, "deployment integration selection");
+  assertSourceDoesNotMatch(integrationSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/, "deployment integration selection");
 });
 
 test("local deployment manifest selects Cloudflare while presentation owns completion publication", async () => {
@@ -162,17 +181,19 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.equal(consumer.max_retries, 10);
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-local-dlq");
 
-  assert.doesNotMatch(presentationWorker, /WorkflowEntrypoint|NonRetryableError/);
-  assert.doesNotMatch(presentationWorker, /createOpenAIImageProvider|createBflFluxImageProvider|executeCredentialedAssetGenerationJob/);
-  assert.match(presentationWorker, /createPresentationAssetCompletionService/);
-  assert.match(presentationWorker, /createThreadPresentationAssetPublisher/);
-  assert.match(presentationWorker, /selectContentCredentialIntegration/);
-  assert.match(presentationWorker, /async queue\(batch, env\)/);
-  assert.match(presentationWorker, /message\.ack\(\)/);
-  assert.match(presentationWorker, /message\.retry/);
-  assert.doesNotMatch(presentationWorker, /publish-market/);
-  assert.doesNotMatch(p3Proof, /publish-market|manual_fixture_handoff/);
-  assert.match(p3Proof, /queue_completion_handoff/);
+  assertSourceDoesNotMatch(presentationWorker, /WorkflowEntrypoint|NonRetryableError/, "thread-presentation Cloudflare worker");
+  assertSourceDoesNotMatch(presentationWorker, /createOpenAIImageProvider|createBflFluxImageProvider|executeCredentialedAssetGenerationJob/, "thread-presentation Cloudflare worker");
+  for (const pattern of [
+    /createPresentationAssetCompletionService/,
+    /createThreadPresentationAssetPublisher/,
+    /selectContentCredentialIntegration/,
+    /async queue\(batch, env\)/,
+    /message\.ack\(\)/,
+    /message\.retry/,
+  ]) assertSourceMatches(presentationWorker, pattern, "thread-presentation Cloudflare worker");
+  assertSourceDoesNotMatch(presentationWorker, /publish-market/, "thread-presentation Cloudflare worker");
+  assertSourceDoesNotMatch(p3Proof, /publish-market|manual_fixture_handoff/, "P3 generated media proof");
+  assertSourceMatches(p3Proof, /queue_completion_handoff/, "P3 generated media proof");
 });
 
 test("remote Cloudflare composition shares generated assets and completion topology without requiring C2PA", async () => {
