@@ -225,6 +225,70 @@ function renderThread() {
   $("rawInspection").textContent = formatJson(inspection);
 }
 
+function renderFid() {
+  const fid = state.inspection.fid;
+  const enabled = fid !== null && state.inspection.capabilities?.fidOperations === true;
+  $("fidIssueButton").disabled = !enabled;
+  $("fidRevokeButton").disabled = !enabled || fid?.activeCredentialId === null;
+  $("fidRaw").textContent = fid === null ? "FID service not configured." : formatJson(fid);
+
+  if (fid === null) {
+    renderExplanation("fidCurrent", {
+      eyebrow: "Fibre Identity Authority",
+      title: "Not configured for this editor run",
+      summary: "Thread inspection remains available, but FID lifecycle operations require an injected FIA service boundary.",
+      facts: [], notes: [],
+    });
+    $("fidHistory").textContent = "No FIA inspection available.";
+    return;
+  }
+
+  const active = fid.credentials.find((entry) => entry.status === "active") ?? null;
+  $("fidReason").value = active === null ? "initial" : "replacement";
+  renderExplanation("fidCurrent", active === null ? {
+    eyebrow: "Fibre Identity Authority",
+    title: "No active FID",
+    summary: "The Thread remains a valid Fibre person with its civil identity; FID issuance is optional and asynchronous to birth.",
+    facts: [{ label: "Credentials", value: String(fid.credentials.length) }, { label: "Workflows", value: String(fid.workflows.length) }],
+    notes: [],
+  } : {
+    eyebrow: "Fibre Identity Authority",
+    title: `Active FID revision ${active.credential.revision}`,
+    summary: "This credential is currently active under FIA lifecycle authority. Its historical authenticity is independent of this live status.",
+    facts: [
+      { label: "Credential", value: active.credential.credentialId },
+      { label: "Issued", value: active.credential.issuedAt },
+      { label: "Issuer", value: active.issuance?.issuer?.authorityId ?? "—" },
+      { label: "C2PA", value: active.issuance?.c2pa?.validationStatus ?? "—" },
+      { label: "Front", value: active.issuance?.front?.objectRef ?? "—" },
+      { label: "Back", value: active.issuance?.back?.objectRef ?? "—" },
+    ],
+    notes: [],
+  });
+
+  const history = $("fidHistory");
+  history.replaceChildren();
+  for (const entry of fid.credentials) {
+    history.append(recordButton(
+      `Revision ${entry.credential.revision} · ${entry.status}`,
+      `${entry.credential.credentialId} · ${entry.issuance?.c2pa?.validationStatus ?? "no verified issuance evidence"}`,
+      () => {
+        $("fidRaw").textContent = formatJson(entry);
+      },
+    ));
+  }
+  for (const entry of fid.workflows) {
+    history.append(recordButton(
+      `Workflow · ${entry.workflow.reason}`,
+      `${entry.state} · revision ${entry.workflow.proposedRevision} · photo ${entry.photoAdmission?.decision ?? "not admitted"}`,
+      () => {
+        $("fidRaw").textContent = formatJson(entry);
+      },
+    ));
+  }
+  if (!history.childElementCount) history.textContent = "No FID history.";
+}
+
 function renderEvents() {
   const list = $("eventList");
   list.replaceChildren();
@@ -302,6 +366,7 @@ function renderRuntimes() {
 
 function renderAll() {
   renderThread();
+  renderFid();
   renderEvents();
   renderRequests();
   renderExpressions();
@@ -333,6 +398,47 @@ async function loadThread() {
     $("lifecycleDetail").textContent = "";
     $("lastLoaded").textContent = `Kernel time ${state.inspection.kernel?.kernelTime ?? "unavailable"}`;
     setStatus("World kernel connected", "success");
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function issueFid() {
+  clearError();
+  if (!state.inspection?.fid) return showError(new Error("Fibre Identity Authority is not configured."));
+  const idempotencyKey = $("fidIdempotencyKey").value.trim();
+  if (!idempotencyKey) return showError(new Error("Enter a stable idempotency key for this issuance request."));
+  $("fidIssueButton").disabled = true;
+  try {
+    const threadId = state.inspection.thread.threadId;
+    await fetchJson(`/api/editor/threads/${encodeURIComponent(threadId)}/fid/issue`, {
+      method: "POST",
+      body: JSON.stringify({ reason: $("fidReason").value, idempotencyKey }),
+    });
+    await loadThread();
+    showView("fid");
+  } catch (error) {
+    showError(error);
+  } finally {
+    if (state.inspection?.fid) $("fidIssueButton").disabled = false;
+  }
+}
+
+async function revokeFid() {
+  clearError();
+  const active = state.inspection?.fid?.credentials?.find((entry) => entry.status === "active") ?? null;
+  if (active === null) return showError(new Error("This Thread has no active FID to revoke."));
+  const reason = window.prompt("Revocation reason");
+  if (!reason?.trim()) return;
+  $("fidRevokeButton").disabled = true;
+  try {
+    const threadId = state.inspection.thread.threadId;
+    await fetchJson(`/api/editor/threads/${encodeURIComponent(threadId)}/fid/revoke`, {
+      method: "POST",
+      body: JSON.stringify({ credentialId: active.credential.credentialId, reason: reason.trim() }),
+    });
+    await loadThread();
+    showView("fid");
   } catch (error) {
     showError(error);
   }
@@ -441,6 +547,8 @@ $("threadId").addEventListener("keydown", (event) => {
   if (event.key === "Enter") void loadThread();
 });
 $("previewButton").addEventListener("click", () => void previewSelfModel());
+$("fidIssueButton").addEventListener("click", () => void issueFid());
+$("fidRevokeButton").addEventListener("click", () => void revokeFid());
 document.querySelectorAll(".tab").forEach((button) => {
   button.addEventListener("click", () => showView(button.dataset.view));
 });
