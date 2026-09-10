@@ -26,8 +26,11 @@ export {
 
 export {
   FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION,
+  FIBRE_IDENTITY_CARD_CURRENT_VERSION,
   FIBRE_IDENTITY_CARD_DATE_KINDS,
+  FIBRE_IDENTITY_CARD_LEGACY_VERSION,
   FIBRE_IDENTITY_CARD_STATUSES,
+  FIBRE_IDENTITY_CARD_VERSIONS,
   FIBRE_IDENTITY_CARD_VISIBILITIES,
   THREAD_VISUAL_IDENTITY_PROJECTION_VERSION,
   assertFibreIdentityNumberFormat,
@@ -47,6 +50,10 @@ export { createGenesisPresentationDeliveryService } from "./genesis-presentation
 export { projectNewbornThreadPresentation } from "./newborn-presentation-projector.mjs";
 export { projectVisualIdentityThreadPresentation } from "./visual-identity-presentation-projector.mjs";
 export { createThreadPresentationVisualPublicationReconciler } from "./visual-publication-reconciler.mjs";
+export {
+  createFidPresentationProjectionService,
+  projectFidThreadPresentation,
+} from "./fid-presentation-projector.mjs";
 
 export {
   PublicPresentationAssetIntegrityError,
