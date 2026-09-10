@@ -22,17 +22,17 @@ function optionalRegenerationKey(value) {
   return value.trim();
 }
 
-function failureResponse(error) {
+function failureResponse(error, kind = "visual_publication") {
   const detail = error instanceof Error ? error.message : String(error);
   if (error instanceof TypeError) {
-    return Response.json({ error: "invalid_visual_publication_handoff", detail, retryable: false }, { status: 400 });
+    return Response.json({ error: `invalid_${kind}_handoff`, detail, retryable: false }, { status: 400 });
   }
   const retryable = error?.retryable !== false;
   const code = typeof error?.code === "string" && error.code !== ""
     ? error.code
-    : "VISUAL_PUBLICATION_RECONCILIATION_FAILED";
+    : `${kind.toUpperCase()}_RECONCILIATION_FAILED`;
   return Response.json({
-    error: "visual_publication_reconciliation_failed",
+    error: `${kind}_reconciliation_failed`,
     code,
     detail,
     retryable,
@@ -43,11 +43,15 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
   if (!reconciler || typeof reconciler.reconcileAvailableEmbodiment !== "function") {
     throw new TypeError("visual publication write API requires a reconciler");
   }
+  if (typeof reconciler.publishCurrentPresent !== "function") {
+    throw new TypeError("visual publication write API requires current-present publication");
+  }
 
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname !== "/internal/visual-publication/reconcile") return null;
+      const currentPresent = url.pathname === "/internal/current-present";
+      if (!currentPresent && url.pathname !== "/internal/visual-publication/reconcile") return null;
       if (request.method !== "POST") {
         return Response.json({ error: "method_not_allowed" }, { status: 405, headers: { Allow: "POST" } });
       }
@@ -57,15 +61,20 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
 
       try {
         const body = await jsonBody(request);
-        const result = await reconciler.reconcileAvailableEmbodiment({
-          threadId: body.threadId,
-          embodiment: body.embodiment,
-          observedAt: body.observedAt,
-          regenerationKey: optionalRegenerationKey(body.regenerationKey),
-        });
+        const result = currentPresent
+          ? await reconciler.publishCurrentPresent({
+              threadId: body.threadId,
+              present: body.present,
+            })
+          : await reconciler.reconcileAvailableEmbodiment({
+              threadId: body.threadId,
+              embodiment: body.embodiment,
+              observedAt: body.observedAt,
+              regenerationKey: optionalRegenerationKey(body.regenerationKey),
+            });
         return Response.json({ ok: true, result });
       } catch (error) {
-        return failureResponse(error);
+        return failureResponse(error, currentPresent ? "current_present" : "visual_publication");
       }
     },
   });
