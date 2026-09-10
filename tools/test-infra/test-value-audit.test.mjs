@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
-import { buildTestValueAudit } from "./test-value-audit.mjs";
+import { buildTestValueAudit, renderQuietAudit } from "./test-value-audit.mjs";
 
 function withAuditFixture(run) {
   const root = mkdtempSync(join(tmpdir(), "fibre-test-value-audit-"));
@@ -132,4 +132,11 @@ test("test-value audit covers every recursive npm test root including deployment
     assert.deepEqual(audit.warnings, []);
     assert.deepEqual(Object.keys(audit.byScope), roots.map(([scope]) => scope).sort());
     for (const [scope] of roots) assert.equal(audit.byScope[scope].files, 1);
+  }));
+
+test("quiet test-value audit renders one concise pass line", () =>
+  withAuditFixture((root) => {
+    put(root, "core/test/thread.test.mjs", `import test from "node:test"; test("thread identity persists", () => {});`);
+    const audit = buildTestValueAudit(root);
+    assert.equal(renderQuietAudit(audit), "TEST-AUDIT: PASS · 1 files · 1 declared calls\n");
   }));
