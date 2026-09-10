@@ -8,9 +8,11 @@ import {
   matchesThreadDirectoryEntry,
   publicThreadDirectoryEntry,
 } from "#services/thread-presentation/src/thread-directory.mjs";
+import { normalizeThreadPresentationEvent } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const PRESENTATION_CHANNEL_PREFIX = "presentation:";
+const CURRENT_PRESENT_CATALOG_PREFIX = "current-present:";
 const DISCOVERY_SCAN_PAGE_SIZE = 100;
 const DIRECTORY_SCAN_LIMIT = 5000;
 const MEET_POLICY_VERSION = "thread-meet-v0.1";
@@ -51,6 +53,31 @@ async function requirePublicChannel(infra, threadId) {
     return null;
   }
   return { channelId, record };
+}
+
+async function currentPublicPresent(infra, channelId, threadId) {
+  const record = await infra.catalog.get(`${CURRENT_PRESENT_CATALOG_PREFIX}${channelId}`);
+  if (record === null
+    || record.kind !== "current_public_present"
+    || record.publiclyVisible !== true
+    || record.threadId !== threadId
+    || record.channelId !== channelId
+    || !Number.isSafeInteger(record.sequence)
+    || record.sequence < 1) {
+    return null;
+  }
+  try {
+    const event = normalizeThreadPresentationEvent(record.event);
+    if (event.kind !== "present.updated"
+      || event.threadId !== threadId
+      || event.channelId !== channelId
+      || event.sequence !== record.sequence) {
+      return null;
+    }
+    return event;
+  } catch {
+    return null;
+  }
 }
 
 function publicIdentityCredentialAllowed(snapshot) {
@@ -312,11 +339,12 @@ export function createPresentationReadApi({
           if (result === null || result.pointer.threadId !== matched.threadId || !publicIdentityCredentialAllowed(result.snapshot)) {
             return json({ error: "not_found" }, { status: 404, headers: cors });
           }
-          return json(result, {
+          const currentPresent = await currentPublicPresent(infra, channelId, matched.threadId);
+          return json({ ...result, currentPresent }, {
             headers: {
               ...cors,
               "Cache-Control": "no-cache",
-              "ETag": `\"${result.pointer.snapshotDigest}\"`,
+              "ETag": `\"${result.pointer.snapshotDigest}:present-${currentPresent?.sequence ?? 0}\"`,
             },
           });
         }
