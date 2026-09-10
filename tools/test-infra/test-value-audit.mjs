@@ -297,11 +297,25 @@ function renderAudit(audit) {
   return `${lines.join("\n")}\n`;
 }
 
+function blockersFor(audit) {
+  const blockers = [];
+  for (const group of audit.hygiene.exactDuplicateBodies) blockers.push(`exact duplicate test bodies: ${group.paths.join(", ")}`);
+  for (const record of audit.hygiene.testImportAliases) blockers.push(`test import alias: ${record.path}`);
+  for (const path of audit.hygiene.commentOnlyTestFiles) blockers.push(`comment-only test tombstone: ${path}`);
+  return blockers;
+}
+
+export function renderQuietAudit(audit, { check = true } = {}) {
+  const status = check ? "PASS · " : "";
+  return `TEST-AUDIT: ${status}${audit.totals.files} files · ${audit.totals.declaredTestCalls} declared calls\n`;
+}
+
 function parseArgs(argv) {
-  const args = { check: false, json: null, markdown: null };
+  const args = { check: false, quiet: false, json: null, markdown: null };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--check") args.check = true;
+    else if (arg === "--quiet") args.quiet = true;
     else if (arg === "--json") args.json = argv[++index];
     else if (arg === "--markdown") args.markdown = argv[++index];
     else throw new TypeError(`unknown test-value audit option: ${arg}`);
@@ -312,18 +326,17 @@ function parseArgs(argv) {
 function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const audit = buildTestValueAudit();
+  const blockers = blockersFor(audit);
   for (const warning of audit.warnings) process.stderr.write(`TEST-AUDIT WARNING: ${warning}\n`);
   if (args.json) writeFileSync(args.json, JSON.stringify(audit, null, 2));
   if (args.markdown) writeFileSync(args.markdown, renderAudit(audit));
-  if (!args.json && !args.markdown) process.stdout.write(renderAudit(audit));
-  const blockers = [];
-  for (const group of audit.hygiene.exactDuplicateBodies) blockers.push(`exact duplicate test bodies: ${group.paths.join(", ")}`);
-  for (const record of audit.hygiene.testImportAliases) blockers.push(`test import alias: ${record.path}`);
-  for (const path of audit.hygiene.commentOnlyTestFiles) blockers.push(`comment-only test tombstone: ${path}`);
+  if (!args.json && !args.markdown && !args.quiet) process.stdout.write(renderAudit(audit));
   if (args.check && blockers.length > 0) {
     for (const blocker of blockers) process.stderr.write(`TEST-AUDIT: ${blocker}\n`);
     process.exitCode = 1;
+    return;
   }
+  if (args.quiet) process.stdout.write(renderQuietAudit(audit, { check: args.check }));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
