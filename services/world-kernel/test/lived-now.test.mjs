@@ -129,20 +129,37 @@ function cognition(homeRef) {
     invocation: () => invocation,
     adapter: {
       provider: "fixture",
-      modelId: "fixture-lived-plan-v1",
+      modelId: "fixture-lived-plan-v2",
       async invoke(input) {
         invocation = structuredClone(input);
         return {
           output: {
-            physicalPlaceRef: homeRef,
-            presenceMode: "mediated",
-            mediatedContext: "Monterey Bay Aquarium live octopus feed",
-            activity: "Watch the octopus livestream closely and sketch the changes I notice.",
-            purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
+            stops: [
+              {
+                startAt: "2026-09-10T05:03:00Z",
+                endAt: "2026-09-10T05:30:00Z",
+                physicalPlaceRef: homeRef,
+                presenceMode: "mediated",
+                mediatedContext: "Monterey Bay Aquarium live octopus feed",
+                activity: "Watch the octopus livestream closely and sketch the changes I notice.",
+                purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
+                travelFromPrevious: "",
+              },
+              {
+                startAt: "2026-09-10T05:35:00Z",
+                endAt: "2026-09-10T06:00:00Z",
+                physicalPlaceRef: homeRef,
+                presenceMode: "physical",
+                mediatedContext: "",
+                activity: "Finish the sketch from memory and mark the details I want to look up later.",
+                purpose: "I want to keep the parts of the observation that still seem interesting after the stream ends.",
+                travelFromPrevious: "",
+              },
+            ],
           },
           provenance: {
             provider: "fixture",
-            modelId: "fixture-lived-plan-v1",
+            modelId: "fixture-lived-plan-v2",
             providerRequestId: "req_maya_personal_plan_001",
           },
         };
@@ -234,19 +251,21 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
     const formed = await formPersonalLivedPlan({
       thread: life.thread,
       authoredAt: "2026-09-10T05:03:00Z",
-      validUntil: "2026-09-10T06:00:00Z",
+      horizonEnd: "2026-09-10T06:00:00Z",
       availablePlaces: [{ ref: life.homeRef, displayName: "Home in Haifa" }],
       sourceReferences: [life.sourceEvent],
       modelAdapter: planner.adapter,
     });
     assert.equal(planner.invocation().input.developmentalContext.ageYears, 10);
+    assert.equal(planner.invocation().input.horizon.endAt, "2026-09-10T06:00:00Z");
     assert.deepEqual(planner.invocation().input.developmentalContext.unresolvedIntentions, [
       "Finish watching the octopus feed and sketch what I notice.",
     ]);
     assert.equal(formed.owner.partyId, life.thread.threadId);
-    assert.equal(formed.cognition.modelId, "fixture-lived-plan-v1");
-    assert.equal(formed.stops.length, 1);
+    assert.equal(formed.cognition.modelId, "fixture-lived-plan-v2");
+    assert.equal(formed.stops.length, 2);
     assert.equal(formed.stops[0].mediatedContext, "Monterey Bay Aquarium live octopus feed");
+    assert.match(formed.stops[1].activity, /Finish the sketch/);
 
     let lived = openLivedNowStore(localWorldStateStorage(databasePath));
     const personal = lived.recordPlan(formed);
@@ -289,6 +308,7 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
     assert.deepEqual(second.sourcePlanRefs, [personal.planId, care.planId]);
     assert.deepEqual(lived.latestPlan(life.thread.threadId, "personal", { at: second.establishedAt }), personal);
     assert.match(personal.stops[0].activity, /octopus livestream/);
+    assert.match(personal.stops[1].activity, /Finish the sketch/);
     lived.close();
 
     lived = openLivedNowStore(localWorldStateStorage(databasePath));
