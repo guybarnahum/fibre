@@ -7,7 +7,7 @@ canonical: true
 
 # Current priorities
 
-Fibre has completed the intrinsic-regulation detour needed before continuing the lived-world meeting loop.
+Fibre has completed the intrinsic-regulation detour and resumed the lived-world meeting loop.
 
 [`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md) is the regulation authority. [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) remains the M2 continuation authority.
 
@@ -19,9 +19,9 @@ R2 Social presence + affective resonance                 CLOSED
 R3 Interoception -> semantic feeling                     CLOSED
 R4 Functional drive loop + organism trace                CLOSED
 
-A1 Flight Plan + World-observed Lived Now                CLOSING
-A2 Care plan + conflicting wills in movement             NEXT
-A3 Current-life projection + Thread Editor
+A1 Flight Plan + World-observed Lived Now                CLOSED
+A2 Care plan + conflicting wills in movement             CURRENT
+A3 Current-life projection + Thread Editor               NEXT
 A4 Public present + insidefibre.com scene
 A5 Situated encounter
 B1 Encounter -> selective experience
@@ -67,15 +67,16 @@ regulatory drive   != semantic need
 intrinsic affect   != semantic emotion
 sensory resonance  != empathy / love / anger
 mechanical signal  != autobiographical meaning
+care requirement   != dependent person's private desire
 ```
 
 Meaning-bearing emotion/need/relationship state remains natural-language-first and Thread-owned.
 
-## A1 now
+## A1 closed
 
-A Flight Plan is now an ordered Thread-authored itinerary rather than one inert next activity. Physical and mediated presences can coexist across a bounded horizon.
+A Flight Plan is an ordered Thread-authored itinerary rather than one inert next activity. Physical and mediated presences can coexist across a bounded horizon.
 
-The critical authority split is now explicit:
+The critical authority split is explicit and persistent:
 
 ```text
 Flight Plan / care plan
@@ -87,9 +88,7 @@ CurrentSituation
 
 `CurrentSituation` persists observed physical place or transit progress, mediated presence, activity, participants and evidence. It may diverge from the governing plan and survives restart independently from the immutable plan.
 
-A required care plan can govern what should happen without fabricating that it already happened. For example, a caregiver may require Maya to put the tablet away while World-observed life still records Maya watching the octopus stream. Both wills and the actual state remain distinguishable.
-
-The persisted CurrentSituation can be projected back into Flight Plan regulation:
+The persisted CurrentSituation feeds Flight Plan regulation:
 
 ```text
 intended presence
@@ -98,14 +97,41 @@ intended presence
   -> presence pressure / progress / attainment
 ```
 
-This is the A1 closure direction. After the focused gates, move to A2 and make a caregiver constraint participate in real movement/progress while preserving the dependent Thread's separate personal Flight Plan.
+A1 therefore preserves `what I intended` separately from `where/how I actually am`.
+
+## A2 current
+
+Care uses the same itinerary semantics but retains separate ownership and authority.
+
+The current proof makes the distinction load-bearing:
+
+```text
+Maya wants to remain home with the octopus stream
+Mom validly requires leaving for the dentist
+World observes Maya riding toward the dentist
+
+care requirement: progressing / eventually satisfied
+Maya's own presence target: disrupted and still hers
+```
+
+The care plan explains and governs the required course of action; it is not converted into the child's intrinsic drive. Moving away from Maya's own intended presence can raise her personal presence pressure while the household successfully carries out care. Arrival at the dentist therefore need not mean intrinsic attainment for Maya.
+
+This preserves three separate truths:
+
+```text
+what I wanted
+what my caregiver required
+what happened
+```
+
+After the focused A2 gates, move to A3 current-life projection rather than building a generic care, travel or behavior engine.
 
 ## Stop rules
 
 - No scheduler framework or route engine.
 - No second location/current-life authority.
 - Plan is never copied into reality merely because it governs.
-- Care authority never rewrites the dependent Thread's own plan.
+- Care authority never rewrites the dependent Thread's own plan or becomes its private desire.
 - World observation never authors private semantic meaning.
 - No high-frequency organism ticking; evaluate meaningful transitions lazily.
 - Keep tests focused on causal Fibre invariants and representative lived cases.
