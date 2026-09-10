@@ -27,7 +27,7 @@ function relationContext(record) {
     partyKind: record.relatedParty.kind,
     displayName: record.relatedParty.displayName,
     relationKind: record.relationKind,
-    relationshipFacts: [...record.relationshipFacts],
+    relationshipFacts: [...(record.relationshipFacts ?? [])],
   };
 }
 
@@ -78,10 +78,11 @@ export async function formSocialPresenceTarget({
   const relations = situatedLifeStore.listCurrentLifeRelations(thread.threadId).map(relationContext);
   if (relations.length === 0) return null;
 
-  const partyIds = new Set(relations.map((relation) => relation.partyId));
+  const partyIds = [...new Set(relations.map((relation) => relation.partyId))];
+  const partyIdSet = new Set(partyIds);
   const semanticStates = semanticStateStore.listCurrentState(thread.threadId)
     .filter((state) => state.domain === "emotion" || state.domain === "need" ||
-      (state.domain === "relationship_attitude" && partyIds.has(state.target?.targetId)))
+      (state.domain === "relationship_attitude" && partyIdSet.has(state.target?.targetId)))
     .map(stateContext);
 
   const input = {
@@ -99,7 +100,7 @@ export async function formSocialPresenceTarget({
   const invocation = await modelAdapter.invoke({
     systemPrompt: SYSTEM_PROMPT,
     input,
-    responseSchema: cognitionSchema(relations.map((relation) => relation.partyId)),
+    responseSchema: cognitionSchema(partyIds),
     clientRequestId: requestId(input),
   });
   assertPlainObject("social presence cognition result", invocation);
@@ -123,10 +124,12 @@ export async function formSocialPresenceTarget({
   };
   if (targetRef === "none") return { target: null, cognition };
 
-  const selected = relations.find((candidate) => candidate.partyId === targetRef);
-  if (selected === undefined) {
+  const selectedRelations = relations.filter((candidate) => candidate.partyId === targetRef);
+  if (selectedRelations.length === 0) {
     throw new TypeError("social presence cognition selected a person outside the Thread's current relationships");
   }
+  const selectedStates = semanticStates.filter((state) =>
+    state.domain !== "relationship_attitude" || state.target?.targetId === targetRef);
 
   return {
     target: {
@@ -140,8 +143,8 @@ export async function formSocialPresenceTarget({
       predictedSatisfaction: null,
       urgency: 0,
       evidenceRefs: [
-        selected.relationRef,
-        ...semanticStates.map((state) => state.stateId),
+        ...selectedRelations.map((candidate) => candidate.relationRef),
+        ...selectedStates.map((state) => state.stateId),
       ],
     },
     cognition,
