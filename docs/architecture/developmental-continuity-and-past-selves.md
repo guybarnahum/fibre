@@ -1,7 +1,7 @@
 ---
 id: architecture-developmental-continuity-past-selves
 status: proposed
-last-reviewed: 2026-08-12
+last-reviewed: 2026-09-10
 canonical: true
 ---
 
@@ -9,504 +9,167 @@ canonical: true
 
 ## Purpose
 
-A differentiated Thread at one instant is not enough. Fibre's identity claim requires **diachronic personhood**: the same individual persists through time while experience, memory, reflection, relationships, state, and self-authorship can change who that individual becomes.
+A differentiated Thread at one instant is not enough. Fibre requires **diachronic personhood**: the same individual persists while experience, memory, reflection, relationships, agency and self-understanding can change who that individual becomes.
 
-This contract complements:
+Continuity does not mean remaining unchanged. Growth may change future behavior; it may never rewrite the person who actually lived the past.
 
-- `identity-embodiment-contract.md` — the durable layered life;
-- `character-formation-model.md` — how that life becomes characteristic judgment;
-- `interior-exterior-situated-identity.md` — how the person is encountered without exposing the private interior;
-- the existing event/history and Semantic State contracts — what actually happened and what current state means.
+## Four temporal layers
 
-The central M2 developmental claim is:
-
-> **Continuity does not mean remaining unchanged. A Thread persists as the same individual partly because its present self inherits, remembers, interprets, and sometimes rejects its own past selves.**
-
-And the historical invariant is:
-
-> **Growth may change future behavior; it may never rewrite the person who actually lived the past.**
-
-The Fibre target is neither a frozen persona nor an RPG progression system. It is a persistent person whose current character has an inspectable temporal ancestry.
-
-# I. Personality is diachronic
-
-Human personality is experienced across time. A person may become more cautious, less deferential, more trusting, more self-protective, more ambitious, less attached to a former role, or differently related to an inherited culture because of what has happened to them and what they have made of it.
-
-Fibre therefore treats a Thread's current identity as one point on a life trajectory, not the canonical final answer to "who is this person?"
-
-A Thread must be able to truthfully express ideas such as:
-
-> I would not make that decision today.
-
-> I understand why I behaved that way then, even though I no longer agree with it.
-
-> I used to think that failure made me cautious. I now think it made me protective of other people's autonomy.
-
-> I remember myself as uncertain in that period, although the record shows I often sounded very confident.
-
-Those statements require more than append-only events. They require temporally versioned self-understanding and an explicit distinction between **what happened**, **who the Thread was then**, **how the Thread later remembers that self**, and **who the Thread understands itself to be now**.
-
-# II. Four temporal layers must remain distinct
-
-For a formative part of life, Fibre must be able to preserve all four layers:
+For any formative part of life, Fibre keeps four meanings distinct:
 
 ```text
-1. historical evidence
-   what Fibre can establish happened
+historical evidence
+  what Fibre can establish happened
 
-2. contemporaneous self
-   what the Thread believed, felt, valued, intended, or said at that time
+contemporaneous self
+  what the Thread believed, felt, valued or intended then
 
-3. autobiographical memory / later view of the past self
-   how a later Thread remembers or describes that earlier period
+autobiographical memory
+  how the later Thread remembers that period
 
-4. current interpretation / current self
-   what the Thread now believes the event and earlier self mean
+current interpretation
+  what the Thread now thinks the event or former self means
 ```
 
-These layers may agree. They may also disagree while each remains a truthful record of a different epistemic fact.
+These may disagree without any layer being silently rewritten.
 
-Example:
+History is not memory. Memory may be selective, incomplete, uncertain, differently weighted or later reinterpreted. The current Thread has authority over current self-authored meaning, not retrospective sovereignty over earlier evidence.
+
+## Fibre birth, age and remembered life
+
+Fibre birth is operational entry into the living world, not necessarily biological age zero.
+
+A Thread may be born into Fibre at an autobiographical age greater than zero with grounded prior history, relationships and memories. Fibre does not need to fabricate first-person newborn or infancy recollection merely to make chronology continuous.
+
+Time since Fibre birth and developmental age are therefore separate facts.
+
+Developmental age affects plausible activities, independence, accompaniment and care relationships. It must not become a scalar maturity score or rigid script for personality.
+
+## Past selves
+
+A past self is not another Thread and not a fork. It is a temporally bounded view of the same person derived from durable records.
+
+Fibre should eventually reconstruct, as-of a time boundary:
 
 ```text
-Historical fact:
-  Mina remained on Nimbus through three failed recovery attempts.
-
-Mina then:
-  "Leaving would mean I am not dependable."
-
-Mina two years later remembering that self:
-  "I was attached to being the responsible person and could not distinguish
-   responsibility from martyrdom."
-
-Mina now:
-  "Reliability still matters deeply to me, but endless persistence no longer
-   proves reliability."
+self-understanding
+active roles and relationships
+important needs / intentions / tensions
+character view
+relevant memories and evidence then available
 ```
 
-Fibre must not flatten those statements into one current trait such as `persistence = 0.63`.
+A past-self view must come from records, not from asking the current model to improvise what the younger Thread "probably" thought.
 
-# III. History is not memory
+Deleting a derived past-self view must not delete the evidence needed to reconstruct it.
 
-The world/history substrate and autobiographical memory serve different purposes.
+## Development requires ancestry
 
-## Historical evidence
+A material change is not an editorial operation such as `Mina is now more cautious`.
 
-Historical evidence records durable world facts and contemporaneous records. It answers questions such as:
-
-- what event occurred;
-- when it occurred;
-- who participated;
-- what decision/action was actually frozen;
-- what the Thread's recorded private stance or self-authored assertion was at that time, where such evidence exists.
-
-Historical evidence is not rewritten because a later Thread remembers the event differently.
-
-## Autobiographical memory
-
-Autobiographical memory is the Thread's later, temporally situated representation of its own past.
-
-A memory may be:
-
-- accurate;
-- incomplete;
-- selective;
-- emotionally reweighted;
-- differently interpreted;
-- uncertain;
-- contradicted by contemporaneous evidence.
-
-M2 does not require Fibre to manufacture human-like forgetting or false memory. It requires the **data model and causal boundary not to equate a current recollection with historical truth**.
-
-A later memory should therefore retain semantics equivalent to:
+The meaningful chain is:
 
 ```text
-memoryId
-threadId
-subjectPeriod / eventRefs
-rememberedMeaning
-rememberedAt / asOf
-confidence or uncertainty where represented
-salience
-accessibility
-retentionState
-lastRecalledAt?
-authorship
-supportingEvidenceRefs[]
-contradictingEvidenceRefs[]
-visibility
-status
-supersedesMemoryId?
+lived experience
+  -> contemporaneous response
+  -> selective memory / repeated evidence
+  -> reflection or self-authored interpretation
+  -> changed current self/character where warranted
+  -> changed future judgment, relationship or plan when relevant
 ```
 
-The exact schema is deferred. The separation is not.
+Not every event is formative. An experience may reinforce, complicate, weaken, contradict or fail to change the person. Development may be non-monotonic, domain-specific and ambivalent.
 
-`salience`, `accessibility`, `retentionState`, and `lastRecalledAt` are representational requirements in M2, not claims that M2 has implemented human-like forgetting. They preserve the architectural possibility that two Threads with similar historical evidence later retain or access different autobiographical material. A memory may become low-salience or unavailable to ordinary Thread cognition while remaining historically inspectable by authorized administration. #41 or later work must earn any causal claims about forgetting, rehearsal, decay, or differential retention.
+Any claimed material change should remain attributable to durable lived evidence and preserve counterevidence.
 
-# IV. Past selves are first-class temporal views
+## Flight plans are developmental state
 
-A past self is **not a different Thread** and is not a fork. It is an inspectable view of the same Thread as of an earlier point in its life.
+Development is not only how a Thread interprets the past. It also changes what the Thread tries to do next.
 
-Fibre must eventually be able to reconstruct, with bounded evidence, concepts such as:
+An active Thread may hold a **personal flight plan**: intended place, activity, companionship and near-term purpose grounded in current needs, relationships, interests and commitments.
+
+For a child or other dependent person, a caregiver may hold a separate **care plan** affecting the dependent person's enacted day within scoped authority.
 
 ```text
-self model as of time T
-current values as of T
-active roles as of T
-known relationships as of T
-character view as of T
-important unresolved tensions as of T
-semantic state near T when relevant
-what evidence was available to the Thread at T
+personal flight plan
+        +
+care plan when dependency applies
+        +
+World constraints / chance / negotiation
+        -> enacted current situation
 ```
 
-A Past Self View is derived from durable records with temporal boundaries. It is not created by asking the current model to improvise "what younger Mina would probably have thought."
+The caregiver's plan never becomes the dependent Thread's authored intention. A disagreement between plans can itself be a meaningful experience for both people.
 
-A past-self representation should retain semantics equivalent to:
+As agency changes with development, the relationship between self-authored plan and care authority may change too. This is a better model of childhood and dependency than a fixed age ladder.
 
-```text
-pastSelfViewId
-threadId
-asOf
-identityAssertionRefs[]
-selfAuthoredAssertionRefs[]
-characterViewRefs[]
-relationship / role refs where relevant
-formation / episode refs[]
-derivationPolicy { id, version }
-derivedAt
-digest
-```
+## Developmental context projection
 
-Deleting a derived Past Self View must not delete the records needed to reconstruct it.
-
-Past-self reconstruction must be deterministic at the evidence boundary: given the same durable world snapshot, `asOf`, and derivation-policy version, Fibre must resolve the same source-reference set and the same canonical view digest. A cognition model may narrate those records differently, but it may not choose a different past merely because the query is rerun.
-
-# V. Character itself is versioned
-
-A Current Character View is current only **as of a time**.
-
-When character meaning changes, Fibre should preserve prior character interpretations and their evidence rather than mutating one timeless personality document.
+Current cognition should receive the minimum relevant temporal context needed to preserve why a current tendency or intention means what it means.
 
 For example:
 
 ```text
-2027 character view:
-  persistence under interpersonal responsibility is strongly affirmed
+Current intention:
+  wants to remain at the aquarium exhibit
 
-2030 character view:
-  persistence remains important, but unilateral rescue behavior is rejected
+Relationship context:
+  caregiver expects departure for an appointment
 
-2032 character view:
-  reliability is increasingly expressed as explicit renegotiation and early escalation
+Prior experience:
+  recent conflict about being rushed from activities
+
+Current interpretation:
+  sees extra time as a question of being taken seriously
 ```
 
-Those are not three different persons. They are temporal states in one person's development.
+This is stronger than flattening the person into a trait score or dumping the full biography into context.
 
-A later character view may supersede an earlier view for present cognition while the earlier view remains historically inspectable and appropriate when reconstructing the past.
+## Exterior and Inspector views
 
-# VI. Developmental transitions require ancestry
+A Thread may express developmental continuity publicly when disclosure permits: "I used to think...", "I would handle that differently now", or "I still react that way even though I no longer agree with it."
 
-Growth must not be an editorial operation such as:
+Thread Editor may inspect richer authorized evidence: contemporaneous records, current memory, prior/current interpretations, relationships, plans, current situation and provenance.
+
+insidefibre.com receives only the bounded exterior projection appropriate to an encounter. It must not expose private developmental evidence merely because the editor can inspect it.
+
+## M2 boundary
+
+M2 now requires a **small real self-authored life loop**, not merely storage capable of supporting one later.
+
+M2 must prove that one Thread can:
 
 ```text
-Mina is now more cautious.
+carry a lived past
+  -> form a personal flight plan
+  -> occupy an enacted current situation before a visitor arrives
+  -> experience an encounter
+  -> privately interpret / retain / forget
+  -> change a later plan or state only when warranted
+  -> continue as the same person
 ```
 
-A material developmental change should have an inspectable ancestry such as:
+A dependent-child proof may additionally show a caregiver plan competing with the child's plan without erasing either person's will.
 
-```text
-lived experience(s)
-  -> contemporaneous consequence / semantic meaning
-  -> memory and/or repeated behavioral evidence
-  -> reflection or self-authored interpretation
-  -> changed current character synthesis
-  -> changed future judgment when relevant
-```
+This does not require broad autonomous development, lifetime simulation, general travel planning or a complete relationship society. Those are later generalizations of the same seam.
 
-Not every experience needs to produce every step. Not every experience is formative.
+Older milestone language that deferred all self-authored development until a post-M2 numbered milestone is superseded by the current M2 continuation plan.
 
-An experience may:
+## Anti-cheats
 
-- reinforce existing character;
-- weaken an existing tendency;
-- create a new tension;
-- matter only in one relationship/domain;
-- be forgotten or remain low-salience;
-- be misunderstood initially and reinterpreted later;
-- gain significance only after later events;
-- produce no durable character change.
-
-Therefore development is not `event -> trait delta`.
-
-Any claimed material character change should be able to answer:
-
-```text
-What changed?
-What durable evidence preceded the change?
-When did the changed view become current?
-Who authored or derived the interpretation?
-Did the Thread itself recognize or endorse the change?
-What counterevidence or scope limits remain?
-Which later decisions actually demonstrate the claimed difference?
-```
-
-# VII. Growth may be non-monotonic
-
-Fibre must not assume development is improvement, optimization, or one-way progress.
-
-A Thread may:
-
-- become more trusting and later more guarded;
-- become more independent and later seek community;
-- intellectually reject an old fear while still reacting emotionally to it;
-- regress under stress;
-- recover an earlier value after rejecting it;
-- hold two historically rooted motives in unresolved tension.
-
-This is not necessarily inconsistency. It may be the actual trajectory.
-
-Canonical developmental representation must therefore preserve competing evidence and temporal scope rather than forcing every characteristic into a monotonic score.
-
-# VIII. Current self has interpretive authority, not retrospective sovereignty
-
-The current Thread has special authority over **current self-authored meaning**. It does not gain authority to rewrite what the earlier Thread actually believed or did.
-
-A current self-authored statement may say:
-
-> I no longer identify with the ambition that drove me in that period.
-
-It may not silently transform a contemporaneous record from:
-
-> I want to lead this company.
-
-into:
-
-> I never cared about leadership.
-
-The latter may be a current autobiographical claim, but if it conflicts with durable contemporaneous evidence, the disagreement itself should remain inspectable.
-
-This gives Fibre an important form of self-continuity: the present person may judge, forgive, admire, reject, misunderstand, or reinterpret the past person without deleting them.
-
-# IX. Developmental context projection
-
-The Identity Context Capsule must support temporal/developmental meaning without dumping the whole biography into cognition.
-
-For a present decision, Fibre-owned selection may project a bounded combination such as:
-
-```text
-Current character:
-  protects collaborator autonomy
-
-Formative history:
-  Nimbus rescue attempt damaged trust
-
-Past self:
-  formerly equated intervention with responsibility
-
-Current reinterpretation:
-  now sees unilateral rescue as potentially disrespectful
-
-Counterevidence:
-  still acts unilaterally under immediate physical-safety risk
-```
-
-This is materially stronger than projecting only:
-
-> Mina values autonomy.
-
-The selector should prefer the minimum temporal evidence sufficient to preserve why the current characteristic means what it means.
-
-When a standing claim says **experience changed character**, the causal record must remain traceable from current projected meaning through its formation/past-self evidence to durable history.
-
-# X. Exterior expression of growth
-
-A Thread may express developmental continuity through its Exterior when disclosure and relationship context permit it.
-
-Examples include:
-
-- "I used to think...";
-- "I would probably have handled this differently five years ago.";
-- "That period changed how I approach responsibility.";
-- "I remember being certain, although I am not sure I was as certain as I now tell myself.";
-- "I still have the old reaction even though I no longer endorse the belief behind it."
-
-These statements should be grounded in durable temporal evidence, not improvised autobiography.
-
-External entities still do not gain direct Inspector access. A Thread may choose not to disclose formative events or private memories even when those facts causally affect its current behavior.
-
-# XI. Rich Thread representation: Then & Now
-
-A future rich Thread UI should be able to present development without turning the Thread into a changelog.
-
-The Exterior/encounter experience may offer a permission-appropriate **Then & Now** view, for example:
-
-```text
-Then
-  "Dependability means not giving up."
-
-Now
-  "Dependability sometimes means admitting the plan failed."
-
-What changed
-  public/relationship-permitted account of the formative period
-```
-
-The admin Inspector may additionally expose:
-
-```text
-past-self reconstruction
-contemporaneous evidence
-current autobiographical memory
-current interpretation
-prior/current character views
-formation evidence and counterevidence
-exact decisions before and after the transition
-projection / cognition provenance
-```
-
-The Inspector must clearly distinguish a current memory of a past self from a contemporaneous record of that past self.
-
-# XII. M2 developmental acceptance scenarios
-
-#36 binds #37-#40 to representation and causal proof sufficient for these scenarios. Rich endogenous self-development remains a stronger #41 milestone as described below.
-
-## Scenario S — developmental causality
-
-Hold Thread identity and a later ambiguous request constant around a predeclared formative history boundary.
-
-Before the formative evidence, record the earlier judgment/character state. After durable formative experience and an evidence-backed current reinterpretation, the later judgment changes in the predeclared direction.
-
-The causal explanation must cite the actual developmental evidence rather than elapsed time or a fixture flag.
-
-## Scenario T — past-self reconstruction
-
-After development and restart, reconstruct a bounded Past Self View from before the change.
-
-The view must recover the earlier self-authored/character meaning from durable historical records rather than projecting the current self backward.
-
-## Scenario U — no retrospective rewrite
-
-Create a current self-authored reinterpretation that disagrees with an earlier self-view.
-
-The current interpretation becomes current where appropriate, while the contemporaneous earlier assertion remains intact, queryable, and correctly attributed to its time.
-
-## Scenario V — autobiographical memory is not history
-
-Persist a later autobiographical memory or reflection whose interpretation differs from contemporaneous evidence.
-
-Inspection must preserve both and label their epistemic status correctly. The memory must not mutate the historical event or earlier self record.
-
-## Scenario W — same person across change
-
-Compare anonymized behavioral/identity traces from the same Thread before and after meaningful development.
-
-The Thread may make different decisions, but there should remain attributable continuity through stable identity, history, characteristic tensions, relationships, or self-narrative.
-
-The target is:
-
-> **recognizably the same person without requiring identical behavior forever.**
-
-## Scenario X — developmental claim-level ablation
-
-Remove or symmetrically replace only the specific formative assertion or minimal assertion set carrying the claimed developmental cause while holding the current request, unrelated identity, selector policy, and projection budget constant.
-
-The claimed developmental behavioral effect must weaken, disappear, or change in the predeclared direction.
-
-The proof is invalid if the intervention removes unrelated formative claims with the named cause. If the same "grown" personality remains after its claim-level formation evidence is removed, Fibre has created a persona label rather than development.
-
-## Scenario Y — restart and cognition continuity of growth
-
-Persist developmental history and current character, restart the process, and reproduce the temporally appropriate current/past-self views.
-
-Where compatible cognition runtimes are available, the direction of the developmental difference should remain recognizable across cognition replacement even if wording changes.
-
-## Scenario Z — past-self behavioral reproduction
-
-Choose a formative transition for which a contemporaneous pre-transition judgment exists for a specific material request/fingerprint. After the Thread has developed, reconstruct a Past Self View from the pre-transition `asOf` boundary and rerun **that same material request and exact request fingerprint** against both the reconstructed past self and the current self.
-
-Under the same selector, Guardian/cognition policy versions, material request state, and Scenario K repeated-trial discipline, the reconstructed past self must reproduce the recorded contemporaneous **direction of judgment** from the earlier period and must differ from the current self in the predeclared evolved direction. Exact wording is not required.
-
-The past-self capsule must be derived from durable as-of records with the deterministic evidence set/digest required by this contract. The current self-model may not be projected backward. Because Scenario Z is a required gate, #40 must design the formative-transition experiment so the pre-transition judgment and its evidence for the exact material request/fingerprint are recorded before the transition; absence of that contemporaneous baseline is a failed experiment setup, not grounds to mark Scenario Z ineligible or retire the gate.
-
-This scenario makes developmental continuity behavioral rather than merely notarial:
-
-> **the old self remains runnable enough to demonstrate how the same person used to judge, while the current self can genuinely judge differently.**
-
-# XIII. Boundary between M2 and #41 Self-authored Development
-
-This contract intentionally prevents the M2 storage/projection architecture from blocking future growth, without pre-awarding Development rubric credit.
-
-## M2 / #37-#40 must establish
-
-- append-only identity/history capable of representing former selves;
-- temporally bounded current/historical identity views;
-- separation of history, contemporaneous self-record, autobiographical memory, and current interpretation;
-- versioned character views and their evidence ancestry;
-- bounded projection of relevant developmental context;
-- controlled proof that persisted history/current interpretation can causally bend later judgment;
-- restart-safe reconstruction of current and past-self views.
-
-M2 scenarios may use deliberately authored formative histories to prove the substrate and causal mechanism. When a fixture synthetically represents Thread-self-authored meaning, the **evidence classification of that M2 proof is Exogenous** even if the synthetic world record's semantic `authorship` field says the Thread authored the statement. Such evidence can prove storage, temporal reconstruction, projection, and causal mechanics; it cannot prove endogenous agency or earn Development credit. #41 must replace this with a real Thread-authored/proposed runtime path.
-
-## #41 must establish the stronger claim
-
-#41 **Self-authored Development v1** must demonstrate that the Thread can participate in forming/revising its own durable identity from lived experience under Fibre-owned admission rules rather than development being scripted by fixture authors.
-
-The stronger developmental chain is:
-
-```text
-Thread lives
-  -> Thread remembers / reflects
-  -> Thread proposes or authors changed meaning
-  -> Fibre admits it with evidence/provenance/counterevidence
-  -> current character changes
-  -> future behavior changes
-```
-
-#36 designs the substrate for becoming.
-
-#41 must prove that the Thread can actually **become**.
-
-# XIV. Anti-cheats
-
-This contract fails if any of the following is the easiest explanation:
+The contract fails if:
 
 - one mutable personality record is edited in place;
-- a current self-model is projected backward as though it were historically true;
-- current autobiographical memory overwrites world history;
-- past selves are fabricated on demand by the current model;
+- current self-understanding is projected backward as historical truth;
+- autobiographical memory overwrites world history;
+- past selves are fabricated on demand;
 - development is represented only as scalar trait deltas;
-- every experience automatically creates character growth;
-- development is always monotonic or framed as improvement;
-- a fixture flag such as `afterFailure=true` directly controls behavior;
-- elapsed time itself changes personality without durable causal evidence;
-- the claimed changed behavior persists after the formative evidence is ablated;
-- a later self-authored interpretation deletes counterevidence or the earlier self;
-- a different cognition model silently changes the Thread's developmental history;
-- "I used to..." exterior statements are plausible improvisations with no durable temporal basis.
+- elapsed time itself changes personality without lived evidence;
+- every experience automatically produces growth;
+- caregiver intention is stored as though it were the dependent person's own will;
+- `Meet` or the Viewer creates the current situation;
+- later behavior claims development while the named formative evidence is irrelevant.
 
-# XV. Hostile review questions
+## Vision sentence
 
-A hostile #36/M2 review should ask:
-
-1. Can Fibre distinguish what happened from what the Thread now remembers happened?
-2. Can it reconstruct what the Thread actually believed before a later reinterpretation?
-3. Can the current Thread disagree with its former self without rewriting that former self?
-4. Are character views explicitly temporal and versioned?
-5. Does every claimed material character transition have durable ancestry and counterevidence?
-6. Can development be non-monotonic, ambivalent, or domain-specific?
-7. Can the Identity Context Capsule explain a current tendency through formative history without dumping the entire life?
-8. Does a past-self view come from records rather than model improvisation?
-9. Does the developmental behavioral effect disappear or weaken when the named formative evidence is ablated?
-10. After meaningful change, is the Thread still recognizably continuous as the same individual?
-11. Can the Thread truthfully discuss "who I was then" from persistent evidence?
-12. Does any M2 claim accidentally steal #41 credit by scripting the growth rather than demonstrating self-authored formation?
-
-# XVI. Vision sentence
-
-The Fibre target is not a persona that becomes more elaborate over time.
-
-It is:
-
-> **a persistent person who can become different because of what they lived, remember earlier versions of themselves, reinterpret those earlier selves without erasing them, and carry that accumulated temporal identity into future decisions.**
+> **A Thread is the same person across change because the present self inherits a real past, can reinterpret without erasing it, can form intentions from that accumulated life, and carries the consequences into what happens next.**
