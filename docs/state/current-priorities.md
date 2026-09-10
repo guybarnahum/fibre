@@ -96,7 +96,12 @@ Meaning-bearing emotion/need/relationship state remains natural-language-first a
 
 The branch already established useful A1/A2 authority boundaries: Thread personal plan and caregiver care plan are distinct from World-enacted situation, care does not overwrite the dependent person's will, and Viewer/caller input cannot author current reality.
 
-Now complete Flight Plan as a half-day/day mental itinerary of desired presence states and movement, with intrinsic regulation as its felt substrate:
+The resumed A1 path now has two further pieces:
+
+- Thread cognition authors an ordered multi-stop itinerary across a bounded horizon rather than one inert next activity.
+- plan-vs-World presence assessment converts observed physical/mediated progress into `preparing`, `moving`, `delayed`, `arrived`, or `dwelling` plus a real intrinsic-regulation target. The immutable plan is not rewritten when observed life diverges.
+
+The next A1 step is to make observed World presence itself part of persisted current-life authority, so restart preserves `what I intended` separately from `where/how I actually am`. Care constraints must then govern what should be enacted without pretending they can teleport the dependent person or rewrite observed reality.
 
 ```text
 intend presence
@@ -117,5 +122,3 @@ Continue on:
 ```text
 agent/m2-lived-encounter
 ```
-
-Planning slice identifiers are Fibre milestones, not GitHub PR numbers.
