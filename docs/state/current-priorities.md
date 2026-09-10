@@ -19,8 +19,9 @@ R2 Social presence + affective resonance                 CLOSED
 R3 Interoception -> semantic feeling                     CLOSED
 R4 Functional drive loop + organism trace                CLOSED
 
-resume A1/A2 Flight Plan + movement                      CURRENT
-A3 Current-life projection + Thread Editor               NEXT
+A1 Flight Plan + World-observed Lived Now                CLOSING
+A2 Care plan + conflicting wills in movement             NEXT
+A3 Current-life projection + Thread Editor
 A4 Public present + insidefibre.com scene
 A5 Situated encounter
 B1 Encounter -> selective experience
@@ -29,7 +30,7 @@ B2 Life continues + second meeting                       TRUE-E2E CLOSURE
 
 All work remains on `agent/m2-lived-encounter`; do not create per-slice branches.
 
-## What the detour earned
+## What the regulation detour earned
 
 The E2E meeting is an architectural forcing function, not merely a demo. Making one meeting genuinely valuable exposed a missing lower organism-like substrate beneath semantic cognition.
 
@@ -57,17 +58,7 @@ R3 created the explicit interoception boundary. Low-level regulation reaches cog
 
 R4 made regulation behaviorally causal. A meaningful regulator transition can earn attention, alter durable semantic interior state, and thereby alter the Thread's next ordinary presence choice. Ordinary unchanged regulation does not wake cognition.
 
-The regulation cycle now also emits a compact `organismTrace` separating:
-
-```text
-regulation
-  -> attention
-  -> interoception
-  -> Thread semantic interpretation
-  -> next desired presence
-```
-
-Thread Editor has a readable projection for that trace. **Do not add a dedicated regulation store or private transport solely for this view.** A3 current-life projection will carry the live trace into Thread Editor when the lived-now path is wired end to end.
+The regulation cycle emits a compact `organismTrace` separating regulation, attention, interoception, Thread semantic interpretation and next desired presence. Thread Editor has a readable projection for that trace. A3 will carry it into live current-life inspection; do not add a dedicated regulation store solely for UI transport.
 
 ## Semantic boundary
 
@@ -80,40 +71,44 @@ mechanical signal  != autobiographical meaning
 
 Meaning-bearing emotion/need/relationship state remains natural-language-first and Thread-owned.
 
-## Stop rules
+## A1 now
 
-- One regulator engine plus species profile, not parallel regulator subsystems.
-- No giant drive or sensor ontology.
-- No fixed mapping from sensor/drive values to named emotions.
-- No `parent/partner => seek proximity` shortcut.
-- No `smile => happy` or `shouting => angry` shortcut.
-- No high-frequency ticking; evaluate meaningful events/time/sensory transitions and recompute lazily.
-- No regulator may mint consent, permission or protected action.
-- Persist consequential targets/transitions, not every numeric sample.
-- Keep tests focused on causal invariants and a few lived examples.
+A Flight Plan is now an ordered Thread-authored itinerary rather than one inert next activity. Physical and mediated presences can coexist across a bounded horizon.
 
-## Flight Plan resumes now
-
-The branch already established useful A1/A2 authority boundaries: Thread personal plan and caregiver care plan are distinct from World-enacted situation, care does not overwrite the dependent person's will, and Viewer/caller input cannot author current reality.
-
-The resumed A1 path now has two further pieces:
-
-- Thread cognition authors an ordered multi-stop itinerary across a bounded horizon rather than one inert next activity.
-- plan-vs-World presence assessment converts observed physical/mediated progress into `preparing`, `moving`, `delayed`, `arrived`, or `dwelling` plus a real intrinsic-regulation target. The immutable plan is not rewritten when observed life diverges.
-
-The next A1 step is to make observed World presence itself part of persisted current-life authority, so restart preserves `what I intended` separately from `where/how I actually am`. Care constraints must then govern what should be enacted without pretending they can teleport the dependent person or rewrite observed reality.
+The critical authority split is now explicit:
 
 ```text
-intend presence
-  -> predict attainability
-  -> move / wait / encounter obstacle / make progress
-  -> regulator pressure and surprise
-  -> cognition / replanning when consequential
-  -> arrive / fail / remain / leave
-  -> World records enacted life without rewriting original intention
+Flight Plan / care plan
+  what someone intends or requires
+
+CurrentSituation
+  what the World actually observes as happening
 ```
 
-Physical places, mediated presences and people-as-places all use the same presence model.
+`CurrentSituation` persists observed physical place or transit progress, mediated presence, activity, participants and evidence. It may diverge from the governing plan and survives restart independently from the immutable plan.
+
+A required care plan can govern what should happen without fabricating that it already happened. For example, a caregiver may require Maya to put the tablet away while World-observed life still records Maya watching the octopus stream. Both wills and the actual state remain distinguishable.
+
+The persisted CurrentSituation can be projected back into Flight Plan regulation:
+
+```text
+intended presence
+  + observed current life
+  -> preparing / moving / delayed / arrived / dwelling
+  -> presence pressure / progress / attainment
+```
+
+This is the A1 closure direction. After the focused gates, move to A2 and make a caregiver constraint participate in real movement/progress while preserving the dependent Thread's separate personal Flight Plan.
+
+## Stop rules
+
+- No scheduler framework or route engine.
+- No second location/current-life authority.
+- Plan is never copied into reality merely because it governs.
+- Care authority never rewrites the dependent Thread's own plan.
+- World observation never authors private semantic meaning.
+- No high-frequency organism ticking; evaluate meaningful transitions lazily.
+- Keep tests focused on causal Fibre invariants and representative lived cases.
 
 ## Branch
 
