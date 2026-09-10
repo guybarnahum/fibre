@@ -128,8 +128,11 @@ export function createThreadPresentationAssetPublisher({
       });
       const stored = proof.receipt;
       const context = stored.context;
-      if (context.kind !== "thread_presentation_media") {
-        throw new TypeError("stored asset receipt is not Thread presentation media");
+      const snapshotMedia = context.kind === "thread_presentation_media";
+      const presentScene = context.kind === "experience_presentation_media"
+        && context.currentPresent === true;
+      if (!snapshotMedia && !presentScene) {
+        throw new TypeError("stored asset receipt is not publishable Thread presentation media");
       }
       for (const [name, value] of Object.entries({
         threadId: context.threadId,
@@ -144,7 +147,7 @@ export function createThreadPresentationAssetPublisher({
       let publiclyVisible = true;
       if (stored.role === "official_id_photo") {
         const current = currentSnapshot;
-        if (current === null || current.pointer.threadId !== context.threadId) {
+        if (!snapshotMedia || current === null || current.pointer.threadId !== context.threadId) {
           throw new TypeError("official ID photo requires the current matching Thread presentation snapshot");
         }
         const slot = current.snapshot.media.assets.find((asset) => asset.mediaId === context.mediaId);
@@ -159,9 +162,6 @@ export function createThreadPresentationAssetPublisher({
         publiclyVisible = card.visibility === "public";
       }
 
-      // media.ready is a durable fact about this immutable completion. Replay must
-      // reconstruct byte-identical stream input, so do not bind event identity to
-      // the wall clock of whichever consumer/recovery attempt happens to publish it.
       const emittedAt = stored.completedAt;
       const eventId = `presasset_${sha256(canonicalJson({
         jobId: stored.jobId,
@@ -189,9 +189,11 @@ export function createThreadPresentationAssetPublisher({
         },
       };
       const accepted = await presentationServer.appendEvent(eventInput, { expectedSequence });
-      const snapshotProjection = accepted.duplicate
-        ? currentSnapshot
-        : await projectMediaReadySnapshot(presentationServer, currentSnapshot, accepted.event, proof);
+      const snapshotProjection = snapshotMedia
+        ? (accepted.duplicate
+            ? currentSnapshot
+            : await projectMediaReadySnapshot(presentationServer, currentSnapshot, accepted.event, proof))
+        : null;
 
       const catalogEntry = {
         kind: "public_presentation_media",
