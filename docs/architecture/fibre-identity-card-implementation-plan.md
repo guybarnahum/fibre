@@ -75,7 +75,7 @@ C  deterministic renderer
 D1 machine credential signing/encryption
 D2 C2PA + immutable object admission
 E1 verifier + atomic activation/reissue/revocation
-E2 Thread Editor + Thread Presentation + E2E closure
+E2 Thread Editor + Thread Presentation + FID vertical closure
 ```
 
 ---
@@ -266,7 +266,7 @@ Proof gate:
 - superseded/revoked historical cards remain cryptographically authentic but status-invalid;
 - offline verification reports authenticity without pretending to know fresh revocation state.
 
-## Slice E2 — Thread Editor, Thread Presentation and true E2E closure
+## Slice E2 — Thread Editor, Thread Presentation and FID vertical closure
 
 Goal: make FID operational and inspectable without breaking authority boundaries.
 
@@ -283,7 +283,7 @@ Implement:
 - Thread Editor actions for authorized issue/reissue/revoke calls only through service contracts;
 - Thread Presentation consumes only the active admitted FID projection;
 - insidefibre.com consumes presentation/media refs, never provider URLs;
-- true E2E proof:
+- close the FID vertical across its existing authority boundaries:
 
 ```text
 already-born Thread + FIN
@@ -301,9 +301,11 @@ already-born Thread + FIN
 
 Then prove reissue and revocation on the same FIN.
 
+This is **FID vertical closure**, not Fibre's true end-to-end experience. Fibre true E2E is a product-level path: birth a richly constituted Thread, meet that Thread through rich visual embodiment, interact with the Thread in context, and allow that interaction to become an experience with selective durable consequences. FID supports identity continuity inside that path; it does not define the path.
+
 Proof gate:
 
-- no manual DB/object manipulation is needed anywhere in the E2E;
+- no manual DB/object manipulation is needed across normal FID authority operations;
 - Thread birth succeeds independently with no FID;
 - Thread Editor/browser never sees signing keys or provider-specific storage;
 - public/consumer presentation contains only policy-admitted active credential data/media.
@@ -323,4 +325,6 @@ Do not weaken existing gates to make a slice pass. Do not migrate unrelated stor
 
 ## Completion criteria
 
-The FID vertical is complete only when the acceptance criteria in [`fibre-identity-card.md`](./fibre-identity-card.md) all pass under the true E2E path, including birth independence, authority-owned identity resolution, photo admission, one active credential per FIN, immutable history, two-side cryptographic binding, exact embedded photo, existing C2PA verification, cryptographically verifiable issuer identity, and modern `InfraDriver`/service boundaries throughout.
+The FID vertical is complete when the acceptance criteria in [`fibre-identity-card.md`](./fibre-identity-card.md) pass across the FID authority path, including birth independence, authority-owned identity resolution, photo admission, one active credential per FIN, immutable history, two-side cryptographic binding, exact embedded photo, existing C2PA verification, cryptographically verifiable issuer identity, and modern `InfraDriver`/service boundaries throughout.
+
+Fibre true E2E is deliberately broader and belongs to the main Thread/personhood roadmap: **rich-life birth -> rich visual meeting -> contextual interaction -> potential experience -> selective durable consequence**.
