@@ -189,6 +189,7 @@ Rules:
 - Ledger changes must be balanced and append-only.
 - Thread Editor writes must become validated domain commands/events, never raw database edits.
 - Preserve prompt, model, fixture, policy, and evaluation versions for experiments.
+- For focused Node tests, use `node --test --test-reporter=./tools/test-infra/fibre-spec-reporter.mjs ...` rather than bare `node --test ...`, so local agent runs keep Fibre's compact test output. Use a different explicit reporter only when a task genuinely requires it.
 - Automated evidence must name and test accepted negative properties. For authority-, consent-, obligation-, identity-, ledger-, and lifecycle-critical guards, evidence must pin both the guard's behavior and the live call path or transaction boundary that makes it load-bearing; a removable wiring point is not sufficient evidence. A passing test count alone is not evidence; targeted mutation analysis is recommended for consequential guards.
 - For identity-, dignity-, relationship-, history-, development-, or economy-facing work, do not count persistence, schema validation, prompt inclusion, provenance, or UI display alone as proof that the concept is functional. Name and exercise the downstream consequence, or state explicitly that causal behavior remains deferred.
 
