@@ -116,31 +116,56 @@ export function createThreadPresentationPublisher({
   privateToken,
   fetchImpl = fetch,
 } = {}) {
-  const url = endpoint(baseUrl, "/internal/genesis/presentations", "Thread Presentation URL");
+  const genesisUrl = endpoint(baseUrl, "/internal/genesis/presentations", "Thread Presentation URL");
+  const presentUrl = endpoint(baseUrl, "/internal/current-present", "Thread Presentation URL");
   const token = nonEmpty("Fibre private token", privateToken);
   const request = bindingFetch(fetchImpl, "Thread Presentation");
 
+  async function post(url, bodyValue, label, fallbackCode) {
+    const response = await request(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-fibre-private-token": token,
+      },
+      body: JSON.stringify(bodyValue),
+    });
+    const body = await responseJson(response);
+    if (!response.ok) {
+      const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
+      const error = new Error(`Thread Presentation rejected ${label}: ${detail}`);
+      error.code = downstreamCode(body, fallbackCode);
+      error.activityCategory = "reconciliation";
+      error.httpStatus = response.status;
+      error.retryable = downstreamRetryable(response, body);
+      throw error;
+    }
+    return body;
+  }
+
   return Object.freeze({
-    async publishGenesisPresentation({ genesisId, publicationDigest, bundle }) {
-      const response = await request(url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-fibre-private-token": token,
-        },
-        body: JSON.stringify({ genesisId, publicationDigest, bundle }),
-      });
-      const body = await responseJson(response);
-      if (!response.ok) {
-        const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
-        const error = new Error(`Thread Presentation rejected Genesis projection: ${detail}`);
-        error.code = downstreamCode(body, "THREAD_PRESENTATION_PUBLICATION_FAILED");
-        error.activityCategory = "reconciliation";
-        error.httpStatus = response.status;
-        error.retryable = downstreamRetryable(response, body);
+    publishGenesisPresentation({ genesisId, publicationDigest, bundle }) {
+      return post(
+        genesisUrl,
+        { genesisId, publicationDigest, bundle },
+        "Genesis projection",
+        "THREAD_PRESENTATION_PUBLICATION_FAILED",
+      );
+    },
+    async publishCurrentPresent({ threadId, present }) {
+      const body = await post(
+        presentUrl,
+        { threadId, present },
+        "current present projection",
+        "THREAD_PRESENTATION_CURRENT_PRESENT_FAILED",
+      );
+      if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
+        const error = new Error("Thread Presentation returned an invalid current present response");
+        error.code = "THREAD_PRESENTATION_CURRENT_PRESENT_INVALID_RESPONSE";
+        error.retryable = true;
         throw error;
       }
-      return body;
+      return body.result;
     },
   });
 }
