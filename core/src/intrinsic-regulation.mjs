@@ -189,6 +189,12 @@ function normalizeTarget(value, index) {
   if (actualSatisfaction === null && targetKind !== "entity") {
     throw new TypeError(`${name}.actualSatisfaction is required unless presence is sensed from an entity`);
   }
+  const predictedSatisfaction = value.predictedSatisfaction === undefined || value.predictedSatisfaction === null
+    ? null
+    : unit(`${name}.predictedSatisfaction`, value.predictedSatisfaction);
+  if (predictedSatisfaction === null && targetKind !== "entity") {
+    throw new TypeError(`${name}.predictedSatisfaction is required unless current entity presence supplies the prediction`);
+  }
 
   return {
     targetId: nonEmpty(`${name}.targetId`, value.targetId),
@@ -199,7 +205,7 @@ function normalizeTarget(value, index) {
     orientation,
     actualSatisfaction,
     expectedSatisfaction: unit(`${name}.expectedSatisfaction`, value.expectedSatisfaction),
-    predictedSatisfaction: unit(`${name}.predictedSatisfaction`, value.predictedSatisfaction),
+    predictedSatisfaction,
     urgency: unit(`${name}.urgency`, value.urgency),
     evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, value.evidenceRefs),
   };
@@ -273,10 +279,11 @@ function sensedEntitySatisfaction(target, percept) {
 
 function presenceDrive(target, percept, profile) {
   const actualSatisfaction = target.actualSatisfaction ?? sensedEntitySatisfaction(target, percept);
+  const predictedSatisfaction = target.predictedSatisfaction ?? actualSatisfaction;
   const currentGap = 1 - actualSatisfaction;
-  const futureGap = 1 - target.predictedSatisfaction;
+  const futureGap = 1 - predictedSatisfaction;
   const progressError = actualSatisfaction - target.expectedSatisfaction;
-  const predictionError = target.predictedSatisfaction - 1;
+  const predictionError = predictedSatisfaction - 1;
   const behindPenalty = Math.max(0, -progressError);
   const urgencyWeight = 0.5 + (0.5 * target.urgency);
   const pressure = (
