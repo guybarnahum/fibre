@@ -63,7 +63,7 @@ function withDatabase(run) {
 function seedLife(databasePath) {
   const thread = childThread();
   const world = openWorldStore(localWorldStateStorage(databasePath));
-  const seeded = world.seedThread(thread);
+  const seeded = world.seedThread(thread).thread;
   world.close();
 
   const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
