@@ -160,7 +160,8 @@ export function normalizeLivedPlan(value) {
       throw new TypeError("personal plan must be owned by its subject Thread");
     }
     if (value.authority !== undefined) throw new TypeError("personal plan cannot carry care authority");
-    if (value.cognition !== undefined) cognition = normalizeCognition(value.cognition);
+    if (value.cognition === undefined) throw new TypeError("personal plan requires Thread cognition provenance");
+    cognition = normalizeCognition(value.cognition);
   } else {
     if (owner.partyId === value.subjectThreadId) {
       throw new TypeError("care plan owner must be distinct from its subject Thread");
