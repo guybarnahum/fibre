@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { requireInfraCapabilities } from "#infra";
+import { assertContentCredentialSigner } from "#services/asset-generator/src/index.mjs";
 import {
   FID_MACHINE_CREDENTIAL_SCHEMA,
   FID_MACHINE_ENVELOPE_VERSION,
@@ -35,17 +36,6 @@ function asBytes(name, value) {
   if (value instanceof Uint8Array) return value;
   if (value instanceof ArrayBuffer) return new Uint8Array(value);
   throw new TypeError(`${name} must be bytes`);
-}
-
-function signer(value) {
-  if (!value || typeof value.embed !== "function" || typeof value.verify !== "function") {
-    throw new TypeError("FID credentialing requires ContentCredentialSigner embed() and verify()");
-  }
-  return {
-    ...value,
-    signerId: nonEmpty("ContentCredentialSigner signerId", value.signerId),
-    format: nonEmpty("ContentCredentialSigner format", value.format),
-  };
 }
 
 function machineEnvelope(value) {
@@ -97,7 +87,7 @@ function assertEmbedResult(value, expectedSigner) {
 }
 
 export async function verifyFidC2paSide({ contentCredentialSigner, bytes, side: rawSide, machineCredential }) {
-  const checkedSigner = signer(contentCredentialSigner);
+  const checkedSigner = assertContentCredentialSigner(contentCredentialSigner);
   const expected = buildFidC2paAssertion({ machineCredential, side: rawSide });
   const verification = await checkedSigner.verify({
     bytes: asBytes("FID credentialed PNG", bytes),
@@ -116,7 +106,7 @@ export async function verifyFidC2paSide({ contentCredentialSigner, bytes, side: 
 export async function credentialAndStoreFidCard({ infra, contentCredentialSigner, render, machineCredential: rawEnvelope }) {
   requireInfraCapabilities(infra, "objects");
   const objects = infra.objects;
-  const checkedSigner = signer(contentCredentialSigner);
+  const checkedSigner = assertContentCredentialSigner(contentCredentialSigner);
   const envelope = machineEnvelope(rawEnvelope);
   const raw = assertRender(render, envelope);
 
