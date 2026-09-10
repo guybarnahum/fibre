@@ -53,6 +53,19 @@ function normalizeAuthority(value) {
   };
 }
 
+function normalizeCognition(value) {
+  assertPlainObject("personal plan.cognition", value);
+  assertExactKeys("personal plan.cognition", value, ["provider", "modelId", "providerRequestId"]);
+  assertNonEmpty("personal plan.cognition.provider", value.provider);
+  assertNonEmpty("personal plan.cognition.modelId", value.modelId);
+  if (value.providerRequestId !== null) assertNonEmpty("personal plan.cognition.providerRequestId", value.providerRequestId);
+  return {
+    provider: value.provider,
+    modelId: value.modelId,
+    providerRequestId: value.providerRequestId,
+  };
+}
+
 function activeAt(plan, at) {
   return Date.parse(plan.authoredAt) <= Date.parse(at) &&
     (plan.validUntil === null || Date.parse(plan.validUntil) >= Date.parse(at));
@@ -76,16 +89,22 @@ export function developmentalContextForThread(thread, at) {
   const birthDate = thread.identity.birthDate ?? null;
   const ageYears = ageYearsAt(birthDate, at);
   const needs = [...(thread.currentState?.needs ?? [])];
+  const feelings = [...(thread.currentState?.feelings ?? [])];
   const unresolvedIntentions = [...(thread.currentState?.unresolvedIntentions ?? [])];
+  const selfModel = thread.currentState?.selfModel ?? thread.identity.selfDescription;
   assertStringArray("Thread.currentState.needs", needs);
+  assertStringArray("Thread.currentState.feelings", feelings);
   assertStringArray("Thread.currentState.unresolvedIntentions", unresolvedIntentions);
+  assertNonEmpty("Thread.currentState.selfModel", selfModel);
 
   return {
     threadId: thread.threadId,
     birthDate,
     ageYears,
     selfDescription: thread.identity.selfDescription,
+    selfModel,
     needs,
+    feelings,
     unresolvedIntentions,
   };
 }
@@ -107,6 +126,7 @@ export function normalizeLivedPlan(value) {
     "companionRefs",
     "sourceReferences",
     "authority",
+    "cognition",
   ]);
   assertId("lived plan.planId", value.planId);
   assertEnum("lived plan.kind", value.kind, LIVED_PLAN_KINDS);
@@ -134,16 +154,19 @@ export function normalizeLivedPlan(value) {
   const sourceReferences = normalizeIds("lived plan.sourceReferences", value.sourceReferences, { required: true });
 
   let authority;
+  let cognition;
   if (value.kind === "personal") {
     if (owner.kind !== "thread" || owner.partyId !== value.subjectThreadId) {
       throw new TypeError("personal plan must be owned by its subject Thread");
     }
     if (value.authority !== undefined) throw new TypeError("personal plan cannot carry care authority");
+    if (value.cognition !== undefined) cognition = normalizeCognition(value.cognition);
   } else {
     if (owner.partyId === value.subjectThreadId) {
       throw new TypeError("care plan owner must be distinct from its subject Thread");
     }
     if (value.authority === undefined) throw new TypeError("care plan requires authority");
+    if (value.cognition !== undefined) throw new TypeError("care plan cannot carry Thread cognition provenance");
     authority = normalizeAuthority(value.authority);
     if (!sourceReferences.includes(authority.relationRef)) {
       throw new TypeError("care plan sourceReferences must include its authority relationRef");
@@ -165,6 +188,7 @@ export function normalizeLivedPlan(value) {
     companionRefs,
     sourceReferences,
     ...(authority === undefined ? {} : { authority }),
+    ...(cognition === undefined ? {} : { cognition }),
   };
 }
 
@@ -201,8 +225,19 @@ export function normalizeCurrentSituation(value) {
   const participantRefs = normalizeIds("current situation.participantRefs", value.participantRefs);
   const sourcePlanRefs = normalizeIds("current situation.sourcePlanRefs", value.sourcePlanRefs, { required: true });
   assertPlainObject("current situation.resolution", value.resolution);
-  assertExactKeys("current situation.resolution", value.resolution, ["kind", "summary"]);
+  assertExactKeys("current situation.resolution", value.resolution, [
+    "kind",
+    "conflict",
+    "enactedPlanRef",
+    "constrainedPlanRef",
+    "summary",
+  ]);
   assertEnum("current situation.resolution.kind", value.resolution.kind, ["personal_plan", "care_constraint"]);
+  if (typeof value.resolution.conflict !== "boolean") throw new TypeError("current situation.resolution.conflict must be boolean");
+  assertId("current situation.resolution.enactedPlanRef", value.resolution.enactedPlanRef);
+  if (value.resolution.constrainedPlanRef !== null) {
+    assertId("current situation.resolution.constrainedPlanRef", value.resolution.constrainedPlanRef);
+  }
   assertNonEmpty("current situation.resolution.summary", value.resolution.summary);
   if (value.provenance !== "world_enacted") {
     throw new TypeError("current situation provenance must be world_enacted");
@@ -221,6 +256,9 @@ export function normalizeCurrentSituation(value) {
     sourcePlanRefs,
     resolution: {
       kind: value.resolution.kind,
+      conflict: value.resolution.conflict,
+      enactedPlanRef: value.resolution.enactedPlanRef,
+      constrainedPlanRef: value.resolution.constrainedPlanRef,
       summary: value.resolution.summary,
     },
     provenance: "world_enacted",
@@ -282,13 +320,21 @@ export function resolveCurrentSituation(input) {
     resolution: careConstrains
       ? {
           kind: "care_constraint",
+          conflict: true,
+          enactedPlanRef: care.planId,
+          constrainedPlanRef: personal.planId,
           summary: "A required caregiver plan constrained what happened without replacing the Thread's personal plan.",
         }
       : {
           kind: "personal_plan",
+          conflict,
+          enactedPlanRef: personal.planId,
+          constrainedPlanRef: null,
           summary: care === null
             ? "The World enacted the Thread's current personal plan."
-            : "The caregiver plan did not constrain this enactment; the Thread's personal plan remained enacted.",
+            : conflict
+              ? "The caregiver plan differed but did not have required authority to constrain this enactment."
+              : "The personal and caregiver plans were compatible; the Thread's personal plan remained enacted.",
         },
     provenance: "world_enacted",
   });
