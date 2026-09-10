@@ -4,12 +4,12 @@ import test from "node:test";
 import { fibreTtyReporter } from "./fibre-tty-reporter.mjs";
 import { testSuiteCommand } from "./run-test-suite.mjs";
 
-async function collect(events) {
+async function collect(events, options) {
   async function* source() {
     for (const event of events) yield event;
   }
   const chunks = [];
-  for await (const chunk of fibreTtyReporter(source())) chunks.push(chunk);
+  for await (const chunk of fibreTtyReporter(source(), options)) chunks.push(chunk);
   return chunks;
 }
 
@@ -34,6 +34,23 @@ test("TTY reporter overwrites successful progress but preserves failures with ne
   assert.ok(chunks[2].endsWith("\n"));
   assert.match(chunks[3], /^\r\u001b\[2K✓ 4  recovery success$/u);
   assert.equal(chunks.at(-1), "\r\u001b[2K✗ 4 tests · 3 passed · 1 failed\n");
+});
+
+test("TTY reporter clips transient success to one terminal row without truncating failures", async () => {
+  const name = "abcdefghijklmnopqrstuvwxyz";
+  const chunks = await collect([
+    { type: "test:pass", data: { name, details: { type: "test" } } },
+    {
+      type: "test:fail",
+      data: {
+        name,
+        details: { type: "test", error: { stack: "Error: boom" } },
+      },
+    },
+  ], { columns: 20 });
+
+  assert.equal(chunks[0], "\r\u001b[2K✓ 1  abcdefghijklm…");
+  assert.match(chunks[1], /^\r\u001b\[2K✗ 2  abcdefghijklmnopqrstuvwxyz\n/u);
 });
 
 test("test-suite command adds compact reporter only for TTY and respects explicit reporters", () => {
