@@ -192,9 +192,6 @@ function normalizeTarget(value, index) {
   const predictedSatisfaction = value.predictedSatisfaction === undefined || value.predictedSatisfaction === null
     ? null
     : unit(`${name}.predictedSatisfaction`, value.predictedSatisfaction);
-  if (predictedSatisfaction === null && targetKind !== "entity") {
-    throw new TypeError(`${name}.predictedSatisfaction is required unless current entity presence supplies the prediction`);
-  }
 
   return {
     targetId: nonEmpty(`${name}.targetId`, value.targetId),
@@ -268,17 +265,24 @@ function basalDrives(percept, profile) {
   ];
 }
 
-function sensedEntitySatisfaction(target, percept) {
+function sensedEntityPresence(target, percept) {
   const cue = percept.social.find((item) => item.entityRef === target.targetRef);
-  if (cue === undefined) return target.relation === "away_from" ? 1 : 0;
-  if (target.relation === "away_from") return 1 - cue.proximity;
-  if (target.relation === "with") return Math.max(cue.proximity, cue.contact);
-  if (target.relation === "near") return cue.proximity;
-  return target.actualSatisfaction ?? cue.proximity;
+  if (cue === undefined) {
+    return {
+      satisfaction: target.relation === "away_from" ? 1 : 0,
+      evidenceRefs: [],
+    };
+  }
+  let satisfaction;
+  if (target.relation === "away_from") satisfaction = 1 - cue.proximity;
+  else if (target.relation === "with") satisfaction = Math.max(cue.proximity, cue.contact);
+  else satisfaction = cue.proximity;
+  return { satisfaction, evidenceRefs: cue.evidenceRefs };
 }
 
 function presenceDrive(target, percept, profile) {
-  const actualSatisfaction = target.actualSatisfaction ?? sensedEntitySatisfaction(target, percept);
+  const sensed = target.targetKind === "entity" ? sensedEntityPresence(target, percept) : null;
+  const actualSatisfaction = target.actualSatisfaction ?? sensed?.satisfaction;
   const predictedSatisfaction = target.predictedSatisfaction ?? actualSatisfaction;
   const currentGap = 1 - actualSatisfaction;
   const futureGap = 1 - predictedSatisfaction;
@@ -301,7 +305,7 @@ function presenceDrive(target, percept, profile) {
     progressError,
     predictionError,
     attained: actualSatisfaction >= 0.95,
-    evidenceRefs: target.evidenceRefs,
+    evidenceRefs: [...new Set([...target.evidenceRefs, ...(sensed?.evidenceRefs ?? [])])],
   });
 }
 
@@ -309,8 +313,10 @@ function socialResonance(percept, profile) {
   let activation = 0;
   let affiliative = 0;
   let distress = 0;
+  const evidenceRefs = new Set();
 
   for (const cue of percept.social) {
+    cue.evidenceRefs.forEach((ref) => evidenceRefs.add(ref));
     const closeness = 0.35 + (0.65 * cue.proximity);
     const familiarWeight = 0.6 + (0.4 * cue.familiarity);
     activation = Math.max(
@@ -331,6 +337,7 @@ function socialResonance(percept, profile) {
     activation: round(activation * profile.sensitivity.social),
     affiliative: round(affiliative * profile.sensitivity.social),
     distress: round(distress * profile.sensitivity.social),
+    evidenceRefs: [...evidenceRefs],
   };
 }
 
