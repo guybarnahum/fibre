@@ -27,7 +27,7 @@ const PERSONAL_PLAN_SCHEMA = Object.freeze({
 });
 
 const SYSTEM_PROMPT = `You are temporary cognition for one persistent Fibre Thread.
-Form one modest near-term personal flight plan from the Thread's own context.
+Form one modest near-term personal intention from the Thread's own context.
 Choose only an offered physical place. The plan is the Thread's intention, not World truth.
 For physical presence, mediatedContext must be an empty string.
 For mediated presence, mediatedContext must name the real place, site, stream, or content being experienced remotely.
@@ -60,7 +60,10 @@ export async function formPersonalLivedPlan({
   assertPlainObject("Thread", thread);
   assertId("Thread.threadId", thread.threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
-  if (validUntil !== null) assertIsoTimestamp("personal plan validUntil", validUntil);
+  assertIsoTimestamp("personal plan validUntil", validUntil);
+  if (Date.parse(validUntil) <= Date.parse(authoredAt)) {
+    throw new TypeError("personal plan validUntil must follow authoredAt");
+  }
   const places = normalizePlaces(availablePlaces);
   assertStringArray("personal plan sourceReferences", sourceReferences);
   if (sourceReferences.length === 0) throw new TypeError("personal plan sourceReferences must not be empty");
@@ -76,7 +79,7 @@ export async function formPersonalLivedPlan({
       availablePlaces: places,
     },
     responseSchema: PERSONAL_PLAN_SCHEMA,
-    clientRequestId: requestId({ threadId: thread.threadId, authoredAt, places, sourceReferences }),
+    clientRequestId: requestId({ threadId: thread.threadId, authoredAt, validUntil, places, sourceReferences }),
   });
   assertPlainObject("personal plan cognition result", invocation);
   assertPlainObject("personal plan cognition output", invocation.output);
@@ -96,12 +99,23 @@ export async function formPersonalLivedPlan({
   assertNonEmpty("personal plan cognition provenance.provider", invocation.provenance.provider);
   assertNonEmpty("personal plan cognition provenance.modelId", invocation.provenance.modelId);
 
+  const stop = {
+    startAt: authoredAt,
+    endAt: validUntil,
+    physicalPlaceRef: output.physicalPlaceRef,
+    mediatedContext: output.presenceMode === "physical" ? null : output.mediatedContext,
+    activity: output.activity,
+    purpose: output.purpose,
+    companionRefs: [],
+    travelFromPrevious: null,
+  };
   const plan = {
     planId: livedPlanId({
       threadId: thread.threadId,
       kind: "personal",
       authoredAt,
-      output,
+      horizonEnd: validUntil,
+      stop,
       provider: invocation.provenance.provider,
       modelId: invocation.provenance.modelId,
     }),
@@ -109,13 +123,9 @@ export async function formPersonalLivedPlan({
     subjectThreadId: thread.threadId,
     owner: { partyId: thread.threadId, kind: "thread" },
     authoredAt,
-    validUntil,
-    physicalPlaceRef: output.physicalPlaceRef,
-    presenceMode: output.presenceMode,
-    mediatedContext: output.presenceMode === "physical" ? null : output.mediatedContext,
-    activity: output.activity,
-    purpose: output.purpose,
-    companionRefs: [],
+    horizonStart: authoredAt,
+    horizonEnd: validUntil,
+    stops: [stop],
     sourceReferences: [...new Set([...sourceReferences, output.physicalPlaceRef])],
     cognition: {
       provider: invocation.provenance.provider,
