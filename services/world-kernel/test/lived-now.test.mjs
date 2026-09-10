@@ -238,7 +238,24 @@ function carePlan({ threadId, homeRef, parentRef, ownerId = "human_maya_mother" 
   };
 }
 
-test("A1/A2: Thread cognition forms personal will before visitor and care constrains enactment without rewriting it", async () =>
+function homeObservation(life, {
+  mediatedContext = "Monterey Bay Aquarium live octopus feed",
+  activity = "Watch the octopus livestream closely and sketch the changes I notice.",
+  reason = "World observation shows Maya is still absorbed in the octopus stream.",
+  participantRefs = [],
+} = {}) {
+  return {
+    phase: "at_place",
+    location: { kind: "place", placeRef: life.homeRef },
+    mediatedContext,
+    activity,
+    reason,
+    participantRefs,
+    evidenceRefs: [life.sourceEvent],
+  };
+}
+
+test("A1/A2: Thread cognition forms personal will; care can govern without fabricating observed life", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
     const context = developmentalContextForThread(life.thread, "2026-09-10T05:03:00Z");
@@ -273,13 +290,16 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
       threadId: life.thread.threadId,
       situationId: livedSituationId({ threadId: life.thread.threadId, step: "before-care" }),
       establishedAt: "2026-09-10T05:04:00Z",
+      observation: homeObservation(life),
     });
     assert.equal(first.resolution.kind, "personal_plan");
     assert.equal(first.resolution.conflict, false);
-    assert.equal(first.resolution.enactedPlanRef, personal.planId);
+    assert.equal(first.resolution.observedDivergence, false);
+    assert.equal(first.resolution.governingPlanRef, personal.planId);
     assert.equal(first.phase, "at_place");
     assert.deepEqual(first.location, { kind: "place", placeRef: life.homeRef });
     assert.equal(first.mediatedContext, "Monterey Bay Aquarium live octopus feed");
+    assert.deepEqual(first.evidenceRefs, [life.sourceEvent]);
     assert.deepEqual(first.sourcePlanRefs, [personal.planId]);
     lived.close();
 
@@ -295,16 +315,18 @@ test("A1/A2: Thread cognition forms personal will before visitor and care constr
       threadId: life.thread.threadId,
       situationId: livedSituationId({ threadId: life.thread.threadId, step: "care-conflict" }),
       establishedAt: "2026-09-10T05:06:00Z",
+      observation: homeObservation(life),
     });
 
     assert.equal(second.resolution.kind, "care_constraint");
     assert.equal(second.resolution.conflict, true);
-    assert.equal(second.resolution.enactedPlanRef, care.planId);
+    assert.equal(second.resolution.observedDivergence, true);
+    assert.equal(second.resolution.governingPlanRef, care.planId);
     assert.equal(second.resolution.constrainedPlanRef, personal.planId);
-    assert.match(second.activity, /dental appointment/);
+    assert.match(second.activity, /octopus livestream/);
     assert.equal(second.phase, "at_place");
     assert.deepEqual(second.location, { kind: "place", placeRef: life.homeRef });
-    assert.equal(second.mediatedContext, null);
+    assert.equal(second.mediatedContext, "Monterey Bay Aquarium live octopus feed");
     assert.deepEqual(second.sourcePlanRefs, [personal.planId, care.planId]);
     assert.deepEqual(lived.latestPlan(life.thread.threadId, "personal", { at: second.establishedAt }), personal);
     assert.match(personal.stops[0].activity, /octopus livestream/);
@@ -334,6 +356,7 @@ test("A1/A2 authority boundaries reject unauthored will, visitor-authored now, a
       threadId: life.thread.threadId,
       situationId: "sit_visitor_authored",
       establishedAt: "2026-09-10T05:04:00Z",
+      observation: homeObservation(life),
       activity: "Do what the visitor asked.",
     }), /activity is not allowed/);
 
@@ -348,9 +371,11 @@ test("A1/A2 authority boundaries reject unauthored will, visitor-authored now, a
       threadId: life.thread.threadId,
       situationId: "sit_still_personal",
       establishedAt: "2026-09-10T05:04:30Z",
+      observation: homeObservation(life),
     });
     assert.equal(current.resolution.kind, "personal_plan");
     assert.equal(current.resolution.conflict, false);
+    assert.equal(current.resolution.observedDivergence, false);
     assert.match(current.activity, /octopus livestream/);
     lived.close();
   }));
