@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-directory-and-meet-v0-1
 status: active
-last-reviewed: 2026-09-09
+last-reviewed: 2026-09-10
 canonical: false
 ---
 
@@ -9,26 +9,23 @@ canonical: false
 
 ## Purpose
 
-Provide one lightweight modern Fibre seam for finding existing Threads and for meeting an eligible Thread for visualization / experience seeding.
+Provide one lightweight seam for finding existing Threads and entering the life of an eligible Thread without creating a second identity, location or encounter authority.
 
-This is broader than FID issuance. FID, Thread Editor, Thread Presentation and future experience surfaces may consume it, but none of them should become the canonical Thread directory.
+FID, Thread Editor, Thread Presentation and insidefibre.com may consume this seam. None becomes the canonical Thread directory.
 
 ## Principle
 
-Start with the smallest useful capability. Do not build a search platform before Fibre needs one.
-
-Use existing Fibre authorities and projections:
+Start with the smallest useful capability and existing Fibre authorities:
 
 - exact FIN resolution through Civil Registry;
-- discoverable/public Threads through the existing Thread Presentation catalog/snapshots;
-- authorized operator search through bounded Thread-owned identity/presentation projections;
-- `InfraDriver` remains below the service/deployment boundary, never in browser code.
+- discoverable/public Threads through Thread Presentation;
+- authorized operator search through bounded Thread-owned projections;
+- current situation and plans remain World/Thread-owned;
+- `InfraDriver` stays below service/deployment boundaries and out of browser code.
 
-The first implementation may scan/filter a bounded eligible set. Add indexing only when actual Thread population or latency requires it.
+The first implementation may scan/filter a bounded eligible set. Add indexing only when population or latency requires it.
 
 ## Service shape
-
-Conceptually:
 
 ```text
 ThreadDirectory
@@ -37,31 +34,30 @@ ThreadDirectory
   meet({ seed?, attributes?, excludeThreadIds?, scope? })
 ```
 
-`scope` controls the visibility/authorization domain, for example public discovery versus an authenticated operator view. Search must never reveal private/restricted attributes merely because they exist in Thread state.
+`scope` controls visibility/authorization. Search never reveals private/restricted attributes merely because they exist.
 
 ## Discovery profile
 
-Search operates on a bounded, explicitly discoverable projection rather than arbitrary hydrated Thread state.
-
-Conceptually:
+Search operates on a bounded discoverable projection, not arbitrary hydrated Thread state.
 
 ```text
 ThreadDiscoveryProfile {
   threadId
-  fin?                 # according to scope/policy
+  fin?
   displayName?
   lifecycleStatus?
-  attributes {}        # only approved discoverable attributes
+  developmentalContext?
+  attributes {}
   presentationRef?
   snapshotDigest?
 }
 ```
 
-The attribute vocabulary should stay small and evolve from real product needs. Do not create a generic property-indexing framework.
+Keep the public attribute vocabulary small and driven by real product needs.
 
-## Exact FIN lookup
+## Exact FIN and search
 
-FIN lookup is authoritative and direct:
+FIN lookup remains authoritative:
 
 ```text
 FIN
@@ -70,42 +66,25 @@ FIN
   -> authorized discovery/inspection projection
 ```
 
-A lookup must not reproduce FIN allocation/checksum logic outside Civil Registry.
-
-## Search by name + attributes
-
-The initial search should support simple case-insensitive name matching plus exact/bounded attribute filters over the authorized discovery profile.
-
-Examples:
-
-```text
-search({ query: "mina" })
-search({ attributes: { geography: "Haifa" } })
-search({ query: "mina", attributes: { lifecycleStatus: "active" } })
-```
-
-No ranking engine is required initially. Stable deterministic ordering is sufficient.
+Initial search supports simple case-insensitive name matching plus bounded approved attributes. No ranking engine is required.
 
 ## Meet a Thread
 
-`meet()` is a Fibre experience primitive, not a recommendation system.
+`meet()` is a Fibre encounter primitive, not a recommendation system and not a situation generator.
 
-It should:
+It:
 
-1. establish the eligible visible candidate set;
-2. apply optional attribute filters/exclusions;
-3. select one Thread;
-4. return its discovery profile plus the presentation/snapshot reference needed to visualize or seed an experience.
+1. establishes the eligible visible candidate set;
+2. applies optional filters/exclusions;
+3. selects one Thread;
+4. returns the discovery profile plus the public Presentation/current-situation reference needed to encounter that Thread **where they already are**.
 
-For reproducible experience seeding, a caller may supply a seed. The same eligible set + seed should choose the same Thread. Unseeded selection may use deployment randomness.
+The call must not choose the Thread's location, activity, personal flight plan, caregiver plan or immediate intention. Those facts must already exist through their owning Fibre authorities before selection.
 
-Conceptually:
+A seed may make **which eligible Thread is selected** reproducible. It must never seed or manufacture that Thread's life.
 
 ```text
-meet({
-  seed: "walkthrough-001",
-  excludeThreadIds: ["thr_..."]
-})
+meet({ seed: "walkthrough-001" })
   -> {
        thread,
        selection: {
@@ -116,54 +95,52 @@ meet({
      }
 ```
 
-Do not over-record the entire candidate set unless a later scientific/replay requirement needs it.
+## Thread Editor
 
-## Relationship to existing public discovery
+Thread Editor is the authorized operator lens over the same directory and World/Presentation contracts.
 
-Thread Presentation already exposes `/api/threads` over `InfraDriver.catalog`, filtering to currently public presentation channels. The Thread Directory should reuse/compose that modern seam for public discovery rather than replace it with a second provider-specific catalog.
+The modern surface should support:
 
-The current public endpoint is intentionally sparse. Directory work may add a bounded public discovery profile, while private/operator discovery stays behind authenticated service boundaries.
+- search by FIN or name;
+- lightweight approved filters;
+- `Meet a Thread`;
+- inspection of the selected person's identity, developmental context, personal/care plans when authorized, enacted current situation, relationships, history, memory, embodiment and provenance.
+
+The editor remains read-oriented and must not become a generic database browser or semantic authority.
+
+## insidefibre.com
+
+insidefibre.com consumes public Presentation/Directory projections only.
+
+Its purpose is not inspection. The selected Thread should appear as a person already living a moment: current embodiment, place, activity, relevant accompaniment/context and an encounter entry point grounded in that same situation.
+
+A dependent person's private will/care negotiation is not automatically public. Presentation decides the bounded exterior projection; World/Thread state remains authoritative underneath it.
 
 ## Development slices
 
 ### A0.1 — Directory read seam
 
-- exact FIN -> Thread lookup through Civil Registry;
-- list/discover eligible Threads through existing modern service projections;
+- FIN -> Thread through Civil Registry;
+- discover eligible Threads through modern service projections;
 - bounded `ThreadDiscoveryProfile`;
 - simple name + approved-attribute filtering;
 - no new search index.
 
-Proof: FIN resolves correctly, visibility is respected, simple search returns only authorized fields.
-
 ### A0.2 — Meet
 
-- `meet()` over the same eligible discovery set;
+- select from the same eligible set;
 - optional filters/exclusions;
-- deterministic seeded selection;
-- return presentation/snapshot reference for visualization / experience seeding.
+- deterministic seeded **selection**;
+- return the existing Presentation/current-situation reference;
+- never materialize or rewrite the selected Thread's life.
 
-Proof: same seed + eligible set selects the same Thread; excluded/private Threads are never selected.
+### A0.3 — Thread Editor
 
-### A0.3 — Thread Editor surface
+- FIN/name search;
+- lightweight filters;
+- `Meet a Thread`;
+- open the selected Thread in the authorized modern inspection view.
 
-- search box accepts FIN or name;
-- lightweight attribute filters;
-- "Meet a Thread" action;
-- selected result opens the existing modern Thread inspection experience.
+## Development discipline
 
-This UI should remain a thin client over Thread Directory / World / Presentation service contracts.
-
-## Fibre development discipline
-
-Fibre development is vision-led:
-
-- prefer small, elegant semantic capabilities over generic infrastructure;
-- reuse modern Fibre interfaces before adding abstractions;
-- avoid boilerplate, symmetry migrations and speculative scale work;
-- write only enough tests to protect the slice's real semantic invariants and dangerous boundaries;
-- do not multiply mocks/tests simply to raise coverage;
-- keep code readable enough that the architecture is visible in the implementation;
-- optimize for advancing the Fibre organism, society and lived experience.
-
-Tests are guardrails, not the product.
+Prefer small semantic capabilities over generic infrastructure. Reuse existing Fibre interfaces, write only enough tests to protect the actual authority/visibility boundaries, and optimize for advancing lived experience rather than framework completeness.
