@@ -39,7 +39,7 @@ function presenceTarget(overrides = {}) {
     targetRef: overrides.targetRef ?? "meeting:alex:1100",
     relation: overrides.relation ?? "available_for",
     orientation: overrides.orientation ?? "approach",
-    actualSatisfaction: overrides.actualSatisfaction ?? 0.2,
+    actualSatisfaction: Object.hasOwn(overrides, "actualSatisfaction") ? overrides.actualSatisfaction : 0.2,
     expectedSatisfaction: overrides.expectedSatisfaction ?? 0.3,
     predictedSatisfaction: overrides.predictedSatisfaction ?? 0.7,
     urgency: overrides.urgency ?? 0.3,
