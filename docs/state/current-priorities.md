@@ -15,8 +15,8 @@ Fibre is taking a deliberate intrinsic-regulation detour before continuing the l
 
 ```text
 R1 Layered regulator kernel + sensorium                  CLOSED
-R2 Social presence + affective resonance                 CURRENT
-R3 Interoception -> semantic feeling                     NEXT
+R2 Social presence + affective resonance                 CLOSED
+R3 Interoception -> semantic feeling                     CURRENT
 R4 Functional drive loop + Thread Editor inspection      NEXT
 
 resume A1/A2 Flight Plan + movement                      AFTER R4
@@ -39,33 +39,31 @@ R1 established one deterministic regulator kernel over normalized body/environme
 
 Thread-species regulator sensitivities vary only within a narrow inherited envelope. This makes genome runtime baselines causally useful without turning them into a numeric personality vector.
 
-## R2 now
+## R2 closed
 
-Make social presence causal without turning relationship roles into emotion rules.
+R2 made another person a real regulatory destination without encoding `parent/partner => seek proximity`.
 
-```text
-Thread-owned desire for presence/distance
-  + sensed person proximity/contact
-  + observable social cues
-  -> presence pressure / attainment
-  + affective resonance
-```
+Thread cognition now chooses `with`, `near`, `away_from`, `connected_to`, or no current social-presence target from Fibre-owned current relationship and semantic context. The caller does not choose the person or private-state subset. World/sensorium proximity and contact independently determine whether that desired relation is actually satisfied.
 
-A person may be a desired place of presence:
+Observable laughter, crying, agitation, calm and contact also produce low-level affective resonance without claiming to know another creature's private emotion. Social sensory evidence remains attributable through the regulator frame.
+
+## R3 now
+
+Give the Thread access to its regulator only through a private interoceptive projection:
 
 ```text
-with caregiver
-near partner
-away from person
-connected to friend
-alone somewhere quiet
+World / body / social evidence
+  -> RegulationFrame
+  -> interoception
+  -> temporary Thread cognition
+  -> zero or more semantic emotion / need states
 ```
 
-The target expresses the Thread's desired relation; the sensorium determines whether the person is actually near. `parent`, `partner` and `friend` labels never decide polarity.
+The interoceptive projection may expose drive family, target, orientation, pressure, urgency, progress/prediction error, attainment, sensory load and social resonance. It must not say `you are anxious`, `you love them`, `you should leave`, or otherwise pre-author semantic meaning.
 
-Observable laughter, crying, agitation, calm and contact may alter low-level social resonance and activation. They do not become claims that another person is happy, sad or angry, and they do not directly author the Thread's own named feeling.
+Thread cognition may interpret the same regulator state differently depending on identity, history and current semantic context. It may also decide that nothing is meaningful enough to record. Any admitted semantic state is restricted, evidence-linked and Thread-authored through the existing Semantic State authority.
 
-The remaining R2 closure step is to source the desired social-presence relation from Thread-owned relationship/interior context rather than treating a fixture-authored target as full evidence of agency.
+R3 closure requires the focused proof that the same low-level condition can become materially different semantic experience for different Threads while the regulator/interoceptive evidence remains the same.
 
 ## Semantic boundary
 
@@ -76,7 +74,7 @@ sensory resonance  != empathy / love / anger
 mechanical signal  != autobiographical meaning
 ```
 
-Meaning-bearing emotion/need/relationship state remains natural-language-first and Thread-owned. R3 exposes only bounded private interoceptive cues to cognition.
+Meaning-bearing emotion/need/relationship state remains natural-language-first and Thread-owned.
 
 ## Stop rules
 
