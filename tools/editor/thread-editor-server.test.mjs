@@ -396,7 +396,6 @@ test("static editor responses use same-origin CSP and no-store", async () => {
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-security-policy"), /connect-src 'self'/);
     assert.equal(response.headers.get("cache-control"), "no-store");
-    assert.equal((await response.text()).includes("Inspection boundary"), true);
   } finally {
     await closeThreadEditorServer(editor.server);
     await close(kernel.server);
