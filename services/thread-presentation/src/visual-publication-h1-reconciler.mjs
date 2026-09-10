@@ -7,6 +7,7 @@ const SLICE_H1_FAULT_PREFIX = "slice-h1-fault-after-workflow-before-demand:";
 const SLICE_H2_FAULT_PREFIX = "slice-h2-provider-transient:";
 const SLICE_H1_PRECONDITION_PREFIX = "sliceh1precondition_";
 const SLICE_H2_PRECONDITION_PREFIX = "sliceh2precondition_";
+const CURRENT_PRESENT_CATALOG_PREFIX = "current-present:";
 
 function faultDescriptor(value) {
   if (typeof value !== "string") return null;
@@ -124,10 +125,28 @@ function withH2FaultContext(slot, activeDescriptor) {
   };
 }
 
+async function retainLatestPresent(catalog, channelId, event) {
+  const key = `${CURRENT_PRESENT_CATALOG_PREFIX}${channelId}`;
+  const prior = await catalog.get(key);
+  if (Number.isSafeInteger(prior?.sequence) && prior.sequence > event.sequence) return prior;
+  const record = Object.freeze({
+    kind: "current_public_present",
+    publiclyVisible: true,
+    threadId: event.threadId,
+    channelId,
+    sequence: event.sequence,
+    event,
+  });
+  await catalog.upsert(key, record);
+  return record;
+}
+
 async function publishCurrentPresent(options, args) {
   const infra = options.infra;
   const presentationServer = options.presentationServer;
-  if (!infra?.catalog || typeof infra.catalog.get !== "function") {
+  if (!infra?.catalog
+    || typeof infra.catalog.get !== "function"
+    || typeof infra.catalog.upsert !== "function") {
     throw new TypeError("current present publication requires presentation catalog access");
   }
   if (!presentationServer
@@ -165,6 +184,8 @@ async function publishCurrentPresent(options, args) {
     sourceReferences: [present?.situationId],
     payload: present,
   });
+  await retainLatestPresent(infra.catalog, channelId, accepted.event);
+
   const slot = planCurrentPresentDepiction({
     present: accepted.event.payload,
     presentation: current.snapshot.presentation,
