@@ -213,7 +213,6 @@ function normalizeCurrentFibreIdentityCard(value) {
   assertFiniteNumber(`${name}.revision`, value.revision, { integer: true, minimum: 1 });
   const supersedesCredentialId = nullableRef(`${name}.supersedesCredentialId`, value.supersedesCredentialId);
   if (value.revision === 1 && supersedesCredentialId !== null) throw new TypeError(`${name} revision 1 cannot supersede another credential`);
-  if (value.revision > 1 && supersedesCredentialId === null) throw new TypeError(`${name} reissue requires supersedesCredentialId`);
   assertId(`${name}.registrationId`, value.registrationId);
   assertIsoTimestamp(`${name}.issuedAt`, value.issuedAt);
   const expiresAt = value.expiresAt === null ? null : value.expiresAt;
