@@ -279,6 +279,17 @@ export function createThreadEditorServer({
     return payload;
   }
 
+  async function optionalCurrentLife(threadId) {
+    try {
+      return await callKernel(`/threads/${encodeURIComponent(threadId)}/private/current-life`, {
+        privateAccess: true,
+      });
+    } catch (error) {
+      if (error instanceof EditorHttpError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
   async function inspection(threadId) {
     const [health, thread, events, integrity] = await Promise.all([
       callKernel("/health"),
@@ -295,7 +306,7 @@ export function createThreadEditorServer({
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/requests`, { privateAccess: true }),
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/runtime`, { privateAccess: true }),
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/expression`, { privateAccess: true }),
-        callKernel(`/threads/${encodeURIComponent(threadId)}/private/current-life`, { privateAccess: true }),
+        optionalCurrentLife(threadId),
       ]);
     }
     return {
