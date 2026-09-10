@@ -14,8 +14,8 @@ Fibre is taking a deliberate intrinsic-regulation detour before continuing the l
 ## Active sequence
 
 ```text
-R1 Layered regulator kernel + sensorium                  CURRENT
-R2 Social presence + affective resonance                 NEXT
+R1 Layered regulator kernel + sensorium                  CLOSED
+R2 Social presence + affective resonance                 CURRENT
 R3 Interoception -> semantic feeling                     NEXT
 R4 Functional drive loop + Thread Editor inspection      NEXT
 
@@ -33,30 +33,25 @@ All work remains on `agent/m2-lived-encounter`; do not create per-slice branches
 
 The E2E meeting is an architectural forcing function, not merely a demo. Making one meeting genuinely valuable exposed missing Fibre capabilities: self-authored life, care/dependency, movement/presence, and now a lower sensory/motivational substrate that makes environmental comfort, social proximity, success, lateness, obstacles and arrival matter to the Thread before an LLM invents an emotion sentence.
 
-## R1 now
+## R1 closed
 
-Build one small deterministic evaluator:
+R1 established one deterministic regulator kernel over normalized body/environment perception plus desired presence targets. It produces private control state — pressure, urgency, progress, prediction error, attainment and aggregate activation — without naming emotions.
+
+Thread-species regulator sensitivities vary only within a narrow inherited envelope. This makes genome runtime baselines causally useful without turning them into a numeric personality vector.
+
+## R2 now
+
+Make social presence causal without turning relationship roles into emotion rules.
 
 ```text
-PerceptFrame
-  -> basal RegulatorKernel
-  + human-like Thread SpeciesProfile
-  + bounded individual runtime baselines
-  -> RegulationFrame
+Thread-owned desire for presence/distance
+  + sensed person proximity/contact
+  + observable social cues
+  -> presence pressure / attainment
+  + affective resonance
 ```
 
-Prove only a few representative channels first:
-
-- thermal/light state;
-- ambient sound / sensory load;
-- social density / openness;
-- commitment/presence pressure.
-
-Outputs are low-level control signals: pressure, urgency, progress, prediction error, attainment, activation, hedonic potential and attention candidates. R1 does not emit named emotions or protected actions.
-
-## R2 social proof
-
-Add person-targeted presence and observable social cues:
+A person may be a desired place of presence:
 
 ```text
 with caregiver
@@ -64,12 +59,13 @@ near partner
 away from person
 connected to friend
 alone somewhere quiet
-laughter / crying / high-intensity voice / approach / withdrawal
 ```
 
-A caregiver, partner or intimate friend may function as a regulatory destination. Density/crowding may be comforting, neutral or aversive depending on relationships and context.
+The target expresses the Thread's desired relation; the sensorium determines whether the person is actually near. `parent`, `partner` and `friend` labels never decide polarity.
 
-Do not infer a private emotion from a face/voice/body cue and do not infer desired proximity from a relationship role.
+Observable laughter, crying, agitation, calm and contact may alter low-level social resonance and activation. They do not become claims that another person is happy, sad or angry, and they do not directly author the Thread's own named feeling.
+
+The remaining R2 closure step is to source the desired social-presence relation from Thread-owned relationship/interior context rather than treating a fixture-authored target as full evidence of agency.
 
 ## Semantic boundary
 
