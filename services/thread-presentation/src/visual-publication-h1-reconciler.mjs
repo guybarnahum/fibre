@@ -1,3 +1,5 @@
+import { THREAD_PRESENTATION_STREAM_VERSION } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
+import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
 import { createThreadPresentationVisualPublicationReconciler as createCoreReconciler } from "./visual-publication-reconciler.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
@@ -122,6 +124,69 @@ function withH2FaultContext(slot, activeDescriptor) {
   };
 }
 
+async function publishCurrentPresent(options, args) {
+  const infra = options.infra;
+  const presentationServer = options.presentationServer;
+  if (!infra?.catalog || typeof infra.catalog.get !== "function") {
+    throw new TypeError("current present publication requires presentation catalog access");
+  }
+  if (!presentationServer
+    || typeof presentationServer.getSnapshot !== "function"
+    || typeof presentationServer.appendEvent !== "function") {
+    throw new TypeError("current present publication requires presentation snapshot and stream access");
+  }
+  if (typeof options.createDemandService !== "function" || typeof options.selectProviderProfile !== "function") {
+    throw new TypeError("current present depiction requires presentation asset generation dependencies");
+  }
+
+  const threadId = args?.threadId;
+  const present = args?.present;
+  const channelId = threadPresentationChannelId(threadId);
+  const [current, catalog] = await Promise.all([
+    presentationServer.getSnapshot(channelId),
+    infra.catalog.get(channelId),
+  ]);
+  if (current === null || current.pointer.threadId !== threadId || catalog?.publiclyVisible !== true) {
+    const error = new Error(`Thread ${threadId} does not have an admitted public presentation`);
+    error.code = "THREAD_PRESENTATION_NOT_PUBLIC";
+    error.retryable = true;
+    throw error;
+  }
+
+  const accepted = await presentationServer.appendEvent({
+    streamVersion: THREAD_PRESENTATION_STREAM_VERSION,
+    eventId: `present_${present?.situationId ?? "invalid"}`,
+    threadId,
+    channelId,
+    occurredAt: present?.establishedAt,
+    emittedAt: present?.establishedAt,
+    kind: "present.updated",
+    provenanceRef: present?.situationId,
+    sourceReferences: [present?.situationId],
+    payload: present,
+  });
+  const slot = planCurrentPresentDepiction({
+    present: accepted.event.payload,
+    presentation: current.snapshot.presentation,
+  });
+  const providerProfile = options.selectProviderProfile({
+    requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
+  });
+  const demandService = options.createDemandService({ infra });
+  const depiction = await demandService.reconcile({
+    scope: { entityKind: "experience", entityRef: accepted.event.payload.situationId },
+    slots: [slot],
+    requestedAt: accepted.event.payload.establishedAt,
+    providerProfile,
+  });
+
+  return Object.freeze({
+    event: accepted.event,
+    duplicate: accepted.duplicate,
+    depiction,
+  });
+}
+
 export function createThreadPresentationVisualPublicationReconciler(options = {}) {
   const suppliedPlanSlots = options.planSlots;
   let activeDescriptor = null;
@@ -151,6 +216,9 @@ export function createThreadPresentationVisualPublicationReconciler(options = {}
       } finally {
         activeDescriptor = null;
       }
+    },
+    publishCurrentPresent(args = {}) {
+      return publishCurrentPresent(options, args);
     },
   });
 }
