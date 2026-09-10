@@ -16,6 +16,7 @@ export const THREAD_PRESENTATION_EVENT_KINDS = Object.freeze([
   "conversation.message.delta",
   "conversation.message.completed",
   "presentation.snapshot.changed",
+  "present.updated",
   "media.ready",
   "media.unavailable",
 ]);
@@ -42,6 +43,54 @@ function uniqueRefs(name, values) {
   return [...values];
 }
 
+function nullableText(name, value) {
+  if (value === null) return null;
+  assertNonEmpty(name, value);
+  return value;
+}
+
+function presentPlace(name, value) {
+  if (value === null) return null;
+  assertPlainObject(name, value);
+  assertExactKeys(name, value, ["displayName", "region"]);
+  assertNonEmpty(`${name}.displayName`, value.displayName);
+  return {
+    displayName: value.displayName,
+    region: nullableText(`${name}.region`, value.region),
+  };
+}
+
+function presentLocation(value) {
+  assertPlainObject("presentation event.payload.location", value);
+  if (value.kind === "place") {
+    assertExactKeys("presentation event.payload.location", value, ["kind", "place"]);
+    return {
+      kind: "place",
+      place: presentPlace("presentation event.payload.location.place", value.place),
+    };
+  }
+  if (value.kind === "transit") {
+    assertExactKeys("presentation event.payload.location", value, ["kind", "from", "to", "progress"]);
+    assertFiniteNumber("presentation event.payload.location.progress", value.progress, { minimum: 0, maximum: 1 });
+    return {
+      kind: "transit",
+      from: presentPlace("presentation event.payload.location.from", value.from),
+      to: presentPlace("presentation event.payload.location.to", value.to),
+      progress: value.progress,
+    };
+  }
+  throw new TypeError("presentation event.payload.location.kind is invalid");
+}
+
+function presentParticipants(value) {
+  assertStringArray("presentation event.payload.participants", value);
+  value.forEach((name, index) => assertNonEmpty(`presentation event.payload.participants[${index}]`, name));
+  if (new Set(value).size !== value.length) {
+    throw new TypeError("presentation event.payload.participants must be unique");
+  }
+  return [...value];
+}
+
 function normalizePayload(kind, payload) {
   assertPlainObject("presentation event.payload", payload);
   assertJsonValue("presentation event.payload", payload);
@@ -64,6 +113,39 @@ function normalizePayload(kind, payload) {
     assertNonEmpty("presentation event.payload.snapshotVersion", payload.snapshotVersion);
     assertNonEmpty("presentation event.payload.snapshotDigest", payload.snapshotDigest);
     assertId("presentation event.payload.objectRef", payload.objectRef);
+  } else if (kind === "present.updated") {
+    assertExactKeys("presentation event.payload", payload, [
+      "presentVersion",
+      "situationId",
+      "establishedAt",
+      "phase",
+      "location",
+      "mediatedContext",
+      "activity",
+      "reason",
+      "participants",
+      "depictionMediaId",
+    ]);
+    if (payload.presentVersion !== "thread-public-present-v0.1") {
+      throw new TypeError(`unsupported public present version ${payload.presentVersion}`);
+    }
+    assertId("presentation event.payload.situationId", payload.situationId);
+    assertIsoTimestamp("presentation event.payload.establishedAt", payload.establishedAt);
+    if (!["at_place", "in_transit"].includes(payload.phase)) {
+      throw new TypeError("presentation event.payload.phase is invalid");
+    }
+    const location = presentLocation(payload.location);
+    if (payload.phase === "at_place" && location.kind !== "place") {
+      throw new TypeError("at-place public present requires a place location");
+    }
+    if (payload.phase === "in_transit" && location.kind !== "transit") {
+      throw new TypeError("in-transit public present requires a transit location");
+    }
+    nullableText("presentation event.payload.mediatedContext", payload.mediatedContext);
+    assertNonEmpty("presentation event.payload.activity", payload.activity);
+    assertNonEmpty("presentation event.payload.reason", payload.reason);
+    presentParticipants(payload.participants);
+    assertId("presentation event.payload.depictionMediaId", payload.depictionMediaId);
   } else if (kind === "media.ready") {
     assertExactKeys("presentation event.payload", payload, ["mediaId", "objectRef", "mediaType", "digest"]);
     assertId("presentation event.payload.mediaId", payload.mediaId);
