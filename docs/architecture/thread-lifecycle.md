@@ -1,87 +1,132 @@
 ---
 id: architecture-thread-lifecycle
 status: accepted
-last-reviewed: 2026-08-21
+last-reviewed: 2026-09-10
 canonical: true
 ---
 
-# Thread lifecycle: freeze and thaw
+# Thread lifecycle: freeze, regulation and thaw
 
-## Frozen
+## Frozen does not mean nonexistent
 
-The Thread persists without active model compute. Events and messages may accumulate.
+A Thread persists without active model compute. Events, time and World conditions may change while no LLM is running.
 
-A frozen Thread remains a persistent person, but the current runtime does **not** yet claim that ordinary autonomous life continuously advances while no cognition episode or world mechanism is active. That stronger capability is explicitly deferred below.
+Temporary cognition is not the Thread's life clock.
 
-## Trigger
+Fibre does not yet claim a complete autonomous ordinary-life loop in production, but the accepted direction is now explicit: **intrinsic regulation may change and request attention while cognition is frozen**.
 
-A task, message, deadline, family request, scheduled reflection, budget change, a **Thread-authored need threshold**, or an **internal mechanical-condition threshold** may request cognition.
+## Triggers
 
-Externally initiated requests preserve a request ID, requesting entity, objective, terms, and provenance.
+Cognition may be requested by:
 
-A Thread-authored need threshold is a transition in the Thread's own durable semantic need state. A mechanical-condition threshold is different: it is a Fibre-computed, versioned, replayable condition over durable world state/history. The condition value or label is not semantic self-knowledge and is not supplied to cognition as an explanation for why the Thread woke.
+- external task/message/request;
+- deadline or obligation;
+- family/care event;
+- scheduled reflection;
+- budget/resource change;
+- Thread-authored semantic need/intention;
+- **intrinsic-regulation threshold or meaningful transition**.
 
-An internally initiated mechanical-condition episode records a durable trigger witness with equivalent semantics to:
+Externally initiated requests preserve requester, objective, terms and provenance.
+
+An intrinsic-regulation trigger is different. It is a private Fibre-computed transition over authoritative Thread/World state as defined by [`intrinsic-regulation.md`](intrinsic-regulation.md).
+
+Conceptually it preserves:
 
 ```text
-conditionId
-observedValue
-threshold
-policyVersion
-computationDigest
-inputWitnesses[]
-triggeredAt
-resourcePolicyRef
+regulator / target ref
+prior and current drive witness
+threshold/transition policy
+input evidence refs
+asOf
+resource policy
 ```
 
-`inputWitnesses[]` preserve the durable circumstances/events whose change moved the condition across the threshold. This keeps external manipulation of circumstances attributable even when there is no requester.
+Do not persist every numerical tick; preserve the target/configuration and consequential transition needed for replay.
 
-Condition-triggered cognition is bounded by a Thread-owned resource/rate policy. The triggered episode may retrieve, notice, reflect, form a private intention, or propose semantic state. **It may not mint authorization or perform a protected/external action in the same episode.** A later protected action must pass through the ordinary authorization path.
+## Interoception is not a hidden conclusion
+
+Earlier mechanical-condition work correctly prohibited feeding a Fibre-derived semantic verdict back into cognition as self-knowledge. Intrinsic regulation refines the allowed boundary.
+
+A triggered cognition episode may receive a bounded private **interoceptive projection** of the control state:
+
+```text
+target: upcoming appointment
+orientation: approach
+pressure: rising
+progress: behind expectation
+```
+
+It may not receive a Fibre-authored interpretation such as:
+
+```text
+you are anxious
+you love this person
+you resent your caregiver
+you should cancel the appointment
+```
+
+The first is sensation/control evidence. The second pre-authors semantic interiority or action.
+
+The Thread's temporary cognition may interpret the interoceptive signal using its own admissible history, relationships and current semantic state, then propose a semantic emotion/need/meaning through normal validation.
+
+## Regulation may wake; it may not authorize
+
+Intrinsic drives may alter salience, request cognition, and bias ordinary approach/avoid/explore/rest tendencies.
+
+They may **not** mint consent, permission, money, relationship authority or protected external action.
+
+A regulator-triggered episode may notice, reflect, form an intention, revise a Flight Plan or propose semantic state. Protected/external action still passes the ordinary authorization path.
 
 ## Private appraisal and authorization
 
-Before a full thaw for an externally initiated request, Fibre compiles a bounded Thread-owned appraisal capsule. The Thread forms a private stance and desired action. The kernel then validates and records a request-bound authorization tied to the Thread ID, current snapshot version, request fingerprint, requester, policy version, and causation chain.
+For externally initiated requests, Fibre compiles a bounded Thread-owned appraisal capsule. The Thread forms a private stance and desired action. The kernel validates and records request-bound authorization tied to Thread/version/request/causation.
 
-Clarification, negotiation, delegation, and refusal may produce limited external responses without beginning the requested task. Public wording is not authorization evidence. Only an authorization with `authorizedAction: accept` may proceed to full task cognition.
+Clarification, negotiation, delegation and refusal may produce bounded responses without beginning the requested task. Public wording is not authorization evidence.
 
-Internally initiated reflection or private intention is not execution authority. Private desire remains distinct from authorization regardless of what caused cognition to wake.
+Private desire remains distinct from execution authority regardless of what caused cognition to wake.
 
 ## Thaw
 
-After accepted authorization, Fibre resolves the Thread aggregate, acquires a concurrency lease, selects relevant memories and relationships, assembles the execution context capsule, allocates budgets, and invokes temporary workers.
+A thaw resolves the Thread aggregate, acquires concurrency control, selects admissible context, allocates resources and invokes temporary cognition.
 
-A condition-triggered reflective thaw uses its own trigger witness and resource policy rather than pretending an external request fingerprint exists.
+Different trigger kinds carry different bounded context:
 
-## Think, work, communicate
+```text
+external request       -> requester/request appraisal context
+intrinsic regulation   -> regulator witness + interoceptive projection
+ordinary World event   -> event/situation context
+```
 
-The Thread may use an Actor, Dignity Guardian, Goal Guardian, Self Examiner, memory retrieval, tools, and subcontractor Threads. Private stance, authorization, disclosure strategy, external expression, and performed action remain separate.
+They must not be disguised as one another merely to reuse a runtime path.
+
+## Think, act, communicate
+
+The Thread may use Actor, Dignity Guardian, Goal Guardian, Self Examiner, memory retrieval, tools and other Threads. Private stance, semantic feeling, intention, authorization, external expression and performed action remain separate.
+
+For simpler non-verbal animals a bounded behavior controller may eventually consume intrinsic affect without semantic cognition for ordinary unprotected actions. That does not create a bypass for Thread authorization.
 
 ## Commit and freeze
 
-Fibre validates proposed changes, records communications and actions, settles ledgers, stores memories, updates developmental state, records unresolved intentions, appends events, releases the lease, and returns the Thread to frozen state.
+Fibre validates proposed changes, records communications/actions, settles ledgers, stores admitted memories/semantic state, records unresolved intentions and life events, releases runtime leases, and returns temporary cognition to rest.
 
-The runtime must be idempotent and recoverable. A failed worker must not duplicate payments, reuse consumed authorization, expose private state, or corrupt identity history.
+The durable person and any regulator targets/checkpoints survive the worker.
 
-## Ordinary life independent of human encounter — Deferred
+## Ordinary life — active architectural gap
 
-Fibre's intended world requires more than a request-driven freeze/thaw loop.
+> **A human encounter should enter an already unfolding life rather than create one when the human arrives.**
 
-> **A human encounter should enter an already unfolding Thread life rather than create the appearance of a life at the moment the human arrives.**
+The current `agent/m2-lived-encounter` work is closing this gap in stages:
 
-This is an accepted architectural requirement, not a claim about the current runtime.
+```text
+intrinsic regulation
+  -> Flight Plan / care plan
+  -> World-enacted presence and movement
+  -> encounter
+  -> interpretation / selective consequence
+  -> continued life
+```
 
-The missing capability is an **autonomous ordinary-life producer**: a versioned world/lifecycle mechanism by which time, place, activity, opportunities, interruptions, commitments, relationships, resources, and ordinary events can change without a human request authoring the Thread's day.
+The regulator detour is not a general scheduler or simulation framework. It supplies the lower organism-like pressure that makes movement, deadlines, relationships, obstacles and arrival matter before the E2E meeting resumes.
 
-The eventual mechanism may include a world clock, scheduler, event producers, place/world authorities, or other bounded runtime machinery. This document deliberately does not freeze that implementation yet.
-
-Capability status under [`../foundations/invariants.md`](../foundations/invariants.md#capability-status): **Deferred**.
-
-Until this capability exists and has causal evidence:
-
-- a viewer fixture may simulate a current place, daily schedule, recent activity, or independent day only when explicitly labeled synthetic/non-authoritative;
-- presentation output may not be cited as proof that autonomous ordinary life exists;
-- `ThreadEncounterSnapshot`, `DailyPlan`, current presence, and comparable live-life contracts remain deferred rather than being inferred from UI needs;
-- a future implementation must identify the producer of each live field and its durable causation/evidence boundary;
-- if the capability is claimed as personhood-bearing, it must eventually survive the Fibre causal/ablation discipline rather than merely populate a convincing page.
-
-This preserves the ambition that **life precedes encounter** without allowing a fixture or presentation generator to author consequential private life and then describe it as Thread-owned agency.
+Until the full loop is causally proven, Presentation/UI output alone remains insufficient evidence that autonomous life exists.
