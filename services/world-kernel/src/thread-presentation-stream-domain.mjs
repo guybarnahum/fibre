@@ -71,7 +71,8 @@ function presentLocation(value) {
   }
   if (value.kind === "transit") {
     assertExactKeys("presentation event.payload.location", value, ["kind", "from", "to", "progress"]);
-    assertFiniteNumber("presentation event.payload.location.progress", value.progress, { minimum: 0, maximum: 1 });
+    assertFiniteNumber("presentation event.payload.location.progress", value.progress, { minimum: 0 });
+    if (value.progress > 1) throw new TypeError("presentation event.payload.location.progress must be at most 1");
     return {
       kind: "transit",
       from: presentPlace("presentation event.payload.location.from", value.from),
