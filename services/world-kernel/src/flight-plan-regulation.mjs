@@ -105,10 +105,7 @@ function movementStatus(planned, observation, actual, expected) {
   return actual + 0.1 < expected ? "delayed" : "moving";
 }
 
-export function assessFlightPlanPresence({ plan: candidate, at, observation: candidateObservation }) {
-  const plan = normalizeLivedPlan(candidate);
-  if (plan.kind !== "personal") throw new TypeError("flight-plan regulation requires a personal plan");
-  assertIsoTimestamp("flight-plan regulation at", at);
+function assessPlanPresence(plan, at, candidateObservation) {
   const observation = normalizeObservation(candidateObservation);
   const planned = plannedPositionAt(plan, at);
   if (planned === null) return null;
@@ -141,5 +138,54 @@ export function assessFlightPlanPresence({ plan: candidate, at, observation: can
       urgency: planned.kind === "in_transit" ? expectedSatisfaction : 1,
       evidenceRefs,
     },
+  };
+}
+
+export function assessFlightPlanPresence({ plan: candidate, at, observation }) {
+  const plan = normalizeLivedPlan(candidate);
+  if (plan.kind !== "personal") throw new TypeError("flight-plan regulation requires a personal plan");
+  assertIsoTimestamp("flight-plan regulation at", at);
+  return assessPlanPresence(plan, at, observation);
+}
+
+export function assessCareConstrainedPresence({ personalPlan, carePlan, currentSituation }) {
+  const personal = normalizeLivedPlan(personalPlan);
+  const care = normalizeLivedPlan(carePlan);
+  const situation = normalizeCurrentSituation(currentSituation);
+  if (personal.kind !== "personal" || care.kind !== "care") {
+    throw new TypeError("care-constrained presence requires personal and care plans");
+  }
+  if (
+    personal.subjectThreadId !== care.subjectThreadId ||
+    situation.threadId !== personal.subjectThreadId
+  ) {
+    throw new TypeError("care-constrained presence requires one subject Thread");
+  }
+  if (
+    situation.resolution.kind !== "care_constraint" ||
+    situation.resolution.governingPlanRef !== care.planId ||
+    situation.resolution.constrainedPlanRef !== personal.planId
+  ) {
+    throw new TypeError("current situation is not governed by the supplied care constraint");
+  }
+
+  const at = situation.establishedAt;
+  const observation = observationFromCurrentSituation(situation);
+  const personalAssessment = assessPlanPresence(personal, at, observation);
+  const careAssessment = assessPlanPresence(care, at, observation);
+  if (personalAssessment === null || careAssessment === null) {
+    throw new TypeError("care-constrained presence must fall inside both plan horizons");
+  }
+
+  return {
+    asOf: at,
+    personal: personalAssessment,
+    careRequirement: {
+      planId: care.planId,
+      status: careAssessment.status,
+      intended: careAssessment.intended,
+      authority: structuredClone(care.authority),
+    },
+    resolution: structuredClone(situation.resolution),
   };
 }
