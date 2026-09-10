@@ -43,9 +43,6 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
   if (!reconciler || typeof reconciler.reconcileAvailableEmbodiment !== "function") {
     throw new TypeError("visual publication write API requires a reconciler");
   }
-  if (typeof reconciler.publishCurrentPresent !== "function") {
-    throw new TypeError("visual publication write API requires current-present publication");
-  }
 
   return Object.freeze({
     async fetch(request) {
@@ -61,6 +58,9 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
 
       try {
         const body = await jsonBody(request);
+        if (currentPresent && typeof reconciler.publishCurrentPresent !== "function") {
+          throw new TypeError("current-present publication is not configured");
+        }
         const result = currentPresent
           ? await reconciler.publishCurrentPresent({
               threadId: body.threadId,
