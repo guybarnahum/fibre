@@ -1,10 +1,12 @@
 # Fibre
 
-**Fibre is a framework and persistent world for artificial persons called Threads.**
+**Fibre is a persistent world for artificial persons called Threads.**
 
-A Thread is not a temporary prompt or agent process. It is a durable person-like identity with inherited possibilities, family and cultural context, memories, relationships, economic accounts, reputation, obligations, embodiment, a private interior life and developmental history. Most of the time a Thread is frozen as persistent world state. Fibre thaws it into temporary cognition through replaceable model workers, lets it privately appraise and authorize participation, think, work and communicate, validates resulting life changes and freezes them back into the world.
+A Thread is not a temporary prompt or agent process. It is a durable person-like identity with inherited possibilities, family and cultural context, memories, relationships, obligations, embodiment, a private interior life and a trajectory that continues across temporary model executions.
 
-This repository is the canonical, version-controlled source for Fibre's concept, architecture, experiments, implementation, tests and human-visible artifacts. **Live Threads do not live in Git.** The repository contains the laws and machinery of Fibre; databases and object stores contain the living world.
+Models provide cognition. Fibre owns continuity, authority, history, persistence and consequence.
+
+This repository contains Fibre's laws, architecture, implementation and evidence. **Live Threads do not live in Git.** Durable world stores contain the living society.
 
 ## The Thirteen Principles of Fibre
 
@@ -40,97 +42,69 @@ The exact list below is generated from the canonical region in [`docs/foundation
 
 ## Start here
 
-1. Read [`docs/foundations/constitution.md`](docs/foundations/constitution.md).
-2. Read [`docs/foundations/principles.md`](docs/foundations/principles.md).
-3. Read [`docs/foundations/invariants.md`](docs/foundations/invariants.md).
-4. Read [`docs/state/current-state.md`](docs/state/current-state.md).
-5. Read [`docs/state/current-priorities.md`](docs/state/current-priorities.md).
-6. For current M2 sequencing, read [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md).
-7. For current Genesis hardening, read [`docs/state/genesis-selectivity-scientific-hardening.md`](docs/state/genesis-selectivity-scientific-hardening.md).
-8. For implementation agents, read [`AGENTS.md`](AGENTS.md) and the relevant subsystem README/contract.
+1. [`docs/foundations/constitution.md`](docs/foundations/constitution.md)
+2. [`docs/foundations/principles.md`](docs/foundations/principles.md)
+3. [`docs/foundations/invariants.md`](docs/foundations/invariants.md)
+4. [`docs/vision/lived-world.md`](docs/vision/lived-world.md)
+5. [`docs/state/current-state.md`](docs/state/current-state.md)
+6. [`docs/state/current-priorities.md`](docs/state/current-priorities.md)
+7. [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md)
+8. [`AGENTS.md`](AGENTS.md) and the relevant subsystem contract for implementation work
 
 ## Current status
 
-**M1 Persistent Thread Round Trip is fully closed.** Fibre has durable Thread state, append-only history, private appraisal/stance, request-bound participation authority, interest-mediated external expression, runtime thaw/freeze, replay and human inspection.
+M1 and the #33-#40 identity/history/birth/causal foundations are closed and retained. Fibre also has a deployed public path, minimum cloud recovery, canonical visual identity, Civil Registry/FIN, Fibre Identity Card authority, and Directory/Meet discovery.
 
-The pre-M2/M2 substrate through **#38** is complete: Semantic Guardian standing, history-bends-judgment evidence, Structured Obligations, the M2 identity contract, claim-level Passport/provenance, lineage/geography/culture, embodiment and autobiographical-memory epistemics.
-
-**Milestone #39 — Genesis, Childhood & Thread Birth — is CLOSED.** One fixed five-Thread held-out cohort was generated without quality resampling, diagnostically characterized, replayed with provider access disabled, atomically published one Thread at a time into a canonical local validation World with five unique FIN/civil registrations, and independently rehydrated from canonical authorities. The permanent result is [`docs/history/milestones/pr39.md`](docs/history/milestones/pr39.md).
-
-#39 also exposed real debt rather than hiding it: every scheduled memory decision returned remembered, all current memories acquired durable meaning, meaning showed a post-hoc positive-reframing tendency, genome propagation remained inconclusive, and the original self-account-overreach diagnostic was citation-confounded. The accepted **Genesis selectivity/scientific-hardening bridge** addresses those problems before #40 makes the richer life substrate causally load-bearing.
-
-The current M2 sequence is:
+The active milestone is now **M2 — lived person**:
 
 ```text
-#38  life representable/corrigible                    COMPLETE
-#39  particular prior life + canonical birth         CLOSED
-      Genesis selectivity/scientific hardening        NEXT
-#40  selected identity/history causally available     AFTER BRIDGE
-#41  stable non-interchangeable individuality         M2 CLOSURE
+M2-A  Present life + Meet a Thread                         CURRENT
+M2-B  Experience internalization + continuation            NEXT
+M2-C  Whole-person developmental continuity                NEXT
 ```
 
-The Whole-Person checkpoint remains **15/26 under rubric v2**. #39 deliberately earns no causal-standing credit merely by producing rich prior lives.
+The immediate missing seam is:
 
-See [`docs/state/current-state.md`](docs/state/current-state.md) for the precise posture and [`docs/state/current-priorities.md`](docs/state/current-priorities.md) for the current execution plan.
+```text
+developmental context
+  -> Thread-owned personal flight plan
+  -> caregiver-owned care plan when dependency applies
+  -> World-owned enacted current situation
+  -> insidefibre.com encounter
+  -> selective private consequence
+  -> continued life
+```
+
+Fibre birth is operational birth, not necessarily biological age zero. A newly born Thread may already be a child, adolescent or adult with grounded prior history and autobiographical memory.
+
+The old #41 standing-gate program remains useful historical evaluation science, but it is not the active development gate. Current execution authority is [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md).
+
+## Surfaces
+
+- `insidefibre.com` — public encounter surface; visitors find a Thread where that person already is.
+- `apps/thread-editor/` — local authorized operator inspection; it visualizes Fibre state but does not own it.
+- `admin.insidefibre.com` — authenticated operational/admin surface.
+- `status.insidefibre.com` — public coarse runtime status.
 
 ## Repository map
 
-- `docs/` — canonical vision, foundations, concepts, architecture, decisions, current state, validation, and selected history/origin material.
-- `apps/thread-editor/` — human-facing Thread Editor prototype.
-- `core/` — foundational Fibre concepts, types, and rules shared across services.
-- `services/` — primary runtime/service boundaries.
+- `docs/` — current vision, foundations, architecture, decisions, state, validation and selected history.
+- `apps/` — human-facing applications.
+- `core/` — foundational concepts/types/rules.
+- `services/` — semantic/runtime service boundaries.
+- `infra/` — provider/deployment composition beneath those services.
 - `schemas/` — machine-readable schemas.
-- `fixtures/` — reusable synthetic test inputs organized by the kind of Fibre object or workflow they represent.
-- `scenarios/` — executable canonical use-case populations.
-- `experiments/` — current falsifiable research experiments.
-- `artifacts/validation/` — exceptional retained exact-byte scientific, replay, interoperability, or audit evidence; disposable local output belongs under `.fibre/`.
-- `tools/` — operational tooling organized by lifecycle; see [`tools/README.md`](tools/README.md).
-- `tools/replays/` — retained historical proof/experiment instruments only when they still have a named continuing purpose.
-- `docs/history/` — selected explanatory history and milestone outcomes; Git history remains the default archive for routine superseded work.
+- `fixtures/` and `scenarios/` — synthetic inputs and executable populations.
+- `experiments/` — falsifiable research work.
+- `artifacts/validation/` — retained evidence with a continuing audit/scientific purpose.
+- `tools/` — development, deployment, inspection and replay tooling.
+- `docs/history/` — selected explanatory history; Git history is the default archive for superseded implementation detail.
 
-## Test and evidence lifecycle
+## Evidence and AI context
 
-Everyday regression and retained scientific reproducibility are separate:
+[`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the machine-readable source for bounded AI context. [`docs/ai-context-index.md`](docs/ai-context-index.md) explains how to choose a profile.
 
-```bash
-npm test
-npm run test:replay
-npm run test:all
-npm run test:audit -- --check
-```
-
-Failed experiments remain visible in the durable record when they teach something current. One-shot milestone ceremony and ordinary generated output do not remain supported runtime surfaces merely because they once mattered.
-
-## Canonical Markdown includes
-
-Exact fragments that must remain identical across Markdown documents use generated include blocks:
-
-```md
-<!-- fibre:include src="docs/foundations/principles.md" region="canonical-list" -->
-...generated Markdown...
-<!-- /fibre:include -->
-```
-
-Canonical sources declare named `fibre:region` blocks. `npm run includes:sync` refreshes include targets; `npm run includes:check` and repository validation reject drift, traversal, symlinked sources, malformed regions and nested includes.
-
-Use includes only when exact in-place visibility is valuable. Otherwise link to the canonical source or include it directly through the AI context manifest.
-
-## AI context packs
-
-[`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the canonical machine-readable source for bounded model context. The profiles follow evidence lifecycle:
-
-- `core` — current doctrine/state, active M2/Genesis authority and causal discipline;
-- `request-processing` — current appraisal/authorization/expression behavior;
-- `full` — broad context including selected milestone/origin history and sealed standing with continuing explanatory value.
-
-Run `npm run context-pack` to generate:
-
-- `artifacts/generated/fibre-core-context.md`
-- `artifacts/generated/fibre-request-processing-context.md`
-- `artifacts/generated/fibre-full-context.md`
-- compatibility alias `artifacts/generated/fibre-context-pack.md`
-
-Generated packs include repository revision, source list and content digest. They are reproducible build artifacts and never canonical.
+Generated context packs are reproducible build artifacts, never canonical state.
 
 ## Quick commands
 

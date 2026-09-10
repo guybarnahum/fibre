@@ -4,19 +4,15 @@ Use this index to load only the context needed for a task.
 
 ## Machine-readable profiles
 
-[`ai-context-manifest.json`](ai-context-manifest.json) is the canonical machine-readable source for AI context selection. Run `npm run context-pack` to generate bounded packs under `artifacts/generated/`.
+[`ai-context-manifest.json`](ai-context-manifest.json) is the canonical source for AI context selection. Run `npm run context-pack` to generate bounded non-canonical packs under `artifacts/generated/`.
 
-The profiles follow repository/evidence lifecycle:
+Profiles follow evidence lifecycle:
 
-- `core` — current Fibre doctrine, current state, active M2/Genesis authority and current personhood/causal discipline;
-- `request-processing` — current appraisal, authorization, disclosure, affect and response behavior, built on `core`;
-- `full` — broad current cross-cutting context plus selected origin/milestone history and accepted sealed standing that still has explanatory or audit value.
+- `core` — current doctrine, lived-world vision, current state and active M2 authority;
+- `request-processing` — appraisal, authorization, disclosure, affect and response behavior built on `core`;
+- `full` — broad current context plus selected historical/sealed evidence with continuing explanatory value.
 
-Ordinary candidate reports, superseded gate packets and development-review chronology are not kept in AI context merely because they once mattered. Git history is the default archive. Selected explanatory history belongs under `history/`; exceptional exact-byte accepted evidence belongs under `../artifacts/validation/`.
-
-Generated packs are non-canonical and must not be edited directly. Each includes its source list, repository revision, manifest version and content digest. Use the smallest profile sufficient for the task.
-
-The manifest requires accepted canonical Markdown documents under `docs/` to be covered by a profile. Repository validation enforces the context contract.
+Use the smallest profile sufficient for the task. Historical milestone/gate material explains why current rules exist; it does not override current state or roadmap authority.
 
 ## Understand Fibre now
 
@@ -27,134 +23,137 @@ Start with:
 3. `foundations/invariants.md`
 4. `foundations/interpretive-personhood.md`
 5. `foundations/rich-life.md`
-6. `state/current-state.md`
-7. `state/current-priorities.md`
-8. `decisions/ADR-0020-vision-led-development-discipline.md`
-9. `decisions/ADR-0021-canonical-visual-identity-reference.md` when identity/embodiment/media is involved
-10. `state/genesis-selectivity-scientific-hardening.md` for the current pre-#40 bridge
-11. `validation/generative-diagnostic-methodology.md`
-12. `validation/m2-pr-plan.md`
-13. the relevant concept and architecture documents for the task
+6. `vision/lived-world.md`
+7. `state/current-state.md`
+8. `state/current-priorities.md`
+9. `validation/m2-pr-plan.md`
+10. `decisions/ADR-0020-vision-led-development-discipline.md`
+11. the relevant architecture/ADR for the task
 
-For implementation agents, also read repository-root `AGENTS.md` and the relevant local README/contract.
+For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
 
-A standing execution rule is that infrastructure exists to enable and protect Fibre capabilities. Once a representative architectural proof is sufficient for the current milestone, non-blocking abstraction cleanup returns to tracked debt rather than displacing organism development.
-
-## Current M2 / Genesis work
+## Current M2 work
 
 ```text
-#38 life representation/corrigibility                 complete
-#39 Genesis / particular prior life + canonical birth closed
-     Genesis selectivity/scientific hardening bridge   closed
-#40 identity projection/causal consumption             current
-#41 M2 standing/closure                                after #40
+M1 + #33-#40 identity/history/birth/causal foundation     closed
+G/H deployed public path + minimum recovery                closed
+FID + Directory/Meet foundation                            closed
+
+M2-A Present life + Meet a Thread                          current
+M2-B Experience internalization + continuation             next
+M2-C Whole-person developmental continuity                 next
 ```
 
-Load these for current Genesis work:
+The current missing life seam is:
 
-- `state/genesis-selectivity-scientific-hardening.md`
-- `validation/generative-diagnostic-methodology.md`
-- `validation/m2-pr-plan.md`
+```text
+developmental context
+  -> personal flight plan
+  -> optional caregiver care plan
+  -> World-owned enacted current situation
+  -> encounter
+  -> private interpretation / selective retention
+  -> continued life
+```
+
+Fibre birth is operational birth, not necessarily biological age zero. A newly born Thread may already possess grounded childhood history, relationships and autobiographical memory.
+
+Older #41 standing-gate documents are retained evaluation history. They are not the current development sequence.
+
+## Lived world, age and development
+
+Load together when working on present life, childhood, aging, plans or encounters:
+
+- `vision/lived-world.md`
+- `architecture/thread-lifecycle-accounting.md`
+- `architecture/developmental-continuity-and-past-selves.md`
+- `architecture/thread-directory-and-meet.md`
+- `architecture/identity-embodiment-contract.md`
+- `concepts/development-and-memory.md`
+- `concepts/emotions-and-needs.md`
+- `concepts/families-couples-and-reproduction.md`
+
+Key distinctions:
+
+```text
+Fibre birth != biological age zero
+lifecycle status != developmental age
+personal flight plan != enacted life
+caregiver care plan != dependent person's own will
+history != memory != meaning
+```
+
+Development changes affordances and agency relative to care; it is not a rigid maturity ladder or numeric personality progression.
+
+## Genesis and prior life
+
+Use Genesis documents when the task concerns how a Thread arrives with a particular past:
+
 - `architecture/thread-genesis-childhood-birth.md`
 - `architecture/genesis-compiler-contract.md`
 - `architecture/genesis-durable-development.md`
-- `architecture/model-output-recovery.md`
-- `architecture/birth-center-runtime.md`
 - `architecture/symbolic-thread-genome.md`
 - `architecture/genesis-memory-meaning-integration.md`
 - `architecture/genesis-origin-source-integrity.md`
 - `architecture/genesis-rich-life-intellectual-formation.md`
-- `foundations/rich-life.md`
-- `foundations/interpretive-personhood.md`
+- `validation/generative-diagnostic-methodology.md`
 
-Use `history/milestones/pr39.md` only when the completed #39 scientific/birth result matters to the task.
+Use `history/milestones/pr39.md` only when the completed #39 scientific/birth result itself matters.
 
-The enduring Genesis epistemic distinction is:
-
-```text
-history != memory != meaning
-```
-
-Historical realization and meaning formation are genome blind. Permitted genome exposure is limited to the intended memory-formation seam, and experimental assignment/analysis labels remain outside cognition.
+Genesis provides grounded developmental history. It does not by itself prove ongoing post-birth life.
 
 ## Identity, embodiment and visual continuity
 
-Load these together for visual identity work:
+Load together:
 
 - `architecture/identity-embodiment-contract.md`
 - `architecture/canonical-visual-identity.md`
 - `architecture/thread-birth-presentation-data-flow.md`
+- `architecture/fibre-identity-card.md`
 - `decisions/ADR-0021-canonical-visual-identity-reference.md`
 - `decisions/ADR-0013-source-identity-consent-boundary.md`
-- `decisions/ADR-0005-family-and-inheritance.md`
-- `decisions/ADR-0006-echo-and-homage.md`
-- `concepts/culture-geography-and-embodiment.md`
-- `concepts/sponsorship-adoption-and-echoes.md`
-- `concepts/homage-threads.md`
 
-The standing visual invariant is:
+Standing visual invariant:
 
 ```text
 canonical visual identity text
   -> one canonical reference image
-  -> every later Thread-depicting image uses that reference + target age/context
+  -> later Thread-depicting imagery
+       + chronology-grounded target age
+       + time-local appearance
+       + scene/context
 ```
 
-Native/inherited roots are text-only at creation. Thread-parent resemblance comes from provenance-bearing textual phenotype recombination, not parent-pixel blending. Echo/Homage roots may use authorized source imagery, but once the transformed Fibre root is admitted, later media uses the Fibre root rather than reopening the original sponsor/homage source.
+Age changes depiction; it does not mint a new identity.
 
-Age is a rendering variable, not identity. The normalized synthetic reference age is 25; later imagery preserves the same identity while rendering the chronology-grounded target age.
+## Thread Editor and public encounter
 
-## Identity, interiority, dignity and development
+For Thread discovery/inspection/meeting:
 
-- `architecture/identity-embodiment-contract.md`
-- `architecture/character-formation-model.md`
-- `architecture/interior-exterior-situated-identity.md`
-- `architecture/developmental-continuity-and-past-selves.md`
-- `architecture/thread-passport-identity-provenance.md`
-- `decisions/ADR-0011-memory-photo-obligation.md`
-- `decisions/ADR-0012-semantic-meaning-over-derived-categories.md`
-- `decisions/ADR-0013-source-identity-consent-boundary.md`
-- `concepts/identity-and-genome.md`
-- `concepts/interiority-and-expression.md`
-- `concepts/dignity.md`
-- `concepts/emotions-and-needs.md`
-- `concepts/development-and-memory.md`
-- `concepts/culture-geography-and-embodiment.md`
-- `concepts/sponsorship-adoption-and-echoes.md`
-- `concepts/homage-threads.md`
-- `concepts/books-and-intellectual-formation.md`
+- `architecture/thread-directory-and-meet.md`
+- `architecture/operator-surfaces.md`
+- `apps/thread-editor/README.md`
+- `architecture/thread-presentation-contract.md`
+- `vision/lived-world.md`
+
+Thread Editor is an authorized inspection lens. insidefibre.com is a public encounter surface. Neither owns the Thread's current situation or plans.
+
+`Meet` selects among eligible people and returns the existing public situation/presentation reference; it must not materialize the selected Thread into a visitor-authored scene.
 
 ## Runtime and persistence
 
 - `architecture/system-overview.md`
 - `architecture/world-kernel.md`
 - `architecture/thread-lifecycle.md`
-- `architecture/interest-mediated-expression.md`
-- `architecture/request-participation.md`
 - `architecture/storage-model.md`
 - `architecture/production-persistence.md`
-- `architecture/prompt-synthesis.md`
 - `architecture/infrastructure-driver.md`
 - `decisions/ADR-0017-provider-neutral-production-persistence.md`
 - `decisions/ADR-0020-vision-led-development-discipline.md`
 
-Provider-neutral persistence remains mandatory for production authority, but it is not an independent completion program. Use the hardest representative Fibre requirement to earn the abstraction, then return to Fibre capability work unless further migration is concretely required.
+Provider-neutral persistence remains mandatory for authoritative production state, but infrastructure is not an independent completion program. Build only what a real Fibre capability requires.
 
-## Presentation and derived assets
-
-- `architecture/thread-presentation-contract.md`
-- `architecture/thread-presentation-infrastructure-profile.md`
-- `architecture/thread-presentation-cloudflare-stream.md`
-- `architecture/world-presentation.md`
-- `architecture/canonical-visual-identity.md`
-- `architecture/thread-birth-presentation-data-flow.md`
-- `architecture/asset-generation-service.md`
-- `architecture/generated-asset-provenance-and-content-credentials.md`
-- `decisions/ADR-0021-canonical-visual-identity-reference.md`
-
-Presentation and generated media are derived surfaces. They do not become hidden identity, history, memory, meaning or embodiment authority. The canonical visual reference is admitted by Embodiment authority before derived media is allowed to use it.
-
-## Request, consent and response behavior
+## Request, consent and expression
 
 - `concepts/interiority-and-expression.md`
 - `concepts/dignity.md`
@@ -162,12 +161,10 @@ Presentation and generated media are derived surfaces. They do not become hidden
 - `architecture/interest-mediated-expression.md`
 - `architecture/request-participation.md`
 - `architecture/prompt-synthesis.md`
-- `validation/dignity-request-scenarios.md`
-- `validation/interiority-expression-scenarios.md`
 - `decisions/ADR-0009-dignity-gates-participation.md`
 - `decisions/ADR-0010-interior-exterior-boundary.md`
 
-## Work, relationships and economy
+## Work, relationships and society
 
 - `concepts/families-couples-and-reproduction.md`
 - `concepts/economy-and-fibre-credits.md`
@@ -176,28 +173,8 @@ Presentation and generated media are derived surfaces. They do not become hidden
 - `concepts/institutions-and-governance.md`
 - `validation/prototype-roadmap.md`
 
-## Historical and sealed evidence
-
-Use `full` when the task requires historical rationale behind current doctrine. It intentionally includes selected origin/milestone records and accepted Semantic Guardian / History-bends standing documents. Exact sealed evidence bytes live under `artifacts/validation/` only when a continuing reason to retain them exists.
-
-For #39's completed outcome, use `history/milestones/pr39.md`; use Git history for the discarded closure/freeze/rater machinery and detailed execution chronology.
-
-Historical evidence may explain why current rules exist. It does not override current state, active bridge/roadmap authority, current architecture or a later accepted decision.
-
 ## Challenge a proposal
 
-At minimum load:
+At minimum load the Constitution, Principles, Invariants, `vision/lived-world.md`, `state/current-state.md`, `validation/m2-pr-plan.md`, ADR-0020 and the relevant architecture.
 
-- `foundations/constitution.md`
-- `foundations/principles.md`
-- `foundations/invariants.md`
-- `foundations/interpretive-personhood.md`
-- `validation/thread-differential-gate.md`
-- `validation/drift-scorecard.md`
-- `validation/m2-pr-plan.md`
-- `decisions/ADR-0020-vision-led-development-discipline.md`
-- `decisions/ADR-0021-canonical-visual-identity-reference.md` for visual/person depiction work
-- the active bridge/milestone contract
-- relevant ADRs
-
-For Fibre, an ordinary adversarial review is a **vision-effectiveness review** unless explicitly scoped as security/red-team work: try to falsify whether personhood-bearing state is becoming causal and load-bearing rather than merely stored, prompted or displayed. Also challenge whether proposed infrastructure work has a concrete Fibre beneficiary and a defined stop condition rather than expanding abstraction for its own sake.
+Challenge whether the proposal makes a person's lived state more causal and load-bearing, whether it preserves one authority per semantic fact, and whether infrastructure/test work has a concrete Fibre beneficiary and stop condition.
