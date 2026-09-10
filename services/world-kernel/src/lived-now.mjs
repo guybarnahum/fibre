@@ -11,7 +11,6 @@ import {
 import { ageYearsAt } from "./visual-identity-reference-domain.mjs";
 
 export const LIVED_PLAN_KINDS = Object.freeze(["personal", "care"]);
-export const PRESENCE_MODES = Object.freeze(["physical", "mediated"]);
 export const CARE_CONSTRAINTS = Object.freeze(["preferred", "required"]);
 
 function assertEnum(name, value, allowed) {
@@ -66,9 +65,64 @@ function normalizeCognition(value) {
   };
 }
 
-function activeAt(plan, at) {
-  return Date.parse(plan.authoredAt) <= Date.parse(at) &&
-    (plan.validUntil === null || Date.parse(plan.validUntil) >= Date.parse(at));
+function normalizeStop(value, index) {
+  const name = `lived plan.stops[${index}]`;
+  assertPlainObject(name, value);
+  assertExactKeys(name, value, [
+    "startAt",
+    "endAt",
+    "physicalPlaceRef",
+    "mediatedContext",
+    "activity",
+    "purpose",
+    "companionRefs",
+    "travelFromPrevious",
+  ]);
+  assertIsoTimestamp(`${name}.startAt`, value.startAt);
+  assertIsoTimestamp(`${name}.endAt`, value.endAt);
+  if (Date.parse(value.endAt) <= Date.parse(value.startAt)) {
+    throw new TypeError(`${name}.endAt must follow startAt`);
+  }
+  assertId(`${name}.physicalPlaceRef`, value.physicalPlaceRef);
+  const mediatedContext = nullableText(`${name}.mediatedContext`, value.mediatedContext);
+  assertNonEmpty(`${name}.activity`, value.activity);
+  assertNonEmpty(`${name}.purpose`, value.purpose);
+  const companionRefs = normalizeIds(`${name}.companionRefs`, value.companionRefs);
+  const travelFromPrevious = nullableText(`${name}.travelFromPrevious`, value.travelFromPrevious);
+  return {
+    startAt: value.startAt,
+    endAt: value.endAt,
+    physicalPlaceRef: value.physicalPlaceRef,
+    mediatedContext,
+    activity: value.activity,
+    purpose: value.purpose,
+    companionRefs,
+    travelFromPrevious,
+  };
+}
+
+function normalizeLocation(value) {
+  assertPlainObject("current situation.location", value);
+  assertNonEmpty("current situation.location.kind", value.kind);
+  if (value.kind === "place") {
+    assertExactKeys("current situation.location", value, ["kind", "placeRef"]);
+    assertId("current situation.location.placeRef", value.placeRef);
+    return { kind: "place", placeRef: value.placeRef };
+  }
+  if (value.kind === "transit") {
+    assertExactKeys("current situation.location", value, ["kind", "fromPlaceRef", "toPlaceRef"]);
+    assertId("current situation.location.fromPlaceRef", value.fromPlaceRef);
+    assertId("current situation.location.toPlaceRef", value.toPlaceRef);
+    if (value.fromPlaceRef === value.toPlaceRef) {
+      throw new TypeError("transit location requires distinct places");
+    }
+    return {
+      kind: "transit",
+      fromPlaceRef: value.fromPlaceRef,
+      toPlaceRef: value.toPlaceRef,
+    };
+  }
+  throw new TypeError("current situation.location.kind is invalid");
 }
 
 export function livedPlanId(seed) {
@@ -117,13 +171,9 @@ export function normalizeLivedPlan(value) {
     "subjectThreadId",
     "owner",
     "authoredAt",
-    "validUntil",
-    "physicalPlaceRef",
-    "presenceMode",
-    "mediatedContext",
-    "activity",
-    "purpose",
-    "companionRefs",
+    "horizonStart",
+    "horizonEnd",
+    "stops",
     "sourceReferences",
     "authority",
     "cognition",
@@ -133,24 +183,40 @@ export function normalizeLivedPlan(value) {
   assertId("lived plan.subjectThreadId", value.subjectThreadId);
   const owner = normalizeOwner(value.owner);
   assertIsoTimestamp("lived plan.authoredAt", value.authoredAt);
-  if (value.validUntil !== null) {
-    assertIsoTimestamp("lived plan.validUntil", value.validUntil);
-    if (Date.parse(value.validUntil) < Date.parse(value.authoredAt)) {
-      throw new TypeError("lived plan.validUntil cannot precede authoredAt");
+  assertIsoTimestamp("lived plan.horizonStart", value.horizonStart);
+  assertIsoTimestamp("lived plan.horizonEnd", value.horizonEnd);
+  if (Date.parse(value.horizonStart) < Date.parse(value.authoredAt)) {
+    throw new TypeError("lived plan horizon cannot start before it was authored");
+  }
+  if (Date.parse(value.horizonEnd) <= Date.parse(value.horizonStart)) {
+    throw new TypeError("lived plan horizonEnd must follow horizonStart");
+  }
+  if (!Array.isArray(value.stops) || value.stops.length === 0) {
+    throw new TypeError("lived plan.stops must not be empty");
+  }
+  const stops = value.stops.map(normalizeStop);
+  for (let index = 0; index < stops.length; index += 1) {
+    const stop = stops[index];
+    if (
+      Date.parse(stop.startAt) < Date.parse(value.horizonStart) ||
+      Date.parse(stop.endAt) > Date.parse(value.horizonEnd)
+    ) {
+      throw new TypeError(`lived plan.stops[${index}] falls outside the plan horizon`);
+    }
+    if (index === 0) {
+      if (stop.travelFromPrevious !== null) {
+        throw new TypeError("first lived plan stop cannot have travelFromPrevious");
+      }
+      continue;
+    }
+    const previous = stops[index - 1];
+    if (Date.parse(stop.startAt) < Date.parse(previous.endAt)) {
+      throw new TypeError("lived plan stops cannot overlap or run backward");
+    }
+    if (stop.physicalPlaceRef !== previous.physicalPlaceRef && stop.travelFromPrevious === null) {
+      throw new TypeError("a stop at a different physical place requires travelFromPrevious");
     }
   }
-  assertId("lived plan.physicalPlaceRef", value.physicalPlaceRef);
-  assertEnum("lived plan.presenceMode", value.presenceMode, PRESENCE_MODES);
-  const mediatedContext = nullableText("lived plan.mediatedContext", value.mediatedContext);
-  if (value.presenceMode === "physical" && mediatedContext !== null) {
-    throw new TypeError("physical plan cannot carry mediatedContext");
-  }
-  if (value.presenceMode === "mediated" && mediatedContext === null) {
-    throw new TypeError("mediated plan requires mediatedContext");
-  }
-  assertNonEmpty("lived plan.activity", value.activity);
-  assertNonEmpty("lived plan.purpose", value.purpose);
-  const companionRefs = normalizeIds("lived plan.companionRefs", value.companionRefs);
   const sourceReferences = normalizeIds("lived plan.sourceReferences", value.sourceReferences, { required: true });
 
   let authority;
@@ -180,16 +246,70 @@ export function normalizeLivedPlan(value) {
     subjectThreadId: value.subjectThreadId,
     owner,
     authoredAt: value.authoredAt,
-    validUntil: value.validUntil,
-    physicalPlaceRef: value.physicalPlaceRef,
-    presenceMode: value.presenceMode,
-    mediatedContext,
-    activity: value.activity,
-    purpose: value.purpose,
-    companionRefs,
+    horizonStart: value.horizonStart,
+    horizonEnd: value.horizonEnd,
+    stops,
     sourceReferences,
     ...(authority === undefined ? {} : { authority }),
     ...(cognition === undefined ? {} : { cognition }),
+  };
+}
+
+export function plannedPositionAt(planCandidate, at) {
+  const plan = normalizeLivedPlan(planCandidate);
+  assertIsoTimestamp("planned position at", at);
+  const instant = Date.parse(at);
+  if (instant < Date.parse(plan.horizonStart) || instant > Date.parse(plan.horizonEnd)) return null;
+
+  for (let index = 0; index < plan.stops.length; index += 1) {
+    const stop = plan.stops[index];
+    const isLastAtHorizonEnd = index === plan.stops.length - 1 && instant === Date.parse(plan.horizonEnd);
+    if (instant >= Date.parse(stop.startAt) && (instant < Date.parse(stop.endAt) || isLastAtHorizonEnd)) {
+      return {
+        kind: "at_place",
+        location: { kind: "place", placeRef: stop.physicalPlaceRef },
+        mediatedContext: stop.mediatedContext,
+        activity: stop.activity,
+        reason: stop.purpose,
+        participantRefs: stop.companionRefs,
+      };
+    }
+  }
+
+  let previous = null;
+  let next = null;
+  for (let index = 0; index < plan.stops.length; index += 1) {
+    const stop = plan.stops[index];
+    if (Date.parse(stop.endAt) <= instant) previous = stop;
+    if (Date.parse(stop.startAt) > instant) {
+      next = stop;
+      break;
+    }
+  }
+  if (previous === null || next === null) return null;
+
+  if (previous.physicalPlaceRef !== next.physicalPlaceRef) {
+    return {
+      kind: "in_transit",
+      location: {
+        kind: "transit",
+        fromPlaceRef: previous.physicalPlaceRef,
+        toPlaceRef: next.physicalPlaceRef,
+      },
+      mediatedContext: null,
+      activity: next.travelFromPrevious,
+      reason: next.purpose,
+      participantRefs: next.companionRefs,
+    };
+  }
+
+  return {
+    kind: "at_place",
+    location: { kind: "place", placeRef: previous.physicalPlaceRef },
+    mediatedContext: null,
+    activity: "Unstructured time between planned commitments.",
+    reason: "The flight plan leaves this interval open.",
+    participantRefs: [],
   };
 }
 
@@ -199,8 +319,8 @@ export function normalizeCurrentSituation(value) {
     "situationId",
     "threadId",
     "establishedAt",
-    "physicalPlaceRef",
-    "presenceMode",
+    "phase",
+    "location",
     "mediatedContext",
     "activity",
     "reason",
@@ -212,15 +332,15 @@ export function normalizeCurrentSituation(value) {
   assertId("current situation.situationId", value.situationId);
   assertId("current situation.threadId", value.threadId);
   assertIsoTimestamp("current situation.establishedAt", value.establishedAt);
-  assertId("current situation.physicalPlaceRef", value.physicalPlaceRef);
-  assertEnum("current situation.presenceMode", value.presenceMode, PRESENCE_MODES);
+  assertEnum("current situation.phase", value.phase, ["at_place", "in_transit"]);
+  const location = normalizeLocation(value.location);
+  if (value.phase === "at_place" && location.kind !== "place") {
+    throw new TypeError("at-place situation requires a place location");
+  }
+  if (value.phase === "in_transit" && location.kind !== "transit") {
+    throw new TypeError("in-transit situation requires a transit location");
+  }
   const mediatedContext = nullableText("current situation.mediatedContext", value.mediatedContext);
-  if (value.presenceMode === "physical" && mediatedContext !== null) {
-    throw new TypeError("physical situation cannot carry mediatedContext");
-  }
-  if (value.presenceMode === "mediated" && mediatedContext === null) {
-    throw new TypeError("mediated situation requires mediatedContext");
-  }
   assertNonEmpty("current situation.activity", value.activity);
   assertNonEmpty("current situation.reason", value.reason);
   const participantRefs = normalizeIds("current situation.participantRefs", value.participantRefs);
@@ -248,8 +368,8 @@ export function normalizeCurrentSituation(value) {
     situationId: value.situationId,
     threadId: value.threadId,
     establishedAt: value.establishedAt,
-    physicalPlaceRef: value.physicalPlaceRef,
-    presenceMode: value.presenceMode,
+    phase: value.phase,
+    location,
     mediatedContext,
     activity: value.activity,
     reason: value.reason,
@@ -266,17 +386,18 @@ export function normalizeCurrentSituation(value) {
   };
 }
 
-export function livedPlansConflict(leftCandidate, rightCandidate) {
-  const left = normalizeLivedPlan(leftCandidate);
-  const right = normalizeLivedPlan(rightCandidate);
-  const intention = (plan) => canonicalJson({
-    physicalPlaceRef: plan.physicalPlaceRef,
-    presenceMode: plan.presenceMode,
-    mediatedContext: plan.mediatedContext,
-    activity: plan.activity,
-    companionRefs: plan.companionRefs,
+function positionsConflict(left, right) {
+  return canonicalJson({
+    location: left.location,
+    mediatedContext: left.mediatedContext,
+    activity: left.activity,
+    participantRefs: left.participantRefs,
+  }) !== canonicalJson({
+    location: right.location,
+    mediatedContext: right.mediatedContext,
+    activity: right.activity,
+    participantRefs: right.participantRefs,
   });
-  return intention(left) !== intention(right);
 }
 
 export function resolveCurrentSituation(input) {
@@ -291,32 +412,29 @@ export function resolveCurrentSituation(input) {
   assertIsoTimestamp("current situation resolution input.establishedAt", input.establishedAt);
   const personal = normalizeLivedPlan(input.personalPlan);
   if (personal.kind !== "personal") throw new TypeError("current situation requires a personal plan");
-  if (!activeAt(personal, input.establishedAt)) throw new TypeError("personal plan is not active at enactment");
+  const personalPosition = plannedPositionAt(personal, input.establishedAt);
+  if (personalPosition === null) throw new TypeError("personal flight plan has no position at enactment time");
 
   const care = input.carePlan === null ? null : normalizeLivedPlan(input.carePlan);
-  if (care !== null) {
-    if (care.kind !== "care") throw new TypeError("carePlan must be a care plan");
-    if (care.subjectThreadId !== personal.subjectThreadId) {
-      throw new TypeError("personal and care plans must have the same subject Thread");
-    }
-    if (!activeAt(care, input.establishedAt)) throw new TypeError("care plan is not active at enactment");
+  if (care !== null && care.subjectThreadId !== personal.subjectThreadId) {
+    throw new TypeError("personal and care plans must have the same subject Thread");
   }
-
-  const conflict = care !== null && livedPlansConflict(personal, care);
+  const carePosition = care === null ? null : plannedPositionAt(care, input.establishedAt);
+  const conflict = carePosition !== null && positionsConflict(personalPosition, carePosition);
   const careConstrains = conflict && care.authority.constraint === "required";
-  const enacted = careConstrains ? care : personal;
-  const sourcePlanRefs = care === null ? [personal.planId] : [personal.planId, care.planId];
+  const enacted = careConstrains ? carePosition : personalPosition;
+  const sourcePlanRefs = carePosition === null ? [personal.planId] : [personal.planId, care.planId];
 
   return normalizeCurrentSituation({
     situationId: input.situationId,
     threadId: personal.subjectThreadId,
     establishedAt: input.establishedAt,
-    physicalPlaceRef: enacted.physicalPlaceRef,
-    presenceMode: enacted.presenceMode,
+    phase: enacted.kind,
+    location: enacted.location,
     mediatedContext: enacted.mediatedContext,
     activity: enacted.activity,
-    reason: enacted.purpose,
-    participantRefs: enacted.companionRefs,
+    reason: enacted.reason,
+    participantRefs: enacted.participantRefs,
     sourcePlanRefs,
     resolution: careConstrains
       ? {
@@ -324,18 +442,18 @@ export function resolveCurrentSituation(input) {
           conflict: true,
           enactedPlanRef: care.planId,
           constrainedPlanRef: personal.planId,
-          summary: "A required caregiver plan constrained what happened without replacing the Thread's personal plan.",
+          summary: "A required caregiver plan constrained the enacted itinerary without replacing the Thread's own flight plan.",
         }
       : {
           kind: "personal_plan",
           conflict,
           enactedPlanRef: personal.planId,
           constrainedPlanRef: null,
-          summary: care === null
-            ? "The World enacted the Thread's current personal plan."
+          summary: carePosition === null
+            ? "The World enacted the Thread's current flight-plan position."
             : conflict
-              ? "The caregiver plan differed but did not have required authority to constrain this enactment."
-              : "The personal and caregiver plans were compatible; the Thread's personal plan remained enacted.",
+              ? "The caregiver itinerary differed but did not have required authority to constrain this moment."
+              : "The personal and caregiver itineraries were compatible at this moment.",
         },
     provenance: "world_enacted",
   });
