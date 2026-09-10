@@ -11,15 +11,15 @@
     <div>
       <p class="eyebrow">Fibre world inspection</p>
       <h1>Thread Editor</h1>
-      <p>Inspect a live Thread, its public history, private participation trace, expression boundary, temporary cognition, and lifecycle integrity.</p>
+      <p>Inspect a live Thread, its public history, private participation trace, expression boundary, temporary cognition, lifecycle integrity, and Fibre identity credentials.</p>
     </div>
     <div class="connection-status" id="connectionStatus" data-state="loading">Connecting…</div>
   </header>
 
   <main>
     <section class="notice">
-      <strong>Inspection boundary</strong>
-      <span>This editor cannot seed, accept commands, issue participation authority, write disclosure or response records, acquire runtime, run workers, freeze, abandon, repair, or mutate obligations. Self-model changes are previewed only.</span>
+      <strong>Authority boundary</strong>
+      <span>Thread state remains inspection-only. FID issue/reissue/revoke actions, when configured, go only through Fibre Identity Authority; the editor never receives FIN-writing authority, signing keys, protected credential bodies, or provider storage access.</span>
     </section>
 
     <section class="toolbar panel">
@@ -73,6 +73,7 @@
 
     <nav class="tabs" aria-label="Thread Editor views">
       <button class="tab active" data-view="state" type="button">Life state</button>
+      <button class="tab" data-view="fid" type="button">FID</button>
       <button class="tab" data-view="events" type="button">Public events</button>
       <button class="tab" data-view="requests" type="button">Private requests</button>
       <button class="tab" data-view="expressions" type="button">Expression boundary</button>
@@ -88,6 +89,36 @@
       <article class="panel"><h2>Feelings</h2><ul id="feelings"></ul></article>
       <article class="panel"><h2>Unresolved intentions</h2><ul id="intentions"></ul><p class="boundary-note">Read-only in M1. No obligation or intention mutation is exposed.</p></article>
       <article class="panel wide"><h2>Genetic personality</h2><div id="traits" class="trait-grid"></div></article>
+    </section>
+
+    <section id="view-fid" class="view-grid" hidden>
+      <article class="panel">
+        <p class="eyebrow">Fibre Identity Authority</p>
+        <h2>Current credential</h2>
+        <div id="fidCurrent" class="explanation"></div>
+        <label>Action reason
+          <select id="fidReason">
+            <option value="initial">Initial</option>
+            <option value="replacement">Replacement</option>
+            <option value="renewal">Renewal</option>
+            <option value="correction">Correction</option>
+          </select>
+        </label>
+        <label>Idempotency key
+          <input id="fidIdempotencyKey" autocomplete="off" spellcheck="false" placeholder="operator-defined stable request key">
+        </label>
+        <button id="fidIssueButton" type="button">Request issuance</button>
+        <button id="fidRevokeButton" type="button">Revoke active FID</button>
+        <p class="boundary-note">These actions ask FIA to act. Identity fields, photo bytes, FIN, keys, and storage locations are not editable here.</p>
+      </article>
+      <article class="panel detail-panel">
+        <h2>Credential and issuance history</h2>
+        <div id="fidHistory" class="record-list"></div>
+        <details class="technical-json">
+          <summary>Show exact FIA inspection JSON</summary>
+          <pre id="fidRaw">FID service not configured.</pre>
+        </details>
+      </article>
     </section>
 
     <section id="view-events" class="view-grid" hidden>
