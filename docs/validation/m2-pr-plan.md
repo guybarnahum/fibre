@@ -113,30 +113,37 @@ Plan and reality may diverge without rewriting one another. Persisted current li
 
 **Done:** after restart Fibre can distinguish where/how the Thread intended to be from where/how World-observed life actually is.
 
-### A2 — Care plan + conflicting wills — CURRENT
+### A2 — Care plan + conflicting wills — CLOSED
 
-Use the same itinerary semantics for a caregiver-owned care plan. Preserve both wills and let the World record preparation, departure, transit and arrival independently.
+Care uses the same itinerary semantics while retaining separate ownership and authority. A caregiver-owned required plan may govern the course of enacted life without rewriting the dependent Thread's personal Flight Plan or becoming the dependent Thread's private drive.
 
-The care plan remains external legitimate authority; it must not be converted into the dependent Thread's private presence drive. Instead, moving the child away from her own intended presence may create personal regulatory pressure while the caregiver requirement progresses or succeeds.
+The representative moving conflict proves that World can observe departure, transit and arrival toward the caregiver-required destination while the dependent Thread's own presence target remains independently unsatisfied and regulator-relevant.
 
-**Done when:** Fibre can distinguish `what I wanted`, `what my caregiver required`, and `what happened` through a moving care conflict, with the dependent person's own regulation remaining their own.
+**Done:** Fibre distinguishes `what I wanted`, `what my caregiver required`, `what happened`, and `what that did to me` through a moving care conflict.
 
-### A3 — Current-life projection + Thread Editor
+### A3 — Current-life projection + Thread Editor — CLOSING
 
-One current-life projection feeds an operator view of:
+One current-life projection assembles the existing authorities into an operator view of:
 
 ```text
 Now / movement
 Flight Plan
 Care / conflict
-Intrinsic regulation
 Plan vs lived
-Recent history
-Semantic feeling / meaning
+Current Semantic State
+Optional organism trace
 Provenance
 ```
 
-The Editor explains causal state but never authors it.
+The projection is computed on read. It is not a store, cache, second current-life authority or Editor-owned state.
+
+The canonical local World now exposes the projection through one private read-only inspection route backed by the existing Lived Now and Semantic State authorities. Thread Editor folds that result into its existing private inspection payload and renders a readable `Lived now` panel in the Life state view.
+
+A missing current-life route on an older World/fixture is treated as an additive capability absence rather than invalidating unrelated Editor inspection. Other upstream failures still surface normally.
+
+The R4 organism trace remains intentionally non-persistent. It belongs in a current-life projection only when an actual regulation cycle produced a trace for that lived moment; Fibre must not invent a debug-trace store solely to make the Editor look complete.
+
+**Done when:** focused projection, live transport, local server-composition and Editor regression gates pass. Then close A3 and move directly to A4.
 
 ### A4 — Public present + insidefibre.com scene
 
