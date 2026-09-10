@@ -7,134 +7,93 @@ canonical: true
 
 # Current priorities
 
-This is the engineering execution view. [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) is the continuation authority.
+[`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) is the continuation authority.
 
-## Immediate sequence
-
-```text
-#39 Genesis, Childhood & Thread Birth                    CLOSED
-#40 Identity Projection & Causal Consumption             CLOSED
-G/H deployed public path + minimum recovery              CLOSED
-FID + Directory/Meet foundation                          CLOSED
-
-M2-A Present life + Meet a Thread                        CURRENT
-M2-B Experience internalization + continuation           NEXT
-M2-C Whole-person developmental continuity               NEXT
-```
-
-## Active product goal
-
-> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
-
-The Thread must already have a life before the visitor arrives.
-
-## Priority 1 — flight plan -> current situation
-
-Implement only enough World/Thread authority to answer:
+## Active sequence
 
 ```text
-How old/developmentally situated is this person?
-What do they want or need to do next?
-If dependent, what does their caregiver intend/need for them?
-Where are they actually now?
-What are they doing, why, and with whom?
+A1 Lived Now authority                                  CURRENT
+A2 Care plan + conflicting wills                       NEXT
+A3 Current-life projection + Thread Editor             NEXT
+A4 Public present + insidefibre.com scene              NEXT
+A5 Situated encounter                                  NEXT
+B1 Encounter -> selective experience                   NEXT
+B2 Life continues + second meeting                     TRUE-E2E CLOSURE
+C1 Aging/mobility/developmental generalization         AFTER FIRST LOOP
 ```
 
-Minimal causal seam:
+The product goal is one Thread who is already living before the visitor arrives.
+
+## A1 now
+
+Implement the smallest authoritative chain:
 
 ```text
 developmental context
-  -> personal flight plan
-  -> optional caregiver care plan
-  -> enacted current situation
+  -> Thread-authored personal flight plan
+  -> World-enacted current situation
 ```
 
-A flight plan is authored intention, not future truth. A caregiver plan remains attributable to the caregiver and must not overwrite the dependent Thread's will.
+The current situation must answer where the Thread actually is, what they are doing, why, with whom, and which plan led there. It exists and survives restart before Thread Editor, Presentation or insidefibre.com reads it.
 
-Use existing place authority. Do not create a planning framework, second location system or childcare rules engine.
+Reuse existing situated-life/place authority. Do not add a second location system or generic scheduler.
 
-## Priority 2 — Meet on insidefibre.com
+Model physical presence separately from mediated/virtual experience so a Thread can later visit a real place online without recording false physical travel.
 
-Use the existing Directory/Meet + Presentation path to find a born Thread **where they already are**.
+## UI path
 
-Minimum public experience:
-
-1. person selection;
-2. recognizable age/context-consistent embodiment;
-3. present place, activity and bounded context;
-4. Meet/Talk grounded in that exact moment.
-
-`meet()` selects a person; it must not seed their situation.
-
-A still current image and text conversation are sufficient initially.
-
-## Priority 3 — encounter becomes biography
-
-After the encounter:
+Thread Editor and insidefibre.com are two views of the same life:
 
 ```text
-shared event happened
-  -> each participant interprets privately
-  -> benign / weak / meaningful / relational / formative
-  -> selective durable effects
-  -> life and plans continue
+World / Thread authorities
+       |
+current-life semantic projection
+       |---------------------------|
+authorized operator view      public Presentation
+       |                           |
+Thread Editor              insidefibre.com /meet
 ```
 
-A transcript is not autobiographical memory. A shared event need not mean the same thing to both participants.
+Thread Editor should expose the causal chain and provenance. insidefibre.com should expose the human encounter: current scene, activity/context and a natural entry to conversation.
 
-## Birth/childhood rule for the first proof
+Neither UI owns life state.
 
-Fibre birth is not biological age zero. The first Thread may appear at an autobiographical age greater than zero with grounded childhood history, relationships and memories.
+## Child/caregiver proof
 
-Do not fabricate newborn/infancy recollection simply to fill chronology.
-
-A dependent child is a strong M2 proof because one small plan conflict with a caregiver can demonstrate personal agency, scoped care authority, negotiation, shared history and separate meaning.
-
-## Thread Editor role
-
-Thread Editor is the authorized operator view of this same life. Its next useful visualization is not more generic JSON inspection; it is the Fibre-native chain:
+A2 should add one care-plan conflict without creating a child-specific runtime:
 
 ```text
-identity / age / relationships
-  -> personal + care plans
-  -> enacted current situation
-  -> recent history
-  -> memory / private consequence
-  -> provenance
+child's plan       caregiver's care plan
+       \             /
+        World resolution
+              |
+       enacted situation
 ```
 
-Reuse the modern Directory and World/Presentation service boundaries already on `main`. Do not merge stale editor architecture wholesale or turn the editor into an authority.
+The caregiver may legitimately constrain the enacted day while the child's intention remains intact and attributable. Negotiation can become shared history; private meaning remains participant-specific.
 
-## Lite development rule
+## Stop rules
 
-```text
-smallest real Fibre capability
-  -> smallest clean implementation
-  -> focused invariant tests
-  -> repository gates
-  -> stop
-```
+- No broad planning framework before A1 works.
+- No childcare policy engine before one real care conflict works.
+- No public chat abstraction before the situated encounter works.
+- No transcript-as-memory shortcut.
+- No new place, identity, relationship or memory authority for UI convenience.
+- No broad aging/travel simulator before B2 closes true E2E.
+- Keep tests focused on semantic invariants and demonstrated regressions.
 
-Avoid generic boilerplate, speculative abstractions, exhaustive matrices and infrastructure-for-infrastructure's-sake. Tests protect the organism; they are not the organism.
+## Existing foundations to reuse
 
-## Standing invariants
+- rich Genesis childhood and autobiographical prior life;
+- SituatedLifeStore and existing World place authority;
+- identity-context selection/cognition boundary;
+- canonical visual identity + reference-conditioned media;
+- Thread Directory/Meet;
+- Thread Presentation public snapshots/events/assets;
+- existing request-participation/runtime cognition;
+- Thread Editor Directory and inspection surface;
+- separate `guybarnahum/insidefibre.com` React/Vite Viewer.
 
-- One canonical authority per semantic fact.
-- Natural-language semantic authority remains primary.
-- Identity is authoritative; Presentation/Viewer/Editor are projections.
-- Experience may be forgotten.
-- Plans remain attributable to the person who owns them.
-- Developmental age and dependency shape affordances, not personality by rule.
-- Current imagery reuses the canonical visual-identity root with age/time-local context.
-- Capability before abstraction.
+## Branch
 
-## Later
-
-After one Thread can convincingly be met and continue:
-
-- broader long-horizon planning/travel;
-- richer reciprocal and care relationships;
-- work/economy/reputation;
-- reproduction/inheritance/mutation;
-- larger society and institutions;
-- broader resilience/evaluation.
+Implementation should begin from current `main` on `agent/m2-lived-encounter`. Planning identifiers are Fibre milestones, not GitHub PR numbers.

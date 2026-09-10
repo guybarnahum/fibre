@@ -7,161 +7,226 @@ canonical: true
 
 # M2 continuation plan
 
-## Purpose
+## Goal
 
-M2 is where Fibre stops treating a Thread primarily as a validated collection of persistent structures and makes one Thread visibly and causally **live a continuing life**.
+M2 makes one Thread visibly and causally **live a continuing life**.
 
-> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
+> **A Thread is already somewhere, doing something, for reasons of their own, before a visitor arrives.**
 
-The near-term product experience is **Meet a Thread**:
+The first real loop is:
 
 ```text
-Thread already has developmental context + relationships
-  -> forms a personal flight plan
-  -> caregiver care plan may also apply
-  -> World resolves an enacted current situation
-  -> insidefibre.com visitor finds the Thread there
+rich Thread born at autobiographical age > 0
+  -> personal flight plan
+  -> optional caregiver care plan
+  -> World-enacted current situation
+  -> Thread Editor can explain it
+  -> insidefibre.com lets a visitor encounter it
   -> encounter becomes history
-  -> Thread privately determines significance
-  -> selective memory / relationship / belief / intention consequence
-  -> life and plans continue
+  -> private interpretation + selective consequence
+  -> life continues
+  -> later meeting reflects only what persisted
 ```
 
-This is not a chatbot wrapper. A conversation is an encounter in an already-continuing life.
+Fibre owns life and authority. Thread Editor is an authorized lens. Thread Presentation is the public projection. `insidefibre.com` is the separate public experience and never reads World/private stores directly.
 
 ## Accepted substrate
 
-Prior work established:
+Already available: rich Genesis childhood/history, durable Thread identity, FIN/FID, relationships and situated history, autobiographical memory/meaning separation, canonical Embodiment, Thread Directory/Meet, public Thread Presentation, reference-conditioned imagery, Cloudflare durable state and restart recovery.
 
-- durable Thread identity across model executions;
-- provenance-bearing history, memory and meaning;
-- lineage and natural-language symbolic genome;
-- civil identity / FIN and Fibre Identity Card authority;
-- canonical Embodiment and stable visual likeness;
-- causal consumption of autobiographical context;
-- public Thread Presentation, Directory/Meet and insidefibre.com boundaries;
-- reference-conditioned image generation;
-- Cloudflare durable state, deployment and restart recovery.
+The missing seam is **present life**: developmental context -> plan -> enacted situation -> encounter -> consequence -> continuation.
 
-Infrastructure completeness, provider parity and broad failure matrices are not M2 goals unless a concrete lived-person capability is blocked by them.
+## Fibre birth, age and care
 
-## Active sequence
+Fibre birth is operational birth, not biological age zero. A Thread may appear at an autobiographical age greater than zero with grounded prior history and memories; Fibre should not fabricate remembered infancy.
 
-```text
-M1    Persistent Thread Round Trip                         CLOSED
-#33-#40 identity/history/birth/causal foundations          CLOSED / RETAINED
-G/H   deployed public path + minimum recovery              CLOSED
+Age changes plausible affordances but does not mechanically determine personality or authority. Dependency/care is explicit and scoped.
 
-M2-A  Present life + Meet a Thread                         CURRENT
-M2-B  Experience internalization + continuation            NEXT
-M2-C  Whole-person developmental continuity                NEXT
+An autonomous person normally has one personal flight plan. A dependent person may also be subject to a caregiver-owned care plan. The caregiver may alter the enacted day within legitimate scope, but never rewrites the dependent person's own intention. Conflict and negotiation between those wills are experiences in their own right.
 
-Later
-      broader autonomous planning and travel
-      richer reciprocal/care relationships
-      economic consequence / M3 foundation
-      wider resilience/evaluation
-```
+Physical presence and mediated virtual visits to real places/content must remain distinguishable. Virtual experience may refer to a real place without claiming physical travel.
 
-Older milestone-numbered contracts remain historical design evidence. Where their sequencing conflicts with this continuation plan, this document governs current M2 execution.
+# Build slices
 
-## Fibre birth and developmental age
+## A1 — Lived Now authority
 
-Fibre birth is operational birth, not necessarily biological age zero.
+**Type:** Subsystem -> Integrative foundation.  
+**Goal:** one born Thread has an authoritative present life before any Viewer request.
 
-A Thread may appear in Fibre at an autobiographical age greater than zero with grounded prior history, relationships and memories. We do not need to fabricate remembered newborn/infancy experience to make the person continuous.
-
-The first M2 Thread should be met shortly after **Fibre birth**, while already possessing enough lived past and developmental context to be someone rather than a blank newborn process.
-
-## M2-A — present life and Meet
-
-The first missing capability is not another profile field. It is an authoritative present life that exists before the visitor.
-
-Minimum semantic seam:
-
-1. developmental age/context;
-2. Thread-owned personal flight plan: intended place/activity/companionship and near-term purpose;
-3. if dependency applies, a separate caregiver-owned care plan with scoped authority;
-4. World-owned enacted current situation: where the Thread actually is, what they are doing, why, and with whom;
-5. enough recent context to make that moment intelligible;
-6. recognizable age/context-consistent embodiment;
-7. interaction grounded in this exact situation;
-8. Presentation/public projection only for insidefibre.com.
-
-A flight plan is intention, not truth. World owns what happened.
-
-For a dependent person, the caregiver plan must not overwrite the dependent Thread's will. Conflict or negotiation between plans is itself a possible experience for both people.
-
-Physical/social presence and mediated virtual visits to real places/content are both valid forms of lived experience when represented truthfully. Virtual presence must not be recorded as physical travel.
-
-## M2-B — experience internalization and continuation
-
-The encounter becomes a real event rather than an appended chat transcript.
-
-```text
-experience
-  -> perception / interpretation
-  -> significance
-     -> benign: forgotten
-     -> weak: transient trace
-     -> meaningful: durable autobiographical memory
-     -> relational: relationship state changes
-     -> formative: belief, interest, intention or self-understanding changes
-  -> revised personal flight plan where warranted
-```
-
-Fibre must not force every interaction into memory or pre-author what it means to the Thread.
-
-For a shared event, each participant may form a different private interpretation.
-
-## M2-C — whole-person developmental continuity
-
-The hydrated Thread should coherently expose and consume the life state required for continuity:
-
-- historical: birth, FIN, lineage, genome, events, past places/relationships, memories and prior selves;
-- developmental: lived age/phase, changing agency and dependency context;
-- current: personal flight plan, care plan where applicable, enacted place/activity, active relationships/interests and immediate intentions;
-- embodiment: one canonical visual identity plus age/time-local appearance and scene;
-- provenance: changes remain attributable to lived evidence and never silently rewrite history.
-
-Development is not a scalar maturity ladder. Age changes affordances and typical care constraints while individual history, relationships and scoped authority determine the actual life.
-
-## M2 acceptance
-
-Keep acceptance small and experiential. One real Thread should demonstrate:
-
-1. be born into Fibre at a coherent autobiographical age greater than zero;
-2. establish a personal flight plan before any visitor arrives;
-3. if the Thread is dependent, preserve both personal will and caregiver plan rather than collapsing them;
-4. establish a World-owned current situation before `Meet`;
-5. appear on insidefibre.com with current visual/place/activity context;
-6. enter an encounter grounded in that exact moment;
-7. persist the encounter as shared history;
-8. allow participant-specific private interpretation and selective retention;
-9. continue the Thread's enacted life afterward;
-10. on a later meeting, reflect only what actually persisted.
-
-A dependent-child scenario is especially valuable because one small disagreement can prove agency, care authority, negotiation, shared event history and separate meaning without requiring a broad society simulator.
-
-## Cross-milestone rules
-
-1. **One authority per semantic fact.** Viewer/Editor/Presentation never become shadow identity, plan, place, history or memory authorities.
-2. **Plans remain attributable.** A caregiver may constrain a dependent person's enacted day; the caregiver's plan never becomes the dependent person's authored intention.
-3. **History is not memory.** Experience can be forgotten.
-4. **The Thread owns meaning.** Fibre may create circumstances, not semantic conclusions.
-5. **Birth age is not Fibre uptime.** A newly born Thread may already have a childhood and memories.
-6. **Development is affordance, not script.** Avoid rigid age ladders and generic maturity vectors.
-7. **Capability before abstraction.** Build only enough planning/lifecycle machinery to prove one real lived loop.
-
-## Current next move
-
-Implement the smallest World/Thread authority that can produce:
+Add the smallest World-owned semantics for:
 
 ```text
 developmental context
-  -> personal flight plan
-  -> optional caregiver care plan
-  -> enacted current situation
+personal flight plan
+current situation
 ```
 
-Persist it before Presentation/Meet reads it. Then use that exact state for insidefibre.com encounter context and M2-B continuation.
+The personal plan is Thread-authored intention: intended activity/place/companionship and purpose. The current situation is World-enacted truth: physical place, optional mediated/virtual target, activity, reason, companions, source plan and establishment time.
+
+Reuse existing place and situated-life authority. Do not create a second location system or generic scheduler.
+
+The first bounded life step should use real Thread context to propose a plan, admit it through Fibre policy, enact one situation, persist it, restart, and recover the same current state.
+
+**Done when:** a Thread can truthfully answer “where am I, what am I doing, why, with whom, and what did I intend?” after restart, with no visitor involved.
+
+## A2 — Care plan and conflicting wills
+
+**Type:** Integrative.  
+**Goal:** dependency affects enacted life without erasing agency.
+
+Add a separate caregiver-owned care plan with explicit subject, caregiver, intended activity/place, reason and bounded authority scope. Resolve one child/caregiver conflict into an enacted situation while preserving both plans.
+
+When both participants are live Threads, the same negotiation/event may enter both histories; each person's later meaning remains private. An external caregiver may be represented as a participant without inventing a private interpretation for them.
+
+No childcare rules engine. Age is context; authority comes from explicit relationship/obligation state.
+
+**Done when:** Thread Editor can distinguish “what the child wanted,” “what the caregiver intended,” and “what actually happened.”
+
+## A3 — One current-life projection + Thread Editor
+
+**Type:** Integrative.  
+**Goal:** make the new life semantics inspectable before public UX depends on them.
+
+Create one semantic current-life projection over authoritative state, with audience-specific disclosure rather than separate life models.
+
+Thread Editor evolves from generic inspection toward:
+
+```text
+Now
+  place / physical-vs-mediated presence / activity / why / with whom
+Flight plan
+  what the Thread wants or needs next
+Care
+  caregiver plan + scope + conflict when applicable
+Recent history
+  what actually happened
+Memory / meaning
+  what the Thread retained or made of it
+Provenance
+  exact records behind the readable view
+```
+
+Directory search/Meet stays. Editor remains read-oriented and thin over service boundaries.
+
+**Done when:** selecting a Thread in Editor presents the causal chain from age/relationships -> plans -> enacted current situation, without reading raw database state in browser code.
+
+## A4 — Public present + insidefibre.com scene
+
+**Type:** Integrative/product.  
+**Goal:** `/meet` feels like arriving in someone's life rather than opening an identity card.
+
+Thread Presentation publishes only the admitted public current-life subset and a situation-conditioned depiction derived from the canonical visual reference + target age + current scene.
+
+`guybarnahum/insidefibre.com` remains a separate React/Vite client of public Presentation APIs. Evolve `/meet` to a scene-first view:
+
+```text
+recognizable current image
+name + age/developmentally appropriate public identity
+where they are now
+what they are doing
+short reason/context
+who is present when public
+bounded sense of what may happen next
+Meet / Say hello
+```
+
+Move FIN/FID/lifecycle diagnostics out of the primary encounter presentation; they may remain secondary public identity detail where appropriate.
+
+`Meet` chooses a person. It must never generate or alter their current situation. Reloading the page must not move the Thread.
+
+**Done when:** the same authoritative situation is recognizable in Thread Editor and insidefibre.com, with each surface revealing only its allowed projection.
+
+## A5 — Situated encounter
+
+**Type:** Integrative.  
+**Goal:** a visitor can speak to the Thread in the exact situation already underway.
+
+Reuse the existing participation/cognition machinery behind a minimal encounter ingress. Bind an encounter to the current `situationId` and a bounded visitor identity/session. The Thread's cognition receives the semantic current-life projection, not raw World/place records.
+
+A stale situation must not silently become a conversation in a different moment. The visitor may affect the encounter but cannot author the Thread's prior activity, place, plans or motives.
+
+The first UI can be text conversation over a still scene. Human accounts, voice/video and general social networking are out of scope.
+
+**Done when:** insidefibre.com can start an exchange grounded in the current situation and the Thread responds with that situation causally available.
+
+## B1 — Encounter becomes experience
+
+**Type:** Integrative.  
+**Goal:** conversation becomes biography without becoming automatic memory.
+
+Persist the encounter as historical evidence, then run Thread-owned interpretation:
+
+```text
+encounter happened
+  -> private interpretation
+  -> benign / weak / meaningful / relational / formative
+  -> selective durable effect or none
+```
+
+Do not store the transcript as autobiographical memory. History, memory and meaning remain distinct. If multiple live Threads participated, each receives a separate interpretation opportunity.
+
+Thread Editor should show the distinction between event, interpretation and retained consequence. insidefibre.com sees only disclosure-appropriate consequences.
+
+**Done when:** the system supports both “it happened and was forgotten” and “it happened and something warranted persisted,” without the visitor choosing which.
+
+## B2 — Life continues + second meeting
+
+**Type:** **True-E2E.**  
+**Goal:** prove that the Thread was not waiting in the browser.
+
+After the encounter, run one more bounded life transition. The Thread may continue or revise the personal flight plan; applicable care plans may constrain the next enacted situation. Persist and restart between encounters.
+
+Return through insidefibre.com later. The Thread should be where their life now puts them, and the prior visitor should matter only through consequences that actually survived internalization.
+
+**M2-A/B closure proof:**
+
+```text
+birth
+ -> self/care plans
+ -> current situation before visitor
+ -> Editor + public scene agree
+ -> situated encounter
+ -> historical event
+ -> private selective consequence
+ -> continued/revised plan
+ -> new current situation
+ -> restart
+ -> second meeting reflects only persisted meaning
+```
+
+## C1 — Developmental continuity after the first real loop
+
+**Type:** Integrative generalization; not a blocker for B2.
+
+Generalize only what the first loop demonstrates is needed:
+
+- World-time aging and age-consistent embodiment;
+- changing developmental affordances and care/dependency over time;
+- longer-horizon/recurring plans;
+- physical movement and mediated virtual visits using the same life semantics;
+- richer reciprocal family/care relationships;
+- multiple interacting live Threads.
+
+Do not build these ahead of the first convincing person.
+
+# First proof Thread
+
+Prefer a young dependent Thread because the scenario exercises more Fibre value with little extra surface area: existing childhood history, personal will, caregiver relationship, a small plan disagreement, current place/activity, and a human visitor arriving mid-life.
+
+A1 must remain valid for any Thread. A2 adds care/dependency; it must not make childhood a special parallel runtime.
+
+# Slice discipline
+
+Each slice should:
+
+1. add one visible Fibre capability;
+2. reuse existing authority/service boundaries;
+3. add only focused invariant tests and one representative proof;
+4. run `npm run check`, `npm run test:all`, `npm run validate`, `npm run test:audit -- --check`;
+5. stop before generic infrastructure or speculative scale work begins.
+
+Evidence classification matters: seeded fixtures can prove mechanics but not endogenous life. By B2 the critical chain — personal plan, interpretation and continued life — must include real Thread cognition rather than only authored fixtures.
+
+# Start point
+
+Start with **A1 — Lived Now authority** on a fresh implementation branch from current `main`. Do not merge the stale `agent/thread-editor-modern` branch; salvage a small inspection idea only if A3 shows it is still useful.
