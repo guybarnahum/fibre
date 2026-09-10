@@ -15,8 +15,6 @@ To make one encounter real and potentially high-value for a Thread, Fibre must e
 
 When the meeting exposes a missing primitive that belongs to life in general, build that primitive generally rather than faking it inside the meeting path.
 
-That is why M2 is temporarily detouring through [`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md).
-
 ## M2 north star
 
 > **A Thread is already somewhere, going somewhere, wanting or needing something, before a visitor arrives. The encounter may matter because it enters that life, not because the Viewer authored it.**
@@ -26,7 +24,7 @@ rich Thread born at autobiographical age > 0
   -> intrinsic drives make conditions matter
   -> half-day/day personal flight plan
   -> optional caregiver care plan
-  -> World-enacted place / movement / mediated presence
+  -> World-observed place / movement / mediated presence
   -> visitor meets the Thread there
   -> encounter becomes history
   -> private interpretation + selective consequence
@@ -36,17 +34,17 @@ rich Thread born at autobiographical age > 0
 
 Fibre owns life and authority. Thread Editor is an authorized lens. Thread Presentation is the public projection. `insidefibre.com` never owns or manufactures the Thread's life state.
 
-## Current detour — intrinsic regulation
+## Intrinsic-regulation detour — completed
 
-A1/A2 established useful authority boundaries, but Flight Plan development pauses while Fibre gains a general motivational substrate.
+The deliberate R1-R4 detour established the organism-like substrate needed before Flight Plan could become lived rather than inert:
 
 ```text
-R1 Regulatory kernel + presence drive
-R2 Person-as-place / social-attachment regulation
-R3 Interoception -> semantic feeling
-R4 Functional drive loop + operator inspection
+R1 Regulatory kernel + presence drive                    CLOSED
+R2 Person-as-place / social-attachment regulation        CLOSED
+R3 Interoception -> semantic feeling                     CLOSED
+R4 Functional drive loop + operator trace                CLOSED
        ↓
-resume Flight Plan / movement / encounter
+Flight Plan / movement / encounter                       RESUMED
 ```
 
 The lower loop is:
@@ -77,7 +75,7 @@ alone somewhere quiet
 
 A caregiver can function as a child's secure base; an intimate friend/partner can regulate an adult through presence; another relationship or moment may create a desire for distance. Role labels never mechanically decide the desired relation.
 
-## Flight Plan when we resume
+## Flight Plan
 
 A Flight Plan is a Thread's **bounded mental itinerary for roughly the next half-day/day**: where/how she expects, wants or needs to be present, what she wants or needs to do, with whom, and when it matters.
 
@@ -97,21 +95,31 @@ The immutable plan preserves intended life; World history preserves lived life. 
 
 Children/dependent persons additionally may be subject to a caregiver-owned care plan. The caregiver may legitimately constrain enacted life without overwriting the dependent person's personal will. The negotiation itself can become an experience for both.
 
+Critically:
+
+```text
+care requirement != dependent person's private desire
+```
+
+A required care plan can explain why Maya is being taken to the dentist while movement away from Maya's own intended presence raises her own regulatory pressure. Successful care compliance does not mechanically become intrinsic satisfaction for the child.
+
 ## Resume sequence
 
-### A1 — Flight Plan + Lived Now
+### A1 — Flight Plan + Lived Now — CLOSED
 
-Reshape the current narrow personal-plan proof into a Thread-authored half-day/day itinerary of desired presence states. World establishes whether the Thread is at a place, in mediated presence, preparing, or moving toward a next physical presence target.
+A Thread can author an ordered half-day/day itinerary of desired physical and mediated presence. World-observed CurrentSituation is persisted separately from the plan and can record place, transit progress, mediated presence, activity and participants.
 
-Reuse existing World/place authority. No second location system, calendar product or route engine.
+Plan and reality may diverge without rewriting one another. Persisted current life can feed Flight Plan regulation after restart, producing `preparing`, `moving`, `delayed`, `arrived` or `dwelling` plus presence pressure/progress/attainment.
 
-**Done:** after restart a Thread can answer where/how she is present or where she is going, what she intended for this part of her day, and why.
+**Done:** after restart Fibre can distinguish where/how the Thread intended to be from where/how World-observed life actually is.
 
-### A2 — Care plan + conflicting wills
+### A2 — Care plan + conflicting wills — CURRENT
 
-Use the same itinerary semantics for a caregiver-owned care plan. Preserve both wills and resolve one child/caregiver conflict into enacted life.
+Use the same itinerary semantics for a caregiver-owned care plan. Preserve both wills and let the World record preparation, departure, transit and arrival independently.
 
-**Done:** Fibre can distinguish `what I wanted`, `what my caregiver required`, and `what happened`.
+The care plan remains external legitimate authority; it must not be converted into the dependent Thread's private presence drive. Instead, moving the child away from her own intended presence may create personal regulatory pressure while the caregiver requirement progresses or succeeds.
+
+**Done when:** Fibre can distinguish `what I wanted`, `what my caregiver required`, and `what happened` through a moving care conflict, with the dependent person's own regulation remaining their own.
 
 ### A3 — Current-life projection + Thread Editor
 
@@ -178,6 +186,6 @@ After one convincing loop, generalize only what proved useful:
 - No transcript-as-memory shortcut.
 - No Viewer-owned current state.
 - Use focused invariant tests plus one representative lived proof.
-- Run `npm run check`, `npm run test:all`, `npm run validate`, `npm run test:audit -- --check` at slice gates.
+- Run `npm run check`, `npm run test:all`, `npm run validate`, `npm run test:audit -- --check --quiet` at slice gates.
 
 The success criterion remains simple: **the meeting becomes interesting because someone was already living, wanting, regulating, experiencing and becoming before we arrived.**
