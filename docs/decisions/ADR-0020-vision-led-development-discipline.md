@@ -1,7 +1,7 @@
 ---
 id: ADR-0020
 status: accepted
-last-reviewed: 2026-09-09
+last-reviewed: 2026-09-10
 ---
 
 # ADR-0020: Vision-led development and abstraction stop conditions
@@ -14,15 +14,21 @@ Accepted.
 
 Fibre requires serious infrastructure: durable semantic state, provider-neutral production persistence, reproducible model invocation, media generation, deployment adapters and other operational machinery. Those foundations matter because a Thread must remain a coherent persistent individual rather than a disposable model session.
 
-The same work becomes counterproductive when infrastructure, test scaffolding, abstraction or generic engineering completeness becomes its own objective. Store-by-store migrations, generalized capability surfaces, exhaustive provider parity, oversized test matrices and boilerplate can consume development effort without making Threads more individual, more causally grounded, more persistent, more socially embedded or more capable of living in the World.
+The same work becomes counterproductive when infrastructure, test scaffolding, abstraction or generic engineering completeness becomes its own objective. Store-by-store migrations, generalized capability surfaces, exhaustive provider parity, oversized test matrices, security hardening disconnected from a current Fibre risk, and boilerplate can consume development effort without making Threads more individual, more causally grounded, more persistent, more socially embedded or more capable of living in the World.
 
-Fibre is not an infrastructure framework with an agent demo. Infrastructure and tests exist to preserve and enable the Fibre organism.
+Fibre is not an infrastructure framework with an agent demo. Infrastructure, security and tests exist to preserve and enable the Fibre organism.
 
 ## Decision
 
 Fibre development is **vision-led, lite and elegant**. The default priority is the smallest implementation that advances a concrete Fibre capability while preserving its semantic invariants.
 
-Infrastructure, abstraction and validation work is justified when it does at least one of the following:
+Before adding code, apply one question:
+
+> **What new lived capability, causal individuality, relationship, drive, memory, agency, consequence or future possibility does this code create or make load-bearing for a Thread?**
+
+If the answer is only cleaner infrastructure, stronger generic abstraction, broader defensive coverage, stylistic symmetry, or hypothetical future safety, the work stays off the critical path unless it blocks the Fibre capability currently being built.
+
+Infrastructure, abstraction, security and validation work is justified when it does at least one of the following:
 
 1. enables a concrete near-term Fibre capability;
 2. preserves a Fibre semantic invariant that would otherwise be violated;
@@ -39,6 +45,7 @@ Infrastructure or test work is **not** justified merely because:
 - every theoretical failure mode could be covered;
 - a test matrix could be made exhaustive;
 - common boilerplate can be introduced without serving a current Fibre capability;
+- generic security hardening is possible without a concrete Fibre threat or production blocker;
 - known migration debt still exists but is not blocking the Fibre capability currently being built.
 
 ## Minimum sufficient implementation
@@ -57,6 +64,8 @@ real Fibre capability
 Do not build generic frameworks, speculative extension points, compatibility layers or reusable abstractions before a second real Fibre use requires them.
 
 Duplication that is small, local and obvious may be preferable to premature abstraction. Elegance means clear authority boundaries and small code, not maximum generality.
+
+The implementation should be judged by **Fibre value per line**, not conventional framework completeness. A small causal path from drive -> attention -> intention -> lived consequence is worth more than a large generic subsystem that only stores, validates or transports those concepts.
 
 ## Minimum sufficient testing
 
@@ -112,12 +121,12 @@ This is especially important for `InfraDriver`. Provider-neutral persistence rem
 
 When a choice exists between:
 
-- extending an already-proven infrastructure abstraction or test matrix into another non-blocking corner; and
-- advancing a Fibre capability such as lived embodiment, causal identity/history consumption, self-authored development, reciprocal relationships, lived history or economic consequence;
+- extending an already-proven infrastructure abstraction, security surface or test matrix into another non-blocking corner; and
+- advancing a Fibre capability such as lived embodiment, causal identity/history consumption, intrinsic regulation, self-authored development, reciprocal relationships, lived history or economic consequence;
 
 Fibre capability work wins by default.
 
-The exception is when the infrastructure or validation work is necessary to make that Fibre capability correct, durable or deployable.
+The exception is when the infrastructure, security or validation work is necessary to make that Fibre capability correct, durable or deployable.
 
 ## Relationship to technical debt
 
@@ -147,7 +156,7 @@ Positive:
 Costs:
 
 - the repository may temporarily contain mixed migrated and legacy persistence paths;
-- some infrastructure cleanup will be intentionally deferred;
+- some infrastructure and security cleanup will be intentionally deferred;
 - some edge cases will remain untested until they become real risks;
 - engineers must exercise judgment about what constitutes a sufficient representative proof;
 - later production work may reopen deferred migration debt when a real capability reaches it.
