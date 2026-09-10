@@ -21,8 +21,8 @@ R4 Functional drive loop + organism trace                CLOSED
 
 A1 Flight Plan + World-observed Lived Now                CLOSED
 A2 Care plan + conflicting wills in movement             CLOSED
-A3 Current-life projection + Thread Editor               CURRENT
-A4 Public present + insidefibre.com scene
+A3 Current-life projection + Thread Editor               CLOSING
+A4 Public present + insidefibre.com scene                 NEXT
 A5 Situated encounter
 B1 Encounter -> selective experience
 B2 Life continues + second meeting                       TRUE-E2E CLOSURE
@@ -58,7 +58,7 @@ R3 created the explicit interoception boundary. Low-level regulation reaches cog
 
 R4 made regulation behaviorally causal. A meaningful regulator transition can earn attention, alter durable semantic interior state, and thereby alter the Thread's next ordinary presence choice. Ordinary unchanged regulation does not wake cognition.
 
-The regulation cycle emits a compact `organismTrace` separating regulation, attention, interoception, Thread semantic interpretation and next desired presence. Thread Editor has a readable projection for that trace. A3 will carry it into live current-life inspection; do not add a dedicated regulation store solely for UI transport.
+The regulation cycle emits a compact `organismTrace` separating regulation, attention, interoception, Thread semantic interpretation and next desired presence. Thread Editor has a readable projection for that trace. Do not add a dedicated regulation store solely for UI transport; a live trace should appear only when a real regulation cycle belongs to that lived moment.
 
 ## Semantic boundary
 
@@ -99,11 +99,11 @@ what happened
 what that did to me
 ```
 
-## A3 current
+## A3 closing
 
-A3 is integration/projection, not another authority.
+A3 remains integration/projection, not another authority.
 
-The first current-life projection now assembles existing authoritative state into one causal operator view:
+The current-life projection assembles existing authoritative state into one causal operator view:
 
 ```text
 observed Now
@@ -115,9 +115,11 @@ optional organism trace
 provenance
 ```
 
-The projection does not persist or reinterpret any of those records. Thread Editor has a readable model for the projection that keeps personal will, caregiver authority, observed life and semantic interior visibly distinct.
+The projection does not persist or reinterpret any of those records. The canonical local World now supplies it through one private read-only route backed directly by Lived Now plus Semantic State. Thread Editor includes that projection in its existing private inspection payload and renders it in the Life state view.
 
-Next, wire this projection through one private World read boundary into the running Thread Editor and render it in the Life state view. Do not add a current-life cache, new store, service hierarchy or mutation path merely for inspection.
+No current-life cache, projection table, service hierarchy or Editor mutation path was added. Older World fixtures that do not expose the additive current-life route remain inspectable; the Editor treats a route-level 404 as current-life unavailable rather than invalidating unrelated inspection.
+
+After the focused A3 gates, close A3 and move directly to A4 public present + insidefibre.com scene. Do not extend operator plumbing unless A4 exposes a real missing life primitive.
 
 ## Stop rules
 
