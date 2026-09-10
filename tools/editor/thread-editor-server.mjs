@@ -129,6 +129,13 @@ function assertExactKeys(value, allowed) {
   }
 }
 
+function requiredText(name, value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new EditorHttpError(400, "INVALID_REQUEST", `${name} is required`);
+  }
+  return value.trim();
+}
+
 function decodeParts(pathname) {
   try {
     return pathname.split("/").filter(Boolean).map(decodeURIComponent);
@@ -206,10 +213,19 @@ function encodedSuffix(segments) {
   return segments.length === 0 ? "" : `/${segments.map(encodeURIComponent).join("/")}`;
 }
 
+function assertFidService(value) {
+  if (value === null) return null;
+  for (const method of ["inspectThread", "issueFidCard", "revokeFidCard"]) {
+    if (!value || typeof value[method] !== "function") throw new TypeError(`fidService must expose ${method}()`);
+  }
+  return value;
+}
+
 export function createThreadEditorServer({
   rootDirectory = DEFAULT_ROOT,
   worldKernelUrl = "http://127.0.0.1:8787",
   privateToken = null,
+  fidService = null,
   accessToken = randomBytes(32).toString("hex"),
   maxBodyBytes = DEFAULT_MAX_BODY_BYTES,
   maxUpstreamBytes = DEFAULT_MAX_UPSTREAM_BYTES,
@@ -219,6 +235,7 @@ export function createThreadEditorServer({
   const root = resolve(rootDirectory);
   const rootReal = realpathSync(root);
   const kernel = normalizeWorldKernelUrl(worldKernelUrl);
+  const fid = assertFidService(fidService);
   if (privateToken !== null && (typeof privateToken !== "string" || privateToken.length < 16)) {
     throw new TypeError("privateToken must be null or at least 16 characters");
   }
@@ -292,11 +309,13 @@ export function createThreadEditorServer({
         repair: false,
         obligationMutation: false,
         expressionMutation: false,
+        fidOperations: fid !== null,
       },
       kernel: health,
       thread: thread.thread,
       events: events.events,
       integrity,
+      fid: fid === null ? null : await fid.inspectThread(threadId),
       private: {
         available: privateToken !== null,
         requests: requests?.requests ?? [],
@@ -310,6 +329,11 @@ export function createThreadEditorServer({
     if (!safeTokenEqual(request.headers["x-fibre-editor-token"], accessToken)) {
       throw new EditorHttpError(403, "EDITOR_TOKEN_REQUIRED", "A valid per-run editor access token is required");
     }
+  }
+
+  function requireFidService() {
+    if (fid === null) throw new EditorHttpError(503, "EDITOR_FID_DISABLED", "Fibre Identity Authority is not configured for this editor run");
+    return fid;
   }
 
   async function apiRoute(request, response, url, requestId) {
@@ -327,6 +351,7 @@ export function createThreadEditorServer({
           mode: "inspection",
           accessCredentialRequired: true,
           privateInspection: privateToken !== null,
+          fidOperations: fid !== null,
         },
         kernel: kernelHealth,
       }, requestId);
@@ -338,6 +363,39 @@ export function createThreadEditorServer({
       if (parts.length === 4) {
         if (request.method !== "GET") throw new EditorHttpError(405, "METHOD_NOT_ALLOWED", "Use GET");
         writeJson(response, 200, await inspection(threadId), requestId);
+        return true;
+      }
+      if (parts.length === 5 && parts[4] === "fid") {
+        if (request.method !== "GET") throw new EditorHttpError(405, "METHOD_NOT_ALLOWED", "Use GET");
+        writeJson(response, 200, await requireFidService().inspectThread(threadId), requestId);
+        return true;
+      }
+      if (parts.length === 6 && parts[4] === "fid" && parts[5] === "issue") {
+        if (request.method !== "POST") throw new EditorHttpError(405, "METHOD_NOT_ALLOWED", "Use POST");
+        const body = await readJson(request, maxBodyBytes);
+        assertExactKeys(body, ["reason", "idempotencyKey"]);
+        const result = await requireFidService().issueFidCard({
+          threadId,
+          reason: requiredText("reason", body.reason),
+          idempotencyKey: requiredText("idempotencyKey", body.idempotencyKey),
+        });
+        writeJson(response, 200, result, requestId);
+        return true;
+      }
+      if (parts.length === 6 && parts[4] === "fid" && parts[5] === "revoke") {
+        if (request.method !== "POST") throw new EditorHttpError(405, "METHOD_NOT_ALLOWED", "Use POST");
+        const body = await readJson(request, maxBodyBytes);
+        assertExactKeys(body, ["credentialId", "reason"]);
+        const current = requireFidService().inspectThread(threadId);
+        const credentialId = requiredText("credentialId", body.credentialId);
+        if (!current.credentials.some((entry) => entry.credential.credentialId === credentialId)) {
+          throw new EditorHttpError(404, "FID_NOT_FOUND", "FID credential does not belong to this Thread");
+        }
+        const result = await requireFidService().revokeFidCard({
+          credentialId,
+          reason: requiredText("reason", body.reason),
+        });
+        writeJson(response, 200, result, requestId);
         return true;
       }
       if (parts.length === 5 && parts[4] === "preview-self-model") {
