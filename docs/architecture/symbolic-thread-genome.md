@@ -1,7 +1,7 @@
 ---
 id: architecture-symbolic-thread-genome-v1
 status: accepted
-last-reviewed: 2026-08-20
+last-reviewed: 2026-09-10
 canonical: true
 ---
 
@@ -9,17 +9,20 @@ canonical: true
 
 ## Scope
 
-This document defines a **software-only artificial inheritance representation for Fibre Threads**. It is not biological genetics, does not model human DNA, and does not infer traits from human demographic characteristics.
+This document defines Fibre's artificial inheritance representation. It is not human DNA and does not infer traits from human demographic characteristics.
 
-The core rule is:
+A Fibre genome has two different kinds of heritable material:
 
-> **A Fibre genome is an ordered sequence of atomic natural-language dispositions. Fibre recombines eligible source sequences with explicit provenance and bounded symbolic mutation.**
+```text
+symbolic loci       = natural-language inherited dispositions
+runtime baselines   = bounded numeric/control parameters with real operational semantics
+```
 
-Natural language carries the canonical heritable meaning. Numeric personality coordinates are not the source of truth.
+The two must not be confused. Meaning-bearing personality remains natural-language-first. Numeric baselines are allowed only where the underlying thing is genuinely quantitative, such as primitive regulator sensitivity or recovery rate.
 
 ## Genome ownership
 
-A durable symbolic genome has an explicit owner rather than assuming every contributing parent is already a live Thread:
+A durable genome has an explicit owner:
 
 ```text
 owner {
@@ -28,20 +31,11 @@ owner {
 }
 ```
 
-This distinction is required by the accepted Genesis origin families:
+A synthetic ancestor is provenance, not a fake live Thread. Source-owner identity must remain exact through recombination and birth publication.
 
-- a `thread` owner is an actual/future Thread identity;
-- a `synthetic_ancestor` owner is a non-live synthetic parent/ancestor used by `synthetic_lineage`.
+## Symbolic loci
 
-A synthetic ancestor must **not** be minted as a fake live Thread merely to hold a genome.
-
-For a Thread-owned source genome, eligibility requires the exact persisted source owner and a live source Thread. For synthetic-lineage source genomes, the exact synthetic-ancestor owner remains non-live and inspectable. Before a synthetic-lineage child becomes live, #39 birth publication binds those exact source-owner IDs to the child manifest and revision-1 #38 `biological_parent` / `parent_genome_source` lineage records.
-
-Genome ownership therefore preserves source identity. It does not by itself fabricate or replace the child’s relationship ledger.
-
-## Textual loci
-
-A genome is an ordered set of independently addressable textual loci, for example:
+The symbolic genome is an ordered set of independently addressable natural-language dispositions, for example:
 
 ```text
 persists after setbacks but changes approach;
@@ -52,7 +46,7 @@ seeks company when stressed;
 becomes skeptical when authority relies on status rather than evidence
 ```
 
-The semicolon form is a readable rendering. Canonical storage uses individually addressable records so provenance and recombination do not depend on punctuation:
+Canonical storage uses addressable records rather than punctuation:
 
 ```text
 genomeId
@@ -66,6 +60,7 @@ orderedLoci[] {
   sourceLocusRef?
   mutationRef?
 }
+runtimeBaselines { ... }
 inheritancePolicy { id, version }
 sourceEligibility
 recombinationWitness
@@ -73,77 +68,67 @@ mutations[]
 createdAt
 ```
 
-`value` remains natural language.
+A symbolic locus expresses one reasonably independent tendency. It is origin material, not a permanent instruction.
 
-## Atomicity
+## Runtime baselines: organismic DNA
 
-A locus expresses one reasonably independent heritable tendency.
+Primitive regulation is substantially more uniform across Threads than personality. The regulator families and broad dynamics are Fibre-species invariants; genetics only tunes them within bounded envelopes.
 
-Good:
+Examples of legitimate inherited runtime baselines include:
 
 ```text
-takes promises literally
-becomes more persistent when another person is relying on her
-recovers from embarrassment by becoming more prepared
-is reluctant to ask for favors
-becomes playful around very serious people
+threat sensitivity
+energy depletion / recovery tendency
+rest pressure sensitivity
+attachment-proximity sensitivity
+exploration / novelty appetite
+regulatory persistence / recovery rate
 ```
 
-Avoid compound persona blobs containing several independent personality claims.
+These may be numeric because they describe control-system parameters rather than semantic meaning.
 
-A vague locus such as `values honesty` is **not mechanically rejected merely for being uninteresting**. Atomicity is a form gate; semantic specificity is measured by the Slice-B positive control. Otherwise the diagnostic would measure the validator rather than the genome design.
+They must satisfy three rules:
+
+1. **bounded** — every parameter has a narrow allowed Fibre-species range;
+2. **non-semantic** — a value cannot mean `anxious`, `loving`, `brave`, `introverted`, or another personality/feeling verdict;
+3. **non-deterministic** — relationship history, developmental state, current World conditions and Thread interpretation can outweigh small inherited differences.
+
+Invalid designs include `safety = 0`, `attachment = 20x`, `happiness = 0.7`, or using numeric baselines as a hidden personality vector.
+
+Developmental gating is separate from baseline magnitude. Reproductive/mating regulation, for example, may become active only at an appropriate developmental stage rather than being an always-on inherited scalar.
+
+See [`intrinsic-regulation.md`](intrinsic-regulation.md).
 
 ## Recombination
 
-Given two eligible source genomes:
+Eligible source genomes may recombine both symbolic loci and bounded runtime baselines under Fibre-owned, versioned policy.
 
-```text
-Source A
-A1 ; A2 ; A3 ; A4 ; A5 ; A6 ; A7 ; A8
+Symbolic recombination copies/recombines atomic text rather than averaging meaning into generic prose. Numeric runtime baselines may use a simple bounded inherited rule appropriate to genuine quantitative parameters, with exact source and recombination provenance.
 
-Source B
-B1 ; B2 ; B3 ; B4 ; B5 ; B6 ; B7 ; B8
-```
-
-Fibre may derive:
-
-```text
-New Thread
-A1 ; A2 ; A3 ; B4 ; B5 ; A6 ; A7 ; B8
-```
-
-The selection/crossover policy is Fibre-owned, versioned, and replayable from its stored witness. Every inherited locus retains exact source-genome and source-locus provenance and the exact source owner remains inspectable.
-
-Recombination copies the inherited textual locus rather than averaging two parents into generic prose. Unusual mixtures and tensions should survive inheritance.
+The resulting value must remain inside its declared species envelope regardless of parent values or mutation.
 
 ## Symbolic mutation
 
-Mutation is explicit semantic variation under a named/versioned policy.
+Symbolic mutation is explicit semantic variation under a named/versioned policy. V1 uses bounded locus replacement with exact source provenance. Mutation cannot become a hidden path for generating a finished persona.
 
-V1 uses a bounded **locus replacement** operation: the resulting locus retains the exact source genome/locus, prior-value digest, replacement text, mutation ID, and policy witness. V1 permits at most two replacements per recombination.
-
-Example:
-
-```text
-becomes intensely curious when two trusted people disagree
-```
-
-Mutation cannot become a hidden path for generating an entire finished persona.
+Runtime-baseline mutation, when enabled, must be much smaller: bounded perturbation within the same species envelope, with source value, resulting value and mutation witness inspectable.
 
 ## Genotype is not character
 
-Inherited symbolic dispositions are origin facts, not permanent instructions.
-
-Fibre preserves the distinction:
+Fibre preserves:
 
 ```text
-genome      = inherited symbolic tendencies
-life        = experiences that interact with those tendencies
-character   = current evidence-backed patterns and tensions
-self        = the Thread's current interpretation of itself
+genome
+  symbolic dispositions + narrow organismic baselines
+life
+  experiences, relationships, development, World conditions
+character
+  current evidence-backed patterns and tensions
+self
+  the Thread's current interpretation of itself
 ```
 
-A Thread may inherit a tendency and later learn to act against it. The inherited locus remains true as origin while character and self-authored interpretation evolve.
+A Thread may inherit a disposition and learn to act against it. Two Threads with nearly identical regulatory baselines may become radically different people because their lives and interpretations differ.
 
 ## Numeric boundary
 
@@ -155,72 +140,54 @@ trust = 0.41
 creativity = 0.93
 ```
 
-Numbers remain appropriate for things with real numerical semantics, including balances, time, evidence confidence, memory salience/accessibility, observed frequencies, model controls, and experimental measurements.
+Numbers are appropriate only for things with real numerical semantics: balances, time, evidence confidence, observed frequencies, model controls, measurements, and bounded organismic regulator parameters.
 
-Runtime systems may derive temporary numeric controls from relevant textual genome, character, state, and situation. Those controls are projections, not inherited identity.
+Runtime systems may derive temporary numeric controls from relevant textual genome, character, state and situation. Derived controls are projections, not inherited identity.
 
-## Non-interchangeability
+## Birth binding and immutability
 
-Fibre must not implement the genome as a small universal personality questionnaire with different values. The vocabulary of atomic dispositions should be broad enough to preserve peculiar combinations and tensions.
+The child genome may exist before the child is live. At birth, publication verifies the exact persisted genome/source lineage and binds it to the child. A mismatch fails closed.
 
-The design target is an artificial individual whose inherited material is already specific, while still leaving substantial room for upbringing, experiences, relationships, memories, and self-authored development to change what that inheritance becomes.
+Inherited genome material is immutable after Genesis. Later regulation, character development and semantic self-understanding do not rewrite DNA.
 
-### Slice-B specificity control
+## Thread Editor: explore DNA
 
-Mechanical validity does not prove that loci are semantically informative.
+Thread Editor should make a Thread's genome explorable as origin evidence, not as a horoscope/profile card.
 
-Before Pass-A life generation, #39 runs a development positive control using two intentionally distinct genomes and controlled neutral situations. A model authors semantic outputs with each genome visible; a stateless blind rater then performs two-alternative discrimination without seeing generator context or source labels.
-
-This is a **capability ceiling / instrument check**, not Genesis personhood evidence and not an admission gate.
-
-- a result near chance means the loci may be horoscope-shaped or too generic to support interpretable inheritance;
-- a strong result only establishes that the loci can matter when directly visible;
-- later Slice-H propagation may legitimately be much weaker because Pass A and Pass C are genome-blind and life intervenes.
-
-## Birth binding
-
-The child genome may exist before the child is live. That is intentional: it is a frozen/provisional Genesis input, not proof that a Thread already exists.
-
-When `GenesisManifest.genomeRef` is present, live birth verifies the canonical persisted bundle through the same transaction-level verifier used by `SymbolicGenomeStore`. The referenced genome must belong to the exact child Thread and Genesis.
-
-For `synthetic_lineage`, publication additionally requires:
+The operator should be able to inspect:
 
 ```text
-manifest.parentOrAncestorRefs
-        == exact ordered genome source-owner IDs
-        == exact synthetic_ancestor parties in #38 parent_genome_source relations
+DNA
+  symbolic loci
+    value
+    inherited from whom / which source locus
+    mutation if any
+    later expression/history when available
+
+  organismic baselines
+    regulator family / parameter
+    inherited value
+    normal Fibre-species envelope
+    parent/source values
+    recombination/mutation witness
+    current effective value after developmental/context projection
 ```
 
-Those relation records are the relationship authority. Genome source ownership is not allowed to silently manufacture family/lineage state by itself.
+The Editor should make small differences legible. It should not visually exaggerate bounded regulatory variation into large personality differences.
 
-A birth mismatch fails closed and leaves no live child. The already-persisted immutable genome remains as provisional provenance rather than being destructively deleted or rewritten.
+A useful debug path is:
 
-This publication binding does not make genome content visible to Pass A.
+```text
+DNA baseline
+  -> current regulator configuration
+  -> drive signal
+  -> interoceptive cue
+  -> Thread-authored semantic interpretation
+  -> behavior / plan / memory consequence
+```
 
-## Implementation ownership
-
-#38 supplies grounded lineage/source records. It does not make genome values causal.
-
-#39, **Genesis, Childhood & Thread Birth v1**, owns the first implementation of this symbolic-genome contract and must provide:
-
-1. durable ordered textual genomes with stable genome/locus IDs;
-2. explicit Thread or synthetic-ancestor genome ownership;
-3. atomic natural-language locus validation;
-4. grounded eligibility for contributing source genomes without fake parent Threads;
-5. deterministic Fibre-owned textual crossover with replayable witness;
-6. exact per-locus source provenance;
-7. explicit symbolic mutation with policy/version and witness;
-8. immutable inherited genome after Thread genesis;
-9. separate expressed dispositions without rewriting inherited loci;
-10. read-only inspection explaining exactly how the genome was formed;
-11. restart/replay reconstruction of the exact same genome;
-12. no numeric personality-vector authority;
-13. no demographic or cultural stereotype inference;
-14. no direct generation of a finished adult character or profession from the genome;
-15. live-birth verification that child/genesis/source-owner provenance agrees with admitted #38 lineage before synthetic-lineage publication commits.
-
-#40 may select relevant inherited loci for cognition, but it must preserve exact evidence references and may not inject the entire genome simply because it exists.
+This provides causal inspection while preserving the rule that genotype is not the finished person.
 
 ## Vision test
 
-The contract succeeds when a reviewer can inspect source genomes and a resulting Thread and understand exactly which textual dispositions were inherited, which were changed through explicit symbolic mutation, and how later life changed their expression — without treating the genome as the finished person.
+The genome succeeds when a reviewer can understand exactly what was inherited, what mutated, how narrow primitive-regulator variation remains, and how later life changed expression — without treating numeric regulator settings or symbolic loci as destiny.
