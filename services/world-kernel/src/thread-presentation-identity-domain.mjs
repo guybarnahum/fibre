@@ -17,11 +17,21 @@ export const THREAD_PRESENTATION_PACKET_VERSIONS = Object.freeze([
   THREAD_PRESENTATION_PACKET_CURRENT_VERSION,
 ]);
 export const THREAD_VISUAL_IDENTITY_PROJECTION_VERSION = "thread-visual-identity-projection-v0.1";
-export const FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION = "fibre-identity-card-credential-v0.1";
-export const FIBRE_IDENTITY_CARD_STATUSES = Object.freeze(["active", "replaced", "expired", "revoked"]);
+
+// v0.1 remains readable for historical presentation snapshots. New FID
+// projection uses v0.2, whose identity comes from Fibre Identity Authority.
+export const FIBRE_IDENTITY_CARD_LEGACY_VERSION = "fibre-identity-card-credential-v0.1";
+export const FIBRE_IDENTITY_CARD_CURRENT_VERSION = "fibre-identity-card-credential-v0.2";
+export const FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION = FIBRE_IDENTITY_CARD_LEGACY_VERSION;
+export const FIBRE_IDENTITY_CARD_VERSIONS = Object.freeze([
+  FIBRE_IDENTITY_CARD_LEGACY_VERSION,
+  FIBRE_IDENTITY_CARD_CURRENT_VERSION,
+]);
+export const FIBRE_IDENTITY_CARD_STATUSES = Object.freeze(["active", "superseded", "expired", "revoked"]);
 export const FIBRE_IDENTITY_CARD_DATE_KINDS = Object.freeze(["birth_date", "entry_date"]);
 export const FIBRE_IDENTITY_CARD_VISIBILITIES = Object.freeze(["public", "restricted", "private"]);
 
+const LEGACY_CARD_STATUSES = Object.freeze(["active", "replaced", "expired", "revoked"]);
 const FIN_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const FIN_PATTERN = new RegExp(`^[${FIN_ALPHABET}]{4}-[${FIN_ALPHABET}]{2}-[${FIN_ALPHABET}]{4}$`);
 
@@ -144,28 +154,19 @@ export function threadVisualIdentityProjectionDigest(value) {
   return `sha256:${sha256(canonicalJson(normalized))}`;
 }
 
-export function normalizeFibreIdentityCard(value) {
-  if (value === null) return null;
+function normalizeLegacyFibreIdentityCard(value) {
   const name = "presentation.identityCard";
-  assertPlainObject(name, value);
   assertExactKeys(name, value, [
     "credentialVersion", "credentialId", "cardSerial", "revision", "supersedesCredentialId",
     "registrationId", "displayName", "dateField", "issuedAt", "expiresAt", "status", "visibility",
     "officialPhotoMediaRef", "machineReadableCredentialRef", "sourceReferences", "provenanceRef",
   ]);
-  if (value.credentialVersion !== FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION) {
-    throw new TypeError(`${name}.credentialVersion is unsupported`);
-  }
   assertId(`${name}.credentialId`, value.credentialId);
   assertNonEmpty(`${name}.cardSerial`, value.cardSerial);
   assertFiniteNumber(`${name}.revision`, value.revision, { integer: true, minimum: 1 });
   const supersedesCredentialId = nullableRef(`${name}.supersedesCredentialId`, value.supersedesCredentialId);
-  if (value.revision === 1 && supersedesCredentialId !== null) {
-    throw new TypeError(`${name} revision 1 cannot supersede another credential`);
-  }
-  if (value.revision > 1 && supersedesCredentialId === null) {
-    throw new TypeError(`${name} reissue requires supersedesCredentialId`);
-  }
+  if (value.revision === 1 && supersedesCredentialId !== null) throw new TypeError(`${name} revision 1 cannot supersede another credential`);
+  if (value.revision > 1 && supersedesCredentialId === null) throw new TypeError(`${name} reissue requires supersedesCredentialId`);
   assertId(`${name}.registrationId`, value.registrationId);
   const displayName = nullableText(`${name}.displayName`, value.displayName);
   const dateField = normalizeCardDateField(value.dateField);
@@ -175,14 +176,14 @@ export function normalizeFibreIdentityCard(value) {
     assertIsoTimestamp(`${name}.expiresAt`, expiresAt);
     if (Date.parse(expiresAt) <= Date.parse(value.issuedAt)) throw new TypeError(`${name}.expiresAt must follow issuedAt`);
   }
-  assertEnum(`${name}.status`, value.status, FIBRE_IDENTITY_CARD_STATUSES);
+  assertEnum(`${name}.status`, value.status, LEGACY_CARD_STATUSES);
   const visibility = value.visibility ?? "private";
   assertEnum(`${name}.visibility`, visibility, FIBRE_IDENTITY_CARD_VISIBILITIES);
   assertId(`${name}.officialPhotoMediaRef`, value.officialPhotoMediaRef);
   const machineReadableCredentialRef = nullableRef(`${name}.machineReadableCredentialRef`, value.machineReadableCredentialRef);
   assertId(`${name}.provenanceRef`, value.provenanceRef);
   return {
-    credentialVersion: FIBRE_IDENTITY_CARD_CREDENTIAL_VERSION,
+    credentialVersion: FIBRE_IDENTITY_CARD_LEGACY_VERSION,
     credentialId: value.credentialId,
     cardSerial: value.cardSerial,
     revision: value.revision,
@@ -201,6 +202,62 @@ export function normalizeFibreIdentityCard(value) {
   };
 }
 
+function normalizeCurrentFibreIdentityCard(value) {
+  const name = "presentation.identityCard";
+  assertExactKeys(name, value, [
+    "credentialVersion", "credentialId", "revision", "supersedesCredentialId", "registrationId",
+    "issuedAt", "expiresAt", "status", "visibility", "frontMediaRef", "backMediaRef",
+    "issuerAuthorityId", "sourceReferences", "provenanceRef",
+  ]);
+  assertId(`${name}.credentialId`, value.credentialId);
+  assertFiniteNumber(`${name}.revision`, value.revision, { integer: true, minimum: 1 });
+  const supersedesCredentialId = nullableRef(`${name}.supersedesCredentialId`, value.supersedesCredentialId);
+  if (value.revision === 1 && supersedesCredentialId !== null) throw new TypeError(`${name} revision 1 cannot supersede another credential`);
+  if (value.revision > 1 && supersedesCredentialId === null) throw new TypeError(`${name} reissue requires supersedesCredentialId`);
+  assertId(`${name}.registrationId`, value.registrationId);
+  assertIsoTimestamp(`${name}.issuedAt`, value.issuedAt);
+  const expiresAt = value.expiresAt === null ? null : value.expiresAt;
+  if (expiresAt !== null) {
+    assertIsoTimestamp(`${name}.expiresAt`, expiresAt);
+    if (Date.parse(expiresAt) <= Date.parse(value.issuedAt)) throw new TypeError(`${name}.expiresAt must follow issuedAt`);
+  }
+  assertEnum(`${name}.status`, value.status, FIBRE_IDENTITY_CARD_STATUSES);
+  assertEnum(`${name}.visibility`, value.visibility, FIBRE_IDENTITY_CARD_VISIBILITIES);
+  assertId(`${name}.frontMediaRef`, value.frontMediaRef);
+  assertId(`${name}.backMediaRef`, value.backMediaRef);
+  if (value.frontMediaRef === value.backMediaRef) throw new TypeError(`${name} front and back media refs must be distinct`);
+  assertNonEmpty(`${name}.issuerAuthorityId`, value.issuerAuthorityId);
+  assertId(`${name}.provenanceRef`, value.provenanceRef);
+  return {
+    credentialVersion: FIBRE_IDENTITY_CARD_CURRENT_VERSION,
+    credentialId: value.credentialId,
+    revision: value.revision,
+    supersedesCredentialId,
+    registrationId: value.registrationId,
+    issuedAt: value.issuedAt,
+    expiresAt,
+    status: value.status,
+    visibility: value.visibility,
+    frontMediaRef: value.frontMediaRef,
+    backMediaRef: value.backMediaRef,
+    issuerAuthorityId: value.issuerAuthorityId,
+    sourceReferences: stringRefs(`${name}.sourceReferences`, value.sourceReferences, { required: true }),
+    provenanceRef: value.provenanceRef,
+  };
+}
+
+export function normalizeFibreIdentityCard(value) {
+  if (value === null) return null;
+  const name = "presentation.identityCard";
+  assertPlainObject(name, value);
+  if (!FIBRE_IDENTITY_CARD_VERSIONS.includes(value.credentialVersion)) {
+    throw new TypeError(`${name}.credentialVersion is unsupported`);
+  }
+  return value.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION
+    ? normalizeCurrentFibreIdentityCard(value)
+    : normalizeLegacyFibreIdentityCard(value);
+}
+
 export function fibreIdentityCardDisplayData(presentation) {
   assertPlainObject("presentation", presentation);
   const civilIdentity = normalizePresentationCivilIdentity(presentation.civilIdentity ?? null);
@@ -209,7 +266,24 @@ export function fibreIdentityCardDisplayData(presentation) {
   if (identityCard.registrationId !== civilIdentity.registrationId) {
     throw new TypeError("identity card registrationId must match civil identity registrationId");
   }
-  if (identityCard.credentialId === civilIdentity.fibreIdentityNumber || identityCard.cardSerial === civilIdentity.fibreIdentityNumber) {
+  if (identityCard.credentialId === civilIdentity.fibreIdentityNumber) {
+    throw new TypeError("identity card credential identity must be distinct from FIN");
+  }
+  if (identityCard.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION) {
+    return Object.freeze({
+      fibreIdentityNumber: civilIdentity.fibreIdentityNumber,
+      credentialId: identityCard.credentialId,
+      revision: identityCard.revision,
+      issuedAt: identityCard.issuedAt,
+      expiresAt: identityCard.expiresAt,
+      status: identityCard.status,
+      visibility: identityCard.visibility,
+      issuerAuthorityId: identityCard.issuerAuthorityId,
+      frontMediaRef: identityCard.frontMediaRef,
+      backMediaRef: identityCard.backMediaRef,
+    });
+  }
+  if (identityCard.cardSerial === civilIdentity.fibreIdentityNumber) {
     throw new TypeError("identity card credential identity must be distinct from FIN");
   }
   return Object.freeze({
