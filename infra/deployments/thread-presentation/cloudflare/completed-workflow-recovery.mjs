@@ -24,6 +24,9 @@ export function createCompletedWorkflowRecoveryReconciler({
     "reconciler.reconcileAvailableEmbodiment",
     reconciler?.reconcileAvailableEmbodiment?.bind(reconciler),
   );
+  const publishCurrentPresent = typeof reconciler?.publishCurrentPresent === "function"
+    ? reconciler.publishCurrentPresent.bind(reconciler)
+    : null;
   const workflowGet = requireFunction("infra.workflows.get", infra?.workflows?.get?.bind(infra.workflows));
   const objectGet = requireFunction("infra.objects.get", infra?.objects?.get?.bind(infra.objects));
   const consume = requireFunction("completionConsumer.consume", completionConsumer?.consume?.bind(completionConsumer));
@@ -55,5 +58,10 @@ export function createCompletedWorkflowRecoveryReconciler({
 
       return reconcile(input);
     },
+    ...(publishCurrentPresent === null ? {} : {
+      publishCurrentPresent(input) {
+        return publishCurrentPresent(input);
+      },
+    }),
   });
 }
