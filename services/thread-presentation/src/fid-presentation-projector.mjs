@@ -1,8 +1,7 @@
 import { requireInfraCapabilities } from "#infra";
-import {
-  FIBRE_IDENTITY_CARD_CURRENT_VERSION,
-  normalizeThreadPresentationBundle,
-} from "./index.mjs";
+import { normalizeThreadPresentationBundle } from "#services/world-kernel/src/thread-presentation-domain.mjs";
+import { FIBRE_IDENTITY_CARD_CURRENT_VERSION } from "#services/world-kernel/src/thread-presentation-identity-domain.mjs";
+import { THREAD_PRESENTATION_STREAM_VERSION } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
 const CARD_ROLES = new Set(["fibre_identity_card_front", "fibre_identity_card_back", "official_id_photo"]);
@@ -79,6 +78,21 @@ function fidMedia(active, side, provenanceRef, sourceReferences) {
   };
 }
 
+function alreadyProjectsActiveFid(bundle, active, visibility) {
+  const card = bundle.presentation.identityCard;
+  if (active === null) return card === null;
+  if (card?.credentialVersion !== FIBRE_IDENTITY_CARD_CURRENT_VERSION
+    || card.credentialId !== active.credentialId
+    || card.visibility !== visibility
+    || card.status !== "active") return false;
+  for (const side of ["front", "back"]) {
+    const ref = card[`${side}MediaRef`];
+    const media = bundle.media.assets.find((asset) => asset.mediaId === ref);
+    if (!media || media.locator !== active[side].objectRef || media.sha256 !== active[side].digest) return false;
+  }
+  return true;
+}
+
 export function projectFidThreadPresentation({ bundle: candidate, activeFid: candidateFid, projectedAt, visibility = "public" } = {}) {
   const current = normalizeThreadPresentationBundle(candidate);
   const threadId = current.presentation.manifest.threadId;
@@ -88,17 +102,10 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
   if (Date.parse(at) < Date.parse(current.presentation.manifest.generatedAt)) {
     throw new TypeError("FID projection cannot predate the current presentation");
   }
-
-  if (fid !== null
-    && current.presentation.identityCard?.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION
-    && current.presentation.identityCard.credentialId === fid.credentialId
-    && current.presentation.identityCard.visibility === visibility) {
-    return current;
-  }
+  if (alreadyProjectsActiveFid(current, fid, visibility)) return current;
 
   const base = withoutPriorCard(current);
   if (fid === null) {
-    if (current.presentation.identityCard === null) return current;
     return normalizeThreadPresentationBundle({
       presentation: { ...base.presentation, manifest: { ...base.presentation.manifest, generatedAt: at } },
       media: { ...base.media, generatedAt: at },
@@ -110,12 +117,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
   }
 
   const provenanceRef = provenanceId(fid.credentialId);
-  const sourceReferences = [
-    fid.credentialId,
-    fid.issuanceRecordDigest,
-    fid.photoAdmissionId,
-    fid.photoDigest,
-  ];
+  const sourceReferences = [fid.credentialId, fid.issuanceRecordDigest, fid.photoAdmissionId, fid.photoDigest];
   const front = fidMedia(fid, "front", provenanceRef, sourceReferences);
   const back = fidMedia(fid, "back", provenanceRef, sourceReferences);
   const identityCard = {
@@ -136,11 +138,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
   };
 
   return normalizeThreadPresentationBundle({
-    presentation: {
-      ...base.presentation,
-      manifest: { ...base.presentation.manifest, generatedAt: at },
-      identityCard,
-    },
+    presentation: { ...base.presentation, manifest: { ...base.presentation.manifest, generatedAt: at }, identityCard },
     media: { ...base.media, generatedAt: at, assets: [...base.media.assets, front, back] },
     provenance: {
       ...base.provenance,
@@ -189,20 +187,17 @@ export function createFidPresentationProjectionService({ presentationServer, inf
         media: current.snapshot.media,
         provenance: current.snapshot.provenance,
       };
-      const projected = projectFidThreadPresentation({ bundle: currentBundle, activeFid: active, projectedAt: at, visibility });
-      if (projected === currentBundle || (
-        current.snapshot.presentation.identityCard?.credentialId === projected.presentation.identityCard?.credentialId
-        && current.snapshot.presentation.identityCard?.visibility === projected.presentation.identityCard?.visibility
-      )) {
+      if (alreadyProjectsActiveFid(currentBundle, active, visibility)) {
         return Object.freeze({ changed: false, active: active !== null, credentialId: active?.credentialId ?? null });
       }
+      const projected = projectFidThreadPresentation({ bundle: currentBundle, activeFid: active, projectedAt: at, visibility });
 
       const events = [];
       if (active !== null) {
         for (const side of ["front", "back"]) {
           const media = projected.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, side));
           const accepted = await presentationServer.appendEvent({
-            streamVersion: "thread-presentation-stream-v0.1",
+            streamVersion: THREAD_PRESENTATION_STREAM_VERSION,
             eventId: `fid_media_${active.credentialId}_${side}`,
             threadId,
             channelId,
@@ -213,7 +208,7 @@ export function createFidPresentationProjectionService({ presentationServer, inf
             sourceReferences: media.sourceReferences,
             payload: { mediaId: media.mediaId, objectRef: media.locator, mediaType: media.mediaType, digest: media.sha256 },
           });
-          events.push({ side, media, event: accepted.event });
+          events.push({ media, event: accepted.event });
         }
       }
 
