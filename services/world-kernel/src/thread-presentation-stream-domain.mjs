@@ -144,7 +144,7 @@ function normalizePayload(kind, payload) {
     }
     nullableText("presentation event.payload.mediatedContext", payload.mediatedContext);
     assertNonEmpty("presentation event.payload.activity", payload.activity);
-    assertNonEmpty("presentation event.payload.reason", payload.reason);
+    nullableText("presentation event.payload.reason", payload.reason);
     presentParticipants(payload.participants);
     assertId("presentation event.payload.depictionMediaId", payload.depictionMediaId);
   } else if (kind === "media.ready") {

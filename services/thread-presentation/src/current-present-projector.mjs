@@ -77,9 +77,11 @@ export function projectCurrentSituationPresent({
     establishedAt: situation.establishedAt,
     phase: situation.phase,
     location: publicLocation(situation.location, places),
-    mediatedContext: situation.mediatedContext,
+    // World knows these enacted details, but their text is not itself a public
+    // disclosure decision. Keep them closed until Fibre has admitted public context.
+    mediatedContext: null,
     activity: situation.activity,
-    reason: situation.reason,
+    reason: null,
     participants: Object.freeze(publicParticipantNames(lifeRelations, situation.participantRefs)),
     depictionMediaId: `media_present_${situation.situationId}`,
   });

@@ -30,7 +30,7 @@ function presentBrief(present, visualIdentity, targetAgeYears) {
       "Generated current-scene reconstruction for a public Thread presentation.",
       `The Thread is ${sceneLocation(present.location)}.`,
       `Current activity: ${present.activity}`,
-      `Observed situation context: ${present.reason}`,
+      ...(present.reason === null ? [] : [`Observed situation context: ${present.reason}`]),
       ...(present.mediatedContext === null ? [] : [`Mediated presence: ${present.mediatedContext}`]),
       people,
       `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
