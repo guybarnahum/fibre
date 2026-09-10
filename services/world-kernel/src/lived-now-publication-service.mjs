@@ -1,4 +1,4 @@
-import { projectCurrentSituationPresent } from "#services/thread-presentation/src/current-present-projector.mjs";
+import { projectCurrentSituationPresent } from "fibre/thread-presentation/current-present";
 
 function requireMethod(owner, name) {
   if (!owner || typeof owner[name] !== "function") {

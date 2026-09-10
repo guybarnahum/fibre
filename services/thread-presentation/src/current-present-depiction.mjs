@@ -1,14 +1,10 @@
 import {
-  normalizeThreadVisualIdentityProjection,
-  threadVisualIdentityProjectionDigest,
-} from "#services/world-kernel/src/thread-presentation-identity-domain.mjs";
-import {
-  presentationAssetSourceDigest,
-} from "#services/world-kernel/src/presentation-asset-demand.mjs";
-import {
   CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
   ageYearsAt,
-} from "#services/world-kernel/src/visual-identity-reference-domain.mjs";
+  normalizeThreadVisualIdentityProjection,
+  threadVisualIdentityProjectionDigest,
+} from "fibre/world-kernel/thread-presentation-contracts";
+import { presentationAssetSourceDigest } from "fibre/world-kernel/presentation-asset-contracts";
 
 function sceneLocation(location) {
   if (location.kind === "place") {

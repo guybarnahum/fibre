@@ -8,7 +8,7 @@ import {
   matchesThreadDirectoryEntry,
   publicThreadDirectoryEntry,
 } from "#services/thread-presentation/src/thread-directory.mjs";
-import { normalizeThreadPresentationEvent } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
+import { normalizeThreadPresentationEvent } from "fibre/world-kernel/thread-presentation-contracts";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const PRESENTATION_CHANNEL_PREFIX = "presentation:";

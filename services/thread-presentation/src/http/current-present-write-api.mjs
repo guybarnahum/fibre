@@ -1,4 +1,4 @@
-import { THREAD_PRESENTATION_STREAM_VERSION } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
+import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { threadPresentationChannelId } from "../public-asset-resolver.mjs";
 
 function authorized(request, privateToken) {

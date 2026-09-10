@@ -1,14 +1,10 @@
 import {
   normalizeCurrentSituation,
-} from "#services/world-kernel/src/lived-now.mjs";
-import {
   normalizeLifeRelation,
   normalizePlaceEpisode,
-  situatedLifeRecordIsCurrent,
-} from "#services/world-kernel/src/situated-life-domain.mjs";
-import {
   placeEpisodeRevisionRef,
-} from "#services/world-kernel/src/situated-life-evidence.mjs";
+  situatedLifeRecordIsCurrent,
+} from "fibre/world-kernel/lived-now-contracts";
 
 export const THREAD_PUBLIC_PRESENT_VERSION = "thread-public-present-v0.1";
 
