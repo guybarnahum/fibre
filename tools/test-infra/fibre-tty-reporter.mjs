@@ -11,6 +11,13 @@ function terminalName(data) {
   return name.replace(/\s+/gu, " ").trim();
 }
 
+function fitTransientLine(prefix, name, columns) {
+  if (!Number.isInteger(columns) || columns <= prefix.length + 1) return `${prefix}${name}`;
+  const available = columns - prefix.length - 1;
+  if (name.length <= available) return `${prefix}${name}`;
+  return `${prefix}${name.slice(0, available - 1)}…`;
+}
+
 function errorText(error) {
   if (error === null || error === undefined) return "Unknown test failure";
   if (typeof error.stack === "string" && error.stack.trim() !== "") return error.stack;
@@ -21,7 +28,7 @@ function indent(value) {
   return String(value).split(/\r?\n/u).map((line) => `    ${line}`).join("\n");
 }
 
-export async function* fibreTtyReporter(source) {
+export async function* fibreTtyReporter(source, { columns = process.stdout.columns } = {}) {
   let passed = 0;
   let failed = 0;
   let skipped = 0;
@@ -35,7 +42,8 @@ export async function* fibreTtyReporter(source) {
       else if (data.todo !== undefined && data.todo !== false) todo += 1;
       else passed += 1;
       const done = passed + failed + skipped + todo + cancelled;
-      yield `${CLEAR_LINE}✓ ${done}  ${terminalName(data)}`;
+      const prefix = `✓ ${done}  `;
+      yield `${CLEAR_LINE}${fitTransientLine(prefix, terminalName(data), columns)}`;
       continue;
     }
 
