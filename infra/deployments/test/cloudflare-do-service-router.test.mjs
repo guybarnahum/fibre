@@ -62,19 +62,27 @@ test("non-health requests resolve exactly one named Durable Object and forward",
 });
 
 test("deep state health converts Durable Object call failures into bounded diagnostics", async () => {
-  const response = await router().fetch(new Request("https://fixture.example/internal/health/state"), {
-    FIXTURE_STATE: {
-      getByName() {
-        return {
-          async fetch() {
-            const error = new Error("fixture Durable Object failed during activation");
-            error.retryable = true;
-            throw error;
-          },
-        };
+  const logged = [];
+  const originalError = console.error;
+  console.error = (message) => logged.push(message);
+  let response;
+  try {
+    response = await router().fetch(new Request("https://fixture.example/internal/health/state"), {
+      FIXTURE_STATE: {
+        getByName() {
+          return {
+            async fetch() {
+              const error = new Error("fixture Durable Object failed during activation");
+              error.retryable = true;
+              throw error;
+            },
+          };
+        },
       },
-    },
-  });
+    });
+  } finally {
+    console.error = originalError;
+  }
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), {
     ok: false,
@@ -90,6 +98,19 @@ test("deep state health converts Durable Object call failures into bounded diagn
       overloaded: false,
     },
   });
+  assert.equal(logged.length, 1);
+  const event = JSON.parse(logged[0]);
+  assert.deepEqual({ ...event, stack: undefined }, {
+    event: "durable_object_state_health_failed",
+    service: "fixture-service",
+    stateScopeId: "fixture",
+    errorName: "Error",
+    detail: "fixture Durable Object failed during activation",
+    retryable: true,
+    overloaded: false,
+    stack: undefined,
+  });
+  assert.match(event.stack, /^Error: fixture Durable Object failed during activation/u);
 });
 
 test("ordinary non-health Durable Object failures still propagate", async () => {
