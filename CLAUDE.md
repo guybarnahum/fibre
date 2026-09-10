@@ -9,3 +9,4 @@
 - "Hostile" review means adversarial review of Fibre personhood, authority, provenance, scientific validity and milestone truth—not generic cyber-security review.
 - Do not update `docs/state/current-state.md` without recording the corresponding decision or completed milestone boundary.
 - Promote durable architectural discoveries into current semantic repository documents; keep generated development runs disposable.
+- For focused Node tests, use `node --test --test-reporter=./tools/test-infra/fibre-spec-reporter.mjs ...`; do not use bare `node --test` except when debugging reporter behavior.
