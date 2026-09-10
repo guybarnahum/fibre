@@ -17,118 +17,89 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 - History, autobiographical memory and private meaning are distinct.
 - Historical state is append-only or explicitly superseding.
 - Meaning-bearing identity, memory, relationship, need, emotion and self-understanding are natural-language-first.
+- Mechanical/private regulatory state may be numeric when it is control state rather than semantic meaning.
 - Model output is candidate cognition; providers do not own Thread life state.
 - Identity is authoritative. Presentation is projection. Publication is permission.
 - Civil identity/FIN and Fibre Identity Card issuance have explicit authority boundaries.
 - Visual identity uses one canonical root/reference chain across age and scene.
 
-## Milestone posture
+## Current milestone posture
 
-[`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) is the continuation authority.
+[`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) remains the M2 continuation authority. [`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md) is the active implementation detour.
 
 ```text
-M1    Persistent Thread Round Trip                         CLOSED
-#33-#40 identity/history/birth/causal foundations          CLOSED / RETAINED
-G/H   deployed public path + minimum recovery              CLOSED
+M1 + identity/history/birth/causal foundations            CLOSED
+G/H public path + minimum recovery                        CLOSED
+FID + Directory/Meet                                      CLOSED
 
-M2-A  Present life + Meet a Thread                         CURRENT
-M2-B  Experience internalization + continuation            NEXT
-M2-C  Whole-person developmental continuity                NEXT
+R1-R4 intrinsic regulation                                CURRENT DETOUR
+M2-A present life / Flight Plan / Meet                    RESUMES AFTER R4
+M2-B experience internalization + continuation            THEN
 ```
 
 The old standing-gate sequence remains evaluation history, not current development order.
 
 ## What exists
 
-Fibre can publish a born Thread with:
+Fibre can publish a born Thread with authoritative identity/FIN/FID, provenance-bearing prior life and situated history, autobiographical memory/meaning lineage, genome/lineage inputs, canonical visual identity, public Thread Presentation/Directory/Meet, and durable cloud recovery.
 
-- authoritative machine/civil identity and FIN;
-- provenance-bearing prior life and situated history;
-- autobiographical memory/meaning lineage;
-- lineage/genome inputs;
-- canonical visual identity and reference-conditioned imagery;
-- public Thread Presentation and Directory/Meet boundaries;
-- durable cloud state and minimum restart/retry recovery.
+The current `agent/m2-lived-encounter` branch has also established an initial A1/A2 authority seam: personal plan and caregiver care plan are distinct from World-enacted current situation; care does not overwrite the dependent person's will; Viewer/caller input cannot author current reality.
 
-Causal consumption of Fibre-owned autobiographical context can already change structured cognition. The public Viewer consumes Presentation rather than raw World/Embodiment stores.
+That one-step plan representation is provisional. The intended Flight Plan is a half-day/day mental itinerary and will be resumed after intrinsic regulation.
 
-## What is missing now
+## The newly exposed gap
 
-Fibre has rich **generated developmental history**, but not yet a complete **ongoing lived-development loop** after birth.
+The E2E meeting forced a deeper question: **why does anything in the Thread's life feel pressing, satisfying, frustrating, comforting or worth moving toward before cognition writes an emotion sentence?**
 
-The first architectural gap is present life:
+Fibre now distinguishes:
 
 ```text
-developmental context
-  -> personal flight plan
+World condition
+  -> intrinsic regulation
+  -> private drive / affect
+  -> cognition
+  -> Thread-authored semantic feeling / need / meaning
+```
+
+Regulators compare desired/avoided conditions with actual and predicted conditions. They may affect attention, urgency and planning, but they do not author named emotions or grant protected action.
+
+A desired condition can be a relation of presence rather than a geographic point: `at station`, `on Zoom with Alex`, `with caregiver`, `near partner`, `away from person`, `alone somewhere quiet`.
+
+This gives movement, lateness, arrival, social proximity, separation, obstacles and surprises a common felt substrate.
+
+## Semantic interiority remains distinct
+
+```text
+regulatory drive  != semantic need
+intrinsic affect  != semantic emotion
+presence pressure != relationship meaning
+```
+
+A bounded interoceptive projection may later let cognition feel regulator output without being told what it means. The Thread may then author a grounded semantic interpretation such as worry, relief, frustration, comfort, loneliness, curiosity or no durable feeling at all.
+
+Different lives must remain able to interpret similar regulator patterns differently.
+
+## Why this remains on the M2 path
+
+The insidefibre.com meeting is an architectural forcing function. Its value is not the chat UI; it exposes what must be true for a visitor to enter an already meaningful life.
+
+After R1-R4, M2 resumes:
+
+```text
+developmental context + relationships
+  -> intrinsic drives
+  -> half-day/day personal Flight Plan
   -> optional caregiver care plan
-  -> World-owned enacted current situation
+  -> World-enacted presence / movement
   -> encounter
-  -> interpretation / selective consequence
-  -> revised plans and continued life
+  -> private interpretation / selective consequence
+  -> continued life
 ```
-
-Current lifecycle status (`active`, `retired`, etc.) is not developmental age. Fibre birth also need not mean biological age zero.
-
-A Thread may enter Fibre at an autobiographical age greater than zero with prior history and memories, without invented newborn/infancy recollection.
-
-## Flight plans, care and agency
-
-An autonomous person normally has one personal flight plan: where they want or need to be and what they intend to do.
-
-A dependent person may additionally be affected by a caregiver's separate care plan. The two plans can conflict. Fibre must preserve whose will is whose; caregiver authority may change the enacted situation without rewriting the dependent person's intention.
-
-That negotiation can itself become a shared historical event with different private meaning for each participant.
-
-Age/dependency should shape plausible places, activities, accompaniment and authority as **affordances**, not as a rigid maturity script.
-
-## insidefibre.com and Thread Editor
-
-insidefibre.com is the public encounter surface:
-
-```text
-find a Thread
-  -> see where they already are
-  -> see current embodiment + situation
-  -> meet them there
-  -> leave
-  -> their life continues
-```
-
-Thread Editor is the authorized operator lens over the same underlying life. It should help inspect identity, developmental context, personal/care plans where permitted, enacted situation, relationships, history, memory, embodiment and provenance without becoming a second authority or generic database browser.
-
-## Experience internalization
-
-An encounter is not automatically a memory.
-
-```text
-experience
-  -> private interpretation
-  -> significance
-     -> forgotten
-     -> transient
-     -> durable memory
-     -> relationship consequence
-     -> formative change
-```
-
-A shared event may produce different private interpretations for different people. Fibre may author circumstances; it must not pre-author their meaning.
 
 ## Development discipline
 
-The critical path is the Fibre organism, not infrastructure completeness.
+Build the smallest organism-level capability with a concrete beneficiary and stop condition.
 
-Build the smallest real capability that advances the lived loop, protect its semantic authority boundaries with focused tests, run the repository gates, and stop. Broad provider parity, resilience matrices and abstraction work remain later unless a concrete lived-person capability exposes a blocker.
-
-## Later, not erased
-
-After one convincing lived loop:
-
-- broader long-horizon planning, travel and virtual-world activity;
-- richer reciprocal/care relationships across many Threads;
-- work, budgets, contracts, reputation and economic consequence;
-- reproduction, inheritance and mutation between live Threads;
-- institutions, communities and a broader Thread society;
-- stronger security/distributed-runtime hardening as scale demands it.
+No generic emotion simulator, no giant drive ontology, no high-frequency world ticking, no role-to-attachment shortcut, and no drive-to-emotion mapping. Reuse existing World, Semantic State, cognition and authority boundaries.
 
 > **Someone was here yesterday. Something happened. It mattered — or it didn't. And today, their life continues.**
