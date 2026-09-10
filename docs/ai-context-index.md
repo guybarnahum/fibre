@@ -27,44 +27,70 @@ Start with:
 7. `state/current-state.md`
 8. `state/current-priorities.md`
 9. `validation/m2-pr-plan.md`
-10. `decisions/ADR-0020-vision-led-development-discipline.md`
-11. the relevant architecture/ADR for the task
+10. `architecture/intrinsic-regulation.md`
+11. `decisions/ADR-0020-vision-led-development-discipline.md`
+12. the relevant architecture/ADR for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
 
-## Current M2 work
+## Current work
 
 ```text
 M1 + #33-#40 identity/history/birth/causal foundation     closed
 G/H deployed public path + minimum recovery                closed
 FID + Directory/Meet foundation                            closed
 
-M2-A Present life + Meet a Thread                          current
-M2-B Experience internalization + continuation             next
-M2-C Whole-person developmental continuity                 next
+R1-R4 Intrinsic regulation                                 current detour
+M2-A Present life + Meet a Thread                          resumes after R4
+M2-B Experience internalization + continuation             then
 ```
 
-The current missing life seam is:
+The E2E meeting is an architectural forcing function: when making the encounter real exposes a missing life primitive, build that primitive generally rather than faking it in the Viewer.
+
+Current active chain:
 
 ```text
-developmental context
-  -> personal flight plan
-  -> optional caregiver care plan
-  -> World-owned enacted current situation
-  -> encounter
-  -> private interpretation / selective retention
+World reality + desired/avoided conditions
+  -> intrinsic regulation
+  -> private drive / affect
+  -> cognition / semantic feeling
+  -> Flight Plan / action
+  -> enacted presence / movement
+  -> encounter / experience
+  -> selective consequence
   -> continued life
 ```
 
-Fibre birth is operational birth, not necessarily biological age zero. A newly born Thread may already possess grounded childhood history, relationships and autobiographical memory.
+## Intrinsic regulation, emotions and needs
 
-Older #41 standing-gate documents are retained evaluation history. They are not the current development sequence.
+Load together when working on drives, affect, motivation, movement pressure, attachment/proximity or semantic feeling:
+
+- `architecture/intrinsic-regulation.md`
+- `concepts/emotions-and-needs.md`
+- `architecture/thread-lifecycle.md`
+- `architecture/system-overview.md`
+- `decisions/ADR-0012-semantic-meaning-over-derived-categories.md`
+
+Key distinctions:
+
+```text
+regulatory drive  != semantic need
+intrinsic affect  != semantic emotion
+presence pressure != relationship meaning
+mechanical state may be numeric
+meaning-bearing state remains natural-language-first
+```
+
+Mechanical regulator output may enter cognition only through a bounded private interoceptive projection, never as a pre-authored emotion verdict or hidden instruction.
+
+Presence targets may be places, people, mediated settings, activities or obligations. A Thread may seek proximity or distance; `parent`, `partner` and `friend` roles do not determine polarity.
 
 ## Lived world, age and development
 
 Load together when working on present life, childhood, aging, plans or encounters:
 
 - `vision/lived-world.md`
+- `architecture/intrinsic-regulation.md`
 - `architecture/thread-lifecycle-accounting.md`
 - `architecture/developmental-continuity-and-past-selves.md`
 - `architecture/thread-directory-and-meet.md`
@@ -73,13 +99,12 @@ Load together when working on present life, childhood, aging, plans or encounter
 - `concepts/emotions-and-needs.md`
 - `concepts/families-couples-and-reproduction.md`
 
-Key distinctions:
-
 ```text
 Fibre birth != biological age zero
 lifecycle status != developmental age
-personal flight plan != enacted life
+personal Flight Plan != enacted life
 caregiver care plan != dependent person's own will
+presence != geography only
 history != memory != meaning
 ```
 
@@ -98,9 +123,7 @@ Use Genesis documents when the task concerns how a Thread arrives with a particu
 - `architecture/genesis-rich-life-intellectual-formation.md`
 - `validation/generative-diagnostic-methodology.md`
 
-Use `history/milestones/pr39.md` only when the completed #39 scientific/birth result itself matters.
-
-Genesis provides grounded developmental history. It does not by itself prove ongoing post-birth life.
+Genesis provides grounded developmental history. It does not by itself prove ongoing post-birth life or intrinsic regulation.
 
 ## Identity, embodiment and visual continuity
 
@@ -113,17 +136,6 @@ Load together:
 - `decisions/ADR-0021-canonical-visual-identity-reference.md`
 - `decisions/ADR-0013-source-identity-consent-boundary.md`
 
-Standing visual invariant:
-
-```text
-canonical visual identity text
-  -> one canonical reference image
-  -> later Thread-depicting imagery
-       + chronology-grounded target age
-       + time-local appearance
-       + scene/context
-```
-
 Age changes depiction; it does not mint a new identity.
 
 ## Thread Editor and public encounter
@@ -135,10 +147,9 @@ For Thread discovery/inspection/meeting:
 - `apps/thread-editor/README.md`
 - `architecture/thread-presentation-contract.md`
 - `vision/lived-world.md`
+- `architecture/intrinsic-regulation.md`
 
-Thread Editor is an authorized inspection lens. insidefibre.com is a public encounter surface. Neither owns the Thread's current situation or plans.
-
-`Meet` selects among eligible people and returns the existing public situation/presentation reference; it must not materialize the selected Thread into a visitor-authored scene.
+Thread Editor is an authorized causal inspection lens. insidefibre.com is a public encounter surface. Neither owns current situation, plans, drives or semantic feelings.
 
 ## Runtime and persistence
 
@@ -175,6 +186,6 @@ Provider-neutral persistence remains mandatory for authoritative production stat
 
 ## Challenge a proposal
 
-At minimum load the Constitution, Principles, Invariants, `vision/lived-world.md`, `state/current-state.md`, `validation/m2-pr-plan.md`, ADR-0020 and the relevant architecture.
+At minimum load the Constitution, Principles, Invariants, `vision/lived-world.md`, `state/current-state.md`, `state/current-priorities.md`, `validation/m2-pr-plan.md`, `architecture/intrinsic-regulation.md`, ADR-0020 and the relevant architecture.
 
-Challenge whether the proposal makes a person's lived state more causal and load-bearing, whether it preserves one authority per semantic fact, and whether infrastructure/test work has a concrete Fibre beneficiary and stop condition.
+Challenge whether the proposal makes the person's lived control loop more causal and load-bearing, preserves one authority per semantic fact, and avoids replacing semantic meaning with derived control labels.
