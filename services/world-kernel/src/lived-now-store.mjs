@@ -133,6 +133,11 @@ function physicalPlaceRefs(plan) {
   return [...new Set(plan.stops.map((stop) => stop.physicalPlaceRef))];
 }
 
+function observedPlaceRefs(situation) {
+  if (situation.location.kind === "place") return [situation.location.placeRef];
+  return [situation.location.fromPlaceRef, situation.location.toPlaceRef];
+}
+
 export class LivedNowStore {
   #database;
   #readOnly;
@@ -324,7 +329,12 @@ export class LivedNowStore {
   enactCurrentSituation(input) {
     if (this.#readOnly) throw new LivedNowConflictError("read-only lived-now store cannot write");
     assertPlainObject("enact current situation input", input);
-    assertExactKeys("enact current situation input", input, ["threadId", "situationId", "establishedAt"]);
+    assertExactKeys("enact current situation input", input, [
+      "threadId",
+      "situationId",
+      "establishedAt",
+      "observation",
+    ]);
     assertId("enact current situation input.threadId", input.threadId);
     assertId("enact current situation input.situationId", input.situationId);
     assertIsoTimestamp("enact current situation input.establishedAt", input.establishedAt);
@@ -332,19 +342,9 @@ export class LivedNowStore {
 
     try {
       return this.#database.transaction(() => {
-        const existing = this.getSituation(input.situationId, { required: false });
-        if (existing !== null) {
-          if (existing.threadId === input.threadId && existing.establishedAt === input.establishedAt) {
-            return existing;
-          }
-          throw new LivedNowConflictError(
-            `current situation ${input.situationId} already exists for another enactment`,
-          );
-        }
-
         const personalPlan = this.latestPlan(input.threadId, "personal", { at: input.establishedAt });
         if (personalPlan === null) {
-          throw new LivedNowConflictError("World cannot enact a current situation without a personal plan");
+          throw new LivedNowConflictError("World cannot establish a current situation without a personal plan");
         }
         const carePlan = this.latestPlan(input.threadId, "care", { at: input.establishedAt });
         const situation = resolveCurrentSituation({
@@ -352,12 +352,24 @@ export class LivedNowStore {
           establishedAt: input.establishedAt,
           personalPlan,
           carePlan,
+          observation: input.observation,
         });
-        if (situation.location.kind === "place") {
-          this.#requirePlace(input.threadId, situation.location.placeRef);
-        } else {
-          this.#requirePlace(input.threadId, situation.location.fromPlaceRef);
-          this.#requirePlace(input.threadId, situation.location.toPlaceRef);
+
+        for (const reference of observedPlaceRefs(situation)) {
+          this.#requirePlace(input.threadId, reference);
+        }
+        assertAllSituatedReferencesResolve(
+          this.#database,
+          input.threadId,
+          situation.evidenceRefs,
+        );
+
+        const existing = this.getSituation(input.situationId, { required: false });
+        if (existing !== null) {
+          if (canonicalJson(existing) === canonicalJson(situation)) return existing;
+          throw new LivedNowConflictError(
+            `current situation ${input.situationId} already exists differently`,
+          );
         }
 
         const recordJson = canonicalJson(situation);
