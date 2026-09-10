@@ -289,11 +289,13 @@ export function createThreadEditorServer({
     let requests = null;
     let runtimes = null;
     let expressions = null;
+    let currentLife = null;
     if (privateToken !== null) {
-      [requests, runtimes, expressions] = await Promise.all([
+      [requests, runtimes, expressions, currentLife] = await Promise.all([
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/requests`, { privateAccess: true }),
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/runtime`, { privateAccess: true }),
         callKernel(`/threads/${encodeURIComponent(threadId)}/private/expression`, { privateAccess: true }),
+        callKernel(`/threads/${encodeURIComponent(threadId)}/private/current-life`, { privateAccess: true }),
       ]);
     }
     return {
@@ -318,6 +320,7 @@ export function createThreadEditorServer({
       fid: fid === null ? null : await fid.inspectThread(threadId),
       private: {
         available: privateToken !== null,
+        currentLife: currentLife?.currentLife ?? null,
         requests: requests?.requests ?? [],
         runtimes: runtimes?.runtimes ?? [],
         expressions: expressions?.expressions ?? [],
