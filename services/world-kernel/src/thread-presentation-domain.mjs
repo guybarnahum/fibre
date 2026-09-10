@@ -9,6 +9,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import {
+  FIBRE_IDENTITY_CARD_CURRENT_VERSION,
   THREAD_PRESENTATION_PACKET_CURRENT_VERSION,
   THREAD_PRESENTATION_PACKET_LEGACY_VERSION,
   THREAD_PRESENTATION_PACKET_VERSIONS,
@@ -563,15 +564,26 @@ export function normalizeThreadPresentationBundle({ presentation, media, provena
     if (p.identityCard !== null) {
       if (p.civilIdentity === null) throw new TypeError("identity card requires civil identity");
       fibreIdentityCardDisplayData(p);
-      if (p.identityCard.displayName !== p.subject.displayName) {
-        throw new TypeError("identity card displayName must match the current presented subject name");
-      }
-      if (p.identityCard.dateField?.kind === "birth_date" && p.identityCard.dateField.value !== p.subject.birthDate) {
-        throw new TypeError("identity card birth date must match the current presented subject birth date");
-      }
-      const photo = mediaById.get(p.identityCard.officialPhotoMediaRef);
-      if (!photo || photo.kind !== "image" || photo.role !== "official_id_photo") {
-        throw new TypeError("identity card officialPhotoMediaRef must resolve to official_id_photo image media");
+      if (p.identityCard.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION) {
+        if (p.identityCard.status !== "active") throw new TypeError("Thread Presentation may expose only an active FIA credential");
+        for (const [side, ref] of [["front", p.identityCard.frontMediaRef], ["back", p.identityCard.backMediaRef]]) {
+          const cardMedia = mediaById.get(ref);
+          if (!cardMedia || cardMedia.kind !== "image" || cardMedia.role !== `fibre_identity_card_${side}`
+            || cardMedia.status !== "ready" || cardMedia.mediaType !== "image/png") {
+            throw new TypeError(`identity card ${side}MediaRef must resolve to ready FIA card PNG media`);
+          }
+        }
+      } else {
+        if (p.identityCard.displayName !== p.subject.displayName) {
+          throw new TypeError("identity card displayName must match the current presented subject name");
+        }
+        if (p.identityCard.dateField?.kind === "birth_date" && p.identityCard.dateField.value !== p.subject.birthDate) {
+          throw new TypeError("identity card birth date must match the current presented subject birth date");
+        }
+        const photo = mediaById.get(p.identityCard.officialPhotoMediaRef);
+        if (!photo || photo.kind !== "image" || photo.role !== "official_id_photo") {
+          throw new TypeError("identity card officialPhotoMediaRef must resolve to official_id_photo image media");
+        }
       }
     }
   }
