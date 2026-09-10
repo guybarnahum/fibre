@@ -6,6 +6,7 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
+import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 import {
   developmentalContextForThread,
   livedPlanId,
@@ -54,10 +55,10 @@ function childThread() {
   return thread;
 }
 
-function withDatabase(run) {
+async function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-lived-now-"));
   const databasePath = join(directory, "world.sqlite");
-  try { return run(databasePath); } finally { rmSync(directory, { recursive: true, force: true }); }
+  try { return await run(databasePath); } finally { rmSync(directory, { recursive: true, force: true }); }
 }
 
 function seedLife(databasePath) {
@@ -122,7 +123,35 @@ function seedLife(databasePath) {
   };
 }
 
-function personalPlan({ threadId, sourceEvent, homeRef }) {
+function cognition(homeRef) {
+  let invocation = null;
+  return {
+    invocation: () => invocation,
+    adapter: {
+      provider: "fixture",
+      modelId: "fixture-lived-plan-v1",
+      async invoke(input) {
+        invocation = structuredClone(input);
+        return {
+          output: {
+            physicalPlaceRef: homeRef,
+            presenceMode: "mediated",
+            mediatedContext: "Monterey Bay Aquarium live octopus feed",
+            activity: "Watch the octopus livestream closely and sketch the changes I notice.",
+            purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
+          },
+          provenance: {
+            provider: "fixture",
+            modelId: "fixture-lived-plan-v1",
+            providerRequestId: "req_maya_personal_plan_001",
+          },
+        };
+      },
+    },
+  };
+}
+
+function personalPlanFixture({ threadId, sourceEvent, homeRef }) {
   return {
     planId: livedPlanId({ threadId, kind: "personal", authoredAt: "2026-09-10T05:03:00Z" }),
     kind: "personal",
@@ -137,6 +166,11 @@ function personalPlan({ threadId, sourceEvent, homeRef }) {
     purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
     companionRefs: [],
     sourceReferences: [sourceEvent, homeRef],
+    cognition: {
+      provider: "fixture",
+      modelId: "fixture-lived-plan-v1",
+      providerRequestId: "req_fixture_boundary",
+    },
   };
 }
 
@@ -163,26 +197,42 @@ function carePlan({ threadId, homeRef, parentRef, ownerId = "human_maya_mother" 
   };
 }
 
-test("A1/A2: personal will exists before the visitor and care can constrain enactment without rewriting it", () =>
-  withDatabase((databasePath) => {
+test("A1/A2: Thread cognition forms personal will before visitor and care constrains enactment without rewriting it", async () =>
+  withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
     const context = developmentalContextForThread(life.thread, "2026-09-10T05:03:00Z");
     assert.equal(context.ageYears, 10);
     assert.equal(context.birthDate, "2016-02-08");
     assert.match(context.selfDescription, /curious about animals/);
+    assert.deepEqual(context.feelings, ["absorbed and curious"]);
+
+    const planner = cognition(life.homeRef);
+    const formed = await formPersonalLivedPlan({
+      thread: life.thread,
+      authoredAt: "2026-09-10T05:03:00Z",
+      validUntil: "2026-09-10T06:00:00Z",
+      availablePlaces: [{ ref: life.homeRef, displayName: "Home in Haifa" }],
+      sourceReferences: [life.sourceEvent],
+      modelAdapter: planner.adapter,
+    });
+    assert.equal(planner.invocation().input.developmentalContext.ageYears, 10);
+    assert.deepEqual(planner.invocation().input.developmentalContext.unresolvedIntentions, [
+      "Finish watching the octopus feed and sketch what I notice.",
+    ]);
+    assert.equal(formed.owner.partyId, life.thread.threadId);
+    assert.equal(formed.cognition.modelId, "fixture-lived-plan-v1");
+    assert.equal(formed.presenceMode, "mediated");
 
     let lived = openLivedNowStore(localWorldStateStorage(databasePath));
-    const personal = lived.recordPlan(personalPlan({
-      threadId: life.thread.threadId,
-      sourceEvent: life.sourceEvent,
-      homeRef: life.homeRef,
-    }));
+    const personal = lived.recordPlan(formed);
     const first = lived.enactCurrentSituation({
       threadId: life.thread.threadId,
       situationId: livedSituationId({ threadId: life.thread.threadId, step: "before-care" }),
       establishedAt: "2026-09-10T05:04:00Z",
     });
     assert.equal(first.resolution.kind, "personal_plan");
+    assert.equal(first.resolution.conflict, false);
+    assert.equal(first.resolution.enactedPlanRef, personal.planId);
     assert.equal(first.presenceMode, "mediated");
     assert.equal(first.physicalPlaceRef, life.homeRef);
     assert.equal(first.mediatedContext, "Monterey Bay Aquarium live octopus feed");
@@ -204,6 +254,9 @@ test("A1/A2: personal will exists before the visitor and care can constrain enac
     });
 
     assert.equal(second.resolution.kind, "care_constraint");
+    assert.equal(second.resolution.conflict, true);
+    assert.equal(second.resolution.enactedPlanRef, care.planId);
+    assert.equal(second.resolution.constrainedPlanRef, personal.planId);
     assert.match(second.activity, /dental appointment/);
     assert.equal(second.presenceMode, "physical");
     assert.deepEqual(second.sourcePlanRefs, [personal.planId, care.planId]);
@@ -217,15 +270,18 @@ test("A1/A2: personal will exists before the visitor and care can constrain enac
     lived.close();
   }));
 
-test("A1/A2 authority boundaries reject visitor-authored now and unrelated caregiver authority", () =>
-  withDatabase((databasePath) => {
+test("A1/A2 authority boundaries reject unauthored will, visitor-authored now, and unrelated caregiver authority", async () =>
+  withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
     const lived = openLivedNowStore(localWorldStateStorage(databasePath));
-    lived.recordPlan(personalPlan({
+    const personal = personalPlanFixture({
       threadId: life.thread.threadId,
       sourceEvent: life.sourceEvent,
       homeRef: life.homeRef,
-    }));
+    });
+    const { cognition: ignored, ...withoutCognition } = personal;
+    assert.throws(() => lived.recordPlan(withoutCognition), /requires Thread cognition provenance/);
+    lived.recordPlan(personal);
 
     assert.throws(() => lived.enactCurrentSituation({
       threadId: life.thread.threadId,
@@ -247,6 +303,7 @@ test("A1/A2 authority boundaries reject visitor-authored now and unrelated careg
       establishedAt: "2026-09-10T05:04:30Z",
     });
     assert.equal(current.resolution.kind, "personal_plan");
+    assert.equal(current.resolution.conflict, false);
     assert.match(current.activity, /octopus livestream/);
     lived.close();
   }));
