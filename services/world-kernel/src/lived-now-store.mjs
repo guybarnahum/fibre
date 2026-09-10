@@ -26,6 +26,12 @@ import {
 export class LivedNowConflictError extends Error {}
 export class LivedNowNotFoundError extends Error {}
 
+const CARE_AUTHORITY_RELATION_KINDS = new Set([
+  "biological_parent",
+  "adoptive_parent",
+  "social_parent",
+]);
+
 function digest(record) {
   return `sha256:${sha256(canonicalJson(record))}`;
 }
@@ -192,6 +198,9 @@ export class LivedNowStore {
     const relation = normalizeLifeRelation(parseJson("care authority relation", row.record_json));
     if (!situatedLifeRecordIsCurrent(relation)) {
       throw new LivedNowConflictError("care plan authority relation is not current");
+    }
+    if (!CARE_AUTHORITY_RELATION_KINDS.has(relation.relationKind)) {
+      throw new LivedNowConflictError("care plan authority requires a current parent relation");
     }
     if (
       relation.relatedParty.partyId !== plan.owner.partyId ||
