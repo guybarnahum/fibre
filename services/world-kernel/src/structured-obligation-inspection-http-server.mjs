@@ -76,6 +76,9 @@ function inspectionRoute(target) {
   const parts = decodedParts(target);
   if (parts === null || parts[0] !== "threads" || parts[2] !== "private") return null;
   const threadId = parts[1];
+  if (parts.length === 4 && parts[3] === "current-life") {
+    return { kind: "current_life", threadId };
+  }
   if (parts.length === 4 && parts[3] === "obligations") {
     return { kind: "obligation_list", threadId };
   }
@@ -124,7 +127,7 @@ function inspectPersistedEvidence(action) {
       error.httpStatus === undefined &&
       error.httpCode === undefined
     ) {
-      throw new IntegrityError(`Structured Obligation persisted evidence is invalid: ${error.message}`);
+      throw new IntegrityError(`Persisted inspection evidence is invalid: ${error.message}`);
     }
     throw error;
   }
@@ -135,7 +138,7 @@ function problem(error) {
     return [404, "STRUCTURED_OBLIGATION_INSPECTION_NOT_FOUND", error.message, {}];
   }
   if (error instanceof IntegrityError) {
-    return [503, "INTEGRITY_FAILURE", "Structured Obligation evidence failed integrity validation", {}];
+    return [503, "INTEGRITY_FAILURE", "Persisted inspection evidence failed integrity validation", {}];
   }
   if (error instanceof TypeError) {
     return [error.httpStatus ?? 400, error.httpCode ?? "INVALID_REQUEST", error.message, error.httpHeaders ?? {}];
@@ -146,6 +149,7 @@ function problem(error) {
 export function createStructuredObligationInspectionHttpServer({
   service,
   inspectionStore,
+  currentLifeReader = null,
   privateToken = null,
   adminToken = null,
   maxBodyBytes = DEFAULT_MAX_HTTP_BODY_BYTES,
@@ -167,6 +171,9 @@ export function createStructuredObligationInspectionHttpServer({
     if (typeof inspectionStore[method] !== "function") {
       throw new TypeError(`inspectionStore.${method} is required`);
     }
+  }
+  if (currentLifeReader !== null && typeof currentLifeReader !== "function") {
+    throw new TypeError("currentLifeReader must be a function when provided");
   }
   const server = createCausalWorldKernelHttpServer({
     service,
@@ -194,6 +201,14 @@ export function createStructuredObligationInspectionHttpServer({
         throw httpError(405, "METHOD_NOT_ALLOWED", "Method is not allowed; use GET", { allow: "GET" });
       }
       validateRoute(route);
+      if (route.kind === "current_life") {
+        if (currentLifeReader === null) {
+          throw httpError(503, "CURRENT_LIFE_INSPECTION_DISABLED", "Current-life inspection is not configured");
+        }
+        return writeJson(response, 200, {
+          currentLife: inspectPersistedEvidence(() => currentLifeReader(route.threadId)),
+        }, id);
+      }
       if (route.kind === "obligation_list") {
         return writeJson(response, 200, {
           obligations: inspectPersistedEvidence(() => inspectionStore.listObligations(route.threadId)),
