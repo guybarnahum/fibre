@@ -7,6 +7,7 @@ import {
 } from "./persistence-common.mjs";
 import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
 import { internalizeLivedEncounter } from "./lived-encounter-reflection.mjs";
+import { formLivedEncounterMemory } from "./lived-encounter-memory.mjs";
 
 const TOKEN_ENCODER = new TextEncoder();
 
@@ -41,6 +42,7 @@ export function createLivedEncounterWriteApi({
   semanticStateStore,
   modelAdapter,
   experienceStore = null,
+  memoryStore = null,
   privateToken,
 }) {
   requireDependency("worldReader", worldReader, "getThread");
@@ -50,6 +52,11 @@ export function createLivedEncounterWriteApi({
   if (experienceStore !== null) {
     requireDependency("experienceStore", experienceStore, "recordEncounter");
     requireDependency("experienceStore", experienceStore, "recordJournalEntry");
+  }
+  if (memoryStore !== null) {
+    if (experienceStore === null) throw new TypeError("memoryStore requires experienceStore");
+    requireDependency("memoryStore", memoryStore, "listCurrentMemories");
+    requireDependency("memoryStore", memoryStore, "recordMemory");
   }
   assertNonEmpty("privateToken", privateToken);
 
@@ -106,7 +113,7 @@ export function createLivedEncounterWriteApi({
       }
 
       if (experienceStore !== null) {
-        await internalizeLivedEncounter({
+        const internalized = await internalizeLivedEncounter({
           thread,
           encounter,
           encounterResult: result,
@@ -114,6 +121,16 @@ export function createLivedEncounterWriteApi({
           experienceStore,
           modelAdapter,
         });
+        if (memoryStore !== null) {
+          await formLivedEncounterMemory({
+            thread,
+            historyEvent: internalized.historyEvent,
+            journalEntry: internalized.journalEntry,
+            semanticStateStore,
+            memoryStore,
+            modelAdapter,
+          });
+        }
       }
       return json({ ok: true, result });
     },
