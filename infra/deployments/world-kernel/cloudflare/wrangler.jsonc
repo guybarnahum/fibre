@@ -3,6 +3,13 @@
   "name": "fibre-world-kernel",
   "main": "./encounter-worker.mjs",
   "compatibility_date": "2026-08-31",
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.yaml"],
+      "fallthrough": true
+    }
+  ],
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
     "FIBRE_WORLD_RECONCILIATION_MS": "5000"
