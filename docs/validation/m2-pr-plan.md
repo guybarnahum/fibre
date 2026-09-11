@@ -160,11 +160,10 @@ Run:
 
 ```bash
 npm run demo:m2
-npm run check
-npm run test:all
-npm run validate
-npm run test:audit -- --check --quiet
+npm run slice:validate
 ```
+
+`slice:validate` is the canonical slice-completion validation. It replaces the previous stack of `npm run check`, `npm run test:all`, `npm run validate`, and `npm run test:audit -- --check --quiet`, avoiding a duplicate build and near-duplicate full test run while preserving their coverage. Its generated-repository validation verifies that the context packs produced during the run exactly match their canonical sources.
 
 Then perform one deployed meeting using [`m2-meeting-runbook.md`](./m2-meeting-runbook.md). A passing M2 is not merely a responsive UI. It must preserve these semantic invariants:
 
@@ -200,5 +199,6 @@ After one convincing loop, generalize only what proved useful:
 - Keep objective history, private journal and autobiographical recall distinct.
 - Ordinary cognition may receive bounded retained memory; it must not receive hidden objective history as fake recollection.
 - Use focused invariant tests plus one representative lived proof.
+- At slice completion, use `npm run slice:validate` rather than manually stacking the overlapping repository-validation commands.
 
 The success criterion remains simple: **the meeting becomes interesting because someone was already living, wanting, regulating, experiencing and becoming before we arrived.**
