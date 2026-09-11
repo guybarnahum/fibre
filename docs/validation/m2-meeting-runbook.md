@@ -221,17 +221,24 @@ second meeting
 
 The automated M2 acceptance proof covers the full two-meeting continuation, including restart. The deployed `/meet` smoke test proves the public ingress path against the currently published life. God's view lets us watch that real system path rather than treating the demo as a black box, while explicitly showing lifecycle phases that have no deployed runtime activity yet. Together they test the milestone without inventing a second demo-only life engine.
 
-## M2 acceptance commands
+## Validation commands
 
-Use the canonical acceptance sequence:
+During normal development iteration, use the fast repository gate:
+
+```bash
+npm run check
+```
+
+For M2 milestone acceptance, do not run `check` again. Use the semantic M2 proof followed by the broader slice closure gate:
 
 ```bash
 git switch agent/m2-lived-encounter
 git pull --ff-only
 
-npm run check
 npm run demo:m2
 npm run slice:validate
 ```
 
-M2 closes only when those gates and one real deployed `/meet` meeting are green. During the live meeting, God's view should make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
+`demo:m2` is the focused Fibre-value proof. `slice:validate` runs the full test suite plus repository, World seed, deployment-manifest and test-value validation, so running `npm run check` immediately before it is redundant.
+
+M2 closes only when those acceptance gates and one real deployed `/meet` meeting are green. During the live meeting, God's view should make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
