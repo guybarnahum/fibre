@@ -108,6 +108,21 @@ export class LivedExperienceStore {
     } catch (error) { throw translateStorageError(error); }
   }
 
+  listEncounters(threadId) {
+    assertId("threadId", threadId);
+    return this.#database.prepare(`
+      SELECT event_id,thread_id,situation_id,occurred_at,visitor_utterance,response_text
+      FROM lived_encounter_records WHERE thread_id=? ORDER BY occurred_at,event_id
+    `).all(threadId).map((row) => ({
+      eventId: row.event_id,
+      threadId: row.thread_id,
+      situationId: row.situation_id,
+      occurredAt: row.occurred_at,
+      visitorUtterance: row.visitor_utterance,
+      responseText: row.response_text,
+    }));
+  }
+
   listJournal(threadId) {
     assertId("threadId", threadId);
     return this.#database.prepare(`
