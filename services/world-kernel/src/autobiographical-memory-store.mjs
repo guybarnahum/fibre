@@ -58,11 +58,21 @@ export class AutobiographicalMemoryStore {
     return row;
   }
 
+  #historyEvent(threadId, ref) {
+    const threadEvent = this.#database.prepare(
+      "SELECT occurred_at FROM thread_events WHERE thread_id=? AND event_id=?",
+    ).get(threadId, ref);
+    if (threadEvent !== undefined) return threadEvent;
+    return this.#database.prepare(
+      "SELECT occurred_at FROM lived_encounter_records WHERE thread_id=? AND event_id=?",
+    ).get(threadId, ref);
+  }
+
   #requireEventRefs(record) {
     const start = Date.parse(record.subjectPeriod.startAt);
     const end = record.subjectPeriod.endAt === null ? null : Date.parse(record.subjectPeriod.endAt);
     for (const ref of record.eventRefs) {
-      const event = this.#database.prepare("SELECT occurred_at FROM thread_events WHERE thread_id=? AND event_id=?").get(record.threadId, ref);
+      const event = this.#historyEvent(record.threadId, ref);
       if (event === undefined) throw new AutobiographicalMemoryConflictError(`memory event reference ${ref} does not resolve to Thread ${record.threadId} history`);
       const occurredAt = Date.parse(event.occurred_at);
       if (occurredAt > Date.parse(record.asOf)) throw new AutobiographicalMemoryConflictError(`memory cannot cite future event ${ref} relative to asOf`);
@@ -72,6 +82,7 @@ export class AutobiographicalMemoryStore {
 
   #referenceResolves(threadId, ref) {
     if (this.#database.prepare("SELECT 1 AS present FROM thread_events WHERE thread_id=? AND event_id=?").get(threadId, ref) !== undefined) return true;
+    if (this.#database.prepare("SELECT 1 AS present FROM lived_encounter_records WHERE thread_id=? AND event_id=?").get(threadId, ref) !== undefined) return true;
     if (this.#database.prepare("SELECT 1 AS present FROM situated_evidence_witnesses WHERE thread_id=? AND reference=?").get(threadId, ref) !== undefined) return true;
     if (this.#database.prepare("SELECT 1 AS present FROM identity_assertion_records WHERE thread_id=? AND assertion_id=?").get(threadId, ref) !== undefined) return true;
     return false;
