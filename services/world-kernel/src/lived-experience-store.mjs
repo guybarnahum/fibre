@@ -6,6 +6,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs";
+import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 function digest(value) {
@@ -31,8 +32,13 @@ export class LivedExperienceStore {
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName: "LivedExperienceStore" });
-    try { migrateDatabase(this.#database); }
-    catch (error) { this.#database.close(); throw error; }
+    try {
+      migrateDatabase(this.#database);
+      createLivedExperienceTables(this.#database);
+    } catch (error) {
+      this.#database.close();
+      throw error;
+    }
   }
 
   close() { this.#database.close(); }
