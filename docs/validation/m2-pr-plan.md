@@ -100,9 +100,9 @@ Thread Presentation publishes only the allowed current-life subset. `/meet` is s
 
 A human encounter is bound to the exact already-published situation. The browser supplies only an utterance plus the displayed `situationId` as a stale-scene precondition. Presentation verifies the published scene and World independently verifies authoritative CurrentSituation before cognition.
 
-Private Semantic State may shape cognition but does not cross the public boundary. The visitor cannot author World state, private motives, plans, care authority or semantic state. The response is ephemeral at the public seam; A5 itself does not create transcript history, memory or relationship state.
+Private Semantic State may shape cognition but does not cross the public boundary. The visitor cannot author World state, private motives, plans, care authority or semantic state. The response is ephemeral at the public seam.
 
-### B1 — Encounter becomes experience — ACTIVE
+### B1 — Encounter becomes experience — IMPLEMENTED / GATE PENDING
 
 B1 separates objective lived evidence from the Thread's subjective internalization:
 
@@ -110,26 +110,44 @@ B1 separates objective lived evidence from the Thread's subjective internalizati
 objective lived encounter
   -> private contemporaneous interpretation
   -> optional private Thread Journal entry
-  -> selective autobiographical retention or none
+  -> Thread-specific autobiographical retention appraisal
+  -> selective autobiographical memory or none
   -> optional durable remembered meaning
 ```
 
-The Thread Journal is private inner voice: a first-person contemporaneous reflection linked to the objective event. It is neither objective history nor autobiographical memory. A journal entry may survive as a historical artifact even if the Thread later does not remember the encounter. Later reinterpretation appends new inner life; it does not rewrite what the Thread thought then.
+The Thread Journal is private inner voice: a first-person contemporaneous reflection linked to the objective encounter. It is neither objective history nor autobiographical memory. A journal entry may survive as a historical artifact even if the Thread later does not remember the encounter.
 
-B1 implementation slices:
+Retention is a separate private cognition pass. It receives a bounded Thread-specific context: self-description, self-model, textual genome tendencies, unresolved intentions, current Semantic State, up to six recent autobiographical memories, the objective encounter and the contemporaneous journal entry. The LLM proposes either `not_remembered` or a selective recollection. Fibre validates and admits any retained result through the existing autobiographical-memory authority.
+
+The same external encounter can therefore persist differently for different Threads because the person-context differs, not because Fibre applies a global salience formula.
 
 ```text
-B1.1 objective encounter <-> private Thread Journal       ACTIVE
-B1.2 selective autobiographical carry-forward            NEXT
+B1.1 objective encounter <-> private Thread Journal       IMPLEMENTED
+B1.2 selective autobiographical carry-forward            IMPLEMENTED
 ```
 
 Do not store a transcript as memory. Human encounters receive no special retention privilege. Shared event does not imply shared meaning, and journal existence does not imply durable memory.
 
-### B2 — Life continues + second meeting
+### B2 — Life continues + second meeting — IMPLEMENTED PROOF / GATE PENDING
 
-Continue or revise the plan after the encounter, allow ordinary movement/life to happen, persist/restart, then meet again.
+Later encounter cognition receives bounded autobiographical memory, not old encounter history or private journal records. After persistence/restart, a retained encounter may therefore affect a second meeting while a `not_remembered` encounter cannot be silently reconstructed from Fibre's objective records.
 
-**True-E2E closure:** the Thread is now somewhere because her life put her there, and the prior visitor matters only through consequences that actually persisted.
+The representative B2 proof moves cognition into a later World situation and reopens persisted memory state before the second meeting:
+
+```text
+first encounter
+  -> history + journal
+  -> retained memory OR not_remembered
+  -> persistence / reopen
+  -> later lived situation
+  -> second encounter
+       retained branch: bounded memory is available
+       forgotten branch: no recollection context exists
+```
+
+This composes with A1/A2's already-persisted Flight Plan and CurrentSituation machinery rather than adding a second continuation engine.
+
+**True-E2E closure after gates:** the Thread is now somewhere because her life put her there, and the prior visitor matters only through consequences that actually persisted.
 
 ## Later generalization
 
@@ -148,10 +166,11 @@ After one convincing loop, generalize only what proved useful:
 - Build one visible Fibre capability at a time.
 - Prefer existing authorities and service boundaries.
 - No generic planner, emotion simulator, child engine, conversation store or world simulator ahead of proof.
-- No fixed drive-to-emotion mapping.
+- No fixed drive-to-emotion or event-to-memory mapping.
 - No transcript-as-memory shortcut.
 - No Viewer-owned current state.
-- Keep private journal and autobiographical recall distinct.
+- Keep objective history, private journal and autobiographical recall distinct.
+- Ordinary cognition may receive bounded retained memory; it must not receive hidden objective history as fake recollection.
 - Use focused invariant tests plus one representative lived proof.
 - Run `npm run check`, `npm run test:all`, `npm run validate`, `npm run test:audit -- --check --quiet` at slice gates.
 
