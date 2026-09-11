@@ -19,12 +19,15 @@ function hasExplicitReporter(nodeTestArgs) {
 
 export function testSuiteCommand(
   argv = process.argv.slice(2),
-  { isTTY = process.stdout.isTTY === true } = {},
+  {
+    isTTY = process.stdout.isTTY === true,
+    isCI = process.env.CI === "true",
+  } = {},
 ) {
   const { suite, nodeTestArgs } = parseTestSuiteArgs(argv);
   const suites = discoverTestSuites();
   const files = suites[suite];
-  const reporterArgs = isTTY && !hasExplicitReporter(nodeTestArgs)
+  const reporterArgs = (isTTY || isCI) && !hasExplicitReporter(nodeTestArgs)
     ? [`--test-reporter=${TTY_REPORTER}`]
     : [];
   return {
