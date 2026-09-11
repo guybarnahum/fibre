@@ -72,6 +72,7 @@
     "includes:check": "node tools/repository/sync-markdown-includes.mjs --check",
     "context-pack": "node tools/repository/build-context-pack.mjs",
     "check": "npm run includes:check && npm test && npm run context-pack && node tools/repository/validate-repo.mjs --generated",
+    "slice:validate": "npm run includes:check && npm run build && node tools/test-infra/run-test-suite.mjs all && npm run context-pack && node tools/repository/validate-repo.mjs --generated && node --disable-warning=ExperimentalWarning tools/repository/validate-world-seed.mjs && node tools/deployment/validate-deployment-manifest.mjs && node tools/deployment/validate-deployment-manifest.mjs infra/deployments/environments/cloudflare.yaml && node tools/test-infra/test-value-audit.mjs --check --quiet",
     "git-check": "node tools/repository/check-git-sync.mjs",
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/editor/serve-thread-editor.mjs",
