@@ -1,14 +1,14 @@
 {
   "$schema": "../../../../node_modules/wrangler/config-schema.json",
   "name": "fibre-world-kernel",
-  "main": "./worker.mjs",
+  "main": "./encounter-worker.mjs",
   "compatibility_date": "2026-08-31",
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
     "FIBRE_WORLD_RECONCILIATION_MS": "5000"
   },
   "secrets": {
-    "required": ["FIBRE_PRIVATE_TOKEN"]
+    "required": ["FIBRE_PRIVATE_TOKEN", "OPENAI_API_KEY"]
   },
   "d1_databases": [
     {
