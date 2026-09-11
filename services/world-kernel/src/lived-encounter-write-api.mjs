@@ -6,6 +6,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
+import { internalizeLivedEncounter } from "./lived-encounter-reflection.mjs";
 
 const TOKEN_ENCODER = new TextEncoder();
 
@@ -39,12 +40,17 @@ export function createLivedEncounterWriteApi({
   livedNowStore,
   semanticStateStore,
   modelAdapter,
+  experienceStore = null,
   privateToken,
 }) {
   requireDependency("worldReader", worldReader, "getThread");
   requireDependency("livedNowStore", livedNowStore, "getCurrentSituation");
   requireDependency("semanticStateStore", semanticStateStore, "listCurrentState");
   requireDependency("modelAdapter", modelAdapter, "invoke");
+  if (experienceStore !== null) {
+    requireDependency("experienceStore", experienceStore, "recordEncounter");
+    requireDependency("experienceStore", experienceStore, "recordJournalEntry");
+  }
   assertNonEmpty("privateToken", privateToken);
 
   return Object.freeze({
@@ -87,15 +93,27 @@ export function createLivedEncounterWriteApi({
       const thread = worldReader.getThread(body.threadId, { required: false });
       if (thread === null) return json({ error: "thread_not_found" }, 404);
 
+      const encounter = { utterance: body.utterance, occurredAt: body.occurredAt };
       const result = await respondToLivedEncounter({
         thread,
-        encounter: { utterance: body.utterance, occurredAt: body.occurredAt },
+        encounter,
         livedNowStore,
         semanticStateStore,
         modelAdapter,
       });
       if (result.grounding.situationId !== body.expectedSituationId) {
         return json({ error: "encounter_scene_changed" }, 409);
+      }
+
+      if (experienceStore !== null) {
+        await internalizeLivedEncounter({
+          thread,
+          encounter,
+          encounterResult: result,
+          semanticStateStore,
+          experienceStore,
+          modelAdapter,
+        });
       }
       return json({ ok: true, result });
     },
