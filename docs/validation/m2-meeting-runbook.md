@@ -1,7 +1,7 @@
 ---
 id: validation-m2-meeting-runbook
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-11
 canonical: true
 ---
 
@@ -23,27 +23,77 @@ Thread already has a life
   -> a later meeting can carry only what actually persisted
 ```
 
+The live M2 exercise should be watched from two surfaces at once:
+
+```text
+insidefibre.com/meet          the human encounter
+admin.insidefibre.com/activity the system-wide causal trail
+```
+
+The Activity Log is an operator lens, not another Fibre authority:
+
+```text
+Activity Log != World history != Thread Journal != autobiographical memory
+```
+
+It tells us what Fibre did and where a runtime chain succeeded or failed. It must not become a copy of the visitor's utterance, the Thread's response, private semantic state, journal text or remembered content.
+
 ## What must already be true
 
 The Thread must already exist and have a World-owned CurrentSituation. Thread Presentation must have published that present. The public meeting surface does not invent a place, activity, plan, feeling or current situation for a visitor.
 
 For the deployed path, the World worker needs its configured model credential and the World and Presentation workers must share their private service token. Thread Presentation is exposed at `https://api.insidefibre.com`; `insidefibre.com` talks only to that public Presentation API.
 
+The deployed World and Presentation workers also write operational activity to the shared Activity Log. `admin.insidefibre.com/activity` is the authenticated, read-only operator surface over that log.
+
+## Watch the Activity Log while meeting
+
+Do this before speaking to the Thread.
+
+1. Open `https://admin.insidefibre.com/activity` in a second window.
+2. Select **Thread**, enter the same `THREAD_ID`, and refresh. Enabling auto-refresh is useful during the meeting.
+3. Keep the Activity view visible while you send the encounter from `/meet` or the public API.
+4. The encounter records use the Thread's `situationId` as `correlationId`, so the public scene and the runtime trail can be matched without copying private conversation content into telemetry.
+
+A successful live encounter should show this compact cross-service chain:
+
+```text
+thread-presentation
+  presentation.encounter.world_submit
+      started -> succeeded
+
+world-kernel
+  encounter.cognition.respond
+      started -> succeeded
+  encounter.experience.internalize
+      started -> succeeded
+  encounter.memory.retain
+      started -> succeeded
+```
+
+`encounter.memory.retain` means Fibre ran the selective retention appraisal. It does **not** mean the Thread necessarily remembered the encounter; `not_remembered` is a valid successful outcome. The Activity Log records execution of the cognitive stage, while the autobiographical-memory authority owns whether a memory actually exists.
+
+Clicking an Activity row should show identifiers and safe evidence, not the visitor's words or private Thread content. The World retention stage may point to the authoritative encounter `eventId`; follow domain authorities when you need to inspect the actual history, journal or memory.
+
+On a failure, use the Activity trail to answer the useful question: **where did the lived encounter stop?** For example, a failed Presentation handoff means World was not reached; a failed cognition stage means no later internalization should be assumed; a failure after cognition tells us how far the semantic chain actually progressed. Activity records are observational and fail-open, so absence of telemetry is never proof that authoritative semantic state does or does not exist.
+
 ## Meet through insidefibre.com
 
 1. Open `https://insidefibre.com/meet`.
 2. Fibre discovers publicly available Threads. To request a particular public Thread, open `https://insidefibre.com/meet?thread=<THREAD_ID>`.
-3. Read **Right now** before speaking. This is the public projection of the Thread's already-enacted situation. If there is no published present, there is no M2 meeting to enter yet.
-4. Type an utterance and send it. The browser submits only the displayed `situationId` and the utterance to `POST /api/threads/<THREAD_ID>/encounter`.
-5. A successful reply means Presentation confirmed the still-published scene and World independently confirmed that the same situation is still authoritative before cognition ran.
-6. If the UI says the Thread's situation changed, reload the page. That `409` is desirable: the visitor arrived too late to speak into the old scene.
-7. Do not expect every meeting to be remembered. After the reply, Fibre records the objective encounter, may create a private first-person journal reflection, and separately decides whether anything enters autobiographical memory.
+3. Open the Activity Log for that Thread as described above.
+4. Read **Right now** before speaking. This is the public projection of the Thread's already-enacted situation. If there is no published present, there is no M2 meeting to enter yet.
+5. Note the displayed/published `situationId`; it is the correlation identity you should see in Activity Log records for this encounter.
+6. Type an utterance and send it. The browser submits only the displayed `situationId` and the utterance to `POST /api/threads/<THREAD_ID>/encounter`.
+7. Follow the Activity Log while the request crosses Presentation and World. A successful reply means Presentation confirmed the still-published scene and World independently confirmed that the same situation was still authoritative before cognition ran.
+8. If the UI says the Thread's situation changed, reload the page. That `409` is desirable: the visitor arrived too late to speak into the old scene.
+9. Do not expect every meeting to be remembered. After the reply, Fibre records the objective encounter, may create a private first-person journal reflection, and separately decides whether anything enters autobiographical memory.
 
 The response visible to the visitor contains only the public `situationId` and the Thread's `responseText`. Private semantic state, journal, memory records, model provenance and hidden grounding stay inside Fibre.
 
 ## Meet through the public API
 
-This bypasses only the Viewer UI. It still exercises the real Presentation -> World encounter boundary.
+This bypasses only the Viewer UI. It still exercises the real Presentation -> World encounter boundary and should produce the same Activity Log trail.
 
 Discover public Threads:
 
@@ -56,6 +106,12 @@ Choose a `threadId`, then inspect the public snapshot:
 ```bash
 THREAD_ID='thr_...'
 curl -sS "https://api.insidefibre.com/api/threads/$THREAD_ID/snapshot" | jq
+```
+
+Before posting the encounter, open:
+
+```text
+https://admin.insidefibre.com/activity?kind=thread&value=<THREAD_ID>&limit=100
 ```
 
 Copy the `situationId` from the snapshot's published present and send one utterance:
@@ -85,7 +141,9 @@ Expected public shape:
 }
 ```
 
-To deliberately test stale-scene protection, first read a valid present and then submit a different/old `situationId`. The request should fail with `409 encounter_scene_changed`, and cognition should not be allowed to treat the stale public scene as current reality.
+Refresh the Thread Activity view and confirm the Presentation + World stages carry the same `THREAD_ID` and `SITUATION_ID` correlation.
+
+To deliberately test stale-scene protection, first read a valid present and then submit a different/old `situationId`. The request should fail with `409 encounter_scene_changed`, and cognition should not be allowed to treat the stale public scene as current reality. The Activity Log is useful here too: a rejected stale scene should not masquerade as a completed cognition/internalization chain.
 
 ## If the M2 branch is not deployed
 
@@ -116,20 +174,24 @@ npm run deploy
 
 ## What counts as a convincing M2 manual meeting
 
-A good smoke test is not "the chatbot answered." Verify the life around the answer:
+A good smoke test is not "the chatbot answered." Verify both the life around the answer and the operational causal trail:
 
 ```text
 before visitor
   current scene already exists
+  public situationId is visible
 
 first meeting
   response is situated in that scene
   visitor does not author the scene
+  Activity Log shows Presentation -> World cognition -> experience -> retention
+  all encounter activity correlates to the entered situationId
 
 behind the meeting
   objective encounter persists
   private subjective reflection may differ from the transcript
   autobiographical retention is selective
+  Activity Log contains identifiers/stages, not private experiential content
 
 after visitor
   World can enact a later point in the Thread's own Flight Plan
@@ -142,37 +204,19 @@ second meeting
   forgotten experience cannot be reconstructed as remembered merely because Fibre has records
 ```
 
-The automated M2 acceptance proof covers the full two-meeting continuation, including restart. The deployed `/meet` smoke test proves the public ingress path against the currently published life. Together they test the milestone without inventing a second demo-only life engine.
+The automated M2 acceptance proof covers the full two-meeting continuation, including restart. The deployed `/meet` smoke test proves the public ingress path against the currently published life. The Activity Log lets us watch that real system path rather than treating the demo as a black box. Together they test the milestone without inventing a second demo-only life engine.
 
 ## M2 acceptance commands
 
-Run the focused semantic proof first:
+Use the canonical acceptance sequence:
 
 ```bash
 git switch agent/m2-lived-encounter
 git pull --ff-only
 
-node --test \
-  --test-reporter=./tools/test-infra/fibre-spec-reporter.mjs \
-  services/world-kernel/test/regulation-cycle.test.mjs \
-  services/world-kernel/test/interoceptive-cognition.test.mjs \
-  services/world-kernel/test/lived-now.test.mjs \
-  services/world-kernel/test/current-life-projection.test.mjs \
-  services/world-kernel/test/lived-encounter-cognition.test.mjs \
-  services/world-kernel/test/lived-encounter-write-api.test.mjs \
-  services/world-kernel/test/lived-encounter-reflection.test.mjs \
-  services/world-kernel/test/lived-encounter-memory.test.mjs \
-  services/world-kernel/test/lived-encounter-continuity.test.mjs
-```
-
-Then run the repository gates:
-
-```bash
 npm run check
-npm run test:all
-npm run validate
-npm run test:audit -- --check --quiet
-git status --short
+npm run demo:m2
+npm run slice:validate
 ```
 
-M2 closes only when the focused semantic proof, repository gates, and one real deployed `/meet` smoke test are green. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
+M2 closes only when those gates and one real deployed `/meet` meeting are green. During the live meeting, the Activity Log should make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
