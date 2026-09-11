@@ -28,7 +28,10 @@ function indent(value) {
   return String(value).split(/\r?\n/u).map((line) => `    ${line}`).join("\n");
 }
 
-export async function* fibreTtyReporter(source, { columns = process.stdout.columns } = {}) {
+export async function* fibreTtyReporter(source, {
+  columns = process.stdout.columns,
+  isTTY = process.stdout.isTTY === true,
+} = {}) {
   let passed = 0;
   let failed = 0;
   let skipped = 0;
@@ -41,29 +44,33 @@ export async function* fibreTtyReporter(source, { columns = process.stdout.colum
       if (data.skip !== undefined && data.skip !== false) skipped += 1;
       else if (data.todo !== undefined && data.todo !== false) todo += 1;
       else passed += 1;
-      const done = passed + failed + skipped + todo + cancelled;
-      const prefix = `✓ ${done}  `;
-      yield `${CLEAR_LINE}${fitTransientLine(prefix, terminalName(data), columns)}`;
+      if (isTTY) {
+        const done = passed + failed + skipped + todo + cancelled;
+        const prefix = `✓ ${done}  `;
+        yield `${CLEAR_LINE}${fitTransientLine(prefix, terminalName(data), columns)}`;
+      }
       continue;
     }
 
     if (event.type === "test:fail" && !isSuite(data)) {
       failed += 1;
       const done = passed + failed + skipped + todo + cancelled;
-      yield `${CLEAR_LINE}✗ ${done}  ${terminalName(data)}\n${indent(errorText(data.details?.error))}\n`;
+      const prefix = isTTY ? CLEAR_LINE : "";
+      yield `${prefix}✗ ${done}  ${terminalName(data)}\n${indent(errorText(data.details?.error))}\n`;
       continue;
     }
 
     if (event.type === "test:cancel" && !isSuite(data)) {
       cancelled += 1;
       const done = passed + failed + skipped + todo + cancelled;
-      yield `${CLEAR_LINE}⊘ ${done}  ${terminalName(data)}\n`;
+      const prefix = isTTY ? CLEAR_LINE : "";
+      yield `${prefix}⊘ ${done}  ${terminalName(data)}\n`;
       continue;
     }
 
     if (event.type === "test:stdout" || event.type === "test:stderr") {
       const message = data.message ?? "";
-      if (message !== "") yield `${CLEAR_LINE}${message}${String(message).endsWith("\n") ? "" : "\n"}`;
+      if (message !== "") yield `${isTTY ? CLEAR_LINE : ""}${message}${String(message).endsWith("\n") ? "" : "\n"}`;
     }
   }
 
@@ -72,7 +79,7 @@ export async function* fibreTtyReporter(source, { columns = process.stdout.colum
   if (skipped !== 0) parts.push(`${skipped} skipped`);
   if (todo !== 0) parts.push(`${todo} todo`);
   if (cancelled !== 0) parts.push(`${cancelled} cancelled`);
-  yield `${CLEAR_LINE}${failed === 0 ? "✓" : "✗"} ${parts.join(" · ")}\n`;
+  yield `${isTTY ? CLEAR_LINE : ""}${failed === 0 ? "✓" : "✗"} ${parts.join(" · ")}\n`;
 }
 
 export default fibreTtyReporter;
