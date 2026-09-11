@@ -13,12 +13,13 @@ const situation = {
   establishedAt: "2026-09-11T00:00:00Z",
 };
 
-function api({ modelCalls = [] } = {}) {
+function api({ modelCalls = [], activityRecorder = null } = {}) {
   return createLivedEncounterWriteApi({
     privateToken: "private-token-a5-bridge",
     worldReader: { getThread: () => structuredClone(thread) },
     livedNowStore: { getCurrentSituation: () => structuredClone(situation) },
     semanticStateStore: { listCurrentState: () => [] },
+    activityRecorder,
     modelAdapter: {
       async invoke(input) {
         modelCalls.push(input);
@@ -65,4 +66,30 @@ test("A5 private encounter bridge exposes speech but keeps cognition grounded in
   assert.equal(body.result.responseText, "Hi.");
   assert.equal(body.result.grounding.situationId, situation.situationId);
   assert.equal(modelCalls.length, 1);
+});
+
+test("A5 Activity Log exposes encounter causality without copying private speech", async () => {
+  const stages = [];
+  const activityRecorder = {
+    async runStage(metadata, operation) {
+      stages.push(structuredClone(metadata));
+      return operation();
+    },
+  };
+  const utterance = "This is private visitor speech.";
+  const response = await api({ activityRecorder }).fetch(request({
+    threadId: thread.threadId,
+    expectedSituationId: situation.situationId,
+    utterance,
+    occurredAt: "2026-09-11T00:05:00Z",
+  }));
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(stages, [{
+    threadId: thread.threadId,
+    correlationId: situation.situationId,
+    stage: "encounter.cognition.respond",
+  }]);
+  assert.equal(JSON.stringify(stages).includes(utterance), false,
+    "operator telemetry should identify the lived encounter without becoming a copy of it");
 });
