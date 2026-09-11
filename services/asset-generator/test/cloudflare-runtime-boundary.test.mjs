@@ -229,7 +229,7 @@ test("remote Cloudflare composition shares generated assets and completion topol
 
   assert.equal(assetConfig.name, "fibre-asset-generator");
   assert.equal(presentationConfig.name, "fibre-thread-presentation");
-  assert.equal(presentationConfig.main, "./worker.mjs");
+  assert.equal(presentationConfig.main, "./encounter-worker.mjs", "remote Presentation should enter through the A5 encounter wrapper");
   assert.equal(assetConfig.vars.FIBRE_DEPLOYMENT_ENV, "cloudflare");
   assert.equal(presentationConfig.vars.FIBRE_DEPLOYMENT_ENV, "cloudflare");
   assert.equal(assetBucket.bucket_name, "fibre-presentation-assets");
