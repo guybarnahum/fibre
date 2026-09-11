@@ -106,6 +106,7 @@ export function createLivedEncounterWriteApi({
         encounter,
         livedNowStore,
         semanticStateStore,
+        memoryStore,
         modelAdapter,
       });
       if (result.grounding.situationId !== body.expectedSituationId) {
