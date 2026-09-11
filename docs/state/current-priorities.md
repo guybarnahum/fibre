@@ -22,9 +22,11 @@ A2 Care plan + conflicting wills in movement             CLOSED
 A3 Current-life projection + Thread Editor               CLOSED
 A4 Public present + insidefibre.com scene                 CLOSED
 A5 Situated encounter                                    CLOSED
-B1 Encounter -> journal -> selective memory              IMPLEMENTED / GATE PENDING
-B2 Life continues + second meeting                       IMPLEMENTED / GATE PENDING
-                                                        TRUE-E2E CLOSURE
+B1 Encounter -> journal -> selective memory              CLOSED
+B2 Life continues + second meeting                       CLOSED
+                                                        TRUE-E2E CAPABILITY
+M2 automated acceptance                                  PASSED
+M2 live human meeting                                    PENDING
 ```
 
 All work remains on `agent/m2-lived-encounter`; do not create per-slice branches.
@@ -62,6 +64,18 @@ history exists + retained autobiographical memory
 ```
 
 The representative B2 proof reopens persisted memory state and places the Thread in a later lived situation before the second encounter. This composes with the existing persisted Flight Plan / CurrentSituation machinery; do not build a second continuation or conversation engine.
+
+## M2 acceptance state
+
+The canonical acceptance sequence has passed:
+
+```bash
+npm run check
+npm run demo:m2
+npm run slice:validate
+```
+
+The automated milestone proof is therefore complete. The remaining M2 closure step is one real deployed human meeting using [`../validation/m2-meeting-runbook.md`](../validation/m2-meeting-runbook.md), followed by inspection that the lived encounter entered the same causal loop shown above.
 
 ## Semantic boundaries
 
