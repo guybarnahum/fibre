@@ -17,7 +17,7 @@ const JOURNEY_PHASES = Object.freeze([
   { id:"life", label:"Life", description:"Plan and enacted situation" },
   { id:"presentation", label:"Presentation", description:"Public projection" },
   { id:"encounter", label:"Encounter", description:"Situated meeting" },
-  { id:"experience", label:"Experience", description:"Journal and memory" },
+  { id:"experience", label:"Experience", description:"History, journal and memory" },
   { id:"continuity", label:"Continuity", description:"Life after the visitor" },
 ]);
 
@@ -29,7 +29,7 @@ function queryLabel(record) { return record.threadId ?? record.genesisId ?? reco
 
 function journeyPhase(stage) {
   if (stage === "presentation.encounter.world_submit" || stage.startsWith("encounter.cognition.")) return "encounter";
-  if (stage.startsWith("encounter.experience.") || stage.startsWith("encounter.memory.")) return "experience";
+  if (stage.startsWith("encounter.history.") || stage.startsWith("encounter.journal.") || stage.startsWith("encounter.experience.") || stage.startsWith("encounter.memory.")) return "experience";
   if (stage.startsWith("continuity.") || stage.startsWith("life.continue.")) return "continuity";
   if (stage.startsWith("life.") || stage.startsWith("lived.")) return "life";
   if (stage.startsWith("birth.")) return "birth";
