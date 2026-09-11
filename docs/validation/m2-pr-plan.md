@@ -36,8 +36,6 @@ Fibre owns life and authority. Thread Editor is an authorized lens. Thread Prese
 
 ## Intrinsic-regulation detour — completed
 
-The deliberate R1-R4 detour established the organism-like substrate needed before Flight Plan could become lived rather than inert:
-
 ```text
 R1 Regulatory kernel + presence drive                    CLOSED
 R2 Person-as-place / social-attachment regulation        CLOSED
@@ -62,46 +60,21 @@ Drive/affect are private mechanical state, not named emotions. Semantic feeling 
 
 ### Person as place
 
-Presence is a relation, not only geography. A Thread may want or need to be:
-
-```text
-at Victoria Station
-at home and connected to a Zoom meeting
-with a caregiver
-near an intimate partner
-away from a particular person
-alone somewhere quiet
-```
-
-A caregiver can function as a child's secure base; an intimate friend/partner can regulate an adult through presence; another relationship or moment may create a desire for distance. Role labels never mechanically decide the desired relation.
+Presence is a relation, not only geography. A Thread may want or need to be at a place, connected to a mediated meeting, with or away from another person, or alone somewhere quiet. Role labels never mechanically decide the desired relation.
 
 ## Flight Plan
 
 A Flight Plan is a Thread's **bounded mental itinerary for roughly the next half-day/day**: where/how she expects, wants or needs to be present, what she wants or needs to do, with whom, and when it matters.
 
-It is not a scheduler and not World truth.
-
-```text
-08:00  home / breakfast
-10:00  home / Zoom with someone
-12:15  moving toward station
-12:45  Victoria Station / train
-15:10  Edinburgh / meet a friend
-```
-
-Physical movement is lived time. Delays, obstacles, unexpected meetings, discoveries and pleasant or unpleasant surprises may change regulatory pressure and bend the enacted day without rewriting the original plan.
+It is not a scheduler and not World truth. Physical movement is lived time. Delays, obstacles, unexpected meetings, discoveries and surprises may change regulatory pressure and bend the enacted day without rewriting the original plan.
 
 The immutable plan preserves intended life; World history preserves lived life. Regulation makes the difference between the two felt; autobiographical memory later decides what was worth retaining.
 
-Children/dependent persons additionally may be subject to a caregiver-owned care plan. The caregiver may legitimately constrain enacted life without overwriting the dependent person's personal will. The negotiation itself can become an experience for both.
-
-Critically:
+Children/dependent persons additionally may be subject to a caregiver-owned care plan. The caregiver may legitimately constrain enacted life without overwriting the dependent person's personal will.
 
 ```text
 care requirement != dependent person's private desire
 ```
-
-A required care plan can explain why Maya is being taken to the dentist while movement away from Maya's own intended presence raises her own regulatory pressure. Successful care compliance does not mechanically become intrinsic satisfaction for the child.
 
 ## Resume sequence
 
@@ -109,62 +82,48 @@ A required care plan can explain why Maya is being taken to the dentist while mo
 
 A Thread can author an ordered half-day/day itinerary of desired physical and mediated presence. World-observed CurrentSituation is persisted separately from the plan and can record place, transit progress, mediated presence, activity and participants.
 
-Plan and reality may diverge without rewriting one another. Persisted current life can feed Flight Plan regulation after restart, producing `preparing`, `moving`, `delayed`, `arrived` or `dwelling` plus presence pressure/progress/attainment.
-
-**Done:** after restart Fibre can distinguish where/how the Thread intended to be from where/how World-observed life actually is.
+Plan and reality may diverge without rewriting one another. Persisted current life can feed Flight Plan regulation after restart.
 
 ### A2 — Care plan + conflicting wills — CLOSED
 
-Care uses the same itinerary semantics while retaining separate ownership and authority. A caregiver-owned required plan may govern the course of enacted life without rewriting the dependent Thread's personal Flight Plan or becoming the dependent Thread's private drive.
+Care uses the same itinerary semantics while retaining separate ownership and authority. A caregiver-owned required plan may govern enacted life without rewriting the dependent Thread's personal Flight Plan or becoming the dependent Thread's private drive.
 
-The representative moving conflict proves that World can observe departure, transit and arrival toward the caregiver-required destination while the dependent Thread's own presence target remains independently unsatisfied and regulator-relevant.
+### A3 — Current-life projection + Thread Editor — CLOSED
 
-**Done:** Fibre distinguishes `what I wanted`, `what my caregiver required`, `what happened`, and `what that did to me` through a moving care conflict.
+One computed current-life projection assembles the existing authorities into the authorized operator view. It is not a store, cache, second current-life authority or Editor-owned state.
 
-### A3 — Current-life projection + Thread Editor — CLOSING
+### A4 — Public present + insidefibre.com scene — CLOSED
 
-One current-life projection assembles the existing authorities into an operator view of:
+Thread Presentation publishes only the allowed current-life subset. `/meet` is scene-first: the visitor enters a life already underway. Viewer selection never generates the person's current situation.
 
-```text
-Now / movement
-Flight Plan
-Care / conflict
-Plan vs lived
-Current Semantic State
-Optional organism trace
-Provenance
-```
+### A5 — Situated encounter — CLOSED
 
-The projection is computed on read. It is not a store, cache, second current-life authority or Editor-owned state.
+A human encounter is bound to the exact already-published situation. The browser supplies only an utterance plus the displayed `situationId` as a stale-scene precondition. Presentation verifies the published scene and World independently verifies authoritative CurrentSituation before cognition.
 
-The canonical local World now exposes the projection through one private read-only inspection route backed by the existing Lived Now and Semantic State authorities. Thread Editor folds that result into its existing private inspection payload and renders a readable `Lived now` panel in the Life state view.
+Private Semantic State may shape cognition but does not cross the public boundary. The visitor cannot author World state, private motives, plans, care authority or semantic state. The response is ephemeral at the public seam; A5 itself does not create transcript history, memory or relationship state.
 
-A missing current-life route on an older World/fixture is treated as an additive capability absence rather than invalidating unrelated Editor inspection. Other upstream failures still surface normally.
+### B1 — Encounter becomes experience — ACTIVE
 
-The R4 organism trace remains intentionally non-persistent. It belongs in a current-life projection only when an actual regulation cycle produced a trace for that lived moment; Fibre must not invent a debug-trace store solely to make the Editor look complete.
-
-**Done when:** focused projection, live transport, local server-composition and Editor regression gates pass. Then close A3 and move directly to A4.
-
-### A4 — Public present + insidefibre.com scene
-
-Publish only the allowed current-life subset and a situation-conditioned depiction. `/meet` becomes scene-first: who this is, where/how they are present, what they are doing, why, who is with them when public, and a bounded sense of where life is heading.
-
-`Meet` selects a person; it never generates the person's current situation.
-
-### A5 — Situated encounter
-
-Bind a human encounter to the exact current situation. Thread cognition receives the admitted current-life/interoceptive context through Fibre-owned projection, never visitor-authored motives or private raw stores.
-
-### B1 — Encounter becomes experience
+B1 separates objective lived evidence from the Thread's subjective internalization:
 
 ```text
-encounter happened
-  -> private interpretation
-  -> forgotten / transient / meaningful / relational / formative
-  -> selective durable effect or none
+objective lived encounter
+  -> private contemporaneous interpretation
+  -> optional private Thread Journal entry
+  -> selective autobiographical retention or none
+  -> optional durable remembered meaning
 ```
 
-Do not store transcript as memory. Shared event does not imply shared meaning.
+The Thread Journal is private inner voice: a first-person contemporaneous reflection linked to the objective event. It is neither objective history nor autobiographical memory. A journal entry may survive as a historical artifact even if the Thread later does not remember the encounter. Later reinterpretation appends new inner life; it does not rewrite what the Thread thought then.
+
+B1 implementation slices:
+
+```text
+B1.1 objective encounter <-> private Thread Journal       ACTIVE
+B1.2 selective autobiographical carry-forward            NEXT
+```
+
+Do not store a transcript as memory. Human encounters receive no special retention privilege. Shared event does not imply shared meaning, and journal existence does not imply durable memory.
 
 ### B2 — Life continues + second meeting
 
@@ -188,10 +147,11 @@ After one convincing loop, generalize only what proved useful:
 - All slices remain on `agent/m2-lived-encounter`.
 - Build one visible Fibre capability at a time.
 - Prefer existing authorities and service boundaries.
-- No generic planner, emotion simulator, child engine or world simulator ahead of proof.
+- No generic planner, emotion simulator, child engine, conversation store or world simulator ahead of proof.
 - No fixed drive-to-emotion mapping.
 - No transcript-as-memory shortcut.
 - No Viewer-owned current state.
+- Keep private journal and autobiographical recall distinct.
 - Use focused invariant tests plus one representative lived proof.
 - Run `npm run check`, `npm run test:all`, `npm run validate`, `npm run test:audit -- --check --quiet` at slice gates.
 
