@@ -36,6 +36,10 @@ function requireDependency(name, value, method) {
   }
 }
 
+function runActivityStage(activityRecorder, metadata, operation) {
+  return activityRecorder === null ? operation() : activityRecorder.runStage(metadata, operation);
+}
+
 export function createLivedEncounterWriteApi({
   worldReader,
   livedNowStore,
@@ -43,6 +47,7 @@ export function createLivedEncounterWriteApi({
   modelAdapter,
   experienceStore = null,
   memoryStore = null,
+  activityRecorder = null,
   privateToken,
 }) {
   requireDependency("worldReader", worldReader, "getThread");
@@ -58,6 +63,7 @@ export function createLivedEncounterWriteApi({
     requireDependency("memoryStore", memoryStore, "listCurrentMemories");
     requireDependency("memoryStore", memoryStore, "recordMemory");
   }
+  if (activityRecorder !== null) requireDependency("activityRecorder", activityRecorder, "runStage");
   assertNonEmpty("privateToken", privateToken);
 
   return Object.freeze({
@@ -100,37 +106,51 @@ export function createLivedEncounterWriteApi({
       const thread = worldReader.getThread(body.threadId, { required: false });
       if (thread === null) return json({ error: "thread_not_found" }, 404);
 
+      const activity = Object.freeze({
+        threadId: body.threadId,
+        correlationId: body.expectedSituationId,
+      });
       const encounter = { utterance: body.utterance, occurredAt: body.occurredAt };
-      const result = await respondToLivedEncounter({
+      const result = await runActivityStage(activityRecorder, {
+        ...activity,
+        stage: "encounter.cognition.respond",
+      }, () => respondToLivedEncounter({
         thread,
         encounter,
         livedNowStore,
         semanticStateStore,
         memoryStore,
         modelAdapter,
-      });
+      }));
       if (result.grounding.situationId !== body.expectedSituationId) {
         return json({ error: "encounter_scene_changed" }, 409);
       }
 
       if (experienceStore !== null) {
-        const internalized = await internalizeLivedEncounter({
+        const internalized = await runActivityStage(activityRecorder, {
+          ...activity,
+          stage: "encounter.experience.internalize",
+        }, () => internalizeLivedEncounter({
           thread,
           encounter,
           encounterResult: result,
           semanticStateStore,
           experienceStore,
           modelAdapter,
-        });
+        }));
         if (memoryStore !== null) {
-          await formLivedEncounterMemory({
+          await runActivityStage(activityRecorder, {
+            ...activity,
+            stage: "encounter.memory.retain",
+            evidence: { eventId: internalized.historyEvent.eventId },
+          }, () => formLivedEncounterMemory({
             thread,
             historyEvent: internalized.historyEvent,
             journalEntry: internalized.journalEntry,
             semanticStateStore,
             memoryStore,
             modelAdapter,
-          });
+          }));
         }
       }
       return json({ ok: true, result });
