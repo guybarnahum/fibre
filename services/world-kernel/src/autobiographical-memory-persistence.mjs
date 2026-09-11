@@ -35,8 +35,19 @@ function subjectiveMemoryStateChanged(previous, current) {
   return previous.accessibility !== current.accessibility || previous.retentionState !== current.retentionState;
 }
 
+function historicalEvent(database, threadId, ref) {
+  const threadEvent = database.prepare(
+    "SELECT occurred_at FROM thread_events WHERE thread_id=? AND event_id=?",
+  ).get(threadId, ref);
+  if (threadEvent !== undefined) return threadEvent;
+  return database.prepare(
+    "SELECT occurred_at FROM lived_encounter_records WHERE thread_id=? AND event_id=?",
+  ).get(threadId, ref);
+}
+
 function referenceResolves(database, threadId, ref) {
   if (database.prepare("SELECT 1 AS present FROM thread_events WHERE thread_id=? AND event_id=?").get(threadId, ref) !== undefined) return true;
+  if (database.prepare("SELECT 1 AS present FROM lived_encounter_records WHERE thread_id=? AND event_id=?").get(threadId, ref) !== undefined) return true;
   if (database.prepare("SELECT 1 AS present FROM situated_evidence_witnesses WHERE thread_id=? AND reference=?").get(threadId, ref) !== undefined) return true;
   if (database.prepare("SELECT 1 AS present FROM identity_assertion_records WHERE thread_id=? AND assertion_id=?").get(threadId, ref) !== undefined) return true;
   return false;
@@ -47,9 +58,7 @@ export function assertAutobiographicalMemoryReferences(database, recordCandidate
   const start = Date.parse(record.subjectPeriod.startAt);
   const end = record.subjectPeriod.endAt === null ? null : Date.parse(record.subjectPeriod.endAt);
   for (const ref of record.eventRefs) {
-    const event = database.prepare(
-      "SELECT occurred_at FROM thread_events WHERE thread_id=? AND event_id=?",
-    ).get(record.threadId, ref);
+    const event = historicalEvent(database, record.threadId, ref);
     if (event === undefined) throw new ErrorType(`memory event reference ${ref} does not resolve to Thread ${record.threadId} history`);
     const occurredAt = Date.parse(event.occurred_at);
     if (occurredAt > Date.parse(record.asOf)) throw new ErrorType(`memory cannot cite future event ${ref} relative to asOf`);
