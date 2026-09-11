@@ -14,7 +14,7 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 ## Accepted foundation
 
 - A Thread is a persistent life, not a model session.
-- History, autobiographical memory and private meaning are distinct.
+- History, private contemporaneous journal, autobiographical memory and remembered meaning are distinct.
 - Historical state is append-only or explicitly superseding.
 - Meaning-bearing identity, memory, relationship, need, emotion and self-understanding are natural-language-first.
 - Mechanical/private regulatory state may be numeric when it is control state rather than semantic meaning.
@@ -25,81 +25,128 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 
 ## Current milestone posture
 
-[`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) remains the M2 continuation authority. [`../architecture/intrinsic-regulation.md`](../architecture/intrinsic-regulation.md) is the active implementation detour.
+[`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) is the M2 authority. [`../validation/m2-meeting-runbook.md`](../validation/m2-meeting-runbook.md) is the operator acceptance path.
 
 ```text
 M1 + identity/history/birth/causal foundations            CLOSED
 G/H public path + minimum recovery                        CLOSED
 FID + Directory/Meet                                      CLOSED
-
-R1-R4 intrinsic regulation                                CURRENT DETOUR
-M2-A present life / Flight Plan / Meet                    RESUMES AFTER R4
-M2-B experience internalization + continuation            THEN
+R1-R4 intrinsic regulation                                CLOSED
+M2-A lived present / Flight Plan / situated encounter     CLOSED
+M2-B experience internalization + continuation            IMPLEMENTED
+M2 acceptance gate                                        PENDING RUN
 ```
 
-The old standing-gate sequence remains evaluation history, not current development order.
+The remaining M2 work is validation, not another architecture slice: run the representative lived-person proof, run repository gates, and exercise one real deployed `/meet` encounter. Do not expand M2 with speculative frameworks before those gates expose a concrete missing capability.
 
-## What exists
+## What M2 now contains
 
-Fibre can publish a born Thread with authoritative identity/FIN/FID, provenance-bearing prior life and situated history, autobiographical memory/meaning lineage, genome/lineage inputs, canonical visual identity, public Thread Presentation/Directory/Meet, and durable cloud recovery.
-
-The current `agent/m2-lived-encounter` branch has also established an initial A1/A2 authority seam: personal plan and caregiver care plan are distinct from World-enacted current situation; care does not overwrite the dependent person's will; Viewer/caller input cannot author current reality.
-
-That one-step plan representation is provisional. The intended Flight Plan is a half-day/day mental itinerary and will be resumed after intrinsic regulation.
-
-## The newly exposed gap
-
-The E2E meeting forced a deeper question: **why does anything in the Thread's life feel pressing, satisfying, frustrating, comforting or worth moving toward before cognition writes an emotion sentence?**
-
-Fibre now distinguishes:
+The Thread can enter the present with a life already underway:
 
 ```text
-World condition
-  -> intrinsic regulation
-  -> private drive / affect
-  -> cognition
-  -> Thread-authored semantic feeling / need / meaning
+developmental context + relationships
+  -> intrinsic drives make conditions matter
+  -> Thread-authored half-day/day Flight Plan
+  -> optional caregiver-owned care plan
+  -> World-enacted CurrentSituation
+  -> authorized private inspection + lossy public present
+  -> visitor enters that exact situation
+  -> objective encounter history
+  -> private contemporaneous Thread Journal
+  -> selective autobiographical retention or none
+  -> life continues independently
+  -> later meeting receives only consequences that persisted
 ```
 
-Regulators compare desired/avoided conditions with actual and predicted conditions. They may affect attention, urgency and planning, but they do not author named emotions or grant protected action.
+A Flight Plan is intended life, not World truth. World observation may diverge without rewriting the plan. Care may constrain enacted life without overwriting the dependent Thread's own will.
 
-A desired condition can be a relation of presence rather than a geographic point: `at station`, `on Zoom with Alex`, `with caregiver`, `near partner`, `away from person`, `alone somewhere quiet`.
+A visitor does not create the Thread's present. The browser supplies only an utterance and the displayed `situationId` as a stale-scene precondition. Presentation checks the published present; World independently checks authoritative CurrentSituation before cognition.
 
-This gives movement, lateness, arrival, social proximity, separation, obstacles and surprises a common felt substrate.
+## Intrinsic regulation remains below semantic life
 
-## Semantic interiority remains distinct
+```text
+desired/avoided condition
+  + actual/predicted World state
+  -> drive pressure / progress / surprise / attainment
+  -> intrinsic affect
+  -> cognition may interpret
+  -> semantic emotion / need / meaning
+```
+
+The distinctions remain load-bearing:
 
 ```text
 regulatory drive  != semantic need
 intrinsic affect  != semantic emotion
 presence pressure != relationship meaning
+care requirement  != dependent person's private desire
 ```
 
-A bounded interoceptive projection may later let cognition feel regulator output without being told what it means. The Thread may then author a grounded semantic interpretation such as worry, relief, frustration, comfort, loneliness, curiosity or no durable feeling at all.
+Similar regulatory conditions may be interpreted differently by different lives.
 
-Different lives must remain able to interpret similar regulator patterns differently.
+## Experience and memory
 
-## Why this remains on the M2 path
-
-The insidefibre.com meeting is an architectural forcing function. Its value is not the chat UI; it exposes what must be true for a visitor to enter an already meaningful life.
-
-After R1-R4, M2 resumes:
+M2 adds a private Thread Journal as the contemporaneous subjective layer between objective history and later autobiographical memory:
 
 ```text
-developmental context + relationships
-  -> intrinsic drives
-  -> half-day/day personal Flight Plan
-  -> optional caregiver care plan
-  -> World-enacted presence / movement
-  -> encounter
-  -> private interpretation / selective consequence
-  -> continued life
+History             what Fibre has evidence happened
+Journal             what it was like for me then
+Memory              what I still retain autobiographically
+Remembered meaning  what the retained experience durably came to mean
 ```
+
+The journal is private inner voice, not a transcript and not proof of later recall. Human encounters receive no special retention privilege. `not_remembered` is a valid outcome.
+
+Ordinary encounter cognition receives bounded retained autobiographical memory. It does not receive old objective encounter history or old journal records as hidden perfect recall. Therefore Fibre can preserve evidence that something happened without forcing the Thread to remember it.
+
+## B2 continuation proof
+
+The representative B2 proof deliberately adds no continuation framework. It composes the existing organism:
+
+```text
+persisted personal Flight Plan with later life
+  -> World enacts first stop
+  -> first encounter enters through normal World encounter API
+  -> history + private reflection + selective memory
+  -> visitor is gone
+  -> World enacts a later stop from the Thread's own plan
+  -> stores reopen across persistence boundary
+  -> second encounter enters the later World situation
+  -> retained branch can carry memory
+  -> forgotten branch cannot reconstruct recollection from hidden records
+```
+
+This is the milestone's central claim: **the visitor enters an existing life; the life continues after the visitor leaves.**
+
+## Public meeting path
+
+The public path is:
+
+```text
+insidefibre.com /meet
+  -> Thread Presentation public present
+  -> POST /api/threads/:threadId/encounter
+  -> Presentation verifies same published situation
+  -> World verifies same authoritative CurrentSituation
+  -> temporary Thread cognition
+  -> public response text
+  -> private experience internalization behind the boundary
+```
+
+The exact operator procedure, direct API commands and M2 acceptance commands are in [`../validation/m2-meeting-runbook.md`](../validation/m2-meeting-runbook.md).
+
+## Immediate next action
+
+Do not add M2 primitives now. Run the acceptance proof and the deployed meeting.
+
+If those gates pass, record **M2 — lived person CLOSED** and move from architecture construction to exercising/debugging the real lived system and choosing the next organism-level milestone from what the experience exposes.
+
+If a gate fails, repair the smallest violated Fibre invariant rather than introducing a generic framework.
 
 ## Development discipline
 
 Build the smallest organism-level capability with a concrete beneficiary and stop condition.
 
-No generic emotion simulator, no giant drive ontology, no high-frequency world ticking, no role-to-attachment shortcut, and no drive-to-emotion mapping. Reuse existing World, Semantic State, cognition and authority boundaries.
+No generic emotion simulator, no giant drive ontology, no high-frequency world ticking, no conversation store, no role-to-attachment shortcut, no drive-to-emotion mapping, and no second current-life authority. Reuse existing World, Semantic State, cognition, memory and Presentation boundaries.
 
 > **Someone was here yesterday. Something happened. It mattered — or it didn't. And today, their life continues.**
