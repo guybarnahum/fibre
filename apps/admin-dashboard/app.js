@@ -8,14 +8,34 @@ const limit = $("#limit");
 const rows = $("#activity-rows");
 const empty = $("#empty-state");
 const dialog = $("#record-dialog");
+const journey = $("#thread-journey");
 let timer = null;
 let currentRecords = [];
 
-function text(node, value) { node.textContent = value ?? "—"; }
+const JOURNEY_PHASES = Object.freeze([
+  { id:"birth", label:"Birth", description:"Genesis and admission" },
+  { id:"life", label:"Life", description:"Plan and enacted situation" },
+  { id:"presentation", label:"Presentation", description:"Public projection" },
+  { id:"encounter", label:"Encounter", description:"Situated meeting" },
+  { id:"experience", label:"Experience", description:"Journal and memory" },
+  { id:"continuity", label:"Continuity", description:"Life after the visitor" },
+]);
+
+function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
 function shortId(input) { if (!input) return null; return input.length > 24 ? `${input.slice(0, 12)}…${input.slice(-8)}` : input; }
 function clock(input) { try { return new Intl.DateTimeFormat([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }).format(new Date(input)); } catch { return input; } }
 function queryLabel(record) { return record.threadId ?? record.genesisId ?? record.requestId ?? record.correlationId ?? "—"; }
+
+function journeyPhase(stage) {
+  if (stage === "presentation.encounter.world_submit" || stage.startsWith("encounter.cognition.")) return "encounter";
+  if (stage.startsWith("encounter.experience.") || stage.startsWith("encounter.memory.")) return "experience";
+  if (stage.startsWith("continuity.") || stage.startsWith("life.continue.")) return "continuity";
+  if (stage.startsWith("life.") || stage.startsWith("lived.")) return "life";
+  if (stage.startsWith("birth.")) return "birth";
+  if (stage.startsWith("presentation.") || stage.startsWith("asset.") || stage.includes(".presentation")) return "presentation";
+  return "system";
+}
 
 function syncFormFromUrl() {
   const params = new URLSearchParams(location.search);
@@ -53,7 +73,7 @@ function summarize(records) {
   const retries = records.filter((r) => r.status === "retrying");
   const recoveredKeys = new Set();
   for (const failed of failures) {
-    if (records.some((r) => r.stage === failed.stage && r.service === failed.service && r.status === "succeeded" && r.occurredAt >= failed.occurredAt)) recoveredKeys.add(`${failed.service}:${failed.stage}`);
+    if (records.some((r) => r.service === failed.service && r.stage === failed.stage && r.status === "succeeded" && r.occurredAt >= failed.occurredAt)) recoveredKeys.add(`${failed.service}:${failed.stage}`);
   }
   return { failures: failures.length, retries: retries.length, recovered: recoveredKeys.size };
 }
@@ -66,27 +86,74 @@ function renderMetrics(records) {
   text($("#metric-recovered"), summary.recovered);
 }
 
+function statusFor(records) {
+  if (records.some((record) => record.status === "failed")) return "failed";
+  if (records.some((record) => record.status === "retrying")) return "retrying";
+  if (records.some((record) => record.status === "started" && !records.some((later) => later.service === record.service && later.stage === record.stage && ["succeeded","failed"].includes(later.status) && later.occurredAt >= record.occurredAt))) return "started";
+  if (records.some((record) => record.status === "succeeded")) return "succeeded";
+  return "unobserved";
+}
+
+function renderJourney(records, query) {
+  const active = query.kind === "thread";
+  journey.hidden = !active;
+  if (!active) return;
+
+  const phaseRecords = new Map(JOURNEY_PHASES.map((phase) => [phase.id, records.filter((record) => journeyPhase(record.stage) === phase.id)]));
+  $("#journey-phases").replaceChildren(...JOURNEY_PHASES.map((phase) => {
+    const observed = phaseRecords.get(phase.id);
+    const state = statusFor(observed);
+    const card = document.createElement("article");
+    card.className = `journey-phase journey-phase-${state}`;
+    const head = document.createElement("div"); head.className = "journey-phase-head";
+    const dot = document.createElement("span"); dot.className = "journey-phase-dot";
+    const label = document.createElement("strong"); label.textContent = phase.label;
+    head.append(dot, label);
+    const description = document.createElement("span"); description.textContent = phase.description;
+    const count = document.createElement("small"); count.textContent = observed.length ? `${observed.length} activity record${observed.length === 1 ? "" : "s"}` : "not observed";
+    card.append(head, description, count);
+    return card;
+  }));
+
+  const terminal = records.filter((record, index) => record.status !== "started" || !records.some((later, laterIndex) => laterIndex > index && later.service === record.service && later.stage === record.stage && ["succeeded","failed"].includes(later.status)));
+  $("#journey-rail").replaceChildren(...terminal.map((record) => {
+    const event = document.createElement("button");
+    event.type = "button";
+    event.className = `journey-event journey-event-${record.status}`;
+    const when = document.createElement("span"); when.className = "journey-time"; when.textContent = clock(record.occurredAt);
+    const copy = document.createElement("span"); copy.className = "journey-copy";
+    const phase = JOURNEY_PHASES.find((candidate) => candidate.id === journeyPhase(record.stage));
+    const heading = document.createElement("strong"); heading.textContent = `${phase?.label ?? "System"} · ${titleCase(record.service)}`;
+    const stage = document.createElement("span"); stage.textContent = record.stage;
+    copy.append(heading, stage);
+    const witness = record.evidence?.eventId ?? record.evidence?.objectRef ?? null;
+    const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = witness ? shortId(witness) : record.status;
+    event.append(when, copy, evidence);
+    event.addEventListener("click", () => showRecord(record));
+    return event;
+  }));
+
+  const observedPhases = JOURNEY_PHASES.filter((phase) => phaseRecords.get(phase.id).length).map((phase) => phase.label);
+  text($("#journey-summary"), observedPhases.length ? `Observed ${observedPhases.join(" → ")} for ${query.value}.` : `No runtime activity observed for ${query.value}.`);
+
+  const lifeObserved = phaseRecords.get("life").length > 0 || phaseRecords.get("continuity").length > 0;
+  const gap = $("#journey-gap");
+  gap.hidden = lifeObserved;
+  gap.textContent = "No life-transition activity is recorded for this Thread. Activity is observational: absence here is not proof that authoritative World state did not change.";
+}
+
 function recordRow(record) {
   const tr = document.createElement("tr");
   const cells = [
-    [clock(record.occurredAt), "time"],
-    [titleCase(record.service), "service"],
-    [record.stage, "stage"],
-    [record.status, ""],
-    [String(record.attempt), "attempt"],
-    [shortId(queryLabel(record)), "correlation"],
+    [clock(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"],
+    [record.status, ""], [String(record.attempt), "attempt"], [shortId(queryLabel(record)), "correlation"],
   ];
   cells.forEach(([content, className], index) => {
     const td = document.createElement("td");
     if (index === 3) {
-      const badge = document.createElement("span");
-      badge.className = `status status-${record.status}`;
-      badge.textContent = titleCase(record.status);
-      td.append(badge);
+      const badge = document.createElement("span"); badge.className = `status status-${record.status}`; badge.textContent = titleCase(record.status); td.append(badge);
     } else {
-      td.className = className;
-      td.textContent = content;
-      if (index === 5) td.title = queryLabel(record);
+      td.className = className; td.textContent = content; if (index === 5) td.title = queryLabel(record);
     }
     tr.append(td);
   });
@@ -94,16 +161,12 @@ function recordRow(record) {
   return tr;
 }
 
-function renderRows(records) {
-  rows.replaceChildren(...records.map(recordRow));
-  empty.hidden = records.length !== 0;
-}
+function renderRows(records) { rows.replaceChildren(...records.map(recordRow)); empty.hidden = records.length !== 0; }
 
-function detail(label, value, { wide = false, mono = false } = {}) {
-  const item = document.createElement("div");
-  item.className = `detail${wide ? " detail-wide" : ""}`;
+function detail(label, input, { wide = false, mono = false } = {}) {
+  const item = document.createElement("div"); item.className = `detail${wide ? " detail-wide" : ""}`;
   const name = document.createElement("label"); name.textContent = label;
-  const body = document.createElement("div"); body.textContent = value ?? "—"; if (mono) body.className = "mono";
+  const body = document.createElement("div"); body.textContent = input ?? "—"; if (mono) body.className = "mono";
   item.append(name, body); return item;
 }
 
@@ -126,7 +189,12 @@ function showRecord(record) {
   if (record.evidence && Object.keys(record.evidence).length) {
     const evidence = document.createElement("div"); evidence.className = "evidence";
     const heading = document.createElement("strong"); heading.textContent = "Evidence"; evidence.append(heading);
-    Object.entries(record.evidence).forEach(([key, val]) => { const row = document.createElement("div"); row.className = "evidence-row"; const k = document.createElement("span"); k.textContent = key; const v = document.createElement("span"); v.className = "mono"; v.textContent = val ?? "—"; row.append(k,v); evidence.append(row); });
+    Object.entries(record.evidence).forEach(([key, val]) => {
+      const row = document.createElement("div"); row.className = "evidence-row";
+      const k = document.createElement("span"); k.textContent = key;
+      const v = document.createElement("span"); v.className = "mono"; v.textContent = val ?? "—";
+      row.append(k, v); evidence.append(row);
+    });
     body.append(evidence);
   }
   dialog.showModal();
@@ -134,7 +202,7 @@ function showRecord(record) {
 
 function populateServices(records) {
   const list = $("#service-list");
-  const values = [...new Set(records.map((r) => r.service).filter(Boolean))].sort();
+  const values = [...new Set(records.map((record) => record.service).filter(Boolean))].sort();
   list.replaceChildren(...values.map((item) => { const option = document.createElement("option"); option.value = item; return option; }));
 }
 
@@ -152,7 +220,7 @@ async function loadActivity({ pushState = false } = {}) {
   const params = formParams();
   if (pushState) history.replaceState(null, "", `${location.pathname}?${params}`);
   try {
-    const response = await fetch(`/api/activity?${params}`, { headers: { Accept:"application/json" }, cache:"no-store" });
+    const response = await fetch(`/api/activity?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
     currentRecords = payload.records ?? [];
@@ -160,9 +228,9 @@ async function loadActivity({ pushState = false } = {}) {
     text($("#chain-title"), chainHeading(payload));
     text($("#chain-summary"), payload.summary?.description ?? `${currentRecords.length} record(s)`);
     text($("#updated-at"), `Updated ${clock(payload.queriedAt)}`);
-    renderMetrics(currentRecords); renderRows(currentRecords); populateServices(currentRecords);
+    renderMetrics(currentRecords); renderJourney(currentRecords, payload.query); renderRows(currentRecords); populateServices(currentRecords);
   } catch (error) {
-    currentRecords = []; renderMetrics([]); renderRows([]);
+    currentRecords = []; renderMetrics([]); renderRows([]); journey.hidden = true;
     text($("#chain-summary"), `Activity unavailable: ${error.message}`);
   } finally { setLoading(false); }
 }
