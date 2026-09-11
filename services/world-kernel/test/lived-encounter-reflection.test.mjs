@@ -28,12 +28,12 @@ function seededThread(storage, threadId) {
   finally { world.close(); }
 }
 
-function withWorld(name, run) {
+async function withWorld(name, run) {
   const directory = mkdtempSync(join(tmpdir(), `${name}-`));
   const databasePath = join(directory, "world.sqlite");
   const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
   const storage = { infraDriver, stateScopeId: "world" };
-  try { return run(storage); }
+  try { return await run(storage); }
   finally { rmSync(directory, { recursive: true, force: true }); }
 }
 
