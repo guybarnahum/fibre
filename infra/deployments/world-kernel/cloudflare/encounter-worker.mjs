@@ -6,6 +6,7 @@ import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-e
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 
@@ -24,6 +25,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         livedNowStore: openLivedNowStore(runtime.worldStorage),
         semanticStateStore: openSemanticStateStore(runtime.worldStorage),
         experienceStore: openLivedExperienceStore(runtime.worldStorage),
+        memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         modelAdapter: selectReasoningIntegration(deployment.integrations.encounter, { environment: this.env }),
         privateToken: this.env.FIBRE_PRIVATE_TOKEN,
       });
