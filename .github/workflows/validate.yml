@@ -8,13 +8,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run check
-      - run: npm run test:all
-      - run: npm run validate
-      - run: npm run test:audit -- --check
-      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/asset-generator/cloudflare/wrangler.jsonc
-      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc
-      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc
-      - run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc
-      - run: npm run deploy:admin-dashboard:cloudflare:dry
-      - run: npm run deploy:status-page:cloudflare:dry
+      - name: check
+        run: npm run check > "$RUNNER_TEMP/check.log" 2>&1 || { cat "$RUNNER_TEMP/check.log"; exit 1; }
+      - name: test all
+        run: npm run test:all > "$RUNNER_TEMP/test-all.log" 2>&1 || { cat "$RUNNER_TEMP/test-all.log"; exit 1; }
+      - name: validate repository
+        run: npm run validate > "$RUNNER_TEMP/validate.log" 2>&1 || { cat "$RUNNER_TEMP/validate.log"; exit 1; }
+      - name: audit tests
+        run: npm run test:audit -- --check --quiet > "$RUNNER_TEMP/test-audit.log" 2>&1 || { cat "$RUNNER_TEMP/test-audit.log"; exit 1; }
+      - name: dry-run asset generator
+        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/asset-generator/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/asset-generator.log" 2>&1 || { cat "$RUNNER_TEMP/asset-generator.log"; exit 1; }
+      - name: dry-run thread presentation
+        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/thread-presentation.log" 2>&1 || { cat "$RUNNER_TEMP/thread-presentation.log"; exit 1; }
+      - name: dry-run world kernel
+        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/world-kernel.log" 2>&1 || { cat "$RUNNER_TEMP/world-kernel.log"; exit 1; }
+      - name: dry-run birth center
+        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/birth-center.log" 2>&1 || { cat "$RUNNER_TEMP/birth-center.log"; exit 1; }
+      - name: dry-run admin dashboard
+        run: npm run deploy:admin-dashboard:cloudflare:dry > "$RUNNER_TEMP/admin-dashboard.log" 2>&1 || { cat "$RUNNER_TEMP/admin-dashboard.log"; exit 1; }
+      - name: dry-run status page
+        run: npm run deploy:status-page:cloudflare:dry > "$RUNNER_TEMP/status-page.log" 2>&1 || { cat "$RUNNER_TEMP/status-page.log"; exit 1; }
