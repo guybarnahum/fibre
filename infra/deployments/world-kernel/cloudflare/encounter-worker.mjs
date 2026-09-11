@@ -1,4 +1,5 @@
 import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from "./worker.mjs";
+import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
@@ -27,6 +28,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         experienceStore: openLivedExperienceStore(runtime.worldStorage),
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         modelAdapter: selectReasoningIntegration(deployment.integrations.encounter, { environment: this.env }),
+        activityRecorder: createCloudflareActivityRecorder({ env: this.env, service: "world-kernel" }),
         privateToken: this.env.FIBRE_PRIVATE_TOKEN,
       });
     }
