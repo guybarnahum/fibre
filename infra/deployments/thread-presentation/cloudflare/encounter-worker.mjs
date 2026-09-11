@@ -1,4 +1,5 @@
 import baseWorker, { FibrePresentationChannelDurableObject } from "./worker.mjs";
+import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
 
 export { FibrePresentationChannelDurableObject };
@@ -19,7 +20,7 @@ function snapshotRequest(request, threadId) {
   });
 }
 
-async function worldEncounter(env, input) {
+async function callWorldEncounter(env, input) {
   const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/lived-encounter", {
     method: "POST",
     headers: {
@@ -42,8 +43,18 @@ async function worldEncounter(env, input) {
   };
 }
 
+function worldEncounter(env, activityRecorder, input) {
+  if (activityRecorder === null) return callWorldEncounter(env, input);
+  return activityRecorder.runStage({
+    threadId: input.threadId,
+    correlationId: input.expectedSituationId,
+    stage: "presentation.encounter.world_submit",
+  }, () => callWorldEncounter(env, input));
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const encounterApi = createPublicEncounterApi({
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
       async readPublicPresent(threadId, originalRequest) {
@@ -52,7 +63,7 @@ export default {
         const body = await response.json();
         return body?.currentPresent?.payload ?? null;
       },
-      encounter(input) { return worldEncounter(env, input); },
+      encounter(input) { return worldEncounter(env, activityRecorder, input); },
     });
     const response = await encounterApi.fetch(request);
     return response ?? baseWorker.fetch(request, env, ctx);
