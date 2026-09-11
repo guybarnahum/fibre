@@ -24,6 +24,10 @@ function requireMethod(name, value, method) {
   }
 }
 
+function runActivityStage(activityRecorder, metadata, operation) {
+  return activityRecorder === null ? operation() : activityRecorder.runStage(metadata, operation);
+}
+
 export async function internalizeLivedEncounter({
   thread,
   encounter,
@@ -31,6 +35,7 @@ export async function internalizeLivedEncounter({
   semanticStateStore,
   experienceStore,
   modelAdapter,
+  activityRecorder = null,
 }) {
   assertPlainObject("Thread", thread);
   assertId("Thread.threadId", thread.threadId);
@@ -45,14 +50,22 @@ export async function internalizeLivedEncounter({
   requireMethod("experienceStore", experienceStore, "recordEncounter");
   requireMethod("experienceStore", experienceStore, "recordJournalEntry");
   requireMethod("modelAdapter", modelAdapter, "invoke");
+  if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
 
-  const historyEvent = experienceStore.recordEncounter({
+  const activity = Object.freeze({
+    threadId: thread.threadId,
+    correlationId: encounterResult.grounding.situationId,
+  });
+  const historyEvent = await runActivityStage(activityRecorder, {
+    ...activity,
+    stage: "encounter.history.record",
+  }, () => experienceStore.recordEncounter({
     threadId: thread.threadId,
     situationId: encounterResult.grounding.situationId,
     occurredAt: encounter.occurredAt,
     visitorUtterance: encounter.utterance,
     responseText: encounterResult.responseText,
-  });
+  }));
 
   const semanticStates = semanticStateStore.listCurrentState(thread.threadId).map((state) => ({
     domain: state.domain,
@@ -75,7 +88,11 @@ export async function internalizeLivedEncounter({
     semanticStates,
   };
 
-  const invocation = await modelAdapter.invoke({
+  const invocation = await runActivityStage(activityRecorder, {
+    ...activity,
+    stage: "encounter.journal.reflect",
+    evidence: { eventId: historyEvent.eventId },
+  }, () => modelAdapter.invoke({
     systemPrompt: SYSTEM_PROMPT,
     input,
     responseSchema: {
@@ -87,7 +104,7 @@ export async function internalizeLivedEncounter({
       },
     },
     clientRequestId: requestId(input),
-  });
+  }));
   assertPlainObject("lived encounter reflection result", invocation);
   assertPlainObject("lived encounter reflection output", invocation.output);
   assertExactKeys("lived encounter reflection output", invocation.output, ["journalEntry"]);
@@ -97,12 +114,16 @@ export async function internalizeLivedEncounter({
 
   const journalEntry = invocation.output.journalEntry === null
     ? null
-    : experienceStore.recordJournalEntry({
-      threadId: thread.threadId,
-      aboutEventRef: historyEvent.eventId,
-      writtenAt: encounter.occurredAt,
-      entryText: invocation.output.journalEntry,
-    });
+    : await runActivityStage(activityRecorder, {
+        ...activity,
+        stage: "encounter.journal.record",
+        evidence: { eventId: historyEvent.eventId },
+      }, () => experienceStore.recordJournalEntry({
+        threadId: thread.threadId,
+        aboutEventRef: historyEvent.eventId,
+        writtenAt: encounter.occurredAt,
+        entryText: invocation.output.journalEntry,
+      }));
 
   return { historyEvent, journalEntry };
 }
