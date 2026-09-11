@@ -158,7 +158,9 @@ Refresh the Thread Activity view and confirm the Presentation + World stages car
 
 To deliberately test stale-scene protection, first read a valid present and then submit a different/old `situationId`. The request should fail with `409 encounter_scene_changed`, and cognition should not be allowed to treat the stale public scene as current reality. The Activity Log is useful here too: a rejected stale scene should not masquerade as a completed cognition/history/journal/memory chain.
 
-## If the M2 branch is not deployed
+## Deploy the M2 runtime and Admin Activity UI
+
+The Admin dashboard is not deployed by the static `deploy:admin-dashboard:cloudflare:dry` command. The real app deployment path resolves the environment-specific custom domain, shared `ACTIVITY_LOG` D1 database and Cloudflare Access configuration before deploying Admin.
 
 From the Fibre repository:
 
@@ -166,19 +168,43 @@ From the Fibre repository:
 git switch agent/m2-lived-encounter
 git pull --ff-only
 
-npm run deployment:validate:remote
-npm run deploy:world-kernel:cloudflare:dry
-npm run deploy:thread-presentation:cloudflare:dry
-npm run deploy:admin-dashboard:cloudflare:dry
+npm run demo:m2
+npm run slice:validate
 
 npm run deploy:world-kernel:cloudflare
 npm run deploy:thread-presentation:cloudflare
-npm run deploy:admin-dashboard:cloudflare
 ```
 
-Those workers require their existing configured secrets. Do not put private tokens or model credentials in the browser or in this runbook.
+Then deploy the operator apps for the environment you want to use. This deploys Admin Dashboard and Status Page together using the provisioned environment state and Cloudflare Access configuration:
 
-From the `insidefibre.com` repository, `main` already contains the situated encounter UI. Validate and deploy it with:
+```bash
+# staging
+npm run cloud:deploy:apps -- --env staging --file .env
+
+# production
+npm run cloud:deploy:apps -- --env production --file .env
+```
+
+If the environment has not been provisioned/configured yet, prepare staging end-to-end with:
+
+```bash
+npm run cloud:prepare:staging
+```
+
+For production, provision/configure first if needed, then deploy runtime and apps with the corresponding production environment arguments.
+
+After app deployment, verify the unauthenticated health endpoint before debugging browser authorization:
+
+```bash
+curl -i https://admin.staging.insidefibre.com/healthz
+curl -i https://admin.insidefibre.com/healthz
+```
+
+A deployed Admin worker should return `200` with the Admin service/version identity on `/healthz`. The `/` and `/activity` routes are intentionally protected by Cloudflare Access plus the Fibre `fibre_admin_entitlements` check; they should not be expected to render for an unauthenticated or non-entitled principal.
+
+Those workers require their existing configured secrets and operator configuration. Do not put private tokens, Cloudflare credentials or model credentials in the browser or in this runbook.
+
+From the `insidefibre.com` repository, `main` contains the situated encounter UI. Validate and deploy it with:
 
 ```bash
 git switch main
