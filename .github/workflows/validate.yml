@@ -9,22 +9,106 @@ jobs:
         with:
           node-version: 22
       - name: check
-        run: npm run check > "$RUNNER_TEMP/check.log" 2>&1 || { cat "$RUNNER_TEMP/check.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/check.log"
+          echo "=== check ==="
+          if npm run check > "$log" 2>&1; then
+            grep -E '^(FIBRE-TEST-SUITE:|[✓✗] [0-9]+ tests)' "$log" || true
+            echo "✓ check passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: test all
-        run: npm run test:all > "$RUNNER_TEMP/test-all.log" 2>&1 || { cat "$RUNNER_TEMP/test-all.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/test-all.log"
+          echo "=== test all ==="
+          if npm run test:all > "$log" 2>&1; then
+            grep -E '^(FIBRE-TEST-SUITE:|[✓✗] [0-9]+ tests)' "$log" || true
+            echo "✓ test all passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: validate repository
-        run: npm run validate > "$RUNNER_TEMP/validate.log" 2>&1 || { cat "$RUNNER_TEMP/validate.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/validate.log"
+          echo "=== validate repository ==="
+          if npm run validate > "$log" 2>&1; then
+            grep -E '^(Repository validation passed|World seed validation passed|Deployment manifest valid:)' "$log" || true
+            echo "✓ repository validation passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: audit tests
-        run: npm run test:audit -- --check --quiet > "$RUNNER_TEMP/test-audit.log" 2>&1 || { cat "$RUNNER_TEMP/test-audit.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/test-audit.log"
+          echo "=== audit tests ==="
+          if npm run test:audit -- --check --quiet > "$log" 2>&1; then
+            grep -E '^TEST-AUDIT:' "$log" || true
+            echo "✓ test audit passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run asset generator
-        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/asset-generator/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/asset-generator.log" 2>&1 || { cat "$RUNNER_TEMP/asset-generator.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/asset-generator.log"
+          echo "=== dry-run asset generator ==="
+          if npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/asset-generator/cloudflare/wrangler.jsonc > "$log" 2>&1; then
+            echo "✓ asset generator dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run thread presentation
-        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/thread-presentation.log" 2>&1 || { cat "$RUNNER_TEMP/thread-presentation.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/thread-presentation.log"
+          echo "=== dry-run thread presentation ==="
+          if npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc > "$log" 2>&1; then
+            echo "✓ thread presentation dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run world kernel
-        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/world-kernel.log" 2>&1 || { cat "$RUNNER_TEMP/world-kernel.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/world-kernel.log"
+          echo "=== dry-run world kernel ==="
+          if npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc > "$log" 2>&1; then
+            echo "✓ world kernel dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run birth center
-        run: npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc > "$RUNNER_TEMP/birth-center.log" 2>&1 || { cat "$RUNNER_TEMP/birth-center.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/birth-center.log"
+          echo "=== dry-run birth center ==="
+          if npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc > "$log" 2>&1; then
+            echo "✓ birth center dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run admin dashboard
-        run: npm run deploy:admin-dashboard:cloudflare:dry > "$RUNNER_TEMP/admin-dashboard.log" 2>&1 || { cat "$RUNNER_TEMP/admin-dashboard.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/admin-dashboard.log"
+          echo "=== dry-run admin dashboard ==="
+          if npm run deploy:admin-dashboard:cloudflare:dry > "$log" 2>&1; then
+            echo "✓ admin dashboard dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run status page
-        run: npm run deploy:status-page:cloudflare:dry > "$RUNNER_TEMP/status-page.log" 2>&1 || { cat "$RUNNER_TEMP/status-page.log"; exit 1; }
+        run: |
+          log="$RUNNER_TEMP/status-page.log"
+          echo "=== dry-run status page ==="
+          if npm run deploy:status-page:cloudflare:dry > "$log" 2>&1; then
+            echo "✓ status page dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
