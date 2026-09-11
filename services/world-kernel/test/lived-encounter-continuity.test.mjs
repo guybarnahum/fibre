@@ -15,12 +15,12 @@ const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
 
-function withWorld(name, run) {
+async function withWorld(name, run) {
   const directory = mkdtempSync(join(tmpdir(), `${name}-`));
   const databasePath = join(directory, "world.sqlite");
   const infraDriver = createSqliteStateInfraDriver({ scopes: { world: databasePath } });
   const storage = { infraDriver, stateScopeId: "world" };
-  try { return run(storage); }
+  try { return await run(storage); }
   finally { rmSync(directory, { recursive: true, force: true }); }
 }
 
