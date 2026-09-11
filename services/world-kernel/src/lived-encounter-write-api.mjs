@@ -127,17 +127,15 @@ export function createLivedEncounterWriteApi({
       }
 
       if (experienceStore !== null) {
-        const internalized = await runActivityStage(activityRecorder, {
-          ...activity,
-          stage: "encounter.experience.internalize",
-        }, () => internalizeLivedEncounter({
+        const internalized = await internalizeLivedEncounter({
           thread,
           encounter,
           encounterResult: result,
           semanticStateStore,
           experienceStore,
           modelAdapter,
-        }));
+          activityRecorder,
+        });
         if (memoryStore !== null) {
           await runActivityStage(activityRecorder, {
             ...activity,
