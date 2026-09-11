@@ -22,6 +22,7 @@ import { createSituatedLifeTables } from "./situated-life-schema.mjs";
 import { ensureSituatedLifeDigestColumns } from "./situated-life-integrity.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
+import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 
 export function translateStorageError(error) {
   if (/database is locked|database is busy/i.test(error?.message ?? "")) return new StorageBusyError(error.message);
@@ -166,6 +167,7 @@ function createSchema(database) {
   createSituatedLifeTables(database);
   createEmbodimentTables(database);
   createAutobiographicalMemoryTables(database);
+  createLivedExperienceTables(database);
 }
 
 function createAndRepairSchema(database) {
@@ -212,7 +214,7 @@ export function migrateDatabase(database) {
   const currentVersion = Number(row.user_version);
   if (currentVersion < 0 || currentVersion > WORLD_STORE_SCHEMA_VERSION) throw new IntegrityError(`Unsupported world-store schema version ${currentVersion}; expected at most ${WORLD_STORE_SCHEMA_VERSION}`);
   if (currentVersion === 0) {
-    const existingTables = Number(database.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses','obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones','structured_authority_withdrawal_closures','identity_assertion_records','memory_visual_companion_records','life_relation_records','place_episode_records','embodiment_records','autobiographical_memory_records','autobiographical_memory_lineage_heads')").get().count);
+    const existingTables = Number(database.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('threads','thread_events','commands','activation_requests','request_appraisals','private_participation_stances','participation_authorizations','thaw_leases','runtime_sessions','actor_runs','goal_guardian_audits','authorization_consumptions','freeze_reports','thread_memories','disclosure_strategies','audience_participation_responses','obligation_records','obligation_applicability_decisions','legacy_obligation_tombstones','structured_authority_withdrawal_closures','identity_assertion_records','memory_visual_companion_records','life_relation_records','place_episode_records','embodiment_records','autobiographical_memory_records','autobiographical_memory_lineage_heads','lived_encounter_records','thread_journal_entries')").get().count);
     if (existingTables !== 0) throw new IntegrityError("Refusing an unversioned pre-release world-store schema; recreate the local M1 database");
   }
 
