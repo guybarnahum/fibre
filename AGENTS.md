@@ -34,6 +34,13 @@ For public progress, milestone summaries, website status, or claims about what F
 - `docs/state/public-progress.md`
 - `docs/state/public-progress.json`
 
+## Validation workflow
+
+- During development, use focused tests or `npm test` as needed.
+- At slice completion, run **only** `npm run slice:validate` for the full repository validation. It performs the include check, one build, the complete active + replay test suite, context-pack generation plus generated-pack validation, World seed and deployment validation, and the quiet test-value audit.
+- Do not stack `npm run check`, `npm run test:all`, `npm run validate`, and `npm run test:audit -- --check --quiet` after one another at slice completion; those commands overlap and repeat almost the full test suite and build.
+- `validate-repo.mjs --generated` means normal repository validation plus verification that generated AI context packs exist and exactly match their canonical sources.
+
 ## Non-negotiable invariants
 
 - A Thread is a persistent person, not a temporary task role.
