@@ -72,12 +72,20 @@ export function createPublicEncounterApi({
         return json({ error: "encounter_scene_changed", situationId: present.situationId }, request, viewerOrigin, 409);
       }
 
-      const result = await encounter({
-        threadId,
-        expectedSituationId: body.situationId,
-        utterance: body.utterance,
-        occurredAt: now(),
-      });
+      let result;
+      try {
+        result = await encounter({
+          threadId,
+          expectedSituationId: body.situationId,
+          utterance: body.utterance,
+          occurredAt: now(),
+        });
+      } catch (error) {
+        if (error?.status === 409) {
+          return json({ error: "encounter_scene_changed" }, request, viewerOrigin, 409);
+        }
+        return json({ error: "encounter_unavailable" }, request, viewerOrigin, 503);
+      }
       if (result.situationId !== body.situationId) {
         return json({ error: "encounter_scene_changed", situationId: result.situationId }, request, viewerOrigin, 409);
       }
