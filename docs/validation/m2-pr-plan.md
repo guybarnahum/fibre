@@ -46,12 +46,13 @@ A2 Care plan + conflicting wills                         CLOSED
 A3 Current-life projection + Thread Editor               CLOSED
 A4 Public present + insidefibre scene                    CLOSED
 A5 Situated encounter                                    CLOSED
-B1 Encounter becomes experience                          IMPLEMENTED
-B2 Life continues + second meeting                       IMPLEMENTED
-M2 acceptance                                             PENDING RUN
+B1 Encounter becomes experience                          CLOSED
+B2 Life continues + second meeting                       CLOSED
+M2 automated acceptance                                  PASSED
+M2 live human meeting                                    PENDING
 ```
 
-No additional M2 architecture slice is planned before acceptance. The gate is now the representative lived-person proof, repository gates, and a real deployed `/meet` smoke test. The exact operator path is recorded in [`m2-meeting-runbook.md`](./m2-meeting-runbook.md).
+No additional M2 architecture slice is planned before closure. The capability slices and automated acceptance are complete. The only remaining gate is one real deployed `/meet` run using [`m2-meeting-runbook.md`](./m2-meeting-runbook.md).
 
 ## Intrinsic regulation
 
@@ -78,7 +79,7 @@ It is not a scheduler and not World truth. Physical movement is lived time. Dela
 
 The immutable plan preserves intended life; World history preserves lived life. Regulation makes the difference between the two felt; autobiographical memory later decides what was worth retaining.
 
-Children/dependent persons additionally may be subject to a caregiver-owned care plan. The caregiver may legitimately constrain enacted life without overwriting the dependent person's personal will.
+Children/dependent persons additionally may be subject to a caregiver-owned care plan. The caregiver may legitimately constrain enacted life without overwriting the dependent Thread's personal Flight Plan or becoming the dependent Thread's private drive.
 
 ```text
 care requirement != dependent person's private desire
@@ -110,7 +111,7 @@ A human encounter is bound to the exact already-published situation. The browser
 
 Private Semantic State may shape cognition but does not cross the public boundary. The visitor cannot author World state, private motives, plans, care authority or semantic state. The response is ephemeral at the public seam.
 
-### B1 — Encounter becomes experience — IMPLEMENTED
+### B1 — Encounter becomes experience — CLOSED
 
 B1 separates objective lived evidence from the Thread's subjective internalization:
 
@@ -131,7 +132,7 @@ The same external encounter can therefore persist differently for different Thre
 
 Do not store a transcript as memory. Human encounters receive no special retention privilege. Shared event does not imply shared meaning, and journal existence does not imply durable memory.
 
-### B2 — Life continues + second meeting — IMPLEMENTED
+### B2 — Life continues + second meeting — CLOSED
 
 B2 deliberately adds no second continuation engine. It composes the life primitives already established by A1-A5 and B1.
 
@@ -156,16 +157,30 @@ This is the M2 continuity claim: the Thread is later somewhere because her life 
 
 ## M2 acceptance gate
 
-Run:
+The canonical automated acceptance sequence is:
 
 ```bash
+git switch agent/m2-lived-encounter
+git pull --ff-only
+npm run check
 npm run demo:m2
 npm run slice:validate
 ```
 
-`slice:validate` is the canonical slice-completion validation. It replaces the previous stack of `npm run check`, `npm run test:all`, `npm run validate`, and `npm run test:audit -- --check --quiet`, avoiding a duplicate build and near-duplicate full test run while preserving their coverage. Its generated-repository validation verifies that the context packs produced during the run exactly match their canonical sources.
+This gate passed on 2026-09-10/11 local development time:
 
-Then perform one deployed meeting using [`m2-meeting-runbook.md`](./m2-meeting-runbook.md). A passing M2 is not merely a responsive UI. It must preserve these semantic invariants:
+```text
+check:          1230 / 1230 active tests passed
+demo:m2:          17 / 17 milestone tests passed
+slice:validate: 1235 / 1235 full-suite tests passed
+TEST-AUDIT: PASS · 310 files · 1149 declared calls
+World seed validation passed
+local + Cloudflare deployment manifests valid
+```
+
+Automated M2 acceptance is therefore **PASSED**.
+
+One closure step remains: perform a real deployed human meeting using [`m2-meeting-runbook.md`](./m2-meeting-runbook.md). A passing live M2 is not merely a responsive UI. It must preserve these semantic invariants:
 
 - the current situation exists before the visitor;
 - visitor input cannot author current reality;
@@ -174,7 +189,7 @@ Then perform one deployed meeting using [`m2-meeting-runbook.md`](./m2-meeting-r
 - persisted life can continue after the encounter and across restart;
 - a later encounter receives only the memories/consequences that actually persisted.
 
-Until those gates are run, M2 is **implemented but not recorded closed**.
+Until that deployed human meeting is observed, M2 is **automatically accepted but not yet recorded fully closed**.
 
 ## Later generalization
 
