@@ -64,6 +64,13 @@ test("B1 maps an objective encounter to the Thread's private first-person journa
   await withWorld("fibre-b1-journal", async (storage) => {
     const thread = seededThread(storage, "thr_b1_journal");
     const experienceStore = openLivedExperienceStore(storage);
+    const stages = [];
+    const activityRecorder = {
+      async runStage(metadata, operation) {
+        stages.push(structuredClone(metadata));
+        return operation();
+      },
+    };
     try {
       const result = await internalizeLivedEncounter({
         thread,
@@ -71,6 +78,7 @@ test("B1 maps an objective encounter to the Thread's private first-person journa
         encounterResult,
         semanticStateStore,
         experienceStore,
+        activityRecorder,
         modelAdapter: modelReturning(
           "I liked that they noticed the expression instead of just saying the drawing was nice. It made me look at the fox differently.",
         ),
@@ -84,6 +92,15 @@ test("B1 maps an objective encounter to the Thread's private first-person journa
       assert.equal(result.historyEvent.eventId, history[0].eventId);
       assert.equal(result.journalEntry.journalEntryId, journal[0].journalEntryId);
       assert.notEqual(journal[0].entryText, `${encounter.utterance}\n${encounterResult.responseText}`);
+      assert.deepEqual(stages.map((stage) => stage.stage), [
+        "encounter.history.record",
+        "encounter.journal.reflect",
+        "encounter.journal.record",
+      ]);
+      assert.equal(stages.every((stage) => stage.threadId === thread.threadId), true);
+      assert.equal(stages.every((stage) => stage.correlationId === encounterResult.grounding.situationId), true);
+      assert.equal(JSON.stringify(stages).includes(encounter.utterance), false,
+        "Activity should expose causal progress without copying visitor speech");
     } finally { experienceStore.close(); }
   });
 });
