@@ -1,5 +1,7 @@
-import baseWorker from "./worker.mjs";
+import baseWorker, { FibrePresentationChannelDurableObject } from "./worker.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
+
+export { FibrePresentationChannelDurableObject };
 
 function binding(env, name) {
   const value = env?.[name];
