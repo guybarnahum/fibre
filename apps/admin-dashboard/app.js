@@ -9,9 +9,12 @@ const rows = $("#activity-rows");
 const empty = $("#empty-state");
 const dialog = $("#record-dialog");
 const journey = $("#thread-journey");
+const workspace = $("#activity-workspace");
+const PAGE_SIZE = 25;
 let timer = null;
 let currentRecords = [];
 let currentPayload = null;
+let currentPage = 0;
 
 const JOURNEY_PHASES = Object.freeze([
   { id:"birth", label:"Birth", description:"Genesis and admission" },
@@ -99,6 +102,7 @@ function statusFor(records) {
 function renderJourney(records, query) {
   const active = query.kind === "thread";
   journey.hidden = !active;
+  workspace.classList.toggle("thread-view", active);
   if (!active) return;
 
   const phaseRecords = new Map(JOURNEY_PHASES.map((phase) => [phase.id, records.filter((record) => journeyPhase(record.stage) === phase.id)]));
@@ -163,7 +167,19 @@ function recordRow(record) {
   return tr;
 }
 
-function renderRows(records) { rows.replaceChildren(...records.map(recordRow)); empty.hidden = records.length !== 0; }
+function renderRows(records) {
+  const pages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
+  currentPage = Math.min(currentPage, pages - 1);
+  const start = currentPage * PAGE_SIZE;
+  const visible = records.slice(start, start + PAGE_SIZE);
+  rows.replaceChildren(...visible.map(recordRow));
+  empty.hidden = records.length !== 0;
+  const pager = $("#activity-pager");
+  pager.hidden = records.length <= PAGE_SIZE;
+  $("#page-prev").disabled = currentPage === 0;
+  $("#page-next").disabled = currentPage >= pages - 1;
+  text($("#page-label"), `${start + 1}–${Math.min(start + PAGE_SIZE, records.length)} of ${records.length}`);
+}
 
 function detail(label, input, { wide = false, mono = false } = {}) {
   const item = document.createElement("div"); item.className = `detail${wide ? " detail-wide" : ""}`;
@@ -273,17 +289,19 @@ async function loadActivity({ pushState = false } = {}) {
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
     currentPayload = payload;
     currentRecords = payload.records ?? [];
+    currentPage = 0;
     $("#export-button").disabled = false;
     text($("#environment-pill"), payload.environment);
     text($("#chain-title"), chainHeading(payload));
-    text($("#chain-summary"), payload.summary?.description ?? `${currentRecords.length} record(s)`);
+    text($("#chain-summary"), payload.summary?.description ?? `${currentRecords.length} raw record(s)`);
     text($("#updated-at"), `Updated ${clock(payload.queriedAt)}`);
     renderMetrics(currentRecords); renderJourney(currentRecords, payload.query); renderRows(currentRecords); populateServices(currentRecords);
   } catch (error) {
     currentPayload = null;
     currentRecords = [];
+    currentPage = 0;
     $("#export-button").disabled = true;
-    renderMetrics([]); renderRows([]); journey.hidden = true;
+    renderMetrics([]); renderRows([]); journey.hidden = true; workspace.classList.remove("thread-view");
     text($("#chain-summary"), `Activity unavailable: ${error.message}`);
   } finally { setLoading(false); }
 }
@@ -297,6 +315,8 @@ form.addEventListener("submit", (event) => { event.preventDefault(); loadActivit
 kind.addEventListener("change", updateIdentityState);
 $("#refresh-button").addEventListener("click", () => loadActivity());
 $("#export-button").addEventListener("click", copyExport);
+$("#page-prev").addEventListener("click", () => { if (currentPage > 0) { currentPage -= 1; renderRows(currentRecords); } });
+$("#page-next").addEventListener("click", () => { if ((currentPage + 1) * PAGE_SIZE < currentRecords.length) { currentPage += 1; renderRows(currentRecords); } });
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
 $("#dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
