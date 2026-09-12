@@ -11,6 +11,7 @@ const dialog = $("#record-dialog");
 const journey = $("#thread-journey");
 let timer = null;
 let currentRecords = [];
+let currentPayload = null;
 
 const JOURNEY_PHASES = Object.freeze([
   { id:"birth", label:"Birth", description:"Genesis and admission" },
@@ -26,6 +27,7 @@ function titleCase(input) { return String(input ?? "").split("-").map((part) => 
 function shortId(input) { if (!input) return null; return input.length > 24 ? `${input.slice(0, 12)}…${input.slice(-8)}` : input; }
 function clock(input) { try { return new Intl.DateTimeFormat([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }).format(new Date(input)); } catch { return input; } }
 function queryLabel(record) { return record.threadId ?? record.genesisId ?? record.requestId ?? record.correlationId ?? "—"; }
+function singleValue(values) { const unique = [...new Set(values.filter(Boolean))]; return unique.length === 1 ? unique[0] : null; }
 
 function journeyPhase(stage) {
   if (stage === "presentation.encounter.world_submit" || stage.startsWith("encounter.cognition.")) return "encounter";
@@ -215,6 +217,52 @@ function chainHeading(payload) {
   return "Recent activity";
 }
 
+function activityIdentity(records) {
+  return Object.freeze({
+    requestId: singleValue(records.map((record) => record.requestId)),
+    genesisId: singleValue(records.map((record) => record.genesisId)),
+    threadId: singleValue(records.map((record) => record.threadId)),
+    threadName: null,
+    fibreIdentityNumber: singleValue(records.map((record) => record.evidence?.fibreIdentityNumber)),
+  });
+}
+
+function activityExport(payload) {
+  const records = payload?.records ?? [];
+  return Object.freeze({
+    contract: "fibre-activity-export-v0.1",
+    exportedAt: new Date().toISOString(),
+    environment: payload?.environment ?? null,
+    queriedAt: payload?.queriedAt ?? null,
+    query: payload?.query ?? null,
+    summary: payload?.summary ?? null,
+    identity: activityIdentity(records),
+    records,
+  });
+}
+
+async function copyExport() {
+  if (currentPayload === null) return;
+  const button = $("#export-button");
+  const exportText = JSON.stringify(activityExport(currentPayload), null, 2);
+  try {
+    await navigator.clipboard.writeText(exportText);
+    button.textContent = "Copied";
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = exportText;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    const copied = document.execCommand("copy");
+    area.remove();
+    button.textContent = copied ? "Copied" : "Copy failed";
+  }
+  setTimeout(() => { button.textContent = "Copy export"; }, 1600);
+}
+
 async function loadActivity({ pushState = false } = {}) {
   setLoading(true);
   const params = formParams();
@@ -223,14 +271,19 @@ async function loadActivity({ pushState = false } = {}) {
     const response = await fetch(`/api/activity?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    currentPayload = payload;
     currentRecords = payload.records ?? [];
+    $("#export-button").disabled = false;
     text($("#environment-pill"), payload.environment);
     text($("#chain-title"), chainHeading(payload));
     text($("#chain-summary"), payload.summary?.description ?? `${currentRecords.length} record(s)`);
     text($("#updated-at"), `Updated ${clock(payload.queriedAt)}`);
     renderMetrics(currentRecords); renderJourney(currentRecords, payload.query); renderRows(currentRecords); populateServices(currentRecords);
   } catch (error) {
-    currentRecords = []; renderMetrics([]); renderRows([]); journey.hidden = true;
+    currentPayload = null;
+    currentRecords = [];
+    $("#export-button").disabled = true;
+    renderMetrics([]); renderRows([]); journey.hidden = true;
     text($("#chain-summary"), `Activity unavailable: ${error.message}`);
   } finally { setLoading(false); }
 }
@@ -243,6 +296,7 @@ function scheduleRefresh() {
 form.addEventListener("submit", (event) => { event.preventDefault(); loadActivity({ pushState:true }); });
 kind.addEventListener("change", updateIdentityState);
 $("#refresh-button").addEventListener("click", () => loadActivity());
+$("#export-button").addEventListener("click", copyExport);
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
 $("#dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
