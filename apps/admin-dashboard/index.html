@@ -53,29 +53,36 @@
         </form>
       </section>
 
-      <section id="thread-journey" class="panel journey-panel" hidden>
-        <div class="panel-head">
-          <div><p class="eyebrow">God's view</p><h2>Thread journey</h2><p id="journey-summary">Observed runtime activity across this Thread's life.</p></div>
-          <span class="observer-pill">observational</span>
-        </div>
-        <div id="journey-phases" class="journey-phases"></div>
-        <div class="journey-body">
-          <div class="journey-body-head"><strong>Observed causal trail</strong><span>Activity Log ≠ semantic truth</span></div>
-          <div id="journey-rail" class="journey-rail"></div>
-          <div id="journey-gap" class="journey-gap" hidden></div>
-        </div>
-      </section>
+      <div id="activity-workspace" class="activity-workspace">
+        <section id="thread-journey" class="panel journey-panel" hidden>
+          <div class="panel-head">
+            <div><p class="eyebrow">God's view</p><h2>Observed causal trail</h2><p id="journey-summary">Meaningful operations across this Thread's observed life.</p></div>
+            <span class="observer-pill">interpreted</span>
+          </div>
+          <div id="journey-phases" class="journey-phases"></div>
+          <div class="journey-body">
+            <div class="journey-body-head"><strong>Meaningful operations</strong><span>collapsed from raw Activity</span></div>
+            <div id="journey-rail" class="journey-rail"></div>
+            <div id="journey-gap" class="journey-gap" hidden></div>
+          </div>
+        </section>
 
-      <section class="panel activity-panel">
-        <div class="panel-head"><div><h2 id="chain-title">Recent activity</h2><p id="chain-summary">Loading…</p></div><span id="updated-at" class="updated-at"></span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Time</th><th>Service</th><th>Stage</th><th>Status</th><th>Attempt</th><th>Correlation</th></tr></thead>
-            <tbody id="activity-rows"></tbody>
-          </table>
-          <div id="empty-state" class="empty" hidden><div class="empty-icon">≋</div><h3>No matching activity</h3><p>Adjust the filters or wait for new runtime activity.</p></div>
-        </div>
-      </section>
+        <section class="panel activity-panel">
+          <div class="panel-head"><div><h2 id="chain-title">Recent activity</h2><p id="chain-summary">Raw Activity records exactly as logged.</p></div><span id="updated-at" class="updated-at"></span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Time</th><th>Service</th><th>Stage</th><th>Status</th><th>Attempt</th><th>Correlation</th></tr></thead>
+              <tbody id="activity-rows"></tbody>
+            </table>
+            <div id="empty-state" class="empty" hidden><div class="empty-icon">≋</div><h3>No matching activity</h3><p>Adjust the filters or wait for new runtime activity.</p></div>
+          </div>
+          <div id="activity-pager" class="activity-pager" hidden>
+            <button id="page-prev" class="secondary" type="button">← Previous</button>
+            <span id="page-label">Page 1</span>
+            <button id="page-next" class="secondary" type="button">Next →</button>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
