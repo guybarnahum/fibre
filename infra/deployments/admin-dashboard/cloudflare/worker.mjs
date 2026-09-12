@@ -1,5 +1,6 @@
 import { normalizeActivityRecord } from "#infra/telemetry";
 import { resolveAdminThreadIdentity } from "./thread-identity.mjs";
+import { parseAdminActivityPage, queryAdminActivityPage } from "./activity-page.mjs";
 
 export const ADMIN_DASHBOARD_VERSION = "fibre-admin-dashboard-v0.2";
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
@@ -163,6 +164,16 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
           if (identity === null) return json(404, { error:"thread_not_found" });
           return json(200, { contract:"fibre-admin-thread-identity-v0.1", environment, resolvedAt:new Date().toISOString(), identity });
         } catch (error) { return json(error instanceof TypeError ? 400 : 503, { error:error instanceof TypeError ? "invalid_thread" : "thread_identity_unavailable", detail:error.message }); }
+      }
+
+      if (url.pathname === "/api/activity/page" && request.method === "GET") {
+        try {
+          const query = parseAdminActivityQuery(url);
+          const page = parseAdminActivityPage(url);
+          const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
+          const result = await queryAdminActivityPage(env, environment, query, page);
+          return json(200, { contract:"fibre-admin-activity-page-v0.1", environment, queriedAt:new Date().toISOString(), query, mode:page.mode, summary:summary(result.records), records:result.records, nextCursor:result.nextCursor });
+        } catch (error) { return json(error instanceof TypeError ? 400 : 503, { error:error instanceof TypeError ? "invalid_query" : "activity_unavailable", detail:error.message }); }
       }
 
       if (url.pathname === "/api/activity" && request.method === "GET") {
