@@ -83,10 +83,7 @@ export async function authorizeAdminPrincipal(env, claims) {
   const email = normalizeAdminPrincipalEmail(claims);
   if (email === null) return false;
   if (!env.ACTIVITY_LOG?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable for Admin authorization");
-  const result = await env.ACTIVITY_LOG
-    .prepare("SELECT admin FROM fibre_admin_entitlements WHERE email = ? LIMIT 1")
-    .bind(email)
-    .all();
+  const result = await env.ACTIVITY_LOG.prepare("SELECT admin FROM fibre_admin_entitlements WHERE email = ? LIMIT 1").bind(email).all();
   const rows = Array.isArray(result?.results) ? result.results : [];
   return rows.length === 1 && rows[0]?.admin === 1;
 }
@@ -172,7 +169,20 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
           const page = parseAdminActivityPage(url);
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const result = await queryAdminActivityPage(env, environment, query, page);
-          return json(200, { contract:"fibre-admin-activity-page-v0.1", environment, queriedAt:new Date().toISOString(), query, mode:page.mode, summary:summary(result.records), records:result.records, nextCursor:result.nextCursor });
+          return json(200, {
+            contract:"fibre-admin-activity-page-v0.2",
+            environment,
+            queriedAt:new Date().toISOString(),
+            query,
+            mode:page.mode,
+            summary:summary(result.records),
+            records:result.records,
+            prevCursor:result.prevCursor,
+            nextCursor:result.nextCursor,
+            total:result.total,
+            totalPages:result.totalPages,
+            pageSize:result.pageSize,
+          });
         } catch (error) { return json(error instanceof TypeError ? 400 : 503, { error:error instanceof TypeError ? "invalid_query" : "activity_unavailable", detail:error.message }); }
       }
 
