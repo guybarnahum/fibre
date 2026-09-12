@@ -5,18 +5,6 @@ function node(tag, className = null, text = null) {
   return element;
 }
 
-function ageFromBirthDate(birthDate) {
-  if (!birthDate) return null;
-  const born = new Date(birthDate);
-  if (Number.isNaN(born.valueOf())) return null;
-  const now = new Date();
-  let years = now.getUTCFullYear() - born.getUTCFullYear();
-  let months = now.getUTCMonth() - born.getUTCMonth();
-  if (now.getUTCDate() < born.getUTCDate()) months -= 1;
-  if (months < 0) { years -= 1; months += 12; }
-  return years >= 0 ? `${years}y ${months}m` : null;
-}
-
 function resolvedValue(value, label) {
   const wrap = node("span", "resolved-value");
   const mark = node("span", "resolved-mark", value ? `*${value}` : "—");
@@ -45,8 +33,7 @@ function identityItem(label, content, { mono = false } = {}) {
 
 export async function renderThreadPage(threadId) {
   const main = document.querySelector(".main");
-  const dialog = document.querySelector("#record-dialog");
-  if (dialog) dialog.remove();
+  document.querySelector("#record-dialog")?.remove();
   for (const item of document.querySelectorAll(".nav-item")) item.classList.remove("active");
 
   main.replaceChildren();
@@ -83,10 +70,10 @@ export async function renderThreadPage(threadId) {
   main.append(panel);
 
   const note = node("section", "panel thread-placeholder");
-  note.append(node("div", "panel-head"));
-  note.querySelector(".panel-head").append(node("div"));
-  note.querySelector(".panel-head div").append(node("h2", null, "Thread Observatory"), node("p", null, "O1 establishes identity and navigation. Overview, Life, Media, Interior, DNA and integrated Activity land in later O slices."));
-  main.append(note);
+  const noteHead = node("div", "panel-head");
+  const noteCopy = node("div");
+  noteCopy.append(node("h2", null, "Thread Observatory"), node("p", null, "O1 establishes identity and navigation. Overview, Life, Media, Interior, DNA and integrated Activity land in later O slices."));
+  noteHead.append(noteCopy); note.append(noteHead); main.append(note);
 
   try {
     const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
@@ -102,7 +89,6 @@ export async function renderThreadPage(threadId) {
       identityItem("Name", resolvedValue(payload.identity.displayName, "Thread name")),
       identityItem("FIN", resolvedValue(payload.identity.fibreIdentityNumber, "FIN")),
       identityItem("Thread ID", payload.identity.threadId, { mono:true }),
-      identityItem("Age", ageFromBirthDate(payload.identity.birthDate)),
       identityItem("Birth date", payload.identity.birthDate),
       identityItem("Lifecycle", payload.identity.lifecycleStatus),
     );
