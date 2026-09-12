@@ -18,10 +18,7 @@
         <a href="/activity" class="nav-item active"><span class="nav-icon">≋</span>Activity</a>
         <a id="status-link" href="https://status.insidefibre.com" class="nav-item"><span class="nav-icon">◉</span>System status<span class="external">↗</span></a>
       </nav>
-      <div class="sidebar-note">
-        <strong>Operational only</strong>
-        <span>Activity is non-authoritative and fail-open. World and service records remain the source of truth.</span>
-      </div>
+      <div class="sidebar-note"><strong>Operational only</strong><span>Activity is non-authoritative and fail-open. World and service records remain the source of truth.</span></div>
     </aside>
 
     <main class="main">
@@ -35,55 +32,57 @@
         <div class="page-actions"><label class="auto-refresh"><input id="auto-refresh" type="checkbox" checked> Auto refresh</label><button id="export-button" class="secondary" type="button" disabled>Copy export</button><button id="refresh-button" class="primary" type="button">Refresh</button></div>
       </section>
 
-      <section class="metrics" aria-label="Activity summary">
-        <article><span>Records</span><strong id="metric-records">—</strong><small>matching current query</small></article>
-        <article><span>Failures</span><strong id="metric-failures">—</strong><small>failed stages</small></article>
-        <article><span>Retrying</span><strong id="metric-retries">—</strong><small>retry events</small></article>
-        <article><span>Recovered</span><strong id="metric-recovered">—</strong><small>failed stages later succeeded</small></article>
+      <section class="metrics" aria-label="Activity page summary">
+        <article><span>Records</span><strong id="metric-records">—</strong><small>on this page</small></article>
+        <article><span>Failures</span><strong id="metric-failures">—</strong><small>on this page</small></article>
+        <article><span>Retrying</span><strong id="metric-retries">—</strong><small>on this page</small></article>
+        <article><span>View</span><strong id="metric-view">—</strong><small>25 rows per cursor page</small></article>
       </section>
 
       <section class="panel filters-panel">
-        <div class="panel-head"><div><h2>Filter activity</h2><p>Use a Thread identity for God's view, or reconstruct another runtime chain.</p></div><kbd>/</kbd></div>
+        <div class="panel-head"><div><h2>Filter activity</h2><p>Follow one Thread or reconstruct another runtime chain.</p></div><kbd>/</kbd></div>
         <form id="filters" class="filters">
-          <label><span>View</span><select id="kind" name="kind"><option value="recent">Recent activity</option><option value="failures">Failures & retries</option><option value="request">Request ID</option><option value="genesis">Genesis ID</option><option value="thread">Thread ID</option></select></label>
+          <label><span>Scope</span><select id="kind" name="kind"><option value="recent">Recent activity</option><option value="failures">Failures & retries</option><option value="request">Request ID</option><option value="genesis">Genesis ID</option><option value="thread">Thread ID</option></select></label>
           <label class="identity-filter"><span>Identity</span><input id="value" name="value" autocomplete="off" placeholder="req_… / gen_… / thr_…"></label>
           <label><span>Service</span><input id="service" name="service" autocomplete="off" list="service-list" placeholder="All services"><datalist id="service-list"></datalist></label>
           <label><span>Status</span><select id="status" name="status"><option value="">All statuses</option><option value="started">Started</option><option value="succeeded">Succeeded</option><option value="failed">Failed</option><option value="retrying">Retrying</option></select></label>
-          <label><span>Rows</span><select id="limit" name="limit"><option>50</option><option selected>100</option><option>200</option></select></label>
           <button class="secondary" type="submit">Apply filters</button>
         </form>
       </section>
 
-      <div id="activity-workspace" class="activity-workspace">
-        <section id="thread-journey" class="panel journey-panel" hidden>
-          <div class="panel-head">
-            <div><p class="eyebrow">God's view</p><h2>Observed causal trail</h2><p id="journey-summary">Meaningful operations across this Thread's observed life.</p></div>
-            <span class="observer-pill">interpreted</span>
+      <section class="panel activity-view-panel">
+        <div class="panel-head activity-view-head">
+          <div><p class="eyebrow">God's view</p><h2 id="chain-title">Activity</h2><p id="chain-summary">Loading…</p></div>
+          <div class="view-switch" role="group" aria-label="Activity view">
+            <button id="view-causal" type="button" data-mode="causal">Causal trail</button>
+            <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
           </div>
-          <div id="journey-phases" class="journey-phases"></div>
+        </div>
+
+        <div id="causal-view" class="activity-view">
           <div class="journey-body">
-            <div class="journey-body-head"><strong>Meaningful operations</strong><span>collapsed from raw Activity</span></div>
+            <div class="journey-body-head"><strong>Meaningful operations</strong><span>execution starts omitted · Activity Log ≠ semantic truth</span></div>
             <div id="journey-rail" class="journey-rail"></div>
             <div id="journey-gap" class="journey-gap" hidden></div>
           </div>
-        </section>
+        </div>
 
-        <section class="panel activity-panel">
-          <div class="panel-head"><div><h2 id="chain-title">Recent activity</h2><p id="chain-summary">Raw Activity records exactly as logged.</p></div><span id="updated-at" class="updated-at"></span></div>
+        <div id="raw-view" class="activity-view" hidden>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Time</th><th>Service</th><th>Stage</th><th>Status</th><th>Attempt</th><th>Correlation</th></tr></thead>
               <tbody id="activity-rows"></tbody>
             </table>
-            <div id="empty-state" class="empty" hidden><div class="empty-icon">≋</div><h3>No matching activity</h3><p>Adjust the filters or wait for new runtime activity.</p></div>
+            <div id="empty-state" class="empty" hidden><div class="empty-icon">≋</div><h3>No matching activity</h3><p>Adjust the filters or move to another page.</p></div>
           </div>
-          <div id="activity-pager" class="activity-pager" hidden>
-            <button id="page-prev" class="secondary" type="button">← Previous</button>
-            <span id="page-label">Page 1</span>
-            <button id="page-next" class="secondary" type="button">Next →</button>
-          </div>
-        </section>
-      </div>
+        </div>
+
+        <div class="activity-pager">
+          <button id="page-prev" class="secondary" type="button">← Previous</button>
+          <span id="page-label">Page 1 · up to 25 rows</span>
+          <button id="page-next" class="secondary" type="button">Next →</button>
+        </div>
+      </section>
     </main>
   </div>
 
