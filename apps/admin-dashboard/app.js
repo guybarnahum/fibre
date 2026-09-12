@@ -7,10 +7,11 @@ const status = $("#status");
 const rows = $("#activity-rows");
 const empty = $("#empty-state");
 const dialog = $("#record-dialog");
-const cursors = { causal:[null], raw:[null] };
+const pageSize = $("#page-size");
 let mode = "raw";
 let currentPayload = null;
 let timer = null;
+let nav = { edge:"first", direction:"next", cursor:null, page:1 };
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
@@ -37,6 +38,7 @@ function syncFromUrl() {
   status.value = params.get("status") ?? "";
   mode = params.get("mode") ?? (kind.value === "thread" ? "causal" : "raw");
   if (!["causal", "raw"].includes(mode)) mode = "raw";
+  pageSize.value = ["10", "25", "50"].includes(params.get("size")) ? params.get("size") : "25";
   updateIdentityState();
   renderMode();
 }
@@ -54,14 +56,18 @@ function baseParams() {
   if (service.value.trim()) params.set("service", service.value.trim());
   if (status.value) params.set("status", status.value);
   params.set("mode", mode);
+  params.set("size", pageSize.value);
   return params;
+}
+
+function syncUrl() {
+  history.replaceState(null, "", `${location.pathname}?${baseParams()}`);
 }
 
 function setLoading(loading) {
   $("#refresh-button").disabled = loading;
   $("#refresh-button").textContent = loading ? "Refreshing…" : "Refresh";
-  $("#page-prev").disabled = loading || cursors[mode].length === 1;
-  $("#page-next").disabled = loading || currentPayload?.nextCursor == null;
+  for (const id of ["page-first", "page-prev", "page-next", "page-last"]) $(`#${id}`).disabled = loading;
 }
 
 function renderMode() {
@@ -80,24 +86,15 @@ function renderMetrics(records) {
 function recordRow(record) {
   const tr = document.createElement("tr");
   const cells = [
-    [clock(record.occurredAt), "time"],
-    [titleCase(record.service), "service"],
-    [record.stage, "stage"],
-    [record.status, ""],
-    [String(record.attempt), "attempt"],
-    [shortId(queryLabel(record)), "correlation"],
+    [clock(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"],
+    [record.status, ""], [String(record.attempt), "attempt"], [shortId(queryLabel(record)), "correlation"],
   ];
   cells.forEach(([content, className], index) => {
     const td = document.createElement("td");
     if (index === 3) {
-      const badge = document.createElement("span");
-      badge.className = `status status-${record.status}`;
-      badge.textContent = titleCase(record.status);
-      td.append(badge);
+      const badge = document.createElement("span"); badge.className = `status status-${record.status}`; badge.textContent = titleCase(record.status); td.append(badge);
     } else {
-      td.className = className;
-      td.textContent = content;
-      if (index === 5) td.title = queryLabel(record);
+      td.className = className; td.textContent = content; if (index === 5) td.title = queryLabel(record);
     }
     tr.append(td);
   });
@@ -116,20 +113,13 @@ function renderCausal(records) {
     const event = document.createElement("button");
     event.type = "button";
     event.className = `journey-event journey-event-${record.status}`;
-    const when = document.createElement("span");
-    when.className = "journey-time";
-    when.textContent = clock(record.occurredAt);
-    const copy = document.createElement("span");
-    copy.className = "journey-copy";
-    const heading = document.createElement("strong");
-    heading.textContent = `${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
-    const stage = document.createElement("span");
-    stage.textContent = record.stage;
+    const when = document.createElement("span"); when.className = "journey-time"; when.textContent = clock(record.occurredAt);
+    const copy = document.createElement("span"); copy.className = "journey-copy";
+    const heading = document.createElement("strong"); heading.textContent = `${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
+    const stage = document.createElement("span"); stage.textContent = record.stage;
     copy.append(heading, stage);
     const witness = record.evidence?.eventId ?? record.evidence?.objectRef ?? null;
-    const evidence = document.createElement("span");
-    evidence.className = "journey-evidence";
-    evidence.textContent = witness ? shortId(witness) : record.status;
+    const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = witness ? shortId(witness) : record.status;
     event.append(when, copy, evidence);
     event.addEventListener("click", () => showRecord(record));
     return event;
@@ -140,12 +130,10 @@ function renderCausal(records) {
 }
 
 function detail(label, input, { wide = false, mono = false } = {}) {
-  const item = document.createElement("div");
-  item.className = `detail${wide ? " detail-wide" : ""}`;
+  const item = document.createElement("div"); item.className = `detail${wide ? " detail-wide" : ""}`;
   const name = document.createElement("label"); name.textContent = label;
   const body = document.createElement("div"); body.textContent = input ?? "—"; if (mono) body.className = "mono";
-  item.append(name, body);
-  return item;
+  item.append(name, body); return item;
 }
 
 function showRecord(record) {
@@ -163,8 +151,7 @@ function showRecord(record) {
   if (record.message) body.append(detail("Message", record.message, { wide:true }));
   if (record.error) {
     const error = document.createElement("div"); error.className = "error-box";
-    error.textContent = `${record.error.category}/${record.error.code} · retryable=${record.error.retryable}`;
-    body.append(error);
+    error.textContent = `${record.error.category}/${record.error.code} · retryable=${record.error.retryable}`; body.append(error);
   }
   if (record.evidence && Object.keys(record.evidence).length) {
     const evidence = document.createElement("div"); evidence.className = "evidence";
@@ -182,9 +169,7 @@ function showRecord(record) {
 
 function populateServices(records) {
   const values = [...new Set(records.map((record) => record.service).filter(Boolean))].sort();
-  $("#service-list").replaceChildren(...values.map((item) => {
-    const option = document.createElement("option"); option.value = item; return option;
-  }));
+  $("#service-list").replaceChildren(...values.map((item) => { const option = document.createElement("option"); option.value = item; return option; }));
 }
 
 function chainHeading(payload) {
@@ -209,14 +194,13 @@ function activityIdentity(records) {
 function activityExport(payload) {
   const records = payload?.records ?? [];
   return Object.freeze({
-    contract:"fibre-activity-export-v0.2",
+    contract:"fibre-activity-export-v0.3",
     exportedAt:new Date().toISOString(),
     environment:payload?.environment ?? null,
     queriedAt:payload?.queriedAt ?? null,
     query:payload?.query ?? null,
     mode:payload?.mode ?? mode,
-    page:cursors[mode].length,
-    nextCursor:payload?.nextCursor ?? null,
+    page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? Number(pageSize.value), totalRecords:payload?.total ?? records.length },
     identity:activityIdentity(records),
     records,
   });
@@ -230,31 +214,46 @@ async function copyExport() {
     await navigator.clipboard.writeText(exportText);
     button.textContent = "Copied";
   } catch {
-    const area = document.createElement("textarea");
-    area.value = exportText;
-    area.setAttribute("readonly", "");
-    area.style.position = "fixed";
-    area.style.opacity = "0";
-    document.body.append(area);
-    area.select();
-    button.textContent = document.execCommand("copy") ? "Copied" : "Copy failed";
-    area.remove();
+    const area = document.createElement("textarea"); area.value = exportText; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0";
+    document.body.append(area); area.select(); button.textContent = document.execCommand("copy") ? "Copied" : "Copy failed"; area.remove();
   }
   setTimeout(() => { button.textContent = "Copy export"; }, 1600);
 }
 
-function syncUrl() {
-  const params = baseParams();
-  history.replaceState(null, "", `${location.pathname}?${params}`);
+function firstPage() { nav = { edge:"first", direction:"next", cursor:null, page:1 }; return loadPage(); }
+function lastPage() {
+  const last = currentPayload?.totalPages ?? 1;
+  nav = { edge:"last", direction:"next", cursor:null, page:last };
+  return loadPage();
+}
+function previousPage() {
+  if (!currentPayload?.prevCursor || nav.page <= 1) return;
+  nav = { edge:"first", direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
+  return loadPage();
+}
+function nextPage() {
+  if (!currentPayload?.nextCursor) return;
+  nav = { edge:"first", direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
+  return loadPage();
 }
 
-async function loadPage({ reset = false, pushState = false } = {}) {
-  if (reset) cursors[mode] = [null];
+function renderPager(payload) {
+  const totalPages = payload.totalPages ?? 1;
+  nav.page = Math.min(Math.max(1, nav.page), totalPages);
+  text($("#page-label"), `${nav.page} of ${totalPages}`);
+  $("#page-first").disabled = nav.page <= 1;
+  $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1;
+  $("#page-next").disabled = payload.nextCursor == null || nav.page >= totalPages;
+  $("#page-last").disabled = nav.page >= totalPages;
+}
+
+async function loadPage({ pushState = false } = {}) {
   setLoading(true);
   if (pushState) syncUrl();
   const params = baseParams();
-  const cursor = cursors[mode].at(-1);
-  if (cursor) params.set("cursor", cursor);
+  params.set("edge", nav.edge);
+  params.set("direction", nav.direction);
+  if (nav.cursor) params.set("cursor", nav.cursor);
   try {
     const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
@@ -264,74 +263,49 @@ async function loadPage({ reset = false, pushState = false } = {}) {
     $("#export-button").disabled = false;
     text($("#environment-pill"), payload.environment);
     text($("#chain-title"), chainHeading(payload));
-    text($("#chain-summary"), mode === "causal" ? "Meaningful terminal and retry operations, 25 per cursor page." : "Raw Activity records exactly as logged, 25 per cursor page.");
-    renderMetrics(records);
-    renderMode();
-    renderRaw(mode === "raw" ? records : []);
-    renderCausal(mode === "causal" ? records : []);
-    populateServices(records);
-    text($("#page-label"), `Page ${cursors[mode].length} · ${records.length} row${records.length === 1 ? "" : "s"}`);
-    $("#page-prev").disabled = cursors[mode].length === 1;
-    $("#page-next").disabled = payload.nextCursor == null;
+    text($("#chain-summary"), mode === "causal"
+      ? `Meaningful terminal and retry operations · ${payload.total} total.`
+      : `Raw Activity records exactly as logged · ${payload.total} total.`);
+    renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); renderCausal(mode === "causal" ? records : []); populateServices(records); renderPager(payload);
   } catch (error) {
     currentPayload = null;
     $("#export-button").disabled = true;
-    renderMetrics([]);
-    renderRaw([]);
-    renderCausal([]);
+    renderMetrics([]); renderRaw([]); renderCausal([]);
     text($("#chain-summary"), `Activity unavailable: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
+  } finally { setLoading(false); if (currentPayload) renderPager(currentPayload); }
 }
 
 function selectMode(nextMode) {
   if (mode === nextMode) return;
   mode = nextMode;
   currentPayload = null;
-  renderMode();
-  syncUrl();
-  loadPage();
+  nav = { edge:"first", direction:"next", cursor:null, page:1 };
+  renderMode(); syncUrl(); loadPage();
 }
 
 function scheduleRefresh() {
-  clearInterval(timer);
-  timer = null;
+  clearInterval(timer); timer = null;
   if ($("#auto-refresh").checked) timer = setInterval(() => loadPage(), 10000);
 }
 
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  cursors.causal = [null];
-  cursors.raw = [null];
-  loadPage({ pushState:true });
-});
+form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
 kind.addEventListener("change", updateIdentityState);
+pageSize.addEventListener("change", () => { nav = { edge:"first", direction:"next", cursor:null, page:1 }; syncUrl(); loadPage(); });
 $("#refresh-button").addEventListener("click", () => loadPage());
 $("#export-button").addEventListener("click", copyExport);
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
 $("#view-causal").addEventListener("click", () => selectMode("causal"));
 $("#view-raw").addEventListener("click", () => selectMode("raw"));
-$("#page-prev").addEventListener("click", () => {
-  if (cursors[mode].length > 1) cursors[mode].pop();
-  loadPage();
-});
-$("#page-next").addEventListener("click", () => {
-  if (!currentPayload?.nextCursor) return;
-  cursors[mode].push(currentPayload.nextCursor);
-  loadPage();
-});
+$("#page-first").addEventListener("click", firstPage);
+$("#page-prev").addEventListener("click", previousPage);
+$("#page-next").addEventListener("click", nextPage);
+$("#page-last").addEventListener("click", lastPage);
 $("#dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
-    event.preventDefault();
-    (value.disabled ? service : value).focus();
-  }
+  if (event.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) { event.preventDefault(); (value.disabled ? service : value).focus(); }
 });
 
 const staging = location.hostname === "admin.staging.insidefibre.com" || location.hostname.includes("-staging.");
 $("#status-link").href = staging ? "https://status.staging.insidefibre.com" : "https://status.insidefibre.com";
-syncFromUrl();
-scheduleRefresh();
-loadPage();
+syncFromUrl(); scheduleRefresh(); loadPage();
