@@ -168,7 +168,9 @@ function renderCausal(records) {
     event.style.setProperty("--journey-indent", `${Math.min(depth, 4) * 18}px`);
     event.title = record.operationId
       ? `Operation ${record.operationId}${record.parentOperationId ? ` · parent ${record.parentOperationId}` : ""}`
-      : "Activity without operation lineage";
+      : record.causationId
+        ? `Caused by ${record.causationId}`
+        : "Activity without operation lineage";
     const when = document.createElement("span"); when.className = "journey-time"; when.textContent = clock(record.occurredAt);
     const copy = document.createElement("span"); copy.className = "journey-copy";
     const heading = document.createElement("strong"); heading.textContent = `${depth > 0 ? "↳ " : ""}${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
@@ -179,6 +181,11 @@ function renderCausal(records) {
       parent.className = "journey-parent";
       parent.textContent = directParent ? `child of ${directParent.stage}` : `child of ${shortId(record.parentOperationId)}`;
       copy.append(parent);
+    } else if (record.causationId) {
+      const cause = document.createElement("small");
+      cause.className = "journey-parent";
+      cause.textContent = `caused by ${shortId(record.causationId)}`;
+      copy.append(cause);
     }
     const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = causalWitness(record, childCount);
     event.append(when, copy, evidence);
