@@ -97,14 +97,16 @@ export async function queryAdminActivityPage(env, environment, query, page) {
   ]);
 
   const rows = Array.isArray(result?.results) ? result.results : [];
-  const scanned = rows.slice(0, page.size);
+  const total = Number(countResult?.results?.[0]?.total ?? 0);
+  const lastPageSize = total === 0 ? 0 : (total % page.size || page.size);
+  const take = page.edge === "last" ? lastPageSize : page.size;
+  const scanned = rows.slice(0, take);
   if (built.reverse) scanned.reverse();
   const records = scanned.map((row) => normalizeActivityRecord(JSON.parse(row.record_json)));
   const extra = rows.length > page.size;
   const cameFromCursor = page.cursor !== null;
-  const hasPrev = page.edge === "last" ? extra : page.direction === "prev" ? extra : cameFromCursor;
+  const hasPrev = page.edge === "last" ? total > records.length : page.direction === "prev" ? extra : cameFromCursor;
   const hasNext = page.edge === "last" ? false : page.direction === "prev" ? cameFromCursor : extra;
-  const total = Number(countResult?.results?.[0]?.total ?? 0);
 
   return Object.freeze({
     records:Object.freeze(records),
