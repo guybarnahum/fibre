@@ -153,13 +153,13 @@ async function responseJson(response, label) {
 }
 
 async function birthHealth({ fetchImpl, baseUrl, requestTimeoutMs }) {
-  const response = await fetchImpl(endpoint(baseUrl, "/healthz"), {
+  const response = await fetchImpl(endpoint(baseUrl, "/internal/health/state"), {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(requestTimeoutMs),
   });
-  const payload = await responseJson(response, "Birth Center health");
+  const payload = await responseJson(response, "Birth Center state health");
   if (!response.ok || payload?.ok !== true || payload.service !== "birth-center" || payload.provider !== "cloudflare") {
-    throw new Error(`staging Birth Center health is not a deployed Cloudflare runtime: HTTP ${response.status} ${JSON.stringify(payload)}`);
+    throw new Error(`staging Birth Center state health is not a deployed Cloudflare runtime: HTTP ${response.status} ${JSON.stringify(payload)}`);
   }
   if (payload.genesisDevelopmentConfigured !== true) {
     throw new Error("staging Birth Center does not report Genesis development configured");
@@ -168,7 +168,7 @@ async function birthHealth({ fetchImpl, baseUrl, requestTimeoutMs }) {
   const repair = payload.genesisReasoningProfiles?.repair;
   for (const [name, profile] of [["creative", creative], ["repair", repair]]) {
     if (typeof profile?.provider !== "string" || profile.provider.trim() === "" || typeof profile?.modelId !== "string" || profile.modelId.trim() === "") {
-      throw new Error(`staging Birth Center health lacks ${name} reasoning profile witness`);
+      throw new Error(`staging Birth Center state health lacks ${name} reasoning profile witness`);
     }
   }
   return Object.freeze({
