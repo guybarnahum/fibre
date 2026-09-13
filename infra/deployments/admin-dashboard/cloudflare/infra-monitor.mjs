@@ -1,4 +1,4 @@
-import { sampleCloudflareResourceHealth } from "#infra/providers/cloudflare/resource-health";
+import { sampleCloudflareResourceHealth } from "../../../providers/cloudflare/resource-health.mjs";
 
 const CACHE_CONTRACT = "fibre-admin-infra-monitor-cache-v0.1";
 const DEFAULT_TTL_MS = 15 * 60_000;
