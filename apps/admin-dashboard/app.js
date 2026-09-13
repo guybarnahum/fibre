@@ -7,6 +7,7 @@ const status = $("#status");
 const rows = $("#activity-rows");
 const empty = $("#empty-state");
 const dialog = $("#record-dialog");
+const threadIdentityCache = new Map();
 let mode = "raw";
 let currentPayload = null;
 let timer = null;
@@ -14,6 +15,7 @@ let nav = { edge:"first", direction:"next", cursor:null, page:1 };
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
+function humanLabel(input) { return String(input ?? "").split(/[-_]/u).filter(Boolean).map((part) => part[0].toUpperCase() + part.slice(1)).join(" "); }
 function shortId(input) { if (!input) return null; return input.length > 24 ? `${input.slice(0, 12)}…${input.slice(-8)}` : input; }
 function clock(input) { try { return new Intl.DateTimeFormat([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }).format(new Date(input)); } catch { return input; } }
 function queryLabel(record) { return record.threadId ?? record.genesisId ?? record.requestId ?? record.correlationId ?? "—"; }
@@ -176,6 +178,36 @@ function showRecord(record) {
   dialog.showModal();
 }
 
+async function resolveThreadIdentity(threadId) {
+  const cached = threadIdentityCache.get(threadId);
+  if (cached) return cached;
+  const pending = (async () => {
+    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    return payload.identity ?? {};
+  })();
+  threadIdentityCache.set(threadId, pending);
+  try { return await pending; }
+  catch (error) { threadIdentityCache.delete(threadId); throw error; }
+}
+
+function threadAssetCard(asset) {
+  const card = document.createElement("article"); card.className = "thread-asset";
+  if (asset.url && String(asset.mediaType ?? "").startsWith("image/")) {
+    const preview = document.createElement("a"); preview.className = "thread-asset-preview"; preview.href = asset.url; preview.target = "_blank"; preview.rel = "noreferrer";
+    const image = document.createElement("img"); image.src = asset.url; image.loading = "lazy"; image.alt = humanLabel(asset.role || asset.kind || "Thread image");
+    preview.append(image); card.append(preview);
+  }
+  const copy = document.createElement("div"); copy.className = "thread-asset-copy";
+  const heading = document.createElement("strong"); heading.textContent = humanLabel(asset.role || asset.mediaId || "Media");
+  const facts = [asset.kind, asset.mediaType, asset.width && asset.height ? `${asset.width}×${asset.height}` : null].filter(Boolean).join(" · ");
+  const meta = document.createElement("small"); meta.textContent = facts || "Public Presentation media";
+  const link = document.createElement("a"); link.className = "thread-asset-link mono"; link.href = asset.url; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = asset.objectRef ?? "Open asset";
+  copy.append(heading, meta, link); card.append(copy);
+  return card;
+}
+
 async function showThread(threadId) {
   text($("#dialog-eyebrow"), "Thread Observatory");
   text($("#dialog-title"), "Thread");
@@ -183,18 +215,29 @@ async function showThread(threadId) {
   body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), detail("Identity", "Loading…", { wide:true }));
   if (!dialog.open) dialog.showModal();
   try {
-    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-    const identity = payload.identity ?? {};
+    const identity = await resolveThreadIdentity(threadId);
     text($("#dialog-title"), identity.displayName ?? "Unnamed Thread");
+    const visual = identity.visualIdentity ?? {};
     const grid = document.createElement("div"); grid.className = "detail-grid";
     grid.append(
       detail("Name", identity.displayName), detail("FIN", identity.fibreIdentityNumber, { mono:true }),
       detail("Thread ID", identity.threadId ?? threadId, { wide:true, mono:true }),
       detail("Birth date", identity.birthDate), detail("Lifecycle", identity.lifecycleStatus),
+      detail("Embodiment", visual.embodimentId, { mono:true }),
+      detail("Canonical reference", (visual.referenceObjectRefs ?? []).join(", ") || null, { wide:true, mono:true }),
     );
     body.replaceChildren(grid);
+    const assets = Array.isArray(identity.assets) ? identity.assets : [];
+    if (assets.length > 0) {
+      const section = document.createElement("section"); section.className = "thread-assets";
+      const head = document.createElement("div"); head.className = "thread-assets-head";
+      const heading = document.createElement("strong"); heading.textContent = "Public media";
+      const count = document.createElement("span"); count.textContent = `${assets.length} ready asset${assets.length === 1 ? "" : "s"}`;
+      head.append(heading, count);
+      const assetGrid = document.createElement("div"); assetGrid.className = "thread-asset-grid";
+      assetGrid.append(...assets.map(threadAssetCard));
+      section.append(head, assetGrid); body.append(section);
+    }
   } catch (error) {
     const problem = document.createElement("div");
     problem.className = "error-box";
@@ -217,27 +260,33 @@ function chainHeading(payload) {
   return "Recent activity";
 }
 
-function activityIdentity(records) {
+async function activityIdentity(payload) {
+  const records = payload?.records ?? [];
+  const threadId = payload?.query?.kind === "thread" ? payload.query.value : singleValue(records.map((record) => record.threadId));
+  let resolved = null;
+  if (threadId) {
+    try { resolved = await resolveThreadIdentity(threadId); } catch {}
+  }
   return Object.freeze({
     requestId:singleValue(records.map((record) => record.requestId)),
     genesisId:singleValue(records.map((record) => record.genesisId)),
-    threadId:singleValue(records.map((record) => record.threadId)),
-    threadName:null,
-    fibreIdentityNumber:singleValue(records.map((record) => record.evidence?.fibreIdentityNumber)),
+    threadId,
+    threadName:resolved?.displayName ?? null,
+    fibreIdentityNumber:resolved?.fibreIdentityNumber ?? singleValue(records.map((record) => record.evidence?.fibreIdentityNumber)),
   });
 }
 
-function activityExport(payload) {
+async function activityExport(payload) {
   const records = payload?.records ?? [];
   return Object.freeze({
-    contract:"fibre-activity-export-v0.3",
+    contract:"fibre-activity-export-v0.4",
     exportedAt:new Date().toISOString(),
     environment:payload?.environment ?? null,
     queriedAt:payload?.queriedAt ?? null,
     query:payload?.query ?? null,
     mode:payload?.mode ?? mode,
     page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? 25, totalRecords:payload?.total ?? records.length },
-    identity:activityIdentity(records),
+    identity:await activityIdentity(payload),
     records,
   });
 }
@@ -245,7 +294,7 @@ function activityExport(payload) {
 async function copyExport() {
   if (!currentPayload) return;
   const button = $("#export-button");
-  const exportText = JSON.stringify(activityExport(currentPayload), null, 2);
+  const exportText = JSON.stringify(await activityExport(currentPayload), null, 2);
   try {
     await navigator.clipboard.writeText(exportText);
     button.textContent = "Copied";
