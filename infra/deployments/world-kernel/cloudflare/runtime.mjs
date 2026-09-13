@@ -27,6 +27,7 @@ import {
 
 const WORLD_SCOPE_ID = "world";
 const DEFAULT_RECONCILIATION_MS = 5_000;
+const RECONCILIATION_STATE_TABLE = "world_reconciliation_runtime_state";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -57,6 +58,32 @@ function createDurableThreadSource(identityStore) {
   return Object.freeze({ listThreadIds() { return identityStore.listThreadIds(); } });
 }
 
+function createDurableRetryState(storage) {
+  storage.sql.exec(`
+    CREATE TABLE IF NOT EXISTS ${RECONCILIATION_STATE_TABLE} (
+      scope_id TEXT PRIMARY KEY,
+      retry_streak INTEGER NOT NULL CHECK (retry_streak >= 0)
+    )
+  `);
+  return Object.freeze({
+    async get() {
+      const rows = storage.sql.exec(
+        `SELECT retry_streak FROM ${RECONCILIATION_STATE_TABLE} WHERE scope_id=?`,
+        WORLD_SCOPE_ID,
+      ).toArray();
+      return rows.length === 0 ? 0 : Number(rows[0].retry_streak);
+    },
+    async set(value) {
+      storage.sql.exec(
+        `INSERT INTO ${RECONCILIATION_STATE_TABLE}(scope_id,retry_streak) VALUES(?,?)
+         ON CONFLICT(scope_id) DO UPDATE SET retry_streak=excluded.retry_streak`,
+        WORLD_SCOPE_ID,
+        value,
+      );
+    },
+  });
+}
+
 function closeAll(stores) {
   for (const store of stores) {
     try { store?.close?.(); } catch {}
@@ -81,6 +108,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   });
   const worldStorage = Object.freeze({ infraDriver, stateScopeId: WORLD_SCOPE_ID });
   const worldStore = openWorldStore(worldStorage);
+  const retryState = createDurableRetryState(storage);
   let identityStore;
   let embodimentStore;
   let genesisStore;
@@ -174,7 +202,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualPublicationProcess,
     activityRecorder,
     onError(entry, error) {
-      console.error(JSON.stringify({ event: "world-reconciliation-failed", ...entry, stack: error instanceof Error ? error.stack : null }));
+      console.error(JSON.stringify({ event: "world-reconciliation-failed", ...entry, stack: error instanceof Error ? error.stack ?? null : null }));
     },
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
@@ -182,6 +210,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     process: reconciliationProcess,
     intervalMs: reconciliationIntervalMs(env),
     now: nowMs,
+    retryState,
   });
 
   const authoritativeBirthPublisher = createGenesisBirthPublicationService({
@@ -238,7 +267,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (closed) return;
       closed = true;
       if (cancelSchedule) await reconciliationRuntime.stop();
-      closeAll([presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
+      closeAll([presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
     },
   });
 }
