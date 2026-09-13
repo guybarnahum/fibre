@@ -34,14 +34,14 @@ test("visual publication write API authenticates and forwards admitted Embodimen
 
   const response = await api.fetch(request());
   assert.equal(response.status, 200);
-  assert.deepEqual(calls, [{ ...BODY, regenerationKey: null }]);
+  assert.deepEqual(calls, [{ ...BODY, activityContext: {}, regenerationKey: null }]);
   assert.deepEqual(await response.json(), {
     ok: true,
     result: { complete: false, stage: "official_photo_pending", detail: { jobId: "assetjob_photo" } },
   });
 });
 
-test("visual publication write API forwards explicit regeneration key", async () => {
+test("visual publication write API forwards explicit regeneration key and Activity context", async () => {
   const calls = [];
   const api = createVisualPublicationWriteApi({
     privateToken: "secret",
@@ -52,9 +52,20 @@ test("visual publication write API forwards explicit regeneration key", async ()
       },
     },
   });
-  const response = await api.fetch(request({ body: { ...BODY, regenerationKey: "recover-bfl-shard-20260903" } }));
+  const activityContext = {
+    threadId: "thr_visual_handoff",
+    causationId: "emb_visual_handoff",
+  };
+  const response = await api.fetch(request({
+    body: {
+      ...BODY,
+      activityContext,
+      regenerationKey: "recover-bfl-shard-20260903",
+    },
+  }));
   assert.equal(response.status, 200);
   assert.equal(calls[0].regenerationKey, "recover-bfl-shard-20260903");
+  assert.deepEqual(calls[0].activityContext, activityContext);
 });
 
 test("visual publication write API rejects unauthenticated handoff", async () => {
