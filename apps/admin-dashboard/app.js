@@ -7,11 +7,10 @@ const status = $("#status");
 const rows = $("#activity-rows");
 const empty = $("#empty-state");
 const dialog = $("#record-dialog");
-const pageSize = $("#page-size");
 let mode = "raw";
 let currentPayload = null;
 let timer = null;
-let nav = { edge:"first", direction:"next", cursor:null, page:1 };
+let nav = { direction:"next", cursor:null, page:1 };
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
@@ -38,7 +37,6 @@ function syncFromUrl() {
   status.value = params.get("status") ?? "";
   mode = params.get("mode") ?? (kind.value === "thread" ? "causal" : "raw");
   if (!["causal", "raw"].includes(mode)) mode = "raw";
-  pageSize.value = ["10", "25", "50"].includes(params.get("size")) ? params.get("size") : "25";
   updateIdentityState();
   renderMode();
 }
@@ -56,7 +54,6 @@ function baseParams() {
   if (service.value.trim()) params.set("service", service.value.trim());
   if (status.value) params.set("status", status.value);
   params.set("mode", mode);
-  params.set("size", pageSize.value);
   return params;
 }
 
@@ -67,7 +64,7 @@ function syncUrl() {
 function setLoading(loading) {
   $("#refresh-button").disabled = loading;
   $("#refresh-button").textContent = loading ? "Refreshing…" : "Refresh";
-  for (const id of ["page-first", "page-prev", "page-next", "page-last"]) $(`#${id}`).disabled = loading;
+  for (const id of ["page-prev", "page-next"]) $(`#${id}`).disabled = loading;
 }
 
 function renderMode() {
@@ -200,7 +197,7 @@ function activityExport(payload) {
     queriedAt:payload?.queriedAt ?? null,
     query:payload?.query ?? null,
     mode:payload?.mode ?? mode,
-    page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? Number(pageSize.value), totalRecords:payload?.total ?? records.length },
+    page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? 25, totalRecords:payload?.total ?? records.length },
     identity:activityIdentity(records),
     records,
   });
@@ -220,38 +217,29 @@ async function copyExport() {
   setTimeout(() => { button.textContent = "Copy export"; }, 1600);
 }
 
-function firstPage() { nav = { edge:"first", direction:"next", cursor:null, page:1 }; return loadPage(); }
-function lastPage() {
-  const last = currentPayload?.totalPages ?? 1;
-  nav = { edge:"last", direction:"next", cursor:null, page:last };
-  return loadPage();
-}
 function previousPage() {
   if (!currentPayload?.prevCursor || nav.page <= 1) return;
-  nav = { edge:"first", direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
+  nav = { direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
   return loadPage();
 }
 function nextPage() {
   if (!currentPayload?.nextCursor) return;
-  nav = { edge:"first", direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
+  nav = { direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
   return loadPage();
 }
 
 function renderPager(payload) {
   const totalPages = payload.totalPages ?? 1;
   nav.page = Math.min(Math.max(1, nav.page), totalPages);
-  text($("#page-label"), `${nav.page} of ${totalPages}`);
-  $("#page-first").disabled = nav.page <= 1;
+  text($("#page-label"), `Page ${nav.page} of ${totalPages}`);
   $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1;
   $("#page-next").disabled = payload.nextCursor == null || nav.page >= totalPages;
-  $("#page-last").disabled = nav.page >= totalPages;
 }
 
 async function loadPage({ pushState = false } = {}) {
   setLoading(true);
   if (pushState) syncUrl();
   const params = baseParams();
-  params.set("edge", nav.edge);
   params.set("direction", nav.direction);
   if (nav.cursor) params.set("cursor", nav.cursor);
   try {
@@ -279,7 +267,7 @@ function selectMode(nextMode) {
   if (mode === nextMode) return;
   mode = nextMode;
   currentPayload = null;
-  nav = { edge:"first", direction:"next", cursor:null, page:1 };
+  nav = { direction:"next", cursor:null, page:1 };
   renderMode(); syncUrl(); loadPage();
 }
 
@@ -288,18 +276,15 @@ function scheduleRefresh() {
   if ($("#auto-refresh").checked) timer = setInterval(() => loadPage(), 10000);
 }
 
-form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
+form.addEventListener("submit", (event) => { event.preventDefault(); nav = { direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
 kind.addEventListener("change", updateIdentityState);
-pageSize.addEventListener("change", () => { nav = { edge:"first", direction:"next", cursor:null, page:1 }; syncUrl(); loadPage(); });
 $("#refresh-button").addEventListener("click", () => loadPage());
 $("#export-button").addEventListener("click", copyExport);
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
 $("#view-causal").addEventListener("click", () => selectMode("causal"));
 $("#view-raw").addEventListener("click", () => selectMode("raw"));
-$("#page-first").addEventListener("click", firstPage);
 $("#page-prev").addEventListener("click", previousPage);
 $("#page-next").addEventListener("click", nextPage);
-$("#page-last").addEventListener("click", lastPage);
 $("#dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
 document.addEventListener("keydown", (event) => {
