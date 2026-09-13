@@ -1,4 +1,4 @@
-export const STATUS_PAGE_VERSION = "fibre-status-page-v0.1";
+export const STATUS_PAGE_VERSION = "fibre-status-page-v0.2";
 const DEFAULT_BINDING_PROBE_TIMEOUT_MS = 2500;
 const DEFAULT_VIEWER_PROBE_TIMEOUT_MS = 3000;
 const MAX_PROBE_TIMEOUT_MS = 30000;
@@ -33,6 +33,28 @@ async function probeBinding(env, component, timeoutMs) {
     return { key:component.key, name:component.name, description:component.description, status };
   } catch { return { key:component.key, name:component.name, description:component.description, status:"outage" }; }
 }
+async function probeInfra(env, timeoutMs) {
+  const binding = env.ADMIN_DASHBOARD;
+  const base = { key:"infra", name:"Infrastructure capacity", description:"Cloudflare usage and resource headroom" };
+  if (!binding?.fetch) return { ...base, status:"degraded" };
+  try {
+    const response = await withProbeTimeout((signal) => binding.fetch(new Request("https://admin.internal/internal/infra-health", { headers:{ Accept:"application/json" }, signal })), timeoutMs);
+    const payload = await response.json();
+    if (!response.ok) return { ...base, status:"degraded" };
+    const level = payload?.level;
+    return {
+      ...base,
+      status:level === "normal" && payload?.stale !== true ? "operational" : "degraded",
+      description:level === "critical"
+        ? "Infrastructure resource use is critical"
+        : level === "elevated"
+          ? "Infrastructure resource use is elevated"
+          : payload?.stale === true || level === "unavailable"
+            ? "Infrastructure sample is stale or unavailable"
+            : base.description,
+    };
+  } catch { return { ...base, status:"degraded" }; }
+}
 async function probeViewer(env, fetchImpl, timeoutMs) {
   try {
     const origin = new URL(env.VIEWER_ORIGIN);
@@ -44,7 +66,7 @@ function overall(components) { const outages = components.filter((item) => item.
 export async function currentPublicStatus(env, { fetchImpl = globalThis.fetch, now = () => new Date().toISOString(), bindingTimeoutMs, viewerTimeoutMs } = {}) {
   const bindingTimeout = probeTimeout("bindingTimeoutMs", bindingTimeoutMs, DEFAULT_BINDING_PROBE_TIMEOUT_MS);
   const viewerTimeout = probeTimeout("viewerTimeoutMs", viewerTimeoutMs, DEFAULT_VIEWER_PROBE_TIMEOUT_MS);
-  const checks = await Promise.all([probeViewer(env, fetchImpl, viewerTimeout), ...COMPONENTS.map((component) => probeBinding(env, component, bindingTimeout))]);
+  const checks = await Promise.all([probeViewer(env, fetchImpl, viewerTimeout), ...COMPONENTS.map((component) => probeBinding(env, component, bindingTimeout)), probeInfra(env, bindingTimeout)]);
   return Object.freeze({ contract:STATUS_PAGE_VERSION, environment:env.FIBRE_ENVIRONMENT ?? "unknown", checkedAt:now(), status:overall(checks), components:Object.freeze(checks.map(Object.freeze)) });
 }
 function secureAsset(response) { const headers = new Headers(response.headers); headers.set("X-Content-Type-Options","nosniff"); headers.set("Referrer-Policy","no-referrer"); headers.set("X-Frame-Options","DENY"); headers.set("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"); return new Response(response.body,{status:response.status,statusText:response.statusText,headers}); }
