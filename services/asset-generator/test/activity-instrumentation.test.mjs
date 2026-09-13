@@ -44,6 +44,7 @@ function job(overrides = {}) {
       requestId: "req_activity_001",
       genesisId: "gen_activity_001",
       threadId: "thr_activity_001",
+      embodimentId: "emb_activity_001",
     },
     ...overrides,
   };
@@ -106,6 +107,9 @@ test("asset activity log identifies a failed attempt followed by an explicit suc
   );
   assert.equal(records.every((record) => record.genesisId === "gen_activity_001"), true);
   assert.equal(records.every((record) => record.threadId === "thr_activity_001"), true);
+  assert.equal(records.every((record) => record.causationId === "emb_activity_001"), true);
+  assert.equal(records.every((record) => record.evidence.objectRef === "asset_activity_001"), true);
+  assert.equal(records.every((record) => record.evidence.embodimentId === "emb_activity_001"), true);
   const failure = records.find((record) => record.status === "failed");
   assert.deepEqual(failure.error, {
     category: "unknown",
@@ -143,4 +147,5 @@ test("non-Thread asset scopes never become Thread activity identities by inferen
   const records = await telemetry.query({ requestId: "req_place_activity_001" });
   assert.equal(records.length, 2);
   assert.equal(records.every((record) => record.threadId === null), true);
+  assert.equal(records.every((record) => record.causationId === null), true);
 });
