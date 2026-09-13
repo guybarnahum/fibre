@@ -31,8 +31,9 @@ export function parseAdminActivityPage(url) {
   if (!MODES.has(mode)) throw new TypeError("unsupported activity mode");
   if (!DIRECTIONS.has(direction)) throw new TypeError("unsupported activity page direction");
   if (!EDGES.has(edge)) throw new TypeError("unsupported activity page edge");
-  const cursor = decodeCursor(url.searchParams.get("cursor"));
-  if (edge === "last" && cursor !== null) throw new TypeError("last page does not accept a cursor");
+  const rawCursor = url.searchParams.get("cursor");
+  if (edge === "last" && rawCursor !== null) throw new TypeError("last page does not accept a cursor");
+  const cursor = decodeCursor(rawCursor);
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
   return Object.freeze({ mode, size:PAGE_SIZE, direction, edge, cursor });
 }
