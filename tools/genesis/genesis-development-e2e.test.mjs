@@ -170,6 +170,16 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
           service: "birth-center",
           provider: "cloudflare",
           stateScopeId: "birth",
+          stateChecked: false,
+        });
+      }
+      if (url.pathname === "/internal/health/state") {
+        return json({
+          ok: true,
+          service: "birth-center",
+          provider: "cloudflare",
+          stateScopeId: "birth",
+          stateChecked: true,
           genesisDevelopmentConfigured: true,
           genesisReasoningProfiles: {
             creative: { provider: "openai", modelId: "gpt-5.1-2025-11-13" },
