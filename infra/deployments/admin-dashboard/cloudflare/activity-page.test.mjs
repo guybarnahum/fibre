@@ -62,7 +62,7 @@ test("Activity pages keep 25 meaningful operations per server page", async () =>
   assert.equal(result.prevCursor, null);
 });
 
-test("Activity paging can jump directly to the last page", async () => {
+test("Activity paging can jump directly to the exact last page", async () => {
   const page = parseAdminActivityPage(new URL("https://admin/api/activity/page?mode=causal&edge=last"));
   const built = buildAdminActivityPageSql({ environment:"staging", query, page });
   assert.equal(page.edge, "last");
@@ -73,7 +73,8 @@ test("Activity paging can jump directly to the last page", async () => {
   );
 
   const result = await queryAdminActivityPage({ ACTIVITY_LOG:d1 }, "staging", query, page);
-  assert.equal(result.records.length, 25);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.totalPages, 2);
   assert.ok(result.prevCursor);
   assert.equal(result.nextCursor, null);
 });
