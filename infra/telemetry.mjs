@@ -296,7 +296,7 @@ export function createActivityRecorder({
       threadId: candidate.threadId ?? null,
       experienceId: candidate.experienceId ?? null,
       sessionId: candidate.sessionId ?? null,
-      correlationId: candidate.correlationId ?? null,
+      correlationId: candidate.correlationId ?? candidate.requestId ?? null,
       causationId: candidate.causationId ?? null,
       stage: candidate.stage,
       status: candidate.status,
