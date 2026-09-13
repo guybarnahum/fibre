@@ -2,20 +2,23 @@ import baseWorker, {
   authenticateAccessRequest,
   authorizeAdminPrincipal,
 } from "./worker.mjs";
-import { readAdminInfraMonitor } from "./infra-monitor.mjs";
+import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
 import { resolveAdminThreadIdentity } from "./thread-identity.mjs";
+
+export { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
+const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
-function json(status, payload) {
+function json(status, payload, cacheControl = "no-store") {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
+      "Cache-Control": cacheControl,
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
     },
@@ -81,6 +84,15 @@ async function proxyAsset(request, env, objectRef) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === INFRA_HEALTH_ROUTE) {
+      try {
+        const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
+        return json(200, await readCachedInfraHealth({ env, environment }), "private, max-age=60");
+      } catch (error) {
+        return json(503, { error:"infra_health_unavailable", detail:error.message });
+      }
+    }
+
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
@@ -91,8 +103,7 @@ export default {
         if (infraMonitor) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const force = request.method === "POST" || url.searchParams.get("force") === "1";
-          const result = await readAdminInfraMonitor({ env, environment, force });
-          return json(200, result);
+          return json(200, await readAdminInfraMonitor({ env, environment, force }));
         }
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
