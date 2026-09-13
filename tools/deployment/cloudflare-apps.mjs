@@ -48,6 +48,12 @@ function deployedValue(name, value) {
   return normalized;
 }
 
+export function selectedCloudflareApps(app = null) {
+  if (app === null) return CLOUDFLARE_APP_DEPLOY_ORDER;
+  if (!CLOUDFLARE_APP_DEPLOY_ORDER.includes(app)) throw new TypeError(`unsupported Cloudflare app ${app}`);
+  return Object.freeze([app]);
+}
+
 export function cloudflareAppDomain(pattern, environment) {
   const env = normalizeCloudflareEnvironment(environment);
   if (pattern === "admin.insidefibre.com") return adminAccessDomain(env);
@@ -135,17 +141,20 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
   return config;
 }
 
-export async function loadCloudflareAppConfigs(repoRoot) {
+export async function loadCloudflareAppConfigs(repoRoot, appIds = CLOUDFLARE_APP_DEPLOY_ORDER) {
   const configs = {};
-  for (const [appId, path] of Object.entries(CLOUDFLARE_APP_CONFIGS)) configs[appId] = parseJsonc(await readFile(resolve(repoRoot, path), "utf8"), path);
+  for (const appId of appIds) {
+    const path = CLOUDFLARE_APP_CONFIGS[appId];
+    configs[appId] = parseJsonc(await readFile(resolve(repoRoot, path), "utf8"), path);
+  }
   return configs;
 }
 
-export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig }) {
+export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig, appIds = CLOUDFLARE_APP_DEPLOY_ORDER }) {
   const baseDir = resolve(repoRoot, ".fibre", "cloudflare", environment, "wrangler");
   await mkdir(baseDir, { recursive: true });
   const written = {};
-  for (const appId of CLOUDFLARE_APP_DEPLOY_ORDER) {
+  for (const appId of appIds) {
     const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig });
     validateResolvedCloudflareAppConfig(appId, resolvedConfig, { environment });
     const path = resolve(baseDir, `${appId}.jsonc`);
@@ -197,29 +206,35 @@ export async function deployCloudflareApps({
   environment,
   operatorConfig,
   dryRun = false,
+  app = null,
   client,
   accessClient = null,
   sourceResolver = resolveCleanGitDeploymentSource,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (!client?.deploy) throw new TypeError("Cloudflare app deployment client is required");
+  const appIds = selectedCloudflareApps(app);
   const source = await sourceResolver(repoRoot);
   const resourceState = await readCloudflareOperatorState({ repoRoot, environment: env });
-  const configs = await loadCloudflareAppConfigs(repoRoot);
-  const cloudflareAccess = accessClient ?? createCloudflareAccessClient({
-    accountId: operatorConfig?.CLOUDFLARE_ACCOUNT_ID,
-    apiToken: operatorConfig?.CLOUDFLARE_API_TOKEN,
-  });
-  const access = await inspectAdminAccess({ environment: env, client: cloudflareAccess });
+  const configs = await loadCloudflareAppConfigs(repoRoot, appIds);
+  let access = null;
+  if (appIds.includes("admin-dashboard")) {
+    const cloudflareAccess = accessClient ?? createCloudflareAccessClient({
+      accountId: operatorConfig?.CLOUDFLARE_ACCOUNT_ID,
+      apiToken: operatorConfig?.CLOUDFLARE_API_TOKEN,
+    });
+    access = await inspectAdminAccess({ environment: env, client: cloudflareAccess });
+  }
   const written = await writeResolvedCloudflareAppConfigs({
     repoRoot,
     environment: env,
     configs,
     resourceState,
     accessConfig: access,
+    appIds,
   });
   const deployments = [];
-  for (const appId of CLOUDFLARE_APP_DEPLOY_ORDER) {
+  for (const appId of appIds) {
     const configPath = resolve(repoRoot, written[appId]);
     const resolved = parseJsonc(await readFile(configPath, "utf8"), configPath);
     await client.deploy({ appId, configPath, dryRun, resolvedConfig: resolved });
@@ -232,8 +247,9 @@ export async function deployCloudflareApps({
     sourceGitSha: source.gitSha,
     sourceTreeClean: source.workingTreeClean,
     dryRun,
+    selectedApp: app,
     recordedAt: new Date().toISOString(),
-    access: Object.freeze({
+    access: access ? Object.freeze({
       contract: access.contract,
       domain: access.domain,
       teamDomain: access.teamDomain,
@@ -241,7 +257,7 @@ export async function deployCloudflareApps({
       appId: access.appId,
       policyCount: access.policyCount,
       allowPolicyCount: access.allowPolicyCount,
-    }),
+    }) : null,
     deployments: Object.freeze(deployments),
   });
   const evidencePath = resolve(repoRoot, ".fibre", "cloudflare", env, "apps-deployment.json");
@@ -253,16 +269,19 @@ export async function deployCloudflareApps({
 function parseArgs(argv) {
   let environment = null;
   let file = null;
+  let app = null;
   let dryRun = false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
     else if (argv[index] === "--file") file = argv[++index] ?? null;
+    else if (argv[index] === "--app") app = argv[++index] ?? null;
     else if (argv[index] === "--dry-run") dryRun = true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
   if (!file) throw new TypeError("--file <operator-config-file> is required");
-  return Object.freeze({ environment, file, dryRun });
+  if (app !== null) selectedCloudflareApps(app);
+  return Object.freeze({ environment, file, app, dryRun });
 }
 
 async function main(argv) {
@@ -274,8 +293,8 @@ async function main(argv) {
     accountId: operatorConfig.CLOUDFLARE_ACCOUNT_ID,
     apiToken: operatorConfig.CLOUDFLARE_API_TOKEN,
   });
-  const result = await deployCloudflareApps({ repoRoot, environment: parsed.environment, operatorConfig, dryRun: parsed.dryRun, client });
-  console.log(`ACCESS ${result.evidence.access.domain} policies=${result.evidence.access.policyCount} allow=${result.evidence.access.allowPolicyCount}`);
+  const result = await deployCloudflareApps({ repoRoot, environment: parsed.environment, operatorConfig, dryRun: parsed.dryRun, app: parsed.app, client });
+  if (result.evidence.access) console.log(`ACCESS ${result.evidence.access.domain} policies=${result.evidence.access.policyCount} allow=${result.evidence.access.allowPolicyCount}`);
   for (const deployment of result.evidence.deployments) console.log(`${parsed.dryRun ? "DRY" : "DEPLOY"} ${deployment.appId} https://${deployment.domain}`);
   console.log(`SOURCE ${result.evidence.sourceGitSha}`);
   console.log(`EVIDENCE ${result.evidencePath}`);
