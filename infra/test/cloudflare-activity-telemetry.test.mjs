@@ -198,6 +198,24 @@ test("Cloudflare Activity Log records idempotently, rejects divergent reuse, and
   assert.equal(database.rows.size, 3);
 });
 
+test("Cloudflare Activity replay accepts legacy v0.1 JSON without operation linkage fields", async () => {
+  const database = new FakeD1Database();
+  const legacy = activity();
+  database.rows.set(legacy.activityId, {
+    activity_id: legacy.activityId,
+    record_json: JSON.stringify(legacy),
+    rowid: 1,
+  });
+  database.lastRowId = 1;
+
+  const telemetry = createCloudflareActivityTelemetryPort({ database });
+  const replay = await telemetry.record(legacy);
+  assert.equal(replay.activityId, legacy.activityId);
+  assert.equal(replay.operationId, null);
+  assert.equal(replay.parentOperationId, null);
+  assert.equal(database.rows.size, 1);
+});
+
 test("Activity Log migration and provider execute against SQLite-compatible D1 semantics", async (t) => {
   const database = new SqliteD1Database();
   t.after(() => database.close());
