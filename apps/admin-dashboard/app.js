@@ -10,7 +10,7 @@ const dialog = $("#record-dialog");
 let mode = "raw";
 let currentPayload = null;
 let timer = null;
-let nav = { direction:"next", cursor:null, page:1 };
+let nav = { edge:"first", direction:"next", cursor:null, page:1 };
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
@@ -64,7 +64,7 @@ function syncUrl() {
 function setLoading(loading) {
   $("#refresh-button").disabled = loading;
   $("#refresh-button").textContent = loading ? "Refreshing…" : "Refresh";
-  for (const id of ["page-prev", "page-next"]) $(`#${id}`).disabled = loading;
+  for (const id of ["page-first", "page-prev", "page-next", "page-last"]) $(`#${id}`).disabled = loading;
 }
 
 function renderMode() {
@@ -134,6 +134,7 @@ function detail(label, input, { wide = false, mono = false } = {}) {
 }
 
 function showRecord(record) {
+  text($("#dialog-eyebrow"), "Activity record");
   text($("#dialog-title"), `${titleCase(record.service)} · ${record.stage}`);
   const grid = document.createElement("div"); grid.className = "detail-grid";
   grid.append(
@@ -217,14 +218,23 @@ async function copyExport() {
   setTimeout(() => { button.textContent = "Copy export"; }, 1600);
 }
 
+function firstPage() {
+  nav = { edge:"first", direction:"next", cursor:null, page:1 };
+  return loadPage();
+}
+function lastPage() {
+  const last = currentPayload?.totalPages ?? 1;
+  nav = { edge:"last", direction:"next", cursor:null, page:last };
+  return loadPage();
+}
 function previousPage() {
   if (!currentPayload?.prevCursor || nav.page <= 1) return;
-  nav = { direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
+  nav = { edge:"first", direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
   return loadPage();
 }
 function nextPage() {
   if (!currentPayload?.nextCursor) return;
-  nav = { direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
+  nav = { edge:"first", direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
   return loadPage();
 }
 
@@ -232,14 +242,17 @@ function renderPager(payload) {
   const totalPages = payload.totalPages ?? 1;
   nav.page = Math.min(Math.max(1, nav.page), totalPages);
   text($("#page-label"), `Page ${nav.page} of ${totalPages}`);
+  $("#page-first").disabled = nav.page <= 1;
   $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1;
   $("#page-next").disabled = payload.nextCursor == null || nav.page >= totalPages;
+  $("#page-last").disabled = nav.page >= totalPages;
 }
 
 async function loadPage({ pushState = false } = {}) {
   setLoading(true);
   if (pushState) syncUrl();
   const params = baseParams();
+  params.set("edge", nav.edge);
   params.set("direction", nav.direction);
   if (nav.cursor) params.set("cursor", nav.cursor);
   try {
@@ -267,7 +280,7 @@ function selectMode(nextMode) {
   if (mode === nextMode) return;
   mode = nextMode;
   currentPayload = null;
-  nav = { direction:"next", cursor:null, page:1 };
+  nav = { edge:"first", direction:"next", cursor:null, page:1 };
   renderMode(); syncUrl(); loadPage();
 }
 
@@ -276,15 +289,17 @@ function scheduleRefresh() {
   if ($("#auto-refresh").checked) timer = setInterval(() => loadPage(), 10000);
 }
 
-form.addEventListener("submit", (event) => { event.preventDefault(); nav = { direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
+form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
 kind.addEventListener("change", updateIdentityState);
 $("#refresh-button").addEventListener("click", () => loadPage());
 $("#export-button").addEventListener("click", copyExport);
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
 $("#view-causal").addEventListener("click", () => selectMode("causal"));
 $("#view-raw").addEventListener("click", () => selectMode("raw"));
+$("#page-first").addEventListener("click", firstPage);
 $("#page-prev").addEventListener("click", previousPage);
 $("#page-next").addEventListener("click", nextPage);
+$("#page-last").addEventListener("click", lastPage);
 $("#dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
 document.addEventListener("keydown", (event) => {
