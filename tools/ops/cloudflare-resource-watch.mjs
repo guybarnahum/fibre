@@ -59,7 +59,7 @@ query FibreInfraWatch($accountTag: string!, $date: Date!, $start: string!, $end:
 
 async function analytics({ accountId, apiToken, now = new Date(), fetchImpl = globalThis.fetch }) {
   if (typeof accountId !== "string" || accountId === "") throw new TypeError("CLOUDFLARE_ACCOUNT_ID is required");
-  if (typeof apiToken !== "string" || apiToken === "") throw new TypeError("CLOUDFLARE_API_TOKEN is required");
+  if (typeof apiToken !== "string" || apiToken === "") throw new TypeError("Cloudflare analytics token is required");
   const end = now.toISOString();
   const start = new Date(now.getTime() - 15 * 60_000).toISOString();
   const date = end.slice(0, 10);
@@ -171,7 +171,7 @@ export async function watchCloudflareResources({
   environment,
   isolate = true,
   accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
-  apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  apiToken = process.env.FIBRE_CLOUDFLARE_ANALYTICS_TOKEN ?? process.env.CLOUDFLARE_API_TOKEN,
   now = new Date(),
   fetchImpl = globalThis.fetch,
   runner = runWrangler,
