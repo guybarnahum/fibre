@@ -48,6 +48,7 @@ test("Activity pages keep 25 meaningful operations per server page", async () =>
   assert.equal(page.size, 25);
   assert.equal(page.edge, "first");
   assert.match(built.sql, /status <> 'started'/u);
+  assert.match(built.sql, /stage NOT LIKE '%\.provider_commit'/u);
   assert.equal(built.bindings.at(-1), 26);
   assert.throws(
     () => parseAdminActivityPage(new URL("https://admin/api/activity/page?direction=prev")),
