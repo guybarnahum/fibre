@@ -16,7 +16,8 @@
     { "binding": "BIRTH_CENTER", "service": "fibre-birth-center" },
     { "binding": "WORLD_KERNEL", "service": "fibre-world-kernel" },
     { "binding": "THREAD_PRESENTATION", "service": "fibre-thread-presentation" },
-    { "binding": "ASSET_GENERATOR", "service": "fibre-asset-generator" }
+    { "binding": "ASSET_GENERATOR", "service": "fibre-asset-generator" },
+    { "binding": "ADMIN_DASHBOARD", "service": "fibre-admin-dashboard" }
   ],
   "assets": {
     "directory": "../../../../apps/status-page",
