@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-lifecycle
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-13
 canonical: true
 ---
 
@@ -111,6 +111,22 @@ For simpler non-verbal animals a bounded behavior controller may eventually cons
 Fibre validates proposed changes, records communications/actions, settles ledgers, stores admitted memories/semantic state, records unresolved intentions and life events, releases runtime leases, and returns temporary cognition to rest.
 
 The durable person and any regulator targets/checkpoints survive the worker.
+
+## Software migration is not a life event
+
+A Thread must also survive Fibre itself changing around them.
+
+Moving a Thread between storage implementations, schema generations or deployed runtime versions is an operational transformation of Fibre's representation. It is **not**, by itself, something that happened in the Thread's life.
+
+Therefore a compatibility migration must preserve the same Thread identity, civil identity and admitted World history. It may translate current persisted state into a newer representation, but it must not rewrite historical World events, mint a replacement biography, or create a fictional lived event merely to explain a software upgrade.
+
+Historical operational evidence follows the same rule. If older Activity predates `operationId`, `parentOperationId` or a causal witness, migration must leave that absence truthful. Fibre must not infer and persist retroactive causality from timestamps, D1 order or later knowledge.
+
+Derived projections are different. Current Presentation/media may be reconciled again from restored authoritative state under current code. Such outputs are present-time derivations and may carry migration/reconciliation provenance; they are not proof that the same projection existed historically.
+
+Operational archive/export is also distinct from lifecycle freeze. Freeze commits a runtime episode into the continuing life. Archive preserves a portable view of the already-existing person across Fibre persistence surfaces. Neither operation creates a second Thread authority.
+
+The current preservation/migration plan is recorded in [`../state/thread-preservation-and-migration.md`](../state/thread-preservation-and-migration.md).
 
 ## Ordinary life — active architectural gap
 
