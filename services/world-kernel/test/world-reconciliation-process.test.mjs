@@ -143,6 +143,22 @@ test("World reconciliation requestWake schedules immediate work without periodic
   }
 });
 
+test("World reconciliation requestWake replaces an overdue alarm", async () => {
+  let clock = 5_000;
+  const process = createWorldReconciliationProcess();
+  const { infraDriver, runtime } = createRuntimeFixture({ process, now: () => clock });
+  try {
+    await infraDriver.scheduler.schedule("world", 1_000);
+    assert.equal(await infraDriver.scheduler.get("world"), 1_000);
+
+    const wake = await runtime.requestWake();
+    assert.deepEqual(wake, { scopeId: "world", scheduledTimeMs: 5_000 });
+    assert.equal(await infraDriver.scheduler.get("world"), 5_000);
+  } finally {
+    await runtime.stop();
+  }
+});
+
 test("World reconciliation converged sweep cancels alarm and becomes quiescent", async () => {
   let runs = 0;
   const process = createWorldReconciliationProcess({
