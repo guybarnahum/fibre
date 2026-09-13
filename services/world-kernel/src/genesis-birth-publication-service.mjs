@@ -80,12 +80,10 @@ function activityIdentity(bundle, supplied = {}) {
 }
 
 function publicationEvidence(bundle) {
-  const evidence = {};
   const fibreIdentityNumber = bundle?.civilRegistration?.fibreIdentityNumber;
-  const eventId = bundle?.thread?.provenance?.lastEventId;
-  if (typeof fibreIdentityNumber === "string" && fibreIdentityNumber !== "") evidence.fibreIdentityNumber = fibreIdentityNumber;
-  if (typeof eventId === "string" && eventId !== "") evidence.eventId = eventId;
-  return evidence;
+  return typeof fibreIdentityNumber === "string" && fibreIdentityNumber !== ""
+    ? { fibreIdentityNumber }
+    : {};
 }
 
 export function createGenesisBirthPublicationService({
