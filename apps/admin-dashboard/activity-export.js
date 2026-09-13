@@ -1,5 +1,3 @@
-const button = document.querySelector("#export-button");
-
 function singleValue(values) {
   const unique = [...new Set(values.filter(Boolean))];
   return unique.length === 1 ? unique[0] : null;
@@ -15,11 +13,17 @@ async function fetchPage(params) {
   return payload;
 }
 
-async function collectAllPages(onProgress) {
-  const fixed = new URLSearchParams(location.search);
+export function activityExportParams(search, displayedMode = null) {
+  const fixed = new URLSearchParams(search);
   fixed.delete("edge");
   fixed.delete("direction");
   fixed.delete("cursor");
+  if (["causal", "raw"].includes(displayedMode)) fixed.set("mode", displayedMode);
+  return fixed;
+}
+
+export async function collectAllActivityPages({ search, displayedMode = null, fetchPageFn, onProgress = () => {} }) {
+  const fixed = activityExportParams(search, displayedMode);
   const records = [];
   const seenCursors = new Set();
   let first = null;
@@ -31,7 +35,7 @@ async function collectAllPages(onProgress) {
     params.set("edge", "first");
     params.set("direction", "next");
     if (nextCursor) params.set("cursor", nextCursor);
-    const page = await fetchPage(params);
+    const page = await fetchPageFn(params);
     if (first === null) first = page;
     records.push(...(page.records ?? []));
     pagesFetched += 1;
@@ -71,15 +75,28 @@ async function identityFor(first, records) {
   };
 }
 
+function displayedMode() {
+  const active = document.querySelector(".view-switch button.active")?.dataset.mode;
+  if (["causal", "raw"].includes(active)) return active;
+  const requested = new URLSearchParams(location.search).get("mode");
+  return ["causal", "raw"].includes(requested) ? requested : null;
+}
+
 async function completeExport(onProgress) {
-  const { first, records, pagesFetched } = await collectAllPages(onProgress);
+  const activeMode = displayedMode();
+  const { first, records, pagesFetched } = await collectAllActivityPages({
+    search: location.search,
+    displayedMode: activeMode,
+    fetchPageFn: fetchPage,
+    onProgress,
+  });
   return {
     contract: "fibre-activity-export-v0.5",
     exportedAt: new Date().toISOString(),
     environment: first?.environment ?? null,
     queriedAt: first?.queriedAt ?? null,
     query: first?.query ?? null,
-    mode: first?.mode ?? new URLSearchParams(location.search).get("mode") ?? "raw",
+    mode: first?.mode ?? activeMode ?? "raw",
     pagination: {
       pageSize: first?.pageSize ?? 25,
       totalPagesAtStart: first?.totalPages ?? 1,
@@ -110,6 +127,7 @@ async function copyText(value) {
   }
 }
 
+const button = typeof document === "undefined" ? null : document.querySelector("#export-button");
 button?.addEventListener("click", async (event) => {
   event.stopImmediatePropagation();
   if (button.disabled) return;
