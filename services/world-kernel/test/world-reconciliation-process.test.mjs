@@ -94,6 +94,36 @@ test("World reconciliation classifier keeps incomplete visual work active", () =
   }), true);
 });
 
+test("World reconciliation retries retryable visual failures", () => {
+  assert.equal(worldReconciliationNeedsRetry({
+    skipped: false,
+    presentation: { enabled: false, ok: true, result: null },
+    visualPublication: {
+      enabled: true,
+      ok: true,
+      result: {
+        skipped: false,
+        results: [{ threadId: "thr_retry", ok: false, retryable: true, code: "TEMPORARY_VISUAL_FAILURE" }],
+      },
+    },
+  }), true);
+});
+
+test("World reconciliation does not reschedule a terminal visual failure", () => {
+  assert.equal(worldReconciliationNeedsRetry({
+    skipped: false,
+    presentation: { enabled: false, ok: true, result: null },
+    visualPublication: {
+      enabled: true,
+      ok: true,
+      result: {
+        skipped: false,
+        results: [{ threadId: "thr_terminal", ok: false, retryable: false, code: "INVALID_BIRTH_MISSING_CANONICAL_VISUAL_IDENTITY" }],
+      },
+    },
+  }), false);
+});
+
 test("World reconciliation requestWake schedules immediate work without periodic bootstrap", async () => {
   const process = createWorldReconciliationProcess();
   const { infraDriver, runtime } = createRuntimeFixture({ process });
