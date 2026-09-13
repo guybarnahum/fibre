@@ -22,6 +22,14 @@ function optionalRegenerationKey(value) {
   return value.trim();
 }
 
+function optionalActivityContext(value) {
+  if (value === undefined || value === null) return {};
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("activityContext must be an object when supplied");
+  }
+  return value;
+}
+
 function failureResponse(error, kind = "visual_publication") {
   const detail = error instanceof Error ? error.message : String(error);
   if (error instanceof TypeError) {
@@ -70,6 +78,7 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
               threadId: body.threadId,
               embodiment: body.embodiment,
               observedAt: body.observedAt,
+              activityContext: optionalActivityContext(body.activityContext),
               regenerationKey: optionalRegenerationKey(body.regenerationKey),
             });
         return Response.json({ ok: true, result });
