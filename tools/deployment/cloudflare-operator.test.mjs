@@ -110,11 +110,9 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
     ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_admin_infra_monitor.sql"],
     ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_admin_infra_monitor.sql"],
   ]);
   assert.equal(first.resources.d1[0].id, second.resources.d1[0].id);
   assert.equal(first.resources.d1[1].id, second.resources.d1[1].id);
@@ -126,8 +124,8 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
     },
     {
       binding: "ACTIVITY_LOG",
-      schema: "0003_admin_infra_monitor.sql",
-      migrations: ["0001_activity_log.sql", "0002_admin_entitlements.sql", "0003_admin_infra_monitor.sql"],
+      schema: "0002_admin_entitlements.sql",
+      migrations: ["0001_activity_log.sql", "0002_admin_entitlements.sql"],
     },
   ]);
   assert.deepEqual(createdOnce, [
@@ -136,7 +134,6 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
     ["d1", "fibre-activity-log-staging"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_admin_infra_monitor.sql"],
     ["r2", "fibre-presentation-assets-staging"],
     ["queue", "fibre-asset-completions-staging"],
     ["queue", "fibre-asset-completions-dlq-staging"],

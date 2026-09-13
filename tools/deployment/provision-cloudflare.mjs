@@ -18,7 +18,6 @@ const D1_MIGRATIONS_BY_BINDING = Object.freeze({
   ACTIVITY_LOG: Object.freeze([
     "infra/providers/cloudflare/d1/0001_activity_log.sql",
     "infra/providers/cloudflare/d1/0002_admin_entitlements.sql",
-    "infra/providers/cloudflare/d1/0003_admin_infra_monitor.sql",
   ]),
 });
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;

@@ -1,61 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { readAdminInfraMonitor } from "./infra-monitor.mjs";
+import { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 
-function fakeD1() {
-  const rows = new Map();
+function fakeState() {
+  const values = new Map();
   return {
-    rows,
-    prepare(sql) {
-      return {
-        bind(...bindings) {
-          return {
-            async all() {
-              if (!sql.startsWith("SELECT sampled_at")) throw new Error(`unexpected all SQL: ${sql}`);
-              const row = rows.get(bindings[0]);
-              return { results: row ? [{ ...row }] : [] };
-            },
-            async run() {
-              if (sql.startsWith("INSERT OR IGNORE")) {
-                if (!rows.has(bindings[0])) rows.set(bindings[0], { sampled_at:null, sample_json:null, sampling_started_at:null });
-                return { meta:{ changes:1 } };
-              }
-              if (sql.startsWith("UPDATE fibre_admin_infra_monitor SET sampling_started_at = ?")) {
-                const [startedAt, environment, cutoff] = bindings;
-                const row = rows.get(environment);
-                const available = row && (row.sampling_started_at === null || row.sampling_started_at < cutoff);
-                if (available) row.sampling_started_at = startedAt;
-                return { meta:{ changes:available ? 1 : 0 } };
-              }
-              if (sql.startsWith("UPDATE fibre_admin_infra_monitor SET sampled_at = ?")) {
-                const [sampledAt, sampleJson, environment] = bindings;
-                const row = rows.get(environment);
-                row.sampled_at = sampledAt;
-                row.sample_json = sampleJson;
-                row.sampling_started_at = null;
-                return { meta:{ changes:1 } };
-              }
-              if (sql.startsWith("UPDATE fibre_admin_infra_monitor SET sampling_started_at = NULL")) {
-                const row = rows.get(bindings[0]);
-                if (row) row.sampling_started_at = null;
-                return { meta:{ changes:row ? 1 : 0 } };
-              }
-              throw new Error(`unexpected run SQL: ${sql}`);
-            },
-          };
-        },
-      };
+    storage:{
+      async get(key) { return values.get(key); },
+      async put(key, value) { values.set(key, structuredClone(value)); },
     },
   };
 }
 
-function monitorEnv(database) {
+function monitorEnv() {
   return {
-    ACTIVITY_LOG:database,
     FIBRE_CLOUDFLARE_ANALYTICS_CONFIG:JSON.stringify({
       accountId:"account",
-      apiToken:"token",
+      apiToken:"analytics-token",
       ttlSeconds:900,
       limits:{ d1RowsReadDaily:1000, d1RowsWrittenDaily:100, workerRequests15m:1000, workerErrors15m:10 },
       d1Resources:[{ name:"activity", id:"activity", binding:"ACTIVITY_LOG" }],
@@ -73,18 +35,13 @@ function analyticsResponse(rowsRead = 100) {
 }
 
 test("Admin infra monitor samples once per TTL and force bypasses freshness", async () => {
-  const database = fakeD1();
+  const monitor = new FibreAdminInfraMonitor(fakeState(), monitorEnv());
   let fetches = 0;
-  const fetchImpl = async () => { fetches += 1; return analyticsResponse(fetches * 100); };
-  const first = await readAdminInfraMonitor({
-    env:monitorEnv(database), environment:"staging", now:new Date("2026-09-13T14:00:00.000Z"), fetchImpl,
-  });
-  const cached = await readAdminInfraMonitor({
-    env:monitorEnv(database), environment:"staging", now:new Date("2026-09-13T14:05:00.000Z"), fetchImpl,
-  });
-  const forced = await readAdminInfraMonitor({
-    env:monitorEnv(database), environment:"staging", force:true, now:new Date("2026-09-13T14:06:00.000Z"), fetchImpl,
-  });
+  monitor.fetchImpl = async () => { fetches += 1; return analyticsResponse(fetches * 100); };
+
+  const first = await monitor.sample({ environment:"staging", force:false, now:new Date("2026-09-13T14:00:00.000Z") });
+  const cached = await monitor.sample({ environment:"staging", force:false, now:new Date("2026-09-13T14:05:00.000Z") });
+  const forced = await monitor.sample({ environment:"staging", force:true, now:new Date("2026-09-13T14:06:00.000Z") });
 
   assert.equal(fetches, 2);
   assert.equal(first.cached, false);
@@ -94,21 +51,16 @@ test("Admin infra monitor samples once per TTL and force bypasses freshness", as
   assert.equal(forced.sample.d1[0].rowsRead, 200);
 });
 
-test("Admin infra monitor returns cached state while another isolate owns the sampling lease", async () => {
-  const database = fakeD1();
-  const env = monitorEnv(database);
-  await readAdminInfraMonitor({ env, environment:"staging", now:new Date("2026-09-13T14:00:00.000Z"), fetchImpl:async () => analyticsResponse(100) });
-  database.rows.get("staging").sampling_started_at = "2026-09-13T14:20:00.000Z";
-  let fetched = false;
-  const result = await readAdminInfraMonitor({
-    env,
-    environment:"staging",
-    force:true,
-    now:new Date("2026-09-13T14:20:30.000Z"),
-    fetchImpl:async () => { fetched = true; return analyticsResponse(999); },
-  });
-  assert.equal(fetched, false);
-  assert.equal(result.cached, true);
-  assert.equal(result.refreshing, true);
-  assert.equal(result.sample.d1[0].rowsRead, 100);
+test("cached infra health never triggers a Cloudflare sample", async () => {
+  const monitor = new FibreAdminInfraMonitor(fakeState(), monitorEnv());
+  let fetches = 0;
+  monitor.fetchImpl = async () => { fetches += 1; return analyticsResponse(); };
+
+  const response = await monitor.fetch(new Request("https://infra-monitor.internal/cached?environment=staging"));
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(fetches, 0);
+  assert.equal(payload.level, "unavailable");
+  assert.equal(payload.stale, true);
 });
