@@ -45,7 +45,17 @@ function activityIdentity(threadId, supplied = {}) {
     requestId: supplied.requestId ?? null,
     genesisId: supplied.genesisId ?? null,
     threadId,
+    correlationId: supplied.correlationId ?? null,
+    causationId: supplied.causationId ?? null,
+    parentOperationId: supplied.parentOperationId ?? null,
   });
+}
+
+function originEventId(embodiment) {
+  const source = embodiment?.sourceReferences?.find((value) => (
+    typeof value === "string" && value.startsWith("evt_")
+  ));
+  return source ?? null;
 }
 
 function currentCanonicalPortrait(embodimentStore, threadId) {
@@ -145,12 +155,17 @@ export function createThreadVisualPublicationReconciler({
         }
         embodiment = materialized.embodiment;
         if (materialized.created === true) {
+          const eventId = originEventId(embodiment);
           await bestEffortRecord(activity, {
             ...context,
+            causationId: eventId ?? context.causationId,
             stage: "world.embodiment.reconcile",
             status: "succeeded",
             attempt: 1,
-            evidence: { embodimentId: embodiment.embodimentId },
+            evidence: {
+              embodimentId: embodiment.embodimentId,
+              ...(eventId === null ? {} : { eventId }),
+            },
           });
         }
       }
@@ -174,12 +189,17 @@ export function createThreadVisualPublicationReconciler({
             jobId: job.jobId,
           });
         }
+        const generatedObjectRef = root.proof?.receipt?.objectRef ?? job.outputObjectRef;
         await bestEffortRecord(activity, {
           ...context,
+          causationId: embodiment.embodimentId,
           stage: "world.visual_identity.demand",
           status: "succeeded",
           attempt: 1,
-          evidence: { embodimentId: embodiment.embodimentId },
+          evidence: {
+            embodimentId: embodiment.embodimentId,
+            objectRef: generatedObjectRef,
+          },
         });
 
         embodiment = await embodimentStore.record(bindVerifiedCanonicalVisualIdentityProof({
@@ -189,10 +209,14 @@ export function createThreadVisualPublicationReconciler({
         }));
         await bestEffortRecord(activity, {
           ...context,
+          causationId: embodiment.asset.referenceObjectRef,
           stage: "world.embodiment.admission",
           status: "succeeded",
           attempt: 1,
-          evidence: { embodimentId: embodiment.embodimentId },
+          evidence: {
+            embodimentId: embodiment.embodimentId,
+            objectRef: embodiment.asset.referenceObjectRef,
+          },
         });
       }
 
@@ -210,7 +234,10 @@ export function createThreadVisualPublicationReconciler({
           threadId,
           embodiment,
           observedAt,
-          activityContext: context,
+          activityContext: Object.freeze({
+            ...context,
+            causationId: embodiment.embodimentId,
+          }),
           regenerationKey: normalizedRegenerationKey,
         }),
       );
