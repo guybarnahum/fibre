@@ -47,10 +47,18 @@ function availableEmbodiment(threadId = "thr_presentation_visual_001") {
   };
 }
 
+function activityCollector(records) {
+  return {
+    async record(record) { records.push(record); return record; },
+    async runStage(_metadata, operation) { return operation(); },
+  };
+}
+
 test("Presentation visual reconciliation projects admitted identity then schedules one reference-conditioned official photo", async () => {
   const embodiment = availableEmbodiment();
   const mediaId = "media_official_id_photo_fixture";
   const calls = [];
+  const activity = [];
   const currentSnapshot = {
     pointer: {
       objectRef: "snapshot_identity_fixture",
@@ -140,12 +148,14 @@ test("Presentation visual reconciliation projects admitted identity then schedul
         },
       };
     },
+    activityRecorder: activityCollector(activity),
   });
 
   const result = await reconciler.reconcileAvailableEmbodiment({
     threadId: embodiment.threadId,
     embodiment,
     observedAt: "2026-08-30T20:02:00Z",
+    activityContext: { causationId: embodiment.embodimentId },
   });
   assert.equal(result.complete, false);
   assert.equal(result.stage, "official_photo_pending");
@@ -153,6 +163,17 @@ test("Presentation visual reconciliation projects admitted identity then schedul
   assert.equal(result.detail.jobId, "asset_job_official_fixture");
   assert.equal(result.detail.workflowStatus, "queued");
   assert.deepEqual(calls, ["visual", "identity", "plan", "demand"]);
+  assert.deepEqual(
+    activity.map((record) => record.stage),
+    [
+      "presentation.visual_identity.project",
+      "presentation.identity_media.ensure",
+      "presentation.media_demand.reconcile",
+    ],
+  );
+  assert.equal(activity.every((record) => record.causationId === embodiment.embodimentId), true);
+  assert.equal(activity.every((record) => record.evidence.embodimentId === embodiment.embodimentId), true);
+  assert.equal(activity.every((record) => record.evidence.objectRef === embodiment.asset.referenceObjectRef), true);
 });
 
 test("Presentation visual reconciliation waits for the newborn projection before touching media", async () => {
