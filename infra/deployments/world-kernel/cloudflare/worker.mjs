@@ -4,6 +4,30 @@ import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
 const WORLD_SCOPE_ID = "world";
+const TOKEN_ENCODER = new TextEncoder();
+
+function constantTimeEqual(left, right) {
+  if (typeof left !== "string" || typeof right !== "string") return false;
+  const leftBytes = TOKEN_ENCODER.encode(left);
+  const rightBytes = TOKEN_ENCODER.encode(right);
+  const length = Math.max(leftBytes.length, rightBytes.length);
+  let difference = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < length; index += 1) difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
+  return difference === 0;
+}
+
+function privateOperatorAuthorized(request, env) {
+  return constantTimeEqual(request.headers.get("x-fibre-private-token"), env?.FIBRE_PRIVATE_TOKEN);
+}
+
+async function reconciliationState(runtime) {
+  const scheduled = await runtime.reconciliationRuntime.ensureScheduled();
+  return Object.freeze({
+    scheduled: scheduled.existing,
+    scheduledTimeMs: scheduled.scheduledTimeMs,
+    running: runtime.reconciliationProcess.running,
+  });
+}
 
 export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
@@ -22,7 +46,6 @@ export class FibreWorldDurableObject extends DurableObject {
     const runtime = this.runtimeForRequest();
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/internal/health/state") {
-      const reconciliation = await runtime.reconciliationRuntime.ensureScheduled();
       return Response.json({
         ok: true,
         service: "world-kernel",
@@ -30,12 +53,21 @@ export class FibreWorldDurableObject extends DurableObject {
         stateScopeId: WORLD_SCOPE_ID,
         stateChecked: true,
         capabilities: runtime.infraDriver.capabilities,
-        reconciliation: {
-          scheduled: reconciliation.existing,
-          scheduledTimeMs: reconciliation.scheduledTimeMs,
-          running: runtime.reconciliationProcess.running,
-        },
+        reconciliation: await reconciliationState(runtime),
       });
+    }
+    if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
+      if (url.search !== "") return Response.json({ error: { code: "QUERY_NOT_SUPPORTED" } }, { status: 400 });
+      if (request.method !== "POST") return Response.json({ error: { code: "METHOD_NOT_ALLOWED" } }, { status: 405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error: { code: "PRIVATE_TOKEN_REQUIRED" } }, { status: 403 });
+      }
+      if (url.pathname.endsWith("/stop")) {
+        const cancelled = await runtime.reconciliationRuntime.stop();
+        return Response.json({ ok: true, action: "stop", cancelled, reconciliation: await reconciliationState(runtime) });
+      }
+      const wake = await runtime.reconciliationRuntime.requestWake();
+      return Response.json({ ok: true, action: "wake", wake, reconciliation: await reconciliationState(runtime) });
     }
     const recoveryResponse = await runtime.visualRecoveryApi.fetch(request);
     if (recoveryResponse !== null) return recoveryResponse;
