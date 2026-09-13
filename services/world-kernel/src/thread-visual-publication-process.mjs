@@ -58,6 +58,10 @@ export function createThreadVisualPublicationProcess({
               threadId,
               ok: false,
               errorName: error?.constructor?.name ?? "Error",
+              code: typeof error?.code === "string" && error.code !== ""
+                ? error.code
+                : "THREAD_VISUAL_PUBLICATION_FAILED",
+              retryable: error?.retryable !== false,
               message: error?.message ?? String(error),
             });
             results.push(entry);
