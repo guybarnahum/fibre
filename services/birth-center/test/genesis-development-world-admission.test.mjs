@@ -46,11 +46,26 @@ function deterministicCognition(counter) {
     configuration: Object.freeze({ transport: "fixture", temperature: 0 }),
     async invoke(request) {
       counter.calls += 1;
+      if (request.clientRequestId.includes("form-repair")) {
+        counter.repairs += 1;
+        return {
+          output: {
+            observableAction: "The subject picked up a dropped notebook, compared its label with the items on the table, returned it to the stack, and moved the loose papers into a folder.",
+          },
+          provenance: {
+            provider: "fixture",
+            modelId: "deterministic-genesis-cognition-v1",
+            providerRequestId: `fixture-repair-${counter.repairs}`,
+          },
+        };
+      }
       if (request.clientRequestId.includes(":pass-a:")) {
         counter.passA += 1;
         return {
           output: {
-            observableAction: "The subject picked up a dropped notebook, compared its label with the items on the table, returned it to the stack, and moved the loose papers into a folder.",
+            observableAction: counter.passA === 1
+              ? "The subject learned that a dropped notebook belonged with the other materials on the table."
+              : "The subject picked up a dropped notebook, compared its label with the items on the table, returned it to the stack, and moved the loose papers into a folder.",
             additionalParticipantRefs: [],
             additionalIntroductions: [],
             intellectualEncounter: null,
@@ -142,7 +157,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   t.after(() => genomeStore.close());
   t.after(() => genesisStore.close());
 
-  const counter = { calls: 0, passA: 0, passB: 0 };
+  const counter = { calls: 0, passA: 0, passB: 0, repairs: 0 };
   const adapter = deterministicCognition(counter);
   const service = createGenesisDevelopmentService({
     runtime,
@@ -158,7 +173,8 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(first.generated, true);
   assert.equal(counter.passA, 14);
   assert.equal(counter.passB, 6);
-  assert.equal(counter.calls, 20);
+  assert.equal(counter.repairs, 1);
+  assert.equal(counter.calls, 21);
   assert.equal(runtime.provisionalBirthStore.countPending(), 1);
   assert.equal(runtime.developmentRequestStore.get(developmentRequest().requestId).status, "submitted");
 
@@ -225,8 +241,21 @@ test("Birth Center develops a narrow request and World atomically admits the res
     true,
     "Genesis cognition must be explicitly parented by life development rather than inferred from time",
   );
+
+  const repair = requestActivity.find((record) => (
+    record.service === "birth-center"
+    && record.stage === "birth.genesis.history.repair_call"
+    && record.status === "succeeded"
+  ));
+  assert.ok(repair, "the deliberately invalid first realization must surface its repair operation");
+  assert.equal(repair.parentOperationId, genesisStart.operationId);
+  assert.deepEqual(repair.evidence, {
+    failedGate: "pass_a_interiority_form",
+    repairOrdinal: "1",
+  });
+
   const providerCommits = requestActivity.filter((record) => record.stage.endsWith(".provider_commit"));
-  assert.equal(providerCommits.length, 20);
+  assert.equal(providerCommits.length, 21);
   assert.equal(providerCommits.every((record) => typeof record.evidence.providerRequestId === "string"), true);
 
   assert.equal(requestActivity.every((record) => record.genesisId === first.genesisId), true);
@@ -237,7 +266,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   );
 
   runtime.close();
-  const replayCounter = { calls: 0, passA: 0, passB: 0 };
+  const replayCounter = { calls: 0, passA: 0, passB: 0, repairs: 0 };
   const restarted = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
