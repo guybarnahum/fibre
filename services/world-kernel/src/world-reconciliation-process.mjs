@@ -121,6 +121,7 @@ export function createWorldReconciliationRuntime({
   intervalMs = 5_000,
   maxRetryMs = DEFAULT_MAX_RETRY_MS,
   now = Date.now,
+  retryState = null,
 } = {}) {
   if (!process || typeof process.runOnce !== "function") {
     throw new TypeError("World reconciliation runtime requires process.runOnce()");
@@ -132,11 +133,32 @@ export function createWorldReconciliationRuntime({
   assertIntervalMs("World reconciliation maxRetryMs", maxRetryMs);
   if (maxRetryMs < intervalMs) throw new TypeError("World reconciliation maxRetryMs must be >= intervalMs");
   if (typeof now !== "function") throw new TypeError("World reconciliation now must be a function");
+  if (retryState !== null && (
+    typeof retryState?.get !== "function" || typeof retryState?.set !== "function"
+  )) {
+    throw new TypeError("World reconciliation retryState must be null or expose get() and set()");
+  }
   const infra = requireInfraCapabilities(infraDriver, "scheduler");
-  let retryStreak = 0;
+  let memoryRetryStreak = 0;
 
-  function retryDelayMs() {
-    const exponent = Math.min(retryStreak, 16);
+  async function retryStreak() {
+    const value = retryState === null ? memoryRetryStreak : await retryState.get();
+    if (!Number.isSafeInteger(value) || value < 0) {
+      throw new TypeError("World reconciliation retry streak must be a non-negative integer");
+    }
+    return value;
+  }
+
+  async function setRetryStreak(value) {
+    if (!Number.isSafeInteger(value) || value < 0) {
+      throw new TypeError("World reconciliation retry streak must be a non-negative integer");
+    }
+    if (retryState === null) memoryRetryStreak = value;
+    else await retryState.set(value);
+  }
+
+  function retryDelayMs(streak) {
+    const exponent = Math.min(streak, 16);
     return Math.min(maxRetryMs, intervalMs * (2 ** exponent));
   }
 
@@ -150,14 +172,15 @@ export function createWorldReconciliationRuntime({
   }
 
   async function scheduleRetry() {
-    const delayMs = retryDelayMs();
-    retryStreak += 1;
+    const streak = await retryStreak();
+    const delayMs = retryDelayMs(streak);
+    await setRetryStreak(streak + 1);
     await infra.scheduler.schedule(scopeId, now() + delayMs);
     return delayMs;
   }
 
   async function requestWake() {
-    retryStreak = 0;
+    await setRetryStreak(0);
     return scheduleAt(now());
   }
 
@@ -173,7 +196,7 @@ export function createWorldReconciliationRuntime({
       const delayMs = await scheduleRetry();
       return Object.freeze({ ...result, reconciliationPending: true, retryDelayMs: delayMs });
     }
-    retryStreak = 0;
+    await setRetryStreak(0);
     await infra.scheduler.cancel(scopeId);
     return Object.freeze({ ...result, reconciliationPending: false, retryDelayMs: null });
   }
@@ -194,6 +217,9 @@ export function createWorldReconciliationRuntime({
     requestWake,
     runNow: runAndSettle,
     handleWake: runAndSettle,
-    stop: () => infra.scheduler.cancel(scopeId),
+    stop: async () => {
+      await setRetryStreak(0);
+      return infra.scheduler.cancel(scopeId);
+    },
   });
 }
