@@ -44,6 +44,8 @@ export const ACTIVITY_EVIDENCE_KEYS = Object.freeze([
   "queueMessageId",
   "workflowInstanceId",
   "regenerationKey",
+  "failedGate",
+  "repairOrdinal",
 ]);
 
 const ACTIVITY_STATUS_SET = new Set(ACTIVITY_STATUSES);
