@@ -29,8 +29,13 @@ async function bestEffortRecord(activity, record) {
 }
 
 async function runActivityStage(activity, metadata, operation) {
-  if (activity === null) return operation();
+  if (activity === null) return operation(Object.freeze({ operationId: null }));
   return activity.runStage(metadata, operation);
+}
+
+function finalWorldEventEvidence(result) {
+  const eventId = result?.thread?.provenance?.lastEventId;
+  return typeof eventId === "string" && eventId !== "" ? { eventId } : {};
 }
 
 export function createBirthReconciliationRuntime({
@@ -84,6 +89,8 @@ export function createBirthReconciliationRuntime({
       requestId: resolved.requestId ?? null,
       genesisId: birth.genesisId,
       threadId: birth.threadId,
+      correlationId: resolved.correlationId ?? null,
+      causationId: resolved.causationId ?? null,
     });
   }
 
@@ -93,15 +100,24 @@ export function createBirthReconciliationRuntime({
     for (const birth of pending) {
       const context = activityContext(birth);
       try {
+        let submitOperationId = null;
         const result = await runActivityStage(activity, {
           ...context,
           stage: "birth.publish.world_submit",
           attempt: 1,
-        }, async () => worldPublisher.publishBirth(birth.bundle, { activityContext: context }));
+        }, async ({ operationId }) => {
+          submitOperationId = operationId;
+          const worldContext = operationId === null
+            ? context
+            : Object.freeze({ ...context, parentOperationId: operationId });
+          return worldPublisher.publishBirth(birth.bundle, { activityContext: worldContext });
+        });
         await runActivityStage(activity, {
           ...context,
+          parentOperationId: submitOperationId,
           stage: "birth.publish.world_ack",
           attempt: 1,
+          evidence: finalWorldEventEvidence(result),
         }, async () => provisionalBirthStore.markPublished(birth.genesisId, result));
         published += 1;
       } catch (error) {
