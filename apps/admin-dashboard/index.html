@@ -24,7 +24,7 @@
     <main class="main">
       <header class="topbar">
         <div class="crumbs"><span>Fibre</span><span>/</span><strong>Activity</strong></div>
-        <div class="topbar-actions"><span id="environment-pill" class="environment-pill">—</span><span class="admin-pill">Admin</span></div>
+        <div class="topbar-actions"><span id="build-pill" class="admin-pill" title="Running Admin build">build…</span><span id="environment-pill" class="environment-pill">—</span><span class="admin-pill">Admin</span></div>
       </header>
 
       <section class="page-head">
@@ -58,10 +58,11 @@
             <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
           </div>
         </div>
+        <div id="thread-context" class="activity-thread-context" hidden></div>
 
         <div id="causal-view" class="activity-view">
           <div class="journey-body">
-            <div class="journey-body-head"><strong>Meaningful operations</strong><span>execution starts omitted · Activity Log ≠ semantic truth</span></div>
+            <div class="journey-body-head"><strong>Meaningful operations</strong><span>nested operations are indented · authoritative causes are labeled · Raw preserves log order</span></div>
             <div id="journey-rail" class="journey-rail"></div>
             <div id="journey-gap" class="journey-gap" hidden></div>
           </div>
@@ -95,6 +96,8 @@
     <div id="dialog-body" class="dialog-body"></div>
   </dialog>
 
+  <script type="module" src="/build-info.js"></script>
+  <script type="module" src="/activity-thread-context.js"></script>
   <script type="module" src="/activity-export.js"></script>
   <script type="module" src="/router.js"></script>
 </body>
