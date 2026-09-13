@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/thread.css">
   <link rel="stylesheet" href="/activity-workspace.css">
+  <link rel="stylesheet" href="/infra-monitor.css">
 </head>
 <body>
   <div class="shell">
@@ -24,7 +25,10 @@
     <main class="main">
       <header class="topbar">
         <div class="crumbs"><span>Fibre</span><span>/</span><strong>Activity</strong></div>
-        <div class="topbar-actions"><span id="build-pill" class="admin-pill" title="Running Admin build">build…</span><span id="environment-pill" class="environment-pill">—</span><span class="admin-pill">Admin</span></div>
+        <div class="topbar-actions">
+          <button id="infra-health-button" class="infra-health-button" type="button" data-level="unavailable"><span class="infra-health-dot" aria-hidden="true"></span><span class="infra-health-label">Infra…</span></button>
+          <span id="build-pill" class="admin-pill" title="Running Admin build">build…</span><span id="environment-pill" class="environment-pill">—</span><span class="admin-pill">Admin</span>
+        </div>
       </header>
 
       <section class="page-head">
@@ -96,7 +100,16 @@
     <div id="dialog-body" class="dialog-body"></div>
   </dialog>
 
+  <dialog id="infra-dialog">
+    <div class="dialog-head">
+      <div><p class="eyebrow">Infrastructure</p><h2>Resource health</h2></div>
+      <div class="infra-dialog-actions"><button id="infra-force-sample" class="secondary" type="button">Force sample</button><button id="infra-dialog-close" class="icon-button" aria-label="Close">×</button></div>
+    </div>
+    <div id="infra-dialog-body" class="dialog-body"></div>
+  </dialog>
+
   <script type="module" src="/build-info.js"></script>
+  <script type="module" src="/infra-monitor.js"></script>
   <script type="module" src="/activity-thread-context.js"></script>
   <script type="module" src="/activity-lineage-hint.js"></script>
   <script type="module" src="/activity-export.js"></script>
