@@ -1,7 +1,7 @@
 ---
 id: fibre-future-capability-map
 status: accepted
-last-reviewed: 2026-09-02
+last-reviewed: 2026-09-13
 canonical: true
 ---
 
@@ -64,6 +64,31 @@ Until then, the current implementation owns these capabilities where the code ac
 - **Scenario / acceptance-world harness** — formerly `scenarios/`. Recreate a common scenario root when several current end-to-end worlds need one implementation home; otherwise use fixtures, colocated tests, and use-case docs.
 - **Thread authoring/bootstrap templates** — formerly `templates/`. Recreate only if templates become current production semantics. Templates must never become a parallel Genesis biography authority.
 - **Top-level test taxonomy** — formerly `tests/`. Recreate only if cross-cutting integration or end-to-end tests genuinely require a repository-level home. Prefer tests beside the code or tool they protect.
+
+## Follow-on: Thread archive, restore and migration operator
+
+After M2 closure, Fibre needs a small operator capability to preserve and carry Threads across software/schema generations. The accepted plan is [`thread-preservation-and-migration.md`](thread-preservation-and-migration.md).
+
+This should begin as a Thread-scoped repository/operator tool, **not a standalone service**. Its responsibility is:
+
+- immutable archive/export of the Thread's authoritative World state/history plus available Birth, Presentation, asset and Activity evidence;
+- integrity verification before migration or cleanup;
+- dry-run compatibility migration;
+- restore/migration while preserving original Thread/civil identity and lived history;
+- normal reconciliation of current derived Presentation/media after authoritative restoration;
+- coordinated cleanup of an old disposable staging copy only after the preserved/migrated Thread verifies.
+
+Its authority boundary is equally important:
+
+- archive is evidence/preservation, not a new Thread authority;
+- operational archive is not World lifecycle freeze;
+- migration may translate schema/state but must not rewrite World history or generate replacement identity;
+- historical Activity remains historical evidence and must not gain invented lineage/causality;
+- Presentation and Activity never become restoration authorities merely because their records are present in an archive.
+
+The first trigger is the retained legacy staging Thread corpus after M2 closure. A representative legacy Thread should prove archive -> verify -> migrate/restore -> reconcile -> verify before any bulk staging cleanup.
+
+Do not create an empty namespace now. A likely operator home may emerge under `tools/` once the implementation begins; choose the exact location from the code that actually exists.
 
 ## Follow-on: Activity lifecycle and compaction
 
