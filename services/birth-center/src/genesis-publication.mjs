@@ -18,6 +18,7 @@ import {
   sha256,
   validateThreadSnapshot,
 } from "fibre/world-kernel/genesis-publication-contracts";
+import { genesisSexForThread } from "./genesis-sex.mjs";
 import { buildGenesisCanonicalVisualIdentity } from "./genesis-visual-phenotype.mjs";
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
@@ -78,6 +79,7 @@ export function buildNeutralGenesisThreadSeed({ threadId, createdAt }) {
     status: "frozen",
     identity: {
       name: "Fibre Thread",
+      sex: genesisSexForThread({ threadId }),
       originOrientation: "original",
       selfDescription: "I am a Fibre Thread.",
     },
@@ -253,6 +255,7 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     { thread: seedThread },
     buildGenesisCanonicalVisualIdentity({
       threadId: candidate.threadId,
+      sex: seedThread.identity.sex,
       originMode: candidate.originMode,
       parentIds,
     }),
