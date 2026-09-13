@@ -79,9 +79,11 @@
 
         <div class="activity-pager" aria-label="Activity pages">
           <div class="pager-nav">
+            <button id="page-first" class="secondary pager-button pager-edge" type="button" title="First page" aria-label="First page">≪ First</button>
             <button id="page-prev" class="secondary pager-button" type="button">← Previous</button>
             <span id="page-label">Page 1 of 1</span>
             <button id="page-next" class="secondary pager-button" type="button">Next →</button>
+            <button id="page-last" class="secondary pager-button pager-edge" type="button" title="Last page" aria-label="Last page">Last ≫</button>
           </div>
         </div>
       </section>
@@ -89,7 +91,7 @@
   </div>
 
   <dialog id="record-dialog">
-    <div class="dialog-head"><div><p class="eyebrow">Activity record</p><h2 id="dialog-title">Details</h2></div><button id="dialog-close" class="icon-button" aria-label="Close">×</button></div>
+    <div class="dialog-head"><div><p id="dialog-eyebrow" class="eyebrow">Activity record</p><h2 id="dialog-title">Details</h2></div><button id="dialog-close" class="icon-button" aria-label="Close">×</button></div>
     <div id="dialog-body" class="dialog-body"></div>
   </dialog>
 
