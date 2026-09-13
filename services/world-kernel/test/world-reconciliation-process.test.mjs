@@ -9,9 +9,16 @@ import {
   worldReconciliationNeedsRetry,
 } from "../src/world-reconciliation-process.mjs";
 
-function createRuntimeFixture({ process, now = () => 1_000, intervalMs = 100, maxRetryMs = 800 } = {}) {
+function createRuntimeFixture({
+  process,
+  now = () => 1_000,
+  intervalMs = 100,
+  maxRetryMs = 800,
+  retryState = null,
+  infraDriver = null,
+} = {}) {
   let wake = async () => {};
-  const infraDriver = createLocalInfraDriver({
+  const infra = infraDriver ?? createLocalInfraDriver({
     stateScopes: { world: ":memory:" },
     schedulerScopes: {
       world: {
@@ -19,9 +26,24 @@ function createRuntimeFixture({ process, now = () => 1_000, intervalMs = 100, ma
       },
     },
   });
-  const runtime = createWorldReconciliationRuntime({ infraDriver, process, intervalMs, maxRetryMs, now });
+  const runtime = createWorldReconciliationRuntime({
+    infraDriver: infra,
+    process,
+    intervalMs,
+    maxRetryMs,
+    now,
+    retryState,
+  });
   wake = () => runtime.handleWake();
-  return { infraDriver, runtime };
+  return { infraDriver: infra, runtime };
+}
+
+function memoryRetryState(initial = 0) {
+  let value = initial;
+  return {
+    async get() { return value; },
+    async set(next) { value = next; },
+  };
 }
 
 test("World reconciliation isolates Genesis delivery from visual publication", async () => {
@@ -220,6 +242,48 @@ test("World reconciliation pending work backs off exponentially and caps retry d
     assert.equal(await infraDriver.scheduler.get("world"), 5_400);
   } finally {
     await runtime.stop();
+  }
+});
+
+test("World reconciliation durable backoff survives runtime recreation", async () => {
+  let clock = 2_000;
+  const retryState = memoryRetryState();
+  const process = createWorldReconciliationProcess({
+    visualPublicationProcess: {
+      async runOnce() {
+        return {
+          skipped: false,
+          reason: null,
+          results: [{ threadId: "thr_pending", ok: true, reconciliation: { complete: false } }],
+        };
+      },
+    },
+  });
+  const first = createRuntimeFixture({
+    process,
+    now: () => clock,
+    intervalMs: 100,
+    maxRetryMs: 800,
+    retryState,
+  });
+  await first.runtime.requestWake();
+  const firstWake = await first.runtime.handleWake();
+  assert.equal(firstWake.retryDelayMs, 100);
+
+  clock = 3_000;
+  const second = createRuntimeFixture({
+    process,
+    now: () => clock,
+    intervalMs: 100,
+    maxRetryMs: 800,
+    retryState,
+    infraDriver: first.infraDriver,
+  });
+  try {
+    const secondWake = await second.runtime.handleWake();
+    assert.equal(secondWake.retryDelayMs, 200, "restart must retain retry streak instead of returning to hot-loop delay");
+  } finally {
+    await second.runtime.stop();
   }
 });
 
