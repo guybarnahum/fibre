@@ -1,7 +1,7 @@
 ---
 id: architecture-runtime-activity-log
 status: proposed
-last-reviewed: 2026-09-01
+last-reviewed: 2026-09-13
 canonical: false
 ---
 
@@ -11,11 +11,11 @@ canonical: false
 
 Provide one global, queryable, append-only operational log that answers a practical debugging question:
 
-> For this Genesis request, Thread, Experience or runtime operation, what succeeded, what failed, what retried, and where did the chain stop?
+> For this Genesis request, Thread, Experience or runtime operation, what succeeded, what failed, what retried, what directly caused it, and where did the chain stop?
 
 The first consumer is the fully-cloud Slice G birth-to-Viewer E2E. The same facility should later cover ordinary Thread Experiences and other asynchronous runtime work.
 
-This is deliberately a simplified form of a durable activity log plus causal correlation. It is **not** a full distributed tracing/OpenTelemetry system and is **not** another Fibre semantic authority.
+This is deliberately a simplified durable activity log plus Fibre causal correlation. It is **not** a full distributed tracing/OpenTelemetry system and is **not** another Fibre semantic authority.
 
 ## Non-authority rule
 
@@ -49,25 +49,34 @@ show all failures in staging since time T
 
 It should generate a human-readable runtime chain without inspecting five independent services by hand.
 
-## Identity and correlation
+## Identity and causal linkage
 
 Do not use only `threadId`. Failures can occur before a live Thread exists.
 
 Every record may carry:
 
 ```text
-requestId       outer operation/request; primary key for one Genesis E2E chain
-genesisId       provisional Genesis identity when known
-threadId        canonical machine Thread identity when known
-experienceId    later: one lived Experience/episode when defined
-sessionId       later: thaw/runtime session when defined
-correlationId   existing Fibre causal/correlation identity when available
-causationId     existing Fibre direct-cause identity when available
+requestId          outer operation/request; primary key for one Genesis E2E chain
+genesisId          provisional Genesis identity when known
+threadId           canonical machine Thread identity when known
+experienceId       later: one lived Experience/episode when defined
+sessionId          later: thaw/runtime session when defined
+correlationId      root operational correlation; defaults to requestId when present
+operationId        one stable identity shared by one runStage start/terminal pair
+parentOperationId  direct nested operational parent when the caller actually knows it
+causationId        direct Fibre/domain cause when the work is asynchronous or restart-driven
 ```
 
-For Slice G v0.1, `requestId` is sufficient to reconstruct one birth chain. `genesisId` and `threadId` are attached as soon as they are derivable/known.
+Use two deliberately small causal mechanisms:
 
-A separate distributed `traceId/spanId` model is deferred. The schema should leave room to add it later without replacing the basic identity envelope.
+1. `parentOperationId` for **synchronous/nested operational work**. Example: Genesis cognition calls are children of the enclosing Genesis life-development operation; World admission calls are children of the Birth World-submission operation.
+2. `causationId` for **domain causation across asynchronous/restart boundaries**. Prefer the authoritative witness already present in Fibre: World event ID, Embodiment ID, canonical object ref, asset job ID, command ID, or similar.
+
+Never infer causation from timestamps or D1 row order. If the caller does not know a parent or direct cause, leave it null rather than manufacture a graph.
+
+For Genesis, `correlationId = requestId` is the root operational grouping unless an emitter provides a stronger explicit correlation. `genesisId` and `threadId` are attached as soon as they are derivable/known.
+
+A full distributed `traceId/spanId` model remains deferred. `operationId` is intentionally narrower: enough to pair one operation and name real nested children, without importing generic tracing machinery.
 
 ## Tiny activity state model
 
@@ -92,6 +101,8 @@ Conceptual shape:
 {
   "activityVersion": "fibre-runtime-activity-v0.1",
   "activityId": "act_...",
+  "operationId": "op_...",
+  "parentOperationId": "op_parent_...",
   "occurredAt": "2026-09-01T05:31:12.123Z",
   "recordedAt": "2026-09-01T05:31:12.129Z",
 
@@ -104,14 +115,14 @@ Conceptual shape:
   "threadId": "thr_...",
   "experienceId": null,
   "sessionId": null,
-  "correlationId": null,
+  "correlationId": "genesis-staging-...",
   "causationId": null,
 
-  "stage": "birth.genesis.history.model_call",
+  "stage": "birth.genesis.history.cognition_call",
   "status": "failed",
   "attempt": 2,
 
-  "message": "OpenAI history realization call timed out",
+  "message": "History realization call timed out",
 
   "error": {
     "category": "provider",
@@ -143,7 +154,7 @@ status
 attempt
 ```
 
-`requestId`, `genesisId`, `threadId` and later experience/session identities are nullable because early failures may precede them.
+`operationId`, parent/direct cause, request/genesis/thread and later experience/session identities are nullable because legacy or early records may precede them.
 
 ### Error categories
 
@@ -182,6 +193,7 @@ genomeId
 embodimentId
 fibreIdentityNumber
 queueMessageId / workflow instance identifier when useful
+failedGate / repairOrdinal when a bounded validation repair occurred
 ```
 
 Do not persist:
@@ -190,6 +202,7 @@ Do not persist:
 - raw model prompts or chain-of-thought;
 - unrestricted provider responses;
 - private Thread biography dumps;
+- rejected biographical/action text merely to explain a repair;
 - private stance/rationale content merely because it would be convenient for debugging.
 
 Sensitive domain details stay inspectable through their existing access-controlled authorities. The Activity Log points to them.
@@ -252,11 +265,11 @@ birth.publish.complete
 Where one Genesis stage makes multiple provider calls, use a more precise child stage or evidence label rather than collapsing all cognition into one generic call:
 
 ```text
-birth.genesis.history.model_call
+birth.genesis.history.cognition_call
 birth.genesis.history.repair_call
-birth.genesis.memory_selection.model_call
-birth.genesis.meaning_formation.model_call
-birth.genesis.identity_bootstrap.model_call
+birth.genesis.memory_selection.cognition_call
+birth.genesis.meaning_formation.cognition_call
+birth.genesis.meaning_reinterpretation.cognition_call
 ```
 
 The exact list should follow real Genesis seams. Do not invent checkpoints that cannot be emitted from a durable code boundary.
@@ -290,6 +303,19 @@ world.embodiment.admission
 world.reconciliation.complete
 ```
 
+Asynchronous visual recovery should use real domain causes rather than preserving an artificial request span forever. The useful chain is:
+
+```text
+World origin event
+  -> canonical Embodiment
+  -> canonical visual object
+  -> admitted Embodiment
+  -> Presentation projection/media demand
+  -> derived public asset
+```
+
+The corresponding `eventId`, `embodimentId`, and `objectRef` remain authoritative elsewhere; Activity only references them.
+
 ### Asset Generator
 
 ```text
@@ -313,6 +339,8 @@ presentation.completion.receive
 presentation.completion.validate
 presentation.world_authority.resolve
 presentation.visual_identity.project
+presentation.identity_media.ensure
+presentation.media_demand.reconcile
 presentation.catalog.publish
 presentation.snapshot.publish
 presentation.asset.serve
@@ -379,15 +407,14 @@ Conceptually:
 
 ```js
 await activity.record({
-  service: "world-kernel",
   requestId,
   genesisId,
   threadId,
-  stage: "world.thread.publication",
+  causationId: embodimentId,
+  stage: "world.visual_identity.demand",
   status: "succeeded",
   attempt: 1,
-  message: "Authoritative Thread admitted",
-  evidence: { eventId },
+  evidence: { embodimentId, objectRef },
 });
 ```
 
@@ -398,20 +425,23 @@ For ordinary start/success/failure boundaries:
 ```js
 await activity.runStage(
   {
-    service: "asset-generator",
     requestId,
     genesisId,
     threadId,
-    stage: "asset.provider.request",
+    parentOperationId,
+    stage: "birth.genesis.history.cognition_call",
     attempt,
   },
-  async () => provider.generate(...),
+  async ({ operationId }) => {
+    // A real nested child may use this operationId as parentOperationId.
+    return cognition.invoke(...);
+  },
 );
 ```
 
-`runStage()` emits `started`, then `succeeded` or `failed`. Domain-specific retry code explicitly emits `retrying` before another attempt.
+`runStage()` allocates one stable `operationId`, emits `started`, then `succeeded` or `failed` with that same operation identity. Domain-specific retry code explicitly emits `retrying` before another attempt.
 
-Do not hide domain retry policy inside the telemetry helper. The domain/service that owns the operation remains the retry authority.
+Do not hide domain retry policy or infer children inside the telemetry helper. The service that owns the operation remains the retry authority and names a parent only when it actually knows one.
 
 ## Provider-neutral boundary
 
@@ -430,7 +460,7 @@ For v0.1, only the smallest exercised surface is required. Do not turn `telemetr
 
 ## Cloudflare storage shape
 
-Recommended first cloud implementation:
+Current cloud implementation:
 
 ```text
 Workers
@@ -440,7 +470,7 @@ Workers
 
 Use a separate operational/telemetry store rather than authoritative World state. This keeps the side facility outside World transaction semantics and allows retention/indexing to evolve independently.
 
-Initial table fields should closely mirror the record envelope:
+Indexed table fields remain the small paging/query envelope:
 
 ```text
 activity_id PRIMARY KEY
@@ -462,9 +492,12 @@ attempt
 message
 error_json
 evidence_json
+record_json
 ```
 
-Useful indexes:
+`operationId` and `parentOperationId` are additive fields in normalized `record_json`; v0.1 does not need a D1 migration or operation index merely to render a causal trail.
+
+Useful indexes remain:
 
 ```text
 (request_id, occurred_at)
@@ -483,42 +516,20 @@ The local implementation may use a dedicated SQLite database or deterministic in
 
 ## Query and inspection surface
 
-Initial CLI goal:
+The Admin Activity workspace provides two deliberately different surfaces:
 
-```text
-npm run inspect:activity -- --request <requestId>
-npm run inspect:activity -- --genesis <genesisId>
-npm run inspect:activity -- --thread <threadId>
-npm run inspect:activity -- --failures
-```
+- **Raw**: exact admitted Activity records.
+- **Causal**: meaningful terminal/retry operations, hiding successful provider-commit plumbing while preserving failures, retries and durable replay evidence. It renders explicit operation parents and direct domain causes; it does not infer causality from chronology.
 
-Human output should be concise and chronological, for example:
+A Thread query resolves human identity and public Presentation media from their authorities rather than manufacturing name/FIN/assets from the current Activity page.
 
-```text
-REQUEST genesis-staging-123
-THREAD  thr_123
-GENESIS gen_123
-
-05:31:00.004  e2e                 e2e.start                         succeeded
-05:31:00.122  birth-center        birth.request.validate            succeeded
-05:31:03.902  birth-center        birth.genesis.history.model_call  succeeded  attempt=1
-05:31:14.100  world-kernel        world.thread.publication          succeeded
-05:31:15.225  asset-generator     asset.provider.request            failed     attempt=1 BFL_TIMEOUT
-05:31:17.227  asset-generator     asset.provider.request            retrying   attempt=2
-05:31:20.813  asset-generator     asset.provider.request            succeeded  attempt=2
-05:31:21.102  thread-presentation presentation.snapshot.publish     succeeded
-05:31:21.488  e2e                 viewer.thread.discoverable        succeeded
-
-FINAL: completed; asset generation succeeded after one retry
-```
-
-The raw JSON query remains available for machines and retained E2E evidence.
+The raw JSON export remains available for machines and retained E2E evidence.
 
 ## Slice G integration
 
 Instrument Slice G first because it crosses all relevant cloud boundaries.
 
-Minimum initial emitters:
+Minimum emitters:
 
 1. E2E runner
 2. Birth Center
@@ -526,48 +537,9 @@ Minimum initial emitters:
 4. Asset Generator
 5. Thread Presentation
 
-The first goal is not exhaustive logging. It is enough coverage to locate the failed boundary without manually correlating each service.
+The goal is not exhaustive logging. It is enough coverage to locate the failed boundary and reconstruct real handoffs without manually correlating each service.
 
-The Slice G evidence file may retain the `requestId` plus an Activity Log query/reference. The 13 authoritative Slice G assertions continue to be proved from their existing inspection/evidence surfaces. Activity Log success is not silently substituted for them.
-
-## Implementation sequence
-
-### AL-A — contract and deterministic local store
-
-- freeze normalized activity schema;
-- `ActivityRecorder.record()`;
-- `runStage()` helper;
-- local deterministic store;
-- idempotent activity admission by `activityId`;
-- query by request/genesis/thread;
-- tests for failure/retry ordering and sanitization.
-
-### AL-B — Slice G emitters
-
-Add detailed checkpoints to:
-
-- E2E runner;
-- Birth Center request/development/publication;
-- World birth/admission/reconciliation;
-- Asset generation;
-- Thread Presentation publication.
-
-Do not refactor domain logic merely to add logging. Emit at existing durable/meaningful boundaries.
-
-### AL-C — Cloudflare telemetry provider
-
-- dedicated D1 database;
-- provider-neutral `InfraDriver.telemetry` exercised surface;
-- provision/config/deploy integration;
-- query endpoint or operator-only read surface;
-- prove telemetry failure does not change Fibre semantic outcomes.
-
-### AL-D — inspector and E2E use
-
-- `inspect:activity` CLI;
-- compact runtime-chain renderer;
-- cloud E2E records its `requestId` and log reference;
-- deliberate-failure test demonstrates that one command identifies the failed stage and retry history.
+The Slice G evidence file may retain the `requestId` plus an Activity Log query/reference. Authoritative Slice G assertions continue to be proved from their existing inspection/evidence surfaces. Activity Log success is not silently substituted for them.
 
 ## Acceptance criteria for v0.1
 
@@ -577,19 +549,23 @@ The Activity Log v0.1 is useful when all of these are true:
 2. After identity is known, the same chain is queryable by `genesisId` and `threadId`.
 3. A deliberate provider or reconciliation failure shows the exact failed stage, service, attempt and retryability.
 4. A successful retry is visible without overwriting the earlier failure.
-5. World semantic events are referenced by IDs/digests rather than copied into telemetry as authority.
-6. No secret/token/raw chain-of-thought/private biography payload is stored.
-7. Duplicate telemetry delivery is idempotent or visibly deduplicated by `activityId`.
-8. Telemetry storage failure cannot create or roll back a Thread, birth, authorization, Embodiment or publication.
-9. The inspector can render a concise success/failure chain for a request.
-10. Local and Cloudflare providers expose the same normalized record/query behavior required by the exercised surface.
+5. Nested operations use explicit operation parentage rather than timestamp inference.
+6. Restart-driven work points to authoritative domain causes such as events, Embodiments and object refs.
+7. World semantic events are referenced by IDs/digests rather than copied into telemetry as authority.
+8. No secret/token/raw chain-of-thought/private biography payload is stored.
+9. Duplicate telemetry delivery is idempotent or visibly deduplicated by `activityId`.
+10. Telemetry storage failure cannot create or roll back a Thread, birth, authorization, Embodiment or publication.
+11. Raw remains exact while Causal can render a concise meaningful chain.
+12. Local and Cloudflare providers expose the same normalized record/query behavior required by the exercised surface.
 
 ## Deliberately deferred
 
 For v0.1 do not add:
 
 - full OpenTelemetry dependency;
-- trace/span/parent DAGs;
+- generic distributed trace/span DAGs;
+- a generic event-reduction framework;
+- D1 parent/operation indexes without a demonstrated query need;
 - metrics dashboards;
 - log sampling policy beyond basic retention needs;
 - arbitrary large diagnostic attachments;
@@ -597,7 +573,7 @@ For v0.1 do not add:
 - semantic lifecycle authority;
 - activity-derived personhood evidence.
 
-These remain open extension paths. If concurrency later makes `requestId` insufficient, add `traceId/spanId/parentSpanId` to the envelope rather than replacing the Activity Log.
+These remain open extension paths. Add richer tracing only if real concurrency/debugging cases exceed the small Fibre-specific `operationId` + `parentOperationId` + `causationId` model.
 
 ## Vision and ambition check
 
