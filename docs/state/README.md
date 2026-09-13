@@ -37,6 +37,12 @@ Use this for architecture, milestone posture, persistence surfaces, causal stand
 
 Use this for the immediate execution sequence, current experimental constraints, blockers and rules for what maintainers may or may not do next.
 
+## Thread preservation and migration
+
+[`thread-preservation-and-migration.md`](thread-preservation-and-migration.md)
+
+Use this for the accepted plan to preserve Threads across Fibre software/schema generations: immediate staging retention, immutable archive-before-migration, the rule to migrate state rather than rewrite history, and the small post-M2 operator path for verified restore/migration and coordinated cleanup. It is a post-M2 follow-on, not an additional M2 closure gate.
+
 ## Future capability map
 
 [`future-capability-map.md`](future-capability-map.md)
