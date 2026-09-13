@@ -96,12 +96,13 @@ export function createCloudflareActivityTelemetryPort({ database } = {}) {
     if (!existing || typeof existing.record_json !== "string") {
       throw new Error(`Cloudflare activity ${normalized.activityId} was not readable after record`);
     }
-    if (existing.record_json !== canonical) {
+    const existingRecord = deserializeRecord(existing.record_json);
+    if (serializedRecord(existingRecord) !== canonical) {
       throw new ActivityTelemetryIdempotencyConflictError(
         `activity ${normalized.activityId} was already recorded with different content`,
       );
     }
-    return clone(deserializeRecord(existing.record_json));
+    return clone(existingRecord);
   }
 
   async function query(candidate = {}) {
