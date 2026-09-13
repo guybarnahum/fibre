@@ -2,11 +2,13 @@ import baseWorker, {
   authenticateAccessRequest,
   authorizeAdminPrincipal,
 } from "./worker.mjs";
+import { readAdminInfraMonitor } from "./infra-monitor.mjs";
 import { resolveAdminThreadIdentity } from "./thread-identity.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
+const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 
 function json(status, payload) {
   return new Response(JSON.stringify(payload), {
@@ -81,10 +83,17 @@ export default {
     const url = new URL(request.url);
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
-    if (request.method === "GET" && (identityMatch || assetMatch)) {
+    const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
+    if ((request.method === "GET" && (identityMatch || assetMatch || infraMonitor)) || (request.method === "POST" && infraMonitor)) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
       try {
+        if (infraMonitor) {
+          const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
+          const force = request.method === "POST" || url.searchParams.get("force") === "1";
+          const result = await readAdminInfraMonitor({ env, environment, force });
+          return json(200, result);
+        }
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const threadId = id("threadId", decodeURIComponent(identityMatch[1]));
@@ -103,6 +112,7 @@ export default {
         }
         return proxyAsset(request, env, id("objectRef", decodeURIComponent(assetMatch[1])));
       } catch (error) {
+        if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
           error: error instanceof TypeError ? "invalid_thread_resource" : "thread_presentation_unavailable",
           detail: error.message,
