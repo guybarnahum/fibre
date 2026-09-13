@@ -119,89 +119,105 @@ export function createWranglerProvisionClient({ runner = runWrangler, cwd = proc
   });
 }
 
-export async function provisionCloudflare({
+async function ensureD1(client, name) {
+  let found = await client.findD1(name);
+  if (!found) {
+    await client.createD1(name);
+    found = await client.findD1(name);
+  }
+  if (!found?.id) throw new Error(`Cloudflare D1 ${name} did not resolve to a database id after provisioning`);
+  return Object.freeze({ name, id: found.id });
+}
+
+async function ensureNamed(client, { kind, name }) {
+  const has = kind === "r2" ? client.hasR2.bind(client) : client.hasQueue.bind(client);
+  const create = kind === "r2" ? client.createR2.bind(client) : client.createQueue.bind(client);
+  if (await has(name)) return Object.freeze({ name, status: "existing" });
+  await create(name);
+  if (!(await has(name))) throw new Error(`Cloudflare ${kind} ${name} was not visible after creation`);
+  return Object.freeze({ name, status: "created" });
+}
+
+export async function provisionCloudflareResources({
   repoRoot,
   environment,
   client,
-  runtimeConfig,
   sourceGitSha = null,
   now = () => new Date().toISOString(),
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
+  const source = optionalGitSha(sourceGitSha);
   if (!client) throw new TypeError("Cloudflare provision client is required");
-  const gitSha = optionalGitSha(sourceGitSha);
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
   const plan = createCloudflareResourcePlan(configs, { environment: env });
+
   const d1 = [];
   for (const database of plan.create.d1) {
-    let resource = await client.findD1(database.name);
-    let status = "existing";
-    if (resource === null) {
-      await client.createD1(database.name);
-      resource = await client.findD1(database.name);
-      if (resource === null) throw new Error(`Cloudflare D1 database ${database.name} was created but could not be resolved`);
-      status = "created";
-    }
+    const resolved = await ensureD1(client, database.name);
     const migrations = migrationsFor(database);
     for (const migration of migrations) await client.applyD1Migration(database.name, migration);
-    d1.push(Object.freeze({ ...database, id:resource.id, status, schema:migrations.at(-1).split("/").at(-1), migrations:migrations.map((item) => item.split("/").at(-1)) }));
+    d1.push({
+      ...resolved,
+      binding: database.binding,
+      schema: migrations.at(-1).split("/").at(-1),
+      migrations: migrations.map((migration) => migration.split("/").at(-1)),
+    });
   }
-
   const r2 = [];
-  for (const bucket of plan.create.r2) {
-    const exists = await client.hasR2(bucket.name);
-    if (!exists) await client.createR2(bucket.name);
-    r2.push(Object.freeze({ ...bucket, status:exists ? "existing" : "created" }));
-  }
-
+  for (const bucket of plan.create.r2) r2.push(await ensureNamed(client, { kind: "r2", name: bucket.name }));
   const queues = [];
-  for (const queue of plan.create.queues) {
-    const exists = await client.hasQueue(queue.name);
-    if (!exists) await client.createQueue(queue.name);
-    queues.push(Object.freeze({ ...queue, status:exists ? "existing" : "created" }));
-  }
+  for (const queue of plan.create.queues) queues.push({ role: queue.role, ...(await ensureNamed(client, { kind: "queue", name: queue.name })) });
 
-  const resolvedRuntimeConfig = activityRuntimeConfig(runtimeConfig, Object.keys(plan.deployManaged.workers), env, gitSha);
-  const wranglerConfigs = await writeResolvedWranglerConfigs({ repoRoot, environment:env, configs, plan, runtimeConfig:resolvedRuntimeConfig });
-  const state = Object.freeze({
-    contract:CLOUDFLARE_OPERATOR_STATE_VERSION,
-    environment:env,
-    sourceGitSha:gitSha,
-    recordedAt:now(),
-    resources:Object.freeze({
-      d1:Object.freeze(d1),
-      r2:Object.freeze(r2),
-      queues:Object.freeze(queues),
-      deployManaged:plan.deployManaged,
-      externalRequired:plan.externalRequired,
-    }),
-    wranglerConfigs,
+  const state = {
+    contract: CLOUDFLARE_OPERATOR_STATE_VERSION,
+    environment: env,
+    recordedAt: now(),
+    resources: {
+      d1,
+      r2,
+      queues,
+      deployManaged: plan.deployManaged,
+      externalRequired: plan.externalRequired,
+    },
+  };
+  const storedRuntimeConfig = await readCloudflareRuntimeConfig({ repoRoot, environment: env });
+  const runtimeConfigByService = activityRuntimeConfig(storedRuntimeConfig, Object.keys(configs), env, source);
+  state.wranglerConfigs = await writeResolvedWranglerConfigs({
+    repoRoot, environment: env, configs, resourceState: state, runtimeConfigByService,
   });
-  await writeCloudflareOperatorState({ repoRoot, environment:env, state });
-  return state;
+  await writeCloudflareOperatorState({ repoRoot, environment: env, resourceState: state });
+  return Object.freeze(state);
+}
+
+function parseArgs(argv) {
+  let environment = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === "--env") environment = argv[++index] ?? null;
+    else throw new TypeError(`unsupported argument ${argv[index]}`);
+  }
+  if (!environment) throw new TypeError("--env <staging|production> is required");
+  return { environment };
 }
 
 async function main(argv) {
-  let environment = null;
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--env") environment = argv[++index] ?? null;
-    else throw new TypeError(`unsupported argument ${arg}`);
-  }
+  const { environment } = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
-  const runtimeConfig = await readCloudflareRuntimeConfig({ repoRoot, environment });
-  const client = createWranglerProvisionClient({ cwd:repoRoot });
+  const client = createWranglerProvisionClient({ cwd: repoRoot });
   try {
-    const state = await provisionCloudflare({ repoRoot, environment, client, runtimeConfig });
-    console.log(`Cloudflare provisioned: ${state.environment}`);
-    for (const database of state.resources.d1) console.log(`D1      ${database.name} ${database.id} ${database.status}`);
+    const state = await provisionCloudflareResources({ repoRoot, environment, client });
+    console.log(`Cloudflare resources ready: ${state.environment}`);
+    for (const database of state.resources.d1) console.log(`D1      ${database.name} ${database.id}`);
     for (const bucket of state.resources.r2) console.log(`R2      ${bucket.name} ${bucket.status}`);
     for (const queue of state.resources.queues) console.log(`QUEUE   ${queue.name} ${queue.status}`);
     for (const [serviceId, worker] of Object.entries(state.resources.deployManaged.workers)) console.log(`DEPLOY  ${serviceId} -> ${worker}`);
   } catch (error) {
-    console.error(formatCloudflareProvisionFailure(error, { environment }));
-    process.exitCode = 1;
+    throw new Error(formatCloudflareProvisionFailure(error, { environment }), { cause: error });
   }
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) await main(process.argv.slice(2));
+if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}
