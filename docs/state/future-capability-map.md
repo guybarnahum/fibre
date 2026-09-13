@@ -90,6 +90,33 @@ The first trigger is the retained legacy staging Thread corpus after M2 closure.
 
 Do not create an empty namespace now. A likely operator home may emerge under `tools/` once the implementation begins; choose the exact location from the code that actually exists.
 
+## Follow-on: sex-aware Genesis completion
+
+Sex is a basic embodied Thread fact, not a visual-rendering choice and not a personality trait. Current Genesis now persists `thread.identity.sex = female | male`, assigns new synthetic births with an approximately 50/50 deterministic birth probability, and requires canonical visual identity to consume that stored fact rather than infer one.
+
+That is only the first slice. Before Genesis is treated as complete, sex must move to the **pre-development subject** so the same authoritative value exists before historical cognition begins. Every downstream Genesis surface must then declare one of three relationships to sex:
+
+```text
+direct biological / identity dependency
+World-, culture- or era-mediated dependency
+no dependency
+```
+
+The follow-on should close these items in order:
+
+1. **Authority timing** — assign sex in the Genesis slot/subject before Pass A; carry one immutable value through candidate development; publication verifies consistency rather than inventing or recomputing it. Legacy Threads may remain without the field until an explicit migration policy exists.
+2. **Birth naming** — create culturally and historically grounded personal naming from sex + culture + language + place + era where the World warrants it. Unisex names remain valid. Never infer sex from a name after the fact. The current neutral `Fibre Thread` seed is not the finished naming model.
+3. **Historical development** — expose sex to historical realization as a factual subject attribute. Sex may affect lived circumstances only through plausible physiology or the enacted World: family treatment, social expectations, institutional access, safety, clothing/grooming conventions, grammatical address, or other era/culture-specific facts. It may not directly author personality, values or destiny.
+4. **Embodiment** — keep the accepted direction `Thread sex -> visual phenotype`; the renderer must never choose or infer sex independently. Stable body/age development may consume the same fact where physically relevant.
+5. **Physiology and intrinsic regulation** — enumerate specific sex-sensitive mechanisms, such as puberty, reproductive physiology or sexual/reproductive drive dynamics, and add them only through explicit causal regulation machinery. Do not introduce a generic `sex multiplier` over needs, emotions or cognition.
+6. **Relationships and reproduction** — keep biological reproductive capacity/contribution separate from sexual orientation, attraction, parenthood, caregiving and family/social role. Those concepts may interact with sex but are not derived from it.
+7. **Counterfactual validation** — prove that changing sex while holding unrelated starting material fixed changes only warranted naming/body/physiology/World-mediated history surfaces. It must not automatically change intelligence, interests, morality, competence, profession, politics, personality loci, dignity or permissions. Keep the population-level birth distribution near 50/50 without adding a global quota counter.
+8. **Legacy preservation** — never backfill old Threads by guessing from portrait, name, pronouns or historical stereotypes. Preserve missing legacy state unless authoritative evidence or a deliberate migration decision exists; follow the Thread preservation/migration plan before cleanup.
+
+Gender identity, pronouns and sexual orientation remain distinct concepts. They may later become self-authored or lived Thread state, but they are not aliases for biological sex and are not inferred by Presentation.
+
+This is a **Genesis completion follow-on**, not a new service and not an additional M2 closure gate. The canonical developmental invariants live in [`../architecture/thread-genesis-childhood-birth.md`](../architecture/thread-genesis-childhood-birth.md).
+
 ## Follow-on: Activity lifecycle and compaction
 
 Activity is diagnostic and non-authoritative, so successful process execution should eventually be compactable without weakening World, Birth Center, Presentation, or Asset Generator authority.
