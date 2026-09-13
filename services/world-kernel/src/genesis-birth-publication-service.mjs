@@ -22,7 +22,7 @@ function optionalActivityRecorder(value) {
 }
 
 async function runActivityStage(activity, metadata, operation) {
-  if (activity === null) return operation();
+  if (activity === null) return operation(Object.freeze({ operationId: null }));
   return activity.runStage(metadata, operation);
 }
 
@@ -73,7 +73,19 @@ function activityIdentity(bundle, supplied = {}) {
     requestId: supplied.requestId ?? null,
     genesisId: supplied.genesisId ?? manifest.genesisId ?? null,
     threadId: supplied.threadId ?? manifest.threadId ?? null,
+    correlationId: supplied.correlationId ?? null,
+    causationId: supplied.causationId ?? null,
+    parentOperationId: supplied.parentOperationId ?? null,
   });
+}
+
+function publicationEvidence(bundle) {
+  const evidence = {};
+  const fibreIdentityNumber = bundle?.civilRegistration?.fibreIdentityNumber;
+  const eventId = bundle?.thread?.provenance?.lastEventId;
+  if (typeof fibreIdentityNumber === "string" && fibreIdentityNumber !== "") evidence.fibreIdentityNumber = fibreIdentityNumber;
+  if (typeof eventId === "string" && eventId !== "") evidence.eventId = eventId;
+  return evidence;
 }
 
 export function createGenesisBirthPublicationService({
@@ -117,6 +129,7 @@ export function createGenesisBirthPublicationService({
         ...context,
         stage: "world.thread.publication",
         attempt: 1,
+        evidence: publicationEvidence(bundle),
       }, async () => target.publishBirth(attachCivilRegistration(bundle)));
     },
   });
