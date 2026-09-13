@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  CLOUDFLARE_APP_DEPLOY_ORDER,
   cloudflareAppDomain,
   resolveCloudflareAppConfig,
+  selectedCloudflareApps,
   validateResolvedCloudflareAppConfig,
 } from "./cloudflare-apps.mjs";
 
@@ -34,6 +36,12 @@ function statusBase() {
     ],
   };
 }
+
+test("app selection keeps full deploys default while allowing one app", () => {
+  assert.equal(selectedCloudflareApps(), CLOUDFLARE_APP_DEPLOY_ORDER);
+  assert.deepEqual(selectedCloudflareApps("admin-dashboard"), ["admin-dashboard"]);
+  assert.throws(() => selectedCloudflareApps("viewer"), /unsupported Cloudflare app viewer/u);
+});
 
 test("admin and status domains get isolated staging hostnames", () => {
   assert.equal(cloudflareAppDomain("admin.insidefibre.com", "staging"), "admin.staging.insidefibre.com");
