@@ -22,6 +22,7 @@ export class FibreWorldDurableObject extends DurableObject {
     const runtime = this.runtimeForRequest();
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/internal/health/state") {
+      const reconciliation = await runtime.reconciliationRuntime.ensureScheduled();
       return Response.json({
         ok: true,
         service: "world-kernel",
@@ -29,6 +30,11 @@ export class FibreWorldDurableObject extends DurableObject {
         stateScopeId: WORLD_SCOPE_ID,
         stateChecked: true,
         capabilities: runtime.infraDriver.capabilities,
+        reconciliation: {
+          scheduled: reconciliation.existing,
+          scheduledTimeMs: reconciliation.scheduledTimeMs,
+          running: runtime.reconciliationProcess.running,
+        },
       });
     }
     const recoveryResponse = await runtime.visualRecoveryApi.fetch(request);
@@ -40,8 +46,29 @@ export class FibreWorldDurableObject extends DurableObject {
     return Response.json({ error: "not_found" }, { status: 404 });
   }
 
-  async alarm() {
-    return this.runtimeForRequest().reconciliationRuntime.handleWake();
+  async alarm(alarmInfo) {
+    const runtime = this.runtimeForRequest();
+    console.log(JSON.stringify({
+      event: "world-reconciliation-alarm-started",
+      retryCount: alarmInfo?.retryCount ?? 0,
+      isRetry: alarmInfo?.isRetry === true,
+    }));
+    try {
+      const result = await runtime.reconciliationRuntime.handleWake();
+      console.log(JSON.stringify({
+        event: "world-reconciliation-alarm-completed",
+        reconciliationPending: result.reconciliationPending,
+        retryDelayMs: result.retryDelayMs,
+      }));
+      return result;
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "world-reconciliation-alarm-failed",
+        errorName: error?.constructor?.name ?? "Error",
+        message: String(error?.message ?? error).slice(0, 512),
+      }));
+      throw error;
+    }
   }
 }
 
