@@ -95,6 +95,17 @@ function optionalCredentialSigner(deployment, env) {
     : selectContentCredentialIntegration(selected, { environment: env });
 }
 
+function completionActivityContext(job) {
+  const context = job?.context ?? {};
+  return Object.freeze({
+    requestId: context.requestId ?? null,
+    genesisId: context.genesisId ?? null,
+    threadId: context.threadId ?? null,
+    correlationId: context.correlationId ?? null,
+    causationId: job?.jobId ?? null,
+  });
+}
+
 function createRuntime(env, job) {
   if (!env || typeof env !== "object") throw new TypeError("Cloudflare asset generation env is required");
   if (!env.ASSET_OBJECTS) throw new TypeError("ASSET_OBJECTS binding is required");
@@ -181,7 +192,9 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
         },
         async (ctx) => {
           try {
-            await runtime.publishCompletion(completion);
+            await runtime.publishCompletion(completion, {
+              activityContext: completionActivityContext(job),
+            });
             return completion;
           } catch (error) {
             const decision = assetGenerationRetryDecision(error, {
