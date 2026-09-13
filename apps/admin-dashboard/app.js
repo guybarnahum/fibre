@@ -31,6 +31,46 @@ function journeyPhase(stage) {
   return "System";
 }
 
+function causalLineage(records) {
+  const byOperation = new Map();
+  const childCounts = new Map();
+  for (const record of records) {
+    if (record.operationId) byOperation.set(record.operationId, record);
+    if (record.parentOperationId) childCounts.set(record.parentOperationId, (childCounts.get(record.parentOperationId) ?? 0) + 1);
+  }
+  return records.map((record) => {
+    const directParent = record.parentOperationId ? byOperation.get(record.parentOperationId) ?? null : null;
+    const seen = new Set(record.operationId ? [record.operationId] : []);
+    let ancestorId = record.parentOperationId;
+    let depth = 0;
+    while (ancestorId && depth < 4 && !seen.has(ancestorId)) {
+      depth += 1;
+      seen.add(ancestorId);
+      const ancestor = byOperation.get(ancestorId);
+      if (!ancestor) break;
+      ancestorId = ancestor.parentOperationId;
+    }
+    return Object.freeze({
+      record,
+      depth,
+      directParent,
+      childCount: record.operationId ? childCounts.get(record.operationId) ?? 0 : 0,
+    });
+  });
+}
+
+function causalWitness(record, childCount) {
+  const failedGate = record.evidence?.failedGate;
+  if (failedGate) {
+    const ordinal = record.evidence?.repairOrdinal;
+    return `repair · ${failedGate}${ordinal ? ` #${ordinal}` : ""}`;
+  }
+  const witness = record.evidence?.eventId ?? record.evidence?.objectRef ?? null;
+  if (witness) return shortId(witness);
+  if (childCount > 0) return `${childCount} child operation${childCount === 1 ? "" : "s"}`;
+  return record.status;
+}
+
 function syncFromUrl() {
   const params = new URLSearchParams(location.search);
   kind.value = params.get("kind") ?? "recent";
@@ -119,17 +159,28 @@ function renderRaw(records) {
 
 function renderCausal(records) {
   const rail = $("#journey-rail");
-  rail.replaceChildren(...records.map((record) => {
+  rail.replaceChildren(...causalLineage(records).map(({ record, depth, directParent, childCount }) => {
     const event = document.createElement("button");
     event.type = "button";
     event.className = `journey-event journey-event-${record.status}`;
+    if (depth > 0) event.classList.add("journey-event-child");
+    if (childCount > 0) event.classList.add("journey-event-parent");
+    event.style.setProperty("--journey-indent", `${Math.min(depth, 4) * 18}px`);
+    event.title = record.operationId
+      ? `Operation ${record.operationId}${record.parentOperationId ? ` · parent ${record.parentOperationId}` : ""}`
+      : "Activity without operation lineage";
     const when = document.createElement("span"); when.className = "journey-time"; when.textContent = clock(record.occurredAt);
     const copy = document.createElement("span"); copy.className = "journey-copy";
-    const heading = document.createElement("strong"); heading.textContent = `${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
+    const heading = document.createElement("strong"); heading.textContent = `${depth > 0 ? "↳ " : ""}${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
     const stage = document.createElement("span"); stage.textContent = record.stage;
     copy.append(heading, stage);
-    const witness = record.evidence?.eventId ?? record.evidence?.objectRef ?? null;
-    const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = witness ? shortId(witness) : record.status;
+    if (record.parentOperationId) {
+      const parent = document.createElement("small");
+      parent.className = "journey-parent";
+      parent.textContent = directParent ? `child of ${directParent.stage}` : `child of ${shortId(record.parentOperationId)}`;
+      copy.append(parent);
+    }
+    const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = causalWitness(record, childCount);
     event.append(when, copy, evidence);
     event.addEventListener("click", () => showRecord(record));
     return event;
@@ -155,6 +206,7 @@ function showRecord(record) {
     detail("Status", record.status), detail("Attempt", record.attempt),
     detail("Request ID", record.requestId, { mono:true }), detail("Genesis ID", record.genesisId, { mono:true }),
     detail("Thread ID", record.threadId, { mono:true }), detail("Activity ID", record.activityId, { mono:true }),
+    detail("Operation ID", record.operationId, { mono:true }), detail("Parent operation", record.parentOperationId, { mono:true }),
     detail("Correlation ID", record.correlationId, { mono:true }), detail("Causation ID", record.causationId, { mono:true }),
     detail("Deployment SHA", record.deploymentGitSha, { wide:true, mono:true }),
   );
