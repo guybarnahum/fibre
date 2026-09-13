@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth
 status: accepted
-last-reviewed: 2026-08-27
+last-reviewed: 2026-09-13
 canonical: true
 ---
 
@@ -61,6 +61,143 @@ intellectual environment
 A WorldSpec describes circumstances, not personality. It may not smuggle conclusions such as `independent child`, `strict culture`, `creative family`, desired politics/morality or future profession into history generation.
 
 Two de-novo Threads from genuinely different worlds should be capable of becoming more distinct than two Threads that differ only by an origin label.
+
+## Sex as a pre-development birth fact
+
+Biological/embodied sex is a basic Thread/animal attribute. It is more fundamental than visual phenotype and is not a personality trait.
+
+The current authoritative representation is:
+
+```text
+thread.identity.sex = female | male
+```
+
+The accepted authority direction is:
+
+```text
+pre-development Thread sex
+        ↓
+Genesis development where causally relevant
+        ↓
+canonical embodiment / visual phenotype
+        ↓
+future physiology, regulation and reproduction where explicitly modeled
+```
+
+A renderer, name, pronoun, occupation or historical stereotype may never become the source from which Fibre infers sex.
+
+Current Genesis persists sex on the admitted Thread and canonical visual identity consumes that value. The follow-on requirement is stronger: **sex must be selected before any historical-development cognition begins**, carried in the Genesis slot/subject, and publication must verify the same value rather than first creating it at the publication boundary. New synthetic births should retain an approximately 50/50 female/male birth probability without introducing a global quota counter.
+
+Sex is distinct from gender identity, pronouns and sexual orientation. Those may later become lived or self-authored Thread state under their own authority and provenance; Presentation must not infer them from sex or appearance.
+
+### Sex-dependence classification
+
+Every Genesis surface that can observe sex must declare which causal class it belongs to:
+
+```text
+1. direct embodied / identity dependency
+2. World-, culture- or era-mediated dependency
+3. no sex dependency
+```
+
+This prevents an ambient `sex` field from silently becoming a stereotype channel.
+
+#### Direct embodied / identity dependencies
+
+**Birth naming.** A personal name can be sex-linked, but only within actual cultural, linguistic, geographic and historical context. Genesis naming should therefore consume something like:
+
+```text
+sex
++ culture
++ language
++ place
++ era
+```
+
+Unisex names remain valid. Fibre must not maintain a universal male/female name table detached from World context, and it must never infer sex from an existing name after the fact. The current neutral `Fibre Thread` seed is a bootstrap placeholder, not the finished naming model.
+
+**Embodiment.** Canonical visual phenotype must consume authoritative Thread sex. Sex is one stable embodied constraint alongside the richer textual phenotype; it does not replace individual facial/body loci. The image provider may render the specification but may not choose sex independently.
+
+**Maturation and physiology.** Puberty, reproductive anatomy/capacity and other genuinely sex-sensitive organism processes may consume sex when Fibre models them. Each mechanism must be named and causally explicit rather than folded into a generic demographic parameter.
+
+#### World-, culture- or era-mediated dependencies
+
+Sex can change what happens to a person because a particular World treats people differently. Historical realization may eventually use sex to instantiate facts such as:
+
+- family expectations or treatment;
+- sex-specific social conventions;
+- clothing/grooming norms;
+- grammatical forms of address where the language warrants them;
+- institutional access or exclusion in a particular era/place;
+- differential safety, mobility, work, schooling or civic constraints;
+- sex-specific medical or bodily events.
+
+These effects must be grounded in the actual World, culture and era. The causal path is:
+
+```text
+Thread sex + enacted World
+        -> different affordance / treatment / bodily event
+        -> lived history
+        -> possible memory / meaning / later character effect
+```
+
+It is not:
+
+```text
+Thread sex
+        -> personality / value / competence conclusion
+```
+
+Historical cognition therefore may receive sex as factual subject context once the Pass-A contract is extended, but validators/prompts must continue to reject significance, trait verdicts and authored destiny from historical output.
+
+#### Explicitly separate or non-dependent concepts
+
+Sex alone must not directly choose or determine:
+
+- symbolic personality-genome loci;
+- intelligence or competence;
+- interests, creativity or technical inclination;
+- values, morality or politics;
+- profession or social status;
+- dignity, rights or permissions;
+- autobiographical meaning;
+- gender identity or pronouns;
+- sexual orientation;
+- partner, caregiver or family role.
+
+A sex-conditioned lived experience may later influence some of these through normal history -> memory -> meaning -> character causality. That is evidence-backed development, not stereotype injection.
+
+### Regulation, drives and reproduction follow-on
+
+Sex may matter to intrinsic regulation, but Fibre should add only **specific mechanisms** that have an intended causal meaning. Plausible future examples include puberty-related regulation, reproductive physiology and sexual/reproductive drive dynamics.
+
+Do not add:
+
+```text
+maleDriveMultiplier
+femaleEmotionGain
+sexPersonalityBias
+```
+
+or any equivalent generic coefficient that silently perturbs all needs, affect or cognition. A sex-sensitive mechanism belongs in the explicit organism/regulation architecture with its own state, dynamics, projection boundary and tests.
+
+Likewise biological reproductive contribution/capacity may depend on sex, while sexual orientation, attraction, parenthood, caregiving and family role remain separate concepts. Relationship semantics must not be inferred from sex.
+
+### Genesis completion checklist
+
+This remains a follow-on after the current M2 closure, but it is part of **Genesis completion**, not optional polish:
+
+1. **Move assignment earlier** — assign sex in the Genesis slot/subject before Pass A; carry it immutably through candidate generation and publication.
+2. **Name the person** — add culturally/linguistically/temporally grounded birth naming that consumes sex where warranted and permits unisex names.
+3. **Extend historical subject context** — add sex to the Pass-A subject contract and cognition projection; keep the historical-output boundary observable and non-semantic.
+4. **Keep embodiment downstream** — visual phenotype requires the authoritative sex and never re-derives it.
+5. **Design physiology explicitly** — enumerate any sex-sensitive maturation/regulatory mechanisms before implementation; no generic sex scalar.
+6. **Separate reproduction/relationships** — biological capacity may use sex; orientation, attraction and family/social role remain independent state.
+7. **Counterfactual tests** — with unrelated starting material held fixed, changing sex should change only warranted naming, embodiment, physiology and World-mediated historical consequences. It must not automatically change personality loci, intelligence, interests, values, morality, competence, profession, dignity or permissions.
+8. **Distribution test** — retain approximately 50/50 female/male assignment across a large deterministic birth sample without a central population quota.
+9. **Legacy rule** — old Threads lacking sex must not be backfilled by guessing from portrait, name, pronouns or stereotypes. Preserve the missing legacy fact unless authoritative evidence or an explicit migration decision exists.
+
+The durable follow-on is also tracked in [`../state/future-capability-map.md`](../state/future-capability-map.md). Legacy handling follows [`../state/thread-preservation-and-migration.md`](../state/thread-preservation-and-migration.md).
 
 ## Origin families
 
@@ -122,7 +259,7 @@ self        = the Thread's current interpretation of itself
 
 Later life may reinforce, complicate, suppress, invert or reject inherited tendencies without rewriting origin.
 
-Culture, nationality, gender, geography, appearance, profession or ancestry may not directly imply personality loci.
+Culture, nationality, sex, gender, geography, appearance, profession or ancestry may not directly imply personality loci.
 
 ## Prior-life formation
 
