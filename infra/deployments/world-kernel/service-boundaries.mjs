@@ -81,14 +81,14 @@ export function createThreadPresentationVisualBoundary({
   const request = bindingFetch(fetchImpl, "Thread Presentation");
 
   return Object.freeze({
-    async reconcileAvailableEmbodiment({ threadId, embodiment, observedAt, regenerationKey = null } = {}) {
+    async reconcileAvailableEmbodiment({ threadId, embodiment, observedAt, activityContext = {}, regenerationKey = null } = {}) {
       const response = await request(url, {
         method: "POST",
         headers: {
           "content-type": "application/json",
           "x-fibre-private-token": token,
         },
-        body: JSON.stringify({ threadId, embodiment, observedAt, regenerationKey }),
+        body: JSON.stringify({ threadId, embodiment, observedAt, activityContext, regenerationKey }),
       });
       const body = await responseJson(response);
       if (!response.ok) {
