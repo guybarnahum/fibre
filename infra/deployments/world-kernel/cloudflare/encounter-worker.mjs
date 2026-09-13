@@ -39,6 +39,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     const response = await this.encounterApiForRequest().fetch(request);
     return response ?? super.fetch(request);
   }
+
+  async alarm(alarmInfo) {
+    return super.alarm(alarmInfo);
+  }
 }
 
 export default baseWorker;
