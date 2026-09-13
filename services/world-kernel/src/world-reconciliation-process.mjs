@@ -44,7 +44,11 @@ function visualNeedsRetry(entry) {
   if (!result || typeof result !== "object") return false;
   if (result.skipped === true) return result.reason === "already_running";
   if (!Array.isArray(result.results)) return false;
-  return result.results.some((item) => item?.ok !== true || item?.reconciliation?.complete !== true);
+  return result.results.some((item) => (
+    item?.ok !== true
+      ? item?.retryable !== false
+      : item?.reconciliation?.complete !== true
+  ));
 }
 
 export function worldReconciliationNeedsRetry(result) {
