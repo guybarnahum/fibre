@@ -142,6 +142,32 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const visualPublicationProcess = createThreadVisualPublicationProcess({
     threadSource: createDurableThreadSource(identityStore),
     reconciler: visualReconciler,
+    async onError(entry, error) {
+      console.error(JSON.stringify({
+        event: "thread-visual-publication-failed",
+        threadId: entry.threadId,
+        code: entry.code,
+        retryable: entry.retryable,
+        errorName: entry.errorName,
+        message: entry.message,
+        stack: error instanceof Error ? error.stack : null,
+      }));
+      if (activityRecorder === null) return;
+      try {
+        await activityRecorder.record({
+          threadId: entry.threadId,
+          stage: "world.visual_publication.reconcile",
+          status: "failed",
+          attempt: 1,
+          message: String(entry.message).slice(0, 512),
+          error: {
+            category: "reconciliation",
+            code: entry.code,
+            retryable: entry.retryable,
+          },
+        });
+      } catch {}
+    },
   });
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
