@@ -34,6 +34,7 @@ const STATUS_SERVICE_TARGETS = Object.freeze({
   WORLD_KERNEL: "fibre-world-kernel",
   THREAD_PRESENTATION: "fibre-thread-presentation",
   ASSET_GENERATOR: "fibre-asset-generator",
+  ADMIN_DASHBOARD: "fibre-admin-dashboard",
 });
 const UNRESOLVED_VALUE_PATTERN = /replace[-_ ]?with|placeholder|change[-_ ]?me|\btodo\b/iu;
 
@@ -130,7 +131,7 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
     const expectedViewer = env === "production" ? "https://insidefibre.com" : "https://staging.insidefibre.com";
     if (config.vars?.VIEWER_ORIGIN !== expectedViewer) throw new TypeError(`status-page VIEWER_ORIGIN must be ${expectedViewer}`);
     const services = config.services ?? [];
-    if (services.length !== Object.keys(STATUS_SERVICE_TARGETS).length) throw new TypeError("status-page must resolve exactly the four Fibre runtime service bindings");
+    if (services.length !== Object.keys(STATUS_SERVICE_TARGETS).length) throw new TypeError("status-page must resolve exactly the declared internal service bindings");
     for (const [binding, baseService] of Object.entries(STATUS_SERVICE_TARGETS)) {
       const matches = services.filter((service) => service?.binding === binding);
       if (matches.length !== 1) throw new TypeError(`status-page must resolve exactly one ${binding} service binding`);
