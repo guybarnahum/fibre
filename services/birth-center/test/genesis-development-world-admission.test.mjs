@@ -187,7 +187,8 @@ test("Birth Center develops a narrow request and World atomically admits the res
   const thread = world.getThread(first.threadId);
   assert.equal(thread.threadId, first.threadId);
   assert.equal(thread.status, "frozen");
-  assert.equal(world.listEvents(first.threadId).length, 15);
+  const worldEvents = world.listEvents(first.threadId);
+  assert.equal(worldEvents.length, 15);
   assert.deepEqual(world.replayThread(first.threadId), thread);
 
   const inspection = genesisStore.inspectGenesis(first.genesisId);
@@ -253,6 +254,36 @@ test("Birth Center develops a narrow request and World atomically admits the res
     failedGate: "pass_a_interiority_form",
     repairOrdinal: "1",
   });
+
+  const worldSubmit = requestActivity.find((record) => (
+    record.service === "birth-center"
+    && record.stage === "birth.publish.world_submit"
+    && record.status === "succeeded"
+  ));
+  assert.ok(worldSubmit?.operationId, "Birth publication must expose its World submission operation");
+  const worldAdmissions = requestActivity.filter((record) => (
+    record.service === "world-kernel"
+    && record.status === "succeeded"
+    && ["world.worldspec.admission", "world.genome.admission", "world.thread.publication"].includes(record.stage)
+  ));
+  assert.equal(worldAdmissions.length, 3);
+  assert.equal(
+    worldAdmissions.every((record) => record.parentOperationId === worldSubmit.operationId),
+    true,
+    "World admission operations must name the Birth submission that caused them",
+  );
+  const threadPublication = worldAdmissions.find((record) => record.stage === "world.thread.publication");
+  assert.equal(typeof threadPublication?.evidence?.eventId, "string");
+  assert.equal(worldEvents.some((event) => event.eventId === threadPublication.evidence.eventId), true);
+  assert.equal(threadPublication.evidence.fibreIdentityNumber, first.fibreIdentityNumber);
+
+  const worldAck = requestActivity.find((record) => (
+    record.service === "birth-center"
+    && record.stage === "birth.publish.world_ack"
+    && record.status === "succeeded"
+  ));
+  assert.equal(worldAck?.parentOperationId, worldSubmit.operationId);
+  assert.equal(worldAck?.evidence?.eventId, thread.provenance.lastEventId);
 
   const providerCommits = requestActivity.filter((record) => record.stage.endsWith(".provider_commit"));
   assert.equal(providerCommits.length, 21);
