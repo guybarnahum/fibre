@@ -3,6 +3,7 @@ import { normalizeActivityRecord } from "#infra/telemetry";
 const MODES = new Set(["raw", "causal"]);
 const PAGE_SIZE = 25;
 const DIRECTIONS = new Set(["next", "prev"]);
+const EDGES = new Set(["first", "last"]);
 
 function encodeCursor(record) {
   return btoa(JSON.stringify([record.occurredAt, record.recordedAt, record.activityId]))
@@ -26,11 +27,14 @@ function decodeCursor(value) {
 export function parseAdminActivityPage(url) {
   const mode = url.searchParams.get("mode") ?? "raw";
   const direction = url.searchParams.get("direction") ?? "next";
+  const edge = url.searchParams.get("edge") ?? "first";
   if (!MODES.has(mode)) throw new TypeError("unsupported activity mode");
   if (!DIRECTIONS.has(direction)) throw new TypeError("unsupported activity page direction");
+  if (!EDGES.has(edge)) throw new TypeError("unsupported activity page edge");
   const cursor = decodeCursor(url.searchParams.get("cursor"));
+  if (edge === "last" && cursor !== null) throw new TypeError("last page does not accept a cursor");
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
-  return Object.freeze({ mode, size:PAGE_SIZE, direction, cursor });
+  return Object.freeze({ mode, size:PAGE_SIZE, direction, edge, cursor });
 }
 
 function activityClauses({ environment, query, page }) {
@@ -56,7 +60,7 @@ function cursorClause(op) {
 export function buildAdminActivityPageSql({ environment, query, page }) {
   const { clauses, bindings } = activityClauses({ environment, query, page });
   const logicalAscending = ["request", "genesis", "thread"].includes(query.kind);
-  const reverse = page.direction === "prev";
+  const reverse = page.edge === "last" || page.direction === "prev";
   const scanAscending = reverse ? !logicalAscending : logicalAscending;
 
   if (page.cursor) {
@@ -98,8 +102,8 @@ export async function queryAdminActivityPage(env, environment, query, page) {
   const records = scanned.map((row) => normalizeActivityRecord(JSON.parse(row.record_json)));
   const extra = rows.length > page.size;
   const cameFromCursor = page.cursor !== null;
-  const hasPrev = page.direction === "prev" ? extra : cameFromCursor;
-  const hasNext = page.direction === "prev" ? cameFromCursor : extra;
+  const hasPrev = page.edge === "last" ? extra : page.direction === "prev" ? extra : cameFromCursor;
+  const hasNext = page.edge === "last" ? false : page.direction === "prev" ? cameFromCursor : extra;
   const total = Number(countResult?.results?.[0]?.total ?? 0);
 
   return Object.freeze({
