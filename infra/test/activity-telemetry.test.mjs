@@ -50,6 +50,8 @@ test("activity contract normalizes nullable identities and redacts common secret
     message: "Bearer abc.def token=secret-value sk-proj-secretvalue bfl_secretvalue cfk_secretvalue",
   }));
 
+  assert.equal(normalized.operationId, null);
+  assert.equal(normalized.parentOperationId, null);
   assert.equal(normalized.genesisId, null);
   assert.equal(normalized.threadId, null);
   assert.equal(normalized.message.includes("secret-value"), false);
@@ -138,6 +140,7 @@ test("local telemetry queries request/genesis/thread activity in chronological o
 test("runStage records success and failure without swallowing operation results or errors", async () => {
   const telemetry = createLocalActivityTelemetryPort();
   let id = 0;
+  let operation = 0;
   const recorder = createActivityRecorder({
     telemetry,
     environment: "test",
@@ -145,16 +148,22 @@ test("runStage records success and failure without swallowing operation results 
     deploymentGitSha: "0123456789abcdef0123456789abcdef01234567",
     now: () => "2026-09-01T05:40:00.000Z",
     activityIdFactory: () => `act_run_${++id}`,
+    operationIdFactory: () => `op_run_${++operation}`,
   });
 
+  let observedOperationId = null;
   const result = await recorder.runStage({
     requestId: "req_run_001",
     genesisId: "gen_run_001",
     threadId: "thr_run_001",
     stage: "birth.genesis.compile",
     attempt: 1,
-  }, async () => "compiled");
+  }, async ({ operationId }) => {
+    observedOperationId = operationId;
+    return "compiled";
+  });
   assert.equal(result, "compiled");
+  assert.equal(observedOperationId, "op_run_1");
 
   const providerError = new Error("Bearer provider-secret failed with token=private-value");
   providerError.activityCategory = "provider";
@@ -166,6 +175,7 @@ test("runStage records success and failure without swallowing operation results 
       requestId: "req_run_001",
       genesisId: "gen_run_001",
       threadId: "thr_run_001",
+      parentOperationId: "op_parent_001",
       stage: "birth.genesis.history.model_call",
       attempt: 2,
     }, async () => { throw providerError; }),
@@ -179,6 +189,9 @@ test("runStage records success and failure without swallowing operation results 
     "started",
     "failed",
   ]);
+  assert.deepEqual(selected.slice(0, 2).map((record) => record.operationId), ["op_run_1", "op_run_1"]);
+  assert.deepEqual(selected.slice(2).map((record) => record.operationId), ["op_run_2", "op_run_2"]);
+  assert.deepEqual(selected.slice(2).map((record) => record.parentOperationId), ["op_parent_001", "op_parent_001"]);
   assert.deepEqual([...new Set(selected.map((record) => record.correlationId))], ["req_run_001"]);
   assert.equal(selected[3].message.includes("provider-secret"), false);
   assert.equal(selected[3].message.includes("private-value"), false);
@@ -223,8 +236,9 @@ test("telemetry storage outage cannot suppress a wrapped Fibre operation", async
     service: "world-kernel",
     now: () => "2026-09-01T05:41:00.000Z",
     activityIdFactory: () => `act_outage_${++id}`,
+    operationIdFactory: () => "op_outage_001",
     onTelemetryError(error, record) {
-      observedErrors.push([error.message, record.stage, record.status]);
+      observedErrors.push([error.message, record.stage, record.status, record.operationId]);
     },
   });
 
@@ -242,8 +256,8 @@ test("telemetry storage outage cannot suppress a wrapped Fibre operation", async
   assert.equal(result, "published");
   assert.equal(operationCount, 1);
   assert.deepEqual(observedErrors, [
-    ["telemetry unavailable", "world.thread.publication", "started"],
-    ["telemetry unavailable", "world.thread.publication", "succeeded"],
+    ["telemetry unavailable", "world.thread.publication", "started", "op_outage_001"],
+    ["telemetry unavailable", "world.thread.publication", "succeeded", "op_outage_001"],
   ]);
 });
 
