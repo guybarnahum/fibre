@@ -1,6 +1,7 @@
 import { sha256 } from "./genesis-development-contracts.mjs";
 import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
 
+const EMBODIED_SEXES = Object.freeze(["female", "male"]);
 const LOCI = Object.freeze({
   face: Object.freeze([
     "softly angular oval face with a slightly broader upper face than jaw",
@@ -87,6 +88,11 @@ function locusForOwner(ownerId, domain) {
   return LOCI[domain][indexFor(ownerId, domain, LOCI[domain].length)];
 }
 
+export function embodiedSexForThread({ threadId } = {}) {
+  const ownerId = nonEmpty("threadId", threadId);
+  return EMBODIED_SEXES[indexFor(ownerId, "embodied-sex", EMBODIED_SEXES.length)];
+}
+
 export function deNovoVisualPhenotypeLoci({ threadId } = {}) {
   const ownerId = nonEmpty("threadId", threadId);
   return Object.freeze(ORDER.map((domain) => Object.freeze({
@@ -119,7 +125,8 @@ export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = 
 }
 
 function canonicalVisualIdentityFromLoci({ threadId, loci }) {
-  const subjectDescription = loci.map((locus) => locus.value).join("; ");
+  const embodiedSex = embodiedSexForThread({ threadId });
+  const subjectDescription = [`adult ${embodiedSex} person`, ...loci.map((locus) => locus.value)].join("; ");
   if (encoder.encode(subjectDescription).byteLength < 500) {
     throw new Error("canonical visual phenotype is too thin for durable cross-age identity");
   }
@@ -128,7 +135,7 @@ function canonicalVisualIdentityFromLoci({ threadId, loci }) {
     specification: Object.freeze({
       subject: Object.freeze({ partyId: threadId, description: subjectDescription }),
       method: "canonical synthetic portrait specification from deterministic textual phenotype loci",
-      description: "Preserve the listed geometry, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
+      description: "Preserve embodied sex and the listed geometry, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
       model: "replaceable-renderer",
     }),
   });
