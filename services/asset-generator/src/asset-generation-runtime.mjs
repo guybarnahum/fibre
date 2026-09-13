@@ -8,6 +8,7 @@ import { executeProvenancedAssetGenerationJob } from "./provenanced-asset-genera
 import { prepareResumableProviderExecution } from "./resumable-provider-operation.mjs";
 
 export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects"]);
+const ACTIVITY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 
 function positiveAttemptNumber(value) {
   if (!Number.isSafeInteger(value) || value < 1) throw new TypeError("attemptNumber must be a positive safe integer");
@@ -55,6 +56,16 @@ async function runActivityStage(activity, metadata, operation) {
   return activity.runStage(metadata, operation);
 }
 
+function safeActivityCause(value) {
+  return typeof value === "string" && ACTIVITY_ID_PATTERN.test(value) ? value : null;
+}
+
+function jobCause(job, supplied) {
+  return safeActivityCause(supplied.causationId)
+    ?? safeActivityCause(job?.context?.embodimentId)
+    ?? safeActivityCause(job?.referenceObjectRefs?.[0]);
+}
+
 function activityIdentity(job, supplied = {}) {
   const context = job?.context ?? {};
   return Object.freeze({
@@ -62,7 +73,7 @@ function activityIdentity(job, supplied = {}) {
     genesisId: supplied.genesisId ?? context.genesisId ?? null,
     threadId: supplied.threadId ?? context.threadId ?? null,
     correlationId: supplied.correlationId ?? null,
-    causationId: supplied.causationId ?? context.embodimentId ?? null,
+    causationId: jobCause(job, supplied),
     parentOperationId: supplied.parentOperationId ?? null,
   });
 }
