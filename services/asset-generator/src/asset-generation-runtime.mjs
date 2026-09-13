@@ -51,7 +51,7 @@ async function bestEffortRecord(activity, record) {
 }
 
 async function runActivityStage(activity, metadata, operation) {
-  if (activity === null) return operation();
+  if (activity === null) return operation(Object.freeze({ operationId: null }));
   return activity.runStage(metadata, operation);
 }
 
@@ -61,7 +61,24 @@ function activityIdentity(job, supplied = {}) {
     requestId: supplied.requestId ?? context.requestId ?? null,
     genesisId: supplied.genesisId ?? context.genesisId ?? null,
     threadId: supplied.threadId ?? context.threadId ?? null,
+    correlationId: supplied.correlationId ?? null,
+    causationId: supplied.causationId ?? context.embodimentId ?? null,
+    parentOperationId: supplied.parentOperationId ?? null,
   });
+}
+
+function jobEvidence(job) {
+  const evidence = {};
+  if (typeof job?.outputObjectRef === "string" && job.outputObjectRef !== "") evidence.objectRef = job.outputObjectRef;
+  if (typeof job?.context?.embodimentId === "string" && job.context.embodimentId !== "") {
+    evidence.embodimentId = job.context.embodimentId;
+  }
+  return evidence;
+}
+
+function completionEvidence(completion) {
+  const objectRef = completion?.receiptObjectRef;
+  return typeof objectRef === "string" && objectRef !== "" ? { objectRef } : {};
 }
 
 function activityCategoryForAssetError(error) {
@@ -104,6 +121,7 @@ export function createAssetGenerationRuntime({
     async execute(job, { attemptNumber = 1, activityContext = {} } = {}) {
       const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
       const context = activityIdentity(job, activityContext);
+      const evidence = jobEvidence(job);
       if (checkedAttemptNumber > 1) {
         await bestEffortRecord(activity, {
           ...context,
@@ -111,12 +129,14 @@ export function createAssetGenerationRuntime({
           status: "retrying",
           attempt: checkedAttemptNumber,
           message: "Retrying asset generation execution",
+          evidence,
         });
       }
       return runActivityStage(activity, {
         ...context,
         stage: "asset.request.execute",
         attempt: checkedAttemptNumber,
+        evidence,
       }, async () => {
         try {
           if (credentialSigner === null && executeJob === executeProvenancedAssetGenerationJob) {
@@ -162,6 +182,7 @@ export function createAssetGenerationRuntime({
         ...context,
         stage: "asset.completion.publish",
         attempt: 1,
+        evidence: completionEvidence(completion),
       }, async () => {
         try {
           return await publishAssetGenerationCompletion({ infra, completion });
