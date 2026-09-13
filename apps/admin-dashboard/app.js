@@ -82,16 +82,27 @@ function renderMetrics(records) {
 
 function recordRow(record) {
   const tr = document.createElement("tr");
+  const label = queryLabel(record);
   const cells = [
     [clock(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"],
-    [record.status, ""], [String(record.attempt), "attempt"], [shortId(queryLabel(record)), "correlation"],
+    [record.status, ""], [String(record.attempt), "attempt"], [shortId(label), "correlation"],
   ];
   cells.forEach(([content, className], index) => {
     const td = document.createElement("td");
     if (index === 3) {
       const badge = document.createElement("span"); badge.className = `status status-${record.status}`; badge.textContent = titleCase(record.status); td.append(badge);
+    } else if (index === 5 && String(label).startsWith("thr_")) {
+      td.className = className;
+      td.title = label;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "thread-link";
+      button.textContent = content;
+      button.title = `Inspect ${label}`;
+      button.addEventListener("click", (event) => { event.stopPropagation(); void showThread(label); });
+      td.append(button);
     } else {
-      td.className = className; td.textContent = content; if (index === 5) td.title = queryLabel(record);
+      td.className = className; td.textContent = content; if (index === 5) td.title = label;
     }
     tr.append(td);
   });
@@ -163,6 +174,33 @@ function showRecord(record) {
     body.append(evidence);
   }
   dialog.showModal();
+}
+
+async function showThread(threadId) {
+  text($("#dialog-eyebrow"), "Thread Observatory");
+  text($("#dialog-title"), "Thread");
+  const body = $("#dialog-body");
+  body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), detail("Identity", "Loading…", { wide:true }));
+  if (!dialog.open) dialog.showModal();
+  try {
+    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    const identity = payload.identity ?? {};
+    text($("#dialog-title"), identity.displayName ?? "Unnamed Thread");
+    const grid = document.createElement("div"); grid.className = "detail-grid";
+    grid.append(
+      detail("Name", identity.displayName), detail("FIN", identity.fibreIdentityNumber, { mono:true }),
+      detail("Thread ID", identity.threadId ?? threadId, { wide:true, mono:true }),
+      detail("Birth date", identity.birthDate), detail("Lifecycle", identity.lifecycleStatus),
+    );
+    body.replaceChildren(grid);
+  } catch (error) {
+    const problem = document.createElement("div");
+    problem.className = "error-box";
+    problem.textContent = `Thread identity unavailable: ${error.message}`;
+    body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), problem);
+  }
 }
 
 function populateServices(records) {
