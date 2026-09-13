@@ -82,6 +82,9 @@ function activityIdentity(threadId, supplied = {}) {
     requestId: supplied.requestId ?? null,
     genesisId: supplied.genesisId ?? null,
     threadId,
+    correlationId: supplied.correlationId ?? null,
+    causationId: supplied.causationId ?? null,
+    parentOperationId: supplied.parentOperationId ?? null,
   });
 }
 
@@ -189,6 +192,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       if (embodiment.threadId !== threadId) {
         throw new TypeError("supplied Embodiment belongs to a different Thread");
       }
+      const canonicalObjectRef = embodiment.asset.referenceObjectRef;
 
       const channelId = threadPresentationChannelId(threadId);
       const initial = await presentationServer.getSnapshot(channelId);
@@ -202,7 +206,7 @@ export function createThreadPresentationVisualPublicationReconciler({
         ...context,
         stage: "presentation.visual_identity.project",
         attempt: 1,
-        evidence: { embodimentId: embodiment.embodimentId },
+        evidence: { embodimentId: embodiment.embodimentId, objectRef: canonicalObjectRef },
       }, async () => visualRewrite.project({
         channelId,
         embodimentId: embodiment.embodimentId,
@@ -220,7 +224,7 @@ export function createThreadPresentationVisualPublicationReconciler({
         ...context,
         stage: "presentation.identity_media.ensure",
         attempt: 1,
-        evidence: { embodimentId: embodiment.embodimentId },
+        evidence: { embodimentId: embodiment.embodimentId, objectRef: canonicalObjectRef },
       }, async () => identityRewrite.ensureOfficialIdentityMedia({
         channelId,
         issuedAt,
@@ -267,7 +271,11 @@ export function createThreadPresentationVisualPublicationReconciler({
         ...context,
         stage: "presentation.media_demand.reconcile",
         attempt: 1,
-        evidence: { embodimentId: embodiment.embodimentId, regenerationKey: normalizedRegenerationKey },
+        evidence: {
+          embodimentId: embodiment.embodimentId,
+          objectRef: canonicalObjectRef,
+          regenerationKey: normalizedRegenerationKey,
+        },
       };
       let demand;
       let active;
