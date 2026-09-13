@@ -80,6 +80,7 @@ export class FibreAdminInfraMonitor {
   constructor(state, env) {
     this.state = state;
     this.env = env;
+    this.fetchImpl = globalThis.fetch;
     this.samplingPromise = null;
   }
 
@@ -97,6 +98,7 @@ export class FibreAdminInfraMonitor {
         d1Resources:config.d1Resources,
         limits:config.limits,
         now,
+        fetchImpl:this.fetchImpl,
       }).then(async (sample) => {
         await this.state.storage.put(SAMPLE_KEY, sample);
         return sample;
