@@ -1,7 +1,7 @@
 ---
 id: concept-identity-genome
 status: accepted
-last-reviewed: 2026-08-18
+last-reviewed: 2026-09-13
 canonical: true
 ---
 
@@ -140,6 +140,33 @@ character   = how those tendencies now tend to express
 self        = what the Thread currently thinks about all of that
 ```
 
+## Sex is basic embodied identity, not personality genotype
+
+A Thread's biological/embodied sex is a basic person/animal attribute. In the current Genesis model it is represented as:
+
+```text
+thread.identity.sex = female | male
+```
+
+Sex is therefore upstream of visual phenotype and may later participate in explicit physiological, developmental, reproductive or regulatory mechanisms. It is **not** a personality locus and must not be reconstructed from appearance, name, pronouns, occupation, interests or other stereotypes.
+
+The authority direction is:
+
+```text
+authoritative Thread sex
+    -> warranted embodiment / physiology / lived-world consequences
+
+not
+
+appearance or social stereotype
+    -> inferred sex
+    -> inferred personality
+```
+
+Sex may affect lived experience because bodies and worlds can respond differently to it. Those enacted experiences may later become history, memory, meaning and character evidence. That causal route is legitimate and very different from directly mapping sex to a disposition, intelligence, value, profession or behavioral conclusion.
+
+Gender identity, pronouns and sexual orientation are distinct concepts. They are not aliases for biological sex, and Fibre must not derive them automatically from sex. Later self-authored identity may use its own appropriate authority and provenance.
+
 ## Needs and mechanical-condition sensitivity
 
 Semantic needs are **not** genome loci. Fibre must not encode a finished conclusion such as `needs recognition`, `needs belonging`, or `must reproduce` as inherited personality authority merely because the conclusion is placed in the genome.
@@ -147,6 +174,8 @@ Semantic needs are **not** genome loci. Fibre must not encode a finished conclus
 Likewise Fibre must not create a second canonical **numeric drive genome** or a fixed inherited vector of condition gains underneath the textual genome. Such coefficients would be more fate-like than textual loci: a Thread can resist, reinterpret, or reject an inherited textual disposition through life, but it cannot reinterpret a hidden number that directly scales its cognition.
 
 If later controlled experiments establish that inherited modulation is necessary, Fibre may derive a bounded temporary numeric runtime control from relevant textual loci through a frozen, versioned, inspectable projection policy. The natural-language locus remains the inherited authority and provenance surface; the derived number is runtime machinery and may never silently overwrite the textual genotype.
+
+Sex-sensitive physiology is a separate question from inherited personality modulation. If Fibre introduces sex-dependent regulation, it should name the specific biological mechanism and causal path rather than using sex as a generic gain over needs, affect or cognition.
 
 ## Numbers and runtime controls
 
@@ -180,6 +209,6 @@ The target is not maximal randomness. It is inherited specificity that later lif
 
 ## Anti-stereotype boundary
 
-Genetic material, ancestry, nationality, culture, gender, appearance, accent, family role, or parent identity may not directly imply morality, competence, politics, dignity, profession, willingness, or other stereotyped conclusions.
+Genetic material, ancestry, nationality, culture, sex, gender, appearance, accent, family role, or parent identity may not directly imply morality, competence, intelligence, interests, politics, dignity, profession, willingness, personality, sexual orientation, or other stereotyped conclusions.
 
-Culture and upbringing are separate lived evidence. Genetics may contribute dispositions, but a person's character must remain attributable to the actual inherited loci, experiences, relationships, memories, interpretations, and self-authored development that formed it.
+Culture, upbringing and sex-conditioned social treatment are separate lived evidence. Genetics may contribute dispositions and sex may contribute specific embodied constraints, but a person's character must remain attributable to the actual inherited loci, experiences, relationships, memories, interpretations, physiology where causally relevant, and self-authored development that formed it.
