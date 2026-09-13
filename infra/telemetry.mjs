@@ -52,6 +52,8 @@ const EVIDENCE_KEY_SET = new Set(ACTIVITY_EVIDENCE_KEYS);
 const ACTIVITY_KEYS = new Set([
   "activityVersion",
   "activityId",
+  "operationId",
+  "parentOperationId",
   "occurredAt",
   "recordedAt",
   "environment",
@@ -73,6 +75,8 @@ const ACTIVITY_KEYS = new Set([
 ]);
 const RECORDER_KEYS = new Set([
   "activityId",
+  "operationId",
+  "parentOperationId",
   "occurredAt",
   "recordedAt",
   "requestId",
@@ -190,6 +194,8 @@ export function normalizeActivityRecord(candidate) {
   return Object.freeze({
     activityVersion: ACTIVITY_RECORD_VERSION,
     activityId: candidate.activityId,
+    operationId: normalizeNullableId("activity.operationId", candidate.operationId),
+    parentOperationId: normalizeNullableId("activity.parentOperationId", candidate.parentOperationId),
     occurredAt: candidate.occurredAt,
     recordedAt: candidate.recordedAt,
     environment: candidate.environment,
@@ -245,6 +251,13 @@ function defaultActivityIdFactory() {
   return `act_${globalThis.crypto.randomUUID()}`;
 }
 
+function defaultOperationIdFactory() {
+  if (typeof globalThis.crypto?.randomUUID !== "function") {
+    throw new Error("crypto.randomUUID is required to allocate Activity operation IDs");
+  }
+  return `op_${globalThis.crypto.randomUUID()}`;
+}
+
 function defaultNow() {
   return new Date().toISOString();
 }
@@ -268,6 +281,7 @@ export function createActivityRecorder({
   deploymentGitSha = null,
   now = defaultNow,
   activityIdFactory = defaultActivityIdFactory,
+  operationIdFactory = defaultOperationIdFactory,
   onTelemetryError = () => {},
 } = {}) {
   assertTelemetryPort(telemetry);
@@ -276,6 +290,7 @@ export function createActivityRecorder({
   normalizeDeploymentGitSha(deploymentGitSha);
   if (typeof now !== "function") throw new TypeError("activity recorder now must be a function");
   if (typeof activityIdFactory !== "function") throw new TypeError("activity recorder activityIdFactory must be a function");
+  if (typeof operationIdFactory !== "function") throw new TypeError("activity recorder operationIdFactory must be a function");
   if (typeof onTelemetryError !== "function") throw new TypeError("activity recorder onTelemetryError must be a function");
 
   async function record(candidate) {
@@ -286,6 +301,8 @@ export function createActivityRecorder({
     const activity = normalizeActivityRecord({
       activityVersion: ACTIVITY_RECORD_VERSION,
       activityId: candidate.activityId ?? activityIdFactory(),
+      operationId: candidate.operationId ?? null,
+      parentOperationId: candidate.parentOperationId ?? null,
       occurredAt,
       recordedAt,
       environment,
@@ -316,7 +333,9 @@ export function createActivityRecorder({
   async function runStage(metadata, operation) {
     if (typeof operation !== "function") throw new TypeError("activity stage operation must be a function");
     assertInfraPlainObject("activity stage metadata", metadata);
-    const common = { ...metadata };
+    const operationId = metadata.operationId ?? operationIdFactory();
+    assertInfraId("activity stage operationId", operationId);
+    const common = { ...metadata, operationId };
     delete common.activityId;
     delete common.occurredAt;
     delete common.recordedAt;
@@ -324,7 +343,7 @@ export function createActivityRecorder({
     delete common.error;
     await record({ ...common, status: "started", error: null });
     try {
-      const result = await operation();
+      const result = await operation(Object.freeze({ operationId }));
       await record({ ...common, status: "succeeded", error: null });
       return result;
     } catch (error) {
