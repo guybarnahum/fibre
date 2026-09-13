@@ -116,6 +116,7 @@ test("World visual reconciliation records state-changing work but stays silent w
       assert.equal(embodiment.status, "available");
       assert.equal(activityContext.requestId, "req_visual_process_001");
       assert.equal(activityContext.genesisId, "gen_visual_process_001");
+      assert.equal(activityContext.causationId, embodiment.embodimentId);
       return {
         complete: true,
         stage: "complete",
@@ -156,6 +157,14 @@ test("World visual reconciliation records state-changing work but stays silent w
   }
   assert.equal(activity.every((record) => record.genesisId === activityContext.genesisId), true);
   assert.equal(activity.every((record) => record.threadId === current.threadId), true);
+  const demand = activity.find((record) => record.stage === "world.visual_identity.demand");
+  assert.equal(demand?.causationId, current.embodimentId);
+  assert.equal(demand?.evidence?.embodimentId, current.embodimentId);
+  assert.equal(demand?.evidence?.objectRef, current.asset.referenceObjectRef);
+  const admission = activity.find((record) => record.stage === "world.embodiment.admission");
+  assert.equal(admission?.causationId, current.asset.referenceObjectRef);
+  assert.equal(admission?.evidence?.embodimentId, current.embodimentId);
+  assert.equal(admission?.evidence?.objectRef, current.asset.referenceObjectRef);
   const countAfterWork = activity.length;
 
   const replay = await reconciler.reconcileThread({ threadId: current.threadId, activityContext });
