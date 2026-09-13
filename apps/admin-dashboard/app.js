@@ -8,9 +8,13 @@ const rows = $("#activity-rows");
 const empty = $("#empty-state");
 const dialog = $("#record-dialog");
 const threadIdentityCache = new Map();
+const ACTIVE_REFRESH_MS = 10_000;
+const ACTIVE_WINDOW_MS = 60_000;
+const IDLE_REFRESH_MS = 15 * 60_000;
 let mode = "raw";
 let currentPayload = null;
 let timer = null;
+let lastInteractionAt = 0;
 let nav = { edge:"first", direction:"next", cursor:null, page:1 };
 
 function text(node, input) { node.textContent = input ?? "—"; }
@@ -430,9 +434,25 @@ function selectMode(nextMode) {
   renderMode(); syncUrl(); loadPage();
 }
 
+function refreshDelay(now = Date.now()) {
+  if (lastInteractionAt === 0) return IDLE_REFRESH_MS;
+  const activeRemaining = ACTIVE_WINDOW_MS - (now - lastInteractionAt);
+  return activeRemaining > 0 ? Math.min(ACTIVE_REFRESH_MS, activeRemaining) : IDLE_REFRESH_MS;
+}
+
 function scheduleRefresh() {
-  clearInterval(timer); timer = null;
-  if ($("#auto-refresh").checked) timer = setInterval(() => loadPage(), 10000);
+  clearTimeout(timer); timer = null;
+  if (!$("#auto-refresh").checked || document.hidden) return;
+  timer = setTimeout(async () => {
+    timer = null;
+    if (!document.hidden && $("#auto-refresh").checked) await loadPage();
+    scheduleRefresh();
+  }, refreshDelay());
+}
+
+function noteUiActivity() {
+  lastInteractionAt = Date.now();
+  scheduleRefresh();
 }
 
 form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
@@ -448,6 +468,9 @@ $("#page-next").addEventListener("click", nextPage);
 $("#page-last").addEventListener("click", lastPage);
 $("#dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+document.addEventListener("pointerdown", noteUiActivity, { passive:true });
+document.addEventListener("keydown", noteUiActivity);
+document.addEventListener("visibilitychange", scheduleRefresh);
 document.addEventListener("keydown", (event) => {
   if (event.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) { event.preventDefault(); (value.disabled ? service : value).focus(); }
 });
