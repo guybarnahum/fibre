@@ -55,7 +55,12 @@ function causalLineage(records) {
       if (!ancestor) break;
       ancestorId = ancestor.parentOperationId;
     }
-    return Object.freeze({ record, depth, directParent, childCount: record.operationId ? childCounts.get(record.operationId) ?? 0 : 0 });
+    return Object.freeze({
+      record,
+      depth,
+      directParent,
+      childCount: record.operationId ? childCounts.get(record.operationId) ?? 0 : 0,
+    });
   });
 }
 
@@ -79,7 +84,8 @@ function syncFromUrl() {
   status.value = params.get("status") ?? "";
   mode = params.get("mode") ?? (kind.value === "thread" ? "causal" : "raw");
   if (!["causal", "raw"].includes(mode)) mode = "raw";
-  updateIdentityState(); renderMode();
+  updateIdentityState();
+  renderMode();
 }
 
 function updateIdentityState() {
@@ -98,7 +104,9 @@ function baseParams() {
   return params;
 }
 
-function syncUrl() { history.replaceState(null, "", `${location.pathname}?${baseParams()}`); }
+function syncUrl() {
+  history.replaceState(null, "", `${location.pathname}?${baseParams()}`);
+}
 
 function setLoading(loading) {
   $("#refresh-button").disabled = loading;
@@ -107,7 +115,8 @@ function setLoading(loading) {
 }
 
 function renderMode() {
-  $("#causal-view").hidden = mode !== "causal"; $("#raw-view").hidden = mode !== "raw";
+  $("#causal-view").hidden = mode !== "causal";
+  $("#raw-view").hidden = mode !== "raw";
   for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.dataset.mode === mode);
   text($("#metric-view"), mode === "causal" ? "Causal" : "Raw");
 }
@@ -119,124 +128,312 @@ function renderMetrics(records) {
 }
 
 function recordRow(record) {
-  const tr = document.createElement("tr"); const label = queryLabel(record);
-  const cells = [[clock(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"], [record.status, ""], [String(record.attempt), "attempt"], [shortId(label), "correlation"]];
+  const tr = document.createElement("tr");
+  const label = queryLabel(record);
+  const cells = [
+    [clock(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"],
+    [record.status, ""], [String(record.attempt), "attempt"], [shortId(label), "correlation"],
+  ];
   cells.forEach(([content, className], index) => {
     const td = document.createElement("td");
-    if (index === 3) { const badge = document.createElement("span"); badge.className = `status status-${record.status}`; badge.textContent = titleCase(record.status); td.append(badge); }
-    else if (index === 5 && String(label).startsWith("thr_")) {
-      td.className = className; td.title = label;
-      const button = document.createElement("button"); button.type = "button"; button.className = "thread-link"; button.textContent = content; button.title = `Inspect ${label}`;
-      button.addEventListener("click", (event) => { event.stopPropagation(); void showThread(label); }); td.append(button);
-    } else { td.className = className; td.textContent = content; if (index === 5) td.title = label; }
+    if (index === 3) {
+      const badge = document.createElement("span"); badge.className = `status status-${record.status}`; badge.textContent = titleCase(record.status); td.append(badge);
+    } else if (index === 5 && String(label).startsWith("thr_")) {
+      td.className = className;
+      td.title = label;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "thread-link";
+      button.textContent = content;
+      button.title = `Inspect ${label}`;
+      button.addEventListener("click", (event) => { event.stopPropagation(); void showThread(label); });
+      td.append(button);
+    } else {
+      td.className = className; td.textContent = content; if (index === 5) td.title = label;
+    }
     tr.append(td);
   });
-  tr.addEventListener("click", () => showRecord(record)); return tr;
+  tr.addEventListener("click", () => showRecord(record));
+  return tr;
 }
 
-function renderRaw(records) { rows.replaceChildren(...records.map(recordRow)); empty.hidden = records.length !== 0; }
+function renderRaw(records) {
+  rows.replaceChildren(...records.map(recordRow));
+  empty.hidden = records.length !== 0;
+}
 
 function renderCausal(records) {
   const rail = $("#journey-rail");
   rail.replaceChildren(...causalLineage(records).map(({ record, depth, directParent, childCount }) => {
-    const event = document.createElement("button"); event.type = "button"; event.className = `journey-event journey-event-${record.status}`;
-    if (depth > 0) event.classList.add("journey-event-child"); if (childCount > 0) event.classList.add("journey-event-parent");
+    const event = document.createElement("button");
+    event.type = "button";
+    event.className = `journey-event journey-event-${record.status}`;
+    if (depth > 0) event.classList.add("journey-event-child");
+    if (childCount > 0) event.classList.add("journey-event-parent");
     event.style.setProperty("--journey-indent", `${Math.min(depth, 4) * 18}px`);
-    event.title = record.operationId ? `Operation ${record.operationId}${record.parentOperationId ? ` · parent ${record.parentOperationId}` : ""}` : record.causationId ? `Caused by ${record.causationId}` : "Activity without operation lineage";
+    event.title = record.operationId
+      ? `Operation ${record.operationId}${record.parentOperationId ? ` · parent ${record.parentOperationId}` : ""}`
+      : record.causationId
+        ? `Caused by ${record.causationId}`
+        : "Activity without operation lineage";
     const when = document.createElement("span"); when.className = "journey-time"; when.textContent = clock(record.occurredAt);
     const copy = document.createElement("span"); copy.className = "journey-copy";
     const heading = document.createElement("strong"); heading.textContent = `${depth > 0 ? "↳ " : ""}${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
-    const stage = document.createElement("span"); stage.textContent = record.stage; copy.append(heading, stage);
-    if (record.parentOperationId) { const parent = document.createElement("small"); parent.className = "journey-parent"; parent.textContent = directParent ? `child of ${directParent.stage}` : `child of ${shortId(record.parentOperationId)}`; copy.append(parent); }
-    else if (record.causationId) { const cause = document.createElement("small"); cause.className = "journey-parent"; cause.textContent = `caused by ${shortId(record.causationId)}`; copy.append(cause); }
+    const stage = document.createElement("span"); stage.textContent = record.stage;
+    copy.append(heading, stage);
+    if (record.parentOperationId) {
+      const parent = document.createElement("small");
+      parent.className = "journey-parent";
+      parent.textContent = directParent ? `child of ${directParent.stage}` : `child of ${shortId(record.parentOperationId)}`;
+      copy.append(parent);
+    } else if (record.causationId) {
+      const cause = document.createElement("small");
+      cause.className = "journey-parent";
+      cause.textContent = `caused by ${shortId(record.causationId)}`;
+      copy.append(cause);
+    }
     const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = causalWitness(record, childCount);
-    event.append(when, copy, evidence); event.addEventListener("click", () => showRecord(record)); return event;
+    event.append(when, copy, evidence);
+    event.addEventListener("click", () => showRecord(record));
+    return event;
   }));
-  const gap = $("#journey-gap"); gap.hidden = records.length !== 0; gap.textContent = "No meaningful terminal or retry activity on this page.";
+  const gap = $("#journey-gap");
+  gap.hidden = records.length !== 0;
+  gap.textContent = "No meaningful terminal or retry activity on this page.";
 }
 
 function detail(label, input, { wide = false, mono = false } = {}) {
   const item = document.createElement("div"); item.className = `detail${wide ? " detail-wide" : ""}`;
   const name = document.createElement("label"); name.textContent = label;
-  const body = document.createElement("div"); body.textContent = input ?? "—"; if (mono) body.className = "mono"; item.append(name, body); return item;
+  const body = document.createElement("div"); body.textContent = input ?? "—"; if (mono) body.className = "mono";
+  item.append(name, body); return item;
 }
 
 function showRecord(record) {
-  text($("#dialog-eyebrow"), "Activity record"); text($("#dialog-title"), `${titleCase(record.service)} · ${record.stage}`);
+  text($("#dialog-eyebrow"), "Activity record");
+  text($("#dialog-title"), `${titleCase(record.service)} · ${record.stage}`);
   const grid = document.createElement("div"); grid.className = "detail-grid";
-  grid.append(detail("Occurred", record.occurredAt, { mono:true }), detail("Recorded", record.recordedAt, { mono:true }), detail("Status", record.status), detail("Attempt", record.attempt), detail("Request ID", record.requestId, { mono:true }), detail("Genesis ID", record.genesisId, { mono:true }), detail("Thread ID", record.threadId, { mono:true }), detail("Activity ID", record.activityId, { mono:true }), detail("Operation ID", record.operationId, { mono:true }), detail("Parent operation", record.parentOperationId, { mono:true }), detail("Correlation ID", record.correlationId, { mono:true }), detail("Causation ID", record.causationId, { mono:true }), detail("Deployment SHA", record.deploymentGitSha, { wide:true, mono:true }));
+  grid.append(
+    detail("Occurred", record.occurredAt, { mono:true }), detail("Recorded", record.recordedAt, { mono:true }),
+    detail("Status", record.status), detail("Attempt", record.attempt),
+    detail("Request ID", record.requestId, { mono:true }), detail("Genesis ID", record.genesisId, { mono:true }),
+    detail("Thread ID", record.threadId, { mono:true }), detail("Activity ID", record.activityId, { mono:true }),
+    detail("Operation ID", record.operationId, { mono:true }), detail("Parent operation", record.parentOperationId, { mono:true }),
+    detail("Correlation ID", record.correlationId, { mono:true }), detail("Causation ID", record.causationId, { mono:true }),
+    detail("Deployment SHA", record.deploymentGitSha, { wide:true, mono:true }),
+  );
   const body = $("#dialog-body"); body.replaceChildren(grid);
   if (record.message) body.append(detail("Message", record.message, { wide:true }));
-  if (record.error) { const error = document.createElement("div"); error.className = "error-box"; error.textContent = `${record.error.category}/${record.error.code} · retryable=${record.error.retryable}`; body.append(error); }
+  if (record.error) {
+    const error = document.createElement("div"); error.className = "error-box";
+    error.textContent = `${record.error.category}/${record.error.code} · retryable=${record.error.retryable}`; body.append(error);
+  }
   if (record.evidence && Object.keys(record.evidence).length) {
-    const evidence = document.createElement("div"); evidence.className = "evidence"; const heading = document.createElement("strong"); heading.textContent = "Evidence"; evidence.append(heading);
-    Object.entries(record.evidence).forEach(([key, val]) => { const row = document.createElement("div"); row.className = "evidence-row"; const k = document.createElement("span"); k.textContent = key; const v = document.createElement("span"); v.className = "mono"; v.textContent = val ?? "—"; row.append(k, v); evidence.append(row); }); body.append(evidence);
+    const evidence = document.createElement("div"); evidence.className = "evidence";
+    const heading = document.createElement("strong"); heading.textContent = "Evidence"; evidence.append(heading);
+    Object.entries(record.evidence).forEach(([key, val]) => {
+      const row = document.createElement("div"); row.className = "evidence-row";
+      const k = document.createElement("span"); k.textContent = key;
+      const v = document.createElement("span"); v.className = "mono"; v.textContent = val ?? "—";
+      row.append(k, v); evidence.append(row);
+    });
+    body.append(evidence);
   }
   dialog.showModal();
 }
 
 async function resolveThreadIdentity(threadId) {
-  const cached = threadIdentityCache.get(threadId); if (cached) return cached;
-  const pending = (async () => { const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" }); const payload = await response.json(); if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`); return payload.identity ?? {}; })();
-  threadIdentityCache.set(threadId, pending); try { return await pending; } catch (error) { threadIdentityCache.delete(threadId); throw error; }
+  const cached = threadIdentityCache.get(threadId);
+  if (cached) return cached;
+  const pending = (async () => {
+    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    return payload.identity ?? {};
+  })();
+  threadIdentityCache.set(threadId, pending);
+  try { return await pending; }
+  catch (error) { threadIdentityCache.delete(threadId); throw error; }
 }
 
 function threadAssetCard(asset) {
   const card = document.createElement("article"); card.className = "thread-asset";
-  if (asset.url && String(asset.mediaType ?? "").startsWith("image/")) { const preview = document.createElement("a"); preview.className = "thread-asset-preview"; preview.href = asset.url; preview.target = "_blank"; preview.rel = "noreferrer"; const image = document.createElement("img"); image.src = asset.url; image.loading = "lazy"; image.alt = humanLabel(asset.role || asset.kind || "Thread image"); preview.append(image); card.append(preview); }
-  const copy = document.createElement("div"); copy.className = "thread-asset-copy"; const heading = document.createElement("strong"); heading.textContent = humanLabel(asset.role || asset.mediaId || "Media");
-  const facts = [asset.kind, asset.mediaType, asset.width && asset.height ? `${asset.width}×${asset.height}` : null].filter(Boolean).join(" · "); const meta = document.createElement("small"); meta.textContent = facts || "Public Presentation media";
-  const link = document.createElement("a"); link.className = "thread-asset-link mono"; link.href = asset.url; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = asset.objectRef ?? "Open asset"; copy.append(heading, meta, link); card.append(copy); return card;
+  if (asset.url && String(asset.mediaType ?? "").startsWith("image/")) {
+    const preview = document.createElement("a"); preview.className = "thread-asset-preview"; preview.href = asset.url; preview.target = "_blank"; preview.rel = "noreferrer";
+    const image = document.createElement("img"); image.src = asset.url; image.loading = "lazy"; image.alt = humanLabel(asset.role || asset.kind || "Thread image");
+    preview.append(image); card.append(preview);
+  }
+  const copy = document.createElement("div"); copy.className = "thread-asset-copy";
+  const heading = document.createElement("strong"); heading.textContent = humanLabel(asset.role || asset.mediaId || "Media");
+  const facts = [asset.kind, asset.mediaType, asset.width && asset.height ? `${asset.width}×${asset.height}` : null].filter(Boolean).join(" · ");
+  const meta = document.createElement("small"); meta.textContent = facts || "Public Presentation media";
+  const link = document.createElement("a"); link.className = "thread-asset-link mono"; link.href = asset.url; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = asset.objectRef ?? "Open asset";
+  copy.append(heading, meta, link); card.append(copy);
+  return card;
 }
 
 async function showThread(threadId) {
-  text($("#dialog-eyebrow"), "Thread Observatory"); text($("#dialog-title"), "Thread"); const body = $("#dialog-body"); body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), detail("Identity", "Loading…", { wide:true })); if (!dialog.open) dialog.showModal();
+  text($("#dialog-eyebrow"), "Thread Observatory");
+  text($("#dialog-title"), "Thread");
+  const body = $("#dialog-body");
+  body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), detail("Identity", "Loading…", { wide:true }));
+  if (!dialog.open) dialog.showModal();
   try {
-    const identity = await resolveThreadIdentity(threadId); text($("#dialog-title"), identity.displayName ?? "Unnamed Thread"); const visual = identity.visualIdentity ?? {}; const grid = document.createElement("div"); grid.className = "detail-grid";
-    grid.append(detail("Name", identity.displayName), detail("FIN", identity.fibreIdentityNumber, { mono:true }), detail("Thread ID", identity.threadId ?? threadId, { wide:true, mono:true }), detail("Birth date", identity.birthDate), detail("Lifecycle", identity.lifecycleStatus), detail("Embodiment", visual.embodimentId, { mono:true }), detail("Canonical reference", (visual.referenceObjectRefs ?? []).join(", ") || null, { wide:true, mono:true })); body.replaceChildren(grid);
+    const identity = await resolveThreadIdentity(threadId);
+    text($("#dialog-title"), identity.displayName ?? "Unnamed Thread");
+    const visual = identity.visualIdentity ?? {};
+    const grid = document.createElement("div"); grid.className = "detail-grid";
+    grid.append(
+      detail("Name", identity.displayName), detail("FIN", identity.fibreIdentityNumber, { mono:true }),
+      detail("Thread ID", identity.threadId ?? threadId, { wide:true, mono:true }),
+      detail("Birth date", identity.birthDate), detail("Lifecycle", identity.lifecycleStatus),
+      detail("Embodiment", visual.embodimentId, { mono:true }),
+      detail("Canonical reference", (visual.referenceObjectRefs ?? []).join(", ") || null, { wide:true, mono:true }),
+    );
+    body.replaceChildren(grid);
     const assets = Array.isArray(identity.assets) ? identity.assets : [];
-    if (assets.length > 0) { const section = document.createElement("section"); section.className = "thread-assets"; const head = document.createElement("div"); head.className = "thread-assets-head"; const heading = document.createElement("strong"); heading.textContent = "Public media"; const count = document.createElement("span"); count.textContent = `${assets.length} ready asset${assets.length === 1 ? "" : "s"}`; head.append(heading, count); const assetGrid = document.createElement("div"); assetGrid.className = "thread-asset-grid"; assetGrid.append(...assets.map(threadAssetCard)); section.append(head, assetGrid); body.append(section); }
-  } catch (error) { const problem = document.createElement("div"); problem.className = "error-box"; problem.textContent = `Thread identity unavailable: ${error.message}`; body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), problem); }
+    if (assets.length > 0) {
+      const section = document.createElement("section"); section.className = "thread-assets";
+      const head = document.createElement("div"); head.className = "thread-assets-head";
+      const heading = document.createElement("strong"); heading.textContent = "Public media";
+      const count = document.createElement("span"); count.textContent = `${assets.length} ready asset${assets.length === 1 ? "" : "s"}`;
+      head.append(heading, count);
+      const assetGrid = document.createElement("div"); assetGrid.className = "thread-asset-grid";
+      assetGrid.append(...assets.map(threadAssetCard));
+      section.append(head, assetGrid); body.append(section);
+    }
+  } catch (error) {
+    const problem = document.createElement("div");
+    problem.className = "error-box";
+    problem.textContent = `Thread identity unavailable: ${error.message}`;
+    body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), problem);
+  }
 }
 
-function populateServices(records) { const values = [...new Set(records.map((record) => record.service).filter(Boolean))].sort(); $("#service-list").replaceChildren(...values.map((item) => { const option = document.createElement("option"); option.value = item; return option; })); }
-function chainHeading(payload) { const query = payload.query; if (query.kind === "request") return `Request ${query.value}`; if (query.kind === "genesis") return `Genesis ${query.value}`; if (query.kind === "thread") return `Thread ${query.value}`; if (query.kind === "failures") return "Failures & retries"; return "Recent activity"; }
+function populateServices(records) {
+  const values = [...new Set(records.map((record) => record.service).filter(Boolean))].sort();
+  $("#service-list").replaceChildren(...values.map((item) => { const option = document.createElement("option"); option.value = item; return option; }));
+}
+
+function chainHeading(payload) {
+  const query = payload.query;
+  if (query.kind === "request") return `Request ${query.value}`;
+  if (query.kind === "genesis") return `Genesis ${query.value}`;
+  if (query.kind === "thread") return `Thread ${query.value}`;
+  if (query.kind === "failures") return "Failures & retries";
+  return "Recent activity";
+}
 
 async function activityIdentity(payload) {
-  const records = payload?.records ?? []; const threadId = payload?.query?.kind === "thread" ? payload.query.value : singleValue(records.map((record) => record.threadId)); let resolved = null; if (threadId) { try { resolved = await resolveThreadIdentity(threadId); } catch {} }
-  return Object.freeze({ requestId:singleValue(records.map((record) => record.requestId)), genesisId:singleValue(records.map((record) => record.genesisId)), threadId, threadName:resolved?.displayName ?? null, fibreIdentityNumber:resolved?.fibreIdentityNumber ?? singleValue(records.map((record) => record.evidence?.fibreIdentityNumber)) });
+  const records = payload?.records ?? [];
+  const threadId = payload?.query?.kind === "thread" ? payload.query.value : singleValue(records.map((record) => record.threadId));
+  let resolved = null;
+  if (threadId) {
+    try { resolved = await resolveThreadIdentity(threadId); } catch {}
+  }
+  return Object.freeze({
+    requestId:singleValue(records.map((record) => record.requestId)),
+    genesisId:singleValue(records.map((record) => record.genesisId)),
+    threadId,
+    threadName:resolved?.displayName ?? null,
+    fibreIdentityNumber:resolved?.fibreIdentityNumber ?? singleValue(records.map((record) => record.evidence?.fibreIdentityNumber)),
+  });
 }
 
-async function activityExport(payload) { const records = payload?.records ?? []; return Object.freeze({ contract:"fibre-activity-export-v0.4", exportedAt:new Date().toISOString(), environment:payload?.environment ?? null, queriedAt:payload?.queriedAt ?? null, query:payload?.query ?? null, mode:payload?.mode ?? mode, page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? 25, totalRecords:payload?.total ?? records.length }, identity:await activityIdentity(payload), records }); }
+async function activityExport(payload) {
+  const records = payload?.records ?? [];
+  return Object.freeze({
+    contract:"fibre-activity-export-v0.4",
+    exportedAt:new Date().toISOString(),
+    environment:payload?.environment ?? null,
+    queriedAt:payload?.queriedAt ?? null,
+    query:payload?.query ?? null,
+    mode:payload?.mode ?? mode,
+    page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? 25, totalRecords:payload?.total ?? records.length },
+    identity:await activityIdentity(payload),
+    records,
+  });
+}
 
 async function copyExport() {
-  if (!currentPayload) return; const button = $("#export-button"); const exportText = JSON.stringify(await activityExport(currentPayload), null, 2);
-  try { await navigator.clipboard.writeText(exportText); button.textContent = "Copied"; }
-  catch { const area = document.createElement("textarea"); area.value = exportText; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0"; document.body.append(area); area.select(); button.textContent = document.execCommand("copy") ? "Copied" : "Copy failed"; area.remove(); }
+  if (!currentPayload) return;
+  const button = $("#export-button");
+  const exportText = JSON.stringify(await activityExport(currentPayload), null, 2);
+  try {
+    await navigator.clipboard.writeText(exportText);
+    button.textContent = "Copied";
+  } catch {
+    const area = document.createElement("textarea"); area.value = exportText; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0";
+    document.body.append(area); area.select(); button.textContent = document.execCommand("copy") ? "Copied" : "Copy failed"; area.remove();
+  }
   setTimeout(() => { button.textContent = "Copy export"; }, 1600);
 }
 
-function firstPage() { nav = { edge:"first", direction:"next", cursor:null, page:1 }; return loadPage(); }
-function lastPage() { const last = currentPayload?.totalPages ?? 1; nav = { edge:"last", direction:"next", cursor:null, page:last }; return loadPage(); }
-function previousPage() { if (!currentPayload?.prevCursor || nav.page <= 1) return; nav = { edge:"first", direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 }; return loadPage(); }
-function nextPage() { if (!currentPayload?.nextCursor) return; nav = { edge:"first", direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 }; return loadPage(); }
+function firstPage() {
+  nav = { edge:"first", direction:"next", cursor:null, page:1 };
+  return loadPage();
+}
+function lastPage() {
+  const last = currentPayload?.totalPages ?? 1;
+  nav = { edge:"last", direction:"next", cursor:null, page:last };
+  return loadPage();
+}
+function previousPage() {
+  if (!currentPayload?.prevCursor || nav.page <= 1) return;
+  nav = { edge:"first", direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
+  return loadPage();
+}
+function nextPage() {
+  if (!currentPayload?.nextCursor) return;
+  nav = { edge:"first", direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
+  return loadPage();
+}
 
 function renderPager(payload) {
-  const totalPages = payload.totalPages ?? 1; nav.page = Math.min(Math.max(1, nav.page), totalPages); text($("#page-label"), `Page ${nav.page} of ${totalPages}`);
-  $("#page-first").disabled = nav.page <= 1; $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1; $("#page-next").disabled = payload.nextCursor == null || nav.page >= totalPages; $("#page-last").disabled = nav.page >= totalPages;
+  const totalPages = payload.totalPages ?? 1;
+  nav.page = Math.min(Math.max(1, nav.page), totalPages);
+  text($("#page-label"), `Page ${nav.page} of ${totalPages}`);
+  $("#page-first").disabled = nav.page <= 1;
+  $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1;
+  $("#page-next").disabled = payload.nextCursor == null || nav.page >= totalPages;
+  $("#page-last").disabled = nav.page >= totalPages;
 }
 
 async function loadPage({ pushState = false } = {}) {
-  setLoading(true); if (pushState) syncUrl(); const params = baseParams(); params.set("edge", nav.edge); params.set("direction", nav.direction); if (nav.cursor) params.set("cursor", nav.cursor);
+  setLoading(true);
+  if (pushState) syncUrl();
+  const params = baseParams();
+  params.set("edge", nav.edge);
+  params.set("direction", nav.direction);
+  if (nav.cursor) params.set("cursor", nav.cursor);
   try {
-    const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" }); const payload = await response.json(); if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-    currentPayload = payload; const records = payload.records ?? []; $("#export-button").disabled = false; text($("#environment-pill"), payload.environment); text($("#chain-title"), chainHeading(payload)); text($("#chain-summary"), mode === "causal" ? `Meaningful terminal and retry operations · ${payload.total} total.` : `Raw Activity records exactly as logged · ${payload.total} total.`);
+    const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    currentPayload = payload;
+    const records = payload.records ?? [];
+    $("#export-button").disabled = false;
+    text($("#environment-pill"), payload.environment);
+    text($("#chain-title"), chainHeading(payload));
+    text($("#chain-summary"), mode === "causal"
+      ? `Meaningful terminal and retry operations · ${payload.total} total.`
+      : `Raw Activity records exactly as logged · ${payload.total} total.`);
     renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); renderCausal(mode === "causal" ? records : []); populateServices(records); renderPager(payload);
-  } catch (error) { currentPayload = null; $("#export-button").disabled = true; renderMetrics([]); renderRaw([]); renderCausal([]); text($("#chain-summary"), `Activity unavailable: ${error.message}`); }
-  finally { setLoading(false); if (currentPayload) renderPager(currentPayload); }
+  } catch (error) {
+    currentPayload = null;
+    $("#export-button").disabled = true;
+    renderMetrics([]); renderRaw([]); renderCausal([]);
+    text($("#chain-summary"), `Activity unavailable: ${error.message}`);
+  } finally { setLoading(false); if (currentPayload) renderPager(currentPayload); }
 }
 
-function selectMode(nextMode) { if (mode === nextMode) return; mode = nextMode; currentPayload = null; nav = { edge:"first", direction:"next", cursor:null, page:1 }; renderMode(); syncUrl(); loadPage(); }
+function selectMode(nextMode) {
+  if (mode === nextMode) return;
+  mode = nextMode;
+  currentPayload = null;
+  nav = { edge:"first", direction:"next", cursor:null, page:1 };
+  renderMode(); syncUrl(); loadPage();
+}
 
 function refreshDelay(now = Date.now()) {
   if (lastInteractionAt === 0) return IDLE_REFRESH_MS;
@@ -247,18 +444,29 @@ function refreshDelay(now = Date.now()) {
 function scheduleRefresh() {
   clearTimeout(timer); timer = null;
   if (!$("#auto-refresh").checked || document.hidden) return;
-  timer = setTimeout(async () => { timer = null; if (!document.hidden && $("#auto-refresh").checked) await loadPage(); scheduleRefresh(); }, refreshDelay());
+  timer = setTimeout(async () => {
+    timer = null;
+    if (!document.hidden && $("#auto-refresh").checked) await loadPage();
+    scheduleRefresh();
+  }, refreshDelay());
 }
 
 function noteUiActivity() {
   const now = Date.now();
   if (now - lastUiSignalAt < 1000) return;
-  lastUiSignalAt = now; lastInteractionAt = now; scheduleRefresh();
+  lastUiSignalAt = now;
+  lastInteractionAt = now;
+  scheduleRefresh();
 }
 
 async function handleVisibilityChange() {
-  if (document.hidden) { scheduleRefresh(); return; }
-  lastInteractionAt = Date.now(); lastUiSignalAt = lastInteractionAt; scheduleRefresh();
+  if (document.hidden) {
+    scheduleRefresh();
+    return;
+  }
+  lastUiSignalAt = Date.now();
+  lastInteractionAt = lastUiSignalAt;
+  scheduleRefresh();
   if ($("#auto-refresh").checked) await loadPage();
 }
 
@@ -279,7 +487,9 @@ document.addEventListener("pointerdown", noteUiActivity, { passive:true });
 document.addEventListener("pointermove", noteUiActivity, { passive:true });
 document.addEventListener("keydown", noteUiActivity);
 document.addEventListener("visibilitychange", () => { void handleVisibilityChange(); });
-document.addEventListener("keydown", (event) => { if (event.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) { event.preventDefault(); (value.disabled ? service : value).focus(); } });
+document.addEventListener("keydown", (event) => {
+  if (event.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) { event.preventDefault(); (value.disabled ? service : value).focus(); }
+});
 
 const staging = location.hostname === "admin.staging.insidefibre.com" || location.hostname.includes("-staging.");
 $("#status-link").href = staging ? "https://status.staging.insidefibre.com" : "https://status.insidefibre.com";
