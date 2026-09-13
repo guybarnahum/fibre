@@ -11,6 +11,15 @@ function serviceBinding(service, { ok = true, status = 200 } = {}) {
   };
 }
 
+function infraBinding(level = "normal", { stale = false } = {}) {
+  return {
+    async fetch(request) {
+      assert.equal(new URL(request.url).pathname, "/internal/infra-health");
+      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.1", level, stale, observedAt:"2026-09-13T14:00:00.000Z" }), { status:200, headers:{ "Content-Type":"application/json" } });
+    },
+  };
+}
+
 function environment(overrides = {}) {
   return {
     FIBRE_ENVIRONMENT: "staging",
@@ -19,23 +28,32 @@ function environment(overrides = {}) {
     WORLD_KERNEL: serviceBinding("world-kernel"),
     THREAD_PRESENTATION: serviceBinding("thread-presentation"),
     ASSET_GENERATOR: serviceBinding("asset-generator"),
+    ADMIN_DASHBOARD: infraBinding(),
     ...overrides,
   };
 }
 
 const viewerOk = async () => new Response("ok", { status: 200 });
 
-test("public status is operational only when viewer and every runtime component are healthy", async () => {
+test("public status is operational only when viewer, runtime, and infra health are normal", async () => {
   const result = await currentPublicStatus(environment(), {
     fetchImpl: viewerOk,
     now: () => "2026-09-01T14:00:00.000Z",
   });
   assert.equal(result.status, "operational");
   assert.equal(result.environment, "staging");
-  assert.equal(result.components.length, 5);
+  assert.equal(result.components.length, 6);
   assert.ok(result.components.every((component) => component.status === "operational"));
   const serialized = JSON.stringify(result);
-  for (const forbidden of ["requestId", "threadId", "genesisId", "providerRequestId", "error"]) assert.equal(serialized.includes(forbidden), false);
+  for (const forbidden of ["requestId", "threadId", "genesisId", "providerRequestId", "error", "databaseId", "accountId"]) assert.equal(serialized.includes(forbidden), false);
+});
+
+test("elevated cached infrastructure degrades public status without exposing monitor detail", async () => {
+  const result = await currentPublicStatus(environment({ ADMIN_DASHBOARD:infraBinding("elevated") }), { fetchImpl:viewerOk });
+  assert.equal(result.status, "degraded");
+  const infra = result.components.find((component) => component.key === "infra");
+  assert.equal(infra.status, "degraded");
+  assert.match(infra.description, /elevated/u);
 });
 
 test("one failed component degrades public status without exposing its internal error", async () => {
@@ -46,7 +64,7 @@ test("one failed component degrades public status without exposing its internal 
   assert.equal(JSON.stringify(result).includes("secret internal detail"), false);
 });
 
-test("viewer failure degrades public status without changing runtime component health", async () => {
+test("viewer failure degrades public status without changing healthy internal components", async () => {
   const result = await currentPublicStatus(environment(), {
     fetchImpl: async () => new Response("down", { status: 503 }),
   });
