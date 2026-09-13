@@ -69,7 +69,7 @@ async function bestEffortRecord(activity, record) {
 }
 
 async function runActivityStage(activity, metadata, operation) {
-  if (activity === null) return operation();
+  if (activity === null) return operation(Object.freeze({ operationId:null }));
   return activity.runStage(metadata, operation);
 }
 
@@ -230,28 +230,33 @@ export function createGenesisDevelopmentService({
 
       let admission = reservation.admission;
       if (admission === null) {
-        const creative = instrumentDurableCognitionAdapter({
-          baseAdapter: creativeBase,
-          birthRuntime,
-          activity,
-          context,
-        });
-        const repair = instrumentDurableCognitionAdapter({
-          baseAdapter: repairBase,
-          birthRuntime,
-          activity,
-          context,
-        });
         const candidate = await runActivityStage(activity, {
           ...context,
           stage: "birth.genesis.start",
           attempt: 1,
-        }, async () => generateGenesisLifeCandidate({
-          slotPlan: plan,
-          adapter: creative,
-          repairAdapter: repair,
-          attemptStartedAt: reservation.createdAt,
-        }));
+        }, async ({ operationId }) => {
+          const cognitionContext = operationId === null
+            ? context
+            : Object.freeze({ ...context, parentOperationId:operationId });
+          const creative = instrumentDurableCognitionAdapter({
+            baseAdapter: creativeBase,
+            birthRuntime,
+            activity,
+            context: cognitionContext,
+          });
+          const repair = instrumentDurableCognitionAdapter({
+            baseAdapter: repairBase,
+            birthRuntime,
+            activity,
+            context: cognitionContext,
+          });
+          return generateGenesisLifeCandidate({
+            slotPlan: plan,
+            adapter: creative,
+            repairAdapter: repair,
+            attemptStartedAt: reservation.createdAt,
+          });
+        });
         admission = await runActivityStage(activity, {
           ...context,
           stage: "birth.genesis.compile",
