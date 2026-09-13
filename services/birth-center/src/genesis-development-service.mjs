@@ -94,6 +94,16 @@ function cognitionStage(clientRequestId) {
   return "birth.genesis.cognition_call";
 }
 
+function cognitionEvidence(stage, args) {
+  if (stage !== "birth.genesis.history.repair_call") return Object.freeze({});
+  const evidence = {};
+  const failedGate = args?.input?.failedGate;
+  if (typeof failedGate === "string" && failedGate.trim() !== "") evidence.failedGate = failedGate.trim();
+  const repairOrdinal = args?.input?.repairOrdinal;
+  if (Number.isSafeInteger(repairOrdinal) && repairOrdinal > 0) evidence.repairOrdinal = String(repairOrdinal);
+  return Object.freeze(evidence);
+}
+
 function providerRequestId(result) {
   const value = result?.provenance?.providerRequestId;
   return typeof value === "string" && value.trim() !== "" ? value : null;
@@ -121,6 +131,7 @@ function instrumentDurableCognitionAdapter({
         ...context,
         stage,
         attempt: 1,
+        evidence: cognitionEvidence(stage, args),
       }, async () => durable.invoke(args));
       const observation = observations.get(args?.clientRequestId);
       const replay = observation === "durable_model_replay";
