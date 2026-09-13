@@ -9,10 +9,45 @@ function clean(value) {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
+function cleanStrings(value) {
+  return Array.isArray(value) ? value.map(clean).filter((item) => item !== null) : [];
+}
+
 export function presentationOrigin(environment) {
   if (environment === "production") return "https://api.insidefibre.com";
   if (environment === "staging") return "https://api.staging.insidefibre.com";
   throw new TypeError("FIBRE_ENVIRONMENT must be staging or production");
+}
+
+function publicMedia(presentationOriginValue, snapshot) {
+  const assets = Array.isArray(snapshot?.media?.assets) ? snapshot.media.assets : [];
+  return Object.freeze(assets
+    .filter((asset) => asset?.status === "ready" && clean(asset.locator) !== null)
+    .map((asset) => {
+      const objectRef = id("media objectRef", clean(asset.locator));
+      return Object.freeze({
+        mediaId: clean(asset.mediaId),
+        kind: clean(asset.kind),
+        role: clean(asset.role),
+        objectRef,
+        mediaType: clean(asset.mediaType),
+        sha256: clean(asset.sha256),
+        width: Number.isFinite(asset.width) ? asset.width : null,
+        height: Number.isFinite(asset.height) ? asset.height : null,
+        durationMs: Number.isFinite(asset.durationMs) ? asset.durationMs : null,
+        url: `${presentationOriginValue}/api/assets/${encodeURIComponent(objectRef)}`,
+      });
+    }));
+}
+
+function visualIdentity(presentation) {
+  const visual = presentation?.visualIdentity;
+  if (!visual || typeof visual !== "object") return null;
+  return Object.freeze({
+    embodimentId: clean(visual.embodimentId),
+    embodimentRevision: Number.isFinite(visual.embodimentRevision) ? visual.embodimentRevision : null,
+    referenceObjectRefs: Object.freeze(cleanStrings(visual.referenceObjectRefs)),
+  });
 }
 
 export async function resolveAdminThreadIdentity({ environment, threadId, fetchImpl = globalThis.fetch } = {}) {
@@ -26,7 +61,8 @@ export async function resolveAdminThreadIdentity({ environment, threadId, fetchI
   if (!response.ok) throw new Error(`Thread Presentation identity lookup failed with HTTP ${response.status}`);
   const payload = await response.json();
   if (payload?.pointer?.threadId !== resolvedThreadId) throw new Error("Thread Presentation returned a mismatched Thread identity");
-  const presentation = payload?.snapshot?.presentation;
+  const snapshot = payload?.snapshot;
+  const presentation = snapshot?.presentation;
   if (!presentation || typeof presentation !== "object") throw new Error("Thread Presentation snapshot lacks public Presentation");
   return Object.freeze({
     threadId: resolvedThreadId,
@@ -34,9 +70,12 @@ export async function resolveAdminThreadIdentity({ environment, threadId, fetchI
     fibreIdentityNumber: clean(presentation.civilIdentity?.fibreIdentityNumber),
     birthDate: clean(presentation.subject?.birthDate),
     lifecycleStatus: clean(presentation.manifest?.lifecycleStatus),
+    visualIdentity: visualIdentity(presentation),
+    assets: publicMedia(origin, snapshot),
     provenance: Object.freeze({
       displayName: "resolved_after_fact",
       fibreIdentityNumber: "resolved_after_fact",
+      assets: "current_public_presentation",
       source: "current_public_presentation",
     }),
   });
