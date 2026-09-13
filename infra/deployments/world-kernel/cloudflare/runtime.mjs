@@ -193,7 +193,13 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const birthPublisher = Object.freeze({
     async publishBirth(bundle, options = {}) {
       const result = await authoritativeBirthPublisher.publishBirth(bundle, options);
-      await reconciliationRuntime.requestWake();
+      const wake = await reconciliationRuntime.requestWake();
+      console.log(JSON.stringify({
+        event: "world-reconciliation-wake-requested",
+        threadId: result?.thread?.threadId ?? bundle?.manifest?.threadId ?? null,
+        scheduledTimeMs: wake.scheduledTimeMs,
+        reusedExistingAlarm: wake.existing === true,
+      }));
       return result;
     },
   });
