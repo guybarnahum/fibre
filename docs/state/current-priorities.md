@@ -92,6 +92,24 @@ After M2 closes, follow [`thread-preservation-and-migration.md`](thread-preserva
 
 This preservation work is deliberately **not** an additional M2 closure gate.
 
+## Explicit post-M2 Genesis debt: sex-aware development
+
+The current Genesis implementation now persists `thread.identity.sex = female | male` and canonical visual identity consumes that authoritative value. This fixes the immediate renderer-default problem but does **not** finish sex-aware Genesis development.
+
+After M2 closure, retain the sex-aware Genesis completion plan as explicit debt rather than allowing the current publication/visual slice to look complete. The required follow-on is defined in [`../architecture/thread-genesis-childhood-birth.md`](../architecture/thread-genesis-childhood-birth.md) and tracked in [`future-capability-map.md`](future-capability-map.md).
+
+The minimum revisit includes:
+
+- assign sex before Pass-A/history cognition rather than first at publication;
+- create culturally/linguistically/temporally grounded personal naming that can consume sex where warranted;
+- allow World/culture/era-mediated sex effects in lived history without mapping sex directly to personality or values;
+- identify specific sex-sensitive maturation, physiology, intrinsic-regulation and reproductive mechanisms before implementing them;
+- keep gender identity, pronouns, sexual orientation, relationship role and caregiving role distinct;
+- add counterfactual tests proving sex changes only causally warranted surfaces;
+- preserve legacy Threads without guessing missing sex from portrait, name or stereotypes.
+
+This is **not an M2 closure gate**. It is a named Genesis follow-on that should be addressed before treating Genesis person-development semantics as complete.
+
 ## Semantic boundaries
 
 ```text
