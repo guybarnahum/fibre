@@ -50,7 +50,10 @@ function activityClauses({ environment, query, page }) {
   if (query.stage) add("stage = ?", query.stage);
   if (query.status) add("status = ?", query.status);
   if (query.before) add("occurred_at < ?", query.before);
-  if (page.mode === "causal") clauses.push("status <> 'started'");
+  if (page.mode === "causal") {
+    clauses.push("status <> 'started'");
+    clauses.push("stage NOT LIKE '%.provider_commit'");
+  }
   return { clauses, bindings };
 }
 
