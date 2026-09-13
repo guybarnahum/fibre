@@ -2,7 +2,7 @@ import { normalizeActivityRecord } from "#infra/telemetry";
 import { resolveAdminThreadIdentity } from "./thread-identity.mjs";
 import { parseAdminActivityPage, queryAdminActivityPage } from "./activity-page.mjs";
 
-export const ADMIN_DASHBOARD_VERSION = "fibre-admin-dashboard-v0.2";
+export const ADMIN_DASHBOARD_VERSION = "fibre-admin-dashboard-v0.3";
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const ADMIN_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 const STATUSES = new Set(["started", "succeeded", "failed", "retrying"]);
@@ -143,7 +143,17 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
   return Object.freeze({
     async fetch(request, env) {
       const url = new URL(request.url);
-      if (request.method === "GET" && url.pathname === "/healthz") return json(200, { ok:true, service:"admin-dashboard", version:ADMIN_DASHBOARD_VERSION });
+      if (request.method === "GET" && url.pathname === "/healthz") {
+        const build = env.CF_VERSION_METADATA ?? {};
+        return json(200, {
+          ok:true,
+          service:"admin-dashboard",
+          version:ADMIN_DASHBOARD_VERSION,
+          buildId:build.id ?? null,
+          buildTag:build.tag ?? null,
+          builtAt:build.timestamp ?? null,
+        });
+      }
       let principal = null;
       try { principal = await authenticate(request, env); } catch { principal = null; }
       if (!principal) return json(403, { error:"access_required" });
