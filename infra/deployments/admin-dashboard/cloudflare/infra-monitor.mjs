@@ -16,21 +16,28 @@ function numberSetting(name, value, fallback) {
   return parsed;
 }
 
-function monitorConfig(env) {
+function parseMonitorSecret(env) {
+  const raw = nonEmpty("FIBRE_CLOUDFLARE_ANALYTICS_CONFIG", env.FIBRE_CLOUDFLARE_ANALYTICS_CONFIG);
+  let parsed;
+  try { parsed = JSON.parse(raw); }
+  catch (error) { throw new TypeError(`FIBRE_CLOUDFLARE_ANALYTICS_CONFIG must be JSON: ${error.message}`); }
+  const resources = Array.isArray(parsed.d1Resources) ? parsed.d1Resources.map((resource) => Object.freeze({
+    name:nonEmpty("D1 resource name", resource?.name),
+    id:nonEmpty("D1 resource id", resource?.id),
+    binding:typeof resource?.binding === "string" ? resource.binding : null,
+  })) : [];
+  if (resources.length === 0) throw new TypeError("FIBRE_CLOUDFLARE_ANALYTICS_CONFIG must include d1Resources");
   return Object.freeze({
-    accountId:nonEmpty("FIBRE_CLOUDFLARE_ACCOUNT_ID", env.FIBRE_CLOUDFLARE_ACCOUNT_ID),
-    apiToken:nonEmpty("FIBRE_CLOUDFLARE_ANALYTICS_TOKEN", env.FIBRE_CLOUDFLARE_ANALYTICS_TOKEN),
-    ttlMs:numberSetting("FIBRE_INFRA_SAMPLE_TTL_SECONDS", env.FIBRE_INFRA_SAMPLE_TTL_SECONDS, DEFAULT_TTL_MS / 1000) * 1000,
+    accountId:nonEmpty("Cloudflare account ID", parsed.accountId),
+    apiToken:nonEmpty("Cloudflare analytics token", parsed.apiToken),
+    ttlMs:numberSetting("ttlSeconds", parsed.ttlSeconds, DEFAULT_TTL_MS / 1000) * 1000,
     limits:Object.freeze({
-      d1RowsReadDaily:numberSetting("FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN", env.FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN, 500_000),
-      d1RowsWrittenDaily:numberSetting("FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN", env.FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN, 10_000),
-      workerRequests15m:numberSetting("FIBRE_INFRA_WORKER_REQUESTS_15M_WARN", env.FIBRE_INFRA_WORKER_REQUESTS_15M_WARN, 25_000),
-      workerErrors15m:numberSetting("FIBRE_INFRA_WORKER_ERRORS_15M_WARN", env.FIBRE_INFRA_WORKER_ERRORS_15M_WARN, 100),
+      d1RowsReadDaily:numberSetting("d1RowsReadDaily", parsed.limits?.d1RowsReadDaily, 500_000),
+      d1RowsWrittenDaily:numberSetting("d1RowsWrittenDaily", parsed.limits?.d1RowsWrittenDaily, 10_000),
+      workerRequests15m:numberSetting("workerRequests15m", parsed.limits?.workerRequests15m, 25_000),
+      workerErrors15m:numberSetting("workerErrors15m", parsed.limits?.workerErrors15m, 100),
     }),
-    d1Resources:Object.freeze([
-      Object.freeze({ name:nonEmpty("FIBRE_ACTIVITY_LOG_DATABASE_NAME", env.FIBRE_ACTIVITY_LOG_DATABASE_NAME), id:nonEmpty("FIBRE_ACTIVITY_LOG_DATABASE_ID", env.FIBRE_ACTIVITY_LOG_DATABASE_ID), binding:"ACTIVITY_LOG" }),
-      ...(env.FIBRE_PRESENTATION_CATALOG_DATABASE_ID && env.FIBRE_PRESENTATION_CATALOG_DATABASE_NAME ? [Object.freeze({ name:env.FIBRE_PRESENTATION_CATALOG_DATABASE_NAME, id:env.FIBRE_PRESENTATION_CATALOG_DATABASE_ID, binding:"PRESENTATION_CATALOG" })] : []),
-    ]),
+    d1Resources:Object.freeze(resources),
   });
 }
 
@@ -89,7 +96,7 @@ function responsePayload({ environment, sample, cached, refreshing = false, stal
 
 export async function readAdminInfraMonitor({ env, environment, force = false, now = new Date(), fetchImpl = globalThis.fetch } = {}) {
   if (!env.ACTIVITY_LOG?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
-  const config = monitorConfig(env);
+  const config = parseMonitorSecret(env);
   const nowMs = now.getTime();
   const row = await cachedRow(env, environment);
   const sample = parsedSample(row);
