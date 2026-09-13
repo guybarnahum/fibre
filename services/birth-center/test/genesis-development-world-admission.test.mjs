@@ -273,9 +273,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
     "World admission operations must name the Birth submission that caused them",
   );
   const threadPublication = worldAdmissions.find((record) => record.stage === "world.thread.publication");
-  assert.equal(typeof threadPublication?.evidence?.eventId, "string");
-  assert.equal(worldEvents.some((event) => event.eventId === threadPublication.evidence.eventId), true);
-  assert.equal(threadPublication.evidence.fibreIdentityNumber, first.fibreIdentityNumber);
+  assert.equal(threadPublication?.evidence?.fibreIdentityNumber, first.fibreIdentityNumber);
 
   const worldAck = requestActivity.find((record) => (
     record.service === "birth-center"
@@ -284,6 +282,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   ));
   assert.equal(worldAck?.parentOperationId, worldSubmit.operationId);
   assert.equal(worldAck?.evidence?.eventId, thread.provenance.lastEventId);
+  assert.equal(worldEvents.some((event) => event.eventId === worldAck.evidence.eventId), true);
 
   const providerCommits = requestActivity.filter((record) => record.stage.endsWith(".provider_commit"));
   assert.equal(providerCommits.length, 21);
