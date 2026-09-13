@@ -1,33 +1,35 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { genesisSexForThread } from "../src/genesis-sex.mjs";
 import {
   buildDeNovoCanonicalVisualIdentity,
   deNovoVisualPhenotypeLoci,
-  embodiedSexForThread,
   recombineVisualPhenotypeLoci,
 } from "../src/genesis-visual-phenotype.mjs";
 import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
 
 const encoder = new TextEncoder();
 
-test("de-novo visual phenotype is deterministic, rich, sex-anchored, and cross-age oriented", () => {
+test("de-novo visual phenotype consumes sex and remains deterministic, rich, and cross-age oriented", () => {
   const threadId = "thr_genesis_visual_phenotype_001";
-  const first = buildDeNovoCanonicalVisualIdentity({ threadId });
-  const replay = buildDeNovoCanonicalVisualIdentity({ threadId });
+  const sex = genesisSexForThread({ threadId });
+  const first = buildDeNovoCanonicalVisualIdentity({ threadId, sex });
+  const replay = buildDeNovoCanonicalVisualIdentity({ threadId, sex });
 
   assert.deepEqual(first, replay);
   assert.equal(first.policyRef, GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY);
   assert.equal(first.specification.subject.partyId, threadId);
-  assert.match(
-    first.specification.subject.description,
-    new RegExp(`^adult ${embodiedSexForThread({ threadId })} person;`, "u"),
-  );
+  assert.match(first.specification.subject.description, new RegExp(`^adult ${sex} person;`, "u"));
   assert.ok(encoder.encode(first.specification.subject.description).byteLength >= 500);
   assert.match(first.specification.subject.description, /;/u);
-  assert.match(first.specification.description, /embodied sex/u);
+  assert.match(first.specification.description, /Preserve sex/u);
   assert.match(first.specification.description, /age transformations/u);
   assert.match(first.specification.description, /normalized age 25/u);
+  assert.throws(
+    () => buildDeNovoCanonicalVisualIdentity({ threadId }),
+    /sex must be female or male/u,
+  );
 
   const loci = deNovoVisualPhenotypeLoci({ threadId });
   assert.ok(loci.length >= 10);
@@ -35,9 +37,9 @@ test("de-novo visual phenotype is deterministic, rich, sex-anchored, and cross-a
   assert.ok(loci.every((locus) => locus.provenance.kind === "de_novo"));
 });
 
-test("embodied sex assignment is deterministic and unbiased across Thread identities", () => {
+test("Genesis sex assignment is deterministic and unbiased across Thread identities", () => {
   const sexes = Array.from({ length: 1_000 }, (_, index) => (
-    embodiedSexForThread({ threadId: `thr_embodied_sex_distribution_${index}` })
+    genesisSexForThread({ threadId: `thr_sex_distribution_${index}` })
   ));
   const female = sexes.filter((sex) => sex === "female").length;
   const male = sexes.filter((sex) => sex === "male").length;
@@ -46,14 +48,16 @@ test("embodied sex assignment is deterministic and unbiased across Thread identi
   assert.ok(female >= 450 && female <= 550, `expected ~50% female, got ${female}/${sexes.length}`);
   assert.ok(male >= 450 && male <= 550, `expected ~50% male, got ${male}/${sexes.length}`);
   assert.equal(
-    embodiedSexForThread({ threadId: "thr_embodied_sex_replay" }),
-    embodiedSexForThread({ threadId: "thr_embodied_sex_replay" }),
+    genesisSexForThread({ threadId: "thr_sex_replay" }),
+    genesisSexForThread({ threadId: "thr_sex_replay" }),
   );
 });
 
 test("different Thread identities do not collapse to one interchangeable phenotype", () => {
-  const left = buildDeNovoCanonicalVisualIdentity({ threadId: "thr_genesis_visual_phenotype_left" });
-  const right = buildDeNovoCanonicalVisualIdentity({ threadId: "thr_genesis_visual_phenotype_right" });
+  const leftId = "thr_genesis_visual_phenotype_left";
+  const rightId = "thr_genesis_visual_phenotype_right";
+  const left = buildDeNovoCanonicalVisualIdentity({ threadId: leftId, sex: genesisSexForThread({ threadId: leftId }) });
+  const right = buildDeNovoCanonicalVisualIdentity({ threadId: rightId, sex: genesisSexForThread({ threadId: rightId }) });
 
   assert.notEqual(left.specification.subject.description, right.specification.subject.description);
 });
