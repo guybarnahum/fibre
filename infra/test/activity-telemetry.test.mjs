@@ -179,6 +179,7 @@ test("runStage records success and failure without swallowing operation results 
     "started",
     "failed",
   ]);
+  assert.deepEqual([...new Set(selected.map((record) => record.correlationId))], ["req_run_001"]);
   assert.equal(selected[3].message.includes("provider-secret"), false);
   assert.equal(selected[3].message.includes("private-value"), false);
   assert.deepEqual(selected[3].error, {
@@ -186,6 +187,25 @@ test("runStage records success and failure without swallowing operation results 
     code: "MODEL_TIMEOUT",
     retryable: true,
   });
+});
+
+test("activity recorder preserves an explicit correlation over the request fallback", async () => {
+  const telemetry = createLocalActivityTelemetryPort();
+  const recorder = createActivityRecorder({
+    telemetry,
+    environment:"test",
+    service:"world-kernel",
+    now:() => "2026-09-01T05:40:00.000Z",
+    activityIdFactory:() => "act_explicit_correlation",
+  });
+  const recorded = await recorder.record({
+    requestId:"req_root_001",
+    correlationId:"corr_domain_001",
+    stage:"world.thread.publication",
+    status:"succeeded",
+    attempt:1,
+  });
+  assert.equal(recorded.correlationId, "corr_domain_001");
 });
 
 test("telemetry storage outage cannot suppress a wrapped Fibre operation", async () => {
