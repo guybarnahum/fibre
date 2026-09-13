@@ -3,10 +3,13 @@ const hint = document.querySelector(".journey-body-head span");
 
 function refreshHint() {
   if (!rail || !hint) return;
-  if (rail.querySelector(".journey-event-child")) {
-    hint.textContent = "Tree view · indented orange rows are child operations · authoritative async causes are labeled";
-  } else if (rail.childElementCount > 0) {
-    hint.textContent = "No parent-operation edges on this page · legacy/pre-lineage Activity remains flat";
+  const records = rail.childElementCount;
+  const children = rail.querySelectorAll(".journey-event-child").length;
+  const parents = rail.querySelectorAll(".journey-event-parent").length;
+  if (children > 0) {
+    hint.textContent = `Tree view · ${children} child operation${children === 1 ? "" : "s"} · ${parents} visible parent${parents === 1 ? "" : "s"} · orange rows are nested work`;
+  } else if (records > 0) {
+    hint.textContent = `${records} operations · 0 parent-operation edges on this page · legacy/pre-lineage Activity remains flat`;
   }
 }
 
