@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-13
 canonical: true
 ---
 
@@ -20,7 +20,7 @@ R4 Functional drive loop + organism trace                CLOSED
 A1 Flight Plan + World-observed Lived Now                CLOSED
 A2 Care plan + conflicting wills in movement             CLOSED
 A3 Current-life projection + Thread Editor               CLOSED
-A4 Public present + insidefibre.com scene                 CLOSED
+A4 Public present + insidefibre.com scene                CLOSED
 A5 Situated encounter                                    CLOSED
 B1 Encounter -> journal -> selective memory              CLOSED
 B2 Life continues + second meeting                       CLOSED
@@ -77,6 +77,21 @@ npm run slice:validate
 
 The automated milestone proof is therefore complete. The remaining M2 closure step is one real deployed human meeting using [`../validation/m2-meeting-runbook.md`](../validation/m2-meeting-runbook.md), followed by inspection that the lived encounter entered the same causal loop shown above.
 
+## Legacy staging Threads during M2 closure
+
+Existing staging Threads are retained through M2 closure. They are useful historical/regression evidence, including Threads whose Activity predates causal operation parentage.
+
+For current observability validation:
+
+- create fresh Genesis Threads against the current deployed runtime;
+- accept older Activity as `legacy/pre-lineage` rather than fabricating a hierarchy after the fact;
+- do not retrofit `operationId`, `parentOperationId`, `causationId` or other causal witnesses into historical records;
+- do not manually purge a Thread from only one World/Birth/Presentation/asset/Activity persistence surface.
+
+After M2 closes, follow [`thread-preservation-and-migration.md`](thread-preservation-and-migration.md): archive and verify first, migrate retained Threads conservatively, keep a curated regression/milestone corpus, and only then coordinate removal of disposable E2E identities.
+
+This preservation work is deliberately **not** an additional M2 closure gate.
+
 ## Semantic boundaries
 
 ```text
@@ -97,6 +112,8 @@ care requirement        != dependent person's private desire
 - No second location/current-life authority.
 - No Viewer-owned current state or private journal/memory leakage.
 - No generic memory/vector infrastructure before bounded retrieval proves insufficient.
+- No ad hoc partial-store deletion of a Thread.
+- No retroactive observability enrichment that invents historical causality.
 - Keep tests focused on causal Fibre invariants and one representative lived loop.
 
 ## Branch
