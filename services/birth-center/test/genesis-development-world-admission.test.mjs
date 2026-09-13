@@ -199,6 +199,13 @@ test("Birth Center develops a narrow request and World atomically admits the res
     assert.equal(stages.has(expected), true, `missing successful activity stage ${expected}`);
   }
 
+  const genesisStart = requestActivity.find((record) => (
+    record.service === "birth-center"
+    && record.stage === "birth.genesis.start"
+    && record.status === "succeeded"
+  ));
+  assert.ok(genesisStart?.operationId, "Genesis life development must expose one operation identity");
+
   const cognitionCalls = requestActivity.filter((record) => (
     record.service === "birth-center"
     && record.status === "succeeded"
@@ -212,6 +219,11 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(
     cognitionCalls.filter((record) => record.stage === "birth.genesis.memory_selection.cognition_call").length,
     6,
+  );
+  assert.equal(
+    cognitionCalls.every((record) => record.parentOperationId === genesisStart.operationId),
+    true,
+    "Genesis cognition must be explicitly parented by life development rather than inferred from time",
   );
   const providerCommits = requestActivity.filter((record) => record.stage.endsWith(".provider_commit"));
   assert.equal(providerCommits.length, 20);
