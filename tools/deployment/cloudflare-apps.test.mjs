@@ -33,6 +33,7 @@ function statusBase() {
       { binding: "WORLD_KERNEL", service: "fibre-world-kernel" },
       { binding: "THREAD_PRESENTATION", service: "fibre-thread-presentation" },
       { binding: "ASSET_GENERATOR", service: "fibre-asset-generator" },
+      { binding: "ADMIN_DASHBOARD", service: "fibre-admin-dashboard" },
     ],
   };
 }
@@ -71,7 +72,7 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
   assert.equal(validateResolvedCloudflareAppConfig("admin-dashboard", resolved, { environment: "staging" }), resolved);
 });
 
-test("status config targets the staging runtime Workers through exactly four service bindings", () => {
+test("status config targets staging runtime and cached Admin health through service bindings", () => {
   const resolved = resolveCloudflareAppConfig("status-page", statusBase(), {
     environment: "staging",
     resourceState: state,
@@ -87,6 +88,7 @@ test("status config targets the staging runtime Workers through exactly four ser
       ["WORLD_KERNEL", "fibre-world-kernel-staging"],
       ["THREAD_PRESENTATION", "fibre-thread-presentation-staging"],
       ["ASSET_GENERATOR", "fibre-asset-generator-staging"],
+      ["ADMIN_DASHBOARD", "fibre-admin-dashboard-staging"],
     ],
   );
   assert.equal(validateResolvedCloudflareAppConfig("status-page", resolved, { environment: "staging" }), resolved);
@@ -131,22 +133,22 @@ test("resolved Admin config rejects unresolved Access or D1 placeholders before 
   );
 });
 
-test("resolved Status config rejects missing or misdirected runtime bindings", () => {
+test("resolved Status config rejects missing or misdirected internal bindings", () => {
   const resolved = resolveCloudflareAppConfig("status-page", statusBase(), {
     environment: "staging",
     resourceState: state,
     accessConfig: access,
   });
   const missing = structuredClone(resolved);
-  missing.services = missing.services.filter((service) => service.binding !== "ASSET_GENERATOR");
+  missing.services = missing.services.filter((service) => service.binding !== "ADMIN_DASHBOARD");
   assert.throws(
     () => validateResolvedCloudflareAppConfig("status-page", missing, { environment: "staging" }),
-    /exactly the four Fibre runtime service bindings/u,
+    /declared internal service bindings/u,
   );
   const misdirected = structuredClone(resolved);
-  misdirected.services.find((service) => service.binding === "WORLD_KERNEL").service = "fibre-world-kernel";
+  misdirected.services.find((service) => service.binding === "ADMIN_DASHBOARD").service = "fibre-admin-dashboard";
   assert.throws(
     () => validateResolvedCloudflareAppConfig("status-page", misdirected, { environment: "staging" }),
-    /WORLD_KERNEL must target fibre-world-kernel-staging/u,
+    /ADMIN_DASHBOARD must target fibre-admin-dashboard-staging/u,
   );
 });
