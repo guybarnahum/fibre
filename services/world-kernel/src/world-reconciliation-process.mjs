@@ -142,7 +142,8 @@ export function createWorldReconciliationRuntime({
 
   async function scheduleAt(scheduledTimeMs) {
     const current = await infra.scheduler.get(scopeId);
-    if (current === null || scheduledTimeMs < current) {
+    const currentIsStale = current !== null && current <= now();
+    if (current === null || currentIsStale || scheduledTimeMs < current) {
       return infra.scheduler.schedule(scopeId, scheduledTimeMs);
     }
     return Object.freeze({ scopeId, scheduledTimeMs: current, existing: true });
