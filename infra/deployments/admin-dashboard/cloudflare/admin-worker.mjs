@@ -13,6 +13,7 @@ export { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
+const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
@@ -93,6 +94,34 @@ async function proxyAsset(request, env, objectRef) {
   });
 }
 
+async function proxyThreadRepair(request, env, threadId) {
+  const privateToken = typeof env?.FIBRE_PRIVATE_TOKEN === "string" ? env.FIBRE_PRIVATE_TOKEN.trim() : "";
+  if (privateToken.length < 16) return json(503, { error:"thread_repair_not_configured" });
+  const init = {
+    method:request.method,
+    headers:{
+      Accept:"application/json",
+      "x-fibre-private-token":privateToken,
+      ...(request.method === "POST" ? { "content-type":"application/json" } : {}),
+    },
+  };
+  if (request.method === "POST") init.body = await request.text();
+  const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    init,
+  ));
+  const payload = await upstream.text();
+  return new Response(payload, {
+    status:upstream.status,
+    headers:{
+      "Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Content-Type-Options":"nosniff",
+      "Referrer-Policy":"no-referrer",
+    },
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -106,9 +135,12 @@ export default {
     }
 
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
+    const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    if ((request.method === "GET" && (identityMatch || assetMatch || infraMonitor)) || (request.method === "POST" && infraMonitor)) {
+    const adminGet = request.method === "GET" && (identityMatch || repairMatch || assetMatch || infraMonitor);
+    const adminPost = request.method === "POST" && (repairMatch || infraMonitor);
+    if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
       try {
@@ -116,6 +148,10 @@ export default {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const force = request.method === "POST" || url.searchParams.get("force") === "1";
           return json(200, await readAdminInfraMonitor({ env, environment, force }));
+        }
+        if (repairMatch) {
+          const threadId = id("threadId", decodeURIComponent(repairMatch[1]));
+          return proxyThreadRepair(request, env, threadId);
         }
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
