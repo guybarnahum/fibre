@@ -1,3 +1,5 @@
+import { GENESIS_SEX_RULE } from "#core/src/genesis-sex.mjs";
+
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") throw new TypeError(`${name} must expose ${method}()`);
   return value;
@@ -83,7 +85,13 @@ function identityCompleteness(thread, registration, presentation) {
       projectionCode:"NAME_PRESENTATION_MISSING",
       conflictCode:"NAME_CONFLICT",
     }),
-    identityFinding({ code:"SEX", missingCode:"SEX_MISSING", authoritative:identity.sex }),
+    text(identity.sex) === null
+      ? finding("SEX_MISSING", "migration_required", "migrate_genesis_sex", {
+        deterministic:true,
+        ruleId:GENESIS_SEX_RULE.id,
+        ruleVersion:GENESIS_SEX_RULE.version,
+      })
+      : finding("SEX", "healthy", null, { authoritative:text(identity.sex) }),
   ];
 
   const canonicalSpec = identity.canonicalVisualIdentity?.specification ?? null;
@@ -122,6 +130,17 @@ function identityCompleteness(thread, registration, presentation) {
   });
 }
 
+function optionalActivity(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value.record !== "function") throw new TypeError("repair activity recorder must expose record()");
+  return value;
+}
+
+async function record(activity, entry) {
+  if (activity === null) return;
+  try { await activity.record(entry); } catch {}
+}
+
 export function createThreadGenesisRepairService({
   worldReader,
   civilRegistry,
@@ -129,6 +148,8 @@ export function createThreadGenesisRepairService({
   presentationReader,
   presentationDelivery,
   visualReconciler,
+  genesisSexMigrator,
+  activityRecorder = null,
 } = {}) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("civilRegistry", civilRegistry, "getCivilRegistrationByThreadId");
@@ -138,6 +159,8 @@ export function createThreadGenesisRepairService({
   }
   requireMethod("presentationDelivery", presentationDelivery, "rebuildThreadPresentation");
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
+  requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
+  const activity = optionalActivity(activityRecorder);
 
   async function diagnose(threadId) {
     const thread = worldReader.getThread(threadId, { required:false });
@@ -193,10 +216,43 @@ export function createThreadGenesisRepairService({
     const before = await diagnose(threadId);
     if (!before.exists) return Object.freeze({ threadId, repairKey, before, after:before, actions:Object.freeze([]) });
 
+    const actionable = before.findings.filter((entry) => entry.action !== null).map((entry) => entry.code);
+    await record(activity, {
+      threadId,
+      operationId:repairKey,
+      stage:"thread.repair.start",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ findingCodes:actionable },
+    });
+
     const actions = [];
-    if (before.findings.some((entry) => entry.action === "rebuild_presentation")) {
+    if (before.findings.some((entry) => entry.action === "migrate_genesis_sex")) {
+      const thread = worldReader.getThread(threadId);
+      const result = await genesisSexMigrator.migrate(thread);
+      actions.push(Object.freeze({ action:"migrate_genesis_sex", result }));
+      await record(activity, {
+        threadId,
+        operationId:repairKey,
+        stage:"thread.repair.genesis_sex_migration",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ eventId:result.eventId, ruleId:GENESIS_SEX_RULE.id, migrated:result.migrated === true },
+      });
+    }
+
+    const afterMigration = await diagnose(threadId);
+    if (afterMigration.findings.some((entry) => entry.action === "rebuild_presentation")) {
       const result = await presentationDelivery.rebuildThreadPresentation(threadId);
       actions.push(Object.freeze({ action:"rebuild_presentation", result }));
+      await record(activity, {
+        threadId,
+        operationId:repairKey,
+        stage:"thread.repair.presentation_rebuild",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ genesisId:result.genesisId, rebuilt:result.rebuilt === true },
+      });
     }
 
     const afterPresentation = await diagnose(threadId);
@@ -204,12 +260,28 @@ export function createThreadGenesisRepairService({
       const result = await visualReconciler.reconcileThread({
         threadId,
         regenerationKey: repairKey,
-        activityContext: { repairKey },
+        activityContext: { repairKey, parentOperationId:repairKey },
       });
       actions.push(Object.freeze({ action:"reconcile_visual_publication", result }));
+      await record(activity, {
+        threadId,
+        operationId:repairKey,
+        stage:"thread.repair.visual_reconcile",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ stage:result.stage, complete:result.complete === true },
+      });
     }
 
     const after = await diagnose(threadId);
+    await record(activity, {
+      threadId,
+      operationId:repairKey,
+      stage:"thread.repair.complete",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ health:after.health, remaining:after.findings.filter((entry) => entry.state !== "healthy").map((entry) => entry.code) },
+    });
     return Object.freeze({
       threadId,
       repairKey,
