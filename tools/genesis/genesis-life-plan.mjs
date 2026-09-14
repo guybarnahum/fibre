@@ -14,6 +14,7 @@ import { symbolicGenomeDigest } from "#services/world-kernel/src/symbolic-genome
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const PR39_DEVELOPMENT_COHORT_PATH = "fixtures/genesis/pr39/development-cohort-v1.json";
 export const PR39_PARENT_GENOME_INDEX_PATH = "fixtures/genesis/pr39/genomes/parent-genome-index.json";
+export const PR39_SUBJECT_IDENTITIES_PATH = "fixtures/genesis/pr39/subject-identities-v1.json";
 
 function absolute(path) { return resolve(ROOT, path); }
 function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")); }
@@ -25,6 +26,16 @@ function loadWorld(slot) {
   const worldSpec = normalizeGenesisWorldSpec(readJson(slot.worldSpecPath));
   if (digest(worldSpec) !== slot.worldSpecDigest) fail(`PR39 slot ${slot.slot} WorldSpec digest drift`);
   return worldSpec;
+}
+
+function loadSubjectIdentities() {
+  const fixture = readJson(PR39_SUBJECT_IDENTITIES_PATH);
+  if (fixture.fixtureVersion !== "pr39-subject-identities-v1") fail("unexpected PR39 subject identity fixture version");
+  return new Map(fixture.slots.map((identity) => [identity.slot, Object.freeze({
+    femaleName: identity.femaleName,
+    maleName: identity.maleName,
+    birthCity: identity.birthCity,
+  })]));
 }
 
 function verifyGenomeBundle(bundle, label) {
@@ -74,10 +85,13 @@ export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_CO
   if (!Array.isArray(fixture.historicalPlan?.windows) || fixture.historicalPlan.windows.length !== 14) {
     fail("PR39 development fixture must contain fourteen historical windows");
   }
+  const subjectIdentities = loadSubjectIdentities();
 
   const windows = fixture.historicalPlan.windows.map((item) => structuredClone(item));
   const slots = fixture.slots.map((slot) => {
     const worldSpec = loadWorld(slot);
+    const subjectIdentity = subjectIdentities.get(slot.slot);
+    if (!subjectIdentity) fail(`PR39 slot ${slot.slot} lacks modern subject identity material`);
     const genome = loadGenome(slot);
     const parentGenomes = loadParentGenomes(genome);
     const offersByWindow = new Map();
@@ -113,6 +127,7 @@ export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_CO
       worldSpec,
       worldSpecPath: slot.worldSpecPath,
       worldSpecDigest: slot.worldSpecDigest,
+      subjectIdentity: structuredClone(subjectIdentity),
       genome,
       genomePath: slot.genomePath,
       genomeDigest: slot.genomeDigest,
