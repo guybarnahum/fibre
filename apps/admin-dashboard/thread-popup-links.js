@@ -21,16 +21,46 @@ function sentence(value) {
   return `${text[0].toUpperCase()}${text.slice(1)}${/[.!?]$/u.test(text) ? "" : "."}`;
 }
 
-function shortId(value) {
-  const text = String(value ?? "");
-  return text.length > 30 ? `${text.slice(0, 14)}…${text.slice(-8)}` : text;
-}
-
 function prettyDate(value) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat([], { month:"short", day:"numeric", year:"numeric" }).format(date);
+}
+
+function firstText(...values) {
+  return values.find((value) => typeof value === "string" && value.trim() !== "")?.trim() ?? null;
+}
+
+function uniqueStrings(...values) {
+  return [...new Set(values.flatMap((value) => Array.isArray(value) ? value : []).filter((value) => typeof value === "string" && value.trim() !== ""))];
+}
+
+function threadName(identity) {
+  return firstText(
+    identity?.displayName,
+    identity?.world?.thread?.identity?.name,
+    identity?.presentation?.subject?.displayName,
+  );
+}
+
+function threadSex(identity) {
+  return firstText(
+    identity?.world?.thread?.identity?.sex,
+    identity?.presentation?.subject?.sex,
+    identity?.presentation?.identity?.sex,
+  );
+}
+
+function memoryRefs(identity) {
+  const thread = identity?.world?.thread ?? {};
+  return uniqueStrings(
+    thread.memoryRefs,
+    thread.currentState?.memoryRefs,
+    thread.identity?.memoryRefs,
+    identity?.presentation?.memoryRefs,
+    identity?.presentation?.memories?.refs,
+  );
 }
 
 function valueOrNone(value, none = "None recorded") {
@@ -47,16 +77,15 @@ function scalar(value) {
 function dataTree(value) {
   const simple = scalar(value);
   if (simple !== null) {
-    const span = el("span", typeof value === "string" && (value.startsWith("thr_") || value.includes("sha256:")) ? "mono" : null, simple);
-    return span;
+    return el("span", typeof value === "string" && (value.startsWith("thr_") || value.includes("sha256:")) ? "mono" : null, simple);
   }
   if (Array.isArray(value)) {
     if (value.length === 0) return el("span", null, "None");
     const list = el("div", "thread-data-list");
     value.forEach((item, index) => {
       const row = el("div", "thread-data-row");
-      row.append(el("span", "thread-data-key mono", `[${index}]`), el("div", "thread-data-value"));
-      row.lastChild.append(dataTree(item)); list.append(row);
+      const val = el("div", "thread-data-value"); val.append(dataTree(item));
+      row.append(el("span", "thread-data-key mono", `[${index}]`), val); list.append(row);
     });
     return list;
   }
@@ -119,11 +148,13 @@ function primaryImage(identity) {
 function hero(identity, threadId) {
   const worldThread = identity.world?.thread ?? {};
   const worldIdentity = worldThread.identity ?? {};
+  const name = threadName(identity);
+  const sex = threadSex(identity);
   const image = primaryImage(identity);
   const wrap = el("section", "thread-person-hero");
   const portrait = el("div", `thread-person-portrait${image ? " has-image" : ""}`);
   if (image) {
-    const img = el("img"); img.src = image.url; img.alt = identity.displayName ?? "Thread portrait"; img.loading = "lazy"; portrait.append(img);
+    const img = el("img"); img.src = image.url; img.alt = name ?? "Thread portrait"; img.loading = "lazy"; portrait.append(img);
   } else {
     portrait.append(
       el("span", "thread-person-portrait-mark", "◌"),
@@ -135,12 +166,19 @@ function hero(identity, threadId) {
   const copy = el("div", "thread-person-hero-copy");
   copy.append(
     el("p", "thread-person-fin mono", identity.fibreIdentityNumber ?? "No FIN"),
-    el("h2", null, identity.displayName ?? worldIdentity.name ?? "Fibre Thread"),
+    el("h2", null, name ?? "Fibre Thread"),
   );
-  const traits = [worldIdentity.sex, identity.lifecycleStatus, worldIdentity.originOrientation]
+  const traits = [sex, identity.lifecycleStatus, worldIdentity.originOrientation]
     .filter(Boolean).map((item) => human(item));
   if (traits.length) copy.append(el("p", "thread-person-meta", traits.join(" · ")));
-  copy.append(el("p", "thread-person-id mono", threadId));
+
+  const identityFacts = el("div", "thread-person-facts hero-facts");
+  identityFacts.append(
+    fact("Name", name ?? "—"),
+    fact("Sex", sex ? human(sex) : "—"),
+  );
+  copy.append(identityFacts, el("p", "thread-person-id mono", threadId));
+
   const states = el("div", "thread-person-states");
   states.append(
     el("span", "thread-state good", "● World admitted"),
@@ -177,32 +215,32 @@ function nowSection(identity) {
 
 function lifeSection(identity) {
   const thread = identity.world?.thread ?? {};
-  const memories = Array.isArray(thread.memoryRefs) ? thread.memoryRefs : [];
-  const relations = Array.isArray(thread.relationshipRefs) ? thread.relationshipRefs : [];
+  const memories = memoryRefs(identity);
+  const relations = uniqueStrings(thread.relationshipRefs, thread.currentState?.relationshipRefs);
   const createdAt = thread.provenance?.createdAt ?? null;
-  const wrap = section("Life");
+  const wrap = section("Life", memories.length ? `${memories.length} memory ${memories.length === 1 ? "reference" : "references"}` : null);
   const summary = el("div", "thread-life-summary");
   summary.append(
-    fact("Memories", `${memories.length} autobiographical ${memories.length === 1 ? "memory" : "memories"}`),
+    fact("Memories", memories.length ? `${memories.length} referenced` : "None referenced"),
     fact("Relationships", relations.length ? `${relations.length} recorded` : "None recorded"),
     fact("Created", prettyDate(createdAt) ?? "—"),
     fact("Version", thread.version ?? "—"),
   );
   wrap.append(summary);
-  if (memories.length) wrap.append(disclosure("Memory references", memories));
+  if (memories.length) wrap.append(disclosure("Memory references", memories, { open:true }));
   return wrap;
 }
 
 function appearanceSection(identity) {
   const description = phenotype(identity);
   const rule = appearanceRule(identity);
-  const threadIdentity = identity.world?.thread?.identity ?? {};
-  if (!description && !rule && !threadIdentity.sex) return null;
+  const sex = threadSex(identity);
+  if (!description && !rule && !sex) return null;
   const wrap = section("Appearance", identity.assets?.length ? `${identity.assets.length} ready media` : "Canonical image not materialized");
   if (description) wrap.append(el("p", "thread-appearance-prose", description));
   const grid = el("div", "thread-person-facts");
   grid.append(
-    fact("Sex", human(threadIdentity.sex) || "—"),
+    fact("Sex", sex ? human(sex) : "—"),
     fact("Renderer", identity.world?.thread?.identity?.canonicalVisualIdentity?.specification?.model ?? "—"),
   );
   wrap.append(grid);
@@ -241,8 +279,7 @@ function dnaSection(identity) {
     list.append(item);
   });
   wrap.append(list);
-  const meta = { header:genome.header, mutations:genome.mutations ?? [], genomeDigest:genome.genomeDigest };
-  wrap.append(disclosure("Genome provenance", meta));
+  wrap.append(disclosure("Genome provenance", { header:genome.header, mutations:genome.mutations ?? [], genomeDigest:genome.genomeDigest }));
   return wrap;
 }
 
@@ -259,12 +296,11 @@ async function openThread(threadId) {
     if (!response.ok) {
       eyebrow.textContent = payload.existence === "not_admitted" ? "Pre-birth candidate" : "Thread Observatory";
       title.textContent = payload.existence === "not_admitted" ? "Not admitted to World" : "Thread unavailable";
-      const problem = el("div", "error-box", payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-      body.replaceChildren(fact("Thread ID", threadId, "mono"), problem); return;
+      body.replaceChildren(fact("Thread ID", threadId, "mono"), el("div", "error-box", payload.detail ?? payload.error ?? `HTTP ${response.status}`)); return;
     }
 
     const identity = payload.identity ?? {};
-    title.textContent = identity.fibreIdentityNumber ?? identity.displayName ?? "Thread";
+    title.textContent = identity.fibreIdentityNumber ?? threadName(identity) ?? "Thread";
     const view = el("div", "thread-person-view");
     view.append(hero(identity, threadId));
     const media = mediaSection(identity); if (media) view.append(media);
@@ -273,16 +309,10 @@ async function openThread(threadId) {
     const appearance = appearanceSection(identity); if (appearance) view.append(appearance);
     const dna = dnaSection(identity); if (dna) view.append(dna);
 
-    const records = el("section", "thread-records");
-    records.append(el("h3", null, "Records"));
+    const records = el("section", "thread-records"); records.append(el("h3", null, "Records"));
     if (identity.world?.civilRegistration) records.append(disclosure("Civil identity & World registration", identity.world.civilRegistration));
     if ((identity.world?.embodiments ?? []).length) records.append(disclosure("Current embodiments", identity.world.embodiments));
-    if (identity.world?.thread?.provenance) records.append(disclosure("Technical provenance", {
-      threadId:identity.world.thread.threadId,
-      status:identity.world.thread.status,
-      version:identity.world.thread.version,
-      provenance:identity.world.thread.provenance,
-    }));
+    if (identity.world?.thread?.provenance) records.append(disclosure("Technical provenance", { threadId:identity.world.thread.threadId, status:identity.world.thread.status, version:identity.world.thread.version, provenance:identity.world.thread.provenance }));
     if (identity.presentation) records.append(disclosure("Current public Presentation", identity.presentation));
     view.append(records); body.replaceChildren(view);
   } catch (error) {
@@ -306,19 +336,22 @@ function decorate(root = document) {
     node.dataset.threadId = threadId; node.classList.add("thread-link");
     if (!["BUTTON", "A"].includes(node.tagName)) { node.setAttribute("role", "button"); node.tabIndex = 0; node.title = `Inspect ${threadId}`; }
   }
-  const chain = document.querySelector("#chain-title"); const chainThread = threadIdFor(chain);
+  const chain = document.querySelector("#chain-title");
+  const chainThread = threadIdFor(chain);
   if (chainThread) { chain.dataset.threadId = chainThread; chain.classList.add("thread-link"); chain.setAttribute("role", "button"); chain.tabIndex = 0; chain.title = `Inspect ${chainThread}`; }
 }
 
 document.addEventListener("click", (event) => {
-  const target = event.target.closest?.(".thread-link,[data-thread-id]"); const threadId = threadIdFor(target);
-  if (!threadId) return; event.preventDefault(); event.stopImmediatePropagation(); void openThread(threadId);
+  const target = event.target.closest?.(".thread-link,[data-thread-id]");
+  const threadId = threadIdFor(target); if (!threadId) return;
+  event.preventDefault(); event.stopImmediatePropagation(); void openThread(threadId);
 }, true);
 
 document.addEventListener("keydown", (event) => {
   if (!["Enter", " "].includes(event.key)) return;
-  const target = event.target.closest?.(".thread-link,[data-thread-id]"); const threadId = threadIdFor(target);
-  if (!threadId || target.tagName === "BUTTON") return; event.preventDefault(); void openThread(threadId);
+  const target = event.target.closest?.(".thread-link,[data-thread-id]");
+  const threadId = threadIdFor(target); if (!threadId || target.tagName === "BUTTON") return;
+  event.preventDefault(); void openThread(threadId);
 });
 
 new MutationObserver((mutations) => {
