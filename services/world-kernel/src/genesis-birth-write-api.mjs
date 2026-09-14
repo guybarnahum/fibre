@@ -8,7 +8,7 @@ function requestId(value) {
     : `req_${crypto.randomUUID()}`;
 }
 
-function activityRequestId(value) {
+function activityId(value) {
   return typeof value === "string" && REQUEST_ID_PATTERN.test(value) ? value : null;
 }
 
@@ -90,10 +90,12 @@ export function createGenesisBirthWriteApi({
           throw problem(403, "PRIVATE_TOKEN_REQUIRED", "A valid private-access token is required");
         }
         const bundle = await readJson(request, maxBodyBytes);
-        const correlation = activityRequestId(request.headers.get("x-fibre-activity-request-id"));
-        const result = await birthPublisher.publishBirth(bundle, {
-          activityContext: correlation === null ? {} : { requestId: correlation },
-        });
+        const requestActivityId = activityId(request.headers.get("x-fibre-activity-request-id"));
+        const parentOperationId = activityId(request.headers.get("x-fibre-activity-parent-operation-id"));
+        const activityContext = {};
+        if (requestActivityId !== null) activityContext.requestId = requestActivityId;
+        if (parentOperationId !== null) activityContext.parentOperationId = parentOperationId;
+        const result = await birthPublisher.publishBirth(bundle, { activityContext });
         return json(result?.idempotent === true ? 200 : 201, result, id);
       } catch (error) {
         const status = error instanceof TypeError ? (error.httpStatus ?? 400) : 500;
