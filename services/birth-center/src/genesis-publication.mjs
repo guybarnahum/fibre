@@ -89,7 +89,7 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
     birthDate: birthInstant.toISOString().slice(0, 10),
     languages: Object.freeze([...worldSpec.languages]),
     birthCity: subjectIdentity.birthCity.trim(),
-    culture: Object.freeze([worldSpec.culturalContext.trim()]),
+    culture: Object.freeze([`${subjectIdentity.birthCity.trim()} formative context`]),
     originOrientation: "original",
     selfDescription: `I am ${name.trim()}.`,
   });
