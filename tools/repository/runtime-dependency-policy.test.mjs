@@ -98,7 +98,7 @@ test("same-owner imports, stable named package boundaries and root Infra entry p
 
 test("dynamic imports are subject to the same ownership boundary", () => {
   const specifier = ["..", "..", "world-kernel", "src", "world-store.mjs"].join("/");
-  assert.deepEqual(runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", fakeImport(specifier, { kind = "dynamic" })), [
+  assert.deepEqual(runtimeDependencyViolationsForSource("services/example/src/runtime.mjs", fakeImport(specifier, { kind: "dynamic" })), [
     `Runtime dependency boundary: services/example/src/runtime.mjs reaches into world-kernel through private cross-owner specifier ${specifier}; use a stable public @fibre/... boundary`,
   ]);
 });
