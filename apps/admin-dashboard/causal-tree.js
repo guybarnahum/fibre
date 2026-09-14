@@ -29,3 +29,15 @@ export function orderCausalTree(items) {
   for (const node of nodes) visit(node, 0);
   return Object.freeze(result);
 }
+
+export function causalTreeVisibility(items, collapsedOperationIds = []) {
+  const collapsed = new Set(collapsedOperationIds);
+  const ordered = orderCausalTree(items);
+  const ancestors = [];
+  return Object.freeze(ordered.map((entry) => {
+    ancestors.length = entry.depth;
+    const hidden = ancestors.some((operationId) => collapsed.has(operationId));
+    ancestors[entry.depth] = entry.item.operationId ?? null;
+    return Object.freeze({ ...entry, hidden });
+  }));
+}
