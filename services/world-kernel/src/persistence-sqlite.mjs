@@ -29,6 +29,43 @@ export function translateStorageError(error) {
   return error;
 }
 
+function dropThreadEventDependentTriggers(database) {
+  database.exec(`
+    DROP TRIGGER IF EXISTS identity_assertions_require_thread_event_witness;
+    DROP TRIGGER IF EXISTS identity_lived_event_witness_guard;
+    DROP TRIGGER IF EXISTS genesis_manifests_require_historical_envelope;
+    DROP TRIGGER IF EXISTS genesis_manifests_publish_fin_registration;
+  `);
+}
+
+function recoverInterruptedEventSchema(database) {
+  dropThreadEventDependentTriggers(database);
+  const rows = database.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('threads','thread_events','thread_events_event_upgrade')",
+  ).all();
+  const names = new Set(rows.map((row) => row.name));
+  const hasThreads = names.has("threads");
+  const hasEvents = names.has("thread_events");
+  const hasUpgrade = names.has("thread_events_event_upgrade");
+
+  if (!hasEvents && hasUpgrade) {
+    database.exec(`
+      ALTER TABLE thread_events_event_upgrade RENAME TO thread_events;
+      CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
+      CREATE TRIGGER IF NOT EXISTS thread_events_no_update BEFORE UPDATE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS thread_events_no_delete BEFORE DELETE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
+    `);
+    return;
+  }
+  if (hasEvents && hasUpgrade) {
+    database.exec("DROP TABLE thread_events_event_upgrade");
+    return;
+  }
+  if (hasThreads && !hasEvents) {
+    throw new IntegrityError("World event schema is incomplete: thread_events is missing and no recoverable upgrade table exists");
+  }
+}
+
 function createBaseSchema(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS threads (
@@ -132,7 +169,7 @@ function createPrivateParticipationSchema(database) {
       request_id TEXT NOT NULL,
       snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
       thread_state_hash TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
-      request_fingerprint TEXT NOT NULL CHECK (length(request_fingerprint) = 71 AND substr(request_fingerprint, 1, 7) = 'sha256:' AND substr(request_fingerprint, 8) NOT GLOB '*[^0-9a-f]*'),
+      request_fingerprint TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
       policy_id TEXT NOT NULL,
       policy_version TEXT NOT NULL,
       stance_json TEXT NOT NULL CHECK (json_valid(stance_json)),
@@ -182,6 +219,7 @@ function needsEventSchemaUpgrade(database) {
 }
 
 function rebuildEventTables(database) {
+  dropThreadEventDependentTriggers(database);
   database.exec(`
     DROP TRIGGER IF EXISTS thread_events_no_update;
     DROP TRIGGER IF EXISTS thread_events_no_delete;
@@ -230,6 +268,7 @@ function rebuildEventTables(database) {
 }
 
 export function migrateDatabase(database) {
+  recoverInterruptedEventSchema(database);
   const row = database.prepare("PRAGMA user_version").get();
   const currentVersion = Number(row.user_version);
   if (currentVersion < 0 || currentVersion > WORLD_STORE_SCHEMA_VERSION) throw new IntegrityError(`Unsupported world-store schema version ${currentVersion}; expected at most ${WORLD_STORE_SCHEMA_VERSION}`);
