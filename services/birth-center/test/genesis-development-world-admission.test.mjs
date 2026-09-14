@@ -22,14 +22,17 @@ function readJson(path) {
 
 function developmentRequest() {
   const cohort = readJson("fixtures/genesis/pr39/development-cohort-v1.json");
+  const identities = readJson("fixtures/genesis/pr39/subject-identities-v1.json");
   const slot = cohort.slots[0];
   const worldSpec = readJson(slot.worldSpecPath);
   const genome = readJson(slot.genomePath);
+  const subjectIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
   return {
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
     requestId: "birth-development-world-admission-001",
     requestedAt: "2026-08-31T23:30:00Z",
     worldSpec,
+    subjectIdentity,
     genomeValues: genome.loci.map((locus) => locus.value),
     participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
     placeAffordances: slot.placeAffordances,
@@ -187,6 +190,9 @@ test("Birth Center develops a narrow request and World atomically admits the res
   const thread = world.getThread(first.threadId);
   assert.equal(thread.threadId, first.threadId);
   assert.equal(thread.status, "frozen");
+  assert.notEqual(thread.identity.name, "Fibre Thread");
+  assert.ok(["female", "male"].includes(thread.identity.sex));
+  assert.equal(thread.identity.birthCity, "Tbilisi, Georgia");
   const worldEvents = world.listEvents(first.threadId);
   assert.equal(worldEvents.length, 15);
   assert.deepEqual(world.replayThread(first.threadId), thread);
