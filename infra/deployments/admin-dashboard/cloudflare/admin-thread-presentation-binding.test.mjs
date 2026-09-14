@@ -16,7 +16,7 @@ const accessConfig = {
   audience: "admin-audience",
 };
 
-test("Admin reaches staging Thread Presentation through a service binding", async () => {
+test("Admin reaches authoritative World and Thread Presentation through service bindings", async () => {
   const source = await readFile(new URL("./wrangler.jsonc", import.meta.url), "utf8");
   const base = parseJsonc(source, "wrangler.jsonc");
   const resolved = resolveCloudflareAppConfig("admin-dashboard", base, {
@@ -24,7 +24,13 @@ test("Admin reaches staging Thread Presentation through a service binding", asyn
     resourceState,
     accessConfig,
   });
-  const binding = resolved.services.find((candidate) => candidate.binding === "THREAD_PRESENTATION");
-  assert.equal(binding?.service, "fibre-thread-presentation-staging");
+  assert.equal(
+    resolved.services.find((candidate) => candidate.binding === "WORLD_KERNEL")?.service,
+    "fibre-world-kernel-staging",
+  );
+  assert.equal(
+    resolved.services.find((candidate) => candidate.binding === "THREAD_PRESENTATION")?.service,
+    "fibre-thread-presentation-staging",
+  );
   assert.equal(resolved.main, "./admin-worker.mjs");
 });
