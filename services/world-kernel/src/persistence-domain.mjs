@@ -1,4 +1,4 @@
-import { GENESIS_SEX_RULE, normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
+import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 import {
   MAX_COMMAND_PAYLOAD_BYTES,
   EVENT_TYPES,
@@ -169,10 +169,17 @@ function applyGenesisSexMigration(thread, event) {
   if (event.threadId !== thread.threadId) throw new IntegrityError(`migration event ${event.eventId} belongs to another Thread`);
   if (thread.version !== event.expectedVersion) throw new IntegrityError(`migration event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`);
   if (thread.identity.sex !== undefined) throw new IntegrityError(`migration event ${event.eventId} attempts to replace existing sex`);
-  assertExactKeys(`migration event ${event.eventId} payload`, event.payload, ["sex","ruleId","ruleVersion"]);
+  assertExactKeys(`migration event ${event.eventId} payload`, event.payload, ["sex","genesisId","resultDigest"]);
   const sex = normalizeGenesisSex(event.payload.sex);
-  if (event.payload.ruleId !== GENESIS_SEX_RULE.id || event.payload.ruleVersion !== GENESIS_SEX_RULE.version) {
-    throw new IntegrityError(`migration event ${event.eventId} uses unknown Genesis sex rule`);
+  assertId(`migration event ${event.eventId} genesisId`, event.payload.genesisId);
+  if (!/^sha256:[0-9a-f]{64}$/u.test(event.payload.resultDigest)) {
+    throw new IntegrityError(`migration event ${event.eventId} has invalid Genesis result digest`);
+  }
+  if (event.provenance.source !== "genesis_birth_publication"
+    || event.provenance.genesisId !== event.payload.genesisId
+    || event.provenance.resultDigest !== event.payload.resultDigest
+    || event.provenance.notThreadLifeEvent !== true) {
+    throw new IntegrityError(`migration event ${event.eventId} lacks authoritative Genesis migration provenance`);
   }
   const replayed = {
     ...thread,
