@@ -67,6 +67,7 @@ export function createGenesisPresentationDeliveryService({
   const registry = method("civilRegistry", civilRegistry, "getCivilRegistrationByThreadId");
   const queue = method("outbox", outbox, "listPending");
   method("outbox", outbox, "get");
+  method("outbox", outbox, "getByThreadId");
   method("outbox", outbox, "recordFailure");
   method("outbox", outbox, "markDelivered");
   const publisher = method("presentationPublisher", presentationPublisher, "publishGenesisPresentation");
@@ -84,6 +85,12 @@ export function createGenesisPresentationDeliveryService({
       genesisId: entry.genesisId,
       threadId: entry.threadId,
     });
+  }
+
+  function projectEntry(entry) {
+    const thread = world.getThread(entry.threadId);
+    const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
+    return projector({ thread, manifest:entry.manifest, civilRegistration });
   }
 
   async function deliverEntry(entry) {
@@ -110,13 +117,7 @@ export function createGenesisPresentationDeliveryService({
       });
     }
     try {
-      const thread = world.getThread(entry.threadId);
-      const civilRegistration = registry.getCivilRegistrationByThreadId(entry.threadId);
-      const bundle = projector({
-        thread,
-        manifest: entry.manifest,
-        civilRegistration,
-      });
+      const bundle = projectEntry(entry);
       const publication = await runActivityStage(activity, {
         ...context,
         stage: "presentation.snapshot.publish",
@@ -149,6 +150,28 @@ export function createGenesisPresentationDeliveryService({
       const entry = queue.get(genesisId);
       if (entry === null) throw new Error(`Genesis presentation outbox record ${genesisId} was not found`);
       return deliverEntry(entry);
+    },
+
+    async rebuildThreadPresentation(threadId) {
+      const entry = queue.getByThreadId(threadId);
+      if (entry === null) throw new Error(`Thread ${threadId} has no Genesis presentation outbox record`);
+      const bundle = projectEntry(entry);
+      const publication = await runActivityStage(activity, {
+        ...activityContext(entry),
+        stage: "presentation.snapshot.rebuild",
+        attempt: 1,
+      }, async () => publisher.publishGenesisPresentation({
+        genesisId: entry.genesisId,
+        publicationDigest: entry.publicationDigest,
+        bundle,
+      }));
+      return Object.freeze({
+        genesisId: entry.genesisId,
+        threadId: entry.threadId,
+        rebuilt: publication?.reused !== true,
+        reused: publication?.reused === true,
+        presentation: publication ?? null,
+      });
     },
 
     async deliverPending({ limit = 100 } = {}) {
