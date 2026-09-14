@@ -100,25 +100,34 @@ export function createBirthReconciliationRuntime({
     for (const birth of pending) {
       const context = activityContext(birth);
       try {
-        let submitOperationId = null;
-        const result = await runActivityStage(activity, {
-          ...context,
-          stage: "birth.publish.world_submit",
-          attempt: 1,
-        }, async ({ operationId }) => {
-          submitOperationId = operationId;
-          const worldContext = operationId === null
-            ? context
-            : Object.freeze({ ...context, parentOperationId: operationId });
-          return worldPublisher.publishBirth(birth.bundle, { activityContext: worldContext });
-        });
         await runActivityStage(activity, {
           ...context,
-          parentOperationId: submitOperationId,
-          stage: "birth.publish.world_ack",
+          stage: "birth.publish.complete",
           attempt: 1,
-          evidence: finalWorldEventEvidence(result),
-        }, async () => provisionalBirthStore.markPublished(birth.genesisId, result));
+        }, async ({ operationId: publicationOperationId }) => {
+          const publicationContext = publicationOperationId === null
+            ? context
+            : Object.freeze({ ...context, parentOperationId: publicationOperationId });
+          let submitOperationId = null;
+          const result = await runActivityStage(activity, {
+            ...publicationContext,
+            stage: "birth.publish.world_submit",
+            attempt: 1,
+          }, async ({ operationId }) => {
+            submitOperationId = operationId;
+            const worldContext = operationId === null
+              ? publicationContext
+              : Object.freeze({ ...context, parentOperationId: operationId });
+            return worldPublisher.publishBirth(birth.bundle, { activityContext: worldContext });
+          });
+          await runActivityStage(activity, {
+            ...publicationContext,
+            parentOperationId: submitOperationId,
+            stage: "birth.publish.world_ack",
+            attempt: 1,
+            evidence: finalWorldEventEvidence(result),
+          }, async () => provisionalBirthStore.markPublished(birth.genesisId, result));
+        });
         published += 1;
       } catch (error) {
         await bestEffortRecord(activity, {
