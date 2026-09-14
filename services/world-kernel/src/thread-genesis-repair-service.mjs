@@ -1,5 +1,7 @@
 import { GENESIS_SEX_RULE } from "#core/src/genesis-sex.mjs";
 
+const REPAIR_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
+
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") throw new TypeError(`${name} must expose ${method}()`);
   return value;
@@ -141,6 +143,10 @@ async function record(activity, entry) {
   try { await activity.record(entry); } catch {}
 }
 
+function childOperation(repairKey, child) {
+  return `${repairKey}.${child}`;
+}
+
 export function createThreadGenesisRepairService({
   worldReader,
   civilRegistry,
@@ -212,7 +218,7 @@ export function createThreadGenesisRepairService({
   }
 
   async function repair(threadId, { repairKey } = {}) {
-    if (typeof repairKey !== "string" || repairKey.trim() === "") throw new TypeError("repairKey is required");
+    if (typeof repairKey !== "string" || !REPAIR_KEY.test(repairKey)) throw new TypeError("repairKey must be a Fibre identifier up to 221 characters");
     const before = await diagnose(threadId);
     if (!before.exists) return Object.freeze({ threadId, repairKey, before, after:before, actions:Object.freeze([]) });
 
@@ -233,7 +239,8 @@ export function createThreadGenesisRepairService({
       actions.push(Object.freeze({ action:"migrate_genesis_sex", result }));
       await record(activity, {
         threadId,
-        operationId:repairKey,
+        operationId:childOperation(repairKey, "migration"),
+        parentOperationId:repairKey,
         stage:"thread.repair.genesis_sex_migration",
         status:"succeeded",
         attempt:1,
@@ -247,7 +254,8 @@ export function createThreadGenesisRepairService({
       actions.push(Object.freeze({ action:"rebuild_presentation", result }));
       await record(activity, {
         threadId,
-        operationId:repairKey,
+        operationId:childOperation(repairKey, "presentation"),
+        parentOperationId:repairKey,
         stage:"thread.repair.presentation_rebuild",
         status:"succeeded",
         attempt:1,
@@ -260,12 +268,13 @@ export function createThreadGenesisRepairService({
       const result = await visualReconciler.reconcileThread({
         threadId,
         regenerationKey: repairKey,
-        activityContext: { repairKey, parentOperationId:repairKey },
+        activityContext: { repairKey, parentOperationId:childOperation(repairKey, "visual") },
       });
       actions.push(Object.freeze({ action:"reconcile_visual_publication", result }));
       await record(activity, {
         threadId,
-        operationId:repairKey,
+        operationId:childOperation(repairKey, "visual"),
+        parentOperationId:repairKey,
         stage:"thread.repair.visual_reconcile",
         status:"succeeded",
         attempt:1,
@@ -276,7 +285,8 @@ export function createThreadGenesisRepairService({
     const after = await diagnose(threadId);
     await record(activity, {
       threadId,
-      operationId:repairKey,
+      operationId:childOperation(repairKey, "complete"),
+      parentOperationId:repairKey,
       stage:"thread.repair.complete",
       status:"succeeded",
       attempt:1,
