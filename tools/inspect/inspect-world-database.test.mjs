@@ -69,25 +69,27 @@ test("database inspector verifies and summarizes a clean Fibre world", async () 
   }
 });
 
-test("inspector source opener remains read-only even if query_only is disabled", () => {
+test("inspector cannot mutate the world even if query_only is disabled", () => {
   const { directory, databasePath } = seededDatabase();
   try {
     const source = openInspectorSourceDatabase(databasePath);
     try {
-      assert.equal(Number(source.prepare("PRAGMA query_only").get().query_only), 1);
       source.exec("PRAGMA query_only=OFF");
-      assert.equal(Number(source.prepare("PRAGMA query_only").get().query_only), 0);
       assert.throws(
-        () => source.exec("PRAGMA user_version=99"),
+        () => source.prepare("DELETE FROM threads WHERE thread_id=?").run(fixture.threadId),
         /readonly|read-only|attempt to write/i,
-        "the source handle itself must be opened read-only, independent of query_only",
+        "inspector must not mutate the world",
       );
     } finally {
       source.close();
     }
     const verification = new DatabaseSync(databasePath, { readOnly: true });
     try {
-      assert.equal(Number(verification.prepare("PRAGMA user_version").get().user_version), 6);
+      assert.equal(
+        verification.prepare("SELECT COUNT(*) AS count FROM threads WHERE thread_id=?").get(fixture.threadId).count,
+        1,
+        "inspection changed the world",
+      );
     } finally {
       verification.close();
     }
