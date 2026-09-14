@@ -95,6 +95,8 @@ export class FibreWorldDurableObject extends DurableObject {
       const wake = await runtime.reconciliationRuntime.requestWake();
       return Response.json({ ok: true, action: "wake", wake, reconciliation: await reconciliationState(runtime) });
     }
+    const repairResponse = await runtime.repairApi.fetch(request);
+    if (repairResponse !== null) return repairResponse;
     const recoveryResponse = await runtime.visualRecoveryApi.fetch(request);
     if (recoveryResponse !== null) return recoveryResponse;
     const inspectionResponse = await runtime.inspectionApi.fetch(request);
