@@ -25,10 +25,11 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
     maleName: identityFixture.maleName,
     birthCity: identityFixture.birthCity,
   };
+  const requestedAt = "2026-09-14T22:41:35Z";
   const plan = buildGenesisDevelopmentPlan({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
     requestId: "modern-birth-reference-001",
-    requestedAt: "2026-09-14T22:41:35Z",
+    requestedAt,
     worldSpec,
     subjectIdentity,
     genomeValues: genome.loci.map((locus) => locus.value),
@@ -41,7 +42,7 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
 
   const thread = buildNeutralGenesisThreadSeed({
     threadId: plan.threadId,
-    createdAt: plan.requestedAt ?? "2026-09-14T22:41:35Z",
+    createdAt: requestedAt,
     subjectIdentity: plan.subjectIdentity,
     worldSpec: plan.worldSpec,
     bornAt: plan.bornAt,
