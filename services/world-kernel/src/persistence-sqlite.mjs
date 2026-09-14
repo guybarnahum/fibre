@@ -29,23 +29,24 @@ export function translateStorageError(error) {
   return error;
 }
 
-function dropIdentityThreadEventTriggers(database) {
-  database.exec(`
-    DROP TRIGGER IF EXISTS identity_assertions_require_thread_event_witness;
-    DROP TRIGGER IF EXISTS identity_lived_event_witness_guard;
-  `);
+function quoteIdentifier(value) {
+  return `"${String(value).replaceAll('"', '""')}"`;
 }
 
 function dropThreadEventDependentTriggers(database) {
-  dropIdentityThreadEventTriggers(database);
-  database.exec(`
-    DROP TRIGGER IF EXISTS genesis_manifests_require_historical_envelope;
-    DROP TRIGGER IF EXISTS genesis_manifests_publish_fin_registration;
-  `);
+  const triggers = database.prepare(`
+    SELECT name
+    FROM sqlite_master
+    WHERE type='trigger'
+      AND sql IS NOT NULL
+      AND instr(lower(sql), 'thread_events') > 0
+  `).all();
+  for (const trigger of triggers) {
+    database.exec(`DROP TRIGGER IF EXISTS ${quoteIdentifier(trigger.name)}`);
+  }
 }
 
 function recoverInterruptedEventSchema(database) {
-  dropIdentityThreadEventTriggers(database);
   const rows = database.prepare(
     "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('threads','thread_events','thread_events_event_upgrade')",
   ).all();
@@ -55,6 +56,7 @@ function recoverInterruptedEventSchema(database) {
   const hasUpgrade = names.has("thread_events_event_upgrade");
 
   if (!hasEvents && hasUpgrade) {
+    dropThreadEventDependentTriggers(database);
     database.exec(`
       ALTER TABLE thread_events_event_upgrade RENAME TO thread_events;
       CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
