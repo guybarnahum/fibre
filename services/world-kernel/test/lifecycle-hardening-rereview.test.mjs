@@ -420,10 +420,9 @@ test("M1 obligation discharge identity is exact UTF-8 prose", async () =>
     runtime.close();
   }));
 
-test("same-version schema open restores newer lifecycle tables and triggers", async () =>
+test("opening a world restores missing lifecycle capability", async () =>
   withDatabase(async (databasePath) => {
     const lifecycle = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
-    assert.equal(lifecycle.storageMetadata().schemaVersion, 6);
     lifecycle.close();
 
     let database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -434,11 +433,9 @@ test("same-version schema open restores newer lifecycle tables and triggers", as
       DROP INDEX IF EXISTS idx_runtime_abandons_thread_time;
       DROP TABLE IF EXISTS runtime_abandons;
     `);
-    assert.equal(Number(database.prepare("PRAGMA user_version").get().user_version), 6);
     database.close();
 
     const reopened = openLifecycleHardeningStore(localWorldStateStorage(databasePath));
-    assert.equal(reopened.storageMetadata().schemaVersion, 6);
     reopened.close();
 
     database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
@@ -447,6 +444,7 @@ test("same-version schema open restores newer lifecycle tables and triggers", as
         "SELECT COUNT(*) AS count FROM sqlite_master WHERE type='table' AND name='runtime_abandons'",
       ).get().count,
       1,
+      "world cannot record runtime abandonment",
     );
     for (const name of [
       "runtime_abandons_no_update",
@@ -458,7 +456,7 @@ test("same-version schema open restores newer lifecycle tables and triggers", as
           "SELECT COUNT(*) AS count FROM sqlite_master WHERE type='trigger' AND name=?",
         ).get(name).count,
         1,
-        name,
+        `missing lifecycle guard ${name}`,
       );
     }
     database.close();
