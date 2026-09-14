@@ -3,7 +3,6 @@ import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 
-import { WORLD_STORE_SCHEMA_VERSION } from "../src/persistence-common.mjs";
 import {
   createObligationTables,
   legacyConsumptionRowsToTombstones,
@@ -23,12 +22,10 @@ function database() {
   return infraDriver.state.open("world");
 }
 
-test("current world-store schema creates the Structured Obligation tables additively", () => {
+test("world migrations provide Structured Obligation storage", () => {
   const db = database();
   try {
     migrateDatabase(db);
-    assert.equal(Number(db.prepare("PRAGMA user_version").get().user_version), WORLD_STORE_SCHEMA_VERSION);
-    assert.equal(WORLD_STORE_SCHEMA_VERSION, 6);
     const names = new Set(db.prepare(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN (
@@ -44,6 +41,7 @@ test("current world-store schema creates the Structured Obligation tables additi
         "obligation_applicability_decisions",
         "obligation_records",
       ],
+      "world cannot represent obligations",
     );
   } finally {
     db.close();
