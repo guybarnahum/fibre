@@ -29,17 +29,23 @@ export function translateStorageError(error) {
   return error;
 }
 
-function dropThreadEventDependentTriggers(database) {
+function dropIdentityThreadEventTriggers(database) {
   database.exec(`
     DROP TRIGGER IF EXISTS identity_assertions_require_thread_event_witness;
     DROP TRIGGER IF EXISTS identity_lived_event_witness_guard;
+  `);
+}
+
+function dropThreadEventDependentTriggers(database) {
+  dropIdentityThreadEventTriggers(database);
+  database.exec(`
     DROP TRIGGER IF EXISTS genesis_manifests_require_historical_envelope;
     DROP TRIGGER IF EXISTS genesis_manifests_publish_fin_registration;
   `);
 }
 
 function recoverInterruptedEventSchema(database) {
-  dropThreadEventDependentTriggers(database);
+  dropIdentityThreadEventTriggers(database);
   const rows = database.prepare(
     "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('threads','thread_events','thread_events_event_upgrade')",
   ).all();
@@ -145,7 +151,7 @@ function createPrivateParticipationSchema(database) {
     ) STRICT;
 
     CREATE TABLE IF NOT EXISTS request_appraisals (
-      appraisal_id TEXT NOT NULL UNIQUE,
+      appraisal_id TEXT PRIMARY KEY CHECK (length(appraisal_id) = 68 AND substr(appraisal_id, 1, 4) = 'app_' AND substr(appraisal_id, 5) NOT GLOB '*[^0-9a-f]*'),
       thread_id TEXT NOT NULL,
       request_id TEXT NOT NULL,
       snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
