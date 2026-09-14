@@ -1,0 +1,53 @@
+.thread-repair-section {
+  border-top: 1px solid var(--line, rgba(127,127,127,.18));
+  padding-top: 18px;
+}
+
+.thread-repair-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.thread-repair-row {
+  display: grid;
+  grid-template-columns: 22px minmax(130px, .75fr) minmax(0, 1.5fr);
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.thread-repair-row:last-child { border-bottom: 0; }
+.thread-repair-icon { font-weight: 800; text-align: center; }
+.thread-repair-row.healthy .thread-repair-icon { opacity: .7; }
+.thread-repair-row.repairable .thread-repair-icon,
+.thread-repair-row.migration_required .thread-repair-icon,
+.thread-repair-row.operator_decision_required .thread-repair-icon { color: #b87900; }
+.thread-repair-row.integrity_error .thread-repair-icon,
+.thread-repair-row.unrecoverable .thread-repair-icon { color: #b42318; }
+.thread-repair-state { opacity: .7; line-height: 1.4; }
+
+.thread-repair-plan {
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.thread-repair-plan span { line-height: 1.45; }
+.thread-repair-plan small,
+.thread-repair-message { opacity: .68; }
+.thread-repair-message { margin: 12px 0 0; }
+.thread-repair-button { margin-top: 12px; }
+
+@media (max-width: 680px) {
+  .thread-repair-row {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+  .thread-repair-state {
+    grid-column: 2;
+  }
+}
