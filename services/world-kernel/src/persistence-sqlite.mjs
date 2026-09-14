@@ -48,7 +48,7 @@ function createBaseSchema(database) {
       sequence INTEGER NOT NULL CHECK (sequence >= 1),
       expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
       resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED')),
+      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED')),
       command_id TEXT,
       command_digest TEXT,
       payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
@@ -63,7 +63,7 @@ function createBaseSchema(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       UNIQUE (thread_id, sequence),
       CHECK (
-        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED') AND command_id IS NULL AND command_digest IS NULL)
+        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED') AND command_id IS NULL AND command_digest IS NULL)
         OR
         (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
       )
@@ -178,7 +178,7 @@ function createAndRepairSchema(database) {
 
 function needsEventSchemaUpgrade(database) {
   const row = database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'").get();
-  return row !== undefined && !row.sql.includes("THREAD_LIFE_EPISODE_RECORDED");
+  return row !== undefined && !row.sql.includes("GENESIS_SEX_MIGRATED");
 }
 
 function rebuildEventTables(database) {
@@ -188,8 +188,8 @@ function rebuildEventTables(database) {
     DROP TRIGGER IF EXISTS commands_no_update;
     DROP TRIGGER IF EXISTS commands_no_delete;
     DROP INDEX IF EXISTS idx_thread_events_thread_sequence;
-    ALTER TABLE commands RENAME TO commands_pre_v4;
-    ALTER TABLE thread_events RENAME TO thread_events_pre_v4;
+    ALTER TABLE commands RENAME TO commands_pre_event_upgrade;
+    ALTER TABLE thread_events RENAME TO thread_events_pre_event_upgrade;
   `);
   createBaseSchema(database);
   database.exec(`
@@ -201,11 +201,11 @@ function rebuildEventTables(database) {
     SELECT event_id,thread_id,sequence,expected_version,resulting_version,event_type,
       command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
       authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-    FROM thread_events_pre_v4;
+    FROM thread_events_pre_event_upgrade;
     INSERT INTO commands(thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at)
-    SELECT thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at FROM commands_pre_v4;
-    DROP TABLE commands_pre_v4;
-    DROP TABLE thread_events_pre_v4;
+    SELECT thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at FROM commands_pre_event_upgrade;
+    DROP TABLE commands_pre_event_upgrade;
+    DROP TABLE thread_events_pre_event_upgrade;
   `);
 }
 
