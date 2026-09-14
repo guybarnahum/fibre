@@ -125,7 +125,7 @@ function assertModernReference({ body, plan, world, presentation }) {
   if (identity.birthDate !== body.bornAt.slice(0, 10)) throw new Error("modern Thread birth date did not persist");
   if (identity.birthCity !== body.subjectIdentity.birthCity) throw new Error("modern Thread birth city did not persist");
   if (JSON.stringify(identity.languages) !== JSON.stringify(body.worldSpec.languages)) throw new Error("modern Thread language context did not persist");
-  if (!Array.isArray(identity.culture) || identity.culture[0] !== body.worldSpec.culturalContext) throw new Error("modern Thread cultural context did not persist");
+  if (!Array.isArray(identity.culture) || identity.culture[0] !== `${body.subjectIdentity.birthCity} formative context`) throw new Error("modern Thread cultural context did not persist");
 
   const publicPresentation = presentation?.snapshot?.presentation;
   if (publicPresentation?.subject?.displayName !== expectedName) throw new Error("public Presentation does not expose modern Thread name");
