@@ -1,8 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { genesisSexForThread } from "#core/src/genesis-sex.mjs";
 import { createThreadGenesisRepairService } from "../src/thread-genesis-repair-service.mjs";
+
+const SEX_EVIDENCE = Object.freeze({
+  sex:"female",
+  genesisId:"gen_repair_1",
+  source:"genesis_birth_publication",
+  resultDigest:`sha256:${"a".repeat(64)}`,
+});
 
 function fixture() {
   const threadId = "thr_repair_1";
@@ -65,6 +71,7 @@ function fixture() {
         return { complete:true, stage:"complete" };
       },
     },
+    genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("sex migration should not run for a complete Thread"); } },
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
@@ -156,7 +163,7 @@ test("R4 surfaces authority conflicts instead of silently repairing them", async
   );
 });
 
-test("R4 marks missing authoritative identity facts as migration, not ordinary repair", async () => {
+test("R4 leaves missing sex non-actionable when preserved Genesis evidence is absent", async () => {
   const service = createThreadGenesisRepairService({
     worldReader:{ getThread() { return { threadId:"thr_legacy_1", status:"frozen", identity:{ selfDescription:"Legacy" } }; } },
     civilRegistry:{ getCivilRegistrationByThreadId() { return null; } },
@@ -164,6 +171,7 @@ test("R4 marks missing authoritative identity facts as migration, not ordinary r
     presentationReader:{ async getSnapshot() { return null; } },
     presentationDelivery:{ async rebuildThreadPresentation() { throw new Error("should not run"); } },
     visualReconciler:{ async reconcileThread() { throw new Error("should not run"); } },
+    genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("diagnosis must not migrate"); } },
   });
   const diagnosis = await service.diagnose("thr_legacy_1");
@@ -171,13 +179,13 @@ test("R4 marks missing authoritative identity facts as migration, not ordinary r
   assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_MISSING").state, "migration_required");
   const sex = diagnosis.findings.find((entry) => entry.code === "SEX_MISSING");
   assert.equal(sex.state, "migration_required");
-  assert.equal(sex.action, "migrate_genesis_sex");
-  assert.equal(sex.deterministic, true);
+  assert.equal(sex.action, null);
+  assert.equal(sex.evidenceAvailable, false);
   assert.equal(diagnosis.findings.find((entry) => entry.code === "FIN_MISSING").state, "migration_required");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "ORIGIN_ORIENTATION_MISSING").state, "migration_required");
 });
 
-test("R6 deterministically restores missing Genesis sex before continuing repair", async () => {
+test("R6 restores missing sex only from immutable Genesis birth evidence", async () => {
   const { state, threadId, thread } = fixture();
   delete thread.identity.sex;
   state.presentation = {
@@ -196,20 +204,23 @@ test("R6 deterministically restores missing Genesis sex before continuing repair
     presentationReader:{ async getSnapshot() { return state.presentation; } },
     presentationDelivery:{ async rebuildThreadPresentation() { throw new Error("not needed"); } },
     visualReconciler:{ async reconcileThread() { throw new Error("not needed"); } },
+    genesisSexEvidence:{ resolve() { return SEX_EVIDENCE; } },
     genesisSexMigrator:{
-      migrate(current) {
-        const sex = genesisSexForThread({ threadId:current.threadId });
-        current.identity.sex = sex;
-        return { migrated:true, reused:false, sex, eventId:"evt_genesis_sex_migrated" };
+      migrate(current, { evidence }) {
+        assert.deepEqual(evidence, SEX_EVIDENCE);
+        current.identity.sex = evidence.sex;
+        return { migrated:true, reused:false, sex:evidence.sex, eventId:"evt_genesis_sex_migrated", evidence };
       },
     },
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
 
   const before = await service.diagnose(threadId);
-  assert.equal(before.findings.find((entry) => entry.code === "SEX_MISSING").action, "migrate_genesis_sex");
+  const missing = before.findings.find((entry) => entry.code === "SEX_MISSING");
+  assert.equal(missing.action, "migrate_genesis_sex");
+  assert.equal(missing.genesisId, SEX_EVIDENCE.genesisId);
   const result = await service.repair(threadId, { repairKey:"repair_sex_1" });
-  assert.equal(thread.identity.sex, genesisSexForThread({ threadId }));
+  assert.equal(thread.identity.sex, "female");
   assert.deepEqual(result.actions.map((entry) => entry.action), ["migrate_genesis_sex"]);
   assert.equal(result.after.findings.find((entry) => entry.code === "SEX").state, "healthy");
   assert.equal(result.after.health, "healthy");
