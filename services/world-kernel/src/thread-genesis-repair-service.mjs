@@ -13,11 +13,12 @@ function presentationVisualState(snapshot, embodiment) {
   if (embodiment === null) return "not_applicable";
   const objectRef = embodiment.asset?.referenceObjectRef ?? null;
   const visualRefs = snapshot?.presentation?.visualIdentity?.referenceObjectRefs ?? [];
+  const officialPhotoMediaRef = snapshot?.presentation?.identityCard?.officialPhotoMediaRef ?? null;
   const media = snapshot?.media?.assets ?? [];
   const projected = typeof objectRef === "string" && visualRefs.includes(objectRef);
-  const published = typeof objectRef === "string" && media.some((asset) => (
-    asset?.status === "ready" && asset?.locator === objectRef
-  ));
+  const published = projected
+    && typeof officialPhotoMediaRef === "string"
+    && media.some((asset) => asset?.mediaId === officialPhotoMediaRef && asset?.status === "ready" && typeof asset?.locator === "string");
   if (published) return "published";
   if (projected) return "projected";
   return "missing";
