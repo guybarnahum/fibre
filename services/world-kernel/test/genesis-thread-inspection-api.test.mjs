@@ -13,7 +13,22 @@ function apiFixture({ born = false } = {}) {
     worldReader: {
       getThread(id) {
         assert.equal(id, threadId);
-        return born ? { threadId, version: 15, status: "frozen", provenance: { lastEventId: "evt_15" } } : null;
+        return born ? {
+          threadId,
+          version: 15,
+          status: "frozen",
+          identity: {
+            name: "Nino Beridze",
+            sex: "female",
+            birthDate: "2004-08-20",
+            languages: ["Georgian", "English"],
+            birthCity: "Tbilisi, Georgia",
+            culture: ["Tbilisi cultural context"],
+            selfDescription: "I am Nino Beridze.",
+          },
+          memoryRefs: ["mem_1", "mem_2"],
+          provenance: { lastEventId: "evt_15" },
+        } : null;
       },
       listEvents(id) {
         assert.equal(id, threadId);
@@ -87,6 +102,8 @@ test("World inspection proves authoritative absence before birth", async () => {
   const { inspection } = await response.json();
   assert.equal(inspection.authoritativeThread.exists, false);
   assert.equal(inspection.authoritativeThread.eventCount, 0);
+  assert.equal(inspection.authoritativeThread.memoryRefCount, 0);
+  assert.equal(inspection.authoritativeThread.identity, null);
   assert.equal(inspection.genesis.manifestExists, false);
   assert.equal(inspection.genesis.threadPublished, false);
   assert.equal(inspection.symbolicGenomes.count, 0);
@@ -94,7 +111,7 @@ test("World inspection proves authoritative absence before birth", async () => {
   assert.equal(inspection.embodiment.currentCount, 0);
 });
 
-test("World inspection exposes only authority witnesses for the one born Thread", async () => {
+test("World inspection exposes bounded authority witnesses for the one born Thread", async () => {
   const response = await apiFixture({ born: true }).fetch(request());
   assert.equal(response.status, 200);
   const { inspection } = await response.json();
@@ -103,7 +120,17 @@ test("World inspection exposes only authority witnesses for the one born Thread"
     version: 15,
     status: "frozen",
     eventCount: 15,
+    memoryRefCount: 2,
     lastEventId: "evt_15",
+    identity: {
+      name: "Nino Beridze",
+      sex: "female",
+      birthDate: "2004-08-20",
+      languages: ["Georgian", "English"],
+      birthCity: "Tbilisi, Georgia",
+      culture: ["Tbilisi cultural context"],
+      selfDescription: "I am Nino Beridze.",
+    },
   });
   assert.equal(inspection.genesis.worldSpecId, "world_inspection_001");
   assert.equal(inspection.symbolicGenomes.count, 1);
