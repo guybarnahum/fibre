@@ -9,36 +9,73 @@ function quoteIdentifier(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
-function recoverInterruptedEventTable(database) {
-  const rows = database.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('threads','thread_events','thread_events_event_upgrade')",
-  ).all();
-  const names = new Set(rows.map((row) => row.name));
-  if (!names.has("threads") || names.has("thread_events")) return;
+function threadEventDependentTriggers(database) {
+  return database.prepare(`
+    SELECT name, sql
+    FROM sqlite_master
+    WHERE type='trigger'
+      AND sql IS NOT NULL
+      AND instr(lower(sql), 'thread_events') > 0
+    ORDER BY name
+  `).all();
+}
 
-  if (!names.has("thread_events_event_upgrade")) {
-    throw new IntegrityError(
-      "World event schema is incomplete: thread_events is missing and no recovery table exists",
-    );
-  }
-
-  const triggers = database.prepare(
-    "SELECT name FROM sqlite_master WHERE type='trigger' AND sql LIKE '%thread_events%'",
-  ).all();
+function withThreadEventTriggersDetached(database, run) {
+  const triggers = threadEventDependentTriggers(database);
   for (const trigger of triggers) {
     database.exec(`DROP TRIGGER IF EXISTS ${quoteIdentifier(trigger.name)}`);
   }
+  try {
+    run();
+  } finally {
+    for (const trigger of triggers) database.exec(trigger.sql);
+  }
+}
 
-  database.exec(`
-    ALTER TABLE thread_events_event_upgrade RENAME TO thread_events;
-    CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
-    CREATE TRIGGER IF NOT EXISTS thread_events_no_update
-      BEFORE UPDATE ON thread_events
-      BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-    CREATE TRIGGER IF NOT EXISTS thread_events_no_delete
-      BEFORE DELETE ON thread_events
-      BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-  `);
+function tableNames(database) {
+  return new Set(database.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('threads','thread_events','thread_events_event_upgrade')",
+  ).all().map((row) => row.name));
+}
+
+function recoverInterruptedEventTable(database) {
+  const before = tableNames(database);
+  if (!before.has("threads")) return;
+
+  withThreadEventTriggersDetached(database, () => {
+    const names = tableNames(database);
+    const hasEvents = names.has("thread_events");
+    const hasUpgrade = names.has("thread_events_event_upgrade");
+
+    if (!hasEvents && !hasUpgrade) {
+      throw new IntegrityError(
+        "World event schema is incomplete: thread_events is missing and no recovery table exists",
+      );
+    }
+
+    if (!hasEvents && hasUpgrade) {
+      database.exec("ALTER TABLE thread_events_event_upgrade RENAME TO thread_events");
+    } else if (hasEvents && hasUpgrade) {
+      const eventCount = Number(database.prepare("SELECT COUNT(*) AS count FROM thread_events").get().count);
+      const upgradeCount = Number(database.prepare("SELECT COUNT(*) AS count FROM thread_events_event_upgrade").get().count);
+      if (eventCount !== upgradeCount) {
+        throw new IntegrityError(
+          `World event schema has both event tables with different row counts (${eventCount} != ${upgradeCount})`,
+        );
+      }
+      database.exec("DROP TABLE thread_events_event_upgrade");
+    }
+
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
+      CREATE TRIGGER IF NOT EXISTS thread_events_no_update
+        BEFORE UPDATE ON thread_events
+        BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS thread_events_no_delete
+        BEFORE DELETE ON thread_events
+        BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
+    `);
+  });
 }
 
 export function openWorldStateDatabase(storage, {
