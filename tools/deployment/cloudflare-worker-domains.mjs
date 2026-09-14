@@ -89,28 +89,42 @@ export function createCloudflareWorkerDomainClient({ accountId, apiToken, fetchI
   });
 }
 
+function exactMatches(records, hostname) {
+  return records.filter((item) => item?.hostname === hostname);
+}
+
 export async function ensureCloudflareWorkerDomain({ client, hostname, service } = {}) {
   if (!client?.listDomains || !client?.attachDomain || !client?.assertPublicDelegation) {
     throw new TypeError("Cloudflare Workers Domain client with public delegation verification is required");
   }
   const expectedHostname = nonEmpty("Worker custom domain hostname", hostname);
   const expectedService = nonEmpty("Worker custom domain service", service);
-  const matches = (await client.listDomains({ hostname: expectedHostname }))
-    .filter((item) => item?.hostname === expectedHostname);
+  const matches = exactMatches(await client.listDomains({ hostname: expectedHostname }), expectedHostname);
   if (matches.length > 1) throw new Error(`Cloudflare custom domain ${expectedHostname} resolved to multiple Worker domain records`);
-  let resolved;
+  let status;
   if (matches.length === 1) {
     if (matches[0].service !== expectedService) {
       throw new Error(`Cloudflare custom domain ${expectedHostname} is already attached to ${String(matches[0].service)}; expected ${expectedService}`);
     }
-    resolved = domainRecord(matches[0], "existing");
+    status = "existing";
   } else {
     const attached = await client.attachDomain({ hostname: expectedHostname, service: expectedService });
     if (attached?.hostname !== expectedHostname || attached?.service !== expectedService) {
       throw new Error(`Cloudflare custom domain ${expectedHostname} did not attach to expected Worker ${expectedService}`);
     }
-    resolved = domainRecord(attached, "attached");
+    status = "attached";
   }
+
+  // Re-read the account-level domain record after Wrangler/API mutation. A deploy is
+  // not considered converged if the hostname is not durably attached to this Worker.
+  const stable = exactMatches(await client.listDomains({ hostname: expectedHostname }), expectedHostname);
+  if (stable.length !== 1) {
+    throw new Error(`Cloudflare custom domain ${expectedHostname} was not stable after deployment`);
+  }
+  if (stable[0].service !== expectedService) {
+    throw new Error(`Cloudflare custom domain ${expectedHostname} changed ownership to ${String(stable[0].service)} after deployment`);
+  }
+  const resolved = domainRecord(stable[0], status);
   const delegation = await client.assertPublicDelegation({ zoneName: resolved.zoneName });
   return Object.freeze({ ...resolved, delegation });
 }
