@@ -85,6 +85,16 @@ async function submit({ baseUrl, privateToken, body, timeoutMs }) {
   }), "modern Genesis birth");
 }
 
+async function inspectDevelopment({ baseUrl, privateToken, requestId, timeoutMs }) {
+  return json(await fetch(
+    `${baseUrl}/internal/births/develop/${encodeURIComponent(requestId)}/inspection`,
+    {
+      headers: { "x-fibre-private-token": privateToken },
+      signal: AbortSignal.timeout(timeoutMs),
+    },
+  ), "Genesis development inspection");
+}
+
 async function inspectWorld({ baseUrl, privateToken, plan, timeoutMs }) {
   return json(await fetch(
     `${baseUrl}/internal/genesis/${encodeURIComponent(plan.genesisId)}/threads/${encodeURIComponent(plan.threadId)}/inspection`,
@@ -157,11 +167,14 @@ async function main() {
 
   process.stdout.write(`${JSON.stringify({ event: "modern-thread-birth-start", requestId, genesisId: plan.genesisId, threadId: plan.threadId })}\n`);
 
-  const birth = await poll(
-    async () => (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development,
-    (development) => development?.status === "published",
-    { timeoutMs },
-  );
+  const birth = (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development;
+  if (birth?.status !== "published") {
+    await poll(
+      () => inspectDevelopment({ baseUrl: birthCenter, privateToken, requestId, timeoutMs }),
+      (result) => result?.inspection?.provisionalStatus === "published",
+      { timeoutMs },
+    );
+  }
   const world = await poll(
     () => inspectWorld({ baseUrl: worldKernel, privateToken, plan, timeoutMs }),
     (result) => result?.inspection?.authoritativeThread?.exists === true && result?.inspection?.genesis?.threadPublished === true,
