@@ -2,7 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createAdminDashboardWorker } from "./worker.mjs";
-import { resolveAdminThreadIdentity } from "./thread-identity.mjs";
+import {
+  combineAdminThreadIdentity,
+  resolveAdminThreadIdentity,
+  resolveAdminWorldThreadIdentity,
+} from "./thread-identity.mjs";
 
 const identity = Object.freeze({
   threadId:"thr_test_1",
@@ -70,6 +74,63 @@ test("O1 resolves a Thread into human identity and public media while preserving
     }),
   });
   assert.deepEqual(resolved, identity);
+});
+
+test("O1 resolves authoritative Thread existence from World", async () => {
+  const resolved = await resolveAdminWorldThreadIdentity({
+    threadId:"thr_test_1",
+    fetchImpl:async (input) => {
+      assert.equal(new URL(input).pathname, "/internal/threads/thr_test_1/identity");
+      return Response.json({
+        contract:"fibre-world-thread-identity-v0.1",
+        identity:{
+          threadId:"thr_test_1",
+          fibreIdentityNumber:"4JX5-2N-04K2",
+          lifecycleStatus:"active",
+        },
+      });
+    },
+  });
+  assert.deepEqual(resolved, {
+    threadId:"thr_test_1",
+    fibreIdentityNumber:"4JX5-2N-04K2",
+    lifecycleStatus:"active",
+  });
+});
+
+test("O1 keeps a World-admitted Thread visible when Presentation is missing", () => {
+  const resolved = combineAdminThreadIdentity({
+    world:{
+      threadId:"thr_test_1",
+      fibreIdentityNumber:"4JX5-2N-04K2",
+      lifecycleStatus:"active",
+    },
+    presentation:null,
+  });
+  assert.equal(resolved.worldStatus, "admitted");
+  assert.equal(resolved.presentationStatus, "unavailable");
+  assert.equal(resolved.fibreIdentityNumber, "4JX5-2N-04K2");
+  assert.equal(resolved.displayName, null);
+  assert.deepEqual(resolved.assets, []);
+  assert.equal(resolved.provenance.source, "world_only");
+});
+
+test("O1 prefers World for FIN and lifecycle while Presentation enriches public identity", () => {
+  const resolved = combineAdminThreadIdentity({
+    world:{
+      threadId:"thr_test_1",
+      fibreIdentityNumber:"4JX5-2N-04K2",
+      lifecycleStatus:"active",
+    },
+    presentation:identity,
+  });
+  assert.equal(resolved.worldStatus, "admitted");
+  assert.equal(resolved.presentationStatus, "current");
+  assert.equal(resolved.displayName, "Thread One");
+  assert.equal(resolved.fibreIdentityNumber, "4JX5-2N-04K2");
+  assert.equal(resolved.lifecycleStatus, "active");
+  assert.equal(resolved.assets.length, 1);
+  assert.equal(resolved.provenance.fibreIdentityNumber, "world_civil_registry");
 });
 
 test("O1 opens the same Thread identity through Admin", async () => {
