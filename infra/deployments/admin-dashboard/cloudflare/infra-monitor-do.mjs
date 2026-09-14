@@ -1,4 +1,4 @@
-import { sampleCloudflareResourceHealth } from "../../../providers/cloudflare/resource-health.mjs";
+import { sampleCloudflareResourceHealth } from "#infra/providers/cloudflare";
 
 const SAMPLE_KEY = "sample";
 const DEFAULT_TTL_MS = 15 * 60_000;
