@@ -5,6 +5,7 @@ import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
+const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/identity$/u;
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -26,6 +27,17 @@ async function reconciliationState(runtime) {
     scheduled: scheduled.existing,
     scheduledTimeMs: scheduled.scheduledTimeMs,
     running: runtime.reconciliationProcess.running,
+  });
+}
+
+function threadIdentity(runtime, threadId) {
+  const thread = runtime.worldStore.getThread(threadId, { required:false });
+  if (thread === null) return null;
+  const registration = runtime.civilRegistryStore.getCivilRegistrationByThreadId(threadId, { required:false });
+  return Object.freeze({
+    threadId,
+    fibreIdentityNumber: registration?.fibreIdentityNumber ?? null,
+    lifecycleStatus: typeof thread.status === "string" ? thread.status : null,
   });
 }
 
@@ -55,6 +67,14 @@ export class FibreWorldDurableObject extends DurableObject {
         capabilities: runtime.infraDriver.capabilities,
         reconciliation: await reconciliationState(runtime),
       });
+    }
+    const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
+    if (identityMatch !== null) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      const identity = threadIdentity(runtime, decodeURIComponent(identityMatch[1]));
+      if (identity === null) return Response.json({ error:"thread_not_found" }, { status:404 });
+      return Response.json({ contract:"fibre-world-thread-identity-v0.1", identity });
     }
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
       if (url.search !== "") return Response.json({ error: { code: "QUERY_NOT_SUPPORTED" } }, { status: 400 });
