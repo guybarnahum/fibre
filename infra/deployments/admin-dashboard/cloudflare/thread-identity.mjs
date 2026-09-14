@@ -50,6 +50,24 @@ function visualIdentity(presentation) {
   });
 }
 
+export async function resolveAdminWorldThreadIdentity({ threadId, fetchImpl = globalThis.fetch } = {}) {
+  const resolvedThreadId = id("threadId", threadId);
+  if (typeof fetchImpl !== "function") throw new TypeError("World Thread identity resolver requires fetch()");
+  const response = await fetchImpl(`https://world.internal/internal/threads/${encodeURIComponent(resolvedThreadId)}/identity`, {
+    headers: { Accept:"application/json" },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`World Thread identity lookup failed with HTTP ${response.status}`);
+  const payload = await response.json();
+  const identity = payload?.identity;
+  if (identity?.threadId !== resolvedThreadId) throw new Error("World returned a mismatched Thread identity");
+  return Object.freeze({
+    threadId: resolvedThreadId,
+    fibreIdentityNumber: clean(identity.fibreIdentityNumber),
+    lifecycleStatus: clean(identity.lifecycleStatus),
+  });
+}
+
 export async function resolveAdminThreadIdentity({ environment, threadId, fetchImpl = globalThis.fetch } = {}) {
   const resolvedThreadId = id("threadId", threadId);
   const origin = presentationOrigin(environment);
@@ -77,6 +95,35 @@ export async function resolveAdminThreadIdentity({ environment, threadId, fetchI
       fibreIdentityNumber: "resolved_after_fact",
       assets: "current_public_presentation",
       source: "current_public_presentation",
+    }),
+  });
+}
+
+export function combineAdminThreadIdentity({ world, presentation } = {}) {
+  if (world === null || world === undefined) return null;
+  if (presentation?.threadId && presentation.threadId !== world.threadId) throw new Error("World and Presentation resolved different Threads");
+  if (
+    world.fibreIdentityNumber
+    && presentation?.fibreIdentityNumber
+    && world.fibreIdentityNumber !== presentation.fibreIdentityNumber
+  ) throw new Error("World and Presentation disagree on Fibre identity number");
+
+  return Object.freeze({
+    threadId: world.threadId,
+    displayName: presentation?.displayName ?? null,
+    fibreIdentityNumber: world.fibreIdentityNumber ?? presentation?.fibreIdentityNumber ?? null,
+    birthDate: presentation?.birthDate ?? null,
+    lifecycleStatus: world.lifecycleStatus ?? presentation?.lifecycleStatus ?? null,
+    visualIdentity: presentation?.visualIdentity ?? null,
+    assets: Object.freeze([...(presentation?.assets ?? [])]),
+    worldStatus: "admitted",
+    presentationStatus: presentation === null || presentation === undefined ? "unavailable" : "current",
+    provenance: Object.freeze({
+      displayName: presentation ? "resolved_after_fact" : "unavailable",
+      fibreIdentityNumber: world.fibreIdentityNumber ? "world_civil_registry" : "resolved_after_fact",
+      lifecycleStatus: world.lifecycleStatus ? "world" : "resolved_after_fact",
+      assets: presentation ? "current_public_presentation" : "unavailable",
+      source: presentation ? "world_plus_current_public_presentation" : "world_only",
     }),
   });
 }
