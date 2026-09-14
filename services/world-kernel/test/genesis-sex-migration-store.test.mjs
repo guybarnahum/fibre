@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { genesisSexForThread } from "#core/src/genesis-sex.mjs";
 import { GenesisSexMigrationStore } from "../src/genesis-sex-migration-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
@@ -12,6 +11,12 @@ import { localWorldStateStorage } from "./support/world-state-storage-fixture.mj
 const fixture = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
 );
+const evidence = Object.freeze({
+  sex:"female",
+  genesisId:"genesis_mina_birth",
+  source:"genesis_birth_publication",
+  resultDigest:`sha256:${"a".repeat(64)}`,
+});
 
 function withWorld(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-genesis-sex-migration-"));
@@ -28,26 +33,28 @@ function withWorld(run) {
   }
 }
 
-test("R6 Genesis sex migration is deterministic, append-only, replayable, and not a life event", () => {
+test("R6 Genesis sex restoration is evidence-backed, append-only, replayable, and not a life event", () => {
   withWorld(({ world, migration }) => {
     const source = structuredClone(fixture);
     delete source.identity.sex;
     const seeded = world.seedThread(source).thread;
-    const sex = genesisSexForThread({ threadId:seeded.threadId });
 
-    const result = migration.migrate(seeded, { migratedAt:"2026-09-14T20:45:00.000Z" });
+    const result = migration.migrate(seeded, { evidence, migratedAt:"2026-09-14T20:45:00.000Z" });
     assert.equal(result.migrated, true);
-    assert.equal(result.sex, sex);
+    assert.equal(result.sex, "female");
 
     const migrated = world.getThread(seeded.threadId);
-    assert.equal(migrated.identity.sex, sex);
+    assert.equal(migrated.identity.sex, "female");
     assert.equal(migrated.version, seeded.version + 1);
 
-    const events = world.listEvents(seeded.threadId);
-    const event = events.at(-1);
+    const event = world.listEvents(seeded.threadId).at(-1);
     assert.equal(event.eventType, "GENESIS_SEX_MIGRATED");
-    assert.equal(event.payload.sex, sex);
-    assert.equal(event.payload.ruleId, "fibre_genesis_sex_v1");
+    assert.deepEqual(event.payload, {
+      sex:"female",
+      genesisId:"genesis_mina_birth",
+      resultDigest:evidence.resultDigest,
+    });
+    assert.equal(event.provenance.source, "genesis_birth_publication");
     assert.equal(event.provenance.notThreadLifeEvent, true);
 
     const command = {
@@ -63,22 +70,31 @@ test("R6 Genesis sex migration is deterministic, append-only, replayable, and no
       occurredAt:"2026-09-14T20:46:00.000Z",
     };
     const applied = world.applyCommand(command);
-    assert.equal(applied.thread.identity.sex, sex);
-
+    assert.equal(applied.thread.identity.sex, "female");
     const replayed = world.applyCommand(command);
     assert.equal(replayed.idempotent, true);
-    assert.equal(replayed.thread.identity.sex, sex);
+    assert.equal(replayed.thread.identity.sex, "female");
   });
 });
 
-test("R6 Genesis sex migration is idempotent once the deterministic fact exists", () => {
+test("R6 refuses to create sex without preserved Genesis evidence", () => {
   withWorld(({ world, migration }) => {
     const source = structuredClone(fixture);
     delete source.identity.sex;
     const seeded = world.seedThread(source).thread;
-    const first = migration.migrate(seeded, { migratedAt:"2026-09-14T20:45:00.000Z" });
+    assert.throws(() => migration.migrate(seeded), /requires authoritative birth evidence/);
+    assert.equal(world.getThread(seeded.threadId).identity.sex, undefined);
+  });
+});
+
+test("R6 Genesis sex restoration is idempotent once the evidenced fact exists", () => {
+  withWorld(({ world, migration }) => {
+    const source = structuredClone(fixture);
+    delete source.identity.sex;
+    const seeded = world.seedThread(source).thread;
+    const first = migration.migrate(seeded, { evidence, migratedAt:"2026-09-14T20:45:00.000Z" });
     const current = world.getThread(seeded.threadId);
-    const second = migration.migrate(current, { migratedAt:"2026-09-14T20:47:00.000Z" });
+    const second = migration.migrate(current, { evidence, migratedAt:"2026-09-14T20:47:00.000Z" });
 
     assert.equal(first.migrated, true);
     assert.equal(second.migrated, false);
