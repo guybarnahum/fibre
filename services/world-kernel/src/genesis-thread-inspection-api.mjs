@@ -53,6 +53,20 @@ function summarizeEmbodiment(record) {
   });
 }
 
+function summarizeIdentity(thread) {
+  if (thread === null) return null;
+  const identity = thread.identity ?? {};
+  return Object.freeze({
+    name: identity.name ?? null,
+    sex: identity.sex ?? null,
+    birthDate: identity.birthDate ?? null,
+    languages: Array.isArray(identity.languages) ? [...identity.languages] : [],
+    birthCity: identity.birthCity ?? null,
+    culture: Array.isArray(identity.culture) ? [...identity.culture] : [],
+    selfDescription: identity.selfDescription ?? null,
+  });
+}
+
 export function createGenesisThreadInspectionApi({
   worldReader,
   genesisReader,
@@ -103,13 +117,17 @@ export function createGenesisThreadInspectionApi({
             version: null,
             status: null,
             eventCount: 0,
+            memoryRefCount: 0,
             lastEventId: null,
+            identity: null,
           } : {
             exists: true,
             version: thread.version,
             status: thread.status,
             eventCount: events.length,
+            memoryRefCount: Array.isArray(thread.memoryRefs) ? thread.memoryRefs.length : 0,
             lastEventId: thread.provenance?.lastEventId ?? null,
+            identity: summarizeIdentity(thread),
           },
           genesis: {
             manifestExists: genesisInspection.manifest !== null,
