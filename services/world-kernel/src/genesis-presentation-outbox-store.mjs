@@ -59,6 +59,20 @@ export class GenesisPresentationOutboxStore {
     return row === undefined ? null : rowToRecord(row);
   }
 
+  getByThreadId(threadId) {
+    assertId("threadId", threadId);
+    const rows = this.#database.prepare(`
+      SELECT genesis_id,thread_id,manifest_json,publication_digest,published_at,state,
+             attempt_count,last_attempt_at,last_error_json,delivered_at
+      FROM ${OUTBOX_TABLE}
+      WHERE thread_id=?
+      ORDER BY published_at ASC, genesis_id ASC
+    `).all(threadId);
+    if (rows.length === 0) return null;
+    if (rows.length !== 1) throw new Error(`Thread ${threadId} has ${rows.length} Genesis presentation outbox records`);
+    return rowToRecord(rows[0]);
+  }
+
   recordFailure(genesisId, error, { attemptedAt = new Date().toISOString() } = {}) {
     assertId("genesisId", genesisId);
     const errorRecord = {
