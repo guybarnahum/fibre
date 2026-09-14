@@ -319,7 +319,7 @@ export function createGenesisDevelopmentService({
       });
       await runActivityStage(activity, {
         ...context,
-        stage: "birth.publish.complete",
+        stage: "birth.publish.queued",
         attempt: 1,
         evidence: { fibreIdentityNumber: result.fibreIdentityNumber },
       }, async () => birthRuntime.developmentRequestStore.markSubmitted(plan.requestId, result));
