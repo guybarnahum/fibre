@@ -1,5 +1,3 @@
-import { GENESIS_SEX_RULE } from "#core/src/genesis-sex.mjs";
-
 const REPAIR_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
 
 function requireMethod(name, value, method) {
@@ -67,9 +65,24 @@ function identityFinding({ code, missingCode, authoritative, projected = undefin
   return finding(code, "healthy", null, { authoritative:source, presentation:publicValue });
 }
 
-function identityCompleteness(thread, registration, presentation) {
+function identityCompleteness(thread, registration, presentation, sexEvidence) {
   const identity = thread.identity ?? {};
   const projected = presentation?.presentation ?? null;
+  const missingSex = text(identity.sex) === null;
+  const sexFinding = missingSex
+    ? sexEvidence === null
+      ? finding("SEX_MISSING", "migration_required", null, {
+        evidenceAvailable:false,
+        reason:"preserved Genesis birth evidence does not explicitly record sex",
+      })
+      : finding("SEX_MISSING", "migration_required", "migrate_genesis_sex", {
+        evidenceAvailable:true,
+        source:sexEvidence.source,
+        genesisId:sexEvidence.genesisId,
+        sex:sexEvidence.sex,
+      })
+    : finding("SEX", "healthy", null, { authoritative:text(identity.sex) });
+
   const findings = [
     identityFinding({
       code:"CIVIL_IDENTITY",
@@ -87,13 +100,7 @@ function identityCompleteness(thread, registration, presentation) {
       projectionCode:"NAME_PRESENTATION_MISSING",
       conflictCode:"NAME_CONFLICT",
     }),
-    text(identity.sex) === null
-      ? finding("SEX_MISSING", "migration_required", "migrate_genesis_sex", {
-        deterministic:true,
-        ruleId:GENESIS_SEX_RULE.id,
-        ruleVersion:GENESIS_SEX_RULE.version,
-      })
-      : finding("SEX", "healthy", null, { authoritative:text(identity.sex) }),
+    sexFinding,
   ];
 
   const canonicalSpec = identity.canonicalVisualIdentity?.specification ?? null;
@@ -154,6 +161,7 @@ export function createThreadGenesisRepairService({
   presentationReader,
   presentationDelivery,
   visualReconciler,
+  genesisSexEvidence,
   genesisSexMigrator,
   activityRecorder = null,
 } = {}) {
@@ -165,6 +173,7 @@ export function createThreadGenesisRepairService({
   }
   requireMethod("presentationDelivery", presentationDelivery, "rebuildThreadPresentation");
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
+  requireMethod("genesisSexEvidence", genesisSexEvidence, "resolve");
   requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
   const activity = optionalActivity(activityRecorder);
 
@@ -177,8 +186,9 @@ export function createThreadGenesisRepairService({
     const registration = civilRegistry.getCivilRegistrationByThreadId(threadId, { required:false });
     const embodiment = currentCanonicalPortrait(embodimentReader, threadId);
     const presentation = await presentationReader.getSnapshot(threadId);
+    const sexEvidence = text(thread.identity?.sex) === null ? genesisSexEvidence.resolve(threadId) : null;
     const visualState = presentationVisualState(presentation, embodiment);
-    const completeness = identityCompleteness(thread, registration, presentation);
+    const completeness = identityCompleteness(thread, registration, presentation, sexEvidence);
     const findings = [...completeness.findings];
 
     const canonicalSpec = thread.identity?.canonicalVisualIdentity?.specification ?? null;
@@ -233,9 +243,12 @@ export function createThreadGenesisRepairService({
     });
 
     const actions = [];
-    if (before.findings.some((entry) => entry.action === "migrate_genesis_sex")) {
+    const sexFinding = before.findings.find((entry) => entry.action === "migrate_genesis_sex") ?? null;
+    if (sexFinding !== null) {
       const thread = worldReader.getThread(threadId);
-      const result = await genesisSexMigrator.migrate(thread);
+      const evidence = genesisSexEvidence.resolve(threadId);
+      if (evidence === null) throw new Error(`Thread ${threadId} no longer has authoritative Genesis sex evidence`);
+      const result = genesisSexMigrator.migrate(thread, { evidence });
       actions.push(Object.freeze({ action:"migrate_genesis_sex", result }));
       await record(activity, {
         threadId,
@@ -244,7 +257,7 @@ export function createThreadGenesisRepairService({
         stage:"thread.repair.genesis_sex_migration",
         status:"succeeded",
         attempt:1,
-        evidence:{ eventId:result.eventId, ruleId:GENESIS_SEX_RULE.id, migrated:result.migrated === true },
+        evidence:{ eventId:result.eventId, genesisId:evidence.genesisId, migrated:result.migrated === true },
       });
     }
 
