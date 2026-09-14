@@ -145,7 +145,7 @@ function createPrivateParticipationSchema(database) {
     ) STRICT;
 
     CREATE TABLE IF NOT EXISTS request_appraisals (
-      appraisal_id TEXT PRIMARY KEY CHECK (length(appraisal_id) = 68 AND substr(appraisal_id, 1, 4) = 'app_' AND substr(appraisal_id, 5) NOT GLOB '*[^0-9a-f]*'),
+      appraisal_id TEXT NOT NULL UNIQUE,
       thread_id TEXT NOT NULL,
       request_id TEXT NOT NULL,
       snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
@@ -169,7 +169,7 @@ function createPrivateParticipationSchema(database) {
       request_id TEXT NOT NULL,
       snapshot_version INTEGER NOT NULL CHECK (snapshot_version >= 1),
       thread_state_hash TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
-      request_fingerprint TEXT NOT NULL CHECK (length(thread_state_hash) = 71 AND substr(thread_state_hash, 1, 7) = 'sha256:' AND substr(thread_state_hash, 8) NOT GLOB '*[^0-9a-f]*'),
+      request_fingerprint TEXT NOT NULL CHECK (length(request_fingerprint) = 71 AND substr(request_fingerprint, 1, 7) = 'sha256:' AND substr(request_fingerprint, 8) NOT GLOB '*[^0-9a-f]*'),
       policy_id TEXT NOT NULL,
       policy_version TEXT NOT NULL,
       stance_json TEXT NOT NULL CHECK (json_valid(stance_json)),
