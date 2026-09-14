@@ -22,14 +22,17 @@ function readJson(path) {
 
 function developmentRequest(requestId) {
   const cohort = readJson("fixtures/genesis/pr39/development-cohort-v1.json");
+  const identities = readJson("fixtures/genesis/pr39/subject-identities-v1.json");
   const slot = cohort.slots[0];
   const worldSpec = readJson(slot.worldSpecPath);
   const genome = readJson(slot.genomePath);
+  const subjectIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
   return {
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
     requestId,
     requestedAt: "2026-08-31T23:30:00Z",
     worldSpec,
+    subjectIdentity,
     genomeValues: genome.loci.map((locus) => locus.value),
     participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
     placeAffordances: slot.placeAffordances,
