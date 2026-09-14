@@ -29,6 +29,12 @@ function fixture() {
       const entry = entries.get(genesisId);
       return entry === undefined ? null : structuredClone(entry);
     },
+    getByThreadId(threadId) {
+      const matches = [...entries.values()].filter((entry) => entry.threadId === threadId);
+      if (matches.length === 0) return null;
+      if (matches.length !== 1) throw new Error(`Thread ${threadId} has ${matches.length} Genesis presentation outbox records`);
+      return structuredClone(matches[0]);
+    },
     recordFailure(genesisId, error, { attemptedAt }) {
       const entry = entries.get(genesisId);
       entry.attemptCount += 1;
@@ -232,4 +238,28 @@ test("already delivered Genesis presentation is idempotent and does not republis
   assert.equal(result.delivered, true);
   assert.equal(result.reused, true);
   assert.equal(current.calls.length, 0);
+});
+
+test("delivered Genesis can rebuild a missing current Presentation without rewriting outbox history", async () => {
+  const current = fixture();
+  const delivered = current.entries.get("gen_1");
+  delivered.state = "delivered";
+  delivered.attemptCount = 1;
+  delivered.deliveredAt = "2026-08-30T03:21:00Z";
+  const service = createGenesisPresentationDeliveryService({
+    worldReader: current.worldReader,
+    civilRegistry: current.civilRegistry,
+    outbox: current.outbox,
+    presentationPublisher: current.publisher,
+    projector: current.projector,
+  });
+
+  const result = await service.rebuildThreadPresentation("thr_1");
+  assert.equal(result.rebuilt, true);
+  assert.equal(current.calls.length, 1);
+  assert.equal(current.calls[0].genesisId, "gen_1");
+  assert.equal(current.calls[0].bundle.projected, true);
+  assert.equal(current.entries.get("gen_1").state, "delivered");
+  assert.equal(current.entries.get("gen_1").attemptCount, 1);
+  assert.equal(current.entries.get("gen_1").deliveredAt, "2026-08-30T03:21:00Z");
 });
