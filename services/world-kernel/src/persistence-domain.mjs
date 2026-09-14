@@ -1,3 +1,4 @@
+import { GENESIS_SEX_RULE, normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 import {
   MAX_COMMAND_PAYLOAD_BYTES,
   EVENT_TYPES,
@@ -39,6 +40,7 @@ export function validateThreadSnapshot(thread) {
   assertPlainObject("thread.identity", thread.identity);
   assertNonEmpty("thread.identity.name", thread.identity.name);
   assertNonEmpty("thread.identity.selfDescription", thread.identity.selfDescription);
+  if (thread.identity.sex !== undefined) normalizeGenesisSex(thread.identity.sex);
   assertPlainObject("thread.genome", thread.genome);
   assertPlainObject("thread.genome.textualTraits", thread.genome.textualTraits);
   assertPlainObject("thread.genome.runtimeBaselines", thread.genome.runtimeBaselines);
@@ -161,6 +163,28 @@ function commandFromEvent(event) {
   return { commandId: event.commandId, threadId: event.threadId, expectedVersion: event.expectedVersion, type: "UPDATE_SELF_MODEL", payload: event.payload, actor: event.actor, occurredAt: event.occurredAt };
 }
 
+function applyGenesisSexMigration(thread, event) {
+  if (thread === null) throw new IntegrityError(`migration event ${event.eventId} appears before a seed event`);
+  if (event.commandId !== null || event.commandDigest !== null) throw new IntegrityError(`migration event ${event.eventId} must not carry command metadata`);
+  if (event.threadId !== thread.threadId) throw new IntegrityError(`migration event ${event.eventId} belongs to another Thread`);
+  if (thread.version !== event.expectedVersion) throw new IntegrityError(`migration event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`);
+  if (thread.identity.sex !== undefined) throw new IntegrityError(`migration event ${event.eventId} attempts to replace existing sex`);
+  assertExactKeys(`migration event ${event.eventId} payload`, event.payload, ["sex","ruleId","ruleVersion"]);
+  const sex = normalizeGenesisSex(event.payload.sex);
+  if (event.payload.ruleId !== GENESIS_SEX_RULE.id || event.payload.ruleVersion !== GENESIS_SEX_RULE.version) {
+    throw new IntegrityError(`migration event ${event.eventId} uses unknown Genesis sex rule`);
+  }
+  const replayed = {
+    ...thread,
+    version:thread.version + 1,
+    identity:{ ...thread.identity, sex },
+    provenance:{ ...thread.provenance, lastEventId:event.eventId },
+  };
+  validateStoredThread(event.threadId, replayed);
+  if (replayed.version !== event.resultingVersion) throw new IntegrityError(`migration event ${event.eventId} has an invalid resulting version`);
+  return replayed;
+}
+
 export function applyEventToThread(thread, event) {
   if (event.eventType === "THREAD_SEEDED") {
     const snapshot = event.payload.snapshot;
@@ -173,6 +197,9 @@ export function applyEventToThread(thread, event) {
   }
   if (event.eventType === THREAD_LIFE_EPISODE_RECORDED) {
     return applyGenesisLifeEpisodeEventToThread(thread, event, IntegrityError);
+  }
+  if (event.eventType === "GENESIS_SEX_MIGRATED") {
+    return applyGenesisSexMigration(thread, event);
   }
   if (event.eventType === "SELF_MODEL_UPDATED") {
     if (thread === null) throw new IntegrityError(`event ${event.eventId} appears before a seed event`);
