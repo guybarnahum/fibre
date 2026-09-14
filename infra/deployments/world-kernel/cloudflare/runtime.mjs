@@ -11,6 +11,8 @@ import { createGenesisThreadInspectionApi } from "#services/world-kernel/src/gen
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
+import { createThreadGenesisRepairApi } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
+import { createThreadGenesisRepairService } from "#services/world-kernel/src/thread-genesis-repair-service.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
 import { createThreadVisualPublicationRecoveryApi } from "#services/world-kernel/src/thread-visual-publication-recovery-api.mjs";
@@ -44,6 +46,21 @@ function serviceBinding(env, name) {
 
 function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
+}
+
+function createPresentationReader(presentationFetch) {
+  return Object.freeze({
+    async getSnapshot(threadId) {
+      const response = await presentationFetch(
+        `https://thread-presentation.internal/api/threads/${encodeURIComponent(threadId)}/snapshot`,
+        { headers:{ Accept:"application/json" } },
+      );
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`Thread Presentation inspection failed with HTTP ${response.status}`);
+      const payload = await response.json();
+      return payload?.snapshot ?? null;
+    },
+  });
 }
 
 function reconciliationIntervalMs(env) {
@@ -167,6 +184,15 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     reconciler: visualReconciler,
     privateToken,
   });
+  const repairService = createThreadGenesisRepairService({
+    worldReader:worldStore,
+    civilRegistry:civilRegistryStore,
+    embodimentReader:embodimentStore,
+    presentationReader:createPresentationReader(presentationFetch),
+    presentationDelivery,
+    visualReconciler,
+  });
+  const repairApi = createThreadGenesisRepairApi({ repairService, privateToken });
   const visualPublicationProcess = createThreadVisualPublicationProcess({
     threadSource: createDurableThreadSource(identityStore),
     reconciler: visualReconciler,
@@ -258,6 +284,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualPublicationProcess,
     visualReconciler,
     visualRecoveryApi,
+    repairService,
+    repairApi,
     reconciliationProcess,
     reconciliationRuntime,
     birthPublisher,
