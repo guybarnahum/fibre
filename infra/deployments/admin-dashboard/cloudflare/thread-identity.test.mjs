@@ -57,6 +57,7 @@ const identity = Object.freeze({
     height:1024,
     durationMs:null,
     url:"https://api.staging.insidefibre.com/api/assets/asset_object_1",
+    source:"current_public_presentation",
   }],
   snapshot:presentationSnapshot,
   provenance:{
@@ -120,7 +121,7 @@ test("O2 never mistakes an old or missing World endpoint for a pre-birth Thread"
   );
 });
 
-test("O1 keeps a World-admitted Thread visible when Presentation is missing", () => {
+test("O1 uses available public World embodiment media when Presentation is missing", () => {
   const resolved = combineAdminThreadIdentity({
     world:{
       threadId:"thr_test_1",
@@ -128,18 +129,40 @@ test("O1 keeps a World-admitted Thread visible when Presentation is missing", ()
       lifecycleStatus:"active",
       thread:{ threadId:"thr_test_1", version:7 },
       civilRegistration:{ fibreIdentityNumber:"4JX5-2N-04K2" },
-      embodiments:[],
+      embodiments:[{
+        embodimentId:"emb_1",
+        revision:2,
+        kind:"portrait",
+        representationKind:"synthetic_generation",
+        status:"available",
+        visibility:"public",
+        asset:{
+          assetRef:"asset://visual_identity_reference_1",
+          referenceObjectRef:"visual_identity_reference_1",
+          sha256:"sha256:abc",
+          mediaType:"image/png",
+          width:1024,
+          height:1024,
+        },
+      }],
       symbolicGenomes:[],
     },
     presentation:null,
   });
-  assert.equal(resolved.worldStatus, "admitted");
   assert.equal(resolved.presentationStatus, "unavailable");
-  assert.equal(resolved.world.thread.version, 7);
-  assert.equal(resolved.presentation, null);
+  assert.equal(resolved.assets.length, 1);
+  assert.equal(resolved.assets[0].objectRef, "visual_identity_reference_1");
+  assert.equal(resolved.assets[0].role, "canonical_portrait");
+  assert.equal(resolved.assets[0].source, "world_embodiment");
+  assert.deepEqual(resolved.visualIdentity, {
+    embodimentId:"emb_1",
+    embodimentRevision:2,
+    referenceObjectRefs:["visual_identity_reference_1"],
+  });
+  assert.equal(resolved.provenance.assets, "world_embodiment");
 });
 
-test("O1 combines World authority with full public Presentation", () => {
+test("O1 combines World authority with full public Presentation and deduplicates embodiment media", () => {
   const resolved = combineAdminThreadIdentity({
     world:{
       threadId:"thr_test_1",
@@ -147,13 +170,21 @@ test("O1 combines World authority with full public Presentation", () => {
       lifecycleStatus:"active",
       thread:{ threadId:"thr_test_1", version:7 },
       civilRegistration:{ fibreIdentityNumber:"4JX5-2N-04K2" },
-      embodiments:[{ embodimentId:"emb_1" }],
+      embodiments:[{
+        embodimentId:"emb_1",
+        revision:1,
+        kind:"portrait",
+        status:"available",
+        visibility:"public",
+        asset:{ referenceObjectRef:"asset_object_1", mediaType:"image/png", width:1024, height:1024 },
+      }],
       symbolicGenomes:[{ header:{ genomeId:"genome_1" } }],
     },
     presentation:identity,
   });
   assert.equal(resolved.displayName, "Thread One");
   assert.equal(resolved.assets.length, 1);
+  assert.equal(resolved.assets[0].source, "current_public_presentation");
   assert.equal(resolved.world.thread.version, 7);
   assert.deepEqual(resolved.presentation, presentationSnapshot);
 });
