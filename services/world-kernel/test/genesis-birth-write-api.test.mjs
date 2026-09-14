@@ -12,10 +12,12 @@ function request({
   body = { hello: "world" },
   contentType = "application/json",
   activityRequestId = null,
+  activityParentOperationId = null,
 } = {}) {
   const headers = { "content-type": contentType, "x-request-id": "req_slice_c" };
   if (token !== null) headers["x-fibre-private-token"] = token;
   if (activityRequestId !== null) headers["x-fibre-activity-request-id"] = activityRequestId;
+  if (activityParentOperationId !== null) headers["x-fibre-activity-parent-operation-id"] = activityParentOperationId;
   return new Request(`https://world.internal${path}`, {
     method,
     headers,
@@ -23,7 +25,7 @@ function request({
   });
 }
 
-test("Fetch-native Genesis birth write API preserves private publication status, idempotency and activity correlation", async () => {
+test("Fetch-native Genesis birth write API preserves publication identity and causal activity context", async () => {
   const calls = [];
   const api = createGenesisBirthWriteApi({
     privateToken: TOKEN,
@@ -35,11 +37,17 @@ test("Fetch-native Genesis birth write API preserves private publication status,
     },
   });
 
-  const first = await api.fetch(request({ activityRequestId: "req_genesis_activity_001" }));
+  const first = await api.fetch(request({
+    activityRequestId: "req_genesis_activity_001",
+    activityParentOperationId: "op_birth_world_submit_001",
+  }));
   assert.equal(first.status, 201);
   assert.equal((await first.json()).thread.threadId, "thr_slice_c");
   assert.deepEqual(calls[0].options, {
-    activityContext: { requestId: "req_genesis_activity_001" },
+    activityContext: {
+      requestId: "req_genesis_activity_001",
+      parentOperationId: "op_birth_world_submit_001",
+    },
   });
   assert.deepEqual(calls[0].bundle, { hello: "world" });
   assert.equal(JSON.stringify(calls[0].bundle).includes("req_genesis_activity_001"), false);
@@ -61,7 +69,10 @@ test("malformed activity correlation is ignored rather than blocking authoritati
       },
     },
   });
-  const response = await api.fetch(request({ activityRequestId: "not valid correlation" }));
+  const response = await api.fetch(request({
+    activityRequestId: "not valid correlation",
+    activityParentOperationId: "not valid parent",
+  }));
   assert.equal(response.status, 201);
   assert.deepEqual(options, { activityContext: {} });
 });
