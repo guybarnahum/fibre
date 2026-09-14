@@ -3,7 +3,11 @@ import baseWorker, {
   authorizeAdminPrincipal,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
-import { resolveAdminThreadIdentity } from "./thread-identity.mjs";
+import {
+  combineAdminThreadIdentity,
+  resolveAdminThreadIdentity,
+  resolveAdminWorldThreadIdentity,
+} from "./thread-identity.mjs";
 
 export { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 
@@ -42,14 +46,19 @@ async function adminPrincipal(request, env) {
   return { response: null };
 }
 
-function presentationBinding(env) {
-  if (!env.THREAD_PRESENTATION?.fetch) throw new Error("THREAD_PRESENTATION binding is unavailable");
-  return env.THREAD_PRESENTATION;
+function serviceBinding(env, name) {
+  const binding = env?.[name];
+  if (!binding?.fetch) throw new Error(`${name} binding is unavailable`);
+  return binding;
 }
 
-function presentationFetch(env) {
-  const binding = presentationBinding(env);
+function bindingFetch(env, name) {
+  const binding = serviceBinding(env, name);
   return (input, init) => binding.fetch(new Request(input, init));
+}
+
+function presentationBinding(env) {
+  return serviceBinding(env, "THREAD_PRESENTATION");
 }
 
 function adminIdentity(identity) {
@@ -108,14 +117,19 @@ export default {
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const threadId = id("threadId", decodeURIComponent(identityMatch[1]));
-          const identity = await resolveAdminThreadIdentity({
+          const world = await resolveAdminWorldThreadIdentity({
+            threadId,
+            fetchImpl: bindingFetch(env, "WORLD_KERNEL"),
+          });
+          if (world === null) return json(404, { error:"thread_not_found", existence:"not_admitted" });
+          const presentation = await resolveAdminThreadIdentity({
             environment,
             threadId,
-            fetchImpl: presentationFetch(env),
+            fetchImpl: bindingFetch(env, "THREAD_PRESENTATION"),
           });
-          if (identity === null) return json(404, { error: "thread_not_found" });
+          const identity = combineAdminThreadIdentity({ world, presentation });
           return json(200, {
-            contract: "fibre-admin-thread-identity-v0.2",
+            contract: "fibre-admin-thread-identity-v0.3",
             environment,
             resolvedAt: new Date().toISOString(),
             identity: adminIdentity(identity),
@@ -125,7 +139,7 @@ export default {
       } catch (error) {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
-          error: error instanceof TypeError ? "invalid_thread_resource" : "thread_presentation_unavailable",
+          error: error instanceof TypeError ? "invalid_thread_resource" : "thread_identity_unavailable",
           detail: error.message,
         });
       }
