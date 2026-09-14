@@ -98,6 +98,14 @@ test("O1 resolves authoritative Thread existence from World", async () => {
   });
 });
 
+test("O2 treats an allocated thr_ identifier absent from World as not born", async () => {
+  const resolved = await resolveAdminWorldThreadIdentity({
+    threadId:"thr_candidate_1",
+    fetchImpl:async () => Response.json({ error:"thread_not_found" }, { status:404 }),
+  });
+  assert.equal(resolved, null);
+});
+
 test("O1 keeps a World-admitted Thread visible when Presentation is missing", () => {
   const resolved = combineAdminThreadIdentity({
     world:{
