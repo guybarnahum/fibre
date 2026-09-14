@@ -60,7 +60,7 @@ test("modern Genesis request carries a proper, sexed and situated identity into 
   assert.equal(thread.identity.birthDate, "2004-08-20");
   assert.deepEqual(thread.identity.languages, worldSpec.languages);
   assert.equal(thread.identity.birthCity, "Tbilisi, Georgia");
-  assert.deepEqual(thread.identity.culture, [worldSpec.culturalContext]);
+  assert.deepEqual(thread.identity.culture, ["Tbilisi, Georgia formative context"]);
   assert.equal(thread.identity.selfDescription, `I am ${thread.identity.name}.`);
   assert.equal(thread.currentState.selfModel, `I am ${thread.identity.name}.`);
 });
