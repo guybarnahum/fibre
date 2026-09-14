@@ -17,3 +17,4 @@ export function createCloudflareInfraDriver({ schedulerScopes = {}, ...options }
 
 export * from "./driver.mjs";
 export { createCloudflareSchedulerPort } from "./scheduler.mjs";
+export { sampleCloudflareResourceHealth } from "./resource-health.mjs";
