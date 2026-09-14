@@ -121,7 +121,13 @@ export default {
             threadId,
             fetchImpl: bindingFetch(env, "WORLD_KERNEL"),
           });
-          if (world === null) return json(404, { error:"thread_not_found", existence:"not_admitted" });
+          if (world === null) {
+            return json(404, {
+              error:"thread_not_found",
+              existence:"not_admitted",
+              detail:"Pre-birth candidate · this identifier was never admitted to World as a Thread",
+            });
+          }
           const presentation = await resolveAdminThreadIdentity({
             environment,
             threadId,
