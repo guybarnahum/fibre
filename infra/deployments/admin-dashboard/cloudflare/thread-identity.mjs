@@ -50,21 +50,33 @@ function visualIdentity(presentation) {
   });
 }
 
+async function responsePayload(response) {
+  try { return await response.json(); }
+  catch { return null; }
+}
+
 export async function resolveAdminWorldThreadIdentity({ threadId, fetchImpl = globalThis.fetch } = {}) {
   const resolvedThreadId = id("threadId", threadId);
   if (typeof fetchImpl !== "function") throw new TypeError("World Thread identity resolver requires fetch()");
   const response = await fetchImpl(`https://world.internal/internal/threads/${encodeURIComponent(resolvedThreadId)}/identity`, {
     headers: { Accept:"application/json" },
   });
-  if (response.status === 404) return null;
-  if (!response.ok) throw new Error(`World Thread identity lookup failed with HTTP ${response.status}`);
-  const payload = await response.json();
+  const payload = await responsePayload(response);
+  if (response.status === 404 && payload?.error?.code === "THREAD_NOT_FOUND") return null;
+  if (!response.ok) {
+    const code = payload?.error?.code ?? payload?.error ?? `HTTP_${response.status}`;
+    throw new Error(`World Thread identity lookup unavailable (${code})`);
+  }
   const identity = payload?.identity;
   if (identity?.threadId !== resolvedThreadId) throw new Error("World returned a mismatched Thread identity");
   return Object.freeze({
     threadId: resolvedThreadId,
     fibreIdentityNumber: clean(identity.fibreIdentityNumber),
     lifecycleStatus: clean(identity.lifecycleStatus),
+    thread: identity.thread && typeof identity.thread === "object" ? structuredClone(identity.thread) : null,
+    civilRegistration: identity.civilRegistration && typeof identity.civilRegistration === "object" ? structuredClone(identity.civilRegistration) : null,
+    embodiments: Object.freeze(Array.isArray(identity.embodiments) ? structuredClone(identity.embodiments) : []),
+    symbolicGenomes: Object.freeze(Array.isArray(identity.symbolicGenomes) ? structuredClone(identity.symbolicGenomes) : []),
   });
 }
 
@@ -90,6 +102,7 @@ export async function resolveAdminThreadIdentity({ environment, threadId, fetchI
     lifecycleStatus: clean(presentation.manifest?.lifecycleStatus),
     visualIdentity: visualIdentity(presentation),
     assets: publicMedia(origin, snapshot),
+    snapshot: structuredClone(snapshot),
     provenance: Object.freeze({
       displayName: "resolved_after_fact",
       fibreIdentityNumber: "resolved_after_fact",
@@ -118,6 +131,13 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
     assets: Object.freeze([...(presentation?.assets ?? [])]),
     worldStatus: "admitted",
     presentationStatus: presentation === null || presentation === undefined ? "unavailable" : "current",
+    world: Object.freeze({
+      thread: world.thread ?? null,
+      civilRegistration: world.civilRegistration ?? null,
+      embodiments: Object.freeze([...(world.embodiments ?? [])]),
+      symbolicGenomes: Object.freeze([...(world.symbolicGenomes ?? [])]),
+    }),
+    presentation: presentation?.snapshot ?? null,
     provenance: Object.freeze({
       displayName: presentation ? "resolved_after_fact" : "unavailable",
       fibreIdentityNumber: world.fibreIdentityNumber ? "world_civil_registry" : "resolved_after_fact",
