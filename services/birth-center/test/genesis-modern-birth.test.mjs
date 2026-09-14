@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  GENESIS_DEVELOPMENT_REQUEST_VERSION,
+  buildGenesisDevelopmentPlan,
+} from "../src/genesis-development-plan.mjs";
+import {
   assertModernGenesisThreadIdentity,
   buildNeutralGenesisThreadSeed,
 } from "../src/genesis-publication.mjs";
@@ -11,16 +15,38 @@ function fixture(path) {
   return JSON.parse(readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8"));
 }
 
-test("modern Genesis birth creates a named, sexed and situated Thread", () => {
-  const worldSpec = fixture("fixtures/genesis/pr39/worlds/tbilisi.json");
+test("modern Genesis request carries a proper, sexed and situated identity into birth", () => {
+  const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
   const identities = fixture("fixtures/genesis/pr39/subject-identities-v1.json");
-  const subjectIdentity = identities.slots.find(({ slot }) => slot === 1);
-  const thread = buildNeutralGenesisThreadSeed({
-    threadId: "thr_modern_birth_reference",
-    createdAt: "2026-09-14T22:41:35Z",
-    subjectIdentity,
+  const slot = cohort.slots[0];
+  const worldSpec = fixture(slot.worldSpecPath);
+  const genome = fixture(slot.genomePath);
+  const subjectIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
+  const plan = buildGenesisDevelopmentPlan({
+    requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
+    requestId: "modern-birth-reference-001",
+    requestedAt: "2026-09-14T22:41:35Z",
     worldSpec,
-    bornAt: worldSpec.timeFrame.startAt,
+    subjectIdentity,
+    genomeValues: genome.loci.map((locus) => locus.value),
+    participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
+    placeAffordances: slot.placeAffordances,
+    bornAt: cohort.entry.bornAt,
+    chronologyEndsAt: cohort.entry.chronologyEndsAt,
+    timeZone: slot.timeZone,
+  });
+  assert.deepEqual(plan.subjectIdentity, {
+    femaleName: subjectIdentity.femaleName,
+    maleName: subjectIdentity.maleName,
+    birthCity: subjectIdentity.birthCity,
+  });
+
+  const thread = buildNeutralGenesisThreadSeed({
+    threadId: plan.threadId,
+    createdAt: "2026-09-14T22:41:35Z",
+    subjectIdentity: plan.subjectIdentity,
+    worldSpec: plan.worldSpec,
+    bornAt: plan.bornAt,
   });
 
   assert.equal(assertModernGenesisThreadIdentity(thread), true);
