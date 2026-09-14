@@ -1,0 +1,36 @@
+{
+  "fixtureVersion": "pr39-subject-identities-v1",
+  "purpose": "Bounded birth identity material for modern Genesis development Threads. Names are selected deterministically from authoritative Genesis sex; place is explicit birth context. WorldSpec remains the authority for language and cultural context.",
+  "slots": [
+    {
+      "slot": 1,
+      "femaleName": "Nino Beridze",
+      "maleName": "Luka Beridze",
+      "birthCity": "Tbilisi, Georgia"
+    },
+    {
+      "slot": 2,
+      "femaleName": "Mei-Ling Chen",
+      "maleName": "Wei-Jie Chen",
+      "birthCity": "Kaohsiung, Taiwan"
+    },
+    {
+      "slot": 3,
+      "femaleName": "Mariana Silva",
+      "maleName": "Gabriel Silva",
+      "birthCity": "Recife, Brazil"
+    },
+    {
+      "slot": 4,
+      "femaleName": "Salma El Idrissi",
+      "maleName": "Youssef El Idrissi",
+      "birthCity": "Fes, Morocco"
+    },
+    {
+      "slot": 5,
+      "femaleName": "Emily Carter",
+      "maleName": "Jack Carter",
+      "birthCity": "Hobart, Australia"
+    }
+  ]
+}
