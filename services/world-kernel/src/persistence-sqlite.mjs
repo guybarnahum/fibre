@@ -185,15 +185,34 @@ function rebuildEventTables(database) {
   database.exec(`
     DROP TRIGGER IF EXISTS thread_events_no_update;
     DROP TRIGGER IF EXISTS thread_events_no_delete;
-    DROP TRIGGER IF EXISTS commands_no_update;
-    DROP TRIGGER IF EXISTS commands_no_delete;
     DROP INDEX IF EXISTS idx_thread_events_thread_sequence;
-    ALTER TABLE commands RENAME TO commands_pre_event_upgrade;
-    ALTER TABLE thread_events RENAME TO thread_events_pre_event_upgrade;
-  `);
-  createBaseSchema(database);
-  database.exec(`
-    INSERT INTO thread_events(
+    CREATE TABLE thread_events_event_upgrade (
+      event_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      sequence INTEGER NOT NULL CHECK (sequence >= 1),
+      expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
+      resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
+      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED')),
+      command_id TEXT,
+      command_digest TEXT,
+      payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+      actor_json TEXT NOT NULL CHECK (json_valid(actor_json)),
+      occurred_at TEXT NOT NULL,
+      state_hash TEXT NOT NULL CHECK (state_hash LIKE 'sha256:%'),
+      authorization_id TEXT,
+      causation_id TEXT NOT NULL,
+      correlation_id TEXT NOT NULL,
+      payload_schema_version INTEGER NOT NULL CHECK (payload_schema_version >= 1),
+      provenance_json TEXT NOT NULL CHECK (json_valid(provenance_json)),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      UNIQUE (thread_id, sequence),
+      CHECK (
+        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED') AND command_id IS NULL AND command_digest IS NULL)
+        OR
+        (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
+      )
+    ) STRICT;
+    INSERT INTO thread_events_event_upgrade(
       event_id,thread_id,sequence,expected_version,resulting_version,event_type,
       command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
       authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
@@ -201,11 +220,12 @@ function rebuildEventTables(database) {
     SELECT event_id,thread_id,sequence,expected_version,resulting_version,event_type,
       command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
       authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-    FROM thread_events_pre_event_upgrade;
-    INSERT INTO commands(thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at)
-    SELECT thread_id,command_id,command_digest,expected_version,resulting_version,event_id,created_at FROM commands_pre_event_upgrade;
-    DROP TABLE commands_pre_event_upgrade;
-    DROP TABLE thread_events_pre_event_upgrade;
+    FROM thread_events;
+    DROP TABLE thread_events;
+    ALTER TABLE thread_events_event_upgrade RENAME TO thread_events;
+    CREATE INDEX idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
+    CREATE TRIGGER thread_events_no_update BEFORE UPDATE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
+    CREATE TRIGGER thread_events_no_delete BEFORE DELETE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
   `);
 }
 
