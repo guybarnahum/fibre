@@ -21,7 +21,12 @@ test("modern Genesis request carries a proper, sexed and situated identity into 
   const slot = cohort.slots[0];
   const worldSpec = fixture(slot.worldSpecPath);
   const genome = fixture(slot.genomePath);
-  const subjectIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
+  const identityFixture = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
+  const subjectIdentity = {
+    femaleName: identityFixture.femaleName,
+    maleName: identityFixture.maleName,
+    birthCity: identityFixture.birthCity,
+  };
   const plan = buildGenesisDevelopmentPlan({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
     requestId: "modern-birth-reference-001",
@@ -35,11 +40,7 @@ test("modern Genesis request carries a proper, sexed and situated identity into 
     chronologyEndsAt: cohort.entry.chronologyEndsAt,
     timeZone: slot.timeZone,
   });
-  assert.deepEqual(plan.subjectIdentity, {
-    femaleName: subjectIdentity.femaleName,
-    maleName: subjectIdentity.maleName,
-    birthCity: subjectIdentity.birthCity,
-  });
+  assert.deepEqual(plan.subjectIdentity, subjectIdentity);
 
   const thread = buildNeutralGenesisThreadSeed({
     threadId: plan.threadId,
