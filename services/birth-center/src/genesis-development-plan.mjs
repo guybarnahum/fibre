@@ -62,18 +62,20 @@ function validateTimeZone(value) {
 }
 
 function normalizeSubjectIdentity(candidate) {
-  exactKeys("Genesis development request subjectIdentity", candidate, [
+  plain("Genesis development request subjectIdentity", candidate);
+  const { slot: _fixtureSlot, ...identity } = candidate;
+  exactKeys("Genesis development request subjectIdentity", identity, [
     "femaleName",
     "maleName",
     "birthCity",
   ]);
-  const femaleName = nonEmpty("Genesis development request subjectIdentity.femaleName", candidate.femaleName);
-  const maleName = nonEmpty("Genesis development request subjectIdentity.maleName", candidate.maleName);
+  const femaleName = nonEmpty("Genesis development request subjectIdentity.femaleName", identity.femaleName);
+  const maleName = nonEmpty("Genesis development request subjectIdentity.maleName", identity.maleName);
   if (femaleName === maleName) throw new TypeError("Genesis development request subject identity requires distinct female and male names");
   return Object.freeze({
     femaleName,
     maleName,
-    birthCity: nonEmpty("Genesis development request subjectIdentity.birthCity", candidate.birthCity),
+    birthCity: nonEmpty("Genesis development request subjectIdentity.birthCity", identity.birthCity),
   });
 }
 
