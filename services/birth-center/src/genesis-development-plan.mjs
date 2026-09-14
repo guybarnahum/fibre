@@ -8,8 +8,8 @@ import {
   sha256,
 } from "./genesis-development-contracts.mjs";
 
-export const GENESIS_DEVELOPMENT_REQUEST_VERSION = "fibre-genesis-development-request-v1";
-const PLAN_VERSION = "fibre-genesis-development-plan-v2";
+export const GENESIS_DEVELOPMENT_REQUEST_VERSION = "fibre-genesis-development-request-v2";
+const PLAN_VERSION = "fibre-genesis-development-plan-v3";
 const WINDOW_COUNT = 14;
 const STRUCTURES_PER_WINDOW = 9;
 const HISTORY_START_AGE = 6;
@@ -59,6 +59,22 @@ function validateTimeZone(value) {
   try { new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date(0)); }
   catch { throw new TypeError(`Genesis development request timeZone ${timeZone} is invalid`); }
   return timeZone;
+}
+
+function normalizeSubjectIdentity(candidate) {
+  exactKeys("Genesis development request subjectIdentity", candidate, [
+    "femaleName",
+    "maleName",
+    "birthCity",
+  ]);
+  const femaleName = nonEmpty("Genesis development request subjectIdentity.femaleName", candidate.femaleName);
+  const maleName = nonEmpty("Genesis development request subjectIdentity.maleName", candidate.maleName);
+  if (femaleName === maleName) throw new TypeError("Genesis development request subject identity requires distinct female and male names");
+  return Object.freeze({
+    femaleName,
+    maleName,
+    birthCity: nonEmpty("Genesis development request subjectIdentity.birthCity", candidate.birthCity),
+  });
 }
 
 function normalizeParticipant(candidate, index) {
@@ -113,6 +129,7 @@ export function normalizeGenesisDevelopmentRequest(candidate) {
     "requestId",
     "requestedAt",
     "worldSpec",
+    "subjectIdentity",
     "genomeValues",
     "participants",
     "placeAffordances",
@@ -138,6 +155,7 @@ export function normalizeGenesisDevelopmentRequest(candidate) {
   if (new Date(worldSpec.timeFrame.endAt).toISOString() !== new Date(chronologyEndsAt).toISOString()) {
     throw new TypeError("Genesis development request WorldSpec must end at chronologyEndsAt");
   }
+  const subjectIdentity = normalizeSubjectIdentity(candidate.subjectIdentity);
   const genomeValues = stringArray("Genesis development request genomeValues", candidate.genomeValues, { minimum: 2 });
   if (!Array.isArray(candidate.participants) || candidate.participants.length === 0) {
     throw new TypeError("Genesis development request participants must be a non-empty array");
@@ -158,6 +176,7 @@ export function normalizeGenesisDevelopmentRequest(candidate) {
     requestId,
     requestedAt,
     worldSpec,
+    subjectIdentity,
     genomeValues: Object.freeze(genomeValues),
     participants: Object.freeze(participants),
     placeAffordances: Object.freeze(placeAffordances),
@@ -238,6 +257,7 @@ function assertPlanShape(plan) {
   nonEmpty("Genesis development plan genesisId", plan.genesisId);
   nonEmpty("Genesis development plan originMode", plan.originMode);
   plain("Genesis development plan worldSpec", plan.worldSpec);
+  plain("Genesis development plan subjectIdentity", plan.subjectIdentity);
   plain("Genesis development plan genome", plan.genome);
   plain("Genesis development plan roster", plan.roster);
   if (!Array.isArray(plan.windows) || plan.windows.length !== WINDOW_COUNT) throw new TypeError(`Genesis development plan requires ${WINDOW_COUNT} windows`);
@@ -308,6 +328,7 @@ export function buildGenesisDevelopmentPlan(candidate) {
     originMode: "de_novo",
     worldSpec,
     worldSpecDigest,
+    subjectIdentity: structuredClone(request.subjectIdentity),
     genome,
     genomeDigest: genome.genomeDigest,
     parentGenomes: Object.freeze([]),
@@ -334,6 +355,7 @@ export function serializeGenesisDevelopmentPlan(plan) {
     originMode: plan.originMode,
     worldSpec: structuredClone(plan.worldSpec),
     worldSpecDigest: plan.worldSpecDigest,
+    subjectIdentity: structuredClone(plan.subjectIdentity),
     genome: structuredClone(plan.genome),
     genomeDigest: plan.genomeDigest,
     parentGenomes: structuredClone(plan.parentGenomes ?? []),
@@ -377,6 +399,7 @@ export function hydrateGenesisDevelopmentPlan(candidate) {
     originMode: candidate.originMode,
     worldSpec: structuredClone(candidate.worldSpec),
     worldSpecDigest: candidate.worldSpecDigest,
+    subjectIdentity: structuredClone(candidate.subjectIdentity),
     genome: structuredClone(candidate.genome),
     genomeDigest: candidate.genomeDigest,
     parentGenomes: structuredClone(candidate.parentGenomes ?? []),
