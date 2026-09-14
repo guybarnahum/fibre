@@ -6,6 +6,7 @@ import { createThreadGenesisRepairService } from "../src/thread-genesis-repair-s
 function fixture() {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
+  const officialMediaId = "media_identity_1";
   const state = { presentation:null, rebuilt:false, visual:false };
   const thread = {
     threadId,
@@ -36,7 +37,7 @@ function fixture() {
         assert.equal(id, threadId);
         state.rebuilt = true;
         state.presentation = {
-          presentation:{ visualIdentity:null },
+          presentation:{ visualIdentity:null, identityCard:null },
           media:{ assets:[] },
         };
         return { rebuilt:true, threadId };
@@ -48,8 +49,11 @@ function fixture() {
         assert.equal(regenerationKey, "repair_test_1");
         state.visual = true;
         state.presentation = {
-          presentation:{ visualIdentity:{ referenceObjectRefs:[objectRef] } },
-          media:{ assets:[{ status:"ready", locator:objectRef }] },
+          presentation:{
+            visualIdentity:{ referenceObjectRefs:[objectRef] },
+            identityCard:{ officialPhotoMediaRef:officialMediaId },
+          },
+          media:{ assets:[{ mediaId:officialMediaId, status:"ready", locator:"identity_photo_1" }] },
         };
         return { complete:true, stage:"complete" };
       },
