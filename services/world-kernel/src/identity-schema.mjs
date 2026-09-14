@@ -494,6 +494,20 @@ export function backfillMemoryVisualCompanions(database) {
     `).all(threadRow.thread_id);
     for (const row of storedRows) refs.add(row.memory_id);
     for (const memoryRef of refs) {
+      const existing = database.prepare(`
+        SELECT companion_id,revision,memory_ref,thread_id,status,representation_kind,
+          truth_status,asset_ref,visibility,supersedes_revision,companion_json,
+          companion_digest,recorded_at
+        FROM memory_visual_companion_records
+        WHERE thread_id=? AND memory_ref=?
+        ORDER BY revision DESC LIMIT 1
+      `).get(threadRow.thread_id, memoryRef);
+      if (existing !== undefined) {
+        decodeMemoryVisualCompanionRow(existing);
+        memoryReferences += 1;
+        continue;
+      }
+
       const pending = pendingFromReference(
         database,
         threadRow.thread_id,
