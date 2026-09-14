@@ -14,8 +14,7 @@ function nonEmpty(name, value) {
   return value;
 }
 
-function activityRequestId(activityContext) {
-  const value = activityContext?.requestId;
+function activityId(value) {
   return typeof value === "string" && ACTIVITY_REQUEST_ID_PATTERN.test(value) ? value : null;
 }
 
@@ -47,8 +46,10 @@ export function createWorldKernelBirthPublisher({
         "content-type": "application/json",
         "x-fibre-private-token": token,
       };
-      const correlation = activityRequestId(activityContext);
-      if (correlation !== null) headers["x-fibre-activity-request-id"] = correlation;
+      const requestId = activityId(activityContext?.requestId);
+      const parentOperationId = activityId(activityContext?.parentOperationId);
+      if (requestId !== null) headers["x-fibre-activity-request-id"] = requestId;
+      if (parentOperationId !== null) headers["x-fibre-activity-parent-operation-id"] = parentOperationId;
       const response = await fetchImpl(target, {
         method: "POST",
         headers,
