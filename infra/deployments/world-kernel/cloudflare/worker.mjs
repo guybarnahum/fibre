@@ -34,10 +34,16 @@ function threadIdentity(runtime, threadId) {
   const thread = runtime.worldStore.getThread(threadId, { required:false });
   if (thread === null) return null;
   const registration = runtime.civilRegistryStore.getCivilRegistrationByThreadId(threadId, { required:false });
+  const embodiments = runtime.embodimentStore.listCurrent(threadId);
+  const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
   return Object.freeze({
     threadId,
     fibreIdentityNumber: registration?.fibreIdentityNumber ?? null,
     lifecycleStatus: typeof thread.status === "string" ? thread.status : null,
+    thread: structuredClone(thread),
+    civilRegistration: registration === null ? null : structuredClone(registration),
+    embodiments: structuredClone(embodiments),
+    symbolicGenomes: structuredClone(symbolicGenomes),
   });
 }
 
@@ -73,8 +79,8 @@ export class FibreWorldDurableObject extends DurableObject {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
       const identity = threadIdentity(runtime, decodeURIComponent(identityMatch[1]));
-      if (identity === null) return Response.json({ error:"thread_not_found" }, { status:404 });
-      return Response.json({ contract:"fibre-world-thread-identity-v0.1", identity });
+      if (identity === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
+      return Response.json({ contract:"fibre-world-thread-identity-v0.2", identity });
     }
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
       if (url.search !== "") return Response.json({ error: { code: "QUERY_NOT_SUPPORTED" } }, { status: 400 });
