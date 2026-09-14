@@ -2,7 +2,6 @@ import { orderCausalTree } from "/causal-tree.js";
 
 const rail = document.querySelector("#journey-rail");
 const hint = document.querySelector(".journey-body-head span");
-let arranging = false;
 
 function lineageFromTitle(title) {
   const operation = /^Operation ([^ ·]+)(?: · parent ([^ ·]+))?/u.exec(title ?? "");
@@ -11,12 +10,11 @@ function lineageFromTitle(title) {
 }
 
 function arrangeTree() {
-  if (!rail || arranging) return;
+  if (!rail) return;
   const events = [...rail.querySelectorAll(":scope > .journey-event")];
   if (events.length === 0) return refreshHint();
 
   const ordered = orderCausalTree(events.map((event) => ({ event, ...lineageFromTitle(event.title) })));
-  arranging = true;
   for (const { item, depth, orphan } of ordered) {
     const event = item.event;
     event.style.setProperty("--journey-indent", `${Math.min(depth, 6) * 18}px`);
@@ -26,9 +24,10 @@ function arrangeTree() {
       const parent = event.querySelector(".journey-parent");
       if (parent) parent.textContent = `upstream operation not on this page · ${item.parentOperationId}`;
     }
-    rail.append(event);
   }
-  arranging = false;
+
+  const orderedEvents = ordered.map(({ item }) => item.event);
+  if (orderedEvents.some((event, index) => events[index] !== event)) rail.replaceChildren(...orderedEvents);
   refreshHint();
 }
 
