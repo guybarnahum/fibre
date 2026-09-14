@@ -12,6 +12,7 @@
     "FIBRE_ENVIRONMENT": "production"
   },
   "services": [
+    { "binding": "WORLD_KERNEL", "service": "fibre-world-kernel" },
     { "binding": "THREAD_PRESENTATION", "service": "fibre-thread-presentation" }
   ],
   "d1_databases": [
