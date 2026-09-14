@@ -134,7 +134,8 @@ export function createSituatedLifeTables(database) {
         AND NEW.behavioral_status <> 'context_only'
       BEGIN SELECT RAISE(ABORT,'situated identity domains are context_only until causal standing'); END;
 
-    CREATE TRIGGER IF NOT EXISTS identity_lived_event_witness_guard
+    DROP TRIGGER IF EXISTS identity_lived_event_witness_guard;
+    CREATE TRIGGER identity_lived_event_witness_guard
       BEFORE INSERT ON identity_assertion_records
       WHEN NEW.registry_version='2'
         AND NEW.domain IN ('cultural_formation','language_formation')
