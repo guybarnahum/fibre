@@ -40,15 +40,15 @@ function threadName(identity) {
   return firstText(
     identity?.displayName,
     identity?.world?.thread?.identity?.name,
-    identity?.presentation?.subject?.displayName,
+    identity?.presentation?.presentation?.subject?.displayName,
   );
 }
 
 function threadSex(identity) {
   return firstText(
     identity?.world?.thread?.identity?.sex,
-    identity?.presentation?.subject?.sex,
-    identity?.presentation?.identity?.sex,
+    identity?.presentation?.presentation?.subject?.sex,
+    identity?.presentation?.presentation?.identity?.sex,
   );
 }
 
@@ -145,16 +145,31 @@ function primaryImage(identity) {
   return (identity.assets ?? []).find((asset) => asset?.url && String(asset.mediaType ?? "").startsWith("image/")) ?? null;
 }
 
+function worldCanonicalAsset(identity) {
+  return (identity.assets ?? []).find((asset) => (
+    asset?.source === "world_embodiment"
+    && asset?.role === "canonical_portrait"
+    && String(asset.mediaType ?? "").startsWith("image/")
+  )) ?? null;
+}
+
 function hero(identity, threadId) {
   const worldThread = identity.world?.thread ?? {};
   const worldIdentity = worldThread.identity ?? {};
   const name = threadName(identity);
   const sex = threadSex(identity);
   const image = primaryImage(identity);
+  const admittedPortrait = worldCanonicalAsset(identity);
   const wrap = el("section", "thread-person-hero");
   const portrait = el("div", `thread-person-portrait${image ? " has-image" : ""}`);
   if (image) {
     const img = el("img"); img.src = image.url; img.alt = name ?? "Thread portrait"; img.loading = "lazy"; portrait.append(img);
+  } else if (admittedPortrait) {
+    portrait.append(
+      el("span", "thread-person-portrait-mark", "◌"),
+      el("strong", null, "Canonical portrait admitted in World"),
+      el("small", null, "Image exists, but Thread Presentation has not published it for delivery."),
+    );
   } else {
     portrait.append(
       el("span", "thread-person-portrait-mark", "◌"),
@@ -235,8 +250,15 @@ function appearanceSection(identity) {
   const description = phenotype(identity);
   const rule = appearanceRule(identity);
   const sex = threadSex(identity);
-  if (!description && !rule && !sex) return null;
-  const wrap = section("Appearance", identity.assets?.length ? `${identity.assets.length} ready media` : "Canonical image not materialized");
+  const published = (identity.assets ?? []).filter((asset) => asset?.deliveryStatus === "published").length;
+  const admitted = (identity.assets ?? []).filter((asset) => asset?.deliveryStatus === "world_only").length;
+  if (!description && !rule && !sex && published === 0 && admitted === 0) return null;
+  const subtitle = published > 0
+    ? `${published} published media`
+    : admitted > 0
+      ? `${admitted} World asset · Presentation publication pending`
+      : "Canonical image not materialized";
+  const wrap = section("Appearance", subtitle);
   if (description) wrap.append(el("p", "thread-appearance-prose", description));
   const grid = el("div", "thread-person-facts");
   grid.append(
@@ -251,7 +273,13 @@ function appearanceSection(identity) {
 function mediaSection(identity) {
   const assets = Array.isArray(identity?.assets) ? identity.assets : [];
   if (!assets.length) return null;
-  const wrap = section("Media", `${assets.length} ready ${assets.length === 1 ? "asset" : "assets"}`);
+  const published = assets.filter((asset) => asset?.deliveryStatus === "published").length;
+  const admitted = assets.filter((asset) => asset?.deliveryStatus === "world_only").length;
+  const subtitle = [
+    published ? `${published} published` : null,
+    admitted ? `${admitted} admitted in World` : null,
+  ].filter(Boolean).join(" · ");
+  const wrap = section("Media", subtitle);
   const grid = el("div", "thread-asset-grid");
   for (const asset of assets) {
     const card = el("article", "thread-asset");
@@ -260,8 +288,18 @@ function mediaSection(identity) {
       const image = el("img"); image.src = asset.url; image.loading = "lazy"; image.alt = asset.role ?? asset.mediaId ?? "Thread image"; preview.append(image); card.append(preview);
     }
     const copy = el("div", "thread-asset-copy");
-    copy.append(el("strong", null, human(asset.role ?? asset.mediaId ?? asset.kind ?? "Media")), el("small", null, [asset.kind, asset.mediaType, asset.width && asset.height ? `${asset.width}×${asset.height}` : null].filter(Boolean).join(" · ")));
-    if (asset.url) { const link = el("a", "thread-asset-link mono", asset.objectRef ?? "Open asset"); link.href = asset.url; link.target = "_blank"; link.rel = "noreferrer"; copy.append(link); }
+    copy.append(
+      el("strong", null, human(asset.role ?? asset.mediaId ?? asset.kind ?? "Media")),
+      el("small", null, [asset.kind, asset.mediaType, asset.width && asset.height ? `${asset.width}×${asset.height}` : null].filter(Boolean).join(" · ")),
+    );
+    if (asset.url) {
+      const link = el("a", "thread-asset-link mono", asset.objectRef ?? "Open asset"); link.href = asset.url; link.target = "_blank"; link.rel = "noreferrer"; copy.append(link);
+    } else {
+      copy.append(
+        el("span", "thread-asset-link", "Admitted in World · not published by Thread Presentation"),
+        el("small", "mono", asset.objectRef ?? ""),
+      );
+    }
     card.append(copy); grid.append(card);
   }
   wrap.append(grid); return wrap;
