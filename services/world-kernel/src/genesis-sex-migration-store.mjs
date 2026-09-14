@@ -1,4 +1,4 @@
-import { GENESIS_SEX_RULE, genesisSexForThread, normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
+import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 import {
   boundedThreadScopedId,
   canonicalJson,
@@ -8,16 +8,33 @@ import {
 import { validateThreadSnapshot } from "./persistence-domain.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
-function eventId(threadId, sex) {
-  const witness = sha256(canonicalJson({
-    threadId,
-    sex,
-    rule:GENESIS_SEX_RULE,
-  })).slice(0, 24);
+function normalizeWitness(threadId, witness) {
+  if (!witness || typeof witness !== "object") {
+    throw new TypeError(`Thread ${threadId} Genesis sex migration requires authoritative birth evidence`);
+  }
+  if (witness.source !== "genesis_birth_publication") {
+    throw new TypeError("Genesis sex migration evidence must come from genesis_birth_publication");
+  }
+  if (typeof witness.genesisId !== "string" || witness.genesisId.trim() === "") {
+    throw new TypeError("Genesis sex migration evidence requires genesisId");
+  }
+  if (typeof witness.resultDigest !== "string" || !/^sha256:[0-9a-f]{64}$/u.test(witness.resultDigest)) {
+    throw new TypeError("Genesis sex migration evidence requires a SHA-256 resultDigest");
+  }
+  return Object.freeze({
+    sex:normalizeGenesisSex(witness.sex),
+    genesisId:witness.genesisId,
+    resultDigest:witness.resultDigest,
+    source:witness.source,
+  });
+}
+
+function eventId(threadId, witness) {
+  const digest = sha256(canonicalJson({ threadId, witness })).slice(0, 24);
   return boundedThreadScopedId({
     prefix:"evt",
     threadId,
-    suffix:`genesis_sex_migration_${witness}`,
+    suffix:`genesis_sex_migration_${digest}`,
   });
 }
 
@@ -30,41 +47,41 @@ export class GenesisSexMigrationStore {
 
   close() { this.#database.close(); }
 
-  migrate(thread, { migratedAt = new Date().toISOString() } = {}) {
+  migrate(thread, { evidence, migratedAt = new Date().toISOString() } = {}) {
     validateThreadSnapshot(thread);
-    const expectedSex = normalizeGenesisSex(genesisSexForThread({ threadId:thread.threadId }));
+    const witness = normalizeWitness(thread.threadId, evidence);
     if (thread.identity.sex !== undefined) {
-      if (thread.identity.sex !== expectedSex) {
-        throw new Error(`Thread ${thread.threadId} sex conflicts with ${GENESIS_SEX_RULE.id}`);
+      if (thread.identity.sex !== witness.sex) {
+        throw new Error(`Thread ${thread.threadId} sex conflicts with preserved Genesis birth evidence`);
       }
-      return Object.freeze({ migrated:false, reused:true, sex:expectedSex, eventId:thread.provenance.lastEventId });
+      return Object.freeze({ migrated:false, reused:true, sex:witness.sex, eventId:thread.provenance.lastEventId, evidence:witness });
     }
 
-    const migrationEventId = eventId(thread.threadId, expectedSex);
+    const migrationEventId = eventId(thread.threadId, witness);
     const existing = this.#database.prepare(
       "SELECT state_hash FROM thread_events WHERE event_id=?",
     ).get(migrationEventId);
     if (existing !== undefined) {
       const currentRow = this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
       const current = currentRow === undefined ? null : JSON.parse(currentRow.state_json);
-      if (current?.identity?.sex !== expectedSex) {
+      if (current?.identity?.sex !== witness.sex) {
         throw new Error(`Genesis sex migration ${migrationEventId} exists without matching Thread state`);
       }
-      return Object.freeze({ migrated:false, reused:true, sex:expectedSex, eventId:migrationEventId });
+      return Object.freeze({ migrated:false, reused:true, sex:witness.sex, eventId:migrationEventId, evidence:witness });
     }
 
     const next = structuredClone(thread);
     next.version += 1;
-    next.identity = { ...next.identity, sex:expectedSex };
+    next.identity = { ...next.identity, sex:witness.sex };
     next.provenance = { ...next.provenance, lastEventId:migrationEventId };
     validateThreadSnapshot(next);
 
     const stateJson = canonicalJson(next);
     const stateHash = threadStateHash(next);
     const payload = {
-      sex:expectedSex,
-      ruleId:GENESIS_SEX_RULE.id,
-      ruleVersion:GENESIS_SEX_RULE.version,
+      sex:witness.sex,
+      genesisId:witness.genesisId,
+      resultDigest:witness.resultDigest,
     };
     const actor = {
       entityId:"fibre.genesis.migration",
@@ -72,9 +89,9 @@ export class GenesisSexMigrationStore {
       displayName:"Fibre Genesis Migration",
     };
     const provenance = {
-      source:"genesis_migration",
-      ruleId:GENESIS_SEX_RULE.id,
-      ruleVersion:GENESIS_SEX_RULE.version,
+      source:"genesis_birth_publication",
+      genesisId:witness.genesisId,
+      resultDigest:witness.resultDigest,
       notThreadLifeEvent:true,
     };
 
@@ -88,7 +105,7 @@ export class GenesisSexMigrationStore {
       }
       const current = JSON.parse(currentRow.state_json);
       if (current.identity?.sex !== undefined) {
-        if (current.identity.sex !== expectedSex) throw new Error(`Thread ${thread.threadId} acquired conflicting sex before migration`);
+        if (current.identity.sex !== witness.sex) throw new Error(`Thread ${thread.threadId} acquired conflicting sex before migration`);
         return;
       }
       const sequence = Number(this.#database.prepare(
@@ -130,6 +147,6 @@ export class GenesisSexMigrationStore {
       if (Number(updated.changes) !== 1) throw new Error(`Thread ${thread.threadId} changed during Genesis migration`);
     });
 
-    return Object.freeze({ migrated:true, reused:false, sex:expectedSex, eventId:migrationEventId });
+    return Object.freeze({ migrated:true, reused:false, sex:witness.sex, eventId:migrationEventId, evidence:witness });
   }
 }
