@@ -141,16 +141,24 @@ function assertSlotPlan(slotPlan) {
   if (!(slotPlan.offersByWindow instanceof Map) || slotPlan.offersByWindow.size !== 14) throw new TypeError("replacement candidate requires fourteen offer sets");
 }
 
+function phaseRunner(value) {
+  if (value === null || value === undefined) return async (_stage, operation) => operation();
+  if (typeof value !== "function") throw new TypeError("replacement candidate runPhase must be a function or null");
+  return value;
+}
+
 export async function generateGenesisLifeCandidate({
   slotPlan,
   adapter,
   repairAdapter = adapter,
   attemptStartedAt,
+  runPhase = null,
 } = {}) {
   assertSlotPlan(slotPlan);
   if (adapter === null || typeof adapter?.invoke !== "function") throw new TypeError("replacement candidate adapter must expose invoke()");
   if (repairAdapter === null || typeof repairAdapter?.invoke !== "function") throw new TypeError("replacement candidate repairAdapter must expose invoke()");
   if (typeof attemptStartedAt !== "string" || !Number.isFinite(Date.parse(attemptStartedAt))) throw new TypeError("replacement candidate attemptStartedAt is required");
+  const phase = phaseRunner(runPhase);
 
   const lineageWitness = slotPlan.originMode === "synthetic_lineage"
     ? syntheticLineageWitnessFromRecombinedGenome(slotPlan.genome)
@@ -159,51 +167,53 @@ export async function generateGenesisLifeCandidate({
   const episodes = [];
   const passA = [];
 
-  for (let index = 0; index < slotPlan.windows.length; index += 1) {
-    const window = slotPlan.windows[index];
-    const envelope = slotPlan.envelopePlan.envelopes[index];
-    if (envelope.windowId !== window.windowId || envelope.ordinal !== index + 1) {
-      fail(`replacement slot ${slotPlan.slot} envelope/window alignment drift at ordinal ${index + 1}`);
+  await phase("birth.genesis.history", async () => {
+    for (let index = 0; index < slotPlan.windows.length; index += 1) {
+      const window = slotPlan.windows[index];
+      const envelope = slotPlan.envelopePlan.envelopes[index];
+      if (envelope.windowId !== window.windowId || envelope.ordinal !== index + 1) {
+        fail(`replacement slot ${slotPlan.slot} envelope/window alignment drift at ordinal ${index + 1}`);
+      }
+      const offeredEntries = slotPlan.offersByWindow.get(window.windowId);
+      if (!Array.isArray(offeredEntries) || offeredEntries.length < 8) {
+        fail(`replacement slot ${slotPlan.slot} window ${window.windowId} lacks current EventStructure offers`);
+      }
+      const constrainedContext = constrainPassAContextToHistoricalEnvelope({
+        worldSpec: slotPlan.worldSpec,
+        envelope,
+      });
+      const input = buildRichLifePassAInput({
+        originMode: slotPlan.originMode,
+        syntheticLineageWitness: lineageWitness,
+        worldSpec: constrainedContext.worldSpec,
+        subject,
+        developmentalWindow: constrainedContext.developmentalWindow,
+        chronologyEndsAt: constrainedContext.chronologyEndsAt,
+        initialRoster: slotPlan.roster.participants,
+        priorEpisodes: episodes,
+        previouslyIntroducedParticipants: uniqueIntroductions(episodes),
+        offeredEntries,
+      });
+      const result = await generateGenesisHistoricalEpisode({
+        adapter,
+        repairAdapter,
+        passAInput: input,
+        envelope,
+        clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-a:episode-${pad(index + 1)}`,
+      });
+      episodes.push(result.episode);
+      passA.push(Object.freeze({
+        ordinal: index + 1,
+        windowId: window.windowId,
+        envelopeDigest: digest(envelope),
+        inputDigest: digest(input),
+        episode: structuredClone(result.episode),
+        episodeDigest: digest(result.episode),
+        calls: structuredClone(result.calls),
+        budgetState: structuredClone(result.budgetState),
+      }));
     }
-    const offeredEntries = slotPlan.offersByWindow.get(window.windowId);
-    if (!Array.isArray(offeredEntries) || offeredEntries.length < 8) {
-      fail(`replacement slot ${slotPlan.slot} window ${window.windowId} lacks current EventStructure offers`);
-    }
-    const constrainedContext = constrainPassAContextToHistoricalEnvelope({
-      worldSpec: slotPlan.worldSpec,
-      envelope,
-    });
-    const input = buildRichLifePassAInput({
-      originMode: slotPlan.originMode,
-      syntheticLineageWitness: lineageWitness,
-      worldSpec: constrainedContext.worldSpec,
-      subject,
-      developmentalWindow: constrainedContext.developmentalWindow,
-      chronologyEndsAt: constrainedContext.chronologyEndsAt,
-      initialRoster: slotPlan.roster.participants,
-      priorEpisodes: episodes,
-      previouslyIntroducedParticipants: uniqueIntroductions(episodes),
-      offeredEntries,
-    });
-    const result = await generateGenesisHistoricalEpisode({
-      adapter,
-      repairAdapter,
-      passAInput: input,
-      envelope,
-      clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-a:episode-${pad(index + 1)}`,
-    });
-    episodes.push(result.episode);
-    passA.push(Object.freeze({
-      ordinal: index + 1,
-      windowId: window.windowId,
-      envelopeDigest: digest(envelope),
-      inputDigest: digest(input),
-      episode: structuredClone(result.episode),
-      episodeDigest: digest(result.episode),
-      calls: structuredClone(result.calls),
-      budgetState: structuredClone(result.budgetState),
-    }));
-  }
+  });
 
   const continuity = deriveGenesisLifeContinuity({
     threadId: slotPlan.threadId,
@@ -217,84 +227,86 @@ export async function generateGenesisLifeCandidate({
   const passB = [];
   const passCInitial = [];
 
-  for (let callOrdinal = 1; callOrdinal <= 6; callOrdinal += 1) {
-    const input = buildGenesisPassBInput({
-      threadId: slotPlan.threadId,
-      bornAt: slotPlan.bornAt,
-      worldSpec: slotPlan.worldSpec,
-      episodes,
-      windows: slotPlan.windows,
-      callOrdinal,
-      priorRememberedMemories,
-      genome: slotPlan.genome,
-    });
-    const result = await generateGenesisPassBMemory({
-      adapter,
-      input,
-      clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-b:call-${pad(callOrdinal)}`,
-    });
-    const horizon = input.history.length;
-    const formationMode = input.assignment.formationMode;
-    passB.push(Object.freeze({
-      callOrdinal,
-      horizon,
-      formationMode,
-      input: structuredClone(input),
-      output: structuredClone(result.output),
-      calls: structuredClone(result.calls),
-    }));
-    if (result.output.outcome !== "remembered") continue;
+  await phase("birth.genesis.memory_formation", async () => {
+    for (let callOrdinal = 1; callOrdinal <= 6; callOrdinal += 1) {
+      const input = buildGenesisPassBInput({
+        threadId: slotPlan.threadId,
+        bornAt: slotPlan.bornAt,
+        worldSpec: slotPlan.worldSpec,
+        episodes,
+        windows: slotPlan.windows,
+        callOrdinal,
+        priorRememberedMemories,
+        genome: slotPlan.genome,
+      });
+      const result = await generateGenesisPassBMemory({
+        adapter,
+        input,
+        clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-b:call-${pad(callOrdinal)}`,
+      });
+      const horizon = input.history.length;
+      const formationMode = input.assignment.formationMode;
+      passB.push(Object.freeze({
+        callOrdinal,
+        horizon,
+        formationMode,
+        input: structuredClone(input),
+        output: structuredClone(result.output),
+        calls: structuredClone(result.calls),
+      }));
+      if (result.output.outcome !== "remembered") continue;
 
-    const identity = memoryIdentityFromPassB({
-      threadId: slotPlan.threadId,
-      callOrdinal,
-      output: result.output,
-      eventMap,
-    });
-    const memory = {
-      ...identity,
-      callOrdinal,
-      horizon,
-      formationMode,
-      passBEpisodeRefs: [...result.output.episodeRefs],
-      rememberedContent: result.output.rememberedContent,
-      uncertainty: [...result.output.uncertainty],
-      initialMeaningFormedAt: input.rememberingAt,
-      ageAtInitialMeaning: input.ageAtRemembering,
-      currentMeaning: null,
-      reinterpretations: [],
-    };
-    const cInput = buildInitialPassCInput({ memory, passBInput: input, horizon });
-    const cResult = await generateGenesisInitialMeaning({
-      adapter,
-      input: cInput,
-      clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-c:initial-${pad(callOrdinal)}`,
-    });
-    passCInitial.push(Object.freeze({
-      callOrdinal,
-      memoryRef: memory.memoryRef,
-      input: structuredClone(cResult.input),
-      output: structuredClone(cResult.output),
-      call: structuredClone(cResult.call),
-    }));
-    if (cResult.output.outcome === "durable_meaning") {
-      memory.currentMeaning = {
-        summary: cResult.output.summary,
-        parts: structuredClone(cResult.output.parts),
-        formedAt: input.rememberingAt,
-        ageAtFormation: input.ageAtRemembering,
-        chronologyIndex: horizon,
+      const identity = memoryIdentityFromPassB({
+        threadId: slotPlan.threadId,
+        callOrdinal,
+        output: result.output,
+        eventMap,
+      });
+      const memory = {
+        ...identity,
+        callOrdinal,
+        horizon,
+        formationMode,
+        passBEpisodeRefs: [...result.output.episodeRefs],
+        rememberedContent: result.output.rememberedContent,
+        uncertainty: [...result.output.uncertainty],
+        initialMeaningFormedAt: input.rememberingAt,
+        ageAtInitialMeaning: input.ageAtRemembering,
+        currentMeaning: null,
+        reinterpretations: [],
       };
+      const cInput = buildInitialPassCInput({ memory, passBInput: input, horizon });
+      const cResult = await generateGenesisInitialMeaning({
+        adapter,
+        input: cInput,
+        clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-c:initial-${pad(callOrdinal)}`,
+      });
+      passCInitial.push(Object.freeze({
+        callOrdinal,
+        memoryRef: memory.memoryRef,
+        input: structuredClone(cResult.input),
+        output: structuredClone(cResult.output),
+        call: structuredClone(cResult.call),
+      }));
+      if (cResult.output.outcome === "durable_meaning") {
+        memory.currentMeaning = {
+          summary: cResult.output.summary,
+          parts: structuredClone(cResult.output.parts),
+          formedAt: input.rememberingAt,
+          ageAtFormation: input.ageAtRemembering,
+          chronologyIndex: horizon,
+        };
+      }
+      memories.push(memory);
+      priorRememberedMemories.push({
+        memoryRef: memory.memoryRef,
+        passBEpisodeRefs: [...memory.passBEpisodeRefs],
+        rememberedContent: memory.rememberedContent,
+        uncertainty: [...memory.uncertainty],
+        formationMode,
+      });
     }
-    memories.push(memory);
-    priorRememberedMemories.push({
-      memoryRef: memory.memoryRef,
-      passBEpisodeRefs: [...memory.passBEpisodeRefs],
-      rememberedContent: memory.rememberedContent,
-      uncertainty: [...memory.uncertainty],
-      formationMode,
-    });
-  }
+  });
 
   const reinterpretationCandidates = buildReinterpretationCandidates({
     threadId: slotPlan.threadId,
@@ -304,55 +316,57 @@ export async function generateGenesisLifeCandidate({
   const reinterpretationSchedule = scheduleReinterpretationOpportunities(reinterpretationCandidates);
   const reinterpretationRuns = [];
   const byMemory = new Map(memories.map((memory) => [memory.memoryRef, memory]));
-  for (const scheduled of reinterpretationSchedule.filter((item) => item.run)) {
-    const memory = byMemory.get(scheduled.memoryRef);
-    if (!memory?.currentMeaning) fail(`scheduled reinterpretation ${scheduled.opportunityId} lacks current durable meaning`);
-    const trigger = eventMap.get(scheduled.trigger.episodeRef);
-    if (!trigger) fail(`scheduled reinterpretation ${scheduled.opportunityId} trigger is not admitted history`);
-    const input = buildScheduledReinterpretationPassCInput({
-      scheduledOpportunity: scheduled,
-      targetMemory: {
+  await phase("birth.genesis.meaning_reinterpretation", async () => {
+    for (const scheduled of reinterpretationSchedule.filter((item) => item.run)) {
+      const memory = byMemory.get(scheduled.memoryRef);
+      if (!memory?.currentMeaning) fail(`scheduled reinterpretation ${scheduled.opportunityId} lacks current durable meaning`);
+      const trigger = eventMap.get(scheduled.trigger.episodeRef);
+      if (!trigger) fail(`scheduled reinterpretation ${scheduled.opportunityId} trigger is not admitted history`);
+      const input = buildScheduledReinterpretationPassCInput({
+        scheduledOpportunity: scheduled,
+        targetMemory: {
+          memoryRef: memory.memoryRef,
+          episodeRefs: [...memory.eventRefs],
+          rememberedContent: memory.rememberedContent,
+          uncertainty: [...memory.uncertainty],
+        },
+        priorMeaning: currentPriorMeaning(memory),
+        formation: {
+          asOf: scheduled.trigger.occurredAt,
+          ageAtFormation: trigger.episode.ageAtEvent,
+          chronologyIndex: trigger.ordinal,
+        },
+      });
+      const result = await generateGenesisReinterpretation({
+        adapter,
+        input,
+        clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-c:reinterpret:${scheduled.opportunityId}`,
+      });
+      reinterpretationRuns.push(Object.freeze({
+        opportunityId: scheduled.opportunityId,
         memoryRef: memory.memoryRef,
-        episodeRefs: [...memory.eventRefs],
-        rememberedContent: memory.rememberedContent,
-        uncertainty: [...memory.uncertainty],
-      },
-      priorMeaning: currentPriorMeaning(memory),
-      formation: {
+        input: structuredClone(result.input),
+        output: structuredClone(result.output),
+        call: structuredClone(result.call),
+      }));
+      memory.reinterpretations.push({
+        opportunityId: scheduled.opportunityId,
         asOf: scheduled.trigger.occurredAt,
-        ageAtFormation: trigger.episode.ageAtEvent,
-        chronologyIndex: trigger.ordinal,
-      },
-    });
-    const result = await generateGenesisReinterpretation({
-      adapter,
-      input,
-      clientRequestId: `${slotPlan.freshModelRequestDomain}:slot-${pad(slotPlan.slot)}:pass-c:reinterpret:${scheduled.opportunityId}`,
-    });
-    reinterpretationRuns.push(Object.freeze({
-      opportunityId: scheduled.opportunityId,
-      memoryRef: memory.memoryRef,
-      input: structuredClone(result.input),
-      output: structuredClone(result.output),
-      call: structuredClone(result.call),
-    }));
-    memory.reinterpretations.push({
-      opportunityId: scheduled.opportunityId,
-      asOf: scheduled.trigger.occurredAt,
-      outcome: result.output.outcome,
-      supportingEventRef: trigger.eventId,
-      output: structuredClone(result.output),
-    });
-    if (result.output.outcome === "revised") {
-      memory.currentMeaning = {
-        summary: result.output.summary,
-        parts: structuredClone(result.output.parts),
-        formedAt: scheduled.trigger.occurredAt,
-        ageAtFormation: trigger.episode.ageAtEvent,
-        chronologyIndex: trigger.ordinal,
-      };
+        outcome: result.output.outcome,
+        supportingEventRef: trigger.eventId,
+        output: structuredClone(result.output),
+      });
+      if (result.output.outcome === "revised") {
+        memory.currentMeaning = {
+          summary: result.output.summary,
+          parts: structuredClone(result.output.parts),
+          formedAt: scheduled.trigger.occurredAt,
+          ageAtFormation: trigger.episode.ageAtEvent,
+          chronologyIndex: trigger.ordinal,
+        };
+      }
     }
-  }
+  });
 
   const core = {
     candidateVersion: GENESIS_LIFE_CANDIDATE_VERSION,
