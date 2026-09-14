@@ -66,7 +66,10 @@ function adminIdentity(identity) {
     ...identity,
     assets: Object.freeze((identity.assets ?? []).map((asset) => Object.freeze({
       ...asset,
-      url: `/api/thread-assets/${encodeURIComponent(asset.objectRef)}`,
+      url: asset.source === "current_public_presentation"
+        ? `/api/thread-assets/${encodeURIComponent(asset.objectRef)}`
+        : null,
+      deliveryStatus: asset.source === "current_public_presentation" ? "published" : "world_only",
     }))),
   });
 }
