@@ -88,7 +88,7 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       code:"CIVIL_IDENTITY",
       missingCode:"FIN_MISSING",
       authoritative:registration?.fibreIdentityNumber,
-      projected:projected === null ? undefined : projected.civilIdentity?.fibreIdentityNumber,
+      projected:projected === null ? undefined : projected.civilIdentity?.fibreIdentityNumber ?? null,
       projectionCode:"FIN_PRESENTATION_MISSING",
       conflictCode:"FIN_CONFLICT",
     }),
@@ -96,7 +96,7 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       code:"NAME",
       missingCode:"NAME_MISSING",
       authoritative:identity.name,
-      projected:projected === null ? undefined : projected.subject?.displayName,
+      projected:projected === null ? undefined : projected.subject?.displayName ?? null,
       projectionCode:"NAME_PRESENTATION_MISSING",
       conflictCode:"NAME_CONFLICT",
     }),
@@ -115,7 +115,7 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
 
   const birthDate = text(identity.birthDate);
   if (birthDate !== null) {
-    const publicBirthDate = projected === null ? undefined : projected.subject?.birthDate;
+    const publicBirthDate = projected === null ? undefined : projected.subject?.birthDate ?? null;
     findings.push(identityFinding({
       code:"BIRTH_DATE",
       missingCode:"BIRTH_DATE_MISSING",
