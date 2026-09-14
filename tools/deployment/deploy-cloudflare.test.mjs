@@ -58,9 +58,10 @@ function allSecrets() {
   return new Set(["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
 }
 
-test("Slice F deployment runs validation, auth, secret/signer gates, dependency-ordered deploys, shallow health, state health and acceptance", async () => {
+test("Slice F deployment accepts services only after shallow and durable state health", async () => {
   const { root, state } = await fixtureRepo();
   const calls = [];
+  let birthStateAttempts = 0;
   const client = {
     async assertAuthenticated() { calls.push("auth"); return { ok: true }; },
     async listSecretNames(workerName) { calls.push(`secrets:${workerName}`); return allSecrets(); },
@@ -80,6 +81,9 @@ test("Slice F deployment runs validation, auth, secret/signer gates, dependency-
     },
     async checkStateHealth({ serviceId, baseUrl }) {
       calls.push(`state-health:${serviceId}:${baseUrl}`);
+      if (serviceId === "birth-center" && birthStateAttempts++ === 0) {
+        throw new Error("Durable Object still initializing");
+      }
       return { ok: true, service: serviceId, stateChecked: true };
     },
     async checkPresentationAcceptance({ baseUrl }) { calls.push(`accept:${baseUrl}`); return { threads: [] }; },
@@ -106,6 +110,7 @@ test("Slice F deployment runs validation, auth, secret/signer gates, dependency-
   ]);
   assert.deepEqual(calls.filter((call) => call.startsWith("state-health:")), [
     "state-health:world-kernel:https://world-kernel.account.workers.dev",
+    "state-health:birth-center:https://birth-center.account.workers.dev",
     "state-health:birth-center:https://birth-center.account.workers.dev",
   ]);
   assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
@@ -210,4 +215,27 @@ test("Slice F Wrangler client verifies secret names, shallow health and deep sta
     resolvedConfig: {},
     deploymentOutput: "Published https://fibre-world-kernel-staging.account.workers.dev",
   }), "https://fibre-world-kernel-staging.account.workers.dev");
+});
+
+test("deep health failures surface the Fibre state diagnostic", async () => {
+  const client = createWranglerDeploymentClient({
+    runner: async () => { throw new Error("runner should not be used"); },
+    cwd: "/repo",
+    fetchImpl: async () => ({
+      ok: false,
+      status: 503,
+      async json() {
+        return {
+          error: {
+            detail: "Birth Center state could not be opened",
+          },
+        };
+      },
+    }),
+  });
+
+  await assert.rejects(
+    client.checkStateHealth({ serviceId: "birth-center", baseUrl: "https://birth.example" }),
+    /HTTP 503: Birth Center state could not be opened/,
+  );
 });
