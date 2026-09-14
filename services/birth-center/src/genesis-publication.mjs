@@ -72,22 +72,53 @@ export function buildGenesisPublicationCognition({
   });
 }
 
-export function buildNeutralGenesisThreadSeed({ threadId, createdAt }) {
+function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt }) {
+  if (!subjectIdentity || typeof subjectIdentity !== "object") throw new TypeError("Genesis birth requires subject identity material");
+  if (!worldSpec || typeof worldSpec !== "object") throw new TypeError("Genesis birth requires WorldSpec identity context");
+  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires at least one WorldSpec language");
+  if (typeof worldSpec.culturalContext !== "string" || worldSpec.culturalContext.trim() === "") throw new TypeError("modern Genesis birth requires WorldSpec cultural context");
+  if (typeof subjectIdentity.birthCity !== "string" || subjectIdentity.birthCity.trim() === "") throw new TypeError("modern Genesis birth requires an explicit birth city");
+  const sex = genesisSexForThread({ threadId });
+  const name = sex === "female" ? subjectIdentity.femaleName : subjectIdentity.maleName;
+  if (typeof name !== "string" || name.trim() === "" || name === "Fibre Thread") throw new TypeError("modern Genesis birth requires a proper sex-compatible name");
+  const birthInstant = new Date(bornAt);
+  if (!Number.isFinite(birthInstant.getTime())) throw new TypeError("modern Genesis birth requires a valid bornAt timestamp");
+  return Object.freeze({
+    name: name.trim(),
+    sex,
+    birthDate: birthInstant.toISOString().slice(0, 10),
+    languages: Object.freeze([...worldSpec.languages]),
+    birthCity: subjectIdentity.birthCity.trim(),
+    culture: Object.freeze([worldSpec.culturalContext.trim()]),
+    originOrientation: "original",
+    selfDescription: `I am ${name.trim()}.`,
+  });
+}
+
+export function assertModernGenesisThreadIdentity(thread) {
+  const identity = thread?.identity;
+  if (!identity || identity.name === "Fibre Thread" || typeof identity.name !== "string" || identity.name.trim() === "") fail("modern Genesis Thread lacks a proper name");
+  if (identity.sex !== "female" && identity.sex !== "male") fail("modern Genesis Thread lacks authoritative sex");
+  if (typeof identity.birthDate !== "string" || identity.birthDate.trim() === "") fail("modern Genesis Thread lacks birth date");
+  if (!Array.isArray(identity.languages) || identity.languages.length === 0) fail("modern Genesis Thread lacks language context");
+  if (typeof identity.birthCity !== "string" || identity.birthCity.trim() === "") fail("modern Genesis Thread lacks birth place");
+  if (!Array.isArray(identity.culture) || identity.culture.length === 0) fail("modern Genesis Thread lacks cultural context");
+  if (typeof identity.selfDescription !== "string" || identity.selfDescription === "I am a Fibre Thread.") fail("modern Genesis Thread retains generic self-description");
+  return true;
+}
+
+export function buildNeutralGenesisThreadSeed({ threadId, createdAt, subjectIdentity, worldSpec, bornAt }) {
+  const identity = modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt });
   const thread = {
     threadId,
     version: 1,
     status: "frozen",
-    identity: {
-      name: "Fibre Thread",
-      sex: genesisSexForThread({ threadId }),
-      originOrientation: "original",
-      selfDescription: "I am a Fibre Thread.",
-    },
+    identity,
     genome: { textualTraits: {}, runtimeBaselines: {} },
     currentState: {
       needs: [],
       feelings: [],
-      selfModel: "I am a Fibre Thread.",
+      selfModel: `I am ${identity.name}.`,
       unresolvedIntentions: [],
     },
     accounts: { fibreCredits: 0, usdAvailable: 0, modelTokensAvailable: 0 },
@@ -96,6 +127,7 @@ export function buildNeutralGenesisThreadSeed({ threadId, createdAt }) {
     provenance: { createdAt, createdBy: "fibre.genesis" },
   };
   validateThreadSnapshot(thread);
+  assertModernGenesisThreadIdentity(thread);
   return thread;
 }
 
@@ -249,6 +281,9 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
   const seedThread = buildNeutralGenesisThreadSeed({
     threadId: candidate.threadId,
     createdAt: candidate.attemptStartedAt,
+    subjectIdentity: slotPlan.subjectIdentity,
+    worldSpec: slotPlan.worldSpec,
+    bornAt: slotPlan.bornAt,
   });
   const parentIds = (slotPlan.genome.header.sourceEligibility?.sourceOwners ?? []).map((owner) => owner.ownerId);
   const thread = attachGenesisCanonicalVisualIdentity(
@@ -261,6 +296,7 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     }),
   ).thread;
   validateThreadSnapshot(thread);
+  assertModernGenesisThreadIdentity(thread);
   const memories = materializeGenesisMemoryRecords(candidate, publicationAt);
   const manifest = buildManifest({ candidate, slotPlan, thread, memories, cognition, publicationAt });
   const lifeRelations = buildSyntheticLineageRelations({ candidate, slotPlan, thread, publicationAt });
