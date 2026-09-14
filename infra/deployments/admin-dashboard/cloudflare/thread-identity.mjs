@@ -36,6 +36,7 @@ function publicMedia(presentationOriginValue, snapshot) {
         height: Number.isFinite(asset.height) ? asset.height : null,
         durationMs: Number.isFinite(asset.durationMs) ? asset.durationMs : null,
         url: `${presentationOriginValue}/api/assets/${encodeURIComponent(objectRef)}`,
+        source: "current_public_presentation",
       });
     }));
 }
@@ -48,6 +49,47 @@ function visualIdentity(presentation) {
     embodimentRevision: Number.isFinite(visual.embodimentRevision) ? visual.embodimentRevision : null,
     referenceObjectRefs: Object.freeze(cleanStrings(visual.referenceObjectRefs)),
   });
+}
+
+function worldEmbodimentMedia(world) {
+  const embodiments = Array.isArray(world?.embodiments) ? world.embodiments : [];
+  return embodiments.flatMap((embodiment) => {
+    const asset = embodiment?.asset;
+    const objectRef = clean(asset?.referenceObjectRef);
+    if (
+      embodiment?.status !== "available" ||
+      embodiment?.visibility !== "public" ||
+      objectRef === null ||
+      clean(asset?.mediaType) === null
+    ) return [];
+    id("World embodiment objectRef", objectRef);
+    return [Object.freeze({
+      mediaId: clean(asset?.assetRef) ?? objectRef,
+      kind: clean(embodiment?.kind) ?? "image",
+      role: embodiment?.kind === "portrait" ? "canonical_portrait" : clean(embodiment?.kind),
+      objectRef,
+      mediaType: clean(asset?.mediaType),
+      sha256: clean(asset?.sha256),
+      width: Number.isFinite(asset?.width) ? asset.width : null,
+      height: Number.isFinite(asset?.height) ? asset.height : null,
+      durationMs: Number.isFinite(asset?.durationMs) ? asset.durationMs : null,
+      url: null,
+      source: "world_embodiment",
+      embodimentId: clean(embodiment?.embodimentId),
+      embodimentRevision: Number.isFinite(embodiment?.revision) ? embodiment.revision : null,
+    })];
+  });
+}
+
+function mergeMedia(world, presentation) {
+  const merged = [];
+  const seen = new Set();
+  for (const asset of [...(presentation?.assets ?? []), ...worldEmbodimentMedia(world)]) {
+    if (!asset?.objectRef || seen.has(asset.objectRef)) continue;
+    seen.add(asset.objectRef);
+    merged.push(asset);
+  }
+  return Object.freeze(merged);
 }
 
 async function responsePayload(response) {
@@ -121,14 +163,20 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
     && world.fibreIdentityNumber !== presentation.fibreIdentityNumber
   ) throw new Error("World and Presentation disagree on Fibre identity number");
 
+  const assets = mergeMedia(world, presentation);
+  const worldPortrait = assets.find((asset) => asset.source === "world_embodiment" && asset.role === "canonical_portrait") ?? null;
   return Object.freeze({
     threadId: world.threadId,
     displayName: presentation?.displayName ?? null,
     fibreIdentityNumber: world.fibreIdentityNumber ?? presentation?.fibreIdentityNumber ?? null,
     birthDate: presentation?.birthDate ?? null,
     lifecycleStatus: world.lifecycleStatus ?? presentation?.lifecycleStatus ?? null,
-    visualIdentity: presentation?.visualIdentity ?? null,
-    assets: Object.freeze([...(presentation?.assets ?? [])]),
+    visualIdentity: presentation?.visualIdentity ?? (worldPortrait ? Object.freeze({
+      embodimentId: worldPortrait.embodimentId,
+      embodimentRevision: worldPortrait.embodimentRevision,
+      referenceObjectRefs: Object.freeze([worldPortrait.objectRef]),
+    }) : null),
+    assets,
     worldStatus: "admitted",
     presentationStatus: presentation === null || presentation === undefined ? "unavailable" : "current",
     world: Object.freeze({
@@ -142,7 +190,7 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
       displayName: presentation ? "resolved_after_fact" : "unavailable",
       fibreIdentityNumber: world.fibreIdentityNumber ? "world_civil_registry" : "resolved_after_fact",
       lifecycleStatus: world.lifecycleStatus ? "world" : "resolved_after_fact",
-      assets: presentation ? "current_public_presentation" : "unavailable",
+      assets: presentation?.assets?.length ? "current_public_presentation" : (assets.length ? "world_embodiment" : "unavailable"),
       source: presentation ? "world_plus_current_public_presentation" : "world_only",
     }),
   });
