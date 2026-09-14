@@ -107,7 +107,11 @@ async function fetchJson(fetchImpl, url) {
   let payload = null;
   try { payload = await response.json(); }
   catch { throw new Error(`health endpoint returned non-JSON response: ${url}`); }
-  if (!response.ok) throw new Error(`health endpoint failed with HTTP ${response.status}: ${url}`);
+  if (!response.ok) {
+    const detail = payload?.error?.detail ?? payload?.detail ?? payload?.error;
+    const diagnostic = typeof detail === "string" && detail.trim() !== "" ? `: ${detail.trim()}` : "";
+    throw new Error(`health endpoint failed with HTTP ${response.status}${diagnostic}: ${url}`);
+  }
   return payload;
 }
 
@@ -175,16 +179,37 @@ export function createWranglerDeploymentClient({
   });
 }
 
-export async function retryServiceHealth({ client, serviceId, baseUrl, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
+async function retryHealth({ serviceId, check, attempts, wait, kind }) {
   let lastError = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try { return await client.checkServiceHealth({ serviceId, baseUrl }); }
+    try { return await check(); }
     catch (error) {
       lastError = error;
       if (attempt < attempts) await wait(HEALTH_RETRY_DELAY_MS);
     }
   }
-  throw new Error(`${serviceId} did not become healthy after deployment`, { cause: lastError });
+  const detail = lastError instanceof Error ? `: ${lastError.message}` : "";
+  throw new Error(`${serviceId} ${kind} did not become healthy after deployment${detail}`, { cause: lastError });
+}
+
+export function retryServiceHealth({ client, serviceId, baseUrl, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
+  return retryHealth({
+    serviceId,
+    attempts,
+    wait,
+    kind: "service",
+    check: () => client.checkServiceHealth({ serviceId, baseUrl }),
+  });
+}
+
+export function retryStateHealth({ client, serviceId, baseUrl, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
+  return retryHealth({
+    serviceId,
+    attempts,
+    wait,
+    kind: "state",
+    check: () => client.checkStateHealth({ serviceId, baseUrl }),
+  });
 }
 
 export async function deployCloudflareStack({
@@ -267,7 +292,7 @@ export async function deployCloudflareStack({
       wait,
     });
     const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
-      ? await client.checkStateHealth({ serviceId, baseUrl })
+      ? await retryStateHealth({ client, serviceId, baseUrl, wait })
       : null;
     deployments.push(Object.freeze({ serviceId, workerName, baseUrl, health, stateHealth, customDomain }));
   }
