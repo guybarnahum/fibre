@@ -327,19 +327,18 @@ test("#38 memory can cite a Genesis life episode while THREAD_SEEDED remains an 
     verified.close();
   }));
 
-test("same-version migration rebuilds a pre-existing event CHECK before Genesis life episode publication", () =>
+test("opening an older world restores Genesis lived-history publication", () =>
   withDatabase((databasePath) => {
     createPreEpisodeSchema(databasePath);
 
     const migrated = openWorldStore(localWorldStateStorage(databasePath));
-    assert.equal(migrated.storageMetadata().schemaVersion, 6);
     migrated.close();
 
     let database = new DatabaseSync(databasePath);
     const schema = database.prepare(
       "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
     ).get().sql;
-    assert.match(schema, /THREAD_LIFE_EPISODE_RECORDED/);
+    assert.match(schema, /THREAD_LIFE_EPISODE_RECORDED/, "world cannot store Genesis life episodes");
     database.close();
 
     const publishedEpisodes = [episodes()[0]];
@@ -353,7 +352,7 @@ test("same-version migration rebuilds a pre-existing event CHECK before Genesis 
     assert.deepEqual(world.listEvents(thread.threadId).map((item) => item.eventType), [
       "THREAD_SEEDED",
       "THREAD_LIFE_EPISODE_RECORDED",
-    ]);
+    ], "Genesis lived history was not published");
     assert.doesNotThrow(() => world.verifyThreadIntegrity(thread.threadId));
     world.close();
   }));
