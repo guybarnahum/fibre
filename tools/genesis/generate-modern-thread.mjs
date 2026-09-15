@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -49,9 +48,23 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function modernRequest({ requestId, requestedAt, cohort, selection }) {
+function modernRequest({ requestId, requestedAt, cohort, selection, sexSelection }) {
   const genome = fixture(selection.genomePath);
-  const subjectIdentity = composeModernSubjectIdentity({ requestId, material: selection.material });
+  const composedIdentity = composeModernSubjectIdentity({ requestId, material: selection.material });
+  const subjectIdentity = Object.freeze({
+    ...composedIdentity,
+    ...(sexSelection === null ? {} : { sex: sexSelection }),
+    ...(selection.selector === null ? {} : {
+      place: Object.freeze({
+        country: selection.selector.country,
+        city: selection.selector.city,
+      }),
+    }),
+    ...(selection.heritage === null ? {} : { heritage: selection.heritage.display }),
+    ...(typeof selection.material?.appearanceContext === "string" && selection.material.appearanceContext.trim() !== ""
+      ? { appearanceContext: selection.material.appearanceContext.trim() }
+      : {}),
+  });
   return Object.freeze({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
     requestId,
@@ -65,27 +78,6 @@ function modernRequest({ requestId, requestedAt, cohort, selection }) {
     chronologyEndsAt: cohort.entry.chronologyEndsAt,
     timeZone: selection.timeZone,
   });
-}
-
-function alternateRequestId(baseRequestId, desiredSex, attempt) {
-  const witness = createHash("sha256")
-    .update(`${baseRequestId}:${desiredSex}:${attempt}`)
-    .digest("hex")
-    .slice(0, 8);
-  return `${baseRequestId}-${desiredSex}-${attempt}-${witness}`;
-}
-
-function requestAndPlanForSex({ baseRequestId, requestedAt, desiredSex, cohort, selection }) {
-  for (let attempt = 0; attempt < 64; attempt += 1) {
-    const requestId = attempt === 0 ? baseRequestId : alternateRequestId(baseRequestId, desiredSex, attempt);
-    const body = modernRequest({ requestId, requestedAt, cohort, selection });
-    const plan = buildGenesisDevelopmentPlan(body);
-    const sex = genesisSexForThread({ threadId: plan.threadId });
-    if (desiredSex === null || sex === desiredSex) {
-      return Object.freeze({ requestId, body, plan, sex, requestIdAdjusted: requestId !== baseRequestId });
-    }
-  }
-  throw new Error(`could not derive a ${desiredSex} modern Genesis request identity`);
 }
 
 async function json(response, label) {
@@ -150,7 +142,7 @@ async function poll(operation, ready, { timeoutMs, intervalMs = 2_000 }) {
 function assertModernReference({ body, plan, world, presentation }) {
   const identity = world.inspection?.authoritativeThread?.identity;
   if (!identity) throw new Error("World inspection lacks authoritative Thread identity");
-  const expectedSex = genesisSexForThread({ threadId: plan.threadId });
+  const expectedSex = body.subjectIdentity.sex ?? genesisSexForThread({ threadId: plan.threadId });
   const expectedName = expectedSex === "female" ? body.subjectIdentity.femaleName : body.subjectIdentity.maleName;
   if (identity.name !== expectedName || identity.name === "Fibre Thread") throw new Error("modern Thread proper name did not persist");
   if (identity.sex !== expectedSex) throw new Error("modern Thread sex did not persist");
@@ -176,13 +168,16 @@ function usage() {
   return [
     "Modern Genesis staging birth",
     "",
-    "  npm run genesis:modern:staging -- --female --Israel/Jerusalem",
-    "  npm run genesis:modern:staging -- --male --Brazil/Recife",
-    "  npm run genesis:modern:staging -- --new-world --female --Georgia/Tbilisi",
+    "  npm run genesis:modern:staging -- --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
+    "  npm run genesis:modern:staging -- --sex=male --place=Germany/Berlin --heritage=Turkish",
+    "  npm run genesis:modern:staging -- --new-world --sex=female --place=Brazil/Recife",
     "",
-    "Sex is optional; without --female/--male Fibre derives sex from the Thread identity.",
-    "Country/City is optional; without it Fibre rotates through the existing Genesis Worlds.",
-    "An unknown Country/City is authored once and cached under .fibre/genesis/worlds; --new-world forces a fresh World version.",
+    "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage.",
+    "Legacy shorthand --female/--male and --Country/City remains accepted.",
+    "Sex is optional; without it Fibre derives sex from the Thread identity.",
+    "Place is optional; without it Fibre rotates through the existing Genesis Worlds.",
+    "Heritage requires an explicit place and creates/reuses a place+heritage World variant.",
+    "Unknown place/heritage combinations are authored once and cached under .fibre/genesis/worlds; --new-world forces a fresh World version.",
   ].join("\n");
 }
 
@@ -207,31 +202,32 @@ async function main() {
     throw new Error("unexpected modern birth material fixture version");
   }
 
-  const baseRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-modern-${Date.now().toString(36)}`;
+  const requestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-modern-${Date.now().toString(36)}`;
   const requestedAt = process.env.FIBRE_GENESIS_REQUESTED_AT?.trim() || new Date().toISOString();
   const baseSlotOrdinal = selectModernBirthSlot({
-    requestId: baseRequestId,
+    requestId,
     slotCount: cohort.slots.length,
     explicitSlot,
   });
   const selection = await resolveModernWorldSelection({
     selector: options.world,
+    heritage: options.heritage,
     forceNewWorld: options.forceNewWorld,
     cohort,
     materialFixture,
     fixture,
     repoRoot: REPO_ROOT,
-    requestId: baseRequestId,
+    requestId,
     baseSlotOrdinal,
   });
-  const chosen = requestAndPlanForSex({
-    baseRequestId,
+  const body = modernRequest({
+    requestId,
     requestedAt,
-    desiredSex: options.sex,
     cohort,
     selection,
+    sexSelection: options.sex,
   });
-  const { requestId, body, plan } = chosen;
+  const plan = buildGenesisDevelopmentPlan(body);
   const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
   const birthCenter = serviceBase(deployed, "birth-center");
   const worldKernel = serviceBase(deployed, "world-kernel");
@@ -241,9 +237,9 @@ async function main() {
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-start",
     requestId,
-    requestIdBase: chosen.requestIdAdjusted ? baseRequestId : undefined,
     sexSelection: options.sex ?? "derived",
-    worldSelection: selection.selector?.display ?? null,
+    placeSelection: selection.selector?.display ?? null,
+    heritageSelection: selection.heritage?.display ?? null,
     worldMode: selection.mode,
     worldSpecId: body.worldSpec.worldSpecId,
     genomeSlot: selection.slotOrdinal,
@@ -275,9 +271,9 @@ async function main() {
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-complete",
     requestId,
-    requestIdBase: chosen.requestIdAdjusted ? baseRequestId : undefined,
     sexSelection: options.sex ?? "derived",
-    worldSelection: selection.selector?.display ?? null,
+    placeSelection: selection.selector?.display ?? null,
+    heritageSelection: selection.heritage?.display ?? null,
     worldMode: selection.mode,
     genomeSlot: selection.slotOrdinal,
     genesisId: plan.genesisId,
