@@ -63,20 +63,22 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     const cloud = this.runtimeForRequest();
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/internal/health/state") {
+      const health = await cloud.infraDriver.health.check();
       return Response.json({
-        ok: true,
+        ok: health.level === "normal",
         service: "birth-center",
-        provider: "cloudflare",
+        provider: health.provider,
         stateScopeId: BIRTH_SCOPE_ID,
         stateChecked: true,
         capabilities: cloud.infraDriver.capabilities,
+        health,
         pendingBirthCount: cloud.runtime.status().pendingBirthCount,
         genesisDevelopmentConfigured: cloud.developmentApi !== null,
         genesisReasoningProfiles: {
           creative: reasoningProfileWitness(cloud.creativeAdapter),
           repair: reasoningProfileWitness(cloud.repairAdapter),
         },
-      });
+      }, { status:health.level === "normal" ? 200 : 503 });
     }
     await this.ensureSchedulerForStatefulRequest(cloud);
     if (cloud.developmentApi !== null) {
