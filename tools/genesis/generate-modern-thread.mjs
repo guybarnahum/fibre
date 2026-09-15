@@ -9,6 +9,10 @@ import {
   GENESIS_DEVELOPMENT_REQUEST_VERSION,
   buildGenesisDevelopmentPlan,
 } from "#services/birth-center/src/genesis-development-plan.mjs";
+import {
+  composeModernSubjectIdentity,
+  selectModernBirthSlot,
+} from "./modern-birth-material.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -39,30 +43,38 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function modernRequest({ requestId, requestedAt, slotOrdinal }) {
+function modernRequest({ requestId, requestedAt, explicitSlot }) {
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
-  const identities = fixture("fixtures/genesis/pr39/subject-identities-v1.json");
+  const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.json");
+  if (materialFixture.fixtureVersion !== "pr39-modern-birth-material-v1") {
+    throw new Error("unexpected modern birth material fixture version");
+  }
+  const slotOrdinal = selectModernBirthSlot({
+    requestId,
+    slotCount: cohort.slots.length,
+    explicitSlot,
+  });
   const slot = cohort.slots[slotOrdinal - 1];
-  const subjectIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slotOrdinal);
-  if (!slot || !subjectIdentity) throw new TypeError(`modern Genesis slot ${slotOrdinal} is unavailable`);
+  const material = materialFixture.slots.find(({ slot: ordinal }) => ordinal === slotOrdinal);
+  if (!slot || !material) throw new TypeError(`modern Genesis slot ${slotOrdinal} is unavailable`);
   const worldSpec = fixture(slot.worldSpecPath);
   const genome = fixture(slot.genomePath);
+  const subjectIdentity = composeModernSubjectIdentity({ requestId, material });
   return Object.freeze({
-    requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
-    requestId,
-    requestedAt,
-    worldSpec,
-    subjectIdentity: Object.freeze({
-      femaleName: subjectIdentity.femaleName,
-      maleName: subjectIdentity.maleName,
-      birthCity: subjectIdentity.birthCity,
+    slotOrdinal,
+    body: Object.freeze({
+      requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
+      requestId,
+      requestedAt,
+      worldSpec,
+      subjectIdentity,
+      genomeValues: genome.loci.map((locus) => locus.value),
+      participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
+      placeAffordances: slot.placeAffordances,
+      bornAt: cohort.entry.bornAt,
+      chronologyEndsAt: cohort.entry.chronologyEndsAt,
+      timeZone: slot.timeZone,
     }),
-    genomeValues: genome.loci.map((locus) => locus.value),
-    participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
-    placeAffordances: slot.placeAffordances,
-    bornAt: cohort.entry.bornAt,
-    chronologyEndsAt: cohort.entry.chronologyEndsAt,
-    timeZone: slot.timeZone,
   });
 }
 
@@ -152,12 +164,15 @@ function assertModernReference({ body, plan, world, presentation }) {
 
 async function main() {
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
-  const slotOrdinal = Number.parseInt(process.env.FIBRE_GENESIS_E2E_SLOT ?? "1", 10);
-  if (!Number.isSafeInteger(slotOrdinal) || slotOrdinal < 1) throw new TypeError("FIBRE_GENESIS_E2E_SLOT must be a positive integer");
+  const rawExplicitSlot = process.env.FIBRE_GENESIS_E2E_SLOT?.trim() || null;
+  const explicitSlot = rawExplicitSlot === null ? null : Number.parseInt(rawExplicitSlot, 10);
+  if (rawExplicitSlot !== null && (!Number.isSafeInteger(explicitSlot) || explicitSlot < 1)) {
+    throw new TypeError("FIBRE_GENESIS_E2E_SLOT must be a positive integer");
+  }
   const requestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-modern-${Date.now().toString(36)}`;
   const requestedAt = process.env.FIBRE_GENESIS_REQUESTED_AT?.trim() || new Date().toISOString();
   const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
-  const body = modernRequest({ requestId, requestedAt, slotOrdinal });
+  const { body, slotOrdinal } = modernRequest({ requestId, requestedAt, explicitSlot });
   const plan = buildGenesisDevelopmentPlan(body);
   const deployed = deployment(REPO_ROOT);
   const birthCenter = serviceBase(deployed, "birth-center");
@@ -165,7 +180,14 @@ async function main() {
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const viewerOrigin = required("staging viewer origin", deployed.externalViewerOrigin);
 
-  process.stdout.write(`${JSON.stringify({ event: "modern-thread-birth-start", requestId, genesisId: plan.genesisId, threadId: plan.threadId })}\n`);
+  process.stdout.write(`${JSON.stringify({
+    event: "modern-thread-birth-start",
+    requestId,
+    slot: slotOrdinal,
+    genesisId: plan.genesisId,
+    threadId: plan.threadId,
+    identityMode: "fresh_birth_composition",
+  })}\n`);
 
   const birth = (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development;
   if (birth?.status !== "published") {
@@ -190,6 +212,7 @@ async function main() {
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-complete",
     requestId,
+    slot: slotOrdinal,
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     fibreIdentityNumber: birth.fibreIdentityNumber,
@@ -200,6 +223,7 @@ async function main() {
     languages: validated.identity.languages,
     memoryRefCount: world.inspection.authoritativeThread.memoryRefCount,
     worldSpecId: body.worldSpec.worldSpecId,
+    identityMode: "fresh_birth_composition",
   })}\n`);
 }
 
