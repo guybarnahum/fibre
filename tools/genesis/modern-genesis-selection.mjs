@@ -202,6 +202,19 @@ function assertTimeZone(value) {
   return value;
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function appearancePrior({ selector, heritage, value }) {
+  let text = nonEmpty("authored world appearanceContext", value);
+  for (const label of [heritage?.display, selector.city, selector.country]) {
+    if (typeof label !== "string" || label.trim() === "") continue;
+    text = text.replace(new RegExp(escapeRegExp(label.trim()), "giu"), "the family");
+  }
+  return text.replace(/\s+/gu, " ").trim();
+}
+
 function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEndsAt, createdAt }) {
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
   const sourceDigest = digest({ selector, heritage, authored }).slice(0, 12);
@@ -248,7 +261,7 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     birthCity: selector.birthCity,
     place: Object.freeze({ country: selector.country, city: selector.city }),
     heritage: heritageLabel,
-    appearanceContext: nonEmpty("authored world appearanceContext", authored.appearanceContext),
+    appearanceContext: appearancePrior({ selector, heritage, value: authored.appearanceContext }),
     nameOrder: authored.nameOrder,
     femaleGivenNames: Object.freeze([...authored.femaleGivenNames]),
     maleGivenNames: Object.freeze([...authored.maleGivenNames]),
@@ -296,7 +309,7 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Keep two causal layers distinct: place defines the surrounding civic/physical world; heritage defines inherited household/community cultural context inside that place.",
       "When heritage is supplied, make naming material, plausible household/community languages, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
       "Do not infer the future subject's religion, religious observance, politics, ethnicity, personality, class identity, profession, competence, trauma or values. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
-      "Return appearanceContext as a broad family-appearance prior only. If the heritage is culturally broad, mixed, diasporic, or does not imply one ancestry, explicitly preserve broad physical variation rather than inventing a single stereotyped phenotype. Never connect appearance to personality or worth.",
+      "Return appearanceContext as a broad family-appearance prior only. It must not repeat the heritage label, country, city, religion, nationality or community name; describe only a broad plausible physical range. If heritage is culturally broad, mixed, diasporic, or does not imply one ancestry, preserve broad physical variation rather than inventing a single stereotyped phenotype. Never connect appearance to personality or worth.",
       "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
       "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
     ].join("\n"),
