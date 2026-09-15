@@ -64,7 +64,8 @@ export class FibreWorldDurableObject extends DurableObject {
 
   async fetch(request) {
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/internal/health/state") {
+    if (request.method === "GET"
+      && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
       const health = await this.health.check();
       return Response.json({
         ok: health.level === "normal",
