@@ -87,10 +87,12 @@ export class ThreadVisualPublicationWorksetStore {
   requeue(threadId, { updatedAt = new Date().toISOString() } = {}) {
     assertId("threadId", threadId);
     const result = this.#database.prepare(`
-      UPDATE ${TABLE}
-      SET state='pending', last_error_json=NULL, updated_at=?
-      WHERE thread_id=? AND state='dead_letter'
-    `).run(updatedAt, threadId);
+      INSERT INTO ${TABLE}(thread_id,state,last_error_json,updated_at)
+      VALUES (?,'pending',NULL,?)
+      ON CONFLICT(thread_id) DO UPDATE SET
+        state='pending', last_error_json=NULL, updated_at=excluded.updated_at
+      WHERE ${TABLE}.state='dead_letter'
+    `).run(threadId, updatedAt);
     return Number(result.changes) === 1;
   }
 }
