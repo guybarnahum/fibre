@@ -1,9 +1,11 @@
-import { sampleCloudflareResourceHealth } from "#infra/providers/cloudflare";
+import { createCloudflareInfraDriver, sampleCloudflareResourceHealth } from "#infra/providers/cloudflare";
 
 const DEFAULT_TTL_MS = 15 * 60_000;
-const STATE_SERVICES = Object.freeze([
-  Object.freeze({ binding:"WORLD_KERNEL", service:"world-kernel", resource:"world" }),
-  Object.freeze({ binding:"BIRTH_CENTER", service:"birth-center", resource:"birth" }),
+const SERVICES = Object.freeze([
+  Object.freeze({ binding:"WORLD_KERNEL", service:"world-kernel" }),
+  Object.freeze({ binding:"BIRTH_CENTER", service:"birth-center" }),
+  Object.freeze({ binding:"THREAD_PRESENTATION", service:"thread-presentation" }),
+  Object.freeze({ binding:"ASSET_GENERATOR", service:"asset-generator" }),
 ]);
 
 function nonEmpty(name, value) {
@@ -54,68 +56,58 @@ function level(checks) {
   return "normal";
 }
 
-function stateCheck(service, payload, responseOk) {
-  const providerCheck = payload?.health?.checks?.find((check) => check.kind === "state") ?? null;
-  if (responseOk && payload?.ok === true && providerCheck?.level !== "critical") {
-    return Object.freeze({
-      kind:"state",
-      resource:service.resource,
-      service:service.service,
-      provider:payload?.provider ?? providerCheck?.provider ?? "cloudflare",
-      level:"normal",
-    });
-  }
-  const error = providerCheck?.error ?? payload?.error ?? { code:"STATE_HEALTH_FAILED", detail:`${service.service} state health failed` };
+function failedServiceCheck(service, code, detail) {
   return Object.freeze({
-    kind:"state",
-    resource:service.resource,
+    kind:"service",
+    resource:service.service,
     service:service.service,
-    provider:payload?.provider ?? providerCheck?.provider ?? "cloudflare",
+    provider:"unknown",
     level:"critical",
-    error:Object.freeze({
-      code:typeof error?.code === "string" ? error.code : "STATE_HEALTH_FAILED",
-      detail:bounded(error?.detail ?? error),
-    }),
+    error:Object.freeze({ code, detail:bounded(detail) }),
   });
 }
 
-async function probeStateService(env, service) {
+function checksFromService(service, payload, responseOk) {
+  const health = payload?.health;
+  const checks = Array.isArray(health?.checks)
+    ? health.checks.map((check) => Object.freeze({ ...check, service:service.service }))
+    : [];
+  if (checks.length > 0 && (responseOk || checks.some((check) => check.level === "critical"))) return checks;
+  const error = payload?.error ?? { code:"INFRA_HEALTH_FAILED", detail:`${service.service} infrastructure health failed` };
+  return [failedServiceCheck(
+    service,
+    typeof error?.code === "string" ? error.code : "INFRA_HEALTH_FAILED",
+    error?.detail ?? error,
+  )];
+}
+
+async function probeService(env, service) {
   const binding = env?.[service.binding];
-  if (!binding?.fetch) {
-    return Object.freeze({
-      kind:"state",
-      resource:service.resource,
-      service:service.service,
-      provider:"cloudflare",
-      level:"critical",
-      error:Object.freeze({ code:"SERVICE_BINDING_UNAVAILABLE", detail:`${service.binding} binding is unavailable` }),
-    });
-  }
+  if (!binding?.fetch) return [failedServiceCheck(service, "SERVICE_BINDING_UNAVAILABLE", `${service.binding} binding is unavailable`)];
   try {
-    const response = await binding.fetch(new Request("https://fibre.internal/internal/health/state", {
+    const response = await binding.fetch(new Request("https://fibre.internal/internal/health/infra", {
       headers:{ Accept:"application/json" },
     }));
     let payload = null;
-    try { payload = await response.json(); }
-    catch { payload = null; }
-    return stateCheck(service, payload, response.ok);
+    try { payload = await response.json(); } catch {}
+    return checksFromService(service, payload, response.ok);
   } catch (error) {
-    return Object.freeze({
-      kind:"state",
-      resource:service.resource,
-      service:service.service,
-      provider:"cloudflare",
-      level:"critical",
-      error:Object.freeze({ code:"STATE_HEALTH_UNAVAILABLE", detail:bounded(error) }),
-    });
+    return [failedServiceCheck(service, "INFRA_HEALTH_UNAVAILABLE", error)];
   }
 }
 
-export async function sampleAdminStateHealth({ env, environment, now = new Date() } = {}) {
+async function adminD1Health(env) {
+  if (!env?.ACTIVITY_LOG) return [failedServiceCheck({ service:"admin-dashboard" }, "ACTIVITY_LOG_UNAVAILABLE", "ACTIVITY_LOG binding is unavailable")];
+  const health = await createCloudflareInfraDriver({ telemetryDatabase:env.ACTIVITY_LOG }).health.check();
+  return health.checks.map((check) => Object.freeze({ ...check, service:"admin-dashboard" }));
+}
+
+export async function sampleAdminInfraHealth({ env, environment, now = new Date() } = {}) {
   const selectedEnvironment = nonEmpty("environment", environment);
-  const checks = Object.freeze(await Promise.all(STATE_SERVICES.map((service) => probeStateService(env, service))));
+  const serviceChecks = await Promise.all(SERVICES.map((service) => probeService(env, service)));
+  const checks = Object.freeze([...serviceChecks.flat(), ...await adminD1Health(env)]);
   return Object.freeze({
-    contract:"fibre-infra-health-summary-v0.2",
+    contract:"fibre-infra-health-summary-v0.3",
     environment:selectedEnvironment,
     observedAt:now.toISOString(),
     level:level(checks),
@@ -126,7 +118,7 @@ export async function sampleAdminStateHealth({ env, environment, now = new Date(
 
 export async function readAdminInfraMonitor({ env, environment, fetchImpl = globalThis.fetch, now = new Date() } = {}) {
   const config = monitorConfig(env);
-  const state = await sampleAdminStateHealth({ env, environment, now });
+  const infra = await sampleAdminInfraHealth({ env, environment, now });
   let capacity = null;
   let capacityError = null;
   try {
@@ -142,24 +134,24 @@ export async function readAdminInfraMonitor({ env, environment, fetchImpl = glob
   } catch (error) {
     capacityError = error;
   }
-  const checks = Object.freeze([...state.checks, ...(capacity?.checks ?? [])]);
-  const sampleLevel = state.level === "critical"
+  const checks = Object.freeze([...infra.checks, ...(capacity?.checks ?? [])]);
+  const sampleLevel = infra.level === "critical"
     ? "critical"
     : capacity === null
       ? "unavailable"
       : level(checks);
   return Object.freeze({
-    contract:"fibre-admin-infra-monitor-v0.3",
+    contract:"fibre-admin-infra-monitor-v0.4",
     environment:nonEmpty("environment", environment),
     cached:false,
     stale:false,
     cacheTtlSeconds:config.ttlMs / 1000,
     sample:Object.freeze({
-      contract:"fibre-admin-infra-sample-v0.1",
+      contract:"fibre-admin-infra-sample-v0.2",
       observedAt:now.toISOString(),
       level:sampleLevel,
       checks,
-      state,
+      infra,
       capacity,
     }),
     error:capacityError ? Object.freeze({ message:bounded(capacityError) }) : null,
@@ -167,5 +159,5 @@ export async function readAdminInfraMonitor({ env, environment, fetchImpl = glob
 }
 
 export async function readCachedInfraHealth({ env, environment } = {}) {
-  return sampleAdminStateHealth({ env, environment });
+  return sampleAdminInfraHealth({ env, environment });
 }
