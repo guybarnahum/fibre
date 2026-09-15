@@ -61,22 +61,55 @@ function validateTimeZone(value) {
   return timeZone;
 }
 
+function normalizeSubjectPlace(candidate) {
+  exactKeys("Genesis development request subjectIdentity.place", candidate, ["country", "city"]);
+  return Object.freeze({
+    country: nonEmpty("Genesis development request subjectIdentity.place.country", candidate.country),
+    city: nonEmpty("Genesis development request subjectIdentity.place.city", candidate.city),
+  });
+}
+
 function normalizeSubjectIdentity(candidate) {
   plain("Genesis development request subjectIdentity", candidate);
   const { slot: _fixtureSlot, ...identity } = candidate;
-  exactKeys("Genesis development request subjectIdentity", identity, [
+  const allowed = new Set([
     "femaleName",
     "maleName",
     "birthCity",
+    "sex",
+    "place",
+    "heritage",
+    "appearanceContext",
   ]);
+  for (const key of Object.keys(identity)) {
+    if (!allowed.has(key)) throw new TypeError(`Genesis development request subjectIdentity.${key} is not allowed`);
+  }
+  for (const key of ["femaleName", "maleName", "birthCity"]) {
+    if (!Object.hasOwn(identity, key)) throw new TypeError(`Genesis development request subjectIdentity.${key} is required`);
+  }
   const femaleName = nonEmpty("Genesis development request subjectIdentity.femaleName", identity.femaleName);
   const maleName = nonEmpty("Genesis development request subjectIdentity.maleName", identity.maleName);
   if (femaleName === maleName) throw new TypeError("Genesis development request subject identity requires distinct female and male names");
-  return Object.freeze({
-    femaleName,
-    maleName,
-    birthCity: nonEmpty("Genesis development request subjectIdentity.birthCity", identity.birthCity),
-  });
+  const birthCity = nonEmpty("Genesis development request subjectIdentity.birthCity", identity.birthCity);
+  const normalized = { femaleName, maleName, birthCity };
+  if (Object.hasOwn(identity, "sex")) {
+    if (identity.sex !== "female" && identity.sex !== "male") throw new TypeError("Genesis development request subjectIdentity.sex must be female or male");
+    normalized.sex = identity.sex;
+  }
+  if (Object.hasOwn(identity, "place")) {
+    const place = normalizeSubjectPlace(identity.place);
+    if (`${place.city}, ${place.country}` !== birthCity) {
+      throw new TypeError("Genesis development request subjectIdentity.place must match birthCity");
+    }
+    normalized.place = place;
+  }
+  if (Object.hasOwn(identity, "heritage")) {
+    normalized.heritage = nonEmpty("Genesis development request subjectIdentity.heritage", identity.heritage);
+  }
+  if (Object.hasOwn(identity, "appearanceContext")) {
+    normalized.appearanceContext = nonEmpty("Genesis development request subjectIdentity.appearanceContext", identity.appearanceContext);
+  }
+  return Object.freeze(normalized);
 }
 
 function normalizeParticipant(candidate, index) {
@@ -251,6 +284,17 @@ function buildOffers(windows, seedDomain) {
   return offersByWindow;
 }
 
+function subjectRelationshipFacts(subjectIdentity) {
+  const facts = ["This is the provisional Thread whose prior life Fibre is generating."];
+  if (subjectIdentity === null) return Object.freeze(facts);
+  if (subjectIdentity.sex) facts.push(`Sex at birth: ${subjectIdentity.sex}.`);
+  facts.push(`Born in ${subjectIdentity.birthCity}.`);
+  if (subjectIdentity.heritage) {
+    facts.push(`Born into a household with ${subjectIdentity.heritage} heritage. This is family/community cultural context and does not determine the subject's beliefs, personality, politics, competence or destiny.`);
+  }
+  return Object.freeze(facts);
+}
+
 function assertPlanShape(plan) {
   plain("Genesis development plan", plan);
   nonEmpty("Genesis development plan requestId", plan.requestId);
@@ -304,7 +348,7 @@ export function buildGenesisDevelopmentPlan(candidate) {
       Object.freeze({
         participantId: threadId,
         factualRoles: Object.freeze(["subject"]),
-        relationshipFacts: Object.freeze(["This is the provisional Thread whose prior life Fibre is generating."]),
+        relationshipFacts: subjectRelationshipFacts(request.subjectIdentity),
       }),
       ...request.participants.map((participant) => structuredClone(participant)),
     ]),
