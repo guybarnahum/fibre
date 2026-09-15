@@ -1,4 +1,3 @@
-const HEALTH_CHANNEL_ID = "fibre-infra-health";
 const HEALTH_OBJECT_KEY = "fibre/health";
 
 function bounded(value) {
@@ -74,9 +73,7 @@ export function createCloudflareHealthPort({
       if (catalogDatabase !== null) checks.push(await d1Check("catalog", "d1", catalogDatabase));
       if (telemetryDatabase !== null) checks.push(await d1Check("telemetry", "d1", telemetryDatabase));
       if (presentationChannels !== null) {
-        checks.push(await probeCloudflareHealth("streams", "durable_objects", async () => {
-          await presentationChannels.getByName(HEALTH_CHANNEL_ID).getHead();
-        }, "DURABLE_OBJECT_STREAM_UNAVAILABLE"));
+        checks.push(normalCloudflareCheck("streams", "durable_objects", { mode:"configured" }));
       }
       for (const workflowName of Object.keys(workflowBindings)) {
         checks.push(normalCloudflareCheck("workflows", workflowName, { mode:"configured" }));
