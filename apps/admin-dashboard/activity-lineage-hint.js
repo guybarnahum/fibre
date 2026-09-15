@@ -6,6 +6,26 @@ const head = document.querySelector(".journey-body-head");
 const collapsed = new Set();
 let observer = null;
 let collapseAllButton = null;
+let lastScopeKey = null;
+
+function activityScope() {
+  const params = new URLSearchParams(location.search);
+  return {
+    mode: params.get("mode") ?? "raw",
+    kind: params.get("kind") ?? "recent",
+    value: params.get("value") ?? "",
+  };
+}
+
+function scopeKey() {
+  const { mode, kind, value } = activityScope();
+  return `${mode}:${kind}:${value}`;
+}
+
+function scopedCausalView() {
+  const { mode, kind } = activityScope();
+  return mode === "causal" && ["request", "genesis", "thread"].includes(kind);
+}
 
 function lineageFromTitle(title) {
   const operation = /^Operation ([^ ·]+)(?: · parent ([^ ·]+))?/u.exec(title ?? "");
@@ -47,6 +67,15 @@ function disclosure(event, operationId, childCount) {
   control.textContent = isCollapsed ? "▸" : "▾";
   control.title = isCollapsed ? "Expand branch" : "Collapse branch";
   control.dataset.operationId = operationId;
+}
+
+function normalizeHeading(event, depth, orphan) {
+  const heading = event.querySelector(".journey-copy > strong");
+  if (!heading) return;
+  const textNode = [...heading.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
+  if (!textNode) return;
+  const label = textNode.textContent.replace(/^↳\s*/u, "");
+  textNode.textContent = depth > 0 && !orphan ? `↳ ${label}` : label;
 }
 
 function phaseMarker(label, count, depth) {
@@ -113,6 +142,23 @@ function parentOperationIds(events) {
   return models.map(({ operationId }) => operationId).filter((operationId) => operationId && parentIds.has(operationId));
 }
 
+function clearStaleInspection() {
+  const dialog = document.querySelector("#record-dialog");
+  if (!dialog) return;
+  if (dialog.open) dialog.close();
+  document.querySelector("#dialog-body")?.replaceChildren();
+}
+
+function initializeScope(events) {
+  const current = scopeKey();
+  if (current === lastScopeKey) return;
+  lastScopeKey = current;
+  collapsed.clear();
+  clearStaleInspection();
+  if (!scopedCausalView()) return;
+  for (const operationId of parentOperationIds(events)) collapsed.add(operationId);
+}
+
 function refreshCollapseAll(events) {
   if (!collapseAllButton) return;
   const parents = parentOperationIds(events);
@@ -123,16 +169,29 @@ function refreshCollapseAll(events) {
   collapseAllButton.setAttribute("aria-label", allCollapsed ? "Expand all causal branches" : "Collapse all causal branches");
 }
 
+function refreshScopedPresentation() {
+  const pager = document.querySelector(".activity-pager");
+  const pageLabel = document.querySelector("#page-label")?.textContent ?? "";
+  const completeChain = scopedCausalView() && /Page 1 of 1/u.test(pageLabel);
+  if (pager) pager.hidden = completeChain;
+  const recordsNote = document.querySelector("#metric-records")?.parentElement?.querySelector("small");
+  const viewNote = document.querySelector("#metric-view")?.parentElement?.querySelector("small");
+  if (recordsNote) recordsNote.textContent = completeChain ? "complete causal chain" : "on this page";
+  if (viewNote) viewNote.textContent = completeChain ? "whole scoped chain" : "cursor-paged Activity";
+}
+
 function arrangeTree() {
   if (!rail) return;
   observer?.disconnect();
   try {
     rail.querySelectorAll(":scope > .journey-phase").forEach((node) => node.remove());
     const events = [...rail.querySelectorAll(":scope > .journey-event")];
+    initializeScope(events);
     const operationIds = new Set(events.map((event) => lineageFromTitle(event.title).operationId).filter(Boolean));
     for (const operationId of collapsed) if (!operationIds.has(operationId)) collapsed.delete(operationId);
     if (events.length === 0) {
       refreshCollapseAll(events);
+      refreshScopedPresentation();
       refreshHint();
       return;
     }
@@ -143,19 +202,23 @@ function arrangeTree() {
       event.style.setProperty("--journey-indent", `${Math.min(depth, 6) * 18}px`);
       event.dataset.causalDepth = String(depth);
       event.hidden = hidden;
-      event.classList.toggle("journey-event-child", depth > 0);
+      event.classList.toggle("journey-event-child", depth > 0 && !orphan);
       event.classList.toggle("journey-event-orphan", orphan);
       event.classList.toggle("journey-event-collapsed", Boolean(item.operationId && collapsed.has(item.operationId)));
+      normalizeHeading(event, depth, orphan);
       disclosure(event, item.operationId, childCount);
       if (orphan) {
         const parent = event.querySelector(".journey-parent");
-        if (parent) parent.textContent = `upstream operation not on this page · ${item.parentOperationId}`;
+        if (parent) parent.textContent = scopedCausalView()
+          ? `causal parent missing from scoped chain · ${item.parentOperationId}`
+          : `upstream operation not on this page · ${item.parentOperationId}`;
       }
     }
 
     rail.replaceChildren(...visible.map(({ item }) => item.event));
     decorateGenesisPhases(visible);
     refreshCollapseAll(events);
+    refreshScopedPresentation();
     refreshHint();
   } finally {
     observer?.observe(rail, { childList:true });
@@ -188,7 +251,8 @@ function refreshHint() {
   const phases = rail.querySelectorAll(":scope > .journey-phase").length;
   const orphans = rail.querySelectorAll(":scope > .journey-event-orphan").length;
   if (children > 0 || orphans > 0) {
-    hint.textContent = `Causal tree · ${children} nested operation${children === 1 ? "" : "s"}${phases ? ` · ${phases} semantic phase${phases === 1 ? "" : "s"}` : ""} · ${parents} parent${parents === 1 ? "" : "s"}${collapsed.size ? ` · ${collapsed.size} collapsed` : ""}${orphans ? ` · ${orphans} upstream parent${orphans === 1 ? "" : "s"} outside this page` : ""}`;
+    const orphanLabel = scopedCausalView() ? "missing causal parent" : "upstream parent outside this page";
+    hint.textContent = `Causal tree · ${children} nested operation${children === 1 ? "" : "s"}${phases ? ` · ${phases} semantic phase${phases === 1 ? "" : "s"}` : ""} · ${parents} parent${parents === 1 ? "" : "s"}${collapsed.size ? ` · ${collapsed.size} collapsed` : ""}${orphans ? ` · ${orphans} ${orphanLabel}${orphans === 1 ? "" : "s"}` : ""}`;
   } else if (records > 0) {
     hint.textContent = `${records} root operation${records === 1 ? "" : "s"} · legacy/pre-lineage Activity remains flat`;
   }
