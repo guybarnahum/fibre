@@ -43,3 +43,16 @@ export function composeModernSubjectIdentity({ requestId, material }) {
     birthCity: material.birthCity,
   });
 }
+
+export function freshModernParticipants({ requestId, participants }) {
+  if (!Array.isArray(participants)) throw new TypeError("modern birth participants must be an array");
+  return Object.freeze(participants.map((participant, index) => {
+    const seed = `${requestId}:${participant.participantId ?? index}:participant`;
+    const participantId = `person_modern_${createHash("sha256").update(seed).digest("hex").slice(0, 24)}`;
+    return Object.freeze({
+      participantId,
+      factualRoles: Object.freeze([...(participant.factualRoles ?? [])]),
+      relationshipFacts: Object.freeze([...(participant.relationshipFacts ?? [])]),
+    });
+  }));
+}
