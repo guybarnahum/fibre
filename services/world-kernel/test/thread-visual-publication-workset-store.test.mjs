@@ -20,7 +20,7 @@ function fixture() {
   };
 }
 
-test("visual reconciliation work survives replay without resurrecting retired Threads", () => {
+test("visual reconciliation retires replay safely and revives work only through explicit repair", () => {
   const current = fixture();
   try {
     current.store.enqueue("thr_dead");
@@ -35,10 +35,10 @@ test("visual reconciliation work survives replay without resurrecting retired Th
     assert.deepEqual(current.store.listThreadIds(), [], "retired Threads must leave active work");
     assert.equal(current.store.enqueue("thr_dead"), false, "birth replay must not resurrect dead-letter work");
     assert.equal(current.store.enqueue("thr_done"), false, "birth replay must not resurrect completed work");
-    assert.deepEqual(current.store.listThreadIds(), []);
 
-    assert.equal(current.store.requeue("thr_dead"), true, "explicit repair must be able to revive dead-letter work");
-    assert.deepEqual(current.store.listThreadIds(), ["thr_dead"]);
+    assert.equal(current.store.requeue("thr_dead"), true, "repair must revive dead-letter work");
+    assert.equal(current.store.requeue("thr_legacy"), true, "repair must activate a pre-workset Thread");
+    assert.deepEqual(current.store.listThreadIds(), ["thr_dead", "thr_legacy"]);
   } finally {
     current.close();
   }
