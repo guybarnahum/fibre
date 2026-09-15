@@ -6,40 +6,40 @@
       "slot": 1,
       "birthCity": "Tbilisi, Georgia",
       "nameOrder": "given_family",
-      "femaleGivenNames": ["Nino", "Mariam", "Salome", "Ana", "Tamar", "Elene"],
-      "maleGivenNames": ["Luka", "Giorgi", "Nikoloz", "Sandro", "Levan", "Dato"],
+      "femaleGivenNames": ["Ketevan", "Mariam", "Salome", "Ana", "Tamar", "Elene"],
+      "maleGivenNames": ["Irakli", "Giorgi", "Nikoloz", "Sandro", "Levan", "Dato"],
       "familyNames": ["Beridze", "Kapanadze", "Maisuradze", "Gelashvili", "Lomidze", "Tsiklauri"]
     },
     {
       "slot": 2,
       "birthCity": "Kaohsiung, Taiwan",
       "nameOrder": "family_given",
-      "femaleGivenNames": ["Mei-Ling", "Yu-Ting", "Hsin-Yi", "Chia-Hui", "Pei-Wen", "Shu-Fen"],
-      "maleGivenNames": ["Wei-Jie", "Chih-Hao", "Jun-Hao", "Yu-Cheng", "Po-Han", "Chia-Wei"],
+      "femaleGivenNames": ["Yi-Ting", "Yu-Ting", "Hsin-Yi", "Chia-Hui", "Pei-Wen", "Shu-Fen"],
+      "maleGivenNames": ["Hao-Ran", "Chih-Hao", "Jun-Hao", "Yu-Cheng", "Po-Han", "Chia-Wei"],
       "familyNames": ["Chen", "Lin", "Huang", "Wu", "Tsai", "Liu"]
     },
     {
       "slot": 3,
       "birthCity": "Recife, Brazil",
       "nameOrder": "given_family",
-      "femaleGivenNames": ["Mariana", "Beatriz", "Luana", "Camila", "Isabela", "Larissa"],
-      "maleGivenNames": ["Gabriel", "Rafael", "João", "Lucas", "Pedro", "Matheus"],
+      "femaleGivenNames": ["Juliana", "Beatriz", "Luana", "Camila", "Isabela", "Larissa"],
+      "maleGivenNames": ["Thiago", "Rafael", "João", "Lucas", "Pedro", "Matheus"],
       "familyNames": ["Silva", "Santos", "Oliveira", "Costa", "Souza", "Almeida"]
     },
     {
       "slot": 4,
       "birthCity": "Fes, Morocco",
       "nameOrder": "given_family",
-      "femaleGivenNames": ["Salma", "Lina", "Yasmine", "Sara", "Meryem", "Imane"],
-      "maleGivenNames": ["Youssef", "Omar", "Hamza", "Adam", "Mehdi", "Amine"],
+      "femaleGivenNames": ["Kenza", "Lina", "Yasmine", "Sara", "Meryem", "Imane"],
+      "maleGivenNames": ["Anas", "Omar", "Hamza", "Adam", "Mehdi", "Amine"],
       "familyNames": ["El Idrissi", "Benjelloun", "Alaoui", "Bennani", "Tazi", "Berrada"]
     },
     {
       "slot": 5,
       "birthCity": "Hobart, Australia",
       "nameOrder": "given_family",
-      "femaleGivenNames": ["Emily", "Charlotte", "Sophie", "Grace", "Matilda", "Zoe"],
-      "maleGivenNames": ["Jack", "Oliver", "Henry", "Liam", "William", "Noah"],
+      "femaleGivenNames": ["Amelia", "Charlotte", "Sophie", "Grace", "Matilda", "Zoe"],
+      "maleGivenNames": ["Ethan", "Oliver", "Henry", "Liam", "William", "Noah"],
       "familyNames": ["Carter", "Bennett", "Wilson", "Harris", "Campbell", "Foster"]
     }
   ]
