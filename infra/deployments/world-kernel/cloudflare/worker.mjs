@@ -22,10 +22,10 @@ function privateOperatorAuthorized(request, env) {
 }
 
 async function reconciliationState(runtime) {
-  const scheduled = await runtime.reconciliationRuntime.ensureScheduled();
+  const scheduledTimeMs = await runtime.infraDriver.scheduler.get(WORLD_SCOPE_ID);
   return Object.freeze({
-    scheduled: scheduled.existing,
-    scheduledTimeMs: scheduled.scheduledTimeMs,
+    scheduled: scheduledTimeMs !== null,
+    scheduledTimeMs,
     running: runtime.reconciliationProcess.running,
   });
 }
@@ -64,15 +64,17 @@ export class FibreWorldDurableObject extends DurableObject {
     const runtime = this.runtimeForRequest();
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/internal/health/state") {
+      const health = await runtime.infraDriver.health.check();
       return Response.json({
-        ok: true,
+        ok: health.level === "normal",
         service: "world-kernel",
-        provider: "cloudflare",
+        provider: health.provider,
         stateScopeId: WORLD_SCOPE_ID,
         stateChecked: true,
         capabilities: runtime.infraDriver.capabilities,
+        health,
         reconciliation: await reconciliationState(runtime),
-      });
+      }, { status:health.level === "normal" ? 200 : 503 });
     }
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     if (identityMatch !== null) {
