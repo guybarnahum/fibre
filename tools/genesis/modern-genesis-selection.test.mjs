@@ -22,9 +22,9 @@ const authoredJerusalem = Object.freeze({
   timeZone:"Asia/Jerusalem",
   languages:["Hebrew", "Arabic", "English"],
   nameOrder:"given_family",
-  femaleGivenNames:["Noa", "Maya", "Yael", "Tamar", "Shira", "Lior"],
-  maleGivenNames:["Noam", "Eitan", "Daniel", "Yoni", "Ariel", "Omer"],
-  familyNames:["Levi", "Cohen", "Mizrahi", "Peretz", "Avital", "Shalev"],
+  femaleGivenNames:["Noa", "Maya", "Yael", "Tamar", "Shira", "Lior", "Neta", "Roni", "Dana", "Adi"],
+  maleGivenNames:["Noam", "Eitan", "Daniel", "Yoni", "Ariel", "Omer", "Itai", "Nadav", "Gil", "Amir"],
+  familyNames:["Levi", "Cohen", "Mizrahi", "Peretz", "Avital", "Shalev", "Barak", "Dahan", "Sagi", "Mor"],
   homeDescription:"An ordinary apartment household in Jerusalem connected to neighborhood streets and everyday services.",
   schoolDescription:"A local school setting with classrooms, teachers, peers and ordinary extracurricular access.",
   transitDescription:"Walking and public transit connect residential areas with school, commerce and civic destinations.",
@@ -94,6 +94,9 @@ test("modern Genesis accepts explicit sex plus Country/City and reuses authored 
   });
   assert.equal(created.mode, "created");
   assert.equal(created.material.birthCity, "Jerusalem, Israel");
+  assert.equal(created.material.femaleGivenNames.length, 10);
+  assert.equal(created.material.maleGivenNames.length, 10);
+  assert.equal(created.material.familyNames.length, 10);
   assert.equal(created.timeZone, "Asia/Jerusalem");
   assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_/u);
 
