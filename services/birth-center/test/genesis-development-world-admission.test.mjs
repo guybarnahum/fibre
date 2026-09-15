@@ -134,6 +134,10 @@ function successfulStages(records) {
     .map((record) => `${record.service}:${record.stage}`));
 }
 
+function successful(records, stage, service = "birth-center") {
+  return records.find((record) => record.service === service && record.stage === stage && record.status === "succeeded");
+}
+
 test("Birth Center develops a narrow request and World atomically admits the resulting canonical Thread", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-genesis-development-world-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -210,8 +214,12 @@ test("Birth Center develops a narrow request and World atomically admits the res
     "birth-center:birth.request.plan",
     "birth-center:birth.request.persist",
     "birth-center:birth.genesis.start",
+    "birth-center:birth.genesis.history",
+    "birth-center:birth.genesis.memory_formation",
+    "birth-center:birth.genesis.meaning_reinterpretation",
     "birth-center:birth.genesis.compile",
     "birth-center:birth.publish.prepare",
+    "birth-center:birth.publish.queued",
     "birth-center:birth.publish.complete",
     "birth-center:birth.publish.world_submit",
     "world-kernel:world.worldspec.admission",
@@ -222,51 +230,43 @@ test("Birth Center develops a narrow request and World atomically admits the res
     assert.equal(stages.has(expected), true, `missing successful activity stage ${expected}`);
   }
 
-  const genesisStart = requestActivity.find((record) => (
-    record.service === "birth-center"
-    && record.stage === "birth.genesis.start"
-    && record.status === "succeeded"
-  ));
-  assert.ok(genesisStart?.operationId, "Genesis life development must expose one operation identity");
+  const genesisStart = successful(requestActivity, "birth.genesis.start");
+  assert.ok(genesisStart?.operationId, "Genesis life development lacks an operation identity");
+  const historyPhase = successful(requestActivity, "birth.genesis.history");
+  const memoryPhase = successful(requestActivity, "birth.genesis.memory_formation");
+  const reinterpretationPhase = successful(requestActivity, "birth.genesis.meaning_reinterpretation");
+  for (const phase of [historyPhase, memoryPhase, reinterpretationPhase]) {
+    assert.ok(phase?.operationId, "Genesis development phase lacks an operation identity");
+    assert.equal(phase.parentOperationId, genesisStart.operationId, "Genesis phase escaped life development");
+  }
 
   const cognitionCalls = requestActivity.filter((record) => (
     record.service === "birth-center"
     && record.status === "succeeded"
     && record.stage.endsWith(".cognition_call")
   ));
+  const historyCalls = cognitionCalls.filter((record) => record.stage === "birth.genesis.history.cognition_call");
+  const memoryCalls = cognitionCalls.filter((record) => record.stage === "birth.genesis.memory_selection.cognition_call");
   assert.equal(cognitionCalls.length, 20);
-  assert.equal(
-    cognitionCalls.filter((record) => record.stage === "birth.genesis.history.cognition_call").length,
-    14,
-  );
-  assert.equal(
-    cognitionCalls.filter((record) => record.stage === "birth.genesis.memory_selection.cognition_call").length,
-    6,
-  );
-  assert.equal(
-    cognitionCalls.every((record) => record.parentOperationId === genesisStart.operationId),
-    true,
-    "Genesis cognition must be explicitly parented by life development rather than inferred from time",
-  );
+  assert.equal(historyCalls.length, 14);
+  assert.equal(memoryCalls.length, 6);
+  assert.equal(historyCalls.every((record) => record.parentOperationId === historyPhase.operationId), true, "Genesis history cognition escaped its phase");
+  assert.equal(memoryCalls.every((record) => record.parentOperationId === memoryPhase.operationId), true, "Genesis memory cognition escaped its phase");
 
-  const repair = requestActivity.find((record) => (
-    record.service === "birth-center"
-    && record.stage === "birth.genesis.history.repair_call"
-    && record.status === "succeeded"
-  ));
+  const repair = successful(requestActivity, "birth.genesis.history.repair_call");
   assert.ok(repair, "the deliberately invalid first realization must surface its repair operation");
-  assert.equal(repair.parentOperationId, genesisStart.operationId);
+  assert.equal(repair.parentOperationId, historyPhase.operationId, "Genesis history repair escaped its phase");
   assert.deepEqual(repair.evidence, {
     failedGate: "pass_a_interiority_form",
     repairOrdinal: "1",
   });
 
-  const worldSubmit = requestActivity.find((record) => (
-    record.service === "birth-center"
-    && record.stage === "birth.publish.world_submit"
-    && record.status === "succeeded"
-  ));
-  assert.ok(worldSubmit?.operationId, "Birth publication must expose its World submission operation");
+  const publishComplete = successful(requestActivity, "birth.publish.complete");
+  const worldSubmit = successful(requestActivity, "birth.publish.world_submit");
+  assert.ok(publishComplete?.operationId, "completed publication lacks an operation identity");
+  assert.ok(worldSubmit?.operationId, "World submission lacks an operation identity");
+  assert.equal(worldSubmit.parentOperationId, publishComplete.operationId, "World submission escaped completed publication");
+
   const worldAdmissions = requestActivity.filter((record) => (
     record.service === "world-kernel"
     && record.status === "succeeded"
@@ -276,17 +276,13 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(
     worldAdmissions.every((record) => record.parentOperationId === worldSubmit.operationId),
     true,
-    "World admission operations must name the Birth submission that caused them",
+    "World admission escaped its Birth submission",
   );
   const threadPublication = worldAdmissions.find((record) => record.stage === "world.thread.publication");
   assert.equal(threadPublication?.evidence?.fibreIdentityNumber, first.fibreIdentityNumber);
 
-  const worldAck = requestActivity.find((record) => (
-    record.service === "birth-center"
-    && record.stage === "birth.publish.world_ack"
-    && record.status === "succeeded"
-  ));
-  assert.equal(worldAck?.parentOperationId, worldSubmit.operationId);
+  const worldAck = successful(requestActivity, "birth.publish.world_ack");
+  assert.equal(worldAck?.parentOperationId, worldSubmit.operationId, "World acknowledgement escaped its Birth submission");
   assert.equal(worldAck?.evidence?.eventId, thread.provenance.lastEventId);
   assert.equal(worldEvents.some((event) => event.eventId === worldAck.evidence.eventId), true);
 
