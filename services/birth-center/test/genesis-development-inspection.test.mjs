@@ -15,7 +15,10 @@ function runtimeFixture() {
     genesisId: "genesis_inspection_001",
     threadId: "thr_inspection_001",
     status: "submitted",
-    plan: { freshModelRequestDomain: "genesis-development:abc:model" },
+    plan: {
+      freshModelRequestDomain: "genesis-development:abc:model",
+      genome: { header: { createdAt: "2026-08-31T23:40:00Z" } },
+    },
   };
   const records = [{
     request: {
@@ -54,6 +57,7 @@ function runtimeFixture() {
 test("Genesis development inspection exposes durable provider witnesses without model content", () => {
   const inspection = createGenesisDevelopmentInspectionService({ runtime: runtimeFixture() })
     .inspect("request-inspection-001");
+  assert.equal(inspection.requestedAt, "2026-08-31T23:40:00Z");
   assert.equal(inspection.requestStatus, "submitted");
   assert.equal(inspection.provisionalStatus, "published");
   assert.equal(inspection.invocationCount, 1);
@@ -96,5 +100,6 @@ test("authenticated development inspection route reports absence and durable wit
   const payload = await found.json();
   assert.equal(payload.ok, true);
   assert.equal(payload.inspection.threadId, "thr_inspection_001");
+  assert.equal(payload.inspection.requestedAt, "2026-08-31T23:40:00Z");
   assert.equal(payload.inspection.invocationCount, 1);
 });
