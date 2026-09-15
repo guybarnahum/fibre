@@ -2,6 +2,8 @@ export const STATUS_PAGE_VERSION = "fibre-status-page-v0.2";
 const DEFAULT_BINDING_PROBE_TIMEOUT_MS = 2500;
 const DEFAULT_VIEWER_PROBE_TIMEOUT_MS = 3000;
 const MAX_PROBE_TIMEOUT_MS = 30000;
+const INFRA_PROBE_TTL_MS = 15 * 60_000;
+const INFRA_PROBE_CACHE = new WeakMap();
 const COMPONENTS = Object.freeze([
   { key:"birth", name:"Birth", description:"Identity and Genesis admission", binding:"BIRTH_CENTER", expected:"birth-center" },
   { key:"world", name:"World", description:"Authoritative Thread runtime", binding:"WORLD_KERNEL", expected:"world-kernel" },
@@ -46,14 +48,22 @@ async function probeInfra(env, timeoutMs) {
       ...base,
       status:level === "normal" && payload?.stale !== true ? "operational" : "degraded",
       description:level === "critical"
-        ? "Infrastructure resource use is critical"
+        ? "Infrastructure resource availability is critical"
         : level === "elevated"
           ? "Infrastructure resource use is elevated"
           : payload?.stale === true || level === "unavailable"
-            ? "Infrastructure sample is stale or unavailable"
+            ? "Infrastructure health is unavailable"
             : base.description,
     };
   } catch { return { ...base, status:"degraded" }; }
+}
+async function cachedInfraProbe(env, timeoutMs) {
+  const now = Date.now();
+  const cached = INFRA_PROBE_CACHE.get(env);
+  if (cached && now - cached.observedAtMs < INFRA_PROBE_TTL_MS) return cached.value;
+  const value = await probeInfra(env, timeoutMs);
+  INFRA_PROBE_CACHE.set(env, Object.freeze({ observedAtMs:now, value:Object.freeze(value) }));
+  return value;
 }
 async function probeViewer(env, fetchImpl, timeoutMs) {
   try {
@@ -66,7 +76,7 @@ function overall(components) { const outages = components.filter((item) => item.
 export async function currentPublicStatus(env, { fetchImpl = globalThis.fetch, now = () => new Date().toISOString(), bindingTimeoutMs, viewerTimeoutMs } = {}) {
   const bindingTimeout = probeTimeout("bindingTimeoutMs", bindingTimeoutMs, DEFAULT_BINDING_PROBE_TIMEOUT_MS);
   const viewerTimeout = probeTimeout("viewerTimeoutMs", viewerTimeoutMs, DEFAULT_VIEWER_PROBE_TIMEOUT_MS);
-  const checks = await Promise.all([probeViewer(env, fetchImpl, viewerTimeout), ...COMPONENTS.map((component) => probeBinding(env, component, bindingTimeout)), probeInfra(env, bindingTimeout)]);
+  const checks = await Promise.all([probeViewer(env, fetchImpl, viewerTimeout), ...COMPONENTS.map((component) => probeBinding(env, component, bindingTimeout)), cachedInfraProbe(env, bindingTimeout)]);
   return Object.freeze({ contract:STATUS_PAGE_VERSION, environment:env.FIBRE_ENVIRONMENT ?? "unknown", checkedAt:now(), status:overall(checks), components:Object.freeze(checks.map(Object.freeze)) });
 }
 function secureAsset(response) { const headers = new Headers(response.headers); headers.set("X-Content-Type-Options","nosniff"); headers.set("Referrer-Policy","no-referrer"); headers.set("X-Frame-Options","DENY"); headers.set("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"); return new Response(response.body,{status:response.status,statusText:response.statusText,headers}); }
