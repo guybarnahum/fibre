@@ -83,19 +83,27 @@ function analyticsResponse() {
   }), { status:200, headers:{ "Content-Type":"application/json" } });
 }
 
-test("Admin surfaces infra failure with one bounded read-only probe per Fibre dependency", async () => {
+test("Admin surfaces infra failure with one bounded read-only observation per TTL", async () => {
   const { env, services, activity } = monitorEnv();
   let analyticsReads = 0;
-  const payload = await readAdminInfraMonitor({
+  const fetchImpl = async () => { analyticsReads += 1; return analyticsResponse(); };
+  const first = await readAdminInfraMonitor({
     env,
     environment:"staging",
     now:new Date("2026-09-15T16:12:38.000Z"),
-    fetchImpl:async () => { analyticsReads += 1; return analyticsResponse(); },
+    fetchImpl,
+  });
+  const cached = await readAdminInfraMonitor({
+    env,
+    environment:"staging",
+    now:new Date("2026-09-15T16:17:38.000Z"),
+    fetchImpl,
   });
 
-  assert.equal(payload.sample.level, "critical");
-  assert.equal(payload.sample.checks.find((check) => check.resource === "world")?.error?.code, "DURABLE_OBJECT_ROWS_READ_LIMIT");
-  assert.ok(services.every((service) => service.reads === 1), "each runtime service must be probed once");
-  assert.equal(activity.reads, 1, "shared Activity D1 must be probed once");
-  assert.equal(analyticsReads, 1, "capacity must be sampled once");
+  assert.equal(first.sample.level, "critical");
+  assert.equal(first.sample.checks.find((check) => check.resource === "world")?.error?.code, "DURABLE_OBJECT_ROWS_READ_LIMIT");
+  assert.equal(cached.cached, true);
+  assert.ok(services.every((service) => service.reads === 1), "each runtime service must be probed once per TTL");
+  assert.equal(activity.reads, 1, "shared Activity D1 must be probed once per TTL");
+  assert.equal(analyticsReads, 1, "capacity must be sampled once per TTL");
 });
