@@ -6,6 +6,26 @@ import { createLocalSchedulerPort } from "./scheduler.mjs";
 import { createSqliteTransactionalStatePort } from "./sqlite-state.mjs";
 import { createLocalActivityTelemetryPort } from "./telemetry.mjs";
 
+function localHealth(driver) {
+  return Object.freeze({
+    async check() {
+      return Object.freeze({
+        contract:"fibre-infra-driver-health-v0.1",
+        driverId:driver.driverId,
+        provider:"local",
+        observedAt:new Date().toISOString(),
+        level:"normal",
+        checks:Object.freeze(driver.capabilities.map((kind) => Object.freeze({
+          kind,
+          resource:"local",
+          provider:"local",
+          level:"normal",
+        }))),
+      });
+    },
+  });
+}
+
 export function createLocalInfraDriver({
   stateScopes = {},
   schedulerScopes = {},
@@ -34,6 +54,7 @@ export function createLocalInfraDriver({
   } else if (telemetry !== false) {
     throw new TypeError("local infra telemetry must be true or false");
   }
+  driver.health = localHealth(driver);
   return Object.freeze(assertInfraDriver(driver));
 }
 
