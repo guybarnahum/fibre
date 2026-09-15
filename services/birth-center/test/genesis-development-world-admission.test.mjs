@@ -220,12 +220,13 @@ test("Birth Center develops a narrow request and World atomically admits the res
     "birth-center:birth.genesis.compile",
     "birth-center:birth.publish.prepare",
     "birth-center:birth.publish.queued",
-    "birth-center:birth.publish.complete",
+    "birth-center:birth.publish.world",
     "birth-center:birth.publish.world_submit",
     "world-kernel:world.worldspec.admission",
     "world-kernel:world.genome.admission",
     "world-kernel:world.thread.publication",
     "birth-center:birth.publish.world_ack",
+    "birth-center:birth.publish.complete",
   ]) {
     assert.equal(stages.has(expected), true, `missing successful activity stage ${expected}`);
   }
@@ -261,11 +262,14 @@ test("Birth Center develops a narrow request and World atomically admits the res
     repairOrdinal: "1",
   });
 
-  const publishComplete = successful(requestActivity, "birth.publish.complete");
+  const worldPublication = successful(requestActivity, "birth.publish.world");
   const worldSubmit = successful(requestActivity, "birth.publish.world_submit");
-  assert.ok(publishComplete?.operationId, "completed publication lacks an operation identity");
+  const publishComplete = successful(requestActivity, "birth.publish.complete");
+  assert.ok(worldPublication?.operationId, "World publication lacks an operation identity");
   assert.ok(worldSubmit?.operationId, "World submission lacks an operation identity");
-  assert.equal(worldSubmit.parentOperationId, publishComplete.operationId, "World submission escaped completed publication");
+  assert.ok(publishComplete?.operationId, "completed publication lacks an operation identity");
+  assert.equal(worldSubmit.parentOperationId, worldPublication.operationId, "World submission escaped World publication");
+  assert.equal(publishComplete.parentOperationId, worldPublication.operationId, "publication completion escaped World publication");
 
   const worldAdmissions = requestActivity.filter((record) => (
     record.service === "world-kernel"
@@ -285,6 +289,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(worldAck?.parentOperationId, worldSubmit.operationId, "World acknowledgement escaped its Birth submission");
   assert.equal(worldAck?.evidence?.eventId, thread.provenance.lastEventId);
   assert.equal(worldEvents.some((event) => event.eventId === worldAck.evidence.eventId), true);
+  assert.equal(publishComplete?.evidence?.eventId, thread.provenance.lastEventId);
 
   const providerCommits = requestActivity.filter((record) => record.stage.endsWith(".provider_commit"));
   assert.equal(providerCommits.length, 21);
