@@ -18,6 +18,7 @@ import { createThreadGenesisRepairService } from "#services/world-kernel/src/thr
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
 import { createThreadVisualPublicationRecoveryApi } from "#services/world-kernel/src/thread-visual-publication-recovery-api.mjs";
+import { ThreadVisualPublicationWorksetStore } from "#services/world-kernel/src/thread-visual-publication-workset-store.mjs";
 import {
   createWorldReconciliationProcess,
   createWorldReconciliationRuntime,
@@ -71,10 +72,6 @@ function reconciliationIntervalMs(env) {
     throw new TypeError("FIBRE_WORLD_RECONCILIATION_MS must be an integer from 100 through 3600000");
   }
   return value;
-}
-
-function createDurableThreadSource(identityStore) {
-  return Object.freeze({ listThreadIds() { return identityStore.listThreadIds(); } });
 }
 
 function createDurableRetryState(storage) {
@@ -134,6 +131,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   let symbolicGenomeStore;
   let civilRegistryStore;
   let presentationOutboxStore;
+  let visualPublicationWorkset;
   let genesisBirthSexEvidence;
   let genesisSexMigrationStore;
 
@@ -144,10 +142,11 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     symbolicGenomeStore = new SymbolicGenomeStore(worldStorage);
     civilRegistryStore = new CivilRegistryStore(worldStorage);
     presentationOutboxStore = new GenesisPresentationOutboxStore(worldStorage);
+    visualPublicationWorkset = new ThreadVisualPublicationWorksetStore(worldStorage);
     genesisBirthSexEvidence = new GenesisBirthSexEvidence(worldStorage);
     genesisSexMigrationStore = new GenesisSexMigrationStore(worldStorage);
   } catch (error) {
-    closeAll([genesisSexMigrationStore, genesisBirthSexEvidence, presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
+    closeAll([genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
     throw error;
   }
 
@@ -201,9 +200,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genesisSexMigrator:genesisSexMigrationStore,
     activityRecorder,
   });
-  const repairApi = createThreadGenesisRepairApi({ repairService, privateToken });
   const visualPublicationProcess = createThreadVisualPublicationProcess({
-    threadSource: createDurableThreadSource(identityStore),
+    workset: visualPublicationWorkset,
     reconciler: visualReconciler,
     async onError(entry, error) {
       console.error(JSON.stringify({
@@ -247,6 +245,15 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     now: nowMs,
     retryState,
   });
+  const repairApi = createThreadGenesisRepairApi({
+    repairService,
+    privateToken,
+    async onRepair({ threadId }) {
+      if (visualPublicationWorkset.requeue(threadId, { updatedAt:now() })) {
+        await reconciliationRuntime.requestWake();
+      }
+    },
+  });
 
   const authoritativeBirthPublisher = createGenesisBirthPublicationService({
     authority: genesisStore,
@@ -257,10 +264,12 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const birthPublisher = Object.freeze({
     async publishBirth(bundle, options = {}) {
       const result = await authoritativeBirthPublisher.publishBirth(bundle, options);
+      const threadId = result?.thread?.threadId ?? bundle?.manifest?.threadId ?? null;
+      if (threadId !== null) visualPublicationWorkset.enqueue(threadId, { updatedAt:now() });
       const wake = await reconciliationRuntime.requestWake();
       console.log(JSON.stringify({
         event: "world-reconciliation-wake-requested",
-        threadId: result?.thread?.threadId ?? bundle?.manifest?.threadId ?? null,
+        threadId,
         scheduledTimeMs: wake.scheduledTimeMs,
         reusedExistingAlarm: wake.existing === true,
       }));
@@ -289,6 +298,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     symbolicGenomeStore,
     civilRegistryStore,
     presentationOutboxStore,
+    visualPublicationWorkset,
     genesisBirthSexEvidence,
     genesisSexMigrationStore,
     presentationDelivery,
@@ -306,7 +316,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (closed) return;
       closed = true;
       if (cancelSchedule) await reconciliationRuntime.stop();
-      closeAll([genesisSexMigrationStore, genesisBirthSexEvidence, presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
+      closeAll([genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
     },
   });
 }
