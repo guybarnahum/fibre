@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
   createWorldAuthoringFetch,
+  normalizeModernHeritage,
   normalizeModernWorldSelector,
   parseModernGenesisArgs,
   resolveModernWorldSelection,
@@ -22,9 +23,9 @@ const authoredJerusalem = Object.freeze({
   timeZone:"Asia/Jerusalem",
   languages:["Hebrew", "Arabic", "English"],
   nameOrder:"given_family",
-  femaleGivenNames:["Noa", "Maya", "Yael", "Tamar", "Shira", "Lior", "Neta", "Roni", "Dana", "Adi"],
-  maleGivenNames:["Noam", "Eitan", "Daniel", "Yoni", "Ariel", "Omer", "Itai", "Nadav", "Gil", "Amir"],
-  familyNames:["Levi", "Cohen", "Mizrahi", "Peretz", "Avital", "Shalev", "Barak", "Dahan", "Sagi", "Mor"],
+  femaleGivenNames:["Noa", "Maya", "Yael", "Tamar", "Shira", "Lior", "Michal", "Roni", "Neta", "Adi"],
+  maleGivenNames:["Noam", "Eitan", "Daniel", "Yoni", "Ariel", "Omer", "Avi", "Nadav", "Gil", "Ron"],
+  familyNames:["Levi", "Cohen", "Mizrahi", "Peretz", "Avital", "Shalev", "Saadon", "Sharabi", "Dahan", "Halevi"],
   homeDescription:"An ordinary apartment household in Jerusalem connected to neighborhood streets and everyday services.",
   schoolDescription:"A local school setting with classrooms, teachers, peers and ordinary extracurricular access.",
   transitDescription:"Walking and public transit connect residential areas with school, commerce and civic destinations.",
@@ -32,7 +33,9 @@ const authoredJerusalem = Object.freeze({
   commerceDescription:"Neighborhood commerce provides groceries, pharmacies, cafes and routine household errands.",
   mobilityPattern:"Daily movement combines walking and public transit, with travel time varying by destination and traffic.",
   schoolingOrCommunityContext:"Schools, neighborhood services, public learning spaces and community programs provide repeated contact with peers and adults.",
-  culturalContext:"Jerusalem, Israel — Hebrew, Arabic and English may be encountered across ordinary civic, educational and commercial settings. The World does not assign the household a religion, politics, ethnicity or values.",
+  culturalContext:"Jerusalem provides the surrounding civic setting, including Hebrew, Arabic and English across ordinary educational, commercial and public contexts.",
+  heritageContext:"The household maintains Yemeni Jewish family heritage through some intergenerational language traces, foods, music, family stories, celebrations and community ties without assigning the subject personal belief or observance.",
+  appearanceContext:"Yemeni Jewish family backgrounds can include a broad range of West Asian and southern Arabian-associated complexions, dark hair textures and eye colors, with substantial individual and family variation; no single facial type is implied.",
   availableInstitutions:["school", "public_library", "public_transit", "neighborhood_health_service"],
   intellectualEnvironment:"School, books, news, internet access, public cultural institutions and ordinary conversation provide varied sources of ideas and disagreement.",
 });
@@ -58,15 +61,21 @@ test("World authoring omits unsupported reasoning-model sampling parameters", as
   assert.deepEqual(sent.reasoning, { effort:"low" });
 });
 
-test("modern Genesis accepts explicit sex plus Country/City and reuses authored Worlds", async (t) => {
-  const options = parseModernGenesisArgs(["--female", "--Israel/jerusalem"]);
+test("modern Genesis keys create and reuse a place plus heritage World", async (t) => {
+  const options = parseModernGenesisArgs([
+    "--sex=female",
+    "--place=Israel/jerusalem",
+    "--heritage=Yemeni Jewish",
+  ]);
   assert.equal(options.sex, "female");
   assert.equal(options.world.display, "Israel/Jerusalem");
+  assert.equal(options.heritage.display, "Yemeni Jewish");
 
   const existingRoot = mkdtempSync(join(tmpdir(), "fibre-existing-world-"));
   t.after(() => rmSync(existingRoot, { recursive:true, force:true }));
   const existing = await resolveModernWorldSelection({
     selector:normalizeModernWorldSelector("Brazil/Recife"),
+    heritage:null,
     cohort,
     materialFixture,
     fixture,
@@ -80,9 +89,11 @@ test("modern Genesis accepts explicit sex plus Country/City and reuses authored 
   const root = mkdtempSync(join(tmpdir(), "fibre-modern-world-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
   const selector = normalizeModernWorldSelector("Israel/Jerusalem");
+  const heritage = normalizeModernHeritage("Yemeni Jewish");
   let authoredCalls = 0;
   const created = await resolveModernWorldSelection({
     selector,
+    heritage,
     cohort,
     materialFixture,
     fixture,
@@ -90,18 +101,22 @@ test("modern Genesis accepts explicit sex plus Country/City and reuses authored 
     requestId:"birth-jerusalem-1",
     baseSlotOrdinal:1,
     now:() => "2026-09-15T06:20:00Z",
-    authorWorld:async () => { authoredCalls += 1; return authoredJerusalem; },
+    authorWorld:async ({ heritage: receivedHeritage }) => {
+      authoredCalls += 1;
+      assert.equal(receivedHeritage.display, "Yemeni Jewish");
+      return authoredJerusalem;
+    },
   });
   assert.equal(created.mode, "created");
   assert.equal(created.material.birthCity, "Jerusalem, Israel");
-  assert.equal(created.material.femaleGivenNames.length, 10);
-  assert.equal(created.material.maleGivenNames.length, 10);
-  assert.equal(created.material.familyNames.length, 10);
+  assert.equal(created.material.heritage, "Yemeni Jewish");
   assert.equal(created.timeZone, "Asia/Jerusalem");
-  assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_/u);
+  assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_yemeni-jewish_/u);
+  assert.match(created.worldSpec.culturalContext, /Yemeni Jewish/u);
 
   const reused = await resolveModernWorldSelection({
     selector,
+    heritage,
     cohort,
     materialFixture,
     fixture,
@@ -112,5 +127,6 @@ test("modern Genesis accepts explicit sex plus Country/City and reuses authored 
   });
   assert.equal(reused.mode, "cached");
   assert.equal(reused.worldSpec.worldSpecId, created.worldSpec.worldSpecId);
+  assert.equal(reused.material.appearanceContext, authoredJerusalem.appearanceContext);
   assert.equal(authoredCalls, 1);
 });
