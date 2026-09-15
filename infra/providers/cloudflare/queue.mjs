@@ -59,8 +59,10 @@ export function withCloudflareQueueBindings(infra, queueBindings) {
     ...base,
     capabilities: [...base.capabilities, "queues"],
     queues: createCloudflareQueuePort(queueBindings),
-    health:extendCloudflareHealth(base.health, async () => Promise.all(
-      entries.map(([queueName, binding]) => queueHealth(queueName, assertQueueBinding(binding, queueName))),
-    )),
+    ...(base.health ? {
+      health:extendCloudflareHealth(base.health, async () => Promise.all(
+        entries.map(([queueName, binding]) => queueHealth(queueName, assertQueueBinding(binding, queueName))),
+      )),
+    } : {}),
   });
 }
