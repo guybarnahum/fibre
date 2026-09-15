@@ -12,7 +12,7 @@ function shortNumber(value) {
 }
 
 function statusLabel(level) {
-  return ({ normal:"Normal", elevated:"Elevated", critical:"Critical" })[level] ?? "Unavailable";
+  return ({ normal:"Normal", elevated:"Elevated", critical:"Critical", unavailable:"Unavailable" })[level] ?? "Unavailable";
 }
 
 function setBadge(level, title = null) {
@@ -38,11 +38,20 @@ function checkLine(check) {
   const copy = document.createElement("div");
   const title = document.createElement("strong");
   title.textContent = check.kind.replaceAll("_", " ");
-  const resource = document.createElement("span"); resource.textContent = check.resource;
+  const resource = document.createElement("span");
+  resource.textContent = [check.resource, check.service].filter(Boolean).join(" · ");
   copy.append(title, resource);
+  if (check.error?.detail) {
+    const diagnostic = document.createElement("span");
+    diagnostic.className = "infra-check-diagnostic";
+    diagnostic.textContent = check.error.detail;
+    copy.append(diagnostic);
+  }
   const value = document.createElement("div");
   value.className = "infra-check-value";
-  value.textContent = `${shortNumber(check.value)} / ${shortNumber(check.limit)}`;
+  value.textContent = Number.isFinite(check.value) && Number.isFinite(check.limit)
+    ? `${shortNumber(check.value)} / ${shortNumber(check.limit)}`
+    : check.error?.code ?? statusLabel(check.level);
   row.append(copy, value);
   return row;
 }
@@ -61,17 +70,17 @@ function render(payload) {
   head.append(
     detail("State", statusLabel(sample.level)),
     detail("Sampled", new Date(sample.observedAt).toLocaleString()),
-    detail("Cache", `${payload.cacheTtlSeconds ?? 900}s${payload.cached ? " · cached" : " · fresh"}`),
-    detail("Worker window", "15 min"),
+    detail("Probe", "Read-only"),
+    detail("Refresh", "15 min"),
   );
   const checks = document.createElement("div");
   checks.className = "infra-checks";
   checks.append(...(sample.checks ?? []).map(checkLine));
   body.replaceChildren(head, checks);
-  if (payload.stale || payload.error) {
+  if (payload.error) {
     const warning = document.createElement("div");
     warning.className = "infra-monitor-note";
-    warning.textContent = payload.error?.message ?? "Showing a stale infrastructure sample while another sample is in progress.";
+    warning.textContent = payload.error.message;
     body.append(warning);
   }
 }
