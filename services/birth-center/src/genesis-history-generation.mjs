@@ -24,6 +24,8 @@ const FORM_REPAIRABLE_GATES = new Set([
 ]);
 const LOCAL_CIVIL_TIME_FORM_REPAIR_GATE = "pass_a_local_civil_time_narration";
 const LOCAL_CIVIL_TIME_NARRATION_FAILURE = /narrates a (?:weekday|daypart) inconsistent with local civil time/iu;
+const PLACE_CONSISTENCY_FORM_REPAIR_GATE = "pass_a_place_consistency";
+const PLACE_CONSISTENCY_FAILURE = /observableAction narrates an explicit scene setting incompatible with authoritative placeRef/iu;
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 
 function frozenEnvelopeForCognition(envelope) {
@@ -60,6 +62,7 @@ export function buildGenesisLifePassACognitionInput({ passAInput, envelope }) {
 function formRepairGate(error) {
   if (error instanceof GenesisPassAValidationError && FORM_REPAIRABLE_GATES.has(error.gate)) return error.gate;
   if (error instanceof TypeError && LOCAL_CIVIL_TIME_NARRATION_FAILURE.test(error.message)) return LOCAL_CIVIL_TIME_FORM_REPAIR_GATE;
+  if (error instanceof TypeError && PLACE_CONSISTENCY_FAILURE.test(error.message)) return PLACE_CONSISTENCY_FORM_REPAIR_GATE;
   return null;
 }
 
@@ -145,7 +148,15 @@ export async function generateGenesisHistoricalEpisode({ adapter, repairAdapter 
         });
         if (formDecision.allowed) {
           const repairOrdinal = formRepairs + 1;
-          const repairInput = { rejectedObservableAction: realization.observableAction, failedGate: repairGate, repairOrdinal };
+          const repairInput = {
+            rejectedObservableAction: realization.observableAction,
+            failedGate: repairGate,
+            repairOrdinal,
+            ...(repairGate === PLACE_CONSISTENCY_FORM_REPAIR_GATE ? {
+              authoritativePlaceKind: envelope.placeKind,
+              repairInstruction: "Remove the conflicting explicit scene-setting wording. Do not replace it with another place label; preserve the observable action itself.",
+            } : {}),
+          };
           const result = await repairAdapter.invoke({
             systemPrompt: GENESIS_LIFE_PASS_A_FORM_REPAIR_PROMPT,
             input: repairInput,
