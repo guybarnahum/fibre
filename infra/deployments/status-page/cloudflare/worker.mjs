@@ -37,7 +37,7 @@ async function probeBinding(env, component, timeoutMs) {
 }
 async function probeInfra(env, timeoutMs) {
   const binding = env.ADMIN_DASHBOARD;
-  const base = { key:"infra", name:"Infrastructure capacity", description:"Cloudflare usage and resource headroom" };
+  const base = { key:"infra", name:"Infrastructure", description:"Backing services and resource headroom" };
   if (!binding?.fetch) return { ...base, status:"degraded" };
   try {
     const response = await withProbeTimeout((signal) => binding.fetch(new Request("https://admin.internal/internal/infra-health", { headers:{ Accept:"application/json" }, signal })), timeoutMs);
@@ -48,7 +48,7 @@ async function probeInfra(env, timeoutMs) {
       ...base,
       status:level === "normal" && payload?.stale !== true ? "operational" : "degraded",
       description:level === "critical"
-        ? "Infrastructure resource availability is critical"
+        ? "Infrastructure availability is critical"
         : level === "elevated"
           ? "Infrastructure resource use is elevated"
           : payload?.stale === true || level === "unavailable"
