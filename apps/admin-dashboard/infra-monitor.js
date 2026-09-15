@@ -10,6 +10,7 @@ const bannerDetails = document.querySelector("#infra-banner-details");
 const REFRESH_MS = 15 * 60_000;
 let timer = null;
 let current = null;
+let lastProbeAt = 0;
 
 function shortNumber(value) {
   return new Intl.NumberFormat([], { notation:"compact", maximumFractionDigits:1 }).format(Number(value ?? 0));
@@ -115,7 +116,9 @@ function render(payload) {
 
 async function load({ force = false } = {}) {
   if (!button) return;
+  if (!force && lastProbeAt > 0 && Date.now() - lastProbeAt < REFRESH_MS) return;
   if (force) forceButton.disabled = true;
+  lastProbeAt = Date.now();
   try {
     const response = await fetch("/api/infra-monitor", {
       method:force ? "POST" : "GET",
@@ -143,11 +146,12 @@ function openDetails() {
 function schedule() {
   clearTimeout(timer); timer = null;
   if (document.hidden) return;
+  const delay = lastProbeAt === 0 ? REFRESH_MS : Math.max(1000, REFRESH_MS - (Date.now() - lastProbeAt));
   timer = setTimeout(async () => {
     timer = null;
     await load();
     schedule();
-  }, REFRESH_MS);
+  }, delay);
 }
 
 button?.addEventListener("click", openDetails);
