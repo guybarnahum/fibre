@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
@@ -51,6 +52,7 @@ export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
+    this.health = createCloudflareInfraDriver({ stateScopes:{ [WORLD_SCOPE_ID]:ctx.storage } }).health;
   }
 
   runtimeForRequest() {
@@ -61,21 +63,20 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetch(request) {
-    const runtime = this.runtimeForRequest();
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/internal/health/state") {
-      const health = await runtime.infraDriver.health.check();
+      const health = await this.health.check();
       return Response.json({
         ok: health.level === "normal",
         service: "world-kernel",
         provider: health.provider,
         stateScopeId: WORLD_SCOPE_ID,
         stateChecked: true,
-        capabilities: runtime.infraDriver.capabilities,
+        capabilities:["state"],
         health,
-        reconciliation: await reconciliationState(runtime),
       }, { status:health.level === "normal" ? 200 : 503 });
     }
+    const runtime = this.runtimeForRequest();
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     if (identityMatch !== null) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
