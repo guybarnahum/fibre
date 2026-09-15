@@ -3,6 +3,10 @@ const dialog = document.querySelector("#infra-dialog");
 const body = document.querySelector("#infra-dialog-body");
 const forceButton = document.querySelector("#infra-force-sample");
 const closeButton = document.querySelector("#infra-dialog-close");
+const banner = document.querySelector("#infra-degradation-banner");
+const bannerTitle = document.querySelector("#infra-banner-title");
+const bannerDetail = document.querySelector("#infra-banner-detail");
+const bannerDetails = document.querySelector("#infra-banner-details");
 const REFRESH_MS = 15 * 60_000;
 let timer = null;
 let current = null;
@@ -21,6 +25,27 @@ function setBadge(level, title = null) {
   button.setAttribute("aria-label", `Infrastructure ${statusLabel(normalized)}`);
   button.title = title ?? `Infrastructure ${statusLabel(normalized)}`;
   button.querySelector(".infra-health-label").textContent = statusLabel(normalized);
+}
+
+function degradedDetail(sample, fallback) {
+  const check = (sample?.checks ?? []).find((candidate) => candidate.level === "critical")
+    ?? (sample?.checks ?? []).find((candidate) => candidate.level === "elevated");
+  if (check?.error?.detail) return check.error.detail;
+  if (check) return `${check.kind.replaceAll("_", " ")} · ${[check.resource, check.service].filter(Boolean).join(" · ")}`;
+  return fallback ?? "Infrastructure health is unavailable.";
+}
+
+function setBanner(level, sample = null, fallback = null) {
+  if (!banner) return;
+  if (level === "normal") {
+    banner.hidden = true;
+    return;
+  }
+  const normalized = ["elevated", "critical"].includes(level) ? level : "unavailable";
+  banner.dataset.level = normalized;
+  bannerTitle.textContent = normalized === "critical" ? "Infrastructure critical" : "Infrastructure degraded";
+  bannerDetail.textContent = degradedDetail(sample, fallback);
+  banner.hidden = false;
 }
 
 function detail(label, value) {
@@ -60,11 +85,14 @@ function render(payload) {
   current = payload;
   const sample = payload?.sample;
   if (!sample) {
-    setBadge("unavailable", payload?.error?.message ?? "Infrastructure monitor unavailable");
-    body.replaceChildren(detail("Monitor", payload?.error?.message ?? "No infrastructure sample is available."));
+    const message = payload?.error?.message ?? "Infrastructure monitor unavailable";
+    setBadge("unavailable", message);
+    setBanner("unavailable", null, message);
+    body.replaceChildren(detail("Monitor", message));
     return;
   }
   setBadge(sample.level, `Infrastructure ${statusLabel(sample.level)} · sampled ${new Date(sample.observedAt).toLocaleString()}`);
+  setBanner(sample.level, sample, payload?.error?.message ?? null);
   const head = document.createElement("div");
   head.className = "infra-summary";
   head.append(
@@ -99,10 +127,17 @@ async function load({ force = false } = {}) {
     render(payload);
   } catch (error) {
     setBadge("unavailable", error.message);
+    setBanner("unavailable", null, error.message);
     if (dialog.open) body.replaceChildren(detail("Monitor", error.message));
   } finally {
     if (force) forceButton.disabled = false;
   }
+}
+
+function openDetails() {
+  if (!dialog.open) dialog.showModal();
+  if (current) render(current);
+  else void load();
 }
 
 function schedule() {
@@ -115,11 +150,8 @@ function schedule() {
   }, REFRESH_MS);
 }
 
-button?.addEventListener("click", () => {
-  if (!dialog.open) dialog.showModal();
-  if (current) render(current);
-  else void load();
-});
+button?.addEventListener("click", openDetails);
+bannerDetails?.addEventListener("click", openDetails);
 forceButton?.addEventListener("click", () => load({ force:true }));
 closeButton?.addEventListener("click", () => dialog.close());
 dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
