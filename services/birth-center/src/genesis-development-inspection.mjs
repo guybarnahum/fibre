@@ -35,6 +35,10 @@ export function createGenesisDevelopmentInspectionService({ runtime } = {}) {
       if (typeof prefix !== "string" || prefix.trim() === "") {
         throw new Error(`Genesis development ${requestId} has no durable model-request domain`);
       }
+      const requestedAt = reservation.plan?.genome?.header?.createdAt;
+      if (typeof requestedAt !== "string" || requestedAt.trim() === "") {
+        throw new Error(`Genesis development ${requestId} has no persisted request-time witness`);
+      }
       const provisional = birthRuntime.provisionalBirthStore.get(reservation.genesisId);
       const invocations = birthRuntime.invocationJournal.listByPrefix(prefix).map(summarizeInvocation);
       return Object.freeze({
@@ -44,6 +48,7 @@ export function createGenesisDevelopmentInspectionService({ runtime } = {}) {
         admissionDigest: reservation.admissionDigest,
         genesisId: reservation.genesisId,
         threadId: reservation.threadId,
+        requestedAt,
         requestStatus: reservation.status,
         provisionalStatus: provisional?.status ?? null,
         invocationCount: invocations.length,
