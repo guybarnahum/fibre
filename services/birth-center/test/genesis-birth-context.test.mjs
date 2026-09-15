@@ -68,7 +68,8 @@ test("Genesis carries explicit sex place and heritage into life context and embo
     heritage: plan.subjectIdentity.heritage,
     appearanceContext: plan.subjectIdentity.appearanceContext,
   });
-  assert.match(visual.specification.subject.description, /adult female person/u);
-  assert.match(visual.specification.subject.description, /family heritage context: Georgian Jewish/u);
-  assert.match(visual.specification.subject.description, /broad family appearance prior/u);
+  const visualDescription = visual.specification.subject.description;
+  assert.match(visualDescription, /adult female person/u);
+  assert.match(visualDescription, /broad family appearance prior/u);
+  assert.doesNotMatch(visualDescription, /Georgian Jewish/u, "heritage label must not become a portrait prompt");
 });
