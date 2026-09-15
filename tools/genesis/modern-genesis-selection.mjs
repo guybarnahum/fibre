@@ -221,10 +221,21 @@ function buildAuthoredWorld({ selector, authored, bornAt, chronologyEndsAt, crea
   return Object.freeze({ worldSpec, material, timeZone, participants, placeAffordances });
 }
 
+export function createWorldAuthoringFetch(fetchImpl = globalThis.fetch) {
+  if (typeof fetchImpl !== "function") throw new TypeError("World authoring fetch must be a function");
+  return async (url, options = {}) => {
+    if (typeof options.body !== "string") return fetchImpl(url, options);
+    const body = JSON.parse(options.body);
+    delete body.temperature;
+    delete body.top_p;
+    return fetchImpl(url, { ...options, body: JSON.stringify(body) });
+  };
+}
+
 async function defaultAuthorWorld({ selector, modelId, requestId }) {
   const adapter = createOpenAIModelAdapter({
     modelId,
-    temperature: 0,
+    fetchImpl: createWorldAuthoringFetch(),
     reasoningEffort: "low",
     maxOutputTokens: 5_000,
   });
