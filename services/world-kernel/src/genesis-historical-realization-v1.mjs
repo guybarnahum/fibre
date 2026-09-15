@@ -11,6 +11,7 @@ import {
   validateRichPassAEpisode,
 } from "./genesis-rich-life-episode.mjs";
 import { assertHistoricalEnvelopeRealized } from "./genesis-historical-envelope-v1.mjs";
+import { assertGenesisEpisodePlaceConsistency } from "./genesis-publication-place-consistency.mjs";
 
 export const GENESIS_HISTORICAL_REALIZATION_VERSION = "genesis-historical-realization-v1";
 
@@ -150,5 +151,6 @@ export function materializeHistoricalEnvelopeEpisode({
   };
   const validated = validateRichPassAEpisode(episode, passAInput);
   assertHistoricalEnvelopeRealized(validated, envelope);
+  assertGenesisEpisodePlaceConsistency({ episode: validated, envelope });
   return Object.freeze(validated);
 }
