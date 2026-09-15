@@ -78,7 +78,8 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
   if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires at least one WorldSpec language");
   if (typeof worldSpec.culturalContext !== "string" || worldSpec.culturalContext.trim() === "") throw new TypeError("modern Genesis birth requires WorldSpec cultural context");
   if (typeof subjectIdentity.birthCity !== "string" || subjectIdentity.birthCity.trim() === "") throw new TypeError("modern Genesis birth requires an explicit birth city");
-  const sex = genesisSexForThread({ threadId });
+  const sex = subjectIdentity.sex ?? genesisSexForThread({ threadId });
+  if (sex !== "female" && sex !== "male") throw new TypeError("modern Genesis birth requires female or male sex");
   const name = sex === "female" ? subjectIdentity.femaleName : subjectIdentity.maleName;
   if (typeof name !== "string" || name.trim() === "" || name === "Fibre Thread") throw new TypeError("modern Genesis birth requires a proper sex-compatible name");
   const birthInstant = new Date(bornAt);
@@ -293,6 +294,9 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
       sex: seedThread.identity.sex,
       originMode: candidate.originMode,
       parentIds,
+      birthCity: slotPlan.subjectIdentity?.birthCity ?? null,
+      heritage: slotPlan.subjectIdentity?.heritage ?? null,
+      appearanceContext: slotPlan.subjectIdentity?.appearanceContext ?? null,
     }),
   ).thread;
   validateThreadSnapshot(thread);
