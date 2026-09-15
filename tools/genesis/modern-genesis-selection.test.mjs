@@ -113,6 +113,7 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(created.timeZone, "Asia/Jerusalem");
   assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_yemeni-jewish_/u);
   assert.match(created.worldSpec.culturalContext, /Yemeni Jewish/u);
+  assert.doesNotMatch(created.material.appearanceContext, /Yemeni Jewish|Jerusalem|Israel/iu, "portrait appearance prior must not carry place/heritage labels");
 
   const reused = await resolveModernWorldSelection({
     selector,
@@ -127,6 +128,6 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   });
   assert.equal(reused.mode, "cached");
   assert.equal(reused.worldSpec.worldSpecId, created.worldSpec.worldSpecId);
-  assert.equal(reused.material.appearanceContext, authoredJerusalem.appearanceContext);
+  assert.equal(reused.material.appearanceContext, created.material.appearanceContext);
   assert.equal(authoredCalls, 1);
 });
