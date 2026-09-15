@@ -1,3 +1,5 @@
+import { classifyCloudflareInfraError } from "#infra/providers/cloudflare";
+
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
   return value;
@@ -9,6 +11,7 @@ function boundedDiagnostic(value) {
 }
 
 function deepHealthFailure(service, stateScopeId, error) {
+  const classified = classifyCloudflareInfraError(error, "DURABLE_OBJECT_STATE_HEALTH_FAILED");
   return Response.json({
     ok: false,
     service,
@@ -16,11 +19,8 @@ function deepHealthFailure(service, stateScopeId, error) {
     stateScopeId,
     stateChecked: false,
     error: {
-      code: "DURABLE_OBJECT_STATE_HEALTH_FAILED",
+      ...classified,
       name: error?.name ?? error?.constructor?.name ?? "Error",
-      detail: boundedDiagnostic(error),
-      retryable: error?.retryable === true,
-      overloaded: error?.overloaded === true,
     },
   }, { status: 503 });
 }
