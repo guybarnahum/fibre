@@ -102,7 +102,7 @@ export function createBirthReconciliationRuntime({
       try {
         await runActivityStage(activity, {
           ...context,
-          stage: "birth.publish.complete",
+          stage: "birth.publish.world",
           attempt: 1,
         }, async ({ operationId: publicationOperationId }) => {
           const publicationContext = publicationOperationId === null
@@ -127,6 +127,12 @@ export function createBirthReconciliationRuntime({
             attempt: 1,
             evidence: finalWorldEventEvidence(result),
           }, async () => provisionalBirthStore.markPublished(birth.genesisId, result));
+          await runActivityStage(activity, {
+            ...publicationContext,
+            stage: "birth.publish.complete",
+            attempt: 1,
+            evidence: finalWorldEventEvidence(result),
+          }, async () => result);
         });
         published += 1;
       } catch (error) {
