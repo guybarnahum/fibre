@@ -25,6 +25,27 @@
 
 .infra-health-label { font-size: 12px; font-weight: 650; }
 
+.infra-degradation-banner {
+  margin: 12px 24px 0;
+  padding: 10px 12px 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid color-mix(in srgb, #e6a700 38%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #e6a700 9%, var(--surface));
+}
+
+.infra-degradation-banner[hidden] { display: none; }
+.infra-degradation-banner[data-level="critical"] {
+  border-color: color-mix(in srgb, #d9480f 45%, var(--border));
+  background: color-mix(in srgb, #d9480f 8%, var(--surface));
+}
+.infra-degradation-banner > div { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 2px; }
+.infra-degradation-banner strong { font-size: 12px; }
+.infra-degradation-banner span { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.infra-degradation-banner button { flex: 0 0 auto; }
+
 #infra-dialog { width: min(760px, calc(100vw - 32px)); }
 
 .infra-summary {
@@ -81,4 +102,5 @@
 @media (max-width: 720px) {
   .infra-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .infra-health-label { display: none; }
+  .infra-degradation-banner { margin-inline: 12px; align-items: flex-start; }
 }
