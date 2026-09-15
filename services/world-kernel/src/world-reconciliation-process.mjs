@@ -43,6 +43,7 @@ function visualNeedsRetry(entry) {
   const result = entry.result;
   if (!result || typeof result !== "object") return false;
   if (result.skipped === true) return result.reason === "already_running";
+  if (result.hasPending === true) return true;
   if (!Array.isArray(result.results)) return false;
   return result.results.some((item) => (
     item?.ok !== true
