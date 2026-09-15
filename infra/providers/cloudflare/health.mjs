@@ -44,12 +44,19 @@ function level(checks) {
   return checks.some((check) => check.level === "critical") ? "critical" : "normal";
 }
 
+async function d1Check(kind, resource, database) {
+  return probeCloudflareHealth(kind, resource, async () => {
+    await database.prepare("SELECT 1 AS fibre_health").first();
+  }, "D1_UNAVAILABLE");
+}
+
 export function createCloudflareHealthPort({
   stateScopes = {},
   objectBucket = null,
   workflowBindings = {},
   presentationChannels = null,
   catalogDatabase = null,
+  telemetryDatabase = null,
 } = {}) {
   return Object.freeze({
     async check() {
@@ -64,11 +71,8 @@ export function createCloudflareHealthPort({
           await objectBucket.head(HEALTH_OBJECT_KEY);
         }, "R2_UNAVAILABLE"));
       }
-      if (catalogDatabase !== null) {
-        checks.push(await probeCloudflareHealth("catalog", "d1", async () => {
-          await catalogDatabase.prepare("SELECT 1 AS fibre_health").first();
-        }, "D1_UNAVAILABLE"));
-      }
+      if (catalogDatabase !== null) checks.push(await d1Check("catalog", "d1", catalogDatabase));
+      if (telemetryDatabase !== null) checks.push(await d1Check("telemetry", "d1", telemetryDatabase));
       if (presentationChannels !== null) {
         checks.push(await probeCloudflareHealth("streams", "durable_objects", async () => {
           await presentationChannels.getByName(HEALTH_CHANNEL_ID).getHead();
