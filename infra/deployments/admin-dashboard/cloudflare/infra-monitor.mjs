@@ -1,6 +1,7 @@
 import { createCloudflareInfraDriver, sampleCloudflareResourceHealth } from "#infra/providers/cloudflare";
 
 const DEFAULT_TTL_MS = 15 * 60_000;
+const SAMPLE_CACHE = new WeakMap();
 const SERVICES = Object.freeze([
   Object.freeze({ binding:"WORLD_KERNEL", service:"world-kernel" }),
   Object.freeze({ binding:"BIRTH_CENTER", service:"birth-center" }),
@@ -116,8 +117,20 @@ export async function sampleAdminInfraHealth({ env, environment, now = new Date(
   });
 }
 
-export async function readAdminInfraMonitor({ env, environment, fetchImpl = globalThis.fetch, now = new Date() } = {}) {
+function cachedPayload(env, nowMs, ttlMs) {
+  const cached = SAMPLE_CACHE.get(env);
+  if (!cached || nowMs - cached.observedAtMs >= ttlMs) return null;
+  return Object.freeze({ ...cached.payload, cached:true });
+}
+
+export async function readAdminInfraMonitor({ env, environment, fetchImpl = globalThis.fetch, now = new Date(), force = false } = {}) {
   const config = monitorConfig(env);
+  const nowMs = now.getTime();
+  if (!force) {
+    const cached = cachedPayload(env, nowMs, config.ttlMs);
+    if (cached !== null) return cached;
+  }
+
   const infra = await sampleAdminInfraHealth({ env, environment, now });
   let capacity = null;
   let capacityError = null;
@@ -140,7 +153,7 @@ export async function readAdminInfraMonitor({ env, environment, fetchImpl = glob
     : capacity === null
       ? "unavailable"
       : level(checks);
-  return Object.freeze({
+  const payload = Object.freeze({
     contract:"fibre-admin-infra-monitor-v0.4",
     environment:nonEmpty("environment", environment),
     cached:false,
@@ -156,8 +169,17 @@ export async function readAdminInfraMonitor({ env, environment, fetchImpl = glob
     }),
     error:capacityError ? Object.freeze({ message:bounded(capacityError) }) : null,
   });
+  SAMPLE_CACHE.set(env, Object.freeze({ observedAtMs:nowMs, payload }));
+  return payload;
 }
 
 export async function readCachedInfraHealth({ env, environment } = {}) {
-  return sampleAdminInfraHealth({ env, environment });
+  const payload = await readAdminInfraMonitor({ env, environment });
+  return Object.freeze({
+    contract:"fibre-infra-health-summary-v0.4",
+    environment:payload.environment,
+    observedAt:payload.sample.observedAt,
+    level:payload.sample.level,
+    stale:payload.stale,
+  });
 }
