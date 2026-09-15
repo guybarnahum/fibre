@@ -124,21 +124,14 @@ export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = 
   throw new TypeError(`unsupported Genesis visual phenotype origin mode ${String(originMode)}`);
 }
 
-function canonicalVisualIdentityFromLoci({ threadId, sex, loci, birthCity = null, heritage = null, appearanceContext = null }) {
-  const normalizedBirthCity = optionalText("birthCity", birthCity);
-  const normalizedHeritage = optionalText("heritage", heritage);
+function canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext = null }) {
   const normalizedAppearance = optionalText("appearanceContext", appearanceContext);
   const identityLoci = normalizedAppearance === null
     ? loci
     : loci.filter((locus) => locus.domain !== "skin" && locus.domain !== "hair");
-  const context = [
-    normalizedBirthCity === null ? null : `birthplace context: ${normalizedBirthCity}`,
-    normalizedHeritage === null ? null : `family heritage context: ${normalizedHeritage}`,
-    normalizedAppearance === null ? null : `broad family appearance prior: ${normalizedAppearance}`,
-  ].filter(Boolean);
   const subjectDescription = [
     `adult ${normalizeGenesisSex(sex)} person`,
-    ...context,
+    ...(normalizedAppearance === null ? [] : [`broad family appearance prior: ${normalizedAppearance}`]),
     ...identityLoci.map((locus) => locus.value),
   ].join("; ");
   if (encoder.encode(subjectDescription).byteLength < 500) {
@@ -148,8 +141,8 @@ function canonicalVisualIdentityFromLoci({ threadId, sex, loci, birthCity = null
     policyRef: GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
     specification: Object.freeze({
       subject: Object.freeze({ partyId: threadId, description: subjectDescription }),
-      method: "canonical synthetic portrait specification from deterministic textual phenotype loci plus bounded birth-context appearance evidence",
-      description: "Preserve sex and the listed geometry, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. When a broad family appearance prior is present, use it only to bound plausible skin/hair/appearance variation; do not convert culture, religion, nationality, heritage or community membership into stereotyped facial traits. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
+      method: "canonical synthetic portrait specification from deterministic textual phenotype loci plus bounded family appearance evidence",
+      description: "Preserve sex and the listed geometry, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. When a broad family appearance prior is present, use it only to bound plausible skin/hair/appearance variation; do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
       model: "replaceable-renderer",
     }),
   });
@@ -160,19 +153,12 @@ export function buildGenesisCanonicalVisualIdentity({
   sex,
   originMode,
   parentIds = [],
-  birthCity = null,
-  heritage = null,
+  birthCity: _birthCity = null,
+  heritage: _heritage = null,
   appearanceContext = null,
 } = {}) {
   const loci = visualPhenotypeLociForBirth({ threadId, originMode, parentIds });
-  return canonicalVisualIdentityFromLoci({
-    threadId,
-    sex,
-    loci,
-    birthCity,
-    heritage,
-    appearanceContext,
-  });
+  return canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext });
 }
 
 export function buildDeNovoCanonicalVisualIdentity({
