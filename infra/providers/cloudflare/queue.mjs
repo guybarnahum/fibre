@@ -4,6 +4,11 @@ import {
   assertInfraJsonValue,
   assertInfraPlainObject,
 } from "../../internal.mjs";
+import {
+  extendCloudflareHealth,
+  normalCloudflareCheck,
+  probeCloudflareHealth,
+} from "./health.mjs";
 
 function assertQueueBinding(binding, queueName) {
   if (!binding || typeof binding.send !== "function") {
@@ -32,12 +37,30 @@ export function createCloudflareQueuePort(queueBindings) {
   });
 }
 
+async function queueHealth(queueName, binding) {
+  if (typeof binding.metrics !== "function") {
+    return normalCloudflareCheck("queues", queueName, { mode:"configured" });
+  }
+  return probeCloudflareHealth("queues", queueName, async () => {
+    const metrics = await binding.metrics();
+    return {
+      backlogCount:Number(metrics?.backlogCount ?? 0),
+      backlogBytes:Number(metrics?.backlogBytes ?? 0),
+      oldestMessageTimestamp:metrics?.oldestMessageTimestamp ?? null,
+    };
+  }, "QUEUE_UNAVAILABLE");
+}
+
 export function withCloudflareQueueBindings(infra, queueBindings) {
   const base = assertInfraDriver(infra);
   if (base.capabilities.includes("queues")) throw new TypeError("infra driver already declares queues capability");
+  const entries = Object.entries(queueBindings);
   return assertInfraDriver({
     ...base,
     capabilities: [...base.capabilities, "queues"],
     queues: createCloudflareQueuePort(queueBindings),
+    health:extendCloudflareHealth(base.health, async () => Promise.all(
+      entries.map(([queueName, binding]) => queueHealth(queueName, assertQueueBinding(binding, queueName))),
+    )),
   });
 }
