@@ -109,6 +109,10 @@ function providerRequestId(result) {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
+function resolvedContext(context) {
+  return typeof context === "function" ? context() : context;
+}
+
 function instrumentDurableCognitionAdapter({
   baseAdapter,
   birthRuntime,
@@ -126,9 +130,10 @@ function instrumentDurableCognitionAdapter({
     modelId: durable.modelId,
     configuration: structuredClone(durable.configuration),
     async invoke(args) {
+      const invocationContext = resolvedContext(context);
       const stage = cognitionStage(args?.clientRequestId);
       const result = await runActivityStage(activity, {
-        ...context,
+        ...invocationContext,
         stage,
         attempt: 1,
         evidence: cognitionEvidence(stage, args),
@@ -137,7 +142,7 @@ function instrumentDurableCognitionAdapter({
       const replay = observation === "durable_model_replay";
       const requestId = providerRequestId(result);
       await bestEffortRecord(activity, {
-        ...context,
+        ...invocationContext,
         stage: replay ? `${stage}.durable_replay` : `${stage}.provider_commit`,
         status: "succeeded",
         attempt: 1,
@@ -245,10 +250,11 @@ export function createGenesisDevelopmentService({
           ...context,
           stage: "birth.genesis.start",
           attempt: 1,
-        }, async ({ operationId }) => {
-          const cognitionContext = operationId === null
+        }, async ({ operationId: genesisOperationId }) => {
+          let cognitionParentOperationId = genesisOperationId;
+          const cognitionContext = () => cognitionParentOperationId === null
             ? context
-            : Object.freeze({ ...context, parentOperationId:operationId });
+            : Object.freeze({ ...context, parentOperationId:cognitionParentOperationId });
           const creative = instrumentDurableCognitionAdapter({
             baseAdapter: creativeBase,
             birthRuntime,
@@ -261,11 +267,25 @@ export function createGenesisDevelopmentService({
             activity,
             context: cognitionContext,
           });
+          const phaseContext = genesisOperationId === null
+            ? context
+            : Object.freeze({ ...context, parentOperationId:genesisOperationId });
+          const runPhase = (stage, operation) => runActivityStage(activity, {
+            ...phaseContext,
+            stage,
+            attempt: 1,
+          }, async ({ operationId: phaseOperationId }) => {
+            const priorParent = cognitionParentOperationId;
+            cognitionParentOperationId = phaseOperationId ?? genesisOperationId;
+            try { return await operation(); }
+            finally { cognitionParentOperationId = priorParent; }
+          });
           return generateGenesisLifeCandidate({
             slotPlan: plan,
             adapter: creative,
             repairAdapter: repair,
             attemptStartedAt: reservation.createdAt,
+            runPhase,
           });
         });
         admission = await runActivityStage(activity, {
