@@ -2,8 +2,10 @@ import { causalTreeVisibility } from "/causal-tree.js";
 
 const rail = document.querySelector("#journey-rail");
 const hint = document.querySelector(".journey-body-head span");
+const head = document.querySelector(".journey-body-head");
 const collapsed = new Set();
 let observer = null;
+let collapseAllButton = null;
 
 function lineageFromTitle(title) {
   const operation = /^Operation ([^ ·]+)(?: · parent ([^ ·]+))?/u.exec(title ?? "");
@@ -104,13 +106,32 @@ function decorateGenesisPhases(visible) {
   }
 }
 
+function parentOperationIds(events) {
+  const models = events.map(modelFor);
+  const parentIds = new Set(models.map(({ parentOperationId }) => parentOperationId).filter(Boolean));
+  return models.map(({ operationId }) => operationId).filter((operationId) => operationId && parentIds.has(operationId));
+}
+
+function refreshCollapseAll(events) {
+  if (!collapseAllButton) return;
+  const parents = parentOperationIds(events);
+  collapseAllButton.hidden = parents.length === 0;
+  if (parents.length === 0) return;
+  const allCollapsed = parents.every((operationId) => collapsed.has(operationId));
+  collapseAllButton.textContent = allCollapsed ? "Expand all" : "Collapse all";
+  collapseAllButton.setAttribute("aria-label", allCollapsed ? "Expand all causal branches" : "Collapse all causal branches");
+}
+
 function arrangeTree() {
   if (!rail) return;
   observer?.disconnect();
   try {
     rail.querySelectorAll(":scope > .journey-phase").forEach((node) => node.remove());
     const events = [...rail.querySelectorAll(":scope > .journey-event")];
+    const operationIds = new Set(events.map((event) => lineageFromTitle(event.title).operationId).filter(Boolean));
+    for (const operationId of collapsed) if (!operationIds.has(operationId)) collapsed.delete(operationId);
     if (events.length === 0) {
+      refreshCollapseAll(events);
       refreshHint();
       return;
     }
@@ -133,6 +154,7 @@ function arrangeTree() {
 
     rail.replaceChildren(...visible.map(({ item }) => item.event));
     decorateGenesisPhases(visible);
+    refreshCollapseAll(events);
     refreshHint();
   } finally {
     observer?.observe(rail, { childList:true });
@@ -143,6 +165,17 @@ function toggle(operationId, forceCollapsed = null) {
   if (!operationId) return;
   const next = forceCollapsed ?? !collapsed.has(operationId);
   if (next) collapsed.add(operationId); else collapsed.delete(operationId);
+  arrangeTree();
+}
+
+function toggleAll() {
+  if (!rail) return;
+  const events = [...rail.querySelectorAll(":scope > .journey-event")];
+  const parents = parentOperationIds(events);
+  const collapse = parents.some((operationId) => !collapsed.has(operationId));
+  for (const operationId of parents) {
+    if (collapse) collapsed.add(operationId); else collapsed.delete(operationId);
+  }
   arrangeTree();
 }
 
@@ -180,6 +213,16 @@ rail?.addEventListener("keydown", (event) => {
     toggle(operationId, false);
   }
 });
+
+if (head) {
+  collapseAllButton = document.createElement("button");
+  collapseAllButton.type = "button";
+  collapseAllButton.className = "causal-collapse-all";
+  collapseAllButton.textContent = "Collapse all";
+  collapseAllButton.hidden = true;
+  collapseAllButton.addEventListener("click", toggleAll);
+  head.append(collapseAllButton);
+}
 
 if (rail) {
   observer = new MutationObserver(arrangeTree);
