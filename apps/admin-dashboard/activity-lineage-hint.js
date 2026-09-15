@@ -32,7 +32,7 @@ function genesisPhase(stage) {
 }
 
 function disclosure(event, operationId, childCount) {
-  let control = event.querySelector(":scope > .causal-disclosure");
+  let control = event.querySelector(".causal-disclosure");
   if (childCount === 0 || !operationId) {
     control?.remove();
     return;
@@ -40,7 +40,8 @@ function disclosure(event, operationId, childCount) {
   if (!control) {
     control = document.createElement("span");
     control.className = "causal-disclosure";
-    event.prepend(control);
+    const heading = event.querySelector(".journey-copy > strong");
+    if (heading) heading.prepend(control); else event.prepend(control);
   }
   const isCollapsed = collapsed.has(operationId);
   control.textContent = isCollapsed ? "▸" : "▾";
