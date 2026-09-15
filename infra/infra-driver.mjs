@@ -71,6 +71,10 @@ export function assertInfraDriver(driver, { required = [] } = {}) {
     if (!CAPABILITY_SET.has(capability)) throw new TypeError(`unknown required infra capability ${capability}`);
     if (!declared.has(capability)) throw new TypeError(`infra driver lacks required capability ${capability}`);
   }
+  if (driver.health !== undefined) {
+    assertInfraPlainObject("infra driver.health", driver.health);
+    if (typeof driver.health.check !== "function") throw new TypeError("infra driver.health.check must be a function");
+  }
   if (declared.has("state")) assertTransactionalStatePort(driver.state);
   if (declared.has("scheduler")) assertSchedulerPort(driver.scheduler);
   if (declared.has("telemetry")) assertTelemetryPort(driver.telemetry);
