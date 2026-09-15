@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v1";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v2";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
@@ -25,6 +25,8 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     "mobilityPattern",
     "schoolingOrCommunityContext",
     "culturalContext",
+    "heritageContext",
+    "appearanceContext",
     "availableInstitutions",
     "intellectualEnvironment",
   ],
@@ -43,6 +45,8 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     mobilityPattern: { type: "string", minLength: 1 },
     schoolingOrCommunityContext: { type: "string", minLength: 1 },
     culturalContext: { type: "string", minLength: 1 },
+    heritageContext: { type: "string", minLength: 1 },
+    appearanceContext: { type: "string", minLength: 1 },
     availableInstitutions: { type: "array", minItems: 3, uniqueItems: true, items: { type: "string", minLength: 1 } },
     intellectualEnvironment: { type: "string", minLength: 1 },
   },
@@ -74,7 +78,7 @@ export function normalizeModernWorldSelector(raw) {
   const value = nonEmpty("world selector", raw).replace(/^--/u, "");
   const parts = value.split("/");
   if (parts.length !== 2 || parts.some((part) => part.trim() === "")) {
-    throw new TypeError("world selector must be Country/City, for example --Israel/Jerusalem");
+    throw new TypeError("place must be Country/City, for example --place=Israel/Jerusalem");
   }
   const country = displayPart(parts[0]);
   const city = displayPart(parts[1]);
@@ -88,15 +92,32 @@ export function normalizeModernWorldSelector(raw) {
   });
 }
 
+export function normalizeModernHeritage(raw) {
+  const display = nonEmpty("heritage", raw).replace(/\s+/gu, " ");
+  return Object.freeze({ display, key: fold(display), slug: fold(display) });
+}
+
+function normalizeSex(value) {
+  if (value !== "female" && value !== "male") throw new TypeError("sex must be female or male");
+  return value;
+}
+
 export function parseModernGenesisArgs(argv = []) {
   let sex = null;
   let world = null;
+  let heritage = null;
   let forceNewWorld = false;
   let help = false;
   for (const argument of argv) {
     if (argument === "--female" || argument === "--male") {
-      const next = argument.slice(2);
-      if (sex !== null && sex !== next) throw new TypeError("choose only one of --female or --male");
+      const next = normalizeSex(argument.slice(2));
+      if (sex !== null && sex !== next) throw new TypeError("choose only one Genesis sex");
+      sex = next;
+      continue;
+    }
+    if (argument.startsWith("--sex=")) {
+      const next = normalizeSex(argument.slice("--sex=".length));
+      if (sex !== null && sex !== next) throw new TypeError("choose only one Genesis sex");
       sex = next;
       continue;
     }
@@ -108,16 +129,23 @@ export function parseModernGenesisArgs(argv = []) {
       help = true;
       continue;
     }
-    const explicitWorld = argument.startsWith("--world=") ? argument.slice("--world=".length) : null;
-    const shorthandWorld = argument.startsWith("--") && argument.includes("/") ? argument.slice(2) : null;
-    if (explicitWorld !== null || shorthandWorld !== null) {
-      if (world !== null) throw new TypeError("choose only one Genesis world selector");
-      world = normalizeModernWorldSelector(explicitWorld ?? shorthandWorld);
+    if (argument.startsWith("--heritage=")) {
+      if (heritage !== null) throw new TypeError("choose only one Genesis heritage");
+      heritage = normalizeModernHeritage(argument.slice("--heritage=".length));
+      continue;
+    }
+    const explicitPlace = argument.startsWith("--place=") ? argument.slice("--place=".length) : null;
+    const legacyWorld = argument.startsWith("--world=") ? argument.slice("--world=".length) : null;
+    const shorthandPlace = argument.startsWith("--") && argument.includes("/") ? argument.slice(2) : null;
+    if (explicitPlace !== null || legacyWorld !== null || shorthandPlace !== null) {
+      if (world !== null) throw new TypeError("choose only one Genesis place");
+      world = normalizeModernWorldSelector(explicitPlace ?? legacyWorld ?? shorthandPlace);
       continue;
     }
     throw new TypeError(`unsupported modern Genesis option ${argument}`);
   }
-  return Object.freeze({ sex, world, forceNewWorld, help });
+  if (heritage !== null && world === null) throw new TypeError("--heritage requires an explicit --place=Country/City");
+  return Object.freeze({ sex, world, heritage, forceNewWorld, help });
 }
 
 function selectorFromBirthCity(value) {
@@ -140,15 +168,25 @@ export function findFixtureWorld({ selector, cohort, materialFixture }) {
   return null;
 }
 
-function cachePath(repoRoot, selector) {
-  return resolve(repoRoot, ".fibre", "genesis", "worlds", `${selector.slug}.json`);
+function cachePath(repoRoot, selector, heritage) {
+  return resolve(
+    repoRoot,
+    ".fibre",
+    "genesis",
+    "worlds",
+    `${selector.slug}__${heritage?.slug ?? "default"}.json`,
+  );
 }
 
-function readCache(repoRoot, selector) {
-  const path = cachePath(repoRoot, selector);
+function readCache(repoRoot, selector, heritage) {
+  const path = cachePath(repoRoot, selector, heritage);
   if (!existsSync(path)) return null;
   const cached = JSON.parse(readFileSync(path, "utf8"));
-  if (cached?.cacheVersion !== MODERN_WORLD_CACHE_VERSION || cached?.selector?.key !== selector.key) {
+  if (
+    cached?.cacheVersion !== MODERN_WORLD_CACHE_VERSION
+    || cached?.selector?.key !== selector.key
+    || (cached?.heritage?.key ?? null) !== (heritage?.key ?? null)
+  ) {
     throw new Error(`invalid modern Genesis world cache ${path}`);
   }
   return Object.freeze({ ...cached, cachePath: path, mode: "cached" });
@@ -164,11 +202,18 @@ function assertTimeZone(value) {
   return value;
 }
 
-function buildAuthoredWorld({ selector, authored, bornAt, chronologyEndsAt, createdAt }) {
+function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEndsAt, createdAt }) {
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
-  const sourceDigest = digest(authored).slice(0, 12);
-  const worldSpecId = `world_modern_${selector.slug}_${sourceDigest}`;
+  const sourceDigest = digest({ selector, heritage, authored }).slice(0, 12);
+  const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${sourceDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
+  const heritageLabel = heritage?.display ?? null;
+  const householdShape = heritageLabel === null
+    ? "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there."
+    : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`;
+  const culturalContext = heritageLabel === null
+    ? authored.culturalContext
+    : `${authored.culturalContext}\nHousehold heritage: ${heritageLabel}. ${authored.heritageContext}`;
   const worldSpec = Object.freeze({
     worldSpecId,
     timeFrame: Object.freeze({ startAt: bornAt, endAt: chronologyEndsAt }),
@@ -179,21 +224,21 @@ function buildAuthoredWorld({ selector, authored, bornAt, chronologyEndsAt, crea
       Object.freeze({ placeId: place("learning"), description: authored.learningDescription }),
       Object.freeze({ placeId: place("commerce"), description: authored.commerceDescription }),
     ]),
-    householdShape: "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there.",
+    householdShape,
     familyRelations: Object.freeze(["The sibling is two years older than the subject."]),
     languages: Object.freeze([...authored.languages]),
     materialCircumstances: "Housing, food, schooling and routine mobility are stable enough for ordinary daily life; household spending choices matter without assigning the family a fixed socioeconomic identity.",
     mobilityPattern: authored.mobilityPattern,
     schoolingOrCommunityContext: authored.schoolingOrCommunityContext,
-    culturalContext: authored.culturalContext,
+    culturalContext,
     availableInstitutions: Object.freeze([...authored.availableInstitutions]),
     intellectualEnvironment: authored.intellectualEnvironment,
     affordedRoles: Object.freeze(["caregiver", "sibling", "relative", "peer", "teacher", "neighbor", "vendor", "librarian", "coach", "mentor", "transit_worker"]),
     worldAuthorship: Object.freeze({
       authorId: "fibre_modern_world_authoring",
       sourcesConsulted: Object.freeze([]),
-      abstractionMethod: `Operator selected ${selector.birthCity}. Fibre authored bounded ordinary-life affordances from general model knowledge before the Thread's life was generated. The World constrains places, institutions and language context without prescribing the subject's personality, religion, politics, ethnicity, profession or values.`,
-      relocationWitness: `Relocating this World away from ${selector.birthCity} changes its language, civic, mobility and institutional affordances; the location is therefore part of the World rather than decorative scenery.`,
+      abstractionMethod: `Operator selected ${selector.birthCity}${heritageLabel === null ? "" : ` with ${heritageLabel} household heritage`}. Fibre authored bounded ordinary-life affordances from general model knowledge before the Thread's life was generated. Place constrains civic surroundings; heritage constrains household/community cultural context. Neither prescribes personality, religion, politics, profession, competence or values.`,
+      relocationWitness: `Relocating this World away from ${selector.birthCity} changes its civic, language, mobility and institutional affordances; changing the household heritage changes family/community cultural affordances. These are causal context rather than decorative scenery.`,
       familiarityProbe: null,
       createdAt,
     }),
@@ -201,15 +246,19 @@ function buildAuthoredWorld({ selector, authored, bornAt, chronologyEndsAt, crea
   });
   const material = Object.freeze({
     birthCity: selector.birthCity,
+    place: Object.freeze({ country: selector.country, city: selector.city }),
+    heritage: heritageLabel,
+    appearanceContext: nonEmpty("authored world appearanceContext", authored.appearanceContext),
     nameOrder: authored.nameOrder,
     femaleGivenNames: Object.freeze([...authored.femaleGivenNames]),
     maleGivenNames: Object.freeze([...authored.maleGivenNames]),
     familyNames: Object.freeze([...authored.familyNames]),
   });
+  const householdSuffix = heritageLabel === null ? "" : ` in a household with ${heritageLabel} heritage`;
   const participants = Object.freeze([
-    Object.freeze({ participantId:"caregiver_1", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([`Lives in the subject household in ${selector.city}.`]) }),
-    Object.freeze({ participantId:"caregiver_2", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([`Lives in the subject household in ${selector.city}.`]) }),
-    Object.freeze({ participantId:"sibling_1", factualRoles:Object.freeze(["sibling"]), relationshipFacts:Object.freeze(["Lives in the subject household and is two years older than the subject."]) }),
+    Object.freeze({ participantId:"caregiver_1", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([`Lives with the subject in ${selector.city}${householdSuffix}.`]) }),
+    Object.freeze({ participantId:"caregiver_2", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([`Lives with the subject in ${selector.city}${householdSuffix}.`]) }),
+    Object.freeze({ participantId:"sibling_1", factualRoles:Object.freeze(["sibling"]), relationshipFacts:Object.freeze([`Lives with the subject${householdSuffix} and is two years older than the subject.`]) }),
   ]);
   const placeAffordances = Object.freeze([
     Object.freeze({ placeRef:place("home"), placeKind:"home", ordinaryCounterpartRoles:Object.freeze(["caregiver", "sibling", "relative", "peer", "neighbor"]) }),
@@ -232,7 +281,7 @@ export function createWorldAuthoringFetch(fetchImpl = globalThis.fetch) {
   };
 }
 
-async function defaultAuthorWorld({ selector, modelId, requestId }) {
+async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
   const adapter = createOpenAIModelAdapter({
     modelId,
     fetchImpl: createWorldAuthoringFetch(),
@@ -240,16 +289,22 @@ async function defaultAuthorWorld({ selector, modelId, requestId }) {
     maxOutputTokens: 5_000,
   });
   const result = await adapter.invoke({
-    clientRequestId: `modern_world_${selector.slug}_${digest(requestId).slice(0, 12)}`,
+    clientRequestId: `modern_world_${selector.slug}_${heritage?.slug ?? "default"}_${digest(requestId).slice(0, 12)}`,
     systemPrompt: [
       "Author bounded ordinary-life material for a Fibre Genesis World.",
-      "The operator has explicitly chosen the country and city. Treat that location as input, not as a political or demographic inference.",
-      "Return plausible public/civic language, mobility, school/community, learning and commerce affordances using general factual knowledge.",
-      "Do not assign the future subject a religion, politics, ethnicity, class identity, profession, personality, competence, trauma or values.",
-      "Names are reusable local naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
-      "Use an IANA time-zone identifier. Keep descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
+      "The operator explicitly supplies place and may supply household heritage. Treat both as input, never as an inference about the operator.",
+      "Keep two causal layers distinct: place defines the surrounding civic/physical world; heritage defines inherited household/community cultural context inside that place.",
+      "When heritage is supplied, make naming material, plausible household/community languages, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
+      "Do not infer the future subject's religion, religious observance, politics, ethnicity, personality, class identity, profession, competence, trauma or values. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
+      "Return appearanceContext as a broad family-appearance prior only. If the heritage is culturally broad, mixed, diasporic, or does not imply one ancestry, explicitly preserve broad physical variation rather than inventing a single stereotyped phenotype. Never connect appearance to personality or worth.",
+      "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
+      "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
     ].join("\n"),
-    input: { country: selector.country, city: selector.city },
+    input: {
+      country: selector.country,
+      city: selector.city,
+      heritage: heritage?.display ?? null,
+    },
     responseSchema: WORLD_AUTHORING_SCHEMA,
   });
   return result.output;
@@ -257,6 +312,7 @@ async function defaultAuthorWorld({ selector, modelId, requestId }) {
 
 export async function resolveModernWorldSelection({
   selector,
+  heritage = null,
   forceNewWorld = false,
   cohort,
   materialFixture,
@@ -269,12 +325,14 @@ export async function resolveModernWorldSelection({
   authorWorld = defaultAuthorWorld,
 } = {}) {
   if (selector === null) {
+    if (heritage !== null) throw new TypeError("Genesis heritage requires an explicit place");
     const slot = cohort.slots[baseSlotOrdinal - 1];
     const material = materialFixture.slots.find((item) => item.slot === baseSlotOrdinal);
     if (!slot || !material) throw new Error(`modern Genesis slot ${baseSlotOrdinal} is unavailable`);
     return Object.freeze({
       mode: "fixture",
       selector: selectorFromBirthCity(material.birthCity),
+      heritage: null,
       slotOrdinal: baseSlotOrdinal,
       genomePath: slot.genomePath,
       worldSpec: fixture(slot.worldSpecPath),
@@ -286,12 +344,13 @@ export async function resolveModernWorldSelection({
     });
   }
 
-  if (!forceNewWorld) {
+  if (!forceNewWorld && heritage === null) {
     const existing = findFixtureWorld({ selector, cohort, materialFixture });
     if (existing) {
       return Object.freeze({
         mode: "fixture",
         selector,
+        heritage: null,
         slotOrdinal: existing.slot.slot,
         genomePath: existing.slot.genomePath,
         worldSpec: fixture(existing.slot.worldSpecPath),
@@ -302,7 +361,10 @@ export async function resolveModernWorldSelection({
         cachePath: null,
       });
     }
-    const cached = readCache(repoRoot, selector);
+  }
+
+  if (!forceNewWorld) {
+    const cached = readCache(repoRoot, selector, heritage);
     if (cached) {
       const slot = cohort.slots[baseSlotOrdinal - 1];
       return Object.freeze({
@@ -313,19 +375,21 @@ export async function resolveModernWorldSelection({
     }
   }
 
-  const authored = await authorWorld({ selector, modelId, requestId });
+  const authored = await authorWorld({ selector, heritage, modelId, requestId });
   const createdAt = now();
   const built = buildAuthoredWorld({
     selector,
+    heritage,
     authored,
     bornAt: cohort.entry.bornAt,
     chronologyEndsAt: cohort.entry.chronologyEndsAt,
     createdAt,
   });
-  const path = cachePath(repoRoot, selector);
+  const path = cachePath(repoRoot, selector, heritage);
   const record = {
     cacheVersion: MODERN_WORLD_CACHE_VERSION,
     selector,
+    heritage,
     createdAt,
     worldSpec: built.worldSpec,
     material: built.material,
