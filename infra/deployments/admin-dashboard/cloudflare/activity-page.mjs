@@ -2,6 +2,8 @@ import { normalizeActivityRecord } from "#infra/telemetry";
 
 const MODES = new Set(["raw", "causal"]);
 const PAGE_SIZE = 25;
+const SCOPED_CAUSAL_SIZE = 1000;
+const SCOPED_CAUSAL_KINDS = new Set(["request", "genesis", "thread"]);
 const DIRECTIONS = new Set(["next", "prev"]);
 const EDGES = new Set(["first", "last"]);
 
@@ -28,6 +30,7 @@ export function parseAdminActivityPage(url) {
   const mode = url.searchParams.get("mode") ?? "raw";
   const direction = url.searchParams.get("direction") ?? "next";
   const edge = url.searchParams.get("edge") ?? "first";
+  const kind = url.searchParams.get("kind") ?? "recent";
   if (!MODES.has(mode)) throw new TypeError("unsupported activity mode");
   if (!DIRECTIONS.has(direction)) throw new TypeError("unsupported activity page direction");
   if (!EDGES.has(edge)) throw new TypeError("unsupported activity page edge");
@@ -35,7 +38,8 @@ export function parseAdminActivityPage(url) {
   if (edge === "last" && rawCursor !== null) throw new TypeError("last page does not accept a cursor");
   const cursor = decodeCursor(rawCursor);
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
-  return Object.freeze({ mode, size:PAGE_SIZE, direction, edge, cursor });
+  const scopedCausal = mode === "causal" && SCOPED_CAUSAL_KINDS.has(kind);
+  return Object.freeze({ mode, size:scopedCausal ? SCOPED_CAUSAL_SIZE : PAGE_SIZE, direction, edge, cursor });
 }
 
 function activityClauses({ environment, query, page }) {
