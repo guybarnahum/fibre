@@ -1,5 +1,3 @@
-import { classifyCloudflareInfraError } from "#infra/providers/cloudflare";
-
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
   return value;
@@ -11,7 +9,6 @@ function boundedDiagnostic(value) {
 }
 
 function deepHealthFailure(service, stateScopeId, error) {
-  const classified = classifyCloudflareInfraError(error, "DURABLE_OBJECT_STATE_HEALTH_FAILED");
   return Response.json({
     ok: false,
     service,
@@ -19,8 +16,11 @@ function deepHealthFailure(service, stateScopeId, error) {
     stateScopeId,
     stateChecked: false,
     error: {
-      ...classified,
+      code: "DURABLE_OBJECT_STATE_HEALTH_FAILED",
       name: error?.name ?? error?.constructor?.name ?? "Error",
+      detail: boundedDiagnostic(error),
+      retryable: error?.retryable === true,
+      overloaded: error?.overloaded === true,
     },
   }, { status: 503 });
 }
@@ -59,7 +59,8 @@ export function createCloudflareDurableObjectServiceRouter({
         throw new TypeError(`${service} Worker requires ${bindingName} Durable Object binding`);
       }
 
-      if (request.method === "GET" && url.pathname === "/internal/health/state") {
+      if (request.method === "GET"
+        && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
         try {
           return await binding.getByName(stateScopeId).fetch(request);
         } catch (error) {
