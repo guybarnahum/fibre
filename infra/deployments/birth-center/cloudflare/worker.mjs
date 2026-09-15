@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
@@ -27,19 +28,12 @@ function createReasoningAdapters(env) {
   });
 }
 
-function reasoningProfileWitness(adapter) {
-  if (!adapter) return null;
-  return Object.freeze({
-    provider: adapter.provider,
-    modelId: adapter.modelId,
-  });
-}
-
 export class FibreBirthCenterDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
     this.schedulerBootstrapped = false;
+    this.health = createCloudflareInfraDriver({ stateScopes:{ [BIRTH_SCOPE_ID]:ctx.storage } }).health;
   }
 
   runtimeForRequest() {
@@ -60,26 +54,20 @@ export class FibreBirthCenterDurableObject extends DurableObject {
   }
 
   async fetch(request) {
-    const cloud = this.runtimeForRequest();
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/internal/health/state") {
-      const health = await cloud.infraDriver.health.check();
+      const health = await this.health.check();
       return Response.json({
         ok: health.level === "normal",
         service: "birth-center",
         provider: health.provider,
         stateScopeId: BIRTH_SCOPE_ID,
         stateChecked: true,
-        capabilities: cloud.infraDriver.capabilities,
+        capabilities:["state"],
         health,
-        pendingBirthCount: cloud.runtime.status().pendingBirthCount,
-        genesisDevelopmentConfigured: cloud.developmentApi !== null,
-        genesisReasoningProfiles: {
-          creative: reasoningProfileWitness(cloud.creativeAdapter),
-          repair: reasoningProfileWitness(cloud.repairAdapter),
-        },
       }, { status:health.level === "normal" ? 200 : 503 });
     }
+    const cloud = this.runtimeForRequest();
     await this.ensureSchedulerForStatefulRequest(cloud);
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
