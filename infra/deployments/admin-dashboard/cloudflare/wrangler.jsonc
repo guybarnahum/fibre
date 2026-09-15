@@ -13,6 +13,7 @@
   },
   "services": [
     { "binding": "WORLD_KERNEL", "service": "fibre-world-kernel" },
+    { "binding": "BIRTH_CENTER", "service": "fibre-birth-center" },
     { "binding": "THREAD_PRESENTATION", "service": "fibre-thread-presentation" }
   ],
   "d1_databases": [
