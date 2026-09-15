@@ -61,13 +61,7 @@ export function createThreadVisualPublicationProcess({
           try {
             const reconciliation = await reconciler.reconcileThread({ threadId });
             const complete = reconciliation?.complete === true;
-            if (queue !== null) {
-              if (complete) await queue.complete(threadId);
-              else await queue.retry(threadId, {
-                code:"VISUAL_PUBLICATION_PENDING",
-                message:reconciliation?.stage ?? "visual publication remains pending",
-              });
-            }
+            if (queue !== null && complete) await queue.complete(threadId);
             const entry = Object.freeze({
               threadId,
               ok: true,
