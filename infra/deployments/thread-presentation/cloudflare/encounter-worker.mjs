@@ -1,3 +1,4 @@
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import baseWorker, { FibrePresentationChannelDurableObject } from "./worker.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
@@ -52,8 +53,26 @@ function worldEncounter(env, activityRecorder, input) {
   }, () => callWorldEncounter(env, input));
 }
 
+async function infraHealth(env) {
+  const health = await createCloudflareInfraDriver({
+    objectBucket:env.PRESENTATION_OBJECTS,
+    presentationChannels:env.PRESENTATION_CHANNELS,
+    catalogDatabase:env.PRESENTATION_CATALOG,
+    workflowBindings:env.ASSET_GENERATION ? { asset_generation_v1:env.ASSET_GENERATION } : {},
+  }).health.check();
+  return Response.json({
+    ok:health.level === "normal",
+    service:"thread-presentation",
+    provider:health.provider,
+    health,
+  }, { status:health.level === "normal" ? 200 : 503 });
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/internal/health/infra") return infraHealth(env);
+
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const encounterApi = createPublicEncounterApi({
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
