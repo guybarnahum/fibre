@@ -236,7 +236,7 @@ function serviceEnvironment(calls) {
   };
 }
 
-test("Cloudflare World restart resumes the durable wake without duplicate semantic admission", async () => {
+test("Cloudflare World restart resumes pending work once and preserves convergence", async () => {
   const storage = durableStorage();
   const calls = { root: 0, genesisPresentation: 0, visualPresentation: 0, visualRequests: [] };
   const env = serviceEnvironment(calls);
@@ -260,32 +260,23 @@ test("Cloudflare World restart resumes the durable wake without duplicate semant
   assert.equal(calls.genesisPresentation, 1);
   assert.equal(calls.root, 1);
   assert.equal(calls.visualPresentation, 1);
-  const firstDemandId = wake.visualPublication.result.results[0].reconciliation.demandId;
-  assert.equal(firstDemandId, "demand_slice_c_cloud_001");
+  assert.equal(wake.visualPublication.result.results[0].reconciliation.demandId, "demand_slice_c_cloud_001");
   const embodiments = recovered.embodimentStore.listCurrent(THREAD_ID);
   assert.equal(embodiments.length, 1);
   assert.equal(embodiments[0].status, "available");
   assert.equal(recovered.embodimentStore.history(THREAD_ID, embodiments[0].embodimentId).length, 2);
-  assert.equal(await recovered.infraDriver.scheduler.get("world"), null, "converged restart recovery must become quiescent");
+  assert.equal(await recovered.infraDriver.scheduler.get("world"), null, "converged recovery must become quiescent");
   await recovered.close();
   recovered = null;
 
   clock = 30_000;
   const replay = createWorldCloudflareRuntime({ storage, env, now, nowMs });
   const replayWake = await replay.reconciliationRuntime.handleWake();
-  assert.equal(calls.genesisPresentation, 1, "delivered Genesis projection must not be duplicated after restart");
-  assert.equal(calls.root, 1, "admitted canonical root must not be regenerated after restart");
-  assert.equal(calls.visualPresentation, 2, "Presentation reconciliation may replay idempotently");
-  const replayDemandId = replayWake.visualPublication.result.results[0].reconciliation.demandId;
-  assert.equal(replayDemandId, firstDemandId, "replayed World state must resolve to the same current Presentation demand");
-  assert.equal(calls.visualRequests.length, 2);
-  assert.equal(calls.visualRequests[0].threadId, THREAD_ID);
-  assert.equal(calls.visualRequests[1].threadId, THREAD_ID);
-  assert.equal(calls.visualRequests[0].embodiment.embodimentId, calls.visualRequests[1].embodiment.embodimentId);
-  assert.equal(calls.visualRequests[0].embodiment.asset.referenceObjectRef, calls.visualRequests[1].embodiment.asset.referenceObjectRef);
-  const replayEmbodiments = replay.embodimentStore.listCurrent(THREAD_ID);
-  assert.equal(replayEmbodiments.length, 1);
-  assert.equal(replay.embodimentStore.history(THREAD_ID, replayEmbodiments[0].embodimentId).length, 2);
+  assert.equal(replayWake.reconciliationPending, false);
+  assert.equal(replayWake.visualPublication.result.results.length, 0, "completed Threads must not reenter visual work");
+  assert.equal(calls.genesisPresentation, 1, "delivered Genesis projection must stay quiescent");
+  assert.equal(calls.root, 1, "admitted canonical root must not be regenerated");
+  assert.equal(calls.visualPresentation, 1, "completed visual publication must not be reinvoked");
   await replay.close({ cancelSchedule: true });
   storage.closeDatabase();
 });
