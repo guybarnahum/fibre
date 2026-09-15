@@ -33,12 +33,15 @@ async function repairBody(request) {
   }
 }
 
-export function createThreadGenesisRepairApi({ repairService, privateToken } = {}) {
+export function createThreadGenesisRepairApi({ repairService, privateToken, onRepair = null } = {}) {
   if (!repairService || typeof repairService.diagnose !== "function" || typeof repairService.repair !== "function") {
     throw new TypeError("Thread repair API requires diagnose() and repair()");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Thread repair privateToken must be at least 16 characters");
+  }
+  if (onRepair !== null && typeof onRepair !== "function") {
+    throw new TypeError("Thread repair onRepair must be a function or null");
   }
 
   return Object.freeze({
@@ -63,6 +66,7 @@ export function createThreadGenesisRepairApi({ repairService, privateToken } = {
         }
         const { repairKey } = await repairBody(request);
         const result = await repairService.repair(threadId, { repairKey });
+        await onRepair?.({ threadId, result });
         return json(result.before.exists ? 200 : 404, {
           contract:"fibre-thread-repair-v0.1",
           result,
