@@ -109,6 +109,18 @@ async function inspectDevelopment({ baseUrl, privateToken, requestId, timeoutMs 
   ), "Genesis development inspection");
 }
 
+async function inspectDevelopmentIfExists({ baseUrl, privateToken, requestId, timeoutMs }) {
+  const response = await fetch(
+    `${baseUrl}/internal/births/develop/${encodeURIComponent(requestId)}/inspection`,
+    {
+      headers: { "x-fibre-private-token": privateToken },
+      signal: AbortSignal.timeout(timeoutMs),
+    },
+  );
+  if (response.status === 404) return null;
+  return json(response, "Genesis development inspection");
+}
+
 async function inspectWorld({ baseUrl, privateToken, plan, timeoutMs }) {
   return json(await fetch(
     `${baseUrl}/internal/genesis/${encodeURIComponent(plan.genesisId)}/threads/${encodeURIComponent(plan.threadId)}/inspection`,
@@ -178,6 +190,7 @@ function usage() {
     "Place is optional; without it Fibre rotates through the existing Genesis Worlds.",
     "Heritage requires an explicit place and creates/reuses a place+heritage World variant.",
     "Unknown place/heritage combinations are authored once and cached under .fibre/genesis/worlds; --new-world forces a fresh World version.",
+    "Set FIBRE_GENESIS_REQUEST_ID to an existing request to resume its persisted request time and durable model calls.",
   ].join("\n");
 }
 
@@ -196,14 +209,28 @@ async function main() {
   }
 
   const deployed = deployment(REPO_ROOT);
+  const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
+  const birthCenter = serviceBase(deployed, "birth-center");
+  const worldKernel = serviceBase(deployed, "world-kernel");
+  const threadPresentation = serviceBase(deployed, "thread-presentation");
+  const viewerOrigin = required("staging viewer origin", deployed.externalViewerOrigin);
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
   const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.json");
   if (materialFixture.fixtureVersion !== "pr39-modern-birth-material-v1") {
     throw new Error("unexpected modern birth material fixture version");
   }
 
-  const requestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-modern-${Date.now().toString(36)}`;
-  const requestedAt = process.env.FIBRE_GENESIS_REQUESTED_AT?.trim() || new Date().toISOString();
+  const explicitRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || null;
+  const requestId = explicitRequestId ?? `genesis-modern-${Date.now().toString(36)}`;
+  const existing = explicitRequestId === null
+    ? null
+    : await inspectDevelopmentIfExists({ baseUrl: birthCenter, privateToken, requestId, timeoutMs });
+  const persistedRequestedAt = existing?.inspection?.requestedAt ?? null;
+  const explicitRequestedAt = process.env.FIBRE_GENESIS_REQUESTED_AT?.trim() || null;
+  if (persistedRequestedAt !== null && explicitRequestedAt !== null && persistedRequestedAt !== explicitRequestedAt) {
+    throw new Error(`existing Genesis request ${requestId} was created at ${persistedRequestedAt}; do not override FIBRE_GENESIS_REQUESTED_AT when resuming`);
+  }
+  const requestedAt = explicitRequestedAt ?? persistedRequestedAt ?? new Date().toISOString();
   const baseSlotOrdinal = selectModernBirthSlot({
     requestId,
     slotCount: cohort.slots.length,
@@ -228,15 +255,14 @@ async function main() {
     sexSelection: options.sex,
   });
   const plan = buildGenesisDevelopmentPlan(body);
-  const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
-  const birthCenter = serviceBase(deployed, "birth-center");
-  const worldKernel = serviceBase(deployed, "world-kernel");
-  const threadPresentation = serviceBase(deployed, "thread-presentation");
-  const viewerOrigin = required("staging viewer origin", deployed.externalViewerOrigin);
+  if (existing !== null && existing.inspection.requestDigest !== plan.requestDigest) {
+    throw new Error(`existing Genesis request ${requestId} does not match the supplied sex/place/heritage inputs`);
+  }
 
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-start",
     requestId,
+    requestMode: existing === null ? "new" : "resume",
     sexSelection: options.sex ?? "derived",
     placeSelection: selection.selector?.display ?? null,
     heritageSelection: selection.heritage?.display ?? null,
@@ -271,6 +297,7 @@ async function main() {
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-complete",
     requestId,
+    requestMode: existing === null ? "new" : "resume",
     sexSelection: options.sex ?? "derived",
     placeSelection: selection.selector?.display ?? null,
     heritageSelection: selection.heritage?.display ?? null,
