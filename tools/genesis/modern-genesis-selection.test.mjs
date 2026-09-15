@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import {
+  createWorldAuthoringFetch,
   normalizeModernWorldSelector,
   parseModernGenesisArgs,
   resolveModernWorldSelection,
@@ -36,17 +37,40 @@ const authoredJerusalem = Object.freeze({
   intellectualEnvironment:"School, books, news, internet access, public cultural institutions and ordinary conversation provide varied sources of ideas and disagreement.",
 });
 
+test("World authoring omits unsupported reasoning-model sampling parameters", async () => {
+  let sent = null;
+  const fetchImpl = createWorldAuthoringFetch(async (_url, options) => {
+    sent = JSON.parse(options.body);
+    return { ok:true };
+  });
+  await fetchImpl("https://example.invalid", {
+    method:"POST",
+    body:JSON.stringify({
+      model:"gpt-5.1-2025-11-13",
+      temperature:0,
+      top_p:1,
+      reasoning:{ effort:"low" },
+      input:[],
+    }),
+  });
+  assert.equal(Object.hasOwn(sent, "temperature"), false);
+  assert.equal(Object.hasOwn(sent, "top_p"), false);
+  assert.deepEqual(sent.reasoning, { effort:"low" });
+});
+
 test("modern Genesis accepts explicit sex plus Country/City and reuses authored Worlds", async (t) => {
   const options = parseModernGenesisArgs(["--female", "--Israel/jerusalem"]);
   assert.equal(options.sex, "female");
   assert.equal(options.world.display, "Israel/Jerusalem");
 
+  const existingRoot = mkdtempSync(join(tmpdir(), "fibre-existing-world-"));
+  t.after(() => rmSync(existingRoot, { recursive:true, force:true }));
   const existing = await resolveModernWorldSelection({
     selector:normalizeModernWorldSelector("Brazil/Recife"),
     cohort,
     materialFixture,
     fixture,
-    repoRoot:mkdtempSync(join(tmpdir(), "fibre-existing-world-")),
+    repoRoot:existingRoot,
     requestId:"birth-existing-world",
     baseSlotOrdinal:1,
   });
