@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -11,8 +12,13 @@ import {
 } from "#services/birth-center/src/genesis-development-plan.mjs";
 import {
   composeModernSubjectIdentity,
+  freshModernParticipants,
   selectModernBirthSlot,
 } from "./modern-birth-material.mjs";
+import {
+  parseModernGenesisArgs,
+  resolveModernWorldSelection,
+} from "./modern-genesis-selection.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -43,39 +49,43 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function modernRequest({ requestId, requestedAt, explicitSlot }) {
-  const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
-  const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.json");
-  if (materialFixture.fixtureVersion !== "pr39-modern-birth-material-v1") {
-    throw new Error("unexpected modern birth material fixture version");
-  }
-  const slotOrdinal = selectModernBirthSlot({
-    requestId,
-    slotCount: cohort.slots.length,
-    explicitSlot,
-  });
-  const slot = cohort.slots[slotOrdinal - 1];
-  const material = materialFixture.slots.find(({ slot: ordinal }) => ordinal === slotOrdinal);
-  if (!slot || !material) throw new TypeError(`modern Genesis slot ${slotOrdinal} is unavailable`);
-  const worldSpec = fixture(slot.worldSpecPath);
-  const genome = fixture(slot.genomePath);
-  const subjectIdentity = composeModernSubjectIdentity({ requestId, material });
+function modernRequest({ requestId, requestedAt, cohort, selection }) {
+  const genome = fixture(selection.genomePath);
+  const subjectIdentity = composeModernSubjectIdentity({ requestId, material: selection.material });
   return Object.freeze({
-    slotOrdinal,
-    body: Object.freeze({
-      requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
-      requestId,
-      requestedAt,
-      worldSpec,
-      subjectIdentity,
-      genomeValues: genome.loci.map((locus) => locus.value),
-      participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
-      placeAffordances: slot.placeAffordances,
-      bornAt: cohort.entry.bornAt,
-      chronologyEndsAt: cohort.entry.chronologyEndsAt,
-      timeZone: slot.timeZone,
-    }),
+    requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
+    requestId,
+    requestedAt,
+    worldSpec: selection.worldSpec,
+    subjectIdentity,
+    genomeValues: genome.loci.map((locus) => locus.value),
+    participants: freshModernParticipants({ requestId, participants: selection.participants }),
+    placeAffordances: selection.placeAffordances,
+    bornAt: cohort.entry.bornAt,
+    chronologyEndsAt: cohort.entry.chronologyEndsAt,
+    timeZone: selection.timeZone,
   });
+}
+
+function alternateRequestId(baseRequestId, desiredSex, attempt) {
+  const witness = createHash("sha256")
+    .update(`${baseRequestId}:${desiredSex}:${attempt}`)
+    .digest("hex")
+    .slice(0, 8);
+  return `${baseRequestId}-${desiredSex}-${attempt}-${witness}`;
+}
+
+function requestAndPlanForSex({ baseRequestId, requestedAt, desiredSex, cohort, selection }) {
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    const requestId = attempt === 0 ? baseRequestId : alternateRequestId(baseRequestId, desiredSex, attempt);
+    const body = modernRequest({ requestId, requestedAt, cohort, selection });
+    const plan = buildGenesisDevelopmentPlan(body);
+    const sex = genesisSexForThread({ threadId: plan.threadId });
+    if (desiredSex === null || sex === desiredSex) {
+      return Object.freeze({ requestId, body, plan, sex, requestIdAdjusted: requestId !== baseRequestId });
+    }
+  }
+  throw new Error(`could not derive a ${desiredSex} modern Genesis request identity`);
 }
 
 async function json(response, label) {
@@ -162,19 +172,67 @@ function assertModernReference({ body, plan, world, presentation }) {
   return Object.freeze({ expectedName, expectedSex, identity });
 }
 
+function usage() {
+  return [
+    "Modern Genesis staging birth",
+    "",
+    "  npm run genesis:modern:staging -- --female --Israel/Jerusalem",
+    "  npm run genesis:modern:staging -- --male --Brazil/Recife",
+    "  npm run genesis:modern:staging -- --new-world --female --Georgia/Tbilisi",
+    "",
+    "Sex is optional; without --female/--male Fibre derives sex from the Thread identity.",
+    "Country/City is optional; without it Fibre rotates through the existing Genesis Worlds.",
+    "An unknown Country/City is authored once and cached under .fibre/genesis/worlds; --new-world forces a fresh World version.",
+  ].join("\n");
+}
+
 async function main() {
+  const options = parseModernGenesisArgs(process.argv.slice(2));
+  if (options.help) {
+    process.stdout.write(`${usage()}\n`);
+    return;
+  }
+
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
   const rawExplicitSlot = process.env.FIBRE_GENESIS_E2E_SLOT?.trim() || null;
   const explicitSlot = rawExplicitSlot === null ? null : Number.parseInt(rawExplicitSlot, 10);
   if (rawExplicitSlot !== null && (!Number.isSafeInteger(explicitSlot) || explicitSlot < 1)) {
     throw new TypeError("FIBRE_GENESIS_E2E_SLOT must be a positive integer");
   }
-  const requestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-modern-${Date.now().toString(36)}`;
-  const requestedAt = process.env.FIBRE_GENESIS_REQUESTED_AT?.trim() || new Date().toISOString();
-  const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
-  const { body, slotOrdinal } = modernRequest({ requestId, requestedAt, explicitSlot });
-  const plan = buildGenesisDevelopmentPlan(body);
+
   const deployed = deployment(REPO_ROOT);
+  const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
+  const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.json");
+  if (materialFixture.fixtureVersion !== "pr39-modern-birth-material-v1") {
+    throw new Error("unexpected modern birth material fixture version");
+  }
+
+  const baseRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-modern-${Date.now().toString(36)}`;
+  const requestedAt = process.env.FIBRE_GENESIS_REQUESTED_AT?.trim() || new Date().toISOString();
+  const baseSlotOrdinal = selectModernBirthSlot({
+    requestId: baseRequestId,
+    slotCount: cohort.slots.length,
+    explicitSlot,
+  });
+  const selection = await resolveModernWorldSelection({
+    selector: options.world,
+    forceNewWorld: options.forceNewWorld,
+    cohort,
+    materialFixture,
+    fixture,
+    repoRoot: REPO_ROOT,
+    requestId: baseRequestId,
+    baseSlotOrdinal,
+  });
+  const chosen = requestAndPlanForSex({
+    baseRequestId,
+    requestedAt,
+    desiredSex: options.sex,
+    cohort,
+    selection,
+  });
+  const { requestId, body, plan } = chosen;
+  const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
   const birthCenter = serviceBase(deployed, "birth-center");
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
@@ -183,7 +241,12 @@ async function main() {
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-start",
     requestId,
-    slot: slotOrdinal,
+    requestIdBase: chosen.requestIdAdjusted ? baseRequestId : undefined,
+    sexSelection: options.sex ?? "derived",
+    worldSelection: selection.selector?.display ?? null,
+    worldMode: selection.mode,
+    worldSpecId: body.worldSpec.worldSpecId,
+    genomeSlot: selection.slotOrdinal,
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     identityMode: "fresh_birth_composition",
@@ -212,7 +275,11 @@ async function main() {
   process.stdout.write(`${JSON.stringify({
     event: "modern-thread-birth-complete",
     requestId,
-    slot: slotOrdinal,
+    requestIdBase: chosen.requestIdAdjusted ? baseRequestId : undefined,
+    sexSelection: options.sex ?? "derived",
+    worldSelection: selection.selector?.display ?? null,
+    worldMode: selection.mode,
+    genomeSlot: selection.slotOrdinal,
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     fibreIdentityNumber: birth.fibreIdentityNumber,
