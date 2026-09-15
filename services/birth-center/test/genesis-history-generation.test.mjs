@@ -165,3 +165,41 @@ test("Birth historical generation repairs local civil-time narration before spen
   assert.deepEqual(result.calls.map((call) => call.kind), ["initial", "form-repair-1"]);
   assert.deepEqual(result.budgetState, { generatedVersions: 2, formRepairs: 1, recordRetries: 0 });
 });
+
+test("Birth historical generation repairs conflicting scene setting before compile", async () => {
+  let generationCalls = 0;
+  const adapter = {
+    invoke: async () => {
+      generationCalls += 1;
+      return {
+        output: { ...validRealization(), observableAction: "At the market, the subject and peer compare two labels and correct one mismatch." },
+        provenance: { provider: "fixture" },
+      };
+    },
+  };
+  let repairCalls = 0;
+  const repairAdapter = {
+    invoke: async (request) => {
+      repairCalls += 1;
+      assert.equal(request.input.failedGate, "pass_a_place_consistency");
+      assert.equal(request.input.authoritativePlaceKind, "school");
+      assert.match(request.input.repairInstruction, /remove the conflicting explicit scene-setting wording/iu);
+      return {
+        output: { observableAction: validRealization().observableAction },
+        provenance: { provider: "fixture-repair" },
+      };
+    },
+  };
+  const result = await generateGenesisHistoricalEpisode({
+    adapter,
+    repairAdapter,
+    passAInput: passAInput(),
+    envelope: envelope(),
+    clientRequestId: "birth-history-place-repair",
+  });
+  assert.equal(generationCalls, 1);
+  assert.equal(repairCalls, 1);
+  assert.equal(result.episode.placeRef, envelope().placeRef);
+  assert.deepEqual(result.calls.map((call) => call.kind), ["initial", "form-repair-1"]);
+  assert.deepEqual(result.budgetState, { generatedVersions: 2, formRepairs: 1, recordRetries: 0 });
+});
