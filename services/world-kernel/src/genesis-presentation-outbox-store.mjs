@@ -43,6 +43,7 @@ export class GenesisPresentationOutboxStore {
              attempt_count,last_attempt_at,last_error_json,delivered_at
       FROM ${OUTBOX_TABLE}
       WHERE state='pending'
+        AND COALESCE(json_extract(last_error_json,'$.retryable'),1) <> 0
       ORDER BY published_at ASC, genesis_id ASC
       LIMIT ?
     `).all(limit).map(rowToRecord);
