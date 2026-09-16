@@ -43,7 +43,7 @@ function labelFor(code) {
 
 function stateText(finding) {
   if (finding.state === "healthy") return "healthy";
-  if (finding.action === "migrate_genesis_sex") return `deterministic Genesis migration · ${finding.ruleId ?? "sex rule"}`;
+  if (finding.migration?.id) return `migration required · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "repairable") return "repairable";
   if (finding.state === "migration_required") return "migration required";
   if (finding.state === "operator_decision_required") return "operator review required";
@@ -52,7 +52,11 @@ function stateText(finding) {
 }
 
 function actionable(diagnosis) {
-  return (diagnosis?.findings ?? []).filter((finding) => typeof finding?.action === "string" && finding.action !== "");
+  return (diagnosis?.findings ?? []).filter((finding) => finding?.state === "repairable" && typeof finding?.action === "string" && finding.action !== "");
+}
+
+function migrations(diagnosis) {
+  return (diagnosis?.findings ?? []).filter((finding) => typeof finding?.migration?.id === "string");
 }
 
 function unresolved(diagnosis) {
@@ -75,6 +79,38 @@ async function applyRepair(threadId) {
     method:"POST",
     headers:{ "content-type":"application/json", Accept:"application/json" },
     body:JSON.stringify({ repairKey }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  return payload;
+}
+
+function collectMigrationInput(migration) {
+  const fields = migration.input?.fields;
+  if (!Array.isArray(fields) || fields.length === 0) return null;
+  const input = {};
+  for (const field of fields) {
+    if (typeof field?.name !== "string" || field.name === "") continue;
+    const answer = window.prompt(field.label ?? human(field.name), field.default ?? "");
+    if (answer === null) return undefined;
+    if (field.required === true && answer.trim() === "") throw new Error(`${field.label ?? human(field.name)} is required`);
+    input[field.name] = answer;
+  }
+  return input;
+}
+
+async function applyMigration(threadId, migration) {
+  const input = collectMigrationInput(migration);
+  if (input === undefined) return null;
+  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
+    method:"POST",
+    headers:{ "content-type":"application/json", Accept:"application/json" },
+    body:JSON.stringify({
+      action:"migrate",
+      migrationId:migration.id,
+      migrationKey:`admin_migration_${Date.now().toString(36)}`,
+      input,
+    }),
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
@@ -127,7 +163,7 @@ function recoveryPlan(host, threadId, diagnosis, reconciliation) {
     plan.append(
       el("strong", null, "Dead letter quarantined"),
       el("span", null, reconciliation.lastError?.message ?? "Background reconciliation stopped after a terminal failure."),
-      el("small", null, "Resolve the authoritative Thread findings above before retrying; Fibre will not burn retries on a known-bad Thread."),
+      el("small", null, "Resolve migration or authoritative Thread findings above before retrying; Fibre will not burn retries on a known-bad Thread."),
     );
     host.append(plan);
     return;
@@ -156,6 +192,42 @@ function recoveryPlan(host, threadId, diagnosis, reconciliation) {
   host.append(plan, button);
 }
 
+function migrationPlan(host, threadId, diagnosis, reconciliation) {
+  const available = migrations(diagnosis);
+  if (available.length === 0) return false;
+  const plan = el("div", "thread-repair-plan");
+  plan.append(
+    el("strong", null, `${available.length} authoritative ${available.length === 1 ? "migration" : "migrations"} available`),
+    el("small", null, "Migration changes a legacy authoritative representation only from declared evidence; it is distinct from repair and recovery."),
+  );
+  for (const finding of available) {
+    const migration = finding.migration;
+    const button = el("button", "primary thread-repair-button", `Migrate · ${migration.label ?? human(migration.id)}`);
+    button.type = "button";
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      button.textContent = "Migrating…";
+      try {
+        const payload = await applyMigration(threadId, migration);
+        if (payload === null) {
+          button.disabled = false;
+          button.textContent = `Migrate · ${migration.label ?? human(migration.id)}`;
+          return;
+        }
+        const next = Object.freeze({ diagnosis:payload.migration.after, reconciliation:payload.reconciliation ?? reconciliation });
+        renderHealth(host, threadId, next, `Migration complete · ${migration.label ?? human(migration.id)}.`);
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = `Migrate · ${migration.label ?? human(migration.id)}`;
+        host.append(el("div", "error-box", `Thread migration failed: ${error instanceof Error ? error.message : String(error)}`));
+      }
+    });
+    plan.append(button);
+  }
+  host.append(plan);
+  return true;
+}
+
 function renderHealth(host, threadId, health, message = null) {
   const { diagnosis, reconciliation } = health;
   host.replaceChildren();
@@ -170,6 +242,8 @@ function renderHealth(host, threadId, health, message = null) {
   host.append(rows);
 
   if (message) host.append(el("p", "thread-repair-message", message));
+  if (migrationPlan(host, threadId, diagnosis, reconciliation)) return;
+
   const actions = actionable(diagnosis);
   if (actions.length === 0) {
     recoveryPlan(host, threadId, diagnosis, reconciliation);
@@ -177,14 +251,9 @@ function renderHealth(host, threadId, health, message = null) {
   }
 
   const plan = el("div", "thread-repair-plan");
-  plan.append(el("strong", null, `${actions.length} deterministic ${actions.length === 1 ? "action" : "actions"}`));
-  for (const finding of actions) {
-    const item = el("span", null, finding.action === "migrate_genesis_sex"
-      ? `Restore missing sex using ${finding.ruleId} from immutable Thread identity.`
-      : `${human(finding.action)}.`);
-    plan.append(item);
-  }
-  plan.append(el("small", null, "Repair does not rewrite World history or invent identity facts."));
+  plan.append(el("strong", null, `${actions.length} deterministic ${actions.length === 1 ? "repair" : "repairs"}`));
+  for (const finding of actions) plan.append(el("span", null, `${human(finding.action)}.`));
+  plan.append(el("small", null, "Repair restores state already derivable from current authority; it does not migrate legacy authority or invent identity facts."));
 
   const button = el("button", "primary thread-repair-button", reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix Thread");
   button.type = "button";
@@ -198,7 +267,7 @@ function renderHealth(host, threadId, health, message = null) {
       let current = Object.freeze({ diagnosis:result.after, reconciliation:payload.reconciliation ?? null });
       renderHealth(host, threadId, current, names ? `Applied: ${names}` : "No repair action was required.");
 
-      for (let attempt = 0; attempt < 30 && actionable(current.diagnosis).some((entry) => entry.state === "repairable"); attempt += 1) {
+      for (let attempt = 0; attempt < 30 && actionable(current.diagnosis).length > 0; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
         current = await requestHealth(threadId);
         renderHealth(host, threadId, current, "Waiting for asynchronous repair work to settle…");
