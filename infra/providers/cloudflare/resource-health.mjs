@@ -92,12 +92,12 @@ function d1Usage(groups, resources) {
   }));
 }
 
-function durableObjectUsage(invocationGroups, periodicGroups, environment) {
+function durableObjectUsage(invocationGroups, periodicGroups) {
   const scriptsByNamespace = new Map();
   for (const group of invocationGroups) {
     const namespaceId = group?.dimensions?.namespaceId;
     const scriptName = group?.dimensions?.scriptName;
-    if (typeof namespaceId !== "string" || !isEnvironmentScript(scriptName, environment)) continue;
+    if (typeof namespaceId !== "string" || typeof scriptName !== "string") continue;
     let scripts = scriptsByNamespace.get(namespaceId);
     if (!scripts) {
       scripts = new Set();
@@ -109,22 +109,32 @@ function durableObjectUsage(invocationGroups, periodicGroups, environment) {
   const usageByNamespace = new Map();
   for (const group of periodicGroups) {
     const namespaceId = group?.dimensions?.namespaceId;
-    if (typeof namespaceId !== "string" || !scriptsByNamespace.has(namespaceId)) continue;
+    if (typeof namespaceId !== "string") continue;
     const current = usageByNamespace.get(namespaceId) ?? { namespaceId, rowsRead:0, rowsWritten:0 };
     current.rowsRead += Number(group?.sum?.rowsRead ?? 0);
     current.rowsWritten += Number(group?.sum?.rowsWritten ?? 0);
     usageByNamespace.set(namespaceId, current);
   }
 
-  return Object.freeze([...scriptsByNamespace.entries()].map(([namespaceId, scripts]) => {
+  const namespaceIds = new Set([...scriptsByNamespace.keys(), ...usageByNamespace.keys()]);
+  return Object.freeze([...namespaceIds].map((namespaceId) => {
     const usage = usageByNamespace.get(namespaceId) ?? { rowsRead:0, rowsWritten:0 };
+    const scripts = scriptsByNamespace.get(namespaceId) ?? new Set();
     return Object.freeze({
       namespaceId,
-      scriptName:[...scripts].sort()[0],
+      scriptNames:Object.freeze([...scripts].sort()),
       rowsRead:usage.rowsRead,
       rowsWritten:usage.rowsWritten,
     });
   }).sort((left, right) => right.rowsRead - left.rowsRead));
+}
+
+function durableObjectTotals(durableObjects) {
+  return Object.freeze(durableObjects.reduce((totals, item) => {
+    totals.rowsRead += item.rowsRead;
+    totals.rowsWritten += item.rowsWritten;
+    return totals;
+  }, { rowsRead:0, rowsWritten:0 }));
 }
 
 function level(value, limit) {
@@ -134,30 +144,28 @@ function level(value, limit) {
   return "normal";
 }
 
-function checksFor({ d1, durableObjects, workers, limits }) {
+function checksFor({ d1, durableObjectTotal, workers, limits }) {
   const checks = [];
   for (const database of d1) {
     checks.push(Object.freeze({ kind:"d1_rows_read", resource:database.name, value:database.rowsRead, limit:limits.d1RowsReadDaily, level:level(database.rowsRead, limits.d1RowsReadDaily) }));
     checks.push(Object.freeze({ kind:"d1_rows_written", resource:database.name, value:database.rowsWritten, limit:limits.d1RowsWrittenDaily, level:level(database.rowsWritten, limits.d1RowsWrittenDaily) }));
   }
-  for (const durableObject of durableObjects) {
-    checks.push(Object.freeze({
-      kind:"durable_object_rows_read",
-      resource:durableObject.scriptName,
-      namespaceId:durableObject.namespaceId,
-      value:durableObject.rowsRead,
-      limit:limits.durableObjectRowsReadDaily,
-      level:level(durableObject.rowsRead, limits.durableObjectRowsReadDaily),
-    }));
-    checks.push(Object.freeze({
-      kind:"durable_object_rows_written",
-      resource:durableObject.scriptName,
-      namespaceId:durableObject.namespaceId,
-      value:durableObject.rowsWritten,
-      limit:limits.durableObjectRowsWrittenDaily,
-      level:level(durableObject.rowsWritten, limits.durableObjectRowsWrittenDaily),
-    }));
-  }
+  checks.push(Object.freeze({
+    kind:"durable_object_rows_read",
+    resource:"durable-objects-account",
+    scope:"account",
+    value:durableObjectTotal.rowsRead,
+    limit:limits.durableObjectRowsReadDaily,
+    level:level(durableObjectTotal.rowsRead, limits.durableObjectRowsReadDaily),
+  }));
+  checks.push(Object.freeze({
+    kind:"durable_object_rows_written",
+    resource:"durable-objects-account",
+    scope:"account",
+    value:durableObjectTotal.rowsWritten,
+    limit:limits.durableObjectRowsWrittenDaily,
+    level:level(durableObjectTotal.rowsWritten, limits.durableObjectRowsWrittenDaily),
+  }));
   for (const worker of workers) {
     checks.push(Object.freeze({ kind:"worker_requests_15m", resource:worker.scriptName, value:worker.requests, limit:limits.workerRequests15m, level:level(worker.requests, limits.workerRequests15m) }));
     checks.push(Object.freeze({ kind:"worker_errors_15m", resource:worker.scriptName, value:worker.errors, limit:limits.workerErrors15m, level:level(worker.errors, limits.workerErrors15m) }));
@@ -206,9 +214,9 @@ export async function sampleCloudflareResourceHealth({
   const durableObjects = durableObjectUsage(
     account.durableObjectsInvocationsAdaptiveGroups ?? [],
     account.durableObjectsPeriodicGroups ?? [],
-    env,
   );
-  const checks = checksFor({ d1, durableObjects, workers, limits });
+  const durableObjectTotal = durableObjectTotals(durableObjects);
+  const checks = checksFor({ d1, durableObjectTotal, workers, limits });
   return Object.freeze({
     contract:"fibre-cloudflare-resource-health-v0.2",
     environment:env,
@@ -218,6 +226,7 @@ export async function sampleCloudflareResourceHealth({
     limits,
     d1,
     durableObjects,
+    durableObjectTotal,
     workers,
     checks,
   });
