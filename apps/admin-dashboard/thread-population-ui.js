@@ -241,18 +241,25 @@ function enterThreads() {
   void loadPopulation();
 }
 
-function exitThreads() {
+function exitThreads(nextMode) {
   if (!active) return;
   active = false;
   view.hidden = true;
   setActivityChrome(false);
   $("#auto-refresh").checked = priorAutoRefresh;
   $("#auto-refresh").dispatchEvent(new Event("change"));
+
+  const params = new URLSearchParams(location.search);
+  if (params.get("mode") === "threads") {
+    params.set("mode", nextMode);
+    history.replaceState(null, "", `${location.pathname}?${params}`);
+    $("#refresh-button").click();
+  }
 }
 
 $("#view-threads").addEventListener("click", enterThreads);
-for (const id of ["view-causal", "view-raw"]) {
-  $(`#${id}`).addEventListener("click", exitThreads, { capture:true });
+for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
+  $(`#${id}`).addEventListener("click", () => exitThreads(nextMode));
 }
 $("#refresh-button").addEventListener("click", (event) => {
   if (!active) return;
