@@ -30,7 +30,6 @@ import {
   AUTOBIOGRAPHICAL_MEMORY_RECORDED,
   applyAutobiographicalMemoryRecordedEvent,
 } from "./autobiographical-memory-anchor.mjs";
-import { applyThreadIdentityAmendmentEvent } from "./thread-identity-amendment-domain.mjs";
 
 export function validateThreadSnapshot(thread) {
   assertPlainObject("thread", thread);
@@ -193,6 +192,55 @@ function applyGenesisSexMigration(thread, event) {
   return replayed;
 }
 
+function applyThreadIdentityUpdate(thread, event) {
+  if (thread === null) throw new IntegrityError(`identity event ${event.eventId} appears before a seed event`);
+  if (event.commandId !== null || event.commandDigest !== null) throw new IntegrityError(`identity event ${event.eventId} must not carry command metadata`);
+  if (event.threadId !== thread.threadId) throw new IntegrityError(`identity event ${event.eventId} belongs to another Thread`);
+  if (thread.version !== event.expectedVersion) throw new IntegrityError(`identity event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`);
+  assertExactKeys(`identity event ${event.eventId} payload`, event.payload, ["changes","previous","operationKey"]);
+  assertPlainObject(`identity event ${event.eventId} changes`, event.payload.changes);
+  assertPlainObject(`identity event ${event.eventId} previous`, event.payload.previous);
+  assertNonEmpty(`identity event ${event.eventId} operationKey`, event.payload.operationKey);
+  const keys = Object.keys(event.payload.changes).sort();
+  const previousKeys = Object.keys(event.payload.previous).sort();
+  if (keys.length === 0 || keys.some((key) => !["name","sex"].includes(key))) {
+    throw new IntegrityError(`identity event ${event.eventId} has unsupported changes`);
+  }
+  if (canonicalJson(keys) !== canonicalJson(previousKeys)) {
+    throw new IntegrityError(`identity event ${event.eventId} previous identity does not match changes`);
+  }
+  if (event.provenance.source !== "admin_operator"
+    || event.provenance.operationKey !== event.payload.operationKey
+    || event.provenance.notThreadLifeEvent !== true) {
+    throw new IntegrityError(`identity event ${event.eventId} lacks Admin update provenance`);
+  }
+
+  const identity = { ...thread.identity };
+  if (keys.includes("name")) {
+    assertNonEmpty(`identity event ${event.eventId} name`, event.payload.changes.name);
+    if (event.payload.previous.name !== thread.identity.name) {
+      throw new IntegrityError(`identity event ${event.eventId} previous name does not match replay`);
+    }
+    identity.name = event.payload.changes.name;
+  }
+  if (keys.includes("sex")) {
+    if (thread.identity.sex !== undefined || event.payload.previous.sex !== null) {
+      throw new IntegrityError(`identity event ${event.eventId} attempts to replace existing sex`);
+    }
+    identity.sex = normalizeGenesisSex(event.payload.changes.sex);
+  }
+
+  const replayed = {
+    ...thread,
+    version:thread.version + 1,
+    identity,
+    provenance:{ ...thread.provenance, lastEventId:event.eventId },
+  };
+  validateStoredThread(event.threadId, replayed);
+  if (replayed.version !== event.resultingVersion) throw new IntegrityError(`identity event ${event.eventId} has an invalid resulting version`);
+  return replayed;
+}
+
 export function applyEventToThread(thread, event) {
   if (event.eventType === "THREAD_SEEDED") {
     const snapshot = event.payload.snapshot;
@@ -209,8 +257,8 @@ export function applyEventToThread(thread, event) {
   if (event.eventType === "GENESIS_SEX_MIGRATED") {
     return applyGenesisSexMigration(thread, event);
   }
-  if (event.eventType === "LEGACY_SEX_ASSIGNED" || event.eventType === "THREAD_NAME_CHANGED") {
-    return applyThreadIdentityAmendmentEvent(thread, event, { validateStoredThread, ErrorType:IntegrityError });
+  if (event.eventType === "THREAD_IDENTITY_UPDATED") {
+    return applyThreadIdentityUpdate(thread, event);
   }
   if (event.eventType === "SELF_MODEL_UPDATED") {
     if (thread === null) throw new IntegrityError(`event ${event.eventId} appears before a seed event`);
