@@ -107,9 +107,10 @@ function actionCell(thread) {
     const reason = thread.health === "migration_required" ? "Migration required"
       : thread.health === "operator_decision_required" ? "Review required"
         : thread.health === "integrity_error" ? "Authority conflict"
-          : thread.health === "unavailable" ? "Unavailable"
-            : thread.reconciliation?.state === "pending" ? "Pending"
-              : "—";
+          : thread.health === "unrecoverable" ? "Not admitted"
+            : thread.health === "unavailable" ? "Unavailable"
+              : thread.reconciliation?.state === "pending" ? "Pending"
+                : "—";
     cell.textContent = reason;
     return cell;
   }
@@ -179,9 +180,20 @@ function renderSummary(summary) {
   for (const [id, value] of Object.entries(values)) $(`#${id}`).textContent = value ?? 0;
 }
 
+function holdThreadsMode() {
+  if (!active) return;
+  $("#causal-view").hidden = true;
+  $("#raw-view").hidden = true;
+  view.hidden = false;
+  document.querySelector("#thread-context").hidden = true;
+  for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.id === "view-threads");
+  $("#chain-title").textContent = "Threads";
+}
+
 async function loadPopulation() {
   if (!active || loading) return;
   loading = true;
+  holdThreadsMode();
   $("#refresh-button").disabled = true;
   $("#refresh-button").textContent = "Refreshing…";
   $("#chain-summary").textContent = "Reading Activity-discovered Threads and authoritative World health…";
@@ -200,6 +212,7 @@ async function loadPopulation() {
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     loading = false;
+    holdThreadsMode();
     $("#refresh-button").disabled = false;
     $("#refresh-button").textContent = "Refresh";
   }
@@ -221,11 +234,7 @@ function enterThreads() {
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
   setActivityChrome(true);
-  $("#causal-view").hidden = true;
-  $("#raw-view").hidden = true;
-  view.hidden = false;
-  for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.id === "view-threads");
-  $("#chain-title").textContent = "Threads";
+  holdThreadsMode();
   $("#chain-summary").textContent = "Loading population…";
   const params = new URLSearchParams(location.search); params.set("mode", "threads");
   history.replaceState(null, "", `${location.pathname}?${params}`);
