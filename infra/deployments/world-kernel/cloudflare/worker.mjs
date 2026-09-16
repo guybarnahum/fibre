@@ -51,8 +51,8 @@ function threadIdentity(runtime, threadId) {
   });
 }
 
-async function diagnosisBatch(request, runtime) {
-  if (!privateOperatorAuthorized(request, runtime.env ?? null)) {
+async function diagnosisBatch(request, runtime, env) {
+  if (!privateOperatorAuthorized(request, env)) {
     return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
   }
   let body;
@@ -113,11 +113,10 @@ export class FibreWorldDurableObject extends DurableObject {
       }, { status:health.level === "normal" ? 200 : 503 });
     }
     const runtime = this.runtimeForRequest();
-    runtime.env = this.env;
     if (url.pathname === THREAD_DIAGNOSIS_BATCH_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
       if (request.method !== "POST") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
-      return diagnosisBatch(request, runtime);
+      return diagnosisBatch(request, runtime, this.env);
     }
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     if (identityMatch !== null) {
