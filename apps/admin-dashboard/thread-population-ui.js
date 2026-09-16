@@ -152,7 +152,7 @@ function threadRow(thread) {
   person.append(link, ids);
 
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
-  const lifecycle = document.createElement("td"); lifecycle.textContent = identity.lifecycleStatus ? human(identity.lifecycleStatus) : "—";
+  const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
   const health = document.createElement("td"); health.append(badge(thread.health, healthKind(thread.health)));
   const reconciliation = document.createElement("td");
   const reconciliationState = reconciliationLabel(thread.reconciliation);
@@ -163,7 +163,7 @@ function threadRow(thread) {
   if (thread.reconciliation?.lastError?.message) reconciliation.title = thread.reconciliation.lastError.message;
   const lastActivity = document.createElement("td"); lastActivity.className = "time"; lastActivity.textContent = when(thread.lastActivityAt);
 
-  tr.append(person, sex, lifecycle, health, reconciliation, lastActivity, actionCell(thread));
+  tr.append(person, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
   return tr;
 }
 
