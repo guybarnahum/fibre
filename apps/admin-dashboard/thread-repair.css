@@ -44,7 +44,34 @@
 .thread-repair-plan small,
 .thread-repair-message { opacity: .68; }
 .thread-repair-message { margin: 12px 0 0; }
-.thread-repair-button { margin-top: 12px; }
+.thread-repair-button { margin-top: 12px; justify-self:start; }
+
+.thread-population-metrics {
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+}
+.thread-population-metrics article {
+  display:grid;
+  gap:4px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-subtle);
+}
+.thread-population-metrics span { font-size:10px; color:var(--muted); font-weight:650; }
+.thread-population-metrics strong { font-size:20px; }
+.thread-population-name { display:block; color:inherit; font-weight:700; text-decoration:none; }
+.thread-population-name:hover { text-decoration:underline; }
+.thread-population-name + small { display:block; margin-top:3px; color:var(--muted); font-size:9px; }
+.thread-population-actions { min-width:120px; }
+.thread-population-actions button { padding:6px 9px; }
+
+@media (max-width: 980px) {
+  .thread-population-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
 
 @media (max-width: 680px) {
   .thread-repair-row {
@@ -53,4 +80,5 @@
   .thread-repair-state {
     grid-column: 2;
   }
+  .thread-population-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
