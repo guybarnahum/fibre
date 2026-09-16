@@ -27,10 +27,22 @@ async function repairBody(request) {
     const value = await request.json();
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError();
     if (value.action === "recover") return Object.freeze({ action:"recover" });
+    if (value.action === "migrate") {
+      if (typeof value.migrationId !== "string" || value.migrationId.trim() === "") throw new TypeError();
+      if (typeof value.migrationKey !== "string" || value.migrationKey.trim() === "") throw new TypeError();
+      const input = value.input ?? null;
+      if (input !== null && (!input || typeof input !== "object" || Array.isArray(input))) throw new TypeError();
+      return Object.freeze({
+        action:"migrate",
+        migrationId:value.migrationId.trim(),
+        migrationKey:value.migrationKey.trim(),
+        input,
+      });
+    }
     if (typeof value.repairKey !== "string" || value.repairKey.trim() === "") throw new TypeError();
     return Object.freeze({ action:"repair", repairKey:value.repairKey.trim() });
   } catch {
-    throw new TypeError("Thread repair body must contain non-empty repairKey or action=recover");
+    throw new TypeError("Thread command must contain repairKey, action=recover, or a named migration");
   }
 }
 
@@ -41,8 +53,11 @@ export function createThreadGenesisRepairApi({
   onRepair = null,
   onRecover = null,
 } = {}) {
-  if (!repairService || typeof repairService.diagnose !== "function" || typeof repairService.repair !== "function") {
-    throw new TypeError("Thread repair API requires diagnose() and repair()");
+  if (!repairService
+    || typeof repairService.diagnose !== "function"
+    || typeof repairService.migrate !== "function"
+    || typeof repairService.repair !== "function") {
+    throw new TypeError("Thread repair API requires diagnose(), migrate(), and repair()");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Thread repair privateToken must be at least 16 characters");
@@ -74,7 +89,7 @@ export function createThreadGenesisRepairApi({
         if (request.method === "GET") {
           const diagnosis = await repairService.diagnose(threadId);
           return json(diagnosis.exists ? 200 : 404, {
-            contract:"fibre-thread-repair-v0.2",
+            contract:"fibre-thread-repair-v0.3",
             diagnosis,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -91,19 +106,27 @@ export function createThreadGenesisRepairApi({
           reconciliationWorkset.requeue(threadId);
           await onRecover?.({ threadId, before });
           return json(200, {
-            contract:"fibre-thread-repair-v0.2",
+            contract:"fibre-thread-repair-v0.3",
             recovery:{ threadId, before, after:reconciliationWorkset.get(threadId) },
+          });
+        }
+        if (command.action === "migrate") {
+          const result = await repairService.migrate(threadId, command);
+          return json(result.before.exists ? 200 : 404, {
+            contract:"fibre-thread-repair-v0.3",
+            migration:result,
+            reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
         }
         const result = await repairService.repair(threadId, { repairKey:command.repairKey });
         await onRepair?.({ threadId, result });
         return json(result.before.exists ? 200 : 404, {
-          contract:"fibre-thread-repair-v0.2",
+          contract:"fibre-thread-repair-v0.3",
           result,
           reconciliation:reconciliationWorkset?.get(threadId) ?? null,
         });
       } catch (error) {
-        if (error instanceof TypeError) return json(400, { error:{ code:"INVALID_REPAIR_REQUEST", detail:error.message } });
+        if (error instanceof TypeError) return json(400, { error:{ code:"INVALID_THREAD_COMMAND", detail:error.message } });
         return json(503, {
           error:{
             code:typeof error?.code === "string" ? error.code : "THREAD_REPAIR_FAILED",
