@@ -4,5 +4,5 @@ if (threadMatch) {
   document.title = "Fibre Admin · Thread";
   import("/thread-page.js").then(({ renderThreadPage }) => renderThreadPage(decodeURIComponent(threadMatch[1])));
 } else {
-  import("/app.js");
+  import("/app.js").then(() => import("/thread-population-ui.js"));
 }
