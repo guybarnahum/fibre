@@ -1,4 +1,5 @@
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
+const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
 
 function id(name, value) {
   if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new TypeError(`${name} must be a Fibre identifier`);
@@ -7,6 +8,11 @@ function id(name, value) {
 
 function clean(value) {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function finishedName(value) {
+  const name = clean(value);
+  return name !== null && !PLACEHOLDER_NAMES.has(name.toLocaleLowerCase("en-US")) ? name : null;
 }
 
 function cleanStrings(value) {
@@ -138,7 +144,7 @@ export async function resolveAdminThreadIdentity({ environment, threadId, fetchI
   if (!presentation || typeof presentation !== "object") throw new Error("Thread Presentation snapshot lacks public Presentation");
   return Object.freeze({
     threadId: resolvedThreadId,
-    displayName: clean(presentation.subject?.displayName),
+    displayName: finishedName(presentation.subject?.displayName),
     fibreIdentityNumber: clean(presentation.civilIdentity?.fibreIdentityNumber),
     birthDate: clean(presentation.subject?.birthDate),
     lifecycleStatus: clean(presentation.manifest?.lifecycleStatus),
@@ -146,8 +152,8 @@ export async function resolveAdminThreadIdentity({ environment, threadId, fetchI
     assets: publicMedia(origin, snapshot),
     snapshot: structuredClone(snapshot),
     provenance: Object.freeze({
-      displayName: "resolved_after_fact",
-      fibreIdentityNumber: "resolved_after_fact",
+      displayName: "current_public_presentation",
+      fibreIdentityNumber: "current_public_presentation",
       assets: "current_public_presentation",
       source: "current_public_presentation",
     }),
@@ -163,13 +169,18 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
     && world.fibreIdentityNumber !== presentation.fibreIdentityNumber
   ) throw new Error("World and Presentation disagree on Fibre identity number");
 
+  const threadIdentity = world.thread?.identity ?? {};
   const assets = mergeMedia(world, presentation);
   const worldPortrait = assets.find((asset) => asset.source === "world_embodiment" && asset.role === "canonical_portrait") ?? null;
+  const worldName = finishedName(threadIdentity.name);
+  const worldBirthDate = clean(threadIdentity.birthDate);
+  const worldSex = clean(threadIdentity.sex);
   return Object.freeze({
     threadId: world.threadId,
-    displayName: presentation?.displayName ?? null,
+    displayName: worldName ?? presentation?.displayName ?? null,
     fibreIdentityNumber: world.fibreIdentityNumber ?? presentation?.fibreIdentityNumber ?? null,
-    birthDate: presentation?.birthDate ?? null,
+    birthDate: worldBirthDate ?? presentation?.birthDate ?? null,
+    sex:worldSex,
     lifecycleStatus: world.lifecycleStatus ?? presentation?.lifecycleStatus ?? null,
     visualIdentity: presentation?.visualIdentity ?? (worldPortrait ? Object.freeze({
       embodimentId: worldPortrait.embodimentId,
@@ -187,9 +198,11 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
     }),
     presentation: presentation?.snapshot ?? null,
     provenance: Object.freeze({
-      displayName: presentation ? "resolved_after_fact" : "unavailable",
-      fibreIdentityNumber: world.fibreIdentityNumber ? "world_civil_registry" : "resolved_after_fact",
-      lifecycleStatus: world.lifecycleStatus ? "world" : "resolved_after_fact",
+      displayName:worldName ? "world" : (presentation?.displayName ? "current_public_presentation" : "unavailable"),
+      fibreIdentityNumber: world.fibreIdentityNumber ? "world_civil_registry" : "current_public_presentation",
+      birthDate:worldBirthDate ? "world" : (presentation?.birthDate ? "current_public_presentation" : "unavailable"),
+      sex:worldSex ? "world" : "unavailable",
+      lifecycleStatus: world.lifecycleStatus ? "world" : "current_public_presentation",
       assets: presentation?.assets?.length ? "current_public_presentation" : (assets.length ? "world_embodiment" : "unavailable"),
       source: presentation ? "world_plus_current_public_presentation" : "world_only",
     }),
