@@ -1,4 +1,4 @@
-const REPAIR_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
+const OPERATION_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
 
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") throw new TypeError(`${name} must expose ${method}()`);
@@ -75,11 +75,12 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
         evidenceAvailable:false,
         reason:"preserved Genesis birth evidence does not explicitly record sex",
       })
-      : finding("SEX_MISSING", "migration_required", "migrate_genesis_sex", {
+      : finding("SEX_MISSING", "migration_required", null, {
         evidenceAvailable:true,
         source:sexEvidence.source,
         genesisId:sexEvidence.genesisId,
         sex:sexEvidence.sex,
+        migration:Object.freeze({ id:"genesis_sex_v1", label:"Genesis sex", input:null }),
       })
     : finding("SEX", "healthy", null, { authoritative:text(identity.sex) });
 
@@ -150,8 +151,19 @@ async function record(activity, entry) {
   try { await activity.record(entry); } catch {}
 }
 
-function childOperation(repairKey, child) {
-  return `${repairKey}.${child}`;
+function operationKey(name, value) {
+  if (typeof value !== "string" || !OPERATION_KEY.test(value)) throw new TypeError(`${name} must be a Fibre identifier up to 221 characters`);
+  return value;
+}
+
+function childOperation(root, child) {
+  return `${root}.${child}`;
+}
+
+function migrationInput(value) {
+  if (value === null || value === undefined) return null;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("migration input must be an object or null");
+  return value;
 }
 
 export function createThreadGenesisRepairService({
@@ -227,48 +239,79 @@ export function createThreadGenesisRepairService({
     });
   }
 
-  async function repair(threadId, { repairKey } = {}) {
-    if (typeof repairKey !== "string" || !REPAIR_KEY.test(repairKey)) throw new TypeError("repairKey must be a Fibre identifier up to 221 characters");
-    const before = await diagnose(threadId);
-    if (!before.exists) return Object.freeze({ threadId, repairKey, before, after:before, actions:Object.freeze([]) });
+  async function migrate(threadId, { migrationId, migrationKey, input = null } = {}) {
+    const root = operationKey("migrationKey", migrationKey);
+    if (migrationId !== "genesis_sex_v1") throw new TypeError("unsupported Thread migration");
+    const suppliedInput = migrationInput(input);
+    if (suppliedInput !== null && Object.keys(suppliedInput).length !== 0) {
+      throw new TypeError("genesis_sex_v1 does not accept operator input");
+    }
 
-    const actionable = before.findings.filter((entry) => entry.action !== null).map((entry) => entry.code);
+    const before = await diagnose(threadId);
+    if (!before.exists) return Object.freeze({ threadId, migrationId, migrationKey:root, before, after:before, migrated:false });
+    const available = before.findings.some((entry) => entry.migration?.id === migrationId);
+    if (!available) throw new TypeError(`migration ${migrationId} is not available for Thread ${threadId}`);
+
     await record(activity, {
       threadId,
-      operationId:repairKey,
+      operationId:root,
+      stage:"thread.migration.start",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ migrationId },
+    });
+
+    const thread = worldReader.getThread(threadId);
+    const evidence = genesisSexEvidence.resolve(threadId);
+    if (evidence === null) throw new Error(`Thread ${threadId} no longer has authoritative Genesis sex evidence`);
+    const result = genesisSexMigrator.migrate(thread, { evidence });
+    await record(activity, {
+      threadId,
+      operationId:childOperation(root, "genesis_sex"),
+      parentOperationId:root,
+      stage:"thread.migration.genesis_sex",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ migrationId, eventId:result.eventId, genesisId:evidence.genesisId, migrated:result.migrated === true },
+    });
+
+    const after = await diagnose(threadId);
+    await record(activity, {
+      threadId,
+      operationId:childOperation(root, "complete"),
+      parentOperationId:root,
+      stage:"thread.migration.complete",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ migrationId, health:after.health },
+    });
+    return Object.freeze({ threadId, migrationId, migrationKey:root, before, after, migrated:result.migrated === true, result });
+  }
+
+  async function repair(threadId, { repairKey } = {}) {
+    const root = operationKey("repairKey", repairKey);
+    const before = await diagnose(threadId);
+    if (!before.exists) return Object.freeze({ threadId, repairKey:root, before, after:before, actions:Object.freeze([]) });
+
+    const migrationBlocked = before.findings.some((entry) => entry.state === "migration_required");
+    const actionable = before.findings.filter((entry) => entry.state === "repairable" && entry.action !== null).map((entry) => entry.code);
+    await record(activity, {
+      threadId,
+      operationId:root,
       stage:"thread.repair.start",
       status:"succeeded",
       attempt:1,
-      evidence:{ findingCodes:actionable },
+      evidence:{ findingCodes:actionable, migrationBlocked },
     });
 
     const actions = [];
-    const sexFinding = before.findings.find((entry) => entry.action === "migrate_genesis_sex") ?? null;
-    if (sexFinding !== null) {
-      const thread = worldReader.getThread(threadId);
-      const evidence = genesisSexEvidence.resolve(threadId);
-      if (evidence === null) throw new Error(`Thread ${threadId} no longer has authoritative Genesis sex evidence`);
-      const result = genesisSexMigrator.migrate(thread, { evidence });
-      actions.push(Object.freeze({ action:"migrate_genesis_sex", result }));
-      await record(activity, {
-        threadId,
-        operationId:childOperation(repairKey, "migration"),
-        parentOperationId:repairKey,
-        stage:"thread.repair.genesis_sex_migration",
-        status:"succeeded",
-        attempt:1,
-        evidence:{ eventId:result.eventId, genesisId:evidence.genesisId, migrated:result.migrated === true },
-      });
-    }
-
-    const afterMigration = await diagnose(threadId);
-    if (afterMigration.findings.some((entry) => entry.action === "rebuild_presentation")) {
+    if (!migrationBlocked && before.findings.some((entry) => entry.action === "rebuild_presentation")) {
       const result = await presentationDelivery.rebuildThreadPresentation(threadId);
       actions.push(Object.freeze({ action:"rebuild_presentation", result }));
       await record(activity, {
         threadId,
-        operationId:childOperation(repairKey, "presentation"),
-        parentOperationId:repairKey,
+        operationId:childOperation(root, "presentation"),
+        parentOperationId:root,
         stage:"thread.repair.presentation_rebuild",
         status:"succeeded",
         attempt:1,
@@ -277,17 +320,17 @@ export function createThreadGenesisRepairService({
     }
 
     const afterPresentation = await diagnose(threadId);
-    if (afterPresentation.findings.some((entry) => entry.action === "reconcile_visual_publication")) {
+    if (!migrationBlocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_visual_publication")) {
       const result = await visualReconciler.reconcileThread({
         threadId,
-        regenerationKey: repairKey,
-        activityContext: { repairKey, parentOperationId:childOperation(repairKey, "visual") },
+        regenerationKey: root,
+        activityContext: { repairKey:root, parentOperationId:childOperation(root, "visual") },
       });
       actions.push(Object.freeze({ action:"reconcile_visual_publication", result }));
       await record(activity, {
         threadId,
-        operationId:childOperation(repairKey, "visual"),
-        parentOperationId:repairKey,
+        operationId:childOperation(root, "visual"),
+        parentOperationId:root,
         stage:"thread.repair.visual_reconcile",
         status:"succeeded",
         attempt:1,
@@ -298,8 +341,8 @@ export function createThreadGenesisRepairService({
     const after = await diagnose(threadId);
     await record(activity, {
       threadId,
-      operationId:childOperation(repairKey, "complete"),
-      parentOperationId:repairKey,
+      operationId:childOperation(root, "complete"),
+      parentOperationId:root,
       stage:"thread.repair.complete",
       status:"succeeded",
       attempt:1,
@@ -307,12 +350,12 @@ export function createThreadGenesisRepairService({
     });
     return Object.freeze({
       threadId,
-      repairKey,
+      repairKey:root,
       before,
       after,
       actions:Object.freeze(actions),
     });
   }
 
-  return Object.freeze({ diagnose, repair });
+  return Object.freeze({ diagnose, migrate, repair });
 }
