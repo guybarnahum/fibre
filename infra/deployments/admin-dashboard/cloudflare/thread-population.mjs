@@ -41,9 +41,23 @@ function portraitUrl(diagnosis) {
     : null;
 }
 
-export async function readAdminThreadPopulation({ activityLog, environment, resolveThreadHealth }) {
+function unavailable(row, error) {
+  return Object.freeze({
+    threadId:row.thread_id,
+    admitted:null,
+    lastActivityAt:row.last_activity_at ?? null,
+    health:"unavailable",
+    identity:null,
+    portraitUrl:null,
+    findings:[],
+    reconciliation:null,
+    error:error instanceof Error ? error.message : String(error),
+  });
+}
+
+export async function readAdminThreadPopulation({ activityLog, environment, resolveThreadHealthBatch }) {
   if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
-  if (typeof resolveThreadHealth !== "function") throw new TypeError("Thread population requires resolveThreadHealth()");
+  if (typeof resolveThreadHealthBatch !== "function") throw new TypeError("Thread population requires resolveThreadHealthBatch()");
 
   const result = await activityLog.prepare(`
     SELECT thread_id, MAX(occurred_at) AS last_activity_at
@@ -55,35 +69,35 @@ export async function readAdminThreadPopulation({ activityLog, environment, reso
   `).bind(environment, MAX_THREADS + 1).all();
   const rows = Array.isArray(result?.results) ? result.results : [];
   const truncated = rows.length > MAX_THREADS;
+  const selected = rows.slice(0, MAX_THREADS);
+  let batch = [];
+  let batchError = null;
+  try { batch = selected.length === 0 ? [] : await resolveThreadHealthBatch(selected.map((row) => row.thread_id)); }
+  catch (error) { batchError = error; }
+  const byThread = new Map((Array.isArray(batch) ? batch : []).map((entry) => [entry.threadId, entry]));
   const threads = [];
 
-  for (const row of rows.slice(0, MAX_THREADS)) {
-    try {
-      const health = await resolveThreadHealth(row.thread_id);
-      const diagnosis = health.diagnosis ?? null;
-      threads.push(Object.freeze({
-        threadId:row.thread_id,
-        admitted:diagnosis?.exists === true,
-        lastActivityAt:row.last_activity_at ?? null,
-        health:diagnosis?.health ?? "unavailable",
-        identity:diagnosis?.identity ?? null,
-        portraitUrl:portraitUrl(diagnosis),
-        findings:diagnosis?.findings ?? [],
-        reconciliation:health.reconciliation ?? null,
-      }));
-    } catch (error) {
-      threads.push(Object.freeze({
-        threadId:row.thread_id,
-        admitted:null,
-        lastActivityAt:row.last_activity_at ?? null,
-        health:"unavailable",
-        identity:null,
-        portraitUrl:null,
-        findings:[],
-        reconciliation:null,
-        error:error instanceof Error ? error.message : String(error),
-      }));
+  for (const row of selected) {
+    if (batchError !== null) {
+      threads.push(unavailable(row, batchError));
+      continue;
     }
+    const health = byThread.get(row.thread_id);
+    if (!health || health.error) {
+      threads.push(unavailable(row, health?.error?.detail ?? health?.error?.code ?? "World diagnosis unavailable"));
+      continue;
+    }
+    const diagnosis = health.diagnosis ?? null;
+    threads.push(Object.freeze({
+      threadId:row.thread_id,
+      admitted:diagnosis?.exists === true,
+      lastActivityAt:row.last_activity_at ?? null,
+      health:diagnosis?.health ?? "unavailable",
+      identity:diagnosis?.identity ?? null,
+      portraitUrl:portraitUrl(diagnosis),
+      findings:diagnosis?.findings ?? [],
+      reconciliation:health.reconciliation ?? null,
+    }));
   }
 
   return Object.freeze({
