@@ -21,6 +21,11 @@ function statusLabel(level) {
   return ({ normal:"Normal", elevated:"Elevated", critical:"Critical", unavailable:"Unavailable" })[level] ?? "Unavailable";
 }
 
+function checkLabel(check) {
+  if (check?.kind === "streams" && check?.resource === "durable_objects") return "DO binding";
+  return String(check?.kind ?? "resource").replaceAll("_", " ");
+}
+
 function setBadge(level, title = null) {
   const normalized = ["normal", "elevated", "critical"].includes(level) ? level : "unavailable";
   button.dataset.level = normalized;
@@ -33,7 +38,7 @@ function degradedDetail(sample, fallback) {
   const check = (sample?.checks ?? []).find((candidate) => candidate.level === "critical")
     ?? (sample?.checks ?? []).find((candidate) => candidate.level === "elevated");
   if (check?.error?.detail) return check.error.detail;
-  if (check) return `${check.kind.replaceAll("_", " ")} · ${[check.resource, check.service].filter(Boolean).join(" · ")}`;
+  if (check) return `${checkLabel(check)} · ${[check.resource, check.service].filter(Boolean).join(" · ")}`;
   return fallback ?? "Infrastructure health is unavailable.";
 }
 
@@ -64,7 +69,7 @@ function checkLine(check) {
   row.className = `infra-check infra-check-${check.level}`;
   const copy = document.createElement("div");
   const title = document.createElement("strong");
-  title.textContent = check.kind.replaceAll("_", " ");
+  title.textContent = checkLabel(check);
   const resource = document.createElement("span");
   resource.textContent = [check.resource, check.service].filter(Boolean).join(" · ");
   copy.append(title, resource);
@@ -91,7 +96,7 @@ function statusText(payload) {
     `Sampled: ${sample.observedAt}`,
   ];
   for (const check of sample.checks ?? []) {
-    const name = check.kind.replaceAll("_", " ");
+    const name = checkLabel(check);
     const resource = [check.resource, check.service].filter(Boolean).join(" · ");
     const value = Number.isFinite(check.value) && Number.isFinite(check.limit)
       ? `${check.value} / ${check.limit}`
@@ -197,7 +202,7 @@ function schedule() {
 
 button?.addEventListener("click", openDetails);
 bannerDetails?.addEventListener("click", openDetails);
-copyButton?.addEventListener("click", () => void copyStatus());
+copyButton?.addEventListener("click", copyStatus);
 forceButton?.addEventListener("click", () => load({ force:true }));
 closeButton?.addEventListener("click", () => dialog.close());
 dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
