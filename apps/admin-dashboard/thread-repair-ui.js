@@ -146,7 +146,7 @@ function recoveryPlan(host, threadId, diagnosis, reconciliation) {
     button.textContent = "Recovering…";
     try {
       await recover(threadId);
-      renderHealth(host, threadId, await requestHealth(threadId), "Recovered · reconciliation is pending.");
+      await renderThreadHealth(host, threadId, "Recovered · reconciliation is pending.");
     } catch (error) {
       button.disabled = false;
       button.textContent = "Recover";
@@ -222,29 +222,27 @@ function renderHealth(host, threadId, health, message = null) {
   host.append(plan, button);
 }
 
-let generation = 0;
-async function attach() {
+export async function renderThreadHealth(host, threadId, message = null) {
+  host.replaceChildren(el("div", "thread-loading", "Checking Thread health…"));
+  try {
+    renderHealth(host, threadId, await requestHealth(threadId), message);
+  } catch (error) {
+    host.replaceChildren(el("div", "error-box", `Thread diagnosis unavailable: ${error instanceof Error ? error.message : String(error)}`));
+  }
+}
+
+function attach() {
   const view = dialogBody?.querySelector(".thread-person-view");
   const idNode = view?.querySelector(".thread-person-id");
   const threadId = idNode?.textContent?.trim();
   if (!view || !/^thr_[A-Za-z0-9._:-]+$/u.test(threadId ?? "")) return;
   if (view.querySelector(".thread-repair-section")) return;
 
-  const token = ++generation;
   const host = el("section", "thread-person-section thread-repair-section");
-  const hero = view.querySelector(".thread-person-hero");
-  hero?.after(host);
-  host.append(el("div", "thread-loading", "Checking Thread health…"));
-  try {
-    const health = await requestHealth(threadId);
-    if (token !== generation || !host.isConnected) return;
-    renderHealth(host, threadId, health);
-  } catch (error) {
-    if (token !== generation || !host.isConnected) return;
-    host.replaceChildren(el("div", "error-box", `Thread diagnosis unavailable: ${error instanceof Error ? error.message : String(error)}`));
-  }
+  view.querySelector(".thread-person-hero")?.after(host);
+  void renderThreadHealth(host, threadId);
 }
 
 if (dialogBody) {
-  new MutationObserver(() => { void attach(); }).observe(dialogBody, { childList:true, subtree:true });
+  new MutationObserver(attach).observe(dialogBody, { childList:true, subtree:true });
 }
