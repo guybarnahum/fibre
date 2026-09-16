@@ -1,6 +1,7 @@
 const button = document.querySelector("#infra-health-button");
 const dialog = document.querySelector("#infra-dialog");
 const body = document.querySelector("#infra-dialog-body");
+const copyButton = document.querySelector("#infra-copy-status");
 const forceButton = document.querySelector("#infra-force-sample");
 const closeButton = document.querySelector("#infra-dialog-close");
 const banner = document.querySelector("#infra-degradation-banner");
@@ -82,6 +83,46 @@ function checkLine(check) {
   return row;
 }
 
+function statusText(payload) {
+  const sample = payload?.sample;
+  if (!sample) return `Infrastructure: Unavailable\n${payload?.error?.message ?? "Infrastructure monitor unavailable"}`;
+  const lines = [
+    `Infrastructure: ${statusLabel(sample.level)}`,
+    `Sampled: ${sample.observedAt}`,
+  ];
+  for (const check of sample.checks ?? []) {
+    const name = check.kind.replaceAll("_", " ");
+    const resource = [check.resource, check.service].filter(Boolean).join(" · ");
+    const value = Number.isFinite(check.value) && Number.isFinite(check.limit)
+      ? `${check.value} / ${check.limit}`
+      : check.error?.code ?? statusLabel(check.level);
+    lines.push(`${name}${resource ? ` · ${resource}` : ""}: ${value}`);
+    if (check.error?.detail) lines.push(`  ${check.error.detail}`);
+  }
+  if (payload.error?.message) lines.push(`Monitor: ${payload.error.message}`);
+  return lines.join("\n");
+}
+
+async function copyStatus() {
+  if (!current) return;
+  const text = statusText(current);
+  try {
+    await navigator.clipboard.writeText(text);
+    copyButton.textContent = "Copied";
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    copyButton.textContent = document.execCommand("copy") ? "Copied" : "Copy failed";
+    area.remove();
+  }
+  setTimeout(() => { copyButton.textContent = "Copy status"; }, 1600);
+}
+
 function render(payload) {
   current = payload;
   const sample = payload?.sample;
@@ -156,6 +197,7 @@ function schedule() {
 
 button?.addEventListener("click", openDetails);
 bannerDetails?.addEventListener("click", openDetails);
+copyButton?.addEventListener("click", () => void copyStatus());
 forceButton?.addEventListener("click", () => load({ force:true }));
 closeButton?.addEventListener("click", () => dialog.close());
 dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
