@@ -248,10 +248,14 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const repairApi = createThreadGenesisRepairApi({
     repairService,
     privateToken,
+    reconciliationWorkset:visualPublicationWorkset,
     async onRepair({ threadId }) {
       if (visualPublicationWorkset.requeue(threadId, { updatedAt:now() })) {
         await reconciliationRuntime.requestWake();
       }
+    },
+    async onRecover() {
+      await reconciliationRuntime.requestWake();
     },
   });
 
