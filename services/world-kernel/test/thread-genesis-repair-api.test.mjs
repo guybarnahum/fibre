@@ -13,6 +13,17 @@ function api(options = {}) {
         if (threadId === "thr_missing") return { threadId, exists:false, health:"unrecoverable", findings:[] };
         return { threadId, exists:true, health:"repairable", findings:[{ code:"PRESENTATION_MISSING", state:"repairable" }] };
       },
+      async migrate(threadId, { migrationId, migrationKey, input }) {
+        return {
+          threadId,
+          migrationId,
+          migrationKey,
+          input,
+          before:{ exists:true, health:"migration_required" },
+          after:{ exists:true, health:"healthy" },
+          migrated:true,
+        };
+      },
       async repair(threadId, { repairKey }) {
         return {
           threadId,
@@ -45,8 +56,26 @@ test("R1 repair diagnosis is private and read-only", async () => {
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair"));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.contract, "fibre-thread-repair-v0.2");
+  assert.equal(body.contract, "fibre-thread-repair-v0.3");
   assert.equal(body.diagnosis.health, "repairable");
+});
+
+test("named migration remains distinct from repair", async () => {
+  const repairApi = api();
+  const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"migrate",
+      migrationId:"genesis_sex_v1",
+      migrationKey:"admin-migration-1",
+      input:null,
+    }),
+  }));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.migration.migrationId, "genesis_sex_v1");
+  assert.equal(body.migration.after.health, "healthy");
 });
 
 test("R2-R3 repair executes only through authenticated POST", async () => {
