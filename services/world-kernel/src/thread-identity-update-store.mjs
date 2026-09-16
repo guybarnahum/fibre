@@ -90,7 +90,7 @@ export class ThreadIdentityUpdateStore {
     const previous = {};
     if (nextName !== undefined && nextName !== thread.identity.name) {
       changes.name = nextName;
-      previous.name = thread.identity.name;
+      previous.name = thread.identity.name ?? null;
     }
     if (nextSex !== undefined && thread.identity.sex === undefined) {
       changes.sex = nextSex;
