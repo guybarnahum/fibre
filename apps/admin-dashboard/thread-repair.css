@@ -72,6 +72,14 @@
   font-size:10px;
   vertical-align:middle;
 }
+.thread-population-portrait-column,
+.thread-population-portrait-cell {
+  width:46px;
+  min-width:46px;
+  padding-left:12px;
+  padding-right:4px;
+  text-align:center;
+}
 .thread-population-person { display:flex; align-items:center; gap:8px; min-width:190px; }
 .thread-population-person > div { min-width:0; }
 .thread-population-portrait {
@@ -203,7 +211,7 @@
 
 @media (max-width:680px) {
   .thread-health-tag { white-space:normal; }
-  .thread-population-table { min-width:820px; }
+  .thread-population-table { min-width:860px; }
   .thread-action-choice-group { grid-template-columns:1fr; }
 }
 
