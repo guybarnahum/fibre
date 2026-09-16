@@ -1,7 +1,7 @@
 import { createCloudflareInfraDriver, sampleCloudflareResourceHealth } from "#infra/providers/cloudflare";
 
 const DEFAULT_TTL_MS = 15 * 60_000;
-const SAMPLE_CACHE = new WeakMap();
+const CAPACITY_CACHE = new WeakMap();
 const SERVICES = Object.freeze([
   Object.freeze({ binding:"WORLD_KERNEL", service:"world-kernel" }),
   Object.freeze({ binding:"BIRTH_CENTER", service:"birth-center" }),
@@ -39,6 +39,8 @@ function monitorConfig(env) {
     limits:Object.freeze({
       d1RowsReadDaily:numberSetting("d1RowsReadDaily", parsed.limits?.d1RowsReadDaily, 500_000),
       d1RowsWrittenDaily:numberSetting("d1RowsWrittenDaily", parsed.limits?.d1RowsWrittenDaily, 10_000),
+      durableObjectRowsReadDaily:numberSetting("durableObjectRowsReadDaily", parsed.limits?.durableObjectRowsReadDaily, 5_000_000),
+      durableObjectRowsWrittenDaily:numberSetting("durableObjectRowsWrittenDaily", parsed.limits?.durableObjectRowsWrittenDaily, 100_000),
       workerRequests15m:numberSetting("workerRequests15m", parsed.limits?.workerRequests15m, 25_000),
       workerErrors15m:numberSetting("workerErrors15m", parsed.limits?.workerErrors15m, 100),
     }),
@@ -117,25 +119,20 @@ export async function sampleAdminInfraHealth({ env, environment, now = new Date(
   });
 }
 
-function cachedPayload(env, nowMs, ttlMs) {
-  const cached = SAMPLE_CACHE.get(env);
+function cachedCapacity(env, nowMs, ttlMs) {
+  const cached = CAPACITY_CACHE.get(env);
   if (!cached || nowMs - cached.observedAtMs >= ttlMs) return null;
-  return Object.freeze({ ...cached.payload, cached:true });
+  return cached;
 }
 
-export async function readAdminInfraMonitor({ env, environment, fetchImpl = globalThis.fetch, now = new Date(), force = false } = {}) {
-  const config = monitorConfig(env);
+async function readCapacity({ env, environment, config, now, fetchImpl, force }) {
   const nowMs = now.getTime();
-  if (!force) {
-    const cached = cachedPayload(env, nowMs, config.ttlMs);
-    if (cached !== null) return cached;
-  }
+  const cached = force ? null : cachedCapacity(env, nowMs, config.ttlMs);
+  if (cached !== null) return Object.freeze({ capacity:cached.capacity, cached:true, stale:false, error:null });
 
-  const infra = await sampleAdminInfraHealth({ env, environment, now });
-  let capacity = null;
-  let capacityError = null;
+  const prior = CAPACITY_CACHE.get(env) ?? null;
   try {
-    capacity = await sampleCloudflareResourceHealth({
+    const capacity = await sampleCloudflareResourceHealth({
       accountId:config.accountId,
       apiToken:config.apiToken,
       environment,
@@ -144,39 +141,46 @@ export async function readAdminInfraMonitor({ env, environment, fetchImpl = glob
       now,
       fetchImpl,
     });
+    CAPACITY_CACHE.set(env, Object.freeze({ observedAtMs:nowMs, capacity }));
+    return Object.freeze({ capacity, cached:false, stale:false, error:null });
   } catch (error) {
-    capacityError = error;
+    if (prior !== null) return Object.freeze({ capacity:prior.capacity, cached:true, stale:true, error });
+    return Object.freeze({ capacity:null, cached:false, stale:true, error });
   }
-  const checks = Object.freeze([...infra.checks, ...(capacity?.checks ?? [])]);
+}
+
+export async function readAdminInfraMonitor({ env, environment, fetchImpl = globalThis.fetch, now = new Date(), force = false } = {}) {
+  const config = monitorConfig(env);
+  const infra = await sampleAdminInfraHealth({ env, environment, now });
+  const capacityResult = await readCapacity({ env, environment, config, now, fetchImpl, force });
+  const checks = Object.freeze([...infra.checks, ...(capacityResult.capacity?.checks ?? [])]);
   const sampleLevel = infra.level === "critical"
     ? "critical"
-    : capacity === null
+    : capacityResult.capacity === null
       ? "unavailable"
       : level(checks);
-  const payload = Object.freeze({
-    contract:"fibre-admin-infra-monitor-v0.4",
+  return Object.freeze({
+    contract:"fibre-admin-infra-monitor-v0.5",
     environment:nonEmpty("environment", environment),
-    cached:false,
-    stale:false,
+    cached:capacityResult.cached,
+    stale:capacityResult.stale,
     cacheTtlSeconds:config.ttlMs / 1000,
     sample:Object.freeze({
-      contract:"fibre-admin-infra-sample-v0.2",
+      contract:"fibre-admin-infra-sample-v0.3",
       observedAt:now.toISOString(),
       level:sampleLevel,
       checks,
       infra,
-      capacity,
+      capacity:capacityResult.capacity,
     }),
-    error:capacityError ? Object.freeze({ message:bounded(capacityError) }) : null,
+    error:capacityResult.error ? Object.freeze({ message:bounded(capacityResult.error) }) : null,
   });
-  SAMPLE_CACHE.set(env, Object.freeze({ observedAtMs:nowMs, payload }));
-  return payload;
 }
 
 export async function readCachedInfraHealth({ env, environment } = {}) {
   const payload = await readAdminInfraMonitor({ env, environment });
   return Object.freeze({
-    contract:"fibre-infra-health-summary-v0.4",
+    contract:"fibre-infra-health-summary-v0.5",
     environment:payload.environment,
     observedAt:payload.sample.observedAt,
     level:payload.sample.level,
