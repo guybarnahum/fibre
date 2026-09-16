@@ -67,6 +67,7 @@
           <div class="view-switch" role="group" aria-label="Activity view">
             <button id="view-causal" type="button" data-mode="causal">Causal trail</button>
             <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
+            <button id="view-threads" type="button" data-mode="threads">Threads</button>
           </div>
         </div>
         <div id="thread-context" class="activity-thread-context" hidden></div>
@@ -86,6 +87,24 @@
               <tbody id="activity-rows"></tbody>
             </table>
             <div id="empty-state" class="empty" hidden><div class="empty-icon">≋</div><h3>No matching activity</h3><p>Adjust the filters or move to another page.</p></div>
+          </div>
+        </div>
+
+        <div id="threads-view" class="activity-view" hidden>
+          <div class="thread-population-metrics" aria-label="Thread population summary">
+            <article><span>Threads</span><strong id="thread-stat-total">—</strong></article>
+            <article><span>Female</span><strong id="thread-stat-female">—</strong></article>
+            <article><span>Male</span><strong id="thread-stat-male">—</strong></article>
+            <article><span>Sex unknown</span><strong id="thread-stat-unknown">—</strong></article>
+            <article><span>Needs attention</span><strong id="thread-stat-attention">—</strong></article>
+            <article><span>Dead letter</span><strong id="thread-stat-dead">—</strong></article>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Thread</th><th>Sex</th><th>Lifecycle</th><th>Health</th><th>Reconciliation</th><th>Last activity</th><th>Action</th></tr></thead>
+              <tbody id="thread-population-rows"></tbody>
+            </table>
+            <div id="thread-population-empty" class="empty" hidden><div class="empty-icon">◎</div><h3>No Threads available</h3><p>No Activity-discovered Thread population could be resolved.</p></div>
           </div>
         </div>
 
