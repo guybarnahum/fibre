@@ -1,3 +1,5 @@
+import { renderThreadHealth } from "./thread-repair-ui.js";
+
 function node(tag, className = null, text = null) {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -68,6 +70,10 @@ export async function renderThreadPage(threadId) {
   grid.append(identityItem("Thread ID", threadId, { mono:true }));
   panel.append(grid);
   main.append(panel);
+
+  const health = node("section", "panel thread-repair-section");
+  main.append(health);
+  void renderThreadHealth(health, threadId);
 
   const note = node("section", "panel thread-placeholder");
   const noteHead = node("div", "panel-head");
