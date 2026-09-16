@@ -10,6 +10,10 @@ const SEX_EVIDENCE = Object.freeze({
   resultDigest:`sha256:${"a".repeat(64)}`,
 });
 
+const NO_IDENTITY_UPDATE = Object.freeze({
+  update() { throw new Error("identity update should not run in this test"); },
+});
+
 function fixture() {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
@@ -73,6 +77,7 @@ function fixture() {
     },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("sex migration should not run for a complete Thread"); } },
+    identityUpdater:NO_IDENTITY_UPDATE,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
   return { service, state, threadId, thread };
@@ -119,6 +124,7 @@ test("R4 exposes authoritative identity completeness without requiring sex in pu
     fibreIdentityNumber:"ABCD-12-EFGH",
     originOrientation:"original",
     birthDate:null,
+    lifecycleStatus:"active",
     canonicalVisualSpecification:"present",
   });
   assert.equal(diagnosis.findings.find((entry) => entry.code === "SEX").state, "healthy");
@@ -139,9 +145,9 @@ test("R4 distinguishes public projection omission from authoritative Genesis abs
   };
   const diagnosis = await service.diagnose(threadId);
   const name = diagnosis.findings.find((entry) => entry.code === "NAME_PRESENTATION_MISSING");
-  assert.equal(name.state, "operator_decision_required");
+  assert.equal(name.state, "repairable");
   assert.equal(name.authoritative, "Repair Thread");
-  assert.equal(diagnosis.health, "operator_decision_required");
+  assert.equal(diagnosis.health, "repairable");
 });
 
 test("R4 surfaces authority conflicts instead of silently repairing them", async () => {
@@ -159,11 +165,12 @@ test("R4 surfaces authority conflicts instead of silently repairing them", async
   assert.equal(diagnosis.health, "integrity_error");
   assert.deepEqual(
     diagnosis.findings.filter((entry) => entry.state === "integrity_error").map((entry) => entry.code),
-    ["FIN_CONFLICT", "NAME_CONFLICT"],
+    ["FIN_CONFLICT"],
   );
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_PRESENTATION_STALE").state, "repairable");
 });
 
-test("R4 leaves missing sex non-actionable when preserved Genesis evidence is absent", async () => {
+test("missing sex without Genesis evidence requires an explicit operator identity decision", async () => {
   const service = createThreadGenesisRepairService({
     worldReader:{ getThread() { return { threadId:"thr_legacy_1", status:"frozen", identity:{ selfDescription:"Legacy" } }; } },
     civilRegistry:{ getCivilRegistrationByThreadId() { return null; } },
@@ -173,16 +180,16 @@ test("R4 leaves missing sex non-actionable when preserved Genesis evidence is ab
     visualReconciler:{ async reconcileThread() { throw new Error("should not run"); } },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("diagnosis must not migrate"); } },
+    identityUpdater:NO_IDENTITY_UPDATE,
   });
   const diagnosis = await service.diagnose("thr_legacy_1");
-  assert.equal(diagnosis.health, "migration_required");
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_MISSING").state, "migration_required");
+  assert.equal(diagnosis.health, "operator_decision_required");
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_UNFINISHED").state, "operator_decision_required");
   const sex = diagnosis.findings.find((entry) => entry.code === "SEX_MISSING");
-  assert.equal(sex.state, "migration_required");
+  assert.equal(sex.state, "operator_decision_required");
   assert.equal(sex.migration, undefined);
   assert.equal(sex.evidenceAvailable, false);
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "FIN_MISSING").state, "migration_required");
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "ORIGIN_ORIENTATION_MISSING").state, "migration_required");
+  assert.equal(sex.identityAction.id, "set_sex");
 });
 
 test("migration changes legacy authority; repair never substitutes for it", async () => {
@@ -212,6 +219,7 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
         return { migrated:true, reused:false, sex:evidence.sex, eventId:"evt_genesis_sex_migrated", evidence };
       },
     },
+    identityUpdater:NO_IDENTITY_UPDATE,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
 
