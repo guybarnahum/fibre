@@ -137,7 +137,9 @@ async function threadHealth(env, threadId) {
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
   ));
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  if (!response.ok && !(response.status === 404 && payload?.diagnosis)) {
+    throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  }
   return payload;
 }
 
