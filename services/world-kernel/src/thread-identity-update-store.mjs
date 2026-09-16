@@ -33,6 +33,15 @@ function eventId(threadId, operationKey) {
   });
 }
 
+function requestMatchesExisting(thread, changes, { name, sex }) {
+  const matches = (field, requested) => {
+    if (requested === undefined) return true;
+    if (Object.prototype.hasOwnProperty.call(changes, field)) return changes[field] === requested;
+    return thread.identity?.[field] === requested;
+  };
+  return matches("name", name) && matches("sex", sex);
+}
+
 export class ThreadIdentityUpdateStore {
   #database;
 
@@ -48,6 +57,31 @@ export class ThreadIdentityUpdateStore {
     const nextName = normalizeName(name);
     const nextSex = sex === undefined ? undefined : normalizeGenesisSex(sex);
     if (nextName === undefined && nextSex === undefined) throw new TypeError("identity update requires name or sex");
+
+    const updateEventId = eventId(thread.threadId, key);
+    const existing = this.#database.prepare(
+      "SELECT event_type,payload_json FROM thread_events WHERE event_id=?",
+    ).get(updateEventId);
+    if (existing !== undefined) {
+      if (existing.event_type !== "THREAD_IDENTITY_UPDATED") {
+        throw new Error(`identity operationKey ${key} resolved to an incompatible World event`);
+      }
+      const payload = JSON.parse(existing.payload_json);
+      const existingChanges = payload?.changes ?? {};
+      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex })) {
+        throw new TypeError(`identity operationKey ${key} was already used with different identity input`);
+      }
+      const currentRow = this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
+      if (currentRow === undefined) throw new Error(`Thread ${thread.threadId} was not found`);
+      return Object.freeze({
+        changed:false,
+        reused:true,
+        eventId:updateEventId,
+        changes:Object.freeze({ ...existingChanges }),
+        thread:JSON.parse(currentRow.state_json),
+      });
+    }
+
     if (nextSex !== undefined && thread.identity.sex !== undefined && thread.identity.sex !== nextSex) {
       throw new TypeError("sex is already authoritative for this Thread");
     }
@@ -64,14 +98,6 @@ export class ThreadIdentityUpdateStore {
     }
     if (Object.keys(changes).length === 0) {
       return Object.freeze({ changed:false, reused:true, eventId:thread.provenance.lastEventId, changes:Object.freeze({}), thread });
-    }
-
-    const updateEventId = eventId(thread.threadId, key);
-    const existing = this.#database.prepare("SELECT state_hash FROM thread_events WHERE event_id=?").get(updateEventId);
-    if (existing !== undefined) {
-      const currentRow = this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
-      if (currentRow === undefined) throw new Error(`Thread ${thread.threadId} was not found`);
-      return Object.freeze({ changed:false, reused:true, eventId:updateEventId, changes:Object.freeze(changes), thread:JSON.parse(currentRow.state_json) });
     }
 
     const next = structuredClone(thread);
