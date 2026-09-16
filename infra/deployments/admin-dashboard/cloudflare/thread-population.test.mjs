@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { readAdminThreadPopulation } from "./thread-population.mjs";
 
-test("Activity discovers identities; World decides which are Threads and defines their state", async () => {
+test("Activity discovers identities; one World batch decides which are Threads and defines their state", async () => {
   const activityLog = {
     prepare() {
       return {
@@ -52,13 +52,19 @@ test("Activity discovers identities; World decides which are Threads and defines
       reconciliation:{ state:"dead_letter" },
     },
   };
+  let worldBatches = 0;
 
   const population = await readAdminThreadPopulation({
     activityLog,
     environment:"staging",
-    resolveThreadHealth:async (threadId) => authoritative[threadId],
+    async resolveThreadHealthBatch(threadIds) {
+      worldBatches += 1;
+      assert.deepEqual(threadIds, ["thr_a", "thr_candidate", "thr_b"], "World batch must cover observed identities once");
+      return threadIds.map((threadId) => ({ threadId, ...authoritative[threadId] }));
+    },
   });
 
+  assert.equal(worldBatches, 1, "Threads view must not fan out into per-Thread World requests");
   assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_candidate", "thr_b"], "Activity must define observed membership");
   assert.equal(population.threads[0].identity.sex, "female", "World must define Thread facts");
   assert.equal(population.threads[0].portraitUrl, "/api/thread-assets/portrait_a", "Presentation may supply public portrait media without becoming identity authority");
