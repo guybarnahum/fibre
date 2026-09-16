@@ -10,6 +10,7 @@ Architecture documents define technical authorities, boundaries, flows, storage/
 - [`intrinsic-regulation.md`](intrinsic-regulation.md) — private predictive drives, intrinsic affect, interoception, person/place presence targets, and the active R1-R4 detour.
 - [`../concepts/emotions-and-needs.md`](../concepts/emotions-and-needs.md) — meaning-bearing semantic emotion/need doctrine above the regulatory layer.
 - [`thread-lifecycle.md`](thread-lifecycle.md) — activation, cognition, freeze and lifecycle behavior.
+- [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md) — canonical distinction between evolving old authoritative representations, reconstructing derivable state, and resuming quarantined work.
 
 ## Runtime ownership and dependencies
 
@@ -25,6 +26,7 @@ Read with:
 
 - [`storage-model.md`](storage-model.md) — authorities, replay and atomicity;
 - [`infrastructure-driver.md`](infrastructure-driver.md) — provider-neutral capability ports;
+- [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md) — evidence, provenance and quarantine rules for migration/repair/recovery;
 - [`cloud-e2e-closure-plan.md`](cloud-e2e-closure-plan.md) — completed Cloudflare E2E/recovery design record.
 
 Infrastructure is not an independent completion program; build it when a lived Fibre capability requires it.
