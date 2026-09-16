@@ -92,7 +92,7 @@
 .thread-population-name { display:block; color:inherit; font-weight:700; font-size:11px; text-decoration:none; }
 .thread-population-name:hover { text-decoration:underline; }
 .thread-population-name + small { display:block; margin-top:2px; color:var(--muted); font-size:8px; }
-.thread-population-actions { min-width:120px; }
+.thread-population-actions { min-width:148px; }
 .thread-action-stack { display:flex; flex-wrap:wrap; gap:4px; }
 .thread-population-actions button { padding:4px 7px; min-height:24px; font-size:9px; }
 .thread-population-activity-only { opacity:.68; }
@@ -112,13 +112,105 @@
 }
 .thread-sort:hover { color:var(--accent); background:transparent; }
 
+.thread-action-dialog {
+  width:min(520px,calc(100vw - 28px));
+  max-width:520px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface);
+  color:inherit;
+  padding:0;
+  box-shadow:0 24px 70px rgba(0,0,0,.26);
+}
+.thread-action-dialog::backdrop { background:rgba(15,23,42,.48); backdrop-filter:blur(2px); }
+.thread-action-dialog-head { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
+.thread-action-form { display:grid; gap:14px; padding:16px 18px 18px; }
+.thread-action-context {
+  margin:0;
+  font-size:10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:var(--muted);
+}
+.thread-action-description { margin:0; font-size:12px; line-height:1.5; color:var(--muted); }
+.thread-action-fields { display:grid; gap:12px; }
+.thread-action-field { display:grid; gap:6px; }
+.thread-action-field > span,
+.thread-action-choice-group legend { font-size:10px; font-weight:700; color:var(--muted); }
+.thread-action-field input {
+  width:100%;
+  box-sizing:border-box;
+  min-height:38px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-subtle);
+  color:inherit;
+  padding:8px 10px;
+  font:inherit;
+}
+.thread-action-field input:focus { outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); border-color:var(--accent); }
+.thread-action-choice-group {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:0;
+  margin:0;
+  border:0;
+}
+.thread-action-choice-group legend { grid-column:1/-1; margin-bottom:2px; }
+.thread-action-choice {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:42px;
+  padding:9px 11px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-subtle);
+  cursor:pointer;
+  font-size:11px;
+  font-weight:700;
+}
+.thread-action-choice:has(input:checked) { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.thread-action-choice input { margin:0; }
+.thread-action-status {
+  padding:9px 10px;
+  border-radius:8px;
+  font-size:11px;
+  line-height:1.4;
+  border:1px solid var(--border);
+  background:var(--surface-subtle);
+}
+.thread-action-status.working { color:var(--muted); }
+.thread-action-status.succeeded { color:#067647; border-color:color-mix(in srgb,#12b76a 42%,var(--border)); background:color-mix(in srgb,#12b76a 8%,transparent); }
+.thread-action-status.failed { color:#b42318; border-color:color-mix(in srgb,#f04438 42%,var(--border)); background:color-mix(in srgb,#f04438 8%,transparent); }
+.thread-action-progress {
+  height:3px;
+  overflow:hidden;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 12%,var(--border));
+}
+.thread-action-progress span {
+  display:block;
+  width:36%;
+  height:100%;
+  border-radius:inherit;
+  background:var(--accent);
+  animation:thread-action-progress 1s ease-in-out infinite alternate;
+}
+.thread-action-footer { display:flex; justify-content:flex-end; gap:8px; padding-top:2px; }
+.thread-action-footer button { min-width:84px; }
+@keyframes thread-action-progress { from { transform:translateX(-10%); } to { transform:translateX(190%); } }
+
 @media (max-width:680px) {
   .thread-health-tag { white-space:normal; }
-  .thread-population-table { min-width:780px; }
+  .thread-population-table { min-width:820px; }
+  .thread-action-choice-group { grid-template-columns:1fr; }
 }
 
 @media (prefers-color-scheme:dark) {
   .thread-health-tag.good { color:#75e0a7; }
   .thread-health-tag.warn { color:#fec84b; }
   .thread-health-tag.bad { color:#fda29b; }
+  .thread-action-status.succeeded { color:#75e0a7; }
+  .thread-action-status.failed { color:#fda29b; }
 }
