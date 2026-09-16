@@ -23,11 +23,23 @@ test("Activity discovers identities; World decides which are Threads and defines
   };
   const authoritative = {
     thr_a:{
-      diagnosis:{ exists:true, health:"healthy", identity:{ name:"A", sex:"female" }, findings:[] },
+      diagnosis:{
+        exists:true,
+        health:"healthy",
+        identity:{ name:"A", sex:"female" },
+        presentation:{ portraitObjectRef:"portrait_a" },
+        findings:[],
+      },
       reconciliation:{ state:"complete" },
     },
     thr_candidate:{
-      diagnosis:{ exists:false, health:"unrecoverable", identity:null, findings:[{ code:"THREAD_NOT_FOUND", state:"unrecoverable" }] },
+      diagnosis:{
+        exists:false,
+        health:"unrecoverable",
+        identity:null,
+        presentation:{ portraitObjectRef:"must_not_be_used" },
+        findings:[{ code:"THREAD_NOT_FOUND", state:"unrecoverable" }],
+      },
       reconciliation:null,
     },
     thr_b:{
@@ -49,7 +61,9 @@ test("Activity discovers identities; World decides which are Threads and defines
 
   assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_candidate", "thr_b"], "Activity must define observed membership");
   assert.equal(population.threads[0].identity.sex, "female", "World must define Thread facts");
+  assert.equal(population.threads[0].portraitUrl, "/api/thread-assets/portrait_a", "Presentation may supply public portrait media without becoming identity authority");
   assert.equal(population.threads[1].admitted, false, "missing World identity must stay Activity-only");
+  assert.equal(population.threads[1].portraitUrl, null, "Activity-only identifiers must not acquire projected personhood");
   assert.deepEqual(population.summary, {
     observed:3,
     total:2,
