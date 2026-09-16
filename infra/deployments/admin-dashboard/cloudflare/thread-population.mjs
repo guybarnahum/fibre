@@ -7,7 +7,9 @@ function sexBucket(value) {
 
 function summarize(threads) {
   const summary = {
-    total:threads.length,
+    observed:threads.length,
+    total:0,
+    activityOnly:0,
     female:0,
     male:0,
     unknownSex:0,
@@ -17,7 +19,13 @@ function summarize(threads) {
     migrationsAvailable:0,
   };
   for (const thread of threads) {
-    summary[sexBucket(thread.identity?.sex) === "unknown" ? "unknownSex" : sexBucket(thread.identity?.sex)] += 1;
+    if (thread.admitted !== true) {
+      summary.activityOnly += 1;
+      continue;
+    }
+    summary.total += 1;
+    const sex = sexBucket(thread.identity?.sex);
+    summary[sex === "unknown" ? "unknownSex" : sex] += 1;
     if (thread.health === "healthy") summary.healthy += 1;
     else summary.attention += 1;
     if (thread.reconciliation?.state === "dead_letter") summary.deadLetter += 1;
@@ -45,17 +53,20 @@ export async function readAdminThreadPopulation({ activityLog, environment, reso
   for (const row of rows.slice(0, MAX_THREADS)) {
     try {
       const health = await resolveThreadHealth(row.thread_id);
+      const diagnosis = health.diagnosis ?? null;
       threads.push(Object.freeze({
         threadId:row.thread_id,
+        admitted:diagnosis?.exists === true,
         lastActivityAt:row.last_activity_at ?? null,
-        health:health.diagnosis?.health ?? "unavailable",
-        identity:health.diagnosis?.identity ?? null,
-        findings:health.diagnosis?.findings ?? [],
+        health:diagnosis?.health ?? "unavailable",
+        identity:diagnosis?.identity ?? null,
+        findings:diagnosis?.findings ?? [],
         reconciliation:health.reconciliation ?? null,
       }));
     } catch (error) {
       threads.push(Object.freeze({
         threadId:row.thread_id,
+        admitted:null,
         lastActivityAt:row.last_activity_at ?? null,
         health:"unavailable",
         identity:null,
