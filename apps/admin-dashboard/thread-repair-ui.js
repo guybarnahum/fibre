@@ -59,14 +59,14 @@ function unresolved(diagnosis) {
   return (diagnosis?.findings ?? []).filter((finding) => finding?.state !== "healthy");
 }
 
-async function requestDiagnosis(threadId) {
+async function requestHealth(threadId) {
   const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
     headers:{ Accept:"application/json" },
     cache:"no-store",
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
-  return payload.diagnosis;
+  return Object.freeze({ diagnosis:payload.diagnosis, reconciliation:payload.reconciliation ?? null });
 }
 
 async function applyRepair(threadId) {
@@ -78,7 +78,18 @@ async function applyRepair(threadId) {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
-  return payload.result;
+  return payload;
+}
+
+async function recover(threadId) {
+  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
+    method:"POST",
+    headers:{ "content-type":"application/json", Accept:"application/json" },
+    body:JSON.stringify({ action:"recover" }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
+  return payload.recovery;
 }
 
 function healthRow(finding) {
@@ -92,19 +103,78 @@ function healthRow(finding) {
   return row;
 }
 
-function renderHealth(host, threadId, diagnosis, message = null) {
+function reconciliationRow(reconciliation) {
+  if (reconciliation === null) return null;
+  const row = el("div", `thread-repair-row ${reconciliation.state}`);
+  const healthy = reconciliation.state === "complete";
+  const detail = reconciliation.state === "dead_letter"
+    ? `dead letter${reconciliation.lastError?.code ? ` · ${human(reconciliation.lastError.code)}` : ""}`
+    : human(reconciliation.state);
+  row.append(
+    el("span", "thread-repair-icon", healthy ? "✓" : reconciliation.state === "dead_letter" ? "×" : "!"),
+    el("strong", null, "Reconciliation"),
+    el("span", "thread-repair-state", detail),
+  );
+  if (reconciliation.lastError?.message) row.title = reconciliation.lastError.message;
+  return row;
+}
+
+function recoveryPlan(host, threadId, diagnosis, reconciliation) {
+  if (reconciliation?.state !== "dead_letter") return;
+  const outstanding = unresolved(diagnosis);
+  if (outstanding.length !== 0) {
+    const plan = el("div", "thread-repair-plan");
+    plan.append(
+      el("strong", null, "Dead letter quarantined"),
+      el("span", null, reconciliation.lastError?.message ?? "Background reconciliation stopped after a terminal failure."),
+      el("small", null, "Resolve the authoritative Thread findings above before retrying; Fibre will not burn retries on a known-bad Thread."),
+    );
+    host.append(plan);
+    return;
+  }
+
+  const plan = el("div", "thread-repair-plan");
+  plan.append(
+    el("strong", null, "Ready to recover"),
+    el("span", null, reconciliation.lastError?.message ?? "The Thread is quarantined from background reconciliation."),
+    el("small", null, "Recovery requeues only this Thread and schedules one World reconciliation wake."),
+  );
+  const button = el("button", "primary thread-repair-button", "Recover");
+  button.type = "button";
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    button.textContent = "Recovering…";
+    try {
+      await recover(threadId);
+      renderHealth(host, threadId, await requestHealth(threadId), "Recovered · reconciliation is pending.");
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Recover";
+      host.append(el("div", "error-box", `Thread recovery failed: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+  host.append(plan, button);
+}
+
+function renderHealth(host, threadId, health, message = null) {
+  const { diagnosis, reconciliation } = health;
   host.replaceChildren();
   const head = el("div", "thread-person-section-head");
   head.append(el("h3", null, "Thread health"), el("span", null, human(diagnosis.health)));
   host.append(head);
 
   const rows = el("div", "thread-repair-list");
+  const workRow = reconciliationRow(reconciliation);
+  if (workRow) rows.append(workRow);
   for (const finding of diagnosis.findings ?? []) rows.append(healthRow(finding));
   host.append(rows);
 
   if (message) host.append(el("p", "thread-repair-message", message));
   const actions = actionable(diagnosis);
-  if (actions.length === 0) return;
+  if (actions.length === 0) {
+    recoveryPlan(host, threadId, diagnosis, reconciliation);
+    return;
+  }
 
   const plan = el("div", "thread-repair-plan");
   plan.append(el("strong", null, `${actions.length} deterministic ${actions.length === 1 ? "action" : "actions"}`));
@@ -116,24 +186,25 @@ function renderHealth(host, threadId, diagnosis, message = null) {
   }
   plan.append(el("small", null, "Repair does not rewrite World history or invent identity facts."));
 
-  const button = el("button", "primary thread-repair-button", "Fix Thread");
+  const button = el("button", "primary thread-repair-button", reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix Thread");
   button.type = "button";
   button.addEventListener("click", async () => {
     button.disabled = true;
     button.textContent = "Repairing…";
     try {
-      const result = await applyRepair(threadId);
+      const payload = await applyRepair(threadId);
+      const result = payload.result;
       const names = (result.actions ?? []).map((entry) => human(entry.action)).join(" · ");
-      let current = result.after;
+      let current = Object.freeze({ diagnosis:result.after, reconciliation:payload.reconciliation ?? null });
       renderHealth(host, threadId, current, names ? `Applied: ${names}` : "No repair action was required.");
 
-      for (let attempt = 0; attempt < 30 && actionable(current).some((entry) => entry.state === "repairable"); attempt += 1) {
+      for (let attempt = 0; attempt < 30 && actionable(current.diagnosis).some((entry) => entry.state === "repairable"); attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        current = await requestDiagnosis(threadId);
+        current = await requestHealth(threadId);
         renderHealth(host, threadId, current, "Waiting for asynchronous repair work to settle…");
       }
 
-      const remaining = unresolved(current);
+      const remaining = unresolved(current.diagnosis);
       renderHealth(
         host,
         threadId,
@@ -144,7 +215,7 @@ function renderHealth(host, threadId, diagnosis, message = null) {
       if (source) source.click();
     } catch (error) {
       button.disabled = false;
-      button.textContent = "Fix Thread";
+      button.textContent = reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix Thread";
       host.append(el("div", "error-box", `Thread repair failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   });
@@ -165,9 +236,9 @@ async function attach() {
   hero?.after(host);
   host.append(el("div", "thread-loading", "Checking Thread health…"));
   try {
-    const diagnosis = await requestDiagnosis(threadId);
+    const health = await requestHealth(threadId);
     if (token !== generation || !host.isConnected) return;
-    renderHealth(host, threadId, diagnosis);
+    renderHealth(host, threadId, health);
   } catch (error) {
     if (token !== generation || !host.isConnected) return;
     host.replaceChildren(el("div", "error-box", `Thread diagnosis unavailable: ${error instanceof Error ? error.message : String(error)}`));
