@@ -24,14 +24,16 @@ If no legitimate source exists, Fibre must not invent the missing fact merely to
 Migrations are named and narrow, for example:
 
 ```text
-migrate_genesis_sex
-migrate_canonical_visual_identity_v1
-migrate_fin_registration_v2
+genesis_sex_v1
+canonical_visual_identity_v1
+fin_registration_v2
 ```
 
 A migration must be deterministic or explicitly evidence-bound, idempotent, and leave durable provenance identifying the prior state, resulting state, migration rule/version, evidence used and operation identity. Migration must preserve append-only history rather than rewrite the past to make a current projection convenient.
 
-The existing Genesis-sex migration is the reference pattern: preserved birth evidence may restore missing sex; without authoritative evidence, Fibre does not fabricate it.
+A migration may declare explicit operator input only when the migration's domain rule requires that input. The accepted input shape belongs to that named migration; there is no generic arbitrary-field migration editor.
+
+The existing `genesis_sex_v1` migration is the reference pattern: preserved birth evidence may restore missing sex; without authoritative evidence, Fibre does not fabricate it. It requires no operator-supplied fact.
 
 ## Repair
 
@@ -124,9 +126,14 @@ For migration-required state, Admin should show the named migration and evidence
 
 Migration, repair and recovery should remain distinguishable in operational evidence.
 
-- migration references the authoritative evidence and resulting migration witness;
-- repair references the authority from which state was reconstructed;
-- recovery records that quarantined work was reactivated;
-- Activity may describe these operations but never substitutes for their authoritative records.
+Named migrations use their own operational family, for example:
+
+```text
+thread.migration.start
+thread.migration.genesis_sex
+thread.migration.complete
+```
+
+Repair remains under `thread.repair.*`; recovery records that quarantined work was reactivated. Activity may describe these operations but never substitutes for their authoritative records.
 
 This distinction lets Fibre evolve its representation without rewriting a person's history, repair derived damage without inventing facts, and recover operational work without turning retries into semantic authority.
