@@ -39,6 +39,8 @@ export function buildAdminInfraMonitorConfig({ operatorConfig, resourceState } =
     limits:Object.freeze({
       d1RowsReadDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN") ?? 500_000,
       d1RowsWrittenDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN") ?? 10_000,
+      durableObjectRowsReadDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_DO_ROWS_READ_DAILY_WARN") ?? 5_000_000,
+      durableObjectRowsWrittenDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_DO_ROWS_WRITTEN_DAILY_WARN") ?? 100_000,
       workerRequests15m:optionalNumber(operatorConfig, "FIBRE_INFRA_WORKER_REQUESTS_15M_WARN") ?? 25_000,
       workerErrors15m:optionalNumber(operatorConfig, "FIBRE_INFRA_WORKER_ERRORS_15M_WARN") ?? 100,
     }),
