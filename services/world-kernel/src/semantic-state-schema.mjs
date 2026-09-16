@@ -33,6 +33,8 @@ export function createSemanticStateTables(database) {
 
     CREATE INDEX IF NOT EXISTS idx_semantic_state_thread_current
       ON semantic_state_records(thread_id,domain,dimension,as_of,state_id);
+    CREATE INDEX IF NOT EXISTS idx_semantic_state_supersedes
+      ON semantic_state_records(supersedes_state_id);
 
     CREATE TRIGGER IF NOT EXISTS semantic_state_dimensions_no_update
       BEFORE UPDATE ON semantic_state_dimensions
