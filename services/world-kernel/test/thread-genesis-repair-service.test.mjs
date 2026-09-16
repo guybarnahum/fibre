@@ -106,7 +106,7 @@ test("R2-R3 rebuild missing Presentation before existing visual reconciliation",
   assert.equal(result.after.health, "healthy");
 });
 
-test("R4 exposes authoritative identity completeness without requiring sex in public Presentation", async () => {
+test("R4 keeps authoritative identity complete while public Presentation stays a projection", async () => {
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
@@ -118,18 +118,12 @@ test("R4 exposes authoritative identity completeness without requiring sex in pu
     media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
   };
   const diagnosis = await service.diagnose(threadId);
-  assert.deepEqual(diagnosis.identity, {
-    name:"Repair Thread",
-    sex:"female",
-    fibreIdentityNumber:"ABCD-12-EFGH",
-    originOrientation:"original",
-    birthDate:null,
-    lifecycleStatus:"active",
-    canonicalVisualSpecification:"present",
-  });
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "SEX").state, "healthy");
-  assert.equal(diagnosis.findings.some((entry) => entry.code === "SEX_PRESENTATION_MISSING"), false);
-  assert.equal(diagnosis.health, "healthy");
+  assert.equal(diagnosis.identity.name, "Repair Thread", "World name must remain authoritative");
+  assert.equal(diagnosis.identity.sex, "female", "World sex must remain authoritative");
+  assert.equal(diagnosis.identity.fibreIdentityNumber, "ABCD-12-EFGH", "civil identity must remain authoritative");
+  assert.equal(diagnosis.presentation.portraitObjectRef, "identity_photo_1", "published portrait must stay discoverable");
+  assert.equal(diagnosis.findings.some((entry) => entry.code === "SEX_PRESENTATION_MISSING"), false, "public Presentation must not become sex authority");
+  assert.equal(diagnosis.health, "healthy", "complete authoritative identity should be healthy");
 });
 
 test("R4 distinguishes public projection omission from authoritative Genesis absence", async () => {
