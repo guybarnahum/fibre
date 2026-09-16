@@ -249,8 +249,10 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     repairService,
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
-    async onRepair({ threadId }) {
-      if (visualPublicationWorkset.requeue(threadId, { updatedAt:now() })) {
+    async onRepair({ threadId, result }) {
+      const blocked = ["migration_required", "integrity_error", "operator_decision_required", "unrecoverable"]
+        .includes(result?.after?.health);
+      if (!blocked && visualPublicationWorkset.requeue(threadId, { updatedAt:now() })) {
         await reconciliationRuntime.requestWake();
       }
     },
