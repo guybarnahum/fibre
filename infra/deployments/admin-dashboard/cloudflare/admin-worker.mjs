@@ -3,6 +3,7 @@ import baseWorker, {
   authorizeAdminPrincipal,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
+import { readAdminThreadPopulation } from "./thread-population.mjs";
 import {
   combineAdminThreadIdentity,
   resolveAdminThreadIdentity,
@@ -15,6 +16,7 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
+const THREAD_POPULATION_ROUTE = "/api/threads/population";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
@@ -62,6 +64,12 @@ function presentationBinding(env) {
   return serviceBinding(env, "THREAD_PRESENTATION");
 }
 
+function privateToken(env) {
+  const value = typeof env?.FIBRE_PRIVATE_TOKEN === "string" ? env.FIBRE_PRIVATE_TOKEN.trim() : "";
+  if (value.length < 16) throw new Error("Fibre private service token is unavailable");
+  return value;
+}
+
 function adminIdentity(identity) {
   return Object.freeze({
     ...identity,
@@ -95,13 +103,14 @@ async function proxyAsset(request, env, objectRef) {
 }
 
 async function proxyThreadRepair(request, env, threadId) {
-  const privateToken = typeof env?.FIBRE_PRIVATE_TOKEN === "string" ? env.FIBRE_PRIVATE_TOKEN.trim() : "";
-  if (privateToken.length < 16) return json(503, { error:"thread_repair_not_configured" });
+  let token;
+  try { token = privateToken(env); }
+  catch { return json(503, { error:"thread_repair_not_configured" }); }
   const init = {
     method:request.method,
     headers:{
       Accept:"application/json",
-      "x-fibre-private-token":privateToken,
+      "x-fibre-private-token":token,
       ...(request.method === "POST" ? { "content-type":"application/json" } : {}),
     },
   };
@@ -122,6 +131,16 @@ async function proxyThreadRepair(request, env, threadId) {
   });
 }
 
+async function threadHealth(env, threadId) {
+  const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
+  ));
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  return payload;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -137,8 +156,9 @@ export default {
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
+    const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || repairMatch || assetMatch || infraMonitor);
+    const adminGet = request.method === "GET" && (identityMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
     const adminPost = request.method === "POST" && (repairMatch || infraMonitor);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
@@ -148,6 +168,20 @@ export default {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const force = request.method === "POST" || url.searchParams.get("force") === "1";
           return json(200, await readAdminInfraMonitor({ env, environment, force }));
+        }
+        if (threadPopulation) {
+          const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
+          const population = await readAdminThreadPopulation({
+            activityLog:env.ACTIVITY_LOG,
+            environment,
+            resolveThreadHealth:(threadId) => threadHealth(env, threadId),
+          });
+          return json(200, {
+            contract:"fibre-admin-thread-population-v0.1",
+            environment,
+            queriedAt:new Date().toISOString(),
+            ...population,
+          });
         }
         if (repairMatch) {
           const threadId = id("threadId", decodeURIComponent(repairMatch[1]));
@@ -183,6 +217,7 @@ export default {
         return proxyAsset(request, env, id("objectRef", decodeURIComponent(assetMatch[1])));
       } catch (error) {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
+        if (threadPopulation) return json(503, { error:"thread_population_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
           error: error instanceof TypeError ? "invalid_thread_resource" : "thread_identity_unavailable",
           detail: error.message,
