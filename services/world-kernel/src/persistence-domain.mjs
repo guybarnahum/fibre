@@ -30,6 +30,7 @@ import {
   AUTOBIOGRAPHICAL_MEMORY_RECORDED,
   applyAutobiographicalMemoryRecordedEvent,
 } from "./autobiographical-memory-anchor.mjs";
+import { applyThreadIdentityAmendmentEvent } from "./thread-identity-amendment-domain.mjs";
 
 export function validateThreadSnapshot(thread) {
   assertPlainObject("thread", thread);
@@ -207,6 +208,9 @@ export function applyEventToThread(thread, event) {
   }
   if (event.eventType === "GENESIS_SEX_MIGRATED") {
     return applyGenesisSexMigration(thread, event);
+  }
+  if (event.eventType === "LEGACY_SEX_ASSIGNED" || event.eventType === "THREAD_NAME_CHANGED") {
+    return applyThreadIdentityAmendmentEvent(thread, event, { validateStoredThread, ErrorType:IntegrityError });
   }
   if (event.eventType === "SELF_MODEL_UPDATED") {
     if (thread === null) throw new IntegrityError(`event ${event.eventId} appears before a seed event`);
