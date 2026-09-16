@@ -34,6 +34,13 @@ function summarize(threads) {
   return Object.freeze(summary);
 }
 
+function portraitUrl(diagnosis) {
+  const objectRef = diagnosis?.presentation?.portraitObjectRef;
+  return diagnosis?.exists === true && typeof objectRef === "string" && objectRef !== ""
+    ? `/api/thread-assets/${encodeURIComponent(objectRef)}`
+    : null;
+}
+
 export async function readAdminThreadPopulation({ activityLog, environment, resolveThreadHealth }) {
   if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
   if (typeof resolveThreadHealth !== "function") throw new TypeError("Thread population requires resolveThreadHealth()");
@@ -60,6 +67,7 @@ export async function readAdminThreadPopulation({ activityLog, environment, reso
         lastActivityAt:row.last_activity_at ?? null,
         health:diagnosis?.health ?? "unavailable",
         identity:diagnosis?.identity ?? null,
+        portraitUrl:portraitUrl(diagnosis),
         findings:diagnosis?.findings ?? [],
         reconciliation:health.reconciliation ?? null,
       }));
@@ -70,6 +78,7 @@ export async function readAdminThreadPopulation({ activityLog, environment, reso
         lastActivityAt:row.last_activity_at ?? null,
         health:"unavailable",
         identity:null,
+        portraitUrl:null,
         findings:[],
         reconciliation:null,
         error:error instanceof Error ? error.message : String(error),
