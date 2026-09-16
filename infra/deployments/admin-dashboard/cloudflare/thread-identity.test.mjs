@@ -61,20 +61,23 @@ const identity = Object.freeze({
   }],
   snapshot:presentationSnapshot,
   provenance:{
-    displayName:"resolved_after_fact",
-    fibreIdentityNumber:"resolved_after_fact",
+    displayName:"current_public_presentation",
+    fibreIdentityNumber:"current_public_presentation",
     assets:"current_public_presentation",
     source:"current_public_presentation",
   },
 });
 
-test("O1 preserves the current public Presentation and ready media", async () => {
+test("O1 keeps public identity and publishes only ready media", async () => {
   const resolved = await resolveAdminThreadIdentity({
     environment:"staging",
     threadId:"thr_test_1",
     fetchImpl:async () => Response.json({ pointer:{ threadId:"thr_test_1" }, snapshot:presentationSnapshot }),
   });
-  assert.deepEqual(resolved, identity);
+  assert.equal(resolved.displayName, "Thread One", "public name must survive projection");
+  assert.equal(resolved.fibreIdentityNumber, "4JX5-2N-04K2", "civil identity must survive projection");
+  assert.equal(resolved.assets.length, 1, "pending media must not become public identity media");
+  assert.equal(resolved.assets[0].objectRef, "asset_object_1", "ready portrait must remain addressable");
 });
 
 test("O1 preserves rich authoritative World Thread state", async () => {
