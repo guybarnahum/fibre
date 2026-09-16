@@ -20,12 +20,15 @@
 
 .thread-repair-row:last-child { border-bottom: 0; }
 .thread-repair-icon { font-weight: 800; text-align: center; }
-.thread-repair-row.healthy .thread-repair-icon { opacity: .7; }
+.thread-repair-row.healthy .thread-repair-icon,
+.thread-repair-row.complete .thread-repair-icon { opacity: .7; }
 .thread-repair-row.repairable .thread-repair-icon,
+.thread-repair-row.pending .thread-repair-icon,
 .thread-repair-row.migration_required .thread-repair-icon,
 .thread-repair-row.operator_decision_required .thread-repair-icon { color: #b87900; }
 .thread-repair-row.integrity_error .thread-repair-icon,
-.thread-repair-row.unrecoverable .thread-repair-icon { color: #b42318; }
+.thread-repair-row.unrecoverable .thread-repair-icon,
+.thread-repair-row.dead_letter .thread-repair-icon { color: #b42318; }
 .thread-repair-state { opacity: .7; line-height: 1.4; }
 
 .thread-repair-plan {
