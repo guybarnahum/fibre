@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { readAdminInfraMonitor } from "./infra-monitor.mjs";
 
-function healthBinding(service, check, { critical = false } = {}) {
+function healthBinding(service, check, { criticalFromRead = Infinity } = {}) {
   let reads = 0;
   return {
     get reads() { return reads; },
@@ -11,6 +11,7 @@ function healthBinding(service, check, { critical = false } = {}) {
       reads += 1;
       assert.equal(request.method, "GET");
       assert.equal(new URL(request.url).pathname, "/internal/health/infra");
+      const critical = reads >= criticalFromRead;
       const healthCheck = critical
         ? {
             ...check,
@@ -49,7 +50,7 @@ function activityDatabase() {
 }
 
 function monitorEnv() {
-  const world = healthBinding("world-kernel", { kind:"state", resource:"world" }, { critical:true });
+  const world = healthBinding("world-kernel", { kind:"state", resource:"world" }, { criticalFromRead:2 });
   const birth = healthBinding("birth-center", { kind:"state", resource:"birth" });
   const presentation = healthBinding("thread-presentation", { kind:"objects", resource:"r2" });
   const asset = healthBinding("asset-generator", { kind:"workflows", resource:"asset_generation_v1" });
@@ -67,7 +68,14 @@ function monitorEnv() {
         accountId:"account",
         apiToken:"analytics-token",
         ttlSeconds:900,
-        limits:{ d1RowsReadDaily:1000, d1RowsWrittenDaily:100, workerRequests15m:1000, workerErrors15m:10 },
+        limits:{
+          d1RowsReadDaily:1000,
+          d1RowsWrittenDaily:100,
+          durableObjectRowsReadDaily:5_000_000,
+          durableObjectRowsWrittenDaily:100_000,
+          workerRequests15m:1000,
+          workerErrors15m:10,
+        },
         d1Resources:[{ name:"activity", id:"activity", binding:"ACTIVITY_LOG" }],
       }),
     },
@@ -79,11 +87,13 @@ function analyticsResponse() {
     data:{ viewer:{ accounts:[{
       d1AnalyticsAdaptiveGroups:[{ dimensions:{ databaseId:"activity" }, sum:{ readQueries:1, writeQueries:0, rowsRead:100, rowsWritten:0 } }],
       workersInvocationsAdaptive:[],
+      durableObjectsInvocationsAdaptiveGroups:[],
+      durableObjectsPeriodicGroups:[],
     }] } },
   }), { status:200, headers:{ "Content-Type":"application/json" } });
 }
 
-test("Admin surfaces infra failure with one bounded read-only observation per TTL", async () => {
+test("live service health is never hidden behind the slower capacity cache", async () => {
   const { env, services, activity } = monitorEnv();
   let analyticsReads = 0;
   const fetchImpl = async () => { analyticsReads += 1; return analyticsResponse(); };
@@ -93,17 +103,18 @@ test("Admin surfaces infra failure with one bounded read-only observation per TT
     now:new Date("2026-09-15T16:12:38.000Z"),
     fetchImpl,
   });
-  const cached = await readAdminInfraMonitor({
+  const second = await readAdminInfraMonitor({
     env,
     environment:"staging",
     now:new Date("2026-09-15T16:17:38.000Z"),
     fetchImpl,
   });
 
-  assert.equal(first.sample.level, "critical");
-  assert.equal(first.sample.checks.find((check) => check.resource === "world")?.error?.code, "DURABLE_OBJECT_ROWS_READ_LIMIT");
-  assert.equal(cached.cached, true);
-  assert.ok(services.every((service) => service.reads === 1), "each runtime service must be probed once per TTL");
-  assert.equal(activity.reads, 1, "shared Activity D1 must be probed once per TTL");
-  assert.equal(analyticsReads, 1, "capacity must be sampled once per TTL");
+  assert.equal(first.sample.level, "normal");
+  assert.equal(second.sample.level, "critical");
+  assert.equal(second.sample.checks.find((check) => check.resource === "world")?.error?.code, "DURABLE_OBJECT_ROWS_READ_LIMIT");
+  assert.equal(second.cached, true, "only capacity analytics should be cached");
+  assert.ok(services.every((service) => service.reads === 2), "runtime health must be probed on every monitor read");
+  assert.equal(activity.reads, 2, "Admin D1 liveness must be probed on every monitor read");
+  assert.equal(analyticsReads, 1, "capacity analytics remain bounded by the TTL");
 });
