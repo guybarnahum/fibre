@@ -365,9 +365,8 @@ function threadRow(thread) {
   const identity = thread.identity ?? {};
   if (thread.admitted === false) tr.className = "thread-population-activity-only";
 
-  const person = document.createElement("td");
-  const personLayout = document.createElement("div");
-  personLayout.className = "thread-population-person";
+  const portraitCell = document.createElement("td");
+  portraitCell.className = "thread-population-portrait-cell";
   const portrait = document.createElement("span");
   portrait.className = "thread-population-portrait";
   if (thread.admitted === true && typeof thread.portraitUrl === "string" && thread.portraitUrl !== "") {
@@ -379,22 +378,23 @@ function threadRow(thread) {
   } else {
     portrait.textContent = thread.admitted === true ? (identity.name?.trim()?.[0] ?? "·") : "·";
   }
+  portraitCell.append(portrait);
 
+  const person = document.createElement("td");
+  const personLayout = document.createElement("div");
+  personLayout.className = "thread-population-person";
   const personText = document.createElement("div");
   const link = document.createElement("a");
   link.className = "thread-population-name";
-  if (thread.admitted === true) {
-    link.href = `/thread/${encodeURIComponent(thread.threadId)}`;
-    link.textContent = identity.name ?? "Unnamed Thread";
-  } else {
-    link.href = `/activity?kind=thread&value=${encodeURIComponent(thread.threadId)}&mode=causal`;
-    link.textContent = thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
-  }
+  link.href = `/thread/${encodeURIComponent(thread.threadId)}`;
+  link.textContent = thread.admitted === true
+    ? identity.name ?? "Unnamed Thread"
+    : thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
   const ids = document.createElement("small");
   ids.className = "mono";
   ids.textContent = [identity.fibreIdentityNumber, identity.lifecycleStatus, shortId(thread.threadId)].filter(Boolean).join(" · ");
   personText.append(link, ids);
-  personLayout.append(portrait, personText);
+  personLayout.append(personText);
   person.append(personLayout);
 
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
@@ -409,7 +409,7 @@ function threadRow(thread) {
   if (thread.reconciliation?.lastError?.message) reconciliation.title = thread.reconciliation.lastError.message;
   const lastActivity = document.createElement("td"); lastActivity.className = "time"; lastActivity.textContent = when(thread.lastActivityAt);
 
-  tr.append(person, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
+  tr.append(portraitCell, person, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
   return tr;
 }
 
@@ -463,6 +463,30 @@ function renderPopulation() {
   renderSortHeaders();
 }
 
+function renderActivitySummaryLabels() {
+  $("#metric-label-records").textContent = "Records";
+  $("#metric-context-records").textContent = "on this page";
+  $("#metric-label-failures").textContent = "Failures";
+  $("#metric-context-failures").textContent = "on this page";
+  $("#metric-label-retries").textContent = "Retrying";
+  $("#metric-context-retries").textContent = "on this page";
+  $("#metric-view-context").textContent = "cursor-paged Activity";
+}
+
+function renderThreadsTopSummary(summary = null) {
+  $("#metric-label-records").textContent = "Threads";
+  $("#metric-context-records").textContent = "admitted population";
+  $("#metric-records").textContent = summary?.total ?? "—";
+  $("#metric-label-failures").textContent = "Needs attention";
+  $("#metric-context-failures").textContent = "authoritative health";
+  $("#metric-failures").textContent = summary?.attention ?? "—";
+  $("#metric-label-retries").textContent = "Dead letter";
+  $("#metric-context-retries").textContent = "reconciliation";
+  $("#metric-retries").textContent = summary?.deadLetter ?? "—";
+  $("#metric-view").textContent = "Threads";
+  $("#metric-view-context").textContent = "population / World health";
+}
+
 function renderSummary(summary) {
   const values = {
     "thread-stat-total":summary.total,
@@ -475,6 +499,7 @@ function renderSummary(summary) {
     "thread-stat-dead":summary.deadLetter,
   };
   for (const [id, value] of Object.entries(values)) $(`#${id}`).textContent = value ?? 0;
+  renderThreadsTopSummary(summary);
 }
 
 function holdThreadsMode() {
@@ -485,6 +510,8 @@ function holdThreadsMode() {
   document.querySelector("#thread-context").hidden = true;
   for (const control of document.querySelectorAll(".view-switch button")) control.classList.toggle("active", control.id === "view-threads");
   $("#chain-title").textContent = "Threads";
+  $("#metric-view").textContent = "Threads";
+  $("#metric-view-context").textContent = "population / World health";
 }
 
 async function loadPopulation() {
@@ -505,6 +532,7 @@ async function loadPopulation() {
     $("#chain-summary").textContent = `${payload.summary?.total ?? 0} admitted Threads · ${payload.summary?.activityOnly ?? 0} Activity-only IDs${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
   } catch (error) {
     population = [];
+    renderThreadsTopSummary();
     renderPopulation();
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
@@ -518,7 +546,6 @@ async function loadPopulation() {
 
 function setActivityChrome(hidden) {
   document.querySelector(".filters-panel").hidden = hidden;
-  document.querySelector(".main > section.metrics").hidden = hidden;
   document.querySelector(".activity-pager").hidden = hidden;
   document.querySelector("#thread-context").hidden = true;
   document.querySelector(".auto-refresh").hidden = hidden;
@@ -532,6 +559,7 @@ function enterThreads() {
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
   setActivityChrome(true);
+  renderThreadsTopSummary();
   holdThreadsMode();
   $("#chain-summary").textContent = "Loading population…";
   const params = new URLSearchParams(location.search); params.set("mode", "threads");
@@ -544,6 +572,8 @@ function exitThreads(nextMode) {
   active = false;
   view.hidden = true;
   setActivityChrome(false);
+  renderActivitySummaryLabels();
+  $("#metric-view").textContent = nextMode === "causal" ? "Causal" : "Raw";
   $("#auto-refresh").checked = priorAutoRefresh;
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
