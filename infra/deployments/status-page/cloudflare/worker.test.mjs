@@ -20,6 +20,19 @@ function infraBinding(level = "normal", { stale = false } = {}) {
   };
 }
 
+function changingInfraBinding(levels) {
+  let reads = 0;
+  return {
+    get reads() { return reads; },
+    async fetch(request) {
+      assert.equal(new URL(request.url).pathname, "/internal/infra-health");
+      const level = levels[Math.min(reads, levels.length - 1)];
+      reads += 1;
+      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.5", level, stale:false, observedAt:"2026-09-16T18:00:00.000Z" }), { status:200, headers:{ "Content-Type":"application/json" } });
+    },
+  };
+}
+
 function environment(overrides = {}) {
   return {
     FIBRE_ENVIRONMENT: "staging",
@@ -46,6 +59,25 @@ test("public status is operational only when viewer, runtime, and infra health a
   assert.ok(result.components.every((component) => component.status === "operational"));
   const serialized = JSON.stringify(result);
   for (const forbidden of ["requestId", "threadId", "genesisId", "providerRequestId", "error", "databaseId", "accountId"]) assert.equal(serialized.includes(forbidden), false);
+});
+
+test("public status refreshes infrastructure quickly enough to catch a new quota failure", async () => {
+  const infra = changingInfraBinding(["normal", "critical"]);
+  const env = environment({ ADMIN_DASHBOARD:infra });
+  const originalNow = Date.now;
+  let nowMs = Date.parse("2026-09-16T18:00:00.000Z");
+  Date.now = () => nowMs;
+  try {
+    const first = await currentPublicStatus(env, { fetchImpl:viewerOk });
+    assert.equal(first.status, "operational");
+    nowMs += 61_000;
+    const second = await currentPublicStatus(env, { fetchImpl:viewerOk });
+    assert.equal(second.status, "degraded");
+    assert.equal(second.components.find((component) => component.key === "infra")?.status, "degraded");
+    assert.equal(infra.reads, 2);
+  } finally {
+    Date.now = originalNow;
+  }
 });
 
 test("elevated cached infrastructure degrades public status without exposing monitor detail", async () => {
