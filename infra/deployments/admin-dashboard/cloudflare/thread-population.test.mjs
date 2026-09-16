@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { readAdminThreadPopulation } from "./thread-population.mjs";
 
-test("Thread population uses Activity for membership and World for person state", async () => {
+test("Activity discovers identities; World decides which are Threads and defines their state", async () => {
   const activityLog = {
     prepare() {
       return {
@@ -12,6 +12,7 @@ test("Thread population uses Activity for membership and World for person state"
             async all() {
               return { results:[
                 { thread_id:"thr_a", last_activity_at:"2026-09-16T03:00:00.000Z" },
+                { thread_id:"thr_candidate", last_activity_at:"2026-09-16T02:30:00.000Z" },
                 { thread_id:"thr_b", last_activity_at:"2026-09-16T02:00:00.000Z" },
               ] };
             },
@@ -22,14 +23,19 @@ test("Thread population uses Activity for membership and World for person state"
   };
   const authoritative = {
     thr_a:{
-      diagnosis:{ health:"healthy", identity:{ name:"A", sex:"female" }, findings:[] },
+      diagnosis:{ exists:true, health:"healthy", identity:{ name:"A", sex:"female" }, findings:[] },
       reconciliation:{ state:"complete" },
+    },
+    thr_candidate:{
+      diagnosis:{ exists:false, health:"unrecoverable", identity:null, findings:[{ code:"THREAD_NOT_FOUND", state:"unrecoverable" }] },
+      reconciliation:null,
     },
     thr_b:{
       diagnosis:{
+        exists:true,
         health:"migration_required",
         identity:{ name:"B", sex:"male" },
-        findings:[{ code:"LEGACY", state:"migration_required", migration:{ id:"legacy_v1" } }],
+        findings:[{ code:"SCHEMA", state:"migration_required", migration:{ id:"schema_v1" } }],
       },
       reconciliation:{ state:"dead_letter" },
     },
@@ -41,10 +47,13 @@ test("Thread population uses Activity for membership and World for person state"
     resolveThreadHealth:async (threadId) => authoritative[threadId],
   });
 
-  assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_b"], "Activity must define population membership");
+  assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_candidate", "thr_b"], "Activity must define observed membership");
   assert.equal(population.threads[0].identity.sex, "female", "World must define Thread facts");
+  assert.equal(population.threads[1].admitted, false, "missing World identity must stay Activity-only");
   assert.deepEqual(population.summary, {
+    observed:3,
     total:2,
+    activityOnly:1,
     female:1,
     male:1,
     unknownSex:0,
