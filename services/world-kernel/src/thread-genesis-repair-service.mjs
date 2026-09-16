@@ -44,6 +44,13 @@ function presentationVisualState(snapshot, embodiment) {
   return "missing";
 }
 
+function presentationPortraitObjectRef(snapshot) {
+  const mediaId = snapshot?.presentation?.identityCard?.officialPhotoMediaRef ?? null;
+  if (typeof mediaId !== "string") return null;
+  const asset = (snapshot?.media?.assets ?? []).find((entry) => entry?.mediaId === mediaId && entry?.status === "ready");
+  return text(asset?.locator);
+}
+
 function finding(code, state, action = null, detail = {}) {
   return Object.freeze({ code, state, action, ...detail });
 }
@@ -249,11 +256,18 @@ export function createThreadGenesisRepairService({
 
   async function diagnose(threadId) {
     const thread = worldReader.getThread(threadId, { required:false });
-    if (thread === null) return Object.freeze({ threadId, health:"unrecoverable", exists:false, identity:null, findings:Object.freeze([
-      finding("THREAD_NOT_FOUND", "unrecoverable", null, {
-        reason:"Activity references this identifier, but World has no admitted Thread",
-      }),
-    ]) });
+    if (thread === null) return Object.freeze({
+      threadId,
+      health:"unrecoverable",
+      exists:false,
+      identity:null,
+      presentation:null,
+      findings:Object.freeze([
+        finding("THREAD_NOT_FOUND", "unrecoverable", null, {
+          reason:"Activity references this identifier, but World has no admitted Thread",
+        }),
+      ]),
+    });
 
     const registration = civilRegistry.getCivilRegistrationByThreadId(threadId, { required:false });
     const embodiment = currentCanonicalPortrait(embodimentReader, threadId);
@@ -295,6 +309,9 @@ export function createThreadGenesisRepairService({
       health: overall(findings),
       exists: true,
       identity:completeness.facts,
+      presentation:Object.freeze({
+        portraitObjectRef:visualState === "published" ? presentationPortraitObjectRef(presentation) : null,
+      }),
       findings: Object.freeze(findings),
     });
   }
