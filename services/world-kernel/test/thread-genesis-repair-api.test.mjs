@@ -13,6 +13,15 @@ function api(options = {}) {
         if (threadId === "thr_missing") return { threadId, exists:false, health:"unrecoverable", findings:[] };
         return { threadId, exists:true, health:"repairable", findings:[{ code:"PRESENTATION_MISSING", state:"repairable" }] };
       },
+      async updateIdentity(threadId, { operationKey, name, sex }) {
+        return {
+          threadId,
+          operationKey,
+          before:{ exists:true, health:"operator_decision_required" },
+          after:{ exists:true, health:"repairable", identity:{ name:name ?? "Thread", sex:sex ?? null } },
+          changed:true,
+        };
+      },
       async migrate(threadId, { migrationId, migrationKey, input }) {
         return {
           threadId,
@@ -56,8 +65,26 @@ test("R1 repair diagnosis is private and read-only", async () => {
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair"));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.contract, "fibre-thread-repair-v0.3");
+  assert.equal(body.contract, "fibre-thread-repair-v0.4");
   assert.equal(body.diagnosis.health, "repairable");
+});
+
+test("Admin identity input changes authority through an explicit Thread action", async () => {
+  const repairApi = api();
+  const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"identity",
+      operationKey:"admin_identity_1",
+      name:"Maya Cohen",
+      sex:"female",
+    }),
+  }));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.identityUpdate.after.identity.name, "Maya Cohen");
+  assert.equal(body.identityUpdate.after.identity.sex, "female");
 });
 
 test("named migration remains distinct from repair", async () => {
