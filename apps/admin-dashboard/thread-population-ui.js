@@ -5,6 +5,8 @@ const empty = $("#thread-population-empty");
 let active = false;
 let loading = false;
 let priorAutoRefresh = true;
+let population = [];
+let sortState = { key:"lastActivity", direction:"desc" };
 
 function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
@@ -46,6 +48,16 @@ function migrationFor(thread) {
   return (thread.findings ?? []).find((finding) => finding?.migration?.id)?.migration ?? null;
 }
 
+function identityActions(thread) {
+  const seen = new Set();
+  return (thread.findings ?? []).flatMap((finding) => {
+    const action = finding?.identityAction;
+    if (!action?.id || seen.has(action.id)) return [];
+    seen.add(action.id);
+    return [action];
+  });
+}
+
 function hasRepair(thread) {
   return (thread.findings ?? []).some((finding) => finding?.state === "repairable" && typeof finding?.action === "string");
 }
@@ -61,32 +73,79 @@ async function command(threadId, body) {
   return payload;
 }
 
-function migrationInput(migration) {
-  const fields = migration.input?.fields;
-  if (!Array.isArray(fields) || fields.length === 0) return null;
+function collectInput(action) {
+  const fields = action.input?.fields;
+  if (!Array.isArray(fields) || fields.length === 0) return {};
   const input = {};
   for (const field of fields) {
     if (typeof field?.name !== "string" || field.name === "") continue;
-    const answer = window.prompt(field.label ?? human(field.name), field.default ?? "");
+    const choices = Array.isArray(field.options) ? field.options : [];
+    const prompt = choices.length > 0
+      ? `${field.label ?? human(field.name)} (${choices.join(" / ")})`
+      : field.label ?? human(field.name);
+    const answer = window.prompt(prompt, field.default ?? "");
     if (answer === null) return undefined;
-    if (field.required === true && answer.trim() === "") throw new Error(`${field.label ?? human(field.name)} is required`);
-    input[field.name] = answer;
+    const value = answer.trim();
+    if (field.required === true && value === "") throw new Error(`${field.label ?? human(field.name)} is required`);
+    if (choices.length > 0 && !choices.includes(value)) throw new Error(`${field.label ?? human(field.name)} must be ${choices.join(" or ")}`);
+    input[field.name] = value;
   }
   return input;
+}
+
+function button(label, body, thread) {
+  const control = document.createElement("button");
+  control.type = "button";
+  control.className = label === "Recover" ? "secondary" : "primary";
+  control.textContent = label;
+  control.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    try {
+      const payload = body();
+      if (payload === null || payload === undefined) return;
+      control.disabled = true;
+      control.textContent = `${label}…`;
+      await command(thread.threadId, payload);
+      await loadPopulation();
+    } catch (error) {
+      control.disabled = false;
+      control.textContent = label;
+      $("#chain-summary").textContent = `${label} failed for ${shortId(thread.threadId)}: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  });
+  return control;
 }
 
 function actionCell(thread) {
   const cell = document.createElement("td");
   cell.className = "thread-population-actions";
-  const migration = migrationFor(thread);
-  const deadLetter = thread.reconciliation?.state === "dead_letter";
-  let label = null;
-  let body = null;
+  if (thread.admitted === false) {
+    cell.textContent = "Activity only";
+    return cell;
+  }
+  if (thread.admitted !== true) {
+    cell.textContent = "Unavailable";
+    return cell;
+  }
 
+  const controls = document.createElement("div");
+  controls.className = "thread-action-stack";
+  for (const action of identityActions(thread)) {
+    controls.append(button(action.label ?? human(action.id), () => {
+      const input = collectInput(action);
+      if (input === undefined) return null;
+      return {
+        action:"identity",
+        operationKey:`admin_identity_${Date.now().toString(36)}`,
+        ...input,
+      };
+    }, thread));
+  }
+
+  const migration = migrationFor(thread);
   if (migration) {
-    label = "Migrate";
-    body = () => {
-      const input = migrationInput(migration);
+    controls.append(button(`Migrate · ${migration.label ?? human(migration.id)}`, () => {
+      const input = collectInput(migration);
       if (input === undefined) return null;
       return {
         action:"migrate",
@@ -94,67 +153,57 @@ function actionCell(thread) {
         migrationKey:`admin_migration_${Date.now().toString(36)}`,
         input,
       };
-    };
-  } else if (hasRepair(thread) && thread.health === "repairable") {
-    label = deadLetter ? "Fix & Recover" : "Fix";
-    body = () => ({ repairKey:`admin_repair_${Date.now().toString(36)}` });
-  } else if (deadLetter && thread.health === "healthy") {
-    label = "Recover";
-    body = () => ({ action:"recover" });
+    }, thread));
   }
 
-  if (body === null) {
-    const reason = thread.health === "migration_required" ? "Migration required"
-      : thread.health === "operator_decision_required" ? "Review required"
-        : thread.health === "integrity_error" ? "Authority conflict"
-          : thread.health === "unrecoverable" ? "Not admitted"
-            : thread.health === "unavailable" ? "Unavailable"
-              : thread.reconciliation?.state === "pending" ? "Pending"
-                : "—";
-    cell.textContent = reason;
+  const deadLetter = thread.reconciliation?.state === "dead_letter";
+  if (hasRepair(thread) && thread.health === "repairable") {
+    controls.append(button(deadLetter ? "Fix & Recover" : "Fix", () => ({
+      repairKey:`admin_repair_${Date.now().toString(36)}`,
+    }), thread));
+  } else if (deadLetter && thread.health === "healthy") {
+    controls.append(button("Recover", () => ({ action:"recover" }), thread));
+  }
+
+  if (controls.childElementCount > 0) {
+    cell.append(controls);
     return cell;
   }
 
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = label === "Recover" ? "secondary" : "primary";
-  button.textContent = label;
-  button.addEventListener("click", async (event) => {
-    event.stopPropagation();
-    try {
-      const payload = body();
-      if (payload === null) return;
-      button.disabled = true;
-      button.textContent = `${label}…`;
-      await command(thread.threadId, payload);
-      await loadPopulation();
-    } catch (error) {
-      button.disabled = false;
-      button.textContent = label;
-      $("#chain-summary").textContent = `${label} failed for ${shortId(thread.threadId)}: ${error instanceof Error ? error.message : String(error)}`;
-    }
-  });
-  cell.append(button);
+  const reason = thread.health === "migration_required" ? "Migration required"
+    : thread.health === "operator_decision_required" ? "Input required"
+      : thread.health === "integrity_error" ? "Authority conflict"
+        : thread.health === "unrecoverable" ? "Not admitted"
+          : thread.health === "unavailable" ? "Unavailable"
+            : thread.reconciliation?.state === "pending" ? "Pending"
+              : "—";
+  cell.textContent = reason;
   return cell;
 }
 
 function threadRow(thread) {
   const tr = document.createElement("tr");
   const identity = thread.identity ?? {};
+  if (thread.admitted === false) tr.className = "thread-population-activity-only";
 
   const person = document.createElement("td");
   const link = document.createElement("a");
   link.className = "thread-population-name";
-  link.href = `/thread/${encodeURIComponent(thread.threadId)}`;
-  link.textContent = identity.name ?? "Unnamed Thread";
+  if (thread.admitted === true) {
+    link.href = `/thread/${encodeURIComponent(thread.threadId)}`;
+    link.textContent = identity.name ?? "Unnamed Thread";
+  } else {
+    link.href = `/activity?kind=thread&value=${encodeURIComponent(thread.threadId)}&mode=causal`;
+    link.textContent = thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
+  }
   const ids = document.createElement("small");
   ids.className = "mono";
-  ids.textContent = [identity.fibreIdentityNumber, shortId(thread.threadId)].filter(Boolean).join(" · ");
+  ids.textContent = [identity.fibreIdentityNumber, identity.lifecycleStatus, shortId(thread.threadId)].filter(Boolean).join(" · ");
   person.append(link, ids);
 
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
-  const health = document.createElement("td"); health.append(badge(thread.health, healthKind(thread.health)));
+  const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
   const reconciliation = document.createElement("td");
   const reconciliationState = reconciliationLabel(thread.reconciliation);
   reconciliation.append(reconciliationState === "—" ? document.createTextNode("—") : badge(
@@ -168,9 +217,60 @@ function threadRow(thread) {
   return tr;
 }
 
+function sortValue(thread, key) {
+  if (key === "sex") return thread.identity?.sex ?? null;
+  if (key === "birthDate") {
+    const parsed = Date.parse(thread.identity?.birthDate ?? "");
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (key === "health") {
+    const order = ["healthy","repairable","operator_decision_required","migration_required","integrity_error","unrecoverable","unavailable"];
+    const index = order.indexOf(thread.health);
+    return index < 0 ? order.length : index;
+  }
+  if (key === "reconciliation") {
+    const order = ["complete","pending","retry","dead_letter"];
+    const index = order.indexOf(thread.reconciliation?.state);
+    return index < 0 ? null : index;
+  }
+  if (key === "lastActivity") {
+    const parsed = Date.parse(thread.lastActivityAt ?? "");
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function compare(left, right, key, direction) {
+  const a = sortValue(left, key);
+  const b = sortValue(right, key);
+  if (a === null && b === null) return left.threadId.localeCompare(right.threadId);
+  if (a === null) return 1;
+  if (b === null) return -1;
+  const base = typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b));
+  if (base !== 0) return direction === "asc" ? base : -base;
+  return left.threadId.localeCompare(right.threadId);
+}
+
+function renderSortHeaders() {
+  for (const control of document.querySelectorAll("[data-thread-sort]")) {
+    const label = control.dataset.label ?? control.textContent.replace(/[↑↓↕]\s*$/u, "").trim();
+    control.dataset.label = label;
+    const current = control.dataset.threadSort === sortState.key;
+    control.textContent = `${label} ${current ? (sortState.direction === "asc" ? "↑" : "↓") : "↕"}`;
+  }
+}
+
+function renderPopulation() {
+  const ordered = [...population].sort((left, right) => compare(left, right, sortState.key, sortState.direction));
+  rows.replaceChildren(...ordered.map(threadRow));
+  empty.hidden = ordered.length !== 0;
+  renderSortHeaders();
+}
+
 function renderSummary(summary) {
   const values = {
     "thread-stat-total":summary.total,
+    "thread-stat-activity-only":summary.activityOnly,
     "thread-stat-female":summary.female,
     "thread-stat-male":summary.male,
     "thread-stat-unknown":summary.unknownSex,
@@ -187,7 +287,7 @@ function holdThreadsMode() {
   $("#raw-view").hidden = true;
   view.hidden = false;
   document.querySelector("#thread-context").hidden = true;
-  for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.id === "view-threads");
+  for (const control of document.querySelectorAll(".view-switch button")) control.classList.toggle("active", control.id === "view-threads");
   $("#chain-title").textContent = "Threads";
 }
 
@@ -197,19 +297,19 @@ async function loadPopulation() {
   holdThreadsMode();
   $("#refresh-button").disabled = true;
   $("#refresh-button").textContent = "Refreshing…";
-  $("#chain-summary").textContent = "Reading Activity-discovered Threads and authoritative World health…";
+  $("#chain-summary").textContent = "Reading Activity-discovered identities and authoritative World health…";
   try {
     const response = await fetch("/api/threads/population", { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    population = payload.threads ?? [];
     renderSummary(payload.summary ?? {});
-    rows.replaceChildren(...(payload.threads ?? []).map(threadRow));
-    empty.hidden = (payload.threads ?? []).length !== 0;
+    renderPopulation();
     $("#environment-pill").textContent = payload.environment ?? "—";
-    $("#chain-summary").textContent = `${payload.summary?.total ?? 0} Activity-discovered Threads · authoritative World status${payload.truncated ? ` · first ${payload.limit}` : ""}.`;
+    $("#chain-summary").textContent = `${payload.summary?.total ?? 0} admitted Threads · ${payload.summary?.activityOnly ?? 0} Activity-only IDs${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
   } catch (error) {
-    rows.replaceChildren();
-    empty.hidden = false;
+    population = [];
+    renderPopulation();
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     loading = false;
@@ -268,5 +368,14 @@ $("#refresh-button").addEventListener("click", (event) => {
   event.stopImmediatePropagation();
   void loadPopulation();
 }, { capture:true });
+for (const control of document.querySelectorAll("[data-thread-sort]")) {
+  control.addEventListener("click", () => {
+    const key = control.dataset.threadSort;
+    sortState = sortState.key === key
+      ? { key, direction:sortState.direction === "asc" ? "desc" : "asc" }
+      : { key, direction:key === "lastActivity" ? "desc" : "asc" };
+    renderPopulation();
+  });
+}
 
 if (new URLSearchParams(location.search).get("mode") === "threads") enterThreads();
