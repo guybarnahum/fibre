@@ -44,10 +44,10 @@
       </section>
 
       <section class="metrics" aria-label="Activity page summary">
-        <article><span>Records</span><strong id="metric-records">—</strong><small>on this page</small></article>
-        <article><span>Failures</span><strong id="metric-failures">—</strong><small>on this page</small></article>
-        <article><span>Retrying</span><strong id="metric-retries">—</strong><small>on this page</small></article>
-        <article><span>View</span><strong id="metric-view">—</strong><small>cursor-paged Activity</small></article>
+        <article><span id="metric-label-records">Records</span><strong id="metric-records">—</strong><small id="metric-context-records">on this page</small></article>
+        <article><span id="metric-label-failures">Failures</span><strong id="metric-failures">—</strong><small id="metric-context-failures">on this page</small></article>
+        <article><span id="metric-label-retries">Retrying</span><strong id="metric-retries">—</strong><small id="metric-context-retries">on this page</small></article>
+        <article><span>View</span><strong id="metric-view">—</strong><small id="metric-view-context">cursor-paged Activity</small></article>
       </section>
 
       <section class="panel filters-panel">
@@ -104,6 +104,7 @@
           <div class="table-wrap">
             <table class="thread-population-table">
               <thead><tr>
+                <th class="thread-population-portrait-column" aria-label="Portrait"></th>
                 <th>Thread</th>
                 <th><button class="thread-sort" type="button" data-thread-sort="sex">Sex</button></th>
                 <th><button class="thread-sort" type="button" data-thread-sort="birthDate">Birth date</button></th>
@@ -139,7 +140,7 @@
   <dialog id="infra-dialog">
     <div class="dialog-head">
       <div><p class="eyebrow">Infrastructure</p><h2>Resource health</h2></div>
-      <div class="infra-dialog-actions"><button id="infra-force-sample" class="secondary" type="button">Refresh now</button><button id="infra-dialog-close" class="icon-button" aria-label="Close">×</button></div>
+      <div class="infra-dialog-actions"><button id="infra-copy-status" class="secondary" type="button">Copy status</button><button id="infra-force-sample" class="secondary" type="button">Refresh now</button><button id="infra-dialog-close" class="icon-button" aria-label="Close">×</button></div>
     </div>
     <div id="infra-dialog-body" class="dialog-body"></div>
   </dialog>
