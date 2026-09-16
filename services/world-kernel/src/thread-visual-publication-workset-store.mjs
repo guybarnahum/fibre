@@ -11,6 +11,16 @@ function errorJson(error) {
   });
 }
 
+function work(row) {
+  if (!row) return null;
+  return Object.freeze({
+    threadId: row.thread_id,
+    state: row.state,
+    lastError: row.last_error_json === null ? null : Object.freeze(JSON.parse(row.last_error_json)),
+    updatedAt: row.updated_at,
+  });
+}
+
 export class ThreadVisualPublicationWorksetStore {
   #database;
 
@@ -37,6 +47,15 @@ export class ThreadVisualPublicationWorksetStore {
       VALUES (?,'pending',NULL,?)
     `).run(threadId, updatedAt);
     return Number(result.changes) === 1;
+  }
+
+  get(threadId) {
+    assertId("threadId", threadId);
+    return work(this.#database.prepare(`
+      SELECT thread_id,state,last_error_json,updated_at
+      FROM ${TABLE}
+      WHERE thread_id=?
+    `).get(threadId));
   }
 
   listThreadIds({ limit = 100 } = {}) {
