@@ -179,13 +179,13 @@ test("R4 leaves missing sex non-actionable when preserved Genesis evidence is ab
   assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_MISSING").state, "migration_required");
   const sex = diagnosis.findings.find((entry) => entry.code === "SEX_MISSING");
   assert.equal(sex.state, "migration_required");
-  assert.equal(sex.action, null);
+  assert.equal(sex.migration, undefined);
   assert.equal(sex.evidenceAvailable, false);
   assert.equal(diagnosis.findings.find((entry) => entry.code === "FIN_MISSING").state, "migration_required");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "ORIGIN_ORIENTATION_MISSING").state, "migration_required");
 });
 
-test("R6 restores missing sex only from immutable Genesis birth evidence", async () => {
+test("migration changes legacy authority; repair never substitutes for it", async () => {
   const { state, threadId, thread } = fixture();
   delete thread.identity.sex;
   state.presentation = {
@@ -217,13 +217,21 @@ test("R6 restores missing sex only from immutable Genesis birth evidence", async
 
   const before = await service.diagnose(threadId);
   const missing = before.findings.find((entry) => entry.code === "SEX_MISSING");
-  assert.equal(missing.action, "migrate_genesis_sex");
+  assert.equal(missing.migration.id, "genesis_sex_v1");
   assert.equal(missing.genesisId, SEX_EVIDENCE.genesisId);
-  const result = await service.repair(threadId, { repairKey:"repair_sex_1" });
+
+  const repair = await service.repair(threadId, { repairKey:"repair_sex_1" });
+  assert.equal(thread.identity.sex, undefined, "repair must not perform migration");
+  assert.deepEqual(repair.actions, []);
+
+  const migration = await service.migrate(threadId, {
+    migrationId:"genesis_sex_v1",
+    migrationKey:"migration_sex_1",
+  });
   assert.equal(thread.identity.sex, "female");
-  assert.deepEqual(result.actions.map((entry) => entry.action), ["migrate_genesis_sex"]);
-  assert.equal(result.after.findings.find((entry) => entry.code === "SEX").state, "healthy");
-  assert.equal(result.after.health, "healthy");
+  assert.equal(migration.migrated, true);
+  assert.equal(migration.after.findings.find((entry) => entry.code === "SEX").state, "healthy");
+  assert.equal(migration.after.health, "healthy");
 });
 
 test("R7 records one repair root with causally parented repair actions", async () => {
