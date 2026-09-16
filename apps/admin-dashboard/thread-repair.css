@@ -1,79 +1,107 @@
 .thread-repair-section {
-  border-top: 1px solid var(--line, rgba(127,127,127,.18));
-  padding-top: 18px;
+  border-top:1px solid var(--line,rgba(127,127,127,.18));
+  padding-top:14px;
 }
 
-.thread-repair-list {
-  display: grid;
-  gap: 6px;
-  margin-top: 10px;
+.thread-health-tags {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
 }
 
-.thread-repair-row {
-  display: grid;
-  grid-template-columns: 22px minmax(130px, .75fr) minmax(0, 1.5fr);
-  align-items: baseline;
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+.thread-health-tag {
+  display:inline-flex;
+  align-items:center;
+  min-height:25px;
+  padding:4px 8px;
+  border:1px solid currentColor;
+  border-radius:999px;
+  font-size:9.5px;
+  font-weight:700;
+  line-height:1.25;
+  white-space:nowrap;
 }
+.thread-health-tag.good { color:#067647; background:color-mix(in srgb,#12b76a 10%,transparent); }
+.thread-health-tag.warn { color:#b54708; background:color-mix(in srgb,#f79009 11%,transparent); }
+.thread-health-tag.bad { color:#b42318; background:color-mix(in srgb,#f04438 10%,transparent); }
 
-.thread-repair-row:last-child { border-bottom: 0; }
-.thread-repair-icon { font-weight: 800; text-align: center; }
-.thread-repair-row.healthy .thread-repair-icon,
-.thread-repair-row.complete .thread-repair-icon { opacity: .7; }
-.thread-repair-row.repairable .thread-repair-icon,
-.thread-repair-row.pending .thread-repair-icon,
-.thread-repair-row.migration_required .thread-repair-icon,
-.thread-repair-row.operator_decision_required .thread-repair-icon { color: #b87900; }
-.thread-repair-row.integrity_error .thread-repair-icon,
-.thread-repair-row.unrecoverable .thread-repair-icon,
-.thread-repair-row.dead_letter .thread-repair-icon { color: #b42318; }
-.thread-repair-state { opacity: .7; line-height: 1.4; }
-
-.thread-repair-plan {
-  display: grid;
-  gap: 5px;
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: color-mix(in srgb, currentColor 5%, transparent);
+.thread-repair-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:10px;
 }
-
-.thread-repair-plan span { line-height: 1.45; }
-.thread-repair-plan small,
-.thread-repair-message { opacity: .68; }
-.thread-repair-message { margin: 12px 0 0; }
-.thread-repair-button { margin-top: 12px; justify-self:start; }
+.thread-repair-button {
+  margin:0;
+  padding:6px 9px;
+  font-size:10px;
+  min-height:28px;
+}
+.thread-repair-message,
+.thread-repair-note {
+  margin:9px 0 0;
+  font-size:10px;
+  line-height:1.45;
+  color:var(--muted);
+}
+.thread-repair-note { max-width:760px; }
 
 .thread-population-metrics {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
-  gap:8px;
-  padding:14px 16px;
+  grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
+  gap:6px;
+  padding:10px 12px;
   border-bottom:1px solid var(--border);
 }
 .thread-population-metrics article {
   display:grid;
-  gap:4px;
-  padding:10px 12px;
+  gap:2px;
+  padding:8px 9px;
   border:1px solid var(--border);
-  border-radius:8px;
+  border-radius:7px;
   background:var(--surface-subtle);
 }
-.thread-population-metrics span { font-size:10px; color:var(--muted); font-weight:650; }
-.thread-population-metrics strong { font-size:20px; }
-.thread-population-name { display:block; color:inherit; font-weight:700; text-decoration:none; }
-.thread-population-name:hover { text-decoration:underline; }
-.thread-population-name + small { display:block; margin-top:3px; color:var(--muted); font-size:9px; }
-.thread-population-actions { min-width:120px; }
-.thread-population-actions button { padding:6px 9px; }
+.thread-population-metrics span { font-size:9px; color:var(--muted); font-weight:650; }
+.thread-population-metrics strong { font-size:17px; line-height:1; }
 
-@media (max-width: 680px) {
-  .thread-repair-row {
-    grid-template-columns: 20px minmax(0, 1fr);
-  }
-  .thread-repair-state {
-    grid-column: 2;
-  }
+.thread-population-table th,
+.thread-population-table td {
+  padding-top:7px;
+  padding-bottom:7px;
+  font-size:10px;
+  vertical-align:middle;
+}
+.thread-population-name { display:block; color:inherit; font-weight:700; font-size:11px; text-decoration:none; }
+.thread-population-name:hover { text-decoration:underline; }
+.thread-population-name + small { display:block; margin-top:2px; color:var(--muted); font-size:8px; }
+.thread-population-actions { min-width:120px; }
+.thread-action-stack { display:flex; flex-wrap:wrap; gap:4px; }
+.thread-population-actions button { padding:4px 7px; min-height:24px; font-size:9px; }
+.thread-population-activity-only { opacity:.68; }
+.thread-population-activity-only .thread-population-name { font-weight:600; }
+
+.thread-sort {
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:inherit;
+  padding:0;
+  margin:0;
+  font:inherit;
+  font-weight:inherit;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.thread-sort:hover { color:var(--accent); background:transparent; }
+
+@media (max-width:680px) {
+  .thread-health-tag { white-space:normal; }
+  .thread-population-table { min-width:780px; }
+}
+
+@media (prefers-color-scheme:dark) {
+  .thread-health-tag.good { color:#75e0a7; }
+  .thread-health-tag.warn { color:#fec84b; }
+  .thread-health-tag.bad { color:#fda29b; }
 }
