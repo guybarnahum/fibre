@@ -13,14 +13,17 @@ function human(value) {
 
 function labelFor(code) {
   const labels = {
+    THREAD_NOT_FOUND:"World admission",
     CIVIL_IDENTITY:"Civil identity",
-    FIN_MISSING:"FIN",
-    FIN_PRESENTATION_MISSING:"FIN presentation",
-    FIN_CONFLICT:"FIN conflict",
+    FIN_MISSING:"Civil identity",
+    FIN_PRESENTATION_MISSING:"Civil identity",
+    FIN_CONFLICT:"Civil identity",
     NAME:"Name",
+    NAME_UNFINISHED:"Name",
     NAME_MISSING:"Name",
-    NAME_PRESENTATION_MISSING:"Name presentation",
-    NAME_CONFLICT:"Name conflict",
+    NAME_PRESENTATION_MISSING:"Name",
+    NAME_PRESENTATION_STALE:"Name",
+    NAME_CONFLICT:"Name",
     SEX:"Sex",
     SEX_MISSING:"Sex",
     CANONICAL_VISUAL_SPEC:"Canonical visual identity",
@@ -28,8 +31,8 @@ function labelFor(code) {
     ORIGIN_ORIENTATION:"Origin orientation",
     ORIGIN_ORIENTATION_MISSING:"Origin orientation",
     BIRTH_DATE:"Birth date",
-    BIRTH_DATE_PRESENTATION_MISSING:"Birth date presentation",
-    BIRTH_DATE_CONFLICT:"Birth date conflict",
+    BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
+    BIRTH_DATE_CONFLICT:"Birth date",
     CANONICAL_EMBODIMENT:"Canonical embodiment",
     CANONICAL_EMBODIMENT_MISSING:"Canonical embodiment",
     CANONICAL_EMBODIMENT_PENDING:"Canonical embodiment",
@@ -43,12 +46,50 @@ function labelFor(code) {
 
 function stateText(finding) {
   if (finding.state === "healthy") return "healthy";
-  if (finding.migration?.id) return `migration required · ${finding.migration.label ?? human(finding.migration.id)}`;
+  if (finding.identityAction?.id) return "input required";
+  if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "repairable") return "repairable";
   if (finding.state === "migration_required") return "migration required";
-  if (finding.state === "operator_decision_required") return "operator review required";
+  if (finding.state === "operator_decision_required") return "input required";
   if (finding.state === "integrity_error") return "authority conflict";
+  if (finding.state === "unrecoverable") return "not admitted";
   return human(finding.state);
+}
+
+function tone(state) {
+  if (["healthy","complete"].includes(state)) return "good";
+  if (["integrity_error","unrecoverable","dead_letter"].includes(state)) return "bad";
+  return "warn";
+}
+
+function explanation(finding) {
+  return [
+    `${labelFor(finding.code)}: ${stateText(finding)}`,
+    finding.reason,
+    finding.authoritative ? `World: ${finding.authoritative}` : null,
+    finding.presentation ? `Presentation: ${finding.presentation}` : null,
+  ].filter(Boolean).join(" · ");
+}
+
+function healthTag(finding) {
+  const kind = tone(finding.state);
+  const icon = kind === "good" ? "✓" : kind === "bad" ? "×" : "!";
+  const suffix = finding.state === "healthy" ? "" : ` · ${stateText(finding)}`;
+  const tag = el("span", `thread-health-tag ${kind}`, `${icon} ${labelFor(finding.code)}${suffix}`);
+  tag.title = explanation(finding);
+  return tag;
+}
+
+function reconciliationTag(reconciliation) {
+  if (reconciliation === null) return null;
+  const kind = tone(reconciliation.state);
+  const icon = kind === "good" ? "✓" : kind === "bad" ? "×" : "!";
+  const detail = reconciliation.state === "dead_letter"
+    ? `dead letter${reconciliation.lastError?.code ? ` · ${human(reconciliation.lastError.code)}` : ""}`
+    : human(reconciliation.state);
+  const tag = el("span", `thread-health-tag ${kind}`, `${icon} Reconciliation · ${detail}`);
+  tag.title = reconciliation.lastError?.message ?? detail;
+  return tag;
 }
 
 function actionable(diagnosis) {
@@ -57,6 +98,16 @@ function actionable(diagnosis) {
 
 function migrations(diagnosis) {
   return (diagnosis?.findings ?? []).filter((finding) => typeof finding?.migration?.id === "string");
+}
+
+function identityActions(diagnosis) {
+  const seen = new Set();
+  return (diagnosis?.findings ?? []).flatMap((finding) => {
+    const action = finding?.identityAction;
+    if (!action?.id || seen.has(action.id)) return [];
+    seen.add(action.id);
+    return [action];
+  });
 }
 
 function unresolved(diagnosis) {
@@ -69,163 +120,138 @@ async function requestHealth(threadId) {
     cache:"no-store",
   });
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  if (!response.ok && !(response.status === 404 && payload?.diagnosis)) {
+    throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  }
   return Object.freeze({ diagnosis:payload.diagnosis, reconciliation:payload.reconciliation ?? null });
 }
 
-async function applyRepair(threadId) {
-  const repairKey = `admin_repair_${Date.now().toString(36)}`;
+async function post(threadId, body) {
   const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
     method:"POST",
     headers:{ "content-type":"application/json", Accept:"application/json" },
-    body:JSON.stringify({ repairKey }),
+    body:JSON.stringify(body),
   });
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
   return payload;
 }
 
-function collectMigrationInput(migration) {
-  const fields = migration.input?.fields;
-  if (!Array.isArray(fields) || fields.length === 0) return null;
+function collectInput(action) {
+  const fields = action.input?.fields;
+  if (!Array.isArray(fields) || fields.length === 0) return {};
   const input = {};
   for (const field of fields) {
     if (typeof field?.name !== "string" || field.name === "") continue;
-    const answer = window.prompt(field.label ?? human(field.name), field.default ?? "");
+    const choices = Array.isArray(field.options) ? field.options : [];
+    const prompt = choices.length > 0
+      ? `${field.label ?? human(field.name)} (${choices.join(" / ")})`
+      : field.label ?? human(field.name);
+    const answer = window.prompt(prompt, field.default ?? "");
     if (answer === null) return undefined;
-    if (field.required === true && answer.trim() === "") throw new Error(`${field.label ?? human(field.name)} is required`);
-    input[field.name] = answer;
+    const value = answer.trim();
+    if (field.required === true && value === "") throw new Error(`${field.label ?? human(field.name)} is required`);
+    if (choices.length > 0 && !choices.includes(value)) throw new Error(`${field.label ?? human(field.name)} must be ${choices.join(" or ")}`);
+    input[field.name] = value;
   }
   return input;
 }
 
-async function applyMigration(threadId, migration) {
-  const input = collectMigrationInput(migration);
-  if (input === undefined) return null;
-  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
-    method:"POST",
-    headers:{ "content-type":"application/json", Accept:"application/json" },
-    body:JSON.stringify({
-      action:"migrate",
-      migrationId:migration.id,
-      migrationKey:`admin_migration_${Date.now().toString(36)}`,
-      input,
-    }),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
-  return payload;
-}
-
-async function recover(threadId) {
-  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
-    method:"POST",
-    headers:{ "content-type":"application/json", Accept:"application/json" },
-    body:JSON.stringify({ action:"recover" }),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
-  return payload.recovery;
-}
-
-function healthRow(finding) {
-  const row = el("div", `thread-repair-row ${finding.state}`);
-  const icon = finding.state === "healthy" ? "✓" : finding.state === "integrity_error" ? "×" : "!";
-  row.append(
-    el("span", "thread-repair-icon", icon),
-    el("strong", null, labelFor(finding.code)),
-    el("span", "thread-repair-state", stateText(finding)),
-  );
-  return row;
-}
-
-function reconciliationRow(reconciliation) {
-  if (reconciliation === null) return null;
-  const row = el("div", `thread-repair-row ${reconciliation.state}`);
-  const healthy = reconciliation.state === "complete";
-  const detail = reconciliation.state === "dead_letter"
-    ? `dead letter${reconciliation.lastError?.code ? ` · ${human(reconciliation.lastError.code)}` : ""}`
-    : human(reconciliation.state);
-  row.append(
-    el("span", "thread-repair-icon", healthy ? "✓" : reconciliation.state === "dead_letter" ? "×" : "!"),
-    el("strong", null, "Reconciliation"),
-    el("span", "thread-repair-state", detail),
-  );
-  if (reconciliation.lastError?.message) row.title = reconciliation.lastError.message;
-  return row;
-}
-
-function recoveryPlan(host, threadId, diagnosis, reconciliation) {
-  if (reconciliation?.state !== "dead_letter") return;
-  const outstanding = unresolved(diagnosis);
-  if (outstanding.length !== 0) {
-    const plan = el("div", "thread-repair-plan");
-    plan.append(
-      el("strong", null, "Dead letter quarantined"),
-      el("span", null, reconciliation.lastError?.message ?? "Background reconciliation stopped after a terminal failure."),
-      el("small", null, "Resolve migration or authoritative Thread findings above before retrying; Fibre will not burn retries on a known-bad Thread."),
-    );
-    host.append(plan);
-    return;
-  }
-
-  const plan = el("div", "thread-repair-plan");
-  plan.append(
-    el("strong", null, "Ready to recover"),
-    el("span", null, reconciliation.lastError?.message ?? "The Thread is quarantined from background reconciliation."),
-    el("small", null, "Recovery requeues only this Thread and schedules one World reconciliation wake."),
-  );
-  const button = el("button", "primary thread-repair-button", "Recover");
+function actionButton(label, run) {
+  const button = el("button", "secondary thread-repair-button", label);
   button.type = "button";
   button.addEventListener("click", async () => {
-    button.disabled = true;
-    button.textContent = "Recovering…";
+    const original = label;
     try {
-      await recover(threadId);
-      await renderThreadHealth(host, threadId, "Recovered · reconciliation is pending.");
+      button.disabled = true;
+      button.textContent = `${label}…`;
+      await run();
     } catch (error) {
       button.disabled = false;
-      button.textContent = "Recover";
-      host.append(el("div", "error-box", `Thread recovery failed: ${error instanceof Error ? error.message : String(error)}`));
+      button.textContent = original;
+      button.parentElement?.after(el("div", "error-box", error instanceof Error ? error.message : String(error)));
     }
   });
-  host.append(plan, button);
+  return button;
 }
 
-function migrationPlan(host, threadId, diagnosis, reconciliation) {
+function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
+  const actions = identityActions(diagnosis);
+  if (actions.length === 0) return;
+  const bar = el("div", "thread-repair-actions");
+  for (const action of actions) {
+    bar.append(actionButton(action.label ?? human(action.id), async () => {
+      const input = collectInput(action);
+      if (input === undefined) return;
+      const payload = await post(threadId, {
+        action:"identity",
+        operationKey:`admin_identity_${Date.now().toString(36)}`,
+        ...input,
+      });
+      renderHealth(host, threadId, {
+        diagnosis:payload.identityUpdate.after,
+        reconciliation:payload.reconciliation ?? reconciliation,
+      }, `${action.label ?? human(action.id)} updated in World.`);
+    }));
+  }
+  host.append(bar);
+}
+
+function renderMigrationActions(host, threadId, diagnosis, reconciliation) {
   const available = migrations(diagnosis);
-  if (available.length === 0) return false;
-  const plan = el("div", "thread-repair-plan");
-  plan.append(
-    el("strong", null, `${available.length} authoritative ${available.length === 1 ? "migration" : "migrations"} available`),
-    el("small", null, "Migration changes a legacy authoritative representation only from declared evidence; it is distinct from repair and recovery."),
-  );
+  if (available.length === 0) return;
+  const bar = el("div", "thread-repair-actions");
   for (const finding of available) {
     const migration = finding.migration;
-    const button = el("button", "primary thread-repair-button", `Migrate · ${migration.label ?? human(migration.id)}`);
-    button.type = "button";
-    button.addEventListener("click", async () => {
-      button.disabled = true;
-      button.textContent = "Migrating…";
-      try {
-        const payload = await applyMigration(threadId, migration);
-        if (payload === null) {
-          button.disabled = false;
-          button.textContent = `Migrate · ${migration.label ?? human(migration.id)}`;
-          return;
-        }
-        const next = Object.freeze({ diagnosis:payload.migration.after, reconciliation:payload.reconciliation ?? reconciliation });
-        renderHealth(host, threadId, next, `Migration complete · ${migration.label ?? human(migration.id)}.`);
-      } catch (error) {
-        button.disabled = false;
-        button.textContent = `Migrate · ${migration.label ?? human(migration.id)}`;
-        host.append(el("div", "error-box", `Thread migration failed: ${error instanceof Error ? error.message : String(error)}`));
-      }
-    });
-    plan.append(button);
+    bar.append(actionButton(`Migrate · ${migration.label ?? human(migration.id)}`, async () => {
+      const input = collectInput(migration);
+      if (input === undefined) return;
+      const payload = await post(threadId, {
+        action:"migrate",
+        migrationId:migration.id,
+        migrationKey:`admin_migration_${Date.now().toString(36)}`,
+        input,
+      });
+      renderHealth(host, threadId, {
+        diagnosis:payload.migration.after,
+        reconciliation:payload.reconciliation ?? reconciliation,
+      }, `Migration complete · ${migration.label ?? human(migration.id)}.`);
+    }));
   }
-  host.append(plan);
-  return true;
+  host.append(bar);
+}
+
+function renderRepairAction(host, threadId, diagnosis, reconciliation) {
+  const actions = actionable(diagnosis);
+  if (actions.length === 0 || diagnosis.health !== "repairable") return;
+  const label = reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix";
+  const bar = el("div", "thread-repair-actions");
+  const button = actionButton(label, async () => {
+    const payload = await post(threadId, { repairKey:`admin_repair_${Date.now().toString(36)}` });
+    const names = (payload.result.actions ?? []).map((entry) => human(entry.action)).join(" · ");
+    renderHealth(host, threadId, {
+      diagnosis:payload.result.after,
+      reconciliation:payload.reconciliation ?? null,
+    }, names ? `Applied: ${names}` : "No repair action was required.");
+  });
+  button.className = "primary thread-repair-button";
+  bar.append(button);
+  host.append(bar);
+}
+
+function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
+  if (reconciliation?.state !== "dead_letter" || unresolved(diagnosis).length !== 0) return;
+  const bar = el("div", "thread-repair-actions");
+  const button = actionButton("Recover", async () => {
+    const payload = await post(threadId, { action:"recover" });
+    renderHealth(host, threadId, {
+      diagnosis,
+      reconciliation:payload.recovery.after,
+    }, "Recovered · reconciliation is pending.");
+  });
+  button.className = "primary thread-repair-button";
+  bar.append(button);
+  host.append(bar);
 }
 
 function renderHealth(host, threadId, health, message = null) {
@@ -235,60 +261,26 @@ function renderHealth(host, threadId, health, message = null) {
   head.append(el("h3", null, "Thread health"), el("span", null, human(diagnosis.health)));
   host.append(head);
 
-  const rows = el("div", "thread-repair-list");
-  const workRow = reconciliationRow(reconciliation);
-  if (workRow) rows.append(workRow);
-  for (const finding of diagnosis.findings ?? []) rows.append(healthRow(finding));
-  host.append(rows);
-
+  const tags = el("div", "thread-health-tags");
+  const work = reconciliationTag(reconciliation);
+  if (work) tags.append(work);
+  for (const finding of diagnosis.findings ?? []) tags.append(healthTag(finding));
+  host.append(tags);
   if (message) host.append(el("p", "thread-repair-message", message));
-  if (migrationPlan(host, threadId, diagnosis, reconciliation)) return;
 
-  const actions = actionable(diagnosis);
-  if (actions.length === 0) {
-    recoveryPlan(host, threadId, diagnosis, reconciliation);
+  if (diagnosis.exists === false) {
+    host.append(el("p", "thread-repair-note", "Activity observed this identifier, but World never admitted it as a Thread. There is no person state to repair or recover."));
     return;
   }
 
-  const plan = el("div", "thread-repair-plan");
-  plan.append(el("strong", null, `${actions.length} deterministic ${actions.length === 1 ? "repair" : "repairs"}`));
-  for (const finding of actions) plan.append(el("span", null, `${human(finding.action)}.`));
-  plan.append(el("small", null, "Repair restores state already derivable from current authority; it does not migrate legacy authority or invent identity facts."));
+  renderIdentityActions(host, threadId, diagnosis, reconciliation);
+  renderMigrationActions(host, threadId, diagnosis, reconciliation);
+  renderRepairAction(host, threadId, diagnosis, reconciliation);
+  renderRecoveryAction(host, threadId, diagnosis, reconciliation);
 
-  const button = el("button", "primary thread-repair-button", reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix Thread");
-  button.type = "button";
-  button.addEventListener("click", async () => {
-    button.disabled = true;
-    button.textContent = "Repairing…";
-    try {
-      const payload = await applyRepair(threadId);
-      const result = payload.result;
-      const names = (result.actions ?? []).map((entry) => human(entry.action)).join(" · ");
-      let current = Object.freeze({ diagnosis:result.after, reconciliation:payload.reconciliation ?? null });
-      renderHealth(host, threadId, current, names ? `Applied: ${names}` : "No repair action was required.");
-
-      for (let attempt = 0; attempt < 30 && actionable(current.diagnosis).length > 0; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        current = await requestHealth(threadId);
-        renderHealth(host, threadId, current, "Waiting for asynchronous repair work to settle…");
-      }
-
-      const remaining = unresolved(current.diagnosis);
-      renderHealth(
-        host,
-        threadId,
-        current,
-        remaining.length === 0 ? "Repair complete." : `Repair settled · ${remaining.map((entry) => stateText(entry)).join(" · ")}`,
-      );
-      const source = document.querySelector(`[data-thread-id="${CSS.escape(threadId)}"]`);
-      if (source) source.click();
-    } catch (error) {
-      button.disabled = false;
-      button.textContent = reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix Thread";
-      host.append(el("div", "error-box", `Thread repair failed: ${error instanceof Error ? error.message : String(error)}`));
-    }
-  });
-  host.append(plan, button);
+  if (reconciliation?.state === "dead_letter" && unresolved(diagnosis).length > 0) {
+    host.append(el("p", "thread-repair-note", "Quarantined until the identity or authority findings above are resolved."));
+  }
 }
 
 export async function renderThreadHealth(host, threadId, message = null) {
