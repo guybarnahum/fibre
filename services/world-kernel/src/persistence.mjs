@@ -73,6 +73,12 @@ export {
 
 const APPRAISAL_ID_PATTERN = /^app_[0-9a-f]{64}$/;
 const STANCE_ID_PATTERN = /^pst_[0-9a-f]{64}$/;
+const EVENT_COLUMNS = `
+  event_id, thread_id, sequence, expected_version, resulting_version,
+  event_type, command_id, command_digest, payload_json, actor_json,
+  occurred_at, state_hash, authorization_id, causation_id, correlation_id,
+  payload_schema_version, provenance_json
+`;
 
 function newPrivateRecordId(prefix) {
   return `${prefix}_${randomBytes(32).toString("hex")}`;
@@ -239,15 +245,16 @@ export class WorldStore {
   listEvents(threadId) {
     assertId("threadId", threadId);
     return this.#database
-      .prepare(`
-        SELECT event_id, thread_id, sequence, expected_version, resulting_version,
-               event_type, command_id, command_digest, payload_json, actor_json,
-               occurred_at, state_hash, authorization_id, causation_id, correlation_id,
-               payload_schema_version, provenance_json
-        FROM thread_events WHERE thread_id = ? ORDER BY sequence ASC
-      `)
+      .prepare(`SELECT ${EVENT_COLUMNS} FROM thread_events WHERE thread_id = ? ORDER BY sequence ASC`)
       .all(threadId)
       .map(rowToEvent);
+  }
+
+  #eventAtSequence(threadId, sequence) {
+    const row = this.#database
+      .prepare(`SELECT ${EVENT_COLUMNS} FROM thread_events WHERE thread_id = ? AND sequence = ?`)
+      .get(threadId, sequence);
+    return row === undefined ? null : rowToEvent(row);
   }
 
   #commandRecord(threadId, commandId) {
@@ -276,8 +283,13 @@ export class WorldStore {
     }
   }
 
-  #replayThrough(threadId, stopEventId = null) {
-    const events = this.listEvents(threadId);
+  #replayThrough(threadId, stopSequence = null) {
+    const events = stopSequence === null
+      ? this.listEvents(threadId)
+      : this.#database
+          .prepare(`SELECT ${EVENT_COLUMNS} FROM thread_events WHERE thread_id = ? AND sequence <= ? ORDER BY sequence ASC`)
+          .all(threadId, stopSequence)
+          .map(rowToEvent);
     if (events.length === 0) {
       throw new ThreadNotFoundError(`Thread ${threadId} has no event history`);
     }
@@ -292,22 +304,20 @@ export class WorldStore {
       if (hash !== event.stateHash) {
         throw new IntegrityError(`Event ${event.eventId} state hash failed replay`);
       }
-      if (stopEventId !== null && event.eventId === stopEventId) {
-        return { thread: replayed, event };
-      }
     }
-    if (stopEventId !== null) {
-      throw new IntegrityError(`Command event ${stopEventId} is absent from Thread ${threadId}`);
+    const event = events.at(-1);
+    if (stopSequence !== null && event.sequence !== stopSequence) {
+      throw new IntegrityError(`Thread ${threadId} has no event at sequence ${stopSequence}`);
     }
-    return { thread: replayed, event: events.at(-1) };
+    return { thread: replayed, event, eventCount: events.length };
   }
 
   #threadAtVersion(threadId, version) {
-    const event = this.listEvents(threadId).find((candidate) => candidate.resultingVersion === version);
-    if (event === undefined) {
+    const replayed = this.#replayThrough(threadId, version);
+    if (replayed.event.resultingVersion !== version || replayed.thread.version !== version) {
       throw new IntegrityError(`Thread ${threadId} has no event for snapshot version ${version}`);
     }
-    return this.#replayThrough(threadId, event.eventId).thread;
+    return replayed.thread;
   }
 
   #idempotentResult(command, digest, prior) {
@@ -316,8 +326,9 @@ export class WorldStore {
         `Command ${command.commandId} was already used with different content`,
       );
     }
-    const replayed = this.#replayThrough(command.threadId, prior.event_id);
+    const replayed = this.#replayThrough(command.threadId, Number(prior.resulting_version));
     if (
+      replayed.event.eventId !== prior.event_id ||
       replayed.event.commandId !== command.commandId ||
       replayed.event.commandDigest !== digest ||
       replayed.event.expectedVersion !== Number(prior.expected_version) ||
@@ -344,7 +355,6 @@ export class WorldStore {
       const transactionResult = this.#database.transaction(() => {
         const prior = this.#commandRecord(command.threadId, command.commandId);
         if (prior !== undefined) {
-
           return this.#idempotentResult(command, digest, prior);
         }
 
@@ -439,9 +449,13 @@ export class WorldStore {
             command.occurredAt,
           );
 
+        const event = this.#eventAtSequence(command.threadId, sequence);
+        if (event === null || event.eventId !== eventId) {
+          throw new IntegrityError(`Command ${command.commandId} event was not persisted canonically`);
+        }
         return {
           thread: nextThread,
-          event: this.listEvents(command.threadId).at(-1),
+          event,
           idempotent: false,
         };
       });
@@ -613,8 +627,9 @@ export class WorldStore {
       .prepare("SELECT request_id FROM activation_requests WHERE thread_id = ? ORDER BY occurred_at, request_id")
       .all(threadId);
     if (rows.length === 0) {
-      const events = this.listEvents(threadId);
-      if (events.length === 0) throw new ThreadNotFoundError(`Thread ${threadId} was not found`);
+      if (this.getThread(threadId, { required: false }) === null) {
+        throw new ThreadNotFoundError(`Thread ${threadId} was not found`);
+      }
       return [];
     }
     return rows.map((row) => this.getPrivateRequestTrace(threadId, row.request_id));
@@ -665,9 +680,6 @@ export class WorldStore {
       const transactionResult = this.#database.transaction(() => {
         const raced = this.#privateRequestRow(record.threadId, record.request.requestId);
         if (raced !== undefined) {
-
-          // The recursive call is bounded: the next entry observes the committed row
-          // and returns an idempotent result or a conflict.
           return this.recordRequestAppraisal(record);
         }
         const thread = this.getThread(record.threadId);
@@ -774,9 +786,6 @@ export class WorldStore {
       const transactionResult = this.#database.transaction(() => {
         trace = this.getPrivateRequestTrace(record.threadId, record.requestId);
         if (trace.privateStance !== null) {
-
-          // The recursive call is bounded: the next entry observes the committed
-          // stance and returns an idempotent result or a conflict.
           return this.recordPrivateStance(record);
         }
         assertStanceMatchesTrace(trace, record.stance);
@@ -845,7 +854,8 @@ export class WorldStore {
 
   verifyThreadIntegrity(threadId) {
     const projected = this.getThread(threadId);
-    const replayed = this.replayThread(threadId);
+    const replay = this.#replayThrough(threadId);
+    const replayed = replay.thread;
     if (projected.threadId !== threadId || replayed.threadId !== threadId) {
       throw new IntegrityError(`Thread ${threadId} identity changed during verification`);
     }
@@ -861,15 +871,15 @@ export class WorldStore {
       threadId: projected.threadId,
       version: projected.version,
       stateHash: projectedHash,
-      eventCount: this.listEvents(threadId).length,
+      eventCount: replay.eventCount,
     };
   }
 
   repairThreadProjection(threadId) {
     assertId("threadId", threadId);
-    const replayed = this.replayThread(threadId);
-    const events = this.listEvents(threadId);
-    const lastEvent = events.at(-1);
+    const replay = this.#replayThrough(threadId);
+    const replayed = replay.thread;
+    const lastEvent = replay.event;
     const stateJson = canonicalJson(replayed);
     const stateHash = threadStateHash(replayed);
     try {
@@ -900,7 +910,7 @@ export class WorldStore {
     return {
       thread: replayed,
       stateHash,
-      eventCount: events.length,
+      eventCount: replay.eventCount,
       repaired: true,
     };
   }
