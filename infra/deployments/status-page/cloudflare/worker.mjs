@@ -2,8 +2,6 @@ export const STATUS_PAGE_VERSION = "fibre-status-page-v0.2";
 const DEFAULT_BINDING_PROBE_TIMEOUT_MS = 2500;
 const DEFAULT_VIEWER_PROBE_TIMEOUT_MS = 3000;
 const MAX_PROBE_TIMEOUT_MS = 30000;
-const INFRA_PROBE_TTL_MS = 60_000;
-const INFRA_PROBE_CACHE = new WeakMap();
 const COMPONENTS = Object.freeze([
   { key:"birth", name:"Birth", description:"Identity and Genesis admission", binding:"BIRTH_CENTER", expected:"birth-center" },
   { key:"world", name:"World", description:"Authoritative Thread runtime", binding:"WORLD_KERNEL", expected:"world-kernel" },
@@ -57,28 +55,20 @@ async function probeInfra(env, timeoutMs) {
     };
   } catch { return { ...base, status:"degraded" }; }
 }
-async function cachedInfraProbe(env, timeoutMs) {
-  const now = Date.now();
-  const cached = INFRA_PROBE_CACHE.get(env);
-  if (cached && now - cached.observedAtMs < INFRA_PROBE_TTL_MS) return cached.value;
-  const value = await probeInfra(env, timeoutMs);
-  INFRA_PROBE_CACHE.set(env, Object.freeze({ observedAtMs:now, value:Object.freeze(value) }));
-  return value;
-}
 async function probeViewer(env, fetchImpl, timeoutMs) {
   try {
     const origin = new URL(env.VIEWER_ORIGIN);
     const response = await withProbeTimeout((signal) => fetchImpl(origin, { redirect:"follow", signal }), timeoutMs);
     return { key:"web", name:"Website", description:"insidefibre.com public experience", status:response.ok ? "operational" : "degraded" };
-  } catch { return { key:"web", name:"Website", description:"insidefibre.com public experience", status:"outage" };
+  } catch { return { key:"web", name:"Website", description:"insidefibre.com public experience", status:"outage" }; }
 }
 function overall(components) { const outages = components.filter((item) => item.status === "outage").length; const degraded = components.some((item) => item.status !== "operational"); if (outages >= 2) return "outage"; if (degraded) return "degraded"; return "operational"; }
 export async function currentPublicStatus(env, { fetchImpl = globalThis.fetch, now = () => new Date().toISOString(), bindingTimeoutMs, viewerTimeoutMs } = {}) {
   const bindingTimeout = probeTimeout("bindingTimeoutMs", bindingTimeoutMs, DEFAULT_BINDING_PROBE_TIMEOUT_MS);
   const viewerTimeout = probeTimeout("viewerTimeoutMs", viewerTimeoutMs, DEFAULT_VIEWER_PROBE_TIMEOUT_MS);
-  const checks = await Promise.all([probeViewer(env, fetchImpl, viewerTimeout), ...COMPONENTS.map((component) => probeBinding(env, component, bindingTimeout)), cachedInfraProbe(env, bindingTimeout)]);
+  const checks = await Promise.all([probeViewer(env, fetchImpl, viewerTimeout), ...COMPONENTS.map((component) => probeBinding(env, component, bindingTimeout)), probeInfra(env, bindingTimeout)]);
   return Object.freeze({ contract:STATUS_PAGE_VERSION, environment:env.FIBRE_ENVIRONMENT ?? "unknown", checkedAt:now(), status:overall(checks), components:Object.freeze(checks.map(Object.freeze)) });
 }
-function secureAsset(response) { const headers = new Headers(response.headers); headers.set("X-Content-Type-Options","nosniff"); headers.set("Referrer-Policy","no-referrer"); headers.set("X-Frame-Options","DENY"); headers.set("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"); return new Response(response.body,{status:response.status,statusText:response.statusText,headers}); }
+function secureAsset(response) { const headers = new Headers(response.headers); headers.set("X-Content-Type-Options","nosniff"); headers.set("Referrer-Policy","no-referrer"); headers.set("X-Frame-Options","DENY"); headers.set("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"); return new Response(response.body,{status:response.status,statusText:response.statusText,headers}); }
 export function createStatusPageWorker({ statusResolver = currentPublicStatus } = {}) { return Object.freeze({ async fetch(request, env) { const url = new URL(request.url); if (request.method === "GET" && url.pathname === "/healthz") return json(200,{ok:true,service:"status-page",version:STATUS_PAGE_VERSION},"no-store"); if (request.method === "GET" && url.pathname === "/api/status") { try { return json(200,await statusResolver(env)); } catch { return json(503,{error:"status_unavailable"},"no-store"); } } if (url.pathname.startsWith("/api/")) return json(404,{error:"not_found"},"no-store"); if (!env.ASSETS?.fetch) return json(503,{error:"assets_unavailable"},"no-store"); return secureAsset(await env.ASSETS.fetch(request)); } }); }
 export default createStatusPageWorker();
