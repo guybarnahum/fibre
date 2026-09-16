@@ -187,6 +187,21 @@ function threadRow(thread) {
   if (thread.admitted === false) tr.className = "thread-population-activity-only";
 
   const person = document.createElement("td");
+  const personLayout = document.createElement("div");
+  personLayout.className = "thread-population-person";
+  const portrait = document.createElement("span");
+  portrait.className = "thread-population-portrait";
+  if (thread.admitted === true && typeof thread.portraitUrl === "string" && thread.portraitUrl !== "") {
+    const image = document.createElement("img");
+    image.src = thread.portraitUrl;
+    image.alt = "";
+    image.loading = "lazy";
+    portrait.append(image);
+  } else {
+    portrait.textContent = thread.admitted === true ? (identity.name?.trim()?.[0] ?? "·") : "·";
+  }
+
+  const personText = document.createElement("div");
   const link = document.createElement("a");
   link.className = "thread-population-name";
   if (thread.admitted === true) {
@@ -199,7 +214,9 @@ function threadRow(thread) {
   const ids = document.createElement("small");
   ids.className = "mono";
   ids.textContent = [identity.fibreIdentityNumber, identity.lifecycleStatus, shortId(thread.threadId)].filter(Boolean).join(" · ");
-  person.append(link, ids);
+  personText.append(link, ids);
+  personLayout.append(portrait, personText);
+  person.append(personLayout);
 
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
