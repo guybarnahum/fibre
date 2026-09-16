@@ -10,6 +10,7 @@ import { openLivedExperienceStore } from "#services/world-kernel/src/lived-exper
 import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
+const HEALTH_ROUTES = new Set(["/internal/health/state", "/internal/health/infra"]);
 
 export class FibreWorldDurableObject extends BaseWorldDurableObject {
   constructor(ctx, env) {
@@ -36,6 +37,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 
   async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && HEALTH_ROUTES.has(url.pathname)) return super.fetch(request);
     const response = await this.encounterApiForRequest().fetch(request);
     return response ?? super.fetch(request);
   }
