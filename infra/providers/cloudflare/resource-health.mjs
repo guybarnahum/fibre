@@ -3,12 +3,14 @@ const GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql";
 export const RESOURCE_HEALTH_DEFAULT_LIMITS = Object.freeze({
   d1RowsReadDaily: 500_000,
   d1RowsWrittenDaily: 10_000,
+  durableObjectRowsReadDaily: 5_000_000,
+  durableObjectRowsWrittenDaily: 100_000,
   workerRequests15m: 25_000,
   workerErrors15m: 100,
 });
 
 const QUERY = `
-query FibreInfraWatch($accountTag: string!, $date: Date!, $start: string!, $end: string!) {
+query FibreInfraWatch($accountTag: string!, $date: Date!, $dayStart: string!, $start: string!, $end: string!) {
   viewer {
     accounts(filter: { accountTag: $accountTag }) {
       d1AnalyticsAdaptiveGroups(limit: 1000, filter: { date_geq: $date, date_leq: $date }) {
@@ -19,6 +21,14 @@ query FibreInfraWatch($accountTag: string!, $date: Date!, $start: string!, $end:
         sum { requests errors subrequests }
         quantiles { cpuTimeP99 }
         dimensions { scriptName status }
+      }
+      durableObjectsInvocationsAdaptiveGroups(limit: 10000, filter: { datetime_geq: $dayStart, datetime_leq: $end }) {
+        sum { requests errors }
+        dimensions { namespaceId scriptName }
+      }
+      durableObjectsPeriodicGroups(limit: 10000, filter: { datetime_geq: $dayStart, datetime_leq: $end }) {
+        sum { rowsRead rowsWritten }
+        dimensions { namespaceId }
       }
     }
   }
@@ -39,18 +49,23 @@ export function normalizeResourceHealthLimits(input = {}) {
   return Object.freeze({
     d1RowsReadDaily: finiteLimit("d1RowsReadDaily", input.d1RowsReadDaily, RESOURCE_HEALTH_DEFAULT_LIMITS.d1RowsReadDaily),
     d1RowsWrittenDaily: finiteLimit("d1RowsWrittenDaily", input.d1RowsWrittenDaily, RESOURCE_HEALTH_DEFAULT_LIMITS.d1RowsWrittenDaily),
+    durableObjectRowsReadDaily: finiteLimit("durableObjectRowsReadDaily", input.durableObjectRowsReadDaily, RESOURCE_HEALTH_DEFAULT_LIMITS.durableObjectRowsReadDaily),
+    durableObjectRowsWrittenDaily: finiteLimit("durableObjectRowsWrittenDaily", input.durableObjectRowsWrittenDaily, RESOURCE_HEALTH_DEFAULT_LIMITS.durableObjectRowsWrittenDaily),
     workerRequests15m: finiteLimit("workerRequests15m", input.workerRequests15m, RESOURCE_HEALTH_DEFAULT_LIMITS.workerRequests15m),
     workerErrors15m: finiteLimit("workerErrors15m", input.workerErrors15m, RESOURCE_HEALTH_DEFAULT_LIMITS.workerErrors15m),
   });
 }
 
+function isEnvironmentScript(scriptName, environment) {
+  if (typeof scriptName !== "string" || !scriptName.startsWith("fibre-")) return false;
+  return environment === "production" ? !scriptName.endsWith("-staging") : scriptName.endsWith(`-${environment}`);
+}
+
 function aggregateWorkers(groups, environment) {
-  const suffix = environment === "production" ? "" : `-${environment}`;
   const byScript = new Map();
   for (const group of groups) {
     const scriptName = group?.dimensions?.scriptName;
-    if (typeof scriptName !== "string" || !scriptName.startsWith("fibre-")) continue;
-    if (suffix && !scriptName.endsWith(suffix)) continue;
+    if (!isEnvironmentScript(scriptName, environment)) continue;
     const current = byScript.get(scriptName) ?? { scriptName, requests:0, errors:0, subrequests:0, cpuTimeP99:0 };
     current.requests += Number(group?.sum?.requests ?? 0);
     current.errors += Number(group?.sum?.errors ?? 0);
@@ -77,6 +92,41 @@ function d1Usage(groups, resources) {
   }));
 }
 
+function durableObjectUsage(invocationGroups, periodicGroups, environment) {
+  const scriptsByNamespace = new Map();
+  for (const group of invocationGroups) {
+    const namespaceId = group?.dimensions?.namespaceId;
+    const scriptName = group?.dimensions?.scriptName;
+    if (typeof namespaceId !== "string" || !isEnvironmentScript(scriptName, environment)) continue;
+    let scripts = scriptsByNamespace.get(namespaceId);
+    if (!scripts) {
+      scripts = new Set();
+      scriptsByNamespace.set(namespaceId, scripts);
+    }
+    scripts.add(scriptName);
+  }
+
+  const usageByNamespace = new Map();
+  for (const group of periodicGroups) {
+    const namespaceId = group?.dimensions?.namespaceId;
+    if (typeof namespaceId !== "string" || !scriptsByNamespace.has(namespaceId)) continue;
+    const current = usageByNamespace.get(namespaceId) ?? { namespaceId, rowsRead:0, rowsWritten:0 };
+    current.rowsRead += Number(group?.sum?.rowsRead ?? 0);
+    current.rowsWritten += Number(group?.sum?.rowsWritten ?? 0);
+    usageByNamespace.set(namespaceId, current);
+  }
+
+  return Object.freeze([...scriptsByNamespace.entries()].map(([namespaceId, scripts]) => {
+    const usage = usageByNamespace.get(namespaceId) ?? { rowsRead:0, rowsWritten:0 };
+    return Object.freeze({
+      namespaceId,
+      scriptName:[...scripts].sort()[0],
+      rowsRead:usage.rowsRead,
+      rowsWritten:usage.rowsWritten,
+    });
+  }).sort((left, right) => right.rowsRead - left.rowsRead));
+}
+
 function level(value, limit) {
   if (limit <= 0) return value > 0 ? "critical" : "normal";
   if (value >= limit) return "critical";
@@ -84,11 +134,29 @@ function level(value, limit) {
   return "normal";
 }
 
-function checksFor({ d1, workers, limits }) {
+function checksFor({ d1, durableObjects, workers, limits }) {
   const checks = [];
   for (const database of d1) {
     checks.push(Object.freeze({ kind:"d1_rows_read", resource:database.name, value:database.rowsRead, limit:limits.d1RowsReadDaily, level:level(database.rowsRead, limits.d1RowsReadDaily) }));
     checks.push(Object.freeze({ kind:"d1_rows_written", resource:database.name, value:database.rowsWritten, limit:limits.d1RowsWrittenDaily, level:level(database.rowsWritten, limits.d1RowsWrittenDaily) }));
+  }
+  for (const durableObject of durableObjects) {
+    checks.push(Object.freeze({
+      kind:"durable_object_rows_read",
+      resource:durableObject.scriptName,
+      namespaceId:durableObject.namespaceId,
+      value:durableObject.rowsRead,
+      limit:limits.durableObjectRowsReadDaily,
+      level:level(durableObject.rowsRead, limits.durableObjectRowsReadDaily),
+    }));
+    checks.push(Object.freeze({
+      kind:"durable_object_rows_written",
+      resource:durableObject.scriptName,
+      namespaceId:durableObject.namespaceId,
+      value:durableObject.rowsWritten,
+      limit:limits.durableObjectRowsWrittenDaily,
+      level:level(durableObject.rowsWritten, limits.durableObjectRowsWrittenDaily),
+    }));
   }
   for (const worker of workers) {
     checks.push(Object.freeze({ kind:"worker_requests_15m", resource:worker.scriptName, value:worker.requests, limit:limits.workerRequests15m, level:level(worker.requests, limits.workerRequests15m) }));
@@ -119,10 +187,11 @@ export async function sampleCloudflareResourceHealth({
   const end = now.toISOString();
   const start = new Date(now.getTime() - 15 * 60_000).toISOString();
   const date = end.slice(0, 10);
+  const dayStart = `${date}T00:00:00.000Z`;
   const response = await fetchImpl(GRAPHQL_URL, {
     method:"POST",
     headers:{ Authorization:`Bearer ${token}`, Accept:"application/json", "Content-Type":"application/json" },
-    body:JSON.stringify({ query:QUERY, variables:{ accountTag, date, start, end } }),
+    body:JSON.stringify({ query:QUERY, variables:{ accountTag, date, dayStart, start, end } }),
   });
   const payload = await response.json();
   if (!response.ok || payload.errors?.length) {
@@ -134,15 +203,21 @@ export async function sampleCloudflareResourceHealth({
   const limits = normalizeResourceHealthLimits(rawLimits);
   const d1 = d1Usage(account.d1AnalyticsAdaptiveGroups ?? [], d1Resources);
   const workers = aggregateWorkers(account.workersInvocationsAdaptive ?? [], env);
-  const checks = checksFor({ d1, workers, limits });
+  const durableObjects = durableObjectUsage(
+    account.durableObjectsInvocationsAdaptiveGroups ?? [],
+    account.durableObjectsPeriodicGroups ?? [],
+    env,
+  );
+  const checks = checksFor({ d1, durableObjects, workers, limits });
   return Object.freeze({
-    contract:"fibre-cloudflare-resource-health-v0.1",
+    contract:"fibre-cloudflare-resource-health-v0.2",
     environment:env,
     observedAt:end,
-    window:Object.freeze({ workersStart:start, workersEnd:end, d1Date:date }),
+    window:Object.freeze({ workersStart:start, workersEnd:end, dailyStart:dayStart, dailyEnd:end, d1Date:date }),
     level:overallLevel(checks),
     limits,
     d1,
+    durableObjects,
     workers,
     checks,
   });
