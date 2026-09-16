@@ -170,9 +170,9 @@ test("R4 surfaces authority conflicts instead of silently repairing them", async
   assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_PRESENTATION_STALE").state, "repairable");
 });
 
-test("missing sex without Genesis evidence requires an explicit operator identity decision", async () => {
+test("Fibre Thread and missing sex require explicit operator identity decisions without invented evidence", async () => {
   const service = createThreadGenesisRepairService({
-    worldReader:{ getThread() { return { threadId:"thr_legacy_1", status:"frozen", identity:{ selfDescription:"Legacy" } }; } },
+    worldReader:{ getThread() { return { threadId:"thr_legacy_1", status:"frozen", identity:{ name:"Fibre Thread", selfDescription:"Legacy" } }; } },
     civilRegistry:{ getCivilRegistrationByThreadId() { return null; } },
     embodimentReader:{ listCurrent() { return []; } },
     presentationReader:{ async getSnapshot() { return null; } },
@@ -184,7 +184,10 @@ test("missing sex without Genesis evidence requires an explicit operator identit
   });
   const diagnosis = await service.diagnose("thr_legacy_1");
   assert.equal(diagnosis.health, "operator_decision_required");
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME_UNFINISHED").state, "operator_decision_required");
+  const name = diagnosis.findings.find((entry) => entry.code === "NAME_UNFINISHED");
+  assert.equal(name.state, "operator_decision_required");
+  assert.equal(name.authoritative, "Fibre Thread");
+  assert.equal(name.identityAction.id, "set_name");
   const sex = diagnosis.findings.find((entry) => entry.code === "SEX_MISSING");
   assert.equal(sex.state, "operator_decision_required");
   assert.equal(sex.migration, undefined);
