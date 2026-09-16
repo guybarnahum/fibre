@@ -175,6 +175,7 @@ function renderSummary(summary) {
     "thread-stat-male":summary.male,
     "thread-stat-unknown":summary.unknownSex,
     "thread-stat-attention":summary.attention,
+    "thread-stat-migrations":summary.migrationsAvailable,
     "thread-stat-dead":summary.deadLetter,
   };
   for (const [id, value] of Object.entries(values)) $(`#${id}`).textContent = value ?? 0;
