@@ -1,7 +1,7 @@
 ---
 id: fibre-operator-surfaces
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-16
 canonical: true
 ---
 
@@ -21,6 +21,20 @@ Admin has two independent gates:
 2. Fibre authorizes that identity from `fibre_admin_entitlements`.
 
 Private/admin service tokens are never delivered to browser JavaScript. Admin entitlement controls access to an operator surface only; it never decides whether a birth, World mutation, Embodiment admission, publication or Thread state is true.
+
+### Thread health and operator actions
+
+Admin may diagnose and invoke bounded Thread maintenance actions, but the authority for each action remains in the owning Fibre service. The canonical semantics are defined in [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md).
+
+Admin must keep three operations visibly distinct:
+
+- **Migrate Thread** — transform an older authoritative representation only when a named migration has legitimate evidence.
+- **Fix Thread** — reconstruct state already derivable from current authority.
+- **Recover** — reactivate one quarantined/dead-letter work item after its blocker is resolved.
+
+A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
+
+Dead-letter reconciliation state and its last failure should be visible in Thread Observatory. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
 
 ## Public status
 
