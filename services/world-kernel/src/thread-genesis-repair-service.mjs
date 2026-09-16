@@ -1,4 +1,5 @@
 const OPERATION_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
+const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
 
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") throw new TypeError(`${name} must expose ${method}()`);
@@ -7,6 +8,19 @@ function requireMethod(name, value, method) {
 
 function text(value) {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function unfinishedName(value) {
+  const normalized = text(value)?.toLocaleLowerCase("en-US") ?? null;
+  return normalized === null || PLACEHOLDER_NAMES.has(normalized);
+}
+
+function identityAction(id, label, fields) {
+  return Object.freeze({
+    id,
+    label,
+    input:Object.freeze({ fields:Object.freeze(fields.map((field) => Object.freeze(field))) }),
+  });
 }
 
 function currentCanonicalPortrait(embodimentStore, threadId) {
@@ -43,26 +57,70 @@ function overall(findings) {
   return "healthy";
 }
 
-function identityFinding({ code, missingCode, authoritative, projected = undefined, projectionCode = null, conflictCode = null }) {
+function identityFinding({
+  code,
+  missingCode,
+  authoritative,
+  projected = undefined,
+  projectionCode = null,
+  conflictCode = null,
+  projectionState = "operator_decision_required",
+  projectionAction = null,
+  conflictState = "integrity_error",
+  conflictAction = null,
+  detail = {},
+}) {
   const source = text(authoritative);
   if (source === null) return finding(missingCode, "migration_required");
-  if (projected === undefined) return finding(code, "healthy", null, { authoritative:source });
+  if (projected === undefined) return finding(code, "healthy", null, { authoritative:source, ...detail });
 
   const publicValue = text(projected);
   if (publicValue === null) {
-    return finding(projectionCode ?? `${code}_PRESENTATION_MISSING`, "operator_decision_required", null, {
+    return finding(projectionCode ?? `${code}_PRESENTATION_MISSING`, projectionState, projectionAction, {
       authoritative:source,
       presentation:null,
       reason:"authoritative fact exists but current Presentation omits it",
+      ...detail,
     });
   }
   if (publicValue !== source) {
-    return finding(conflictCode ?? `${code}_CONFLICT`, "integrity_error", null, {
+    return finding(conflictCode ?? `${code}_CONFLICT`, conflictState, conflictAction, {
       authoritative:source,
       presentation:publicValue,
+      reason:"current Presentation differs from authoritative World identity",
+      ...detail,
     });
   }
-  return finding(code, "healthy", null, { authoritative:source, presentation:publicValue });
+  return finding(code, "healthy", null, { authoritative:source, presentation:publicValue, ...detail });
+}
+
+function nameFinding(identity, projected) {
+  const name = text(identity.name);
+  const action = identityAction(
+    unfinishedName(name) ? "set_name" : "change_name",
+    unfinishedName(name) ? "Set name" : "Change name",
+    [{ name:"name", label:"Name", kind:"text", required:true, ...(unfinishedName(name) ? {} : { default:name }) }],
+  );
+  if (unfinishedName(name)) {
+    return finding("NAME_UNFINISHED", "operator_decision_required", null, {
+      authoritative:name,
+      reason:"Fibre Thread is a bootstrap placeholder, not a finished personal name",
+      identityAction:action,
+    });
+  }
+  return identityFinding({
+    code:"NAME",
+    missingCode:"NAME_MISSING",
+    authoritative:name,
+    projected:projected === null ? undefined : projected.subject?.displayName ?? null,
+    projectionCode:"NAME_PRESENTATION_MISSING",
+    conflictCode:"NAME_PRESENTATION_STALE",
+    projectionState:"repairable",
+    projectionAction:"rebuild_presentation",
+    conflictState:"repairable",
+    conflictAction:"rebuild_presentation",
+    detail:{ identityAction:action },
+  });
 }
 
 function identityCompleteness(thread, registration, presentation, sexEvidence) {
@@ -71,9 +129,12 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
   const missingSex = text(identity.sex) === null;
   const sexFinding = missingSex
     ? sexEvidence === null
-      ? finding("SEX_MISSING", "migration_required", null, {
+      ? finding("SEX_MISSING", "operator_decision_required", null, {
         evidenceAvailable:false,
-        reason:"preserved Genesis birth evidence does not explicitly record sex",
+        reason:"sex is absent from authoritative Thread identity",
+        identityAction:identityAction("set_sex", "Set sex", [
+          { name:"sex", label:"Sex", kind:"select", options:["female","male"], required:true },
+        ]),
       })
       : finding("SEX_MISSING", "migration_required", null, {
         evidenceAvailable:true,
@@ -93,14 +154,7 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       projectionCode:"FIN_PRESENTATION_MISSING",
       conflictCode:"FIN_CONFLICT",
     }),
-    identityFinding({
-      code:"NAME",
-      missingCode:"NAME_MISSING",
-      authoritative:identity.name,
-      projected:projected === null ? undefined : projected.subject?.displayName ?? null,
-      projectionCode:"NAME_PRESENTATION_MISSING",
-      conflictCode:"NAME_CONFLICT",
-    }),
+    nameFinding(identity, projected),
     sexFinding,
   ];
 
@@ -129,11 +183,13 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
 
   return Object.freeze({
     facts:Object.freeze({
-      name:text(identity.name),
+      name:unfinishedName(identity.name) ? null : text(identity.name),
+      storedName:text(identity.name),
       sex:text(identity.sex),
       fibreIdentityNumber:text(registration?.fibreIdentityNumber),
       originOrientation,
       birthDate,
+      lifecycleStatus:thread.status,
       canonicalVisualSpecification:canonicalSpec === null ? "missing" : "present",
     }),
     findings:Object.freeze(findings),
@@ -175,6 +231,7 @@ export function createThreadGenesisRepairService({
   visualReconciler,
   genesisSexEvidence,
   genesisSexMigrator,
+  identityUpdater,
   activityRecorder = null,
 } = {}) {
   requireMethod("worldReader", worldReader, "getThread");
@@ -187,12 +244,15 @@ export function createThreadGenesisRepairService({
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
   requireMethod("genesisSexEvidence", genesisSexEvidence, "resolve");
   requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
+  requireMethod("identityUpdater", identityUpdater, "update");
   const activity = optionalActivity(activityRecorder);
 
   async function diagnose(threadId) {
     const thread = worldReader.getThread(threadId, { required:false });
     if (thread === null) return Object.freeze({ threadId, health:"unrecoverable", exists:false, identity:null, findings:Object.freeze([
-      finding("THREAD_NOT_FOUND", "unrecoverable"),
+      finding("THREAD_NOT_FOUND", "unrecoverable", null, {
+        reason:"Activity references this identifier, but World has no admitted Thread",
+      }),
     ]) });
 
     const registration = civilRegistry.getCivilRegistrationByThreadId(threadId, { required:false });
@@ -237,6 +297,24 @@ export function createThreadGenesisRepairService({
       identity:completeness.facts,
       findings: Object.freeze(findings),
     });
+  }
+
+  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex } = {}) {
+    const root = operationKey("operationKey", requestedKey);
+    const before = await diagnose(threadId);
+    if (!before.exists) return Object.freeze({ threadId, operationKey:root, before, after:before, changed:false });
+    const thread = worldReader.getThread(threadId);
+    const result = identityUpdater.update(thread, { name, sex, operationKey:root });
+    await record(activity, {
+      threadId,
+      operationId:root,
+      stage:"thread.identity.update",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ eventId:result.eventId, changes:Object.keys(result.changes ?? {}) },
+    });
+    const after = await diagnose(threadId);
+    return Object.freeze({ threadId, operationKey:root, before, after, changed:result.changed === true, result });
   }
 
   async function migrate(threadId, { migrationId, migrationKey, input = null } = {}) {
@@ -294,6 +372,8 @@ export function createThreadGenesisRepairService({
     if (!before.exists) return Object.freeze({ threadId, repairKey:root, before, after:before, actions:Object.freeze([]) });
 
     const migrationBlocked = before.findings.some((entry) => entry.state === "migration_required");
+    const decisionBlocked = before.findings.some((entry) => entry.state === "operator_decision_required");
+    const blocked = migrationBlocked || decisionBlocked;
     const actionable = before.findings.filter((entry) => entry.state === "repairable" && entry.action !== null).map((entry) => entry.code);
     await record(activity, {
       threadId,
@@ -301,11 +381,11 @@ export function createThreadGenesisRepairService({
       stage:"thread.repair.start",
       status:"succeeded",
       attempt:1,
-      evidence:{ findingCodes:actionable, migrationBlocked },
+      evidence:{ findingCodes:actionable, blocked },
     });
 
     const actions = [];
-    if (!migrationBlocked && before.findings.some((entry) => entry.action === "rebuild_presentation")) {
+    if (!blocked && before.findings.some((entry) => entry.action === "rebuild_presentation")) {
       const result = await presentationDelivery.rebuildThreadPresentation(threadId);
       actions.push(Object.freeze({ action:"rebuild_presentation", result }));
       await record(activity, {
@@ -320,7 +400,7 @@ export function createThreadGenesisRepairService({
     }
 
     const afterPresentation = await diagnose(threadId);
-    if (!migrationBlocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_visual_publication")) {
+    if (!blocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_visual_publication")) {
       const result = await visualReconciler.reconcileThread({
         threadId,
         regenerationKey: root,
@@ -357,5 +437,5 @@ export function createThreadGenesisRepairService({
     });
   }
 
-  return Object.freeze({ diagnose, migrate, repair });
+  return Object.freeze({ diagnose, updateIdentity, migrate, repair });
 }
