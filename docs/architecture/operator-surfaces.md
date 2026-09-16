@@ -22,6 +22,16 @@ Admin has two independent gates:
 
 Private/admin service tokens are never delivered to browser JavaScript. Admin entitlement controls access to an operator surface only; it never decides whether a birth, World mutation, Embodiment admission, publication or Thread state is true.
 
+### Thread population
+
+The Activity workspace may expose a **Threads** population view beside Causal and Raw Activity.
+
+Activity supplies population discovery only: a Thread appears because Activity has observed its `threadId`. Activity records must never be treated as authority for the person's name, sex, lifecycle, health, migration state or recoverability. Those facts are resolved at read time from World and the owning maintenance/reconciliation authorities.
+
+Population statistics such as sex counts, health counts, migration availability and dead-letter counts are therefore computed from the authoritative Thread diagnoses returned for the Activity-discovered population, not from telemetry payloads.
+
+Population inspection is operator-driven and bounded. It should not become a background polling loop or a second directory authority. Normal Activity auto-refresh may pause while the population view is active so population diagnosis does not create avoidable infrastructure load.
+
 ### Thread health and operator actions
 
 Admin may diagnose and invoke bounded Thread maintenance actions, but the authority for each action remains in the owning Fibre service. The canonical semantics are defined in [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md).
@@ -32,9 +42,11 @@ Admin must keep three operations visibly distinct:
 - **Fix Thread** — reconstruct state already derivable from current authority.
 - **Recover** — reactivate one quarantined/dead-letter work item after its blocker is resolved.
 
+A named migration may declare explicit operator inputs when its domain rule genuinely requires them. Admin may collect and pass only those migration-specific inputs; it must not expose a generic arbitrary-field editor as a substitute for migration authority.
+
 A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
 
-Dead-letter reconciliation state and its last failure should be visible in Thread Observatory. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
+Dead-letter reconciliation state and its last failure should be visible in Thread Observatory and the population view. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
 
 ## Public status
 
