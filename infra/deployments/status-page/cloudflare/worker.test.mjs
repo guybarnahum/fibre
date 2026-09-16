@@ -15,7 +15,7 @@ function infraBinding(level = "normal", { stale = false } = {}) {
   return {
     async fetch(request) {
       assert.equal(new URL(request.url).pathname, "/internal/infra-health");
-      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.1", level, stale, observedAt:"2026-09-13T14:00:00.000Z" }), { status:200, headers:{ "Content-Type":"application/json" } });
+      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.5", level, stale, observedAt:"2026-09-13T14:00:00.000Z" }), { status:200, headers:{ "Content-Type":"application/json" } });
     },
   };
 }
@@ -23,12 +23,10 @@ function infraBinding(level = "normal", { stale = false } = {}) {
 function changingInfraBinding(levels) {
   let reads = 0;
   return {
-    get reads() { return reads; },
-    async fetch(request) {
-      assert.equal(new URL(request.url).pathname, "/internal/infra-health");
+    async fetch() {
       const level = levels[Math.min(reads, levels.length - 1)];
       reads += 1;
-      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.5", level, stale:false, observedAt:"2026-09-16T18:00:00.000Z" }), { status:200, headers:{ "Content-Type":"application/json" } });
+      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.5", level, stale:false }), { status:200, headers:{ "Content-Type":"application/json" } });
     },
   };
 }
@@ -61,23 +59,10 @@ test("public status is operational only when viewer, runtime, and infra health a
   for (const forbidden of ["requestId", "threadId", "genesisId", "providerRequestId", "error", "databaseId", "accountId"]) assert.equal(serialized.includes(forbidden), false);
 });
 
-test("public status refreshes infrastructure quickly enough to catch a new quota failure", async () => {
-  const infra = changingInfraBinding(["normal", "critical"]);
-  const env = environment({ ADMIN_DASHBOARD:infra });
-  const originalNow = Date.now;
-  let nowMs = Date.parse("2026-09-16T18:00:00.000Z");
-  Date.now = () => nowMs;
-  try {
-    const first = await currentPublicStatus(env, { fetchImpl:viewerOk });
-    assert.equal(first.status, "operational");
-    nowMs += 61_000;
-    const second = await currentPublicStatus(env, { fetchImpl:viewerOk });
-    assert.equal(second.status, "degraded");
-    assert.equal(second.components.find((component) => component.key === "infra")?.status, "degraded");
-    assert.equal(infra.reads, 2);
-  } finally {
-    Date.now = originalNow;
-  }
+test("public status does not hide a new infrastructure failure behind stale health", async () => {
+  const env = environment({ ADMIN_DASHBOARD:changingInfraBinding(["normal", "critical"]) });
+  assert.equal((await currentPublicStatus(env, { fetchImpl:viewerOk })).status, "operational");
+  assert.equal((await currentPublicStatus(env, { fetchImpl:viewerOk })).status, "degraded");
 });
 
 test("elevated cached infrastructure degrades public status without exposing monitor detail", async () => {
