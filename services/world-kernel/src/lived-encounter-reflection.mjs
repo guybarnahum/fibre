@@ -29,16 +29,18 @@ function runActivityStage(activityRecorder, metadata, operation) {
 }
 
 export async function internalizeLivedEncounter({
-  thread,
+  livedContext = null,
+  thread = null,
   encounter,
   encounterResult,
-  semanticStateStore,
+  semanticStateStore = null,
   experienceStore,
   modelAdapter,
   activityRecorder = null,
 }) {
-  assertPlainObject("Thread", thread);
-  assertId("Thread.threadId", thread.threadId);
+  const activeThread = livedContext?.thread ?? thread;
+  assertPlainObject("Thread", activeThread);
+  assertId("Thread.threadId", activeThread.threadId);
   assertPlainObject("lived encounter", encounter);
   assertNonEmpty("lived encounter.utterance", encounter.utterance);
   assertNonEmpty("lived encounter.occurredAt", encounter.occurredAt);
@@ -46,28 +48,35 @@ export async function internalizeLivedEncounter({
   assertNonEmpty("encounter result.responseText", encounterResult.responseText);
   assertPlainObject("encounter result.grounding", encounterResult.grounding);
   assertId("encounter result.grounding.situationId", encounterResult.grounding.situationId);
-  requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
+  if (livedContext !== null) {
+    assertPlainObject("lived context", livedContext);
+    assertExactKeys("lived context", livedContext, ["thread", "situation", "semanticStates", "memories"]);
+    if (!Array.isArray(livedContext.semanticStates)) throw new TypeError("lived context semanticStates must be an array");
+  } else {
+    requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
+  }
   requireMethod("experienceStore", experienceStore, "recordEncounter");
   requireMethod("experienceStore", experienceStore, "recordJournalEntry");
   requireMethod("modelAdapter", modelAdapter, "invoke");
   if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
 
   const activity = Object.freeze({
-    threadId: thread.threadId,
+    threadId: activeThread.threadId,
     correlationId: encounterResult.grounding.situationId,
   });
   const historyEvent = await runActivityStage(activityRecorder, {
     ...activity,
     stage: "encounter.history.record",
   }, () => experienceStore.recordEncounter({
-    threadId: thread.threadId,
+    threadId: activeThread.threadId,
     situationId: encounterResult.grounding.situationId,
     occurredAt: encounter.occurredAt,
     visitorUtterance: encounter.utterance,
     responseText: encounterResult.responseText,
   }));
 
-  const semanticStates = semanticStateStore.listCurrentState(thread.threadId).map((state) => ({
+  const semanticRecords = livedContext?.semanticStates ?? semanticStateStore.listCurrentState(activeThread.threadId);
+  const semanticStates = semanticRecords.map((state) => ({
     domain: state.domain,
     dimension: state.dimension,
     target: state.target ?? null,
@@ -75,9 +84,9 @@ export async function internalizeLivedEncounter({
   }));
   const input = {
     thread: {
-      selfDescription: thread.identity?.selfDescription ?? "",
-      selfModel: thread.currentState?.selfModel ?? "",
-      unresolvedIntentions: [...(thread.currentState?.unresolvedIntentions ?? [])],
+      selfDescription: activeThread.identity?.selfDescription ?? "",
+      selfModel: activeThread.currentState?.selfModel ?? "",
+      unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
     },
     situationId: encounterResult.grounding.situationId,
     encounter: {
@@ -119,7 +128,7 @@ export async function internalizeLivedEncounter({
         stage: "encounter.journal.record",
         evidence: { eventId: historyEvent.eventId },
       }, () => experienceStore.recordJournalEntry({
-        threadId: thread.threadId,
+        threadId: activeThread.threadId,
         aboutEventRef: historyEvent.eventId,
         writtenAt: encounter.occurredAt,
         entryText: invocation.output.journalEntry,
