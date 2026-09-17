@@ -4,7 +4,7 @@ import { deflateSync } from "node:zlib";
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
 import { assertFidPhotoAdmissionReceipt } from "./fid-photo-admission.mjs";
 
-export const FID_CARD_TEMPLATE_VERSION = "fid-card-template-v0.1";
+export const FID_CARD_TEMPLATE_VERSION = "fid-card-template-v0.2";
 export const FID_CARD_SIZE = Object.freeze({ width: 856, height: 540 });
 
 const GLYPHS = Object.freeze({
@@ -51,6 +51,30 @@ const GLYPHS = Object.freeze({
   "?": ["01110","10001","00001","00010","00100","00000","00100"],
 });
 
+const CARD_PALETTE = Object.freeze({
+  paper: [240, 238, 229, 255],
+  paperWarm: [227, 223, 209, 255],
+  weave: [232, 229, 218, 255],
+  ink: [24, 29, 29, 255],
+  inkSoft: [75, 81, 78, 255],
+  graphite: [28, 33, 34, 255],
+  graphiteSoft: [43, 50, 50, 255],
+  light: [232, 229, 216, 255],
+  lightMuted: [166, 172, 164, 255],
+  accent: [126, 107, 79, 255],
+});
+
+const FRONT_LAYOUT = Object.freeze({
+  margin: 46,
+  bodyX: 344,
+  right: 808,
+  headerHeight: 88,
+  portraitX: 48,
+  portraitY: 118,
+  portraitWidth: 248,
+  portraitHeight: 340,
+});
+
 function sha256(bytes) {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 }
@@ -86,7 +110,12 @@ function rect(surface, x, y, width, height, color) {
   }
 }
 
-function drawText(surface, text, x, y, scale, color) {
+function textWidth(text, scale, tracking = scale) {
+  const length = String(text).length;
+  return length === 0 ? 0 : length * 5 * scale + (length - 1) * tracking;
+}
+
+function drawText(surface, text, x, y, scale, color, { tracking = scale } = {}) {
   let cursor = x;
   for (const raw of String(text).toUpperCase()) {
     const glyph = GLYPHS[raw] ?? GLYPHS["?"];
@@ -95,7 +124,28 @@ function drawText(surface, text, x, y, scale, color) {
         if (glyph[row][col] === "1") rect(surface, cursor + col * scale, y + row * scale, scale, scale, color);
       }
     }
-    cursor += 6 * scale;
+    cursor += 5 * scale + tracking;
+  }
+}
+
+function drawTextRight(surface, text, right, y, scale, color, options = {}) {
+  const tracking = options.tracking ?? scale;
+  drawText(surface, text, right - textWidth(text, scale, tracking), y, scale, color, options);
+}
+
+function outlineRect(surface, x, y, width, height, color, thickness = 1) {
+  rect(surface, x, y, width, thickness, color);
+  rect(surface, x, y + height - thickness, width, thickness, color);
+  rect(surface, x, y, thickness, height, color);
+  rect(surface, x + width - thickness, y, thickness, height, color);
+}
+
+function drawWeave(surface, color, { spacing = 44, yStart = 0, yEnd = surface.height } = {}) {
+  for (let x = -surface.height; x < surface.width + surface.height; x += spacing) {
+    for (let y = yStart; y < yEnd; y += 1) pixel(surface, x + y, y, color);
+  }
+  for (let x = 0; x < surface.width + surface.height; x += spacing * 2) {
+    for (let y = yStart; y < yEnd; y += 1) pixel(surface, x - y, y, color);
   }
 }
 
@@ -190,23 +240,34 @@ function fingerprint(surface, digest, x, y, width, height, color) {
 export function createFidCardTemplate({ version = FID_CARD_TEMPLATE_VERSION } = {}) {
   if (typeof version !== "string" || version.trim() === "") throw new TypeError("FID template version is required");
   const { width, height } = FID_CARD_SIZE;
-  const frontBaseLayer = rgbaSurface(width, height, [238, 236, 226, 255]);
+  const frontBaseLayer = rgbaSurface(width, height, CARD_PALETTE.paper);
   const frontUpperLayer = rgbaSurface(width, height);
-  const back = rgbaSurface(width, height, [29, 34, 35, 255]);
+  const back = rgbaSurface(width, height, CARD_PALETTE.graphite);
 
-  rect(frontBaseLayer, 0, 0, width, 72, [28, 33, 34, 255]);
-  for (let x = -height; x < width; x += 34) {
-    for (let y = 0; y < height; y += 1) pixel(frontBaseLayer, x + y, y, [218, 215, 201, 255]);
-  }
-  rect(frontUpperLayer, 18, 18, width - 36, 2, [52, 58, 58, 170]);
-  rect(frontUpperLayer, 18, height - 20, width - 36, 2, [52, 58, 58, 170]);
-  drawText(frontUpperLayer, "FIBRE IDENTITY", 42, 24, 4, [238, 236, 226, 255]);
+  rect(frontBaseLayer, 0, 0, width, FRONT_LAYOUT.headerHeight, CARD_PALETTE.graphite);
+  drawWeave(frontBaseLayer, CARD_PALETTE.weave, { spacing: 56, yStart: FRONT_LAYOUT.headerHeight, yEnd: height - 20 });
+  rect(frontBaseLayer, FRONT_LAYOUT.margin, FRONT_LAYOUT.headerHeight - 3, width - FRONT_LAYOUT.margin * 2, 3, CARD_PALETTE.accent);
 
-  for (let x = -height; x < width; x += 26) {
-    for (let y = 0; y < height; y += 1) pixel(back, x + y, y, [43, 50, 50, 255]);
-  }
-  drawText(back, "FIBRE", 54, 54, 7, [222, 220, 208, 255]);
-  drawText(back, "IDENTITY CREDENTIAL", 58, 126, 3, [170, 174, 166, 255]);
+  drawText(frontUpperLayer, "FIBRE", FRONT_LAYOUT.margin, 24, 4, CARD_PALETTE.light);
+  drawTextRight(frontUpperLayer, "IDENTITY CREDENTIAL", FRONT_LAYOUT.right, 31, 2, CARD_PALETTE.lightMuted);
+  outlineRect(
+    frontUpperLayer,
+    FRONT_LAYOUT.portraitX - 4,
+    FRONT_LAYOUT.portraitY - 4,
+    FRONT_LAYOUT.portraitWidth + 8,
+    FRONT_LAYOUT.portraitHeight + 8,
+    CARD_PALETTE.inkSoft,
+    2,
+  );
+  rect(frontUpperLayer, 320, 118, 2, 340, CARD_PALETTE.paperWarm);
+  rect(frontUpperLayer, FRONT_LAYOUT.margin, 499, width - FRONT_LAYOUT.margin * 2, 1, CARD_PALETTE.inkSoft);
+
+  drawWeave(back, CARD_PALETTE.graphiteSoft, { spacing: 38, yStart: 0, yEnd: height });
+  rect(back, 48, 48, 4, 132, CARD_PALETTE.accent);
+  drawText(back, "FIBRE", 70, 48, 6, CARD_PALETTE.light);
+  drawText(back, "IDENTITY CREDENTIAL", 72, 106, 2, CARD_PALETTE.lightMuted);
+  drawText(back, "FIBRE IDENTITY AUTHORITY", 72, 142, 2, CARD_PALETTE.lightMuted);
+  rect(back, 70, 188, 716, 2, CARD_PALETTE.accent);
 
   return Object.freeze({ version, frontBaseLayer, frontUpperLayer, back });
 }
@@ -254,26 +315,41 @@ export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: can
   }))));
 
   const front = clone(template.frontBaseLayer);
-  placeCover(front, admittedPhoto, 54, 112, 280, 350);
-  drawText(front, "FIN", 382, 140, 3, [42, 47, 47, 255]);
-  drawText(front, workflow.fibreIdentityNumber, 382, 174, 5, [24, 29, 29, 255]);
-  drawText(front, "REV", 382, 244, 3, [86, 91, 89, 255]);
-  drawText(front, String(workflow.proposedRevision), 382, 278, 4, [24, 29, 29, 255]);
-  drawText(front, "FID", 382, 334, 3, [86, 91, 89, 255]);
-  drawText(front, workflow.proposedCredentialId.slice(-16), 382, 368, 2, [24, 29, 29, 255]);
-  fingerprint(front, identitySnapshotDigest, 382, 424, 256, 12, [73, 80, 79, 255]);
+  placeCover(
+    front,
+    admittedPhoto,
+    FRONT_LAYOUT.portraitX,
+    FRONT_LAYOUT.portraitY,
+    FRONT_LAYOUT.portraitWidth,
+    FRONT_LAYOUT.portraitHeight,
+  );
 
-  const watermark = rgbaSurface(160, 200);
-  placeCover(watermark, admittedPhoto, 0, 0, watermark.width, watermark.height, 0.18);
-  blend(front, watermark, 650, 250, 0.32);
+  drawText(front, "FIBRE IDENTITY NUMBER", FRONT_LAYOUT.bodyX, 132, 2, CARD_PALETTE.inkSoft);
+  drawText(front, workflow.fibreIdentityNumber, FRONT_LAYOUT.bodyX, 164, 5, CARD_PALETTE.ink);
+  rect(front, FRONT_LAYOUT.bodyX, 222, FRONT_LAYOUT.right - FRONT_LAYOUT.bodyX, 2, CARD_PALETTE.paperWarm);
+
+  drawText(front, "CREDENTIAL", FRONT_LAYOUT.bodyX, 258, 2, CARD_PALETTE.inkSoft);
+  drawText(front, workflow.proposedCredentialId.slice(-16), FRONT_LAYOUT.bodyX, 286, 2, CARD_PALETTE.ink);
+  drawText(front, "REVISION", FRONT_LAYOUT.bodyX, 334, 2, CARD_PALETTE.inkSoft);
+  drawText(front, String(workflow.proposedRevision).padStart(2, "0"), FRONT_LAYOUT.bodyX, 362, 3, CARD_PALETTE.ink);
+  drawText(front, "VERIFY IDENTITY SNAPSHOT", FRONT_LAYOUT.bodyX, 418, 2, CARD_PALETTE.inkSoft);
+  fingerprint(front, identitySnapshotDigest, FRONT_LAYOUT.bodyX, 452, 304, 14, CARD_PALETTE.inkSoft);
+
+  placeCover(front, admittedPhoto, 646, 270, 158, 198, 0.055);
   blend(front, template.frontUpperLayer);
 
   const back = clone(template.back);
-  drawText(back, "TEMPLATE", 58, 206, 2, [150, 156, 150, 255]);
-  drawText(back, template.version, 58, 232, 2, [222, 220, 208, 255]);
-  drawText(back, "PAIR", 58, 288, 2, [150, 156, 150, 255]);
-  fingerprint(back, materialDigest, 58, 318, 256, 22, [222, 220, 208, 255]);
-  drawText(back, workflow.proposedCredentialId.slice(-20), 58, 382, 2, [176, 181, 173, 255]);
+  drawText(back, "CREDENTIAL", 72, 232, 2, CARD_PALETTE.lightMuted);
+  drawText(back, workflow.proposedCredentialId.slice(-20), 72, 260, 2, CARD_PALETTE.light);
+  drawText(back, "REVISION", 584, 232, 2, CARD_PALETTE.lightMuted);
+  drawText(back, String(workflow.proposedRevision).padStart(2, "0"), 584, 260, 3, CARD_PALETTE.light);
+
+  drawText(back, "TEMPLATE", 72, 324, 2, CARD_PALETTE.lightMuted);
+  drawText(back, template.version, 72, 352, 2, CARD_PALETTE.light);
+  drawText(back, "VERIFY RENDER PAIR", 72, 408, 2, CARD_PALETTE.lightMuted);
+  fingerprint(back, materialDigest, 72, 440, 336, 22, CARD_PALETTE.light);
+  drawTextRight(back, identitySnapshotDigest.slice(-16), 786, 444, 2, CARD_PALETTE.lightMuted);
+  rect(back, 70, 498, 716, 1, CARD_PALETTE.lightMuted);
 
   const frontPng = encodePng(front);
   const backPng = encodePng(back);

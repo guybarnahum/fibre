@@ -12,6 +12,8 @@ import {
 import { buildFidPhotoAdmission } from "../src/fid-photo-admission.mjs";
 import {
   createFidCardTemplate,
+  FID_CARD_SIZE,
+  FID_CARD_TEMPLATE_VERSION,
   fidRenderPhotoDigest,
   renderFidCard,
 } from "../src/fid-card-renderer.mjs";
@@ -86,6 +88,14 @@ function admission(forWorkflow, admittedPhoto) {
   });
 }
 
+function pngDimensions(bytes) {
+  assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+  };
+}
+
 test("Slice C renders identical front/back PNG bytes from the same authorized issuance material", () => {
   const w = workflow();
   const p = photo();
@@ -94,12 +104,15 @@ test("Slice C renders identical front/back PNG bytes from the same authorized is
   const first = renderFidCard({ workflow: w, photoAdmission: a, photo: p });
   const second = renderFidCard({ workflow: w, photoAdmission: a, photo: p });
 
+  assert.equal(first.templateVersion, FID_CARD_TEMPLATE_VERSION);
   assert.deepEqual(Object.keys(first.files).sort(), ["back.png", "front.png"]);
   assert.deepEqual(first.files["front.png"], second.files["front.png"]);
   assert.deepEqual(first.files["back.png"], second.files["back.png"]);
   assert.equal(first.frontRenderDigest, second.frontRenderDigest);
   assert.equal(first.backRenderDigest, second.backRenderDigest);
-  assert.deepEqual([...first.files["front.png"].subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.notEqual(first.frontRenderDigest, first.backRenderDigest);
+  assert.deepEqual(pngDimensions(first.files["front.png"]), FID_CARD_SIZE);
+  assert.deepEqual(pngDimensions(first.files["back.png"]), FID_CARD_SIZE);
 });
 
 test("Slice C render digests move when authorized identity, admitted photo, or template version moves", () => {
@@ -125,8 +138,9 @@ test("Slice C render digests move when authorized identity, admitted photo, or t
     workflow: w,
     photoAdmission: admission(w, p),
     photo: p,
-    template: createFidCardTemplate({ version: "fid-card-template-v0.2" }),
+    template: createFidCardTemplate({ version: "fid-card-template-v0.3" }),
   });
+  assert.notEqual(templateRender.frontRenderDigest, baseline.frontRenderDigest);
   assert.notEqual(templateRender.backRenderDigest, baseline.backRenderDigest);
 });
 
