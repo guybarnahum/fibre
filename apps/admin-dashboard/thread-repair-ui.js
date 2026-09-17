@@ -1,3 +1,5 @@
+import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+
 const dialogBody = document.querySelector("#dialog-body");
 
 function el(tag, className = null, text = null) {
@@ -137,26 +139,6 @@ async function post(threadId, body) {
   return payload;
 }
 
-function collectInput(action) {
-  const fields = action.input?.fields;
-  if (!Array.isArray(fields) || fields.length === 0) return {};
-  const input = {};
-  for (const field of fields) {
-    if (typeof field?.name !== "string" || field.name === "") continue;
-    const choices = Array.isArray(field.options) ? field.options : [];
-    const prompt = choices.length > 0
-      ? `${field.label ?? human(field.name)} (${choices.join(" / ")})`
-      : field.label ?? human(field.name);
-    const answer = window.prompt(prompt, field.default ?? "");
-    if (answer === null) return undefined;
-    const value = answer.trim();
-    if (field.required === true && value === "") throw new Error(`${field.label ?? human(field.name)} is required`);
-    if (choices.length > 0 && !choices.includes(value)) throw new Error(`${field.label ?? human(field.name)} must be ${choices.join(" or ")}`);
-    input[field.name] = value;
-  }
-  return input;
-}
-
 function actionButton(label, run) {
   const button = el("button", "secondary thread-repair-button", label);
   button.type = "button";
@@ -175,23 +157,39 @@ function actionButton(label, run) {
   return button;
 }
 
+function dialogActionButton(label, open) {
+  const button = el("button", "secondary thread-repair-button", label);
+  button.type = "button";
+  button.addEventListener("click", open);
+  return button;
+}
+
 function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
   const actions = identityActions(diagnosis);
   if (actions.length === 0) return;
   const bar = el("div", "thread-repair-actions");
   for (const action of actions) {
-    bar.append(actionButton(action.label ?? human(action.id), async () => {
-      const input = collectInput(action);
-      if (input === undefined) return;
-      const payload = await post(threadId, {
-        action:"identity",
-        operationKey:`admin_identity_${Date.now().toString(36)}`,
-        ...input,
+    const label = action.label ?? human(action.id);
+    bar.append(dialogActionButton(label, () => {
+      openThreadActionDialog({
+        threadId,
+        threadName:diagnosis.identity?.name ?? null,
+        label,
+        eyebrow:"Authoritative identity",
+        description:"Record an explicit operator identity decision in World history.",
+        fields:actionFields(action),
+        run:async (input) => {
+          const payload = await post(threadId, {
+            action:"identity",
+            operationKey:`admin_identity_${Date.now().toString(36)}`,
+            ...input,
+          });
+          renderHealth(host, threadId, {
+            diagnosis:payload.identityUpdate.after,
+            reconciliation:payload.reconciliation ?? reconciliation,
+          }, `${label} updated in World.`);
+        },
       });
-      renderHealth(host, threadId, {
-        diagnosis:payload.identityUpdate.after,
-        reconciliation:payload.reconciliation ?? reconciliation,
-      }, `${action.label ?? human(action.id)} updated in World.`);
     }));
   }
   host.append(bar);
@@ -203,19 +201,28 @@ function renderMigrationActions(host, threadId, diagnosis, reconciliation) {
   const bar = el("div", "thread-repair-actions");
   for (const finding of available) {
     const migration = finding.migration;
-    bar.append(actionButton(`Migrate · ${migration.label ?? human(migration.id)}`, async () => {
-      const input = collectInput(migration);
-      if (input === undefined) return;
-      const payload = await post(threadId, {
-        action:"migrate",
-        migrationId:migration.id,
-        migrationKey:`admin_migration_${Date.now().toString(36)}`,
-        input,
+    const label = `Migrate · ${migration.label ?? human(migration.id)}`;
+    bar.append(dialogActionButton(label, () => {
+      openThreadActionDialog({
+        threadId,
+        threadName:diagnosis.identity?.name ?? null,
+        label,
+        eyebrow:"Identity migration",
+        description:"Apply the named migration using preserved evidence, then re-diagnose authoritative World state.",
+        fields:actionFields(migration),
+        run:async (input) => {
+          const payload = await post(threadId, {
+            action:"migrate",
+            migrationId:migration.id,
+            migrationKey:`admin_migration_${Date.now().toString(36)}`,
+            input,
+          });
+          renderHealth(host, threadId, {
+            diagnosis:payload.migration.after,
+            reconciliation:payload.reconciliation ?? reconciliation,
+          }, `Migration complete · ${migration.label ?? human(migration.id)}.`);
+        },
       });
-      renderHealth(host, threadId, {
-        diagnosis:payload.migration.after,
-        reconciliation:payload.reconciliation ?? reconciliation,
-      }, `Migration complete · ${migration.label ?? human(migration.id)}.`);
     }));
   }
   host.append(bar);
