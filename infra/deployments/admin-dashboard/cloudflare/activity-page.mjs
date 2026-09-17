@@ -1,4 +1,5 @@
 import { normalizeActivityRecord } from "#infra/telemetry";
+import { logD1Cost } from "../../cloudflare-d1-cost.mjs";
 
 const MODES = new Set(["raw", "causal"]);
 const PAGE_SIZE = 25;
@@ -103,6 +104,22 @@ export async function queryAdminActivityPage(env, environment, query, page) {
     env.ACTIVITY_LOG.prepare(built.sql).bind(...built.bindings).all(),
     env.ACTIVITY_LOG.prepare(count.sql).bind(...count.bindings).all(),
   ]);
+  logD1Cost({
+    database:"activity-log",
+    service:"admin-dashboard",
+    operation:"admin.activity.page",
+    kind:query.kind,
+    mode:page.mode,
+    result,
+  });
+  logD1Cost({
+    database:"activity-log",
+    service:"admin-dashboard",
+    operation:"admin.activity.count",
+    kind:query.kind,
+    mode:page.mode,
+    result:countResult,
+  });
 
   const rows = Array.isArray(result?.results) ? result.results : [];
   const total = Number(countResult?.results?.[0]?.total ?? 0);
