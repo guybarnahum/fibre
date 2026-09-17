@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
+import { THREAD_PRESENTATION_STREAM_VERSION } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
 import { createPresentationReadApi, channelIdForThread } from "../../src/http/read-api.mjs";
 
 async function presentationBundle() {
@@ -86,21 +87,78 @@ test("GET /api/threads discovers only explicitly public Thread presentations", a
   const response = await visible.api.fetch(new Request("https://api.insidefibre.com/api/threads"));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.deepEqual(body, {
-    threads: [{
-      threadId: visible.threadId,
-      lifecycleStatus: "genesis_candidate",
-      snapshotVersion: "discovery-v1",
-      snapshotDigest: body.threads[0].snapshotDigest,
-    }],
-    nextCursor: null,
-  });
+  assert.equal(body.threads.length, 1);
+  assert.equal(body.threads[0].threadId, visible.threadId);
+  assert.equal(body.threads[0].lifecycleStatus, "genesis_candidate");
+  assert.equal(typeof body.threads[0].displayName, "string");
+  assert.equal(body.threads[0].currentPresent, null);
   assert.match(body.threads[0].snapshotDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.equal(body.nextCursor, null);
 
   const hidden = await discoveryFixture({ publiclyVisible: false });
   const hiddenResponse = await hidden.api.fetch(new Request("https://api.insidefibre.com/api/threads"));
   assert.equal(hiddenResponse.status, 200);
   assert.deepEqual(await hiddenResponse.json(), { threads: [], nextCursor: null });
+});
+
+test("Thread roster reads current identity and presence without reopening snapshots", async () => {
+  const infra = createMemoryInfraDriver();
+  const presentationServer = createThreadPresentationServer({ infra });
+  const bundle = await presentationBundle();
+  const threadId = bundle.presentation.manifest.threadId;
+  const channelId = channelIdForThread(threadId);
+  await presentationServer.publishSnapshot({
+    channelId,
+    objectRef:"snapshot_roster_projection_v1",
+    snapshotVersion:"roster-v1",
+    bundle,
+    catalog:{ publiclyVisible:true },
+  });
+  const accepted = await presentationServer.appendEvent({
+    streamVersion:THREAD_PRESENTATION_STREAM_VERSION,
+    eventId:"present_roster_projection_001",
+    threadId,
+    channelId,
+    occurredAt:"2026-09-17T18:00:00Z",
+    emittedAt:"2026-09-17T18:00:00Z",
+    kind:"present.updated",
+    provenanceRef:"sit_roster_projection_001",
+    sourceReferences:["sit_roster_projection_001"],
+    payload:{
+      presentVersion:"thread-public-present-v0.1",
+      situationId:"sit_roster_projection_001",
+      establishedAt:"2026-09-17T18:00:00Z",
+      phase:"at_place",
+      location:{ kind:"place", place:{ displayName:"Harbor café", region:"Haifa District" } },
+      mediatedContext:null,
+      activity:"Sketching the boats",
+      reason:null,
+      participants:[],
+      depictionMediaId:"media_present_roster_projection_001",
+    },
+  });
+  const channel = await infra.catalog.get(channelId);
+  await infra.catalog.upsert(channelId, {
+    ...channel,
+    currentPresent:{ sequence:accepted.event.sequence, event:accepted.event },
+  });
+
+  const api = createPresentationReadApi({
+    infra,
+    presentationServer:{
+      ...presentationServer,
+      async getSnapshot() { throw new Error("roster reopened a snapshot"); },
+    },
+    viewerOrigin:"https://insidefibre.com",
+    async openStream() { return new Response(null, { status:426 }); },
+  });
+
+  const response = await api.fetch(new Request("https://api.insidefibre.com/api/threads"));
+  assert.equal(response.status, 200);
+  const roster = await response.json();
+  assert.equal(roster.threads[0].displayName, bundle.presentation.subject.displayName);
+  assert.equal(roster.threads[0].currentPresent.payload.location.place.displayName, "Harbor café");
+  assert.equal(roster.threads[0].currentPresent.payload.activity, "Sketching the boats");
 });
 
 test("Thread discovery pages public Threads across hidden catalog entries", async () => {
