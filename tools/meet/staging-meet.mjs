@@ -1,3 +1,4 @@
+import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
@@ -13,29 +14,58 @@ export async function listStagingThreads({ fetchImpl = globalThis.fetch } = {}) 
   return body(await fetchImpl(`${BASE_URL}/api/threads?limit=50`, { headers:{ Accept:"application/json" } }));
 }
 
-export async function meetStagingThread({ threadId, utterance, fetchImpl = globalThis.fetch }) {
+export async function openStagingMeeting({ threadId, fetchImpl = globalThis.fetch }) {
   if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("threadId is required");
-  if (typeof utterance !== "string" || utterance.trim() === "") throw new TypeError("utterance is required");
-
-  const encoded = encodeURIComponent(threadId.trim());
+  const selectedThreadId = threadId.trim();
+  const encoded = encodeURIComponent(selectedThreadId);
   const snapshot = await body(await fetchImpl(`${BASE_URL}/api/threads/${encoded}/snapshot`, {
     headers:{ Accept:"application/json" },
   }));
   const situationId = snapshot?.currentPresent?.payload?.situationId;
   if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no published current situation");
 
-  const result = await body(await fetchImpl(`${BASE_URL}/api/threads/${encoded}/encounter`, {
-    method:"POST",
-    headers:{ "content-type":"application/json", Accept:"application/json" },
-    body:JSON.stringify({ situationId, utterance:utterance.trim() }),
-  }));
-  if (result?.situationId !== situationId) throw new Error("Encounter left the published situation");
-
   return Object.freeze({
-    threadId:threadId.trim(),
+    threadId:selectedThreadId,
     situationId,
-    responseText:result.responseText ?? null,
+    async say(utterance) {
+      if (typeof utterance !== "string" || utterance.trim() === "") throw new TypeError("utterance is required");
+      const result = await body(await fetchImpl(`${BASE_URL}/api/threads/${encoded}/encounter`, {
+        method:"POST",
+        headers:{ "content-type":"application/json", Accept:"application/json" },
+        body:JSON.stringify({ situationId, utterance:utterance.trim() }),
+      }));
+      if (result?.situationId !== situationId) throw new Error("Encounter left the published situation");
+      return Object.freeze({
+        threadId:selectedThreadId,
+        situationId,
+        responseText:result.responseText ?? null,
+      });
+    },
   });
+}
+
+export async function meetStagingThread({ threadId, utterance, fetchImpl = globalThis.fetch }) {
+  return (await openStagingMeeting({ threadId, fetchImpl })).say(utterance);
+}
+
+async function interactiveMeeting(threadId) {
+  const meeting = await openStagingMeeting({ threadId });
+  const terminal = createInterface({ input:process.stdin, output:process.stdout });
+  console.log(`Meeting ${meeting.threadId} · ${meeting.situationId}`);
+  console.log("Type bye to say goodbye and end the meeting.");
+  try {
+    for (;;) {
+      let utterance;
+      try { utterance = (await terminal.question("you> ")).trim(); }
+      catch { break; }
+      if (utterance === "") continue;
+      const result = await meeting.say(utterance);
+      console.log(`thread> ${result.responseText ?? ""}`);
+      if (utterance.toLocaleLowerCase("en-US") === "bye") break;
+    }
+  } finally {
+    terminal.close();
+  }
 }
 
 async function main(args) {
@@ -44,10 +74,12 @@ async function main(args) {
     return;
   }
   const [threadId, ...words] = args;
-  if (!threadId || words.length === 0) {
-    throw new Error('usage: npm run meet:staging -- <thread-id> "<utterance>" | --list');
+  if (!threadId) throw new Error("usage: node tools/meet/staging-meet.mjs <thread-id> [utterance] | --list");
+  if (words.length > 0) {
+    console.log(JSON.stringify(await meetStagingThread({ threadId, utterance:words.join(" ") }), null, 2));
+    return;
   }
-  console.log(JSON.stringify(await meetStagingThread({ threadId, utterance:words.join(" ") }), null, 2));
+  await interactiveMeeting(threadId);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
