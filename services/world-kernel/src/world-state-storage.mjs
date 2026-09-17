@@ -5,6 +5,9 @@ import {
 } from "#infra";
 import { IntegrityError, assertNonEmpty } from "./persistence-common.mjs";
 
+const INITIALIZATION_BY_STORAGE = new WeakMap();
+const INITIALIZATION_BY_DATABASE = new WeakMap();
+
 function quoteIdentifier(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
@@ -82,6 +85,19 @@ function recoverInterruptedEventTable(database) {
   `);
 }
 
+function initializationFor(storage) {
+  let initialization = INITIALIZATION_BY_STORAGE.get(storage);
+  if (initialization === undefined) {
+    initialization = { recovered:false, migrated:false };
+    INITIALIZATION_BY_STORAGE.set(storage, initialization);
+  }
+  return initialization;
+}
+
+export function worldStateInitialization(database) {
+  return INITIALIZATION_BY_DATABASE.get(database) ?? null;
+}
+
 export function openWorldStateDatabase(storage, {
   readOnly = false,
   storeName = "World state store",
@@ -99,6 +115,16 @@ export function openWorldStateDatabase(storage, {
     FIBRE_WORLD_STATE_REQUIREMENTS,
   );
   const database = infra.state.open(stateScopeId, { readOnly });
-  if (!readOnly) recoverInterruptedEventTable(database);
+  const initialization = initializationFor(storage);
+  INITIALIZATION_BY_DATABASE.set(database, initialization);
+  if (!readOnly && !initialization.recovered) {
+    try {
+      recoverInterruptedEventTable(database);
+      initialization.recovered = true;
+    } catch (error) {
+      database.close();
+      throw error;
+    }
+  }
   return database;
 }
