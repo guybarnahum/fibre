@@ -46,8 +46,6 @@ export function createAutobiographicalMemoryTables(database) {
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       head_digest TEXT NOT NULL CHECK (head_digest LIKE 'sha256:%'),
       recorded_at TEXT NOT NULL,
-      FOREIGN KEY (memory_id,revision) REFERENCES autobiographical_memory_records(memory_id,revision),
-      FOREIGN KEY (memory_id,revision) REFERENCES autobiographical_memory_lineage_heads(memory_id,revision),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
