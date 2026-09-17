@@ -90,7 +90,7 @@ test("GET /api/threads discovers only explicitly public Thread presentations", a
   assert.equal(body.threads.length, 1);
   assert.equal(body.threads[0].threadId, visible.threadId);
   assert.equal(body.threads[0].lifecycleStatus, "genesis_candidate");
-  assert.equal(typeof body.threads[0].displayName, "string");
+  assert.equal(body.threads[0].displayName, null, "unnamed Threads must stay unnamed");
   assert.equal(body.threads[0].currentPresent, null);
   assert.match(body.threads[0].snapshotDigest, /^sha256:[0-9a-f]{64}$/);
   assert.equal(body.nextCursor, null);
