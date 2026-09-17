@@ -60,8 +60,45 @@ export function createEmbodimentTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS embodiment_current_heads (
+      embodiment_id TEXT PRIMARY KEY,
+      revision INTEGER NOT NULL CHECK (revision >= 1),
+      thread_id TEXT NOT NULL,
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      head_digest TEXT NOT NULL CHECK (head_digest LIKE 'sha256:%'),
+      recorded_at TEXT NOT NULL,
+      FOREIGN KEY (embodiment_id,revision) REFERENCES embodiment_records(embodiment_id,revision),
+      FOREIGN KEY (embodiment_id,revision) REFERENCES embodiment_lineage_heads(embodiment_id,revision),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE INDEX IF NOT EXISTS idx_embodiment_thread
       ON embodiment_records(thread_id, kind, recorded_at, embodiment_id, revision);
+    CREATE INDEX IF NOT EXISTS idx_embodiment_current_thread
+      ON embodiment_current_heads(thread_id,embodiment_id);
+
+    CREATE TRIGGER IF NOT EXISTS embodiment_current_head_on_insert
+      AFTER INSERT ON embodiment_lineage_heads
+      BEGIN
+        INSERT INTO embodiment_current_heads(
+          embodiment_id,revision,thread_id,record_digest,head_digest,recorded_at
+        ) VALUES (
+          NEW.embodiment_id,
+          NEW.revision,
+          NEW.thread_id,
+          (SELECT record_digest FROM embodiment_records
+            WHERE embodiment_id=NEW.embodiment_id AND revision=NEW.revision),
+          NEW.head_digest,
+          NEW.recorded_at
+        )
+        ON CONFLICT(embodiment_id) DO UPDATE SET
+          revision=excluded.revision,
+          thread_id=excluded.thread_id,
+          record_digest=excluded.record_digest,
+          head_digest=excluded.head_digest,
+          recorded_at=excluded.recorded_at
+        WHERE excluded.revision > embodiment_current_heads.revision;
+      END;
 
     CREATE TRIGGER IF NOT EXISTS embodiment_rights_no_update
       BEFORE UPDATE ON embodiment_rights_authorities
