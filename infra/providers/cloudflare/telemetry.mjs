@@ -44,7 +44,7 @@ export function createCloudflareActivityTelemetryPort({ database } = {}) {
   async function record(candidate) {
     const normalized = normalizeActivityRecord(candidate);
     const canonical = serializedRecord(normalized);
-    await db.prepare(`
+    const inserted = await db.prepare(`
       INSERT OR IGNORE INTO fibre_activity_log (
         activity_id,
         occurred_at,
@@ -89,6 +89,8 @@ export function createCloudflareActivityTelemetryPort({ database } = {}) {
       infraCanonicalJson(normalized.evidence),
       canonical,
     ).run();
+
+    if (Number(inserted?.meta?.changes ?? 0) > 0) return clone(normalized);
 
     const existing = await db.prepare(
       "SELECT record_json FROM fibre_activity_log WHERE activity_id = ? LIMIT 1",
