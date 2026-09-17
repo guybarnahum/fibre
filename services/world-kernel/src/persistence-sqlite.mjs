@@ -21,6 +21,7 @@ import { repairIdentityAssertionRegistryV2Schema } from "./identity-schema-compa
 import { createSituatedLifeTables } from "./situated-life-schema.mjs";
 import { ensureSituatedLifeDigestColumns } from "./situated-life-integrity.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";
+import { ensureEmbodimentIntegrity } from "./embodiment-integrity.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 
@@ -219,6 +220,7 @@ function createAndRepairSchema(database) {
   createSchema(database);
   repairIdentityAssertionRegistryV2Schema(database);
   ensureSituatedLifeDigestColumns(database);
+  ensureEmbodimentIntegrity(database);
 }
 
 function needsEventSchemaUpgrade(database) {
@@ -285,13 +287,7 @@ export function migrateDatabase(database) {
     if (existingTables !== 0) throw new IntegrityError("Refusing an unversioned pre-release world-store schema; recreate the local M1 database");
   }
 
-  if (currentVersion === WORLD_STORE_SCHEMA_VERSION && !needsEventSchemaUpgrade(database)) {
-    database.transaction(() => {
-      createAndRepairSchema(database);
-      migrateLegacyConsumedObligations(database);
-    });
-    return;
-  }
+  if (currentVersion === WORLD_STORE_SCHEMA_VERSION && !needsEventSchemaUpgrade(database)) return;
 
   const rebuildEvents = currentVersion > 0 && needsEventSchemaUpgrade(database);
   if (rebuildEvents) database.exec("PRAGMA foreign_keys=OFF");
