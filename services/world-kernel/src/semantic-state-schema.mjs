@@ -1,6 +1,13 @@
 import { BUILTIN_SEMANTIC_DIMENSIONS } from "./semantic-state.mjs";
 
+function tableExists(database, name) {
+  return database.prepare(
+    "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
+  ).get(name) !== undefined;
+}
+
 export function createSemanticStateTables(database) {
+  const needsCurrentProjection = !tableExists(database, "semantic_state_current_heads");
   database.exec(`
     CREATE TABLE IF NOT EXISTS semantic_state_dimensions (
       domain TEXT NOT NULL CHECK (domain IN ('emotion','need','relationship_attitude','situation_attitude')),
@@ -36,6 +43,18 @@ export function createSemanticStateTables(database) {
     CREATE INDEX IF NOT EXISTS idx_semantic_state_supersedes
       ON semantic_state_records(supersedes_state_id);
 
+    CREATE TABLE IF NOT EXISTS semantic_state_current_heads (
+      state_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      state_digest TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      FOREIGN KEY (state_id) REFERENCES semantic_state_records(state_id),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_semantic_state_current_heads_thread
+      ON semantic_state_current_heads(thread_id,state_id);
+
     CREATE TRIGGER IF NOT EXISTS semantic_state_dimensions_no_update
       BEFORE UPDATE ON semantic_state_dimensions
       BEGIN SELECT RAISE(ABORT,'semantic_state_dimensions is append-only'); END;
@@ -48,7 +67,29 @@ export function createSemanticStateTables(database) {
     CREATE TRIGGER IF NOT EXISTS semantic_state_records_no_delete
       BEFORE DELETE ON semantic_state_records
       BEGIN SELECT RAISE(ABORT,'semantic_state_records is append-only'); END;
+
+    CREATE TRIGGER IF NOT EXISTS semantic_state_current_head_insert
+      AFTER INSERT ON semantic_state_records
+      BEGIN
+        DELETE FROM semantic_state_current_heads WHERE state_id=NEW.supersedes_state_id;
+        INSERT INTO semantic_state_current_heads(state_id,thread_id,state_digest,as_of)
+        SELECT NEW.state_id,NEW.thread_id,NEW.state_digest,NEW.as_of
+        WHERE NEW.staleness='current';
+      END;
   `);
+
+  if (needsCurrentProjection) {
+    database.exec(`
+      INSERT INTO semantic_state_current_heads(state_id,thread_id,state_digest,as_of)
+      SELECT current.state_id,current.thread_id,current.state_digest,current.as_of
+      FROM semantic_state_records current
+      WHERE current.staleness='current'
+        AND NOT EXISTS (
+          SELECT 1 FROM semantic_state_records newer
+          WHERE newer.supersedes_state_id=current.state_id
+        );
+    `);
+  }
 
   const insert = database.prepare(`
     INSERT OR IGNORE INTO semantic_state_dimensions(
