@@ -1,3 +1,5 @@
+import { logD1Cost } from "../../cloudflare-d1-cost.mjs";
+
 const MAX_THREADS = 200;
 const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
 
@@ -115,17 +117,24 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
   if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
   if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
 
+  const activityPromise = activityLog.prepare(`
+    SELECT thread_id, MAX(occurred_at) AS last_activity_at
+    FROM fibre_activity_log
+    WHERE environment = ? AND thread_id IS NOT NULL
+    GROUP BY thread_id
+    ORDER BY last_activity_at DESC, thread_id ASC
+    LIMIT ?
+  `).bind(environment, MAX_THREADS + 1).all();
   const [registryEntries, activityResult] = await Promise.all([
     readRegistry(MAX_THREADS),
-    activityLog.prepare(`
-      SELECT thread_id, MAX(occurred_at) AS last_activity_at
-      FROM fibre_activity_log
-      WHERE environment = ? AND thread_id IS NOT NULL
-      GROUP BY thread_id
-      ORDER BY last_activity_at DESC, thread_id ASC
-      LIMIT ?
-    `).bind(environment, MAX_THREADS + 1).all(),
+    activityPromise,
   ]);
+  logD1Cost({
+    database:"activity-log",
+    service:"admin-dashboard",
+    operation:"admin.thread_population.activity",
+    result:activityResult,
+  });
   if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid population");
 
   const activityRows = Array.isArray(activityResult?.results) ? activityResult.results : [];
