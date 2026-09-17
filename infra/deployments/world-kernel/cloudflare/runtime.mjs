@@ -15,6 +15,7 @@ import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { createThreadGenesisRepairApi } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createThreadGenesisRepairService } from "#services/world-kernel/src/thread-genesis-repair-service.mjs";
+import { createThreadIdentityCommandService } from "#services/world-kernel/src/thread-identity-command-service.mjs";
 import { ThreadIdentityUpdateStore } from "#services/world-kernel/src/thread-identity-update-store.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
@@ -204,6 +205,12 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     identityUpdater:threadIdentityUpdateStore,
     activityRecorder,
   });
+  const identityService = createThreadIdentityCommandService({
+    worldReader:worldStore,
+    genesisSexEvidence:genesisBirthSexEvidence,
+    identityUpdater:threadIdentityUpdateStore,
+    activityRecorder,
+  });
   const visualPublicationProcess = createThreadVisualPublicationProcess({
     workset: visualPublicationWorkset,
     reconciler: visualReconciler,
@@ -251,6 +258,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   });
   const repairApi = createThreadGenesisRepairApi({
     repairService,
+    identityService,
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
     async onRepair({ threadId, result }) {
@@ -317,6 +325,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualReconciler,
     visualRecoveryApi,
     repairService,
+    identityService,
     repairApi,
     reconciliationProcess,
     reconciliationRuntime,
