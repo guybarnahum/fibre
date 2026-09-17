@@ -84,6 +84,8 @@ export function createThreadPresentationServer({ infra }) {
         threadId: normalized.presentation.manifest.threadId,
         lifecycleStatus: normalized.presentation.manifest.lifecycleStatus,
         fixture: normalized.presentation.manifest.fixture,
+        displayName: normalized.presentation.subject?.displayName ?? null,
+        identityCardVisibility: normalized.presentation.identityCard?.visibility ?? null,
         latestSnapshotVersion: snapshotVersion,
         latestSnapshotDigest: digest,
         ...catalog,
