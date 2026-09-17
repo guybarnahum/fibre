@@ -136,9 +136,7 @@ export class EmbodimentStore {
   }
 
   listCurrent(threadId) {
-    const current = this.#inner.listCurrent(threadId);
-    for (const record of current) this.history(threadId, record.embodimentId);
-    return current;
+    return this.#inner.listCurrent(threadId);
   }
 
   record(candidate) {
