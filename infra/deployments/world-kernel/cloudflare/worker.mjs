@@ -6,10 +6,7 @@ import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
-const THREAD_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/identity$/u;
-const THREAD_DIAGNOSIS_BATCH_ROUTE = "/internal/threads/diagnose";
-const MAX_DIAGNOSIS_BATCH = 500;
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -51,38 +48,6 @@ function threadIdentity(runtime, threadId) {
   });
 }
 
-async function diagnosisBatch(request, runtime, env) {
-  if (!privateOperatorAuthorized(request, env)) {
-    return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
-  }
-  let body;
-  try { body = await request.json(); }
-  catch { return Response.json({ error:{ code:"INVALID_THREAD_BATCH" } }, { status:400 }); }
-  const threadIds = body?.threadIds;
-  if (!Array.isArray(threadIds) || threadIds.length > MAX_DIAGNOSIS_BATCH || threadIds.some((value) => typeof value !== "string" || !THREAD_ID_PATTERN.test(value))) {
-    return Response.json({ error:{ code:"INVALID_THREAD_BATCH" } }, { status:400 });
-  }
-  const results = [];
-  for (const threadId of threadIds) {
-    try {
-      results.push({
-        threadId,
-        diagnosis:await runtime.repairService.diagnose(threadId),
-        reconciliation:runtime.visualPublicationWorkset.get(threadId) ?? null,
-      });
-    } catch (error) {
-      results.push({
-        threadId,
-        error:{
-          code:typeof error?.code === "string" ? error.code : "THREAD_DIAGNOSIS_FAILED",
-          detail:error instanceof Error ? error.message : String(error),
-        },
-      });
-    }
-  }
-  return Response.json({ contract:"fibre-world-thread-diagnosis-batch-v0.1", results });
-}
-
 export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -113,11 +78,6 @@ export class FibreWorldDurableObject extends DurableObject {
       }, { status:health.level === "normal" ? 200 : 503 });
     }
     const runtime = this.runtimeForRequest();
-    if (url.pathname === THREAD_DIAGNOSIS_BATCH_ROUTE) {
-      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
-      if (request.method !== "POST") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
-      return diagnosisBatch(request, runtime, this.env);
-    }
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     if (identityMatch !== null) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
