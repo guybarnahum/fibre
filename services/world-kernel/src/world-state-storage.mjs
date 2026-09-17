@@ -114,7 +114,7 @@ export function openWorldStateDatabase(storage, {
     stateScopeId,
     FIBRE_WORLD_STATE_REQUIREMENTS,
   );
-  const database = infra.state.open(stateScopeId, { readOnly });
+  const database = infra.state.open(stateScopeId, { readOnly, queryLabel:storeName });
   const initialization = initializationFor(storage);
   INITIALIZATION_BY_DATABASE.set(database, initialization);
   if (!readOnly && !initialization.recovered) {
