@@ -39,6 +39,44 @@ export function createAutobiographicalMemoryTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS autobiographical_memory_current_heads (
+      memory_id TEXT PRIMARY KEY,
+      revision INTEGER NOT NULL CHECK (revision >= 1),
+      thread_id TEXT NOT NULL,
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      head_digest TEXT NOT NULL CHECK (head_digest LIKE 'sha256:%'),
+      recorded_at TEXT NOT NULL,
+      FOREIGN KEY (memory_id,revision) REFERENCES autobiographical_memory_records(memory_id,revision),
+      FOREIGN KEY (memory_id,revision) REFERENCES autobiographical_memory_lineage_heads(memory_id,revision),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_autobiographical_memory_current_thread
+      ON autobiographical_memory_current_heads(thread_id,memory_id);
+
+    CREATE TRIGGER IF NOT EXISTS autobiographical_memory_current_head_on_insert
+      AFTER INSERT ON autobiographical_memory_lineage_heads
+      BEGIN
+        INSERT INTO autobiographical_memory_current_heads(
+          memory_id,revision,thread_id,record_digest,head_digest,recorded_at
+        ) VALUES (
+          NEW.memory_id,
+          NEW.revision,
+          NEW.thread_id,
+          (SELECT record_digest FROM autobiographical_memory_records
+            WHERE memory_id=NEW.memory_id AND revision=NEW.revision),
+          NEW.head_digest,
+          NEW.recorded_at
+        )
+        ON CONFLICT(memory_id) DO UPDATE SET
+          revision=excluded.revision,
+          thread_id=excluded.thread_id,
+          record_digest=excluded.record_digest,
+          head_digest=excluded.head_digest,
+          recorded_at=excluded.recorded_at
+        WHERE excluded.revision > autobiographical_memory_current_heads.revision;
+      END;
+
     CREATE TRIGGER IF NOT EXISTS autobiographical_memory_no_update
       BEFORE UPDATE ON autobiographical_memory_records
       BEGIN SELECT RAISE(ABORT,'autobiographical_memory_records is append-only'); END;
