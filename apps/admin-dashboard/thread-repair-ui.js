@@ -179,15 +179,12 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         description:"Record an explicit operator identity decision in World history.",
         fields:actionFields(action),
         run:async (input) => {
-          const payload = await post(threadId, {
+          await post(threadId, {
             action:"identity",
             operationKey:`admin_identity_${Date.now().toString(36)}`,
             ...input,
           });
-          renderHealth(host, threadId, {
-            diagnosis:payload.identityUpdate.after,
-            reconciliation:payload.reconciliation ?? reconciliation,
-          }, `${label} updated in World.`);
+          renderHealth(host, threadId, await requestHealth(threadId), `${label} updated in World.`);
         },
       });
     }));
