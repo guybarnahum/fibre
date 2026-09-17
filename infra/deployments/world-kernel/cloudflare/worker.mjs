@@ -41,6 +41,26 @@ function directorySearch(url) {
   return { query, fin, limit };
 }
 
+function stateCostDelta(before, after) {
+  const labels = {};
+  for (const label of new Set([...Object.keys(before.labels), ...Object.keys(after.labels)])) {
+    const left = before.labels[label] ?? { rowsRead:0, rowsWritten:0, queries:0 };
+    const right = after.labels[label] ?? { rowsRead:0, rowsWritten:0, queries:0 };
+    const delta = {
+      rowsRead:right.rowsRead - left.rowsRead,
+      rowsWritten:right.rowsWritten - left.rowsWritten,
+      queries:right.queries - left.queries,
+    };
+    if (delta.rowsRead !== 0 || delta.rowsWritten !== 0 || delta.queries !== 0) labels[label] = delta;
+  }
+  return Object.freeze({
+    rowsRead:after.rowsRead - before.rowsRead,
+    rowsWritten:after.rowsWritten - before.rowsWritten,
+    queries:after.queries - before.queries,
+    labels:Object.freeze(labels),
+  });
+}
+
 async function reconciliationState(runtime) {
   const scheduledTimeMs = await runtime.infraDriver.scheduler.get(WORLD_SCOPE_ID);
   return Object.freeze({
@@ -95,21 +115,21 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.threadDirectory;
   }
 
-  async fetch(request) {
-    const url = new URL(request.url);
-    if (request.method === "GET"
-      && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
-      const health = await this.health.check();
-      return Response.json({
-        ok: health.level === "normal",
-        service: "world-kernel",
-        provider: health.provider,
-        stateScopeId: WORLD_SCOPE_ID,
-        stateChecked: true,
-        capabilities:["state"],
-        health,
-      }, { status:health.level === "normal" ? 200 : 503 });
+  async withStateCost(operation, run) {
+    const state = this.infraDriver.state;
+    if (typeof state.costSnapshot !== "function") return run();
+    const before = state.costSnapshot(WORLD_SCOPE_ID);
+    try {
+      return await run();
+    } finally {
+      const cost = stateCostDelta(before, state.costSnapshot(WORLD_SCOPE_ID));
+      if (cost.queries !== 0 || cost.rowsRead !== 0 || cost.rowsWritten !== 0) {
+        console.log(JSON.stringify({ event:"world-state-cost", ...operation, ...cost }));
+      }
     }
+  }
+
+  async fetchWorldRequest(request, url) {
     if (url.pathname === THREAD_DIRECTORY_ROUTE) {
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
       if (!privateOperatorAuthorized(request, this.env)) {
@@ -158,29 +178,52 @@ export class FibreWorldDurableObject extends DurableObject {
     return Response.json({ error: "not_found" }, { status: 404 });
   }
 
-  async alarm(alarmInfo) {
-    const runtime = this.runtimeForRequest();
-    console.log(JSON.stringify({
-      event: "world-reconciliation-alarm-started",
-      retryCount: alarmInfo?.retryCount ?? 0,
-      isRetry: alarmInfo?.isRetry === true,
-    }));
-    try {
-      const result = await runtime.reconciliationRuntime.handleWake();
-      console.log(JSON.stringify({
-        event: "world-reconciliation-alarm-completed",
-        reconciliationPending: result.reconciliationPending,
-        retryDelayMs: result.retryDelayMs,
-      }));
-      return result;
-    } catch (error) {
-      console.error(JSON.stringify({
-        event: "world-reconciliation-alarm-failed",
-        errorName: error?.constructor?.name ?? "Error",
-        message: String(error?.message ?? error).slice(0, 512),
-      }));
-      throw error;
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === "GET"
+      && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
+      const health = await this.health.check();
+      return Response.json({
+        ok: health.level === "normal",
+        service: "world-kernel",
+        provider: health.provider,
+        stateScopeId: WORLD_SCOPE_ID,
+        stateChecked: true,
+        capabilities:["state"],
+        health,
+      }, { status:health.level === "normal" ? 200 : 503 });
     }
+    return this.withStateCost(
+      { kind:"request", method:request.method, path:url.pathname },
+      () => this.fetchWorldRequest(request, url),
+    );
+  }
+
+  async alarm(alarmInfo) {
+    return this.withStateCost({ kind:"alarm", path:"world-reconciliation" }, async () => {
+      const runtime = this.runtimeForRequest();
+      console.log(JSON.stringify({
+        event: "world-reconciliation-alarm-started",
+        retryCount: alarmInfo?.retryCount ?? 0,
+        isRetry: alarmInfo?.isRetry === true,
+      }));
+      try {
+        const result = await runtime.reconciliationRuntime.handleWake();
+        console.log(JSON.stringify({
+          event: "world-reconciliation-alarm-completed",
+          reconciliationPending: result.reconciliationPending,
+          retryDelayMs: result.retryDelayMs,
+        }));
+        return result;
+      } catch (error) {
+        console.error(JSON.stringify({
+          event: "world-reconciliation-alarm-failed",
+          errorName: error?.constructor?.name ?? "Error",
+          message: String(error?.message ?? error).slice(0, 512),
+        }));
+        throw error;
+      }
+    });
   }
 }
 
