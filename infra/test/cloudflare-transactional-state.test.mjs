@@ -5,6 +5,7 @@ import { createCloudflareTransactionalStatePort } from "../providers/cloudflare/
 
 function cursor(rows = [], rowsWritten = 0) {
   return {
+    rowsRead:rows.length,
     rowsWritten,
     toArray() { return rows.map((row) => ({ ...row })); },
   };
@@ -91,4 +92,20 @@ test("Cloudflare transactional state delegates ordinary SQL unchanged", () => {
 
   assert.deepEqual(database.prepare("SELECT ? AS value").get("delegated"), { value: "delegated" });
   assert.deepEqual(storage.ordinaryCalls, [{ sql: "SELECT ? AS value", params: ["delegated"] }]);
+});
+
+test("Durable Object SQL cost remains attributable to the Fibre operation that caused it", () => {
+  const storage = fakeSqliteDurableStorage();
+  const state = createCloudflareTransactionalStatePort({ scopes:{ world:storage } });
+  const database = state.open("world", { queryLabel:"WorldStore" });
+
+  database.prepare("SELECT ? AS value").get("current-thread");
+  database.exec("PRAGMA user_version = 7");
+
+  assert.deepEqual(state.costSnapshot("world"), {
+    rowsRead:1,
+    rowsWritten:1,
+    queries:3,
+    labels:{ WorldStore:{ rowsRead:1, rowsWritten:1, queries:3 } },
+  });
 });
