@@ -67,8 +67,6 @@ export function createEmbodimentTables(database) {
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       head_digest TEXT NOT NULL CHECK (head_digest LIKE 'sha256:%'),
       recorded_at TEXT NOT NULL,
-      FOREIGN KEY (embodiment_id,revision) REFERENCES embodiment_records(embodiment_id,revision),
-      FOREIGN KEY (embodiment_id,revision) REFERENCES embodiment_lineage_heads(embodiment_id,revision),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
