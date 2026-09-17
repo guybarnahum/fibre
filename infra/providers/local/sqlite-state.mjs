@@ -16,6 +16,8 @@ import {
   assertTransactionalStateSession,
 } from "../../transactional-state.mjs";
 
+const ZERO_COST = Object.freeze({ rowsRead:0, rowsWritten:0, queries:0, labels:Object.freeze({}) });
+
 function normalizeSqlitePath(databasePath) {
   if (databasePath === ":memory:") return databasePath;
   if (typeof databasePath !== "string" || databasePath.trim() === "") {
@@ -144,20 +146,25 @@ export function createSqliteTransactionalStatePort({
     throw new TypeError("SQLite transactional state busyTimeoutMs must be a non-negative integer");
   }
 
+  function requireScope(scopeId) {
+    assertInfraId("transactional state scopeId", scopeId);
+    const databasePath = normalizedScopes.get(scopeId);
+    if (databasePath === undefined) throw new Error(`transactional state scope ${scopeId} is not configured`);
+    return databasePath;
+  }
+
   return Object.freeze({
     stateVersion: TRANSACTIONAL_STATE_VERSION,
     guarantees(scopeId) {
-      assertInfraId("transactional state scopeId", scopeId);
-      const databasePath = normalizedScopes.get(scopeId);
-      if (databasePath === undefined) throw new Error(`transactional state scope ${scopeId} is not configured`);
-      return stateGuarantees(databasePath);
+      return stateGuarantees(requireScope(scopeId));
     },
     open(scopeId, { readOnly = false } = {}) {
-      assertInfraId("transactional state scopeId", scopeId);
       if (typeof readOnly !== "boolean") throw new TypeError("transactional state readOnly must be boolean");
-      const databasePath = normalizedScopes.get(scopeId);
-      if (databasePath === undefined) throw new Error(`transactional state scope ${scopeId} is not configured`);
-      return createSession(scopeId, databasePath, { readOnly, busyTimeoutMs });
+      return createSession(scopeId, requireScope(scopeId), { readOnly, busyTimeoutMs });
+    },
+    costSnapshot(scopeId) {
+      requireScope(scopeId);
+      return ZERO_COST;
     },
   });
 }
