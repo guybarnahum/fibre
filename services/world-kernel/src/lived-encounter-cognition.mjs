@@ -90,10 +90,6 @@ export async function respondToLivedEncounter({
   memoryStore = null,
   modelAdapter,
 }) {
-  const state = contextState({ livedContext, thread, livedNowStore, semanticStateStore, memoryStore });
-  const activeThread = state.thread;
-  assertPlainObject("Thread", activeThread);
-  assertId("Thread.threadId", activeThread.threadId);
   assertPlainObject("lived encounter", encounter);
   assertExactKeys("lived encounter", encounter, ["utterance", "occurredAt"]);
   assertNonEmpty("lived encounter.utterance", encounter.utterance);
@@ -101,6 +97,11 @@ export async function respondToLivedEncounter({
   if (modelAdapter === null || typeof modelAdapter !== "object" || typeof modelAdapter.invoke !== "function") {
     throw new TypeError("lived encounter cognition requires a model adapter");
   }
+
+  const state = contextState({ livedContext, thread, livedNowStore, semanticStateStore, memoryStore });
+  const activeThread = state.thread;
+  assertPlainObject("Thread", activeThread);
+  assertId("Thread.threadId", activeThread.threadId);
 
   const currentSituation = state.currentSituation;
   if (currentSituation === null) {
