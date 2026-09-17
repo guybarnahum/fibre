@@ -240,10 +240,57 @@ export class EmbodimentStore {
 
   listCurrent(threadId) {
     this.#requireThread(threadId);
-    const ids = this.#db.prepare(
-      "SELECT DISTINCT embodiment_id FROM embodiment_records WHERE thread_id=? ORDER BY embodiment_id",
-    ).all(threadId);
-    return ids.map(({ embodiment_id }) => this.history(threadId, embodiment_id).at(-1));
+    const projectedCount = Number(this.#db.prepare(
+      "SELECT COUNT(*) AS count FROM embodiment_current_heads WHERE thread_id=?",
+    ).get(threadId).count);
+    const rows = this.#db.prepare(`
+      SELECT
+        current.embodiment_id,current.revision,current.thread_id,
+        current.record_digest AS current_record_digest,
+        current.head_digest AS current_head_digest,
+        current.recorded_at AS current_recorded_at,
+        records.kind,records.representation_kind,records.truth_status,records.rights_basis,
+        records.visibility,records.status,records.recorded_at,records.supersedes_revision,
+        records.specification_digest,records.asset_sha256,records.record_json,records.record_digest,
+        heads.head_digest AS lineage_head_digest,
+        heads.recorded_at AS lineage_recorded_at,
+        previous.head_digest AS previous_head_digest
+      FROM embodiment_current_heads current
+      JOIN embodiment_records records
+        ON records.embodiment_id=current.embodiment_id AND records.revision=current.revision
+      JOIN embodiment_lineage_heads heads
+        ON heads.embodiment_id=current.embodiment_id AND heads.revision=current.revision
+      LEFT JOIN embodiment_lineage_heads previous
+        ON previous.embodiment_id=current.embodiment_id AND previous.revision=current.revision-1
+      WHERE current.thread_id=?
+        AND NOT EXISTS (
+          SELECT 1 FROM embodiment_lineage_heads newer
+          WHERE newer.embodiment_id=current.embodiment_id AND newer.revision>current.revision
+        )
+      ORDER BY current.embodiment_id
+    `).all(threadId);
+    if (rows.length !== projectedCount) {
+      throw new IntegrityError(`Thread ${threadId} embodiment current-head projection is stale`);
+    }
+    return rows.map((row) => {
+      const record = parseRow(row);
+      const previousHeadDigest = record.revision === 1 ? null : row.previous_head_digest;
+      if (record.revision > 1 && typeof previousHeadDigest !== "string") {
+        throw new IntegrityError(`embodiment ${record.embodimentId} current head has no predecessor witness`);
+      }
+      const contentDigest = embodimentContentDigest(record);
+      const headDigest = embodimentHeadDigest(record, previousHeadDigest);
+      if (
+        row.current_record_digest !== contentDigest ||
+        row.current_head_digest !== headDigest ||
+        row.lineage_head_digest !== headDigest ||
+        row.current_recorded_at !== record.recordedAt ||
+        row.lineage_recorded_at !== record.recordedAt
+      ) {
+        throw new IntegrityError(`embodiment ${record.embodimentId} current-head witness mismatch`);
+      }
+      return record;
+    });
   }
 
   record(candidate) {
