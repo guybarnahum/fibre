@@ -1,4 +1,3 @@
-
 import {
   IntegrityError,
   assertId,
@@ -53,7 +52,7 @@ export class SemanticStateStore {
   #database;
 
   constructor(storage) {
-        this.#database = openWorldStateDatabase(storage, { storeName: "SemanticStateStore" });
+    this.#database = openWorldStateDatabase(storage, { storeName: "SemanticStateStore" });
     try {
       migrateDatabase(this.#database);
       createSemanticStateTables(this.#database);
@@ -141,16 +140,19 @@ export class SemanticStateStore {
     return this.#database.prepare(`
       SELECT r.state_id,r.thread_id,r.domain,r.dimension,r.target_json,r.state_text,
         r.evidence_refs_json,r.as_of,r.supersedes_state_id,r.provenance_json,
-        r.visibility,r.staleness,r.state_digest
-      FROM semantic_state_records r
-      WHERE r.thread_id=?
-        AND r.staleness='current'
-        AND NOT EXISTS (
-          SELECT 1 FROM semantic_state_records newer
-          WHERE newer.supersedes_state_id=r.state_id
-        )
+        r.visibility,r.staleness,r.state_digest,
+        h.state_digest AS current_head_digest,h.as_of AS current_head_as_of
+      FROM semantic_state_current_heads h
+      JOIN semantic_state_records r ON r.state_id=h.state_id
+      WHERE h.thread_id=?
       ORDER BY r.domain,r.dimension,r.as_of,r.state_id
-    `).all(threadId).map(rowToState);
+    `).all(threadId).map((row) => {
+      const state = rowToState(row);
+      if (row.current_head_digest !== row.state_digest || row.current_head_as_of !== row.as_of) {
+        throw new IntegrityError(`semantic state ${state.stateId} current-head witness mismatch`);
+      }
+      return state;
+    });
   }
 
   recordState(candidate) {
