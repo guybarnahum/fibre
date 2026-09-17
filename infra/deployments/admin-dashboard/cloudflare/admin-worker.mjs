@@ -131,16 +131,15 @@ async function proxyThreadRepair(request, env, threadId) {
   });
 }
 
-async function threadHealth(env, threadId) {
+async function threadRegistry(env, limit) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    `https://world.internal/internal/thread-directory/search?limit=${encodeURIComponent(String(limit))}`,
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
   ));
   const payload = await response.json().catch(() => null);
-  if (!response.ok && !(response.status === 404 && payload?.diagnosis)) {
-    throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
-  }
-  return payload;
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  if (!Array.isArray(payload?.threads)) throw new Error("World Thread Registry response is invalid");
+  return payload.threads;
 }
 
 export default {
@@ -176,10 +175,10 @@ export default {
           const population = await readAdminThreadPopulation({
             activityLog:env.ACTIVITY_LOG,
             environment,
-            resolveThreadHealth:(threadId) => threadHealth(env, threadId),
+            readRegistry:(limit) => threadRegistry(env, limit),
           });
           return json(200, {
-            contract:"fibre-admin-thread-population-v0.1",
+            contract:"fibre-admin-thread-population-v0.2",
             environment,
             queriedAt:new Date().toISOString(),
             ...population,
