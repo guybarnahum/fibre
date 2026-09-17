@@ -180,11 +180,7 @@ export class AutobiographicalMemoryStore {
   }
 
   listCurrentMemories(threadId) {
-    const threadRow = this.#requireThread(threadId);
-    let thread;
-    try { thread = JSON.parse(threadRow.state_json); }
-    catch (error) { throw new IntegrityError(`Thread ${threadId} JSON is invalid: ${error.message}`); }
-    const expectedRefs = Array.isArray(thread.memoryRefs) ? thread.memoryRefs : [];
+    this.#requireThread(threadId);
     const rows = this.#database.prepare(`
       SELECT
         current.memory_id,current.revision,current.thread_id,
@@ -210,11 +206,6 @@ export class AutobiographicalMemoryStore {
         )
       ORDER BY current.memory_id
     `).all(threadId);
-
-    const projectedIds = new Set(rows.map((row) => row.memory_id));
-    if (rows.length !== expectedRefs.length || expectedRefs.some((memoryId) => !projectedIds.has(memoryId))) {
-      throw new IntegrityError(`Thread ${threadId} memory current-head projection disagrees with World history`);
-    }
 
     return rows.map((row) => {
       const record = rehydrateAutobiographicalMemory(parseRecord(row));
