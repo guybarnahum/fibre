@@ -40,6 +40,17 @@ function runActivityStage(activityRecorder, metadata, operation) {
   return activityRecorder === null ? operation() : activityRecorder.runStage(metadata, operation);
 }
 
+function captureLivedContext({ thread, situation, semanticStateStore, memoryStore }) {
+  return Object.freeze({
+    thread: structuredClone(thread),
+    situation: structuredClone(situation),
+    semanticStates: Object.freeze(semanticStateStore.listCurrentState(thread.threadId).map((state) => structuredClone(state))),
+    memories: Object.freeze(memoryStore === null
+      ? []
+      : memoryStore.listCurrentMemories(thread.threadId).map((memory) => structuredClone(memory))),
+  });
+}
+
 export function createLivedEncounterWriteApi({
   worldReader,
   livedNowStore,
@@ -105,6 +116,7 @@ export function createLivedEncounterWriteApi({
 
       const thread = worldReader.getThread(body.threadId, { required: false });
       if (thread === null) return json({ error: "thread_not_found" }, 404);
+      const livedContext = captureLivedContext({ thread, situation, semanticStateStore, memoryStore });
 
       const activity = Object.freeze({
         threadId: body.threadId,
@@ -115,11 +127,8 @@ export function createLivedEncounterWriteApi({
         ...activity,
         stage: "encounter.cognition.respond",
       }, () => respondToLivedEncounter({
-        thread,
+        livedContext,
         encounter,
-        livedNowStore,
-        semanticStateStore,
-        memoryStore,
         modelAdapter,
       }));
       if (result.grounding.situationId !== body.expectedSituationId) {
@@ -128,10 +137,9 @@ export function createLivedEncounterWriteApi({
 
       if (experienceStore !== null) {
         const internalized = await internalizeLivedEncounter({
-          thread,
+          livedContext,
           encounter,
           encounterResult: result,
-          semanticStateStore,
           experienceStore,
           modelAdapter,
           activityRecorder,
@@ -142,10 +150,9 @@ export function createLivedEncounterWriteApi({
             stage: "encounter.memory.retain",
             evidence: { eventId: internalized.historyEvent.eventId },
           }, () => formLivedEncounterMemory({
-            thread,
+            livedContext,
             historyEvent: internalized.historyEvent,
             journalEntry: internalized.journalEntry,
-            semanticStateStore,
             memoryStore,
             modelAdapter,
           }));
