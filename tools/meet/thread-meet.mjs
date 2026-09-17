@@ -67,15 +67,52 @@ export async function listThreads({ environment, baseUrl, fetchImpl = globalThis
   return body(await fetchImpl(`${api}/api/threads?limit=50`, { headers:{ Accept:"application/json" } }));
 }
 
-export async function openThreadMeeting({ threadId, environment, baseUrl, fetchImpl = globalThis.fetch }) {
+function threadLine(thread, index) {
+  const present = thread.currentPresent?.payload;
+  const name = thread.displayName ?? thread.threadId;
+  const place = locationText(present?.location) ?? "location unknown";
+  const activity = present?.activity ?? "activity unknown";
+  return `${String(index + 1).padStart(2, " ")}. ${name} · ${place} · ${activity}`;
+}
+
+async function chooseThread(options) {
+  const result = await listThreads(options);
+  const threads = Array.isArray(result?.threads) ? result.threads : [];
+  if (threads.length === 0) throw new Error("No public Threads are available");
+  for (const [index, thread] of threads.entries()) console.log(threadLine(thread, index));
+
+  const terminal = createInterface({ input:process.stdin, output:process.stdout });
+  try {
+    for (;;) {
+      const answer = (await terminal.question("meet> ")).trim();
+      if (answer === ":q") return null;
+      const index = Number(answer) - 1;
+      if (Number.isInteger(index) && index >= 0 && index < threads.length) return threads[index];
+      console.log(`Choose 1-${threads.length}, or :q.`);
+    }
+  } finally {
+    terminal.close();
+  }
+}
+
+export async function openThreadMeeting({
+  threadId,
+  currentPresent = null,
+  environment,
+  baseUrl,
+  fetchImpl = globalThis.fetch,
+}) {
   if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("threadId is required");
   const selectedThreadId = threadId.trim();
   const encoded = encodeURIComponent(selectedThreadId);
   const api = meetingBaseUrl({ environment, baseUrl });
-  const snapshot = await body(await fetchImpl(`${api}/api/threads/${encoded}/snapshot`, {
-    headers:{ Accept:"application/json" },
-  }));
-  const present = snapshot?.currentPresent?.payload;
+  let present = currentPresent?.payload ?? currentPresent;
+  if (present === null) {
+    const snapshot = await body(await fetchImpl(`${api}/api/threads/${encoded}/snapshot`, {
+      headers:{ Accept:"application/json" },
+    }));
+    present = snapshot?.currentPresent?.payload;
+  }
   const situationId = present?.situationId;
   if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no published current situation");
 
@@ -120,13 +157,14 @@ async function interactiveMeeting(options) {
 }
 
 function parseArgs(args) {
-  const options = { environment:"staging", baseUrl:null, list:false, threadId:null, utterance:null };
+  const options = { environment:"staging", baseUrl:null, list:false, json:false, threadId:null, utterance:null };
   const words = [];
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--env") options.environment = args[++index];
     else if (arg === "--base-url") options.baseUrl = args[++index];
     else if (arg === "--list") options.list = true;
+    else if (arg === "--json") options.json = true;
     else if (options.threadId === null) options.threadId = arg;
     else words.push(arg);
   }
@@ -137,11 +175,21 @@ function parseArgs(args) {
 async function main(args) {
   const options = parseArgs(args);
   if (options.list) {
-    console.log(JSON.stringify(await listThreads(options), null, 2));
+    if (options.json) {
+      console.log(JSON.stringify(await listThreads(options), null, 2));
+      return;
+    }
+    const selected = await chooseThread(options);
+    if (selected === null) return;
+    await interactiveMeeting({
+      ...options,
+      threadId:selected.threadId,
+      currentPresent:selected.currentPresent,
+    });
     return;
   }
   if (!options.threadId) {
-    throw new Error("usage: npm run thread:meet -- [--env local|staging|production] [--base-url URL] <thread-id> [utterance] | --list");
+    throw new Error("usage: npm run thread:meet -- [--env local|staging|production] [--base-url URL] <thread-id> [utterance] | --list [--json]");
   }
   if (options.utterance !== null) {
     const meeting = await openThreadMeeting(options);
