@@ -223,6 +223,58 @@ function createAndRepairSchema(database) {
   ensureEmbodimentIntegrity(database);
 }
 
+function rebuildCurrentHeadProjections(database) {
+  database.exec(`
+    DELETE FROM autobiographical_memory_current_heads;
+    INSERT INTO autobiographical_memory_current_heads(
+      memory_id,revision,thread_id,record_digest,head_digest,recorded_at
+    )
+    SELECT heads.memory_id,heads.revision,heads.thread_id,records.record_digest,heads.head_digest,heads.recorded_at
+    FROM autobiographical_memory_lineage_heads heads
+    JOIN autobiographical_memory_records records
+      ON records.memory_id=heads.memory_id AND records.revision=heads.revision
+    WHERE heads.revision=(
+      SELECT MAX(latest.revision)
+      FROM autobiographical_memory_lineage_heads latest
+      WHERE latest.memory_id=heads.memory_id
+    );
+
+    DELETE FROM embodiment_current_heads;
+    INSERT INTO embodiment_current_heads(
+      embodiment_id,revision,thread_id,record_digest,head_digest,recorded_at
+    )
+    SELECT heads.embodiment_id,heads.revision,heads.thread_id,records.record_digest,heads.head_digest,heads.recorded_at
+    FROM embodiment_lineage_heads heads
+    JOIN embodiment_records records
+      ON records.embodiment_id=heads.embodiment_id AND records.revision=heads.revision
+    WHERE heads.revision=(
+      SELECT MAX(latest.revision)
+      FROM embodiment_lineage_heads latest
+      WHERE latest.embodiment_id=heads.embodiment_id
+    );
+  `);
+
+  const memoryLineages = Number(database.prepare(
+    "SELECT COUNT(DISTINCT memory_id) AS count FROM autobiographical_memory_records",
+  ).get().count);
+  const memoryHeads = Number(database.prepare(
+    "SELECT COUNT(*) AS count FROM autobiographical_memory_current_heads",
+  ).get().count);
+  if (memoryHeads !== memoryLineages) {
+    throw new IntegrityError(`memory current-head projection is incomplete (${memoryHeads} != ${memoryLineages})`);
+  }
+
+  const embodimentLineages = Number(database.prepare(
+    "SELECT COUNT(DISTINCT embodiment_id) AS count FROM embodiment_records",
+  ).get().count);
+  const embodimentHeads = Number(database.prepare(
+    "SELECT COUNT(*) AS count FROM embodiment_current_heads",
+  ).get().count);
+  if (embodimentHeads !== embodimentLineages) {
+    throw new IntegrityError(`embodiment current-head projection is incomplete (${embodimentHeads} != ${embodimentLineages})`);
+  }
+}
+
 function needsEventSchemaUpgrade(database) {
   const row = database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'").get();
   return row !== undefined && !row.sql.includes("THREAD_IDENTITY_UPDATED");
@@ -300,6 +352,7 @@ export function migrateDatabase(database) {
         const identityMigration = backfillLegacyThreadIdentity(database);
         if (identityMigration.droppedPostSeedAdditions !== 0) throw new IntegrityError(`identity migration found ${identityMigration.droppedPostSeedAdditions} post-seed legacy projection additions with no trustworthy provenance; migration refused rather than silently dropping or fabricating identity history`);
         backfillMemoryVisualCompanions(database);
+        rebuildCurrentHeadProjections(database);
         database.exec(`PRAGMA user_version = ${WORLD_STORE_SCHEMA_VERSION}`);
       }
       const violations = database.prepare("PRAGMA foreign_key_check").all();
