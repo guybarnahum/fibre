@@ -34,8 +34,8 @@ function requestId(input) {
   return `lived-memory_${sha256(canonicalJson(input))}`;
 }
 
-function boundedPriorMemories(memoryStore, threadId) {
-  return memoryStore.listCurrentMemories(threadId)
+function boundedPriorMemories(memories) {
+  return [...memories]
     .sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))
     .slice(0, MAX_PRIOR_MEMORIES)
     .map((memory) => ({
@@ -85,38 +85,50 @@ function validateOutput(output) {
 }
 
 export async function formLivedEncounterMemory({
-  thread,
+  livedContext = null,
+  thread = null,
   historyEvent,
   journalEntry,
-  semanticStateStore,
+  semanticStateStore = null,
   memoryStore,
   modelAdapter,
 }) {
-  assertPlainObject("Thread", thread);
-  assertId("Thread.threadId", thread.threadId);
+  const activeThread = livedContext?.thread ?? thread;
+  assertPlainObject("Thread", activeThread);
+  assertId("Thread.threadId", activeThread.threadId);
   assertPlainObject("lived encounter historyEvent", historyEvent);
   assertId("lived encounter historyEvent.eventId", historyEvent.eventId);
-  if (historyEvent.threadId !== thread.threadId) throw new TypeError("lived encounter history belongs to another Thread");
+  if (historyEvent.threadId !== activeThread.threadId) throw new TypeError("lived encounter history belongs to another Thread");
   if (journalEntry !== null) {
     assertPlainObject("lived encounter journalEntry", journalEntry);
-    if (journalEntry.threadId !== thread.threadId || journalEntry.aboutEventRef !== historyEvent.eventId) {
+    if (journalEntry.threadId !== activeThread.threadId || journalEntry.aboutEventRef !== historyEvent.eventId) {
       throw new TypeError("lived encounter journal does not belong to this Thread experience");
     }
   }
-  requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
-  requireMethod("memoryStore", memoryStore, "listCurrentMemories");
+  if (livedContext !== null) {
+    assertPlainObject("lived context", livedContext);
+    assertExactKeys("lived context", livedContext, ["thread", "situation", "semanticStates", "memories"]);
+    if (!Array.isArray(livedContext.semanticStates) || !Array.isArray(livedContext.memories)) {
+      throw new TypeError("lived context state must be arrays");
+    }
+  } else {
+    requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
+    requireMethod("memoryStore", memoryStore, "listCurrentMemories");
+  }
   requireMethod("memoryStore", memoryStore, "recordMemory");
   requireMethod("modelAdapter", modelAdapter, "invoke");
 
+  const semanticRecords = livedContext?.semanticStates ?? semanticStateStore.listCurrentState(activeThread.threadId);
+  const priorMemoryRecords = livedContext?.memories ?? memoryStore.listCurrentMemories(activeThread.threadId);
   const input = {
     thread: {
-      selfDescription: thread.identity?.selfDescription ?? "",
-      selfModel: thread.currentState?.selfModel ?? "",
-      stableTendencies: structuredClone(thread.genome?.textualTraits ?? {}),
-      unresolvedIntentions: [...(thread.currentState?.unresolvedIntentions ?? [])],
+      selfDescription: activeThread.identity?.selfDescription ?? "",
+      selfModel: activeThread.currentState?.selfModel ?? "",
+      stableTendencies: structuredClone(activeThread.genome?.textualTraits ?? {}),
+      unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
     },
-    semanticStates: semanticStateStore.listCurrentState(thread.threadId).map(semanticContext),
-    priorMemories: boundedPriorMemories(memoryStore, thread.threadId),
+    semanticStates: semanticRecords.map(semanticContext),
+    priorMemories: boundedPriorMemories(priorMemoryRecords),
     experience: {
       eventId: historyEvent.eventId,
       situationId: historyEvent.situationId,
@@ -154,7 +166,7 @@ export async function formLivedEncounterMemory({
 
   const slot = "lived-encounter";
   const memoryId = autobiographicalMemoryId({
-    threadId: thread.threadId,
+    threadId: activeThread.threadId,
     originReference: historyEvent.eventId,
     slot,
   });
@@ -163,7 +175,7 @@ export async function formLivedEncounterMemory({
     recordFormat: AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
     memoryId,
     revision: 1,
-    threadId: thread.threadId,
+    threadId: activeThread.threadId,
     subject: { originEventRef: historyEvent.eventId, slot },
     subjectPeriod: { startAt: historyEvent.occurredAt, endAt: historyEvent.occurredAt },
     eventRefs: [historyEvent.eventId],
