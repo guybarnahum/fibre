@@ -39,7 +39,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname !== LIVED_ENCOUNTER_ROUTE) return super.fetch(request);
-    return this.encounterApiForRequest().fetch(request);
+    return this.withStateCost(
+      { kind:"request", method:request.method, path:url.pathname },
+      () => this.encounterApiForRequest().fetch(request),
+    );
   }
 
   async alarm(alarmInfo) {
