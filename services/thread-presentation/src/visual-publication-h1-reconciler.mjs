@@ -7,7 +7,6 @@ const SLICE_H1_FAULT_PREFIX = "slice-h1-fault-after-workflow-before-demand:";
 const SLICE_H2_FAULT_PREFIX = "slice-h2-provider-transient:";
 const SLICE_H1_PRECONDITION_PREFIX = "sliceh1precondition_";
 const SLICE_H2_PRECONDITION_PREFIX = "sliceh2precondition_";
-const CURRENT_PRESENT_CATALOG_PREFIX = "current-present:";
 
 function faultDescriptor(value) {
   if (typeof value !== "string") return null;
@@ -125,20 +124,18 @@ function withH2FaultContext(slot, activeDescriptor) {
   };
 }
 
-async function retainLatestPresent(catalog, channelId, event) {
-  const key = `${CURRENT_PRESENT_CATALOG_PREFIX}${channelId}`;
-  const prior = await catalog.get(key);
+async function retainLatestPresent(catalog, channelId, event, channelRecord) {
+  const prior = channelRecord?.currentPresent;
   if (Number.isSafeInteger(prior?.sequence) && prior.sequence > event.sequence) return prior;
-  const record = Object.freeze({
-    kind: "current_public_present",
-    publiclyVisible: true,
-    threadId: event.threadId,
-    channelId,
+  const currentPresent = Object.freeze({
     sequence: event.sequence,
     event,
   });
-  await catalog.upsert(key, record);
-  return record;
+  await catalog.upsert(channelId, {
+    ...channelRecord,
+    currentPresent,
+  });
+  return currentPresent;
 }
 
 async function publishCurrentPresent(options, args) {
@@ -184,7 +181,7 @@ async function publishCurrentPresent(options, args) {
     sourceReferences: [present?.situationId],
     payload: present,
   });
-  await retainLatestPresent(infra.catalog, channelId, accepted.event);
+  await retainLatestPresent(infra.catalog, channelId, accepted.event, catalog);
 
   const slot = planCurrentPresentDepiction({
     present: accepted.event.payload,
