@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const WORLD_STORE_SCHEMA_VERSION = 7;
+export const WORLD_STORE_SCHEMA_VERSION = 8;
 export const MAX_COMMAND_PAYLOAD_BYTES = 64 * 1024;
 
 export const THREAD_STATUSES = new Set([
