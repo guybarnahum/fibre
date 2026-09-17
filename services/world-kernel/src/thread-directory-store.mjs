@@ -1,23 +1,95 @@
+import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
+
+const MAX_THREADS = 5000;
+
+function clean(value) {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function strings(value) {
+  return Object.freeze(Array.isArray(value)
+    ? value.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : []);
+}
+
+function parse(name, value) {
+  if (value === null || value === undefined) return null;
+  try { return JSON.parse(value); }
+  catch (error) { throw new IntegrityError(`${name} is not valid JSON: ${error.message}`); }
+}
+
+function registryEntry(row) {
+  const thread = parse(`Thread ${row.thread_id}`, row.state_json);
+  const identity = thread?.identity ?? {};
+  const worldSpec = parse(`Thread ${row.thread_id} WorldSpec`, row.world_spec_json);
+  const raisedAs = worldSpec === null ? null : Object.freeze({
+    culturalContext: clean(worldSpec.culturalContext),
+    languages: strings(worldSpec.languages),
+    schoolingOrCommunityContext: clean(worldSpec.schoolingOrCommunityContext),
+  });
+  return Object.freeze({
+    threadId: row.thread_id,
+    fibreIdentityNumber: clean(row.fibre_identity_number),
+    displayName: clean(identity.name),
+    sex: clean(identity.sex),
+    status: clean(row.status),
+    originOrientation: clean(identity.originOrientation),
+    birthDate: clean(identity.birthDate),
+    birthPlace: clean(identity.birthCity),
+    culture: strings(identity.culture),
+    languages: strings(identity.languages),
+    raisedAs,
+    summary: clean(identity.selfDescription),
+    version: Number(row.version),
+    stateHash: clean(row.state_hash),
+    updatedAt: clean(row.updated_at),
+  });
+}
 
 export class ThreadDirectoryStore {
   #database;
+  #tables;
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, {
       readOnly: true,
       storeName: "ThreadDirectoryStore",
     });
+    this.#tables = new Set(this.#database.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name IN (
+        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs'
+      )
+    `).all().map((row) => row.name));
   }
 
   close() { this.#database.close(); }
 
-  listThreadIds({ limit = 5000 } = {}) {
-    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5000) {
-      throw new TypeError("Thread directory limit must be between 1 and 5000");
+  listEntries({ limit = MAX_THREADS, fin = null } = {}) {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_THREADS) {
+      throw new TypeError(`Thread directory limit must be between 1 and ${MAX_THREADS}`);
     }
-    return this.#database.prepare(
-      "SELECT thread_id FROM threads ORDER BY thread_id ASC LIMIT ?",
-    ).all(limit).map((row) => row.thread_id);
+    if (!this.#tables.has("threads")) return [];
+    const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
+    const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
+    if (fin !== null && !hasCivilRegistry) return [];
+
+    const sql = `
+      SELECT
+        t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
+        ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
+        ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json
+      FROM threads t
+      ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
+      ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
+      ${fin === null ? "" : "WHERE r.fibre_identity_number=?"}
+      ORDER BY t.thread_id ASC
+      LIMIT ?
+    `;
+    const rows = fin === null
+      ? this.#database.prepare(sql).all(limit)
+      : this.#database.prepare(sql).all(fin, limit);
+    return rows.map(registryEntry);
   }
 }
