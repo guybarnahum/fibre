@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { meetStagingThread } from "./staging-meet.mjs";
+import { openStagingMeeting } from "./staging-meet.mjs";
 
-test("a staging meeting enters the Thread's published situation", async () => {
+test("a meeting stays in the Thread's published situation", async () => {
   const requests = [];
   const fetchImpl = async (url, init = {}) => {
     requests.push({ url:String(url), init });
@@ -13,15 +13,13 @@ test("a staging meeting enters the Thread's published situation", async () => {
     return Response.json({ situationId:"sit_current_001", responseText:"I am still here." });
   };
 
-  const result = await meetStagingThread({
-    threadId:"thr_meeting_001",
-    utterance:"What are you doing?",
-    fetchImpl,
-  });
+  const meeting = await openStagingMeeting({ threadId:"thr_meeting_001", fetchImpl });
+  await meeting.say("What are you doing?");
+  await meeting.say("Bye");
 
-  assert.equal(result.situationId, "sit_current_001", "meeting must stay in the published situation");
-  assert.deepEqual(JSON.parse(requests[1].init.body), {
-    situationId:"sit_current_001",
-    utterance:"What are you doing?",
-  });
+  assert.equal(meeting.situationId, "sit_current_001", "meeting must enter the published situation");
+  assert.deepEqual(requests.slice(1).map(({ init }) => JSON.parse(init.body).situationId), [
+    "sit_current_001",
+    "sit_current_001",
+  ], "every turn must remain in the published situation");
 });
