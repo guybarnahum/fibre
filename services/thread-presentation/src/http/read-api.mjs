@@ -185,7 +185,11 @@ function publicDiscoveryEntry({ key, value, current = null, currentPresent = nul
   const directory = publicDirectoryEntry({ key, value, current });
   if (directory === null) return null;
   return Object.freeze({
-    ...directory,
+    threadId: directory.threadId,
+    lifecycleStatus: directory.lifecycleStatus,
+    displayName: directory.displayName,
+    snapshotVersion: directory.snapshotVersion,
+    snapshotDigest: directory.snapshotDigest,
     currentPresent,
   });
 }
