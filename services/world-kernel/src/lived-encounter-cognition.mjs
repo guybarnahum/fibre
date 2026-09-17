@@ -39,10 +39,8 @@ function semanticContext(record) {
   };
 }
 
-function memoryContext(memoryStore, threadId) {
-  if (memoryStore === null) return [];
-  validateStore("memoryStore", memoryStore, "listCurrentMemories");
-  return memoryStore.listCurrentMemories(threadId)
+function memoryContext(memories) {
+  return [...memories]
     .sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))
     .slice(0, MAX_ENCOUNTER_MEMORIES)
     .map((memory) => ({
@@ -55,27 +53,56 @@ function memoryContext(memoryStore, threadId) {
     }));
 }
 
+function contextState({ livedContext, thread, livedNowStore, semanticStateStore, memoryStore }) {
+  if (livedContext !== null) {
+    assertPlainObject("lived context", livedContext);
+    assertExactKeys("lived context", livedContext, ["thread", "situation", "semanticStates", "memories"]);
+    if (!Array.isArray(livedContext.semanticStates) || !Array.isArray(livedContext.memories)) {
+      throw new TypeError("lived context state must be arrays");
+    }
+    return {
+      thread: livedContext.thread,
+      currentSituation: livedContext.situation,
+      semanticStates: livedContext.semanticStates,
+      memories: livedContext.memories,
+    };
+  }
+  validateStore("livedNowStore", livedNowStore, "getCurrentSituation");
+  validateStore("semanticStateStore", semanticStateStore, "listCurrentState");
+  const currentSituation = livedNowStore.getCurrentSituation(thread.threadId);
+  return {
+    thread,
+    currentSituation,
+    semanticStates: semanticStateStore.listCurrentState(thread.threadId),
+    memories: memoryStore === null ? [] : (() => {
+      validateStore("memoryStore", memoryStore, "listCurrentMemories");
+      return memoryStore.listCurrentMemories(thread.threadId);
+    })(),
+  };
+}
+
 export async function respondToLivedEncounter({
-  thread,
+  livedContext = null,
+  thread = null,
   encounter,
-  livedNowStore,
-  semanticStateStore,
+  livedNowStore = null,
+  semanticStateStore = null,
   memoryStore = null,
   modelAdapter,
 }) {
-  assertPlainObject("Thread", thread);
-  assertId("Thread.threadId", thread.threadId);
+  const state = contextState({ livedContext, thread, livedNowStore, semanticStateStore, memoryStore });
+  const activeThread = state.thread;
+  assertPlainObject("Thread", activeThread);
+  assertId("Thread.threadId", activeThread.threadId);
   assertPlainObject("lived encounter", encounter);
   assertExactKeys("lived encounter", encounter, ["utterance", "occurredAt"]);
   assertNonEmpty("lived encounter.utterance", encounter.utterance);
   assertIsoTimestamp("lived encounter.occurredAt", encounter.occurredAt);
-  validateStore("livedNowStore", livedNowStore, "getCurrentSituation");
-  validateStore("semanticStateStore", semanticStateStore, "listCurrentState");
   if (modelAdapter === null || typeof modelAdapter !== "object" || typeof modelAdapter.invoke !== "function") {
     throw new TypeError("lived encounter cognition requires a model adapter");
   }
 
-  const currentSituation = livedNowStore.getCurrentSituation(thread.threadId);
+  const currentSituation = state.currentSituation;
   if (currentSituation === null) {
     throw new TypeError("lived encounter requires an already-enacted current situation");
   }
@@ -83,14 +110,14 @@ export async function respondToLivedEncounter({
     throw new TypeError("lived encounter cannot precede its current situation");
   }
 
-  const semanticStates = semanticStateStore.listCurrentState(thread.threadId).map(semanticContext);
-  const autobiographicalMemories = memoryContext(memoryStore, thread.threadId);
+  const semanticStates = state.semanticStates.map(semanticContext);
+  const autobiographicalMemories = memoryContext(state.memories);
   const input = {
     thread: {
-      threadId: thread.threadId,
-      selfDescription: thread.identity?.selfDescription ?? "",
-      selfModel: thread.currentState?.selfModel ?? "",
-      unresolvedIntentions: [...(thread.currentState?.unresolvedIntentions ?? [])],
+      threadId: activeThread.threadId,
+      selfDescription: activeThread.identity?.selfDescription ?? "",
+      selfModel: activeThread.currentState?.selfModel ?? "",
+      unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
     },
     currentSituation,
     semanticStates,
