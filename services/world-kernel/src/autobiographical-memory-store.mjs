@@ -180,15 +180,73 @@ export class AutobiographicalMemoryStore {
   }
 
   listCurrentMemories(threadId) {
-    this.#requireThread(threadId);
-    const ids = this.#database.prepare(`
-      SELECT memory_id FROM autobiographical_memory_records WHERE thread_id=?
-      UNION
-      SELECT json_extract(payload_json,'$.memoryId') AS memory_id
-      FROM thread_events WHERE thread_id=? AND event_type=?
-      ORDER BY memory_id
-    `).all(threadId, threadId, AUTOBIOGRAPHICAL_MEMORY_RECORDED);
-    return ids.map(({ memory_id: id }) => this.memoryHistory(threadId, id).at(-1)).filter(autobiographicalMemoryIsCurrent);
+    const threadRow = this.#requireThread(threadId);
+    let thread;
+    try { thread = JSON.parse(threadRow.state_json); }
+    catch (error) { throw new IntegrityError(`Thread ${threadId} JSON is invalid: ${error.message}`); }
+    const expectedRefs = Array.isArray(thread.memoryRefs) ? thread.memoryRefs : [];
+    const rows = this.#database.prepare(`
+      SELECT
+        current.memory_id,current.revision,current.thread_id,
+        current.record_digest AS current_record_digest,
+        current.head_digest AS current_head_digest,
+        current.recorded_at AS current_recorded_at,
+        records.status,records.visibility,records.as_of,records.recorded_at,
+        records.supersedes_revision,records.record_json,records.record_digest,
+        heads.head_digest AS lineage_head_digest,
+        heads.recorded_at AS lineage_recorded_at,
+        previous.record_digest AS previous_record_digest
+      FROM autobiographical_memory_current_heads current
+      JOIN autobiographical_memory_records records
+        ON records.memory_id=current.memory_id AND records.revision=current.revision
+      JOIN autobiographical_memory_lineage_heads heads
+        ON heads.memory_id=current.memory_id AND heads.revision=current.revision
+      LEFT JOIN autobiographical_memory_records previous
+        ON previous.memory_id=current.memory_id AND previous.revision=current.revision-1
+      WHERE current.thread_id=?
+        AND NOT EXISTS (
+          SELECT 1 FROM autobiographical_memory_lineage_heads newer
+          WHERE newer.memory_id=current.memory_id AND newer.revision>current.revision
+        )
+      ORDER BY current.memory_id
+    `).all(threadId);
+
+    const projectedIds = new Set(rows.map((row) => row.memory_id));
+    if (rows.length !== expectedRefs.length || expectedRefs.some((memoryId) => !projectedIds.has(memoryId))) {
+      throw new IntegrityError(`Thread ${threadId} memory current-head projection disagrees with World history`);
+    }
+
+    return rows.map((row) => {
+      const record = rehydrateAutobiographicalMemory(parseRecord(row));
+      const checks = [
+        [row.memory_id, record.memoryId, "memory ID"],
+        [Number(row.revision), record.revision, "revision"],
+        [row.thread_id, record.threadId, "Thread"],
+        [row.status, record.status, "status"],
+        [row.visibility, record.visibility, "visibility"],
+        [row.as_of, record.asOf, "asOf"],
+        [row.recorded_at, record.recordedAt, "recordedAt"],
+        [row.supersedes_revision, record.supersedesRevision ?? null, "supersedes revision"],
+      ];
+      for (const [actual, expected, field] of checks) if (actual !== expected) throw new IntegrityError(`memory ${record.memoryId} ${field} column mismatch`);
+      if (row.record_json !== canonicalJson(record)) throw new IntegrityError(`memory ${record.memoryId} is not canonical JSON`);
+      const previousDigest = record.revision === 1 ? null : row.previous_record_digest;
+      if (record.revision > 1 && typeof previousDigest !== "string") {
+        throw new IntegrityError(`memory ${record.memoryId} current head has no predecessor witness`);
+      }
+      const digest = autobiographicalMemoryRecordDigest(record, previousDigest);
+      if (
+        row.record_digest !== digest ||
+        row.current_record_digest !== digest ||
+        row.lineage_head_digest !== digest ||
+        row.current_head_digest !== digest ||
+        row.current_recorded_at !== record.recordedAt ||
+        row.lineage_recorded_at !== record.recordedAt
+      ) {
+        throw new IntegrityError(`memory ${record.memoryId} current-head witness mismatch`);
+      }
+      return record;
+    }).filter(autobiographicalMemoryIsCurrent);
   }
 
   inspectThread(threadId) {
