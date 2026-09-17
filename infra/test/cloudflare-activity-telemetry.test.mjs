@@ -50,17 +50,19 @@ class FakeD1Statement {
     }
     if (this.database.failWrites) throw new Error("simulated D1 unavailable");
     const row = Object.fromEntries(INSERT_COLUMNS.map((column, index) => [column, this.bindings[index]]));
-    if (!this.database.rows.has(row.activity_id)) {
+    const created = !this.database.rows.has(row.activity_id);
+    if (created) {
       row.rowid = ++this.database.lastRowId;
       this.database.rows.set(row.activity_id, row);
     }
-    return { success: true };
+    return { success: true, meta:{ changes:created ? 1 : 0 } };
   }
 
   async first() {
     if (!this.sql.startsWith("SELECT record_json FROM fibre_activity_log WHERE activity_id = ?")) {
       throw new Error(`unexpected D1 first: ${this.sql}`);
     }
+    this.database.reads += 1;
     const row = this.database.rows.get(this.bindings[0]);
     return row ? { record_json: row.record_json } : null;
   }
@@ -84,6 +86,7 @@ class FakeD1Database {
   constructor({ failWrites = false } = {}) {
     this.rows = new Map();
     this.lastRowId = 0;
+    this.reads = 0;
     this.failWrites = failWrites;
   }
 
@@ -161,13 +164,15 @@ function activity(overrides = {}) {
   };
 }
 
-test("Cloudflare Activity Log records idempotently, rejects divergent reuse, and queries by correlation", async () => {
+test("new Activity facts stay write-only while retries still verify durable identity", async () => {
   const database = new FakeD1Database();
   const telemetry = createCloudflareActivityTelemetryPort({ database });
 
   const first = await telemetry.record(activity());
+  assert.equal(database.reads, 0, "a new observational fact should not be reread immediately");
   const replay = await telemetry.record(activity());
   assert.deepEqual(replay, first);
+  assert.equal(database.reads, 1, "an idempotent retry must verify the durable fact");
   assert.equal(database.rows.size, 1);
 
   await telemetry.record(activity({
