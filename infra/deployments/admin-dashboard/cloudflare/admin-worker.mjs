@@ -131,23 +131,16 @@ async function proxyThreadRepair(request, env, threadId) {
   });
 }
 
-async function threadHealthBatch(env, threadIds) {
+async function threadHealth(env, threadId) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    "https://world.internal/internal/threads/diagnose",
-    {
-      method:"POST",
-      headers:{
-        Accept:"application/json",
-        "content-type":"application/json",
-        "x-fibre-private-token":privateToken(env),
-      },
-      body:JSON.stringify({ threadIds }),
-    },
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
   ));
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
-  if (!Array.isArray(payload?.results)) throw new Error("World diagnosis batch is invalid");
-  return payload.results;
+  if (!response.ok && !(response.status === 404 && payload?.diagnosis)) {
+    throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  }
+  return payload;
 }
 
 export default {
@@ -183,7 +176,7 @@ export default {
           const population = await readAdminThreadPopulation({
             activityLog:env.ACTIVITY_LOG,
             environment,
-            resolveThreadHealthBatch:(threadIds) => threadHealthBatch(env, threadIds),
+            resolveThreadHealth:(threadId) => threadHealth(env, threadId),
           });
           return json(200, {
             contract:"fibre-admin-thread-population-v0.1",
