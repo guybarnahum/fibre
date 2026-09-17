@@ -15,10 +15,9 @@ function withDatabase(run) {
   finally { rmSync(directory, { recursive:true, force:true }); }
 }
 
-test("World DB open restores an interrupted event table and every dependent trigger", () => {
+test("a new World activation restores interrupted event authority", () => {
   withDatabase((databasePath) => {
-    const storage = localWorldStateStorage(databasePath);
-    const initial = openWorldStore(storage);
+    const initial = openWorldStore(localWorldStateStorage(databasePath));
     initial.close();
 
     const raw = new DatabaseSync(databasePath);
@@ -33,7 +32,7 @@ test("World DB open restores an interrupted event table and every dependent trig
     `);
     raw.close();
 
-    const recovered = openWorldStore(storage);
+    const recovered = openWorldStore(localWorldStateStorage(databasePath));
     recovered.close();
 
     const verified = new DatabaseSync(databasePath);
