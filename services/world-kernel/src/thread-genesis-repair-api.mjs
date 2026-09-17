@@ -1,5 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
+const CONTRACT = "fibre-thread-repair-v0.5";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -55,6 +56,7 @@ async function repairBody(request) {
 
 export function createThreadGenesisRepairApi({
   repairService,
+  identityService,
   privateToken,
   reconciliationWorkset = null,
   onRepair = null,
@@ -62,10 +64,12 @@ export function createThreadGenesisRepairApi({
 } = {}) {
   if (!repairService
     || typeof repairService.diagnose !== "function"
-    || typeof repairService.updateIdentity !== "function"
     || typeof repairService.migrate !== "function"
     || typeof repairService.repair !== "function") {
-    throw new TypeError("Thread repair API requires diagnose(), updateIdentity(), migrate(), and repair()");
+    throw new TypeError("Thread repair API requires diagnose(), migrate(), and repair()");
+  }
+  if (!identityService || typeof identityService.update !== "function") {
+    throw new TypeError("Thread repair API requires identityService.update()");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Thread repair privateToken must be at least 16 characters");
@@ -97,7 +101,7 @@ export function createThreadGenesisRepairApi({
         if (request.method === "GET") {
           const diagnosis = await repairService.diagnose(threadId);
           return json(diagnosis.exists ? 200 : 404, {
-            contract:"fibre-thread-repair-v0.4",
+            contract:CONTRACT,
             diagnosis,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -110,14 +114,14 @@ export function createThreadGenesisRepairApi({
           reconciliationWorkset.requeue(threadId);
           await onRecover?.({ threadId, before });
           return json(200, {
-            contract:"fibre-thread-repair-v0.4",
+            contract:CONTRACT,
             recovery:{ threadId, before, after:reconciliationWorkset.get(threadId) },
           });
         }
         if (command.action === "identity") {
-          const result = await repairService.updateIdentity(threadId, command);
-          return json(result.before.exists ? 200 : 404, {
-            contract:"fibre-thread-repair-v0.4",
+          const result = await identityService.update(threadId, command);
+          return json(result.exists ? 200 : 404, {
+            contract:CONTRACT,
             identityUpdate:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -125,7 +129,7 @@ export function createThreadGenesisRepairApi({
         if (command.action === "migrate") {
           const result = await repairService.migrate(threadId, command);
           return json(result.before.exists ? 200 : 404, {
-            contract:"fibre-thread-repair-v0.4",
+            contract:CONTRACT,
             migration:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -133,7 +137,7 @@ export function createThreadGenesisRepairApi({
         const result = await repairService.repair(threadId, { repairKey:command.repairKey });
         await onRepair?.({ threadId, result });
         return json(result.before.exists ? 200 : 404, {
-          contract:"fibre-thread-repair-v0.4",
+          contract:CONTRACT,
           result,
           reconciliation:reconciliationWorkset?.get(threadId) ?? null,
         });
