@@ -83,7 +83,7 @@ function syncFromUrl() {
   service.value = params.get("service") ?? "";
   status.value = params.get("status") ?? "";
   mode = params.get("mode") ?? (kind.value === "thread" ? "causal" : "raw");
-  if (!["causal", "raw"].includes(mode)) mode = "raw";
+  if (!["causal", "raw", "threads"].includes(mode)) mode = "raw";
   updateIdentityState();
   renderMode();
 }
@@ -118,7 +118,7 @@ function renderMode() {
   $("#causal-view").hidden = mode !== "causal";
   $("#raw-view").hidden = mode !== "raw";
   for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.dataset.mode === mode);
-  text($("#metric-view"), mode === "causal" ? "Causal" : "Raw");
+  text($("#metric-view"), mode === "threads" ? "Threads" : mode === "causal" ? "Causal" : "Raw");
 }
 
 function renderMetrics(records) {
@@ -400,6 +400,7 @@ function renderPager(payload) {
 }
 
 async function loadPage({ pushState = false } = {}) {
+  if (mode === "threads") return;
   setLoading(true);
   if (pushState) syncUrl();
   const params = baseParams();
