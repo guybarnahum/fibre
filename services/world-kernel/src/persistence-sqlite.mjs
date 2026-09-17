@@ -339,7 +339,10 @@ export function migrateDatabase(database) {
     if (existingTables !== 0) throw new IntegrityError("Refusing an unversioned pre-release world-store schema; recreate the local M1 database");
   }
 
-  if (currentVersion === WORLD_STORE_SCHEMA_VERSION && !needsEventSchemaUpgrade(database)) return;
+  if (currentVersion === WORLD_STORE_SCHEMA_VERSION && !needsEventSchemaUpgrade(database)) {
+    database.transaction(() => createSchema(database));
+    return;
+  }
 
   const rebuildEvents = currentVersion > 0 && needsEventSchemaUpgrade(database);
   if (rebuildEvents) database.exec("PRAGMA foreign_keys=OFF");
