@@ -55,7 +55,10 @@ class FakeD1Statement {
       row.rowid = ++this.database.lastRowId;
       this.database.rows.set(row.activity_id, row);
     }
-    return { success: true, meta:{ changes:created ? 1 : 0 } };
+    return {
+      success:true,
+      meta:{ changes:created ? 1 : 0, rows_read:1, rows_written:created ? 5 : 0 },
+    };
   }
 
   async first() {
@@ -71,6 +74,7 @@ class FakeD1Statement {
     if (!this.sql.startsWith("SELECT record_json FROM fibre_activity_log")) {
       throw new Error(`unexpected D1 all: ${this.sql}`);
     }
+    this.database.reads += 1;
     const columns = [...this.sql.matchAll(/([a-z_]+) = \?/gu)].map((match) => match[1]);
     const selected = [...this.database.rows.values()]
       .filter((row) => columns.every((column, index) => row[column] === this.bindings[index]))
@@ -78,7 +82,7 @@ class FakeD1Statement {
         || left.recorded_at.localeCompare(right.recorded_at)
         || left.rowid - right.rowid)
       .map((row) => ({ record_json: row.record_json }));
-    return { success: true, results: selected };
+    return { success:true, results:selected, meta:{ rows_read:selected.length + 2, rows_written:0 } };
   }
 }
 
@@ -164,15 +168,31 @@ function activity(overrides = {}) {
   };
 }
 
-test("new Activity facts stay write-only while retries still verify durable identity", async () => {
+test("new Activity facts stay write-only while D1 cost remains attributable to the Fibre operation", async () => {
   const database = new FakeD1Database();
-  const telemetry = createCloudflareActivityTelemetryPort({ database });
+  const costs = [];
+  const telemetry = createCloudflareActivityTelemetryPort({
+    database,
+    onCost(operation, result) {
+      costs.push({
+        operation,
+        rowsRead:result.meta.rows_read,
+        rowsWritten:result.meta.rows_written,
+      });
+    },
+  });
 
   const first = await telemetry.record(activity());
   assert.equal(database.reads, 0, "a new observational fact should not be reread immediately");
+  assert.deepEqual(costs, [{ operation:"activity.record", rowsRead:1, rowsWritten:5 }]);
+
   const replay = await telemetry.record(activity());
   assert.deepEqual(replay, first);
   assert.equal(database.reads, 1, "an idempotent retry must verify the durable fact");
+  assert.deepEqual(costs.slice(1), [
+    { operation:"activity.record", rowsRead:1, rowsWritten:0 },
+    { operation:"activity.retry_verify", rowsRead:3, rowsWritten:0 },
+  ]);
   assert.equal(database.rows.size, 1);
 
   await telemetry.record(activity({
