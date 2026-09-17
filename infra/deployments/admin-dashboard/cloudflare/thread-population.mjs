@@ -1,4 +1,14 @@
-const MAX_THREADS = 500;
+const MAX_THREADS = 200;
+const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
+
+function clean(value) {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function unfinishedName(value) {
+  const normalized = clean(value)?.toLocaleLowerCase("en-US") ?? null;
+  return normalized === null || PLACEHOLDER_NAMES.has(normalized);
+}
 
 function sexBucket(value) {
   if (value === "female" || value === "male") return value;
@@ -34,58 +44,99 @@ function summarize(threads) {
   return Object.freeze(summary);
 }
 
-function portraitUrl(diagnosis) {
-  const objectRef = diagnosis?.presentation?.portraitObjectRef;
-  return diagnosis?.exists === true && typeof objectRef === "string" && objectRef !== ""
-    ? `/api/thread-assets/${encodeURIComponent(objectRef)}`
-    : null;
+function registryFindings(entry) {
+  const findings = [];
+  if (unfinishedName(entry.displayName)) {
+    findings.push(Object.freeze({
+      code:"NAME_UNFINISHED",
+      state:"operator_decision_required",
+      reason:"This Thread does not yet have a finished personal name",
+      identityAction:Object.freeze({
+        id:"set_name",
+        label:"Set name",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"name", label:"Name", kind:"text", required:true }),
+        ]) }),
+      }),
+    }));
+  }
+  if (clean(entry.sex) === null) findings.push(Object.freeze({ code:"SEX_MISSING", state:"attention" }));
+  if (clean(entry.fibreIdentityNumber) === null) findings.push(Object.freeze({ code:"FIN_MISSING", state:"attention" }));
+  return Object.freeze(findings);
 }
 
-export async function readAdminThreadPopulation({ activityLog, environment, resolveThreadHealth }) {
+function admittedThread(entry, lastActivityAt) {
+  const findings = registryFindings(entry);
+  return Object.freeze({
+    threadId:entry.threadId,
+    admitted:true,
+    lastActivityAt:lastActivityAt ?? null,
+    health:findings.length === 0 ? "healthy" : findings.some((finding) => finding.state === "operator_decision_required")
+      ? "operator_decision_required"
+      : "attention",
+    identity:Object.freeze({
+      name:unfinishedName(entry.displayName) ? null : clean(entry.displayName),
+      storedName:clean(entry.displayName),
+      sex:clean(entry.sex),
+      fibreIdentityNumber:clean(entry.fibreIdentityNumber),
+      originOrientation:clean(entry.originOrientation),
+      birthDate:clean(entry.birthDate),
+      birthPlace:clean(entry.birthPlace),
+      culture:Object.freeze([...(entry.culture ?? [])]),
+      languages:Object.freeze([...(entry.languages ?? [])]),
+      raisedAs:entry.raisedAs === null ? null : structuredClone(entry.raisedAs),
+      lifecycleStatus:clean(entry.status),
+    }),
+    registry:Object.freeze({
+      version:entry.version ?? null,
+      stateHash:clean(entry.stateHash),
+      updatedAt:clean(entry.updatedAt),
+    }),
+    portraitUrl:null,
+    findings,
+    reconciliation:null,
+  });
+}
+
+function activityOnly(row) {
+  return Object.freeze({
+    threadId:row.thread_id,
+    admitted:false,
+    lastActivityAt:row.last_activity_at ?? null,
+    health:"unrecoverable",
+    identity:null,
+    portraitUrl:null,
+    findings:Object.freeze([]),
+    reconciliation:null,
+  });
+}
+
+export async function readAdminThreadPopulation({ activityLog, environment, readRegistry }) {
   if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
-  if (typeof resolveThreadHealth !== "function") throw new TypeError("Thread population requires resolveThreadHealth()");
+  if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
 
-  const result = await activityLog.prepare(`
-    SELECT thread_id, MAX(occurred_at) AS last_activity_at
-    FROM fibre_activity_log
-    WHERE environment = ? AND thread_id IS NOT NULL
-    GROUP BY thread_id
-    ORDER BY last_activity_at DESC, thread_id ASC
-    LIMIT ?
-  `).bind(environment, MAX_THREADS + 1).all();
-  const rows = Array.isArray(result?.results) ? result.results : [];
-  const truncated = rows.length > MAX_THREADS;
-  const threads = [];
+  const [registryEntries, activityResult] = await Promise.all([
+    readRegistry(MAX_THREADS),
+    activityLog.prepare(`
+      SELECT thread_id, MAX(occurred_at) AS last_activity_at
+      FROM fibre_activity_log
+      WHERE environment = ? AND thread_id IS NOT NULL
+      GROUP BY thread_id
+      ORDER BY last_activity_at DESC, thread_id ASC
+      LIMIT ?
+    `).bind(environment, MAX_THREADS + 1).all(),
+  ]);
+  if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid population");
 
-  for (const row of rows.slice(0, MAX_THREADS)) {
-    try {
-      const health = await resolveThreadHealth(row.thread_id);
-      const diagnosis = health.diagnosis ?? null;
-      threads.push(Object.freeze({
-        threadId:row.thread_id,
-        admitted:diagnosis?.exists === true,
-        lastActivityAt:row.last_activity_at ?? null,
-        health:diagnosis?.health ?? "unavailable",
-        identity:diagnosis?.identity ?? null,
-        portraitUrl:portraitUrl(diagnosis),
-        findings:diagnosis?.findings ?? [],
-        reconciliation:health.reconciliation ?? null,
-      }));
-    } catch (error) {
-      threads.push(Object.freeze({
-        threadId:row.thread_id,
-        admitted:null,
-        lastActivityAt:row.last_activity_at ?? null,
-        health:"unavailable",
-        identity:null,
-        portraitUrl:null,
-        findings:[],
-        reconciliation:null,
-        error:error instanceof Error ? error.message : String(error),
-      }));
-    }
+  const activityRows = Array.isArray(activityResult?.results) ? activityResult.results : [];
+  const activityByThread = new Map(activityRows.map((row) => [row.thread_id, row.last_activity_at ?? null]));
+  const admittedIds = new Set(registryEntries.map((entry) => entry.threadId));
+  const threads = registryEntries.map((entry) => admittedThread(entry, activityByThread.get(entry.threadId)));
+  for (const row of activityRows.slice(0, MAX_THREADS)) {
+    if (!admittedIds.has(row.thread_id)) threads.push(activityOnly(row));
   }
 
+  const truncated = registryEntries.length >= MAX_THREADS || activityRows.length > MAX_THREADS;
   return Object.freeze({
     threads:Object.freeze(threads),
     summary:summarize(threads),
