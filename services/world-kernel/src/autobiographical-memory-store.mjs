@@ -179,9 +179,16 @@ export class AutobiographicalMemoryStore {
     return history;
   }
 
-  listCurrentMemories(threadId) {
+  listCurrentMemories(threadId, { limit = null, newestFirst = false } = {}) {
     this.#requireThread(threadId);
-    const rows = this.#database.prepare(`
+    if (limit !== null && (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000)) {
+      throw new TypeError("current memory limit must be between 1 and 1000");
+    }
+    if (typeof newestFirst !== "boolean") throw new TypeError("newestFirst must be boolean");
+    const order = newestFirst
+      ? "current.recorded_at DESC,current.memory_id DESC"
+      : "current.memory_id";
+    const sql = `
       SELECT
         current.memory_id,current.revision,current.thread_id,
         current.record_digest AS current_record_digest,
@@ -200,12 +207,16 @@ export class AutobiographicalMemoryStore {
       LEFT JOIN autobiographical_memory_records previous
         ON previous.memory_id=current.memory_id AND previous.revision=current.revision-1
       WHERE current.thread_id=?
+        AND records.status<>'retracted'
         AND NOT EXISTS (
           SELECT 1 FROM autobiographical_memory_lineage_heads newer
           WHERE newer.memory_id=current.memory_id AND newer.revision>current.revision
         )
-      ORDER BY current.memory_id
-    `).all(threadId);
+      ORDER BY ${order}${limit === null ? "" : " LIMIT ?"}
+    `;
+    const rows = limit === null
+      ? this.#database.prepare(sql).all(threadId)
+      : this.#database.prepare(sql).all(threadId, limit);
 
     return rows.map((row) => {
       const record = rehydrateAutobiographicalMemory(parseRecord(row));
