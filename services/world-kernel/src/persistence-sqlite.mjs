@@ -24,6 +24,7 @@ import { createEmbodimentTables } from "./embodiment-schema.mjs";
 import { ensureEmbodimentIntegrity } from "./embodiment-integrity.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
+import { worldStateInitialization } from "./world-state-storage.mjs";
 
 export function translateStorageError(error) {
   if (/database is locked|database is busy/i.test(error?.message ?? "")) return new StorageBusyError(error.message);
@@ -330,7 +331,10 @@ function rebuildEventTables(database) {
 }
 
 export function migrateDatabase(database) {
-  recoverInterruptedEventSchema(database);
+  const initialization = worldStateInitialization(database);
+  if (initialization?.migrated) return;
+  if (initialization?.recovered !== true) recoverInterruptedEventSchema(database);
+
   const row = database.prepare("PRAGMA user_version").get();
   const currentVersion = Number(row.user_version);
   if (currentVersion < 0 || currentVersion > WORLD_STORE_SCHEMA_VERSION) throw new IntegrityError(`Unsupported world-store schema version ${currentVersion}; expected at most ${WORLD_STORE_SCHEMA_VERSION}`);
@@ -341,6 +345,7 @@ export function migrateDatabase(database) {
 
   if (currentVersion === WORLD_STORE_SCHEMA_VERSION && !needsEventSchemaUpgrade(database)) {
     database.transaction(() => createSchema(database));
+    if (initialization !== null) initialization.migrated = true;
     return;
   }
 
@@ -364,4 +369,5 @@ export function migrateDatabase(database) {
   } finally {
     if (rebuildEvents) database.exec("PRAGMA foreign_keys=ON");
   }
+  if (initialization !== null) initialization.migrated = true;
 }
