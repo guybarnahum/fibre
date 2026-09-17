@@ -8,19 +8,24 @@ const privateToken = "repair-private-token-123";
 function api(options = {}) {
   return createThreadGenesisRepairApi({
     privateToken,
+    identityService:{
+      async update(threadId, { operationKey, name, sex }) {
+        return {
+          threadId,
+          operationKey,
+          exists:threadId !== "thr_missing",
+          changed:threadId !== "thr_missing",
+          eventId:threadId === "thr_missing" ? null : "evt_identity_1",
+          changes:threadId === "thr_missing" ? {} : { name, sex },
+          identity:threadId === "thr_missing" ? null : { name:name ?? "Thread", sex:sex ?? null },
+          version:threadId === "thr_missing" ? null : 2,
+        };
+      },
+    },
     repairService:{
       async diagnose(threadId) {
         if (threadId === "thr_missing") return { threadId, exists:false, health:"unrecoverable", findings:[] };
         return { threadId, exists:true, health:"repairable", findings:[{ code:"PRESENTATION_MISSING", state:"repairable" }] };
-      },
-      async updateIdentity(threadId, { operationKey, name, sex }) {
-        return {
-          threadId,
-          operationKey,
-          before:{ exists:true, health:"operator_decision_required" },
-          after:{ exists:true, health:"repairable", identity:{ name:name ?? "Thread", sex:sex ?? null } },
-          changed:true,
-        };
       },
       async migrate(threadId, { migrationId, migrationKey, input }) {
         return {
@@ -65,11 +70,11 @@ test("R1 repair diagnosis is private and read-only", async () => {
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair"));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.contract, "fibre-thread-repair-v0.4");
+  assert.equal(body.contract, "fibre-thread-repair-v0.5");
   assert.equal(body.diagnosis.health, "repairable");
 });
 
-test("Admin identity input changes authority through an explicit Thread action", async () => {
+test("Admin identity input changes World authority without requiring a repair diagnosis", async () => {
   const repairApi = api();
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
     method:"POST",
@@ -83,8 +88,8 @@ test("Admin identity input changes authority through an explicit Thread action",
   }));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.identityUpdate.after.identity.name, "Maya Cohen");
-  assert.equal(body.identityUpdate.after.identity.sex, "female");
+  assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female" });
+  assert.equal(body.identityUpdate.changed, true);
 });
 
 test("named migration remains distinct from repair", async () => {
