@@ -1,3 +1,5 @@
+import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+
 const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
 const rows = $("#thread-population-rows");
@@ -73,197 +75,9 @@ async function command(threadId, body) {
   return payload;
 }
 
-function element(tag, className = null, text = null) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== null) node.textContent = text;
-  return node;
-}
-
-function ensureActionDialog() {
-  const existing = $("#thread-action-dialog");
-  if (existing) return existing;
-
-  const dialog = element("dialog", "thread-action-dialog");
-  dialog.id = "thread-action-dialog";
-
-  const head = element("div", "dialog-head thread-action-dialog-head");
-  const heading = element("div");
-  const eyebrow = element("p", "eyebrow", "Thread action");
-  eyebrow.dataset.threadActionEyebrow = "";
-  const title = element("h2", null, "Thread action");
-  title.dataset.threadActionTitle = "";
-  heading.append(eyebrow, title);
-  const close = element("button", "icon-button", "×");
-  close.type = "button";
-  close.setAttribute("aria-label", "Close");
-  close.dataset.threadActionClose = "";
-  head.append(heading, close);
-
-  const form = element("form", "thread-action-form");
-  form.dataset.threadActionForm = "";
-  const context = element("p", "thread-action-context");
-  context.dataset.threadActionContext = "";
-  const description = element("p", "thread-action-description");
-  description.dataset.threadActionDescription = "";
-  const fields = element("div", "thread-action-fields");
-  fields.dataset.threadActionFields = "";
-  const status = element("div", "thread-action-status");
-  status.dataset.threadActionStatus = "";
-  status.setAttribute("role", "status");
-  status.setAttribute("aria-live", "polite");
-  status.hidden = true;
-  const progress = element("div", "thread-action-progress");
-  progress.dataset.threadActionProgress = "";
-  progress.hidden = true;
-  progress.append(element("span"));
-
-  const footer = element("div", "thread-action-footer");
-  const cancel = element("button", "secondary", "Cancel");
-  cancel.type = "button";
-  cancel.dataset.threadActionCancel = "";
-  const submit = element("button", "primary", "Apply");
-  submit.type = "submit";
-  submit.dataset.threadActionSubmit = "";
-  footer.append(cancel, submit);
-  form.append(context, description, fields, status, progress, footer);
-  dialog.append(head, form);
-  document.body.append(dialog);
-
-  const closeDialog = () => {
-    if (dialog.dataset.busy !== "true") dialog.close();
-  };
-  close.addEventListener("click", closeDialog);
-  cancel.addEventListener("click", closeDialog);
-  dialog.addEventListener("cancel", (event) => {
-    if (dialog.dataset.busy === "true") event.preventDefault();
-  });
-  return dialog;
-}
-
-function actionFields(action) {
-  return Array.isArray(action?.input?.fields) ? action.input.fields : [];
-}
-
-function renderActionFields(host, fields) {
-  host.replaceChildren();
-  for (const field of fields) {
-    if (typeof field?.name !== "string" || field.name === "") continue;
-    const choices = Array.isArray(field.options) ? field.options : [];
-    if (choices.length > 0) {
-      const group = element("fieldset", "thread-action-choice-group");
-      group.append(element("legend", null, field.label ?? human(field.name)));
-      for (const [index, choice] of choices.entries()) {
-        const option = element("label", "thread-action-choice");
-        const input = document.createElement("input");
-        input.type = "radio";
-        input.name = field.name;
-        input.value = choice;
-        input.required = field.required === true;
-        input.checked = field.default === choice || (field.default === undefined && choices.length === 1 && index === 0);
-        option.append(input, element("span", null, human(choice)));
-        group.append(option);
-      }
-      host.append(group);
-      continue;
-    }
-
-    const label = element("label", "thread-action-field");
-    label.append(element("span", null, field.label ?? human(field.name)));
-    const input = document.createElement("input");
-    input.type = field.kind === "number" ? "number" : "text";
-    input.name = field.name;
-    input.required = field.required === true;
-    input.autocomplete = "off";
-    input.value = field.default ?? "";
-    label.append(input);
-    host.append(label);
-  }
-}
-
-function dialogInput(form, fields) {
-  if (!form.reportValidity()) return null;
-  const values = {};
-  const data = new FormData(form);
-  for (const field of fields) {
-    if (typeof field?.name !== "string" || field.name === "") continue;
-    const raw = data.get(field.name);
-    const value = typeof raw === "string" ? raw.trim() : "";
-    if (field.required === true && value === "") return null;
-    values[field.name] = value;
-  }
-  return values;
-}
-
 function setPopulationControlsDisabled(disabled) {
   for (const control of document.querySelectorAll(".thread-population-actions button")) control.disabled = disabled;
   if (disabled) $("#refresh-button").disabled = true;
-}
-
-function openActionDialog({ thread, label, eyebrow, description, fields = [], body }) {
-  const dialog = ensureActionDialog();
-  const form = dialog.querySelector("[data-thread-action-form]");
-  const status = dialog.querySelector("[data-thread-action-status]");
-  const progress = dialog.querySelector("[data-thread-action-progress]");
-  const submit = dialog.querySelector("[data-thread-action-submit]");
-  const cancel = dialog.querySelector("[data-thread-action-cancel]");
-  const close = dialog.querySelector("[data-thread-action-close]");
-  const threadName = thread.identity?.name ?? "Unnamed Thread";
-
-  dialog.querySelector("[data-thread-action-eyebrow]").textContent = eyebrow;
-  dialog.querySelector("[data-thread-action-title]").textContent = label;
-  dialog.querySelector("[data-thread-action-context]").textContent = `${threadName} · ${shortId(thread.threadId)}`;
-  dialog.querySelector("[data-thread-action-description]").textContent = description;
-  renderActionFields(dialog.querySelector("[data-thread-action-fields]"), fields);
-  status.hidden = true;
-  status.className = "thread-action-status";
-  status.textContent = "";
-  progress.hidden = true;
-  submit.textContent = label;
-  submit.disabled = false;
-  cancel.disabled = false;
-  close.disabled = false;
-  dialog.dataset.busy = "false";
-
-  form.onsubmit = async (event) => {
-    event.preventDefault();
-    const input = dialogInput(form, fields);
-    if (input === null) return;
-
-    dialog.dataset.busy = "true";
-    submit.disabled = true;
-    cancel.disabled = true;
-    close.disabled = true;
-    setPopulationControlsDisabled(true);
-    status.hidden = false;
-    status.className = "thread-action-status working";
-    status.textContent = `${label} in progress…`;
-    progress.hidden = false;
-
-    try {
-      await command(thread.threadId, body(input));
-      status.className = "thread-action-status succeeded";
-      status.textContent = `${label} completed. Refreshing authoritative Thread state…`;
-      await loadPopulation();
-      $("#chain-summary").textContent = `${label} completed for ${threadName}.`;
-      dialog.dataset.busy = "false";
-      dialog.close();
-    } catch (error) {
-      dialog.dataset.busy = "false";
-      status.className = "thread-action-status failed";
-      status.textContent = `${label} failed: ${error instanceof Error ? error.message : String(error)}`;
-      progress.hidden = true;
-      submit.disabled = false;
-      cancel.disabled = false;
-      close.disabled = false;
-      setPopulationControlsDisabled(false);
-    }
-  };
-
-  dialog.showModal();
-  const first = dialog.querySelector("[data-thread-action-fields] input");
-  if (first) first.focus();
-  else submit.focus();
 }
 
 function button(label, spec, thread) {
@@ -273,7 +87,20 @@ function button(label, spec, thread) {
   control.textContent = label;
   control.addEventListener("click", (event) => {
     event.stopPropagation();
-    openActionDialog({ thread, label, ...spec });
+    openThreadActionDialog({
+      threadId:thread.threadId,
+      threadName:thread.identity?.name ?? null,
+      label,
+      eyebrow:spec.eyebrow,
+      description:spec.description,
+      fields:spec.fields ?? [],
+      onBusyChange:setPopulationControlsDisabled,
+      run:async (input) => {
+        await command(thread.threadId, spec.body(input));
+        await loadPopulation();
+        $("#chain-summary").textContent = `${label} completed for ${thread.identity?.name ?? "Unnamed Thread"}.`;
+      },
+    });
   });
   return control;
 }
