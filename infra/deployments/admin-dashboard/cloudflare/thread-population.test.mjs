@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { readAdminThreadPopulation } from "./thread-population.mjs";
 
-test("Activity discovers identities; World decides which are Threads and defines their state", async () => {
+test("World Registry defines admitted population while Activity remains observational", async () => {
   const activityLog = {
     prepare() {
       return {
@@ -21,49 +21,57 @@ test("Activity discovers identities; World decides which are Threads and defines
       };
     },
   };
-  const authoritative = {
-    thr_a:{
-      diagnosis:{
-        exists:true,
-        health:"healthy",
-        identity:{ name:"A", sex:"female" },
-        presentation:{ portraitObjectRef:"portrait_a" },
-        findings:[],
-      },
-      reconciliation:{ state:"complete" },
+  const registry = [
+    {
+      threadId:"thr_a",
+      fibreIdentityNumber:"FIN-A",
+      displayName:"A",
+      sex:"female",
+      status:"active",
+      originOrientation:"original",
+      birthDate:"2004-03-18",
+      birthPlace:"Valparaíso, Chile",
+      culture:["Valparaíso formative context"],
+      languages:["Spanish", "English"],
+      raisedAs:{ culturalContext:"Chilean coastal household" },
+      version:9,
+      stateHash:"sha256:a",
+      updatedAt:"2026-09-17T13:00:00Z",
     },
-    thr_candidate:{
-      diagnosis:{
-        exists:false,
-        health:"unrecoverable",
-        identity:null,
-        presentation:{ portraitObjectRef:"must_not_be_used" },
-        findings:[{ code:"THREAD_NOT_FOUND", state:"unrecoverable" }],
-      },
-      reconciliation:null,
+    {
+      threadId:"thr_b",
+      fibreIdentityNumber:"FIN-B",
+      displayName:"B",
+      sex:"male",
+      status:"active",
+      originOrientation:"original",
+      birthDate:null,
+      birthPlace:null,
+      culture:[],
+      languages:["English"],
+      raisedAs:null,
+      version:4,
+      stateHash:"sha256:b",
+      updatedAt:"2026-09-17T12:00:00Z",
     },
-    thr_b:{
-      diagnosis:{
-        exists:true,
-        health:"migration_required",
-        identity:{ name:"B", sex:"male" },
-        findings:[{ code:"SCHEMA", state:"migration_required", migration:{ id:"schema_v1" } }],
-      },
-      reconciliation:{ state:"dead_letter" },
-    },
-  };
+  ];
 
   const population = await readAdminThreadPopulation({
     activityLog,
     environment:"staging",
-    resolveThreadHealth:async (threadId) => authoritative[threadId],
+    readRegistry:async (limit) => {
+      assert.ok(limit > 0 && limit <= 200, "population must use a bounded World Registry read");
+      return registry;
+    },
   });
 
-  assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_candidate", "thr_b"], "Activity must define observed membership");
-  assert.equal(population.threads[0].identity.sex, "female", "World must define Thread facts");
-  assert.equal(population.threads[0].portraitUrl, "/api/thread-assets/portrait_a", "Presentation may supply public portrait media without becoming identity authority");
-  assert.equal(population.threads[1].admitted, false, "missing World identity must stay Activity-only");
-  assert.equal(population.threads[1].portraitUrl, null, "Activity-only identifiers must not acquire projected personhood");
+  assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_b", "thr_candidate"]);
+  assert.equal(population.threads[0].admitted, true, "World Registry membership must define admitted Threads");
+  assert.equal(population.threads[0].lastActivityAt, "2026-09-16T03:00:00.000Z", "Activity may annotate lived observation without becoming authority");
+  assert.deepEqual(population.threads[0].identity.culture, ["Valparaíso formative context"]);
+  assert.deepEqual(population.threads[0].identity.raisedAs, { culturalContext:"Chilean coastal household" });
+  assert.equal(population.threads[2].admitted, false, "Activity-only identifiers must remain explicitly unadmitted");
+  assert.equal(population.threads[2].identity, null, "Activity-only identifiers must not acquire projected personhood");
   assert.deepEqual(population.summary, {
     observed:3,
     total:2,
@@ -71,9 +79,9 @@ test("Activity discovers identities; World decides which are Threads and defines
     female:1,
     male:1,
     unknownSex:0,
-    healthy:1,
-    attention:1,
-    deadLetter:1,
-    migrationsAvailable:1,
+    healthy:2,
+    attention:0,
+    deadLetter:0,
+    migrationsAvailable:0,
   });
 });
