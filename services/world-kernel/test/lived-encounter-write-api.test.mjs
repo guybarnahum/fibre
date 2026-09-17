@@ -94,10 +94,11 @@ test("A5 Activity Log exposes encounter causality without copying private speech
     "operator telemetry should identify the lived encounter without becoming a copy of it");
 });
 
-test("one lived encounter keeps one causal present through cognition, reflection, and memory", async () => {
+test("one lived encounter keeps one bounded causal present through cognition, reflection, and memory", async () => {
   let situationReads = 0;
   let semanticReads = 0;
   let memoryReads = 0;
+  let memoryQuery = null;
   const modelCalls = [];
   const memory = {
     memoryId: "mem_prior_context",
@@ -144,8 +145,9 @@ test("one lived encounter keeps one causal present through cognition, reflection
       recordJournalEntry() { throw new Error("journal should not be written"); },
     },
     memoryStore: {
-      listCurrentMemories() {
+      listCurrentMemories(_threadId, options) {
         memoryReads += 1;
+        memoryQuery = structuredClone(options);
         return [{ ...memory, rememberedContent: `${memory.rememberedContent} ${memoryReads}` }];
       },
       recordMemory() { throw new Error("memory should not be retained"); },
@@ -191,6 +193,7 @@ test("one lived encounter keeps one causal present through cognition, reflection
   assert.equal(situationReads, 1, "one encounter must have one current situation");
   assert.equal(semanticReads, 1, "one encounter must have one semantic present");
   assert.equal(memoryReads, 1, "one encounter must have one prior-memory present");
+  assert.deepEqual(memoryQuery, { limit:6, newestFirst:true }, "encounter memory must remain bounded as a life grows");
   assert.equal(modelCalls.length, 3);
   assert.equal(modelCalls[0].input.semanticStates[0].state, "state-1");
   assert.equal(modelCalls[1].input.semanticStates[0].state, "state-1");
