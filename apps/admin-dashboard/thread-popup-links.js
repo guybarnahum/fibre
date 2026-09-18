@@ -9,6 +9,8 @@ const title = document.querySelector("#dialog-title");
 const eyebrow = document.querySelector("#dialog-eyebrow");
 const body = document.querySelector("#dialog-body");
 const THREAD = /^thr_[A-Za-z0-9._:-]+$/u;
+let openThreadId = null;
+let openThreadLoad = 0;
 
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
@@ -25,6 +27,8 @@ function fact(label, value, className = null) {
 
 async function openThread(threadId) {
   if (!dialog || !body || !THREAD.test(threadId)) return;
+  openThreadId = threadId;
+  const load = ++openThreadLoad;
   dialog.classList.add("thread-observatory-dialog");
   eyebrow.textContent = "Thread Observatory";
   title.textContent = "Thread";
@@ -33,6 +37,7 @@ async function openThread(threadId) {
 
   try {
     const payload = await fetchThreadObservatory(threadId);
+    if (openThreadId !== threadId || load !== openThreadLoad) return;
     const identity = payload.identity ?? {};
     title.textContent = identity.fibreIdentityNumber ?? threadName(identity) ?? "Thread";
     body.replaceChildren(renderThreadObservatory({
@@ -102,6 +107,17 @@ document.addEventListener("keydown", (event) => {
   const threadId = threadIdFor(target);
   if (!threadId || target.tagName === "BUTTON") return;
   event.preventDefault();
+  void openThread(threadId);
+});
+
+dialog?.addEventListener("close", () => {
+  openThreadId = null;
+  openThreadLoad += 1;
+});
+
+window.addEventListener("fibre:thread-identity-updated", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId !== openThreadId || !dialog?.open) return;
   void openThread(threadId);
 });
 
