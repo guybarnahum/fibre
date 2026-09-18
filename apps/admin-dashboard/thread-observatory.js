@@ -384,15 +384,33 @@ export async function fetchThreadObservatory(threadId) {
 
   let memories = [];
   let memoryError = null;
+  let deepWorld = null;
   try {
-    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/memories`, { headers:{ Accept:"application/json" }, cache:"no-store" });
-    const memoryPayload = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(memoryPayload?.detail ?? memoryPayload?.error ?? `HTTP ${response.status}`);
-    memories = Array.isArray(memoryPayload?.memories) ? memoryPayload.memories : [];
+    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/observatory`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const observatoryPayload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(observatoryPayload?.detail ?? observatoryPayload?.error?.detail ?? observatoryPayload?.error?.code ?? observatoryPayload?.error ?? `HTTP ${response.status}`);
+    const observatory = observatoryPayload?.observatory ?? null;
+    if (!observatory || observatory.threadId !== threadId) throw new Error("World Observatory returned mismatched Thread");
+    memories = Array.isArray(observatory.memories) ? observatory.memories : [];
+    deepWorld = {
+      thread:observatory.thread ?? null,
+      civilRegistration:observatory.civilRegistration ?? null,
+      embodiments:Array.isArray(observatory.embodiments) ? observatory.embodiments : [],
+      symbolicGenomes:Array.isArray(observatory.symbolicGenomes) ? observatory.symbolicGenomes : [],
+    };
   } catch (error) {
     memoryError = error instanceof Error ? error.message : String(error);
   }
-  return Object.freeze({ ...payload, memories:Object.freeze(memories), memoryError });
+  const identity = {
+    ...(payload.identity ?? {}),
+    world:deepWorld ?? payload.identity?.world ?? null,
+  };
+  return Object.freeze({
+    ...payload,
+    identity:Object.freeze(identity),
+    memories:Object.freeze(memories),
+    memoryError,
+  });
 }
 
 export function renderThreadObservatory({ identity, threadId, memories = [], memoryError = null } = {}) {
