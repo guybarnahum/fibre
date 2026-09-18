@@ -192,6 +192,8 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
           projectedAt,
           identityDigest,
         );
+        const priorName = currentBundle.presentation.subject.displayName;
+        const introductionTracksIdentity = currentBundle.presentation.introduction.headline === priorName;
         const next = normalizeThreadPresentationBundle({
           presentation:{
             ...currentBundle.presentation,
@@ -207,6 +209,12 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
               languages:[...projected.languages],
               provenanceRef,
             },
+            introduction:introductionTracksIdentity ? {
+              ...currentBundle.presentation.introduction,
+              headline:projected.displayName,
+              sourceReferences:[...projected.sourceReferences],
+              provenanceRef,
+            } : currentBundle.presentation.introduction,
             identityCard:cardResult.card,
           },
           media:{ ...currentBundle.media, generatedAt:projectedAt },
