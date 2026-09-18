@@ -68,6 +68,7 @@
             <button id="view-causal" type="button" data-mode="causal">Causal trail</button>
             <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
             <button id="view-threads" type="button" data-mode="threads">Threads</button>
+            <button id="view-stillborn" type="button" data-mode="stillborn">Stillborn</button>
           </div>
         </div>
         <div id="thread-context" class="activity-thread-context" hidden></div>
@@ -93,7 +94,7 @@
         <div id="threads-view" class="activity-view" hidden>
           <div class="thread-population-metrics" aria-label="Thread population summary">
             <article><span>Threads</span><strong id="thread-stat-total">—</strong></article>
-            <article><span>Activity only</span><strong id="thread-stat-activity-only">—</strong></article>
+            <article><span>Stillborn</span><strong id="thread-stat-activity-only">—</strong></article>
             <article><span>Female</span><strong id="thread-stat-female">—</strong></article>
             <article><span>Male</span><strong id="thread-stat-male">—</strong></article>
             <article><span>Sex unknown</span><strong id="thread-stat-unknown">—</strong></article>
@@ -116,6 +117,26 @@
               <tbody id="thread-population-rows"></tbody>
             </table>
             <div id="thread-population-empty" class="empty" hidden><div class="empty-icon">◎</div><h3>No Threads available</h3><p>No Activity-discovered Thread population could be resolved.</p></div>
+          </div>
+        </div>
+
+        <div id="stillborn-view" class="activity-view" hidden>
+          <div class="stillborn-intro">
+            <div><p class="eyebrow">Unrecoverable</p><h3>Stillborn Threads</h3></div>
+            <p>Activity observed these Thread identifiers, but World has no recoverable admitted person state. This is an operational parking view, not a lifecycle state.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="stillborn-table">
+              <thead><tr>
+                <th>Thread identifier</th>
+                <th>Last activity</th>
+                <th>Health</th>
+                <th>Meaning</th>
+                <th>Action</th>
+              </tr></thead>
+              <tbody id="stillborn-rows"></tbody>
+            </table>
+            <div id="stillborn-empty" class="empty" hidden><div class="empty-icon">○</div><h3>No Stillborn Threads</h3><p>No unrecoverable Thread identifiers are currently parked here.</p></div>
           </div>
         </div>
 
