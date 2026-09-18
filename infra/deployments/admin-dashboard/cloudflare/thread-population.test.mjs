@@ -66,7 +66,8 @@ test("World Registry defines admitted population while Activity remains observat
     },
   });
 
-  assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_b", "thr_candidate"]);
+  assert.deepEqual(population.threads.map((thread) => thread.threadId), ["thr_a", "thr_b"]);
+  assert.deepEqual(population.stillborn.map((thread) => thread.threadId), ["thr_candidate"]);
   assert.equal(population.threads[0].admitted, true, "World Registry membership must define admitted Threads");
   assert.equal(population.threads[0].lastActivityAt, "2026-09-16T03:00:00.000Z", "Activity may annotate lived observation without becoming authority");
   assert.deepEqual(population.threads[0].identity.culture, ["Valparaíso formative context"]);
@@ -74,8 +75,9 @@ test("World Registry defines admitted population while Activity remains observat
   assert.equal(population.threads[0].reconciliation.state, "pending", "World reconciliation state must remain actionable in Threads");
   assert.equal(population.threads[0].findings.find((finding) => finding.code === "NAME").identityAction.id, "change_name");
   assert.equal(population.threads[0].health, "healthy", "healthy identity actions must not degrade health");
-  assert.equal(population.threads[2].admitted, false, "Activity-only identifiers must remain explicitly unadmitted");
-  assert.equal(population.threads[2].identity, null, "Activity-only identifiers must not acquire projected personhood");
+  assert.equal(population.stillborn[0].admitted, false, "Stillborn Activity identifiers must remain explicitly unadmitted");
+  assert.equal(population.stillborn[0].health, "unrecoverable");
+  assert.equal(population.stillborn[0].identity, null, "Stillborn identifiers must not acquire projected personhood");
   assert.deepEqual(population.summary, {
     observed:3,
     total:2,
@@ -87,5 +89,6 @@ test("World Registry defines admitted population while Activity remains observat
     attention:0,
     deadLetter:0,
     migrationsAvailable:0,
+    stillborn:1,
   });
 });
