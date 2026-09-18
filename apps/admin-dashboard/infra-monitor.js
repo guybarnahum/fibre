@@ -1,7 +1,10 @@
+import { decorateActionButton } from "./fa-icons.js";
+
 const button = document.querySelector("#infra-health-button");
 const dialog = document.querySelector("#infra-dialog");
 const body = document.querySelector("#infra-dialog-body");
 const copyButton = document.querySelector("#infra-copy-status");
+if (copyButton) decorateActionButton(copyButton, { icon:"copy", label:"Copy infrastructure status", tooltip:"Copy infrastructure status", iconOnly:true });
 const forceButton = document.querySelector("#infra-force-sample");
 const closeButton = document.querySelector("#infra-dialog-close");
 const banner = document.querySelector("#infra-degradation-banner");
@@ -113,7 +116,7 @@ async function copyStatus() {
   const text = statusText(current);
   try {
     await navigator.clipboard.writeText(text);
-    copyButton.textContent = "Copied";
+    decorateActionButton(copyButton, { icon:"copy", label:"Infrastructure status copied", tooltip:"Infrastructure status copied", iconOnly:true });
   } catch {
     const area = document.createElement("textarea");
     area.value = text;
@@ -122,10 +125,18 @@ async function copyStatus() {
     area.style.opacity = "0";
     document.body.append(area);
     area.select();
-    copyButton.textContent = document.execCommand("copy") ? "Copied" : "Copy failed";
+    const copied = document.execCommand("copy");
     area.remove();
+    decorateActionButton(copyButton, {
+      icon:"copy",
+      label:copied ? "Infrastructure status copied" : "Copy infrastructure status failed",
+      tooltip:copied ? "Infrastructure status copied" : "Copy infrastructure status failed",
+      iconOnly:true,
+    });
   }
-  setTimeout(() => { copyButton.textContent = "Copy status"; }, 1600);
+  setTimeout(() => {
+    decorateActionButton(copyButton, { icon:"copy", label:"Copy infrastructure status", tooltip:"Copy infrastructure status", iconOnly:true });
+  }, 1600);
 }
 
 function render(payload) {
