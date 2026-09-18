@@ -212,7 +212,7 @@ function applyThreadIdentityUpdate(thread, event) {
   assertNonEmpty(`identity event ${event.eventId} operationKey`, event.payload.operationKey);
   const keys = Object.keys(event.payload.changes).sort();
   const previousKeys = Object.keys(event.payload.previous).sort();
-  if (keys.length === 0 || keys.some((key) => !["name","sex","birthDate"].includes(key))) {
+  if (keys.length === 0 || keys.some((key) => !["name","sex","birthDate","languages"].includes(key))) {
     throw new IntegrityError(`identity event ${event.eventId} has unsupported changes`);
   }
   if (canonicalJson(keys) !== canonicalJson(previousKeys)) {
@@ -251,6 +251,21 @@ function applyThreadIdentityUpdate(thread, event) {
       throw new IntegrityError(`identity event ${event.eventId} previous birth date does not match replay`);
     }
     identity.birthDate = birthDate;
+  }
+  if (keys.includes("languages")) {
+    const languages = event.payload.changes.languages;
+    if (!Array.isArray(languages) || languages.length < 1 || languages.length > 3
+      || languages.some((item) => typeof item !== "string" || item.trim() === "" || item !== item.trim())) {
+      throw new IntegrityError(`identity event ${event.eventId} has invalid languages`);
+    }
+    const languageKeys = languages.map((item) => item.toLocaleLowerCase("en-US"));
+    if (new Set(languageKeys).size !== languageKeys.length) {
+      throw new IntegrityError(`identity event ${event.eventId} has duplicate languages`);
+    }
+    if (canonicalJson(event.payload.previous.languages ?? null) !== canonicalJson(thread.identity.languages ?? null)) {
+      throw new IntegrityError(`identity event ${event.eventId} previous languages do not match replay`);
+    }
+    identity.languages = [...languages];
   }
 
   const replayed = {
