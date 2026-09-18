@@ -321,11 +321,16 @@ export function createPresentationReadApi({
         return json({ error: "origin_not_allowed" }, { status: 403 });
       }
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-      if (request.method !== "GET") return json({ error: "method_not_allowed" }, { status: 405, headers: cors });
-      if (url.pathname === "/healthz") return json({ ok: true }, { headers: cors });
+      if (!["GET", "HEAD"].includes(request.method)) return json({ error: "method_not_allowed" }, { status: 405, headers: cors });
+      if (url.pathname === "/healthz") return request.method === "HEAD"
+        ? new Response(null, { status:200, headers:cors })
+        : json({ ok: true }, { headers: cors });
 
       const matched = route(url.pathname);
       if (matched === null) return json({ error: "not_found" }, { status: 404, headers: cors });
+      if (request.method === "HEAD" && matched.kind !== "snapshot") {
+        return json({ error: "method_not_allowed" }, { status: 405, headers: cors });
+      }
       try {
         if (matched.kind === "threads") {
           return json(await discoverPublicThreads({ infra, presentationServer, url }), {
@@ -359,6 +364,27 @@ export function createPresentationReadApi({
         const { channelId } = publicChannel;
 
         if (matched.kind === "snapshot") {
+          if (request.method === "HEAD") {
+            const projectedAllowed = projectedIdentityAllowed(publicChannel.record);
+            if (projectedAllowed === false) return new Response(null, { status:404, headers:cors });
+            let snapshotDigest = publicChannel.record?.latestSnapshotDigest ?? null;
+            if (projectedAllowed === null || typeof snapshotDigest !== "string" || snapshotDigest === "") {
+              const result = await presentationServer.getSnapshot(channelId);
+              if (result === null || result.pointer.threadId !== matched.threadId || !publicIdentityCredentialAllowed(result.snapshot)) {
+                return new Response(null, { status:404, headers:cors });
+              }
+              snapshotDigest = result.pointer.snapshotDigest;
+            }
+            return new Response(null, {
+              status:200,
+              headers:{
+                ...cors,
+                "Cache-Control":"no-cache",
+                "ETag":`"${snapshotDigest}"`,
+                "X-Fibre-Snapshot-Digest":snapshotDigest,
+              },
+            });
+          }
           const result = await presentationServer.getSnapshot(channelId);
           if (result === null || result.pointer.threadId !== matched.threadId || !publicIdentityCredentialAllowed(result.snapshot)) {
             return json({ error: "not_found" }, { status: 404, headers: cors });
@@ -368,7 +394,7 @@ export function createPresentationReadApi({
             headers: {
               ...cors,
               "Cache-Control": "no-cache",
-              "ETag": `\"${result.pointer.snapshotDigest}:present-${currentPresent?.sequence ?? 0}\"`,
+              "ETag": `"${result.pointer.snapshotDigest}:present-${currentPresent?.sequence ?? 0}"`,
             },
           });
         }
