@@ -139,10 +139,14 @@ function actionCell(thread) {
   controls.className = "thread-action-stack";
   for (const action of identityActions(thread)) {
     const label = action.label ?? human(action.id);
+    const finding = (thread.findings ?? []).find((entry) => entry?.identityAction?.id === action.id) ?? null;
     const isAdmission = action.id === "admit_name" || action.id === "admit_birth_date";
+    const isLanguages = ["set_languages","change_languages"].includes(action.id);
     const description = isAdmission
       ? "Admit preserved identity evidence into authoritative World identity. Presentation is evidence, not authority."
-      : "Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.";
+      : isLanguages
+        ? `${finding?.state === "operator_decision_required" ? "Required operator decision. " : ""}${finding?.reason ?? "Set this Thread's personal language path from household, civic life, or sustained schooling."}`
+        : "Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.";
     controls.append(button(label, {
       kind:"identity",
       icon:iconForIdentityAction(action.id),
