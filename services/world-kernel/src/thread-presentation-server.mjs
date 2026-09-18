@@ -114,5 +114,10 @@ export function createThreadPresentationServer({ infra }) {
         snapshot: JSON.parse(typeof stored.bytes === "string" ? stored.bytes : new TextDecoder().decode(stored.bytes)),
       };
     },
+
+    async getCatalog(channelId) {
+      assertId("channelId", channelId);
+      return infra.catalog.get(channelId);
+    },
   });
 }
