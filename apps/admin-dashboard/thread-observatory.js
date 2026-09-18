@@ -1,3 +1,5 @@
+import { decorateActionButton } from "./fa-icons.js";
+
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -142,19 +144,26 @@ function disclosure(label, value, { open = false, prose = false } = {}) {
   const details = el("details", "thread-data-section"); details.open = open;
   const summary = el("summary", "thread-data-summary");
   summary.append(el("span", null, label));
-  const copy = el("button", "thread-copy-button", "Copy");
+  const copy = el("button", "thread-copy-button");
   copy.type = "button";
-  copy.title = `Copy ${label}`;
+  decorateActionButton(copy, {
+    icon:"copy",
+    label:`Copy ${label}`,
+    tooltip:`Copy ${label}`,
+    iconOnly:true,
+  });
   copy.addEventListener("click", async (event) => {
     event.preventDefault();
     event.stopPropagation();
     try {
       await copyToClipboard(value);
-      copy.textContent = "Copied";
+      decorateActionButton(copy, { icon:"copy", label:`Copied ${label}`, tooltip:`Copied ${label}`, iconOnly:true });
     } catch {
-      copy.textContent = "Copy failed";
+      decorateActionButton(copy, { icon:"copy", label:`Copy ${label} failed`, tooltip:`Copy ${label} failed`, iconOnly:true });
     }
-    window.setTimeout(() => { copy.textContent = "Copy"; }, 1200);
+    window.setTimeout(() => {
+      decorateActionButton(copy, { icon:"copy", label:`Copy ${label}`, tooltip:`Copy ${label}`, iconOnly:true });
+    }, 1200);
   });
   summary.append(copy);
   details.append(summary);
