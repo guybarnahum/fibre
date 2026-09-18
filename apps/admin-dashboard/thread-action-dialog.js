@@ -104,10 +104,14 @@ function renderFields(host, fields) {
     const label = element("label", "thread-action-field");
     label.append(element("span", null, field.label ?? human(field.name)));
     const input = document.createElement("input");
-    input.type = field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text";
+    input.type = field.kind === "number" ? "number" : "text";
     input.name = field.name;
     input.required = field.required === true;
-    input.autocomplete = "off";
+    input.autocomplete = field.kind === "date" ? "bday" : "off";
+    if (field.kind === "date") {
+      input.placeholder = "MMDDYYYY, MM/DD/YYYY, or YYYY-MM-DD";
+      input.inputMode = "numeric";
+    }
     input.value = field.default ?? "";
     label.append(input);
     host.append(label);
