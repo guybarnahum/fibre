@@ -37,6 +37,7 @@ test("World Registry defines admitted population while Activity remains observat
       version:9,
       stateHash:"sha256:a",
       updatedAt:"2026-09-17T13:00:00Z",
+      reconciliation:{ state:"pending", lastError:null, updatedAt:"2026-09-18T17:20:54.081Z" },
     },
     {
       threadId:"thr_b",
@@ -70,6 +71,9 @@ test("World Registry defines admitted population while Activity remains observat
   assert.equal(population.threads[0].lastActivityAt, "2026-09-16T03:00:00.000Z", "Activity may annotate lived observation without becoming authority");
   assert.deepEqual(population.threads[0].identity.culture, ["Valparaíso formative context"]);
   assert.deepEqual(population.threads[0].identity.raisedAs, { culturalContext:"Chilean coastal household" });
+  assert.equal(population.threads[0].reconciliation.state, "pending", "World reconciliation state must remain actionable in Threads");
+  assert.equal(population.threads[0].findings.find((finding) => finding.code === "NAME").identityAction.id, "change_name");
+  assert.equal(population.threads[0].health, "healthy", "healthy identity actions must not degrade health");
   assert.equal(population.threads[2].admitted, false, "Activity-only identifiers must remain explicitly unadmitted");
   assert.equal(population.threads[2].identity, null, "Activity-only identifiers must not acquire projected personhood");
   assert.deepEqual(population.summary, {
