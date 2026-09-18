@@ -213,6 +213,32 @@ function digest(value) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
+function fixtureWorldWithFamilyContext(worldSpec, material) {
+  const familyOriginContext = typeof material?.familyOriginContext === "string" ? material.familyOriginContext.trim() : "";
+  const appearanceContext = typeof material?.appearanceContext === "string" ? material.appearanceContext.trim() : "";
+  if (familyOriginContext === "" || appearanceContext === "") return Object.freeze({ worldSpec, material });
+
+  const suffix = `family_${digest({
+    worldSpecId:worldSpec.worldSpecId,
+    familyOriginContext,
+    appearanceContext,
+  }).slice(0, 12)}`;
+  const nextWorld = Object.freeze({
+    ...worldSpec,
+    worldSpecId:`${worldSpec.worldSpecId}_${suffix}`,
+    householdShape:`${worldSpec.householdShape} Family origin context: ${familyOriginContext}`,
+    culturalContext:[
+      worldSpec.culturalContext,
+      `Family origin context: ${familyOriginContext}`,
+      "Family origin may shape ordinary experiences of belonging, language, peer perception, family stories, travel, community ties, or identity questions when context makes those effects plausible. Do not force every episode to concern ancestry or visible difference, and do not infer personality, ability, values, trauma, or social outcome from ancestry or appearance.",
+    ].join("\n"),
+  });
+  return Object.freeze({
+    worldSpec:nextWorld,
+    material:Object.freeze({ ...material, familyOriginContext, appearanceContext }),
+  });
+}
+
 function assertTimeZone(value) {
   try { new Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date(0)); }
   catch { throw new TypeError(`authored Genesis world returned invalid time zone ${String(value)}`); }
@@ -395,6 +421,7 @@ export async function resolveModernWorldSelection({
     const material = materialFixture.slots.find((item) => item.slot === worldSlotOrdinal);
     if (!genomeSlot) throw new Error(`modern Genesis genome slot ${baseSlotOrdinal} is unavailable`);
     if (!worldSlot || !material) throw new Error(`modern Genesis World slot ${worldSlotOrdinal} is unavailable`);
+    const family = fixtureWorldWithFamilyContext(fixture(worldSlot.worldSpecPath), material);
     return Object.freeze({
       mode: "fixture",
       selector: selectorFromBirthCity(material.birthCity),
@@ -402,8 +429,8 @@ export async function resolveModernWorldSelection({
       slotOrdinal: baseSlotOrdinal,
       worldSlotOrdinal,
       genomePath: genomeSlot.genomePath,
-      worldSpec: fixture(worldSlot.worldSpecPath),
-      material,
+      worldSpec: family.worldSpec,
+      material:family.material,
       timeZone: worldSlot.timeZone,
       participants: worldSlot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
       placeAffordances: worldSlot.placeAffordances,
@@ -414,14 +441,15 @@ export async function resolveModernWorldSelection({
   if (!forceNewWorld && heritage === null) {
     const existing = findFixtureWorld({ selector, cohort, materialFixture });
     if (existing) {
+      const family = fixtureWorldWithFamilyContext(fixture(existing.slot.worldSpecPath), existing.material);
       return Object.freeze({
         mode: "fixture",
         selector,
         heritage: null,
         slotOrdinal: existing.slot.slot,
         genomePath: existing.slot.genomePath,
-        worldSpec: fixture(existing.slot.worldSpecPath),
-        material: existing.material,
+        worldSpec: family.worldSpec,
+        material: family.material,
         timeZone: existing.slot.timeZone,
         participants: existing.slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
         placeAffordances: existing.slot.placeAffordances,
