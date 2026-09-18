@@ -118,10 +118,9 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
   if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
 
   const activityPromise = activityLog.prepare(`
-    SELECT thread_id, MAX(occurred_at) AS last_activity_at
-    FROM fibre_activity_log
-    WHERE environment = ? AND thread_id IS NOT NULL
-    GROUP BY thread_id
+    SELECT thread_id, last_activity_at
+    FROM fibre_activity_thread_heads
+    WHERE environment = ?
     ORDER BY last_activity_at DESC, thread_id ASC
     LIMIT ?
   `).bind(environment, MAX_THREADS + 1).all();
