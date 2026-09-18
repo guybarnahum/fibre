@@ -61,6 +61,7 @@ export function createThreadGenesisRepairApi({
   reconciliationWorkset = null,
   onRepair = null,
   onRecover = null,
+  onIdentityUpdate = null,
 } = {}) {
   if (!repairService
     || typeof repairService.diagnose !== "function"
@@ -83,6 +84,9 @@ export function createThreadGenesisRepairApi({
   }
   if (onRecover !== null && typeof onRecover !== "function") {
     throw new TypeError("Thread repair onRecover must be a function or null");
+  }
+  if (onIdentityUpdate !== null && typeof onIdentityUpdate !== "function") {
+    throw new TypeError("Thread repair onIdentityUpdate must be a function or null");
   }
 
   return Object.freeze({
@@ -120,9 +124,13 @@ export function createThreadGenesisRepairApi({
         }
         if (command.action === "identity") {
           const result = await identityService.update(threadId, command);
+          const identityProjection = result.exists
+            ? await onIdentityUpdate?.({ threadId, result }) ?? null
+            : null;
           return json(result.exists ? 200 : 404, {
             contract:CONTRACT,
             identityUpdate:result,
+            identityProjection,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
         }
