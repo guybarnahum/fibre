@@ -70,23 +70,6 @@ async function reconciliationState(runtime) {
   });
 }
 
-function threadIdentity(runtime, threadId) {
-  const thread = runtime.worldStore.getThread(threadId, { required:false });
-  if (thread === null) return null;
-  const registration = runtime.civilRegistryStore.getCivilRegistrationByThreadId(threadId, { required:false });
-  const embodiments = runtime.embodimentStore.listCurrent(threadId);
-  const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
-  return Object.freeze({
-    threadId,
-    fibreIdentityNumber: registration?.fibreIdentityNumber ?? null,
-    lifecycleStatus: typeof thread.status === "string" ? thread.status : null,
-    thread: structuredClone(thread),
-    civilRegistration: registration === null ? null : structuredClone(registration),
-    embodiments: structuredClone(embodiments),
-    symbolicGenomes: structuredClone(symbolicGenomes),
-  });
-}
-
 export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -145,15 +128,15 @@ export class FibreWorldDurableObject extends DurableObject {
         throw error;
       }
     }
-    const runtime = this.runtimeForRequest();
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     if (identityMatch !== null) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
-      const identity = threadIdentity(runtime, decodeURIComponent(identityMatch[1]));
+      const identity = this.directoryForRequest().get(decodeURIComponent(identityMatch[1]));
       if (identity === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
-      return Response.json({ contract:"fibre-world-thread-identity-v0.2", identity });
+      return Response.json({ contract:"fibre-world-thread-identity-v0.3", identity });
     }
+    const runtime = this.runtimeForRequest();
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
       if (url.search !== "") return Response.json({ error: { code: "QUERY_NOT_SUPPORTED" } }, { status: 400 });
       if (request.method !== "POST") return Response.json({ error: { code: "METHOD_NOT_ALLOWED" } }, { status: 405 });
