@@ -2,7 +2,6 @@ import {
   FIBRE_IDENTITY_CARD_CURRENT_VERSION,
   normalizeThreadPresentationBundle,
 } from "#services/thread-presentation/src/index.mjs";
-import { canonicalJson, sha256 } from "#services/world-kernel/src/persistence-common.mjs";
 import { threadPresentationChannelId } from "../public-asset-resolver.mjs";
 
 const ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/identity-projection$/u;
@@ -83,7 +82,7 @@ function sameSubject(subject, projected) {
     && JSON.stringify(subject?.languages ?? []) === JSON.stringify(projected.languages);
 }
 
-function legacyCardReissue(card, civilIdentity, projected, projectedAt, digest) {
+function legacyCardReissue(card, civilIdentity, projected, projectedAt, token) {
   if (card === null || card.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION) return { card, provenance:null };
   const dateField = card.dateField?.kind === "birth_date"
     ? (projected.birthDate === null
@@ -96,14 +95,14 @@ function legacyCardReissue(card, civilIdentity, projected, projectedAt, digest) 
   }
 
   const revision = card.revision + 1;
-  const provenanceRef = `prov_world_identity_card_${digest.slice(0, 32)}`;
-  const credentialId = `fic_world_identity_${digest.slice(0, 32)}`;
+  const provenanceRef = `prov_world_identity_card_${token}`;
+  const credentialId = `fic_world_identity_${token}`;
   const sourceReferences = [...new Set([...card.sourceReferences, ...projected.sourceReferences])];
   return {
     card:{
       ...card,
       credentialId,
-      cardSerial:`FIC-${digest.slice(0, 16).toUpperCase()}`,
+      cardSerial:`FIC-${token.toUpperCase()}`,
       revision,
       supersedesCredentialId:card.credentialId,
       displayName:projected.displayName,
@@ -180,17 +179,16 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
           });
         }
 
-        const identityDigest = sha256(canonicalJson({
-          priorSnapshotDigest:current.pointer.snapshotDigest,
-          projection:projected,
-        }));
-        const provenanceRef = `prov_world_identity_${identityDigest.slice(0, 32)}`;
+        const priorDigest = nonEmpty("current snapshot digest", current.pointer.snapshotDigest);
+        const token = `${projected.worldVersion}_${priorDigest.slice(-24)}`;
+        const provenanceRef = `prov_world_identity_${token}`;
+        const introductionProvenanceRef = `prov_world_identity_intro_${token}`;
         const cardResult = legacyCardReissue(
           currentBundle.presentation.identityCard,
           civil,
           projected,
           projectedAt,
-          identityDigest,
+          token,
         );
         const priorName = currentBundle.presentation.subject.displayName;
         const introductionTracksIdentity = currentBundle.presentation.introduction.headline === priorName;
@@ -213,7 +211,7 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
               ...currentBundle.presentation.introduction,
               headline:projected.displayName,
               sourceReferences:[...projected.sourceReferences],
-              provenanceRef,
+              provenanceRef:introductionProvenanceRef,
             } : currentBundle.presentation.introduction,
             identityCard:cardResult.card,
           },
@@ -229,6 +227,12 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
                 sourceReferences:[...projected.sourceReferences],
                 note:"Current public identity projected from authoritative World Thread state.",
               },
+              ...(introductionTracksIdentity ? [{
+                provenanceId:introductionProvenanceRef,
+                kind:"fibre_projection",
+                sourceReferences:[...projected.sourceReferences],
+                note:"Identity-derived public headline follows the current authoritative World name.",
+              }] : []),
               ...(cardResult.provenance === null ? [] : [cardResult.provenance]),
             ],
           },
@@ -236,8 +240,8 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
         const expectedSequence = current.pointer.sequence ?? current.snapshot.cursor;
         const result = await presentationServer.publishSnapshot({
           channelId,
-          objectRef:`snapshot_world_identity_${identityDigest}`,
-          snapshotVersion:`world-identity-${identityDigest.slice(0, 24)}`,
+          objectRef:`snapshot_world_identity_${token}`,
+          snapshotVersion:`world-identity-${token}`,
           bundle:next,
           expectedSequence,
           catalog:{
