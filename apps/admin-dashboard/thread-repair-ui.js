@@ -199,6 +199,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
             operationKey:`admin_identity_${Date.now().toString(36)}`,
             ...input,
           });
+          window.dispatchEvent(new CustomEvent("fibre:thread-identity-updated", {
+            detail:{ threadId, actionId:action.id },
+          }));
           renderHealth(
             host,
             threadId,
