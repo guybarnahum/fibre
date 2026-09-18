@@ -22,6 +22,10 @@ import {
   ensureCloudflareWorkerDomain,
 } from "./cloudflare-worker-domains.mjs";
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
+import {
+  d1BindingsFromConfig,
+  ensureCloudflareD1Migrations,
+} from "./cloudflare-d1-migrations.mjs";
 
 export const CLOUDFLARE_APP_DEPLOYMENT_VERSION = "fibre-cloudflare-app-deployment-v0.3";
 export const CLOUDFLARE_APP_CONFIGS = Object.freeze({
@@ -184,6 +188,15 @@ export function createWranglerAppDeploymentClient({
     return domains;
   }
   return Object.freeze({
+    async migrateD1({ repoRoot, resolvedConfig, dryRun = false }) {
+      return ensureCloudflareD1Migrations({
+        repoRoot,
+        databases:d1BindingsFromConfig(resolvedConfig),
+        runner,
+        dryRun,
+        print:console.log,
+      });
+    },
     async deploy({ configPath, dryRun = false, resolvedConfig = null }) {
       const args = ["deploy"];
       if (dryRun) args.push("--dry-run");
@@ -238,6 +251,11 @@ export async function deployCloudflareApps({
   for (const appId of appIds) {
     const configPath = resolve(repoRoot, written[appId]);
     const resolved = parseJsonc(await readFile(configPath, "utf8"), configPath);
+    if (d1BindingsFromConfig(resolved).length > 0) {
+      if (typeof client.migrateD1 !== "function") throw new TypeError("Cloudflare app deployment client must migrate D1 before deploy");
+      await client.migrateD1({ repoRoot, resolvedConfig:resolved, dryRun });
+    }
+    console.log(`${dryRun ? "WORKER DRY" : "WORKER DEPLOY"} ${appId} -> ${resolved.name}`);
     await client.deploy({ appId, configPath, dryRun, resolvedConfig: resolved });
     const route = (resolved.routes ?? []).find((item) => item.custom_domain === true);
     deployments.push(Object.freeze({ appId, workerName: resolved.name, domain: route?.pattern ?? null }));
