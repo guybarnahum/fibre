@@ -41,6 +41,15 @@ export function validateThreadSnapshot(thread) {
   assertNonEmpty("thread.identity.name", thread.identity.name);
   assertNonEmpty("thread.identity.selfDescription", thread.identity.selfDescription);
   if (thread.identity.sex !== undefined) normalizeGenesisSex(thread.identity.sex);
+  if (thread.identity.birthDate !== undefined) {
+    if (typeof thread.identity.birthDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(thread.identity.birthDate)) {
+      throw new TypeError("thread.identity.birthDate must use YYYY-MM-DD");
+    }
+    const birthInstant = new Date(`${thread.identity.birthDate}T00:00:00.000Z`);
+    if (!Number.isFinite(birthInstant.getTime()) || birthInstant.toISOString().slice(0, 10) !== thread.identity.birthDate) {
+      throw new TypeError("thread.identity.birthDate is invalid");
+    }
+  }
   assertPlainObject("thread.genome", thread.genome);
   assertPlainObject("thread.genome.textualTraits", thread.genome.textualTraits);
   assertPlainObject("thread.genome.runtimeBaselines", thread.genome.runtimeBaselines);
@@ -203,7 +212,7 @@ function applyThreadIdentityUpdate(thread, event) {
   assertNonEmpty(`identity event ${event.eventId} operationKey`, event.payload.operationKey);
   const keys = Object.keys(event.payload.changes).sort();
   const previousKeys = Object.keys(event.payload.previous).sort();
-  if (keys.length === 0 || keys.some((key) => !["name","sex"].includes(key))) {
+  if (keys.length === 0 || keys.some((key) => !["name","sex","birthDate"].includes(key))) {
     throw new IntegrityError(`identity event ${event.eventId} has unsupported changes`);
   }
   if (canonicalJson(keys) !== canonicalJson(previousKeys)) {
@@ -228,6 +237,20 @@ function applyThreadIdentityUpdate(thread, event) {
       throw new IntegrityError(`identity event ${event.eventId} attempts to replace existing sex`);
     }
     identity.sex = normalizeGenesisSex(event.payload.changes.sex);
+  }
+  if (keys.includes("birthDate")) {
+    const birthDate = event.payload.changes.birthDate;
+    if (typeof birthDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(birthDate)) {
+      throw new IntegrityError(`identity event ${event.eventId} has invalid birth date`);
+    }
+    const birthInstant = new Date(`${birthDate}T00:00:00.000Z`);
+    if (!Number.isFinite(birthInstant.getTime()) || birthInstant.toISOString().slice(0, 10) !== birthDate) {
+      throw new IntegrityError(`identity event ${event.eventId} has invalid birth date`);
+    }
+    if ((event.payload.previous.birthDate ?? null) !== (thread.identity.birthDate ?? null)) {
+      throw new IntegrityError(`identity event ${event.eventId} previous birth date does not match replay`);
+    }
+    identity.birthDate = birthDate;
   }
 
   const replayed = {
