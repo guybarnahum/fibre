@@ -252,7 +252,6 @@ export function createThreadGenesisRepairService({
     throw new TypeError("presentationReader must expose getSnapshot()");
   }
   requireMethod("presentationDelivery", presentationDelivery, "rebuildThreadPresentation");
-  requireMethod("presentationDelivery", presentationDelivery, "reconcileThreadPresentationIdentity");
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
   requireMethod("genesisSexEvidence", genesisSexEvidence, "resolve");
   requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
@@ -423,7 +422,12 @@ export function createThreadGenesisRepairService({
 
     let afterPresentation = await diagnose(threadId);
     if (!blocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_identity_projection")) {
-      const result = await presentationDelivery.reconcileThreadPresentationIdentity(threadId);
+      const identityProjection = requireMethod(
+        "presentationDelivery",
+        presentationDelivery,
+        "reconcileThreadPresentationIdentity",
+      );
+      const result = await identityProjection.reconcileThreadPresentationIdentity(threadId);
       actions.push(Object.freeze({ action:"reconcile_identity_projection", result }));
       await record(activity, {
         threadId,
