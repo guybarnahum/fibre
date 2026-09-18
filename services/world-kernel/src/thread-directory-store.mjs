@@ -66,6 +66,25 @@ export class ThreadDirectoryStore {
 
   close() { this.#database.close(); }
 
+  getEntry(threadId) {
+    if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("Thread directory threadId is required");
+    if (!this.#tables.has("threads")) return null;
+    const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
+    const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
+    const row = this.#database.prepare(`
+      SELECT
+        t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
+        ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
+        ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json
+      FROM threads t
+      ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
+      ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
+      WHERE t.thread_id=?
+      LIMIT 1
+    `).get(threadId.trim());
+    return row === undefined ? null : registryEntry(row);
+  }
+
   listEntries({ limit = MAX_THREADS, fin = null } = {}) {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_THREADS) {
       throw new TypeError(`Thread directory limit must be between 1 and ${MAX_THREADS}`);
