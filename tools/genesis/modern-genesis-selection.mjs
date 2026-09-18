@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v3";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v4";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
@@ -26,6 +26,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     "schoolingOrCommunityContext",
     "culturalContext",
     "heritageContext",
+    "familyOriginContext",
     "appearanceContext",
     "availableInstitutions",
     "intellectualEnvironment",
@@ -53,7 +54,16 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     schoolingOrCommunityContext: { type: "string", minLength: 1 },
     culturalContext: { type: "string", minLength: 1 },
     heritageContext: { type: "string", minLength: 1 },
-    appearanceContext: { type: "string", minLength: 1 },
+    familyOriginContext: {
+      type: "string",
+      minLength: 1,
+      description:"A concise causal account of this household's family origins and migration/mixed-ancestry history insofar as it matters to languages, family/community ties, appearance, and lived experience. This is subject-family context, not a demographic description of the city.",
+    },
+    appearanceContext: {
+      type: "string",
+      minLength: 1,
+      description:"A broad physical-family appearance prior causally compatible with familyOriginContext. Do not invent ancestry that familyOriginContext does not support.",
+    },
     availableInstitutions: { type: "array", minItems: 3, uniqueItems: true, items: { type: "string", minLength: 1 } },
     intellectualEnvironment: { type: "string", minLength: 1 },
   },
@@ -239,12 +249,17 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
   const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${sourceDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
   const heritageLabel = heritage?.display ?? null;
-  const householdShape = heritageLabel === null
+  const familyOriginContext = nonEmpty("authored world familyOriginContext", authored.familyOriginContext);
+  const householdShapeBase = heritageLabel === null
     ? "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there."
     : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`;
-  const culturalContext = heritageLabel === null
-    ? authored.culturalContext
-    : `${authored.culturalContext}\nHousehold heritage: ${heritageLabel}. ${authored.heritageContext}`;
+  const householdShape = `${householdShapeBase} Family origin context: ${familyOriginContext}`;
+  const culturalContext = [
+    authored.culturalContext,
+    ...(heritageLabel === null ? [] : [`Household heritage: ${heritageLabel}. ${authored.heritageContext}`]),
+    `Family origin context: ${familyOriginContext}`,
+    "Family origin may shape ordinary experiences of belonging, language, peer perception, family stories, travel, community ties, or identity questions when context makes those effects plausible. Do not force every episode to concern ancestry or visible difference, and do not infer personality, ability, values, trauma, or social outcome from ancestry or appearance.",
+  ].join("\n");
   const worldSpec = Object.freeze({
     worldSpecId,
     timeFrame: Object.freeze({ startAt: bornAt, endAt: chronologyEndsAt }),
@@ -279,6 +294,7 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     birthCity: selector.birthCity,
     place: Object.freeze({ country: selector.country, city: selector.city }),
     heritage: heritageLabel,
+    familyOriginContext,
     appearanceContext: appearancePrior({ selector, heritage, value: authored.appearanceContext }),
     nameOrder: authored.nameOrder,
     femaleGivenNames: Object.freeze([...authored.femaleGivenNames]),
@@ -287,9 +303,18 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
   });
   const householdSuffix = heritageLabel === null ? "" : ` in a household with ${heritageLabel} heritage`;
   const participants = Object.freeze([
-    Object.freeze({ participantId:"caregiver_1", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([`Lives with the subject in ${selector.city}${householdSuffix}.`]) }),
-    Object.freeze({ participantId:"caregiver_2", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([`Lives with the subject in ${selector.city}${householdSuffix}.`]) }),
-    Object.freeze({ participantId:"sibling_1", factualRoles:Object.freeze(["sibling"]), relationshipFacts:Object.freeze([`Lives with the subject${householdSuffix} and is two years older than the subject.`]) }),
+    Object.freeze({ participantId:"caregiver_1", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([
+      `Lives with the subject in ${selector.city}${householdSuffix}.`,
+      `Household family-origin context: ${familyOriginContext}`,
+    ]) }),
+    Object.freeze({ participantId:"caregiver_2", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([
+      `Lives with the subject in ${selector.city}${householdSuffix}.`,
+      `Household family-origin context: ${familyOriginContext}`,
+    ]) }),
+    Object.freeze({ participantId:"sibling_1", factualRoles:Object.freeze(["sibling"]), relationshipFacts:Object.freeze([
+      `Lives with the subject${householdSuffix} and is two years older than the subject.`,
+      `Shares the household family-origin context: ${familyOriginContext}`,
+    ]) }),
   ]);
   const placeAffordances = Object.freeze([
     Object.freeze({ placeRef:place("home"), placeKind:"home", ordinaryCounterpartRoles:Object.freeze(["caregiver", "sibling", "relative", "peer", "neighbor"]) }),
@@ -329,9 +354,12 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Choose a coherent household language path. A minority or ancestry language belongs in languages only when this household plausibly uses it; unrelated minority languages must not be combined merely because their communities exist in the same country.",
       "Use at most three personal languages. A typical path is the household/civic language, optionally one heritage/home language, and optionally one language learned through school or sustained public exposure. Do not imply equal fluency.",
       "Keep language domains realistic: heritage/ancestry languages are ordinarily home/family/community languages unless the local civic context independently uses them; school languages may become usable without becoming home languages. Put broader regional multilingualism in culturalContext, not in the subject's languages.",
-      "When heritage is supplied, make naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
-      "Do not infer the future subject's religion, religious observance, politics, ethnicity, personality, class identity, profession, competence, trauma or values. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
-      "Return appearanceContext as a broad family-appearance prior only. It must not repeat the heritage label, country, city, religion, nationality or community name; describe only a broad plausible physical range. If heritage is culturally broad, mixed, diasporic, or does not imply one ancestry, preserve broad physical variation rather than inventing a single stereotyped phenotype. Never connect appearance to personality or worth.",
+      "Author familyOriginContext before appearanceContext. familyOriginContext is a concise causal household history: local family roots, mixed ancestry, migration, diaspora, adoption, or other family-origin facts only when plausibly warranted.",
+      "When no heritage is supplied, choose a plausible family-origin path for this place weighted toward ordinary local household histories rather than uniform global diversity. Less common diaspora or mixed-origin households are valid, but if chosen the familyOriginContext must explicitly explain the migration or family connection that makes them part of this place.",
+      "When heritage is supplied, make familyOriginContext, naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
+      "familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
+      "Do not infer the future subject's religion, religious observance, politics, personality, class identity, profession, competence, trauma or values from ancestry, appearance, place, or heritage. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
+      "Return appearanceContext as a broad family-appearance prior causally supported by familyOriginContext. If the appearance range would be uncommon in the selected place, familyOriginContext must contain the corresponding migration, mixed-ancestry, adoption, or diaspora history rather than leaving the appearance unexplained. Do not repeat the heritage label, country, city, religion, nationality or community name in appearanceContext; describe only a broad plausible physical range. Preserve substantial within-family variation and never connect appearance to personality or worth.",
       "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
       "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
     ].join("\n"),
