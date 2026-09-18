@@ -292,7 +292,7 @@ async function main(argv) {
       phase = "thread";
       await promptAction(terminal, "Open one Thread once.");
       phase = "activity";
-      await promptAction(terminal, "Open the Admin Activity page once.");
+      await promptAction(terminal, "From the Thread page, click Activity ↗ once.");
     }
   } catch (error) {
     failure = error;
