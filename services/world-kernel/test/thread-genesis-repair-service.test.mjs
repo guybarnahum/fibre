@@ -28,6 +28,7 @@ function fixture() {
       originOrientation:"original",
       selfDescription:"I persist.",
       birthDate:"2004-08-20",
+      languages:["English"],
       canonicalVisualIdentity:{ specification:{ subject:{ description:"stable face" } } },
     },
   };
@@ -41,7 +42,7 @@ function fixture() {
     asset:{ referenceObjectRef:objectRef },
   };
   const publicIdentity = {
-    subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
+    subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
     civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
   };
   const service = createThreadGenesisRepairService({
@@ -101,6 +102,7 @@ test("R1 diagnoses missing Presentation and unpublished canonical visual without
   assert.equal(name.identityAction.id, "change_name");
   assert.equal(name.identityAction.input.fields[0].default, "Repair Thread");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "SEX").state, "healthy");
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "LANGUAGES").identityAction.id, "change_languages");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "PRESENTATION_MISSING").action, "rebuild_presentation");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "CANONICAL_VISUAL_NOT_PUBLISHED").action, "reconcile_visual_publication");
 });
@@ -122,7 +124,7 @@ test("R4 keeps authoritative identity complete while public Presentation stays a
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -142,7 +144,7 @@ test("R4 distinguishes public projection omission from authoritative Genesis abs
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ birthDate:"2004-08-20" },
+      subject:{ birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -160,7 +162,7 @@ test("R4 repairs stale public name from World without rebuilding Genesis", async
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Old Name", birthDate:"2004-08-20" },
+      subject:{ displayName:"Old Name", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -179,7 +181,7 @@ test("R4 surfaces authority conflicts instead of silently repairing them", async
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Different Thread", birthDate:"2004-08-20" },
+      subject:{ displayName:"Different Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ZZZZ-99-ZZZZ" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -220,12 +222,37 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
   assert.equal(sex.identityAction.id, "set_sex");
 });
 
+test("legacy demographic language list requires explicit operator review", async () => {
+  const { service, state, threadId, thread } = fixture();
+  thread.identity.languages = ["Hebrew", "Arabic", "English", "Russian", "Amharic"];
+  state.presentation = {
+    presentation:{
+      subject:{
+        displayName:"Repair Thread",
+        birthDate:"2004-08-20",
+        languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"],
+      },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const finding = diagnosis.findings.find((entry) => entry.code === "LANGUAGES_NEED_REVIEW");
+  assert.equal(diagnosis.health, "operator_decision_required");
+  assert.deepEqual(finding.authoritative, ["Hebrew", "Arabic", "English", "Russian", "Amharic"]);
+  assert.equal(finding.identityAction.id, "change_languages");
+  assert.equal(finding.identityAction.input.fields[0].default, "Hebrew, Arabic, English, Russian, Amharic");
+});
+
 test("missing birth date requires explicit operator admission and preserves Presentation evidence", async () => {
   const { service, state, threadId, thread } = fixture();
   delete thread.identity.birthDate;
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -250,7 +277,7 @@ test("preserved public name requires explicit World admission instead of being l
   thread.identity.name = "Fibre Thread";
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Maya Cohen", birthDate:"2004-08-20" },
+      subject:{ displayName:"Maya Cohen", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -275,7 +302,7 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   delete thread.identity.sex;
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
