@@ -39,6 +39,10 @@ export function createThreadDirectoryService({ directoryStore }) {
   }
 
   return Object.freeze({
+    get(threadId) {
+      if (typeof directoryStore.getEntry !== "function") throw new TypeError("Thread directory store must expose getEntry()");
+      return directoryStore.getEntry(threadId);
+    },
     search({ query = null, fin = null, limit = 50 } = {}) {
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200) {
         throw new TypeError("Thread directory search limit must be between 1 and 200");
