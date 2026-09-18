@@ -250,6 +250,21 @@ function renderRepairAction(host, threadId, diagnosis, reconciliation) {
   host.append(bar);
 }
 
+function renderPendingReconciliationAction(host, threadId, diagnosis, reconciliation) {
+  if (reconciliation?.state !== "pending" || diagnosis.health !== "healthy") return;
+  const bar = el("div", "thread-repair-actions");
+  const button = actionButton("Resolve reconciliation", async () => {
+    const payload = await post(threadId, { repairKey:`admin_reconcile_${Date.now().toString(36)}` });
+    renderHealth(host, threadId, {
+      diagnosis:payload.result.after,
+      reconciliation:payload.reconciliation ?? null,
+    }, "Reconciliation state resolved from current authoritative health.");
+  });
+  button.className = "primary thread-repair-button";
+  bar.append(button);
+  host.append(bar);
+}
+
 function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
   if (reconciliation?.state !== "dead_letter" || unresolved(diagnosis).length !== 0) return;
   const bar = el("div", "thread-repair-actions");
@@ -294,6 +309,7 @@ function renderHealth(host, threadId, health, message = null) {
   renderIdentityActions(host, threadId, diagnosis, reconciliation);
   renderMigrationActions(host, threadId, diagnosis, reconciliation);
   renderRepairAction(host, threadId, diagnosis, reconciliation);
+  renderPendingReconciliationAction(host, threadId, diagnosis, reconciliation);
   renderRecoveryAction(host, threadId, diagnosis, reconciliation);
 
   if (reconciliation?.state === "dead_letter" && unresolved(diagnosis).length > 0) {
