@@ -134,6 +134,7 @@ test("private Genesis write API rejects unauthorized writes and conflicting retr
   assert.equal(created.status, 201);
 
   const conflicting = structuredClone(input);
+  conflicting.publicationDigest = `sha256:${"b".repeat(64)}`;
   conflicting.bundle.presentation.introduction.summary = "Different projection content.";
   const conflict = await api.fetch(request(conflicting));
   assert.equal(conflict.status, 409);
