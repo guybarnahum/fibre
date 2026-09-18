@@ -1,4 +1,5 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
 
 const dialogBody = document.querySelector("#dialog-body");
 
@@ -140,27 +141,28 @@ async function post(threadId, body) {
   return payload;
 }
 
-function actionButton(label, run) {
-  const button = el("button", "secondary thread-repair-button", label);
+function actionButton(label, run, { icon = null, tooltip = label } = {}) {
+  const button = el("button", "secondary thread-repair-button");
   button.type = "button";
+  decorateActionButton(button, { icon, label, tooltip });
   button.addEventListener("click", async () => {
-    const original = label;
     try {
       button.disabled = true;
-      button.textContent = `${label}…`;
+      decorateActionButton(button, { icon, label:`${label}…`, tooltip });
       await run();
     } catch (error) {
       button.disabled = false;
-      button.textContent = original;
+      decorateActionButton(button, { icon, label, tooltip });
       button.parentElement?.after(el("div", "error-box", error instanceof Error ? error.message : String(error)));
     }
   });
   return button;
 }
 
-function dialogActionButton(label, open) {
-  const button = el("button", "secondary thread-repair-button", label);
+function dialogActionButton(label, open, { icon = null, tooltip = label } = {}) {
+  const button = el("button", "secondary thread-repair-button");
   button.type = "button";
+  decorateActionButton(button, { icon, label, tooltip });
   button.addEventListener("click", open);
   return button;
 }
@@ -171,17 +173,18 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
   const bar = el("div", "thread-repair-actions");
   for (const action of actions) {
     const label = action.label ?? human(action.id);
+    const description = action.id === "admit_name"
+      ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
+      : action.id === "admit_birth_date"
+        ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
+        : "Record an explicit operator identity decision in World history.";
     bar.append(dialogActionButton(label, () => {
       openThreadActionDialog({
         threadId,
         threadName:diagnosis.identity?.name ?? null,
         label,
         eyebrow:"Authoritative identity",
-        description:action.id === "admit_name"
-          ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-          : action.id === "admit_birth_date"
-            ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-            : "Record an explicit operator identity decision in World history.",
+        description,
         fields:actionFields(action),
         run:async (input) => {
           await post(threadId, {
@@ -201,6 +204,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
           );
         },
       });
+    }, {
+      icon:iconForIdentityAction(action.id),
+      tooltip:`${label} — ${description}`,
     }));
   }
   host.append(bar);
@@ -234,6 +240,9 @@ function renderMigrationActions(host, threadId, diagnosis, reconciliation) {
           }, `Migration complete · ${migration.label ?? human(migration.id)}.`);
         },
       });
+    }, {
+      icon:"arrow-up-from-bracket",
+      tooltip:`${label} — Apply preserved Genesis evidence to authoritative World identity.`,
     }));
   }
   host.append(bar);
@@ -251,6 +260,11 @@ function renderRepairAction(host, threadId, diagnosis, reconciliation) {
       diagnosis:payload.result.after,
       reconciliation:payload.reconciliation ?? null,
     }, names ? `Applied: ${names}` : "No repair action was required.");
+  }, {
+    icon:reconciliation?.state === "dead_letter" ? "heart-pulse" : "wrench",
+    tooltip:reconciliation?.state === "dead_letter"
+      ? "Fix & Recover — repair derived state from World authority and return this Thread from quarantine."
+      : "Fix — repair derived state from authoritative World facts.",
   });
   button.className = "primary thread-repair-button";
   bar.append(button);
@@ -266,6 +280,9 @@ function renderPendingReconciliationAction(host, threadId, diagnosis, reconcilia
       diagnosis:payload.result.after,
       reconciliation:payload.reconciliation ?? null,
     }, "Reconciliation state resolved from current authoritative health.");
+  }, {
+    icon:"rotate",
+    tooltip:"Resolve reconciliation — retire stale pending reconciliation after authoritative health is verified.",
   });
   button.className = "primary thread-repair-button";
   bar.append(button);
@@ -281,6 +298,9 @@ function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
       diagnosis,
       reconciliation:payload.recovery.after,
     }, "Recovered · reconciliation is pending.");
+  }, {
+    icon:"heart-pulse",
+    tooltip:"Recover — return this healthy Thread from dead-letter quarantine to reconciliation processing.",
   });
   button.className = "primary thread-repair-button";
   bar.append(button);
