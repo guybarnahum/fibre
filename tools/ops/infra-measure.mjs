@@ -243,7 +243,7 @@ async function main(argv) {
   const repoRoot = repoRootFrom(import.meta.url);
   const git = await gitContext(repoRoot);
   const configs = await requireResolvedConfigs(repoRoot, options.environment);
-  const terminal = createInterface({ input:process.stdin, output:process.stdout });
+  let terminal = null;
   const events = [];
   let phase = "startup";
   const record = (source, event) => {
@@ -286,6 +286,7 @@ async function main(argv) {
     }
 
     if (!options.skipAdmin) {
+      terminal = createInterface({ input:process.stdin, output:process.stdout });
       phase = "threads";
       await promptAction(terminal, "Open the Admin Threads page once.");
       phase = "thread";
@@ -299,7 +300,7 @@ async function main(argv) {
     phase = "settle";
     await sleep(2000);
     await stopTails(tails);
-    terminal.close();
+    terminal?.close();
   }
 
   const summary = summarizeCosts(events);
