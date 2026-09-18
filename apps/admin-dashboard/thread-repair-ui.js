@@ -33,6 +33,7 @@ function labelFor(code) {
     ORIGIN_ORIENTATION:"Origin orientation",
     ORIGIN_ORIENTATION_MISSING:"Origin orientation",
     BIRTH_DATE:"Birth date",
+    BIRTH_DATE_MISSING:"Birth date",
     BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
     BIRTH_DATE_CONFLICT:"Birth date",
     CANONICAL_EMBODIMENT:"Canonical embodiment",
@@ -51,7 +52,7 @@ function stateText(finding) {
   if (finding.state === "repairable") return "repairable";
   if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "migration_required") return "migration required";
-  if (finding.state === "operator_decision_required" && finding.identityAction?.id === "admit_name") return "admission required";
+  if (finding.state === "operator_decision_required" && ["admit_name","admit_birth_date"].includes(finding.identityAction?.id)) return "admission required";
   if (finding.state === "operator_decision_required") return "input required";
   if (finding.state === "integrity_error") return "authority conflict";
   if (finding.state === "unrecoverable") return "not admitted";
@@ -178,7 +179,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         eyebrow:"Authoritative identity",
         description:action.id === "admit_name"
           ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-          : "Record an explicit operator identity decision in World history.",
+          : action.id === "admit_birth_date"
+            ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
+            : "Record an explicit operator identity decision in World history.",
         fields:actionFields(action),
         run:async (input) => {
           await post(threadId, {
@@ -190,7 +193,11 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
             host,
             threadId,
             await requestHealth(threadId),
-            action.id === "admit_name" ? "Name admitted into World; Presentation is reconciled from that authority." : `${label} updated in World.`,
+            action.id === "admit_name"
+              ? "Name admitted into World; Presentation is reconciled from that authority."
+              : action.id === "admit_birth_date"
+                ? "Birth date admitted into World; Presentation is reconciled from that authority."
+                : `${label} updated in World.`,
           );
         },
       });
