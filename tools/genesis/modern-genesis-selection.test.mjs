@@ -21,7 +21,7 @@ const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.
 
 const authoredJerusalem = Object.freeze({
   timeZone:"Asia/Jerusalem",
-  languages:["Hebrew", "Arabic", "English"],
+  languages:["Hebrew", "English"],
   nameOrder:"given_family",
   femaleGivenNames:["Noa", "Maya", "Yael", "Tamar", "Shira", "Lior", "Michal", "Roni", "Neta", "Adi"],
   maleGivenNames:["Noam", "Eitan", "Daniel", "Yoni", "Ariel", "Omer", "Avi", "Nadav", "Gil", "Ron"],
@@ -113,6 +113,7 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(created.timeZone, "Asia/Jerusalem");
   assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_yemeni-jewish_/u);
   assert.match(created.worldSpec.culturalContext, /Yemeni Jewish/u);
+  assert.deepEqual(created.worldSpec.languages, ["Hebrew", "English"], "personal languages must not become a Jerusalem demographic inventory");
   assert.doesNotMatch(created.material.appearanceContext, /Yemeni Jewish|Jerusalem|Israel/iu, "portrait appearance prior must not carry place/heritage labels");
 
   const reused = await resolveModernWorldSelection({
@@ -132,6 +133,30 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(authoredCalls, 1);
 });
 
+
+test("authored World rejects demographic language inventories for one subject", async (t) => {
+  const root = mkdtempSync(join(tmpdir(), "fibre-language-inventory-"));
+  t.after(() => rmSync(root, { recursive:true, force:true }));
+
+  await assert.rejects(
+    () => resolveModernWorldSelection({
+      selector:normalizeModernWorldSelector("Israel/Jerusalem"),
+      heritage:normalizeModernHeritage("Russian Jewish"),
+      cohort,
+      materialFixture,
+      fixture,
+      repoRoot:root,
+      requestId:"birth-language-inventory",
+      baseSlotOrdinal:1,
+      now:() => "2026-09-18T19:00:00Z",
+      authorWorld:async () => ({
+        ...authoredJerusalem,
+        languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"],
+      }),
+    }),
+    /1 to 3 personally plausible languages/u,
+  );
+});
 
 test("default births choose World independently from genome slot", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-world-independence-"));
