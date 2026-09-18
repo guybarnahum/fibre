@@ -191,8 +191,28 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
     : finding("ORIGIN_ORIENTATION", "healthy", null, { authoritative:originOrientation }));
 
   const birthDate = text(identity.birthDate);
-  if (birthDate !== null) {
-    const publicBirthDate = projected === null ? undefined : projected.subject?.birthDate ?? null;
+  const publicBirthDate = projected === null ? undefined : projected.subject?.birthDate ?? null;
+  if (birthDate === null) {
+    const preservedBirthDate = text(publicBirthDate);
+    findings.push(finding("BIRTH_DATE_MISSING", "operator_decision_required", null, {
+      authoritative:null,
+      presentation:preservedBirthDate,
+      reason:preservedBirthDate === null
+        ? "birth date is absent from authoritative Thread identity"
+        : "Presentation preserves a birth date candidate that requires explicit operator admission into World identity",
+      identityAction:identityAction(
+        preservedBirthDate === null ? "set_birth_date" : "admit_birth_date",
+        preservedBirthDate === null ? "Set birth date" : "Admit birth date",
+        [{
+          name:"birthDate",
+          label:"Birth date",
+          kind:"date",
+          required:true,
+          ...(preservedBirthDate === null ? {} : { default:preservedBirthDate }),
+        }],
+      ),
+    }));
+  } else {
     findings.push(identityFinding({
       code:"BIRTH_DATE",
       missingCode:"BIRTH_DATE_MISSING",
@@ -204,6 +224,15 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       projectionAction:"reconcile_identity_projection",
       conflictState:"repairable",
       conflictAction:"reconcile_identity_projection",
+      detail:{
+        identityAction:identityAction("change_birth_date", "Change birth date", [{
+          name:"birthDate",
+          label:"Birth date",
+          kind:"date",
+          required:true,
+          default:birthDate,
+        }]),
+      },
     }));
   }
 
@@ -335,12 +364,12 @@ export function createThreadGenesisRepairService({
     });
   }
 
-  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex } = {}) {
+  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex, birthDate } = {}) {
     const root = operationKey("operationKey", requestedKey);
     const before = await diagnose(threadId);
     if (!before.exists) return Object.freeze({ threadId, operationKey:root, before, after:before, changed:false });
     const thread = worldReader.getThread(threadId);
-    const result = identityUpdater.update(thread, { name, sex, operationKey:root });
+    const result = identityUpdater.update(thread, { name, sex, birthDate, operationKey:root });
     await record(activity, {
       threadId,
       operationId:root,
