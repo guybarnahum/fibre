@@ -56,6 +56,22 @@ function normalizeBirthDate(value) {
   throw new TypeError("Thread birth date must be YYYY-MM-DD, YYYYMMDD, MM/DD/YYYY, or MMDDYYYY");
 }
 
+function normalizeLanguages(value) {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length < 1 || value.length > 3) {
+    throw new TypeError("Thread languages must contain 1 to 3 languages");
+  }
+  const normalized = value.map((item) => {
+    if (typeof item !== "string" || item.trim() === "") throw new TypeError("Thread language names must be non-empty strings");
+    const language = item.trim().replace(/\s+/gu, " ");
+    if (language.length > 80) throw new TypeError("Thread language names must be at most 80 characters");
+    return language;
+  });
+  const keys = normalized.map((item) => item.toLocaleLowerCase("en-US"));
+  if (new Set(keys).size !== keys.length) throw new TypeError("Thread languages must be unique");
+  return normalized;
+}
+
 function normalizeOperationKey(value) {
   if (typeof value !== "string" || !OPERATION_KEY.test(value)) {
     throw new TypeError("identity operationKey must be a Fibre identifier up to 221 characters");
@@ -71,13 +87,18 @@ function eventId(threadId, operationKey) {
   });
 }
 
-function requestMatchesExisting(thread, changes, { name, sex, birthDate }) {
+function requestMatchesExisting(thread, changes, { name, sex, birthDate, languages }) {
   const matches = (field, requested) => {
     if (requested === undefined) return true;
     if (Object.prototype.hasOwnProperty.call(changes, field)) return changes[field] === requested;
     return thread.identity?.[field] === requested;
   };
-  return matches("name", name) && matches("sex", sex) && matches("birthDate", birthDate);
+  const languageMatch = languages === undefined
+    ? true
+    : Object.prototype.hasOwnProperty.call(changes, "languages")
+      ? canonicalJson(changes.languages) === canonicalJson(languages)
+      : canonicalJson(thread.identity?.languages ?? []) === canonicalJson(languages);
+  return matches("name", name) && matches("sex", sex) && matches("birthDate", birthDate) && languageMatch;
 }
 
 export class ThreadIdentityUpdateStore {
@@ -89,14 +110,15 @@ export class ThreadIdentityUpdateStore {
 
   close() { this.#database.close(); }
 
-  update(thread, { name, sex, birthDate, operationKey, changedAt = new Date().toISOString() } = {}) {
+  update(thread, { name, sex, birthDate, languages, operationKey, changedAt = new Date().toISOString() } = {}) {
     validateThreadSnapshot(thread);
     const key = normalizeOperationKey(operationKey);
     const nextName = normalizeName(name);
     const nextSex = sex === undefined ? undefined : normalizeGenesisSex(sex);
     const nextBirthDate = normalizeBirthDate(birthDate);
-    if (nextName === undefined && nextSex === undefined && nextBirthDate === undefined) {
-      throw new TypeError("identity update requires name, sex, or birthDate");
+    const nextLanguages = normalizeLanguages(languages);
+    if (nextName === undefined && nextSex === undefined && nextBirthDate === undefined && nextLanguages === undefined) {
+      throw new TypeError("identity update requires name, sex, birthDate, or languages");
     }
 
     const updateEventId = eventId(thread.threadId, key);
@@ -109,7 +131,7 @@ export class ThreadIdentityUpdateStore {
       }
       const payload = JSON.parse(existing.payload_json);
       const existingChanges = payload?.changes ?? {};
-      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex, birthDate:nextBirthDate })) {
+      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex, birthDate:nextBirthDate, languages:nextLanguages })) {
         throw new TypeError(`identity operationKey ${key} was already used with different identity input`);
       }
       const currentRow = this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
@@ -140,6 +162,10 @@ export class ThreadIdentityUpdateStore {
     if (nextBirthDate !== undefined && nextBirthDate !== thread.identity.birthDate) {
       changes.birthDate = nextBirthDate;
       previous.birthDate = thread.identity.birthDate ?? null;
+    }
+    if (nextLanguages !== undefined && canonicalJson(nextLanguages) !== canonicalJson(thread.identity.languages ?? [])) {
+      changes.languages = [...nextLanguages];
+      previous.languages = Array.isArray(thread.identity.languages) ? [...thread.identity.languages] : null;
     }
     if (Object.keys(changes).length === 0) {
       return Object.freeze({ changed:false, reused:true, eventId:thread.provenance.lastEventId, changes:Object.freeze({}), thread });
