@@ -294,6 +294,8 @@ async function main(argv) {
       await promptAction(terminal, "Open one Thread once. Do not press Check health yet.");
       phase = "health";
       await promptAction(terminal, "Optional: click Check health once, or type s to skip.");
+      phase = "health-repeat";
+      await promptAction(terminal, "If health was checked, click Refresh health once. Otherwise type s to skip.");
       phase = "activity";
       await promptAction(terminal, "From the Thread page, click Activity ↗ once. It should open Raw Activity.");
     }
