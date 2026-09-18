@@ -186,7 +186,12 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
             operationKey:`admin_identity_${Date.now().toString(36)}`,
             ...input,
           });
-          renderHealth(host, threadId, await requestHealth(threadId), `${label} updated in World.`);
+          renderHealth(
+            host,
+            threadId,
+            await requestHealth(threadId),
+            action.id === "admit_name" ? "Name admitted into World; Presentation is reconciled from that authority." : `${label} updated in World.`,
+          );
         },
       });
     }));
