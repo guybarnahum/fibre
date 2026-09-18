@@ -22,6 +22,10 @@ function identityItem(label, content, { mono = false } = {}) {
   return item;
 }
 
+function listText(value) {
+  return Array.isArray(value) && value.length > 0 ? value.join(", ") : null;
+}
+
 function portraitAsset(identity) {
   const assets = Array.isArray(identity?.assets) ? identity.assets : [];
   return assets.find((asset) => asset?.role === "canonical_portrait" && asset?.url)
@@ -115,6 +119,12 @@ export async function renderThreadPage(threadId) {
       identityItem("FIN", payload.identity.fibreIdentityNumber),
       identityItem("Sex", payload.identity.sex),
       identityItem("Birth date", payload.identity.birthDate),
+      identityItem("Birth place", payload.identity.birthPlace),
+      identityItem("Raised cultural context", payload.identity.raisedAs?.culturalContext),
+      identityItem("Raised languages", listText(payload.identity.raisedAs?.languages)),
+      identityItem("Schooling / community", payload.identity.raisedAs?.schoolingOrCommunityContext),
+      identityItem("Culture", listText(payload.identity.culture)),
+      identityItem("Languages", listText(payload.identity.languages)),
       identityItem("Lifecycle", payload.identity.lifecycleStatus),
       identityItem("Thread ID", payload.identity.threadId, { mono:true }),
     );
