@@ -75,6 +75,8 @@ test("World Registry defines admitted population while Activity remains observat
   assert.equal(population.threads[0].reconciliation.state, "pending", "World reconciliation state must remain actionable in Threads");
   assert.equal(population.threads[0].findings.find((finding) => finding.code === "NAME").identityAction.id, "change_name");
   assert.equal(population.threads[0].health, "healthy", "healthy identity actions must not degrade health");
+  assert.equal(population.threads[1].findings.find((finding) => finding.code === "BIRTH_DATE_MISSING").identityAction.id, "set_birth_date");
+  assert.equal(population.threads[1].health, "operator_decision_required", "missing canonical birth date must require explicit input");
   assert.equal(population.stillborn[0].admitted, false, "Stillborn Activity identifiers must remain explicitly unadmitted");
   assert.equal(population.stillborn[0].health, "unrecoverable");
   assert.equal(population.stillborn[0].identity, null, "Stillborn identifiers must not acquire projected personhood");
@@ -85,8 +87,8 @@ test("World Registry defines admitted population while Activity remains observat
     female:1,
     male:1,
     unknownSex:0,
-    healthy:2,
-    attention:0,
+    healthy:1,
+    attention:1,
     deadLetter:0,
     migrationsAvailable:0,
     stillborn:1,
