@@ -95,7 +95,10 @@ test("R1 diagnoses missing Presentation and unpublished canonical visual without
   const { service, threadId } = fixture();
   const diagnosis = await service.diagnose(threadId);
   assert.equal(diagnosis.health, "repairable");
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME").state, "healthy");
+  const name = diagnosis.findings.find((entry) => entry.code === "NAME");
+  assert.equal(name.state, "healthy");
+  assert.equal(name.identityAction.id, "change_name");
+  assert.equal(name.identityAction.input.fields[0].default, "Repair Thread");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "SEX").state, "healthy");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "PRESENTATION_MISSING").action, "rebuild_presentation");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "CANONICAL_VISUAL_NOT_PUBLISHED").action, "reconcile_visual_publication");
