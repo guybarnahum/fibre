@@ -127,10 +127,12 @@ class SqliteD1Statement {
 class SqliteD1Database {
   constructor() {
     this.database = new DatabaseSync(":memory:");
-    this.database.exec(readFileSync(
-      new URL("../providers/cloudflare/d1/0001_activity_log.sql", import.meta.url),
-      "utf8",
-    ));
+    for (const migration of [
+      "../providers/cloudflare/d1/0001_activity_log.sql",
+      "../providers/cloudflare/d1/0003_activity_thread_heads.sql",
+    ]) {
+      this.database.exec(readFileSync(new URL(migration, import.meta.url), "utf8"));
+    }
   }
 
   prepare(sql) {
@@ -263,6 +265,13 @@ test("Activity Log migration and provider execute against SQLite-compatible D1 s
   ]);
   assert.equal(records[0].deploymentGitSha, "9baa39c426496d0437a0760ec6f297e4d72a2d9b");
   assert.equal(records[0].environment, "staging");
+  assert.deepEqual(
+    database.database.prepare(
+      "SELECT thread_id,last_activity_at FROM fibre_activity_thread_heads WHERE environment=?",
+    ).get("staging"),
+    { thread_id:"thr_cloud_001", last_activity_at:"2026-09-01T06:20:02.000Z" },
+    "Thread activity head must advance with new observational Activity",
+  );
   const indexes = database.database.prepare(
     "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'fibre_activity_log' ORDER BY name",
   ).all().map((row) => row.name);
