@@ -476,7 +476,7 @@ function appearanceSection(identity) {
 }
 
 function mediaSection(identity) {
-  const assets = (Array.isArray(identity?.assets) ? identity.assets : []).filter((asset) => !["fibre_identity_card_front","fibre_identity_card_back"].includes(asset?.role));
+  const assets = (Array.isArray(identity?.assets) ? identity.assets : []).filter((asset) => !["official_id_photo","fibre_identity_card_front","fibre_identity_card_back"].includes(asset?.role));
   if (!assets.length) return null;
   const published = assets.filter((asset) => asset?.deliveryStatus === "published").length;
   const admitted = assets.filter((asset) => asset?.deliveryStatus === "world_only").length;
