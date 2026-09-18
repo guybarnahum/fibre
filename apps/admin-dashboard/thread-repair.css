@@ -33,11 +33,22 @@
   margin-top:10px;
 }
 .thread-repair-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
   margin:0;
   padding:6px 9px;
   font-size:10px;
   min-height:28px;
 }
+.fa-action-icon {
+  width:13px;
+  height:13px;
+  flex:0 0 13px;
+  display:block;
+}
+.fa-action-label { line-height:1; }
 .thread-repair-message,
 .thread-repair-note {
   margin:9px 0 0;
@@ -102,7 +113,28 @@
 .thread-population-name + small { display:block; margin-top:2px; color:var(--muted); font-size:8px; }
 .thread-population-actions { min-width:148px; }
 .thread-action-stack { display:flex; flex-wrap:wrap; gap:4px; }
-.thread-population-actions button { padding:4px 7px; min-height:24px; font-size:9px; }
+.thread-population-actions button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  padding:4px 7px;
+  min-height:24px;
+  font-size:9px;
+}
+.thread-population-actions .icon-only-action {
+  width:26px;
+  min-width:26px;
+  height:26px;
+  min-height:26px;
+  padding:5px;
+  border-radius:6px;
+}
+.thread-population-actions .icon-only-action .fa-action-icon {
+  width:13px;
+  height:13px;
+  flex-basis:13px;
+}
 .thread-population-activity-only { opacity:.68; }
 .thread-population-activity-only .thread-population-name { font-weight:600; }
 
