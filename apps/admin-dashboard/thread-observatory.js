@@ -393,8 +393,9 @@ function fidSection(identity) {
   const card = presentation?.identityCard ?? null;
   const wrap = section("Fibre Identity Card", card ? `Revision ${card.revision ?? "—"} · ${human(card.status ?? "unknown")}` : "Card not issued");
   const assets = Array.isArray(identity.assets) ? identity.assets : [];
+  const officialPhotoMediaRef = typeof card?.officialPhotoMediaRef === "string" ? card.officialPhotoMediaRef : null;
   const officialPhoto = assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
-    ?? assets.find((asset) => asset?.mediaId === card?.officialPhotoMediaRef && asset?.url)
+    ?? (officialPhotoMediaRef === null ? null : assets.find((asset) => asset?.mediaId === officialPhotoMediaRef && asset?.url))
     ?? null;
 
   const visuals = el("div", "thread-fid-visuals");
