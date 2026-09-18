@@ -216,6 +216,31 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
   assert.equal(sex.identityAction.id, "set_sex");
 });
 
+test("preserved public name requires explicit World admission instead of being lost or silently promoted", async () => {
+  const { service, state, threadId, thread } = fixture();
+  thread.identity.name = "Fibre Thread";
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Maya Cohen" },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const name = diagnosis.findings.find((entry) => entry.code === "NAME_UNFINISHED");
+  assert.equal(name.state, "operator_decision_required", "name admission was not explicit");
+  assert.equal(name.presentation, "Maya Cohen", "preserved name was lost");
+  assert.equal(name.identityAction.id, "admit_name", "wrong admission action");
+  assert.equal(name.identityAction.input.fields[0].default, "Maya Cohen", "candidate was not prefilled");
+
+  const repair = await service.repair(threadId, { repairKey:"repair_preserved_name_1" });
+  assert.equal(thread.identity.name, "Fibre Thread", "repair promoted projection into World");
+  assert.deepEqual(repair.actions, [], "repair bypassed operator admission");
+});
+
 test("migration changes legacy authority; repair never substitutes for it", async () => {
   const { state, threadId, thread } = fixture();
   delete thread.identity.sex;
