@@ -41,7 +41,7 @@ function fixture() {
     asset:{ referenceObjectRef:objectRef },
   };
   const publicIdentity = {
-    subject:{ displayName:"Repair Thread" },
+    subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
     civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
   };
   const service = createThreadGenesisRepairService({
