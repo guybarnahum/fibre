@@ -37,6 +37,10 @@ function labelFor(code) {
     BIRTH_DATE_MISSING:"Birth date",
     BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
     BIRTH_DATE_CONFLICT:"Birth date",
+    LANGUAGES:"Languages",
+    LANGUAGES_MISSING:"Languages",
+    LANGUAGES_NEED_REVIEW:"Languages",
+    LANGUAGES_PRESENTATION_STALE:"Languages",
     CANONICAL_EMBODIMENT:"Canonical embodiment",
     CANONICAL_EMBODIMENT_MISSING:"Canonical embodiment",
     CANONICAL_EMBODIMENT_PENDING:"Canonical embodiment",
@@ -54,6 +58,7 @@ function stateText(finding) {
   if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "migration_required") return "migration required";
   if (finding.state === "operator_decision_required" && ["admit_name","admit_birth_date"].includes(finding.identityAction?.id)) return "admission required";
+  if (finding.code === "LANGUAGES_NEED_REVIEW") return "review required";
   if (finding.state === "operator_decision_required") return "input required";
   if (finding.state === "integrity_error") return "authority conflict";
   if (finding.state === "unrecoverable") return "not admitted";
@@ -177,7 +182,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
       ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
       : action.id === "admit_birth_date"
         ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-        : "Record an explicit operator identity decision in World history.";
+        : ["set_languages","change_languages"].includes(action.id)
+          ? "Set this Thread's personal language path in authoritative World identity. Use only languages grounded in household, civic life, or sustained schooling; do not list a country's demographic language inventory."
+          : "Record an explicit operator identity decision in World history.";
     bar.append(dialogActionButton(label, () => {
       openThreadActionDialog({
         threadId,
