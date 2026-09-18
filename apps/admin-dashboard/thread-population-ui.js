@@ -4,10 +4,15 @@ const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
 const rows = $("#thread-population-rows");
 const empty = $("#thread-population-empty");
+const stillbornView = $("#stillborn-view");
+const stillbornRows = $("#stillborn-rows");
+const stillbornEmpty = $("#stillborn-empty");
 let active = false;
+let populationMode = "threads";
 let loading = false;
 let priorAutoRefresh = true;
 let population = [];
+let stillborn = [];
 let sortState = { key:"lastActivity", direction:"desc" };
 
 function human(value) {
@@ -304,6 +309,57 @@ function renderPopulation() {
   renderSortHeaders();
 }
 
+function stillbornRow(thread) {
+  const tr = document.createElement("tr");
+  tr.className = "stillborn-row";
+
+  const identifier = document.createElement("td");
+  identifier.className = "mono";
+  identifier.textContent = thread.threadId;
+
+  const lastActivity = document.createElement("td");
+  lastActivity.className = "time";
+  lastActivity.textContent = when(thread.lastActivityAt);
+
+  const health = document.createElement("td");
+  health.append(badge("unrecoverable", "failed"));
+
+  const meaning = document.createElement("td");
+  meaning.className = "stillborn-reason";
+  meaning.textContent = thread.admitted === false
+    ? "Observed in Activity, but World never admitted a recoverable Thread state."
+    : "World diagnosis marked this Thread unrecoverable.";
+
+  const action = document.createElement("td");
+  action.className = "thread-population-actions";
+  const raw = document.createElement("button");
+  raw.type = "button";
+  raw.className = "secondary";
+  raw.textContent = "View Raw";
+  raw.addEventListener("click", () => {
+    const params = new URLSearchParams();
+    params.set("kind", "thread");
+    params.set("value", thread.threadId);
+    params.set("mode", "raw");
+    location.assign(`${location.pathname}?${params}`);
+  });
+  action.append(raw);
+
+  tr.append(identifier, lastActivity, health, meaning, action);
+  return tr;
+}
+
+function renderStillborn() {
+  const ordered = [...stillborn].sort((left, right) => {
+    const a = Date.parse(left.lastActivityAt ?? "");
+    const b = Date.parse(right.lastActivityAt ?? "");
+    if (Number.isFinite(a) && Number.isFinite(b) && a !== b) return b - a;
+    return left.threadId.localeCompare(right.threadId);
+  });
+  stillbornRows.replaceChildren(...ordered.map(stillbornRow));
+  stillbornEmpty.hidden = ordered.length !== 0;
+}
+
 function renderActivitySummaryLabels() {
   $("#metric-label-records").textContent = "Records";
   $("#metric-context-records").textContent = "on this page";
@@ -328,6 +384,20 @@ function renderThreadsTopSummary(summary = null) {
   $("#metric-view-context").textContent = "population / World health";
 }
 
+function renderStillbornTopSummary(summary = null) {
+  $("#metric-label-records").textContent = "Stillborn";
+  $("#metric-context-records").textContent = "unrecoverable observed IDs";
+  $("#metric-records").textContent = summary?.stillborn ?? stillborn.length ?? "—";
+  $("#metric-label-failures").textContent = "World admission";
+  $("#metric-context-failures").textContent = "no recoverable person state";
+  $("#metric-failures").textContent = "0";
+  $("#metric-label-retries").textContent = "Repair path";
+  $("#metric-context-retries").textContent = "parked / observational";
+  $("#metric-retries").textContent = "—";
+  $("#metric-view").textContent = "Stillborn";
+  $("#metric-view-context").textContent = "unrecoverable / Activity evidence";
+}
+
 function renderSummary(summary) {
   const values = {
     "thread-stat-total":summary.total,
@@ -347,12 +417,18 @@ function holdThreadsMode() {
   if (!active) return;
   $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
-  view.hidden = false;
+  view.hidden = populationMode !== "threads";
+  stillbornView.hidden = populationMode !== "stillborn";
   document.querySelector("#thread-context").hidden = true;
-  for (const control of document.querySelectorAll(".view-switch button")) control.classList.toggle("active", control.id === "view-threads");
-  $("#chain-title").textContent = "Threads";
-  $("#metric-view").textContent = "Threads";
-  $("#metric-view-context").textContent = "population / World health";
+  for (const control of document.querySelectorAll(".view-switch button")) {
+    control.classList.toggle("active", control.dataset.mode === populationMode);
+  }
+  $("#chain-title").textContent = populationMode === "stillborn" ? "Stillborn Threads" : "Threads";
+  if (populationMode === "stillborn") renderStillbornTopSummary();
+  else {
+    $("#metric-view").textContent = "Threads";
+    $("#metric-view-context").textContent = "population / World health";
+  }
 }
 
 async function loadPopulation() {
@@ -367,14 +443,25 @@ async function loadPopulation() {
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
     population = payload.threads ?? [];
+    stillborn = payload.stillborn ?? [];
     renderSummary(payload.summary ?? {});
     renderPopulation();
+    renderStillborn();
     $("#environment-pill").textContent = payload.environment ?? "—";
-    $("#chain-summary").textContent = `${payload.summary?.total ?? 0} admitted Threads · ${payload.summary?.activityOnly ?? 0} Activity-only IDs${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
+    if (populationMode === "stillborn") {
+      renderStillbornTopSummary(payload.summary ?? {});
+      $("#chain-summary").textContent = `${stillborn.length} unrecoverable Thread ${stillborn.length === 1 ? "identifier" : "identifiers"} parked outside the admitted population${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
+    } else {
+      renderThreadsTopSummary(payload.summary ?? {});
+      $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
+    }
   } catch (error) {
     population = [];
-    renderThreadsTopSummary();
+    stillborn = [];
+    if (populationMode === "stillborn") renderStillbornTopSummary();
+    else renderThreadsTopSummary();
     renderPopulation();
+    renderStillborn();
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     loading = false;
@@ -393,25 +480,48 @@ function setActivityChrome(hidden) {
   $("#export-button").hidden = hidden;
 }
 
-function enterThreads() {
-  if (active) return;
+function enterPopulation(nextMode) {
+  populationMode = nextMode;
+  if (active) {
+    holdThreadsMode();
+    if (populationMode === "stillborn") {
+      renderStillbornTopSummary({ stillborn:stillborn.length });
+      $("#chain-summary").textContent = `${stillborn.length} unrecoverable Thread ${stillborn.length === 1 ? "identifier" : "identifiers"} parked outside the admitted population.`;
+    } else {
+      renderThreadsTopSummary({
+        total:population.length,
+        attention:population.filter((thread) => thread.health !== "healthy").length,
+        deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
+      });
+      $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`;
+    }
+    const params = new URLSearchParams(location.search);
+    params.set("mode", populationMode);
+    history.replaceState(null, "", `${location.pathname}?${params}`);
+    return;
+  }
   active = true;
   priorAutoRefresh = $("#auto-refresh").checked;
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
   setActivityChrome(true);
-  renderThreadsTopSummary();
+  if (populationMode === "stillborn") renderStillbornTopSummary();
+  else renderThreadsTopSummary();
   holdThreadsMode();
   $("#chain-summary").textContent = "Loading population…";
-  const params = new URLSearchParams(location.search); params.set("mode", "threads");
+  const params = new URLSearchParams(location.search); params.set("mode", populationMode);
   history.replaceState(null, "", `${location.pathname}?${params}`);
   void loadPopulation();
 }
+
+function enterThreads() { enterPopulation("threads"); }
+function enterStillborn() { enterPopulation("stillborn"); }
 
 function exitThreads(nextMode) {
   if (!active) return;
   active = false;
   view.hidden = true;
+  stillbornView.hidden = true;
   setActivityChrome(false);
   renderActivitySummaryLabels();
   $("#metric-view").textContent = nextMode === "causal" ? "Causal" : "Raw";
@@ -427,6 +537,7 @@ function exitThreads(nextMode) {
 }
 
 $("#view-threads").addEventListener("click", enterThreads);
+$("#view-stillborn").addEventListener("click", enterStillborn);
 for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
   $(`#${id}`).addEventListener("click", () => exitThreads(nextMode));
 }
@@ -446,4 +557,6 @@ for (const control of document.querySelectorAll("[data-thread-sort]")) {
   });
 }
 
-if (new URLSearchParams(location.search).get("mode") === "threads") enterThreads();
+const initialMode = new URLSearchParams(location.search).get("mode");
+if (initialMode === "threads") enterThreads();
+if (initialMode === "stillborn") enterStillborn();
