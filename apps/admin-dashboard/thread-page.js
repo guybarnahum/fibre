@@ -56,7 +56,7 @@ export async function renderThreadPage(threadId) {
   const back = node("a", "button-link secondary", "← Threads"); back.href = "/activity?mode=threads";
   const viewer = node("a", "button-link primary", "Open as visitor ↗");
   const activity = node("a", "button-link secondary", "Activity ↗");
-  activity.href = `/activity?kind=thread&value=${encodeURIComponent(threadId)}&limit=100`;
+  activity.href = `/activity?kind=thread&value=${encodeURIComponent(threadId)}&limit=100&mode=raw`;
   pageActions.append(back, viewer, activity);
   pageHead.append(person, pageActions);
   main.append(pageHead);
