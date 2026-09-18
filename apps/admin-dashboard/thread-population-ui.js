@@ -401,7 +401,7 @@ function renderStillbornTopSummary(summary = null) {
 function renderSummary(summary) {
   const values = {
     "thread-stat-total":summary.total,
-    "thread-stat-activity-only":summary.activityOnly,
+    "thread-stat-activity-only":summary.stillborn,
     "thread-stat-female":summary.female,
     "thread-stat-male":summary.male,
     "thread-stat-unknown":summary.unknownSex,
@@ -529,7 +529,7 @@ function exitThreads(nextMode) {
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
   const params = new URLSearchParams(location.search);
-  if (params.get("mode") === "threads") {
+  if (["threads","stillborn"].includes(params.get("mode"))) {
     params.set("mode", nextMode);
     history.replaceState(null, "", `${location.pathname}?${params}`);
     $("#refresh-button").click();
