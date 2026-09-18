@@ -356,17 +356,41 @@ function memoriesSection(memories, birthDate, memoryError = null) {
   track.setAttribute("role", "tablist");
   const detail = el("div", "thread-memory-selected");
   detail.setAttribute("role", "tabpanel");
+  detail.tabIndex = 0;
+  detail.title = "Click the left or right side to browse memories";
   const markers = [];
+  let selectedIndex = -1;
 
-  const selectMemory = (index) => {
+  const selectMemory = (index, direction = null) => {
+    if (index < 0 || index >= ordered.length || index === selectedIndex) return;
+    const movement = direction ?? (selectedIndex < 0 ? null : index > selectedIndex ? "right" : "left");
     markers.forEach((marker, markerIndex) => {
       const selected = markerIndex === index;
       marker.classList.toggle("active", selected);
       marker.setAttribute("aria-selected", selected ? "true" : "false");
       marker.tabIndex = selected ? 0 : -1;
     });
-    detail.replaceChildren(memoryCard(ordered[index], birthDate));
+    const card = memoryCard(ordered[index], birthDate);
+    if (movement) card.classList.add(movement === "right" ? "slide-from-right" : "slide-from-left");
+    detail.replaceChildren(card);
+    selectedIndex = index;
   };
+
+  detail.addEventListener("click", (event) => {
+    if (ordered.length < 2 || selectedIndex < 0) return;
+    const bounds = detail.getBoundingClientRect();
+    const goRight = event.clientX >= bounds.left + bounds.width / 2;
+    selectMemory(selectedIndex + (goRight ? 1 : -1), goRight ? "right" : "left");
+  });
+  detail.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectMemory(selectedIndex - 1, "left");
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectMemory(selectedIndex + 1, "right");
+    }
+  });
 
   ordered.forEach((memory, index) => {
     const marker = el("button", "thread-memory-marker");
