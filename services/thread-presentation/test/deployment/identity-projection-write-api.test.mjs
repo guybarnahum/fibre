@@ -10,6 +10,7 @@ import { createThreadPresentationServer } from "#services/world-kernel/src/threa
 import { projectNewbornThreadPresentation } from "../../src/newborn-presentation-projector.mjs";
 import { createGenesisPresentationWriteApi } from "../../src/http/genesis-write-api.mjs";
 import { createIdentityProjectionWriteApi } from "../../src/http/identity-projection-write-api.mjs";
+import { threadPresentationChannelId } from "../../src/public-asset-resolver.mjs";
 
 const TOKEN = "private-test-token";
 
@@ -70,7 +71,7 @@ test("World identity correction converges publicly without rewriting Genesis", a
   const created = await genesisApi.fetch(post("https://presentation.local/internal/genesis/presentations", original));
   assert.equal(created.status, 201, "Genesis publication failed");
 
-  const before = await server.getSnapshot(`thread:${original.threadId}`);
+  const before = await server.getSnapshot(threadPresentationChannelId(original.threadId));
   const immutableBefore = await infra.objects.get(before.pointer.objectRef);
 
   const corrected = await identityApi.fetch(post(
@@ -91,7 +92,7 @@ test("World identity correction converges publicly without rewriting Genesis", a
   ));
   assert.equal(corrected.status, 201, "identity projection failed");
 
-  const after = await server.getSnapshot(`thread:${original.threadId}`);
+  const after = await server.getSnapshot(threadPresentationChannelId(original.threadId));
   assert.equal(after.snapshot.presentation.subject.displayName, "Ari North", "World name did not converge");
   assert.equal(after.snapshot.presentation.introduction.headline, "Ari North", "public headline stayed stale");
   assert.equal(
