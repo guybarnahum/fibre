@@ -33,8 +33,34 @@ test("naming a Thread does not inspect unrelated birth evidence", async () => {
     operationKey:"admin_name_1",
     name:"Maya Cohen",
   });
-  assert.deepEqual(result.identity, { name:"Maya Cohen", sex:null });
+  assert.deepEqual(result.identity, { name:"Maya Cohen", sex:null, birthDate:null });
   assert.equal(result.changed, true);
+});
+
+test("birth date is carried through the identity command boundary", async () => {
+  const current = thread();
+  const service = createThreadIdentityCommandService({
+    worldReader:{ getThread:() => structuredClone(current) },
+    genesisSexEvidence:{ resolve() { throw new Error("birth date must not inspect sex evidence"); } },
+    identityUpdater:{
+      update(value, { birthDate }) {
+        assert.equal(birthDate, "08202004");
+        return {
+          changed:true,
+          eventId:"evt_birth_date",
+          changes:{ birthDate:"2004-08-20" },
+          thread:{ ...value, version:value.version + 1, identity:{ ...value.identity, birthDate:"2004-08-20" } },
+        };
+      },
+    },
+  });
+
+  const result = await service.update(current.threadId, {
+    operationKey:"admin_birth_date_1",
+    birthDate:"08202004",
+  });
+  assert.equal(result.identity.birthDate, "2004-08-20");
+  assert.deepEqual(result.changes, { birthDate:"2004-08-20" });
 });
 
 test("preserved Genesis sex evidence cannot be replaced by an operator guess", async () => {
