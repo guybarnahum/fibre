@@ -179,14 +179,22 @@ async function main(args) {
       console.log(JSON.stringify(await listThreads(options), null, 2));
       return;
     }
-    const selected = await chooseThread(options);
-    if (selected === null) return;
-    await interactiveMeeting({
-      ...options,
-      threadId:selected.threadId,
-      currentPresent:selected.currentPresent,
-    });
-    return;
+    for (;;) {
+      const selected = await chooseThread(options);
+      if (selected === null) return;
+      try {
+        await interactiveMeeting({
+          ...options,
+          threadId:selected.threadId,
+          currentPresent:selected.currentPresent,
+        });
+        return;
+      } catch (error) {
+        if (error?.message !== "Thread has no published current situation") throw error;
+        const name = selected.displayName ?? selected.threadId;
+        console.log(`${name} is not currently in a published situation. Choose another Thread.\n`);
+      }
+    }
   }
   if (!options.threadId) {
     throw new Error("usage: npm run thread:meet -- [--env local|staging|production] [--base-url URL] <thread-id> [utterance] | --list [--json]");
