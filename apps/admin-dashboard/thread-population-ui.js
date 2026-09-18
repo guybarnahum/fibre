@@ -215,9 +215,11 @@ function threadRow(thread) {
   const personLayout = document.createElement("div");
   personLayout.className = "thread-population-person";
   const personText = document.createElement("div");
-  const link = document.createElement("a");
-  link.className = "thread-population-name";
-  link.href = `/thread/${encodeURIComponent(thread.threadId)}`;
+  const link = document.createElement("button");
+  link.type = "button";
+  link.className = "thread-population-name thread-link";
+  link.dataset.threadId = thread.threadId;
+  link.title = `Inspect ${thread.threadId}`;
   link.textContent = thread.admitted === true
     ? identity.name ?? "Unnamed Thread"
     : thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
