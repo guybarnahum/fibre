@@ -333,26 +333,30 @@ export async function resolveModernWorldSelection({
   repoRoot,
   requestId,
   baseSlotOrdinal,
+  worldSlotOrdinal = baseSlotOrdinal,
   modelId = process.env.FIBRE_GENESIS_WORLD_MODEL?.trim() || DEFAULT_WORLD_MODEL,
   now = () => new Date().toISOString(),
   authorWorld = defaultAuthorWorld,
 } = {}) {
   if (selector === null) {
     if (heritage !== null) throw new TypeError("Genesis heritage requires an explicit place");
-    const slot = cohort.slots[baseSlotOrdinal - 1];
-    const material = materialFixture.slots.find((item) => item.slot === baseSlotOrdinal);
-    if (!slot || !material) throw new Error(`modern Genesis slot ${baseSlotOrdinal} is unavailable`);
+    const genomeSlot = cohort.slots[baseSlotOrdinal - 1];
+    const worldSlot = cohort.slots[worldSlotOrdinal - 1];
+    const material = materialFixture.slots.find((item) => item.slot === worldSlotOrdinal);
+    if (!genomeSlot) throw new Error(`modern Genesis genome slot ${baseSlotOrdinal} is unavailable`);
+    if (!worldSlot || !material) throw new Error(`modern Genesis World slot ${worldSlotOrdinal} is unavailable`);
     return Object.freeze({
       mode: "fixture",
       selector: selectorFromBirthCity(material.birthCity),
       heritage: null,
       slotOrdinal: baseSlotOrdinal,
-      genomePath: slot.genomePath,
-      worldSpec: fixture(slot.worldSpecPath),
+      worldSlotOrdinal,
+      genomePath: genomeSlot.genomePath,
+      worldSpec: fixture(worldSlot.worldSpecPath),
       material,
-      timeZone: slot.timeZone,
-      participants: slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
-      placeAffordances: slot.placeAffordances,
+      timeZone: worldSlot.timeZone,
+      participants: worldSlot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
+      placeAffordances: worldSlot.placeAffordances,
       cachePath: null,
     });
   }
