@@ -111,6 +111,8 @@ function renderFields(host, fields) {
     if (field.kind === "date") {
       input.placeholder = "MMDDYYYY, MM/DD/YYYY, or YYYY-MM-DD";
       input.inputMode = "numeric";
+    } else if (field.kind === "string_list") {
+      input.placeholder = field.placeholder ?? "Language 1, Language 2";
     }
     input.value = field.default ?? "";
     label.append(input);
@@ -127,7 +129,9 @@ function readInput(form, fields) {
     const raw = data.get(field.name);
     const value = typeof raw === "string" ? raw.trim() : "";
     if (field.required === true && value === "") return null;
-    values[field.name] = value;
+    values[field.name] = field.kind === "string_list"
+      ? value.split(",").map((item) => item.trim()).filter(Boolean)
+      : value;
   }
   return values;
 }
