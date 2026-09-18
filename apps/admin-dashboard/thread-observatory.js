@@ -110,6 +110,27 @@ export function mergeObservatoryWorldIdentity(identity = {}, deepWorld = null) {
     && !["fibre thread","fiber thread"].includes(worldName.toLocaleLowerCase("en-US"))
     ? worldName
     : null;
+  const identityVersion = Number.isFinite(identity.version) ? identity.version : null;
+  const deepWorldVersion = Number.isFinite(thread.version) ? thread.version : null;
+  const deepWorldIsNewer = deepWorldVersion !== null
+    && (identityVersion === null || deepWorldVersion > identityVersion);
+
+  if (!deepWorldIsNewer) {
+    return Object.freeze({
+      ...identity,
+      displayName:firstText(identity.displayName, finishedWorldName),
+      sex:firstText(identity.sex, authoritative.sex),
+      birthDate:firstText(identity.birthDate, authoritative.birthDate),
+      birthPlace:firstText(identity.birthPlace, authoritative.birthCity),
+      culture:Object.freeze(Array.isArray(identity.culture) ? [...identity.culture] : [...(authoritative.culture ?? [])]),
+      languages:Object.freeze(Array.isArray(identity.languages) ? [...identity.languages] : [...(authoritative.languages ?? [])]),
+      originOrientation:firstText(identity.originOrientation, authoritative.originOrientation),
+      summary:firstText(identity.summary, authoritative.selfDescription),
+      lifecycleStatus:firstText(identity.lifecycleStatus, thread.status),
+      world:deepWorld,
+    });
+  }
+
   return Object.freeze({
     ...identity,
     displayName:finishedWorldName ?? identity.displayName ?? null,
@@ -121,6 +142,7 @@ export function mergeObservatoryWorldIdentity(identity = {}, deepWorld = null) {
     originOrientation:firstText(authoritative.originOrientation, identity.originOrientation),
     summary:firstText(authoritative.selfDescription, identity.summary),
     lifecycleStatus:firstText(thread.status, identity.lifecycleStatus),
+    version:deepWorldVersion,
     world:deepWorld,
   });
 }

@@ -208,6 +208,11 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
     originOrientation:clean(world.originOrientation ?? threadIdentity.originOrientation),
     summary:clean(world.summary ?? threadIdentity.selfDescription),
     lifecycleStatus: world.lifecycleStatus ?? presentation?.lifecycleStatus ?? null,
+    version: Number.isFinite(world.version)
+      ? world.version
+      : (Number.isFinite(world.thread?.version) ? world.thread.version : null),
+    stateHash: clean(world.stateHash),
+    updatedAt: clean(world.updatedAt),
     visualIdentity: presentation?.visualIdentity ?? (worldPortrait ? Object.freeze({
       embodimentId: worldPortrait.embodimentId,
       embodimentRevision: worldPortrait.embodimentRevision,
