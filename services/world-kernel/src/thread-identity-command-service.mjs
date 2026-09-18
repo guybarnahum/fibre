@@ -1,3 +1,5 @@
+import { canonicalJson } from "./persistence-common.mjs";
+
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") throw new TypeError(`${name} must expose ${method}()`);
   return value;
@@ -12,6 +14,30 @@ function optionalActivity(value) {
 async function record(activity, entry) {
   if (activity === null) return;
   try { await activity.record(entry); } catch {}
+}
+
+function persistenceMismatch(threadId, detail) {
+  const error = new Error(`Thread ${threadId} identity update was not durably readable: ${detail}`);
+  error.code = "THREAD_IDENTITY_PERSISTENCE_MISMATCH";
+  error.retryable = false;
+  return error;
+}
+
+function persistedIdentityUpdate(worldReader, threadId, result) {
+  const persisted = worldReader.getThread(threadId, { required:false });
+  if (persisted === null) throw persistenceMismatch(threadId, "Thread disappeared after update");
+  if (persisted.version !== result.thread.version) {
+    throw persistenceMismatch(threadId, `expected version ${result.thread.version}, read version ${persisted.version}`);
+  }
+  if (persisted.provenance?.lastEventId !== result.thread.provenance?.lastEventId) {
+    throw persistenceMismatch(threadId, "last identity event did not become authoritative");
+  }
+  for (const field of Object.keys(result.changes ?? {})) {
+    if (canonicalJson(persisted.identity?.[field] ?? null) !== canonicalJson(result.thread.identity?.[field] ?? null)) {
+      throw persistenceMismatch(threadId, `${field} did not match the committed value`);
+    }
+  }
+  return persisted;
 }
 
 export function createThreadIdentityCommandService({
@@ -47,13 +73,14 @@ export function createThreadIdentityCommandService({
       }
 
       const result = identityUpdater.update(thread, { name, sex, birthDate, languages, operationKey });
+      const persisted = persistedIdentityUpdate(worldReader, threadId, result);
       await record(activity, {
         threadId,
         operationId:operationKey,
         stage:"thread.identity.update",
         status:"succeeded",
         attempt:1,
-        evidence:{ eventId:result.eventId, changes:Object.keys(result.changes ?? {}) },
+        evidence:{ eventId:result.eventId, changes:Object.keys(result.changes ?? {}), persistedVersion:persisted.version },
       });
       return Object.freeze({
         threadId,
@@ -63,12 +90,12 @@ export function createThreadIdentityCommandService({
         eventId:result.eventId,
         changes:Object.freeze({ ...result.changes }),
         identity:Object.freeze({
-          name:result.thread.identity?.name ?? null,
-          sex:result.thread.identity?.sex ?? null,
-          birthDate:result.thread.identity?.birthDate ?? null,
-          languages:Object.freeze([...(result.thread.identity?.languages ?? [])]),
+          name:persisted.identity?.name ?? null,
+          sex:persisted.identity?.sex ?? null,
+          birthDate:persisted.identity?.birthDate ?? null,
+          languages:Object.freeze([...(persisted.identity?.languages ?? [])]),
         }),
-        version:result.thread.version,
+        version:persisted.version,
       });
     },
   });

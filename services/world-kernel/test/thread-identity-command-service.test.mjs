@@ -14,17 +14,20 @@ function thread(overrides = {}) {
 
 test("naming a Thread does not inspect unrelated birth evidence", async () => {
   const current = thread();
+  let persisted = structuredClone(current);
   const service = createThreadIdentityCommandService({
-    worldReader:{ getThread:() => structuredClone(current) },
+    worldReader:{ getThread:() => structuredClone(persisted) },
     genesisSexEvidence:{ resolve() { throw new Error("name must not read birth sex evidence"); } },
     identityUpdater:{
       update(value, { name }) {
-        return {
-          changed:true,
-          eventId:"evt_name",
-          changes:{ name },
-          thread:{ ...value, version:value.version + 1, identity:{ ...value.identity, name } },
+        const next = {
+          ...value,
+          version:value.version + 1,
+          identity:{ ...value.identity, name },
+          provenance:{ ...value.provenance, lastEventId:"evt_name" },
         };
+        persisted = structuredClone(next);
+        return { changed:true, eventId:"evt_name", changes:{ name }, thread:next };
       },
     },
   });
@@ -39,18 +42,21 @@ test("naming a Thread does not inspect unrelated birth evidence", async () => {
 
 test("birth date is carried through the identity command boundary", async () => {
   const current = thread();
+  let persisted = structuredClone(current);
   const service = createThreadIdentityCommandService({
-    worldReader:{ getThread:() => structuredClone(current) },
+    worldReader:{ getThread:() => structuredClone(persisted) },
     genesisSexEvidence:{ resolve() { throw new Error("birth date must not inspect sex evidence"); } },
     identityUpdater:{
       update(value, { birthDate }) {
         assert.equal(birthDate, "08202004");
-        return {
-          changed:true,
-          eventId:"evt_birth_date",
-          changes:{ birthDate:"2004-08-20" },
-          thread:{ ...value, version:value.version + 1, identity:{ ...value.identity, birthDate:"2004-08-20" } },
+        const next = {
+          ...value,
+          version:value.version + 1,
+          identity:{ ...value.identity, birthDate:"2004-08-20" },
+          provenance:{ ...value.provenance, lastEventId:"evt_birth_date" },
         };
+        persisted = structuredClone(next);
+        return { changed:true, eventId:"evt_birth_date", changes:{ birthDate:"2004-08-20" }, thread:next };
       },
     },
   });
@@ -65,18 +71,21 @@ test("birth date is carried through the identity command boundary", async () => 
 
 test("language correction crosses the identity command boundary", async () => {
   const current = thread({ languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"] });
+  let persisted = structuredClone(current);
   const service = createThreadIdentityCommandService({
-    worldReader:{ getThread:() => structuredClone(current) },
+    worldReader:{ getThread:() => structuredClone(persisted) },
     genesisSexEvidence:{ resolve() { throw new Error("languages must not inspect sex evidence"); } },
     identityUpdater:{
       update(value, { languages }) {
         assert.deepEqual(languages, ["Hebrew", "Russian", "English"]);
-        return {
-          changed:true,
-          eventId:"evt_languages",
-          changes:{ languages },
-          thread:{ ...value, version:value.version + 1, identity:{ ...value.identity, languages } },
+        const next = {
+          ...value,
+          version:value.version + 1,
+          identity:{ ...value.identity, languages },
+          provenance:{ ...value.provenance, lastEventId:"evt_languages" },
         };
+        persisted = structuredClone(next);
+        return { changed:true, eventId:"evt_languages", changes:{ languages }, thread:next };
       },
     },
   });
@@ -87,6 +96,38 @@ test("language correction crosses the identity command boundary", async () => {
   });
   assert.deepEqual(result.identity.languages, ["Hebrew", "Russian", "English"]);
   assert.deepEqual(result.changes, { languages:["Hebrew", "Russian", "English"] });
+});
+
+test("identity command never acknowledges a language update that is not durably readable", async () => {
+  const current = thread({ languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"] });
+  const service = createThreadIdentityCommandService({
+    worldReader:{ getThread:() => structuredClone(current) },
+    genesisSexEvidence:{ resolve() { throw new Error("languages must not inspect sex evidence"); } },
+    identityUpdater:{
+      update(value, { languages }) {
+        return {
+          changed:true,
+          eventId:"evt_languages_unpersisted",
+          changes:{ languages },
+          thread:{
+            ...value,
+            version:value.version + 1,
+            identity:{ ...value.identity, languages },
+            provenance:{ ...value.provenance, lastEventId:"evt_languages_unpersisted" },
+          },
+        };
+      },
+    },
+  });
+
+  await assert.rejects(
+    service.update(current.threadId, {
+      operationKey:"admin_languages_unpersisted_1",
+      languages:["Hebrew", "English"],
+    }),
+    (error) => error?.code === "THREAD_IDENTITY_PERSISTENCE_MISMATCH"
+      && /not durably readable/u.test(error.message),
+  );
 });
 
 test("preserved Genesis sex evidence cannot be replaced by an operator guess", async () => {
