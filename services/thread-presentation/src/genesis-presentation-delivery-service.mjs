@@ -71,7 +71,6 @@ export function createGenesisPresentationDeliveryService({
   method("outbox", outbox, "recordFailure");
   method("outbox", outbox, "markDelivered");
   const publisher = method("presentationPublisher", presentationPublisher, "publishGenesisPresentation");
-  method("presentationPublisher", presentationPublisher, "reconcileIdentityProjection");
   const activity = optionalActivityRecorder(activityRecorder);
   if (activityContextForEntry !== null && typeof activityContextForEntry !== "function") {
     throw new TypeError("Genesis presentation activityContextForEntry must be a function or null");
@@ -184,7 +183,12 @@ export function createGenesisPresentationDeliveryService({
         thread.provenance?.lastEventId ?? null,
       ].filter((value) => typeof value === "string" && value.trim() !== "");
       const projectedAt = now();
-      const publication = await publisher.reconcileIdentityProjection({
+      const identityPublisher = method(
+        "presentationPublisher",
+        presentationPublisher,
+        "reconcileIdentityProjection",
+      );
+      const publication = await identityPublisher.reconcileIdentityProjection({
         threadId,
         projectedAt,
         projection:{
