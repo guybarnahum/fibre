@@ -85,7 +85,9 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
     baseSlotOrdinal:1,
   });
   assert.equal(existing.mode, "fixture");
-  assert.equal(existing.worldSpec.worldSpecId, "world_pr39_rg1_03_recife");
+  assert.match(existing.worldSpec.worldSpecId, /^world_pr39_rg1_03_recife_family_/u);
+  assert.match(existing.worldSpec.culturalContext, /Family origin context:/u);
+  assert.match(existing.material.familyOriginContext, /northeastern Brazil/u);
 
   const root = mkdtempSync(join(tmpdir(), "fibre-modern-world-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
@@ -217,5 +219,7 @@ test("default births choose World independently from genome slot", async (t) => 
 
   assert.equal(selected.genomePath, cohort.slots[0].genomePath, "genome slot changed");
   assert.equal(selected.material.birthCity, "Recife, Brazil", "World stayed pinned to genome");
-  assert.equal(selected.worldSpec.worldSpecId, "world_pr39_rg1_03_recife", "wrong World selected");
+  assert.match(selected.worldSpec.worldSpecId, /^world_pr39_rg1_03_recife_family_/u, "wrong World selected");
+  assert.match(selected.worldSpec.culturalContext, /Family origin context:/u, "family origin did not reach life-generating World context");
+  assert.match(selected.material.appearanceContext, /northeastern Brazilian/u, "fixture appearance prior was not carried");
 });
