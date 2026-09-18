@@ -123,9 +123,9 @@ function nameFinding(identity, projected) {
     projectionCode:"NAME_PRESENTATION_MISSING",
     conflictCode:"NAME_PRESENTATION_STALE",
     projectionState:"repairable",
-    projectionAction:"rebuild_presentation",
+    projectionAction:"reconcile_identity_projection",
     conflictState:"repairable",
-    conflictAction:"rebuild_presentation",
+    conflictAction:"reconcile_identity_projection",
     detail:{ identityAction:action },
   });
 }
@@ -185,6 +185,10 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       projected:publicBirthDate,
       projectionCode:"BIRTH_DATE_PRESENTATION_MISSING",
       conflictCode:"BIRTH_DATE_CONFLICT",
+      projectionState:"repairable",
+      projectionAction:"reconcile_identity_projection",
+      conflictState:"repairable",
+      conflictAction:"reconcile_identity_projection",
     }));
   }
 
@@ -248,6 +252,7 @@ export function createThreadGenesisRepairService({
     throw new TypeError("presentationReader must expose getSnapshot()");
   }
   requireMethod("presentationDelivery", presentationDelivery, "rebuildThreadPresentation");
+  requireMethod("presentationDelivery", presentationDelivery, "reconcileThreadPresentationIdentity");
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
   requireMethod("genesisSexEvidence", genesisSexEvidence, "resolve");
   requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
@@ -416,7 +421,22 @@ export function createThreadGenesisRepairService({
       });
     }
 
-    const afterPresentation = await diagnose(threadId);
+    let afterPresentation = await diagnose(threadId);
+    if (!blocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_identity_projection")) {
+      const result = await presentationDelivery.reconcileThreadPresentationIdentity(threadId);
+      actions.push(Object.freeze({ action:"reconcile_identity_projection", result }));
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "identity_projection"),
+        parentOperationId:root,
+        stage:"thread.repair.identity_projection",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ reconciled:result.reconciled === true },
+      });
+      afterPresentation = await diagnose(threadId);
+    }
+
     if (!blocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_visual_publication")) {
       const result = await visualReconciler.reconcileThread({
         threadId,
