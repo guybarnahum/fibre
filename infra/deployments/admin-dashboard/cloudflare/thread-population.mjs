@@ -29,8 +29,10 @@ function summarize(threads) {
     attention:0,
     deadLetter:0,
     migrationsAvailable:0,
+    stillborn:0,
   };
   for (const thread of threads) {
+    if (thread.health === "unrecoverable") summary.stillborn += 1;
     if (thread.admitted !== true) {
       summary.activityOnly += 1;
       continue;
@@ -181,9 +183,12 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
     if (!admittedIds.has(row.thread_id)) threads.push(activityOnly(row));
   }
 
+  const stillborn = threads.filter((thread) => thread.health === "unrecoverable");
+  const admittedPopulation = threads.filter((thread) => thread.health !== "unrecoverable");
   const truncated = registryEntries.length >= MAX_THREADS || activityRows.length > MAX_THREADS;
   return Object.freeze({
-    threads:Object.freeze(threads),
+    threads:Object.freeze(admittedPopulation),
+    stillborn:Object.freeze(stillborn),
     summary:summarize(threads),
     truncated,
     limit:MAX_THREADS,
