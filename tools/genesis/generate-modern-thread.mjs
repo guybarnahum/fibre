@@ -187,7 +187,7 @@ function usage() {
     "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage.",
     "Legacy shorthand --female/--male and --Country/City remains accepted.",
     "Sex is optional; without it Fibre derives sex from the Thread identity.",
-    "Place is optional; without it Fibre rotates through the existing Genesis Worlds.",
+    "Place is optional; without it Fibre independently rotates through the existing globally distributed Genesis Worlds.",
     "Heritage requires an explicit place and creates/reuses a place+heritage World variant.",
     "Unknown place/heritage combinations are authored once and cached under .fibre/genesis/worlds; --new-world forces a fresh World version.",
     "Set FIBRE_GENESIS_REQUEST_ID to an existing request to resume its persisted request time and durable model calls.",
@@ -236,6 +236,10 @@ async function main() {
     slotCount: cohort.slots.length,
     explicitSlot,
   });
+  const worldSlotOrdinal = selectModernBirthSlot({
+    requestId:`${requestId}:world`,
+    slotCount:cohort.slots.length,
+  });
   const selection = await resolveModernWorldSelection({
     selector: options.world,
     heritage: options.heritage,
@@ -246,6 +250,7 @@ async function main() {
     repoRoot: REPO_ROOT,
     requestId,
     baseSlotOrdinal,
+    worldSlotOrdinal,
   });
   const body = modernRequest({
     requestId,
@@ -269,6 +274,7 @@ async function main() {
     worldMode: selection.mode,
     worldSpecId: body.worldSpec.worldSpecId,
     genomeSlot: selection.slotOrdinal,
+    worldSlot: selection.worldSlotOrdinal ?? null,
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     identityMode: "fresh_birth_composition",
@@ -303,6 +309,7 @@ async function main() {
     heritageSelection: selection.heritage?.display ?? null,
     worldMode: selection.mode,
     genomeSlot: selection.slotOrdinal,
+    worldSlot: selection.worldSlotOrdinal ?? null,
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     fibreIdentityNumber: birth.fibreIdentityNumber,
