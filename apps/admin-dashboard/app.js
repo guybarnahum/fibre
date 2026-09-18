@@ -209,6 +209,42 @@ function detail(label, input, { wide = false, mono = false } = {}) {
   item.append(name, body); return item;
 }
 
+async function copyText(value) {
+  const textValue = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(textValue);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = textValue;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
+function activityCopyAction(record) {
+  const actions = document.createElement("div");
+  actions.className = "activity-record-actions";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary";
+  button.textContent = "Copy details";
+  button.addEventListener("click", async () => {
+    try {
+      await copyText(record);
+      button.textContent = "Copied";
+    } catch {
+      button.textContent = "Copy failed";
+    }
+    window.setTimeout(() => { button.textContent = "Copy details"; }, 1200);
+  });
+  actions.append(button);
+  return actions;
+}
+
 function showRecord(record) {
   text($("#dialog-eyebrow"), "Activity record");
   text($("#dialog-title"), `${titleCase(record.service)} · ${record.stage}`);
@@ -222,7 +258,7 @@ function showRecord(record) {
     detail("Correlation ID", record.correlationId, { mono:true }), detail("Causation ID", record.causationId, { mono:true }),
     detail("Deployment SHA", record.deploymentGitSha, { wide:true, mono:true }),
   );
-  const body = $("#dialog-body"); body.replaceChildren(grid);
+  const body = $("#dialog-body"); body.replaceChildren(activityCopyAction(record), grid);
   if (record.message) body.append(detail("Message", record.message, { wide:true }));
   if (record.error) {
     const error = document.createElement("div"); error.className = "error-box";
