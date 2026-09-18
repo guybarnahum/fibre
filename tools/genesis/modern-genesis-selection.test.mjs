@@ -131,3 +131,25 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(reused.material.appearanceContext, created.material.appearanceContext);
   assert.equal(authoredCalls, 1);
 });
+
+
+test("default births choose World independently from genome slot", async (t) => {
+  const root = mkdtempSync(join(tmpdir(), "fibre-world-independence-"));
+  t.after(() => rmSync(root, { recursive:true, force:true }));
+
+  const selected = await resolveModernWorldSelection({
+    selector:null,
+    heritage:null,
+    cohort,
+    materialFixture,
+    fixture,
+    repoRoot:root,
+    requestId:"birth-world-independence",
+    baseSlotOrdinal:1,
+    worldSlotOrdinal:3,
+  });
+
+  assert.equal(selected.genomePath, cohort.slots[0].genomePath, "genome slot changed");
+  assert.equal(selected.material.birthCity, "Recife, Brazil", "World stayed pinned to genome");
+  assert.equal(selected.worldSpec.worldSpecId, "world_pr39_rg1_03_recife", "wrong World selected");
+});
