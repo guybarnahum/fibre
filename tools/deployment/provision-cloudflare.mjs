@@ -11,7 +11,7 @@ import {
   writeResolvedWranglerConfigs,
 } from "./cloudflare-operator.mjs";
 
-const D1_MIGRATIONS_BY_BINDING = Object.freeze({
+export const D1_MIGRATIONS_BY_BINDING = Object.freeze({
   PRESENTATION_CATALOG: Object.freeze([
     "infra/providers/cloudflare/d1/0001_fibre_catalog.sql",
   ]),
