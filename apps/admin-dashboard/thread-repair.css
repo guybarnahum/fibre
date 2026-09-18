@@ -106,6 +106,33 @@
 .thread-population-activity-only { opacity:.68; }
 .thread-population-activity-only .thread-population-name { font-weight:600; }
 
+.stillborn-intro {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:24px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface-subtle);
+}
+.stillborn-intro h3 { margin:0; font-size:13px; }
+.stillborn-intro p:last-child {
+  max-width:720px;
+  margin:0;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.5;
+}
+.stillborn-table td { font-size:10px; }
+.stillborn-table .stillborn-reason {
+  min-width:320px;
+  white-space:normal;
+  line-height:1.45;
+  color:var(--muted);
+}
+.stillborn-row { background:color-mix(in srgb,var(--danger-soft) 42%,transparent); }
+.stillborn-row:hover { background:color-mix(in srgb,var(--danger-soft) 68%,transparent); }
+
 .thread-sort {
   appearance:none;
   border:0;
