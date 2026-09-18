@@ -65,6 +65,10 @@ test("service deploy uses the resolved environment config without provisioning",
       async writeFileImpl(path, content) {
         writes.push([path, JSON.parse(content)]);
       },
+      async ensureD1MigrationsImpl({ databases }) {
+        calls.push(["migrate", databases]);
+      },
+      print() {},
       async runner(args, options) {
         calls.push(["wrangler", args, options]);
         return { stdout: "deployed", stderr: "" };
@@ -76,7 +80,11 @@ test("service deploy uses the resolved environment config without provisioning",
     assert.match(calls[0][1], /\.fibre\/cloudflare\/staging\/wrangler\/world-kernel\.jsonc$/);
     assert.equal(writes.length, 1);
     assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
-    const wrangler = calls.find((entry) => entry[0] === "wrangler");
+    const migrateIndex = calls.findIndex((entry) => entry[0] === "migrate");
+    const wranglerIndex = calls.findIndex((entry) => entry[0] === "wrangler");
+    assert.ok(migrateIndex >= 0 && migrateIndex < wranglerIndex, "D1 migrations must complete before Worker deploy");
+    assert.deepEqual(calls[migrateIndex][1], [{ binding:"ACTIVITY_LOG", name:"fibre-activity-log-staging" }]);
+    const wrangler = calls[wranglerIndex];
     assert.deepEqual(wrangler[1].slice(0, 1), ["deploy"]);
     assert.ok(wrangler[1].includes("--experimental-provision=false"));
     assert.ok(wrangler[1].includes("--experimental-auto-create=false"));
