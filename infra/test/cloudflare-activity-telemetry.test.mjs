@@ -265,13 +265,11 @@ test("Activity Log migration and provider execute against SQLite-compatible D1 s
   ]);
   assert.equal(records[0].deploymentGitSha, "9baa39c426496d0437a0760ec6f297e4d72a2d9b");
   assert.equal(records[0].environment, "staging");
-  assert.deepEqual(
-    database.database.prepare(
-      "SELECT thread_id,last_activity_at FROM fibre_activity_thread_heads WHERE environment=?",
-    ).get("staging"),
-    { thread_id:"thr_cloud_001", last_activity_at:"2026-09-01T06:20:02.000Z" },
-    "Thread activity head must advance with new observational Activity",
-  );
+  const head = database.database.prepare(
+    "SELECT thread_id,last_activity_at FROM fibre_activity_thread_heads WHERE environment=?",
+  ).get("staging");
+  assert.equal(head?.thread_id, "thr_cloud_001", "Thread activity head must stay bound to the Thread");
+  assert.equal(head?.last_activity_at, "2026-09-01T06:20:02.000Z", "Thread activity head must advance with new observational Activity");
   const indexes = database.database.prepare(
     "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'fibre_activity_log' ORDER BY name",
   ).all().map((row) => row.name);
