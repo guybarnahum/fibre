@@ -10,17 +10,10 @@ import {
   writeCloudflareOperatorState,
   writeResolvedWranglerConfigs,
 } from "./cloudflare-operator.mjs";
-
-export const D1_MIGRATIONS_BY_BINDING = Object.freeze({
-  PRESENTATION_CATALOG: Object.freeze([
-    "infra/providers/cloudflare/d1/0001_fibre_catalog.sql",
-  ]),
-  ACTIVITY_LOG: Object.freeze([
-    "infra/providers/cloudflare/d1/0001_activity_log.sql",
-    "infra/providers/cloudflare/d1/0002_admin_entitlements.sql",
-    "infra/providers/cloudflare/d1/0003_activity_thread_heads.sql",
-  ]),
-});
+import {
+  D1_MIGRATIONS_BY_BINDING,
+  ensureCloudflareD1Migrations,
+} from "./cloudflare-d1-migrations.mjs";
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 const ANSI_ESCAPE_PATTERN = /\u001b\[[0-9;]*m/gu;
 
@@ -46,12 +39,6 @@ function activityRuntimeConfig(runtimeConfigByService, serviceIds, environment, 
     };
   }
   return Object.freeze(result);
-}
-
-function migrationsFor(database) {
-  const migrations = D1_MIGRATIONS_BY_BINDING[database.binding];
-  if (!migrations?.length) throw new TypeError(`no D1 migrations registered for binding ${database.binding}`);
-  return migrations;
 }
 
 function cloudflareFailureText(error) {
@@ -91,6 +78,15 @@ export function createWranglerProvisionClient({ runner = runWrangler, cwd = proc
     },
     async applyD1Migration(name, filePath) {
       await runner(["d1", "execute", name, "--remote", "--file", filePath], { cwd });
+    },
+    async ensureD1Migrations({ repoRoot, databases, dryRun = false }) {
+      return ensureCloudflareD1Migrations({
+        repoRoot,
+        databases,
+        runner,
+        dryRun,
+        print:console.log,
+      });
     },
     async hasR2(name) {
       try {
@@ -154,14 +150,26 @@ export async function provisionCloudflareResources({
   const d1 = [];
   for (const database of plan.create.d1) {
     const resolved = await ensureD1(client, database.name);
-    const migrations = migrationsFor(database);
-    for (const migration of migrations) await client.applyD1Migration(database.name, migration);
+    const migrations = D1_MIGRATIONS_BY_BINDING[database.binding];
+    if (!migrations?.length) throw new TypeError(`no D1 migrations registered for binding ${database.binding}`);
     d1.push({
       ...resolved,
       binding: database.binding,
       schema: migrations.at(-1).split("/").at(-1),
       migrations: migrations.map((migration) => migration.split("/").at(-1)),
     });
+  }
+  if (typeof client.ensureD1Migrations === "function") {
+    await client.ensureD1Migrations({
+      repoRoot,
+      databases:d1.map(({ binding, name }) => ({ binding, name })),
+    });
+  } else {
+    for (const database of d1) {
+      for (const migration of D1_MIGRATIONS_BY_BINDING[database.binding]) {
+        await client.applyD1Migration(database.name, migration);
+      }
+    }
   }
   const r2 = [];
   for (const bucket of plan.create.r2) r2.push(await ensureNamed(client, { kind: "r2", name: bucket.name }));
