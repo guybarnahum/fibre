@@ -73,8 +73,22 @@ export async function renderThreadPage(threadId) {
   main.append(panel);
 
   const health = node("section", "panel thread-repair-section");
+  const healthHead = node("div", "panel-head");
+  const healthCopy = node("div");
+  healthCopy.append(
+    node("h2", null, "Thread health"),
+    node("p", null, "Run forensic diagnosis only when needed."),
+  );
+  const healthButton = node("button", "secondary", "Check health");
+  healthButton.type = "button";
+  healthButton.addEventListener("click", async () => {
+    healthButton.disabled = true;
+    try { await renderThreadHealth(health, threadId); }
+    catch { healthButton.disabled = false; }
+  }, { once:true });
+  healthHead.append(healthCopy, healthButton);
+  health.append(healthHead);
   main.append(health);
-  void renderThreadHealth(health, threadId);
 
   try {
     const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
