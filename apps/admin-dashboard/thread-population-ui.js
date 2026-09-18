@@ -152,6 +152,7 @@ function actionCell(thread) {
   }
 
   const deadLetter = thread.reconciliation?.state === "dead_letter";
+  const pending = thread.reconciliation?.state === "pending";
   if (hasRepair(thread) && thread.health === "repairable") {
     const label = deadLetter ? "Repair & recover" : "Repair";
     controls.append(button(label, {
@@ -161,6 +162,13 @@ function actionCell(thread) {
         ? "Repair derived state from authoritative World facts and recover this Thread from reconciliation quarantine."
         : "Repair derived state from authoritative World facts. No new identity fact will be invented.",
       body:() => ({ repairKey:`admin_repair_${Date.now().toString(36)}` }),
+    }, thread));
+  } else if (pending && thread.health === "healthy") {
+    controls.append(button("Resolve reconciliation", {
+      kind:"repair",
+      eyebrow:"Reconciliation cleanup",
+      description:"Retire stale pending reconciliation now that authoritative Thread health is complete. This does not change identity or Genesis.",
+      body:() => ({ repairKey:`admin_reconcile_${Date.now().toString(36)}` }),
     }, thread));
   } else if (deadLetter && thread.health === "healthy") {
     controls.append(button("Recover", {
