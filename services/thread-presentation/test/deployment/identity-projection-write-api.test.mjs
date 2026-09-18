@@ -103,9 +103,5 @@ test("World identity correction converges publicly without rewriting Genesis", a
 
   const immutableAfter = await infra.objects.get(before.pointer.objectRef);
   assert.equal(immutableAfter.digest, immutableBefore.digest, "Genesis snapshot changed");
-  assert.equal(
-    new TextDecoder().decode(immutableAfter.bytes),
-    new TextDecoder().decode(immutableBefore.bytes),
-    "Genesis bytes changed",
-  );
+  assert.deepEqual(immutableAfter.bytes, immutableBefore.bytes, "Genesis bytes changed");
 });
