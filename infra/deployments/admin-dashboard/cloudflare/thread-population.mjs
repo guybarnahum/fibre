@@ -61,6 +61,18 @@ function registryFindings(entry) {
         ]) }),
       }),
     }));
+  } else {
+    findings.push(Object.freeze({
+      code:"NAME",
+      state:"healthy",
+      identityAction:Object.freeze({
+        id:"change_name",
+        label:"Change name",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"name", label:"Name", kind:"text", required:true, default:clean(entry.displayName) }),
+        ]) }),
+      }),
+    }));
   }
   if (clean(entry.sex) === null) findings.push(Object.freeze({ code:"SEX_MISSING", state:"attention" }));
   if (clean(entry.fibreIdentityNumber) === null) findings.push(Object.freeze({ code:"FIN_MISSING", state:"attention" }));
@@ -69,11 +81,12 @@ function registryFindings(entry) {
 
 function admittedThread(entry, lastActivityAt) {
   const findings = registryFindings(entry);
+  const unresolved = findings.filter((finding) => finding.state !== "healthy");
   return Object.freeze({
     threadId:entry.threadId,
     admitted:true,
     lastActivityAt:lastActivityAt ?? null,
-    health:findings.length === 0 ? "healthy" : findings.some((finding) => finding.state === "operator_decision_required")
+    health:unresolved.length === 0 ? "healthy" : unresolved.some((finding) => finding.state === "operator_decision_required")
       ? "operator_decision_required"
       : "attention",
     identity:Object.freeze({
@@ -96,7 +109,9 @@ function admittedThread(entry, lastActivityAt) {
     }),
     portraitUrl:null,
     findings,
-    reconciliation:null,
+    reconciliation:entry.reconciliation === null || entry.reconciliation === undefined
+      ? null
+      : structuredClone(entry.reconciliation),
   });
 }
 
