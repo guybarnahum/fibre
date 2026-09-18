@@ -58,6 +58,14 @@ function fixture() {
         };
         return { rebuilt:true, genesisId:"gen_repair_1", threadId };
       },
+      async reconcileThreadPresentationIdentity(id) {
+        assert.equal(id, threadId);
+        state.presentation.presentation.subject = {
+          ...(state.presentation.presentation.subject ?? {}),
+          displayName:thread.identity.name,
+        };
+        return { threadId, reconciled:true };
+      },
     },
     visualReconciler:{
       async reconcileThread({ threadId:id, regenerationKey }) {
@@ -142,6 +150,25 @@ test("R4 distinguishes public projection omission from authoritative Genesis abs
   assert.equal(name.state, "repairable");
   assert.equal(name.authoritative, "Repair Thread");
   assert.equal(diagnosis.health, "repairable");
+});
+
+test("R4 repairs stale public name from World without rebuilding Genesis", async () => {
+  const { service, state, threadId } = fixture();
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Old Name" },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const result = await service.repair(threadId, { repairKey:"repair_identity_projection_1" });
+
+  assert.equal(state.rebuilt, false, "Genesis rebuild was used");
+  assert.deepEqual(result.actions.map((entry) => entry.action), ["reconcile_identity_projection"], "wrong repair path");
+  assert.equal(result.after.health, "healthy", "identity did not converge");
 });
 
 test("R4 surfaces authority conflicts instead of silently repairing them", async () => {
