@@ -95,6 +95,36 @@ function threadSex(identity) {
   return firstText(identity?.sex, identity?.world?.thread?.identity?.sex);
 }
 
+export function mergeObservatoryWorldIdentity(identity = {}, deepWorld = null) {
+  const thread = deepWorld?.thread;
+  const authoritative = thread?.identity;
+  if (!authoritative || typeof authoritative !== "object") {
+    return Object.freeze({
+      ...identity,
+      world:deepWorld ?? identity.world ?? null,
+    });
+  }
+
+  const worldName = firstText(authoritative.name);
+  const finishedWorldName = worldName !== null
+    && !["fibre thread","fiber thread"].includes(worldName.toLocaleLowerCase("en-US"))
+    ? worldName
+    : null;
+  return Object.freeze({
+    ...identity,
+    displayName:finishedWorldName ?? identity.displayName ?? null,
+    sex:firstText(authoritative.sex, identity.sex),
+    birthDate:firstText(authoritative.birthDate, identity.birthDate),
+    birthPlace:firstText(authoritative.birthCity, identity.birthPlace),
+    culture:Object.freeze(Array.isArray(authoritative.culture) ? [...authoritative.culture] : [...(identity.culture ?? [])]),
+    languages:Object.freeze(Array.isArray(authoritative.languages) ? [...authoritative.languages] : [...(identity.languages ?? [])]),
+    originOrientation:firstText(authoritative.originOrientation, identity.originOrientation),
+    summary:firstText(authoritative.selfDescription, identity.summary),
+    lifecycleStatus:firstText(thread.status, identity.lifecycleStatus),
+    world:deepWorld,
+  });
+}
+
 export function portraitAsset(identity) {
   const assets = Array.isArray(identity?.assets) ? identity.assets : [];
   return assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
@@ -581,13 +611,10 @@ export async function fetchThreadObservatory(threadId) {
   } catch (error) {
     memoryError = error instanceof Error ? error.message : String(error);
   }
-  const identity = {
-    ...(payload.identity ?? {}),
-    world:deepWorld ?? payload.identity?.world ?? null,
-  };
+  const identity = mergeObservatoryWorldIdentity(payload.identity ?? {}, deepWorld);
   return Object.freeze({
     ...payload,
-    identity:Object.freeze(identity),
+    identity,
     memories:Object.freeze(memories),
     memoryError,
   });
