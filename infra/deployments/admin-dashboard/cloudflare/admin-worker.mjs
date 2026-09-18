@@ -14,7 +14,7 @@ export { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
-const THREAD_MEMORIES_ROUTE = /^\/api\/threads\/([^/]+)\/memories$/u;
+const THREAD_OBSERVATORY_ROUTE = /^\/api\/threads\/([^/]+)\/observatory$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
@@ -103,9 +103,9 @@ async function proxyAsset(request, env, objectRef) {
   });
 }
 
-async function proxyThreadMemories(env, threadId) {
+async function proxyThreadObservatory(env, threadId) {
   const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/memories`,
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/observatory`,
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
   ));
   const payload = await upstream.text();
@@ -173,12 +173,12 @@ export default {
     }
 
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
-    const memoriesMatch = THREAD_MEMORIES_ROUTE.exec(url.pathname);
+    const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || memoriesMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
     const adminPost = request.method === "POST" && (repairMatch || infraMonitor);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
@@ -207,9 +207,9 @@ export default {
           const threadId = id("threadId", decodeURIComponent(repairMatch[1]));
           return proxyThreadRepair(request, env, threadId);
         }
-        if (memoriesMatch) {
-          const threadId = id("threadId", decodeURIComponent(memoriesMatch[1]));
-          return proxyThreadMemories(env, threadId);
+        if (observatoryMatch) {
+          const threadId = id("threadId", decodeURIComponent(observatoryMatch[1]));
+          return proxyThreadObservatory(env, threadId);
         }
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
