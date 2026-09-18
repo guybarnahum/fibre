@@ -118,6 +118,43 @@ function identityActions(diagnosis) {
     return [action];
   });
 }
+function operatorDecisionFindings(diagnosis) {
+  return (diagnosis?.findings ?? []).filter((finding) => finding?.state === "operator_decision_required");
+}
+
+function operatorDecisionActionIds(diagnosis) {
+  return new Set(operatorDecisionFindings(diagnosis)
+    .map((finding) => finding?.identityAction?.id)
+    .filter((value) => typeof value === "string" && value !== ""));
+}
+
+function readableFindingValue(value) {
+  if (Array.isArray(value)) return value.length === 0 ? "None" : value.join(" · ");
+  if (value === null || value === undefined || value === "") return "None";
+  return String(value);
+}
+
+function renderOperatorDecisionGuidance(host, diagnosis) {
+  const findings = operatorDecisionFindings(diagnosis);
+  if (findings.length === 0) return;
+
+  const panel = el("div", "thread-operator-decisions");
+  panel.append(el("strong", null, findings.length === 1 ? "Operator decision required" : "Operator decisions required"));
+  for (const finding of findings) {
+    const item = el("div", "thread-operator-decision");
+    const action = finding.identityAction;
+    const title = el("span", "thread-operator-decision-title", labelFor(finding.code));
+    const actionLabel = action?.label ?? null;
+    const summary = el("p", null, [
+      finding.reason ?? `${labelFor(finding.code)} requires explicit operator input.`,
+      finding.authoritative !== undefined ? `Current World: ${readableFindingValue(finding.authoritative)}.` : null,
+      actionLabel ? `Required action: ${actionLabel}.` : null,
+    ].filter(Boolean).join(" "));
+    item.append(title, summary);
+    panel.append(item);
+  }
+  host.append(panel);
+}
 
 function unresolved(diagnosis) {
   return (diagnosis?.findings ?? []).filter((finding) => finding?.state !== "healthy");
@@ -175,6 +212,7 @@ function dialogActionButton(label, open, { icon = null, tooltip = label } = {}) 
 function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
   const actions = identityActions(diagnosis);
   if (actions.length === 0) return;
+  const required = operatorDecisionActionIds(diagnosis);
   const bar = el("div", "thread-repair-actions");
   for (const action of actions) {
     const label = action.label ?? human(action.id);
@@ -185,7 +223,7 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         : ["set_languages","change_languages"].includes(action.id)
           ? "Set this Thread's personal language path in authoritative World identity. Use only languages grounded in household, civic life, or sustained schooling; do not list a country's demographic language inventory."
           : "Record an explicit operator identity decision in World history.";
-    bar.append(dialogActionButton(label, () => {
+    const control = dialogActionButton(label, () => {
       openThreadActionDialog({
         threadId,
         threadName:diagnosis.identity?.name ?? null,
@@ -217,7 +255,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
     }, {
       icon:iconForIdentityAction(action.id),
       tooltip:`${label} — ${description}`,
-    }));
+    });
+    if (required.has(action.id)) control.className = "primary thread-repair-button thread-required-action";
+    bar.append(control);
   }
   host.append(bar);
 }
@@ -336,6 +376,7 @@ function renderHealth(host, threadId, health, message = null) {
   for (const finding of diagnosis.findings ?? []) tags.append(healthTag(finding));
   host.append(tags);
   if (message) host.append(el("p", "thread-repair-message", message));
+  renderOperatorDecisionGuidance(host, diagnosis);
 
   if (diagnosis.exists === false) {
     host.append(el("p", "thread-repair-note", "Activity observed this identifier, but World never admitted it as a Thread. There is no person state to repair or recover."));
