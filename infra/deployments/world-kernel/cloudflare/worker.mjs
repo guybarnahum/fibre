@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
 import { ThreadHealthProjectionStore } from "#services/world-kernel/src/thread-health-projection-store.mjs";
@@ -11,6 +12,7 @@ import { createWorldCloudflareRuntime } from "./runtime.mjs";
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
 const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/identity$/u;
+const THREAD_MEMORIES_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/memories$/u;
 const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
 const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.5";
@@ -183,6 +185,27 @@ export class FibreWorldDurableObject extends DurableObject {
       if (identity === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({ contract:"fibre-world-thread-identity-v0.3", identity });
     }
+    const memoriesMatch = THREAD_MEMORIES_ROUTE.exec(url.pathname);
+    if (memoriesMatch !== null) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      const threadId = decodeURIComponent(memoriesMatch[1]);
+      const memory = openAutobiographicalMemoryInspectionStore(this.worldStorage);
+      try {
+        const memories = memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 });
+        return Response.json({
+          contract:"fibre-thread-autobiographical-memory-v0.1",
+          threadId,
+          memories,
+        });
+      } finally {
+        memory.close();
+      }
+    }
+
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     if (repairMatch !== null && request.method === "GET") {
       if (url.search !== "") return repairJson(400, { error:{ code:"QUERY_NOT_SUPPORTED" } }, false);
