@@ -28,6 +28,11 @@ function registryEntry(row) {
     languages: strings(worldSpec.languages),
     schoolingOrCommunityContext: clean(worldSpec.schoolingOrCommunityContext),
   });
+  const reconciliation = clean(row.reconciliation_state) === null ? null : Object.freeze({
+    state:clean(row.reconciliation_state),
+    lastError:parse(`Thread ${row.thread_id} reconciliation error`, row.reconciliation_error_json),
+    updatedAt:clean(row.reconciliation_updated_at),
+  });
   return Object.freeze({
     threadId: row.thread_id,
     fibreIdentityNumber: clean(row.fibre_identity_number),
@@ -44,6 +49,7 @@ function registryEntry(row) {
     version: Number(row.version),
     stateHash: clean(row.state_hash),
     updatedAt: clean(row.updated_at),
+    reconciliation,
   });
 }
 
@@ -59,7 +65,7 @@ export class ThreadDirectoryStore {
     this.#tables = new Set(this.#database.prepare(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN (
-        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs'
+        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs','thread_visual_publication_work'
       )
     `).all().map((row) => row.name));
   }
@@ -75,10 +81,14 @@ export class ThreadDirectoryStore {
       SELECT
         t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
         ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
-        ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json
+        ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json,
+        ${this.#tables.has("thread_visual_publication_work") ? "v.state" : "NULL"} AS reconciliation_state,
+        ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
+        ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at
       FROM threads t
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
+      ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
       WHERE t.thread_id=?
       LIMIT 1
     `).get(threadId.trim());
@@ -98,10 +108,14 @@ export class ThreadDirectoryStore {
       SELECT
         t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
         ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
-        ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json
+        ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json,
+        ${this.#tables.has("thread_visual_publication_work") ? "v.state" : "NULL"} AS reconciliation_state,
+        ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
+        ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at
       FROM threads t
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
+      ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
       ${fin === null ? "" : "WHERE r.fibre_identity_number=?"}
       ORDER BY t.thread_id ASC
       LIMIT ?
