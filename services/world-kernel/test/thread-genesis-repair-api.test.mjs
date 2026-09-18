@@ -92,6 +92,30 @@ test("Admin identity input changes World authority without requiring a repair di
   assert.equal(body.identityUpdate.changed, true);
 });
 
+test("identity correction projects the new person state after World accepts it", async () => {
+  let projected = null;
+  const repairApi = api({
+    onIdentityUpdate:async ({ threadId, result }) => {
+      projected = { threadId, name:result.identity.name };
+      return { state:"current", changed:true };
+    },
+  });
+  const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"identity",
+      operationKey:"admin_identity_projection_1",
+      name:"Maya Cohen",
+    }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 200, "identity correction failed");
+  assert.deepEqual(projected, { threadId:"thr_1", name:"Maya Cohen" }, "Presentation missed World correction");
+  assert.equal(body.identityProjection.state, "current", "projection did not converge");
+});
+
 test("named migration remains distinct from repair", async () => {
   const repairApi = api();
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
