@@ -6,6 +6,9 @@ import {
   threadName,
 } from "./thread-observatory.js";
 
+let renderedThreadId = null;
+let threadPageLoad = 0;
+
 function node(tag, className = null, text = null) {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -35,6 +38,8 @@ function healthSection(threadId) {
 }
 
 export async function renderThreadPage(threadId) {
+  renderedThreadId = threadId;
+  const load = ++threadPageLoad;
   const main = document.querySelector(".main");
   document.querySelector("#record-dialog")?.remove();
   for (const item of document.querySelectorAll(".nav-item")) item.classList.remove("active");
@@ -75,6 +80,7 @@ export async function renderThreadPage(threadId) {
 
   try {
     const payload = await fetchThreadObservatory(threadId);
+    if (renderedThreadId !== threadId || load !== threadPageLoad) return;
     environmentPill.textContent = payload.environment;
     const identity = payload.identity ?? {};
     const name = threadName(identity) ?? "Unnamed Thread";
@@ -112,3 +118,9 @@ export async function renderThreadPage(threadId) {
     viewer.removeAttribute("href");
   }
 }
+
+window.addEventListener("fibre:thread-identity-updated", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId === null || threadId !== renderedThreadId) return;
+  void renderThreadPage(threadId);
+});
