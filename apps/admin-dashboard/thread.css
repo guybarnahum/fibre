@@ -21,3 +21,42 @@
 
 @media(max-width:1100px){.thread-identity-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.thread-page-person{align-items:flex-start}.thread-page-avatar{width:56px;height:56px;flex-basis:56px}.thread-page-person h1{font-size:21px}.thread-identity-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Unified Thread Observatory */
+.thread-observatory-page{padding:18px}
+.thread-person-summary{font-size:13px;line-height:1.55;color:var(--muted);margin:0 0 10px;max-width:720px}
+.thread-identity-table{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.thread-identity-table .thread-person-fact.long{grid-column:span 2}
+.thread-identity-table .thread-person-fact.long strong{font-weight:550;line-height:1.55}
+.thread-empty-note{margin:0;padding:14px;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font-size:11px;line-height:1.5;background:var(--surface-subtle)}
+.thread-memory-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.thread-memory-card{border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--surface-subtle);display:grid;gap:9px;min-width:0}
+.thread-memory-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.thread-memory-head strong{font-size:11px}
+.thread-memory-head span{font-size:9px;color:var(--muted)}
+.thread-memory-content{font-size:13px;line-height:1.55;margin:0}
+.thread-memory-meaning{margin:0;padding:9px 11px;border-left:2px solid var(--border-strong);background:var(--surface)}
+.thread-memory-meaning span{display:block;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.thread-memory-meaning p{margin:0;font-size:12px;line-height:1.5;font-style:italic}
+.thread-memory-uncertainty{margin:0;color:var(--muted);font-size:10px;line-height:1.45}
+.thread-memory-foot{display:flex;gap:10px;flex-wrap:wrap;padding-top:3px;border-top:1px solid var(--border);color:var(--muted);font-size:9px}
+.thread-fid-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.thread-fid-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface-subtle)}
+.thread-fid-card>strong{display:block;padding:8px 10px;font-size:10px}
+.thread-fid-preview{display:block;width:100%;border:0;padding:0;background:var(--surface);aspect-ratio:1.586/1;cursor:zoom-in;overflow:hidden}
+.thread-fid-preview img{width:100%;height:100%;object-fit:contain;display:block}
+.thread-image-button{cursor:zoom-in}
+.thread-person-portrait-button{width:100%;height:100%;border:0;padding:0;background:transparent;cursor:zoom-in}
+.thread-person-portrait-button img{width:100%;height:100%;object-fit:cover;display:block}
+.thread-page-avatar-button{width:100%;height:100%;border:0;padding:0;background:transparent;cursor:zoom-in}
+.thread-page-avatar-button img{width:100%;height:100%;object-fit:cover;display:block}
+.thread-population-portrait[role="button"]{cursor:zoom-in}
+.thread-image-dialog{width:min(1100px,calc(100vw - 32px));max-width:1100px;max-height:calc(100vh - 32px);padding:0;border:1px solid var(--border);border-radius:16px;background:var(--surface);box-shadow:0 24px 90px rgba(0,0,0,.32)}
+.thread-image-dialog::backdrop{background:rgba(0,0,0,.62);backdrop-filter:blur(4px)}
+.thread-image-dialog figure{margin:0;padding:18px;display:grid;gap:10px;place-items:center;max-height:calc(100vh - 32px)}
+.thread-image-dialog img{display:block;max-width:100%;max-height:calc(100vh - 100px);object-fit:contain;border-radius:10px}
+.thread-image-dialog figcaption{font-size:10px;color:var(--muted)}
+.thread-image-close{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:20px;cursor:pointer}
+@media(max-width:900px){.thread-identity-table{grid-template-columns:repeat(2,minmax(0,1fr))}.thread-memory-list{grid-template-columns:1fr}}
+@media(max-width:650px){.thread-observatory-page{padding:12px}.thread-identity-table,.thread-fid-grid{grid-template-columns:1fr}.thread-identity-table .thread-person-fact.long{grid-column:auto}}
