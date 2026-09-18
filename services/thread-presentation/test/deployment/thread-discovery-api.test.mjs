@@ -161,6 +161,37 @@ test("Thread roster reads current identity and presence without reopening snapsh
   assert.equal(roster.threads[0].currentPresent.payload.activity, "Sketching the boats");
 });
 
+test("snapshot witness stays on the current Presentation projection", async () => {
+  const infra = createMemoryInfraDriver();
+  const presentationServer = createThreadPresentationServer({ infra });
+  const bundle = await presentationBundle();
+  const threadId = bundle.presentation.manifest.threadId;
+  const channelId = channelIdForThread(threadId);
+  const published = await presentationServer.publishSnapshot({
+    channelId,
+    objectRef:"snapshot_health_witness_v1",
+    snapshotVersion:"health-witness-v1",
+    bundle,
+    catalog:{ publiclyVisible:true },
+  });
+  const api = createPresentationReadApi({
+    infra,
+    presentationServer:{
+      ...presentationServer,
+      async getSnapshot() { throw new Error("snapshot witness reopened Presentation"); },
+    },
+    viewerOrigin:"https://insidefibre.com",
+    async openStream() { return new Response(null, { status:426 }); },
+  });
+
+  const response = await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${encodeURIComponent(threadId)}/snapshot`,
+    { method:"HEAD" },
+  ));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("x-fibre-snapshot-digest"), published.pointer.snapshotDigest);
+});
+
 test("Thread discovery pages public Threads across hidden catalog entries", async () => {
   const api = await catalogDiscoveryFixture([
     { threadId: "thr_a" },
