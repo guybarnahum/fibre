@@ -127,6 +127,15 @@ async function recordIdentityProjectionFailure(activityRecorder, { threadId, ope
   } catch {}
 }
 
+export function repairReconciliationDisposition(result) {
+  if (result?.after?.health === "healthy") return "retire";
+  const visualAction = Array.isArray(result?.actions)
+    ? result.actions.find((entry) => entry?.action === "reconcile_visual_publication") ?? null
+    : null;
+  if (visualAction !== null && visualAction.result?.complete !== true) return "retry_visual";
+  return "none";
+}
+
 export function createWorldCloudflareRuntime({ storage, env, now = () => new Date().toISOString(), nowMs = Date.now } = {}) {
   if (!storage || typeof storage !== "object") throw new TypeError("Cloudflare World runtime requires Durable Object storage");
   if (typeof now !== "function") throw new TypeError("Cloudflare World runtime now must be a function");
@@ -282,10 +291,18 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
     async onRepair({ threadId, result }) {
-      const blocked = ["migration_required", "integrity_error", "operator_decision_required", "unrecoverable"]
-        .includes(result?.after?.health);
-      if (!blocked && visualPublicationWorkset.requeue(threadId, { updatedAt:now() })) {
-        await reconciliationRuntime.requestWake();
+      const disposition = repairReconciliationDisposition(result);
+      if (disposition === "retire") {
+        if (visualPublicationWorkset.get(threadId)?.state === "pending") {
+          visualPublicationWorkset.complete(threadId, { updatedAt:now() });
+        }
+        return;
+      }
+      if (disposition === "retry_visual") {
+        visualPublicationWorkset.requeue(threadId, { updatedAt:now() });
+        if (visualPublicationWorkset.get(threadId)?.state === "pending") {
+          await reconciliationRuntime.requestWake();
+        }
       }
     },
     async onRecover() {
