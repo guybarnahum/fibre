@@ -104,7 +104,7 @@ function renderFields(host, fields) {
     const label = element("label", "thread-action-field");
     label.append(element("span", null, field.label ?? human(field.name)));
     const input = document.createElement("input");
-    input.type = field.kind === "number" ? "number" : "text";
+    input.type = field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text";
     input.name = field.name;
     input.required = field.required === true;
     input.autocomplete = "off";
