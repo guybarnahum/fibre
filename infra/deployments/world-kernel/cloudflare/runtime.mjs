@@ -15,10 +15,6 @@ import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { createThreadGenesisRepairApi } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createThreadGenesisRepairService } from "#services/world-kernel/src/thread-genesis-repair-service.mjs";
-import {
-  createThreadHealthReader,
-  ThreadHealthProjectionStore,
-} from "#services/world-kernel/src/thread-health-projection-store.mjs";
 import { createThreadIdentityCommandService } from "#services/world-kernel/src/thread-identity-command-service.mjs";
 import { ThreadIdentityUpdateStore } from "#services/world-kernel/src/thread-identity-update-store.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
@@ -58,29 +54,16 @@ function bindingFetch(binding) {
 }
 
 function createPresentationReader(presentationFetch) {
-  const url = (threadId) => `https://thread-presentation.internal/api/threads/${encodeURIComponent(threadId)}/snapshot`;
   return Object.freeze({
     async getSnapshot(threadId) {
-      const response = await presentationFetch(url(threadId), { headers:{ Accept:"application/json" } });
+      const response = await presentationFetch(
+        `https://thread-presentation.internal/api/threads/${encodeURIComponent(threadId)}/snapshot`,
+        { headers:{ Accept:"application/json" } },
+      );
       if (response.status === 404) return null;
       if (!response.ok) throw new Error(`Thread Presentation inspection failed with HTTP ${response.status}`);
       const payload = await response.json();
       return payload?.snapshot ?? null;
-    },
-    async getSnapshotDigest(threadId) {
-      const response = await presentationFetch(url(threadId), {
-        method:"HEAD",
-        headers:{ Accept:"application/json" },
-      });
-      if (response.status === 404) return null;
-      if (response.status === 405) {
-        const current = await presentationFetch(url(threadId), { headers:{ Accept:"application/json" } });
-        if (current.status === 404) return null;
-        if (!current.ok) throw new Error(`Thread Presentation witness failed with HTTP ${current.status}`);
-        return (await current.json())?.pointer?.snapshotDigest ?? null;
-      }
-      if (!response.ok) throw new Error(`Thread Presentation witness failed with HTTP ${response.status}`);
-      return response.headers.get("x-fibre-snapshot-digest");
     },
   });
 }
@@ -223,24 +206,6 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     identityUpdater:threadIdentityUpdateStore,
     activityRecorder,
   });
-  let healthProjectionStore = null;
-  let healthReader = null;
-  const projectedRepairService = Object.freeze({
-    async diagnose(threadId) {
-      if (healthReader === null) {
-        healthProjectionStore = new ThreadHealthProjectionStore(worldStorage);
-        healthReader = createThreadHealthReader({
-          projectionStore:healthProjectionStore,
-          presentationReader,
-          diagnosisService:repairService,
-          now,
-        });
-      }
-      return healthReader.diagnose(threadId);
-    },
-    migrate(...args) { return repairService.migrate(...args); },
-    repair(...args) { return repairService.repair(...args); },
-  });
   const identityService = createThreadIdentityCommandService({
     worldReader:worldStore,
     genesisSexEvidence:genesisBirthSexEvidence,
@@ -293,7 +258,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     retryState,
   });
   const repairApi = createThreadGenesisRepairApi({
-    repairService:projectedRepairService,
+    repairService,
     identityService,
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
@@ -372,7 +337,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (closed) return;
       closed = true;
       if (cancelSchedule) await reconciliationRuntime.stop();
-      closeAll([healthProjectionStore, threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
+      closeAll([threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
     },
   });
 }
