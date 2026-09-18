@@ -34,13 +34,15 @@ function normalizeBirthDate(value) {
   let match = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/u.exec(raw);
   if (match !== null) {
     const normalized = canonicalBirthDate(match[1], match[2], match[3]);
-    if (normalized !== null) return normalized;
+    if (normalized === null) throw new TypeError("Thread birth date is invalid");
+    return normalized;
   }
 
   match = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/u.exec(raw);
   if (match !== null) {
     const normalized = canonicalBirthDate(match[3], match[1], match[2]);
-    if (normalized !== null) return normalized;
+    if (normalized === null) throw new TypeError("Thread birth date is invalid");
+    return normalized;
   }
 
   if (/^\d{8}$/u.test(raw)) {
@@ -48,6 +50,7 @@ function normalizeBirthDate(value) {
     if (ymd !== null) return ymd;
     const mdy = canonicalBirthDate(raw.slice(4, 8), raw.slice(0, 2), raw.slice(2, 4));
     if (mdy !== null) return mdy;
+    throw new TypeError("Thread birth date is invalid");
   }
 
   throw new TypeError("Thread birth date must be YYYY-MM-DD, YYYYMMDD, MM/DD/YYYY, or MMDDYYYY");
