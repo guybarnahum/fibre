@@ -35,6 +35,7 @@ const authoredJerusalem = Object.freeze({
   schoolingOrCommunityContext:"Schools, neighborhood services, public learning spaces and community programs provide repeated contact with peers and adults.",
   culturalContext:"Jerusalem provides the surrounding civic setting, including Hebrew, Arabic and English across ordinary educational, commercial and public contexts.",
   heritageContext:"The household maintains Yemeni Jewish family heritage through some intergenerational language traces, foods, music, family stories, celebrations and community ties without assigning the subject personal belief or observance.",
+  familyOriginContext:"The household has longstanding Yemeni Jewish family roots with migration to Israel in earlier generations; close relatives and family stories maintain that ancestry while the subject is born and raised in Jerusalem.",
   appearanceContext:"Yemeni Jewish family backgrounds can include a broad range of West Asian and southern Arabian-associated complexions, dark hair textures and eye colors, with substantial individual and family variation; no single facial type is implied.",
   availableInstitutions:["school", "public_library", "public_transit", "neighborhood_health_service"],
   intellectualEnvironment:"School, books, news, internet access, public cultural institutions and ordinary conversation provide varied sources of ideas and disagreement.",
@@ -113,6 +114,9 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(created.timeZone, "Asia/Jerusalem");
   assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_yemeni-jewish_/u);
   assert.match(created.worldSpec.culturalContext, /Yemeni Jewish/u);
+  assert.match(created.worldSpec.culturalContext, /family roots|migration/iu, "family origin must become causal World context");
+  assert.match(created.worldSpec.householdShape, /Family origin context:/u);
+  assert.match(created.material.familyOriginContext, /Yemeni Jewish family roots/u);
   assert.deepEqual(created.worldSpec.languages, ["Hebrew", "English"], "personal languages must not become a Jerusalem demographic inventory");
   assert.doesNotMatch(created.material.appearanceContext, /Yemeni Jewish|Jerusalem|Israel/iu, "portrait appearance prior must not carry place/heritage labels");
 
@@ -133,6 +137,43 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(authoredCalls, 1);
 });
 
+
+test("uncommon local appearance remains valid when family origin makes it causal", async (t) => {
+  const root = mkdtempSync(join(tmpdir(), "fibre-tbilisi-family-origin-"));
+  t.after(() => rmSync(root, { recursive:true, force:true }));
+  const selector = normalizeModernWorldSelector("Georgia/Tbilisi");
+  const authored = {
+    ...authoredJerusalem,
+    timeZone:"Asia/Tbilisi",
+    languages:["Georgian", "English"],
+    femaleGivenNames:["Nino", "Mariam", "Salome", "Ana", "Tamar", "Elene"],
+    maleGivenNames:["Giorgi", "Irakli", "Levan", "Sandro", "Dato", "Nikoloz"],
+    familyNames:["Beridze", "Kapanadze", "Mensah", "Gelashvili", "Lomidze", "Tsiklauri"],
+    culturalContext:"The household lives ordinary urban life in Tbilisi.",
+    heritageContext:"No operator-supplied heritage label.",
+    familyOriginContext:"One caregiver is Georgian; the other was born in Ghana, came to Tbilisi as a university student in the 1990s, remained after graduation, and built a mixed Georgian-Ghanaian family whose relatives and family stories connect both places.",
+    appearanceContext:"A mixed family appearance range combining substantial West African and South Caucasus ancestry, including darker skin and tightly curled to wavy dark hair alongside broad variation in facial features and complexion; no single phenotype is implied.",
+  };
+  const created = await resolveModernWorldSelection({
+    selector,
+    heritage:null,
+    forceNewWorld:true,
+    cohort,
+    materialFixture,
+    fixture,
+    repoRoot:root,
+    requestId:"birth-tbilisi-mixed-origin",
+    baseSlotOrdinal:1,
+    now:() => "2026-09-18T20:10:00Z",
+    authorWorld:async () => authored,
+  });
+
+  assert.match(created.material.familyOriginContext, /Ghana/u);
+  assert.match(created.worldSpec.culturalContext, /Ghana/u, "family origin must be available to life generation");
+  assert.match(created.worldSpec.householdShape, /Ghana/u, "household story must carry the same causal origin");
+  assert.match(created.material.appearanceContext, /West African|South Caucasus/u);
+  assert.doesNotMatch(created.material.appearanceContext, /Tbilisi|Georgia/iu, "appearance prior must remain physical rather than geographic");
+});
 
 test("authored World rejects demographic language inventories for one subject", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-language-inventory-"));
