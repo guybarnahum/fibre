@@ -9,15 +9,15 @@ function api(options = {}) {
   return createThreadGenesisRepairApi({
     privateToken,
     identityService:{
-      async update(threadId, { operationKey, name, sex }) {
+      async update(threadId, { operationKey, name, sex, birthDate }) {
         return {
           threadId,
           operationKey,
           exists:threadId !== "thr_missing",
           changed:threadId !== "thr_missing",
           eventId:threadId === "thr_missing" ? null : "evt_identity_1",
-          changes:threadId === "thr_missing" ? {} : { name, sex },
-          identity:threadId === "thr_missing" ? null : { name:name ?? "Thread", sex:sex ?? null },
+          changes:threadId === "thr_missing" ? {} : { name, sex, birthDate },
+          identity:threadId === "thr_missing" ? null : { name:name ?? "Thread", sex:sex ?? null, birthDate:birthDate ?? null },
           version:threadId === "thr_missing" ? null : 2,
         };
       },
@@ -84,11 +84,12 @@ test("Admin identity input changes World authority without requiring a repair di
       operationKey:"admin_identity_1",
       name:"Maya Cohen",
       sex:"female",
+      birthDate:"2004-08-20",
     }),
   }));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female" });
+  assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female", birthDate:"2004-08-20" });
   assert.equal(body.identityUpdate.changed, true);
 });
 
