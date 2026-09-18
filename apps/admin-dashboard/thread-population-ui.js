@@ -199,8 +199,12 @@ function threadRow(thread) {
   if (thread.admitted === true && typeof thread.portraitUrl === "string" && thread.portraitUrl !== "") {
     const image = document.createElement("img");
     image.src = thread.portraitUrl;
-    image.alt = "";
+    image.alt = `${identity.name ?? "Thread"} portrait`;
     image.loading = "lazy";
+    portrait.dataset.lightboxSrc = thread.portraitUrl;
+    portrait.dataset.lightboxAlt = image.alt;
+    portrait.setAttribute("role", "button");
+    portrait.tabIndex = 0;
     portrait.append(image);
   } else {
     portrait.textContent = thread.admitted === true ? (identity.name?.trim()?.[0] ?? "·") : "·";
