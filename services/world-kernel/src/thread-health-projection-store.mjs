@@ -1,5 +1,4 @@
 import { canonicalJson } from "./persistence-common.mjs";
-import { migrateDatabase } from "./persistence-sqlite.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 const TABLE = "thread_health_projections";
@@ -16,7 +15,8 @@ function tableNames(database) {
       'threads',
       'fibre_civil_registrations',
       'embodiment_current_heads',
-      'thread_visual_publication_work'
+      'thread_visual_publication_work',
+      'genesis_birth_publications'
     )
   `).all().map((row) => row.name));
 }
@@ -27,7 +27,6 @@ export class ThreadHealthProjectionStore {
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName:"ThreadHealthProjectionStore" });
-    migrateDatabase(this.#database);
     this.#database.exec(`
       CREATE TABLE IF NOT EXISTS ${TABLE} (
         thread_id TEXT PRIMARY KEY,
@@ -81,6 +80,15 @@ export class ThreadHealthProjectionStore {
         `).get(threadId)
       : undefined;
 
+    const genesis = this.#tables.has("genesis_birth_publications")
+      ? this.#database.prepare(`
+          SELECT genesis_id,request_digest,published_at
+          FROM genesis_birth_publications
+          WHERE thread_id=?
+          LIMIT 1
+        `).get(threadId)
+      : undefined;
+
     return Object.freeze({
       thread:Object.freeze({
         version:Number(thread.version),
@@ -93,6 +101,11 @@ export class ThreadHealthProjectionStore {
         state:reconciliation.state,
         lastError:reconciliation.last_error_json === null ? null : parseJson(reconciliation.last_error_json),
         updatedAt:reconciliation.updated_at,
+      }),
+      genesisPublication:genesis === undefined ? null : Object.freeze({
+        genesisId:genesis.genesis_id,
+        requestDigest:genesis.request_digest,
+        publishedAt:genesis.published_at,
       }),
     });
   }
