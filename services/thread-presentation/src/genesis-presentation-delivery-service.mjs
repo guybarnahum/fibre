@@ -71,6 +71,7 @@ export function createGenesisPresentationDeliveryService({
   method("outbox", outbox, "recordFailure");
   method("outbox", outbox, "markDelivered");
   const publisher = method("presentationPublisher", presentationPublisher, "publishGenesisPresentation");
+  method("presentationPublisher", presentationPublisher, "reconcileIdentityProjection");
   const activity = optionalActivityRecorder(activityRecorder);
   if (activityContextForEntry !== null && typeof activityContextForEntry !== "function") {
     throw new TypeError("Genesis presentation activityContextForEntry must be a function or null");
@@ -171,6 +172,37 @@ export function createGenesisPresentationDeliveryService({
         rebuilt: publication?.reused !== true,
         reused: publication?.reused === true,
         presentation: publication ?? null,
+      });
+    },
+
+    async reconcileThreadPresentationIdentity(threadId) {
+      const thread = world.getThread(threadId);
+      const registration = registry.getCivilRegistrationByThreadId(threadId);
+      if (registration === null) throw new Error(`Thread ${threadId} has no civil registration`);
+      const sourceReferences = [
+        threadId,
+        thread.provenance?.lastEventId ?? null,
+      ].filter((value) => typeof value === "string" && value.trim() !== "");
+      const projectedAt = now();
+      const publication = await publisher.reconcileIdentityProjection({
+        threadId,
+        projectedAt,
+        projection:{
+          threadId,
+          displayName:thread.identity?.name ?? null,
+          birthDate:thread.identity?.birthDate ?? null,
+          languages:Array.isArray(thread.identity?.languages) ? thread.identity.languages : [],
+          lifecycleStatus:thread.status,
+          fibreIdentityNumber:registration.fibreIdentityNumber,
+          worldVersion:thread.version,
+          sourceReferences,
+        },
+      });
+      return Object.freeze({
+        threadId,
+        reconciled:publication?.changed === true,
+        reused:publication?.changed === false,
+        presentation:publication ?? null,
       });
     },
 
