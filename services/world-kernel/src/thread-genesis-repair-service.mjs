@@ -236,6 +236,55 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
     }));
   }
 
+  const languages = Array.isArray(identity.languages)
+    ? identity.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  const publicLanguages = projected === null
+    ? undefined
+    : Array.isArray(projected.subject?.languages)
+      ? projected.subject.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+      : [];
+  const languageAction = identityAction(
+    languages.length === 0 ? "set_languages" : "change_languages",
+    languages.length === 0 ? "Set languages" : "Change languages",
+    [{
+      name:"languages",
+      label:"Languages",
+      kind:"string_list",
+      required:true,
+      ...(languages.length === 0 ? {} : { default:languages.join(", ") }),
+      placeholder:"Hebrew, Russian, English",
+    }],
+  );
+  if (languages.length === 0) {
+    findings.push(finding("LANGUAGES_MISSING", "operator_decision_required", null, {
+      authoritative:Object.freeze([]),
+      presentation:publicLanguages === undefined ? undefined : Object.freeze([...publicLanguages]),
+      reason:"authoritative Thread identity has no personal language path",
+      identityAction:languageAction,
+    }));
+  } else if (languages.length > 3) {
+    findings.push(finding("LANGUAGES_NEED_REVIEW", "operator_decision_required", null, {
+      authoritative:Object.freeze([...languages]),
+      presentation:publicLanguages === undefined ? undefined : Object.freeze([...publicLanguages]),
+      reason:"legacy identity lists more than three personal languages; verify household, civic, and schooling language paths rather than preserving a demographic language inventory",
+      identityAction:languageAction,
+    }));
+  } else if (publicLanguages !== undefined && JSON.stringify(publicLanguages) !== JSON.stringify(languages)) {
+    findings.push(finding("LANGUAGES_PRESENTATION_STALE", "repairable", "reconcile_identity_projection", {
+      authoritative:Object.freeze([...languages]),
+      presentation:Object.freeze([...publicLanguages]),
+      reason:"current Presentation languages differ from authoritative World identity",
+      identityAction:languageAction,
+    }));
+  } else {
+    findings.push(finding("LANGUAGES", "healthy", null, {
+      authoritative:Object.freeze([...languages]),
+      presentation:publicLanguages === undefined ? undefined : Object.freeze([...publicLanguages]),
+      identityAction:languageAction,
+    }));
+  }
+
   return Object.freeze({
     facts:Object.freeze({
       name:unfinishedName(identity.name) ? null : text(identity.name),
@@ -244,6 +293,7 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       fibreIdentityNumber:text(registration?.fibreIdentityNumber),
       originOrientation,
       birthDate,
+      languages:Object.freeze([...languages]),
       lifecycleStatus:thread.status,
       canonicalVisualSpecification:canonicalSpec === null ? "missing" : "present",
     }),
@@ -364,12 +414,12 @@ export function createThreadGenesisRepairService({
     });
   }
 
-  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex, birthDate } = {}) {
+  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex, birthDate, languages } = {}) {
     const root = operationKey("operationKey", requestedKey);
     const before = await diagnose(threadId);
     if (!before.exists) return Object.freeze({ threadId, operationKey:root, before, after:before, changed:false });
     const thread = worldReader.getThread(threadId);
-    const result = identityUpdater.update(thread, { name, sex, birthDate, operationKey:root });
+    const result = identityUpdater.update(thread, { name, sex, birthDate, languages, operationKey:root });
     await record(activity, {
       threadId,
       operationId:root,
