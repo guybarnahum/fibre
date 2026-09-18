@@ -24,6 +24,13 @@ function shortId(value) {
   return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
 
+function initials(value) {
+  const parts = String(value ?? "").trim().split(/\s+/u).filter(Boolean);
+  if (parts.length === 0) return "·";
+  if (parts.length === 1) return parts[0].slice(0, 1).toLocaleUpperCase();
+  return `${parts[0].slice(0, 1)}${parts.at(-1).slice(0, 1)}`.toLocaleUpperCase();
+}
+
 function when(value) {
   if (!value) return "—";
   const date = new Date(value);
@@ -239,8 +246,16 @@ function threadRow(thread) {
     portrait.setAttribute("role", "button");
     portrait.tabIndex = 0;
     portrait.append(image);
+    image.addEventListener("error", () => {
+      image.remove();
+      portrait.removeAttribute("role");
+      portrait.removeAttribute("tabindex");
+      delete portrait.dataset.lightboxSrc;
+      delete portrait.dataset.lightboxAlt;
+      portrait.textContent = initials(identity.name);
+    }, { once:true });
   } else {
-    portrait.textContent = thread.admitted === true ? (identity.name?.trim()?.[0] ?? "·") : "·";
+    portrait.textContent = thread.admitted === true ? initials(identity.name) : "·";
   }
   portraitCell.append(portrait);
 
