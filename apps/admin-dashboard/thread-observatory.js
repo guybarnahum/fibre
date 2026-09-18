@@ -51,6 +51,8 @@ function memoryMoment(memory) {
 }
 
 function memoryAgeLabel(memory, birthDate) {
+  if (utcDateParts(birthDate) === null) return "Age — · birth date missing";
+  if (utcDateParts(memoryMoment(memory)) === null) return "Age — · memory date missing";
   const months = ageMonths(birthDate, memoryMoment(memory));
   if (months === null) return "Age —";
   const years = Math.floor(months / 12);
