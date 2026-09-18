@@ -122,7 +122,7 @@ test("R4 keeps authoritative identity complete while public Presentation stays a
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -142,7 +142,7 @@ test("R4 distinguishes public projection omission from authoritative Genesis abs
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{},
+      subject:{ birthDate:"2004-08-20" },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -160,7 +160,7 @@ test("R4 repairs stale public name from World without rebuilding Genesis", async
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Old Name" },
+      subject:{ displayName:"Old Name", birthDate:"2004-08-20" },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -179,7 +179,7 @@ test("R4 surfaces authority conflicts instead of silently repairing them", async
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Different Thread" },
+      subject:{ displayName:"Different Thread", birthDate:"2004-08-20" },
       civilIdentity:{ fibreIdentityNumber:"ZZZZ-99-ZZZZ" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -250,7 +250,7 @@ test("preserved public name requires explicit World admission instead of being l
   thread.identity.name = "Fibre Thread";
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Maya Cohen" },
+      subject:{ displayName:"Maya Cohen", birthDate:"2004-08-20" },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -275,7 +275,7 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   delete thread.identity.sex;
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
